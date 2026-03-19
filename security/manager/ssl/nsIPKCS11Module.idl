@@ -6,7 +6,6 @@
 #include "nsISupports.idl"
 
 interface nsIPKCS11Slot;
-interface nsISimpleEnumerator;
 
 [scriptable, uuid(8a44bdf9-d1a5-4734-bd5a-34ed7fe564c2)]
 interface nsIPKCS11Module : nsISupports
@@ -16,5 +15,5 @@ interface nsIPKCS11Module : nsISupports
   [must_use]
   readonly attribute AUTF8String libName;
   [must_use]
-  nsISimpleEnumerator listSlots();
+  readonly attribute Array<nsIPKCS11Slot> slots;
 };

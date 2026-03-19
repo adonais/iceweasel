@@ -161,16 +161,19 @@ inline nsresult BlockUntilLoadableCertsLoaded() {
   return component->BlockUntilLoadableCertsLoaded();
 }
 
-inline nsresult CheckForSmartCardChanges() {
-#ifndef MOZ_NO_SMART_CARDS
-  nsCOMPtr<nsINSSComponent> component(do_GetService(PSM_COMPONENT_CONTRACTID));
-  if (!component) {
-    return NS_ERROR_FAILURE;
-  }
-  return component->CheckForSmartCardChanges();
-#else
-  return NS_OK;
-#endif
-}
+// In theory a token on a PKCS#11 module can be inserted or removed at any
+// time. Operations that may depend on resources on external tokens should call
+// this to ensure they have a recent view of the token.
+nsresult CheckForSmartCardChanges();
+
+// Gets the path to the current profile as a string in a way that NSS can make
+// use of it. In particular, uses UTF-8 file paths on Windows (regardless of
+// the current system code page), because that's what SQLite (which provides
+// NSS' storage) requires.
+nsresult GetNSSProfilePath(nsAutoCString& aProfilePath);
+
+// Helper to determine if the platform is in safe mode or not. Conservatively
+// defaults to `true` if no nsIXULRuntime is available.
+bool GetInSafeMode();
 
 #endif  // _nsNSSComponent_h_

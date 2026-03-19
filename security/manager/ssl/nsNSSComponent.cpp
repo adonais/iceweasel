@@ -32,7 +32,6 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/Vector.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "mozilla/net/SocketProcessParent.h"
@@ -77,10 +76,6 @@
 #  include <linux/magic.h>
 #  include <sys/vfs.h>
 #endif
-
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
-#  include "mozilla/ipc/UtilityProcessManager.h"
-#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
 using namespace mozilla;
 using namespace mozilla::psm;
@@ -577,8 +572,18 @@ static StaticMutex sCheckForSmartCardChangesMutex MOZ_UNANNOTATED;
 MOZ_RUNINIT static TimeStamp sLastCheckedForSmartCardChanges = TimeStamp::Now();
 #endif
 
-nsresult nsNSSComponent::CheckForSmartCardChanges() {
+nsresult CheckForSmartCardChanges() {
 #ifndef MOZ_NO_SMART_CARDS
+
+#  ifdef NIGHTLY_BUILD
+  // If this is the parent process and PKCS#11 modules are loaded in the
+  // utility process, this is a no-op.
+  if (XRE_IsParentProcess() &&
+      StaticPrefs::security_utility_pkcs11_module_process_enabled_AtStartup()) {
+    return NS_OK;
+  }
+#  endif
+
   {
     StaticMutexAutoLock lock(sCheckForSmartCardChangesMutex);
     // Do this at most once every 3 seconds.
@@ -592,16 +597,14 @@ nsresult nsNSSComponent::CheckForSmartCardChanges() {
 
   // SECMOD_UpdateSlotList attempts to acquire the list lock as well, so we
   // have to do this in three steps.
-  Vector<UniqueSECMODModule> modulesWithRemovableSlots;
+  nsTArray<UniqueSECMODModule> modulesWithRemovableSlots;
   {
     AutoSECMODListReadLock secmodLock;
     SECMODModuleList* list = SECMOD_GetDefaultModuleList();
     while (list) {
       if (SECMOD_LockedModuleHasRemovableSlots(list->module)) {
         UniqueSECMODModule module(SECMOD_ReferenceModule(list->module));
-        if (!modulesWithRemovableSlots.append(std::move(module))) {
-          return NS_ERROR_OUT_OF_MEMORY;
-        }
+        modulesWithRemovableSlots.AppendElement(std::move(module));
       }
       list = list->next;
     }
@@ -1195,7 +1198,7 @@ static void SetNSSDatabaseCacheModeAsAppropriate() {
 }
 #endif  // defined(XP_WIN) || (defined(XP_LINUX) && !defined(ANDROID))
 
-static nsresult GetNSSProfilePath(nsAutoCString& aProfilePath) {
+nsresult GetNSSProfilePath(nsAutoCString& aProfilePath) {
   aProfilePath.Truncate();
   nsCOMPtr<nsIFile> profileFile;
   nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
@@ -1477,6 +1480,18 @@ void UnmigrateFromPrefixedCertDBs() {
 }
 #endif  // defined(NIGHTLY_BUILD) && !defined(ANDROID)
 
+bool GetInSafeMode() {
+  bool inSafeMode = true;
+  nsCOMPtr<nsIXULRuntime> runtime(do_GetService("@mozilla.org/xre/runtime;1"));
+  // There might not be an nsIXULRuntime in embedded situations. This will
+  // default to assuming we are in safe mode (as a result, no external PKCS11
+  // modules will be loaded).
+  if (runtime) {
+    MOZ_ALWAYS_SUCCEEDS(runtime->GetInSafeMode(&inSafeMode));
+  }
+  return inSafeMode;
+}
+
 nsresult nsNSSComponent::InitializeNSS() {
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("nsNSSComponent::InitializeNSS\n"));
   AUTO_PROFILER_LABEL("nsNSSComponent::InitializeNSS", OTHER);
@@ -1509,57 +1524,8 @@ nsresult nsNSSComponent::InitializeNSS() {
 #endif
 
   bool nocertdb = StaticPrefs::security_nocertdb_AtStartup();
-  bool inSafeMode = true;
-  nsCOMPtr<nsIXULRuntime> runtime(do_GetService("@mozilla.org/xre/runtime;1"));
-  // There might not be an nsIXULRuntime in embedded situations. This will
-  // default to assuming we are in safe mode (as a result, no external PKCS11
-  // modules will be loaded).
-  if (runtime) {
-    rv = runtime->GetInSafeMode(&inSafeMode);
-    MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  }
+  bool inSafeMode = GetInSafeMode();
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug, ("inSafeMode: %u\n", inSafeMode));
-
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
-  if (!inSafeMode &&
-      StaticPrefs::security_utility_pkcs11_module_process_enabled_AtStartup()) {
-    auto manager = ipc::UtilityProcessManager::GetSingleton();
-    MOZ_ASSERT(manager);
-    if (manager) {
-      // You may need to store the launchPromise in the nsNSSComponent,
-      // depending on how you design its API.
-      auto launchPromise = manager->StartPKCS11Module();
-      launchPromise->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [](RefPtr<PKCS11ModuleParent>&& parent) {
-            MOZ_RELEASE_ASSERT(parent);
-            parent->SendLoadModule(u"MySecretModule"_ns)
-                ->Then(
-                    GetCurrentSerialEventTarget(), __func__,
-                    [](nsresult res) {
-                      // We have a result from the utility process!
-                      // Check that we successfully loaded MySecretModule.
-                      MOZ_RELEASE_ASSERT(NS_SUCCEEDED(res));
-                    },
-                    [](ipc::ResponseRejectReason reason) {
-                      // We ran into an IPC Error.
-                      MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-                              ("Loading MySecretModule failed: %d",
-                               static_cast<int>(reason)));
-                    });
-          },
-          [](base::LaunchError&& aError) {
-            // We ran into a launch error.
-            MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
-                    ("Failed to start the PKCS#11 process: %s, %ld",
-                     aError.FunctionName().get(), aError.ErrorCode()));
-          });
-    }
-  }
-#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
   rv = InitializeNSSWithFallbacks(profileStr, nocertdb, inSafeMode);
   MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));

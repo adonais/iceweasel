@@ -163,7 +163,7 @@ this.pkcs11 = class extends ExtensionAPI {
             });
           }
           let rv = [];
-          for (let slot of module.listSlots()) {
+          for (let slot of module.slots) {
             let token = slot.getToken();
             let slotobj = {
               name: slot.name,

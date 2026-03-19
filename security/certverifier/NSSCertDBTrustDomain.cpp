@@ -1542,7 +1542,15 @@ void NSSCertDBTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension extension,
 
 SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
                         PKCS11DBConfig pkcs11DbConfig) {
-  MOZ_ASSERT(NS_IsMainThread());
+  // In the parent process, this must be called on the main thread. In the
+  // utility process, this will be called on a background thread.
+  MOZ_ASSERT(NS_IsMainThread() || XRE_IsUtilityProcess());
+  // If this is the utility process, the pref to enable the utility process
+  // better be true (or this is a gtest).
+  MOZ_ASSERT(
+      !XRE_IsUtilityProcess() ||
+      StaticPrefs::security_utility_pkcs11_module_process_enabled_AtStartup() ||
+      PR_GetEnv("MOZ_RUN_GTEST"));
 
   // The NSS_INIT_NOROOTINIT flag turns off the loading of the root certs
   // module by NSS_Initialize because we will load it in LoadLoadableRoots
@@ -1553,8 +1561,20 @@ SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
   if (nssDbConfig == NSSDBConfig::ReadOnly) {
     flags |= NSS_INIT_READONLY;
   }
-  if (pkcs11DbConfig == PKCS11DBConfig::DoNotLoadModules) {
+  // If we've been configured to not load any modules or if this is the parent
+  // process and the PKCS#11 utility process is enabled, don't load the NSS
+  // PKCS#11 module DB.
+  bool isParentProcessButLoadingModulesInUtilityProcess =
+      XRE_IsParentProcess() &&
+      StaticPrefs::security_utility_pkcs11_module_process_enabled_AtStartup();
+  if (pkcs11DbConfig == PKCS11DBConfig::DoNotLoadModules ||
+      isParentProcessButLoadingModulesInUtilityProcess) {
     flags |= NSS_INIT_NOMODDB;
+  }
+  // If this is the utility process, only load the NSS PKCS#11 module DB, not
+  // the key/certificate DB.
+  if (XRE_IsUtilityProcess()) {
+    flags |= NSS_INIT_NOCERTDB;
   }
   nsAutoCString dbTypeAndDirectory("sql:");
   dbTypeAndDirectory.Append(dir);
@@ -1567,22 +1587,30 @@ SECStatus InitializeNSS(const nsACString& dir, NSSDBConfig nssDbConfig,
     return srv;
   }
 
-  if (nssDbConfig == NSSDBConfig::ReadWrite) {
+  // If the key DB doesn't have a password set, PK11_NeedUserInit will return
+  // true. For the SQL DB, we need to set a password or we won't be able to
+  // import any certificates or change trust settings. This only applies to the
+  // parent process and when we're in read/write mode.
+  if (nssDbConfig == NSSDBConfig::ReadWrite && XRE_IsParentProcess()) {
     UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
     if (!slot) {
       return SECFailure;
     }
-    // If the key DB doesn't have a password set, PK11_NeedUserInit will return
-    // true. For the SQL DB, we need to set a password or we won't be able to
-    // import any certificates or change trust settings.
     if (PK11_NeedUserInit(slot.get())) {
       srv = PK11_InitPin(slot.get(), nullptr, nullptr);
-      MOZ_ASSERT(srv == SECSuccess);
-      (void)srv;
+      MOZ_ALWAYS_TRUE(srv == SECSuccess);
     }
   }
 
-  CollectThirdPartyPKCS11ModuleTelemetry(/*aIsInitialization=*/true);
+  // Collect third party PKCS#11 module telemetry if this is the parent process
+  // and the utility process is not enabled or if this is the utility process.
+  bool isParentProcessAndNotLoadingModulesInUtilityProcess =
+      XRE_IsParentProcess() &&
+      !StaticPrefs::security_utility_pkcs11_module_process_enabled_AtStartup();
+  if (isParentProcessAndNotLoadingModulesInUtilityProcess ||
+      XRE_IsUtilityProcess()) {
+    CollectThirdPartyPKCS11ModuleTelemetry(/*aIsInitialization=*/true);
+  }
 
   return SECSuccess;
 }

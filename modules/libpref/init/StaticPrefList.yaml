@@ -17846,7 +17846,6 @@
   value: true
   mirror: always
 
-#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
 # If true, load PKCS#11 third-party modules in a dedicated utility process
 # rather than the main process. (Well, that's the long-term goal for the code
 # paths behind this pref, but right now this is still work in progress!)
@@ -17854,7 +17853,6 @@
   type: bool
   value: false
   mirror: once
-#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
 - name: security.pki.cert_short_lifetime_in_days
   type: RelaxedAtomicUint32

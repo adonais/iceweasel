@@ -6,11 +6,36 @@ namespace mozilla {
 
 namespace psm {
 
+struct SlotInfo {
+  nsCString name;
+  nsCString desc;
+  nsCString manID;
+  nsCString hwVersion;
+  nsCString fwVersion;
+  uint32_t status;
+  nsCString tokenName;
+};
+
+struct ModuleInfo {
+  nsCString name;
+  nsCString libName;
+  SlotInfo[] slots;
+};
+
 [ChildProc=Utility]
 protocol PPKCS11Module
 {
   child:
-    async LoadModule(nsString aModule) returns (nsresult rv);
+    async AddModule(
+        nsCString aModuleName,
+        nsCString aLibraryPath,
+        uint32_t aMechanismFlags,
+        uint32_t aCipherFlags
+    ) returns (nsresult rv);
+
+    async DeleteModule(nsCString aModuleName) returns (nsresult rv);
+
+    async ListModules() returns (nsresult rv, ModuleInfo[] modules);
 };
 
 } // namespace psm

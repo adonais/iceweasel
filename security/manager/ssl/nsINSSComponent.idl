@@ -69,13 +69,6 @@ interface nsINSSComponent : nsISupports {
   [noscript] void blockUntilLoadableCertsLoaded();
 
   /**
-   * In theory a token on a PKCS#11 module can be inserted or removed at any
-   * time. Operations that may depend on resources on external tokens should
-   * call this to ensure they have a recent view of the token.
-   */
-  [noscript] void checkForSmartCardChanges();
-
-  /**
    * Used to potentially detect when a user's internet connection is being
    * intercepted. When doing an update ping, if certificate verification fails,
    * we make a note of the issuer distinguished name of that certificate.

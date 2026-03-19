@@ -73,8 +73,7 @@ async function doConfirm(l10n_id) {
 
 async function RefreshDeviceList() {
   for (let module of await secmoddb.listModules()) {
-    let slots = module.listSlots();
-    AddModule(module, slots);
+    AddModule(module, module.slots);
   }
 
   // Set the text on the FIPS button.

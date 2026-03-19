@@ -7,6 +7,7 @@
 #endif  // !NIGHTLY_BUILD || MOZ_NO_SMART_CARDS
 
 #include "mozilla/psm/PKCS11ModuleParent.h"
+#include "nsNSSComponent.h"
 
 namespace mozilla::psm {
 
@@ -23,7 +24,14 @@ nsresult PKCS11ModuleParent::BindToUtilityProcess(
     return NS_ERROR_FAILURE;
   }
 
-  if (!aUtilityParent->SendStartPKCS11ModuleService(std::move(childEnd))) {
+  nsAutoCString profilePath;
+  rv = GetNSSProfilePath(profilePath);
+  if (NS_FAILED(rv)) {
+    profilePath.Truncate();
+  }
+
+  if (!aUtilityParent->SendStartPKCS11ModuleService(std::move(childEnd),
+                                                    profilePath)) {
     MOZ_ASSERT_UNREACHABLE("StartPKCS11Module service failure");
     return NS_ERROR_FAILURE;
   }

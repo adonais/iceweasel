@@ -2,30 +2,19 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "nsPKCS11Slot.h"
-
 #include <string.h>
 
-#include "PKCS11ModuleDB.h"
-#include "mozilla/Casting.h"
-#include "mozilla/Logging.h"
-#include "nsCOMPtr.h"
-#include "nsIMutableArray.h"
-#include "nsNSSCertHelper.h"
-#include "nsNSSComponent.h"
-#include "nsPK11TokenDB.h"
-#include "nsPromiseFlatString.h"
-#include "nsComponentManagerUtils.h"
-#include "secmod.h"
+#include "PKCS11Slot.h"
 
-using mozilla::LogLevel;
+#include "nsComponentManagerUtils.h"
+#include "nsNSSCertHelper.h"
+#include "nsPK11TokenDB.h"
+
 using namespace mozilla::psm;
 
-extern mozilla::LazyLogModule gPIPNSSLog;
+NS_IMPL_ISUPPORTS(PKCS11Slot, nsIPKCS11Slot)
 
-NS_IMPL_ISUPPORTS(nsPKCS11Slot, nsIPKCS11Slot)
-
-nsPKCS11Slot::nsPKCS11Slot(PK11SlotInfo* slot) {
+PKCS11Slot::PKCS11Slot(PK11SlotInfo* slot) {
   MOZ_ASSERT(slot);
   mSlot.reset(PK11_ReferenceSlot(slot));
   mIsInternalCryptoSlot =
@@ -35,7 +24,7 @@ nsPKCS11Slot::nsPKCS11Slot(PK11SlotInfo* slot) {
   (void)refreshSlotInfo();
 }
 
-nsresult nsPKCS11Slot::refreshSlotInfo() {
+nsresult PKCS11Slot::refreshSlotInfo() {
   CK_SLOT_INFO slotInfo;
   nsresult rv = mozilla::MapSECStatus(PK11_GetSlotInfo(mSlot.get(), &slotInfo));
   if (NS_FAILED(rv)) {
@@ -94,8 +83,8 @@ nsresult nsPKCS11Slot::refreshSlotInfo() {
   return NS_OK;
 }
 
-nsresult nsPKCS11Slot::GetAttributeHelper(const nsACString& attribute,
-                                          /*out*/ nsACString& xpcomOutParam) {
+nsresult PKCS11Slot::GetAttributeHelper(const nsACString& attribute,
+                                        /*out*/ nsACString& xpcomOutParam) {
   if (PK11_GetSlotSeries(mSlot.get()) != mSeries) {
     nsresult rv = refreshSlotInfo();
     if (NS_FAILED(rv)) {
@@ -108,7 +97,7 @@ nsresult nsPKCS11Slot::GetAttributeHelper(const nsACString& attribute,
 }
 
 NS_IMETHODIMP
-nsPKCS11Slot::GetName(/*out*/ nsACString& name) {
+PKCS11Slot::GetName(/*out*/ nsACString& name) {
   if (mIsInternalCryptoSlot) {
     if (PK11_IsFIPS()) {
       return GetPIPNSSBundleString("Fips140TokenDescription", name);
@@ -124,27 +113,27 @@ nsPKCS11Slot::GetName(/*out*/ nsACString& name) {
 }
 
 NS_IMETHODIMP
-nsPKCS11Slot::GetDesc(/*out*/ nsACString& desc) {
+PKCS11Slot::GetDesc(/*out*/ nsACString& desc) {
   return GetAttributeHelper(mSlotDesc, desc);
 }
 
 NS_IMETHODIMP
-nsPKCS11Slot::GetManID(/*out*/ nsACString& manufacturerID) {
+PKCS11Slot::GetManID(/*out*/ nsACString& manufacturerID) {
   return GetAttributeHelper(mSlotManufacturerID, manufacturerID);
 }
 
 NS_IMETHODIMP
-nsPKCS11Slot::GetHWVersion(/*out*/ nsACString& hwVersion) {
+PKCS11Slot::GetHWVersion(/*out*/ nsACString& hwVersion) {
   return GetAttributeHelper(mSlotHWVersion, hwVersion);
 }
 
 NS_IMETHODIMP
-nsPKCS11Slot::GetFWVersion(/*out*/ nsACString& fwVersion) {
+PKCS11Slot::GetFWVersion(/*out*/ nsACString& fwVersion) {
   return GetAttributeHelper(mSlotFWVersion, fwVersion);
 }
 
 NS_IMETHODIMP
-nsPKCS11Slot::GetToken(nsIPK11Token** _retval) {
+PKCS11Slot::GetToken(nsIPK11Token** _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
   nsCOMPtr<nsIPK11Token> token = new nsPK11Token(mSlot.get());
   token.forget(_retval);
@@ -152,7 +141,7 @@ nsPKCS11Slot::GetToken(nsIPK11Token** _retval) {
 }
 
 NS_IMETHODIMP
-nsPKCS11Slot::GetTokenName(/*out*/ nsACString& tokenName) {
+PKCS11Slot::GetTokenName(/*out*/ nsACString& tokenName) {
   if (!PK11_IsPresent(mSlot.get())) {
     tokenName.SetIsVoid(true);
     return NS_OK;
@@ -180,7 +169,7 @@ nsPKCS11Slot::GetTokenName(/*out*/ nsACString& tokenName) {
 }
 
 NS_IMETHODIMP
-nsPKCS11Slot::GetStatus(uint32_t* _retval) {
+PKCS11Slot::GetStatus(uint32_t* _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
   if (PK11_IsDisabled(mSlot.get())) {
     *_retval = SLOT_DISABLED;
@@ -199,81 +188,89 @@ nsPKCS11Slot::GetStatus(uint32_t* _retval) {
   return NS_OK;
 }
 
-NS_IMPL_ISUPPORTS(nsPKCS11Module, nsIPKCS11Module)
-
-nsPKCS11Module::nsPKCS11Module(SECMODModule* module) {
-  MOZ_ASSERT(module);
-  mModule.reset(SECMOD_ReferenceModule(module));
-}
-
-// Convert the UTF8 internal name of the module to how it should appear to the
-// user. In most cases this involves simply passing back the module's name.
-// However, the builtin roots module has a non-localized name internally that we
-// must map to the localized version when we display it to the user.
-static nsresult NormalizeModuleNameOut(const char* moduleNameIn,
-                                       nsACString& moduleNameOut) {
-  // Easy case: this isn't the builtin roots module.
-  if (strnlen(moduleNameIn, kRootModuleName.Length() + 1) !=
-          kRootModuleName.Length() ||
-      strncmp(kRootModuleName.get(), moduleNameIn, kRootModuleName.Length()) !=
-          0) {
-    moduleNameOut.Assign(moduleNameIn);
-    return NS_OK;
-  }
-
-  nsAutoString localizedRootModuleName;
-  nsresult rv =
-      GetPIPNSSBundleString("RootCertModuleName", localizedRootModuleName);
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+nsresult PKCS11Slot::GetSlotInfo(SlotInfo& slotInfo) {
+  nsresult rv = GetName(slotInfo.name());
   if (NS_FAILED(rv)) {
     return rv;
   }
-  moduleNameOut.Assign(NS_ConvertUTF16toUTF8(localizedRootModuleName));
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsPKCS11Module::GetName(/*out*/ nsACString& name) {
-  return NormalizeModuleNameOut(mModule->commonName, name);
-}
-
-NS_IMETHODIMP
-nsPKCS11Module::GetLibName(/*out*/ nsACString& libName) {
-  if (mModule->dllName) {
-    libName = mModule->dllName;
-  } else {
-    libName.SetIsVoid(true);
+  rv = GetDesc(slotInfo.desc());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = GetManID(slotInfo.manID());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = GetHWVersion(slotInfo.hwVersion());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = GetFWVersion(slotInfo.fwVersion());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = GetStatus(&slotInfo.status());
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  rv = GetTokenName(slotInfo.tokenName());
+  if (NS_FAILED(rv)) {
+    return rv;
   }
   return NS_OK;
 }
 
+NS_IMPL_ISUPPORTS(RemotePKCS11Slot, nsIPKCS11Slot)
+
+RemotePKCS11Slot::RemotePKCS11Slot(const SlotInfo& slotInfo)
+    : mSlotInfo(slotInfo) {}
+
 NS_IMETHODIMP
-nsPKCS11Module::ListSlots(nsISimpleEnumerator** _retval) {
-  NS_ENSURE_ARG_POINTER(_retval);
-
-  nsresult rv = CheckForSmartCardChanges();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  nsCOMPtr<nsIMutableArray> array = do_CreateInstance(NS_ARRAY_CONTRACTID);
-  if (!array) {
-    return NS_ERROR_FAILURE;
-  }
-
-  /* applications which allow new slot creation (which Firefox now does
-   * since it uses the WaitForSlotEvent call) need to hold the
-   * ModuleList Read lock to prevent the slot array from changing out
-   * from under it. */
-  mozilla::AutoSECMODListReadLock lock;
-  for (int i = 0; i < mModule->slotCount; i++) {
-    if (mModule->slots[i]) {
-      nsCOMPtr<nsIPKCS11Slot> slot = new nsPKCS11Slot(mModule->slots[i]);
-      rv = array->AppendElement(slot);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-    }
-  }
-
-  return array->Enumerate(_retval, NS_GET_IID(nsIPKCS11Slot));
+RemotePKCS11Slot::GetName(/*out*/ nsACString& name) {
+  name.Assign(mSlotInfo.name());
+  return NS_OK;
 }
+
+NS_IMETHODIMP
+RemotePKCS11Slot::GetDesc(/*out*/ nsACString& desc) {
+  desc.Assign(mSlotInfo.desc());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Slot::GetManID(/*out*/ nsACString& manufacturerID) {
+  manufacturerID.Assign(mSlotInfo.manID());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Slot::GetHWVersion(/*out*/ nsACString& hwVersion) {
+  hwVersion.Assign(mSlotInfo.hwVersion());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Slot::GetFWVersion(/*out*/ nsACString& fwVersion) {
+  fwVersion.Assign(mSlotInfo.fwVersion());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Slot::GetToken(nsIPK11Token** _retval) {
+  return NS_ERROR_NOT_AVAILABLE;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Slot::GetTokenName(/*out*/ nsACString& tokenName) {
+  tokenName.Assign(mSlotInfo.tokenName());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+RemotePKCS11Slot::GetStatus(uint32_t* status) {
+  NS_ENSURE_ARG_POINTER(status);
+  *status = mSlotInfo.status();
+  return NS_OK;
+}
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS

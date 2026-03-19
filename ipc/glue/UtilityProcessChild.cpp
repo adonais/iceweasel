@@ -233,9 +233,10 @@ mozilla::ipc::IPCResult UtilityProcessChild::RecvRequestMemoryReport(
 
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
 IPCResult UtilityProcessChild::RecvStartPKCS11ModuleService(
-    Endpoint<PPKCS11ModuleChild>&& aEndpoint) {
+    Endpoint<PPKCS11ModuleChild>&& aEndpoint, nsCString&& aProfilePath) {
   auto child = MakeRefPtr<psm::PKCS11ModuleChild>();
-  if (!child || NS_FAILED(child->Start(std::move(aEndpoint)))) {
+  if (!child ||
+      NS_FAILED(child->Start(std::move(aEndpoint), std::move(aProfilePath)))) {
     return IPC_FAIL(this, "Failed to create and start PKCS11ModuleChild");
   }
 

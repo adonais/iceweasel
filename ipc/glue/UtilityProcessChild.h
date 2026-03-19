@@ -86,7 +86,7 @@ class UtilityProcessChild final : public PUtilityProcessChild {
 
 #if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
   IPCResult RecvStartPKCS11ModuleService(
-      Endpoint<PPKCS11ModuleChild>&& aEndpoint);
+      Endpoint<PPKCS11ModuleChild>&& aEndpoint, nsCString&& aProfilePath);
 #endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
   void ActorDestroy(ActorDestroyReason aWhy) override;

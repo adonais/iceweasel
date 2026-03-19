@@ -1373,3 +1373,21 @@ function add_ct_test(host, expectedCTValue, expectConnectionSuccess) {
     );
   }
 }
+
+function findSlotByName(module, name) {
+  for (let slot of module.slots) {
+    if (slot.name == name) {
+      return slot;
+    }
+  }
+  return null;
+}
+
+async function findModuleByName(moduleDB, name) {
+  for (let module of await moduleDB.listModules()) {
+    if (module.name == name) {
+      return module;
+    }
+  }
+  return null;
+}

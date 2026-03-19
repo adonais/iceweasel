@@ -3,25 +3,32 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsPKCS11Slot_h
-#define nsPKCS11Slot_h
+#ifndef PKCS11Slot_h
+#define PKCS11Slot_h
 
 #include "ScopedNSSTypes.h"
-#include "nsIPKCS11Module.h"
 #include "nsIPKCS11Slot.h"
 #include "nsISupports.h"
 #include "nsString.h"
-#include "pk11func.h"
 
-class nsPKCS11Slot : public nsIPKCS11Slot {
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+#include "mozilla/psm/PPKCS11Module.h"
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
+
+class PKCS11Slot : public nsIPKCS11Slot {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPKCS11SLOT
 
-  explicit nsPKCS11Slot(PK11SlotInfo* slot);
+  explicit PKCS11Slot(PK11SlotInfo* slot);
+
+
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+  nsresult GetSlotInfo(mozilla::psm::SlotInfo& slotInfo);
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
  protected:
-  virtual ~nsPKCS11Slot() = default;
+  virtual ~PKCS11Slot() = default;
 
  private:
   mozilla::UniquePK11SlotInfo mSlot;
@@ -40,18 +47,20 @@ class nsPKCS11Slot : public nsIPKCS11Slot {
                               /*out*/ nsACString& xpcomOutParam);
 };
 
-class nsPKCS11Module : public nsIPKCS11Module {
+#if defined(NIGHTLY_BUILD) && !defined(MOZ_NO_SMART_CARDS)
+class RemotePKCS11Slot : public nsIPKCS11Slot {
  public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIPKCS11MODULE
+  NS_DECL_NSIPKCS11SLOT
 
-  explicit nsPKCS11Module(SECMODModule* module);
+  explicit RemotePKCS11Slot(const mozilla::psm::SlotInfo& slotInfo);
 
  protected:
-  virtual ~nsPKCS11Module() = default;
+  virtual ~RemotePKCS11Slot() = default;
 
  private:
-  mozilla::UniqueSECMODModule mModule;
+  mozilla::psm::SlotInfo mSlotInfo;
 };
+#endif  // NIGHTLY_BUILD && !MOZ_NO_SMART_CARDS
 
-#endif  // nsPKCS11Slot_h
+#endif  // PKCS11Slot_h
