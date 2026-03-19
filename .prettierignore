@@ -830,7 +830,6 @@ image/test/mochitest/test_mq_dynamic_svg.html
 image/test/mochitest/test_svg_animatedGIF.html
 intl/uconv/tests/test_big5_encoder.html
 intl/uconv/tests/test_bug335816.html
-js/src/README.html
 js/xpconnect/tests/chrome/file_bug618176.xhtml
 layout/base/tests/accessiblecaret_magnifier.html
 layout/base/tests/bug1263288-ref.html
