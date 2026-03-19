@@ -223,7 +223,7 @@ function CardSection({
   const mayHaveSectionsPersonalization =
     prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
 
-  const { sectionKey, title, subtitle } = section;
+  const { sectionKey, title, subtitle, followable } = section;
   const { responsiveLayouts, name: layoutName } = section.layout;
 
   const following = sectionPersonalization[sectionKey]?.isFollowed;
@@ -486,7 +486,8 @@ function CardSection({
       <div
         className={following ? "section-follow following" : "section-follow"}
       >
-        {!anySectionsFollowed &&
+        {followable &&
+          !anySectionsFollowed &&
           sectionPosition === 0 &&
           shouldShowOMCHighlight(
             messageData,
@@ -502,7 +503,8 @@ function CardSection({
               />
             </MessageWrapper>
           )}
-        {!anySectionsFollowed &&
+        {followable &&
+          !anySectionsFollowed &&
           sectionPosition === 0 &&
           shouldShowOMCHighlight(
             messageData,
@@ -517,25 +519,27 @@ function CardSection({
               />
             </MessageWrapper>
           )}
-        <moz-button
-          onClick={following ? onUnfollowClick : onFollowClick}
-          type="default"
-          index={sectionPosition}
-          section={sectionKey}
-        >
-          <span
-            className="section-button-follow-text"
-            data-l10n-id="newtab-section-follow-button"
-          />
-          <span
-            className="section-button-following-text"
-            data-l10n-id="newtab-section-following-button"
-          />
-          <span
-            className="section-button-unfollow-text"
-            data-l10n-id="newtab-section-unfollow-button"
-          />
-        </moz-button>
+        {followable && (
+          <moz-button
+            onClick={following ? onUnfollowClick : onFollowClick}
+            type="default"
+            index={sectionPosition}
+            section={sectionKey}
+          >
+            <span
+              className="section-button-follow-text"
+              data-l10n-id="newtab-section-follow-button"
+            />
+            <span
+              className="section-button-following-text"
+              data-l10n-id="newtab-section-following-button"
+            />
+            <span
+              className="section-button-unfollow-text"
+              data-l10n-id="newtab-section-unfollow-button"
+            />
+          </moz-button>
+        )}
       </div>
       <SectionContextMenu
         dispatch={dispatch}

@@ -260,7 +260,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
                     .find(item => item.columnCount === 1);
 
                 smallestBreakpointLayout.tiles.forEach(tile => {
-                  if (tile.hasAd) {
+                  if (tile.hasAd && section.allowAds) {
                     const widgetsBeforeThisPosition =
                       smallestBreakpointLayout.tiles.filter(
                         t => t.allowsWidget && t.position < tile.position

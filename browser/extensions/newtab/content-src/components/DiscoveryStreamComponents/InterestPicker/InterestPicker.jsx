@@ -131,36 +131,40 @@ function InterestPicker({ title, subtitle, interests, receivedFeedRank }) {
         onBlur={onWrapperBlur}
         ref={focusRef}
       >
-        {interests.map((interest, index) => {
-          const checked =
-            sectionPersonalization[interest.sectionId]?.isFollowed;
-          return (
-            <li
-              key={interest.sectionId}
-              ref={index === focusedIndex ? focusedRef : null}
-            >
-              <label>
-                <input
-                  type="checkbox"
-                  id={interest.sectionId}
-                  name={interest.sectionId}
-                  checked={checked}
-                  aria-checked={checked}
-                  onChange={e => handleChange(e, index)}
-                  key={`${interest.sectionId}-${checked}`} // Force remount to sync DOM state with React state
-                  tabIndex={index === focusedIndex ? 0 : -1}
-                  onFocus={() => {
-                    onItemFocus(index);
-                  }}
-                />
-                <span className="topic-item-label">{interest.title || ""}</span>
-                <div
-                  className={`topic-item-icon icon ${checked ? "icon-check-filled" : "icon-add-circle-fill"}`}
-                ></div>
-              </label>
-            </li>
-          );
-        })}
+        {interests
+          .filter(interest => interest.followable)
+          .map((interest, index) => {
+            const checked =
+              sectionPersonalization[interest.sectionId]?.isFollowed;
+            return (
+              <li
+                key={interest.sectionId}
+                ref={index === focusedIndex ? focusedRef : null}
+              >
+                <label>
+                  <input
+                    type="checkbox"
+                    id={interest.sectionId}
+                    name={interest.sectionId}
+                    checked={checked}
+                    aria-checked={checked}
+                    onChange={e => handleChange(e, index)}
+                    key={`${interest.sectionId}-${checked}`} // Force remount to sync DOM state with React state
+                    tabIndex={index === focusedIndex ? 0 : -1}
+                    onFocus={() => {
+                      onItemFocus(index);
+                    }}
+                  />
+                  <span className="topic-item-label">
+                    {interest.title || ""}
+                  </span>
+                  <div
+                    className={`topic-item-icon icon ${checked ? "icon-check-filled" : "icon-add-circle-fill"}`}
+                  ></div>
+                </label>
+              </li>
+            );
+          })}
       </ul>
       <p className="learn-more-copy">
         <a

@@ -272,6 +272,7 @@ describe("<CardSections />", () => {
                 receivedRank: 0,
                 sectionKey: "section_key_1",
                 title: "title",
+                followable: true,
                 layout,
               },
               {
@@ -285,6 +286,7 @@ describe("<CardSections />", () => {
                 receivedRank: 0,
                 sectionKey: "section_key_2",
                 title: "title",
+                followable: true,
                 layout,
               },
             ],
@@ -396,6 +398,7 @@ describe("<CardSections />", () => {
                 receivedRank: 0,
                 sectionKey: "section_key_1",
                 title: "title",
+                followable: true,
                 layout,
               },
               {
@@ -409,6 +412,7 @@ describe("<CardSections />", () => {
                 receivedRank: 0,
                 sectionKey: "section_key_2",
                 title: "title",
+                followable: true,
                 layout,
               },
             ],

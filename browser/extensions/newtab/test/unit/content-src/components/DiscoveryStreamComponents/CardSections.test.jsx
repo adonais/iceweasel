@@ -284,6 +284,7 @@ describe("<CardSections />", () => {
                 receivedRank: 0,
                 sectionKey: "section_key_1",
                 title: "title",
+                followable: true,
                 layout,
               },
               {
@@ -297,6 +298,7 @@ describe("<CardSections />", () => {
                 receivedRank: 0,
                 sectionKey: "section_key_2",
                 title: "title",
+                followable: true,
                 layout,
               },
             ],
@@ -423,6 +425,7 @@ describe("<CardSections />", () => {
                 receivedRank: 0,
                 sectionKey: "section_key_1",
                 title: "title",
+                followable: true,
                 layout,
               },
               {
@@ -436,6 +439,7 @@ describe("<CardSections />", () => {
                 receivedRank: 0,
                 sectionKey: "section_key_2",
                 title: "title",
+                followable: true,
                 layout,
               },
             ],
@@ -448,6 +452,72 @@ describe("<CardSections />", () => {
     const highlight = wrapper.find(FollowSectionButtonHighlight);
     assert.equal(highlight.length, 1);
     assert.isTrue(wrapper.html().includes("follow-section-button-highlight"));
+  });
+
+  it("should not render follow button when section.followable is false", () => {
+    const state = {
+      ...INITIAL_STATE,
+      Prefs: {
+        ...INITIAL_STATE.Prefs,
+        values: {
+          ...INITIAL_STATE.Prefs.values,
+          [PREF_SECTIONS_PERSONALIZATION_ENABLED]: true,
+        },
+      },
+    };
+
+    wrapper = mount(
+      <WrapWithProvider state={state}>
+        <CardSections
+          dispatch={dispatch}
+          {...DEFAULT_PROPS}
+          data={{
+            ...DEFAULT_PROPS.data,
+            sections: [
+              {
+                ...DEFAULT_PROPS.data.sections[0],
+                followable: false,
+              },
+            ],
+          }}
+        />
+      </WrapWithProvider>
+    );
+
+    assert.equal(wrapper.find(".section-follow moz-button").length, 0);
+  });
+
+  it("should render follow button when section.followable is true", () => {
+    const state = {
+      ...INITIAL_STATE,
+      Prefs: {
+        ...INITIAL_STATE.Prefs,
+        values: {
+          ...INITIAL_STATE.Prefs.values,
+          [PREF_SECTIONS_PERSONALIZATION_ENABLED]: true,
+        },
+      },
+    };
+
+    wrapper = mount(
+      <WrapWithProvider state={state}>
+        <CardSections
+          dispatch={dispatch}
+          {...DEFAULT_PROPS}
+          data={{
+            ...DEFAULT_PROPS.data,
+            sections: [
+              {
+                ...DEFAULT_PROPS.data.sections[0],
+                followable: true,
+              },
+            ],
+          }}
+        />
+      </WrapWithProvider>
+    );
+
+    assert.equal(wrapper.find(".section-follow moz-button").length, 1);
   });
 
   describe("Keyboard navigation", () => {

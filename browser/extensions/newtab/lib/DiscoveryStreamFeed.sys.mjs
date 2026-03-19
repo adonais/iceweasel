@@ -1804,6 +1804,8 @@ export class DiscoveryStreamFeed {
                 receivedRank: sectionData.receivedFeedRank,
                 layout: sectionData.layout,
                 iab: sectionData.iab,
+                allowAds: sectionData.allowAds ?? true,
+                followable: sectionData.followable ?? true,
                 // property if initially shown (with interest picker)
                 visible: sectionData.isInitiallyVisible,
               });
@@ -1861,10 +1863,14 @@ export class DiscoveryStreamFeed {
           feedResponse.interestPicker.sections =
             feedResponse.interestPicker.sections.map(section => {
               const { sectionId } = section;
-              const title = sections.find(
+              const found = sections.find(
                 ({ sectionKey }) => sectionKey === sectionId
-              )?.title;
-              return { sectionId, title };
+              );
+              return {
+                sectionId,
+                title: found?.title,
+                followable: found?.followable,
+              };
             });
         }
         if (feedResponse.inferredLocalModel) {

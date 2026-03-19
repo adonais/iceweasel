@@ -3026,6 +3026,8 @@ describe("DiscoveryStreamFeed", () => {
               receivedRank: 1,
               layout: "cards",
               iab: "iab-category",
+              allowAds: true,
+              followable: true,
               visible: true,
             },
           ],
@@ -3073,6 +3075,135 @@ describe("DiscoveryStreamFeed", () => {
 
       // Use JSON comparison because deepEqual will error with incorrect property order message
       assert.equal(JSON.stringify(feedData), JSON.stringify(expectedData));
+    });
+    it("should include allowAds and followable in section objects", async () => {
+      setPref("discoverystream.sections.enabled", true);
+      const fakeCache = {};
+      sandbox.stub(feed.cache, "get").returns(Promise.resolve(fakeCache));
+      sandbox.stub(feed, "rotate").callsFake(val => val);
+      sandbox
+        .stub(feed, "scoreItemsInferred")
+        .callsFake(val => ({ data: val, filtered: [], personalized: false }));
+      sandbox.stub(feed, "fetchFromEndpoint").resolves({
+        recommendedAt: 0,
+        surfaceId: "NEW_TAB_EN_US",
+        data: [],
+        feeds: {
+          "section-1": {
+            title: "Section 1",
+            subtitle: "",
+            receivedFeedRank: 1,
+            layout: "cards",
+            iab: null,
+            isInitiallyVisible: true,
+            allowAds: false,
+            followable: true,
+            recommendations: [],
+          },
+        },
+      });
+
+      const feedData = await feed.getComponentFeed("url");
+      const [section] = feedData.data.sections;
+      assert.equal(section.allowAds, false);
+      assert.equal(section.followable, true);
+    });
+    it("should default allowAds and followable to true when absent", async () => {
+      setPref("discoverystream.sections.enabled", true);
+      const fakeCache = {};
+      sandbox.stub(feed.cache, "get").returns(Promise.resolve(fakeCache));
+      sandbox.stub(feed, "rotate").callsFake(val => val);
+      sandbox
+        .stub(feed, "scoreItemsInferred")
+        .callsFake(val => ({ data: val, filtered: [], personalized: false }));
+      sandbox.stub(feed, "fetchFromEndpoint").resolves({
+        recommendedAt: 0,
+        surfaceId: "NEW_TAB_EN_US",
+        data: [],
+        feeds: {
+          "section-1": {
+            title: "Section 1",
+            subtitle: "",
+            receivedFeedRank: 1,
+            layout: "cards",
+            iab: null,
+            isInitiallyVisible: true,
+            recommendations: [],
+          },
+        },
+      });
+
+      const feedData = await feed.getComponentFeed("url");
+      const [section] = feedData.data.sections;
+      assert.equal(section.allowAds, true);
+      assert.equal(section.followable, true);
+    });
+    it("should default allowAds and followable to true when null", async () => {
+      setPref("discoverystream.sections.enabled", true);
+      const fakeCache = {};
+      sandbox.stub(feed.cache, "get").returns(Promise.resolve(fakeCache));
+      sandbox.stub(feed, "rotate").callsFake(val => val);
+      sandbox
+        .stub(feed, "scoreItemsInferred")
+        .callsFake(val => ({ data: val, filtered: [], personalized: false }));
+      sandbox.stub(feed, "fetchFromEndpoint").resolves({
+        recommendedAt: 0,
+        surfaceId: "NEW_TAB_EN_US",
+        data: [],
+        feeds: {
+          "section-1": {
+            title: "Section 1",
+            subtitle: "",
+            receivedFeedRank: 1,
+            layout: "cards",
+            iab: null,
+            isInitiallyVisible: true,
+            allowAds: null,
+            followable: null,
+            recommendations: [],
+          },
+        },
+      });
+
+      const feedData = await feed.getComponentFeed("url");
+      const [section] = feedData.data.sections;
+      assert.equal(section.allowAds, true);
+      assert.equal(section.followable, true);
+    });
+    it("should include followable in interestPicker.sections", async () => {
+      setPref("discoverystream.sections.enabled", true);
+      const fakeCache = {};
+      sandbox.stub(feed.cache, "get").returns(Promise.resolve(fakeCache));
+      sandbox.stub(feed, "rotate").callsFake(val => val);
+      sandbox
+        .stub(feed, "scoreItemsInferred")
+        .callsFake(val => ({ data: val, filtered: [], personalized: false }));
+      sandbox.stub(feed, "fetchFromEndpoint").resolves({
+        recommendedAt: 0,
+        surfaceId: "NEW_TAB_EN_US",
+        data: [],
+        feeds: {
+          "section-1": {
+            title: "Section 1",
+            subtitle: "",
+            receivedFeedRank: 1,
+            layout: "cards",
+            iab: null,
+            isInitiallyVisible: true,
+            followable: false,
+            recommendations: [],
+          },
+        },
+        interestPicker: {
+          sections: [{ sectionId: "section-1" }],
+        },
+      });
+
+      const feedData = await feed.getComponentFeed("url");
+      const [pickerSection] = feedData.data.interestPicker.sections;
+      assert.equal(pickerSection.sectionId, "section-1");
+      assert.equal(pickerSection.title, "Section 1");
+      assert.equal(pickerSection.followable, false);
     });
 
     describe("client layout for sections", () => {
