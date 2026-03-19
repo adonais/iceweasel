@@ -28,7 +28,7 @@
             android:scaleType="fitCenter"
             android:layout_marginStart="16dp"
             android:layout_gravity="center_vertical"
-            tools:drawableStartCompat="@drawable/ic_internet" />
+            tools:drawableStartCompat="@drawable/mozac_ic_globe_24" />
 
         <TextView
             android:id="@+id/url"
