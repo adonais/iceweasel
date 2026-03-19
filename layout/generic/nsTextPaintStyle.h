@@ -62,7 +62,12 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
    */
   bool GetSelectionColors(nscolor* aForeColor, nscolor* aBackColor);
   void GetHighlightColors(nscolor* aForeColor, nscolor* aBackColor);
-  void GetTargetTextColors(nscolor* aForeColor, nscolor* aBackColor);
+  // Returns true if the author has specified a text color.
+  // Always sets a value into `aForeColor`.
+  bool GetTargetTextColor(nscolor* aForeColor);
+  // Returns true if the target text background is being displayed.
+  // Always sets a value into `aBackColor`.
+  bool GetTargetTextBackgroundColor(nscolor* aBackColor);
   mozilla::Span<const StyleSimpleShadow> GetTargetTextShadow();
   // Computes colors for custom highlights.
   // Returns false if there are no rules associated with `aHighlightName`.
@@ -120,6 +125,7 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
   bool mInitSelectionColorsAndShadow;
   bool mResolveColors;
   bool mInitTargetTextPseudoStyle;
+  mozilla::Maybe<bool> mTargetTextUseLightScheme;
 
   // Selection data
 
@@ -157,6 +163,7 @@ class MOZ_STACK_CLASS nsTextPaintStyle {
   void InitCommonColors();
   bool InitSelectionColorsAndShadow();
   void InitTargetTextPseudoStyle();
+  bool TargetTextUseLightScheme();
 
   nsSelectionStyle* SelectionStyle(SelectionStyleIndex aIndex);
   nsSelectionStyle InitSelectionStyle(SelectionStyleIndex aIndex);

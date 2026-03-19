@@ -6491,9 +6491,9 @@ void nsTextFrame::DrawSelectionDecorations(
         // with the background color.
         else if (aRangeStyle.IsForegroundColorDefined() ||
                  aRangeStyle.IsBackgroundColorDefined()) {
-          nscolor bg;
-          GetSelectionTextColors(aSelectionType, nullptr, aTextPaintStyle,
-                                 aRangeStyle, &params.color, &bg);
+          params.color = GetSelectionTextColors(aSelectionType, nullptr,
+                                                aTextPaintStyle, aRangeStyle)
+                             .mForeground;
         }
         // Otherwise, use the foreground color of the frame.
         else {
@@ -6538,35 +6538,53 @@ void nsTextFrame::DrawSelectionDecorations(
 }
 
 /* static */
-bool nsTextFrame::GetSelectionTextColors(SelectionType aSelectionType,
-                                         nsAtom* aHighlightName,
-                                         nsTextPaintStyle& aTextPaintStyle,
-                                         const TextRangeStyle& aRangeStyle,
-                                         nscolor* aForeground,
-                                         nscolor* aBackground) {
+nsTextFrame::SelectionColors nsTextFrame::GetSelectionTextColors(
+    SelectionType aSelectionType, nsAtom* aHighlightName,
+    nsTextPaintStyle& aTextPaintStyle, const TextRangeStyle& aRangeStyle) {
+  SelectionColors selectionColors;
   switch (aSelectionType) {
-    case SelectionType::eNormal:
-      return aTextPaintStyle.GetSelectionColors(aForeground, aBackground);
+    case SelectionType::eNormal: {
+      const bool displayed = aTextPaintStyle.GetSelectionColors(
+          &selectionColors.mForeground, &selectionColors.mBackground);
+      selectionColors.mHasBackground =
+          displayed && NS_GET_A(selectionColors.mBackground) > 0;
+      selectionColors.mOverridesForeground = displayed;
+      break;
+    }
     case SelectionType::eFind:
-      aTextPaintStyle.GetHighlightColors(aForeground, aBackground);
-      return true;
-    case SelectionType::eHighlight: {
-      // Intentionally not short-cutting here because the called methods have
-      // side-effects that affect outparams.
-      bool hasForeground = aTextPaintStyle.GetCustomHighlightTextColor(
-          aHighlightName, aForeground);
-      bool hasBackground = aTextPaintStyle.GetCustomHighlightBackgroundColor(
-          aHighlightName, aBackground);
-      return hasForeground || hasBackground;
-    }
-    case SelectionType::eTargetText: {
-      aTextPaintStyle.GetTargetTextColors(aForeground, aBackground);
-      return true;
-    }
+      aTextPaintStyle.GetHighlightColors(&selectionColors.mForeground,
+                                         &selectionColors.mBackground);
+      selectionColors.mHasBackground =
+          NS_GET_A(selectionColors.mBackground) > 0;
+      selectionColors.mOverridesForeground = true;
+      break;
+    case SelectionType::eHighlight:
+      // Intentionally not short-cutting here: both methods must always run.
+      selectionColors.mOverridesForeground =
+          aTextPaintStyle.GetCustomHighlightTextColor(
+              aHighlightName, &selectionColors.mForeground);
+      selectionColors.mHasBackground =
+          aTextPaintStyle.GetCustomHighlightBackgroundColor(
+              aHighlightName, &selectionColors.mBackground);
+      selectionColors.mHasPaintImpact =
+          !!aTextPaintStyle.GetComputedStyleForSelectionPseudo(aSelectionType,
+                                                               aHighlightName);
+      break;
+    case SelectionType::eTargetText:
+      // Intentionally not short-cutting here: both methods must always run.
+      selectionColors.mOverridesForeground =
+          aTextPaintStyle.GetTargetTextColor(&selectionColors.mForeground);
+      selectionColors.mHasBackground =
+          aTextPaintStyle.GetTargetTextBackgroundColor(
+              &selectionColors.mBackground);
+      selectionColors.mHasPaintImpact =
+          !!aTextPaintStyle.GetComputedStyleForSelectionPseudo(aSelectionType,
+                                                               aHighlightName);
+      break;
     case SelectionType::eURLSecondary:
-      aTextPaintStyle.GetURLSecondaryColor(aForeground);
-      *aBackground = NS_RGBA(0, 0, 0, 0);
-      return true;
+      aTextPaintStyle.GetURLSecondaryColor(&selectionColors.mForeground);
+      selectionColors.mOverridesForeground = true;
+      break;
     case SelectionType::eIMERawClause:
     case SelectionType::eIMESelectedRawClause:
     case SelectionType::eIMEConvertedClause:
@@ -6574,39 +6592,47 @@ bool nsTextFrame::GetSelectionTextColors(SelectionType aSelectionType,
       if (aRangeStyle.IsDefined()) {
         if (!aRangeStyle.IsForegroundColorDefined() &&
             !aRangeStyle.IsBackgroundColorDefined()) {
-          *aForeground = aTextPaintStyle.GetTextColor();
-          *aBackground = NS_RGBA(0, 0, 0, 0);
-          return false;
+          selectionColors.mForeground = aTextPaintStyle.GetTextColor();
+          break;
         }
         if (aRangeStyle.IsForegroundColorDefined()) {
-          *aForeground = aRangeStyle.mForegroundColor;
+          selectionColors.mForeground = aRangeStyle.mForegroundColor;
           if (aRangeStyle.IsBackgroundColorDefined()) {
-            *aBackground = aRangeStyle.mBackgroundColor;
+            selectionColors.mBackground = aRangeStyle.mBackgroundColor;
           } else {
             // If foreground color is defined but background color isn't
             // defined, we can guess that IME must expect that the background
             // color is system's default field background color.
-            *aBackground = aTextPaintStyle.GetSystemFieldBackgroundColor();
+            selectionColors.mBackground =
+                aTextPaintStyle.GetSystemFieldBackgroundColor();
           }
         } else {  // aRangeStyle.IsBackgroundColorDefined() is true
-          *aBackground = aRangeStyle.mBackgroundColor;
+          selectionColors.mBackground = aRangeStyle.mBackgroundColor;
           // If background color is defined but foreground color isn't defined,
           // we can assume that IME must expect that the foreground color is
           // same as system's field text color.
-          *aForeground = aTextPaintStyle.GetSystemFieldForegroundColor();
+          selectionColors.mForeground =
+              aTextPaintStyle.GetSystemFieldForegroundColor();
         }
-        return true;
+        selectionColors.mHasBackground =
+            NS_GET_A(selectionColors.mBackground) > 0;
+        selectionColors.mOverridesForeground = true;
+        break;
       }
       aTextPaintStyle.GetIMESelectionColors(
           nsTextPaintStyle::GetUnderlineStyleIndexForSelectionType(
               aSelectionType),
-          aForeground, aBackground);
-      return true;
+          &selectionColors.mForeground, &selectionColors.mBackground);
+      selectionColors.mHasBackground =
+          NS_GET_A(selectionColors.mBackground) > 0;
+      selectionColors.mOverridesForeground = true;
+      break;
     default:
-      *aForeground = aTextPaintStyle.GetTextColor();
-      *aBackground = NS_RGBA(0, 0, 0, 0);
-      return false;
+      selectionColors.mForeground = aTextPaintStyle.GetTextColor();
+      break;
   }
+  selectionColors.mHasPaintImpact |= selectionColors.HasAnyColorImpact();
+  return selectionColors;
 }
 
 /**
@@ -6872,17 +6898,17 @@ SelectionTypeMask nsTextFrame::CreateSelectionRangeList(
     uint32_t end = std::min(aParams.contentRange.end, uint32_t(sd->mEnd));
     if (start < end) {
       // The PaintTextWithSelectionColors caller passes SelectionType::eNone,
-      // so we collect all selections that set colors, and prioritize them
-      // according to selection type (lower types take precedence).
+      // so we collect all selections that affect text/background paint, and
+      // prioritize them according to selection type (lower types take
+      // precedence).
       if (aSelectionType == SelectionType::eNone) {
         allTypes |= ToSelectionTypeMask(sd->mSelectionType);
-        // Ignore selections that don't set colors.
-        nscolor foreground(0), background(0);
-        if (GetSelectionTextColors(sd->mSelectionType,
-                                   sd->mHighlightData.mHighlightName,
-                                   *aParams.textPaintStyle, sd->mTextRangeStyle,
-                                   &foreground, &background)) {
-          if (NS_GET_A(background) > 0) {
+        // Ignore selections that don't affect text/background paint.
+        const auto colors = GetSelectionTextColors(
+            sd->mSelectionType, sd->mHighlightData.mHighlightName,
+            *aParams.textPaintStyle, sd->mTextRangeStyle);
+        if (colors.HasAnyPaintImpact()) {
+          if (colors.mHasBackground) {
             anyBackgrounds = true;
           }
           aSelectionRanges.AppendElement(
@@ -7095,7 +7121,6 @@ bool nsTextFrame::PaintTextWithSelectionColors(
     while (iterator.GetNextSegment(&iOffset, &range, &hyphenWidth,
                                    selectionTypes, highlightNames,
                                    rangeStyles)) {
-      nscolor foreground(0), background(0);
       gfxFloat advance =
           hyphenWidth + mTextRun->GetAdvanceWidth(range, aParams.provider);
       nsRect bgRect;
@@ -7120,18 +7145,16 @@ bool nsTextFrame::PaintTextWithSelectionColors(
       // priority. To account for non-opaque overlapping selections, all
       // selection backgrounds are painted.
       for (size_t index = 0; index < selectionTypes.Length(); ++index) {
-        GetSelectionTextColors(selectionTypes[index], highlightNames[index],
-                               *aParams.textPaintStyle, rangeStyles[index],
-                               &foreground, &background);
-
-        // Draw background color
-        if (NS_GET_A(background) > 0) {
+        const auto colors =
+            GetSelectionTextColors(selectionTypes[index], highlightNames[index],
+                                   *aParams.textPaintStyle, rangeStyles[index]);
+        if (colors.mHasBackground) {
           if (textDrawer) {
             textDrawer->AppendSelectionRect(selectionRect,
-                                            ToDeviceColor(background));
+                                            ToDeviceColor(colors.mBackground));
           } else {
             PaintSelectionBackground(*aParams.context->GetDrawTarget(),
-                                     background, aParams.dirtyRect,
+                                     colors.mBackground, aParams.dirtyRect,
                                      selectionRect, aParams.callbacks);
           }
         }
@@ -7167,29 +7190,24 @@ bool nsTextFrame::PaintTextWithSelectionColors(
   AutoTArray<TextRangeStyle, 1> rangeStyles;
   while (iterator.GetNextSegment(&iOffset, &range, &hyphenWidth, selectionTypes,
                                  highlightNames, rangeStyles)) {
-    nscolor foreground(0), background(0);
+    nscolor foreground(0);
     if (aParams.IsGenerateTextMask()) {
       foreground = NS_RGBA(0, 0, 0, 255);
     } else {
-      nscolor tmpForeground(0);
+      nscolor fallbackForeground(0);
       bool colorHasBeenSet = false;
       for (size_t index = 0; index < selectionTypes.Length(); ++index) {
-        if (selectionTypes[index] == SelectionType::eHighlight) {
-          if (aParams.textPaintStyle->GetCustomHighlightTextColor(
-                  highlightNames[index], &tmpForeground)) {
-            foreground = tmpForeground;
-            colorHasBeenSet = true;
-          }
-
-        } else {
-          GetSelectionTextColors(selectionTypes[index], highlightNames[index],
-                                 *aParams.textPaintStyle, rangeStyles[index],
-                                 &foreground, &background);
+        const auto colors =
+            GetSelectionTextColors(selectionTypes[index], highlightNames[index],
+                                   *aParams.textPaintStyle, rangeStyles[index]);
+        fallbackForeground = colors.mForeground;
+        if (colors.mOverridesForeground) {
+          foreground = colors.mForeground;
           colorHasBeenSet = true;
         }
       }
       if (!colorHasBeenSet) {
-        foreground = tmpForeground;
+        foreground = fallbackForeground;
       }
     }
 
@@ -7469,15 +7487,15 @@ nscolor nsTextFrame::GetCaretColorAt(int32_t aOffset) {
     if (start <= offsetInFrame && offsetInFrame < end &&
         (selectionType == SelectionType::eNone ||
          sdptr->mSelectionType < selectionType)) {
-      nscolor foreground, background;
-      if (GetSelectionTextColors(sdptr->mSelectionType,
-                                 sdptr->mHighlightData.mHighlightName,
-                                 textPaintStyle, sdptr->mTextRangeStyle,
-                                 &foreground, &background)) {
-        if (!isSolidTextColor && NS_IS_SELECTION_SPECIAL_COLOR(foreground)) {
+      const auto colors = GetSelectionTextColors(
+          sdptr->mSelectionType, sdptr->mHighlightData.mHighlightName,
+          textPaintStyle, sdptr->mTextRangeStyle);
+      if (colors.HasAnyColorImpact()) {
+        if (!isSolidTextColor &&
+            NS_IS_SELECTION_SPECIAL_COLOR(colors.mForeground)) {
           result = NS_RGBA(0, 0, 0, 255);
         } else {
-          result = foreground;
+          result = colors.mForeground;
         }
         selectionType = sdptr->mSelectionType;
       }

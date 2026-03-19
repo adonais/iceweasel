@@ -213,42 +213,57 @@ void nsTextPaintStyle::GetHighlightColors(nscolor* aForeColor,
   *aBackColor = NS_TRANSPARENT;
 }
 
-void nsTextPaintStyle::GetTargetTextColors(nscolor* aForeColor,
-                                           nscolor* aBackColor) {
-  NS_ASSERTION(aForeColor, "aForeColor is null");
-  NS_ASSERTION(aBackColor, "aBackColor is null");
+bool nsTextPaintStyle::TargetTextUseLightScheme() {
+  if (mTargetTextUseLightScheme.isSome()) {
+    return *mTargetTextUseLightScheme;
+  }
   InitCommonColors();
-  InitTargetTextPseudoStyle();
+  const auto darkSchemeBackground =
+      LookAndFeel::Color(LookAndFeel::ColorID::TargetTextBackground,
+                         ColorScheme::Dark, LookAndFeel::UseStandins::No);
+  const auto lightSchemeBackground =
+      LookAndFeel::Color(LookAndFeel::ColorID::TargetTextBackground,
+                         ColorScheme::Light, LookAndFeel::UseStandins::No);
+  mTargetTextUseLightScheme =
+      Some(RelativeLuminanceUtils::ContrastRatio(lightSchemeBackground,
+                                                 mFrameBackgroundColor) >
+           RelativeLuminanceUtils::ContrastRatio(darkSchemeBackground,
+                                                 mFrameBackgroundColor));
+  return *mTargetTextUseLightScheme;
+}
 
-  if (mTargetTextPseudoStyle) {
+bool nsTextPaintStyle::GetTargetTextColor(nscolor* aForeColor) {
+  NS_ASSERTION(aForeColor, "aForeColor is null");
+  InitTargetTextPseudoStyle();
+  if (mTargetTextPseudoStyle &&
+      (mTargetTextPseudoStyle->HasAuthorSpecifiedTextColor() ||
+       mTargetTextPseudoStyle->HasAuthorSpecifiedBorderOrBackground())) {
     *aForeColor = mTargetTextPseudoStyle->GetVisitedDependentColor(
         &nsStyleText::mWebkitTextFillColor);
+    return mTargetTextPseudoStyle->HasAuthorSpecifiedTextColor();
+  }
+  *aForeColor = LookAndFeel::Color(
+      LookAndFeel::ColorID::TargetTextForeground,
+      TargetTextUseLightScheme() ? ColorScheme::Light : ColorScheme::Dark,
+      LookAndFeel::UseStandins::No);
+  return false;
+}
+
+bool nsTextPaintStyle::GetTargetTextBackgroundColor(nscolor* aBackColor) {
+  NS_ASSERTION(aBackColor, "aBackColor is null");
+  InitTargetTextPseudoStyle();
+  if (mTargetTextPseudoStyle &&
+      (mTargetTextPseudoStyle->HasAuthorSpecifiedTextColor() ||
+       mTargetTextPseudoStyle->HasAuthorSpecifiedBorderOrBackground())) {
     *aBackColor = mTargetTextPseudoStyle->GetVisitedDependentColor(
         &nsStyleBackground::mBackgroundColor);
-    return;
+    return NS_GET_A(*aBackColor) != 0;
   }
-
-  const auto darkSchemeBackground = LookAndFeel::Color(
+  *aBackColor = LookAndFeel::Color(
       LookAndFeel::ColorID::TargetTextBackground,
-      LookAndFeel::ColorScheme::Dark, LookAndFeel::UseStandins::No);
-  const auto lightSchemeBackground = LookAndFeel::Color(
-      LookAndFeel::ColorID::TargetTextBackground,
-      LookAndFeel::ColorScheme::Light, LookAndFeel::UseStandins::No);
-  const auto lightSchemeForeground = LookAndFeel::Color(
-      LookAndFeel::ColorID::TargetTextForeground,
-      LookAndFeel::ColorScheme::Light, LookAndFeel::UseStandins::No);
-  const auto darkSchemeForeground = LookAndFeel::Color(
-      LookAndFeel::ColorID::TargetTextForeground,
-      LookAndFeel::ColorScheme::Dark, LookAndFeel::UseStandins::No);
-  const float ratioLightScheme = RelativeLuminanceUtils::ContrastRatio(
-      lightSchemeBackground, mFrameBackgroundColor);
-  const float ratioDarkScheme = RelativeLuminanceUtils::ContrastRatio(
-      darkSchemeBackground, mFrameBackgroundColor);
-
-  *aBackColor = ratioLightScheme > ratioDarkScheme ? lightSchemeBackground
-                                                   : darkSchemeBackground;
-  *aForeColor = ratioLightScheme > ratioDarkScheme ? lightSchemeForeground
-                                                   : darkSchemeForeground;
+      TargetTextUseLightScheme() ? ColorScheme::Light : ColorScheme::Dark,
+      LookAndFeel::UseStandins::No);
+  return NS_GET_A(*aBackColor) != 0;
 }
 
 mozilla::Span<const StyleSimpleShadow> nsTextPaintStyle::GetTargetTextShadow() {
