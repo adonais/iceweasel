@@ -6,7 +6,7 @@
 
 /**
  * @import { HiddenFrame } from "resource://gre/modules/HiddenFrame.sys.mjs"
- * @import { GetTextOptions, ExtractionResult } from './PageExtractor.d.ts'
+ * @import { GetTextOptions, ExtractionResult, PageMetadata } from './PageExtractor.d.ts'
  * @import { PageExtractorChild } from './PageExtractorChild.sys.mjs'
  */
 
@@ -47,6 +47,17 @@ export class PageExtractorParent extends JSWindowActorParent {
    */
   waitForPageReady() {
     return this.sendQuery("PageExtractorParent:WaitForPageReady");
+  }
+
+  /**
+   * Get metadata related to the page.
+   *
+   * @see PageExtractorChild#getPageMetadata
+   *
+   * @returns {Promise<PageMetadata>}
+   */
+  getPageMetadata() {
+    return this.sendQuery("PageExtractorParent:GetPageMetadata");
   }
 
   /**

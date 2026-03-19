@@ -5,7 +5,7 @@
 // @ts-check
 
 /**
- * @import { GetTextOptions, GetDOMOptions, CanvasSnapshot, ExtractionResult } from './PageExtractor.d.ts'
+ * @import { GetTextOptions, GetDOMOptions, CanvasSnapshot, ExtractionResult, PageMetadata } from './PageExtractor.d.ts'
  * @import { PageExtractorParent } from './PageExtractorParent.sys.mjs'
  */
 
@@ -68,6 +68,16 @@ export class PageExtractorChild extends JSWindowActorChild {
         return this.getText(data);
       case "PageExtractorParent:WaitForPageReady":
         return this.waitForPageReady();
+      case "PageExtractorParent:GetPageMetadata":
+        if (this.isAboutReader()) {
+          const document = this.browsingContext?.window?.document;
+          const text = this.getAboutReaderContent() ?? "";
+          const language = document?.querySelector(".container")?.lang ?? "";
+          const wordCount = this.#getWordCount(language, text);
+
+          return { structuredDataTypes: [], wordCount, language };
+        }
+        return this.getPageMetadata();
     }
     return Promise.reject(new Error("Unknown message: " + name));
   }
@@ -92,6 +102,117 @@ export class PageExtractorChild extends JSWindowActorChild {
         waitForIdle();
       }
     });
+  }
+
+  /**
+   * @see PageExtractorParent#getPageMetadata for docs
+   *
+   * @returns {Promise<PageMetadata>}
+   */
+  async getPageMetadata() {
+    const document = this.browsingContext?.window?.document;
+
+    if (!document) {
+      return Promise.reject(
+        new Error("No document available for page metadata extraction.")
+      );
+    }
+
+    const structuredDataTypes = this.#extractStructuredDataTypes(document);
+    const language = this.#detectLanguage(document);
+    const wordCount = this.#getWordCount(language, document.body.innerText);
+
+    return { structuredDataTypes, wordCount, language };
+  }
+
+  /**
+   * This will establish a word count of the text argument based on the provided language.
+   *
+   * @param {string} language
+   * @param {string} text
+   * @returns {number}
+   */
+  #getWordCount(language, text) {
+    let wordCount = 0;
+    const segmenter = new Intl.Segmenter(language || undefined, {
+      granularity: "word",
+    });
+    for (const { isWordLike } of segmenter.segment(text)) {
+      if (isWordLike) {
+        wordCount++;
+      }
+    }
+    return wordCount;
+  }
+
+  /**
+   * This extracts various `@type` values within the JSON-LD structured data markup of a page.
+   *
+   * @param {Document} document
+   * @returns {string[]}
+   */
+  #extractStructuredDataTypes(document) {
+    const scripts = document.querySelectorAll(
+      'script[type="application/ld+json" i]'
+    );
+    const types = new Set();
+
+    const asArray = value => {
+      if (Array.isArray(value)) {
+        return value;
+      }
+      return value == null ? [] : [value];
+    };
+
+    for (const script of scripts) {
+      const text = script.textContent?.trim();
+      if (!text) {
+        continue;
+      }
+
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        continue;
+      }
+
+      // JSON-LD can be:
+      // - an object
+      // - an array of objects
+      // - an object with @graph: [...]
+      const topLevelItems = asArray(parsed);
+      const graphItems = topLevelItems.flatMap(x => asArray(x?.["@graph"]));
+      const items = graphItems.length ? graphItems : topLevelItems;
+
+      for (const item of items) {
+        for (const t of asArray(item?.["@type"])) {
+          if (typeof t === "string") {
+            types.add(t);
+          }
+        }
+      }
+    }
+
+    return Array.from(types);
+  }
+
+  /**
+   * Query the lang tag of the document.
+   *
+   * @param {Document} document
+   * @returns {string}
+   */
+  #detectLanguage(document) {
+    const declared = document?.documentElement?.lang;
+    if (declared) {
+      try {
+        return new Intl.Locale(declared).baseName;
+      } catch {
+        return "";
+      }
+    }
+    return "";
   }
 
   /**

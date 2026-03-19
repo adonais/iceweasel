@@ -40,3 +40,14 @@ export type ExtractionResult = {
   links: string[];
   canvasSnapshots: CanvasSnapshot[];
 };
+
+export type PageMetadata = {
+  // JSON-LD types as defined by https://schema.org/Thing
+  // this is used to understand context about the content, where expected values could be things like:
+  // ["Recipe", "NewsArticle"] or ["Book"] or ["Person", "Blog", "Article"]
+  structuredDataTypes: string[];
+  // word count of all the content on the page
+  wordCount: number;
+  // lang-tag of the page
+  language: string;
+};

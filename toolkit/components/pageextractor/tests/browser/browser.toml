@@ -21,4 +21,6 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2004856
 ]
 
+["browser_page_metadata.js"]
+
 ["browser_viewport_extractor.js"]
