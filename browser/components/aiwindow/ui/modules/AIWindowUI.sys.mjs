@@ -160,10 +160,6 @@ export const AIWindowUI = {
       aiBrowser.removeAttribute("data-conversation-id");
     }
 
-    if (!aiBrowser.contentDocument || !aiBrowser.contentWindow) {
-      return;
-    }
-
     const aiWindowElement = await this.getAiWindowElement(win, aiBrowser);
     if (!aiWindowElement) {
       return;
@@ -173,7 +169,6 @@ export const AIWindowUI = {
       aiWindowElement.openConversation(conversation);
       return;
     }
-
     aiWindowElement.onCreateNewChatClick();
   },
 
