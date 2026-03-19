@@ -5,7 +5,6 @@
 import { connect, batch } from "react-redux";
 import { LocationSearch } from "content-src/components/Weather/LocationSearch";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import { useIntersectionObserver } from "../../lib/utils";
 import React, { useState } from "react";
 
@@ -21,6 +20,8 @@ const USER_ACTION_TYPES = {
 
 const VISIBLE = "visible";
 const VISIBILITY_CHANGE_EVENT = "visibilitychange";
+const PREF_SYSTEM_SHOW_WEATHER = "system.showWeather";
+
 function WeatherPlaceholder() {
   const [isSeen, setIsSeen] = useState(false);
 
@@ -321,7 +322,7 @@ export class _Weather extends React.PureComponent {
 
   handleChangeDisplay = value => {
     const weatherForecastEnabled =
-      this.props.Prefs.values[PREFS.WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
+      this.props.Prefs.values["widgets.system.weatherForecast.enabled"];
 
     if (this.panelElement) {
       this.panelElement.hide();
@@ -331,7 +332,7 @@ export class _Weather extends React.PureComponent {
         ac.OnlyToMain({
           type: at.SET_PREF,
           data: {
-            name: PREFS.WEATHER_DISPLAY,
+            name: "weather.display",
             value,
           },
         })
@@ -363,7 +364,7 @@ export class _Weather extends React.PureComponent {
         ac.OnlyToMain({
           type: at.SET_PREF,
           data: {
-            name: PREFS.SHOW_WEATHER,
+            name: "showWeather",
             value: false,
           },
         })
@@ -433,8 +434,8 @@ export class _Weather extends React.PureComponent {
 
   handleRejectOptIn = () => {
     batch(() => {
-      this.props.dispatch(ac.SetPref(PREFS.WEATHER_OPT_IN_ACCEPTED, false));
-      this.props.dispatch(ac.SetPref(PREFS.WEATHER_OPT_IN_DISPLAYED, false));
+      this.props.dispatch(ac.SetPref("weather.optInAccepted", false));
+      this.props.dispatch(ac.SetPref("weather.optInDisplayed", false));
 
       // Old event (keep for backward compatibility)
       this.props.dispatch(
@@ -495,7 +496,7 @@ export class _Weather extends React.PureComponent {
   isEnabled() {
     const { values } = this.props.Prefs;
     const systemValue =
-      values[PREFS.SYSTEM_SHOW_WEATHER] && values[PREFS.FEEDS_WEATHERFEED];
+      values[PREF_SYSTEM_SHOW_WEATHER] && values["feeds.weatherfeed"];
     const experimentValue = values.trainhopConfig?.weather?.enabled;
     return systemValue || experimentValue;
   }
@@ -519,14 +520,14 @@ export class _Weather extends React.PureComponent {
 
     const WEATHER_SUGGESTION = Weather.suggestions?.[0];
 
-    const showDetailedView = Prefs.values[PREFS.WEATHER_DISPLAY] === "detailed";
+    const showDetailedView = Prefs.values["weather.display"] === "detailed";
 
     const nimbusWeatherForecastTrainhopEnabled =
       Prefs.values.trainhopConfig?.widgets?.weatherForecastEnabled;
 
     const weatherForecastWidgetEnabled =
       nimbusWeatherForecastTrainhopEnabled ||
-      Prefs.values[PREFS.WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
+      Prefs.values["widgets.system.weatherForecast.enabled"];
 
     if (showDetailedView && weatherForecastWidgetEnabled) {
       return null;
@@ -536,7 +537,7 @@ export class _Weather extends React.PureComponent {
       .filter(v => v)
       .join(" ");
 
-    const weatherOptIn = Prefs.values[PREFS.SYSTEM_SHOW_WEATHER_OPT_IN];
+    const weatherOptIn = Prefs.values["system.showWeatherOptIn"];
     const nimbusWeatherOptInEnabled =
       Prefs.values.trainhopConfig?.weather?.weatherOptInEnabled;
     // Bug 2009484: Controls button order in opt-in dialog for A/B testing.
@@ -548,9 +549,9 @@ export class _Weather extends React.PureComponent {
     const reverseOptInButtons =
       Prefs.values.trainhopConfig?.weather?.reverseOptInButtons;
 
-    const optInDisplayed = Prefs.values[PREFS.WEATHER_OPT_IN_DISPLAYED];
-    const optInUserChoice = Prefs.values[PREFS.WEATHER_OPT_IN_ACCEPTED];
-    const staticWeather = Prefs.values[PREFS.WEATHER_STATIC_DATA_ENABLED];
+    const optInDisplayed = Prefs.values["weather.optInDisplayed"];
+    const optInUserChoice = Prefs.values["weather.optInAccepted"];
+    const staticWeather = Prefs.values["weather.staticData.enabled"];
 
     // Conditionals for rendering feature based on prefs + nimbus experiment variables
     const isOptInEnabled = weatherOptIn || nimbusWeatherOptInEnabled;
@@ -569,9 +570,9 @@ export class _Weather extends React.PureComponent {
     // - static weather data is enabled
     const showStaticData = isOptInEnabled && staticWeather;
     const isLocationSearchEnabled =
-      Prefs.values[PREFS.WEATHER_LOCATION_SEARCH_ENABLED];
-    const isFahrenheit = Prefs.values[PREFS.WEATHER_TEMPERATURE_UNITS] === "f";
-    const isSimpleDisplay = Prefs.values[PREFS.WEATHER_DISPLAY] === "simple";
+      Prefs.values["weather.locationSearchEnabled"];
+    const isFahrenheit = Prefs.values["weather.temperatureUnits"] === "f";
+    const isSimpleDisplay = Prefs.values["weather.display"] === "simple";
 
     const contextMenu = () => (
       <div className="weatherButtonContextMenuWrapper">
@@ -654,7 +655,7 @@ export class _Weather extends React.PureComponent {
                 <div className="weatherText">
                   <div className="weatherForecastRow">
                     <span className="weatherTemperature">
-                      22&deg;{Prefs.values[PREFS.WEATHER_TEMPERATURE_UNITS]}
+                      22&deg;{Prefs.values["weather.temperatureUnits"]}
                     </span>
                   </div>
                   <div className="weatherCityRow">
@@ -684,10 +685,10 @@ export class _Weather extends React.PureComponent {
                     <span className="weatherTemperature">
                       {
                         WEATHER_SUGGESTION.current_conditions.temperature[
-                          Prefs.values[PREFS.WEATHER_TEMPERATURE_UNITS]
+                          Prefs.values["weather.temperatureUnits"]
                         ]
                       }
-                      &deg;{Prefs.values[PREFS.WEATHER_TEMPERATURE_UNITS]}
+                      &deg;{Prefs.values["weather.temperatureUnits"]}
                     </span>
                   </div>
                   <div className="weatherCityRow">
@@ -701,21 +702,21 @@ export class _Weather extends React.PureComponent {
                         <span>
                           {
                             WEATHER_SUGGESTION.forecast.high[
-                              Prefs.values[PREFS.WEATHER_TEMPERATURE_UNITS]
+                              Prefs.values["weather.temperatureUnits"]
                             ]
                           }
                           &deg;
-                          {Prefs.values[PREFS.WEATHER_TEMPERATURE_UNITS]}
+                          {Prefs.values["weather.temperatureUnits"]}
                         </span>
                         <span>&bull;</span>
                         <span>
                           {
                             WEATHER_SUGGESTION.forecast.low[
-                              Prefs.values[PREFS.WEATHER_TEMPERATURE_UNITS]
+                              Prefs.values["weather.temperatureUnits"]
                             ]
                           }
                           &deg;
-                          {Prefs.values[PREFS.WEATHER_TEMPERATURE_UNITS]}
+                          {Prefs.values["weather.temperatureUnits"]}
                         </span>
                       </div>
                       <span className="weatherTextSummary">

@@ -11,7 +11,6 @@ import React, {
 } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import { useIntersectionObserver, useConfetti } from "../../../lib/utils";
 
 const TASK_TYPE = {
@@ -576,7 +575,7 @@ function Lists({
         ac.OnlyToMain({
           type: at.SET_PREF,
           data: {
-            name: PREFS.WIDGETS_LISTS_ENABLED,
+            name: "widgets.lists.enabled",
             value: false,
           },
         })

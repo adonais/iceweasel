@@ -5,7 +5,6 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
 import { LocationSearch } from "content-src/components/Weather/LocationSearch";
 
@@ -180,7 +179,7 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
         ac.OnlyToMain({
           type: at.SET_PREF,
           data: {
-            name: PREFS.WEATHER_TEMPERATURE_UNITS,
+            name: "weather.temperatureUnits",
             value: unit,
           },
         })
@@ -207,7 +206,7 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
         ac.OnlyToMain({
           type: at.SET_PREF,
           data: {
-            name: PREFS.WEATHER_DISPLAY,
+            name: "weather.display",
             value: display,
           },
         })
@@ -234,7 +233,7 @@ function WeatherForecast({ dispatch, isMaximized, widgetsMayBeMaximized }) {
         ac.OnlyToMain({
           type: at.SET_PREF,
           data: {
-            name: PREFS.SHOW_WEATHER,
+            name: "showWeather",
             value: false,
           },
         })

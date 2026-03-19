@@ -4,7 +4,6 @@
 
 import { ErrorBoundary } from "content-src/components/ErrorBoundary/ErrorBoundary";
 import { FluentOrText } from "content-src/components/FluentOrText/FluentOrText";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import React from "react";
 import { connect } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
@@ -13,7 +12,8 @@ import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
  * A section that can collapse. As of bug 1710937, it can no longer collapse.
  * See bug 1727365 for follow-up work to simplify this component.
  */
-// @nova-cleanup(remove-pref): Remove PREFS.NOVA_ENABLED
+// @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
+const PREF_NOVA_ENABLED = "nova.enabled";
 
 export class _CollapsibleSection extends React.PureComponent {
   constructor(props) {
@@ -53,14 +53,19 @@ export class _CollapsibleSection extends React.PureComponent {
 
   handleTopicSelectionButtonClick() {
     const maybeDisplay =
-      this.props.Prefs.values[PREFS.TOPIC_SELECTION_ONBOARDING_MAYBE_DISPLAY];
+      this.props.Prefs.values[
+        "discoverystream.topicSelection.onboarding.maybeDisplay"
+      ];
 
     this.props.dispatch(ac.OnlyToMain({ type: at.TOPIC_SELECTION_USER_OPEN }));
 
     if (maybeDisplay) {
       // if still part of onboarding, remove user from onboarding flow
       this.props.dispatch(
-        ac.SetPref(PREFS.TOPIC_SELECTION_ONBOARDING_MAYBE_DISPLAY, false)
+        ac.SetPref(
+          "discoverystream.topicSelection.onboarding.maybeDisplay",
+          false
+        )
       );
     }
     this.props.dispatch(
@@ -93,13 +98,14 @@ export class _CollapsibleSection extends React.PureComponent {
     const hasSubtitleClassName = subTitle ? `has-subtitle` : ``;
     const hasBeenUpdatedPreviously =
       this.props.Prefs.values[
-        PREFS.TOPIC_SELECTION_HAS_BEEN_UPDATED_PREVIOUSLY
+        "discoverystream.topicSelection.hasBeenUpdatedPreviously"
       ];
-    const selectedTopics = this.props.Prefs.values[PREFS.TOPICS_SELECTED];
+    const selectedTopics =
+      this.props.Prefs.values["discoverystream.topicSelection.selectedTopics"];
     const topicsHaveBeenPreviouslySet =
       hasBeenUpdatedPreviously || selectedTopics;
     // @nova-cleanup(remove-conditional): Remove conditional class "collapsible-section"
-    const novaEnabled = this.props.Prefs.values[PREFS.NOVA_ENABLED];
+    const novaEnabled = this.props.Prefs.values[PREF_NOVA_ENABLED];
     return (
       <section
         className={`

@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { PREFS } from "./PrefsConstants.mjs";
-
 export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
   const { layout, feeds, spocs } = state;
   let spocIndexPlacementMap = {};
@@ -64,7 +62,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
   const filterArray = [];
 
   // Filter sections is Topsites are turned off
-  if (!prefs[PREFS.FEEDS_TOPSITES]) {
+  if (!prefs["feeds.topsites"]) {
     filterArray.push("TopSites");
   }
 
@@ -72,7 +70,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
   // Note extra logic is required bc this feature can be enabled via Nimbus
   const nimbusWidgetsTrainhopEnabled = prefs.trainhopConfig?.widgets?.enabled;
   const nimbusWidgetsEnabled = prefs.widgetsConfig?.enabled;
-  const widgetsEnabled = prefs[PREFS.WIDGETS_SYSTEM_ENABLED];
+  const widgetsEnabled = prefs["widgets.system.enabled"];
   if (
     !nimbusWidgetsTrainhopEnabled &&
     !nimbusWidgetsEnabled &&
@@ -83,8 +81,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
 
   // Filter sections is Recommended Stories are turned off
   const pocketEnabled =
-    prefs[PREFS.FEEDS_SECTION_TOPSTORIES] &&
-    prefs[PREFS.FEEDS_SYSTEM_TOPSTORIES];
+    prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
   if (!pocketEnabled) {
     filterArray.push(
       // Bug 1980459 - Do not remove Widgets if DS is disabled
@@ -137,7 +134,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
       data.recommendations.push({ placeholder: true });
     }
 
-    const sectionsEnabled = prefs[PREFS.SECTIONS_ENABLED];
+    const sectionsEnabled = prefs["discoverystream.sections.enabled"];
     if (sectionsEnabled) {
       for (let i = 0; i < items; i++) {
         data.sections[0].data.push({ placeholder: true });
@@ -248,7 +245,7 @@ export const selectLayoutRender = ({ state = {}, prefs = {} }) => {
     const spocsPositions = component?.spocs?.positions;
     const spocsPlacement = component?.placement;
 
-    const sectionsEnabled = prefs[PREFS.SECTIONS_ENABLED];
+    const sectionsEnabled = prefs["discoverystream.sections.enabled"];
     data = {
       ...data,
       ...(sectionsEnabled

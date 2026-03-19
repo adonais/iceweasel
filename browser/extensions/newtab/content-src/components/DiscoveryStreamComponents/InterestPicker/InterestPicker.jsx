@@ -5,8 +5,9 @@
 import React, { useState, useRef, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
+const PREF_VISIBLE_SECTIONS =
+  "discoverystream.sections.interestPicker.visibleSections";
 
 /**
  * Shows a list of recommended topics with visual indication whether
@@ -24,8 +25,7 @@ function InterestPicker({ title, subtitle, interests, receivedFeedRank }) {
   const { sectionPersonalization } = useSelector(
     state => state.DiscoveryStream
   );
-  const visibleSections = prefs[PREFS.VISIBLE_SECTIONS]
-    ?.split(",")
+  const visibleSections = prefs[PREF_VISIBLE_SECTIONS]?.split(",")
     .map(item => item.trim())
     .filter(item => item);
 
@@ -89,9 +89,7 @@ function InterestPicker({ title, subtitle, interests, receivedFeedRank }) {
         // add section to visible sections and place after the inline picker
         // subtract 1 from the rank so that it is normalized with array index
         visibleSections.splice(receivedFeedRank - 1, 0, topic);
-        dispatch(
-          ac.SetPref(PREFS.VISIBLE_SECTIONS, visibleSections.join(", "))
-        );
+        dispatch(ac.SetPref(PREF_VISIBLE_SECTIONS, visibleSections.join(", ")));
       }
     } else {
       delete updatedSections[topic];
@@ -166,7 +164,7 @@ function InterestPicker({ title, subtitle, interests, receivedFeedRank }) {
       </ul>
       <p className="learn-more-copy">
         <a
-          href={prefs[PREFS.SUPPORT_URL]}
+          href={prefs["support.url"]}
           data-l10n-id="newtab-topic-selection-privacy-link"
         />
       </p>

@@ -4,9 +4,15 @@
 
 import { actionCreators as ac } from "common/Actions.mjs";
 import { FeatureHighlight } from "./FeatureHighlight";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import React, { useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
+
+const PREF_MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_A =
+  "mobileDownloadModal.variant-a";
+const PREF_MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_B =
+  "mobileDownloadModal.variant-b";
+const PREF_MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_C =
+  "mobileDownloadModal.variant-c";
 
 const FEATURE_ID = "FEATURE_DOWNLOAD_MOBILE_PROMO";
 
@@ -48,11 +54,11 @@ export function DownloadMobilePromoHighlight({
 
   const prefs = useSelector(state => state.Prefs.values);
   const mobileDownloadPromoVarA =
-    prefs[PREFS.MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_A];
+    prefs[PREF_MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_A];
   const mobileDownloadPromoVarB =
-    prefs[PREFS.MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_B];
+    prefs[PREF_MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_B];
   const mobileDownloadPromoVarC =
-    prefs[PREFS.MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_C];
+    prefs[PREF_MOBILE_DOWNLOAD_HIGHLIGHT_VARIANT_C];
 
   function getActiveVariant() {
     if (mobileDownloadPromoVarA) {

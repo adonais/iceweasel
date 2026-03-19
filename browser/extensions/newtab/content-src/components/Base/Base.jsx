@@ -18,7 +18,6 @@ import { Weather } from "content-src/components/Weather/Weather";
 import { DownloadModalToggle } from "content-src/components/DownloadModalToggle/DownloadModalToggle";
 import { Notifications } from "content-src/components/Notifications/Notifications";
 import { TopicSelection } from "content-src/components/DiscoveryStreamComponents/TopicSelection/TopicSelection";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import { DownloadMobilePromoHighlight } from "../DiscoveryStreamComponents/FeatureHighlight/DownloadMobilePromoHighlight";
 import { WallpaperFeatureHighlight } from "../DiscoveryStreamComponents/FeatureHighlight/WallpaperFeatureHighlight";
 import { ActivationWindowMessage } from "../ActivationWindowMessage/ActivationWindowMessage";
@@ -31,6 +30,8 @@ const PREF_INFERRED_PERSONALIZATION_SYSTEM =
   "discoverystream.sections.personalization.inferred.enabled";
 const PREF_INFERRED_PERSONALIZATION_USER =
   "discoverystream.sections.personalization.inferred.user.enabled";
+// @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
+const PREF_NOVA_ENABLED = "nova.enabled";
 // Returns a function will not be continuously triggered when called. The
 // function will be triggered if called again after `wait` milliseconds.
 function debounce(func, wait) {
@@ -304,8 +305,8 @@ export class BaseContent extends React.PureComponent {
         Prefs: { values: prevPrefs = {} } = {},
       } = prevProps;
 
-      const selectedWallpaper = prefs[PREFS.WALLPAPER_SELECTED];
-      const prevSelectedWallpaper = prevPrefs[PREFS.WALLPAPER_SELECTED];
+      const selectedWallpaper = prefs["newtabWallpapers.wallpaper"];
+      const prevSelectedWallpaper = prevPrefs["newtabWallpapers.wallpaper"];
       const uploadedWallpaperTheme =
         prefs["newtabWallpapers.customWallpaper.theme"];
       const prevUploadedWallpaperTheme =
@@ -494,7 +495,8 @@ export class BaseContent extends React.PureComponent {
 
   renderWallpaperAttribution() {
     const { wallpaperList } = this.props.Wallpapers;
-    const activeWallpaper = this.props.Prefs.values[PREFS.WALLPAPER_SELECTED];
+    const activeWallpaper =
+      this.props.Prefs.values[`newtabWallpapers.wallpaper`];
     const selected = wallpaperList.find(wp => wp.title === activeWallpaper);
     // make sure a wallpaper is selected and that the attribution also exists
     if (!selected?.attribution) {
@@ -529,7 +531,7 @@ export class BaseContent extends React.PureComponent {
 
   async updateWallpaper() {
     const prefs = this.props.Prefs.values;
-    const selectedWallpaper = prefs[PREFS.WALLPAPER_SELECTED];
+    const selectedWallpaper = prefs["newtabWallpapers.wallpaper"];
     const { wallpaperList, uploadedWallpaper: uploadedWallpaperUrl } =
       this.props.Wallpapers;
     const uploadedWallpaperTheme =
@@ -712,9 +714,9 @@ export class BaseContent extends React.PureComponent {
     const prefs = props.Prefs.values;
 
     // @nova-cleanup(remove-conditional):
-    const novaEnabled = prefs[PREFS.NOVA_ENABLED];
+    const novaEnabled = prefs[PREF_NOVA_ENABLED];
 
-    const activeWallpaper = prefs[PREFS.WALLPAPER_SELECTED];
+    const activeWallpaper = prefs[`newtabWallpapers.wallpaper`];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
     const weatherEnabled = prefs.showWeather;
     const { showTopicSelection } = DiscoveryStream;
@@ -727,7 +729,7 @@ export class BaseContent extends React.PureComponent {
       section => section.id !== "topstories"
     );
 
-    const topSitesEnabled = prefs[PREFS.FEEDS_TOPSITES];
+    const topSitesEnabled = prefs["feeds.topsites"];
     const pocketEnabled =
       prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
     const noSectionsEnabled =

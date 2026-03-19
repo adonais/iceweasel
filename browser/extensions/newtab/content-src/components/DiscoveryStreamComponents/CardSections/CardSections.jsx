@@ -3,22 +3,43 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import React, { useCallback, useState } from "react";
-import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
 import { DSEmptyState } from "../DSEmptyState/DSEmptyState";
-import { AdBanner } from "../AdBanner/AdBanner";
-import { BriefingCard } from "../BriefingCard/BriefingCard";
 import { DSCard, PlaceholderDSCard } from "../DSCard/DSCard";
-import { InterestPicker } from "../InterestPicker/InterestPicker";
-import { PersonalizedCard } from "../PersonalizedCard/PersonalizedCard";
-import { SectionContextMenu } from "../SectionContextMenu/SectionContextMenu";
-import { FollowSectionButtonHighlight } from "../FeatureHighlight/FollowSectionButtonHighlight";
 import { useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import {
-  getActiveColumnLayout,
   useIntersectionObserver,
+  getActiveColumnLayout,
 } from "../../../lib/utils";
+import { SectionContextMenu } from "../SectionContextMenu/SectionContextMenu";
+import { InterestPicker } from "../InterestPicker/InterestPicker";
+import { AdBanner } from "../AdBanner/AdBanner.jsx";
+import { PersonalizedCard } from "../PersonalizedCard/PersonalizedCard";
+import { FollowSectionButtonHighlight } from "../FeatureHighlight/FollowSectionButtonHighlight";
+import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
+import { BriefingCard } from "../BriefingCard/BriefingCard.jsx";
+
+// Prefs
+const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
+const PREF_SECTIONS_PERSONALIZATION_ENABLED =
+  "discoverystream.sections.personalization.enabled";
+const PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
+const PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
+const PREF_TOPICS_AVAILABLE = "discoverystream.topicSelection.topics";
+const PREF_INTEREST_PICKER_ENABLED =
+  "discoverystream.sections.interestPicker.enabled";
+const PREF_VISIBLE_SECTIONS =
+  "discoverystream.sections.interestPicker.visibleSections";
+const PREF_BILLBOARD_ENABLED = "newtabAdSize.billboard";
+const PREF_BILLBOARD_POSITION = "newtabAdSize.billboard.position";
+const PREF_LEADERBOARD_ENABLED = "newtabAdSize.leaderboard";
+const PREF_LEADERBOARD_POSITION = "newtabAdSize.leaderboard.position";
+const PREF_INFERRED_PERSONALIZATION_USER =
+  "discoverystream.sections.personalization.inferred.user.enabled";
+const PREF_DAILY_BRIEF_SECTIONID = "discoverystream.dailyBrief.sectionId";
+const PREF_DAILY_BRIEF_ENABLED = "discoverystream.dailyBrief.enabled";
+const PREF_SPOCS_STARTUPCACHE_ENABLED =
+  "discoverystream.spocs.startupCache.enabled";
 
 // Feed URL
 const CURATED_RECOMMENDATIONS_FEED_URL =
@@ -187,20 +208,20 @@ function CardSection({
     }
   };
 
-  const showTopics = prefs[PREFS.TOPICS_ENABLED];
-  const mayHaveSectionsCards = prefs[PREFS.SECTIONS_CARDS_ENABLED];
-  const selectedTopics = prefs[PREFS.TOPICS_SELECTED];
-  const availableTopics = prefs[PREFS.TOPICS_AVAILABLE];
-  const spocsStartupCacheEnabled = prefs[PREFS.SPOCS_STARTUPCACHE_ENABLED];
+  const showTopics = prefs[PREF_TOPICS_ENABLED];
+  const mayHaveSectionsCards = prefs[PREF_SECTIONS_CARDS_ENABLED];
+  const selectedTopics = prefs[PREF_TOPICS_SELECTED];
+  const availableTopics = prefs[PREF_TOPICS_AVAILABLE];
+  const spocsStartupCacheEnabled = prefs[PREF_SPOCS_STARTUPCACHE_ENABLED];
   const dailyBriefEnabled =
     prefs.trainhopConfig?.dailyBriefing?.enabled ||
-    prefs[PREFS.DAILY_BRIEF_ENABLED];
+    prefs[PREF_DAILY_BRIEF_ENABLED];
   const dailyBriefSectionId =
     prefs.trainhopConfig?.dailyBriefing?.sectionId ||
-    prefs[PREFS.DAILY_BRIEF_SECTIONID];
+    prefs[PREF_DAILY_BRIEF_SECTIONID];
 
   const mayHaveSectionsPersonalization =
-    prefs[PREFS.SECTIONS_PERSONALIZATION_ENABLED];
+    prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
 
   const { sectionKey, title, subtitle } = section;
   const { responsiveLayouts, name: layoutName } = section.layout;
@@ -568,9 +589,8 @@ function CardSections({
     state => state.DiscoveryStream
   );
   const { messageData } = useSelector(state => state.Messages);
-  const personalizationEnabled = prefs[PREFS.SECTIONS_PERSONALIZATION_ENABLED];
-  const interestPickerEnabled = prefs[PREFS.INTEREST_PICKER_ENABLED];
-
+  const personalizationEnabled = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
+  const interestPickerEnabled = prefs[PREF_INTEREST_PICKER_ENABLED];
   const [activeColumnLayout, setActiveColumnLayout] = useState(() =>
     getActiveColumnLayout(window.innerWidth)
   );
@@ -586,7 +606,7 @@ function CardSections({
     return null;
   }
 
-  const visibleSections = prefToArray(prefs[PREFS.VISIBLE_SECTIONS]);
+  const visibleSections = prefToArray(prefs[PREF_VISIBLE_SECTIONS]);
   const { interestPicker } = data;
 
   // Used to determine if we should show FollowSectionButtonHighlight
@@ -646,8 +666,8 @@ function CardSections({
   ));
 
   // Add a billboard/leaderboard IAB ad to the sectionsToRender array (if enabled/possible).
-  const billboardEnabled = prefs[PREFS.BILLBOARD_ENABLED];
-  const leaderboardEnabled = prefs[PREFS.LEADERBOARD_ENABLED];
+  const billboardEnabled = prefs[PREF_BILLBOARD_ENABLED];
+  const leaderboardEnabled = prefs[PREF_LEADERBOARD_ENABLED];
 
   if (
     (billboardEnabled || leaderboardEnabled) &&
@@ -664,8 +684,8 @@ function CardSections({
     if (spocToRender && !spocs.blocked.includes(spocToRender.url)) {
       const row =
         spocToRender.format === "leaderboard"
-          ? prefs[PREFS.LEADERBOARD_POSITION]
-          : prefs[PREFS.BILLBOARD_POSITION];
+          ? prefs[PREF_LEADERBOARD_POSITION]
+          : prefs[PREF_BILLBOARD_POSITION];
 
       sectionsToRender.splice(
         // Math.min is used here to ensure the given row stays within the bounds of the sectionsToRender array.
@@ -709,7 +729,7 @@ function CardSections({
     if (messageData && Object.keys(messageData).length >= 1) {
       if (
         shouldShowOMCHighlight(messageData, "PersonalizedCard") &&
-        prefs[PREFS.INFERRED_PERSONALIZATION_USER]
+        prefs[PREF_INFERRED_PERSONALIZATION_USER]
       ) {
         const row = messageData.content.position;
         sectionsToRender.splice(

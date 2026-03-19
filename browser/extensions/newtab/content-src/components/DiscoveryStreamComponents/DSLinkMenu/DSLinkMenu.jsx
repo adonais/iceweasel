@@ -5,7 +5,6 @@
 import { LinkMenu } from "content-src/components/LinkMenu/LinkMenu";
 import { ContextMenuButton } from "content-src/components/ContextMenu/ContextMenuButton";
 import { actionCreators as ac } from "common/Actions.mjs";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import React from "react";
 import { connect } from "react-redux";
 
@@ -13,8 +12,9 @@ export class _DSLinkMenu extends React.PureComponent {
   render() {
     const { index, dispatch } = this.props;
     let TOP_STORIES_CONTEXT_MENU_OPTIONS;
+    const PREF_REPORT_ADS_ENABLED = "discoverystream.reportAds.enabled";
     const prefs = this.props.Prefs.values;
-    const showAdsReporting = prefs[PREFS.REPORT_ADS_ENABLED];
+    const showAdsReporting = prefs[PREF_REPORT_ADS_ENABLED];
     const isSpoc = this.props.card_type === "spoc";
 
     if (isSpoc) {

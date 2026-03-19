@@ -3,7 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector, batch } from "react-redux";
 import { useIntersectionObserver } from "../../../lib/utils";
@@ -722,7 +721,7 @@ export const FocusTimer = ({
               }
               onClick={() => {
                 handlePrefUpdate(
-                  PREFS.WIDGETS_TIMER_SHOW_SYSTEM_NOTIFICATIONS,
+                  "widgets.focusTimer.showSystemNotifications",
                   !showSystemNotifications
                 );
               }}
@@ -731,7 +730,7 @@ export const FocusTimer = ({
               data-l10n-id="newtab-widget-menu-hide"
               onClick={() => {
                 batch(() => {
-                  handlePrefUpdate(PREFS.WIDGETS_TIMER_ENABLED, false);
+                  handlePrefUpdate("widgets.focusTimer.enabled", false);
 
                   const telemetryData = {
                     widget_name: "focus_timer",

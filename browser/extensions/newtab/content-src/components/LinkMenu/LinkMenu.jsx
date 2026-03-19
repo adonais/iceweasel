@@ -5,7 +5,6 @@
 import { actionCreators as ac } from "common/Actions.mjs";
 import { connect } from "react-redux";
 import { ContextMenu } from "content-src/components/ContextMenu/ContextMenu";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import { LinkMenuOptions } from "content-src/lib/link-menu-options";
 import React from "react";
 
@@ -155,6 +154,6 @@ export class _LinkMenu extends React.PureComponent {
 const getState = state => ({
   isPrivateBrowsingEnabled: state.Prefs.values.isPrivateBrowsingEnabled,
   platform: state.Prefs.values.platform,
-  privacyInfoUrl: state.Prefs.values[PREFS.PRIVACY_INFO_URL],
+  privacyInfoUrl: state.Prefs.values["privacyInfo.url"],
 });
 export const LinkMenu = connect(getState)(_LinkMenu);

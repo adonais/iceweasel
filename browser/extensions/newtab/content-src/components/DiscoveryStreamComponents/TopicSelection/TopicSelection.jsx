@@ -6,7 +6,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ModalOverlayWrapper } from "content-src/components/ModalOverlay/ModalOverlay";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 
 const EMOJI_LABELS = {
   business: "💼",
@@ -28,13 +27,14 @@ function TopicSelection({ supportUrl }) {
   const modalRef = useRef(null);
   const checkboxWrapperRef = useRef(null);
   const prefs = useSelector(state => state.Prefs.values);
-  const topics = prefs[PREFS.TOPICS_AVAILABLE].split(", ");
-  const selectedTopics = prefs[PREFS.TOPICS_SELECTED];
+  const topics = prefs["discoverystream.topicSelection.topics"].split(", ");
+  const selectedTopics = prefs["discoverystream.topicSelection.selectedTopics"];
   const suggestedTopics =
-    prefs[PREFS.TOPIC_SELECTION_SUGGESTED_TOPICS]?.split(", ");
-  const displayCount = prefs[PREFS.TOPIC_SELECTION_ONBOARDING_DISPLAY_COUNT];
+    prefs["discoverystream.topicSelection.suggestedTopics"]?.split(", ");
+  const displayCount =
+    prefs["discoverystream.topicSelection.onboarding.displayCount"];
   const topicsHaveBeenPreviouslySet =
-    prefs[PREFS.TOPIC_SELECTION_HAS_BEEN_UPDATED_PREVIOUSLY];
+    prefs["discoverystream.topicSelection.hasBeenUpdatedPreviously"];
   const [isFirstRun] = useState(displayCount === 0);
   const displayCountRef = useRef(displayCount);
   const preselectedTopics = () => {
@@ -68,11 +68,17 @@ function TopicSelection({ supportUrl }) {
     if (id === "first-run") {
       dispatch(ac.AlsoToMain({ type: at.TOPIC_SELECTION_MAYBE_LATER }));
       dispatch(
-        ac.SetPref(PREFS.TOPIC_SELECTION_ONBOARDING_MAYBE_DISPLAY, true)
+        ac.SetPref(
+          "discoverystream.topicSelection.onboarding.maybeDisplay",
+          true
+        )
       );
     } else {
       dispatch(
-        ac.SetPref(PREFS.TOPIC_SELECTION_ONBOARDING_MAYBE_DISPLAY, false)
+        ac.SetPref(
+          "discoverystream.topicSelection.onboarding.maybeDisplay",
+          false
+        )
       );
     }
     handleModalClose();
@@ -96,7 +102,10 @@ function TopicSelection({ supportUrl }) {
           // automatically remove them from onboarding
           if (displayCountRef.current > 3) {
             dispatch(
-              ac.SetPref(PREFS.TOPIC_SELECTION_ONBOARDING_MAYBE_DISPLAY, false)
+              ac.SetPref(
+                "discoverystream.topicSelection.onboarding.maybeDisplay",
+                false
+              )
             );
           }
           observer.unobserve(modalRef.current);
@@ -178,11 +187,21 @@ function TopicSelection({ supportUrl }) {
 
   function handleSubmit() {
     const topicsString = topicsToSelect.join(", ");
-    dispatch(ac.SetPref(PREFS.TOPICS_SELECTED, topicsString));
-    dispatch(ac.SetPref(PREFS.TOPIC_SELECTION_ONBOARDING_MAYBE_DISPLAY, false));
+    dispatch(
+      ac.SetPref("discoverystream.topicSelection.selectedTopics", topicsString)
+    );
+    dispatch(
+      ac.SetPref(
+        "discoverystream.topicSelection.onboarding.maybeDisplay",
+        false
+      )
+    );
     if (!topicsHaveBeenPreviouslySet) {
       dispatch(
-        ac.SetPref(PREFS.TOPIC_SELECTION_HAS_BEEN_UPDATED_PREVIOUSLY, true)
+        ac.SetPref(
+          "discoverystream.topicSelection.hasBeenUpdatedPreviously",
+          true
+        )
       );
     }
     dispatch(

@@ -8,12 +8,14 @@ import { ComponentPerfTimer } from "content-src/components/ComponentPerfTimer/Co
 import { ErrorBoundary } from "content-src/components/ErrorBoundary/ErrorBoundary";
 import { connect } from "react-redux";
 import { ModalOverlayWrapper } from "content-src/components/ModalOverlay/ModalOverlay";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import React from "react";
 import { SearchShortcutsForm } from "./SearchShortcutsForm";
 import { TOP_SITES_MAX_SITES_PER_ROW } from "common/Reducers.sys.mjs";
 import { TopSiteForm } from "./TopSiteForm";
 import { TopSiteList } from "./TopSite";
+
+// @nova-cleanup(remove-pref): Remove once classic path is gone
+const PREF_NOVA_ENABLED = "nova.enabled";
 
 function topSiteIconType(link) {
   if (link.customScreenshotURL) {
@@ -98,7 +100,7 @@ export class _TopSites extends React.PureComponent {
    * Return the TopSites that are visible based on prefs and window width.
    */
   _getVisibleTopSites() {
-    const novaEnabled = this.props.Prefs.values[PREFS.NOVA_ENABLED];
+    const novaEnabled = this.props.Prefs.values[PREF_NOVA_ENABLED];
     let sitesPerRow = this.props.TopSitesMaxSitesPerRow;
 
     if (novaEnabled) {

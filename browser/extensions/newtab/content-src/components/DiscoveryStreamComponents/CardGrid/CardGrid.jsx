@@ -9,7 +9,18 @@ import { AdBanner } from "../AdBanner/AdBanner.jsx";
 import { FluentOrText } from "../../FluentOrText/FluentOrText.jsx";
 import React, { useEffect, useRef } from "react";
 import { connect } from "react-redux";
-import { PREFS } from "content-src/lib/PrefsConstants.mjs";
+const PREF_NOVA_ENABLED = "nova.enabled";
+const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
+const PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
+const PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
+const PREF_TOPICS_SELECTED = "discoverystream.topicSelection.selectedTopics";
+const PREF_TOPICS_AVAILABLE = "discoverystream.topicSelection.topics";
+const PREF_SPOCS_STARTUPCACHE_ENABLED =
+  "discoverystream.spocs.startupCache.enabled";
+const PREF_BILLBOARD_ENABLED = "newtabAdSize.billboard";
+const PREF_BILLBOARD_POSITION = "newtabAdSize.billboard.position";
+const PREF_LEADERBOARD_ENABLED = "newtabAdSize.leaderboard";
+const PREF_LEADERBOARD_POSITION = "newtabAdSize.leaderboard.position";
 const WIDGET_IDS = {
   TOPICS: 1,
 };
@@ -114,13 +125,13 @@ export class _CardGrid extends React.PureComponent {
     } = this.props;
 
     const { topicsLoading } = DiscoveryStream;
-    const mayHaveSectionsCards = prefs[PREFS.SECTIONS_CARDS_ENABLED];
-    const showTopics = prefs[PREFS.TOPICS_ENABLED];
-    const selectedTopics = prefs[PREFS.TOPICS_SELECTED];
-    const availableTopics = prefs[PREFS.TOPICS_AVAILABLE];
-    const spocsStartupCacheEnabled = prefs[PREFS.SPOCS_STARTUPCACHE_ENABLED];
-    const billboardEnabled = prefs[PREFS.BILLBOARD_ENABLED];
-    const leaderboardEnabled = prefs[PREFS.LEADERBOARD_ENABLED];
+    const mayHaveSectionsCards = prefs[PREF_SECTIONS_CARDS_ENABLED];
+    const showTopics = prefs[PREF_TOPICS_ENABLED];
+    const selectedTopics = prefs[PREF_TOPICS_SELECTED];
+    const availableTopics = prefs[PREF_TOPICS_AVAILABLE];
+    const spocsStartupCacheEnabled = prefs[PREF_SPOCS_STARTUPCACHE_ENABLED];
+    const billboardEnabled = prefs[PREF_BILLBOARD_ENABLED];
+    const leaderboardEnabled = prefs[PREF_LEADERBOARD_ENABLED];
 
     const recs = this.props.data.recommendations.slice(0, items);
     const cards = [];
@@ -249,8 +260,8 @@ export class _CardGrid extends React.PureComponent {
       if (spocToRender && !spocs.blocked.includes(spocToRender.url)) {
         const row =
           spocToRender.format === "leaderboard"
-            ? prefs[PREFS.LEADERBOARD_POSITION]
-            : prefs[PREFS.BILLBOARD_POSITION];
+            ? prefs[PREF_LEADERBOARD_POSITION]
+            : prefs[PREF_BILLBOARD_POSITION];
 
         function displayCardsPerRow() {
           // Determines the number of cards per row based on the window width:
@@ -346,8 +357,8 @@ export class _CardGrid extends React.PureComponent {
     const isEmpty = data.recommendations.length === 0;
 
     const prefs = this.props.Prefs.values;
-    const novaEnabled = prefs[PREFS.NOVA_ENABLED];
-    const sectionsEnabled = prefs[PREFS.SECTIONS_ENABLED];
+    const novaEnabled = prefs[PREF_NOVA_ENABLED];
+    const sectionsEnabled = prefs[PREF_SECTIONS_ENABLED];
     const showNovaHeader = novaEnabled && !sectionsEnabled;
 
     return (
