@@ -109,8 +109,6 @@ class nsHTTPCompressConv : public nsIStreamConverter,
 
   uint32_t check_header(nsIInputStream* iStr, uint32_t streamLen, nsresult* rs);
 
-  void ReportDecodingErrorWithSite(nsIRequest* aRequest,
-                                   const nsACString& aLabel);
   Atomic<uint32_t, Relaxed> mDecodedDataLength{0};
 
   mutable mozilla::Mutex mMutex MOZ_UNANNOTATED{"nsHTTPCompressConv"};
