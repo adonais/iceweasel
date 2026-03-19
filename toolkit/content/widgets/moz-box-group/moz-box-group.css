@@ -54,6 +54,6 @@ slot[name="header"]::slotted(:first-child) {
 }
 
 .scroll-container {
-  max-height: var(--box-group-max-height);
+  max-height: var(--box-group-max-height, none);
   overflow-y: auto;
 }

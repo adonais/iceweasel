@@ -55,7 +55,7 @@
 }
 
 .box-container {
-  padding: var(--box-padding);
+  padding: var(--box-padding, var(--space-large));
   font-size: inherit;
   text-align: start;
 }
@@ -73,6 +73,8 @@ slot[name="actions-start"] {
 }
 
 .handle {
+  --box-item-handle-icon-color: var(--text-color);
+
   width: var(--button-size-icon);
   height: var(--button-size-icon);
   cursor: grab;
@@ -83,7 +85,7 @@ slot[name="actions-start"] {
   -moz-context-properties: fill;
   /** Override the text color set by description-deemphasized for the handle.
       This cannot be disabled, hence the color should remain the default. */
-  fill: var(--text-color);
+  fill: var(--box-item-handle-icon-color);
   flex-shrink: 0;
 }
 
