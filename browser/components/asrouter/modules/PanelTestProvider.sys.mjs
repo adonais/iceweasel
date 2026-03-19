@@ -2787,11 +2787,33 @@ const MESSAGES = () => [
     template: "newtab_message",
     content: {
       messageType: "ASRouterNewTabMessage",
+      // eslint-disable-next-line mozilla/no-newtab-refs-outside-newtab
+      imageSrc: "chrome://newtab/content/data/content/assets/kit-in-circle.svg",
+      heading: "Most browsers track you. Firefox blocks that.",
+      body: "Many browsers track you. Firefox blocks a lot of that automatically, without extra work.",
+      hideDismissButton: false,
+      primaryButton: {
+        label: "Label",
+        action: {
+          type: "OPEN_URL",
+          data: { args: "https://www.mozilla.org/" },
+        },
+      },
+      secondaryButton: {
+        label: "Label",
+        action: {
+          dismiss: true,
+        },
+      },
+    },
+    frequency: {
+      lifetime: 3,
     },
     trigger: {
       id: "newtabMessageCheck",
     },
-    groups: [],
+    targeting: `!isDefaultBrowser`,
+    groups: ["cfr"],
   },
   {
     id: "UNIVERSAL_INFOBAR_WITH_EMBEDDED_LINKS",

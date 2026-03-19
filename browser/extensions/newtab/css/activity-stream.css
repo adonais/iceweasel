@@ -741,16 +741,20 @@ main section {
   background-color: var(--background-color-canvas);
   border: 2px solid var(--card-border-color);
   color: var(--text-color);
-  padding: var(--space-large);
   border-radius: var(--border-radius-medium);
   margin-block: 0 var(--space-xlarge);
   margin-inline: auto;
   overflow: hidden;
+  max-width: 300px;
   /**
    * Bug 2021914 - this is temporary until we get the Nova grid rules more
    * proliferated on New Tab.
    */
-  max-width: 960px;
+}
+@media (min-width: 724px) {
+  .asrouter-newtab-message-wrapper {
+    max-width: 904px;
+  }
 }
 
 .as-error-fallback {

@@ -47,6 +47,21 @@ add_setup(async function () {
       template: "newtab_message",
       content: {
         messageType: "ASRouterNewTabMessage",
+        imageSrc:
+          // eslint-disable-next-line mozilla/no-newtab-refs-outside-newtab
+          "chrome://newtab/content/data/content/assets/kit-in-circle.svg",
+        heading: "Test Heading",
+        body: "This is a test message body.",
+        primaryButton: {
+          label: "Primary Action",
+          action: {
+            type: "OPEN_URL",
+            data: { args: "https://www.mozilla.org/" },
+          },
+        },
+      },
+      frequency: {
+        lifetime: 3,
       },
       trigger: {
         id: "newtabMessageCheck",
@@ -80,26 +95,20 @@ add_task(async function test_show_newtab_message() {
     });
   });
 
-  // The impression is triggered by an intersection observer, which is not
-  // guaranteed to fire before the SpecialPowers.spawn resolves. We work
-  // around this by waiting for the addImpression method to be called.
   await TestUtils.waitForCondition(
-    () => ASRouter.addImpression.called,
-    "Waiting for addImpression to be called"
-  );
-  Assert.ok(
-    ASRouter.addImpression.calledWith(gTestNewTabMessage),
+    () => ASRouter.addImpression.calledWith(gTestNewTabMessage),
     "The test message had an impression recorded for it."
   );
-  Assert.ok(
-    AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
-      sinon.match({
-        message_id: gTestNewTabMessage.id,
-        event: "IMPRESSION",
-        pingType: "newtab_message",
-      })
-    ),
-    "The test message had an impression recorded for it."
+  await TestUtils.waitForCondition(
+    () =>
+      AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
+        sinon.match({
+          message_id: gTestNewTabMessage.id,
+          event: "IMPRESSION",
+          pingType: "newtab_message",
+        })
+      ),
+    "Waiting for Glean IMPRESSION ping"
   );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   sandbox.restore();
@@ -289,6 +298,250 @@ add_task(async function test_special_message_actions() {
     "SpecialMessageActions was callable from the asrouter-newtab-message component."
   );
 
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
+/**
+ * Tests that clicking the dismiss button in the component's shadow DOM calls
+ * handleDismiss (records DISMISS telemetry and hides the message) without
+ * permanently blocking it.
+ */
+add_task(async function test_dismiss_button_click() {
+  let sandbox = sinon.createSandbox();
+  sandbox.spy(AboutWelcomeTelemetry.prototype, "submitGleanPingForPing");
+  sandbox.spy(ASRouter, "blockMessageById");
+
+  await withTestMessage(sandbox, gTestNewTabMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+      await ContentTaskUtils.waitForCondition(() => {
+        return content.document.querySelector("asrouter-newtab-message");
+      }, "Found asrouter-newtab-message");
+
+      let msgEl = content.document.querySelector("asrouter-newtab-message");
+      let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+      let dismissBtn = shadow.querySelector(".dismiss-button moz-button");
+      Assert.ok(dismissBtn, "Found dismiss button in shadow DOM");
+      dismissBtn.click();
+
+      await ContentTaskUtils.waitForCondition(() => {
+        return !content.document.querySelector("asrouter-newtab-message");
+      }, "asrouter-newtab-message removed from DOM");
+    });
+  });
+
+  Assert.ok(
+    AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
+      sinon.match({
+        message_id: gTestNewTabMessage.id,
+        event: "DISMISS",
+        pingType: "newtab_message",
+      })
+    ),
+    "Clicking the dismiss button recorded a DISMISS telemetry event."
+  );
+  Assert.ok(
+    !ASRouter.blockMessageById.called,
+    "Clicking the dismiss button did not permanently block the message."
+  );
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
+/**
+ * Tests that clicking the primary button fires click telemetry and triggers the
+ * configured SpecialMessageAction.
+ */
+add_task(async function test_primary_button_click() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(SpecialMessageActions, "handleAction");
+  sandbox.spy(AboutWelcomeTelemetry.prototype, "submitGleanPingForPing");
+
+  await withTestMessage(sandbox, gTestNewTabMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+      await ContentTaskUtils.waitForCondition(() => {
+        return content.document.querySelector("asrouter-newtab-message");
+      }, "Found asrouter-newtab-message");
+
+      let msgEl = content.document.querySelector("asrouter-newtab-message");
+      let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+      let primaryBtn = shadow.querySelector(
+        ".button-group moz-button[type='primary']"
+      );
+      Assert.ok(primaryBtn, "Found primary button in shadow DOM");
+      primaryBtn.click();
+    });
+  });
+
+  Assert.ok(
+    SpecialMessageActions.handleAction.calledWithMatch(
+      sinon.match({
+        type: "OPEN_URL",
+        data: { args: "https://www.mozilla.org/" },
+      }),
+      gBrowser.selectedBrowser
+    ),
+    "Clicking the primary button triggered the configured SpecialMessageAction."
+  );
+  Assert.ok(
+    AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
+      sinon.match({
+        message_id: gTestNewTabMessage.id,
+        event: "CLICK",
+        pingType: "newtab_message",
+      })
+    ),
+    "Clicking the primary button recorded a CLICK telemetry event."
+  );
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
+add_task(async function test_hidden_dismiss_button() {
+  let sandbox = sinon.createSandbox();
+  const testMessage = {
+    ...gTestNewTabMessage,
+    content: {
+      ...gTestNewTabMessage.content,
+      hideDismissButton: true,
+    },
+  };
+
+  await withTestMessage(sandbox, testMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+      await ContentTaskUtils.waitForCondition(() => {
+        return content.document.querySelector("asrouter-newtab-message");
+      }, "Found asrouter-newtab-message");
+
+      let msgEl = content.document.querySelector("asrouter-newtab-message");
+      let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+      let dismissBtn = shadow.querySelector(".dismiss-button moz-button");
+      Assert.ok(
+        !dismissBtn,
+        "Dismiss button is not rendered when hideDismissButton is true"
+      );
+    });
+  });
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
+/**
+ * Tests that clicking the secondary button fires CLICK telemetry and triggers
+ * the configured SpecialMessageAction.
+ */
+add_task(async function test_secondary_button_click() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(SpecialMessageActions, "handleAction");
+  sandbox.spy(AboutWelcomeTelemetry.prototype, "submitGleanPingForPing");
+
+  const testMessage = {
+    ...gTestNewTabMessage,
+    content: {
+      ...gTestNewTabMessage.content,
+      secondaryButton: {
+        label: "Secondary Action",
+        action: { type: "CANCEL" },
+      },
+    },
+  };
+
+  await withTestMessage(sandbox, testMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+      await ContentTaskUtils.waitForCondition(() => {
+        return content.document.querySelector("asrouter-newtab-message");
+      }, "Found asrouter-newtab-message");
+
+      let msgEl = content.document.querySelector("asrouter-newtab-message");
+      let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+      let secondaryBtn = shadow.querySelector(
+        ".button-group moz-button[type='default']"
+      );
+      Assert.ok(secondaryBtn, "Found secondary button in shadow DOM");
+      secondaryBtn.click();
+    });
+  });
+
+  Assert.ok(
+    SpecialMessageActions.handleAction.calledWithMatch(
+      sinon.match({ type: "CANCEL" }),
+      gBrowser.selectedBrowser
+    ),
+    "Clicking the secondary button triggered the configured SpecialMessageAction."
+  );
+  Assert.ok(
+    AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
+      sinon.match({
+        message_id: testMessage.id,
+        event: "CLICK",
+        pingType: "newtab_message",
+      })
+    ),
+    "Clicking the secondary button recorded a CLICK telemetry event."
+  );
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+  sandbox.restore();
+});
+
+add_task(async function test_secondary_button_dismiss() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(SpecialMessageActions, "handleAction");
+  sandbox.spy(AboutWelcomeTelemetry.prototype, "submitGleanPingForPing");
+  sandbox.spy(ASRouter, "blockMessageById");
+
+  const testMessage = {
+    ...gTestNewTabMessage,
+    content: {
+      ...gTestNewTabMessage.content,
+      secondaryButton: {
+        label: "Not Now",
+        action: {
+          dismiss: true,
+        },
+      },
+    },
+  };
+
+  await withTestMessage(sandbox, testMessage, async () => {
+    await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab");
+    await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+      await ContentTaskUtils.waitForCondition(() => {
+        return content.document.querySelector("asrouter-newtab-message");
+      }, "Found asrouter-newtab-message");
+
+      let msgEl = content.document.querySelector("asrouter-newtab-message");
+      let shadow = Cu.waiveXrays(msgEl).shadowRoot;
+      let secondaryBtn = shadow.querySelector(
+        ".button-group moz-button[type='default']"
+      );
+      Assert.ok(secondaryBtn, "Found secondary button in shadow DOM");
+      secondaryBtn.click();
+
+      await ContentTaskUtils.waitForCondition(() => {
+        return !content.document.querySelector("asrouter-newtab-message");
+      }, "asrouter-newtab-message removed from DOM after dismiss");
+    });
+  });
+
+  Assert.ok(
+    !SpecialMessageActions.handleAction.called,
+    "Clicking the secondary button with only dismiss: true did not trigger SpecialMessageActions."
+  );
+  Assert.ok(
+    AboutWelcomeTelemetry.prototype.submitGleanPingForPing.calledWithMatch(
+      sinon.match({
+        message_id: testMessage.id,
+        event: "DISMISS",
+        pingType: "newtab_message",
+      })
+    ),
+    "Clicking the secondary button with dismiss: true recorded a DISMISS telemetry event."
+  );
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
   sandbox.restore();
 });
