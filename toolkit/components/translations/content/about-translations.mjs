@@ -6,7 +6,7 @@
 // about-translations.mjs is running in an unprivileged context, and these injected functions
 // allow for the page to get access to additional privileged features.
 
-/* global AT_getAppLocale, AT_getSupportedLanguages, AT_log, AT_getScriptDirection,
+/* global AT_getAppLocaleAsBCP47, AT_getSupportedLanguages, AT_log, AT_getScriptDirection,
    AT_getDisplayName, AT_logError, AT_createTranslationsPort, AT_isHtmlTranslation,
    AT_isTranslationEngineSupported, AT_isInAutomation, AT_identifyLanguage,
    AT_telemetry, AT_isEnabledStateManagedByPolicy, AT_enableTranslationsFeature */
@@ -611,7 +611,7 @@ class AboutTranslations {
     );
     sourceLanguageSelector.addEventListener(
       "change",
-      this.#onSourceLanguageInput
+      this.#onSourceLanguageChange
     );
     detectedLanguageUnsupportedMessage.addEventListener(
       "pointerdown",
@@ -629,7 +629,7 @@ class AboutTranslations {
     swapLanguagesButton.addEventListener("click", this.#onSwapLanguagesButton);
     targetLanguageSelector.addEventListener(
       "change",
-      this.#onTargetLanguageInput
+      this.#onTargetLanguageChange
     );
     translationErrorButton.addEventListener(
       "click",
@@ -709,7 +709,7 @@ class AboutTranslations {
   /**
    * Handles change events on the source-language selector.
    */
-  #onSourceLanguageInput = () => {
+  #onSourceLanguageChange = () => {
     const { sourceLanguageSelector } = this.elements;
 
     this.#clearTranslationRequestTelemetryThrottle();
@@ -730,7 +730,7 @@ class AboutTranslations {
   /**
    * Handles change events on the target-language selector.
    */
-  #onTargetLanguageInput = () => {
+  #onTargetLanguageChange = () => {
     this.#clearTranslationRequestTelemetryThrottle();
     this.#disableSwapLanguagesButton();
     this.#updateURLFromUI();
@@ -1244,6 +1244,17 @@ class AboutTranslations {
   }
 
   /**
+   * Splits a language-tag key into its language tag and optional variant.
+   *
+   * @param {string} languageTagKey
+   * @returns {{ languageTag: string, variant: string | undefined }}
+   */
+  #splitLanguageTagKey(languageTagKey) {
+    const [languageTag = "", variant] = languageTagKey.split(",");
+    return { languageTag, variant };
+  }
+
+  /**
    * Returns the language pair formed by the values of the language selectors.
    * Returns null if one or more of the selectors has no selected value.
    *
@@ -1259,9 +1270,10 @@ class AboutTranslations {
       selectedSourceLanguage = sourceLanguageSelector.value;
     }
 
-    const [sourceLanguage, sourceVariant] = selectedSourceLanguage.split(",");
-    const [targetLanguage, targetVariant] =
-      targetLanguageSelector.value.split(",");
+    const { languageTag: sourceLanguage, variant: sourceVariant } =
+      this.#splitLanguageTagKey(selectedSourceLanguage);
+    const { languageTag: targetLanguage, variant: targetVariant } =
+      this.#splitLanguageTagKey(targetLanguageSelector.value);
 
     if (sourceLanguage === "" || targetLanguage === "") {
       // At least one selector is empty, so we cannot create a language pair.
@@ -1337,7 +1349,7 @@ class AboutTranslations {
       this.#resetDetectLanguageOptionText();
       sourceSectionTextArea.setAttribute(
         "dir",
-        AT_getScriptDirection(AT_getAppLocale())
+        AT_getScriptDirection(AT_getAppLocaleAsBCP47())
       );
     }
 
@@ -1951,7 +1963,7 @@ class AboutTranslations {
 
     targetSectionTextArea.setAttribute(
       "dir",
-      AT_getScriptDirection(AT_getAppLocale())
+      AT_getScriptDirection(AT_getAppLocaleAsBCP47())
     );
 
     dispatchTestEvent("AboutTranslationsTest:ShowTranslatingPlaceholder");
@@ -2071,7 +2083,7 @@ class AboutTranslations {
    * based on its content and the currently selected source language.
    */
   #updateSourceScriptDirection() {
-    const appLocale = AT_getAppLocale();
+    const appLocale = AT_getAppLocaleAsBCP47();
     const selectedLanguagePair = this.#getSelectedLanguagePair();
     const selectedSourceLanguage = selectedLanguagePair?.sourceLanguage;
     const { sourceSectionTextArea } = this.elements;
@@ -2094,7 +2106,7 @@ class AboutTranslations {
    * based on its content and the currently selected target language.
    */
   #updateTargetScriptDirection() {
-    const appLocale = AT_getAppLocale();
+    const appLocale = AT_getAppLocaleAsBCP47();
     const selectedLanguagePair = this.#getSelectedLanguagePair();
     const selectedTargetLanguage = selectedLanguagePair?.targetLanguage;
     const { targetSectionTextArea } = this.elements;
@@ -2186,7 +2198,7 @@ class AboutTranslations {
           this.#resetDetectLanguageOptionText();
           this.elements.sourceSectionTextArea.setAttribute(
             "dir",
-            AT_getScriptDirection(AT_getAppLocale())
+            AT_getScriptDirection(AT_getAppLocaleAsBCP47())
           );
         }
 
@@ -2269,7 +2281,7 @@ class AboutTranslations {
         this.#updateSwapLanguagesButtonEnabledState();
         this.elements.targetSectionTextArea.setAttribute(
           "dir",
-          AT_getScriptDirection(AT_getAppLocale())
+          AT_getScriptDirection(AT_getAppLocaleAsBCP47())
         );
         this.#hideTranslationErrorMessage();
         return;

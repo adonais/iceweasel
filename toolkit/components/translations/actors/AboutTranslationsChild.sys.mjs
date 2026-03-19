@@ -146,7 +146,7 @@ export class AboutTranslationsChild extends JSWindowActorChild {
     const fns = [
       "AT_log",
       "AT_logError",
-      "AT_getAppLocale",
+      "AT_getAppLocaleAsBCP47",
       "AT_getSupportedLanguages",
       "AT_enableTranslationsFeature",
       "AT_isEnabledStateManagedByPolicy",
@@ -188,7 +188,7 @@ export class AboutTranslationsChild extends JSWindowActorChild {
    *
    * @returns {Intl.Locale}
    */
-  AT_getAppLocale() {
+  AT_getAppLocaleAsBCP47() {
     return Services.locale.appLocaleAsBCP47;
   }
 
