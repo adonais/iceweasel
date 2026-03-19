@@ -404,6 +404,8 @@ void MFMediaEngineVideoStream::ShutdownCleanUpOnTaskQueue() {
   mPendingDrainPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
   mVideoDecodeBeforeDcompPromise.RejectIfExists(NS_ERROR_DOM_MEDIA_CANCELED,
                                                 __func__);
+  // mDCompSurfaceHandle is owned by DcompSurfaceTexture, which closes it in
+  // its destructor. Do not call CloseHandle here.
 }
 
 void MFMediaEngineVideoStream::SendRequestSampleEvent(bool aIsEnough) {
