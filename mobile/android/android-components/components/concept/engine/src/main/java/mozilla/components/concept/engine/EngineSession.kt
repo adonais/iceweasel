@@ -14,6 +14,7 @@ import mozilla.components.concept.engine.history.HistoryItem
 import mozilla.components.concept.engine.manifest.WebAppManifest
 import mozilla.components.concept.engine.media.RecordingDevice
 import mozilla.components.concept.engine.mediasession.MediaSession
+import mozilla.components.concept.engine.pageextraction.PageMetadata
 import mozilla.components.concept.engine.permission.PermissionRequest
 import mozilla.components.concept.engine.prompt.PromptRequest
 import mozilla.components.concept.engine.translate.TranslationEngineState
@@ -1157,6 +1158,14 @@ abstract class EngineSession(
      * Gets the page text content of this session
      */
     open fun getPageContent(onResult: (String) -> Unit, onException: (Throwable) -> Unit) = Unit
+
+    /**
+     * Gets metadata about the current page.
+     */
+    open fun getPageMetadata(
+        onResult: (PageMetadata) -> Unit,
+        onException: (Throwable) -> Unit,
+    ) = Unit
 
     /**
      * Allow the Engine to handle back navigation events to dismiss some HTML elements such as &lt;dialog&gt;.

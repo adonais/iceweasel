@@ -21,6 +21,7 @@ import org.mozilla.geckoview.PageExtractionController.PageExtractionException
 import org.mozilla.geckoview.PageExtractionController.PageExtractionException.ERROR_MALFORMED_RESULT
 import org.mozilla.geckoview.PageExtractionController.PageExtractionException.ERROR_NULL_RESULT
 import org.mozilla.geckoview.PageExtractionController.PageExtractionException.ERROR_UNKNOWN
+import org.mozilla.geckoview.PageExtractionController.PageMetadata
 import org.mozilla.geckoview.PageExtractionController.SessionPageExtractor
 import org.robolectric.Shadows.shadowOf
 
@@ -146,5 +147,89 @@ class GeckoEngineSessionPageExtractionTest {
         // then assert that content is returned without error
         assertEquals("mozilla.org awesome blog", resultContent)
         assertNull("Expected no error to be returned. Got $resultError instead", resultError)
+    }
+
+    @Test
+    fun `given page metadata extractor returns successfully but null result, then an unexpected null error is returned`() {
+        whenever(mockedSessionPageExtractor.pageMetadata)
+            .thenReturn(GeckoResult.fromValue(null))
+
+        var resultError: Throwable? = null
+        engineSession.getPageMetadata(
+            onResult = { },
+            onException = { resultError = it },
+        )
+
+        shadowOf(getMainLooper()).idle()
+
+        assertTrue(resultError is PageExtractionError.UnexpectedNull)
+    }
+
+    @Test
+    fun `given page metadata extractor returns a null result exception, then an unexpected null error is returned`() {
+        whenever(mockedSessionPageExtractor.pageMetadata)
+            .thenReturn(GeckoResult.fromException(PageExtractionException(ERROR_NULL_RESULT)))
+
+        var resultError: Throwable? = null
+        engineSession.getPageMetadata(
+            onResult = { },
+            onException = { resultError = it },
+        )
+
+        shadowOf(getMainLooper()).idle()
+
+        assertTrue(resultError is PageExtractionError.UnexpectedNull)
+    }
+
+    @Test
+    fun `given page metadata extractor returns a malformed result exception, then a malformed result error is returned`() {
+        whenever(mockedSessionPageExtractor.pageMetadata)
+            .thenReturn(GeckoResult.fromException(PageExtractionException(ERROR_MALFORMED_RESULT)))
+
+        var resultError: Throwable? = null
+        engineSession.getPageMetadata(
+            onResult = { },
+            onException = { resultError = it },
+        )
+
+        shadowOf(getMainLooper()).idle()
+
+        assertTrue(resultError is PageExtractionError.MalformedResult)
+    }
+
+    @Test
+    fun `given page metadata extractor returns an unknown exception, then an unknown error is returned`() {
+        whenever(mockedSessionPageExtractor.pageMetadata)
+            .thenReturn(GeckoResult.fromException(PageExtractionException(ERROR_UNKNOWN)))
+
+        var resultError: Throwable? = null
+        engineSession.getPageMetadata(
+            onResult = { },
+            onException = { resultError = it },
+        )
+
+        shadowOf(getMainLooper()).idle()
+
+        assertTrue(resultError is PageExtractionError.UnknownError)
+    }
+
+    @Test
+    fun `given page metadata extractor returns metadata successfully, then the result is returned without error`() {
+        whenever(mockedSessionPageExtractor.pageMetadata)
+            .thenReturn(GeckoResult.fromValue(PageMetadata(arrayOf("Article"), 42, "en")))
+
+        var resultMetadata: mozilla.components.concept.engine.pageextraction.PageMetadata? = null
+        var resultError: Throwable? = null
+        engineSession.getPageMetadata(
+            onResult = { resultMetadata = it },
+            onException = { resultError = it },
+        )
+
+        shadowOf(getMainLooper()).idle()
+
+        assertNull("Expected no error to be returned. Got $resultError instead", resultError)
+        assertEquals(listOf("Article"), resultMetadata?.structuredDataTypes)
+        assertEquals(42, resultMetadata?.wordCount)
+        assertEquals("en", resultMetadata?.language)
     }
 }

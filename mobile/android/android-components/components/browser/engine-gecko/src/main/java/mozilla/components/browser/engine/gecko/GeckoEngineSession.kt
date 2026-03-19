@@ -38,6 +38,7 @@ import mozilla.components.concept.engine.history.HistoryTrackingDelegate
 import mozilla.components.concept.engine.manifest.WebAppManifest
 import mozilla.components.concept.engine.manifest.WebAppManifestParser
 import mozilla.components.concept.engine.pageextraction.PageExtractionError
+import mozilla.components.concept.engine.pageextraction.PageMetadata
 import mozilla.components.concept.engine.request.RequestInterceptor
 import mozilla.components.concept.engine.request.RequestInterceptor.InterceptionResponse
 import mozilla.components.concept.engine.translate.TranslationError
@@ -869,6 +870,37 @@ class GeckoEngineSession(
                         return@then GeckoResult()
                     }
                     onResult(content)
+                    GeckoResult<Unit>()
+                },
+                { error ->
+                    onException(error.intoPageExtractionError())
+                    GeckoResult()
+                },
+            )
+    }
+
+    /**
+     * See [EngineSession.getPageMetadata]
+     */
+    @OptIn(ExperimentalGeckoViewApi::class)
+    override fun getPageMetadata(
+        onResult: (PageMetadata) -> Unit,
+        onException: (Throwable) -> Unit,
+    ) {
+        geckoSession.sessionPageExtractor.pageMetadata
+            .then(
+                { metadata ->
+                    if (metadata == null) {
+                        onException(PageExtractionError.UnexpectedNull())
+                        return@then GeckoResult()
+                    }
+                    onResult(
+                        PageMetadata(
+                            structuredDataTypes = metadata.structuredDataTypes.toList(),
+                            wordCount = metadata.wordCount,
+                            language = metadata.language,
+                        ),
+                    )
                     GeckoResult<Unit>()
                 },
                 { error ->
