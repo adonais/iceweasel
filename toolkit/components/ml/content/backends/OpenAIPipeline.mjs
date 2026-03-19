@@ -339,8 +339,15 @@ export class OpenAIPipeline {
   ) {
     lazy.console.debug("Running OpenAI pipeline");
     try {
-      const { baseURL, apiKey, modelId, serviceType, extraHeaders, engineId } =
-        this.#options;
+      const {
+        baseURL,
+        apiKey,
+        modelId,
+        serviceType,
+        purpose,
+        extraHeaders,
+        engineId,
+      } = this.#options;
       const fxAccountToken = request.fxAccountToken
         ? request.fxAccountToken
         : null;
@@ -351,6 +358,7 @@ export class OpenAIPipeline {
         defaultHeaders: {
           ...extraHeaders,
           "service-type": serviceType || "ai",
+          purpose: purpose || "chat",
           "x-engine-id": engineId,
         },
       });
