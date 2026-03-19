@@ -53,57 +53,24 @@
   min-height: 0;
 }
 
-#categories {
-  margin: 0;
-  margin-inline-start: 42px;
-}
-
-#search-container {
-  position: sticky;
-  top: 0;
-  width: 100%;
-  /* Negative margin is used here to hide the borders of setting-controls on scroll */
-  margin-inline-start: -1px;
-  /* z-index = 2 so that the search-tooltips don't appear when the user scrolls
-     up after searching. */
-  z-index: 2;
-  background-color: var(--background-color-canvas);
-  padding-top: 40px;
-  padding-bottom: var(--space-large);
-  padding-inline: var(--focus-outline-offset);
-}
-
-#searchInput {
-  width: 100%;
-}
-
-@media (max-width: 52rem) {
-  #search-container:has(#policies-container-content:not([hidden])) {
-    padding-top: var(--space-small);
-  }
-}
-
 .main-content {
-  contain: inline-size;
-  /* 72px matches moz-page-nav's --page-nav-margin-top, minus the 40px
-     padding-top already set in common-shared.css. */
-  margin-top: 32px;
   padding-top: 0;
-  padding-inline-end: 42px;
-  scroll-padding-top: calc(40px + var(--space-large) + 40px);
+  /* the 32px min-height, plus 20+30px margin below, plus some leeway: */
+  scroll-padding-top: 90px;
+  contain: inline-size;
 }
 
 .pane-container {
   /* A workaround to keep the container always float on the `top: 0` (Bug 1377009) */
   display: block;
-  width: min(100%, 600px);
+  width: min(100%, var(--page-main-content-width));
   min-width: min-content;
-  /* Used to prevent cutting off the borders of the setting-controls */
-  margin-inline-start: 1px;
 }
 
 #mainPrefPane {
   width: 100%;
+  /* at some point we'll end up removing the sticky element using z-index above this that cuts off the top of the focus outline in https://bugzilla.mozilla.org/show_bug.cgi?id=1867385, but we're adding padding intentionally until then */
+  padding: calc(var(--focus-outline-offset) + var(--focus-outline-width)) 0 0;
 }
 
 html|div[data-category],
@@ -251,6 +218,46 @@ setting-group:has(> moz-card).spotlight {
 .subcategory:not([hidden]) ~ .subcategory {
   padding-top: var(--space-xxlarge);
   border-top: 1px solid var(--border-color);
+}
+
+/* Category List */
+
+#categories {
+  overflow: visible;
+  min-height: auto;
+  padding: 1px; /* Adding padding around richlistitem in order to make entire keyboard focusing outline visible */
+}
+
+#category-general > .category-icon {
+  list-style-image: url("chrome://browser/skin/preferences/category-general.svg");
+}
+
+#category-home > .category-icon {
+  list-style-image: url("chrome://browser/skin/home.svg");
+}
+
+#category-search > .category-icon {
+  list-style-image: url("chrome://browser/skin/preferences/category-search.svg");
+}
+
+#category-privacy > .category-icon {
+  list-style-image: url("chrome://browser/skin/preferences/category-privacy-security.svg");
+}
+
+#category-sync > .category-icon {
+  list-style-image: url("chrome://browser/skin/preferences/category-sync.svg");
+}
+
+#category-ai-features > .category-icon {
+  list-style-image: url("chrome://global/skin/icons/highlights.svg");
+}
+
+#category-experimental > .category-icon {
+  list-style-image: url("chrome://global/skin/icons/experiments.svg");
+}
+
+#category-more-from-mozilla > .category-icon {
+  list-style-image: url("chrome://browser/skin/preferences/mozilla-logo.svg");
 }
 
 /* All panes */
@@ -434,7 +441,7 @@ setting-group:has(> moz-card).spotlight {
   margin-inline-end: var(--space-small);
 }
 
-a[is="moz-support-link"]:not([hidden]) {
+a[is="moz-support-link"]:not(.sidebar-footer-link, [hidden]) {
   display: inline-block;
   white-space: initial;
 }
@@ -894,6 +901,25 @@ dialog > .sync-engines-list + hbox {
   fill: var(--color-accent-primary);
 }
 
+.navigation {
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+}
+
+@media (prefers-reduced-motion) {
+  /* Setting border-inline-end on .navigation makes it a focusable element */
+  .navigation::after {
+    content: "";
+    width: 1px;
+    height: 100%;
+    background-color: var(--border-color);
+    top: 0;
+    inset-inline-end: 0;
+    position: absolute;
+  }
+}
+
 .face-sad::before {
   content: "\01F641";
   font-size: 1.3em;
@@ -904,6 +930,21 @@ dialog > .sync-engines-list + hbox {
   content: "\01F600";
   font-size: 1.3em;
   margin-inline-end: 8px;
+}
+
+#policies-container,
+#searchInput {
+  min-height: 32px;
+  margin: 20px 0 30px;
+}
+
+#policies-container {
+  margin-inline-end: var(--space-large);
+  /* Make sure the container is at least the same height as the searchbox.
+     This is needed in addition to the min-height above to make the info icon
+     the same height as the first line in the policies label.
+     Searchbox's height - line-height - border top and bottom */
+  padding-block: max(0px, calc((32px - 1.8em - 2px) / 2));
 }
 
 .info-box-container {
@@ -933,6 +974,22 @@ dialog > .sync-engines-list + hbox {
 
 .info-box-container.smaller-font-size .info-icon {
   margin-top: 0.3em;
+}
+
+.sticky-container {
+  position: sticky;
+  background-color: var(--background-color-canvas);
+  top: 0;
+  z-index: 1;
+  /* The sticky-container should have the capability to cover all spotlight area. */
+  width: calc(100% + 8px);
+  margin-inline: -4px;
+  padding-inline: 4px;
+}
+
+.sticky-inner-container {
+  flex: 1;
+  max-width: var(--page-main-content-width);
 }
 
 #search-tooltip-container {
@@ -1150,18 +1207,7 @@ richlistitem .text-link:hover {
   margin-inline-start: 6px;
 }
 
-/* This is an HTML div (not XUL hbox), so it needs explicit display:flex for
-   horizontal icon+title layout. The :not([hidden]) guard prevents this from
-   overriding the hidden attribute's display:none (inline styles and CSS rules
-   both beat the UA stylesheet's hidden handling for HTML elements). */
-#moreFromMozillaCategory-header:not([hidden]) {
-  display: flex;
-  flex-wrap: wrap;
-}
-
 #moreFromMozillaCategory-header .subtitle {
-  flex-basis: 100%;
-  margin-block-start: var(--space-xsmall);
   margin-block-end: var(--space-xlarge);
 }
 

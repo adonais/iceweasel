@@ -34,8 +34,8 @@ add_task(async function testHiddenWhenLabsDisabled() {
   );
 
   is(
-    doc.getElementById("categories").currentView,
-    "paneGeneral",
+    doc.querySelector(".category[selected]").id,
+    "category-general",
     "When the experimental features section is hidden, navigating to #experimental should redirect to #general"
   );
 

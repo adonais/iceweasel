@@ -57,8 +57,8 @@ export class SettingPane extends MozLitElement {
     if (this.config.visible) {
       let visible = this.config.visible();
       if (!visible && !this.isSubPane) {
-        let categoryButton = document.querySelector(
-          `#categories moz-page-nav-button[view="${this.name}"]`
+        let categoryButton = /** @type {XULElement} */ (
+          document.querySelector(`#categories [value="${this.name}"]`)
         );
         if (categoryButton) {
           categoryButton.remove();
@@ -110,11 +110,12 @@ export class SettingPane extends MozLitElement {
   }
 
   _createCategoryButton() {
-    let categoryButton = document.createElement("moz-page-nav-button");
+    let categoryButton = document.createXULElement("richlistitem");
+    categoryButton.classList.add("category");
     if (this.isSubPane) {
       categoryButton.classList.add("hidden-category");
     }
-    categoryButton.setAttribute("view", this.name);
+    categoryButton.setAttribute("value", this.name);
     document.getElementById("categories").append(categoryButton);
   }
 
