@@ -113,6 +113,7 @@ const char* const sExecutableExts[] = {
   ".scf",         // Windows explorer command
   ".scr",
   ".sct",
+  ".search-ms",  // Windows Saved Search
   ".settingcontent-ms",
   ".shb",
   ".shs",
