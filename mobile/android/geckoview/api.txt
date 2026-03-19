@@ -2337,9 +2337,17 @@ package org.mozilla.geckoview {
     field @NonNull public final String errorType;
   }
 
+  public static class PageExtractionController.PageMetadata {
+    ctor public PageMetadata(@NonNull String[], int, @NonNull String);
+    field @NonNull public final String language;
+    field @NonNull public final String[] structuredDataTypes;
+    field public final int wordCount;
+  }
+
   public static class PageExtractionController.SessionPageExtractor {
     ctor public SessionPageExtractor(GeckoSession);
     method @HandlerThread @NonNull public GeckoResult<String> getPageContent();
+    method @HandlerThread @NonNull public GeckoResult<PageExtractionController.PageMetadata> getPageMetadata();
   }
 
   @UiThread public class PanZoomController {

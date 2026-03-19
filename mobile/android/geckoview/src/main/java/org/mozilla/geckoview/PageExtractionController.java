@@ -5,11 +5,48 @@
 package org.mozilla.geckoview;
 
 import androidx.annotation.NonNull;
+import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 
 /** Manges the page content extraction */
 @ExperimentalGeckoViewApi
 public class PageExtractionController {
+
+  /** Metadata about a page extracted by {@link SessionPageExtractor#getPageMetadata()} */
+  public static class PageMetadata {
+    /** JSON-LD types as defined by Schema.org */
+    @NonNull public final String[] structuredDataTypes;
+
+    /** Word count of all the content on the page */
+    public final int wordCount;
+
+    /** BCP 47 language tag of the page */
+    @NonNull public final String language;
+
+    /**
+     * Construct a new page metadata object.
+     *
+     * @param structuredDataTypes JSON-LD types as defined by Schema.org
+     * @param wordCount word count of all the content on the page
+     * @param language BCP 47 language tag of the page
+     */
+    public PageMetadata(
+        @NonNull final String[] structuredDataTypes,
+        final int wordCount,
+        @NonNull final String language) {
+      this.structuredDataTypes = structuredDataTypes;
+      this.wordCount = wordCount;
+      this.language = language;
+    }
+
+    /* package */ static PageMetadata fromBundle(@NonNull final GeckoBundle bundle) {
+      final String[] structuredDataTypes = bundle.getStringArray("structuredDataTypes");
+      final int wordCount = bundle.getInt("wordCount", -1);
+      final String language = bundle.getString("language");
+
+      return new PageMetadata(structuredDataTypes, wordCount, language);
+    }
+  }
 
   /**
    * Session page extractor coordinates session messaging between the page extractor actor and
@@ -17,11 +54,11 @@ public class PageExtractionController {
    *
    * <p>Performs page extraction actions that are dependent on the page.
    */
-  @ExperimentalGeckoViewApi
   public static class SessionPageExtractor {
 
     // Events dispatched to GeckoViewPageExtractor
     private static final String GET_TEXT_CONTENT_EVENT = "GeckoView:PageExtractor:GetTextContent";
+    private static final String GET_PAGE_METADATA_EVENT = "GeckoView:PageExtractor:GetPageMetadata";
 
     private static final String GET_TEXT_CONTENT_RESULT_KEY = "text";
 
@@ -60,6 +97,32 @@ public class PageExtractionController {
                       new PageExtractionException(PageExtractionException.ERROR_MALFORMED_RESULT));
 
                 return GeckoResult.fromValue(textContent);
+              },
+              exception ->
+                  GeckoResult.fromException(
+                      new PageExtractionException(
+                          PageExtractionException.ERROR_UNKNOWN, exception)));
+    }
+
+    /**
+     * Gets metadata about the current page.
+     *
+     * @return a {@link PageMetadata} for the current page or a {@link PageExtractionException} if
+     *     an error occurs
+     */
+    @HandlerThread
+    public @NonNull GeckoResult<PageMetadata> getPageMetadata() {
+      ThreadUtils.assertOnHandlerThread();
+      return mSession
+          .getEventDispatcher()
+          .queryBundle(GET_PAGE_METADATA_EVENT)
+          .then(
+              result -> {
+                if (result == null)
+                  return GeckoResult.fromException(
+                      new PageExtractionException(PageExtractionException.ERROR_NULL_RESULT));
+
+                return GeckoResult.fromValue(PageMetadata.fromBundle(result));
               },
               exception ->
                   GeckoResult.fromException(

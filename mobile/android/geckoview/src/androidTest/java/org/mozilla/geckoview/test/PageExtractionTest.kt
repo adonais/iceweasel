@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -69,6 +70,24 @@ class PageExtractionTest : BaseSessionTest() {
                  The computed style is respected for extraction.
             """.trimIndent(),
             pageContent,
+        )
+    }
+
+    @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
+    @Test
+    fun returnsPageMetadata() {
+        mainSession.loadTestPath(PAGE_EXTRACTION_HTML_PATH)
+        mainSession.waitForPageStop()
+
+        val metadata = sessionRule.waitForResult(mainSession.sessionPageExtractor.pageMetadata)
+        mainSession.waitForRoundTrip()
+
+        assertNotNull("Expected page metadata result to be non-null", metadata)
+        assertTrue("Expected word count to be greater than 0", metadata.wordCount > 0)
+        assertEquals("Expected language to be 'en'", "en", metadata.language)
+        assertTrue(
+            "Expected structuredDataTypes to contain 'Article'",
+            metadata.structuredDataTypes.contains("Article"),
         )
     }
 }
