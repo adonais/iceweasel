@@ -5254,13 +5254,11 @@ class AboutTranslationsTestUtils {
    * @param {string}  [options.value]
    * @param {boolean} [options.showsPlaceholder]
    * @param {string}  [options.scriptDirection]
+   * @param {string|null} [options.languageTag]
    * @returns {Promise<void>}
    */
-  async assertSourceTextArea({
-    value,
-    showsPlaceholder,
-    scriptDirection,
-  } = {}) {
+  async assertSourceTextArea(options = {}) {
+    const { value, showsPlaceholder, scriptDirection, languageTag } = options;
     // This helps the test visually render at each step without significantly slowing test speed.
     await doubleRaf(document);
 
@@ -5275,15 +5273,21 @@ class AboutTranslationsTestUtils {
             hasPlaceholder: textArea.hasAttribute("placeholder"),
             actualValue: textArea.value,
             actualScriptDirection: textArea.getAttribute("dir"),
+            actualLanguageTag: textArea.getAttribute("lang"),
           };
         },
-        { value, showsPlaceholder, scriptDirection }
+        { value, showsPlaceholder, scriptDirection, languageTag }
       );
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
 
-    const { hasPlaceholder, actualValue, actualScriptDirection } = pageResult;
+    const {
+      hasPlaceholder,
+      actualValue,
+      actualScriptDirection,
+      actualLanguageTag,
+    } = pageResult;
 
     if (showsPlaceholder !== undefined) {
       if (showsPlaceholder) {
@@ -5313,6 +5317,14 @@ class AboutTranslationsTestUtils {
         `Expected source textarea "dir" attribute to be "${scriptDirection}", but got "${actualScriptDirection}".`
       );
     }
+
+    if (languageTag !== undefined) {
+      is(
+        actualLanguageTag,
+        languageTag,
+        `Expected source textarea "lang" attribute to be "${languageTag}", but got "${actualLanguageTag}".`
+      );
+    }
   }
 
   /**
@@ -5322,13 +5334,11 @@ class AboutTranslationsTestUtils {
    * @param {string}  [options.value]
    * @param {boolean} [options.showsPlaceholder]
    * @param {string}  [options.scriptDirection]
+   * @param {string|null} [options.languageTag]
    * @returns {Promise<void>}
    */
-  async assertTargetTextArea({
-    value,
-    showsPlaceholder,
-    scriptDirection,
-  } = {}) {
+  async assertTargetTextArea(options = {}) {
+    const { value, showsPlaceholder, scriptDirection, languageTag } = options;
     // This helps the test visually render at each step without significantly slowing test speed.
     await doubleRaf(document);
 
@@ -5343,15 +5353,21 @@ class AboutTranslationsTestUtils {
             hasPlaceholder: textArea.hasAttribute("placeholder"),
             actualValue: textArea.value,
             actualScriptDirection: textArea.getAttribute("dir"),
+            actualLanguageTag: textArea.getAttribute("lang"),
           };
         },
-        { value, showsPlaceholder, scriptDirection }
+        { value, showsPlaceholder, scriptDirection, languageTag }
       );
     } catch (error) {
       AboutTranslationsTestUtils.#reportTestFailure(error);
     }
 
-    const { hasPlaceholder, actualValue, actualScriptDirection } = pageResult;
+    const {
+      hasPlaceholder,
+      actualValue,
+      actualScriptDirection,
+      actualLanguageTag,
+    } = pageResult;
 
     if (showsPlaceholder !== undefined) {
       if (showsPlaceholder) {
@@ -5379,6 +5395,14 @@ class AboutTranslationsTestUtils {
         actualScriptDirection,
         scriptDirection,
         `Expected target textarea "dir" attribute to be "${scriptDirection}", but got "${actualScriptDirection}".`
+      );
+    }
+
+    if (languageTag !== undefined) {
+      is(
+        actualLanguageTag,
+        languageTag,
+        `Expected target textarea "lang" attribute to be "${languageTag}", but got "${actualLanguageTag}".`
       );
     }
   }

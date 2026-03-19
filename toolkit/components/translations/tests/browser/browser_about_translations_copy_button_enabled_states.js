@@ -191,6 +191,7 @@ add_task(async function test_copy_button_disables_when_translation_cleared() {
   );
 
   await aboutTranslationsTestUtils.assertTargetTextArea({
+    languageTag: null,
     showsPlaceholder: true,
   });
   await aboutTranslationsTestUtils.assertCopyButton({ enabled: false });

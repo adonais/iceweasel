@@ -1981,10 +1981,9 @@ class AboutTranslations {
 
     this.#setTargetText(this.#translatingPlaceholderText);
     this.#disableSwapLanguagesButton();
-    this.#updateTextAreaScriptDirection(
-      targetSectionTextArea,
-      AT_getAppLocaleAsBCP47()
-    );
+    this.#updateTextAreaAttributes(targetSectionTextArea, {
+      languageTag: AT_getAppLocaleAsBCP47(),
+    });
 
     dispatchTestEvent("AboutTranslationsTest:ShowTranslatingPlaceholder");
   }
@@ -2099,54 +2098,67 @@ class AboutTranslations {
   }
 
   /**
-   * Sets a textarea's `dir` attribute based on a language tag.
+   * Updates a textarea's `dir` and `lang` attributes according to the provided language tag.
+   *
+   * The `dir` attribute is always derived and set from the provided language tag,
+   * however there are cases in which we may want to remove the `lang` attribute
+   * from the textarea, rather than populate it with the tag's value.
    *
    * @param {HTMLTextAreaElement} textArea
-   * @param {string} languageTag
+   * @param {object} config
+   * @param {string} config.languageTag
+   * @param {boolean} [config.removeLangAttribute=false]
    */
-  #updateTextAreaScriptDirection(textArea, languageTag) {
+  #updateTextAreaAttributes(
+    textArea,
+    { languageTag, removeLangAttribute = false }
+  ) {
     textArea.setAttribute("dir", AT_getScriptDirection(languageTag));
+
+    if (removeLangAttribute) {
+      textArea.removeAttribute("lang");
+    } else {
+      textArea.setAttribute("lang", languageTag);
+    }
   }
 
   /**
-   * Sets the text direction ("dir" attribute) of the source text area
-   * based on its content and the currently selected source language.
+   * Sets the source text area's `dir` and `lang` attributes based on its
+   * content and the currently selected source language.
    */
   #updateSourceScriptDirection() {
     const selectedSourceLanguage = this.#getSelectedSourceLanguageTag();
     const { sourceSectionTextArea } = this.elements;
 
     if (selectedSourceLanguage && sourceSectionTextArea.value) {
-      this.#updateTextAreaScriptDirection(
-        sourceSectionTextArea,
-        selectedSourceLanguage
-      );
+      this.#updateTextAreaAttributes(sourceSectionTextArea, {
+        languageTag: selectedSourceLanguage,
+      });
     } else {
-      this.#updateTextAreaScriptDirection(
-        sourceSectionTextArea,
-        AT_getAppLocaleAsBCP47()
-      );
+      this.#updateTextAreaAttributes(sourceSectionTextArea, {
+        languageTag: AT_getAppLocaleAsBCP47(),
+        removeLangAttribute: true,
+      });
     }
   }
 
   /**
-   * Sets the text direction ("dir" attribute) of the target text area
-   * based on its content and the currently selected target language.
+   * Sets the target text area's `dir` and `lang` attributes based on its
+   * content and the currently selected target language.
    */
   #updateTargetScriptDirection() {
     const selectedTargetLanguage = this.#getSelectedTargetLanguageTag();
     const { targetSectionTextArea } = this.elements;
 
     if (selectedTargetLanguage && targetSectionTextArea.value) {
-      this.#updateTextAreaScriptDirection(
-        targetSectionTextArea,
-        selectedTargetLanguage
-      );
+      this.#updateTextAreaAttributes(targetSectionTextArea, {
+        languageTag: selectedTargetLanguage,
+      });
     } else {
-      this.#updateTextAreaScriptDirection(
-        targetSectionTextArea,
-        AT_getAppLocaleAsBCP47()
-      );
+      this.#updateTextAreaAttributes(targetSectionTextArea, {
+        languageTag: AT_getAppLocaleAsBCP47(),
+        removeLangAttribute: true,
+      });
     }
   }
 

@@ -282,10 +282,12 @@ add_task(async function test_about_translations_resize_by_input() {
   }
 
   await aboutTranslationsTestUtils.assertSourceTextArea({
+    languageTag: null,
     showsPlaceholder: true,
   });
 
   await aboutTranslationsTestUtils.assertTargetTextArea({
+    languageTag: null,
     showsPlaceholder: true,
   });
 

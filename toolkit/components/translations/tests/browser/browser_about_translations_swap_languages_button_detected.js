@@ -87,6 +87,7 @@ add_task(
       enabled: false,
     });
     await aboutTranslationsTestUtils.assertTargetTextArea({
+      languageTag: null,
       showsPlaceholder: true,
     });
 

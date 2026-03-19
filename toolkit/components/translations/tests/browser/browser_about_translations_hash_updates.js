@@ -23,9 +23,11 @@ add_task(async function test_about_translations_url_hash_change_updates_ui() {
     sourceText: "",
   });
   await aboutTranslationsTestUtils.assertSourceTextArea({
+    languageTag: null,
     showsPlaceholder: true,
   });
   await aboutTranslationsTestUtils.assertTargetTextArea({
+    languageTag: null,
     showsPlaceholder: true,
   });
   await aboutTranslationsTestUtils.assertEvents(
@@ -175,9 +177,11 @@ add_task(async function test_about_translations_url_empty_hash_resets_ui() {
     sourceText: "",
   });
   await aboutTranslationsTestUtils.assertSourceTextArea({
+    languageTag: null,
     showsPlaceholder: true,
   });
   await aboutTranslationsTestUtils.assertTargetTextArea({
+    languageTag: null,
     showsPlaceholder: true,
   });
 
@@ -274,9 +278,11 @@ add_task(
       sourceText: "",
     });
     await aboutTranslationsTestUtils.assertSourceTextArea({
+      languageTag: null,
       showsPlaceholder: true,
     });
     await aboutTranslationsTestUtils.assertTargetTextArea({
+      languageTag: null,
       showsPlaceholder: true,
     });
 

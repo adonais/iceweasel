@@ -34,6 +34,14 @@ add_task(
     await aboutTranslationsTestUtils.assertSourceClearButton({
       visible: true,
     });
+    await aboutTranslationsTestUtils.assertSourceTextArea({
+      languageTag: "en",
+      value: "Hello world",
+    });
+    await aboutTranslationsTestUtils.assertTargetTextArea({
+      languageTag: "fr",
+      value: "HELLO WORLD [en to fr]",
+    });
 
     await aboutTranslationsTestUtils.assertEvents(
       {
@@ -58,9 +66,11 @@ add_task(
     );
 
     await aboutTranslationsTestUtils.assertSourceTextArea({
+      languageTag: null,
       showsPlaceholder: true,
     });
     await aboutTranslationsTestUtils.assertTargetTextArea({
+      languageTag: null,
       showsPlaceholder: true,
     });
     await aboutTranslationsTestUtils.assertCopyButton({ enabled: false });
@@ -102,6 +112,15 @@ add_task(
       }
     );
 
+    await aboutTranslationsTestUtils.assertSourceTextArea({
+      languageTag: "en",
+      value: "Clearing in progress",
+    });
+    await aboutTranslationsTestUtils.assertTargetTextArea({
+      languageTag: Services.locale.appLocaleAsBCP47,
+      value: "Translating…",
+    });
+
     await aboutTranslationsTestUtils.assertEvents(
       {
         expected: [
@@ -125,9 +144,11 @@ add_task(
     );
 
     await aboutTranslationsTestUtils.assertSourceTextArea({
+      languageTag: null,
       showsPlaceholder: true,
     });
     await aboutTranslationsTestUtils.assertTargetTextArea({
+      languageTag: null,
       showsPlaceholder: true,
     });
     await aboutTranslationsTestUtils.assertSourceClearButton({

@@ -195,6 +195,7 @@ add_task(async function test_about_translations_url_src_param_updates() {
     expectedLength: initialHistoryLength,
   });
   await aboutTranslationsTestUtils.assertTargetTextArea({
+    languageTag: null,
     showsPlaceholder: true,
   });
 
@@ -225,9 +226,11 @@ add_task(async function test_about_translations_url_src_param_updates() {
     expectedLength: initialHistoryLength,
   });
   await aboutTranslationsTestUtils.assertTargetTextArea({
+    languageTag: null,
     showsPlaceholder: true,
   });
   await aboutTranslationsTestUtils.assertSourceTextArea({
+    languageTag: null,
     showsPlaceholder: true,
   });
 

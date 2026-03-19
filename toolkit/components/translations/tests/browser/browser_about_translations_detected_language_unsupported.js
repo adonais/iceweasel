@@ -62,6 +62,10 @@ add_task(
     await aboutTranslationsTestUtils.assertSourceLanguageSelector({
       detectedLanguage,
     });
+    await aboutTranslationsTestUtils.assertSourceTextArea({
+      languageTag: detectedLanguage,
+      value: SPANISH_TEXT,
+    });
     await aboutTranslationsTestUtils.assertSourceClearButton({
       visible: true,
     });
@@ -91,9 +95,11 @@ add_task(
       visible: false,
     });
     await aboutTranslationsTestUtils.assertSourceTextArea({
+      languageTag: null,
       showsPlaceholder: true,
     });
     await aboutTranslationsTestUtils.assertTargetTextArea({
+      languageTag: null,
       showsPlaceholder: true,
     });
 
@@ -145,6 +151,10 @@ add_task(
       targetTextAreaVisible: true,
       learnMoreSupportPage: "website-translation",
     });
+    await aboutTranslationsTestUtils.assertSourceTextArea({
+      languageTag: detectedLanguage,
+      value: SPANISH_TEXT,
+    });
 
     await aboutTranslationsTestUtils.assertEvents(
       {
@@ -170,9 +180,11 @@ add_task(
       visible: false,
     });
     await aboutTranslationsTestUtils.assertSourceTextArea({
+      languageTag: null,
       showsPlaceholder: true,
     });
     await aboutTranslationsTestUtils.assertTargetTextArea({
+      languageTag: null,
       showsPlaceholder: true,
     });
 
@@ -223,6 +235,10 @@ add_task(
       sourceTextAreaVisible: true,
       targetTextAreaVisible: true,
       learnMoreSupportPage: "website-translation",
+    });
+    await aboutTranslationsTestUtils.assertSourceTextArea({
+      languageTag: detectedLanguage,
+      value: SPANISH_TEXT,
     });
 
     await aboutTranslationsTestUtils.setTargetLanguageSelectorValue("en");
@@ -302,6 +318,7 @@ add_task(
       detectedLanguage,
     });
     await aboutTranslationsTestUtils.assertTargetTextArea({
+      languageTag: null,
       showsPlaceholder: true,
     });
 
