@@ -194,19 +194,6 @@ export class NetErrorCard extends MozLitElement {
       );
     }
 
-    // nssFailure2 are TLS errors which are tracked by load_abouttlserror
-    if (!gIsCertError && gErrorCode !== "nssFailure2" && !isCaptive()) {
-      let neterrorInfo = Object.assign({}, this.errorInfo);
-      if (!neterrorInfo.errorCodeString) {
-        neterrorInfo.errorCodeString = gErrorCode;
-      }
-      recordSecurityUITelemetry(
-        "securityUiNeterror",
-        "loadAboutneterror",
-        neterrorInfo
-      );
-    }
-
     // Check if the connection is being man-in-the-middled. When the parent
     // detects an intercepted connection, the page may be reloaded with a new
     // error code (MOZILLA_PKIX_ERROR_MITM_DETECTED).

@@ -457,19 +457,6 @@ function initPage() {
 
   document.body.classList.add("neterror");
 
-  // nssFailure2 are TLS errors which are tracked by load_abouttlserror
-  if (gErrorCode !== "nssFailure2" && !isCaptive()) {
-    let netErrorInfo = document.getNetErrorInfo();
-    if (!netErrorInfo.errorCodeString) {
-      netErrorInfo.errorCodeString = gErrorCode;
-    }
-    void recordSecurityUITelemetry(
-      "securityUiNeterror",
-      "loadAboutneterror",
-      netErrorInfo
-    );
-  }
-
   const tryAgain = document.getElementById("netErrorButtonContainer");
   tryAgain.hidden = false;
   const learnMoreLink = document.getElementById("learnMoreLink");

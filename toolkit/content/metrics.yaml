@@ -387,36 +387,6 @@ security.ui.tlserror:
         type: quantity
     telemetry_mirror: SecurityUiTlserror_Load_Abouttlserror
 
-security.ui.neterror:
-  load_aboutneterror:
-    type: event
-    description: >
-      The about:neterror page is loaded with a network error (not a
-      certificate error, TLS error, or DoH warning). The error code is
-      recorded in the value extra key.
-    bugs:
-      - https://bugzil.la/2022590
-    data_reviews:
-      - https://bugzil.la/2022590
-    notification_emails:
-      - jaws@mozilla.com
-      - seceng-telemetry@mozilla.com
-    expires: never
-    extra_keys:
-      value:
-        description: >
-          The error code string (e.g. dnsNotFound, connectionFailure,
-          netTimeout). Truncated to 40 characters.
-        type: string
-      is_frame:
-        description: >
-          If the error page is loaded in an iframe.
-        type: boolean
-      channel_status:
-        description: >
-          The status of the failed channel, as an nsresult.
-        type: quantity
-
 findbar:
   shown:
     type: counter
