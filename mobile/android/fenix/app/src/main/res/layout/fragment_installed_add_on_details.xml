@@ -101,7 +101,7 @@
                 android:text="@string/mozac_feature_addons_permissions"
                 android:textColor="?attr/textPrimary"
                 android:textSize="16sp"
-                app:drawableStartCompat="@drawable/ic_permission" />
+                app:drawableStartCompat="@drawable/mozac_ic_permissions_24" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/remove_add_on"
