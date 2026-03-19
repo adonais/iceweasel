@@ -35,6 +35,10 @@ add_task(async function () {
   // note that the worker from WORKER2_URL will appear second in the list with
   // the "installed" state
   info("Check the workers data for this registration");
+  await waitFor(
+    () => registrationContainer.querySelectorAll(".js-sw-worker").length === 2,
+    "Wait until both workers are listed for the registration."
+  );
   const workers = registrationContainer.querySelectorAll(".js-sw-worker");
   is(workers.length, 2, "Registration has two workers");
   // check url for worker from WORKER1_URL
