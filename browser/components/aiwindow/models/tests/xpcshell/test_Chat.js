@@ -823,3 +823,159 @@ add_task(
     }
   }
 );
+
+add_task(
+  async function test_Chat_fetchWithHistory_get_user_memories_called_when_memories_enabled() {
+    const sb = sinon.createSandbox();
+    try {
+      let callCount = 0;
+      const fakeEngine = {
+        runWithGenerator(_options) {
+          callCount++;
+          async function* gen() {
+            if (callCount === 1) {
+              yield {
+                toolCalls: [
+                  {
+                    id: "call_get_user_memories_001",
+                    function: {
+                      name: "get_user_memories",
+                      arguments: JSON.stringify({}),
+                    },
+                  },
+                ],
+              };
+            } else {
+              yield { text: "Final answer." };
+            }
+          }
+          return gen();
+        },
+        getConfig() {
+          return {};
+        },
+      };
+
+      const getUserMemoriesStub = sb
+        .stub(Chat.toolMap, "get_user_memories")
+        .resolves("list of memories");
+      sb.stub(openAIEngine, "build").resolves(fakeEngine);
+      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+
+      const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+
+      const conversation = new ChatConversation({
+        title: "memories are enabled",
+        description: "desc",
+        pageUrl: new URL("https://www.firefox.com"),
+        pageMeta: {},
+      });
+      conversation.addUserMessage(
+        "What memories have you saved about me?",
+        "https://www.firefox.com",
+        { memoriesEnabled: true }
+      );
+      conversation.addAssistantMessage("text", "");
+
+      await Chat.fetchWithHistory(conversation, engineInstance);
+
+      Assert.ok(
+        getUserMemoriesStub.calledOnce,
+        "get_user_memories should be called exactly once"
+      );
+
+      // Verify tool response is in the conversation
+      const toolMessages = conversation.messages.filter(
+        msg => msg.role === MESSAGE_ROLE.TOOL
+      );
+      const getUserMemoriesErrorMsg = toolMessages.find(msg =>
+        String(msg.content?.body).includes("list of memories")
+      );
+      Assert.ok(
+        getUserMemoriesErrorMsg,
+        "get_user_memories should return the correct string when memories are enabled"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(
+  async function test_Chat_fetchWithHistory_get_user_memories_returns_error_when_memories_disabled() {
+    const sb = sinon.createSandbox();
+    try {
+      let callCount = 0;
+      const fakeEngine = {
+        runWithGenerator(_options) {
+          callCount++;
+          async function* gen() {
+            if (callCount === 1) {
+              yield {
+                toolCalls: [
+                  {
+                    id: "call_get_user_memories_001",
+                    function: {
+                      name: "get_user_memories",
+                      arguments: JSON.stringify({}),
+                    },
+                  },
+                ],
+              };
+            } else {
+              yield { text: "Final answer." };
+            }
+          }
+          return gen();
+        },
+        getConfig() {
+          return {};
+        },
+      };
+
+      const getUserMemoriesStub = sb
+        .stub(Chat.toolMap, "get_user_memories")
+        .resolves("list of memories");
+      sb.stub(openAIEngine, "build").resolves(fakeEngine);
+      sb.stub(openAIEngine, "getFxAccountToken").resolves("mock_token");
+
+      const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+
+      const conversation = new ChatConversation({
+        title: "memories are enabled",
+        description: "desc",
+        pageUrl: new URL("https://www.firefox.com"),
+        pageMeta: {},
+      });
+      conversation.addUserMessage(
+        "What memories have you saved about me?",
+        "https://www.firefox.com",
+        { memoriesEnabled: false }
+      );
+      conversation.addAssistantMessage("text", "");
+
+      await Chat.fetchWithHistory(conversation, engineInstance);
+
+      Assert.ok(
+        !getUserMemoriesStub.calledOnce,
+        "get_user_memories should not be called when memories are disabled"
+      );
+
+      // Verify tool response is in conversation with correct text
+      const toolMessages = conversation.messages.filter(
+        msg => msg.role === MESSAGE_ROLE.TOOL
+      );
+      const getUserMemoriesErrorMsg = toolMessages.find(msg =>
+        String(msg.content?.body).includes(
+          "ERROR: get_user_memories tool call error:"
+        )
+      );
+      Assert.ok(
+        getUserMemoriesErrorMsg,
+        "get_user_memories error should be raised when memories are disabled"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
