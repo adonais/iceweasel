@@ -3371,19 +3371,6 @@ dependencies = [
 
 [[package]]
 name = "ron"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db09040cc89e461f1a265139777a2bde7f8d8c67c4936f700c63ce3e2904d468"
-dependencies = [
- "base64",
- "bitflags 2.10.0",
- "serde",
- "serde_derive",
- "unicode-ident",
-]
-
-[[package]]
-name = "ron"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd490c5b18261893f14449cbd28cb9c0b637aebf161cd77900bfdedaff21ec32"
@@ -4509,7 +4496,7 @@ dependencies = [
  "peek-poke",
  "plane-split",
  "rayon",
- "ron 0.12.0",
+ "ron",
  "rustc-hash 2.1.1",
  "serde",
  "serde_json",
@@ -5279,7 +5266,7 @@ dependencies = [
  "png 0.16.8",
  "repl-ng",
  "reqwest",
- "ron 0.11.0",
+ "ron",
  "serde",
  "serde_json",
  "strprox",
