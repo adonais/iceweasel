@@ -460,23 +460,17 @@
 
         if (shouldTranslate) {
           let translationPromises = [];
-          let translationDuration = parseInt(
-            window
-              .getComputedStyle(movingTabs[0])
-              .getPropertyValue("--tab-dragover-transform-duration")
-              .trim()
-          );
-          // Make the timeoutPromise a little bit longer than the translationPromise
-          let timeoutPromise = new Promise(r =>
-            setTimeout(r, translationDuration + 50)
-          );
           for (let item of movingTabs) {
             item = elementToMove(item);
             let translationPromise = new Promise(resolve => {
               item.toggleAttribute("tabdrop-samewindow", true);
               item.style.transform = `translate(${newTranslateX}px, ${newTranslateY}px)`;
-              if (gReduceMotion) {
+              let postTransitionCleanup = () => {
+                item.removeAttribute("tabdrop-samewindow");
                 resolve();
+              };
+              if (gReduceMotion) {
+                postTransitionCleanup();
               } else {
                 let onTransitionEnd = transitionendEvent => {
                   if (
@@ -487,16 +481,12 @@
                   }
                   item.removeEventListener("transitionend", onTransitionEnd);
 
-                  resolve();
+                  postTransitionCleanup();
                 };
                 item.addEventListener("transitionend", onTransitionEnd);
               }
             });
-            let promiseRace = Promise.race([
-              translationPromise,
-              timeoutPromise,
-            ]).then(() => item.removeAttribute("tabdrop-samewindow"));
-            translationPromises.push(promiseRace);
+            translationPromises.push(translationPromise);
           }
           Promise.all(translationPromises).then(() => {
             this.finishAnimateTabMove();
@@ -686,10 +676,6 @@
       if (draggedTab) {
         delete draggedTab._dragData;
       }
-
-      // In case finishAnimateTabMove is not called above, this is a
-      // fallback, particularly to remove the movingtab attribute.
-      this.finishAnimateTabMove();
     }
 
     handle_dragend(event) {
