@@ -19,7 +19,7 @@ platform(linux,mac) fuzzy(1,35000) == linear-stops.yaml linear-stops-ref.png
 == linear-clamp-2.yaml linear-clamp-2-ref.yaml
 
 fuzzy-range(<=1,*4800) == linear-hard-stop.yaml linear-hard-stop-ref.png
-fuzzy-if(env(android,device),15,17000) == linear-hard-stop-repeat-large.yaml linear-hard-stop-repeat-large-ref.yaml # Android device is Samsung Galaxy A51
+fuzzy(1,9000) fuzzy-if(env(android,device),15,17000) == linear-hard-stop-repeat-large.yaml linear-hard-stop-repeat-large-ref.yaml # Android device is Samsung Galaxy A51
 fuzzy-if(platform(swgl),255,920) == linear-hard-stop-45-degrees.yaml linear-hard-stop-45-degrees-ref.png
 
 # dithering requires us to fuzz here

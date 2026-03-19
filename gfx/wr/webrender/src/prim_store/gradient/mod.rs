@@ -11,8 +11,6 @@ mod linear;
 mod radial;
 mod conic;
 
-pub use linear::MAX_CACHED_SIZE as LINEAR_MAX_CACHED_SIZE;
-
 pub use linear::*;
 pub use radial::*;
 pub use conic::*;
