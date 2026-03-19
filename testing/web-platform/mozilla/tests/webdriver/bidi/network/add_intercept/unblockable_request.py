@@ -1,5 +1,4 @@
 import pytest
-from tests.bidi import wait_for_bidi_events
 from tests.bidi.network import (
     BEFORE_REQUEST_SENT_EVENT,
     IMAGE_RESPONSE_BODY,
@@ -77,13 +76,13 @@ async def test_data_uri(
 
 async def test_cached_resources(
     bidi_session,
-    configuration,
     add_intercept,
     top_context,
     url,
     inline,
     setup_network_test,
     wait_for_event,
+    wait_for_bidi_events,
     wait_for_future_safe,
     fetch,
 ):
@@ -112,8 +111,6 @@ async def test_cached_resources(
 
     # Expect two events, one for the document, one for the stylesheet.
     await wait_for_bidi_events(
-        bidi_session,
-        configuration,
         network_events[RESPONSE_COMPLETED_EVENT],
         3,
         timeout=2,
@@ -136,8 +133,6 @@ async def test_cached_resources(
 
     # Expect two events after reload, for the document and the stylesheet.
     await wait_for_bidi_events(
-        bidi_session,
-        configuration,
         network_events[RESPONSE_COMPLETED_EVENT],
         6,
         timeout=2,

@@ -1,5 +1,4 @@
 import pytest
-from tests.bidi import wait_for_bidi_events
 from tests.bidi.network import (
     RESPONSE_COMPLETED_EVENT,
     STYLESHEET_RED_COLOR,
@@ -17,8 +16,8 @@ pytestmark = pytest.mark.asyncio
 )
 async def test_cached_stylesheet(
     bidi_session,
-    configuration,
     url,
+    wait_for_bidi_events,
     inline,
     setup_network_test,
     top_context,
@@ -48,8 +47,6 @@ async def test_cached_stylesheet(
 
     # Expect two events, one for the document, one for the stylesheet.
     await wait_for_bidi_events(
-        bidi_session,
-        configuration,
         events,
         2,
         timeout=2,
@@ -66,8 +63,6 @@ async def test_cached_stylesheet(
 
     # Expect two events after reload, for the document and the stylesheet.
     await wait_for_bidi_events(
-        bidi_session,
-        configuration,
         events,
         4,
         timeout=2,
