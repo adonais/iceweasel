@@ -66,7 +66,7 @@ impl NormalBorderData {
         frame_state: &mut FrameBuildingState,
     ) {
         let mut writer = frame_state.frame_gpu_data.f32.write_blocks(3 + self.brush_segments.len() * VECS_PER_SEGMENT);
-        self.write_prim_gpu_blocks(&mut writer, common.prim_rect.size());
+        self.write_prim_gpu_blocks(&mut writer, common.prim_size);
         self.write_segment_gpu_blocks(&mut writer);
         common.gpu_buffer_address = writer.finish();
         common.opacity = PrimitiveOpacity::translucent();
@@ -113,7 +113,7 @@ impl From<NormalBorderKey> for NormalBorderTemplate {
         let mut border_segments = Vec::new();
 
         create_border_segments(
-            common.prim_rect.size(),
+            common.prim_size,
             &border,
             &widths,
             &mut border_segments,
@@ -236,7 +236,7 @@ impl ImageBorderData {
         frame_state: &mut FrameBuildingState,
     ) {
         let mut writer = frame_state.frame_gpu_data.f32.write_blocks(3 + self.brush_segments.len() * VECS_PER_SEGMENT);
-        self.write_prim_gpu_blocks(&mut writer, &common.prim_rect.size());
+        self.write_prim_gpu_blocks(&mut writer, &common.prim_size);
         self.write_segment_gpu_blocks(&mut writer);
         common.gpu_buffer_address = writer.finish();
 
@@ -298,7 +298,7 @@ impl From<ImageBorderKey> for ImageBorderTemplate {
     fn from(key: ImageBorderKey) -> Self {
         let common = PrimTemplateCommonData::with_key_common(key.common);
 
-        let brush_segments = key.kind.nine_patch.create_brush_segments(common.prim_rect.size());
+        let brush_segments = key.kind.nine_patch.create_brush_segments(common.prim_size);
         ImageBorderTemplate {
             common,
             kind: ImageBorderData {
@@ -360,9 +360,9 @@ fn test_struct_sizes() {
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<NormalBorderPrim>(), 84, "NormalBorderPrim size changed");
-    assert_eq!(mem::size_of::<NormalBorderTemplate>(), 216, "NormalBorderTemplate size changed");
-    assert_eq!(mem::size_of::<NormalBorderKey>(), 104, "NormalBorderKey size changed");
+    assert_eq!(mem::size_of::<NormalBorderTemplate>(), 208, "NormalBorderTemplate size changed");
+    assert_eq!(mem::size_of::<NormalBorderKey>(), 96, "NormalBorderKey size changed");
     assert_eq!(mem::size_of::<ImageBorder>(), 68, "ImageBorder size changed");
-    assert_eq!(mem::size_of::<ImageBorderTemplate>(), 104, "ImageBorderTemplate size changed");
-    assert_eq!(mem::size_of::<ImageBorderKey>(), 88, "ImageBorderKey size changed");
+    assert_eq!(mem::size_of::<ImageBorderTemplate>(), 96, "ImageBorderTemplate size changed");
+    assert_eq!(mem::size_of::<ImageBorderKey>(), 80, "ImageBorderKey size changed");
 }
