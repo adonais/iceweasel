@@ -6,7 +6,6 @@ loader: taskgraph.loader.transform:loader
 
 transforms:
     - taskgraph.transforms.from_deps
-    - gecko_taskgraph.transforms.release:run_on_releases
     - gecko_taskgraph.transforms.beetmover_apt
     - gecko_taskgraph.transforms.task
 
@@ -26,8 +25,3 @@ tasks:
     beetmover-apt:
         from-deps:
             group-by: single-with-filters
-        run-on-releases:
-            - nightly
-            - beta
-            - release
-            - esr140
