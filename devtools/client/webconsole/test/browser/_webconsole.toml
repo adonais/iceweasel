@@ -452,6 +452,10 @@ skip-if = [
 ["browser_webconsole_filter_scroll.js"]
 
 ["browser_webconsole_filters.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 2021481
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 2021481
+]
 
 ["browser_webconsole_filters_persist.js"]
 
