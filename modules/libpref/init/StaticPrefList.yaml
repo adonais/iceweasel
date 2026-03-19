@@ -9568,7 +9568,7 @@
 # Support for the Wide Arithmetic proposal (i64.add/sub128, i64.mul_wide_s/u)
 - name: javascript.options.wasm_wide_arithmetic
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
   set_spidermonkey_pref: always
 
