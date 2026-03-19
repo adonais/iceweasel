@@ -83,33 +83,38 @@ add_task(async function test_chat_streams_end_to_end() {
 });
 
 add_task(async function test_chat_tool_call_get_open_tabs() {
-  const win = await BrowserTestUtils.openNewBrowserWindow({ aiWindow: true });
-  await BrowserTestUtils.waitForMutationCondition(
-    win.document.documentElement,
-    { attributes: true },
-    () => win.document.documentElement.hasAttribute("ai-window")
+  const { AIWindow } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs"
   );
 
-  const initialTab = win.gBrowser.selectedTab;
-  const tab1 = await BrowserTestUtils.openNewForegroundTab(
-    win.gBrowser,
-    "https://example.com/one",
-    true
-  );
-  const tab2 = await BrowserTestUtils.openNewForegroundTab(
-    win.gBrowser,
-    "https://example.com/two",
-    true
-  );
-  BrowserTestUtils.removeTab(initialTab);
+  // Stubbing the isAIWindowActive check to allow tool calls to work in the test environment
+  // Using a real AIWindow interferes with the openAIEngine
+  // The stub will make the code think the current window is the active AIWindow which allows get_open_tabs to work
+  const isAIWindowActiveStub = sinon
+    .stub(AIWindow, "isAIWindowActive")
+    .callsFake(win => win === window);
 
+  let tab1, tab2;
   try {
+    tab1 = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "https://example.com/one",
+      true
+    );
+    tab2 = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "https://example.com/two",
+      true
+    );
+
     await withServer(
       {
         toolCall: { name: "get_open_tabs", args: "{}" },
         followupChunks: ["Here are your tabs."],
       },
       async () => {
+        const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+
         const conversation = new ChatConversation({
           title: "chat title",
           description: "chat desc",
@@ -118,8 +123,6 @@ add_task(async function test_chat_tool_call_get_open_tabs() {
         });
         conversation.addUserMessage("List tabs", "https://example.com", 0);
         conversation.addAssistantMessage("text", "");
-
-        const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
 
         await Chat.fetchWithHistory(conversation, engineInstance);
 
@@ -146,9 +149,9 @@ add_task(async function test_chat_tool_call_get_open_tabs() {
       }
     );
   } finally {
+    isAIWindowActiveStub.restore();
     BrowserTestUtils.removeTab(tab1);
     BrowserTestUtils.removeTab(tab2);
-    await BrowserTestUtils.closeWindow(win);
   }
 });
 
