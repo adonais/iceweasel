@@ -23,7 +23,7 @@
         android:key="@string/pref_key_sync_debug_quit"
         android:title="@string/preferences_sync_debug_quit_button_title"
         android:summary="@string/preferences_sync_debug_quit_button_summary"
-        android:icon="@drawable/ic_close"
+        android:icon="@drawable/mozac_ic_cross_24"
         app:isPreferenceVisible="false" />
     <CheckBoxPreference
         android:defaultValue="false"
