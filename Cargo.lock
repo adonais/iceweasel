@@ -3963,9 +3963,9 @@ checksum = "09edd9e8b54e49e587e4f6295a7d29c3ea94d469cb40ab8ca70b288248a81db2"
 
 [[package]]
 name = "libc"
-version = "0.2.176"
+version = "0.2.183"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58f929b4d672ea937a23a1ab494143d968337a5f47e56d0815df1e0890ddf174"
+checksum = "b5b646652bf6661599e1da8901b3b9522896f01e736bad5f723fe7a3a27f899d"
 
 [[package]]
 name = "libcrux-hacl-rs"
@@ -4505,11 +4505,9 @@ dependencies = [
 
 [[package]]
 name = "mio"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4569e456d394deccd22ce1c1913e6ea0e54519f577285001215d33557431afe4"
+version = "1.1.1"
+source = "git+https://github.com/kinetiknz/mio?rev=5e8b202db39facecc343170f50a07916640a607c#5e8b202db39facecc343170f50a07916640a607c"
 dependencies = [
- "hermit-abi",
  "libc",
  "log",
  "wasi 0.11.999",

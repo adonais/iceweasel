@@ -147,6 +147,10 @@ audit-as-crates-io = true
 audit-as-crates-io = true
 notes = "This is a pinned version of the upstream code, presumably to get a fix that hadn't been released yet. We should consider switching to the latest official release."
 
+[policy."mio:1.1.1@git:5e8b202db39facecc343170f50a07916640a607c"]
+audit-as-crates-io = false
+notes = "Fork of mio 1.1.1 with windows-sys downgraded to 0.52."
+
 [policy.mls-rs]
 audit-as-crates-io = true
 notes = "This is a pinned version of the upstream code, pending update of the crate."
@@ -602,10 +606,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.minimal-lexical]]
 version = "0.2.1"
-criteria = "safe-to-deploy"
-
-[[exemptions.mio]]
-version = "0.8.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.murmurhash3]]

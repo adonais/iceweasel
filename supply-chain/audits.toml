@@ -8209,7 +8209,7 @@ end = "2024-07-17"
 
 [[trusted.hashbrown]]
 criteria = "safe-to-deploy"
-user-id = 55123
+user-id = 55123 # rust-lang-owner
 start = "2025-04-30"
 end = "2026-09-30"
 
@@ -8275,7 +8275,7 @@ end = "2024-10-25"
 
 [[trusted.libc]]
 criteria = "safe-to-deploy"
-user-id = 55123
+user-id = 55123 # rust-lang-owner
 start = "2024-08-15"
 end = "2026-09-30"
 

@@ -331,11 +331,10 @@ user-login = "alexcrichton"
 user-name = "Alex Crichton"
 
 [[publisher.libc]]
-version = "0.2.153"
-when = "2024-01-31"
-user-id = 51017
-user-login = "JohnTitor"
-user-name = "Yuki Okushi"
+version = "0.2.183"
+when = "2026-03-08"
+user-id = 55123
+user-login = "rust-lang-owner"
 
 [[publisher.linux-raw-sys]]
 version = "0.4.14"
@@ -1406,26 +1405,6 @@ who = "Alex Crichton <alex@alexcrichton.com>"
 criteria = "safe-to-deploy"
 version = "0.1.0"
 notes = "Well-scoped crate do doing LEB encoding with no `unsafe` code and does what it says on the tin."
-
-[[audits.bytecode-alliance.audits.libc]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.2.153 -> 0.2.158"
-notes = "More platforms, more definitions, more headers, it's still just `libc`"
-
-[[audits.bytecode-alliance.audits.libc]]
-who = "Dan Gohman <dev@sunfishcode.online>"
-criteria = "safe-to-deploy"
-delta = "0.2.158 -> 0.2.161"
-
-[[audits.bytecode-alliance.audits.libc]]
-who = "Alex Crichton <alex@alexcrichton.com>"
-criteria = "safe-to-deploy"
-delta = "0.2.161 -> 0.2.171"
-notes = """
-Lots of unsafe, but that's par for the course with libc, it's all FFI type
-definitions updates/adjustments/etc.
-"""
 
 [[audits.bytecode-alliance.audits.memoffset]]
 who = "Alex Crichton <alex@alexcrichton.com>"
