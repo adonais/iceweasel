@@ -1783,6 +1783,17 @@ void Animation::PostUpdate() {
 
 void Animation::CancelPendingTasks() {
   mPendingState = PendingState::NotPending;
+
+  // If we cancel the pending animation, we need to remove it from the pending
+  // scroll-driven animation tracker. Also, the caller should put this animation
+  // back into the pending animation tracker if needed, for scroll-timeline or
+  // view-timeline.
+  if (Document* doc = GetRenderedDocument()) {
+    if (auto* tracker = doc->GetScrollTimelineAnimationTracker()) {
+      // no-op if |this| is not in the tracker.
+      tracker->RemovePending(*this);
+    }
+  }
 }
 
 // https://drafts.csswg.org/web-animations/#reset-an-animations-pending-tasks
