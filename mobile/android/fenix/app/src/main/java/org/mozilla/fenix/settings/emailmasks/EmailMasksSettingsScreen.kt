@@ -33,6 +33,7 @@ import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun EmailMasksSettingsScreen(
@@ -111,7 +112,7 @@ private fun ManageEmailMasksRow(
             modifier = Modifier.weight(1f),
         )
         Icon(
-            painter = painterResource(R.drawable.ic_open_in_new),
+            painter = painterResource(iconsR.drawable.mozac_ic_external_link_24),
             contentDescription = null,
         )
     }
