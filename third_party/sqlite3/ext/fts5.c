@@ -14831,7 +14831,7 @@ static void fts5DoSecureDelete(
   int iSegid = pSeg->pSeg->iSegid;
   u8 *aPg = pSeg->pLeaf->p;
   int nPg = pSeg->pLeaf->nn;
-  int iPgIdx = pSeg->pLeaf->szLeaf;
+  int iPgIdx = pSeg->pLeaf->szLeaf;         /* Offset of page footer */
 
   u64 iDelta = 0;
   int iNextOff = 0;
@@ -14910,7 +14910,7 @@ static void fts5DoSecureDelete(
         iSOP += fts5GetVarint32(&aPg[iSOP], nPos);
       }
       assert_nc( iSOP==pSeg->iLeafOffset );
-      iNextOff = pSeg->iLeafOffset + pSeg->nPos;
+      iNextOff = iSOP + pSeg->nPos;
     }
   }
 
@@ -22730,7 +22730,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2026-01-09 17:27:48 b270f8339eb13b504d0b2ba154ebca966b7dde08e40c3ed7d559749818cb2075", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2026-03-13 10:38:09 737ae4a34738ffa0c3ff7f9bb18df914dd1cad163f28fd6b6e114a344fe6d618", -1, SQLITE_TRANSIENT);
 }
 
 /*
