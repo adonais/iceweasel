@@ -157,7 +157,7 @@ function revert_allow_unsafe_parent_loads_when_extensions_not_remote() {
 }
 
 /**
- * Clears the HTTP and content image caches.
+ * Clears the HTTP and all subresource caches.
  */
 function clearCache() {
   Services.cache2.clear();
@@ -166,6 +166,8 @@ function clearCache() {
     .getService(Ci.imgITools)
     .getImgCacheForDocument(null);
   imageCache.clearCache(false);
+
+  ChromeUtils.clearResourceCache();
 }
 
 var promiseConsoleOutput = async function (task) {
