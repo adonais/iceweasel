@@ -6,6 +6,7 @@ package org.mozilla.fenix.theme
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import mozilla.components.compose.base.theme.AcornColors
 import mozilla.components.compose.base.theme.AcornTheme
@@ -42,9 +43,28 @@ fun FirefoxTheme(
         Theme.Private -> acornPrivateColorScheme()
     }
 
-    AcornTheme(
-        colors = colors,
-        colorScheme = colorScheme,
+    val tabGroupColors: TabGroupColorPalette = when (theme) {
+        Theme.Light -> TabGroupColorPalette.lightPalette
+        Theme.Dark -> TabGroupColorPalette.darkPalette
+        Theme.Private -> TabGroupColorPalette.privatePalette
+    }
+
+    ProvideFirefoxTokens(tabGroupColors = tabGroupColors) {
+        AcornTheme(
+            colors = colors,
+            colorScheme = colorScheme,
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun ProvideFirefoxTokens(
+    tabGroupColors: TabGroupColorPalette,
+    content: @Composable () -> Unit,
+) {
+    CompositionLocalProvider(
+        localTabGroupColors provides tabGroupColors,
         content = content,
     )
 }
@@ -70,4 +90,9 @@ object FirefoxTheme {
         @Composable
         @ReadOnlyComposable
         get() = AcornTheme.windowSize
+
+    val tabGroupColors: TabGroupColorPalette
+        @Composable
+        @ReadOnlyComposable
+        get() = localTabGroupColors.current
 }

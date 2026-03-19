@@ -311,9 +311,21 @@ private fun AcornColorGrid(
 private const val CONTAINER_STACK_WIDTH = 200
 private const val CONTAINER_GUTTER = 4
 
+/**
+ * A reusable UI component used in theme previews to display a vertical stack of color blocks.
+ *
+ * @param color1 The background color for the first block.
+ * @param color2 The text color for the first block, which also serves as the background for the second block.
+ * @param color3 The background color for the third block.
+ * @param color4 The text color for the third block, which also serves as the background for the fourth block.
+ * @param color1Name The string label to display inside the [color1] block.
+ * @param color2Name The string label to display inside the [color2] block.
+ * @param color3Name The string label to display inside the [color3] block.
+ * @param color4Name The string label to display inside the [color4] block.
+ */
 @Suppress("LongParameterList", "LongMethod", "MagicNumber")
 @Composable
-private fun ContainerColorStack(
+fun ContainerColorStack(
     color1: Color,
     color2: Color,
     color3: Color,
