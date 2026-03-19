@@ -18,7 +18,7 @@
         android:layout_marginTop="12dp"
         android:text="@string/sign_out_confirmation_message_2"
         android:textSize="16sp"
-        app:drawableStartCompat="@drawable/ic_info"
+        app:drawableStartCompat="@drawable/mozac_ic_information_24"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

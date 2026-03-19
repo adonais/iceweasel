@@ -87,7 +87,7 @@
                 android:textColor="?attr/textPrimary"
                 android:text="@string/mozac_feature_addons_details"
                 android:textSize="16sp"
-                app:drawableStartCompat="@drawable/ic_info"
+                app:drawableStartCompat="@drawable/mozac_ic_information_24"
                 app:drawableTint="?attr/textPrimary" />
 
             <TextView

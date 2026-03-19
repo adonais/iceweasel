@@ -31,7 +31,7 @@
             android:importantForAccessibility="no"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_info"
+            app:srcCompat="@drawable/mozac_ic_information_24"
             tools:tint="@color/fx_mobile_private_icon_color_primary" />
 
         <TextView
