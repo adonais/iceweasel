@@ -1004,6 +1004,22 @@ class MenuDialogMiddlewareTest {
         }
 
     @Test
+    fun `GIVEN summarization feature is gated by evaluation, WHEN menu is initialized, THEN the menu item is not visible`() =
+        runTest(testDispatcher) {
+            summarizeFeatureSettings.showMenuItem = true
+
+            val store = createStore(evaluateEligibilityForSummarization = { false })
+            store.dispatch(MenuAction.InitAction)
+
+            testScheduler.advanceUntilIdle()
+
+            assertFalse(
+                "Expected the menu item is not enabled because evaluation of the page indicated that it should not be visible",
+                store.state.summarizationMenuState.enabled,
+            )
+        }
+
+    @Test
     fun `GIVEN summarization feature setting indicates the menu item should be visible, WHEN menu is initialized, THEN the menu item is visible`() =
         runTest(testDispatcher) {
             summarizeFeatureSettings.showMenuItem = true

@@ -107,7 +107,6 @@ class SummarizeToolbarCFRBinding(
         val session = this?.engineState?.engineSession ?: return false
 
         return eligibilityChecker.check(session)
-            .map { true }
             .getOrNull() ?: false
     }
 

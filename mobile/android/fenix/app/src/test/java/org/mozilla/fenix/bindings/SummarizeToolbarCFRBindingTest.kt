@@ -16,6 +16,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.DisplayState
+import mozilla.components.concept.engine.EngineSession
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.components.support.test.fakes.engine.TestEngineSession
@@ -117,7 +118,14 @@ class SummarizeToolbarCFRBindingTest {
                 featureDiscoverySettings = FakeSummarizationFeatureConfiguration(
                     shouldToolbarShowCfr = false,
                 ),
-                testEligibilityChecker = SummarizationEligibilityChecker { Result.success(Unit) },
+                testEligibilityChecker = object : SummarizationEligibilityChecker {
+                    override suspend fun check(session: EngineSession): Result<Boolean> =
+                        Result.success(true)
+
+                    override suspend fun checkLanguage(session: EngineSession): Result<Boolean> {
+                        TODO("Not yet implemented")
+                    }
+                },
                 browserStore = BrowserStore(BrowserState(tabs = listOf(tab), selectedTabId = "1")),
                 browserToolbarStore = BrowserToolbarStore(
                     middleware = listOf(actionListenerMiddleware(actions)),
@@ -214,8 +222,13 @@ class SummarizeToolbarCFRBindingTest {
 
             val actions = mutableListOf<BrowserToolbarAction>()
             val binding = createBinding(
-                testEligibilityChecker = SummarizationEligibilityChecker {
-                    Result.failure(Exception("Not eligible"))
+                testEligibilityChecker = object : SummarizationEligibilityChecker {
+                    override suspend fun check(session: EngineSession): Result<Boolean> =
+                        Result.failure(Exception("Not eligible"))
+
+                    override suspend fun checkLanguage(session: EngineSession): Result<Boolean> {
+                        TODO("Not yet implemented")
+                    }
                 },
                 browserStore = browserStore,
                 browserToolbarStore = BrowserToolbarStore(
@@ -292,8 +305,13 @@ class SummarizeToolbarCFRBindingTest {
         }
 
     private fun createBindingWithEligibleTab(
-        eligibilityChecker: SummarizationEligibilityChecker = SummarizationEligibilityChecker {
-            Result.success(Unit)
+        eligibilityChecker: SummarizationEligibilityChecker = object : SummarizationEligibilityChecker {
+            override suspend fun check(session: EngineSession): Result<Boolean> =
+                Result.success(true)
+
+            override suspend fun checkLanguage(session: EngineSession): Result<Boolean> {
+                TODO("Not yet implemented")
+            }
         },
         featureDiscoverySettings: FakeSummarizationFeatureConfiguration = FakeSummarizationFeatureConfiguration(
             shouldToolbarShowCfr = true,
@@ -329,8 +347,13 @@ class SummarizeToolbarCFRBindingTest {
         ),
         browserStore: BrowserStore = BrowserStore(),
         browserToolbarStore: BrowserToolbarStore = BrowserToolbarStore(),
-        testEligibilityChecker: SummarizationEligibilityChecker = SummarizationEligibilityChecker {
-            Result.success(Unit)
+        testEligibilityChecker: SummarizationEligibilityChecker = object : SummarizationEligibilityChecker {
+            override suspend fun check(session: EngineSession): Result<Boolean> =
+                Result.success(true)
+
+            override suspend fun checkLanguage(session: EngineSession): Result<Boolean> {
+                TODO("Not yet implemented")
+            }
         },
     ): SummarizeToolbarCFRBinding {
         return SummarizeToolbarCFRBinding(

@@ -202,13 +202,13 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
                         }
                         .collect {
                             navigateToSummarizationIfEligible()
-                    }
+                        }
                 }
             }
         }
     }
 
-    private fun navigateToSummarizationIfEligible() {
+    private suspend fun navigateToSummarizationIfEligible() {
         findNavController().apply {
             // If the shake gesture was disabled in the bottom sheet hosted settings but the fragment
             // has not been recreated yet, we need to check if it's still active before proceeding.
@@ -230,7 +230,22 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
             // can still detect shakes in the background. Don't try to navigate twice.
             val currentDestinationIsNotTheBrowser = currentDestination?.id != R.id.browserFragment
 
-            if (isPrivate || isPageLoading || currentDestinationIsNotTheBrowser) {
+            // evaluate this lazy, to try and avoid querying the engine unless necessary
+            val isEnglishContent: suspend () -> Boolean = {
+                getSafeCurrentTab()?.engineState?.engineSession?.let { session ->
+                    requireComponents.core.summarizationEligibilityChecker
+                        .checkLanguage(session)
+                        .getOrNull()
+                } ?: false
+            }
+
+            // this can be removed when we get rid of language gating
+            @Suppress("ComplexCondition")
+            if (isPrivate ||
+                isPageLoading ||
+                currentDestinationIsNotTheBrowser ||
+                !isEnglishContent()
+            ) {
                 return
             }
 

@@ -53,7 +53,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import mozilla.components.browser.state.selector.findCustomTab
@@ -120,7 +119,6 @@ import org.mozilla.fenix.utils.lastSavedFolderCache
 import org.mozilla.fenix.webcompat.DefaultWebCompatReporterMoreInfoSender
 import org.mozilla.fenix.webcompat.middleware.DefaultWebCompatReporterRetrievalService
 import org.mozilla.fenix.webcompat.middleware.WebCompatInfoDeserializer
-import kotlin.coroutines.resume
 import com.google.android.material.R as materialR
 
 // EXPANDED_MIN_RATIO is used for BottomSheetBehavior.halfExpandedRatio().
@@ -325,16 +323,9 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 summarizeMenuSettings = components.core.summarizeFeatureSettings,
                                 evaluateEligibilityForSummarization = {
                                     selectedTab?.engineState?.engineSession?.let { session ->
-                                        suspendCancellableCoroutine { continuation ->
-                                            session.getPageMetadata(
-                                                onResult = { metadata ->
-                                                    continuation.resume(metadata.language.contains("EN"))
-                                                },
-                                                onException = {
-                                                    continuation.resume(false)
-                                                },
-                                            )
-                                        }
+                                        requireComponents.core.summarizationEligibilityChecker
+                                            .checkLanguage(session)
+                                            .getOrNull()
                                     } ?: false
                                 },
                                 bookmarksStorage = components.core.bookmarksStorage,
