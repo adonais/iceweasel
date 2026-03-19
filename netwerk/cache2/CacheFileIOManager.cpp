@@ -4465,9 +4465,9 @@ void CacheFileIOManager::SyncRemoveAllCacheFiles() {
 
       PRExplodedTime now;
       PR_ExplodeTime(PR_Now(), PR_GMTParameters, &now);
-      leafName.AppendPrintf("%04d-%02d-%02d-%02d-%02d-%02d", now.tm_year,
-                            now.tm_month + 1, now.tm_mday, now.tm_hour,
-                            now.tm_min, now.tm_sec);
+      leafName.Append(nsPrintfCString(
+          "%04d-%02d-%02d-%02d-%02d-%02d", now.tm_year, now.tm_month + 1,
+          now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec));
       leafName.Append(kPurgeExtension);
 
       nsAutoCString secondsToWait;

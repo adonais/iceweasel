@@ -166,7 +166,7 @@ NS_IMETHODIMP FuzzySecurityInfo::GetIsBuiltCertChainRootBuiltInRoot(
 
 NS_IMETHODIMP
 FuzzySecurityInfo::GetPeerId(nsACString& aResult) {
-  aResult.Truncate();
+  aResult.Assign(""_ns);
   return NS_OK;
 }
 

@@ -155,7 +155,7 @@ FuzzySocketControl::GetRetryEchConfig(nsACString& aEchConfig) { return NS_OK; }
 
 NS_IMETHODIMP
 FuzzySocketControl::GetPeerId(nsACString& aResult) {
-  aResult.Truncate();
+  aResult.Assign(""_ns);
   return NS_OK;
 }
 

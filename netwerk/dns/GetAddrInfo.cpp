@@ -448,7 +448,7 @@ nsresult GetAddrInfo(const nsACString& aHost, uint16_t aAddressFamily,
 
 bool FindHTTPSRecordOverride(const nsACString& aHost,
                              TypeRecordResultType& aResult) {
-  LOG("FindHTTPSRecordOverride aHost=%s", PromiseFlatCString(aHost).get());
+  LOG("FindHTTPSRecordOverride aHost=%s", nsCString(aHost).get());
   if (!gOverrideServiceUsed) {
     return false;
   }

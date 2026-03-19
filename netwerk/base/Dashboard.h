@@ -36,7 +36,7 @@ class Dashboard final : public nsIDashboard, public nsIDashboardEventNotifier {
  private:
   struct LogData {
     LogData(nsCString host, uint32_t serial, bool encryption)
-        : mHost(std::move(host)),
+        : mHost(host),
           mSerial(serial),
           mMsgSent(0),
           mMsgReceived(0),

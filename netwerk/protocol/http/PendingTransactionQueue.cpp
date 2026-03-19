@@ -294,7 +294,7 @@ void PendingTransactionQueue::CancelAllTransactions(nsresult reason) {
   }
   mPendingTransactionTable.Clear();
 
-  for (const auto& trans : toClose) {
+  for (auto trans : toClose) {
     LOG(("PendingTransactionQueue::CancelAllTransactions %p\n", trans.get()));
     trans->Close(reason);
   }
