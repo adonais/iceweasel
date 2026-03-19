@@ -830,6 +830,13 @@
                 <action android:name="org.mozilla.fenix.ACTION_SAVE_TO_PDF" />
             </intent-filter>
         </receiver>
+
+        <receiver android:name="org.mozilla.fenix.components.share.PrintReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="org.mozilla.fenix.ACTION_PRINT" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

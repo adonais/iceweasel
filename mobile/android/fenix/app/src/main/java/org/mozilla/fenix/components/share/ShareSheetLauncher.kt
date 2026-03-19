@@ -25,6 +25,10 @@ import org.mozilla.fenix.components.menu.MenuDialogFragmentDirections
 import org.mozilla.fenix.ext.nav
 import mozilla.components.ui.icons.R as iconsR
 
+internal const val SAVE_PDF_ACTION = "org.mozilla.fenix.ACTION_SAVE_TO_PDF"
+internal const val PRINT_ACTION = "org.mozilla.fenix.ACTION_PRINT"
+internal const val TAB_ID_KEY = "tabID"
+
 /**
  * Interface for handling share events and launching the appropriate share sheet.
  */
@@ -123,7 +127,10 @@ class ShareSheetLauncherImpl(
             context.shareWithChooserActions(
                 text = url,
                 subject = title ?: "",
-                actions = arrayOf(savePDFChooserAction(context, id)),
+                actions = arrayOf(
+                    savePDFChooserAction(context, id),
+                    printAction(context, id),
+                ),
             )
         } else {
             context.share(text = url, subject = title ?: "")
@@ -156,6 +163,36 @@ class ShareSheetLauncherImpl(
         return ChooserAction.Builder(
             icon,
             context.getString(R.string.share_save_to_pdf),
+            pendingIntent,
+        ).build()
+    }
+
+    /**
+     * Create a [ChooserAction] for printing the current page.
+     *
+     * @param context The context used to create intents.
+     * @param id The session ID of the tab to print.
+     * @return A [ChooserAction] that can be added to the share intent chooser.
+     */
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun printAction(context: Context, id: String): ChooserAction {
+        val icon = Icon.createWithResource(context, iconsR.drawable.mozac_ic_print_24)
+
+        val actionIntent = Intent(context, PrintReceiver::class.java).apply {
+            action = PRINT_ACTION
+            putExtra(TAB_ID_KEY, id)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            id.hashCode(),
+            actionIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
+        return ChooserAction.Builder(
+            icon,
+            context.getString(R.string.menu_print),
             pendingIntent,
         ).build()
     }
@@ -198,6 +235,3 @@ class ShareSheetLauncherImpl(
         )
     }
 }
-
-internal const val SAVE_PDF_ACTION = "org.mozilla.fenix.ACTION_SAVE_TO_PDF"
-internal const val TAB_ID_KEY = "tabID"
