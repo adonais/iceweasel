@@ -1,0 +1,31 @@
+schema: 1
+
+bugzilla:
+  product: "Core"
+  component: "Graphics: ImageLib"
+
+origin:
+  name: "libjpeg-turbo"
+  description: "JPEG image codec with SIMD acceleration"
+
+  url: "https://libjpeg-turbo.org"
+  license: ['IJG', 'BSD-3-Clause']
+
+  release: v3.0.4 (2024-09-14).
+
+  revision: "3.0.4"
+
+  license-file: LICENSE.md
+
+updatebot:
+  maintainer-phab: tnikkel
+  maintainer-bz: tnikkel@gmail.com
+  tasks:
+    - type: vendoring
+      enabled: True
+      needinfo: ["tnikkel@gmail.com"]
+
+vendoring:
+  url: https://github.com/libjpeg-turbo/libjpeg-turbo
+  source-hosting: github
+  tracking: tag
