@@ -278,6 +278,10 @@ internal object AppStoreReducer {
         is AppAction.MenuNotification.RemoveMenuNotification -> state.copy(
             supportedMenuNotifications = state.supportedMenuNotifications - action.notification,
         )
+
+        is AppAction.UpdateTrackersBlockedCount -> state.copy(
+            trackersBlockedCount = action.count,
+        )
     }
 }
 

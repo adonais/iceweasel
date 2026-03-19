@@ -47,6 +47,7 @@ projects:
     - components:feature-media
     - components:feature-privatemode
     - components:feature-prompts
+    - components:feature-protection-dashboard
     - components:feature-push
     - components:feature-pwa
     - components:feature-qr

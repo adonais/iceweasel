@@ -85,6 +85,7 @@ internal sealed class HomepageState {
      * @property showPocketStories Whether to show the pocket stories section.
      * @property showCollections Whether to show the collections section.
      * @property showPrivacyReport Whether to show the privacy report section.
+     * @property trackersBlockedCount The number of trackers blocked for the privacy report.
      * @property headerState State related to the header of the homepage.
      * @property searchBarVisible Whether the middle search bar should be visible or not.
      * @property searchBarEnabled Whether the middle search bar is enabled or not.
@@ -115,6 +116,7 @@ internal sealed class HomepageState {
         val showPocketStories: Boolean,
         val showCollections: Boolean,
         val showPrivacyReport: Boolean,
+        val trackersBlockedCount: Int,
         override val headerState: HeaderState,
         val searchBarVisible: Boolean,
         val searchBarEnabled: Boolean,
@@ -249,6 +251,7 @@ internal sealed class HomepageState {
                 showCollections = settings.collections,
                 showPrivacyReport = settings.showPrivacyReportSectionToggle &&
                     settings.showPrivacyReportFeature,
+                trackersBlockedCount = trackersBlockedCount,
                 headerState = HeaderState(
                     showHeader = settings.showHomepageHeader,
                     wordmarkTextColor = wallpaperState.textColor,

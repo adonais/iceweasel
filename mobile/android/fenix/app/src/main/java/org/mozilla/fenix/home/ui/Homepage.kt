@@ -165,7 +165,7 @@ internal fun Homepage(
 
                             if (showPrivacyReport) {
                                 TrackersBlockedCard(
-                                    trackersBlockedCount = 0,
+                                    trackersBlockedCount = trackersBlockedCount,
                                     modifier = Modifier.padding(top = 16.dp),
                                 )
                             }
@@ -507,6 +507,7 @@ private fun HomepagePreview() {
                     showPocketStories = true,
                     showCollections = true,
                     showPrivacyReport = true,
+                    trackersBlockedCount = 754,
                     headerState = HeaderState(
                         showHeader = false,
                         wordmarkTextColor = null,
@@ -559,6 +560,7 @@ private fun HomepageBannerPreview() {
                     showPocketStories = true,
                     showCollections = true,
                     showPrivacyReport = true,
+                    trackersBlockedCount = 754,
                     headerState = HeaderState(
                         showHeader = true,
                         wordmarkTextColor = null,
@@ -611,6 +613,7 @@ private fun HomepagePreviewCollections() {
                     showPocketStories = true,
                     showCollections = true,
                     showPrivacyReport = true,
+                    trackersBlockedCount = 754,
                     headerState = HeaderState(
                         showHeader = false,
                         wordmarkTextColor = null,
@@ -663,6 +666,7 @@ private fun MinimalHomepagePreview() {
                     showPocketStories = true,
                     showCollections = false,
                     showPrivacyReport = true,
+                    trackersBlockedCount = 754,
                     headerState = HeaderState(
                         showHeader = false,
                         wordmarkTextColor = null,

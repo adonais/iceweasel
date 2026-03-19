@@ -1107,7 +1107,20 @@ projects:
     path: components/feature/protection-dashboard
     publish: true
     upstream_dependencies:
+    - components:browser-errorpages
+    - components:browser-state
+    - components:concept-awesomebar
+    - components:concept-base
+    - components:concept-engine
+    - components:concept-fetch
+    - components:concept-storage
+    - components:lib-publicsuffixlist
+    - components:lib-state
+    - components:support-base
+    - components:support-ktx
+    - components:support-utils
     - components:tooling-lint
+    - components:ui-icons
   components:feature-push:
     description: Feature that implements push notifications with a supported push
       service.

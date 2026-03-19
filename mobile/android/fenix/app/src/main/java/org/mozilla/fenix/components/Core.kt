@@ -53,6 +53,8 @@ import mozilla.components.feature.media.middleware.RecordingDevicesMiddleware
 import mozilla.components.feature.prompts.PromptMiddleware
 import mozilla.components.feature.prompts.file.FileUploadsDirCleaner
 import mozilla.components.feature.prompts.file.FileUploadsDirCleanerMiddleware
+import mozilla.components.feature.protection.dashboard.ProtectionsDashboardMiddleware
+import mozilla.components.feature.protection.dashboard.ProtectionsStorage
 import mozilla.components.feature.pwa.ManifestStorage
 import mozilla.components.feature.pwa.WebAppShortcutManager
 import mozilla.components.feature.readerview.ReaderViewMiddleware
@@ -365,6 +367,7 @@ class Core(
                 AdsTelemetryMiddleware(adsTelemetry),
                 LastMediaAccessMiddleware(),
                 HistoryMetadataMiddleware(historyMetadataService),
+                ProtectionsDashboardMiddleware(protectionsStorage),
                 SessionPrioritizationMiddleware(),
                 SaveToPDFMiddleware(context),
                 FxSuggestFactsMiddleware(),
@@ -473,6 +476,13 @@ class Core(
      */
     val historyMetadataService: HistoryMetadataService by lazyMonitored {
         DefaultHistoryMetadataService(storage = historyStorage)
+    }
+
+    /**
+     * The [ProtectionsStorage] is used to store tracker blocking statistics.
+     */
+    val protectionsStorage: ProtectionsStorage by lazyMonitored {
+        ProtectionsStorage(context)
     }
 
     /**

@@ -184,6 +184,7 @@ private fun MiddleSearchHomepagePreview() {
                 showPocketStories = true,
                 showCollections = true,
                 showPrivacyReport = true,
+                trackersBlockedCount = 754,
                 headerState = HeaderState(
                     showHeader = false,
                     wordmarkTextColor = null,

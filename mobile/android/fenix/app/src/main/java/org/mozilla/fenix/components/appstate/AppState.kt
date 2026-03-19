@@ -80,6 +80,7 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @property reviewPrompt Whether we should show a review prompt and whether we ran the eligibility check at all
  * @property voiceSearchState The [VoiceSearchState] representing the current state of voice search functionality.
  * @property isDefaultBrowser Whether Firefox is the default browser or not.
+ * @property trackersBlockedCount The total number of trackers blocked to display in the privacy report.
  */
 data class AppState(
     val isForeground: Boolean = true,
@@ -117,4 +118,5 @@ data class AppState(
     val reviewPrompt: ReviewPromptState = Unknown,
     val voiceSearchState: VoiceSearchState = VoiceSearchState(),
     val isDefaultBrowser: Boolean = false,
+    val trackersBlockedCount: Int = 0,
 ) : State

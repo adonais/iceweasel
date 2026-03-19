@@ -177,6 +177,7 @@ import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerStore
 import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerTelemetryMiddleware
 import org.mozilla.fenix.termsofuse.store.Surface
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.trackingprotection.TrackersBlockedFeature
 import org.mozilla.fenix.utils.allowUndo
 import org.mozilla.fenix.utils.showAddSearchWidgetPromptIfSupported
 import org.mozilla.fenix.wallpapers.Wallpaper
@@ -279,6 +280,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
     private val snackbarBinding = ViewBoundFeatureWrapper<SnackbarBinding>()
     private val showReviewPromptBinding = ViewBoundFeatureWrapper<ShowReviewPromptBinding>()
     private val topSitesBinding = ViewBoundFeatureWrapper<TopSitesBinding>()
+    private val trackersBlockedFeature = ViewBoundFeatureWrapper<TrackersBlockedFeature>()
 
     private val homepageEdgeToEdgeFeature = ViewBoundFeatureWrapper<HomepageEdgeToEdgeFeature>()
     private var qrScanFenixFeature: ViewBoundFeatureWrapper<QrScanFenixFeature>? =
@@ -430,6 +432,17 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
                     accountManager = requireComponents.backgroundServices.accountManager,
                     historyStorage = requireComponents.core.historyStorage,
                     coroutineScope = viewLifecycleOwner.lifecycleScope,
+                ),
+                owner = viewLifecycleOwner,
+                view = binding.root,
+            )
+        }
+
+        if (requireContext().settings().showPrivacyReportFeature) {
+            trackersBlockedFeature.set(
+                feature = TrackersBlockedFeature(
+                    appStore = components.appStore,
+                    protectionsStorage = components.core.protectionsStorage,
                 ),
                 owner = viewLifecycleOwner,
                 view = binding.root,

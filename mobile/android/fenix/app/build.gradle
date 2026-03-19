@@ -572,6 +572,7 @@ dependencies {
     implementation project(':components:feature-media')
     implementation project(':components:feature-privatemode')
     implementation project(':components:feature-prompts')
+    implementation project(':components:feature-protection-dashboard')
     implementation project(':components:feature-push')
     implementation project(':components:feature-pwa')
     implementation project(':components:feature-qr')

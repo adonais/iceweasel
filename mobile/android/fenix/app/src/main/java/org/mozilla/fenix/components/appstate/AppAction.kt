@@ -791,4 +791,11 @@ sealed class AppAction : Action {
          */
         data class RemoveMenuNotification(val notification: SupportedMenuNotifications) : MenuNotification()
     }
+
+    /**
+     * Updates the total count of trackers blocked for the privacy report.
+     *
+     * @property count The new count of trackers blocked.
+     */
+    data class UpdateTrackersBlockedCount(val count: Int) : AppAction()
 }
