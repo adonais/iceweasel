@@ -57,9 +57,7 @@ def filter_beetmover_apt_dep(task):
     # We only create beetmover-apt tasks for l10n beetmover-repackage tasks that
     # beetmove langpack .deb packages. The langpack .deb packages support all
     # architectures, so we generate them only on x86_64 tasks.
-    return (
-        is_x86_64_l10n_task(task) or is_not_l10n_task(task)
-    )
+    return is_x86_64_l10n_task(task) or is_not_l10n_task(task)
 
 
 def is_x86_64_l10n_task(task):
