@@ -98,6 +98,12 @@ class ExternalEngineStateMachine final
                                  self->NotifyResizingInternal(aWidth, aHeight);
                                }));
   }
+  void NotifyHardwareReset() {
+    // On the engine manager thread.
+    (void)OwnerThread()->Dispatch(NS_NewRunnableFunction(
+        "ExternalEngineStateMachine::NotifyHardwareReset",
+        [self = RefPtr{this}] { self->RecoverFromHardwareReset(); }));
+  }
 
   const char* GetStateStr() const;
 
@@ -294,7 +300,13 @@ class ExternalEngineStateMachine final
 
   void UpdateSecondaryVideoContainer() override;
 
+  // When the media engine enters an unrecoverable state, one of two recovery
+  // paths is taken:
+  // - CDM process crash : tear down reader resources and reinitialize entirely
+  // - hardware context reset : GPU/DRM state invalidated but process still
+  // alive, so reinitialize the engine only.
   void RecoverFromCDMProcessCrashIfNeeded();
+  void RecoverFromHardwareReset();
 
   void ReportTelemetry(const MediaResult& aError);
 
