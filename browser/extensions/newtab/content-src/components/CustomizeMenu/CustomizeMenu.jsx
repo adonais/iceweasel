@@ -4,6 +4,7 @@
 
 import { ContentSection } from "content-src/components/CustomizeMenu/ContentSection/ContentSection";
 import { connect } from "react-redux";
+import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import React from "react";
 // eslint-disable-next-line no-shadow
 import { CSSTransition } from "react-transition-group";
@@ -14,9 +15,6 @@ export class _CustomizeMenu extends React.PureComponent {
     this.onEntered = this.onEntered.bind(this);
     this.onExited = this.onExited.bind(this);
     this.onSubpanelToggle = this.onSubpanelToggle.bind(this);
-    this.personalizeButtonRef = React.createRef();
-    this.customizeMenuRef = React.createRef();
-    this.closeButtonRef = React.createRef();
     this.state = {
       exitEventFired: false,
       subpanelOpen: false,
@@ -29,22 +27,21 @@ export class _CustomizeMenu extends React.PureComponent {
 
   onEntered() {
     this.setState({ exitEventFired: false });
-    if (this.closeButtonRef.current) {
-      this.closeButtonRef.current.focus();
+    if (this.closeButton) {
+      this.closeButton.focus();
     }
   }
 
   onExited() {
     this.setState({ exitEventFired: true });
-    if (this.personalizeButtonRef.current) {
-      this.personalizeButtonRef.current.focus();
+    if (this.openButton) {
+      this.openButton.focus();
     }
   }
 
   render() {
     const activationWindowVariant =
-      this.props.Prefs.values["activationWindow.variant"];
-
+      this.props.Prefs.values[PREFS.ACTIVATION_WINDOW_VARIANT];
     const activationWindowClass = activationWindowVariant
       ? `activation-window-variant-${activationWindowVariant}`
       : "";
@@ -52,14 +49,12 @@ export class _CustomizeMenu extends React.PureComponent {
     return (
       <span>
         <CSSTransition
-          nodeRef={this.personalizeButtonRef}
           timeout={300}
           classNames="personalize-animate"
           in={!this.props.showing}
           appear={true}
         >
           <button
-            ref={this.personalizeButtonRef}
             className={`${activationWindowClass} personalize-button`}
             data-l10n-id="newtab-customize-panel-icon-button"
             aria-haspopup="dialog"
@@ -69,6 +64,7 @@ export class _CustomizeMenu extends React.PureComponent {
                 this.props.onOpen();
               }
             }}
+            ref={c => (this.openButton = c)}
           >
             <label data-l10n-id="newtab-customize-panel-icon-button-label" />
             <div>
@@ -80,7 +76,6 @@ export class _CustomizeMenu extends React.PureComponent {
           </button>
         </CSSTransition>
         <CSSTransition
-          nodeRef={this.customizeMenuRef}
           timeout={250}
           classNames="customize-animate"
           in={this.props.showing}
@@ -88,10 +83,7 @@ export class _CustomizeMenu extends React.PureComponent {
           onExited={this.onExited}
           appear={true}
         >
-          <div
-            ref={this.customizeMenuRef}
-            className="customize-menu-animate-wrapper"
-          >
+          <div className="customize-menu-animate-wrapper">
             <div
               className={`customize-menu ${
                 this.state.subpanelOpen ? "subpanel-open" : ""
@@ -106,7 +98,7 @@ export class _CustomizeMenu extends React.PureComponent {
                   type="icon ghost"
                   data-l10n-id="newtab-custom-close-menu-button"
                   iconsrc="chrome://global/skin/icons/close.svg"
-                  ref={this.closeButtonRef}
+                  ref={c => (this.closeButton = c)}
                 ></moz-button>
               </div>
               <ContentSection

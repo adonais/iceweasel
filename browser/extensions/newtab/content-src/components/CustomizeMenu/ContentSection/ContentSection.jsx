@@ -7,6 +7,7 @@ import { batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { SectionsMgmtPanel } from "../SectionsMgmtPanel/SectionsMgmtPanel";
 import { WallpaperCategories } from "../../WallpaperCategories/WallpaperCategories";
+import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 
 export class ContentSection extends React.PureComponent {
   constructor(props) {
@@ -204,8 +205,8 @@ export class ContentSection extends React.PureComponent {
                   <moz-toggle
                     id="weather-toggle"
                     pressed={weatherEnabled || null}
-                    ontoggle={this.onPreferenceSelect}
-                    data-preference="showWeather"
+                    onToggle={this.onPreferenceSelect}
+                    data-preference={PREFS.SHOW_WEATHER}
                     data-event-source="WEATHER"
                     data-l10n-id="newtab-custom-widget-weather-toggle"
                   />
@@ -218,8 +219,8 @@ export class ContentSection extends React.PureComponent {
                   <moz-toggle
                     id="lists-toggle"
                     pressed={listsEnabled || null}
-                    ontoggle={this.onPreferenceSelect}
-                    data-preference="widgets.lists.enabled"
+                    onToggle={this.onPreferenceSelect}
+                    data-preference={PREFS.WIDGETS_LISTS_ENABLED}
                     data-event-source="WIDGET_LISTS"
                     data-l10n-id="newtab-custom-widget-lists-toggle"
                   />
@@ -232,8 +233,8 @@ export class ContentSection extends React.PureComponent {
                   <moz-toggle
                     id="timer-toggle"
                     pressed={timerEnabled || null}
-                    ontoggle={this.onPreferenceSelect}
-                    data-preference="widgets.focusTimer.enabled"
+                    onToggle={this.onPreferenceSelect}
+                    data-preference={PREFS.WIDGETS_TIMER_ENABLED}
                     data-event-source="WIDGET_TIMER"
                     data-l10n-id="newtab-custom-widget-timer-toggle"
                   />
@@ -250,8 +251,8 @@ export class ContentSection extends React.PureComponent {
               <moz-toggle
                 id="weather-toggle"
                 pressed={weatherEnabled || null}
-                ontoggle={this.onPreferenceSelect}
-                data-preference="showWeather"
+                onToggle={this.onPreferenceSelect}
+                data-preference={PREFS.SHOW_WEATHER}
                 data-event-source="WEATHER"
                 data-l10n-id="newtab-custom-weather-toggle"
               />
@@ -262,8 +263,8 @@ export class ContentSection extends React.PureComponent {
             <moz-toggle
               id="shortcuts-toggle"
               pressed={topSitesEnabled || null}
-              ontoggle={this.onPreferenceSelect}
-              data-preference="feeds.topsites"
+              onToggle={this.onPreferenceSelect}
+              data-preference={PREFS.FEEDS_TOPSITES}
               data-event-source="TOP_SITES"
               data-l10n-id="newtab-custom-shortcuts-toggle"
             >
@@ -277,7 +278,7 @@ export class ContentSection extends React.PureComponent {
                       id="row-selector"
                       className="selector"
                       name="row-count"
-                      data-preference="topSitesRows"
+                      data-preference={PREFS.TOP_SITES_ROWS}
                       value={topSitesRowsCount}
                       onChange={this.onPreferenceSelect}
                       disabled={!topSitesEnabled}
@@ -315,9 +316,9 @@ export class ContentSection extends React.PureComponent {
               <moz-toggle
                 id="pocket-toggle"
                 pressed={pocketEnabled || null}
-                ontoggle={this.onPreferenceSelect}
+                onToggle={this.onPreferenceSelect}
                 aria-describedby="custom-pocket-subtitle"
-                data-preference="feeds.section.topstories"
+                data-preference={PREFS.FEEDS_SECTION_TOPSTORIES}
                 data-event-source="TOP_STORIES"
                 {...(mayHaveInferredPersonalization
                   ? {
@@ -344,7 +345,9 @@ export class ContentSection extends React.PureComponent {
                               checked={showInferredPersonalizationEnabled}
                               type="checkbox"
                               onChange={this.onPreferenceSelect}
-                              data-preference="discoverystream.sections.personalization.inferred.user.enabled"
+                              data-preference={
+                                PREFS.INFERRED_PERSONALIZATION_USER
+                              }
                               data-event-source="INFERRED_PERSONALIZATION"
                             />
                             <label

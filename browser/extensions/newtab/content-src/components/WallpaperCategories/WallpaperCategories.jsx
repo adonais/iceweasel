@@ -5,6 +5,7 @@
 import React from "react";
 import { connect } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 // eslint-disable-next-line no-shadow
 import { CSSTransition } from "react-transition-group";
 
@@ -117,7 +118,7 @@ export class _WallpaperCategories extends React.PureComponent {
     }
 
     // Setting this now so when we remove v1 we don't have to migrate v1 values.
-    this.props.setPref("newtabWallpapers.wallpaper", id);
+    this.props.setPref(PREFS.WALLPAPER_SELECTED, id);
   }
 
   // Note: There's a separate event (debouncedHandleChange) that fires the handleChange
@@ -131,7 +132,7 @@ export class _WallpaperCategories extends React.PureComponent {
       id = `solid-color-picker-${event.target.value}`;
     }
 
-    this.props.setPref("newtabWallpapers.wallpaper", id);
+    this.props.setPref(PREFS.WALLPAPER_SELECTED, id);
 
     const uploadedPreviously =
       this.props.Prefs.values[PREF_WALLPAPER_UPLOADED_PREVIOUSLY];
@@ -242,8 +243,7 @@ export class _WallpaperCategories extends React.PureComponent {
     const uploadedPreviously =
       this.props.Prefs.values[PREF_WALLPAPER_UPLOADED_PREVIOUSLY];
 
-    const selectedWallpaper =
-      this.props.Prefs.values["newtabWallpapers.wallpaper"];
+    const selectedWallpaper = this.props.Prefs.values[PREFS.WALLPAPER_SELECTED];
 
     // If a custom wallpaper is set, remove it
     if (selectedWallpaper === "custom") {
@@ -255,7 +255,7 @@ export class _WallpaperCategories extends React.PureComponent {
     }
 
     // Reset active wallpaper
-    this.props.setPref("newtabWallpapers.wallpaper", "");
+    this.props.setPref(PREFS.WALLPAPER_SELECTED, "");
 
     // Fire WALLPAPER_CLICK telemetry event
     this.handleUserEvent(at.WALLPAPER_CLICK, {
@@ -352,7 +352,7 @@ export class _WallpaperCategories extends React.PureComponent {
         );
 
         // Set active wallpaper ID to "custom"
-        this.props.setPref("newtabWallpapers.wallpaper", "custom");
+        this.props.setPref(PREFS.WALLPAPER_SELECTED, "custom");
 
         // Update the uploadedPreviously pref to TRUE
         // Note: this pref used for telemetry. Do not reset to false.
@@ -453,7 +453,7 @@ export class _WallpaperCategories extends React.PureComponent {
 
     let wallpaperCustomSolidColorHex = null;
 
-    const selectedWallpaper = prefs["newtabWallpapers.wallpaper"];
+    const selectedWallpaper = prefs[PREFS.WALLPAPER_SELECTED];
 
     // User has previous selected a custom color
     if (selectedWallpaper.includes("solid-color-picker")) {
