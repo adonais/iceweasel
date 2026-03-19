@@ -44,6 +44,7 @@ import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
+import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndDescription
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
@@ -433,7 +434,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
     class Transition(private val composeTestRule: ComposeTestRule) {
         fun clickSettingsButton(localizedText: String = getStringResource(R.string.browser_menu_settings), interact: SettingsRobot.() -> Unit): SettingsRobot.Transition {
             Log.i(TAG, "clickSettingsButton: Trying to click the Settings button from the new main menu design.")
-            composeTestRule.settingsButton(localizedText).performClick()
+            itemWithDescription(localizedText).click()
             Log.i(TAG, "clickSettingsButton: Clicked the Settings button from the new main menu design.")
 
             SettingsRobot().interact()
