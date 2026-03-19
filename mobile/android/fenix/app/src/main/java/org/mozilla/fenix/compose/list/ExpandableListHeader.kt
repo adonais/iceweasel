@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Expandable header for sections of lists
@@ -141,7 +142,7 @@ private fun HeaderWithClickableIconPreview() {
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.ic_delete),
+                        painter = painterResource(iconsR.drawable.mozac_ic_delete_24),
                         contentDescription = "click me",
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -167,7 +168,7 @@ private fun CollapsibleHeaderWithClickableIconPreview() {
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.ic_delete),
+                        painter = painterResource(iconsR.drawable.mozac_ic_delete_24),
                         contentDescription = "click me",
                         modifier = Modifier.size(20.dp),
                         tint = MaterialTheme.colorScheme.onPrimaryContainer,
