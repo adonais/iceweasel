@@ -22,6 +22,11 @@ import {
   validateCitedUrls,
 } from "moz-src:///browser/components/aiwindow/models/CitationParser.sys.mjs";
 
+// Hard limit on how many times run_search can execute per conversation turn.
+// Prevents infinite tool-call loops when the model repeatedly requests search.
+// Bug 2024006.
+const MAX_RUN_SEARCH_PER_TURN = 3;
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AIWindow:
@@ -89,6 +94,7 @@ Object.assign(Chat, {
     const allAllowedUrls = new Set();
     let fullResponseText = "";
     const searchExecuted = conversation._searchExecutedTurn === currentTurn;
+    let blockedSearchAttempts = 0;
 
     const streamModelResponse = () =>
       engineInstance.runWithGenerator({
@@ -122,9 +128,13 @@ Object.assign(Chat, {
       // Guard: if the first pending tool call is a duplicate run_search,
       // return an error tool result so the model continues without
       // executing the search or navigating the browser.
+      // Bug 2024006: after MAX_RUN_SEARCH_PER_TURN blocked attempts, remove
+      // the tool entirely so the model is forced to respond with text.
       // @todo Bug 2006159 - Check all pending tool calls, not just the first
       const firstPending = pendingToolCalls[0]?.function;
       if (firstPending?.name === "run_search" && searchExecuted) {
+        blockedSearchAttempts++;
+
         const blockedCalls = pendingToolCalls.slice(0, 1).map(tc => ({
           id: tc.id,
           type: "function",
@@ -140,10 +150,16 @@ Object.assign(Chat, {
         for (const tc of pendingToolCalls.slice(0, 1)) {
           const content = {
             tool_call_id: tc.id,
-            body: "ERROR: run_search tool call error: only one allowed per user message. Try run_search tool call again only after the next user message if prompted. Do not hallucinate search results.",
+            body: "ERROR: run_search tool call error: You may only run one search per user message. Respond to the user with what you have already found and ask if they want you to proceed with the next search. Do not hallucinate search results.",
             name: tc.function.name,
           };
           conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
+        }
+
+        if (blockedSearchAttempts === MAX_RUN_SEARCH_PER_TURN) {
+          chatToolsConfig = chatToolsConfig.filter(
+            t => t.function?.name !== "run_search"
+          );
         }
         continue;
       }

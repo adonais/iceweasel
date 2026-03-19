@@ -802,7 +802,7 @@ add_task(
         msg => msg.role === MESSAGE_ROLE.TOOL
       );
       const guardMessage = toolMessages.find(msg =>
-        String(msg.content?.body).includes("only one allowed per user message")
+        String(msg.content?.body).includes("ERROR: run_search tool call error:")
       );
       Assert.ok(guardMessage, "Guard tool result should be in conversation");
 
