@@ -514,7 +514,7 @@ private fun generateMultiSelectBannerMenuItems(
         ),
         MenuItem.IconItem(
             text = Text.Resource(R.string.tab_manager_multiselect_menu_item_add_to_collection),
-            drawableRes = R.drawable.ic_tab_collection,
+            drawableRes = iconsR.drawable.mozac_ic_collection_24,
             testTag = TabsTrayTestTag.COLLECTIONS_BUTTON,
             onClick = onSaveToCollectionsClick,
         ),

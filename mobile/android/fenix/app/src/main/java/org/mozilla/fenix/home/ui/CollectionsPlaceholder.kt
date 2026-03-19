@@ -103,7 +103,7 @@ internal fun CollectionsPlaceholder(
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentHeight(),
-                    icon = painterResource(R.drawable.ic_tab_collection),
+                    icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
                     onClick = interactor::onAddTabsToCollectionTapped,
                     contentColor = buttonTextColor,
                     containerColor = buttonBackgroundColor,
