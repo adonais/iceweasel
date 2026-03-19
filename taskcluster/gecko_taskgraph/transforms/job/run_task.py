@@ -8,10 +8,12 @@ Support for running jobs that are invoked via the `run-task` script.
 import dataclasses
 import functools
 import os
+from typing import Literal, Union
+from typing import Optional as TOptional
 
 from mozpack import path
 from taskgraph.transforms.run.common import support_caches
-from taskgraph.util.schema import LegacySchema
+from taskgraph.util.schema import LegacySchema, Schema, taskref_or_string_msgspec
 from taskgraph.util.yaml import load_yaml
 from voluptuous import Any, Optional, Required
 
@@ -57,6 +59,46 @@ run_task_schema = LegacySchema({
     # Whether to run as root. (defaults to False)
     Optional("run-as-root"): bool,
 })
+
+
+class RunTaskSchema(Schema, kw_only=True):
+    using: Literal["run-task"]
+    # Use the specified caches.
+    use_caches: TOptional[Union[bool, list[str]]] = None
+    # if true (the default), perform a checkout of gecko on the worker
+    checkout: bool = True
+    # Path to run command in. If a checkout is present, the path
+    # to the checkout will be interpolated with the key `checkout`
+    cwd: TOptional[str] = None
+    # The sparse checkout profile to use. Value is the filename relative to
+    # "sparse-profile-prefix" which defaults to "build/sparse-profiles/".
+    sparse_profile: TOptional[Union[str, None]] = None
+    # The relative path to the sparse profile.
+    sparse_profile_prefix: TOptional[str] = None
+    # Whether to use a shallow clone or not, default True (git only).
+    shallow_clone: TOptional[bool] = None
+    # if true, perform a checkout of a comm-central based branch inside the
+    # gecko checkout
+    comm_checkout: bool = False
+    # The command arguments to pass to the `run-task` script, after the
+    # checkout arguments.  If a list, it will be passed directly; otherwise
+    # it will be included in a single argument to `bash -cx`.
+    command: Union[list[taskref_or_string_msgspec], taskref_or_string_msgspec]
+    # Base work directory used to set up the task.
+    workdir: TOptional[str] = None
+    # If not false, tooltool downloads will be enabled via relengAPIProxy
+    # for either just public files, or all files. Only supported on
+    # docker-worker.
+    tooltool_downloads: Union[bool, Literal["public", "internal"]] = False
+    # Whether to run as root. (defaults to False)
+    run_as_root: TOptional[bool] = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.tooltool_downloads is True:
+            raise ValueError(
+                "tooltool-downloads must be False, 'public', or 'internal'"
+            )
 
 
 def common_setup(config, job, taskdesc, command):
