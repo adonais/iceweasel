@@ -6133,6 +6133,32 @@ class AboutTranslationsTestUtils {
   }
 
   /**
+   * Undoes the most recent user-input edit to the source-section
+   * text area, simulating the behavior of invoking `Ctrl/Cmd + Z`.
+   *
+   * @returns {Promise<void>}
+   */
+  async invokeSourceTextAreaUndoAction() {
+    logAction();
+    await doubleRaf(document);
+    try {
+      await this.#runInPage(selectors => {
+        const sourceTextArea = content.document.querySelector(
+          selectors.sourceSectionTextArea
+        );
+        sourceTextArea.focus();
+      });
+      await BrowserTestUtils.synthesizeKey(
+        "z",
+        { accelKey: true },
+        this.#browser
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
+    }
+  }
+
+  /**
    * Retrieves the current value of the target textarea.
    *
    * @returns {Promise<string>}

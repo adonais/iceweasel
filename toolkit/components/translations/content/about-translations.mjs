@@ -8,7 +8,7 @@
 
 /* global AT_getAppLocaleAsBCP47, AT_getSupportedLanguages, AT_log, AT_getScriptDirection,
    AT_getDisplayName, AT_logError, AT_createTranslationsPort, AT_isHtmlTranslation,
-   AT_isTranslationEngineSupported, AT_isInAutomation, AT_identifyLanguage,
+   AT_isTranslationEngineSupported, AT_isInAutomation, AT_identifyLanguage, AT_clearSourceText,
    AT_telemetry, AT_isEnabledStateManagedByPolicy, AT_enableTranslationsFeature */
 
 import { Translator } from "chrome://global/content/translations/Translator.mjs";
@@ -687,9 +687,7 @@ class AboutTranslations {
     }
 
     event.preventDefault();
-    this.#setSourceText("");
-    this.#maybeUpdateDetectedSourceLanguage();
-    this.elements.sourceSectionTextArea.focus();
+    this.#clearSourceText();
 
     AT_telemetry("onClearSourceTextButton");
   };
@@ -1902,6 +1900,15 @@ class AboutTranslations {
       sourceSectionClearButton.hidden = true;
       dispatchTestEvent("AboutTranslationsTest:SourceTextClearButtonHidden");
     }
+  }
+
+  /**
+   * Clears the content in the source-section text area.
+   */
+  #clearSourceText() {
+    AT_clearSourceText();
+    this.elements.sourceSectionTextArea.focus();
+    dispatchTestEvent("AboutTranslationsTest:ClearSourceText");
   }
 
   /**
