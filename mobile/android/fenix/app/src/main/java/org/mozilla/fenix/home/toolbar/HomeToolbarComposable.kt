@@ -13,14 +13,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.colorResource
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.updateLayoutParams
 import androidx.navigation.NavController
@@ -125,56 +123,48 @@ internal class HomeToolbarComposable(
             }
 
             FirefoxTheme {
-                Column {
-                    if (shouldShowTabStrip) {
-                        tabStripContent()
-                    }
-
-                    if (settings.shouldUseBottomToolbar) {
-                        searchSuggestionsContent(Modifier.weight(1f))
-                    }
-                    Box {
-                        if (settings.enableHomepageSearchBar) {
-                            BrowserSimpleToolbar(toolbarStore, appStore)
+                MaterialTheme(
+                    colorScheme = homepageToolbarColors(
+                        isPrivateMode = browsingModeManager.mode == BrowsingMode.Private,
+                        shouldUseEdgeToEdgeColors = isEdgeToEdgeBackgroundEnabled && isSearchEmpty,
+                    ),
+                ) {
+                    Column {
+                        if (shouldShowTabStrip) {
+                            tabStripContent()
                         }
-                        this@Column.AnimatedVisibility(
-                            visible = isAddressBarVisible.value || appStore.state.searchState.isSearchActive,
-                            enter = fadeIn(
-                                animationSpec = tween(
-                                    durationMillis = 250,
-                                    easing = Easing { fraction -> fraction * fraction },
-                                ),
-                            ),
-                            exit = fadeOut(
-                                animationSpec = tween(
-                                    durationMillis = 250,
-                                    easing = Easing { fraction -> 1f - (1f - fraction) * (1f - fraction) },
-                                ),
-                            ),
-                        ) {
-                            val (backgroundColor, outlineColor) =
-                                if (browsingModeManager.mode == BrowsingMode.Private) {
-                                    MaterialTheme.colorScheme.surface to
-                                            colorResource(R.color.homepage_tab_edge_to_edge_private_toolbar_outline)
-                                } else if (isEdgeToEdgeBackgroundEnabled && isSearchEmpty) {
-                                    colorResource(R.color.homepage_tab_edge_to_edge_toolbar_background) to
-                                            colorResource(R.color.homepage_tab_edge_to_edge_toolbar_outline)
-                                } else {
-                                    MaterialTheme.colorScheme.surface to DividerDefaults.color
-                                }
 
-                            BrowserToolbar(
-                                store = toolbarStore,
-                                backgroundColor = backgroundColor,
-                                outlineColor = outlineColor,
-                            )
+                        if (settings.shouldUseBottomToolbar) {
+                            searchSuggestionsContent(Modifier.weight(1f))
                         }
-                    }
-                    if (settings.toolbarPosition == BOTTOM) {
-                        navigationBarContent?.invoke()
-                    }
-                    if (!settings.shouldUseBottomToolbar) {
-                        searchSuggestionsContent(Modifier.weight(1f))
+                        Box {
+                            if (settings.enableHomepageSearchBar) {
+                                BrowserSimpleToolbar(toolbarStore, appStore)
+                            }
+                            this@Column.AnimatedVisibility(
+                                visible = isAddressBarVisible.value || appStore.state.searchState.isSearchActive,
+                                enter = fadeIn(
+                                    animationSpec = tween(
+                                        durationMillis = 250,
+                                        easing = Easing { fraction -> fraction * fraction },
+                                    ),
+                                ),
+                                exit = fadeOut(
+                                    animationSpec = tween(
+                                        durationMillis = 250,
+                                        easing = Easing { fraction -> 1f - (1f - fraction) * (1f - fraction) },
+                                    ),
+                                ),
+                            ) {
+                                BrowserToolbar(store = toolbarStore)
+                            }
+                        }
+                        if (settings.toolbarPosition == BOTTOM) {
+                            navigationBarContent?.invoke()
+                        }
+                        if (!settings.shouldUseBottomToolbar) {
+                            searchSuggestionsContent(Modifier.weight(1f))
+                        }
                     }
                 }
             }

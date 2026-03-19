@@ -14,7 +14,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -91,11 +90,11 @@ fun BrowserToolbar(
     store: BrowserToolbarStore,
     cfr: BrowserToolbarCFR? = null,
     useMinimalBottomToolbarWhenEnteringText: Boolean = false,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface,
-    outlineColor: Color = DividerDefaults.color,
 ) {
     val uiState by store.observeAsComposableState { it }
     val cfrProperties = browserToolbarCFRProperties(uiState.gravity)
+    val backgroundColor = MaterialTheme.colorScheme.surface
+    val outlineColor = DividerDefaults.color
 
     if (uiState.isEditMode()) {
         BrowserEditToolbar(
