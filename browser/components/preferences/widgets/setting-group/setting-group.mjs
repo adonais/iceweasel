@@ -39,6 +39,7 @@ const CLICK_HANDLERS = new Set([
   "moz-button",
   "moz-box-group",
   "moz-message-bar",
+  "a",
 ]);
 const DISMISS_HANDLERS = new Set(["moz-message-bar"]);
 const REORDER_HANDLERS = new Set(["moz-box-group"]);

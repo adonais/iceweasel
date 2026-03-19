@@ -564,151 +564,23 @@
 <html:setting-group groupid="permissions" data-category="panePrivacy" data-subcategory="permissions" hidden="true"></html:setting-group>
 
 <!-- Firefox Data Collection and Use -->
-<hbox id="dataCollectionCategory"
-      class="subcategory"
-      hidden="true"
-      data-category="panePrivacy">
-  <html:h1 data-l10n-id="collection-header2" data-l10n-attrs="searchkeywords"/>
-</hbox>
+<html:setting-group groupid="dataCollection" data-category="panePrivacy" hidden="true"
+  class="subcategory"></html:setting-group>
 
-<groupbox id="dataCollectionGroup" data-category="panePrivacy" hidden="true">
-  <label class="search-header" hidden="true"><html:h2 data-l10n-id="collection-header2" data-l10n-attrs="searchkeywords"/></label>
-
-  <description class="description-deemphasized">
-    <html:span data-l10n-id="preferences-collection-description"/>
-    <html:a id="dataCollectionPrivacyNotice"
-            class="learnMore"
-            target="_blank"
-            data-l10n-id="preferences-collection-privacy-notice"/>
-  </description>
-  <description class="description-deemphasized"
-               id="preferences-privacy-profiles"
-               hidden="true">
-    <html:span data-l10n-id="preferences-across-profiles"/>
-    <html:a id="dataCollectionViewProfiles"
-            target="_blank"
-            data-l10n-id="preferences-view-profiles"/>
-  </description>
-#ifdef MOZ_DATA_REPORTING
-  <hbox id="telemetry-container" class="info-box-container smaller-font-size" hidden="true">
-    <hbox class="info-icon-container">
-      <html:img class="info-icon"></html:img>
-    </hbox>
-    <description>
-      <html:span id="telemetryDisabledDescription"
-                 data-l10n-id="collection-health-report-telemetry-disabled"/>
-      <html:a is="moz-support-link"
-              support-page="telemetry-clientid"
-              class="learnMore"
-              data-l10n-id="collection-health-report-telemetry-disabled-link"/>
-    </description>
-  </hbox>
-
-  <html:moz-message-bar id="backup-multi-profile-warning-message-bar"
-                   type="info"
-                   dismissable="true"
-                   data-l10n-id="backup-multi-profile-warning-message"
-                   data-l10n-attrs="message"
-                   hidden="true">
-    <html:a id="dataCollectionViewProfilesMultiProfileBackupWarning"
-            slot="support-link"
-            target="_blank"
-            data-l10n-id="preferences-view-profiles"/>
-  </html:moz-message-bar>
-
-  <vbox data-subcategory="reports">
-    <checkbox id="submitHealthReportBox"
-              data-l10n-id="collection-health-report2"/>
-    <description class="indent tip-caption">
-#ifdef MOZ_TELEMETRY_REPORTING
-      <html:span data-l10n-id="collection-health-report-description"/>
-#else # !MOZ_TELEMETRY_REPORTING
-      <html:span data-l10n-id="collection-health-report-disabled2"/>
-#endif # MOZ_TELEMETRY_REPORTING
-      <html:a id="FHRLearnMore"
-              is="moz-support-link"
-              support-page="technical-and-interaction-data"
-              class="learnMore"
-              data-l10n-id="collection-health-report-link"/>
-    </description>
-
-    <vbox class="indent">
-      <checkbox id="addonRecommendationEnabled"
-                data-l10n-id="addon-recommendations2"/>
-      <description class="indent tip-caption">
-        <html:span data-l10n-id="addon-recommendations-description"/>
-        <html:a is="moz-support-link"
-                id="addonRecommendationLearnMore"
-                class="learnMore"
-                support-page="personalized-addons"/>
-      </description>
-
-#ifdef MOZ_NORMANDY
-      <checkbox id="optOutStudiesEnabled"
-                data-l10n-id="collection-studies2"/>
-      <description class="indent tip-caption">
-        <html:span data-l10n-id="collection-studies-description"/>
-        <html:a id="viewShieldStudies"
-                href="about:studies"
-                class="learnMore"
-                target="_blank"
-                data-l10n-id="collection-studies-link"/>
-      </description>
-#endif # MOZ_NORMANDY
-    </vbox>
-#ifdef MOZ_NORMANDY
-    <checkbox id="enableNimbusRollouts"
-              data-l10n-id="nimbus-rollouts-enabled"
-              preference="nimbus.rollouts.enabled"/>
-    <description class="indent tip-caption">
-      <html:span data-l10n-id="nimbus-rollouts-enabled-description" />
-      <html:a is="moz-support-link"
-              id="enableRolloutsLearnMore"
-              class="learnMore"
-              support-page="remote-improvements" />
-    </description>
-#endif # MOZ_NORMANDY
-
-    <checkbox id="submitUsagePingBox"
-              data-l10n-id="collection-usage-ping"
-              preference="datareporting.usage.uploadEnabled"/>
-    <description class="indent tip-caption">
-      <html:span data-l10n-id="collection-usage-ping-description"/>
-      <html:a id="submitUsagePingLearnMore"
-              is="moz-support-link"
-              class="learnMore"
-              support-page="usage-ping-settings"/>
-    </description>
-
-#ifdef MOZ_CRASHREPORTER
-    <checkbox id="automaticallySubmitCrashesBox"
-              data-l10n-id="collection-backlogged-crash-reports2"
-              preference="browser.crashReports.unsubmittedCheck.autoSubmit2"/>
-    <description class="indent tip-caption">
-      <html:span data-l10n-id="collection-backlogged-crash-reports-description"/>
-      <html:a is="moz-support-link"
-              class="learnMore"
-              support-page="crash-reports"
-              id="crashReporterLearnMore"/>
-    </description>
-#endif # MOZ_CRASHREPORTER
-  </vbox>
-#endif MOZ_DATA_REPORTING
-  <vbox id="privacySegmentationSection" data-subcategory="privacy-segmentation" hidden="true">
-    <label>
-      <html:h2 data-l10n-id="privacy-segmentation-section-header"/>
-    </label>
-    <label data-l10n-id="privacy-segmentation-section-description"/>
-    <radiogroup id="privacyDataFeatureRecommendationRadioGroup" preference="browser.dataFeatureRecommendations.enabled">
-        <radio id="privacyDataFeatureRecommendationEnabled"
-               data-l10n-id="privacy-segmentation-radio-off"
-               value="true"/>
-        <radio id="privacyDataFeatureRecommendationDisabled"
-               data-l10n-id="privacy-segmentation-radio-on"
-               value="false"/>
-    </radiogroup>
-  </vbox>
-</groupbox>
+<vbox id="privacySegmentationSection" data-subcategory="privacy-segmentation" hidden="true">
+  <label>
+    <html:h2 data-l10n-id="privacy-segmentation-section-header"/>
+  </label>
+  <label data-l10n-id="privacy-segmentation-section-description"/>
+  <radiogroup id="privacyDataFeatureRecommendationRadioGroup" preference="browser.dataFeatureRecommendations.enabled">
+      <radio id="privacyDataFeatureRecommendationEnabled"
+              data-l10n-id="privacy-segmentation-radio-off"
+              value="true"/>
+      <radio id="privacyDataFeatureRecommendationDisabled"
+              data-l10n-id="privacy-segmentation-radio-on"
+              value="false"/>
+  </radiogroup>
+</vbox>
 
 <hbox id="securityCategory"
       class="subcategory"
