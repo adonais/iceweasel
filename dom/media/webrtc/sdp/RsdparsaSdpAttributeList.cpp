@@ -15,7 +15,7 @@
 
 namespace mozilla {
 
-MOZ_GLIBCXX_CONSTINIT const std::string RsdparsaSdpAttributeList::kEmptyString;
+MOZ_RUNINIT const std::string RsdparsaSdpAttributeList::kEmptyString = "";
 
 RsdparsaSdpAttributeList::~RsdparsaSdpAttributeList() {
   for (size_t i = 0; i < kNumAttributeTypes; ++i) {

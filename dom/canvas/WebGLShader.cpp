@@ -100,7 +100,7 @@ void WebGLShader::CompileShader() {
     mCompileResults = validator->ValidateAndTranslate(mSource.c_str());
   }
 
-  mCompilationLog = mCompileResults->mInfoLog;
+  mCompilationLog = mCompileResults->mInfoLog.c_str();
   const auto& success = mCompileResults->mValid;
 
   if (MOZ_UNLIKELY(kDumpShaders)) {

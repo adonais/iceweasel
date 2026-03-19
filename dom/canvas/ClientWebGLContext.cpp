@@ -2549,7 +2549,7 @@ void ClientWebGLContext::GetParameter(JSContext* cx, GLenum pname,
                                ToChars(bool(inProcess)));
       }
       str += *maybe;
-      retval.set(StringValue(cx, str, rv));
+      retval.set(StringValue(cx, str.c_str(), rv));
     }
   } else {
     const auto maybe = GetNumber(pname);
