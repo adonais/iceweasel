@@ -1150,6 +1150,8 @@
   <string name="download_multi_select_title">%1$d hatin bijartin</string>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Jê bibe</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">Here Sazkariyên Jêbarkirinan</string>
   <string name="download_clear_search_description">Paqij bike</string>
   <!-- Text for the button to share the download URL -->
   <string name="download_share_url">URL`ê parve bike</string>
