@@ -16,6 +16,7 @@ import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RecyclerViewIdlingResource
 import org.mozilla.fenix.helpers.TestAssetHelper.enhancedTrackingProtectionAsset
+import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.addonsMenu
@@ -167,13 +168,19 @@ class SettingsAddonsTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/875785
     @Test
     fun verifyUBlockWorksInNormalModeTest() {
+        val genericURL = mockWebServer.getGenericAsset(1)
         val addonName = "uBlock Origin"
         val webPage = "https://mozilla-mobile.github.io/testapp/"
 
         addonsMenu(composeTestRule) {
             installAddon(addonName, composeTestRule.activityRule)
             closeAddonInstallCompletePrompt()
+            verifyAddonIsInstalled(addonName)
         }.goBackToHomeScreen {
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(genericURL.url) {
+            verifyPageContent(genericURL.content)
         }
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(webPage.toUri()) {
