@@ -19,6 +19,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
   IPPProxyStates:
     "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+  IPPUsageHelper:
+    "moz-src:///browser/components/ipprotection/IPPUsageHelper.sys.mjs",
+  UsageStates:
+    "moz-src:///browser/components/ipprotection/IPPUsageHelper.sys.mjs",
   IPProtectionService:
     "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtection:
@@ -135,7 +139,7 @@ export class IPProtectionPanel {
   panel = null;
   initiatedUpgrade = false;
   #window = null;
-  #lastBandwidthWarningMessageDismissed = 0;
+  #lastDismissedUsageState = "none";
 
   /**
    * Gets the gBrowser from the weak reference to the window.
@@ -350,6 +354,7 @@ export class IPProtectionPanel {
 
     this.setState({
       isSiteExceptionsEnabled: this.isExceptionsFeatureEnabled,
+      bandwidthWarning: this.#shouldShowBandwidthWarning(),
     });
 
     if (this.panel) {
@@ -602,6 +607,10 @@ export class IPProtectionPanel {
       "IPPProxyManager:UsageChanged",
       this.handleEvent
     );
+    lazy.IPPUsageHelper.addEventListener(
+      "IPPUsageHelper:StateChanged",
+      this.handleEvent
+    );
     lazy.IPPEnrollAndEntitleManager.addEventListener(
       "IPPEnrollAndEntitleManager:StateChanged",
       this.handleEvent
@@ -625,6 +634,10 @@ export class IPProtectionPanel {
       "IPPProxyManager:UsageChanged",
       this.handleEvent
     );
+    lazy.IPPUsageHelper.removeEventListener(
+      "IPPUsageHelper:StateChanged",
+      this.handleEvent
+    );
     lazy.IPProtectionService.removeEventListener(
       "IPProtectionService:StateChanged",
       this.handleEvent
@@ -633,6 +646,18 @@ export class IPProtectionPanel {
       "IPPExceptionsManager:ExclusionChanged",
       this.handleEvent
     );
+  }
+
+  #shouldShowBandwidthWarning() {
+    const state = lazy.IPPUsageHelper.state;
+    if (
+      (state == "warning-75-percent" || state == "warning-90-percent") &&
+      state !== this.#lastDismissedUsageState
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   #addProgressListener() {
@@ -799,7 +824,7 @@ export class IPProtectionPanel {
         bandwidthUsage: this.#getBandwidthUsage(),
         bandwidthWarning:
           lazy.IPProtectionService.state === lazy.IPProtectionStates.READY
-            ? this.state.bandwidthWarning
+            ? this.#shouldShowBandwidthWarning()
             : false,
         paused: lazy.IPPProxyManager.state === lazy.IPPProxyStates.PAUSED,
       });
@@ -818,8 +843,7 @@ export class IPProtectionPanel {
       lazy.IPPExceptionsManager.setExclusion(principal, true);
       Glean.ipprotection.exclusionToggled.record({ excluded: true });
     } else if (event.type == "IPProtection:DismissBandwidthWarning") {
-      // Store the dismissed threshold level
-      this.#lastBandwidthWarningMessageDismissed = event.detail.threshold;
+      this.#lastDismissedUsageState = lazy.IPPUsageHelper.state;
       this.setState({ bandwidthWarning: false });
     } else if (event.type == "IPPProxyManager:UsageChanged") {
       const usage = event.detail.usage;
@@ -867,12 +891,6 @@ export class IPProtectionPanel {
         this.#measureBandwidthThreshold(threshold, lastRecordedThreshold);
       }
 
-      // Reset dismissed warnings when usage is reset
-      if (threshold === 0) {
-        this.#lastBandwidthWarningMessageDismissed = 0;
-      }
-
-      // Update bandwidthUsage state with byte values
       if (lazy.BANDWIDTH_USAGE_ENABLED) {
         this.setState({
           bandwidthUsage: {
@@ -882,19 +900,11 @@ export class IPProtectionPanel {
           },
         });
       }
-
-      // Check threshold and clear or set warning
-      if (threshold === 100) {
-        this.setState({ bandwidthWarning: false });
-      } else if (
-        (threshold === firstWarning || threshold === secondWarning) &&
-        threshold > this.#lastBandwidthWarningMessageDismissed
-      ) {
-        this.setState({ bandwidthWarning: true });
-      } else if (threshold <= this.#lastBandwidthWarningMessageDismissed) {
-        // Keep warning dismissed if threshold hasn't increased
-        this.setState({ bandwidthWarning: false });
+    } else if (event.type == "IPPUsageHelper:StateChanged") {
+      if (lazy.IPPUsageHelper.state === lazy.UsageStates.NONE) {
+        this.#lastDismissedUsageState = lazy.UsageStates.NONE;
       }
+      this.setState({ bandwidthWarning: this.#shouldShowBandwidthWarning() });
     }
   }
 

@@ -32,6 +32,7 @@ MOZ_SRC_FILES += [
     "IPProtectionToolbarButton.sys.mjs",
     "IPPSignInWatcher.sys.mjs",
     "IPPStartupCache.sys.mjs",
+    "IPPUsageHelper.sys.mjs",
 ]
 
 BROWSER_CHROME_MANIFESTS += [

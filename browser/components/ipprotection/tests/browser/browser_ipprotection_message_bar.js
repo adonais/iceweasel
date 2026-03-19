@@ -8,6 +8,10 @@ const { BANDWIDTH } = ChromeUtils.importESModule(
   "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
 );
 
+const { IPPUsageHelper } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/ipprotection/IPPUsageHelper.sys.mjs"
+);
+
 const mockBandwidthUsage = {
   remaining: BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB,
   max: BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB,
@@ -49,17 +53,13 @@ add_task(async function test_warning_message() {
     "2026-03-01T00:00:00.000Z"
   );
 
-  // Call handleEvent directly on the test panel to avoid affecting defaultState
-  let panel = IPProtection.getPanel(window);
-  const usageChangedEventFirstWarning = new CustomEvent(
-    "IPPProxyManager:UsageChanged",
-    {
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
       bubbles: true,
       composed: true,
       detail: { usage: usageFirstWarning },
-    }
+    })
   );
-  panel.handleEvent(usageChangedEventFirstWarning);
 
   await messageBarLoadedPromise;
 
@@ -152,17 +152,13 @@ add_task(async function test_warning_message() {
     "2026-03-01T00:00:00.000Z"
   );
 
-  // Call handleEvent directly on the test panel to avoid affecting defaultState
-  panel = IPProtection.getPanel(window);
-  const usageChangedEventSecondWarning = new CustomEvent(
-    "IPPProxyManager:UsageChanged",
-    {
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
       bubbles: true,
       composed: true,
       detail: { usage: usageSecondWarning },
-    }
+    })
   );
-  panel.handleEvent(usageChangedEventSecondWarning);
 
   // The third threshold warning should appear
   await messageBarLoadedPromise;
@@ -234,12 +230,32 @@ add_task(async function test_warning_message() {
   await closePanel();
   await SpecialPowers.popPrefEnv();
   Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+
+  // Reset IPPUsageHelper state to NONE
+  let resetPromise = BrowserTestUtils.waitForEvent(
+    IPPUsageHelper,
+    "IPPUsageHelper:StateChanged"
+  );
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(maxBytes),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+  await resetPromise;
 });
 
 /**
- * Tests that the bandwidth warning is dismissed when bandwidth is fully exhausted.
+ * Tests that the bandwidth warning is dismissed when bandwidth resets to NONE state.
  */
-add_task(async function test_warning_dismissed_at_zero_remaining() {
+add_task(async function test_warning_dismissed_when_bandwidth_resets() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.ipProtection.bandwidth.enabled", true]],
   });
@@ -248,16 +264,32 @@ add_task(async function test_warning_dismissed_at_zero_remaining() {
   let content = await openPanel({
     isSignedOut: false,
     error: "",
-    bandwidthWarning: true,
-    bandwidthUsage: {
-      remaining: maxBytes * BANDWIDTH.THIRD_THRESHOLD,
-      max: maxBytes,
-    },
+    bandwidthWarning: false,
   });
-  await content.updateComplete;
+
+  let messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(maxBytes * BANDWIDTH.THIRD_THRESHOLD),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+  await messageBarLoadedPromise;
   Assert.ok(
     content.shadowRoot.querySelector("ipprotection-message-bar"),
-    "Message bar should be present initially"
+    "Message bar should be present after warning threshold is reached"
   );
 
   let messageBarUnloadedPromise = BrowserTestUtils.waitForMutationCondition(
@@ -266,15 +298,15 @@ add_task(async function test_warning_dismissed_at_zero_remaining() {
     () => !content.shadowRoot.querySelector("ipprotection-message-bar")
   );
 
-  let panel = IPProtection.getPanel(window);
-  panel.handleEvent(
+  // Fire a full-remaining event to reset IPPUsageHelper to NONE
+  IPPProxyManager.dispatchEvent(
     new CustomEvent("IPPProxyManager:UsageChanged", {
       bubbles: true,
       composed: true,
       detail: {
         usage: new ProxyUsage(
           String(maxBytes),
-          "0",
+          String(maxBytes),
           "2026-03-01T00:00:00.000Z"
         ),
       },
@@ -283,7 +315,7 @@ add_task(async function test_warning_dismissed_at_zero_remaining() {
   await messageBarUnloadedPromise;
   Assert.ok(
     !content.shadowRoot.querySelector("ipprotection-message-bar"),
-    "Message bar should be dismissed when bandwidth is fully exhausted"
+    "Message bar should be dismissed when bandwidth resets"
   );
   await closePanel();
   await SpecialPowers.popPrefEnv();
@@ -302,10 +334,30 @@ add_task(async function test_warning_message_decimal_precision() {
   const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
   const remainingBytes = maxBytes * BANDWIDTH.SECOND_THRESHOLD;
 
-  let content = await openPanel({
-    bandwidthWarning: true,
-    bandwidthUsage: { remaining: remainingBytes, max: maxBytes },
-  });
+  let content = await openPanel({});
+
+  let messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(remainingBytes),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+
+  await messageBarLoadedPromise;
+  await content.updateComplete;
 
   const messageBar = content.shadowRoot.querySelector(
     "ipprotection-message-bar"
@@ -328,6 +380,25 @@ add_task(async function test_warning_message_decimal_precision() {
   await closePanel();
   await SpecialPowers.popPrefEnv();
   Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+
+  let resetPromise = BrowserTestUtils.waitForEvent(
+    IPPUsageHelper,
+    "IPPUsageHelper:StateChanged"
+  );
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(maxBytes),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+  await resetPromise;
 });
 
 add_task(async function test_warning_message_l10n_args_at_80_percent_used() {
@@ -338,10 +409,30 @@ add_task(async function test_warning_message_l10n_args_at_80_percent_used() {
   const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
   const remaining = Math.floor(maxBytes * 0.2);
 
-  let content = await openPanel({
-    bandwidthWarning: true,
-    bandwidthUsage: { remaining, max: maxBytes },
-  });
+  let content = await openPanel({});
+
+  let messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(remaining),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+
+  await messageBarLoadedPromise;
+  await content.updateComplete;
 
   const messageBar = content.shadowRoot.querySelector(
     "ipprotection-message-bar"
@@ -362,6 +453,25 @@ add_task(async function test_warning_message_l10n_args_at_80_percent_used() {
 
   await closePanel();
   await SpecialPowers.popPrefEnv();
+
+  let resetPromise = BrowserTestUtils.waitForEvent(
+    IPPUsageHelper,
+    "IPPUsageHelper:StateChanged"
+  );
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(maxBytes),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+  await resetPromise;
 });
 
 add_task(async function test_warning_message_l10n_args_mb_below_1gb() {
@@ -372,10 +482,30 @@ add_task(async function test_warning_message_l10n_args_mb_below_1gb() {
   const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
   const remaining = Math.floor(0.9 * BANDWIDTH.BYTES_IN_GB);
 
-  let content = await openPanel({
-    bandwidthWarning: true,
-    bandwidthUsage: { remaining, max: maxBytes },
-  });
+  let content = await openPanel({});
+
+  let messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+    content.shadowRoot,
+    { childList: true, subtree: true },
+    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+  );
+
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(remaining),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+
+  await messageBarLoadedPromise;
+  await content.updateComplete;
 
   const messageBar = content.shadowRoot.querySelector(
     "ipprotection-message-bar"
@@ -396,6 +526,25 @@ add_task(async function test_warning_message_l10n_args_mb_below_1gb() {
 
   await closePanel();
   await SpecialPowers.popPrefEnv();
+
+  let resetPromise = BrowserTestUtils.waitForEvent(
+    IPPUsageHelper,
+    "IPPUsageHelper:StateChanged"
+  );
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(maxBytes),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+  await resetPromise;
 });
 
 /**
@@ -403,11 +552,11 @@ add_task(async function test_warning_message_l10n_args_mb_below_1gb() {
  * removes it from the DOM.
  */
 add_task(async function test_dismiss() {
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+
   let content = await openPanel({
     isSignedOut: false,
     error: "",
-    bandwidthWarning: false,
-    bandwidthUsage: mockBandwidthUsage,
   });
 
   let messageBar = content.shadowRoot.querySelector("ipprotection-message-bar");
@@ -421,12 +570,19 @@ add_task(async function test_dismiss() {
   );
 
   // Use bandwidth warning to test message bar dismiss functionality
-  await setPanelState({
-    isSignedOut: false,
-    error: "",
-    bandwidthWarning: true,
-    bandwidthUsage: mockBandwidthUsage,
-  });
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(maxBytes * BANDWIDTH.SECOND_THRESHOLD),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
   await messageBarLoadedPromise;
 
   messageBar = content.shadowRoot.querySelector("ipprotection-message-bar");
@@ -436,6 +592,9 @@ add_task(async function test_dismiss() {
     messageBar.mozMessageBarEl,
     "Wrapped moz-message-bar should be present"
   );
+
+  await messageBar.updateComplete;
+  await messageBar.mozMessageBarEl.updateComplete;
 
   let closeButton = messageBar.mozMessageBarEl.closeButton;
 
@@ -460,12 +619,34 @@ add_task(async function test_dismiss() {
   Assert.ok(true, "Message bar should be not be present");
 
   await closePanel();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+
+  let resetPromise = BrowserTestUtils.waitForEvent(
+    IPPUsageHelper,
+    "IPPUsageHelper:StateChanged"
+  );
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(maxBytes),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+  await resetPromise;
 });
 
 /**
  * Tests that signing out removes the bandwidth warning from the panel.
  */
 add_task(async function test_remove_warning_after_sign_out() {
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+
   setupService({
     isSignedIn: true,
     isEnrolledAndEntitled: true,
@@ -474,10 +655,20 @@ add_task(async function test_remove_warning_after_sign_out() {
   IPProtectionService.updateState();
 
   let content = await openPanel();
-  await setPanelState({
-    bandwidthWarning: true,
-    bandwidthUsage: mockBandwidthUsage,
-  });
+
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(maxBytes * BANDWIDTH.SECOND_THRESHOLD),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
 
   await BrowserTestUtils.waitForMutationCondition(
     content.shadowRoot,
@@ -507,4 +698,24 @@ add_task(async function test_remove_warning_after_sign_out() {
 
   await closePanel();
   cleanupService();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+
+  let resetPromise = BrowserTestUtils.waitForEvent(
+    IPPUsageHelper,
+    "IPPUsageHelper:StateChanged"
+  );
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(maxBytes),
+          String(maxBytes),
+          "2026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+  await resetPromise;
 });
