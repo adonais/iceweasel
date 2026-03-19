@@ -62,7 +62,7 @@ add_task(async function test_aifeature_disable() {
     ],
   });
 
-  await LinkPreview.block();
+  await LinkPreview.disable();
 
   is(
     Services.prefs.getBoolPref("browser.ml.linkPreview.enabled"),
@@ -115,7 +115,7 @@ add_task(async function test_aifeature_reset() {
     ],
   });
 
-  await LinkPreview.makeAvailable();
+  await LinkPreview.reset();
 
   // Check that all user values are cleared
   ok(
@@ -403,7 +403,7 @@ add_task(async function test_aifeature_disable_enable_workflow() {
   is(uninstallStub.callCount, 0, "uninstall not called during enable");
 
   // Disable the feature
-  await LinkPreview.block();
+  await LinkPreview.disable();
 
   is(LinkPreview.isEnabled, false, "feature disabled after calling disable()");
   is(uninstallStub.callCount, 1, "uninstall called once during disable");
@@ -433,7 +433,7 @@ add_task(async function test_aifeature_disable_calls_uninstall() {
     ],
   });
 
-  await LinkPreview.block();
+  await LinkPreview.disable();
 
   is(
     uninstallStub.callCount,
@@ -458,7 +458,7 @@ add_task(async function test_aifeature_reset_calls_uninstall() {
     ],
   });
 
-  await LinkPreview.makeAvailable();
+  await LinkPreview.reset();
 
   is(
     uninstallStub.callCount,
@@ -512,7 +512,7 @@ add_task(async function test_aifeature_sequential_enable_disable() {
   await LinkPreview.enable();
   is(LinkPreview.isEnabled, true, "Should be enabled after enable()");
 
-  await LinkPreview.block();
+  await LinkPreview.disable();
   is(LinkPreview.isEnabled, false, "Should be disabled after disable()");
 
   await LinkPreview.enable();

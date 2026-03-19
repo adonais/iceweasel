@@ -38,32 +38,32 @@ export class AIFeature {
   }
 
   /**
-   * Block the feature by setting its preference to blocked,
+   * Disable the feature by clearing its preference,
    * which typically triggers observers that handle:
    * - Removing event listeners
    * - Deleting downloaded models/artifacts
    * - Updating telemetry
    *
-   * @returns {Promise<void>} Resolves when block process (including cleanup) completes
+   * @returns {Promise<void>} Resolves when disable process (including cleanup) completes
    */
-  static async block() {
-    throw new Error("AIFeature subclass must implement static block()");
+  static async disable() {
+    throw new Error("AIFeature subclass must implement static disable()");
   }
 
   /**
-   * Make the feature available (reset to default state).
-   * - Sets feature pref to DEFAULT value (not explicitly blocked)
+   * Reset the feature to its default state.
+   * - Sets feature pref to DEFAULT value (not explicitly disabled)
    * - Uninstalls any downloaded models/artifacts
    * - Resets all related prefs (opt-in, UI visibility, etc.) to defaults
    *
-   * This differs from block() in that it restores factory defaults rather than
-   * explicitly blocking. The default state may be enabled or disabled depending
+   * This differs from disable() in that it restores factory defaults rather than
+   * explicitly disabling. The default state may be enabled or disabled depending
    * on rollout status and default pref values.
    *
-   * @returns {Promise<void>} Resolves when makeAvailable is complete
+   * @returns {Promise<void>} Resolves when reset is complete
    */
-  static async makeAvailable() {
-    throw new Error("AIFeature subclass must implement static makeAvailable()");
+  static async reset() {
+    throw new Error("AIFeature subclass must implement static reset()");
   }
 
   /**

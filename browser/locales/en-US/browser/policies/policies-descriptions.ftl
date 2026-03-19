@@ -11,8 +11,6 @@
 
 policy-3rdparty = Set policies that WebExtensions can access via chrome.storage.managed.
 
-policy-AIControls = Configure AI controls.
-
 policy-AllowedDomainsForApps = Define domains allowed to access Google Workspace.
 
 policy-AllowFileSelectionDialogs = Allow file selection dialogs.

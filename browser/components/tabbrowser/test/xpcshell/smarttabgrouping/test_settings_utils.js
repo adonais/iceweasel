@@ -135,7 +135,7 @@ add_task(async function test_reset_clears_user_prefs_and_uninstalls_models() {
 
   const uninstallStub = sinon.stub(MLUninstallService, "uninstall").resolves();
 
-  await SmartTabGroupingManager.makeAvailable();
+  await SmartTabGroupingManager.reset();
 
   Assert.ok(
     !Services.prefs.prefHasUserValue(PREF_ENABLED),
@@ -210,7 +210,7 @@ add_task(async function test_disable_sets_prefs_false_and_uninstalls_models() {
 
   const uninstallStub = sinon.stub(MLUninstallService, "uninstall").resolves();
 
-  await SmartTabGroupingManager.block();
+  await SmartTabGroupingManager.disable();
 
   Assert.equal(
     Services.prefs.getBoolPref(PREF_ENABLED, true),

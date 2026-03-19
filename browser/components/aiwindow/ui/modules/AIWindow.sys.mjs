@@ -903,7 +903,7 @@ export const AIWindow = {
    * @returns {boolean}
    */
   get isManagedByPolicy() {
-    return Services.prefs.prefIsLocked(PREF_AI_CONTROL_SMARTWINDOW);
+    return Services.prefs.prefIsLocked(PREF_SMARTWINDOW_ENABLED);
   },
 
   /**
@@ -911,7 +911,7 @@ export const AIWindow = {
    *
    * @returns {Promise<void>}
    */
-  async makeAvailable() {
+  async reset() {
     // TODO: Bug 2019981 - Remove memories
     Services.prefs.clearUserPref(PREF_SMARTWINDOW_CONSENT_TIME);
   },
@@ -931,7 +931,7 @@ export const AIWindow = {
    *
    * @returns {Promise<void>}
    */
-  async block() {
+  async disable() {
     // Leave PREF_SMARTWINDOW_ENABLED alone, since PREF_AI_CONTROL_SMARTWINDOW
     // will block the feature anyways.
     Services.prefs.setStringPref(PREF_AI_CONTROL_SMARTWINDOW, "blocked");

@@ -173,7 +173,7 @@ export const LinkPreview = {
    * Also disables opt-in pref and uninstalls models.
    * Waits for model uninstallation to complete before resolving.
    */
-  async block() {
+  async disable() {
     // Disable both feature and opt-in prefs (triggers onEnabledPref to remove listeners)
     Services.prefs.setBoolPref("browser.ml.linkPreview.enabled", false);
     Services.prefs.setBoolPref("browser.ml.linkPreview.optin", false);
@@ -190,16 +190,10 @@ export const LinkPreview = {
    * Reset the feature to its default state.
    * Clears all user prefs to restore factory defaults and uninstalls models.
    */
-  async makeAvailable() {
-    // Set explicitly rather than clearing, so that a non-locked policy default
-    // of "blocked" does not prevent the user from switching back to "available".
-    Services.prefs.setStringPref(
-      "browser.ai.control.linkPreviewKeyPoints",
-      "available"
-    );
-    Services.prefs.setBoolPref("browser.ml.linkPreview.enabled", true);
+  async reset() {
     // Clear all related prefs (returns to default values, triggers onEnabledPref if enabled was true)
     const prefs = [
+      "browser.ml.linkPreview.enabled",
       "browser.ml.linkPreview.optin",
       "browser.ml.linkPreview.collapsed",
       "browser.ml.linkPreview.shift",
@@ -266,10 +260,7 @@ export const LinkPreview = {
    * @returns {boolean}
    */
   get isManagedByPolicy() {
-    return (
-      Services.prefs.prefIsLocked("browser.ml.linkPreview.enabled") ||
-      this._isDisabledByPolicy()
-    );
+    return Services.prefs.prefIsLocked("browser.ml.linkPreview.optin");
   },
 
   /**

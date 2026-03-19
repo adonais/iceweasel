@@ -77,10 +77,10 @@ export class TranslationsFeature extends AIFeature {
    *
    * @returns {Promise<void>}
    */
-  static async block() {
+  static async disable() {
     if (TranslationsFeature.isManagedByPolicy) {
       throw new Error(
-        "Cannot block Translations: controlled by enterprise policy"
+        "Cannot disable Translations: controlled by enterprise policy"
       );
     }
 
@@ -99,17 +99,15 @@ export class TranslationsFeature extends AIFeature {
    *
    * @returns {Promise<void>}
    */
-  static async makeAvailable() {
+  static async reset() {
     if (TranslationsFeature.isManagedByPolicy) {
       throw new Error(
-        "Cannot make Translations available: controlled by enterprise policy"
+        "Cannot reset Translations: controlled by enterprise policy"
       );
     }
 
-    // Set explicitly rather than clearing, so that a non-locked policy default
-    // of "blocked" does not prevent the user from switching back to "available".
-    Services.prefs.setStringPref(AI_CONTROL_TRANSLATIONS_PREF, "available");
-    Services.prefs.setBoolPref(TRANSLATIONS_ENABLE_PREF, true);
+    Services.prefs.clearUserPref(AI_CONTROL_TRANSLATIONS_PREF);
+    Services.prefs.clearUserPref(TRANSLATIONS_ENABLE_PREF);
 
     await Promise.allSettled([
       lazy.EngineProcess.destroyTranslationsEngine(),

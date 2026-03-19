@@ -78,9 +78,7 @@ Preferences.addSetting({ id: "sidebarChatbotFieldset" });
 Preferences.addSetting({
   id: "aiBlockedMessage",
   deps: ["aiControlDefaultToggle"],
-  visible: deps => {
-    return deps.aiControlDefaultToggle.value;
-  },
+  visible: deps => deps.aiControlDefaultToggle.value,
 });
 
 const AiControlStates = Object.freeze({
@@ -103,10 +101,10 @@ function updateAiControlDefault(state) {
   for (let feature of Object.values(OnDeviceModelManager.features)) {
     if (isBlocked) {
       // Reset to default (blocked) state unless it was already blocked.
-      OnDeviceModelManager.block(feature);
+      OnDeviceModelManager.disable(feature);
     } else if (!isBlocked && !OnDeviceModelManager.isEnabled(feature)) {
       // Reset to default (available) state unless it was manually enabled.
-      OnDeviceModelManager.makeAvailable(feature);
+      OnDeviceModelManager.reset(feature);
     }
   }
   if (isBlocked) {
@@ -350,11 +348,11 @@ function makeAiControlSetting({
     },
     set(prefVal) {
       if (prefVal == AiControlStates.available) {
-        OnDeviceModelManager.makeAvailable(feature);
+        OnDeviceModelManager.reset(feature);
       } else if (prefVal == AiControlStates.enabled) {
         OnDeviceModelManager.enable(feature);
       } else if (prefVal == AiControlStates.blocked) {
-        OnDeviceModelManager.block(feature);
+        OnDeviceModelManager.disable(feature);
       }
       return prefVal;
     },
@@ -446,11 +444,11 @@ Preferences.addSetting(
     },
     set(inputVal, deps) {
       if (inputVal == AiControlStates.blocked) {
-        OnDeviceModelManager.block(this.feature);
+        OnDeviceModelManager.disable(this.feature);
         return inputVal;
       }
       if (inputVal == AiControlStates.available) {
-        OnDeviceModelManager.makeAvailable(this.feature);
+        OnDeviceModelManager.reset(this.feature);
         return inputVal;
       }
       if (inputVal) {

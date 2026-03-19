@@ -1346,14 +1346,8 @@ export const GenAI = {
     );
   },
 
-  async makeAvailable() {
-    // Set explicitly rather than clearing, so that a non-locked policy default
-    // of "blocked" does not prevent the user from switching back to "available".
-    Services.prefs.setStringPref(
-      "browser.ai.control.sidebarChatbot",
-      "available"
-    );
-    Services.prefs.setBoolPref(PREF_CHAT_ENABLED, true);
+  async reset() {
+    Services.prefs.clearUserPref(PREF_CHAT_ENABLED);
     Services.prefs.clearUserPref(PREF_CHAT_PAGE);
     Services.prefs.clearUserPref(PREF_CHAT_PROVIDER);
   },
@@ -1365,7 +1359,7 @@ export const GenAI = {
     // "available" unless it's set elsewhere.
   },
 
-  async block() {
+  async disable() {
     Services.prefs.setBoolPref(PREF_CHAT_ENABLED, false);
     Services.prefs.setBoolPref(PREF_CHAT_PAGE, false);
     Services.prefs.clearUserPref(PREF_CHAT_PROVIDER);

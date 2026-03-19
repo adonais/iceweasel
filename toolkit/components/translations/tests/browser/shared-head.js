@@ -251,7 +251,7 @@ async function openAboutTranslations({
   const lockedFeaturePrefs = [];
 
   if (!featureEnabled) {
-    await TranslationsParent.AIFeature.block();
+    await TranslationsParent.AIFeature.disable();
   }
 
   if (lockEnabledState) {
