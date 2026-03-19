@@ -3,23 +3,21 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { actionCreators as ac } from "common/Actions.mjs";
+import { connect } from "react-redux";
+import { FluentOrText } from "content-src/components/FluentOrText/FluentOrText";
 import { DSImage } from "../DSImage/DSImage.jsx";
+import {
+  DSContextFooter,
+  DSMessageFooter,
+  SponsorLabel,
+} from "../DSContextFooter/DSContextFooter";
 import { DSLinkMenu } from "../DSLinkMenu/DSLinkMenu";
 import { ImpressionStats } from "../../DiscoveryStreamImpressionStats/ImpressionStats";
 import { getActiveCardSize } from "../../../lib/utils";
 import React from "react";
 import { SafeAnchor } from "../SafeAnchor/SafeAnchor";
-import {
-  DSContextFooter,
-  SponsorLabel,
-  DSMessageFooter,
-} from "../DSContextFooter/DSContextFooter.jsx";
-import { FluentOrText } from "../../FluentOrText/FluentOrText.jsx";
-import { connect } from "react-redux";
+import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 const READING_WPM = 220;
-const PREF_OHTTP_MERINO = "discoverystream.merino-provider.ohttp.enabled";
-const PREF_OHTTP_UNIFIED_ADS = "unifiedAds.ohttp.enabled";
-const PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
 
 /**
  * READ TIME FROM WORD COUNT
@@ -463,9 +461,9 @@ export class _DSCard extends React.PureComponent {
 
     let ohttpEnabled = false;
     if (flightId) {
-      ohttpEnabled = Prefs.values[PREF_OHTTP_UNIFIED_ADS];
+      ohttpEnabled = Prefs.values[PREFS.OHTTP_UNIFIED_ADS];
     } else {
-      ohttpEnabled = Prefs.values[PREF_OHTTP_MERINO];
+      ohttpEnabled = Prefs.values[PREFS.OHTTP_MERINO];
     }
 
     const ohttpImagesEnabled = Prefs.values.ohttpImagesConfig?.enabled;
@@ -487,7 +485,7 @@ export class _DSCard extends React.PureComponent {
     const { Prefs } = this.props;
 
     const rawImageSrc = this.getRawImageSrc();
-    const smartCrop = Prefs.values["images.smart"];
+    const smartCrop = Prefs.values[PREFS.IMAGES_SMART];
     return (
       <DSImage
         extraClassNames={`img ${classNames}`}
@@ -579,7 +577,7 @@ export class _DSCard extends React.PureComponent {
       readTime: displayReadTime,
     } = DiscoveryStream;
 
-    const sectionsEnabled = Prefs.values[PREF_SECTIONS_ENABLED];
+    const sectionsEnabled = Prefs.values[PREFS.SECTIONS_ENABLED];
     // We can ignore hideDescriptions if we are in sections.
     const excerpt =
       !hideDescriptions || sectionsEnabled ? this.props.excerpt : "";

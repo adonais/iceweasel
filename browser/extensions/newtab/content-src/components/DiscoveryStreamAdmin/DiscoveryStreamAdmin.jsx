@@ -5,25 +5,7 @@
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { connect } from "react-redux";
 import React from "react";
-
-// Pref Constants
-const PREF_AD_SIZE_MEDIUM_RECTANGLE = "newtabAdSize.mediumRectangle";
-const PREF_AD_SIZE_BILLBOARD = "newtabAdSize.billboard";
-const PREF_AD_SIZE_LEADERBOARD = "newtabAdSize.leaderboard";
-const PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
-const PREF_SPOC_PLACEMENTS = "discoverystream.placements.spocs";
-const PREF_SPOC_COUNTS = "discoverystream.placements.spocs.counts";
-const PREF_CONTEXTUAL_ADS_ENABLED =
-  "discoverystream.sections.contextualAds.enabled";
-const PREF_CONTEXTUAL_BANNER_PLACEMENTS =
-  "discoverystream.placements.contextualBanners";
-const PREF_CONTEXTUAL_BANNER_COUNTS =
-  "discoverystream.placements.contextualBanners.counts";
-const PREF_UNIFIED_ADS_ENABLED = "unifiedAds.spocs.enabled";
-const PREF_UNIFIED_ADS_ENDPOINT = "unifiedAds.endpoint";
-const PREF_ALLOWED_ENDPOINTS = "discoverystream.endpoints";
-const PREF_OHTTP_CONFIG = "discoverystream.ohttp.configURL";
-const PREF_OHTTP_RELAY = "discoverystream.ohttp.relayURL";
+import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 
 const Row = props => (
   <tr className="message-item" {...props}>
@@ -257,10 +239,10 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
 
   refreshTopicSelectionCache() {
     this.props.dispatch(
-      ac.SetPref("discoverystream.topicSelection.onboarding.displayCount", 0)
+      ac.SetPref(PREFS.TOPIC_SELECTION_ONBOARDING_DISPLAY_COUNT, 0)
     );
     this.props.dispatch(
-      ac.SetPref("discoverystream.topicSelection.onboarding.maybeDisplay", true)
+      ac.SetPref(PREFS.TOPIC_SELECTION_ONBOARDING_MAYBE_DISPLAY, true)
     );
   }
 
@@ -307,7 +289,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
   handleWeatherSubmit(e) {
     e.preventDefault();
     const { weatherQuery } = this.state;
-    this.props.dispatch(ac.SetPref("weather.query", weatherQuery));
+    this.props.dispatch(ac.SetPref(PREFS.WEATHER_QUERY, weatherQuery));
   }
 
   toggleIABBanners(e) {
@@ -317,33 +299,37 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     switch (id) {
       case "newtab_billboard":
         // Update boolean pref for billboard ad size
-        this.props.dispatch(ac.SetPref(PREF_AD_SIZE_BILLBOARD, pressed));
+        this.props.dispatch(ac.SetPref(PREFS.BILLBOARD_ENABLED, pressed));
 
         break;
       case "newtab_leaderboard":
         // Update boolean pref for billboard ad size
-        this.props.dispatch(ac.SetPref(PREF_AD_SIZE_LEADERBOARD, pressed));
+        this.props.dispatch(ac.SetPref(PREFS.LEADERBOARD_ENABLED, pressed));
 
         break;
       case "newtab_rectangle":
         // Update boolean pref for mediumRectangle (MREC) ad size
-        this.props.dispatch(ac.SetPref(PREF_AD_SIZE_MEDIUM_RECTANGLE, pressed));
+        this.props.dispatch(
+          ac.SetPref(PREFS.AD_SIZE_MEDIUM_RECTANGLE, pressed)
+        );
 
         break;
     }
 
     // Note: The counts array is passively updated whenever the placements array is updated.
     // The default pref values for each are:
-    // PREF_SPOC_PLACEMENTS: "newtab_spocs"
-    // PREF_SPOC_COUNTS: "6"
+    // PREFS.SPOC_PLACEMENTS: "newtab_spocs"
+    // PREFS.SPOC_COUNTS: "6"
     const generateSpocPrefValues = () => {
       const placements =
-        this.props.otherPrefs[PREF_SPOC_PLACEMENTS]?.split(",")
+        this.props.otherPrefs[PREFS.SPOC_PLACEMENTS]
+          ?.split(",")
           .map(item => item.trim())
           .filter(item => item) || [];
 
       const counts =
-        this.props.otherPrefs[PREF_SPOC_COUNTS]?.split(",")
+        this.props.otherPrefs[PREFS.SPOC_COUNTS]
+          ?.split(",")
           .map(item => item.trim())
           .filter(item => item) || [];
 
@@ -384,39 +370,37 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     const { placements, counts } = generateSpocPrefValues();
 
     // Update prefs with new values
-    this.props.dispatch(ac.SetPref(PREF_SPOC_PLACEMENTS, placements));
-    this.props.dispatch(ac.SetPref(PREF_SPOC_COUNTS, counts));
+    this.props.dispatch(ac.SetPref(PREFS.SPOC_PLACEMENTS, placements));
+    this.props.dispatch(ac.SetPref(PREFS.SPOC_COUNTS, counts));
 
     // If contextual ads, sections, and one of the banners are enabled
     // update the contextualBanner prefs to include the banner value and count
     // Else, clear the prefs
-    if (PREF_CONTEXTUAL_ADS_ENABLED && PREF_SECTIONS_ENABLED) {
-      if (PREF_AD_SIZE_BILLBOARD && placements.includes("newtab_billboard")) {
+    if (PREFS.CONTEXTUAL_ADS_ENABLED && PREFS.SECTIONS_ENABLED) {
+      if (PREFS.BILLBOARD_ENABLED && placements.includes("newtab_billboard")) {
         this.props.dispatch(
-          ac.SetPref(PREF_CONTEXTUAL_BANNER_PLACEMENTS, "newtab_billboard")
+          ac.SetPref(PREFS.CONTEXTUAL_BANNER_PLACEMENTS, "newtab_billboard")
         );
-        this.props.dispatch(ac.SetPref(PREF_CONTEXTUAL_BANNER_COUNTS, "1"));
+        this.props.dispatch(ac.SetPref(PREFS.CONTEXTUAL_BANNER_COUNTS, "1"));
       } else if (
-        PREF_AD_SIZE_LEADERBOARD &&
+        PREFS.LEADERBOARD_ENABLED &&
         placements.includes("newtab_leaderboard")
       ) {
         this.props.dispatch(
-          ac.SetPref(PREF_CONTEXTUAL_BANNER_PLACEMENTS, "newtab_leaderboard")
+          ac.SetPref(PREFS.CONTEXTUAL_BANNER_PLACEMENTS, "newtab_leaderboard")
         );
-        this.props.dispatch(ac.SetPref(PREF_CONTEXTUAL_BANNER_COUNTS, "1"));
+        this.props.dispatch(ac.SetPref(PREFS.CONTEXTUAL_BANNER_COUNTS, "1"));
       } else {
-        this.props.dispatch(ac.SetPref(PREF_CONTEXTUAL_BANNER_PLACEMENTS, ""));
-        this.props.dispatch(ac.SetPref(PREF_CONTEXTUAL_BANNER_COUNTS, ""));
+        this.props.dispatch(ac.SetPref(PREFS.CONTEXTUAL_BANNER_PLACEMENTS, ""));
+        this.props.dispatch(ac.SetPref(PREFS.CONTEXTUAL_BANNER_COUNTS, ""));
       }
     }
   }
 
   handleSectionsToggle(e) {
     const { pressed } = e.target;
-    this.props.dispatch(ac.SetPref(PREF_SECTIONS_ENABLED, pressed));
-    this.props.dispatch(
-      ac.SetPref("discoverystream.sections.cards.enabled", pressed)
-    );
+    this.props.dispatch(ac.SetPref(PREFS.SECTIONS_ENABLED, pressed));
+    this.props.dispatch(ac.SetPref(PREFS.SECTIONS_CARDS_ENABLED, pressed));
   }
 
   sendConversionEvent() {
@@ -498,9 +482,7 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
       coarsePrivateInferredInterests,
     } = this.props.state.InferredPersonalization;
     const inferredPersonalizationEnabled = Boolean(
-      this.props.otherPrefs?.[
-        "discoverystream.sections.personalization.inferred.enabled"
-      ]
+      this.props.otherPrefs?.[PREFS.INFERRED_PERSONALIZATION_SYSTEM]
     );
     const hasModelData =
       inferredInterests !== undefined ||
@@ -723,13 +705,13 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
 
   handleAllizomToggle(e) {
     const prefs = this.props.otherPrefs;
-    const unifiedAdsSpocsEnabled = prefs[PREF_UNIFIED_ADS_ENABLED];
+    const unifiedAdsSpocsEnabled = prefs[PREFS.UNIFIED_ADS_ENABLED];
     if (!unifiedAdsSpocsEnabled) {
       return;
     }
     const { pressed } = e.target;
     const { dispatch } = this.props;
-    const allowedEndpoints = prefs[PREF_ALLOWED_ENDPOINTS];
+    const allowedEndpoints = prefs[PREFS.ALLOWED_ENDPOINTS];
     const setPref = (pref = "", value = "") => {
       dispatch(ac.SetPref(pref, value));
     };
@@ -744,24 +726,24 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
       );
     };
     if (pressed) {
-      setPref(PREF_UNIFIED_ADS_ENDPOINT, "https://ads.allizom.org/");
+      setPref(PREFS.UNIFIED_ADS_ENDPOINT, "https://ads.allizom.org/");
       setPref(
-        PREF_ALLOWED_ENDPOINTS,
+        PREFS.ALLOWED_ENDPOINTS,
         `${allowedEndpoints},https://ads.allizom.org/`
       );
       setPref(
-        PREF_OHTTP_CONFIG,
+        PREFS.OHTTP_CONFIG,
         "https://stage.ohttp-gateway.nonprod.webservices.mozgcp.net/ohttp-configs"
       );
       setPref(
-        PREF_OHTTP_RELAY,
+        PREFS.OHTTP_RELAY,
         "https://mozilla-ohttp-relay-test.edgecompute.app/"
       );
     } else {
-      clearPref(PREF_UNIFIED_ADS_ENDPOINT);
-      clearPref(PREF_ALLOWED_ENDPOINTS);
-      clearPref(PREF_OHTTP_CONFIG);
-      clearPref(PREF_OHTTP_RELAY);
+      clearPref(PREFS.UNIFIED_ADS_ENDPOINT);
+      clearPref(PREFS.ALLOWED_ENDPOINTS);
+      clearPref(PREFS.OHTTP_CONFIG);
+      clearPref(PREFS.OHTTP_RELAY);
     }
   }
 
@@ -769,14 +751,14 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
     const { spocs } = this.props.state.DiscoveryStream;
 
     const unifiedAdsSpocsEnabled =
-      this.props.otherPrefs[PREF_UNIFIED_ADS_ENABLED];
+      this.props.otherPrefs[PREFS.UNIFIED_ADS_ENABLED];
 
     // Determine which mechanism is querying the UAPI ads server
-    const PREF_UNIFIED_ADS_ADSFEED_ENABLED = "unifiedAds.adsFeed.enabled";
     const adsFeedEnabled =
-      this.props.otherPrefs[PREF_UNIFIED_ADS_ADSFEED_ENABLED];
+      this.props.otherPrefs[PREFS.UNIFIED_ADS_ADSFEED_ENABLED];
 
-    const unifiedAdsEndpoint = this.props.otherPrefs[PREF_UNIFIED_ADS_ENDPOINT];
+    const unifiedAdsEndpoint =
+      this.props.otherPrefs[PREFS.UNIFIED_ADS_ENDPOINT];
     const spocsEndpoint = unifiedAdsSpocsEnabled
       ? unifiedAdsEndpoint
       : spocs.spocs_endpoint;
@@ -891,14 +873,14 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
   render() {
     const prefToggles = "enabled collapsible".split(" ");
     const { config, layout } = this.props.state.DiscoveryStream;
-    const sectionsEnabled = this.props.otherPrefs[PREF_SECTIONS_ENABLED];
+    const sectionsEnabled = this.props.otherPrefs[PREFS.SECTIONS_ENABLED];
 
     // Prefs for IAB Banners
     const mediumRectangleEnabled =
-      this.props.otherPrefs[PREF_AD_SIZE_MEDIUM_RECTANGLE];
-    const billboardsEnabled = this.props.otherPrefs[PREF_AD_SIZE_BILLBOARD];
-    const leaderboardEnabled = this.props.otherPrefs[PREF_AD_SIZE_LEADERBOARD];
-    const spocPlacements = this.props.otherPrefs[PREF_SPOC_PLACEMENTS];
+      this.props.otherPrefs[PREFS.AD_SIZE_MEDIUM_RECTANGLE];
+    const billboardsEnabled = this.props.otherPrefs[PREFS.BILLBOARD_ENABLED];
+    const leaderboardEnabled = this.props.otherPrefs[PREFS.LEADERBOARD_ENABLED];
+    const spocPlacements = this.props.otherPrefs[PREFS.SPOC_PLACEMENTS];
     const mediumRectangleEnabledPressed =
       mediumRectangleEnabled && spocPlacements.includes("newtab_rectangle");
     const billboardPressed =

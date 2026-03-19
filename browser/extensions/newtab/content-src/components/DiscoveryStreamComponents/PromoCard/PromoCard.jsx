@@ -5,9 +5,8 @@
 import React, { useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import { useIntersectionObserver } from "../../../lib/utils";
-
-const PREF_PROMO_CARD_DISMISSED = "discoverystream.promoCard.visible";
 
 /**
  * The PromoCard component displays a promotional message.
@@ -31,7 +30,7 @@ const PromoCard = () => {
         type: at.PROMO_CARD_DISMISS,
       })
     );
-    dispatch(ac.SetPref(PREF_PROMO_CARD_DISMISSED, false));
+    dispatch(ac.SetPref(PREFS.PROMOCARD_VISIBLE, false));
   }, [dispatch]);
 
   const handleIntersection = useCallback(() => {

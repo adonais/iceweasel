@@ -10,15 +10,13 @@ import { Highlights } from "content-src/components/DiscoveryStreamComponents/Hig
 import { HorizontalRule } from "content-src/components/DiscoveryStreamComponents/HorizontalRule/HorizontalRule";
 import { Navigation } from "content-src/components/DiscoveryStreamComponents/Navigation/Navigation";
 import { PrivacyLink } from "content-src/components/DiscoveryStreamComponents/PrivacyLink/PrivacyLink";
+import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 import React from "react";
 import { SectionTitle } from "content-src/components/DiscoveryStreamComponents/SectionTitle/SectionTitle";
 import { selectLayoutRender } from "content-src/lib/selectLayoutRender";
 import { TopSites } from "content-src/components/TopSites/TopSites";
 import { CardSections } from "../DiscoveryStreamComponents/CardSections/CardSections";
 import { Widgets } from "content-src/components/Widgets/Widgets";
-
-// @nova-cleanup(remove-pref): Remove PREF_NOVA_ENABLED
-const PREF_NOVA_ENABLED = "nova.enabled";
 
 const ALLOWED_CSS_URL_PREFIXES = [
   "chrome://",
@@ -118,7 +116,7 @@ export class _DiscoveryStreamBase extends React.PureComponent {
       case "TopSites":
         // @nova-cleanup(remove-conditional): Remove this guard when DiscoveryStreamBase
         // is no longer used in the Nova layout
-        if (this.props.Prefs.values[PREF_NOVA_ENABLED]) {
+        if (this.props.Prefs.values[PREFS.NOVA_ENABLED]) {
           return null;
         }
         return (
@@ -143,8 +141,7 @@ export class _DiscoveryStreamBase extends React.PureComponent {
           />
         );
       case "CardGrid": {
-        const sectionsEnabled =
-          this.props.Prefs.values["discoverystream.sections.enabled"];
+        const sectionsEnabled = this.props.Prefs.values[PREFS.SECTIONS_ENABLED];
         if (sectionsEnabled) {
           return (
             <CardSections
@@ -212,13 +209,11 @@ export class _DiscoveryStreamBase extends React.PureComponent {
       prefs: this.props.Prefs.values,
       locale,
     });
-    const sectionsEnabled =
-      this.props.Prefs.values["discoverystream.sections.enabled"];
+    const sectionsEnabled = this.props.Prefs.values[PREFS.SECTIONS_ENABLED];
     const topicSelectionEnabled =
-      this.props.Prefs.values["discoverystream.topicSelection.enabled"];
-    const reportAdsEnabled =
-      this.props.Prefs.values["discoverystream.reportAds.enabled"];
-    const spocsEnabled = this.props.Prefs.values["unifiedAds.spocs.enabled"];
+      this.props.Prefs.values[PREFS.TOPIC_SELECTION_ENABLED];
+    const reportAdsEnabled = this.props.Prefs.values[PREFS.REPORT_ADS_ENABLED];
+    const spocsEnabled = this.props.Prefs.values[PREFS.UNIFIED_ADS_ENABLED];
 
     // Find the first component of a type and remove it from layout
     const extractComponent = type => {
@@ -254,7 +249,7 @@ export class _DiscoveryStreamBase extends React.PureComponent {
       this.props.Prefs.values.trainhopConfig?.widgets?.enabled;
     const widgetsNimbusEnabled = this.props.Prefs.values.widgetsConfig?.enabled;
     const widgetsSystemPrefsEnabled =
-      this.props.Prefs.values["widgets.system.enabled"];
+      this.props.Prefs.values[PREFS.WIDGETS_SYSTEM_ENABLED];
 
     const widgets =
       widgetsNimbusTrainhopEnabled ||

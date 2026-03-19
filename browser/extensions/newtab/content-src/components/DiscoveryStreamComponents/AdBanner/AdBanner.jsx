@@ -8,12 +8,7 @@ import { ImpressionStats } from "../../DiscoveryStreamImpressionStats/Impression
 import { actionCreators as ac } from "common/Actions.mjs";
 import { AdBannerContextMenu } from "../AdBannerContextMenu/AdBannerContextMenu";
 import { PromoCard } from "../PromoCard/PromoCard.jsx";
-
-const PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
-const PREF_OHTTP_UNIFIED_ADS = "unifiedAds.ohttp.enabled";
-const PREF_REPORT_ADS_ENABLED = "discoverystream.reportAds.enabled";
-const PREF_PROMOCARD_ENABLED = "discoverystream.promoCard.enabled";
-const PREF_PROMOCARD_VISIBLE = "discoverystream.promoCard.visible";
+import { PREFS } from "content-src/lib/PrefsConstants.mjs";
 
 /**
  * A new banner ad that appears between rows of stories: leaderboard or billboard size.
@@ -56,12 +51,12 @@ export const AdBanner = ({
   };
   const promoCardEnabled =
     spoc.format === "billboard" &&
-    prefs[PREF_PROMOCARD_ENABLED] &&
-    prefs[PREF_PROMOCARD_VISIBLE];
+    prefs[PREFS.PROMOCARD_ENABLED] &&
+    prefs[PREFS.PROMOCARD_VISIBLE];
 
-  const sectionsEnabled = prefs[PREF_SECTIONS_ENABLED];
-  const ohttpEnabled = prefs[PREF_OHTTP_UNIFIED_ADS];
-  const showAdReporting = prefs[PREF_REPORT_ADS_ENABLED];
+  const sectionsEnabled = prefs[PREFS.SECTIONS_ENABLED];
+  const ohttpEnabled = prefs[PREFS.OHTTP_UNIFIED_ADS];
+  const showAdReporting = prefs[PREFS.REPORT_ADS_ENABLED];
   const ohttpImagesEnabled = prefs.ohttpImagesConfig?.enabled;
   const [menuActive, setMenuActive] = useState(false);
   const adBannerWrapperClassName = `ad-banner-wrapper ${menuActive ? "active" : ""} ${promoCardEnabled ? "promo-card" : ""}`;
