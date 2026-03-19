@@ -42,6 +42,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
 });
 
+ChromeUtils.defineLazyGetter(lazy, "console", function () {
+  return console.createInstance({
+    prefix: "ChatConversation",
+  });
+});
+
 const CHAT_ROLES = [MESSAGE_ROLE.USER, MESSAGE_ROLE.ASSISTANT];
 
 /**
@@ -412,12 +418,18 @@ export class ChatConversation extends EventEmitter {
     }
 
     if (userOpts?.memoriesEnabled) {
-      const memoriesContext = await this.getMemoriesContext(
-        prompt,
-        engineInstance
-      );
-      if (memoriesContext) {
-        userContext.memoriesContext = memoriesContext;
+      try {
+        const memoriesContext = await this.getMemoriesContext(
+          prompt,
+          engineInstance
+        );
+        if (memoriesContext) {
+          userContext.memoriesContext = memoriesContext;
+        }
+      } catch (memoriesContextError) {
+        lazy.console.error(
+          `Failed to generate memories context message: ${memoriesContextError}`
+        );
       }
     }
 

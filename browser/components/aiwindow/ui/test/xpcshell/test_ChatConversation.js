@@ -21,6 +21,14 @@ const { MemoryStore } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs"
 );
 
+const { MemoriesManager } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs"
+);
+
+const { EmbeddingsGenerator } = ChromeUtils.importESModule(
+  "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs"
+);
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
@@ -1007,6 +1015,64 @@ add_task(async function test_generatePrompt_skipUserDispatch() {
     !emitted,
     "event should not be emitted when skipUserDispatch is true"
   );
+});
+
+add_task(async function test_generatePrompt_memoriesContextErrorDoesNotThrow() {
+  let sandbox = lazy.sinon.createSandbox();
+
+  // Seed a memory so getRelevantMemories reaches the embeddings path
+  await MemoryStore.addMemory({
+    id: "memory-embed-fail",
+    memory_summary: "User likes hiking",
+    category: "preference",
+    intent: "profile",
+    reasoning: "Test memory",
+    score: 0.5,
+    updated_at: Date.now(),
+    is_deleted: false,
+  });
+  MemoriesManager._clearEmbeddingsCache();
+
+  sandbox
+    .stub(EmbeddingsGenerator.prototype, "embedMany")
+    .rejects(new Error("Failed to download embedding model"));
+
+  const conversation = new ChatConversation({});
+  const mockEngineInstance = {
+    loadPrompt: sandbox.stub().resolves("system prompt"),
+  };
+  sandbox.stub(conversation, "getRealTimeInfo").resolves("real time context");
+
+  const result = await conversation.generatePrompt(
+    "hello",
+    null,
+    mockEngineInstance,
+    { memoriesEnabled: true }
+  );
+
+  Assert.ok(result, "generatePrompt should resolve successfully");
+
+  const userMessage = conversation.messages.find(
+    m => m.role === MESSAGE_ROLE.USER
+  );
+
+  Assert.ok(
+    EmbeddingsGenerator.prototype.embedMany.calledOnce,
+    "embedMany should have been called exactly once"
+  );
+  Assert.equal(
+    userMessage.content.userContext.realTimeContext,
+    "real time context",
+    "realTimeContext should still be set despite embeddings failure"
+  );
+  Assert.ok(
+    !("memoriesContext" in userMessage.content.userContext),
+    "memoriesContext should not be set when embedMany rejects"
+  );
+
+  await MemoryStore.hardDeleteMemory("memory-embed-fail", "other");
+  MemoriesManager._clearEmbeddingsCache();
+  sandbox.restore();
 });
 
 add_task(
