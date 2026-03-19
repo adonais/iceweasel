@@ -7,7 +7,7 @@
 #ifndef _PKCS11I_H_
 #define _PKCS11I_H_ 1
 
-#include "nssilock.h"
+#include "prlock.h"
 #include "seccomon.h"
 #include "secoidt.h"
 #include "lowkeyti.h"
@@ -152,6 +152,16 @@ typedef enum {
 } SFTKFreeStatus;
 
 /*
+ * Source of various objects
+ */
+typedef enum {
+    SFTK_SOURCE_DEFAULT = 0,
+    SFTK_SOURCE_KEA,
+    SFTK_SOURCE_HKDF_EXPAND,
+    SFTK_SOURCE_HKDF_EXTRACT
+} SFTKSource;
+
+/*
  * attribute values of an object.
  */
 struct SFTKAttributeStr {
@@ -176,7 +186,7 @@ struct SFTKObjectListStr {
 
 struct SFTKObjectFreeListStr {
     SFTKObject *head;
-    PZLock *lock;
+    PRLock *lock;
     int count;
 };
 
@@ -189,12 +199,14 @@ struct SFTKObjectStr {
     CK_OBJECT_CLASS objclass;
     CK_OBJECT_HANDLE handle;
     int refCount;
-    PZLock *refLock;
+    PRUint32 type; /* SFTK_SESSION_OBJECT_TYPE or SFTK_TOKEN_OBJECT_TYPE */
+    PRLock *refLock;
     SFTKSlot *slot;
     void *objectInfo;
     SFTKFree infoFree;
     CK_FLAGS validation_value;
     SFTKAttribute validation_attribute;
+    SFTKSource source;
 };
 
 struct SFTKTokenObjectStr {
@@ -205,7 +217,7 @@ struct SFTKTokenObjectStr {
 struct SFTKSessionObjectStr {
     SFTKObject obj;
     SFTKObjectList sessionList;
-    PZLock *attributeLock;
+    PRLock *attributeLock;
     SFTKSession *session;
     PRBool wasDerived;
     int nextAttr;
@@ -303,7 +315,7 @@ struct SFTKSessionStr {
     SFTKSession *next;
     SFTKSession *prev;
     CK_SESSION_HANDLE handle;
-    PZLock *objectLock;
+    PRLock *objectLock;
     int objectIDCount;
     CK_SESSION_INFO info;
     CK_NOTIFY notify;
@@ -325,9 +337,9 @@ struct SFTKSessionStr {
  * (head[]->refCount),  objectLock protects all elements of the slot's
  * object hash tables (sessObjHashTable[] and tokObjHashTable), and
  * sessionObjectHandleCount.
- * slotLock protects the remaining protected elements:
- * password, needLogin, isLoggedIn, ssoLoggedIn, and sessionCount,
- * and pwCheckLock serializes the key database password checks in
+ * slotLock protects password, needLogin, isLoggedIn, ssoLoggedIn,
+ * sessionCount, and rwSessionCount.
+ * pwCheckLock serializes the key database password checks in
  * NSC_SetPIN and NSC_Login.
  *
  * Each of the fields below has the following lifetime as commented
@@ -345,11 +357,11 @@ struct SFTKSessionStr {
  */
 struct SFTKSlotStr {
     CK_SLOT_ID slotID;             /* invariant */
-    PZLock *slotLock;              /* invariant */
-    PZLock **sessionLock;          /* invariant */
+    PRLock *slotLock;              /* invariant */
+    PRLock **sessionLock;          /* invariant */
     unsigned int numSessionLocks;  /* invariant */
     unsigned long sessionLockMask; /* invariant */
-    PZLock *objectLock;            /* invariant */
+    PRLock *objectLock;            /* invariant */
     PRLock *pwCheckLock;           /* invariant */
     PRBool present;                /* variable -set */
     PRBool hasTokens;              /* per load */
@@ -367,8 +379,7 @@ struct SFTKSlotStr {
     int sessionIDConflict;         /* not protected by a lock */
                                    /* (preserved) */
     int sessionCount;              /* variable - reset */
-    PRInt32 rwSessionCount;        /* set by atomic operations */
-                                   /* (reset) */
+    int rwSessionCount;            /* variable - reset */
     int sessionObjectHandleCount;  /* variable - perserved */
     CK_ULONG index;                /* invariant */
     PLHashTable *tokObjHashTable;  /* invariant */
@@ -504,6 +515,11 @@ struct SFTKItemTemplateStr {
 /* slot helper macros */
 #define sftk_SlotFromSession(sp) ((sp)->slot)
 #define sftk_isToken(id) (((id)&SFTK_TOKEN_MASK) == SFTK_TOKEN_MAGIC)
+
+/* Type tag values for SFTKObject.type */
+#define SFTK_SESSION_OBJECT_TYPE 0xFFFFFFFFU
+#define SFTK_TOKEN_OBJECT_TYPE 0x00000000U
+
 #define sftk_isFIPS(id) \
     (((id) == FIPS_SLOT_ID) || ((id) >= SFTK_MIN_FIPS_USER_SLOT_ID))
 
@@ -790,7 +806,7 @@ extern CK_RV SFTK_ClearTokenKeyHashTable(SFTKSlot *slot);
 
 extern CK_RV sftk_searchObjectList(SFTKSearchResults *search,
                                    SFTKObject **head, unsigned int size,
-                                   PZLock *lock, CK_ATTRIBUTE_PTR inTemplate,
+                                   PRLock *lock, CK_ATTRIBUTE_PTR inTemplate,
                                    int count, PRBool isLoggedIn);
 extern SFTKObjectListElement *sftk_FreeObjectListElement(
     SFTKObjectListElement *objectList);
@@ -900,7 +916,7 @@ PRBool sftk_poisonHandle(SFTKSlot *slot, SECItem *dbkey,
                          CK_OBJECT_HANDLE handle);
 SFTKObject *sftk_NewTokenObject(SFTKSlot *slot, SECItem *dbKey,
                                 CK_OBJECT_HANDLE handle);
-SFTKTokenObject *sftk_convertSessionToToken(SFTKObject *so);
+CK_RV sftk_convertSessionToToken(SFTKObject *so);
 
 /* J-PAKE (jpakesftk.c) */
 extern CK_RV jpake_Round1(HASH_HashType hashType,
