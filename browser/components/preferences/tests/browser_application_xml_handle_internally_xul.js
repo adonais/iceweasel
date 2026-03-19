@@ -10,7 +10,7 @@ const MIMEService = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
 // This test checks that application/xml has the handle internally option.
 add_task(async function applicationXmlHandleInternally() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
+    set: [["browser.settings-redesign.enabled", false]],
   });
   const mimeInfo = MIMEService.getFromTypeAndExtension(
     "application/xml",
@@ -29,17 +29,24 @@ add_task(async function applicationXmlHandleInternally() {
 
   let win = gBrowser.selectedBrowser.contentWindow;
 
-  let container = win.document.getElementById("applicationsHandlersView");
+  let container = win.document.getElementById("handlersView");
 
   // First, find the application/xml item.
-  let xmlItem = container.querySelector("moz-box-item[type='application/xml']");
+  let xmlItem = container.querySelector("richlistitem[type='application/xml']");
   Assert.ok(xmlItem, "application/xml is present in handlersView");
   if (xmlItem) {
     xmlItem.scrollIntoView({ block: "center" });
-    let list = xmlItem.closest("moz-box-group");
+    xmlItem.closest("richlistbox").selectItem(xmlItem);
+
+    // Open its menu
+    let list = xmlItem.querySelector(".actionsMenu");
+    let popup = list.menupopup;
+    let popupShown = BrowserTestUtils.waitForEvent(popup, "popupshown");
+    EventUtils.synthesizeMouseAtCenter(list, {}, win);
+    await popupShown;
 
     let handleInternallyItem = list.querySelector(
-      `moz-option[action='${Ci.nsIHandlerInfo.handleInternally}']`
+      `menuitem[action='${Ci.nsIHandlerInfo.handleInternally}']`
     );
 
     ok(!!handleInternallyItem, "handle internally is present");
