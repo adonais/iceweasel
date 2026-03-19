@@ -1203,9 +1203,9 @@ bool SkeletonState::DecodeIndex(ogg_packet* aPacket) {
 
   int64_t timeDenom =
       LittleEndian::readInt64(aPacket->packet + INDEX_TIME_DENOM_OFFSET);
-  if (timeDenom == 0) {
-    LOG(LogLevel::Debug, ("Ogg Skeleton Index packet for stream %u has 0 "
-                          "timestamp denominator.",
+  if (timeDenom <= 0) {
+    LOG(LogLevel::Debug, ("Ogg Skeleton Index packet for stream %u has "
+                          "non-positive timestamp denominator.",
                           serialno));
     return (mActive = false);
   }
