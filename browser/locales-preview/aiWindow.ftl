@@ -80,6 +80,7 @@ smartbar-context-menu-button =
 ## Website Chip
 
 aiwindow-website-chip-placeholder = Tag a tab or site
+aiwindow-website-chip-history-deleted = History deleted
 aiwindow-website-chip-remove-button =
     .aria-label = Remove
 

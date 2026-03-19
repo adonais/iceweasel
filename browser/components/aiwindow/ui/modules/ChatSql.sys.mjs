@@ -165,14 +165,62 @@ ORDER BY c.updated_date DESC;
 export const REMOVE_ALL_SITE_URLS_FROM_MESSAGES = `
 UPDATE message
 SET page_url = NULL,
-    page_history_deleted = true
+    page_history_deleted = 1,
+    content_jsonb = CASE
+      WHEN json_type(content_jsonb, '$.contextMentions') = 'array'
+      THEN jsonb_set(
+        content_jsonb,
+        '$.contextMentions',
+        (
+          SELECT jsonb_group_array(
+            jsonb_set(value, '$.historyDeleted', jsonb('true'))
+            ORDER BY key
+          )
+          FROM jsonb_each(content_jsonb, '$.contextMentions')
+        )
+      )
+      ELSE content_jsonb
+    END
 `;
 
 export const REMOVE_SITE_URL_FROM_MESSAGES = `
-    UPDATE message
-    SET page_url = NULL,
-        page_history_deleted = true
-    WHERE page_url = :page_url;
+UPDATE message
+SET
+  page_url = CASE
+    WHEN page_url = :page_url THEN NULL
+    ELSE page_url
+  END,
+
+  page_history_deleted = CASE
+    WHEN page_url = :page_url THEN 1
+    ELSE page_history_deleted
+  END,
+
+  content_jsonb = CASE
+    WHEN json_type(content_jsonb, '$.contextMentions') = 'array'
+    THEN jsonb_set(
+      content_jsonb,
+      '$.contextMentions',
+      (
+        SELECT jsonb_group_array(
+          CASE
+            WHEN json_extract(value, '$.url') = :page_url
+            THEN jsonb_set(value, '$.historyDeleted', jsonb('true'))
+            ELSE value
+          END
+          ORDER BY key
+        )
+        FROM jsonb_each(content_jsonb, '$.contextMentions')
+      )
+    )
+    ELSE content_jsonb
+  END
+WHERE page_url = :page_url
+   OR EXISTS (
+     SELECT 1
+     FROM jsonb_each(content_jsonb, '$.contextMentions')
+     WHERE json_extract(value, '$.url') = :page_url
+   );
 `;
 
 /**

@@ -12,6 +12,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const { ChatStore, ChatConversation, ChatMessage } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs"
 );
+const { UserRoleOpts } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs"
+);
 
 async function addBasicConvoTestData(date, title, updated = null) {
   const link = "https://www.firefox.com";
@@ -943,3 +946,94 @@ add_atomic_task(async function test_ChatStorage_deleteUrlFromMessages() {
     );
   });
 });
+
+add_atomic_task(
+  async function test_ChatStorage_deleteUrlFromMessages_marksContextMentionHistoryDeleted() {
+    const targetUrl = "https://www.example.com/page";
+    const otherUrl = "https://www.other.com/";
+
+    const conversation = new ChatConversation({
+      createdDate: new Date("1/4/2025").getTime(),
+      updatedDate: new Date("1/4/2025").getTime(),
+    });
+    conversation.title = "test";
+    conversation.addUserMessage(
+      "test message",
+      new URL(targetUrl),
+      new UserRoleOpts({
+        contextMentions: [
+          { url: targetUrl, label: "Example", iconSrc: "", type: "tab" },
+          { url: otherUrl, label: "Other", iconSrc: "", type: "tab" },
+        ],
+      })
+    );
+    await gChatStore.updateConversation(conversation);
+
+    await gChatStore.deleteUrlFromMessages(targetUrl);
+
+    const updated = await gChatStore.findConversationById(conversation.id);
+    const mentions = updated.messages[0].content.contextMentions;
+
+    Assert.withSoftAssertions(function (soft) {
+      soft.equal(
+        mentions[0].historyDeleted,
+        true,
+        "Matching context mention should be marked historyDeleted"
+      );
+      soft.equal(
+        mentions[1].historyDeleted,
+        undefined,
+        "Non-matching context mention should not be marked historyDeleted"
+      );
+    });
+  }
+);
+
+add_atomic_task(
+  async function test_ChatStorage_deleteAllUrlsFromMessages_marksAllContextMentionsHistoryDeleted() {
+    const conversation = new ChatConversation({
+      createdDate: new Date("1/4/2025").getTime(),
+      updatedDate: new Date("1/4/2025").getTime(),
+    });
+    conversation.title = "test";
+    conversation.addUserMessage(
+      "test message",
+      new URL("https://www.example.com/"),
+      new UserRoleOpts({
+        contextMentions: [
+          {
+            url: "https://www.example.com/",
+            label: "Example",
+            iconSrc: "",
+            type: "tab",
+          },
+          {
+            url: "https://www.other.com/",
+            label: "Other",
+            iconSrc: "",
+            type: "tab",
+          },
+        ],
+      })
+    );
+    await gChatStore.updateConversation(conversation);
+
+    await gChatStore.deleteAllUrlsFromMessages();
+
+    const updated = await gChatStore.findConversationById(conversation.id);
+    const mentions = updated.messages[0].content.contextMentions;
+
+    Assert.withSoftAssertions(function (soft) {
+      soft.equal(
+        mentions[0].historyDeleted,
+        true,
+        "First context mention should be marked historyDeleted"
+      );
+      soft.equal(
+        mentions[1].historyDeleted,
+        true,
+        "Second context mention should be marked historyDeleted"
+      );
+    });
+  }
+);

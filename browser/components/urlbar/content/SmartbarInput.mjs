@@ -108,6 +108,8 @@ let px = number => number.toFixed(2) + "px";
  * @property {string} [iconSrc]
  *   Icon URI. When missing or empty, falls back to the favicon from Places
  *   via `getIconForUrl`.
+ * @property {boolean} [historyDeleted]
+ *   Whether the URL has been removed from browsing history.
  */
 
 const MAX_CONTEXT_WEBSITES = 5;
