@@ -23,6 +23,11 @@ updatebot:
   tasks:
     - type: vendoring
       enabled: True
+    # Update this branch name when vendoring a new release.
+    - type: commit-alert
+      enabled: true
+      frequency: every
+      branch: 1.6.0
 
 vendoring:
   url: https://github.com/webmproject/libwebp
