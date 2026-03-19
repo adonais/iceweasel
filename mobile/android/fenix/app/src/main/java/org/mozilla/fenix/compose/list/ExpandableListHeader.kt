@@ -27,7 +27,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
@@ -87,7 +86,11 @@ fun ExpandableListHeader(
 
                 Icon(
                     painter = painterResource(
-                        if (expanded) R.drawable.ic_chevron_up else R.drawable.ic_chevron_down,
+                        id = if (expanded) {
+                            iconsR.drawable.mozac_ic_chevron_up_24
+                        } else {
+                            iconsR.drawable.mozac_ic_chevron_down_24
+                        },
                     ),
                     contentDescription = if (expanded) {
                         collapseActionContentDescription
