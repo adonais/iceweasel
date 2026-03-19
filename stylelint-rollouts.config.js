@@ -77,6 +77,7 @@ module.exports = [
       "browser/components/profiles/content/profile-selector.css",
       "browser/components/profiles/content/profiles-pages.css",
       "browser/components/profiles/content/profiles-theme-card.css",
+      "browser/components/protections/content/privacy-metrics-card.css",
       "browser/components/protections/content/protections.css",
       "browser/components/screenshots/overlay/overlay.css",
       "browser/components/screenshots/screenshots-buttons.css",

@@ -443,7 +443,7 @@ export class AboutProtectionsParent extends JSWindowActorParent {
 
       case "FetchPrivacyMetrics":
         if (lazy.PrivateBrowsingUtils.isWindowPrivate(win)) {
-          return null;
+          return { isPrivate: true };
         }
         return lazy.PrivacyMetricsService.getWeeklyStats();
     }

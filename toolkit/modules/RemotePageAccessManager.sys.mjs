@@ -225,6 +225,7 @@ export let RemotePageAccessManager = {
         "browser.contentblocking.report.monitor.enabled",
         "privacy.fingerprintingProtection",
         "privacy.socialtracking.block_cookies.enabled",
+        "browser.contentblocking.report.privacy_metrics.enabled",
         "browser.contentblocking.report.proxy.enabled",
         "privacy.trackingprotection.cryptomining.enabled",
         "privacy.trackingprotection.fingerprinting.enabled",

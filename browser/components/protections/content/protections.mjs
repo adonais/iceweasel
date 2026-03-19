@@ -479,6 +479,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const proxyUI = document.querySelector(".proxy-card");
   proxyUI.dataset.enabled = proxyEnabled;
 
+  const privacyMetricsEnabled = RPMGetBoolPref(
+    "browser.contentblocking.report.privacy_metrics.enabled",
+    false
+  );
+  if (privacyMetricsEnabled) {
+    document.querySelector("privacy-metrics-card").classList.remove("hidden");
+  }
+
   const VPNEnabled = RPMGetBoolPref("browser.vpn_promo.enabled", true);
   if (VPNEnabled) {
     const vpnCard = new VPNCard(document);
