@@ -1,0 +1,11 @@
+[package]
+name = "marannon"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+tar = "0.4.44"
+tempfile = "3.27.0"
+ureq = "3"
+xz = "0.1.0"
