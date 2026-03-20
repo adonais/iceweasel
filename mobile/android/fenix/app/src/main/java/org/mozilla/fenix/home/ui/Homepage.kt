@@ -133,16 +133,12 @@ internal fun Homepage(
                 )
             }
 
-            if (state.headerState.showHeader) {
-                HomepageHeader(
-                    wordmarkTextColor = state.headerState.wordmarkTextColor,
-                    privateBrowsingButtonColor = state.headerState.privateBrowsingButtonColor,
-                    browsingMode = state.browsingMode,
-                    browsingModeChanged = interactor::onPrivateModeButtonClicked,
-                )
-            } else {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
+            HomepageHeader(
+                wordmarkTextColor = state.headerState.wordmarkTextColor,
+                privateBrowsingButtonColor = state.headerState.privateBrowsingButtonColor,
+                browsingMode = state.browsingMode,
+                browsingModeChanged = interactor::onPrivateModeButtonClicked,
+            )
 
             if (state.firstFrameDrawn) {
                 with(state) {
@@ -509,7 +505,6 @@ private fun HomepagePreview() {
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
                     headerState = HeaderState(
-                        showHeader = false,
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(
                             getAttr(
@@ -562,7 +557,6 @@ private fun HomepageBannerPreview() {
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
                     headerState = HeaderState(
-                        showHeader = true,
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(
                             getAttr(
@@ -615,7 +609,6 @@ private fun HomepagePreviewCollections() {
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
                     headerState = HeaderState(
-                        showHeader = false,
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(
                             getAttr(
@@ -668,7 +661,6 @@ private fun MinimalHomepagePreview() {
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
                     headerState = HeaderState(
-                        showHeader = false,
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(
                             getAttr(
@@ -702,7 +694,6 @@ private fun PrivateHomepagePreview() {
         Homepage(
             state = HomepageState.Private(
                 headerState = HeaderState(
-                    showHeader = false,
                     wordmarkTextColor = null,
                     privateBrowsingButtonColor = colorResource(
                         getAttr(

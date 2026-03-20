@@ -186,7 +186,6 @@ private fun MiddleSearchHomepagePreview() {
                 showPrivacyReport = true,
                 trackersBlockedCount = 754,
                 headerState = HeaderState(
-                    showHeader = false,
                     wordmarkTextColor = null,
                     privateBrowsingButtonColor = colorResource(
                         getAttr(

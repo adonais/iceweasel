@@ -169,7 +169,6 @@ internal sealed class HomepageState {
             return if (browsingModeManager.mode.isPrivate) {
                 buildPrivateState(
                     appState = appState,
-                    settings = settings,
                 )
             } else {
                 buildNormalState(
@@ -185,16 +184,13 @@ internal sealed class HomepageState {
          * Builds a new [HomepageState.Private] from the current [AppState] and [Settings].
          *
          * @param appState State to build the [HomepageState.Private] from.
-         * @param settings [Settings] corresponding to how the homepage should be displayed.
          */
         @Composable
         private fun buildPrivateState(
             appState: AppState,
-            settings: Settings,
         ) = with(appState) {
             Private(
                 headerState = HeaderState(
-                    showHeader = settings.showHomepageHeader,
                     wordmarkTextColor = null,
                     privateBrowsingButtonColor = colorResource(
                         getAttr(
@@ -253,7 +249,6 @@ internal sealed class HomepageState {
                     settings.showPrivacyReportFeature,
                 trackersBlockedCount = trackersBlockedCount,
                 headerState = HeaderState(
-                    showHeader = settings.showHomepageHeader,
                     wordmarkTextColor = wallpaperState.textColor,
                     privateBrowsingButtonColor = wallpaperState.iconColor,
                 ),
@@ -281,12 +276,10 @@ internal sealed class HomepageState {
 /**
  * A simple wrapper around state required for the homepage header.
  *
- * @property showHeader whether the header should be shown
  * @property wordmarkTextColor an optional color for the wordmark text
  * @property privateBrowsingButtonColor the color to use for the private browsing button
  */
 internal data class HeaderState(
-    val showHeader: Boolean,
     val wordmarkTextColor: Color?,
     val privateBrowsingButtonColor: Color,
 )

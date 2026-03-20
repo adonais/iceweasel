@@ -271,14 +271,6 @@ class Settings(
         get() = FxNimbus.features.firefoxJpGuideDefaultSite.value().enabled
 
     /**
-     * Indicates whether or not the homepage header should be shown.
-     */
-    var showHomepageHeader by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_enable_homepage_header),
-        default = { homescreenSections[HomeScreenSection.HEADER] == true },
-    )
-
-    /**
      * Indicates whether or not top sites should be shown on the home screen.
      */
     var showTopSitesFeature by booleanPreference(

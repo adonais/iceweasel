@@ -51,7 +51,6 @@ class HomeActivityTestRule(
         initialTouchMode: Boolean = false,
         launchActivity: Boolean = true,
         skipOnboarding: Boolean = false,
-        isHomepageHeaderEnabled: Boolean = true,
         isPocketEnabled: Boolean = settings.showPocketRecommendationsFeature,
         isRecentTabsFeatureEnabled: Boolean = settings.showRecentTabsFeature,
         isRecentlyVisitedFeatureEnabled: Boolean = settings.historyMetadataUIFeature,
@@ -73,7 +72,6 @@ class HomeActivityTestRule(
         openLinksInExternalApp: OpenLinksInApp = getOpenLinksInApp(settings),
         hasSeenBrowserToolbarCFR: Boolean = true,
     ) : this(initialTouchMode, launchActivity, skipOnboarding) {
-        this.isHomepageHeaderEnabled = isHomepageHeaderEnabled
         this.isPocketEnabled = isPocketEnabled
         this.isRecentTabsFeatureEnabled = isRecentTabsFeatureEnabled
         this.isRecentlyVisitedFeatureEnabled = isRecentlyVisitedFeatureEnabled
@@ -145,7 +143,6 @@ class HomeActivityTestRule(
             initialTouchMode = initialTouchMode,
             launchActivity = launchActivity,
             skipOnboarding = skipOnboarding,
-            isHomepageHeaderEnabled = true,
             isPWAsPromptEnabled = false,
             isWallpaperOnboardingEnabled = false,
             isOpenInAppBannerEnabled = false,
@@ -205,7 +202,6 @@ class HomeActivityIntentTestRule internal constructor(
         tabManagerOpeningAnimationEnabled: Boolean = false,
         hasSeenBrowserToolbarCFR: Boolean = true,
     ) : this(initialTouchMode, launchActivity, skipOnboarding) {
-        this.isHomepageHeaderEnabled = isHomepageHeaderEnabled
         this.isPocketEnabled = isPocketEnabled
         this.isRecentTabsFeatureEnabled = isRecentTabsFeatureEnabled
         this.isRecentlyVisitedFeatureEnabled = isRecentlyVisitedFeatureEnabled
@@ -282,7 +278,6 @@ class HomeActivityIntentTestRule internal constructor(
      * settings and override any changes made in the meantime.
      */
     fun updateCachedSettings() {
-        isHomepageHeaderEnabled = settings.showHomepageHeader
         isPocketEnabled = settings.showPocketRecommendationsFeature
         isRecentTabsFeatureEnabled = settings.showRecentTabsFeature
         isRecentlyVisitedFeatureEnabled = settings.historyMetadataUIFeature
