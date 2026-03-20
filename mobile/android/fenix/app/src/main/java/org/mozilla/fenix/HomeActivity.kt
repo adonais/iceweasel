@@ -566,7 +566,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             privateBrowsingLockFeature,
             externalAppLinkStatusBinding,
             summarizeToolbarHighlightBinding,
-            components.core.summarizationSettings,
         )
 
         if (!isCustomTabIntent(intent)) {

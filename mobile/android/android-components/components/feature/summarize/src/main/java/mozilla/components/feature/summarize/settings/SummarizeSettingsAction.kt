@@ -12,16 +12,6 @@ import mozilla.components.lib.state.Action
 sealed interface SummarizeSettingsAction : Action
 
 /**
- * The Settings have appeared in the view tree.
- */
-data object ViewAppeared : SummarizeSettingsAction
-
-/**
- * The settings have been loaded from disk.
- */
-data class SettingsLoaded(val isFeatureEnabled: Boolean, val isGestureEnabled: Boolean) : SummarizeSettingsAction
-
-/**
  * The user toggled the summarize pages preference.
  */
 data object SummarizePagesPreferenceToggled : SummarizeSettingsAction

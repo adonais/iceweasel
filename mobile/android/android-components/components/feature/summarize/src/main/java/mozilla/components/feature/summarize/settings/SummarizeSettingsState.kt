@@ -9,10 +9,10 @@ import mozilla.components.lib.state.State
 /**
  * State for the summarize settings screen.
  *
- * @property isFeatureEnabled Whether page summarization is enabled.
- * @property isGestureEnabled Whether the shake-to-summarize gesture is enabled.
+ * @property summarizePagesEnabled Whether page summarization is enabled.
+ * @property shakeToSummarizeEnabled Whether the shake-to-summarize gesture is enabled.
  */
 data class SummarizeSettingsState(
-    val isFeatureEnabled: Boolean = false,
-    val isGestureEnabled: Boolean = false,
+    val summarizePagesEnabled: Boolean,
+    val shakeToSummarizeEnabled: Boolean,
 ) : State

@@ -4,11 +4,10 @@
 
 package org.mozilla.fenix.summarization.onboarding
 
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import org.mozilla.fenix.summarization.SummarizationSettingsBinding
+import mozilla.components.feature.summarize.settings.SummarizationFeatureSettings
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -17,11 +16,17 @@ import org.mozilla.fenix.utils.Settings
  */
 class FenixSummarizationFeatureConfiguration(
     private val settings: Settings,
-    private val summarizationSettingsBinding: SummarizationSettingsBinding,
-) : SummarizationFeatureDiscoveryConfiguration {
-
+) : SummarizationFeatureDiscoveryConfiguration, SummarizationFeatureSettings {
     override val canShowFeature: Boolean
-        get() = settings.shakeToSummarizeFeatureFlagEnabled && summarizationSettingsBinding.isFeatureEnabled.value
+        get() = settings.shakeToSummarizeFeatureFlagEnabled && settings.shakeToSummarizeFeatureUserPreference
+
+    override var summarizePagesEnabled: Boolean
+        get() = canShowFeature
+        set(value) { settings.shakeToSummarizeFeatureUserPreference = value }
+
+    override var shakeToSummarizeEnabled: Boolean
+        get() = settings.shakeGestureEnabled
+        set(value) { settings.shakeGestureEnabled = value }
 
     override val showMenuItem: Boolean
         get() = canShowFeature
@@ -39,16 +44,12 @@ class FenixSummarizationFeatureConfiguration(
      * We determine if we should highlight the toolbar by checking the feature flags &
      * checking the number of interactions
      */
-    val shouldHighlightToolbarMenuButton: Boolean
+    private val shouldHighlightToolbarMenuButton: Boolean
         get() = canShowFeature && settings.shakeToSummarizeToolbarInteractionCount.underMaxCount()
 
     private val _toolbarMenuButtonHighlight = MutableStateFlow(shouldHighlightToolbarMenuButton)
-    override val toolbarMenuButtonHighlight: Flow<Boolean>
-        get() = _toolbarMenuButtonHighlight.combine(
-            summarizationSettingsBinding.isFeatureEnabled,
-        ) { shouldHighlightToolbarMenuButton, isFeatureEnabled ->
-            isFeatureEnabled && shouldHighlightToolbarMenuButton
-        }
+    override val toolbarMenuButtonHighlight: StateFlow<Boolean>
+        get() = _toolbarMenuButtonHighlight
 
     override fun cacheDiscoveryEvent(event: SummarizeDiscoveryEvent) {
         when (event) {

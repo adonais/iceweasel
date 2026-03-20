@@ -5,7 +5,6 @@
 package mozilla.components.feature.summarize
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.concept.llm.CloudLlmProvider
@@ -13,7 +12,6 @@ import mozilla.components.concept.llm.Llm
 import mozilla.components.concept.llm.Prompt
 import mozilla.components.feature.summarize.content.PageContentExtractor
 import mozilla.components.feature.summarize.content.PageMetadataExtractor
-import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
@@ -93,9 +91,6 @@ class SummarizationMiddleware(
                     observeCloudLlmProvider(store, llmProvider)
                 }
             }
-            OffDeviceSummarizationShakeConsentAction.CancelClicked -> scope.launch {
-                settings.incrementShakeConsentRejectedCount()
-            }
             OffDeviceSummarizationShakeConsentAction.AllowClicked -> scope.launch {
                 settings.setHasConsentedToShake(true)
                 observeCloudLlmProvider(store, llmProvider)
@@ -152,5 +147,5 @@ class SummarizationMiddleware(
     private suspend fun needsShakeConsent(state: SummarizationState): Boolean =
         state is SummarizationState.Inert &&
             state.initializedWithShake &&
-            !settings.getHasConsentedToShake().first()
+            !settings.hasConsentedToShake()
 }

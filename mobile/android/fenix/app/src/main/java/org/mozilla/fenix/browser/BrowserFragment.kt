@@ -181,9 +181,12 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
     }
 
     private fun setupShakeDetection() {
-        val shouldSetupShake = requireComponents.core.summarizeFeatureSettings.canShowFeature &&
-                requireComponents.core.summarizationSettings.isGestureEnabled.value
-        if (!shouldSetupShake) {
+        if (
+            !(
+                requireComponents.core.summarizeFeatureSettings.canShowFeature &&
+                requireComponents.core.summarizeFeatureSettings.shakeToSummarizeEnabled
+            )
+        ) {
             return
         }
 
@@ -209,7 +212,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
         findNavController().apply {
             // If the shake gesture was disabled in the bottom sheet hosted settings but the fragment
             // has not been recreated yet, we need to check if it's still active before proceeding.
-            val shakeEnabled = requireComponents.core.summarizationSettings.isGestureEnabled.value
+            val shakeEnabled = requireComponents.core.summarizeFeatureSettings.shakeToSummarizeEnabled
 
             if (!shakeEnabled) {
                 return

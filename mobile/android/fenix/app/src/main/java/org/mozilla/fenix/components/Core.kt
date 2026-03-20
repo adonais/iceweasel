@@ -75,7 +75,6 @@ import mozilla.components.feature.session.HistoryDelegate
 import mozilla.components.feature.session.middleware.LastAccessMiddleware
 import mozilla.components.feature.session.middleware.undo.UndoMiddleware
 import mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage
-import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.feature.top.sites.DefaultTopSitesStorage
 import mozilla.components.feature.top.sites.PinnedSiteStorage
 import mozilla.components.feature.webcompat.WebCompatFeature
@@ -136,7 +135,6 @@ import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.share.DefaultSentFromFirefoxManager
 import org.mozilla.fenix.share.DefaultSentFromStorage
 import org.mozilla.fenix.share.SaveToPDFMiddleware
-import org.mozilla.fenix.summarization.FenixSummarizationSettingsBinding
 import org.mozilla.fenix.summarization.eligibility.DefaultSummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
@@ -676,19 +674,12 @@ class Core(
 
     val loginExceptionStorage by lazyMonitored { LoginExceptionStorage(context) }
 
-    val summarizationSettings: FenixSummarizationSettingsBinding by lazyMonitored {
-        FenixSummarizationSettingsBinding(SummarizationSettings.dataStore(context))
-    }
-
     /**
      * Fenix implementation of [SummarizationFeatureDiscoveryConfiguration]
      * backed by [org.mozilla.fenix.utils.Settings]
      */
     val summarizeFeatureSettings: FenixSummarizationFeatureConfiguration by lazyMonitored {
-        FenixSummarizationFeatureConfiguration(
-            settings = context.components.settings,
-            summarizationSettingsBinding = summarizationSettings,
-        )
+        FenixSummarizationFeatureConfiguration(settings = context.components.settings)
     }
 
     val tabGroupRepository by lazyMonitored { DefaultTabGroupRepository(context) }

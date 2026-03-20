@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.summarize
 
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -16,7 +15,6 @@ import mozilla.components.feature.summarize.SummarizationState.Summarizing
 import mozilla.components.feature.summarize.content.PageMetadata
 import mozilla.components.feature.summarize.fakes.FakeCloudProvider
 import mozilla.components.feature.summarize.fakes.FakeLlm
-import mozilla.components.feature.summarize.settings.SummarizationSettings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -65,7 +63,7 @@ class SummarizationStoreTest {
         )
 
         assertEquals(expected, states)
-        assertTrue(settings.getHasConsentedToShake().first())
+        assertTrue(settings.hasConsentedToShake())
     }
 
     @Test
@@ -105,7 +103,7 @@ class SummarizationStoreTest {
         )
 
         assertEquals(expected, states)
-        assertFalse(settings.getHasConsentedToShake().first())
+        assertFalse(settings.hasConsentedToShake())
     }
 
     @Test
@@ -118,8 +116,8 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    settings = SummarizationSettings.inMemory(hasConsentedToShakeInitial = true),
                     llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     pageContentExtractor = { Result.success(content) },
                     pageMetadataExtractor = { Result.success(PageMetadata(listOf("Article"), "en")) },
                     scope = backgroundScope,
@@ -158,8 +156,8 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
+                    settings = SummarizationSettings.inMemory(hasConsentedToShakeInitial = true),
                     llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     pageContentExtractor = { Result.failure(failureThrowable) },
                     pageMetadataExtractor = { Result.success(PageMetadata(listOf(), "")) },
                     scope = backgroundScope,
@@ -195,7 +193,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                    settings = SummarizationSettings.inMemory(hasConsentedToShakeInitial = true),
                     llmProvider = provider,
                     pageContentExtractor = { Result.success(content) },
                     pageMetadataExtractor = { Result.success(PageMetadata(listOf("Recipe"), "en")) },
@@ -236,7 +234,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                    settings = SummarizationSettings.inMemory(hasConsentedToShakeInitial = true),
                     llmProvider = provider,
                     pageContentExtractor = { Result.success(content) },
                     pageMetadataExtractor = { Result.success(PageMetadata(listOf("Recipe"), "es")) },
@@ -277,7 +275,7 @@ class SummarizationStoreTest {
             reducer = ::summarizationReducer,
             middleware = listOf(
                 SummarizationMiddleware(
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                    settings = SummarizationSettings.inMemory(hasConsentedToShakeInitial = true),
                     llmProvider = provider,
                     pageContentExtractor = { Result.success(content) },
                     pageMetadataExtractor = { Result.failure(IllegalStateException()) },

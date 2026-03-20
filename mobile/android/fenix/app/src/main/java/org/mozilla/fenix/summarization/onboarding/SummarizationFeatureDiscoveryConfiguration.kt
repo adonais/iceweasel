@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.summarization.onboarding
 
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -40,12 +39,12 @@ interface SummarizationFeatureDiscoveryConfiguration {
     val shouldToolbarShowCfr: Boolean
 
     /**
-    * Reactive state that indicates whether the three-dot menu button in the toolbar should be highlighted.
-    *
-    * It is a [StateFlow] because, unlike the rest, we require instant changes in this to reflect
-    * in the UI
-    */
-    val toolbarMenuButtonHighlight: Flow<Boolean>
+     * Reactive state that indicates whether the three-dot menu button in the toolbar should be highlighted.
+     *
+     * It is a [StateFlow] because, unlike the rest, we require instant changes in this to reflect
+     * in the UI
+     */
+    val toolbarMenuButtonHighlight: StateFlow<Boolean>
 
     /**
      * Saves a feature discovery event

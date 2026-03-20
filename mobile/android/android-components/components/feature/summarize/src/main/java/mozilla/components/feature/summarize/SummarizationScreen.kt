@@ -231,8 +231,8 @@ private fun SummarizationScreenPreview(
             ),
             settingsStore = SummarizeSettingsStore(
                 initialState = SummarizeSettingsState(
-                    isFeatureEnabled = true,
-                    isGestureEnabled = true,
+                    summarizePagesEnabled = true,
+                    shakeToSummarizeEnabled = true,
                 ),
                 reducer = ::summarizeSettingsReducer,
                 middleware = listOf(),
