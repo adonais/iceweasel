@@ -278,7 +278,7 @@ async function showReusableMasksAsync(browser, origin, error) {
     "firefox-relay-see-all-masks",
     "firefox-relay-dismiss",
     { id: "firefox-relay-reuse-masks-header", args: { count: maskCount } },
-    "firefox-relay-reuse-masks-description",
+    "firefox-relay-reuse-masks-description-v2",
     "firefox-relay-reuse-masks-select-label"
   );
   const seeAllMasks = {

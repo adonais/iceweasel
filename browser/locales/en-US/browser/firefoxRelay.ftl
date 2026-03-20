@@ -21,7 +21,7 @@ firefox-relay-reuse-masks-header =
     { $count ->
         *[other] You’ve used all { $count } free email masks
     }
-firefox-relay-reuse-masks-description = You can reuse an existing mask, but using a unique mask for each website is the most secure option. <label data-l10n-name="learn-more-url">Upgrade for unlimited masks</label>
+firefox-relay-reuse-masks-description-v2 = You can reuse one or see all masks to choose a different one.
 firefox-relay-reuse-masks-select-label = Select a recent mask
 firefox-relay-see-all-masks =
     .label = See all masks
