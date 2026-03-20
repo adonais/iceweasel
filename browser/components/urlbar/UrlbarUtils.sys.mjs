@@ -206,11 +206,12 @@ export var UrlbarUtils = {
   REGEXP_SINGLE_WORD: /^[^\s@:/?#]+(:\d+)?$/,
 
   // Valid entry points for search mode. If adding a value here, please update
-  // telemetry documentation and Scalars.yaml.
+  // telemetry documentation and metrics.yaml.
   SEARCH_MODE_ENTRY: new Set([
     "bookmarkmenu",
     "handoff",
     "keywordoffer",
+    "messagingSystem",
     "oneoff",
     "historymenu",
     "other",

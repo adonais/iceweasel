@@ -1955,6 +1955,21 @@ urlbar.searchmode:
     expires: never
     telemetry_mirror: URLBAR_SEARCHMODE_KEYWORDOFFER
 
+  messaging_system:
+    type: labeled_counter
+    description: >
+      A keyed uint recording how many times the user entered a particular search mode
+      through the messaging system.
+    data_sensitivity:
+      - interaction
+    bugs:
+      - https://bugzil.la/2018806
+    data_reviews:
+      - https://bugzil.la/2018806
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+    expires: never
+
   oneoff:
     type: labeled_counter
     description: >

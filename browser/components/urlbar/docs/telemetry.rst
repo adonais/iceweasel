@@ -287,6 +287,9 @@ urlbar.searchmode.*
   - ``bookmarkmenu``
     Used when the user selects the Search Bookmarks menu item in the Library
     menu.
+  - ``messaging_system``
+    Used when the user enters search mode through the messaging system.
+    This is added in Firefox 150, and it is only available in Glean.
   - ``handoff``
     Used when the user uses the search box on the new tab page and is handed off
     to the address bar. NOTE: This entry point was disabled from Firefox 88 to
@@ -381,6 +384,11 @@ urlbar.searchmode.*
           one-off buttons (``urlbar.searchmode.oneoff``).
 
       Added Glean equivalents of the probes as labeled counters.
+
+    Firefox 150
+      Added ``urlbar.searchmode.messaging_system``:
+        - This new probe is for accesses to search mode from the messaging system.
+          This is added in Firefox 150, and it is only available in Glean.
 
 
 urlbar.picked.*

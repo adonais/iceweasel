@@ -458,7 +458,7 @@ interface SearchMode {
   "data": {
     "engineName": "test_engine",
     "source": 3,
-    "entry": "other",
+    "entry": "messagingSystem",
     "isPreview": false,
   }
 }
