@@ -494,6 +494,7 @@ abstract class BaseBrowserFragment :
                         val appLinksUseCases = requireComponents.useCases.appLinksUseCases
                         val getRedirect = appLinksUseCases.appLinkRedirect
                         val redirect = getRedirect.invoke(fallbackUrl)
+                        redirect.appIntent?.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                         appLinksUseCases.openAppLink.invoke(redirect.appIntent)
                     }
                 },
