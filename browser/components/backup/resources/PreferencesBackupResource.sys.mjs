@@ -61,6 +61,8 @@ export class PreferencesBackupResource extends BackupResource {
       "app.normandy.user_id",
       "toolkit.telemetry.cachedClientID",
       "toolkit.telemetry.cachedProfileGroupID",
+      // We don't want any recovered profiles to manage the original profile's shortcut.
+      "browser.profiles.shortcutFileName",
       PROFILE_RESTORATION_DATE_PREF,
     ];
 
