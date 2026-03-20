@@ -51,6 +51,7 @@ exclude = [
   "dom/base/rust",
   "dom/origin-trials/ffi",
   "ipc/rust/ipdl_utils",
+  "tools/update-verify/marannon",
 
   # Excluded because we don't want to vendor their dependencies.
   "intl/l10n/rust/l10nregistry-tests",

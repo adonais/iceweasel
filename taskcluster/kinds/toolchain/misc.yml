@@ -195,6 +195,27 @@ linux64-custom-v8:
         ]
         toolchain-artifact: public/build/d8.tar.zst
 
+linux64-marannon:
+    description: "marannon"
+    treeherder:
+        symbol: TL(marannon)
+    fetches:
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust
+            - sysroot-x86_64-linux-gnu
+    run:
+        script: build-rust-based-toolchain.sh
+        sparse-profile: null
+        toolchain-artifact: public/build/marannon.tar.zst
+        resources:
+            - tools/update-verify/marannon/**
+        arguments: ["x86_64-unknown-linux-gnu"]
+    worker:
+        env:
+            CRATE_PATH: tools/update-verify/marannon
+            RUN_TESTS: "1"
+
 macosx64-xz:
     description: "xz development library"
     worker-type: b-osx-1015

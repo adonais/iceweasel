@@ -108,6 +108,9 @@ path:third_party/googletest/
 path:third_party/zucchini/
 path:tools/zucchini/
 
+# for the marannon toolchain task
+path:tools/update-verify/marannon/
+
 # for the minidump-stackwalk toolchain task
 path:toolkit/crashreporter
 path:tools/crashreporter/
