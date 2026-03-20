@@ -1504,6 +1504,24 @@ nsresult nsSocketTransport::InitiateSocket() {
   }
 #endif
 
+#if defined(TCP_NOTSENT_LOWAT)
+  {
+    int32_t notsentLowat = StaticPrefs::network_tcp_notsent_lowat();
+    if (notsentLowat > 0) {
+      PRFileDesc* bottom = PR_GetIdentitiesLayer(fd, PR_NSPR_IO_LAYER);
+      if (bottom) {
+        PROsfd sock = PR_FileDesc2NativeHandle(bottom);
+        if (sock != -1) {
+          if (setsockopt(sock, IPPROTO_TCP, TCP_NOTSENT_LOWAT, &notsentLowat,
+                         sizeof(notsentLowat)) != 0) {
+            NS_WARNING("nsSocketTransport: Failed setting TCP_NOTSENT_LOWAT");
+          }
+        }
+      }
+    }
+  }
+#endif
+
   // up to here, mFD will only be accessed by us
 
   // assign mFD so that we can properly handle OnSocketDetached before we've

@@ -16215,6 +16215,18 @@
 #endif
   mirror: always
 
+# Maximum unsent data (bytes) in the kernel send buffer before a TCP socket
+# stops reporting writable. Reduces local send bufferbloat for multiplexed
+# connections. 0 = disabled (kernel default). Effective on Linux 4.6+ and macOS.
+- name: network.tcp.notsent_lowat
+  type: RelaxedAtomicInt32
+#ifdef NIGHTLY_BUILD
+  value: 32768
+#else
+  value: 0
+#endif
+  mirror: always
+
 # Whether to redirect a failing request to an essential domain
 # to a fallback domain that hosts the same content.
 - name: network.essential_domains_fallback
