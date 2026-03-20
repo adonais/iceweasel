@@ -27,7 +27,9 @@ class AndroidGamepadManager final
   static jni::ByteArray::LocalRef NativeAddGamepad(jni::String::Param aName) {
     RefPtr<GamepadPlatformService> service =
         GamepadPlatformService::GetParentService();
-    MOZ_RELEASE_ASSERT(service);
+    if (!service) {
+      return nullptr;
+    }
 
     nsCString name = aName->ToCString();
     if (name.IsEmpty()) {

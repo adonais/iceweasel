@@ -357,6 +357,10 @@ public class AndroidGamepadManager {
   private static void addGamepad(final InputDevice device) {
     sPendingGamepads.put(device.getId(), new ArrayList<KeyEvent>());
     final byte[] gamepadId = nativeAddGamepad(device.getName());
+    if (gamepadId == null) {
+      // This might be race condition. GamepadPlatformService has gone away.
+      return;
+    }
     ThreadUtils.runOnUiThread(
         new Runnable() {
           @Override
