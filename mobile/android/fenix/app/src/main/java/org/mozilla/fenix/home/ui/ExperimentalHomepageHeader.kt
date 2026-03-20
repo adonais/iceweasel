@@ -19,6 +19,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -37,11 +38,13 @@ import mozilla.components.ui.icons.R as iconsR
 /**
  * Homepage header for the entry points experiment.
  *
+ * @param wordmarkTextColor color for the wordmark.
  * @param onPrivateModeTapped callback for when the private mode button is tapped.
  * @param onStoriesTapped callback for when the stories button is tapped.
  */
 @Composable
 fun ExperimentalHomepageHeader(
+    wordmarkTextColor: Color?,
     onPrivateModeTapped: () -> Unit,
     onStoriesTapped: () -> Unit,
 ) {
@@ -57,7 +60,7 @@ fun ExperimentalHomepageHeader(
 
         Column {
             Spacer(modifier = Modifier.height(28.dp))
-            WordmarkAndLogo()
+            WordmarkAndLogo(wordmarkTextColor)
         }
 
         StoriesButton(onClick = onStoriesTapped)
@@ -85,6 +88,7 @@ fun ExperimentalPrivateHomepageHeader(onHomeTapped: () -> Unit) {
 
 @Composable
 private fun WordmarkAndLogo(
+    wordmarkTextColor: Color?,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -92,7 +96,7 @@ private fun WordmarkAndLogo(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         WordmarkLogo()
-        WordmarkText(MaterialTheme.colorScheme.onSurface)
+        WordmarkText(wordmarkTextColor)
     }
 }
 
@@ -142,7 +146,11 @@ private fun HomepageHeaderPreview(
 ) {
     FirefoxTheme(theme) {
         Surface {
-            ExperimentalHomepageHeader(onPrivateModeTapped = {}, onStoriesTapped = {})
+            ExperimentalHomepageHeader(
+                wordmarkTextColor = null,
+                onPrivateModeTapped = {},
+                onStoriesTapped = {},
+            )
         }
     }
 }

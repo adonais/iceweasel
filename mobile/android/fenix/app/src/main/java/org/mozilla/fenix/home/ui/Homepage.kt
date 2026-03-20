@@ -139,6 +139,7 @@ internal fun Homepage(
             when (headerState) {
                 is HeaderState.Experimental.Normal -> {
                     ExperimentalHomepageHeader(
+                        wordmarkTextColor = headerState.wordmarkTextColor,
                         onPrivateModeTapped = { browsingModeChanged(BrowsingMode.Private) },
                         onStoriesTapped = { interactor.onDiscoverMoreClicked() },
                     )

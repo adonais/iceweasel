@@ -277,7 +277,9 @@ private fun buildHeaderState(
     privateBrowsingButtonColor: Color,
 ): HeaderState {
     return if (settings.privateModeAndStoriesEntryPointEnabled) {
-        HeaderState.Experimental.Normal
+        HeaderState.Experimental.Normal(
+            wordmarkTextColor = textColor,
+        )
     } else {
         HeaderState.Normal(
             wordmarkTextColor = textColor,
@@ -326,7 +328,9 @@ internal sealed class HeaderState {
         /**
          * Represents the header in normal mode for the entry points experiment.
          */
-        data object Normal : Experimental()
+        data class Normal(
+            val wordmarkTextColor: Color?,
+        ) : Experimental()
 
         /**
          * Represents the header in private mode for the entry points experiment.
