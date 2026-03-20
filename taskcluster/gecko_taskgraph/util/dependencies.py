@@ -58,6 +58,20 @@ def platform_grouping(config, tasks):
     return groups.values()
 
 
+@group_by("platform-no-l10n")
+def platform_no_l10n_grouping(config, tasks):
+    """The same as `platform` grouping, but ignores l10n tasks. Useful when
+    grouping by multiple upstream kinds, only some of which contain l10n
+    tasks."""
+    groups = []
+    for grouped_tasks in platform_grouping(config, tasks):
+        group = [task for task in grouped_tasks if "locale" not in task.attributes]
+        if group:
+            groups.append(group)
+
+    return groups
+
+
 @group_by("single-locale")
 def single_locale_grouping(config, tasks):
     """Split by a single locale (but also by platform, build-type, product)
