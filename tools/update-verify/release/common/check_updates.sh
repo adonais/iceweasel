@@ -83,7 +83,7 @@ check_updates () {
     # This check is disabled because we rely on glob expansion here
     # shellcheck disable=SC2086
     cd_dir=$(ls -d ${PWD}/source/${platform_dirname})
-    cd "${cd_dir}" || (echo "TEST-UNEXPECTED-FAIL: couldn't cd to ${cd_dir}" && return 1)
+    cd "${cd_dir}" || { echo "TEST-UNEXPECTED-FAIL: couldn't cd to ${cd_dir}" && return 2; }
 
     set -x
     # Decide if we should use alternative argument list added in
@@ -106,7 +106,7 @@ check_updates () {
     cd ../..
   else
     echo "TEST-UNEXPECTED-FAIL: no dir in source/$platform_dirname"
-    return 1
+    return 3
   fi
 
   # Print updater log
@@ -118,7 +118,7 @@ check_updates () {
   if [ "$update_status" != "succeeded" ]
   then
     echo "TEST-UNEXPECTED-FAIL: update status was not successful: $update_status"
-    return 1
+    return 4
   fi
 
   # TODO: Check updater return code
@@ -173,13 +173,13 @@ check_updates () {
     # shellcheck disable=SC2086
     if ! compgen -G source/${platform_dirname}/Contents/MacOS/updater.app/Contents/Frameworks/UpdateSettings.framework >/dev/null; then
       echo "TEST-UNEXPECTED-FAIL: UpdateSettings.framework doesn't exist after update"
-      return 4
+      return 5
     fi
     # This check is disabled because we rely on glob expansion here
     # shellcheck disable=SC2086
     if ! compgen -G source/${platform_dirname}/Contents/Frameworks/ChannelPrefs.framework >/dev/null; then
       echo "TEST-UNEXPECTED-FAIL: ChannelPrefs.framework doesn't exist after update"
-      return 5
+      return 6
     fi
   fi
 
@@ -191,11 +191,11 @@ check_updates () {
   if [ $diffErr == 2 ]
   then
     echo "TEST-UNEXPECTED-FAIL: differences found after update"
-    return 1
+    return 7
   elif [ $diffErr != 0 ]
   then
     echo "TEST-UNEXPECTED-FAIL: unknown error from diff: $diffErr"
-    return 3
+    return 8
   fi
 }
 
