@@ -64,8 +64,11 @@ class StoriesFragment : Fragment(), SystemInsetsPaddedFragment {
                 appStore.stateFlow.map { state -> state.recommendationState }
             }.collectAsState(initial = ContentRecommendationsState())
 
+            val entryPointExperimentEnabled = components.settings.privateModeAndStoriesEntryPointEnabled
+
             StoriesScreen(
                 state = storiesState,
+                entryPointExperimentEnabled = entryPointExperimentEnabled,
                 interactor = interactor,
                 onNavigationIconClick = {
                     this@StoriesFragment.findNavController().popBackStack()

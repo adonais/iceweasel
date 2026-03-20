@@ -42,6 +42,7 @@ import org.mozilla.fenix.GleanMetrics.History
 import org.mozilla.fenix.GleanMetrics.HomeBookmarks
 import org.mozilla.fenix.GleanMetrics.RecentlyVisitedHomepage
 import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
 import org.mozilla.fenix.compose.MessageCard
 import org.mozilla.fenix.compose.home.HomeSectionHeader
@@ -101,6 +102,7 @@ internal fun Homepage(
     modifier: Modifier = Modifier,
 ) {
     val scrollState = rememberScrollState()
+    val browsingModeChanged = interactor::onPrivateModeButtonClicked
 
     BoxWithConstraints(
         modifier = modifier
@@ -133,12 +135,30 @@ internal fun Homepage(
                 )
             }
 
-            HomepageHeader(
-                wordmarkTextColor = state.headerState.wordmarkTextColor,
-                privateBrowsingButtonColor = state.headerState.privateBrowsingButtonColor,
-                browsingMode = state.browsingMode,
-                browsingModeChanged = interactor::onPrivateModeButtonClicked,
-            )
+            val headerState = state.headerState
+            when (headerState) {
+                is HeaderState.Experimental.Normal -> {
+                    ExperimentalHomepageHeader(
+                        onPrivateModeTapped = { browsingModeChanged(BrowsingMode.Private) },
+                        onStoriesTapped = { interactor.onDiscoverMoreClicked() },
+                    )
+                }
+
+                is HeaderState.Experimental.Private -> {
+                    ExperimentalPrivateHomepageHeader(
+                        onHomeTapped = { browsingModeChanged(BrowsingMode.Normal) },
+                    )
+                }
+
+                is HeaderState.Normal -> {
+                    HomepageHeader(
+                        wordmarkTextColor = headerState.wordmarkTextColor,
+                        privateBrowsingButtonColor = headerState.privateBrowsingButtonColor,
+                        browsingMode = state.browsingMode,
+                        browsingModeChanged = browsingModeChanged,
+                    )
+                }
+            }
 
             if (state.firstFrameDrawn) {
                 with(state) {
@@ -504,7 +524,7 @@ private fun HomepagePreview() {
                     showCollections = true,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
-                    headerState = HeaderState(
+                    headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(
                             getAttr(
@@ -556,7 +576,7 @@ private fun HomepageBannerPreview() {
                     showCollections = true,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
-                    headerState = HeaderState(
+                    headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(
                             getAttr(
@@ -608,7 +628,7 @@ private fun HomepagePreviewCollections() {
                     showCollections = true,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
-                    headerState = HeaderState(
+                    headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(
                             getAttr(
@@ -660,7 +680,7 @@ private fun MinimalHomepagePreview() {
                     showCollections = false,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
-                    headerState = HeaderState(
+                    headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
                         privateBrowsingButtonColor = colorResource(
                             getAttr(
@@ -693,7 +713,7 @@ private fun PrivateHomepagePreview() {
     FirefoxTheme(theme = Theme.Private) {
         Homepage(
             state = HomepageState.Private(
-                headerState = HeaderState(
+                headerState = HeaderState.Normal(
                     wordmarkTextColor = null,
                     privateBrowsingButtonColor = colorResource(
                         getAttr(

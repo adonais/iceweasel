@@ -169,6 +169,7 @@ internal sealed class HomepageState {
             return if (browsingModeManager.mode.isPrivate) {
                 buildPrivateState(
                     appState = appState,
+                    settings = settings,
                 )
             } else {
                 buildNormalState(
@@ -184,20 +185,15 @@ internal sealed class HomepageState {
          * Builds a new [HomepageState.Private] from the current [AppState] and [Settings].
          *
          * @param appState State to build the [HomepageState.Private] from.
+         * @param settings [Settings] to build the [HomepageState.Private] from.
          */
         @Composable
         private fun buildPrivateState(
             appState: AppState,
+            settings: Settings,
         ) = with(appState) {
             Private(
-                headerState = HeaderState(
-                    wordmarkTextColor = null,
-                    privateBrowsingButtonColor = colorResource(
-                        getAttr(
-                            R.attr.mozac_ic_private_mode_circle_fill_icon_color,
-                        ),
-                    ),
-                ),
+                headerState = buildPrivateHeaderState(settings = settings),
                 firstFrameDrawn = firstFrameDrawn,
                 isSearchInProgress = searchState.isSearchActive,
             )
@@ -248,8 +244,9 @@ internal sealed class HomepageState {
                 showPrivacyReport = settings.showPrivacyReportSectionToggle &&
                     settings.showPrivacyReportFeature,
                 trackersBlockedCount = trackersBlockedCount,
-                headerState = HeaderState(
-                    wordmarkTextColor = wallpaperState.textColor,
+                headerState = buildHeaderState(
+                    settings = settings,
+                    textColor = wallpaperState.textColor,
                     privateBrowsingButtonColor = wallpaperState.iconColor,
                 ),
                 searchBarVisible = shouldShowSearchBar(appState = appState),
@@ -273,16 +270,70 @@ internal sealed class HomepageState {
     }
 }
 
+@Composable
+private fun buildHeaderState(
+    settings: Settings,
+    textColor: Color,
+    privateBrowsingButtonColor: Color,
+): HeaderState {
+    return if (settings.privateModeAndStoriesEntryPointEnabled) {
+        HeaderState.Experimental.Normal
+    } else {
+        HeaderState.Normal(
+            wordmarkTextColor = textColor,
+            privateBrowsingButtonColor = privateBrowsingButtonColor,
+        )
+    }
+}
+
+@Composable
+private fun buildPrivateHeaderState(settings: Settings): HeaderState {
+    return if (settings.privateModeAndStoriesEntryPointEnabled) {
+        HeaderState.Experimental.Private
+    } else {
+        HeaderState.Normal(
+            wordmarkTextColor = null,
+            privateBrowsingButtonColor = colorResource(
+                getAttr(
+                    R.attr.mozac_ic_private_mode_circle_fill_icon_color,
+                ),
+            ),
+        )
+    }
+}
+
 /**
  * A simple wrapper around state required for the homepage header.
- *
- * @property wordmarkTextColor an optional color for the wordmark text
- * @property privateBrowsingButtonColor the color to use for the private browsing button
  */
-internal data class HeaderState(
-    val wordmarkTextColor: Color?,
-    val privateBrowsingButtonColor: Color,
-)
+internal sealed class HeaderState {
+
+    /**
+     * Represents the non-experimental header state for both normal and private mode.
+     *
+     * @property wordmarkTextColor an optional color for the wordmark text.
+     * @property privateBrowsingButtonColor the color to use for the private browsing button.
+     */
+    data class Normal(
+        val wordmarkTextColor: Color?,
+        val privateBrowsingButtonColor: Color,
+    ) : HeaderState()
+
+    /**
+     * Represents the experimental states for the entry points experiment.
+     */
+    sealed class Experimental : HeaderState() {
+
+        /**
+         * Represents the header in normal mode for the entry points experiment.
+         */
+        data object Normal : Experimental()
+
+        /**
+         * Represents the header in private mode for the entry points experiment.
+         */
+        data object Private : Experimental()
+    }
+}
 
 /**
  * Returns whether the search bar should be shown. Only show if the search dialog

@@ -12,6 +12,8 @@
     <string name="content_description_menu">More options</string>
     <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
     <string name="content_description_private_browsing">Private browsing</string>
+    <!-- Content description (not visible, for screen readers etc.): "Normal Browsing" menu button. -->
+    <string name="content_description_normal_browsing">Normal browsing</string>
     <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
     <string name="search_hint">Search or enter address</string>
     <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -3147,6 +3149,8 @@
     <!-- Pocket recommended stories -->
     <!-- Header text for a section on the home screen. -->
     <string name="pocket_stories_header_2">Stories</string>
+    <!-- Header text for the Stories screen. -->
+    <string name="stories_screen_text_news">News</string>
     <!-- Context description text for the "Discover more" button in the stories home screen section
         which navigates the user to a screen displaying more stories. -->
     <string name="stories_discover_more_content_description">Discover more stories</string>
