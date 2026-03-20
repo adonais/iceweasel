@@ -603,13 +603,8 @@ export class AIWindow extends MozLitElement {
 
     this.#browser = browser;
 
-    await this.#loadPendingConversation().catch(error => {
-      console.error(
-        `loadPendingConversation() error: ${error.toString()}, \nstack: ${error.stack}`
-      );
-    });
-
-    // Defer Smartbar and conversation starters for preloaded documents
+    // Create the Smartbar before any async work so it is available
+    // synchronously after the first render.
     if (doc.hidden) {
       this.#visibilityChangeHandler = () => {
         if (!doc.hidden && !this.#smartbar) {
@@ -622,6 +617,15 @@ export class AIWindow extends MozLitElement {
       });
     } else {
       this.#getOrCreateSmartbar(doc, container);
+    }
+
+    await this.#loadPendingConversation().catch(error => {
+      console.error(
+        `loadPendingConversation() error: ${error.toString()}, \nstack: ${error.stack}`
+      );
+    });
+
+    if (!doc.hidden) {
       this.loadStarterPrompts();
     }
   }
