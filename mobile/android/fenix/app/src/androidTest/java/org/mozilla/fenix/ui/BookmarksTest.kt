@@ -342,8 +342,9 @@ class BookmarksTest {
         }
     }
 
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833694
     @Test
-    fun moveBookmarkTest() {
+    fun moveBookmarkToDifferentFolderTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
         createBookmarkItem(defaultWebPage.url.toString(), defaultWebPage.title, null)
