@@ -20,6 +20,7 @@ suites:
     netwerk/test/unit:
         description: "Performance tests from the 'netwerk/test/unit' folder."
         tests:
+            DNS Benchmark: ""
             http3 raw: ""
             TRR Benchmark: ""
     testing/performance:
