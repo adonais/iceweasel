@@ -10,7 +10,6 @@ import mozilla.components.lib.llm.mlpa.service.AuthenticationService.Request
 import mozilla.components.lib.llm.mlpa.service.AuthorizationToken
 import mozilla.components.lib.llm.mlpa.service.PackageName
 import mozilla.components.lib.llm.mlpa.service.UserId
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * Provides a stable [UserId] representing the current user.
@@ -79,25 +78,20 @@ fun interface MlpaTokenProvider {
             integrityClient: IntegrityClient,
             authenticationService: AuthenticationService,
             userIdProvider: UserIdProvider,
-            storage: MlpaTokenStorage,
             packageName: PackageName,
         ) = MlpaTokenProvider {
-            storage.getToken()?.also {
-                return@MlpaTokenProvider Result.success(it)
-            }
+            integrityClient.request().fold(
+                onSuccess = { token ->
+                    val request = Request(
+                        userId = userIdProvider.getUserId(),
+                        integrityToken = token,
+                        packageName = packageName,
+                    )
 
-            runCatching {
-                val request = Request(
-                    userId = userIdProvider.getUserId(),
-                    integrityToken = integrityClient.request().getOrThrow(),
-                    packageName = packageName,
-                )
-
-                val response = authenticationService.verify(request).getOrThrow()
-                storage.setToken(response.accessToken, response.expiresIn.seconds)
-
-                return@runCatching response.accessToken
-            }
+                    authenticationService.verify(request).map { it.accessToken }
+                },
+                onFailure = { Result.failure(it) },
+            )
         }
     }
 }
