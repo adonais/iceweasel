@@ -2030,48 +2030,43 @@ permissions-addon-exceptions2 =
 
 ## Privacy Section - Data Collection
 
-# The search keyword isn't shown to users but is used to find relevant settings in about:preferences.
-data-collection =
-    .label = { -brand-short-name } data collection and use
-    .description = We strive to provide you with choices and collect only the minimal data necessary to improve { -brand-product-name } for everyone.
+collection-header2 = { -brand-short-name } Data Collection and Use
     .searchkeywords = telemetry
-data-collection-link = View Privacy Notice
-data-collection-preferences-across-profiles =
-    .message = These settings apply to every { -brand-product-name } profile on this device.
-data-collection-profiles-link = View all profiles
-data-collection-health-report-telemetry-disabled =
-    .message = You’re no longer allowing { -vendor-short-name } to capture technical and interaction data. All past data will be deleted within 30 days.
-data-collection-health-report =
-    .label = Send technical and interaction data to { -vendor-short-name }
-    .accesskey = r
-    .description = This helps us improve { -brand-product-name } features, performance, and stability.
-data-collection-health-report-disabled =
-    .label = Send technical and interaction data to { -vendor-short-name }
-    .accesskey = r
-    .description = Data reporting is disabled for this build configuration.
-data-collection-run-studies =
-    .label = Allow { -brand-short-name } to run feature studies
-    .description = { -brand-short-name } randomly selects users to test features, which helps improve quality for everyone.
-data-collection-studies-link =
-    .label = View { -brand-short-name } studies
-data-collection-backlogged-crash-reports =
-    .label = Automatically send crash reports
-    .description = This helps { -vendor-short-name } diagnose and fix issues with the browser. Reports may include personal or sensitive data.
-    .accesskey = c
-data-collection-usage-ping =
-    .label = Send daily usage ping to { -vendor-short-name }
-    .description = This helps { -vendor-short-name } to estimate active users.
-    .accesskey = u
+
+preferences-collection-description = We strive to provide you with choices and collect only the minimal data necessary to improve { -brand-product-name } for everyone.
+preferences-collection-privacy-notice = View Privacy Notice
+preferences-across-profiles = These settings apply to every { -brand-product-name } profile on this device.
+preferences-view-profiles = View all profiles
+
+collection-health-report-telemetry-disabled = You’re no longer allowing { -vendor-short-name } to capture technical and interaction data. All past data will be deleted within 30 days.
+collection-health-report-telemetry-disabled-link = Learn more
 
 backup-multi-profile-warning-message =
     .message = To make sure this change is included in your backups, open each profile and choose “Backup now” in Settings.
 
-nimbus-rollouts =
+collection-usage-ping =
+    .label = Send daily usage ping to { -vendor-short-name }
+    .accesskey = u
+collection-usage-ping-description = This helps { -vendor-short-name } to estimate active users.
+
+collection-health-report2 =
+    .label = Send technical and interaction data to { -vendor-short-name }
+    .accesskey = r
+collection-health-report-link = Learn more
+collection-health-report-description = This helps us improve { -brand-product-name } features, performance, and stability.
+
+collection-studies2 =
+    .label = Install and run studies
+collection-studies-description = Try out features and ideas before they’re released to everyone.
+collection-studies-link = View { -brand-short-name } studies
+
+nimbus-rollouts-enabled =
     .label = Allow { -brand-short-name } to improve features, performance, and stability between updates
-    .description = Changes will be rolled out remotely.
-addon-recommendations3 =
+nimbus-rollouts-enabled-description = Changes will be applied remotely.
+
+addon-recommendations2 =
     .label = Allow personalized extension recommendations
-    .description = Get extension recommendations to improve your browsing experience.
+addon-recommendations-description = Get extension recommendations to improve your browsing experience.
 
 # This message is displayed above disabled data sharing options in developer builds
 # or builds with no Telemetry support available.
