@@ -42,6 +42,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://devtools/client/shared/inplace-editor-utils/autocomplete-color-function.mjs",
   getAutocompleteDataForAnchorFunction:
     "resource://devtools/client/shared/inplace-editor-utils/autocomplete-anchor-function.mjs",
+  getAutocompleteDataForAnchorSizeFunction:
+    "resource://devtools/client/shared/inplace-editor-utils/autocomplete-anchor-size-function.mjs",
 });
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
@@ -88,7 +90,7 @@ const GRID_COL_PROPERTY_NAMES = [
 const ACCEPT_ANCHOR_PROPERTY_NAMES = new Set([
   // position-anchor directly accepts anchor names
   "position-anchor",
-  //  inset properties that accept an anchor() function as a value
+  // inset properties that accept an anchor()/anchor-size() function as a value
   "top",
   "left",
   "bottom",
@@ -100,6 +102,31 @@ const ACCEPT_ANCHOR_PROPERTY_NAMES = new Set([
   "inset-inline-start",
   "inset-inline-end",
   "inset-inline",
+  // sizing properties that accept the use of anchor-size()
+  "width",
+  "height",
+  "min-width",
+  "min-height",
+  "max-width",
+  "max-height",
+  "block-size",
+  "inline-size",
+  "min-block-size",
+  "min-inline-size",
+  "max-block-size",
+  "max-inline-size",
+  // margin properties that accept the use of anchor-size()
+  "margin",
+  "margin-bottom",
+  "margin-left",
+  "margin-right",
+  "margin-top",
+  "margin-block",
+  "margin-block-end",
+  "margin-block-start",
+  "margin-inline",
+  "margin-inline-end",
+  "margin-inline-start",
 ]);
 
 /**
@@ -1944,6 +1971,13 @@ class InplaceEditor extends EventEmitter {
 
     if (functionName === "anchor") {
       return lazy.getAutocompleteDataForAnchorFunction({
+        functionTokens: functionStackEntry.tokens,
+        anchorNames: this.anchorNames,
+      });
+    }
+
+    if (functionName === "anchor-size") {
+      return lazy.getAutocompleteDataForAnchorSizeFunction({
         functionTokens: functionStackEntry.tokens,
         anchorNames: this.anchorNames,
       });

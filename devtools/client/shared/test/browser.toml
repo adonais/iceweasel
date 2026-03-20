@@ -190,6 +190,8 @@ skip-if = [
 
 ["browser_inplace-editor_autocomplete_anchor_function.js"]
 
+["browser_inplace-editor_autocomplete_anchor_size_function.js"]
+
 ["browser_inplace-editor_autocomplete_color_function.js"]
 
 ["browser_inplace-editor_autocomplete_css_variable.js"]
