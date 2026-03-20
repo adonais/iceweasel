@@ -55,6 +55,20 @@ export function getHostName() {
   return RPMGetHostForDisplay(document);
 }
 
+export function getFilePath() {
+  try {
+    const url = new URL(document.location.href);
+    if (url.protocol === "file:") {
+      let path = decodeURIComponent(url.pathname);
+      if (/^\/[A-Za-z]:/.test(path)) {
+        path = path.substring(1);
+      }
+      return path;
+    }
+  } catch (e) {}
+  return null;
+}
+
 export function retryThis(buttonEl) {
   RPMSendAsyncMessage("Browser:EnableOnlineMode");
   buttonEl.disabled = true;

@@ -78,6 +78,8 @@ support-files = [
   "server_error.sjs",
 ]
 
+["browser_aboutNetError_fileNotFound.js"]
+
 ["browser_aboutNetError_httpAuthDisabled.js"]
 
 ["browser_aboutNetError_internet_connection_offline.js"]

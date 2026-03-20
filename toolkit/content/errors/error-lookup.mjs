@@ -48,6 +48,7 @@ export function resolveL10nArgs(l10nConfig, l10nArgValues) {
 
   const values = {
     hostname: l10nArgValues.hostname,
+    path: l10nArgValues.filePath,
     date: Date.now(),
     errorMessage: l10nArgValues.errorInfo?.errorMessage ?? "",
     validHosts: l10nArgValues.domainMismatchNames ?? "",
