@@ -42,6 +42,7 @@ struct MediaPlaybackEvent {
     CancelVideoSuspendTimer,
     VideoOnlySeekBegin,
     VideoOnlySeekCompleted,
+    PlaybackRateFallback,
   } mType;
 
   using DataType = Variant<Nothing, int64_t>;

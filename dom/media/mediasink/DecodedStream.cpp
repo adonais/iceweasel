@@ -505,7 +505,6 @@ DecodedStream::DecodedStream(
     MediaQueue<AudioData>& aAudioQueue, MediaQueue<VideoData>& aVideoQueue)
     : mOwnerThread(aOwnerThread),
       mDummyTrack(std::move(aDummyTrack)),
-
       mWatchManager(this, mOwnerThread),
       mPlaying(false, "DecodedStream::mPlaying"),
       mPrincipalHandle(aOwnerThread, PRINCIPAL_HANDLE_NONE,
@@ -517,6 +516,7 @@ DecodedStream::DecodedStream(
       mPreservesPitch(aPreservesPitch),
       mShouldConfigAudioOutput(aShouldConfigAudioOutput),
       mDevice(aDevice),
+      mPlaybackRateFallbackForwarder(aOwnerThread),
       mAudioQueue(aAudioQueue),
       mVideoQueue(aVideoQueue) {}
 
@@ -660,6 +660,10 @@ nsresult DecodedStream::Start(const TimeUnit& aStartTime,
     mVideoEndedPromise = mData->mVideoEndedPromise;
     mOutputListener = mData->OnOutput().Connect(mOwnerThread, this,
                                                 &DecodedStream::NotifyOutput);
+    if (mData->mAudioTrack) {
+      mPlaybackRateFallbackForwarder.Forward(
+          mData->mAudioTrack->OnPlaybackRateFallback());
+    }
     SendData();
   }
   return NS_OK;
@@ -713,6 +717,7 @@ void DecodedStream::DestroyData(UniquePtr<DecodedStreamData>&& aData) {
 
   TRACE("DecodedStream::DestroyData");
   mOutputListener.Disconnect();
+  mPlaybackRateFallbackForwarder.DisconnectAll();
 
   aData->Close();
   NS_DispatchToMainThread(

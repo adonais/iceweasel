@@ -253,6 +253,7 @@ class MediaDecoderStateMachine
   void OnVideoPopped(const RefPtr<VideoData>& aSample);
 
   void AudioAudibleChanged(bool aAudible);
+  void OnPlaybackRateFallback();
 
   void SetPlaybackRate(double aPlaybackRate) override;
   void SetCanPlayThrough(bool aCanPlayThrough) override {
@@ -487,6 +488,7 @@ class MediaDecoderStateMachine
   MediaEventListener mAudioQueueListener;
   MediaEventListener mVideoQueueListener;
   MediaEventListener mAudibleListener;
+  MediaEventListener mPlaybackRateFallbackListener;
   MediaEventListener mOnMediaNotSeekable;
 
   const bool mIsMSE;
