@@ -5,6 +5,7 @@
 #include "MFMediaEngineParent.h"
 
 #include <audiosessiontypes.h>
+#include <dxgi.h>
 #include <intsafe.h>
 #include <mfapi.h>
 
@@ -285,21 +286,23 @@ void MFMediaEngineParent::HandleMediaEngineEvent(
 
 void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
                                       HRESULT aResult) {
+  AssertOnManagerThread();
   if (aError == MF_MEDIA_ENGINE_ERR_NOERROR) {
     return;
   }
 #ifdef MOZ_WMF_CDM
-  // A special error requires to reset the hareware context, not a real error.
-  if (aResult == DRM_E_TEE_INVALID_HWDRM_STATE) {
-    LOG("Notify error 'DRM_E_TEE_INVALID_HWDRM_STATE', hr=%lx", aResult);
-    ENGINE_MARKER(
-        "MFMediaEngineParent,Received 'DRM_E_TEE_INVALID_HWDRM_STATE'");
+  // Hardware context reset errors require engine recovery, not a real error.
+  if (IsHardwareResetHRESULT(aResult)) {
+    LOG("Notifying hardware reset error, hr=%lx", aResult);
+    ENGINE_MARKER("MFMediaEngineParent,HardwareContextReset");
+    mHardwareResetInProgress = true;
     auto* proxy = mContentProtectionManager
                       ? mContentProtectionManager->GetCDMProxy()
                       : nullptr;
     if (proxy) {
       proxy->OnHardwareContextReset();
     }
+    (void)SendNotifyHardwareReset();
     return;
   }
 #endif
@@ -343,6 +346,20 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
       MOZ_ASSERT_UNREACHABLE("Unsupported error");
       return;
   }
+}
+
+/* static */
+bool MFMediaEngineParent::IsHardwareResetHRESULT(HRESULT aResult) {
+#ifdef MOZ_WMF_CDM
+  if (aResult == DRM_E_TEE_INVALID_HWDRM_STATE ||      // TEE state invalid
+      aResult == DRM_OEM_E_ASD_ACTIVE_DISPLAY_FAIL) {  // display link failure
+    return true;
+  }
+#endif
+  // https://learn.microsoft.com/en-us/windows/win32/direct3ddxgi/dxgi-error
+  return aResult == DXGI_ERROR_DEVICE_REMOVED ||  // GPU removed / driver crash
+         aResult == DXGI_ERROR_DEVICE_HUNG ||     // GPU hung (TDR timeout)
+         aResult == DXGI_ERROR_DEVICE_RESET;      // GPU reset by OS
 }
 
 MFMediaEngineStreamWrapper* MFMediaEngineParent::GetMediaEngineStream(
@@ -682,7 +699,21 @@ void MFMediaEngineParent::EnsureDcompSurfaceHandle() {
       nullptr /* pSrc */, &rect, nullptr /* pBorderClr */));
 
   HANDLE surfaceHandle = INVALID_HANDLE_VALUE;
-  RETURN_VOID_IF_FAILED(mediaEngineEx->GetVideoSwapchainHandle(&surfaceHandle));
+  HRESULT rv = mediaEngineEx->GetVideoSwapchainHandle(&surfaceHandle);
+  if (FAILED(rv)) {
+    if (IsHardwareResetHRESULT(rv)) {
+      LOG("GetVideoSwapchainHandle failed with hardware reset hr=%lx", rv);
+      (void)SendNotifyHardwareReset();
+    } else {
+      LOG("GetVideoSwapchainHandle failed, hr=%lx", rv);
+      MediaResult error(
+          NS_ERROR_DOM_MEDIA_DECODE_ERR,
+          nsPrintfCString("GetVideoSwapchainHandle failed (hr=%lx)", rv),
+          Some(static_cast<int32_t>(rv)));
+      (void)SendNotifyError(error);
+    }
+    return;
+  }
   if (surfaceHandle && surfaceHandle != INVALID_HANDLE_VALUE) {
     LOG("EnsureDcompSurfaceHandle, handle=%p, size=[%dx%d]", surfaceHandle,
         size.width, size.height);
