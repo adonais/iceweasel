@@ -113,11 +113,13 @@ decorate_task(
     );
 
     Services.prefs.setBoolPref(OPT_OUT_PREF, false);
+    await optOutCheckbox.updateComplete;
     ok(
       !optOutCheckbox.checked,
       "Disabling the opt-out pref unchecks the opt-out checkbox."
     );
     Services.prefs.setBoolPref(OPT_OUT_PREF, true);
+    await optOutCheckbox.updateComplete;
     ok(
       optOutCheckbox.checked,
       "Enabling the opt-out pref checks the opt-out checkbox."
@@ -128,7 +130,10 @@ decorate_task(
 decorate_task(
   withPrivacyPrefs(),
   async function testViewStudiesLink({ browser }) {
-    browser.contentDocument.getElementById("viewShieldStudies").click();
+    browser.contentDocument
+      .getElementById("viewShieldStudies")
+      .shadowRoot.querySelector("a")
+      .click();
     await BrowserTestUtils.waitForLocationChange(gBrowser);
 
     is(

@@ -4072,6 +4072,107 @@ SettingGroupManager.registerGroups({
       },
     ],
   },
+  dataCollection: {
+    items: [
+      {
+        id: "dataCollectionCategory",
+        l10nId: "data-collection",
+        control: "moz-fieldset",
+        controlAttrs: {
+          headinglevel: 1,
+          "data-l10n-attrs": "searchkeywords",
+        },
+        items: [
+          {
+            id: "dataCollectionLink",
+            control: "a",
+            l10nId: "data-collection-link",
+            slot: "support-link",
+            controlAttrs: {
+              id: "dataCollectionPrivacyNoticeLink",
+              target: "_blank",
+            },
+          },
+          {
+            id: "preferencesPrivacyProfiles",
+            control: "moz-message-bar",
+            l10nId: "data-collection-preferences-across-profiles",
+            items: [
+              {
+                id: "privacyProfilesLink",
+                control: "a",
+                l10nId: "data-collection-profiles-link",
+                slot: "support-link",
+                controlAttrs: {
+                  id: "dataCollectionViewProfiles",
+                  target: "_blank",
+                  href: "",
+                },
+              },
+            ],
+          },
+          {
+            id: "telemetryContainer",
+            control: "moz-message-bar",
+            l10nId: "data-collection-health-report-telemetry-disabled",
+            supportPage: "telemetry-clientid",
+          },
+          {
+            id: "backup-multi-profile-warning-message-bar",
+            control: "moz-message-bar",
+            l10nId: "backup-multi-profile-warning-message",
+            controlAttrs: {
+              dismissable: true,
+            },
+          },
+          {
+            id: "submitHealthReportBox",
+            supportPage: "technical-and-interaction-data",
+            subcategory: "reports",
+            items: [
+              {
+                id: "addonRecommendationEnabled",
+                l10nId: "addon-recommendations3",
+                supportPage: "personalized-addons",
+              },
+              {
+                id: "optOutStudiesEnabled",
+                l10nId: "data-collection-run-studies",
+                items: [
+                  {
+                    id: "viewShieldStudies",
+                    control: "moz-box-link",
+                    l10nId: "data-collection-studies-link",
+                    controlAttrs: {
+                      href: "about:studies",
+                    },
+                  },
+                ],
+              },
+            ],
+          },
+
+          {
+            id: "enableNimbusRollouts",
+            l10nId: "nimbus-rollouts",
+            supportPage: "remote-improvements",
+          },
+          {
+            id: "submitUsagePingBox",
+            l10nId: "data-collection-usage-ping",
+            subcategory: "reports",
+            supportPage: "usage-ping-settings",
+          },
+          {
+            id: "automaticallySubmitCrashesBox",
+            l10nId: "data-collection-backlogged-crash-reports",
+            subcategory: "reports",
+            supportPage: "crash-report",
+          },
+        ],
+      },
+    ],
+  },
   dnsOverHttps: {
     l10nId: "dns-over-https-group2",
     headingLevel: 1,

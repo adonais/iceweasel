@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+/** @import MozCheckbox from "chrome://global/content/elements/moz-checkbox.mjs";*/
+/** @import MozMessageBar from "chrome://global/content/elements/moz-message-bar.mjs";*/
+/** @import {SettingValue, SettingDeps, SettingEmitChange} from "chrome://global/content/preferences/Setting.mjs";*/
+
 /* import-globals-from extensionControlled.js */
 /* import-globals-from preferences.js */
 
@@ -12,6 +16,8 @@ const TRACKING_PROTECTION_PREFS = [
   "privacy.trackingprotection.enabled",
   "privacy.trackingprotection.pbmode.enabled",
 ];
+const PRIVACY_SEGMENTATION_PREF =
+  "browser.privacySegmentation.preferences.show";
 const CONTENT_BLOCKING_PREFS = [
   "privacy.trackingprotection.enabled",
   "privacy.trackingprotection.pbmode.enabled",
@@ -127,6 +133,7 @@ const SECURITY_PRIVACY_STATUS_CARD_ENABLED =
   );
 
 Preferences.addAll([
+  { id: BACKUP_ENABLED_ON_PROFILES_PREF_NAME, type: "string" },
   // Content blocking / Tracking Protection
   { id: "privacy.trackingprotection.enabled", type: "bool" },
   { id: "privacy.trackingprotection.pbmode.enabled", type: "bool" },
@@ -306,6 +313,8 @@ Preferences.addAll([
     id: "browser.preferences.config_warning.warningSafeBrowsing.dismissed",
     type: "bool",
   },
+  { id: PREF_NORMANDY_ENABLED, type: "bool" },
+  { id: PRIVACY_SEGMENTATION_PREF, type: "bool" },
 ]);
 
 if (SECURITY_PRIVACY_STATUS_CARD_ENABLED) {
@@ -1224,12 +1233,10 @@ Preferences.add({
 });
 
 // Data Choices tab
-if (AppConstants.MOZ_CRASHREPORTER) {
-  Preferences.add({
-    id: "browser.crashReports.unsubmittedCheck.autoSubmit2",
-    type: "bool",
-  });
-}
+Preferences.add({
+  id: "browser.crashReports.unsubmittedCheck.autoSubmit2",
+  type: "bool",
+});
 
 Preferences.addSetting({
   id: "gpcFunctionalityEnabled",
@@ -2058,6 +2065,234 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "permissionBox",
 });
+Preferences.addSetting({
+  id: "submitUsagePingBox",
+  pref: "datareporting.usage.uploadEnabled",
+  visible: () => AppConstants.MOZ_DATA_REPORTING,
+});
+Preferences.addSetting({
+  id: "automaticallySubmitCrashesBox",
+  pref: "browser.crashReports.unsubmittedCheck.autoSubmit2",
+  visible: () =>
+    AppConstants.MOZ_DATA_REPORTING && AppConstants.MOZ_CRASHREPORTER,
+});
+
+Preferences.addSetting({
+  id: "privacySegmentation",
+  pref: PRIVACY_SEGMENTATION_PREF,
+});
+
+Preferences.addSetting({
+  id: "dataCollectionCategory",
+  deps: ["privacySegmentation"],
+  visible: ({ privacySegmentation }) =>
+    AppConstants.MOZ_DATA_REPORTING || privacySegmentation.value,
+});
+
+Preferences.addSetting({
+  id: "dataCollectionLink",
+  visible: () => {
+    const url = Services.urlFormatter.formatURLPref(
+      "toolkit.datacollection.infoURL"
+    );
+    if (url) {
+      return true;
+    }
+    return false;
+  },
+  getControlConfig(config) {
+    // Set up or hides the Privacy notice link with the correct URL for various data collection options
+    const url = Services.urlFormatter.formatURLPref(
+      "toolkit.datacollection.infoURL"
+    );
+    return {
+      ...config,
+      controlAttrs: {
+        ...config.controlAttrs,
+        href: url,
+      },
+    };
+  },
+});
+
+Preferences.addSetting({
+  id: "dataCollectionPrivacyNotice",
+});
+
+Preferences.addSetting({
+  id: "preferencesPrivacyProfiles",
+  visible: () => SelectableProfileService.isEnabled,
+});
+
+Preferences.addSetting({
+  id: "privacyProfilesLink",
+  onUserClick: () => gMainPane.manageProfiles(),
+});
+
+Preferences.addSetting({
+  id: "privacyDataFeatureRecommendationRadioGroup",
+  pref: "browser.dataFeatureRecommendations.enabled",
+});
+
+Preferences.addSetting({
+  id: "submitHealthReportBox",
+  pref: PREF_UPLOAD_ENABLED,
+  getControlConfig(config, _, setting) {
+    if (!setting.value) {
+      return {
+        ...config,
+        l10nId: "data-collection-health-report-disabled",
+      };
+    }
+    return {
+      ...config,
+      l10nId: "data-collection-health-report",
+    };
+  },
+});
+
+Preferences.addSetting({
+  id: "addonRecommendationEnabled",
+  pref: PREF_ADDON_RECOMMENDATIONS_ENABLED,
+  deps: ["submitHealthReportBox"],
+  visible: () => AppConstants.MOZ_DATA_REPORTING,
+  get: (value, deps) => {
+    return value && deps.submitHealthReportBox.pref.value;
+  },
+});
+
+Preferences.addSetting({
+  id: "normandyEnabled",
+  pref: PREF_NORMANDY_ENABLED,
+});
+
+Preferences.addSetting({
+  id: "optOutStudiesEnabled",
+  visible: () => AppConstants.MOZ_NORMANDY,
+  pref: PREF_OPT_OUT_STUDIES_ENABLED,
+  deps: ["submitHealthReportBox", "normandyEnabled"],
+  disabled: ({ submitHealthReportBox, normandyEnabled }) => {
+    /**
+    *  The checkbox should be disabled if any of the below are true. This
+    prevents the user from changing the value in the box.
+    * 2. telemetry upload is disabled
+    * 3. Normandy is disabled
+    */
+    const allowedByPolicy = Services.policies.isAllowed("Shield");
+    return (
+      !allowedByPolicy || !submitHealthReportBox.value || !normandyEnabled.value
+    );
+  },
+
+  get: (value, { submitHealthReportBox, normandyEnabled }) => {
+    /**
+     * The checkbox should match the value of the preference only if all the below are true:
+     *
+     * 1. the policy allows Shield
+     * 2. telemetry upload is enabled
+     * 3. Normandy is enabled
+     *
+     * Otherwise, the checkbox should remain unchecked. This
+     * is because in these situations, Shield studies are always disabled, and
+     * so showing a checkbox would be confusing.
+     */
+    const allowedByPolicy = Services.policies.isAllowed("Shield");
+
+    if (
+      !allowedByPolicy ||
+      !submitHealthReportBox.value ||
+      !normandyEnabled.value
+    ) {
+      return false;
+    }
+    return value;
+  },
+});
+
+Preferences.addSetting({
+  id: "viewShieldStudies",
+});
+
+Preferences.addSetting({
+  id: "profilesBackupEnabled",
+  pref: BACKUP_ENABLED_ON_PROFILES_PREF_NAME,
+});
+
+Preferences.addSetting({
+  id: "telemetryContainer",
+  deps: ["submitHealthReportBox"],
+  visible: deps => {
+    if (!AppConstants.MOZ_DATA_REPORTING) {
+      return false;
+    }
+    return !deps.submitHealthReportBox.value;
+  },
+});
+
+Preferences.addSetting(
+  /** @type {{ _originalStateOfDataCollectionPrefs: Map<string, any>} & SettingConfig} */ ({
+    id: "backup-multi-profile-warning-message-bar",
+    _originalStateOfDataCollectionPrefs: new Map(),
+    deps: [
+      "addonRecommendationEnabled",
+      "optOutStudiesEnabled",
+      "submitHealthReportBox",
+      "submitUsagePingBox",
+      "automaticallySubmitCrashesBox",
+      "profilesBackupEnabled",
+    ],
+    setup(emitChange, dataCollectionPrefDeps) {
+      emitChange();
+      for (let pref in dataCollectionPrefDeps) {
+        const value = dataCollectionPrefDeps[pref].value;
+        this._originalStateOfDataCollectionPrefs.set(pref, value);
+      }
+    },
+    visible(dataCollectionPrefDeps) {
+      const { currentProfile } = SelectableProfileService;
+      if (!currentProfile) {
+        return false;
+      }
+      let anyPrefChanged = false;
+      for (let pref in dataCollectionPrefDeps) {
+        if (pref === "profilesBackupEnabled") {
+          continue;
+        }
+        const originalValue =
+          this._originalStateOfDataCollectionPrefs.get(pref);
+        const updatedValue = dataCollectionPrefDeps[pref].value;
+        if (updatedValue !== originalValue) {
+          anyPrefChanged = true;
+          break;
+        }
+      }
+
+      const profilesBackupEnabledValue = /** @type {string} */ (
+        dataCollectionPrefDeps.profilesBackupEnabled.value
+      );
+      let profilesEnabledOn = JSON.parse(profilesBackupEnabledValue || "{}");
+      let currentId = currentProfile.id;
+      let otherProfilesEnabled = Object.keys(profilesEnabledOn).some(
+        id => id != currentId
+      );
+      return otherProfilesEnabled && anyPrefChanged;
+    },
+  })
+);
+
+Preferences.addSetting({
+  id: "enableNimbusRollouts",
+  pref: "nimbus.rollouts.enabled",
+  visible: () => AppConstants.MOZ_DATA_REPORTING && AppConstants.MOZ_NORMANDY,
+  disabled: () => !Services.policies.isAllowed("NimbusRollouts"),
+  get: value => {
+    if (!Services.policies.isAllowed("NimbusRollouts")) {
+      return false;
+    }
+    return value;
+  },
+});
+
 Preferences.addSetting({
   id: "popupPolicy",
   pref: "dom.disable_open_during_load",
@@ -2999,37 +3234,6 @@ function setSyncToPrefListener(aId, aCallback) {
   Preferences.addSyncToPrefListener(document.getElementById(aId), aCallback);
 }
 
-function dataCollectionCheckboxHandler({
-  checkbox,
-  pref,
-  matchPref = () => true,
-  isDisabled = () => false,
-}) {
-  function updateCheckbox() {
-    let collectionEnabled = Services.prefs.getBoolPref(
-      PREF_UPLOAD_ENABLED,
-      false
-    );
-
-    if (collectionEnabled && matchPref()) {
-      checkbox.toggleAttribute(
-        "checked",
-        Services.prefs.getBoolPref(pref, false)
-      );
-      checkbox.setAttribute("preference", pref);
-    } else {
-      checkbox.removeAttribute("preference");
-      checkbox.removeAttribute("checked");
-    }
-
-    checkbox.disabled =
-      !collectionEnabled || Services.prefs.prefIsLocked(pref) || isDisabled();
-  }
-
-  Preferences.get(PREF_UPLOAD_ENABLED).on("change", updateCheckbox);
-  updateCheckbox();
-}
-
 // Sets the "Learn how" SUMO link in the Strict/Custom options of Content Blocking.
 function setUpContentBlockingWarnings() {
   document.getElementById("fpiIncompatibilityWarning").hidden =
@@ -3060,8 +3264,6 @@ var gPrivacyPane = {
    * Whether the prompt to restart Firefox should appear when changing the autostart pref.
    */
   _shouldPromptForRestart: true,
-
-  _originalStateOfDataCollectionPrefs: new Map(),
 
   /**
    * Update the tracking protection UI to deal with extension control.
@@ -3541,6 +3743,7 @@ var gPrivacyPane = {
     initSettingGroup("history");
     initSettingGroup("history2");
     initSettingGroup("permissions");
+    initSettingGroup("dataCollection");
     initSettingGroup("dnsOverHttps");
     initSettingGroup("dnsOverHttpsAdvanced");
     initSettingGroup("etpStatus");
@@ -3557,7 +3760,6 @@ var gPrivacyPane = {
     this.networkCookieBehaviorReadPrefs();
     this._initTrackingProtectionExtensionControl();
     this._ensureTrackingProtectionExceptionListMigration();
-    this._initProfilesInfo();
 
     Preferences.get("privacy.trackingprotection.enabled").on(
       "change",
@@ -3650,54 +3852,7 @@ var gPrivacyPane = {
 
     this.initCookieBannerHandling();
 
-    this.initDataCollection();
-
-    if (AppConstants.MOZ_DATA_REPORTING) {
-      this.updateSubmitHealthReportFromPref();
-      Preferences.get(PREF_UPLOAD_ENABLED).on(
-        "change",
-        gPrivacyPane.updateSubmitHealthReportFromPref
-      );
-      setEventListener(
-        "submitHealthReportBox",
-        "command",
-        gPrivacyPane.updateSubmitHealthReportToPref
-      );
-      if (AppConstants.MOZ_NORMANDY) {
-        this.initOptOutStudyCheckbox();
-      }
-      this.initAddonRecommendationsCheckbox();
-    }
-
-    if (SelectableProfileService.currentProfile) {
-      let dataCollectionPrefs = PreferencesBackupResource.dataCollectionPrefs;
-      for (let pref of dataCollectionPrefs) {
-        this._originalStateOfDataCollectionPrefs.set(
-          pref,
-          Services.prefs.getBoolPref(pref, false)
-        );
-
-        Services.prefs.addObserver(
-          pref,
-          gPrivacyPane.updateBackupBannerVisibility
-        );
-      }
-      window.addEventListener("unload", () => {
-        for (let pref of dataCollectionPrefs) {
-          Services.prefs.removeObserver(
-            pref,
-            gPrivacyPane.updateBackupBannerVisibility
-          );
-        }
-      });
-
-      document
-        .getElementById("backup-multi-profile-warning-message-bar")
-        .addEventListener("message-bar:user-dismissed", event => {
-          event.preventDefault();
-          event.target.hidden = true;
-        });
-    }
+    this.initPrivacySegmentation();
 
     let signonBundle = document.getElementById("signonBundle");
     appendSearchKeywords("showPasswords", [
@@ -5204,173 +5359,33 @@ var gPrivacyPane = {
     gSubDialog.open("chrome://pippki/content/device_manager.xhtml");
   },
 
-  initDataCollection() {
+  initPrivacySegmentation() {
     if (
       !AppConstants.MOZ_DATA_REPORTING &&
-      !Services.prefs.getBoolPref(
-        "browser.privacySegmentation.preferences.show"
-      )
+      !Services.prefs.getBoolPref(PRIVACY_SEGMENTATION_PREF)
     ) {
-      // Nothing to control in the data collection section, remove it.
-      document.getElementById("dataCollectionCategory").remove();
-      document.getElementById("dataCollectionGroup").remove();
       return;
     }
 
-    this._setupLearnMoreLink(
-      "toolkit.datacollection.infoURL",
-      "dataCollectionPrivacyNotice"
-    );
-    this.initPrivacySegmentation();
-  },
-
-  initPrivacySegmentation() {
     // Section visibility
     let section = document.getElementById("privacySegmentationSection");
     let updatePrivacySegmentationSectionVisibilityState = () => {
-      section.hidden = !Services.prefs.getBoolPref(
-        "browser.privacySegmentation.preferences.show"
-      );
+      section.hidden = !Services.prefs.getBoolPref(PRIVACY_SEGMENTATION_PREF);
     };
 
     Services.prefs.addObserver(
-      "browser.privacySegmentation.preferences.show",
+      PRIVACY_SEGMENTATION_PREF,
       updatePrivacySegmentationSectionVisibilityState
     );
 
     window.addEventListener("unload", () => {
       Services.prefs.removeObserver(
-        "browser.privacySegmentation.preferences.show",
+        PRIVACY_SEGMENTATION_PREF,
         updatePrivacySegmentationSectionVisibilityState
       );
     });
 
     updatePrivacySegmentationSectionVisibilityState();
-  },
-
-  /**
-   * Set up or hide the Learn More links for various data collection options
-   */
-  _setupLearnMoreLink(pref, element) {
-    // set up the Learn More link with the correct URL
-    let url = Services.urlFormatter.formatURLPref(pref);
-    let el = document.getElementById(element);
-
-    if (url) {
-      el.setAttribute("href", url);
-    } else {
-      el.hidden = true;
-    }
-  },
-
-  /**
-   * Update the health report service checkbox from preference.
-   */
-  updateSubmitHealthReportFromPref() {
-    let checkbox = document.getElementById("submitHealthReportBox");
-    let telemetryContainer = document.getElementById("telemetry-container");
-
-    // Telemetry is only sending data if MOZ_TELEMETRY_REPORTING is defined.
-    // We still want to display the preferences panel if that's not the case, but
-    // we want it to be disabled and unchecked.
-    if (
-      Services.prefs.prefIsLocked(PREF_UPLOAD_ENABLED) ||
-      !AppConstants.MOZ_TELEMETRY_REPORTING
-    ) {
-      checkbox.setAttribute("disabled", "true");
-      return;
-    }
-
-    checkbox.checked =
-      Services.prefs.getBoolPref(PREF_UPLOAD_ENABLED) &&
-      AppConstants.MOZ_TELEMETRY_REPORTING;
-    telemetryContainer.hidden = checkbox.checked;
-  },
-
-  /**
-   * Update the health report preference with state from checkbox.
-   */
-  updateSubmitHealthReportToPref() {
-    let checkbox = document.getElementById("submitHealthReportBox");
-    let telemetryContainer = document.getElementById("telemetry-container");
-
-    Services.prefs.setBoolPref(PREF_UPLOAD_ENABLED, checkbox.checked);
-    telemetryContainer.hidden = checkbox.checked;
-  },
-
-  updateBackupBannerVisibility() {
-    let anyPrefChanged = false;
-    for (let [
-      pref,
-      originalValue,
-    ] of gPrivacyPane._originalStateOfDataCollectionPrefs) {
-      if (Services.prefs.getBoolPref(pref, false) !== originalValue) {
-        anyPrefChanged = true;
-        break;
-      }
-    }
-
-    let profilesEnabledOn = JSON.parse(
-      Services.prefs.getStringPref(BACKUP_ENABLED_ON_PROFILES_PREF_NAME, "{}")
-    );
-    let currentId = SelectableProfileService.currentProfile.id;
-    let otherProfilesEnabled = Object.keys(profilesEnabledOn).some(
-      id => id != currentId
-    );
-    document.getElementById("backup-multi-profile-warning-message-bar").hidden =
-      !otherProfilesEnabled || !anyPrefChanged;
-  },
-
-  /**
-   * Initialize the opt-out-study preference checkbox into about:preferences and
-   * handles events coming from the UI for it.
-   */
-  initOptOutStudyCheckbox() {
-    // The checkbox should be disabled if any of the below are true. This
-    // prevents the user from changing the value in the box.
-    //
-    // * the policy forbids shield
-    // * Normandy is disabled
-    //
-    // The checkbox should match the value of the preference only if all of
-    // these are true. Otherwise, the checkbox should remain unchecked. This
-    // is because in these situations, Shield studies are always disabled, and
-    // so showing a checkbox would be confusing.
-    //
-    // * the policy allows Shield
-    // * Normandy is enabled
-
-    const allowedByPolicy = Services.policies.isAllowed("Shield");
-    const checkbox = document.getElementById("optOutStudiesEnabled");
-
-    function updateCheckbox() {
-      if (
-        allowedByPolicy &&
-        Services.prefs.getBoolPref(PREF_UPLOAD_ENABLED, false) &&
-        Services.prefs.getBoolPref(PREF_NORMANDY_ENABLED, false)
-      ) {
-        checkbox.toggleAttribute(
-          "checked",
-          Services.prefs.getBoolPref(PREF_OPT_OUT_STUDIES_ENABLED, false)
-        );
-        checkbox.setAttribute("preference", PREF_OPT_OUT_STUDIES_ENABLED);
-        checkbox.removeAttribute("disabled");
-      } else {
-        checkbox.removeAttribute("preference");
-        checkbox.removeAttribute("checked");
-        checkbox.setAttribute("disabled", "true");
-      }
-    }
-    Preferences.get(PREF_UPLOAD_ENABLED).on("change", updateCheckbox);
-    updateCheckbox();
-  },
-
-  initAddonRecommendationsCheckbox() {
-    // Setup the checkbox.
-    dataCollectionCheckboxHandler({
-      checkbox: document.getElementById("addonRecommendationEnabled"),
-      pref: PREF_ADDON_RECOMMENDATIONS_ENABLED,
-    });
   },
 
   observe(aSubject, aTopic) {
@@ -5381,32 +5396,6 @@ var gPrivacyPane = {
         gPrivacyPane.updateDoHStatus();
         break;
     }
-  },
-
-  _initProfilesInfo() {
-    setEventListener(
-      "dataCollectionViewProfiles",
-      "click",
-      gMainPane.manageProfiles
-    );
-
-    setEventListener(
-      "dataCollectionViewProfilesMultiProfileBackupWarning",
-      "click",
-      gMainPane.manageProfiles
-    );
-
-    let listener = () => gPrivacyPane.updateProfilesPrivacyInfo();
-    SelectableProfileService.on("enableChanged", listener);
-    window.addEventListener("unload", () =>
-      SelectableProfileService.off("enableChanged", listener)
-    );
-    this.updateProfilesPrivacyInfo();
-  },
-
-  updateProfilesPrivacyInfo() {
-    let profilesInfo = document.getElementById("preferences-privacy-profiles");
-    profilesInfo.hidden = !SelectableProfileService.isEnabled;
   },
 
   /**
