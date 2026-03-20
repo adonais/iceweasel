@@ -184,10 +184,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
         findPreference<Preference>(
             getPreferenceKey(R.string.pref_key_page_summaries),
         )?.isVisible = components.settings.shakeToSummarizeFeatureFlagEnabled
-
-        findPreference<Preference>(
-            getPreferenceKey(R.string.pref_key_ai_controls),
-        )?.isVisible = requireContext().settings().aiControlsFeatureFlagEnabled
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -402,10 +398,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
 
             resources.getString(R.string.pref_key_page_summaries) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToPageSummariesSettingsFragment()
-            }
-
-            resources.getString(R.string.pref_key_ai_controls) -> {
-                SettingsFragmentDirections.actionSettingsFragmentToAiControlsFragment()
             }
 
             // Privacy and security preferences

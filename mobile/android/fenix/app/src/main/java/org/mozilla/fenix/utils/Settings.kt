@@ -2569,11 +2569,6 @@ class Settings(
         default = { FxNimbus.features.shakeToSummarize.value().enabled },
     )
 
-    var aiControlsFeatureFlagEnabled by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_enable_ai_controls),
-        default = Config.channel.isDebug,
-    )
-
     /**
      * User controlled pref that indicates if the user has the Shake to Summarize feature enabled (not to be confused with [shakeToSummarizeFeatureFlagEnabled]
      * which controls the feature flag itself)
