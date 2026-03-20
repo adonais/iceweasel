@@ -21,7 +21,8 @@ class PrintTargetWindows final : public PrintTarget {
   static already_AddRefed<PrintTargetWindows> CreateOrNull(HDC aDC);
 
   nsresult BeginPrinting(const nsAString& aTitle,
-                         const nsAString& aPrintToFileName, int32_t aStartPage,
+                         const nsAString& aPrintToFileName,
+                         uint64_t aBrowsingContextId, int32_t aStartPage,
                          int32_t aEndPage) override;
   nsresult EndPrinting() override;
   nsresult AbortPrinting() override;

@@ -206,6 +206,7 @@ static SkPDF::Metadata GetDefaultMetadata() {
 
 nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
                                          const nsAString& aPrintToFileName,
+                                         uint64_t aBrowsingContextId,
                                          int32_t aStartPage, int32_t aEndPage) {
   // We need to create the SkPDFDocument here rather than in CreateOrNull
   // because it's only now that we are given aTitle which we want for the

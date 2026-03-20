@@ -236,19 +236,21 @@ nsresult nsDeviceContext::InitForPrinting(nsIDeviceContextSpec* aDevice) {
 
 nsresult nsDeviceContext::BeginDocument(const nsAString& aTitle,
                                         const nsAString& aPrintToFileName,
+                                        uint64_t aBrowsingContextId,
                                         int32_t aStartPage, int32_t aEndPage) {
   MOZ_DIAGNOSTIC_ASSERT(!mIsCurrentlyPrintingDoc,
                         "Mismatched BeginDocument/EndDocument calls");
   AUTO_PROFILER_MARKER_TEXT("DeviceContext Printing", LAYOUT_Printing, {},
                             "nsDeviceContext::BeginDocument"_ns);
 
-  nsresult rv = mPrintTarget->BeginPrinting(aTitle, aPrintToFileName,
-                                            aStartPage, aEndPage);
+  mBrowsingContextId = aBrowsingContextId;
+  nsresult rv = mPrintTarget->BeginPrinting(
+      aTitle, aPrintToFileName, aBrowsingContextId, aStartPage, aEndPage);
 
   if (NS_SUCCEEDED(rv)) {
     if (mDeviceContextSpec) {
-      rv = mDeviceContextSpec->BeginDocument(aTitle, aPrintToFileName,
-                                             aStartPage, aEndPage);
+      rv = mDeviceContextSpec->BeginDocument(
+          aTitle, aPrintToFileName, aBrowsingContextId, aStartPage, aEndPage);
     }
     mIsCurrentlyPrintingDoc = true;
   }

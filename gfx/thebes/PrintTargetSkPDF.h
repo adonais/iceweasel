@@ -26,7 +26,8 @@ class PrintTargetSkPDF final : public PrintTarget {
       nsIOutputStream* aStream, const IntSize& aSizeInPoints);
 
   nsresult BeginPrinting(const nsAString& aTitle,
-                         const nsAString& aPrintToFileName, int32_t aStartPage,
+                         const nsAString& aPrintToFileName,
+                         uint64_t aBrowsingContextId, int32_t aStartPage,
                          int32_t aEndPage) override;
   nsresult EndPrinting() override;
   void Finish() override;

@@ -344,6 +344,7 @@ void nsDeviceContextSpecGTK::EnumeratePrinters() {
 NS_IMETHODIMP
 nsDeviceContextSpecGTK::BeginDocument(const nsAString& aTitle,
                                       const nsAString& aPrintToFileName,
+                                      uint64_t aBrowsingContextId,
                                       int32_t aStartPage, int32_t aEndPage) {
   // Print job names exceeding 255 bytes are safe with GTK version 3.18.2 or
   // newer. This is a workaround for old GTK.
