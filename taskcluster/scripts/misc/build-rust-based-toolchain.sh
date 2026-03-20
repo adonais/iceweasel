@@ -84,6 +84,17 @@ if test ! -f $WORKSPACE_ROOT/Cargo.lock; then
   fi
 fi
 
+if [[ -v RUN_TESTS ]]; then
+  pushd $CRATE_PATH
+  cargo test \
+    --locked \
+    --verbose \
+    --target-dir $workspace/obj \
+    --target "$TARGET" \
+    ${FEATURES:+--features "$FEATURES"}
+  popd
+fi
+
 cargo install \
   --locked \
   --verbose \
