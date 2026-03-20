@@ -1,5 +1,11 @@
 #!/bin/bash
 
+pushd "$(dirname "$0")" &>/dev/null || exit
+MY_DIR=$(pwd)
+popd &>/dev/null || exit
+
+. "${MY_DIR}/unpack.sh"
+
 check_updates () {
   # called with 10 args - platform, source package, target package, update package, old updater boolean,
   # a path to the updater binary to use for the tests, a file to write diffs to, the update channel,
@@ -179,7 +185,7 @@ check_updates () {
 
   # This check is disabled because we rely on glob expansion here
   # shellcheck disable=SC2086
-  ../compare-directories.py source/${platform_dirname} target/${platform_dirname} "${channel}" ${ignore_coderesources} > "${diff_file}"
+  ${MY_DIR}/../compare-directories.py source/${platform_dirname} target/${platform_dirname} "${channel}" ${ignore_coderesources} > "${diff_file}"
   diffErr=$?
   cat "${diff_file}"
   if [ $diffErr == 2 ]
@@ -192,3 +198,15 @@ check_updates () {
     return 3
   fi
 }
+
+# if called directly, run the update check
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  # works at a basic level with:
+  # bash ~/repos/firefox/tools/update-verify/release/common/check_updates.sh Linux_x86_64-gcc3 firefox-149.0b1.tar.xz firefox-149.0b2.tar.xz ach `pwd`/updater/updater uv.diff beta "" "" "" firefox
+  # requires:
+  # - xz files present on disk
+  # - updater in `updater/updater`
+  # - mar present at `update/update.mar`
+  check_updates "$@"
+  exit $?
+fi
