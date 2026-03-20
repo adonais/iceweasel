@@ -551,9 +551,6 @@ Maybe<webrtc::VideoCaptureCapability> AggregateCapturer::CombinedCapability() {
     uint64_t minDistance = UINT64_MAX;
 
     for (const auto& candidateCapability : mCapabilities) {
-      if (candidateCapability.videoType != combinedCap->videoType) {
-        continue;
-      }
       // The first priority is finding a suitable resolution.
       // So here we raise the weight of width and height
       uint64_t distance =
@@ -568,9 +565,10 @@ Maybe<webrtc::VideoCaptureCapability> AggregateCapturer::CombinedCapability() {
         minDistance = distance;
       }
     }
-    if (minDistanceCapability) {
-      combinedCap = Some(*minDistanceCapability);
+    if (!minDistanceCapability) {
+      return Nothing();
     }
+    combinedCap = Some(*minDistanceCapability);
   }
   return combinedCap;
 }
