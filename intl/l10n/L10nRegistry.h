@@ -109,8 +109,6 @@ class L10nRegistry final : public nsWrapperCache {
       const dom::Sequence<OwningNonNull<L10nFileSource>>& aSources);
   void RemoveSources(const dom::Sequence<nsCString>& aSources);
   bool HasSource(const nsACString& aName, ErrorResult& aRv);
-  already_AddRefed<L10nFileSource> GetSource(const nsACString& aName,
-                                             ErrorResult& aRv);
   void GetSourceNames(nsTArray<nsCString>& aRetVal);
   void ClearSources();
 

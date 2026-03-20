@@ -166,8 +166,6 @@ interface L10nRegistry {
 
   [Throws]
   boolean hasSource(UTF8String aName);
-  [Throws]
-  L10nFileSource? getSource(UTF8String aName);
   sequence<UTF8String> getSourceNames();
   undefined clearSources();
 
