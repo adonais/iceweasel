@@ -583,7 +583,9 @@ void MFMediaSource::SetCDMProxy(MFCDMProxy* aCDMProxy) {
   AssertOnManagerThread();
   LOG("SetCDMProxy");
   mCDMProxy = aCDMProxy;
-  // TODO : ask cdm proxy to refresh trusted input
+  if (mCDMProxy) {
+    mCDMProxy->ResetTrustedInput();
+  }
 }
 #endif
 
