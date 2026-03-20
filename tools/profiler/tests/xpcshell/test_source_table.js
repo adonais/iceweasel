@@ -40,10 +40,7 @@ add_task(async function test_source_table() {
   Assert.ok(profile.sources.data, "Sources table has data");
 
   // Verify the schema has the expected fields
-  Assert.ok(
-    "uuid" in profile.sources.schema,
-    "Sources schema has 'uuid' field"
-  );
+  Assert.ok("id" in profile.sources.schema, "Sources schema has 'id' field");
   Assert.ok(
     "filename" in profile.sources.schema,
     "Sources schema has 'filename' field"
@@ -61,12 +58,12 @@ add_task(async function test_source_table() {
   );
 
   // Verify each source has the expected structure
-  const uuidCol = profile.sources.schema.uuid;
+  const idCol = profile.sources.schema.id;
   const filenameCol = profile.sources.schema.filename;
   const sourceMapURLCol = profile.sources.schema.sourceMapURL;
 
   for (const source of profile.sources.data) {
-    Assert.ok(source[uuidCol], "Source entry has a UUID");
+    Assert.ok(source[idCol], "Source entry has an ID");
     Assert.ok(source[filenameCol], "Source entry has a filename");
     // sourceMapURL can be null or absent when not set.
     Assert.ok(
@@ -157,7 +154,7 @@ add_task(async function test_source_table_with_sourcemap() {
   Assert.ok(profile.sources, "Profile has a sources table");
   Assert.ok(profile.sources.data, "Sources table has data");
 
-  const uuidCol = profile.sources.schema.uuid;
+  const idCol = profile.sources.schema.id;
   const filenameCol = profile.sources.schema.filename;
   const sourceMapURLCol = profile.sources.schema.sourceMapURL;
 
@@ -167,7 +164,7 @@ add_task(async function test_source_table_with_sourcemap() {
     const sourceMapURL = source[sourceMapURLCol];
     if (sourceMapURL === "test-source-map.js.map") {
       foundSourceWithMap = true;
-      Assert.ok(source[uuidCol], "Source with sourceMapURL has a UUID");
+      Assert.ok(source[idCol], "Source with sourceMapURL has an ID");
       Assert.ok(source[filenameCol], "Source with sourceMapURL has a filename");
       break;
     }
