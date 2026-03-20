@@ -29,6 +29,15 @@ add_task(async function test_useDiskCache_noMemoryCache() {
 });
 
 add_task(async function test_noDiskCache_useMemoryCache() {
+  if (!AppConstants.NIGHTLY_BUILD) {
+    // TODO bug 2024970: unskip when enables on non-Nightly.
+    todo_check_true(
+      false,
+      "navigation cache is not yet enabled on non-nightly"
+    );
+    return;
+  }
+
   await test_filterResponseData({
     diskCache: false,
     memoryCache: true,
@@ -37,6 +46,15 @@ add_task(async function test_noDiskCache_useMemoryCache() {
 });
 
 add_task(async function test_useDiskCache_useMemoryCache() {
+  if (!AppConstants.NIGHTLY_BUILD) {
+    // TODO bug 2024970: unskip when enables on non-Nightly.
+    todo_check_true(
+      false,
+      "navigation cache is not yet enabled on non-nightly"
+    );
+    return;
+  }
+
   await test_filterResponseData({
     diskCache: true,
     memoryCache: true,
