@@ -173,6 +173,11 @@
     <string name="preferences_debug_settings_isolated_process" translatable="false">Enable Isolated Content Process (requires restart)</string>
     <string name="preferences_debug_settings_app_zygote" translatable="false">Enable Isolated Processes with Zygote Preloading (requires restart)</string>
 
+  <!-- Label for the defaults section and reset action in secret settings. -->
+  <string name="preferences_debug_settings_reset_defaults" translatable="false">Reset all to defaults</string>
+  <string name="preferences_debug_settings_reset_defaults_confirm" translatable="false">Reset</string>
+  <string name="preferences_debug_settings_reset_defaults_cancel" translatable="false">Cancel</string>
+
     <!-- A secret menu option in the tabs tray for making a tab inactive for testing. -->
     <string name="inactive_tabs_menu_item_2">Make tabs inactive</string>
 
