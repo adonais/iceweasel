@@ -6,6 +6,7 @@
 
 import valueParser from "postcss-value-parser";
 import { tokensTable } from "../../../../toolkit/themes/shared/design-system/dist/semantic-categories.mjs";
+import { isSystemColor } from "./helpers.mjs";
 
 /**
  * Validates whether a given CSS property value complies with allowed design token rules.
@@ -38,6 +39,8 @@ export class PropertyValidator {
   customFixes;
   /** @type {Record<string, string>} */
   customSuggestions;
+  /** @type {boolean} */
+  warnSystemColors;
 
   constructor(config) {
     this.config = config;
@@ -90,6 +93,9 @@ export class PropertyValidator {
       .map(type => type.customSuggestions)
       .filter(Boolean)
       .reduce((acc, fixes) => ({ ...acc, ...fixes }), {});
+    this.warnSystemColors = this.config.validTypes.some(
+      propType => propType.warnSystemColors
+    );
   }
 
   getFixedValue(value, lookupMap = {}) {
@@ -301,6 +307,15 @@ export class PropertyValidator {
     }
 
     if (isAlias && this.isValidAliasToken(varName)) {
+      return true;
+    }
+
+    // allow system colors as var() fallback values
+    if (
+      fallback?.type === "word" &&
+      this.warnSystemColors &&
+      isSystemColor(fallback.value)
+    ) {
       return true;
     }
 
