@@ -1,0 +1,13 @@
+{
+  "border": {
+    "color": {
+      "@base": {
+        "value": {
+          "light": "rgba(21, 20, 26, 0.4)",
+          "dark": "rgba(251, 251, 254, 0.4)",
+          "forcedColors": "CanvasText"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,222 @@
+{
+  "background": {
+    "color": {
+      "@base": {
+        "comment": "TODO Bug 1821203 - Gray use needs to be consolidated",
+        "value": {
+          "default": "transparent",
+          "forcedColors": "ButtonFace"
+        }
+      },
+      "hover": {
+        "value": {
+          "light": "{color.purple-desaturated.10}",
+          "dark": "{color.purple-desaturated.60}",
+          "forcedColors": "SelectedItemText"
+        }
+      },
+      "active": {
+        "value": {
+          "light": "{color.purple-desaturated.20}",
+          "dark": "{color.purple-desaturated.50}",
+          "forcedColors": "SelectedItemText"
+        }
+      },
+      "primary": {
+        "hover": {
+          "value": {
+            "light": "{color.violet.70}",
+            "dark": "{color.violet.20}",
+            "forcedColors": "{color.accent.primary.hover}"
+          }
+        },
+        "active": {
+          "value": {
+            "light": "{color.violet.80}",
+            "dark": "{color.violet.10}",
+            "forcedColors": "{color.accent.primary.active}"
+          }
+        }
+      },
+      "ghost": {
+        "@base": {
+          "value": {
+            "default": "{button.background.color.@base}",
+            "forcedColors": "transparent"
+          }
+        },
+        "disabled": {
+          "value": "{button.background.color.ghost.@base}"
+        }
+      }
+    }
+  },
+  "border": {
+    "color": {
+      "@base": {
+        "value": {
+          "default": "{color.accent.primary.@base}",
+          "forcedColors": "{border.color.interactive.@base}"
+        }
+      },
+      "destructive": {
+        "@base": {
+          "value": {
+            "default": "{button.border.color.ghost.@base}",
+            "forcedColors": "{button.border.color.primary.@base}"
+          }
+        },
+        "selected": {
+          "value": {
+            "default": "{button.border.color.destructive.@base}",
+            "forcedColors": "{button.border.color.destructive.active}"
+          }
+        }
+      },
+      "ghost": {
+        "@base": {
+          "value": {
+            "default": "transparent",
+            "forcedColors": "{button.border.color.@base}"
+          }
+        },
+        "active": {
+          "value": {
+            "default": "{button.border.color.ghost.@base}",
+            "forcedColors": "{button.border.color.active}"
+          }
+        },
+        "disabled": {
+          "value": {
+            "default": "{button.border.color.ghost.@base}",
+            "forcedColors": "{button.border.color.disabled}"
+          }
+        },
+        "hover": {
+          "value": {
+            "default": "{button.border.color.ghost.@base}",
+            "forcedColors": "{button.border.color.hover}"
+          }
+        },
+        "selected": {
+          "value": {
+            "default": "{button.border.color.ghost.@base}",
+            "forcedColors": "{button.border.color.ghost.active}"
+          }
+        }
+      },
+      "primary": {
+        "@base": {
+          "value": {
+            "default": "{button.border.color.ghost.@base}",
+            "forcedColors": "ButtonFace"
+          }
+        },
+        "selected": {
+          "value": {
+            "default": "{button.border.color.primary.@base}",
+            "forcedColors": "{button.border.color.primary.active}"
+          }
+        }
+      },
+      "selected": {
+        "value": {
+          "default": "{button.border.color.@base}",
+          "forcedColors": "{button.border.color.active}"
+        }
+      }
+    },
+    "radius": {
+      "value": "{border.radius.circle}"
+    }
+  },
+  "size": {
+    "icon": {
+      "small": {
+        "value": "{size.item.medium}"
+      }
+    }
+  },
+  "text": {
+    "color": {
+      "@base": {
+        "value": {
+          "light": "{color.violet.90}",
+          "dark": "{color.neutral.0}",
+          "forcedColors": "ButtonText"
+        }
+      },
+      "destructive": {
+        "@base": {
+          "value": {
+            "light": "{color.white.@base}",
+            "dark": "{color.neutral.90}",
+            "forcedColors": "{button.text.color.primary.@base}"
+          }
+        },
+        "selected": {
+          "value": {
+            "light": "{button.text.color.destructive.@base}",
+            "dark": "{button.text.color.destructive.active}",
+            "forcedColors": "{button.text.color.destructive.active}"
+          }
+        }
+      },
+      "ghost": {
+        "@base": {
+          "value": {
+            "default": "{button.text.color.@base}",
+            "forcedColors": "ButtonText"
+          }
+        },
+        "active": {
+          "value": {
+            "default": "{button.text.color.ghost.@base}",
+            "forcedColors": "{button.text.color.active}"
+          }
+        },
+        "disabled": {
+          "value": {
+            "default": "{button.text.color.ghost.@base}",
+            "forcedColors": "GrayText"
+          }
+        },
+        "hover": {
+          "value": {
+            "default": "{button.text.color.ghost.@base}",
+            "forcedColors": "{button.text.color.ghost.active}"
+          }
+        }
+      },
+      "menu": {
+        "disabled": {
+          "value": {
+            "default": "{button.text.color.ghost.disabled}",
+            "forcedColors": "{button.text.color.primary.@base}"
+          }
+        }
+      },
+      "primary": {
+        "@base": {
+          "value": {
+            "light": "{color.white.@base}",
+            "dark": "{color.neutral.90}",
+            "forcedColors": "ButtonFace"
+          }
+        },
+        "active": {
+          "value": {
+            "default": "{button.text.color.primary.@base}",
+            "forcedColors": "{button.text.color.primary.hover}"
+          }
+        }
+      },
+      "selected": {
+        "value": {
+          "default": "{button.text.color.@base}",
+          "forcedColors": "{button.text.color.active}"
+        }
+      }
+    }
+  }
+}

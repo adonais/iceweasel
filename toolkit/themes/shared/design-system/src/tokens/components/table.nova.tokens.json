@@ -1,0 +1,19 @@
+{
+  "row": {
+    "background": {
+      "color": {
+        "@base": {
+          "value": "{background.color.canvas}"
+        },
+        "alternate": {
+          "comment": "TODO Bug 1821203 - Gray use needs to be consolidated",
+          "value": {
+            "light": "#F0F0F4",
+            "dark": "{color.neutral.80}",
+            "forcedColors": "{background.color.canvas}"
+          }
+        }
+      }
+    }
+  }
+}

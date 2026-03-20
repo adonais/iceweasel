@@ -438,6 +438,132 @@
       }
     }
   },
+  "neutral": {
+    "0": {
+      "override": true,
+      "value": "unset"
+    },
+    "10": {
+      "override": true,
+      "value": "unset"
+    },
+    "20": {
+      "override": true,
+      "value": "unset"
+    },
+    "30": {
+      "override": true,
+      "value": "unset"
+    },
+    "40": {
+      "override": true,
+      "value": "unset"
+    },
+    "50": {
+      "override": true,
+      "value": "unset"
+    },
+    "60": {
+      "override": true,
+      "value": "unset"
+    },
+    "70": {
+      "override": true,
+      "value": "unset"
+    },
+    "80": {
+      "override": true,
+      "value": "unset"
+    },
+    "90": {
+      "override": true,
+      "value": "unset"
+    }
+  },
+  "purple-desaturated": {
+    "0": {
+      "override": true,
+      "value": "unset"
+    },
+    "10": {
+      "override": true,
+      "value": "unset"
+    },
+    "20": {
+      "override": true,
+      "value": "unset"
+    },
+    "30": {
+      "override": true,
+      "value": "unset"
+    },
+    "40": {
+      "override": true,
+      "value": "unset"
+    },
+    "50": {
+      "override": true,
+      "value": "unset"
+    },
+    "60": {
+      "override": true,
+      "value": "unset"
+    },
+    "70": {
+      "override": true,
+      "value": "unset"
+    },
+    "80": {
+      "override": true,
+      "value": "unset"
+    },
+    "90": {
+      "override": true,
+      "value": "unset"
+    }
+  },
+  "violet-desaturated": {
+    "0": {
+      "override": true,
+      "value": "unset"
+    },
+    "10": {
+      "override": true,
+      "value": "unset"
+    },
+    "20": {
+      "override": true,
+      "value": "unset"
+    },
+    "30": {
+      "override": true,
+      "value": "unset"
+    },
+    "40": {
+      "override": true,
+      "value": "unset"
+    },
+    "50": {
+      "override": true,
+      "value": "unset"
+    },
+    "60": {
+      "override": true,
+      "value": "unset"
+    },
+    "70": {
+      "override": true,
+      "value": "unset"
+    },
+    "80": {
+      "override": true,
+      "value": "unset"
+    },
+    "90": {
+      "override": true,
+      "value": "unset"
+    }
+  },
   "accent": {
     "primary": {
       "@base": {

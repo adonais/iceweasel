@@ -343,7 +343,10 @@ function formatTokens({ mediaQuery, surface, args, overrideIdentifier }) {
     // Skip any tokens that belong to a set of overrides.
     if (
       !overrideIdentifier &&
-      OVERRIDE_IDENTIFIERS.some(({ name }) => token.name.includes(`-${name}-`))
+      (OVERRIDE_IDENTIFIERS.some(({ name }) =>
+        token.name.includes(`-${name}-`)
+      ) ||
+        token.override)
     ) {
       return;
     }
@@ -616,6 +619,7 @@ function tokensTableFormat(args, isSemanticTable = false) {
     // Exclude override tokens from stylelint/storybook token tables.
     .filter(
       token =>
+        !token.override &&
         !OVERRIDE_IDENTIFIERS.some(({ name }) =>
           token.name.includes(`-${name}-`)
         )

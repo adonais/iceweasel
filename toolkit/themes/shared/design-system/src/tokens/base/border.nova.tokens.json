@@ -1,0 +1,35 @@
+{
+  "color": {
+    "@base": {
+      "value": {
+        "light": "{color.neutral.20}",
+        "dark": "{color.neutral.50}",
+        "forcedColors": "CanvasText"
+      }
+    },
+    "transparent": {
+      "value": {
+        "default": "transparent",
+        "forcedColors": "CanvasText"
+      }
+    },
+    "deemphasized": {
+      "@base": {
+        "value": {
+          "light": "{color.neutral.30}",
+          "dark": "{color.neutral.70}",
+          "forcedColors": "ButtonText"
+        }
+      }
+    },
+    "interactive": {
+      "@base": {
+        "value": {
+          "light": "{color.neutral.30}",
+          "dark": "{color.neutral.50}",
+          "forcedColors": "ButtonText"
+        }
+      }
+    }
+  }
+}

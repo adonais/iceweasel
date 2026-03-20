@@ -1,0 +1,3427 @@
+{
+  "HCM Theme": {
+    "Color": {
+      "NightSky": "#FFFFFF",
+      "Desert": "#FFFFFF",
+      "Dusk": "#FFFFFF",
+      "Win10": "#FFFFFF",
+      "Win10White": "#FFFFFF"
+    },
+    "ActiveText": {
+      "NightSky": "#8080FF",
+      "Desert": "#1C5E75",
+      "Dusk": "#70EBDE",
+      "Win10": "#8080FF",
+      "Win10White": "#00009F"
+    },
+    "ButtonBorder": {
+      "NightSky": "#FFFFFF",
+      "Desert": "#C0C0C0",
+      "Dusk": "#FFFFFF",
+      "Win10": "#FFFFFF",
+      "Win10White": "#C0C0C0"
+    },
+    "ButtonFace": {
+      "NightSky": "#292929",
+      "Desert": "#FFFAEF",
+      "Dusk": "#2D3236",
+      "Win10": "#000000",
+      "Win10White": "#FFFFFF"
+    },
+    "ButtonText": {
+      "NightSky": "#FFEE32",
+      "Desert": "#202020",
+      "Dusk": "#B6F6F0",
+      "Win10": "#FFFFFF",
+      "Win10White": "#000000"
+    },
+    "Canvas": {
+      "NightSky": "#000000",
+      "Desert": "#FFFAEF",
+      "Dusk": "#2D3236",
+      "Win10": "#000000",
+      "Win10White": "#FFFFFF"
+    },
+    "CanvasText": {
+      "NightSky": "#FFFFFF",
+      "Desert": "#3D3D3D",
+      "Dusk": "#FFFFFF",
+      "Win10": "#FFFF00",
+      "Win10White": "#000000"
+    },
+    "Field": {
+      "NightSky": "#000000",
+      "Desert": "#FFFAEF",
+      "Dusk": "#2D3236",
+      "Win10": "#000000",
+      "Win10White": "#FFFFFF"
+    },
+    "FieldText": {
+      "NightSky": "#FFFFFF",
+      "Desert": "#3D3D3D",
+      "Dusk": "#FFFFFF",
+      "Win10": "#FFFF00",
+      "Win10White": "#000000"
+    },
+    "GrayText": {
+      "NightSky": "#A6A6A6",
+      "Desert": "#676767",
+      "Dusk": "#A6A6A6",
+      "Win10": "#00FF00",
+      "Win10White": "#600000"
+    },
+    "Highlight": {
+      "NightSky": "#D6B4FD",
+      "Desert": "#903909",
+      "Dusk": "#A1BFDE",
+      "Win10": "#008000",
+      "Win10White": "#37006E"
+    },
+    "HighlightText": {
+      "NightSky": "#2B2B2B",
+      "Desert": "#FFF5E3",
+      "Dusk": "#212D3B",
+      "Win10": "#FFFFFF",
+      "Win10White": "#FFFFFF"
+    },
+    "LinkText": {
+      "NightSky": "#8080FF",
+      "Desert": "#1C5E75",
+      "Dusk": "#70EBDE",
+      "Win10": "#8080FF",
+      "Win10White": "#00009F"
+    },
+    "Mark": {
+      "NightSky": "#FFFF00",
+      "Desert": "#FFFF00",
+      "Dusk": "#FFFF00",
+      "Win10": "#FFFF00",
+      "Win10White": "#FFFF00"
+    },
+    "MarkText": {
+      "NightSky": "#000000",
+      "Desert": "#000000",
+      "Dusk": "#000000",
+      "Win10": "#000000",
+      "Win10White": "#000000"
+    },
+    "SelectedItem": {
+      "NightSky": "#D6B4FD",
+      "Desert": "#903909",
+      "Dusk": "#A1BFDE",
+      "Win10": "#008000",
+      "Win10White": "#37006E"
+    },
+    "SelectedItemText": {
+      "NightSky": "#2B2B2B",
+      "Desert": "#FFF5E3",
+      "Dusk": "#212D3B",
+      "Win10": "#FFFFFF",
+      "Win10White": "#FFFFFF"
+    },
+    "AccentColor": {
+      "NightSky": "#D6B4FD",
+      "Desert": "#903909",
+      "Dusk": "#A1BFDE",
+      "Win10": "#008000",
+      "Win10White": "#37006E"
+    },
+    "AccentColorText": {
+      "NightSky": "#000000",
+      "Desert": "#FFFFFF",
+      "Dusk": "#000000",
+      "Win10": "#FFFFFF",
+      "Win10White": "#FFFFFF"
+    },
+    "VisitedText": {
+      "NightSky": "#80FF80",
+      "Desert": "#9E3D96",
+      "Dusk": "#96FF9B",
+      "Win10": "#80FF00",
+      "Win10White": "#800080"
+    }
+  },
+  "Primitives": {
+    "border": {
+      "radius": {
+        "circle": {
+          "Value": 9999
+        },
+        "xsmall": {
+          "Value": 2
+        },
+        "small": {
+          "Value": 4
+        },
+        "medium": {
+          "Value": 8
+        },
+        "large": {
+          "Value": 12
+        },
+        "xlarge": {
+          "Value": 16
+        },
+        "xxlarge": {
+          "Value": 24
+        },
+        "xxxlarge": {
+          "Value": 32
+        }
+      },
+      "width": {
+        "Value": 1
+      }
+    },
+    "button": {
+      "border": {
+        "radius": {
+          "Value": "{border/radius/circle}"
+        },
+        "width": {
+          "Value": "{border/width}"
+        }
+      },
+      "padding": {
+        "icon": {
+          "Value": 0
+        }
+      },
+      "min": {
+        "height": {
+          "Value": "{size/item/large}",
+          "small": {
+            "Value": "{size/item/medium}"
+          },
+          "large": {
+            "Value": 40
+          }
+        }
+      },
+      "size": {
+        "icon": {
+          "Value": "{button/min/height}",
+          "small": {
+            "Value": "{size/item/medium}"
+          },
+          "large": {
+            "Value": "{size/item/large}"
+          }
+        }
+      }
+    },
+    "focus": {
+      "outline": {
+        "inset": {
+          "Value": -2
+        },
+        "offset": {
+          "Value": 2
+        },
+        "width": {
+          "Value": 2
+        }
+      }
+    },
+    "link": {
+      "focus": {
+        "outline": {
+          "offset": {
+            "Value": 1
+          }
+        }
+      }
+    },
+    "page": {
+      "main": {
+        "content": {
+          "width": {
+            "Value": 664
+          }
+        }
+      }
+    },
+    "size": {
+      "item": {
+        "xsmall": {
+          "Value": 12
+        },
+        "small": {
+          "Value": 16
+        },
+        "medium": {
+          "Value": 24
+        },
+        "large": {
+          "Value": 32
+        },
+        "xlarge": {
+          "Value": 48
+        }
+      }
+    },
+    "box": {
+      "shadow": {
+        "level-1": {
+          "shadow-1": {
+            "x": {
+              "Value": 0
+            },
+            "y": {
+              "Value": 0
+            },
+            "blur": {
+              "Value": 1
+            },
+            "spread": {
+              "Value": 0
+            }
+          },
+          "shadow-2": {
+            "x": {
+              "Value": 0
+            },
+            "y": {
+              "Value": 1
+            },
+            "blur": {
+              "Value": 2
+            },
+            "spread": {
+              "Value": 0
+            }
+          }
+        },
+        "level-2": {
+          "shadow-1": {
+            "x": {
+              "Value": 0
+            },
+            "y": {
+              "Value": 0.25
+            },
+            "blur": {
+              "Value": 0.75
+            },
+            "spread": {
+              "Value": 0
+            }
+          },
+          "shadow-2": {
+            "x": {
+              "Value": 0
+            },
+            "y": {
+              "Value": 2
+            },
+            "blur": {
+              "Value": 6
+            },
+            "spread": {
+              "Value": 0
+            }
+          }
+        },
+        "level-3": {
+          "shadow-1": {
+            "x": {
+              "Value": 0
+            },
+            "y": {
+              "Value": 0.375
+            },
+            "blur": {
+              "Value": 1.5
+            },
+            "spread": {
+              "Value": 0
+            }
+          },
+          "shadow-2": {
+            "x": {
+              "Value": 0
+            },
+            "y": {
+              "Value": 3
+            },
+            "blur": {
+              "Value": 12
+            },
+            "spread": {
+              "Value": 0
+            }
+          }
+        },
+        "level-4": {
+          "shadow-1": {
+            "x": {
+              "Value": 0
+            },
+            "y": {
+              "Value": 0.5
+            },
+            "blur": {
+              "Value": 2
+            },
+            "spread": {
+              "Value": 0
+            }
+          },
+          "shadow-2": {
+            "x": {
+              "Value": 0
+            },
+            "y": {
+              "Value": 4
+            },
+            "blur": {
+              "Value": 16
+            },
+            "spread": {
+              "Value": 0
+            }
+          }
+        }
+      }
+    },
+    "icon": {
+      "size": {
+        "Value": "{icon/size/small}"
+      }
+    }
+  },
+  "Theme": {
+    "color": {
+      "accent": {
+        "attention": {
+          "Light": "{color/green/40}",
+          "Dark": "{color/green/30}",
+          "HCM": "{AccentColor}",
+          "Private": "{color/green/30}",
+          "Smart (WIP)": "{color/green/40}"
+        },
+        "primary": {
+          "Light": "{color/violet/50}",
+          "Dark": "{color/violet/30}",
+          "HCM": "{Highlight}",
+          "Private": "{color/violet/30}",
+          "Smart (WIP)": "{color/violet/50}",
+          "deemphasized": {
+            "Light": "rgba(117, 41, 232, 0.10000000149011612)",
+            "Dark": "rgba(184, 165, 255, 0.10000000149011612)",
+            "HCM": "{SelectedItem}",
+            "Private": "rgba(184, 165, 255, 0.10000000149011612)",
+            "Smart (WIP)": "rgba(117, 41, 232, 0.10000000149011612)"
+          },
+          "hover": {
+            "Light": "{color/violet/60}",
+            "Dark": "{color/violet/40}",
+            "HCM": "{SelectedItem}",
+            "Private": "{color/violet/40}",
+            "Smart (WIP)": "{color/violet/60}"
+          },
+          "active": {
+            "Light": "{color/violet/70}",
+            "Dark": "{color/violet/50}",
+            "HCM": "{color/accent/primary/hover}",
+            "Private": "{color/violet/50}",
+            "Smart (WIP)": "{color/violet/70}"
+          },
+          "selected": {
+            "Light": "{color/violet/50}",
+            "Dark": "{color/violet/30}",
+            "HCM": "{SelectedItem}",
+            "Private": "{color/violet/30}",
+            "Smart (WIP)": "{color/violet/50}"
+          }
+        }
+      }
+    },
+    "badge": {
+      "background": {
+        "color": {
+          "Light": "rgba(0, 0, 0, 0)",
+          "Dark": "rgba(0, 0, 0, 0)",
+          "HCM": "{Canvas}",
+          "Private": "rgba(0, 0, 0, 0)",
+          "Smart (WIP)": "rgba(0, 0, 0, 0)"
+        },
+        "filled": {
+          "color": {
+            "Light": "{color/green/50}",
+            "Dark": "{color/green/20}",
+            "HCM": "{AccentColor}",
+            "Private": "{color/green/20}",
+            "Smart (WIP)": "{color/green/50}"
+          }
+        }
+      },
+      "border": {
+        "color": {
+          "Light": "rgba(21, 20, 26, 0.4000000059604645)",
+          "Dark": "rgba(251, 251, 254, 0.4000000059604645)",
+          "HCM": "{CanvasText}",
+          "Private": "rgba(251, 251, 254, 0.4000000059604645)",
+          "Smart (WIP)": "rgba(21, 20, 26, 0.4000000059604645)"
+        },
+        "filled": {
+          "color": {
+            "Light": "rgba(251, 251, 254, 0.4000000059604645)",
+            "Dark": "rgba(21, 20, 26, 0.4000000059604645)",
+            "HCM": "{CanvasText}",
+            "Private": "rgba(21, 20, 26, 0.4000000059604645)",
+            "Smart (WIP)": "rgba(251, 251, 254, 0.4000000059604645)"
+          }
+        }
+      }
+    },
+    "border": {
+      "color": {
+        "Light": "{color/neutral/20}",
+        "Dark": "{color/neutral/50}",
+        "HCM": "{CanvasText}",
+        "Private": "{color/neutral/70}",
+        "Smart (WIP)": "{color/neutral/20}",
+        "overlay": {
+          "Light": "#F0F0F4",
+          "Dark": "{color/neutral/50}",
+          "HCM": "{CanvasText}",
+          "Private": "{color/neutral/50}",
+          "Smart (WIP)": "#F0F0F4"
+        },
+        "default": {
+          "Light": "{color/neutral/20}",
+          "Dark": "{color/neutral/50}",
+          "HCM": "{CanvasText}",
+          "Private": "{color/neutral/60}",
+          "Smart (WIP)": "{color/neutral/20}"
+        },
+        "transparent": {
+          "Light": "rgba(0, 0, 0, 0)",
+          "Dark": "rgba(0, 0, 0, 0)",
+          "HCM": "{CanvasText}",
+          "Private": "rgba(0, 0, 0, 0)",
+          "Smart (WIP)": "rgba(0, 0, 0, 0)"
+        },
+        "card": {
+          "Light": "rgba(21, 20, 26, 0.10196078568696976)",
+          "Dark": "rgba(251, 251, 254, 0.10196078568696976)",
+          "HCM": "{CanvasText}",
+          "Private": "rgba(251, 251, 254, 0.10196078568696976)",
+          "Smart (WIP)": "rgba(21, 20, 26, 0.10196078568696976)"
+        },
+        "deemphasized": {
+          "Light": "{color/neutral/30}",
+          "Dark": "{color/neutral/70}",
+          "HCM": "{ButtonText}",
+          "Private": "{color/neutral/70}",
+          "Smart (WIP)": "{color/neutral/30}"
+        },
+        "interactive": {
+          "Light": "{color/neutral/30}",
+          "Dark": "{color/neutral/50}",
+          "HCM": "{ButtonText}",
+          "Private": "{color/neutral/50}",
+          "Smart (WIP)": "{color/neutral/60}",
+          "hover": {
+            "Light": "{border/color/interactive}",
+            "Dark": "{border/color/interactive}",
+            "HCM": "{SelectedItem}",
+            "Private": "{border/color/interactive}",
+            "Smart (WIP)": "{border/color/interactive}"
+          },
+          "active": {
+            "Light": "{border/color/interactive}",
+            "Dark": "{border/color/interactive}",
+            "HCM": "{ButtonText}",
+            "Private": "{border/color/interactive}",
+            "Smart (WIP)": "{border/color/interactive}"
+          },
+          "disabled": {
+            "Light": "{border/color/interactive}",
+            "Dark": "{border/color/interactive}",
+            "HCM": "{GrayText}",
+            "Private": "{border/color/interactive}",
+            "Smart (WIP)": "{border/color/interactive}"
+          }
+        },
+        "selected": {
+          "Light": "{color/accent/primary}",
+          "Dark": "{color/accent/primary}",
+          "HCM": "{SelectedItem}",
+          "Private": "{color/accent/primary}",
+          "Smart (WIP)": "{color/accent/primary}"
+        },
+        "panel": {
+          "Light": "rgba(33, 3, 64, 0.20000000298023224)",
+          "Dark": "rgba(255, 255, 255, 0.10000000149011612)",
+          "HCM": "{CanvasText}",
+          "Private": "rgba(255, 255, 255, 0.10000000149011612)",
+          "Smart (WIP)": "rgba(33, 3, 64, 0.20000000298023224)"
+        },
+        "secondary": {
+          "Light": "{color/neutral/20}",
+          "Dark": "rgba(225, 227, 242, 0.10000000149011612)",
+          "HCM": "{CanvasText}",
+          "Private": "{color/violet-desaturated/60}",
+          "Smart (WIP)": "#E1E3F2"
+        }
+      }
+    },
+    "box": {
+      "shadow": {
+        "color": {
+          "accent": {
+            "primary": {
+              "primary": {
+                "Light": "rgba(115, 56, 226, 0.23999999463558197)",
+                "Dark": "rgba(115, 56, 226, 0.23999999463558197)",
+                "HCM": "rgba(115, 56, 226, 0.23999999463558197)",
+                "Private": "rgba(115, 56, 226, 0.23999999463558197)",
+                "Smart (WIP)": "rgba(115, 56, 226, 0.23999999463558197)"
+              }
+            }
+          },
+          "darker": {
+            "layer-1": {
+              "Light": "rgba(0, 0, 0, 0.15000000596046448)",
+              "Dark": "rgba(0, 0, 0, 0.20000000298023224)",
+              "HCM": "rgba(0, 0, 0, 0)",
+              "Private": "rgba(0, 0, 0, 0.20000000298023224)",
+              "Smart (WIP)": "rgba(0, 0, 0, 0.15000000596046448)"
+            },
+            "layer-2": {
+              "Light": "rgba(0, 0, 0, 0.20000000298023224)",
+              "Dark": "rgba(0, 0, 0, 0.4000000059604645)",
+              "HCM": "rgba(0, 0, 0, 0)",
+              "Private": "rgba(0, 0, 0, 0.4000000059604645)",
+              "Smart (WIP)": "rgba(0, 0, 0, 0.20000000298023224)"
+            }
+          },
+          "lighter": {
+            "layer-1": {
+              "Light": "rgba(0, 0, 0, 0.019999999552965164)",
+              "Dark": "rgba(0, 0, 0, 0.20000000298023224)",
+              "HCM": "rgba(0, 0, 0, 0)",
+              "Private": "rgba(0, 0, 0, 0.20000000298023224)",
+              "Smart (WIP)": "rgba(0, 0, 0, 0.05000000074505806)"
+            },
+            "layer-2": {
+              "Light": "rgba(0, 0, 0, 0.05000000074505806)",
+              "Dark": "rgba(0, 0, 0, 0.4000000059604645)",
+              "HCM": "rgba(0, 0, 0, 0)",
+              "Private": "rgba(0, 0, 0, 0.4000000059604645)",
+              "Smart (WIP)": "rgba(0, 0, 0, 0.10000000149011612)"
+            }
+          }
+        },
+        "level-1": {
+          "shadow-1": {
+            "color": {
+              "Light": "{box/shadow/color/darker/layer-1}",
+              "Dark": "{box/shadow/color/darker/layer-1}",
+              "HCM": "{box/shadow/color/darker/layer-1}",
+              "Private": "{box/shadow/color/darker/layer-1}",
+              "Smart (WIP)": "{box/shadow/color/darker/layer-1}"
+            }
+          },
+          "shadow-2": {
+            "color": {
+              "Light": "{box/shadow/color/darker/layer-2}",
+              "Dark": "{box/shadow/color/darker/layer-2}",
+              "HCM": "{box/shadow/color/darker/layer-2}",
+              "Private": "{box/shadow/color/darker/layer-2}",
+              "Smart (WIP)": "{box/shadow/color/darker/layer-2}"
+            }
+          }
+        },
+        "level-2": {
+          "shadow-1": {
+            "color": {
+              "Light": "{box/shadow/color/lighter/layer-1}",
+              "Dark": "{box/shadow/color/lighter/layer-1}",
+              "HCM": "{box/shadow/color/lighter/layer-1}",
+              "Private": "{box/shadow/color/lighter/layer-1}",
+              "Smart (WIP)": "{box/shadow/color/lighter/layer-1}"
+            }
+          },
+          "shadow-2": {
+            "color": {
+              "Light": "{box/shadow/color/lighter/layer-2}",
+              "Dark": "{box/shadow/color/lighter/layer-2}",
+              "HCM": "{box/shadow/color/lighter/layer-2}",
+              "Private": "{box/shadow/color/lighter/layer-2}",
+              "Smart (WIP)": "{box/shadow/color/lighter/layer-2}"
+            }
+          }
+        },
+        "level-3": {
+          "shadow-1": {
+            "color": {
+              "Light": "{box/shadow/color/lighter/layer-1}",
+              "Dark": "{box/shadow/color/lighter/layer-1}",
+              "HCM": "{box/shadow/color/lighter/layer-1}",
+              "Private": "{box/shadow/color/lighter/layer-1}",
+              "Smart (WIP)": "{box/shadow/color/lighter/layer-1}"
+            }
+          },
+          "shadow-2": {
+            "color": {
+              "Light": "{box/shadow/color/lighter/layer-2}",
+              "Dark": "{box/shadow/color/lighter/layer-2}",
+              "HCM": "{box/shadow/color/lighter/layer-2}",
+              "Private": "{box/shadow/color/lighter/layer-2}",
+              "Smart (WIP)": "{box/shadow/color/lighter/layer-2}"
+            }
+          }
+        },
+        "level-4": {
+          "shadow-1": {
+            "color": {
+              "Light": "{box/shadow/color/lighter/layer-1}",
+              "Dark": "{box/shadow/color/lighter/layer-1}",
+              "HCM": "{box/shadow/color/lighter/layer-1}",
+              "Private": "{box/shadow/color/lighter/layer-1}",
+              "Smart (WIP)": "{box/shadow/color/lighter/layer-1}"
+            }
+          },
+          "shadow-2": {
+            "color": {
+              "Light": "{box/shadow/color/lighter/layer-2}",
+              "Dark": "{box/shadow/color/lighter/layer-2}",
+              "HCM": "{box/shadow/color/lighter/layer-2}",
+              "Private": "{box/shadow/color/lighter/layer-2}",
+              "Smart (WIP)": "{box/shadow/color/lighter/layer-2}"
+            }
+          }
+        }
+      }
+    },
+    "background": {
+      "color": {
+        "backdrop": {
+          "Light": "rgba(0, 0, 0, 0.25)",
+          "Dark": "rgba(0, 0, 0, 0.25)",
+          "HCM": "rgba(0, 0, 0, 0.25)",
+          "Private": "rgba(0, 0, 0, 0.25)",
+          "Smart (WIP)": "rgba(0, 0, 0, 0.25)"
+        },
+        "canvas": {
+          "Light": "{color/violet-desaturated/0}",
+          "Dark": "{color/neutral/90}",
+          "HCM": "{Canvas}",
+          "Private": "{color/violet-desaturated/80}",
+          "Smart (WIP)": "{color/violet-desaturated/0}"
+        },
+        "critical": {
+          "Light": "{color/red/0}",
+          "Dark": "{color/red/80}",
+          "HCM": "{background/color/canvas}",
+          "Private": "{color/red/80}",
+          "Smart (WIP)": "{color/red/0}"
+        },
+        "information": {
+          "Light": "{color/blue/0}",
+          "Dark": "{color/blue/80}",
+          "HCM": "{background/color/canvas}",
+          "Private": "{color/blue/80}",
+          "Smart (WIP)": "{color/blue/0}"
+        },
+        "success": {
+          "Light": "{color/green/0}",
+          "Dark": "{color/green/80}",
+          "HCM": "{background/color/canvas}",
+          "Private": "{color/green/80}",
+          "Smart (WIP)": "{color/green/0}"
+        },
+        "warning": {
+          "Light": "{color/yellow/0}",
+          "Dark": "{color/yellow/80}",
+          "HCM": "{background/color/canvas}",
+          "Private": "{color/yellow/80}",
+          "Smart (WIP)": "{color/yellow/0}"
+        },
+        "box": {
+          "Light": "{color/white}",
+          "Dark": "{color/neutral/70}",
+          "HCM": "{background/color/canvas}",
+          "Private": "{color/violet-desaturated/70}",
+          "Smart (WIP)": "{color/white}",
+          "info": {
+            "Light": "{color/neutral/20}",
+            "Dark": "{color/neutral/80}",
+            "HCM": "{background/color/canvas}",
+            "Private": "{color/neutral/80}",
+            "Smart (WIP)": "{color/neutral/20}"
+          },
+          "accent": {
+            "primary": {
+              "Light": "{color/purple-desaturated/10}",
+              "Dark": "{color/purple-desaturated/60}",
+              "HCM": "{background/color/canvas}",
+              "Private": "{color/purple-desaturated/60}",
+              "Smart (WIP)": "{color/purple-desaturated/20}"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "background": {
+        "color": {
+          "Light": "rgba(0, 0, 0, 0)",
+          "Dark": "rgba(0, 0, 0, 0)",
+          "HCM": "{ButtonFace}",
+          "Private": "rgba(54, 45, 81, 0)",
+          "Smart (WIP)": "rgba(0, 0, 0, 0)",
+          "hover": {
+            "Light": "{color/purple-desaturated/10}",
+            "Dark": "{color/purple-desaturated/60}",
+            "HCM": "{SelectedItemText}",
+            "Private": "{color/purple-desaturated/60}",
+            "Smart (WIP)": "rgba(172, 61, 234, 0.15000000596046448)"
+          },
+          "active": {
+            "Light": "{color/purple-desaturated/20}",
+            "Dark": "{color/purple-desaturated/50}",
+            "HCM": "{SelectedItemText}",
+            "Private": "{color/purple-desaturated/50}",
+            "Smart (WIP)": "rgba(172, 61, 234, 0.30000001192092896)"
+          },
+          "disabled": {
+            "Light": "{button/background/color}",
+            "Dark": "{button/background/color}",
+            "HCM": "{ButtonFace}",
+            "Private": "{button/background/color}",
+            "Smart (WIP)": "{button/background/color}"
+          },
+          "selected": {
+            "Light": "{button/background/color/active}",
+            "Dark": "{button/background/color/active}",
+            "HCM": "{button/background/color/active}",
+            "Private": "{button/background/color/active}",
+            "Smart (WIP)": "{button/background/color/active}"
+          },
+          "primary": {
+            "Light": "{color/accent/primary}",
+            "Dark": "{color/accent/primary}",
+            "HCM": "{color/accent/primary}",
+            "Private": "{color/accent/primary}",
+            "Smart (WIP)": "{color/accent/primary}",
+            "hover": {
+              "Light": "{color/violet/70}",
+              "Dark": "{color/violet/20}",
+              "HCM": "{color/accent/primary/hover}",
+              "Private": "{color/violet/30}",
+              "Smart (WIP)": "{color/violet/70}"
+            },
+            "active": {
+              "Light": "{color/violet/80}",
+              "Dark": "{color/violet/10}",
+              "HCM": "{color/accent/primary/active}",
+              "Private": "{color/violet/20}",
+              "Smart (WIP)": "{color/violet/80}"
+            },
+            "disabled": {
+              "Light": "{button/background/color/primary}",
+              "Dark": "{button/background/color/primary}",
+              "HCM": "{button/text/color/disabled}",
+              "Private": "{button/background/color/primary}",
+              "Smart (WIP)": "{button/background/color/primary}"
+            },
+            "selected": {
+              "Light": "{button/background/color/primary/active}",
+              "Dark": "{button/background/color/primary/active}",
+              "HCM": "{button/background/color/primary/active}",
+              "Private": "{button/background/color/primary/active}",
+              "Smart (WIP)": "{button/background/color/primary/active}"
+            }
+          },
+          "ghost": {
+            "Light": "{button/background/color}",
+            "Dark": "{button/background/color}",
+            "HCM": "rgba(0, 0, 0, 0)",
+            "Private": "{button/background/color}",
+            "Smart (WIP)": "{button/background/color}",
+            "hover": {
+              "Light": "{button/background/color/hover}",
+              "Dark": "{button/background/color/hover}",
+              "HCM": "{button/background/color/hover}",
+              "Private": "{button/background/color/hover}",
+              "Smart (WIP)": "{button/background/color/hover}"
+            },
+            "active": {
+              "Light": "{button/background/color/active}",
+              "Dark": "{button/background/color/active}",
+              "HCM": "{button/background/color/active}",
+              "Private": "{button/background/color/active}",
+              "Smart (WIP)": "{button/background/color/active}"
+            },
+            "disabled": {
+              "Light": "{button/background/color/ghost}",
+              "Dark": "{button/background/color/ghost}",
+              "HCM": "{button/background/color/ghost}",
+              "Private": "{button/background/color/ghost}",
+              "Smart (WIP)": "{button/background/color/ghost}"
+            },
+            "selected": {
+              "Light": "{button/background/color/ghost/active}",
+              "Dark": "{button/background/color/ghost/active}",
+              "HCM": "{button/background/color/ghost/active}",
+              "Private": "{button/background/color/ghost/active}",
+              "Smart (WIP)": "{button/background/color/ghost/active}"
+            }
+          },
+          "neutral": {
+            "Light": "rgba(43, 27, 85, 0.10000000149011612)",
+            "Dark": "rgba(245, 236, 255, 0.10000000149011612)",
+            "HCM": "rgba(0, 0, 0, 0)",
+            "Private": "{button/background/color}",
+            "Smart (WIP)": "rgba(43, 27, 85, 0.10000000149011612)"
+          },
+          "destructive": {
+            "Light": "{color/red/60}",
+            "Dark": "{color/red/30}",
+            "HCM": "{button/background/color/primary}",
+            "Private": "{color/red/30}",
+            "Smart (WIP)": "{color/red/60}",
+            "hover": {
+              "Light": "{color/red/70}",
+              "Dark": "{color/red/20}",
+              "HCM": "{button/background/color/primary/hover}",
+              "Private": "{color/red/20}",
+              "Smart (WIP)": "{color/red/70}"
+            },
+            "active": {
+              "Light": "{color/red/80}",
+              "Dark": "{color/red/10}",
+              "HCM": "{button/background/color/primary/active}",
+              "Private": "{color/red/10}",
+              "Smart (WIP)": "{color/red/80}"
+            },
+            "disabled": {
+              "Light": "{button/background/color/destructive}",
+              "Dark": "{button/background/color/destructive}",
+              "HCM": "{button/background/color/primary/disabled}",
+              "Private": "{button/background/color/destructive}",
+              "Smart (WIP)": "{button/background/color/destructive}"
+            },
+            "selected": {
+              "Light": "{button/background/color/destructive/active}",
+              "Dark": "{button/background/color/destructive/active}",
+              "HCM": "{button/background/color/destructive/active}",
+              "Private": "{button/background/color/destructive/active}",
+              "Smart (WIP)": "{button/background/color/destructive/active}"
+            }
+          },
+          "menu": {
+            "Light": "{button/background/color/ghost}",
+            "Dark": "{button/background/color/ghost}",
+            "HCM": "{button/background/color/ghost}",
+            "Private": "{button/background/color/ghost}",
+            "Smart (WIP)": "{button/background/color/ghost}",
+            "hover": {
+              "Light": "{button/background/color/ghost/hover}",
+              "Dark": "{button/background/color/ghost/hover}",
+              "HCM": "{button/background/color/primary}",
+              "Private": "{button/background/color/ghost/hover}",
+              "Smart (WIP)": "{button/background/color/ghost/hover}"
+            },
+            "active": {
+              "Light": "{button/background/color/ghost/active}",
+              "Dark": "{button/background/color/ghost/active}",
+              "HCM": "{button/background/color/primary}",
+              "Private": "{button/background/color/ghost/active}",
+              "Smart (WIP)": "{button/background/color/ghost/active}"
+            },
+            "disabled": {
+              "Light": "{button/background/color/ghost/disabled}",
+              "Dark": "{button/background/color/ghost/disabled}",
+              "HCM": "{button/background/color/ghost/disabled}",
+              "Private": "{button/background/color/ghost/disabled}",
+              "Smart (WIP)": "{button/background/color/ghost/disabled}"
+            }
+          },
+          "default": {
+            "hover": {
+              "Light": "{color/neutral/20}",
+              "Dark": "{color/neutral/50}",
+              "HCM": "{button/background/color/hover}",
+              "Private": "{button/background/color/hover}",
+              "Smart (WIP)": "rgba(43, 27, 85, 0.20000000298023224)"
+            },
+            "active": {
+              "Light": "{color/neutral/30}",
+              "Dark": "{color/neutral/60}",
+              "HCM": "{button/background/color/active}",
+              "Private": "{button/background/color/active}",
+              "Smart (WIP)": "rgba(43, 27, 85, 0.30000001192092896)"
+            },
+            "disabled": {
+              "Light": "{button/background/color/neutral}",
+              "Dark": "{button/background/color/neutral}",
+              "HCM": "{button/background/color/ghost}",
+              "Private": "{button/background/color/ghost}",
+              "Smart (WIP)": "{button/background/color/neutral}"
+            },
+            "selected": {
+              "Light": "{button/background/color/default/active}",
+              "Dark": "{button/background/color/default/active}",
+              "HCM": "{button/background/color/ghost/active}",
+              "Private": "{button/background/color/ghost/active}",
+              "Smart (WIP)": "{button/background/color/default/active}"
+            }
+          }
+        }
+      },
+      "opacity": {
+        "disabled": {
+          "Light": 50,
+          "Dark": 50,
+          "HCM": 100,
+          "Private": 50,
+          "Smart (WIP)": 50
+        }
+      },
+      "border": {
+        "color": {
+          "Light": "{color/accent/primary}",
+          "Dark": "{color/accent/primary}",
+          "HCM": "{border/color/interactive}",
+          "Private": "{color/purple-desaturated/30}",
+          "Smart (WIP)": "{color/accent/primary}",
+          "hover": {
+            "Light": "{button/border/color}",
+            "Dark": "{button/border/color}",
+            "HCM": "{border/color/interactive/hover}",
+            "Private": "{button/border/color}",
+            "Smart (WIP)": "{button/border/color}"
+          },
+          "active": {
+            "Light": "{button/border/color}",
+            "Dark": "{button/border/color}",
+            "HCM": "{border/color/interactive/active}",
+            "Private": "{button/border/color}",
+            "Smart (WIP)": "{button/border/color}"
+          },
+          "disabled": {
+            "Light": "{button/border/color}",
+            "Dark": "{button/border/color}",
+            "HCM": "{border/color/interactive/disabled}",
+            "Private": "{button/border/color}",
+            "Smart (WIP)": "{button/border/color}"
+          },
+          "selected": {
+            "Light": "{button/border/color}",
+            "Dark": "{button/border/color}",
+            "HCM": "{button/border/color/active}",
+            "Private": "{button/border/color}",
+            "Smart (WIP)": "{button/border/color}"
+          },
+          "primary": {
+            "Light": "{button/border/color/ghost}",
+            "Dark": "{button/border/color/ghost}",
+            "HCM": "{ButtonFace}",
+            "Private": "{button/border/color/ghost}",
+            "Smart (WIP)": "{button/border/color/ghost}",
+            "hover": {
+              "Light": "{button/border/color/primary}",
+              "Dark": "{button/border/color/primary}",
+              "HCM": "{SelectedItemText}",
+              "Private": "{button/border/color/primary}",
+              "Smart (WIP)": "{button/border/color/primary}"
+            },
+            "active": {
+              "Light": "{button/border/color/primary}",
+              "Dark": "{button/border/color/primary}",
+              "HCM": "{ButtonText}",
+              "Private": "{button/border/color/primary}",
+              "Smart (WIP)": "{button/border/color/primary}"
+            },
+            "disabled": {
+              "Light": "{button/border/color/primary}",
+              "Dark": "{button/border/color/primary}",
+              "HCM": "{button/border/color/primary}",
+              "Private": "{button/border/color/primary}",
+              "Smart (WIP)": "{button/border/color/primary}"
+            },
+            "selected": {
+              "Light": "{button/border/color/primary}",
+              "Dark": "{button/border/color/primary}",
+              "HCM": "{button/border/color/primary/active}",
+              "Private": "{button/border/color/primary}",
+              "Smart (WIP)": "{button/border/color/primary}"
+            }
+          },
+          "ghost": {
+            "Light": "rgba(0, 0, 0, 0)",
+            "Dark": "rgba(0, 0, 0, 0)",
+            "HCM": "{button/border/color}",
+            "Private": "rgba(0, 0, 0, 0)",
+            "Smart (WIP)": "rgba(0, 0, 0, 0)",
+            "hover": {
+              "Light": "{button/border/color/ghost}",
+              "Dark": "{button/border/color/ghost}",
+              "HCM": "{button/border/color/hover}",
+              "Private": "{button/border/color/ghost}",
+              "Smart (WIP)": "{button/border/color/ghost}"
+            },
+            "active": {
+              "Light": "{button/border/color/ghost}",
+              "Dark": "{button/border/color/ghost}",
+              "HCM": "{button/border/color/active}",
+              "Private": "{button/border/color/ghost}",
+              "Smart (WIP)": "{button/border/color/ghost}"
+            },
+            "disabled": {
+              "Light": "{button/border/color/ghost}",
+              "Dark": "{button/border/color/ghost}",
+              "HCM": "{button/border/color/disabled}",
+              "Private": "{button/border/color/ghost}",
+              "Smart (WIP)": "{button/border/color/ghost}"
+            },
+            "selected": {
+              "Light": "{button/border/color/ghost}",
+              "Dark": "{button/border/color/ghost}",
+              "HCM": "{button/border/color/ghost/active}",
+              "Private": "{button/border/color/ghost}",
+              "Smart (WIP)": "{button/border/color/ghost}"
+            }
+          },
+          "neutral": {
+            "Light": "{button/border/color/ghost}",
+            "Dark": "{button/border/color/ghost}",
+            "HCM": "{button/border/color}",
+            "Private": "rgba(0, 0, 0, 0)",
+            "Smart (WIP)": "{button/border/color/ghost}"
+          },
+          "destructive": {
+            "Light": "{button/border/color/ghost}",
+            "Dark": "{button/border/color/ghost}",
+            "HCM": "{button/border/color/primary}",
+            "Private": "{button/border/color/ghost}",
+            "Smart (WIP)": "{button/border/color/ghost}",
+            "hover": {
+              "Light": "{button/border/color/destructive}",
+              "Dark": "{button/border/color/destructive}",
+              "HCM": "{button/border/color/primary/hover}",
+              "Private": "{button/border/color/destructive}",
+              "Smart (WIP)": "{button/border/color/destructive}"
+            },
+            "active": {
+              "Light": "{button/border/color/destructive}",
+              "Dark": "{button/border/color/destructive}",
+              "HCM": "{button/border/color/primary/active}",
+              "Private": "{button/border/color/destructive}",
+              "Smart (WIP)": "{button/border/color/destructive}"
+            },
+            "disabled": {
+              "Light": "{button/border/color/destructive}",
+              "Dark": "{button/border/color/destructive}",
+              "HCM": "{button/border/color/primary/disabled}",
+              "Private": "{button/border/color/destructive}",
+              "Smart (WIP)": "{button/border/color/destructive}"
+            },
+            "selected": {
+              "Light": "{button/border/color/destructive}",
+              "Dark": "{button/border/color/destructive}",
+              "HCM": "{button/border/color/destructive/active}",
+              "Private": "{button/border/color/destructive}",
+              "Smart (WIP)": "{button/border/color/destructive}"
+            }
+          },
+          "deemphasized": {
+            "Light": "{border/color/panel}",
+            "Dark": "{border/color/panel}",
+            "HCM": "rgba(0, 0, 0, 0)",
+            "Private": "{border/color/panel}",
+            "Smart (WIP)": "{border/color/panel}"
+          },
+          "default": {
+            "hover": {
+              "Light": "{button/border/color/neutral}",
+              "Dark": "{button/border/color/neutral}",
+              "HCM": "{button/border/color/hover}",
+              "Private": "{button/border/color/ghost}",
+              "Smart (WIP)": "{button/border/color/neutral}"
+            },
+            "active": {
+              "Light": "{button/border/color/neutral}",
+              "Dark": "{button/border/color/neutral}",
+              "HCM": "{button/border/color/active}",
+              "Private": "{button/border/color/ghost}",
+              "Smart (WIP)": "{button/border/color/neutral}"
+            },
+            "disabled": {
+              "Light": "{button/border/color/neutral}",
+              "Dark": "{button/border/color/neutral}",
+              "HCM": "{button/border/color/disabled}",
+              "Private": "{button/border/color/ghost}",
+              "Smart (WIP)": "{button/border/color/neutral}"
+            },
+            "selected": {
+              "Light": "{button/border/color/neutral}",
+              "Dark": "{button/border/color/neutral}",
+              "HCM": "{button/border/color/ghost/active}",
+              "Private": "{button/border/color/ghost}",
+              "Smart (WIP)": "{button/border/color/neutral}"
+            }
+          }
+        }
+      },
+      "text": {
+        "color": {
+          "Light": "{color/violet/90}",
+          "Dark": "{color/neutral/0}",
+          "HCM": "{ButtonText}",
+          "Private": "{color/violet/0}",
+          "Smart (WIP)": "{color/violet/80}",
+          "hover": {
+            "Light": "{button/text/color}",
+            "Dark": "{button/text/color}",
+            "HCM": "{SelectedItem}",
+            "Private": "{button/text/color}",
+            "Smart (WIP)": "{button/text/color}"
+          },
+          "active": {
+            "Light": "{button/text/color}",
+            "Dark": "{button/text/color}",
+            "HCM": "{SelectedItem}",
+            "Private": "{button/text/color}",
+            "Smart (WIP)": "{button/text/color}"
+          },
+          "disabled": {
+            "Light": "{button/text/color}",
+            "Dark": "{button/text/color}",
+            "HCM": "{GrayText}",
+            "Private": "{button/text/color}",
+            "Smart (WIP)": "{button/text/color}"
+          },
+          "selected": {
+            "Light": "{button/text/color}",
+            "Dark": "{button/text/color}",
+            "HCM": "{button/text/color/active}",
+            "Private": "{button/text/color}",
+            "Smart (WIP)": "{button/text/color}"
+          },
+          "primary": {
+            "Light": "{color/white}",
+            "Dark": "{color/neutral/90}",
+            "HCM": "{ButtonFace}",
+            "Private": "{color/neutral/90}",
+            "Smart (WIP)": "{color/white}",
+            "hover": {
+              "Light": "{button/text/color/primary}",
+              "Dark": "{button/text/color/primary}",
+              "HCM": "{SelectedItemText}",
+              "Private": "{button/text/color/primary}",
+              "Smart (WIP)": "{button/text/color/primary}"
+            },
+            "active": {
+              "Light": "{button/text/color/primary}",
+              "Dark": "{button/text/color/primary}",
+              "HCM": "{button/text/color/primary/hover}",
+              "Private": "{button/text/color/primary}",
+              "Smart (WIP)": "{button/text/color/primary}"
+            },
+            "disabled": {
+              "Light": "{button/text/color/primary}",
+              "Dark": "{button/text/color/primary}",
+              "HCM": "{button/text/color/primary}",
+              "Private": "{button/text/color/primary}",
+              "Smart (WIP)": "{button/text/color/primary}"
+            },
+            "selected": {
+              "Light": "{button/text/color/primary/active}",
+              "Dark": "{button/text/color/primary/active}",
+              "HCM": "{button/text/color/primary/active}",
+              "Private": "{button/text/color/primary/active}",
+              "Smart (WIP)": "{button/text/color/primary/active}"
+            }
+          },
+          "ghost": {
+            "Light": "{button/text/color}",
+            "Dark": "{button/text/color}",
+            "HCM": "{ButtonText}",
+            "Private": "{button/text/color}",
+            "Smart (WIP)": "{button/text/color}",
+            "hover": {
+              "Light": "{button/text/color/ghost}",
+              "Dark": "{button/text/color/ghost}",
+              "HCM": "{button/text/color/ghost/active}",
+              "Private": "{button/text/color}",
+              "Smart (WIP)": "{button/text/color/ghost}"
+            },
+            "active": {
+              "Light": "{button/text/color/ghost}",
+              "Dark": "{button/text/color/ghost}",
+              "HCM": "{button/text/color/active}",
+              "Private": "{button/text/color}",
+              "Smart (WIP)": "{button/text/color/ghost}"
+            },
+            "disabled": {
+              "Light": "{button/text/color/ghost}",
+              "Dark": "{button/text/color/ghost}",
+              "HCM": "{GrayText}",
+              "Private": "{button/text/color}",
+              "Smart (WIP)": "{button/text/color/ghost}"
+            },
+            "selected": {
+              "Light": "{button/text/color/ghost/active}",
+              "Dark": "{button/text/color/ghost/active}",
+              "HCM": "{button/text/color/ghost/active}",
+              "Private": "{button/text/color/ghost/active}",
+              "Smart (WIP)": "{button/text/color/ghost/active}"
+            }
+          },
+          "neutral": {
+            "Light": "{button/text/color}",
+            "Dark": "{button/text/color}",
+            "HCM": "{ButtonText}",
+            "Private": "{button/text/color}",
+            "Smart (WIP)": "{button/text/color}",
+            "hover": {
+              "Light": "{button/text/color/neutral}",
+              "Dark": "{button/text/color/neutral}",
+              "HCM": "{button/text/color/ghost/active}",
+              "Private": "{button/text/color}",
+              "Smart (WIP)": "{button/text/color/neutral}"
+            },
+            "active": {
+              "Light": "{button/text/color/neutral}",
+              "Dark": "{button/text/color/neutral}",
+              "HCM": "{button/text/color/active}",
+              "Private": "{button/text/color}",
+              "Smart (WIP)": "{button/text/color/neutral}"
+            },
+            "disabled": {
+              "Light": "{button/text/color/neutral}",
+              "Dark": "{button/text/color/neutral}",
+              "HCM": "{GrayText}",
+              "Private": "{button/text/color}",
+              "Smart (WIP)": "{button/text/color/neutral}"
+            },
+            "selected": {
+              "Light": "{button/text/color/neutral/active}",
+              "Dark": "{button/text/color/neutral/active}",
+              "HCM": "{button/text/color/ghost/active}",
+              "Private": "{button/text/color/ghost/active}",
+              "Smart (WIP)": "{button/text/color/neutral/active}"
+            }
+          },
+          "destructive": {
+            "Light": "{color/white}",
+            "Dark": "{color/neutral/90}",
+            "HCM": "{button/text/color/primary}",
+            "Private": "{color/neutral/90}",
+            "Smart (WIP)": "{color/white}",
+            "hover": {
+              "Light": "{button/text/color/destructive}",
+              "Dark": "{button/text/color/destructive}",
+              "HCM": "{button/text/color/primary/hover}",
+              "Private": "{button/text/color/destructive}",
+              "Smart (WIP)": "{button/text/color/destructive}"
+            },
+            "active": {
+              "Light": "{button/text/color/destructive}",
+              "Dark": "{button/text/color/destructive}",
+              "HCM": "{button/text/color/primary/active}",
+              "Private": "{button/text/color/destructive}",
+              "Smart (WIP)": "{button/text/color/destructive}"
+            },
+            "disabled": {
+              "Light": "{button/text/color/destructive}",
+              "Dark": "{button/text/color/destructive}",
+              "HCM": "{button/text/color/primary/disabled}",
+              "Private": "{button/text/color/destructive}",
+              "Smart (WIP)": "{button/text/color/destructive}"
+            },
+            "selected": {
+              "Light": "{button/text/color/destructive}",
+              "Dark": "{button/text/color/destructive/active}",
+              "HCM": "{button/text/color/destructive/active}",
+              "Private": "{button/text/color/destructive/active}",
+              "Smart (WIP)": "{button/text/color/destructive}"
+            }
+          },
+          "menu": {
+            "Light": "{button/text/color/ghost}",
+            "Dark": "{button/text/color/ghost}",
+            "HCM": "{button/text/color/ghost}",
+            "Private": "{button/text/color/ghost}",
+            "Smart (WIP)": "{button/text/color/ghost}",
+            "hover": {
+              "Light": "{button/text/color/ghost/hover}",
+              "Dark": "{button/text/color/ghost/hover}",
+              "HCM": "{button/text/color/primary}",
+              "Private": "{button/text/color/ghost/hover}",
+              "Smart (WIP)": "{button/text/color/ghost/hover}"
+            },
+            "active": {
+              "Light": "{button/text/color/ghost/active}",
+              "Dark": "{button/text/color/ghost/active}",
+              "HCM": "{button/text/color/primary}",
+              "Private": "{button/text/color/ghost/active}",
+              "Smart (WIP)": "{button/text/color/ghost/active}"
+            },
+            "disabled": {
+              "Light": "{button/text/color/ghost/disabled}",
+              "Dark": "{button/text/color/ghost/disabled}",
+              "HCM": "{button/text/color/primary}",
+              "Private": "{button/text/color/ghost/disabled}",
+              "Smart (WIP)": "{button/text/color/ghost/disabled}"
+            },
+            "selected": {
+              "Light": "{button/text/color/ghost/selected}",
+              "Dark": "{button/text/color/ghost/selected}",
+              "HCM": "{button/text/color/primary}",
+              "Private": "{button/text/color/ghost/selected}",
+              "Smart (WIP)": "{button/text/color/ghost/selected}"
+            }
+          }
+        }
+      }
+    },
+    "divider": {
+      "color": {
+        "default": {
+          "Light": "{border/color/default}",
+          "Dark": "{border/color/default}",
+          "HCM": "#FFFFFF",
+          "Private": "{color/purple-desaturated/50}",
+          "Smart (WIP)": "{border/color/default}"
+        },
+        "tinted": {
+          "Light": "#888FC3",
+          "Dark": "rgba(136, 143, 195, 0.699999988079071)",
+          "HCM": "#FFFFFF",
+          "Private": "{color/purple-desaturated/50}",
+          "Smart (WIP)": "#888FC3"
+        }
+      }
+    },
+    "focus": {
+      "outline": {
+        "Light": "{focus/outline/width}",
+        "Dark": "{focus/outline/width}",
+        "HCM": "{focus/outline/width}",
+        "Private": "{focus/outline/width}",
+        "Smart (WIP)": "{focus/outline/width}",
+        "color": {
+          "Light": "{color/accent/primary}",
+          "Dark": "{color/accent/primary}",
+          "HCM": "{text/color}",
+          "Private": "{color/accent/primary}",
+          "Smart (WIP)": "{color/accent/primary}"
+        }
+      }
+    },
+    "glow": {
+      "background": {
+        "linear": {
+          "gradient": {
+            "layer-leading": {
+              "Light": "{color/violet/10}",
+              "Dark": "rgba(99, 47, 200, 0.5)",
+              "HCM": "#30223A",
+              "Private": "{color/violet/70}",
+              "Smart (WIP)": "{color/violet/10}"
+            },
+            "layer-trailing": {
+              "Light": "{color/orange/10}",
+              "Dark": "rgba(255, 138, 87, 0.5)",
+              "HCM": "rgba(68, 49, 52, 0)",
+              "Private": "{color/violet/60}",
+              "Smart (WIP)": "{color/orange/10}"
+            },
+            "scrim-layer-leading": {
+              "Light": "{color/violet/40}",
+              "Dark": "rgba(99, 47, 200, 0.699999988079071)",
+              "HCM": "#30223A",
+              "Private": "{color/violet/70}",
+              "Smart (WIP)": "{color/violet/10}"
+            },
+            "scrim-layer-trailing": {
+              "Light": "{color/orange/30}",
+              "Dark": "rgba(255, 138, 87, 0.699999988079071)",
+              "HCM": "rgba(68, 49, 52, 0)",
+              "Private": "{color/violet/60}",
+              "Smart (WIP)": "{color/orange/10}"
+            }
+          }
+        }
+      }
+    },
+    "icon": {
+      "color": {
+        "Light": "{color/neutral/70}",
+        "Dark": "{color/neutral/0}",
+        "HCM": "{text/color}",
+        "Private": "{color/neutral/0}",
+        "Smart (WIP)": "{color/neutral/70}",
+        "accent": {
+          "primary": {
+            "desaturated": {
+              "Light": "{color/purple-desaturated/50}",
+              "Dark": "{color/purple-desaturated/10}",
+              "HCM": "{color/purple-desaturated/10}",
+              "Private": "{color/purple-desaturated/10}",
+              "Smart (WIP)": "{color/purple-desaturated/60}"
+            }
+          }
+        },
+        "information": {
+          "Light": "{color/blue/40}",
+          "Dark": "{color/blue/20}",
+          "HCM": "{icon/color}",
+          "Private": "{color/blue/20}",
+          "Smart (WIP)": "{color/blue/40}"
+        },
+        "success": {
+          "Light": "{color/green/40}",
+          "Dark": "{color/green/20}",
+          "HCM": "{icon/color}",
+          "Private": "{color/green/20}",
+          "Smart (WIP)": "{color/green/40}"
+        },
+        "warning": {
+          "Light": "{color/yellow/40}",
+          "Dark": "{color/yellow/20}",
+          "HCM": "{icon/color}",
+          "Private": "{color/yellow/20}",
+          "Smart (WIP)": "{color/yellow/40}"
+        },
+        "critical": {
+          "Light": "{color/red/40}",
+          "Dark": "{color/red/20}",
+          "HCM": "{icon/color}",
+          "Private": "{color/red/20}",
+          "Smart (WIP)": "{color/red/40}"
+        }
+      }
+    },
+    "link": {
+      "color": {
+        "Light": "{color/accent/primary}",
+        "Dark": "{color/accent/primary}",
+        "HCM": "{LinkText}",
+        "Private": "#BEAEFF",
+        "Smart (WIP)": "{color/accent/primary}",
+        "hover": {
+          "Light": "{color/accent/primary/hover}",
+          "Dark": "{color/accent/primary/hover}",
+          "HCM": "{LinkText}",
+          "Private": "{color/accent/primary/hover}",
+          "Smart (WIP)": "{color/accent/primary/hover}"
+        },
+        "active": {
+          "Light": "{color/accent/primary/active}",
+          "Dark": "{color/accent/primary/active}",
+          "HCM": "{ActiveText}",
+          "Private": "{color/accent/primary/active}",
+          "Smart (WIP)": "{color/accent/primary/active}"
+        },
+        "visited": {
+          "Light": "{link/color}",
+          "Dark": "{link/color}",
+          "HCM": "{link/color}",
+          "Private": "{link/color}",
+          "Smart (WIP)": "{link/color}"
+        }
+      }
+    },
+    "newtab": {
+      "background": {
+        "color": {
+          "box": {
+            "Light": "rgba(255, 255, 255, 0.8999999761581421)",
+            "Dark": "rgba(38, 39, 47, 0.8999999761581421)",
+            "HCM": "{background/color/box}",
+            "Private": "rgba(38, 39, 47, 0.8999999761581421)",
+            "Smart (WIP)": "rgba(255, 255, 255, 0.8999999761581421)"
+          }
+        }
+      }
+    },
+    "outline": {
+      "color": {
+        "error": {
+          "Light": "{color/red/70}",
+          "Dark": "{color/red/20}",
+          "HCM": "{border/color}",
+          "Private": "{color/red/20}",
+          "Smart (WIP)": "{color/red/70}"
+        }
+      }
+    },
+    "switcher": {
+      "button": {
+        "icon": {
+          "background": {
+            "color": {
+              "Light": "rgba(255, 255, 255, 0.6000000238418579)",
+              "Dark": "rgba(240, 240, 255, 0.30000001192092896)",
+              "HCM": "rgba(41, 41, 41, 0)",
+              "Private": "rgba(240, 240, 255, 0.30000001192092896)",
+              "Smart (WIP)": "rgba(255, 255, 255, 0.6000000238418579)",
+              "hover": {
+                "Light": "#FFFFFF",
+                "Dark": "rgba(240, 240, 255, 0.6000000238418579)",
+                "HCM": "{SelectedItemText}",
+                "Private": "rgba(240, 240, 255, 0.6000000238418579)",
+                "Smart (WIP)": "#FFFFFF"
+              },
+              "active": {
+                "Light": "#FFFFFF",
+                "Dark": "rgba(240, 240, 255, 0.6000000238418579)",
+                "HCM": "{SelectedItemText}",
+                "Private": "rgba(240, 240, 255, 0.6000000238418579)",
+                "Smart (WIP)": "#FFFFFF"
+              }
+            }
+          }
+        }
+      }
+    },
+    "promo": {
+      "border": {
+        "color": {
+          "Light": "rgba(21, 20, 26, 0.11999999731779099)",
+          "Dark": "rgba(251, 251, 254, 0.11999999731779099)",
+          "HCM": "{CanvasText}",
+          "Private": "rgba(251, 251, 254, 0.11999999731779099)",
+          "Smart (WIP)": "rgba(21, 20, 26, 0.11999999731779099)"
+        }
+      },
+      "background": {
+        "color": {
+          "Light": "{background/color/box/info}",
+          "Dark": "{background/color/box/info}",
+          "HCM": "{background/color/box/info}",
+          "Private": "{background/color/box/info}",
+          "Smart (WIP)": "{background/color/box/info}",
+          "accent": {
+            "primary": {
+              "Light": "{background/color/box/accent/primary}",
+              "Dark": "{background/color/box/accent/primary}",
+              "HCM": "{background/color/box/accent/primary}",
+              "Private": "{background/color/box/accent/primary}",
+              "Smart (WIP)": "{background/color/box/accent/primary}"
+            }
+          }
+        }
+      }
+    },
+    "scrim": {
+      "background": {
+        "color": {
+          "Light": "{color/violet-desaturated/70}",
+          "Dark": "{color/neutral/70}",
+          "HCM": "{color/neutral/80}",
+          "Private": "{color/violet-desaturated/70}",
+          "Smart (WIP)": "{color/purple-desaturated/70}"
+        }
+      }
+    },
+    "tab": {
+      "group": {
+        "yellow": {
+          "default": {
+            "Light": "{color/yellow/50}",
+            "Dark": "{color/yellow/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/yellow/10}",
+            "Smart (WIP)": "{color/yellow/50}"
+          },
+          "hover": {
+            "Light": "{color/yellow/60}",
+            "Dark": "{color/yellow/20}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/yellow/20}",
+            "Smart (WIP)": "{color/yellow/60}"
+          },
+          "focused": {
+            "Light": "{color/yellow/50}",
+            "Dark": "{color/yellow/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/yellow/10}",
+            "Smart (WIP)": "{color/yellow/50}"
+          },
+          "content": {
+            "Light": "#FFFFFF",
+            "Dark": "#8F4000",
+            "HCM": "#8F4000",
+            "Private": "#8F4000",
+            "Smart (WIP)": "#FFFFFF"
+          }
+        },
+        "orange": {
+          "default": {
+            "Light": "{color/orange/50}",
+            "Dark": "{color/orange/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/orange/10}",
+            "Smart (WIP)": "{color/orange/50}"
+          },
+          "hover": {
+            "Light": "{color/orange/60}",
+            "Dark": "{color/orange/20}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/orange/20}",
+            "Smart (WIP)": "{color/orange/60}"
+          },
+          "focused": {
+            "Light": "{color/orange/50}",
+            "Dark": "{color/orange/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/orange/10}",
+            "Smart (WIP)": "{color/orange/50}"
+          },
+          "content": {
+            "Light": "#FFFFFF",
+            "Dark": "{color/orange/60}",
+            "HCM": "#8F4000",
+            "Private": "{color/orange/60}",
+            "Smart (WIP)": "#FFFFFF"
+          }
+        },
+        "red": {
+          "default": {
+            "Light": "{color/red/50}",
+            "Dark": "{color/red/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/red/10}",
+            "Smart (WIP)": "{color/red/50}"
+          },
+          "hover": {
+            "Light": "{color/red/60}",
+            "Dark": "{color/red/20}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/red/20}",
+            "Smart (WIP)": "{color/red/60}"
+          },
+          "focused": {
+            "Light": "{color/red/50}",
+            "Dark": "{color/red/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/red/10}",
+            "Smart (WIP)": "{color/red/50}"
+          },
+          "content": {
+            "Light": "#FFFFFF",
+            "Dark": "{color/red/60}",
+            "HCM": "#8F4000",
+            "Private": "{color/red/60}",
+            "Smart (WIP)": "#FFFFFF"
+          }
+        },
+        "pink": {
+          "default": {
+            "Light": "{color/pink/50}",
+            "Dark": "{color/pink/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/pink/10}",
+            "Smart (WIP)": "{color/pink/50}"
+          },
+          "hover": {
+            "Light": "{color/pink/60}",
+            "Dark": "{color/pink/20}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/pink/20}",
+            "Smart (WIP)": "{color/pink/60}"
+          },
+          "focused": {
+            "Light": "{color/pink/50}",
+            "Dark": "{color/pink/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/pink/10}",
+            "Smart (WIP)": "{color/pink/50}"
+          },
+          "content": {
+            "Light": "#FFFFFF",
+            "Dark": "{color/pink/60}",
+            "HCM": "#96236F",
+            "Private": "{color/pink/60}",
+            "Smart (WIP)": "#FFFFFF"
+          }
+        },
+        "purple": {
+          "default": {
+            "Light": "{color/purple/50}",
+            "Dark": "{color/purple/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/purple/10}",
+            "Smart (WIP)": "{color/purple/50}"
+          },
+          "hover": {
+            "Light": "{color/purple/60}",
+            "Dark": "{color/purple/20}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/purple/20}",
+            "Smart (WIP)": "{color/purple/60}"
+          },
+          "focused": {
+            "Light": "{color/purple/50}",
+            "Dark": "{color/purple/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/purple/10}",
+            "Smart (WIP)": "{color/purple/50}"
+          },
+          "content": {
+            "Light": "#FFFFFF",
+            "Dark": "{color/purple/60}",
+            "HCM": "#7E29A3",
+            "Private": "{color/purple/60}",
+            "Smart (WIP)": "#FFFFFF"
+          }
+        },
+        "violet": {
+          "default": {
+            "Light": "{color/violet/50}",
+            "Dark": "{color/violet/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/violet/10}",
+            "Smart (WIP)": "{color/violet/50}"
+          },
+          "hover": {
+            "Light": "{color/violet/60}",
+            "Dark": "{color/violet/20}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/violet/20}",
+            "Smart (WIP)": "{color/violet/60}"
+          },
+          "focused": {
+            "Light": "{color/violet/50}",
+            "Dark": "{color/violet/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/violet/10}",
+            "Smart (WIP)": "{color/violet/50}"
+          },
+          "content": {
+            "Light": "#FFFFFF",
+            "Dark": "{color/violet/60}",
+            "HCM": "#5111A3",
+            "Private": "{color/violet/60}",
+            "Smart (WIP)": "#FFFFFF"
+          }
+        },
+        "blue": {
+          "default": {
+            "Light": "{color/blue/50}",
+            "Dark": "{color/blue/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/blue/10}",
+            "Smart (WIP)": "{color/blue/50}"
+          },
+          "hover": {
+            "Light": "{color/blue/60}",
+            "Dark": "{color/blue/20}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/blue/20}",
+            "Smart (WIP)": "{color/blue/60}"
+          },
+          "focused": {
+            "Light": "{color/blue/50}",
+            "Dark": "{color/blue/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/blue/10}",
+            "Smart (WIP)": "{color/blue/50}"
+          },
+          "content": {
+            "Light": "#FFFFFF",
+            "Dark": "{color/blue/60}",
+            "HCM": "#2053B4",
+            "Private": "{color/blue/60}",
+            "Smart (WIP)": "#FFFFFF"
+          }
+        },
+        "cyan": {
+          "default": {
+            "Light": "{color/cyan/50}",
+            "Dark": "{color/cyan/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/cyan/10}",
+            "Smart (WIP)": "{color/cyan/50}"
+          },
+          "hover": {
+            "Light": "{color/cyan/60}",
+            "Dark": "{color/cyan/20}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/cyan/20}",
+            "Smart (WIP)": "{color/cyan/60}"
+          },
+          "focused": {
+            "Light": "{color/cyan/50}",
+            "Dark": "{color/cyan/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/cyan/10}",
+            "Smart (WIP)": "{color/cyan/50}"
+          },
+          "content": {
+            "Light": "#FFFFFF",
+            "Dark": "{color/cyan/60}",
+            "HCM": "#00638A",
+            "Private": "{color/cyan/60}",
+            "Smart (WIP)": "#FFFFFF"
+          }
+        },
+        "green": {
+          "default": {
+            "Light": "{color/green/50}",
+            "Dark": "{color/green/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/green/10}",
+            "Smart (WIP)": "{color/green/50}"
+          },
+          "hover": {
+            "Light": "{color/green/60}",
+            "Dark": "{color/green/20}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/green/20}",
+            "Smart (WIP)": "{color/green/60}"
+          },
+          "focused": {
+            "Light": "{color/green/50}",
+            "Dark": "{color/green/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/green/10}",
+            "Smart (WIP)": "{color/green/50}"
+          },
+          "content": {
+            "Light": "#FFFFFF",
+            "Dark": "{color/green/60}",
+            "HCM": "#186D00",
+            "Private": "{color/green/60}",
+            "Smart (WIP)": "#FFFFFF"
+          }
+        },
+        "grey": {
+          "default": {
+            "Light": "{color/neutral/50}",
+            "Dark": "{color/neutral/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/neutral/10}",
+            "Smart (WIP)": "{color/neutral/50}"
+          },
+          "hover": {
+            "Light": "{color/neutral/60}",
+            "Dark": "{color/neutral/20}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/neutral/20}",
+            "Smart (WIP)": "{color/neutral/60}"
+          },
+          "focused": {
+            "Light": "{color/neutral/50}",
+            "Dark": "{color/neutral/10}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/neutral/10}",
+            "Smart (WIP)": "{color/neutral/50}"
+          },
+          "content": {
+            "Light": "#FFFFFF",
+            "Dark": "{color/neutral/60}",
+            "HCM": "#393443",
+            "Private": "{color/neutral/60}",
+            "Smart (WIP)": "#FFFFFF"
+          }
+        }
+      },
+      "border": {
+        "color": {
+          "Light": "rgba(0, 0, 0, 0)",
+          "Dark": "rgba(0, 0, 0, 0)",
+          "HCM": "{ButtonText}",
+          "Private": "rgba(0, 0, 0, 0)",
+          "Smart (WIP)": "rgba(0, 0, 0, 0)",
+          "hover": {
+            "Light": "rgba(0, 0, 0, 0)",
+            "Dark": "rgba(0, 0, 0, 0)",
+            "HCM": "{SelectedItem}",
+            "Private": "rgba(0, 0, 0, 0)",
+            "Smart (WIP)": "rgba(0, 0, 0, 0)"
+          },
+          "selected": {
+            "Light": "rgba(0, 0, 0, 0)",
+            "Dark": "rgba(0, 0, 0, 0)",
+            "HCM": "{SelectedItem}",
+            "Private": "rgba(0, 0, 0, 0)",
+            "Smart (WIP)": "rgba(0, 0, 0, 0)"
+          },
+          "selected-leading": {
+            "Light": "{color/violet/30}",
+            "Dark": "#A67CE5",
+            "HCM": "#FFFFFF",
+            "Private": "#A67CE5",
+            "Smart (WIP)": "{color/violet/30}"
+          },
+          "selected-trailing": {
+            "Light": "{color/orange/30}",
+            "Dark": "{color/violet/50}",
+            "HCM": "#FFFFFF",
+            "Private": "{color/violet/50}",
+            "Smart (WIP)": "{color/orange/30}"
+          }
+        }
+      },
+      "background": {
+        "color": {
+          "Light": "rgba(0, 0, 0, 0)",
+          "Dark": "rgba(0, 0, 0, 0)",
+          "HCM": "rgba(0, 0, 0, 0)",
+          "Private": "rgba(0, 0, 0, 0)",
+          "Smart (WIP)": "rgba(0, 0, 0, 0)",
+          "hover": {
+            "Light": "rgba(66, 14, 80, 0.11999999731779099)",
+            "Dark": "{color/neutral/60}",
+            "HCM": "rgba(0, 0, 0, 0)",
+            "Private": "{color/neutral/60}",
+            "Smart (WIP)": "rgba(66, 14, 80, 0.11999999731779099)"
+          },
+          "active": {
+            "Light": "{color/white}",
+            "Dark": "{color/neutral/70}",
+            "HCM": "{ButtonFace}",
+            "Private": "{background/color/canvas}",
+            "Smart (WIP)": "#FFFFFF"
+          },
+          "pinned": {
+            "Light": "rgba(21, 20, 26, 0)",
+            "Dark": "rgba(21, 20, 26, 0)",
+            "HCM": "rgba(0, 0, 0, 0)",
+            "Private": "rgba(21, 20, 26, 0)",
+            "Smart (WIP)": "rgba(21, 20, 26, 0)"
+          },
+          "pinned-vertical": {
+            "Light": "rgba(179, 151, 255, 0.23999999463558197)",
+            "Dark": "{color/neutral/60}",
+            "HCM": "rgba(0, 0, 0, 0)",
+            "Private": "{color/purple-desaturated/60}",
+            "Smart (WIP)": "rgba(179, 151, 255, 0.23999999463558197)"
+          },
+          "split-hover-non-active": {
+            "Light": "#F5F6FC",
+            "Dark": "{color/neutral/60}",
+            "HCM": "rgba(0, 0, 0, 0)",
+            "Private": "{color/purple-desaturated/60}",
+            "Smart (WIP)": "#F5F6FC"
+          }
+        }
+      },
+      "text": {
+        "color": {
+          "Light": "{text/color}",
+          "Dark": "{text/color}",
+          "HCM": "{text/color}",
+          "Private": "{text/color}",
+          "Smart (WIP)": "{text/color}",
+          "deemphasized": {
+            "Light": "{text/color/deemphasized}",
+            "Dark": "{text/color/deemphasized}",
+            "HCM": "{text/color}",
+            "Private": "{text/color/deemphasized}",
+            "Smart (WIP)": "{text/color/deemphasized}",
+            "hover": {
+              "Light": "{text/color/deemphasized}",
+              "Dark": "{text/color/deemphasized}",
+              "HCM": "{AccentColorText}",
+              "Private": "{text/color/deemphasized}",
+              "Smart (WIP)": "{text/color/deemphasized}"
+            },
+            "active": {
+              "Light": "{text/color/deemphasized}",
+              "Dark": "{text/color/deemphasized}",
+              "HCM": "{CanvasText}",
+              "Private": "{text/color/deemphasized}",
+              "Smart (WIP)": "{text/color/deemphasized}"
+            }
+          },
+          "hover": {
+            "Light": "{text/color}",
+            "Dark": "{text/color}",
+            "HCM": "{text/color}",
+            "Private": "{text/color}",
+            "Smart (WIP)": "{text/color}"
+          },
+          "active": {
+            "Light": "{text/color}",
+            "Dark": "{text/color}",
+            "HCM": "{CanvasText}",
+            "Private": "{text/color}",
+            "Smart (WIP)": "{text/color}"
+          }
+        }
+      }
+    },
+    "table": {
+      "row": {
+        "background": {
+          "color": {
+            "Light": "{background/color/canvas}",
+            "Dark": "{background/color/canvas}",
+            "HCM": "{background/color/canvas}",
+            "Private": "{background/color/canvas}",
+            "Smart (WIP)": "{background/color/canvas}",
+            "alternate": {
+              "Light": "#F0F0F4",
+              "Dark": "{color/neutral/80}",
+              "HCM": "{background/color/canvas}",
+              "Private": "{color/neutral/80}",
+              "Smart (WIP)": "#F0F0F4"
+            }
+          }
+        }
+      }
+    },
+    "text": {
+      "color": {
+        "Light": "{color/violet-desaturated/90}",
+        "Dark": "{color/violet-desaturated/0}",
+        "HCM": "{CanvasText}",
+        "Private": "#FFFFFF",
+        "Smart (WIP)": "{color/violet/80}",
+        "deemphasized": {
+          "Light": "rgba(20, 9, 43, 0.699999988079071)",
+          "Dark": "rgba(242, 240, 248, 0.699999988079071)",
+          "HCM": "{CanvasText}",
+          "Private": "rgba(251, 251, 254, 0.699999988079071)",
+          "Smart (WIP)": "rgba(43, 27, 85, 0.699999988079071)"
+        },
+        "disabled": {
+          "Light": "rgba(21, 20, 26, 0.4000000059604645)",
+          "Dark": "rgba(251, 251, 254, 0.4000000059604645)",
+          "HCM": "{GrayText}",
+          "Private": "rgba(251, 251, 254, 0.4000000059604645)",
+          "Smart (WIP)": "rgba(21, 20, 26, 0.4000000059604645)"
+        },
+        "error": {
+          "Light": "{color/red/50}",
+          "Dark": "{color/red/20}",
+          "HCM": "{CanvasText}",
+          "Private": "{color/red/20}",
+          "Smart (WIP)": "{color/red/50}"
+        },
+        "accent": {
+          "primary": {
+            "selected": {
+              "Light": "{color/white}",
+              "Dark": "{color/neutral/90}",
+              "HCM": "{SelectedItemText}",
+              "Private": "{color/neutral/90}",
+              "Smart (WIP)": "{color/white}"
+            }
+          }
+        }
+      }
+    },
+    "panel": {
+      "background": {
+        "color": {
+          "Light": "{background/color/box}",
+          "Dark": "{background/color/box}",
+          "HCM": "{background/color/box}",
+          "Private": "{background/color/box}",
+          "Smart (WIP)": "{background/color/box}"
+        }
+      }
+    },
+    "tabstrip": {
+      "background": {
+        "color": {
+          "Light": "{color/white}",
+          "Dark": "{color/neutral/70}",
+          "HCM": "{color/violet/40}",
+          "Private": "{color/neutral/70}",
+          "Smart (WIP)": "#FFFFFF"
+        },
+        "linear": {
+          "gradient": {
+            "top-layer-leading": {
+              "Light": "#999999",
+              "Dark": "#555555",
+              "HCM": "#111111",
+              "Private": "{color/violet-desaturated/40}",
+              "Smart (WIP)": "#999999"
+            },
+            "top-layer-trailing": {
+              "Light": "rgba(153, 153, 153, 0)",
+              "Dark": "rgba(34, 34, 34, 0)",
+              "HCM": "rgba(34, 34, 34, 0)",
+              "Private": "{color/violet-desaturated/20}",
+              "Smart (WIP)": "rgba(153, 153, 153, 0)"
+            },
+            "bottom-layer-leading": {
+              "Light": "{color/violet/0}",
+              "Dark": "{color/violet-desaturated/80}",
+              "HCM": "{color/violet-desaturated/80}",
+              "Private": "{color/violet/90}",
+              "Smart (WIP)": "{color/violet/0}"
+            },
+            "bottom-layer-trailing": {
+              "Light": "{color/orange/0}",
+              "Dark": "#453233",
+              "HCM": "#453233",
+              "Private": "{color/violet/90}",
+              "Smart (WIP)": "{color/orange/0}"
+            }
+          }
+        }
+      }
+    },
+    "toolbar": {
+      "background": {
+        "color": {
+          "Light": "{color/white}",
+          "Dark": "{color/neutral/60}",
+          "HCM": "{Canvas}",
+          "Private": "{color/neutral/60}",
+          "Smart (WIP)": "{color/white}"
+        }
+      },
+      "button": {
+        "background": {
+          "color": {
+            "Light": "{button/background/color}",
+            "Dark": "{button/background/color}",
+            "HCM": "{ButtonFace}",
+            "Private": "rgba(54, 45, 81, 0)",
+            "Smart (WIP)": "{button/background/color}",
+            "primary": {
+              "Light": "{color/accent/primary}",
+              "Dark": "{color/accent/primary}",
+              "HCM": "{color/accent/primary}",
+              "Private": "{color/accent/primary}",
+              "Smart (WIP)": "{color/accent/primary}",
+              "hover": {
+                "Light": "{color/violet/70}",
+                "Dark": "{color/violet/30}",
+                "HCM": "{color/accent/primary/hover}",
+                "Private": "{color/violet/30}",
+                "Smart (WIP)": "{color/violet/70}"
+              },
+              "active": {
+                "Light": "{color/violet/80}",
+                "Dark": "{color/violet/20}",
+                "HCM": "{color/accent/primary/active}",
+                "Private": "{color/violet/20}",
+                "Smart (WIP)": "{color/violet/80}"
+              },
+              "disabled": {
+                "Light": "{button/background/color/primary}",
+                "Dark": "{button/background/color/primary}",
+                "HCM": "{button/text/color/disabled}",
+                "Private": "{button/background/color/primary}",
+                "Smart (WIP)": "{button/background/color/primary}"
+              },
+              "selected": {
+                "Light": "{button/background/color/primary/active}",
+                "Dark": "{button/background/color/primary/active}",
+                "HCM": "{button/background/color/primary/active}",
+                "Private": "{button/background/color/primary/active}",
+                "Smart (WIP)": "{button/background/color/primary/active}"
+              }
+            },
+            "hover": {
+              "Light": "rgba(123, 97, 143, 0.15000000596046448)",
+              "Dark": "rgba(83, 60, 100, 0.6000000238418579)",
+              "HCM": "{SelectedItemText}",
+              "Private": "rgba(83, 60, 100, 0.6000000238418579)",
+              "Smart (WIP)": "rgba(123, 97, 143, 0.15000000596046448)"
+            },
+            "active": {
+              "Light": "rgba(123, 97, 143, 0.30000001192092896)",
+              "Dark": "{button/background/color/active}",
+              "HCM": "{SelectedItemText}",
+              "Private": "{button/background/color/active}",
+              "Smart (WIP)": "rgba(123, 97, 143, 0.30000001192092896)"
+            },
+            "disabled": {
+              "Light": "{toolbar/button/background/color}",
+              "Dark": "{toolbar/button/background/color}",
+              "HCM": "{ButtonFace}",
+              "Private": "{toolbar/button/background/color}",
+              "Smart (WIP)": "{toolbar/button/background/color}"
+            },
+            "selected": {
+              "Light": "{toolbar/button/background/color/active}",
+              "Dark": "{toolbar/button/background/color/active}",
+              "HCM": "{toolbar/button/background/color/active}",
+              "Private": "{toolbar/button/background/color/active}",
+              "Smart (WIP)": "{toolbar/button/background/color/active}"
+            },
+            "ghost": {
+              "Light": "{toolbar/button/background/color}",
+              "Dark": "{toolbar/button/background/color}",
+              "HCM": "rgba(0, 0, 0, 0)",
+              "Private": "{toolbar/button/background/color}",
+              "Smart (WIP)": "{toolbar/button/background/color}",
+              "hover": {
+                "Light": "{toolbar/button/background/color/hover}",
+                "Dark": "{toolbar/button/background/color/hover}",
+                "HCM": "{toolbar/button/background/color/hover}",
+                "Private": "{toolbar/button/background/color/hover}",
+                "Smart (WIP)": "{toolbar/button/background/color/hover}"
+              },
+              "active": {
+                "Light": "{toolbar/button/background/color/active}",
+                "Dark": "{toolbar/button/background/color/active}",
+                "HCM": "{toolbar/button/background/color/active}",
+                "Private": "{toolbar/button/background/color/active}",
+                "Smart (WIP)": "{toolbar/button/background/color/active}"
+              },
+              "disabled": {
+                "Light": "{toolbar/button/background/color/disabled}",
+                "Dark": "{toolbar/button/background/color/disabled}",
+                "HCM": "{toolbar/button/background/color/disabled}",
+                "Private": "{toolbar/button/background/color/disabled}",
+                "Smart (WIP)": "{toolbar/button/background/color/disabled}"
+              }
+            }
+          }
+        },
+        "border": {
+          "color": {
+            "Light": "{toolbar/button/text/color}",
+            "Dark": "{button/border/color}",
+            "HCM": "{button/border/color}",
+            "Private": "{button/border/color}",
+            "Smart (WIP)": "{toolbar/button/text/color}",
+            "hover": {
+              "Light": "{toolbar/button/border/color}",
+              "Dark": "{toolbar/button/border/color}",
+              "HCM": "{border/color/interactive/hover}",
+              "Private": "{toolbar/button/border/color}",
+              "Smart (WIP)": "{toolbar/button/border/color}"
+            },
+            "active": {
+              "Light": "{toolbar/button/border/color}",
+              "Dark": "{toolbar/button/border/color}",
+              "HCM": "{border/color/interactive/active}",
+              "Private": "{toolbar/button/border/color}",
+              "Smart (WIP)": "{toolbar/button/border/color}"
+            },
+            "disabled": {
+              "Light": "{toolbar/button/border/color}",
+              "Dark": "{toolbar/button/border/color}",
+              "HCM": "{border/color/interactive/disabled}",
+              "Private": "{toolbar/button/border/color}",
+              "Smart (WIP)": "{toolbar/button/border/color}"
+            },
+            "selected": {
+              "Light": "{toolbar/button/border/color/active}",
+              "Dark": "{toolbar/button/border/color/active}",
+              "HCM": "{toolbar/button/border/color/active}",
+              "Private": "{toolbar/button/border/color/active}",
+              "Smart (WIP)": "{toolbar/button/border/color/active}"
+            },
+            "primary": {
+              "Light": "rgba(0, 0, 0, 0)",
+              "Dark": "rgba(0, 0, 0, 0)",
+              "HCM": "{ButtonFace}",
+              "Private": "rgba(0, 0, 0, 0)",
+              "Smart (WIP)": "rgba(0, 0, 0, 0)",
+              "hover": {
+                "Light": "{button/border/color/primary}",
+                "Dark": "{button/border/color/primary}",
+                "HCM": "{SelectedItemText}",
+                "Private": "{button/border/color/primary}",
+                "Smart (WIP)": "{button/border/color/primary}"
+              },
+              "active": {
+                "Light": "{button/border/color/primary}",
+                "Dark": "{button/border/color/primary}",
+                "HCM": "{ButtonText}",
+                "Private": "{button/border/color/primary}",
+                "Smart (WIP)": "{button/border/color/primary}"
+              },
+              "selected": {
+                "Light": "{button/border/color/primary}",
+                "Dark": "{button/border/color/primary}",
+                "HCM": "{button/border/color/primary/active}",
+                "Private": "{button/border/color/primary}",
+                "Smart (WIP)": "{button/border/color/primary}"
+              },
+              "disabled": {
+                "Light": "{button/border/color/primary}",
+                "Dark": "{button/border/color/primary}",
+                "HCM": "{button/border/color/primary}",
+                "Private": "{button/border/color/primary}",
+                "Smart (WIP)": "{button/border/color/primary}"
+              }
+            },
+            "ghost": {
+              "Light": "{button/border/color/ghost}",
+              "Dark": "{button/border/color/ghost}",
+              "HCM": "{button/border/color/ghost}",
+              "Private": "{button/border/color/ghost}",
+              "Smart (WIP)": "{button/border/color/ghost}",
+              "hover": {
+                "Light": "{button/border/color/ghost/hover}",
+                "Dark": "{button/border/color/ghost/hover}",
+                "HCM": "{button/border/color/ghost/hover}",
+                "Private": "{button/border/color/ghost/hover}",
+                "Smart (WIP)": "{button/border/color/ghost/hover}"
+              },
+              "active": {
+                "Light": "{button/border/color/ghost/active}",
+                "Dark": "{button/border/color/ghost/active}",
+                "HCM": "{button/border/color/ghost/active}",
+                "Private": "{button/border/color/ghost/active}",
+                "Smart (WIP)": "{button/border/color/ghost/active}"
+              },
+              "disabled": {
+                "Light": "{button/border/color/ghost/disabled}",
+                "Dark": "{button/border/color/ghost/disabled}",
+                "HCM": "{button/border/color/ghost/disabled}",
+                "Private": "{button/border/color/ghost/disabled}",
+                "Smart (WIP)": "{button/border/color/ghost/disabled}"
+              }
+            }
+          }
+        },
+        "text": {
+          "color": {
+            "Light": "{color/purple-desaturated/50}",
+            "Dark": "{color/violet/0}",
+            "HCM": "{ButtonText}",
+            "Private": "#F0F0FF",
+            "Smart (WIP)": "{color/purple-desaturated/50}",
+            "hover": {
+              "Light": "{toolbar/button/text/color}",
+              "Dark": "{toolbar/button/text/color}",
+              "HCM": "{SelectedItem}",
+              "Private": "{toolbar/button/text/color}",
+              "Smart (WIP)": "{toolbar/button/text/color}"
+            },
+            "active": {
+              "Light": "{toolbar/button/text/color}",
+              "Dark": "{toolbar/button/text/color}",
+              "HCM": "{SelectedItem}",
+              "Private": "{toolbar/button/text/color}",
+              "Smart (WIP)": "{toolbar/button/text/color}"
+            },
+            "disabled": {
+              "Light": "{toolbar/button/text/color}",
+              "Dark": "{toolbar/button/text/color}",
+              "HCM": "{GrayText}",
+              "Private": "{toolbar/button/text/color}",
+              "Smart (WIP)": "{toolbar/button/text/color}"
+            },
+            "primary": {
+              "Light": "{color/white}",
+              "Dark": "{color/neutral/90}",
+              "HCM": "{ButtonFace}",
+              "Private": "{color/neutral/90}",
+              "Smart (WIP)": "{color/white}",
+              "hover": {
+                "Light": "{toolbar/button/text/color/primary}",
+                "Dark": "{toolbar/button/text/color/primary}",
+                "HCM": "{SelectedItemText}",
+                "Private": "{button/text/color/primary}",
+                "Smart (WIP)": "{toolbar/button/text/color/primary}"
+              },
+              "active": {
+                "Light": "{toolbar/button/text/color/primary}",
+                "Dark": "{toolbar/button/text/color/primary}",
+                "HCM": "{button/text/color/primary/hover}",
+                "Private": "{button/text/color/primary}",
+                "Smart (WIP)": "{toolbar/button/text/color/primary}"
+              },
+              "disabled": {
+                "Light": "{toolbar/button/text/color/primary}",
+                "Dark": "{toolbar/button/text/color/primary}",
+                "HCM": "{button/text/color/primary}",
+                "Private": "{button/text/color/primary}",
+                "Smart (WIP)": "{toolbar/button/text/color/primary}"
+              },
+              "selected": {
+                "Light": "{toolbar/button/text/color/primary/active}",
+                "Dark": "{toolbar/button/text/color/primary/active}",
+                "HCM": "{button/text/color/primary/active}",
+                "Private": "{button/text/color/primary/active}",
+                "Smart (WIP)": "{toolbar/button/text/color/primary/active}"
+              }
+            },
+            "ghost": {
+              "Light": "{toolbar/button/text/color}",
+              "Dark": "{toolbar/button/text/color}",
+              "HCM": "{toolbar/button/text/color}",
+              "Private": "{toolbar/button/text/color}",
+              "Smart (WIP)": "{toolbar/button/text/color}",
+              "hover": {
+                "Light": "{toolbar/button/text/color/hover}",
+                "Dark": "{toolbar/button/text/color/hover}",
+                "HCM": "{toolbar/button/text/color/hover}",
+                "Private": "{toolbar/button/text/color/hover}",
+                "Smart (WIP)": "{toolbar/button/text/color/hover}"
+              },
+              "active": {
+                "Light": "{toolbar/button/text/color/active}",
+                "Dark": "{toolbar/button/text/color/active}",
+                "HCM": "{toolbar/button/text/color/active}",
+                "Private": "{toolbar/button/text/color/active}",
+                "Smart (WIP)": "{toolbar/button/text/color/active}"
+              },
+              "disabled": {
+                "Light": "{toolbar/button/text/color/disabled}",
+                "Dark": "{toolbar/button/text/color/disabled}",
+                "HCM": "{toolbar/button/text/color/disabled}",
+                "Private": "{toolbar/button/text/color/disabled}",
+                "Smart (WIP)": "{toolbar/button/text/color/disabled}"
+              }
+            },
+            "selected": {
+              "Light": "{toolbar/button/text/color/active}",
+              "Dark": "{toolbar/button/text/color/active}",
+              "HCM": "{toolbar/button/text/color/active}",
+              "Private": "{toolbar/button/text/color/active}",
+              "Smart (WIP)": "{toolbar/button/text/color/active}"
+            }
+          }
+        }
+      }
+    },
+    "urlbar": {
+      "background": {
+        "color": {
+          "Light": "rgba(255, 255, 255, 0.6000000238418579)",
+          "Dark": "{background/color/box}",
+          "HCM": "{background/color/box}",
+          "Private": "rgba(54, 45, 81, 0.6000000238418579)",
+          "Smart (WIP)": "rgba(255, 255, 255, 0.6000000238418579)"
+        }
+      },
+      "button": {
+        "background": {
+          "color": {
+            "Light": "{button/background/color}",
+            "Dark": "{button/background/color}",
+            "HCM": "{ButtonFace}",
+            "Private": "{color/violet-desaturated/90}",
+            "Smart (WIP)": "{button/background/color}",
+            "hover": {
+              "Light": "rgba(123, 97, 143, 0.15000000596046448)",
+              "Dark": "rgba(83, 60, 100, 0.15000000596046448)",
+              "HCM": "{SelectedItemText}",
+              "Private": "{button/background/color/hover}",
+              "Smart (WIP)": "rgba(123, 97, 143, 0.15000000596046448)"
+            },
+            "active": {
+              "Light": "rgba(123, 97, 143, 0.30000001192092896)",
+              "Dark": "rgba(123, 97, 143, 0.30000001192092896)",
+              "HCM": "{SelectedItemText}",
+              "Private": "{button/background/color/active}",
+              "Smart (WIP)": "rgba(123, 97, 143, 0.30000001192092896)"
+            },
+            "disabled": {
+              "Light": "{toolbar/button/background/color}",
+              "Dark": "{toolbar/button/background/color}",
+              "HCM": "{ButtonFace}",
+              "Private": "{toolbar/button/background/color}",
+              "Smart (WIP)": "{toolbar/button/background/color}"
+            },
+            "selected": {
+              "Light": "{toolbar/button/background/color/active}",
+              "Dark": "{toolbar/button/background/color/active}",
+              "HCM": "{toolbar/button/background/color/active}",
+              "Private": "{toolbar/button/background/color/active}",
+              "Smart (WIP)": "{toolbar/button/background/color/active}"
+            }
+          }
+        }
+      }
+    },
+    "window-type": {
+      "is-classic": {
+        "Light": true,
+        "Dark": true,
+        "HCM": true,
+        "Private": false,
+        "Smart (WIP)": false
+      },
+      "is-private": {
+        "Light": false,
+        "Dark": false,
+        "HCM": false,
+        "Private": true,
+        "Smart (WIP)": false
+      },
+      "is-smart": {
+        "Light": false,
+        "Dark": false,
+        "HCM": false,
+        "Private": false,
+        "Smart (WIP)": true
+      },
+      "Window type": {
+        "Light": "Classic window",
+        "Dark": "Classic window",
+        "HCM": "Classic window",
+        "Private": "Private window",
+        "Smart (WIP)": "Smart window"
+      }
+    }
+  },
+  "Surface": {
+    "font-size": {
+      "xlarge": {
+        "heading": {
+          "Brand": "{brand/font-size/heading/xlarge}",
+          "Platform": 1
+        }
+      },
+      "large": {
+        "heading": {
+          "Brand": "{brand/font-size/heading/large}",
+          "Platform": 1
+        }
+      },
+      "medium": {
+        "heading": {
+          "Brand": "{brand/font-size/heading/medium}",
+          "Platform": "{platform/font-size/heading/medium}"
+        }
+      },
+      "root": {
+        "Brand": "{brand/font-size/root}",
+        "Platform": "{platform/font-size/root}"
+      },
+      "small": {
+        "Brand": "{brand/font-size/small}",
+        "Platform": "{platform/font-size/small}"
+      },
+      "xsmall": {
+        "Brand": "{brand/font-size/xsmall}",
+        "Platform": "{platform/font-size/xsmall}"
+      }
+    },
+    "space": {
+      "xxsmall": {
+        "Brand": "{brand/space/xxsmall}",
+        "Platform": "{platform/space/xxsmall}"
+      },
+      "xsmall": {
+        "Brand": "{brand/space/xsmall}",
+        "Platform": "{platform/space/xsmall}"
+      },
+      "small": {
+        "Brand": "{brand/space/small}",
+        "Platform": "{platform/space/small}"
+      },
+      "medium": {
+        "Brand": "{brand/space/medium}",
+        "Platform": "{platform/space/medium}"
+      },
+      "large": {
+        "Brand": "{brand/space/large}",
+        "Platform": "{platform/space/large}"
+      },
+      "xlarge": {
+        "Brand": "{brand/space/xlarge}",
+        "Platform": "{platform/space/xlarge}"
+      },
+      "xxlarge": {
+        "Brand": "{brand/space/xxlarge}",
+        "Platform": "{platform/space/xxlarge}"
+      },
+      "xxxlarge": {
+        "Brand": "{brand/space/xxxlarge}",
+        "Platform": "{platform/space/xxxlarge}"
+      }
+    },
+    "button": {
+      "padding": {
+        "block": {
+          "Brand": "{brand/button/padding/block}",
+          "Platform": "{platform/button/padding/block}"
+        },
+        "inline": {
+          "Brand": "{brand/button/padding/inline}",
+          "Platform": "{platform/button/padding/inline}"
+        }
+      }
+    },
+    "checkbox": {
+      "margin": {
+        "inline": {
+          "Brand": "{brand/checkbox/margin/inline}",
+          "Platform": "{platform/checkbox/margin/inline}"
+        }
+      }
+    }
+  },
+  "Colors": {
+    "color": {
+      "white": {
+        "Value": "#FFFFFF"
+      },
+      "neutral": {
+        "0": {
+          "Value": "#F6F8FF"
+        },
+        "10": {
+          "Value": "#EEF0FB"
+        },
+        "20": {
+          "Value": "#D7D8E3"
+        },
+        "30": {
+          "Value": "#B1B2BD"
+        },
+        "40": {
+          "Value": "#7E808A"
+        },
+        "50": {
+          "Value": "#4F5059"
+        },
+        "60": {
+          "Value": "#32333B"
+        },
+        "70": {
+          "Value": "#26272F"
+        },
+        "80": {
+          "Value": "#181820"
+        },
+        "90": {
+          "Value": "#101118"
+        }
+      },
+      "blue": {
+        "0": {
+          "Value": "#E3F4FF"
+        },
+        "10": {
+          "Value": "#C2E5FF"
+        },
+        "20": {
+          "Value": "#9CCEFF"
+        },
+        "30": {
+          "Value": "#72B3FF"
+        },
+        "40": {
+          "Value": "#4893FF"
+        },
+        "50": {
+          "Value": "#2971E7"
+        },
+        "60": {
+          "Value": "#0F50B6"
+        },
+        "70": {
+          "Value": "#023587"
+        },
+        "80": {
+          "Value": "#001D61"
+        },
+        "90": {
+          "Value": "#000F42"
+        }
+      },
+      "violet": {
+        "0": {
+          "Value": "#F5ECFF"
+        },
+        "10": {
+          "Value": "#E7D9FF"
+        },
+        "20": {
+          "Value": "#D2BFFF"
+        },
+        "30": {
+          "Value": "#BBA0FF"
+        },
+        "40": {
+          "Value": "#A27DFF"
+        },
+        "50": {
+          "Value": "#854DFF"
+        },
+        "60": {
+          "Value": "#632FC8"
+        },
+        "70": {
+          "Value": "#451793"
+        },
+        "80": {
+          "Value": "#2B0664"
+        },
+        "90": {
+          "Value": "#19053E"
+        }
+      },
+      "violet-desaturated": {
+        "0": {
+          "Value": "#F2F0F8"
+        },
+        "10": {
+          "Value": "#E1DBF1"
+        },
+        "20": {
+          "Value": "#C9C0E3"
+        },
+        "30": {
+          "Value": "#AEA1D1"
+        },
+        "40": {
+          "Value": "#9182BA"
+        },
+        "50": {
+          "Value": "#71629A"
+        },
+        "60": {
+          "Value": "#534577"
+        },
+        "70": {
+          "Value": "#382C58"
+        },
+        "80": {
+          "Value": "#23173E"
+        },
+        "90": {
+          "Value": "#14092B"
+        }
+      },
+      "purple": {
+        "0": {
+          "Value": "#FAEBFF"
+        },
+        "10": {
+          "Value": "#F4D3FF"
+        },
+        "20": {
+          "Value": "#E7B5FF"
+        },
+        "30": {
+          "Value": "#D98FFF"
+        },
+        "40": {
+          "Value": "#CC67FD"
+        },
+        "50": {
+          "Value": "#AC3DEA"
+        },
+        "60": {
+          "Value": "#821FB5"
+        },
+        "70": {
+          "Value": "#5C0583"
+        },
+        "80": {
+          "Value": "#3B0058"
+        },
+        "90": {
+          "Value": "#240036"
+        }
+      },
+      "purple-desaturated": {
+        "0": {
+          "Value": "#F4F0F7"
+        },
+        "10": {
+          "Value": "#E5DAEF"
+        },
+        "20": {
+          "Value": "#D0BDDF"
+        },
+        "30": {
+          "Value": "#B79ECB"
+        },
+        "40": {
+          "Value": "#9C7EB3"
+        },
+        "50": {
+          "Value": "#7D5E93"
+        },
+        "60": {
+          "Value": "#5D4171"
+        },
+        "70": {
+          "Value": "#412853"
+        },
+        "80": {
+          "Value": "#2A1439"
+        },
+        "90": {
+          "Value": "#1A0726"
+        }
+      },
+      "pink": {
+        "0": {
+          "Value": "#FFEAF5"
+        },
+        "10": {
+          "Value": "#FECEEC"
+        },
+        "20": {
+          "Value": "#FFACE0"
+        },
+        "30": {
+          "Value": "#FE88D2"
+        },
+        "40": {
+          "Value": "#EF60C4"
+        },
+        "50": {
+          "Value": "#CB3AA6"
+        },
+        "60": {
+          "Value": "#9B1B7D"
+        },
+        "70": {
+          "Value": "#700059"
+        },
+        "80": {
+          "Value": "#4B003A"
+        },
+        "90": {
+          "Value": "#300024"
+        }
+      },
+      "red": {
+        "0": {
+          "Value": "#FFEBE6"
+        },
+        "10": {
+          "Value": "#FFD0CA"
+        },
+        "20": {
+          "Value": "#FFADAB"
+        },
+        "30": {
+          "Value": "#FF858E"
+        },
+        "40": {
+          "Value": "#F35A77"
+        },
+        "50": {
+          "Value": "#CF325E"
+        },
+        "60": {
+          "Value": "#A01242"
+        },
+        "70": {
+          "Value": "#76002B"
+        },
+        "80": {
+          "Value": "#500219"
+        },
+        "90": {
+          "Value": "#36000D"
+        }
+      },
+      "orange": {
+        "0": {
+          "Value": "#FFEDE0"
+        },
+        "10": {
+          "Value": "#FFD3B7"
+        },
+        "20": {
+          "Value": "#FFB28A"
+        },
+        "30": {
+          "Value": "#FF8D5B"
+        },
+        "40": {
+          "Value": "#F26527"
+        },
+        "50": {
+          "Value": "#CE4008"
+        },
+        "60": {
+          "Value": "#9F2304"
+        },
+        "70": {
+          "Value": "#730F00"
+        },
+        "80": {
+          "Value": "#4E0200"
+        },
+        "90": {
+          "Value": "#350000"
+        }
+      },
+      "yellow": {
+        "0": {
+          "Value": "#FFF9E2"
+        },
+        "10": {
+          "Value": "#FBE4AD"
+        },
+        "20": {
+          "Value": "#F4C470"
+        },
+        "30": {
+          "Value": "#EA9E1E"
+        },
+        "40": {
+          "Value": "#D57800"
+        },
+        "50": {
+          "Value": "#AE5900"
+        },
+        "60": {
+          "Value": "#834004"
+        },
+        "70": {
+          "Value": "#5E2900"
+        },
+        "80": {
+          "Value": "#401700"
+        },
+        "90": {
+          "Value": "#2B0B00"
+        }
+      },
+      "green": {
+        "0": {
+          "Value": "#E8F7E5"
+        },
+        "10": {
+          "Value": "#C6EBBD"
+        },
+        "20": {
+          "Value": "#9CD790"
+        },
+        "30": {
+          "Value": "#70BF5E"
+        },
+        "40": {
+          "Value": "#3DA321"
+        },
+        "50": {
+          "Value": "#108307"
+        },
+        "60": {
+          "Value": "#056204"
+        },
+        "70": {
+          "Value": "#004600"
+        },
+        "80": {
+          "Value": "#002E00"
+        },
+        "90": {
+          "Value": "#011E00"
+        }
+      },
+      "cyan": {
+        "0": {
+          "Value": "#E7F4F9"
+        },
+        "10": {
+          "Value": "#C0E7F5"
+        },
+        "20": {
+          "Value": "#90D3E8"
+        },
+        "30": {
+          "Value": "#5ABAD7"
+        },
+        "40": {
+          "Value": "#0F9FC1"
+        },
+        "50": {
+          "Value": "#0A7F9F"
+        },
+        "60": {
+          "Value": "#055E78"
+        },
+        "70": {
+          "Value": "#004257"
+        },
+        "80": {
+          "Value": "#002B3B"
+        },
+        "90": {
+          "Value": "#001B28"
+        }
+      }
+    }
+  },
+  "Operating System": {
+    "system": {
+      "is-mac": {
+        "macOS": true,
+        "Windows": false,
+        "LinuxUbuntu": false,
+        "LinuxKDE": false
+      },
+      "is-windows": {
+        "macOS": false,
+        "Windows": true,
+        "LinuxUbuntu": false,
+        "LinuxKDE": false
+      },
+      "is-linux": {
+        "macOS": false,
+        "Windows": false,
+        "LinuxUbuntu": true,
+        "LinuxKDE": true
+      }
+    },
+    "platform": {
+      "border-radius": {
+        "window": {
+          "macOS": 16,
+          "Windows": 8,
+          "LinuxUbuntu": 16,
+          "LinuxKDE": 16
+        },
+        "chrome": {
+          "macOS": 12,
+          "Windows": 4,
+          "LinuxUbuntu": 12,
+          "LinuxKDE": 12
+        }
+      },
+      "font-size": {
+        "family": {
+          "macOS": "SF Pro",
+          "Windows": "Segoe UI",
+          "LinuxUbuntu": "Ubuntu Sans",
+          "LinuxKDE": "Noto Sans"
+        },
+        "root": {
+          "macOS": 13,
+          "Windows": 12,
+          "LinuxUbuntu": 14.66670036315918,
+          "LinuxKDE": 13.33329963684082
+        },
+        "small": {
+          "macOS": 11,
+          "Windows": 11,
+          "LinuxUbuntu": 11,
+          "LinuxKDE": 11
+        },
+        "xsmall": {
+          "macOS": 8.199999809265137,
+          "Windows": 9,
+          "LinuxUbuntu": 11,
+          "LinuxKDE": 10
+        },
+        "heading": {
+          "medium": {
+            "macOS": 13,
+            "Windows": 12,
+            "LinuxUbuntu": 14.66670036315918,
+            "LinuxKDE": 13.33329963684082
+          }
+        }
+      },
+      "checkbox": {
+        "margin": {
+          "inline": {
+            "macOS": "{platform/space/small}",
+            "Windows": "{platform/space/small}",
+            "LinuxUbuntu": "{platform/space/small}",
+            "LinuxKDE": "{platform/space/small}"
+          }
+        }
+      },
+      "button": {
+        "padding": {
+          "block": {
+            "macOS": "{platform/space/xsmall}",
+            "Windows": "{platform/space/xsmall}",
+            "LinuxUbuntu": "{platform/space/xsmall}",
+            "LinuxKDE": "{platform/space/xsmall}"
+          },
+          "inline": {
+            "macOS": "{platform/space/large}",
+            "Windows": "{platform/space/large}",
+            "LinuxUbuntu": "{platform/space/large}",
+            "LinuxKDE": "{platform/space/large}"
+          }
+        }
+      },
+      "space": {
+        "xxsmall": {
+          "macOS": 2,
+          "Windows": 2,
+          "LinuxUbuntu": 2,
+          "LinuxKDE": 2
+        },
+        "xsmall": {
+          "macOS": 3,
+          "Windows": 3,
+          "LinuxUbuntu": 4,
+          "LinuxKDE": 4
+        },
+        "small": {
+          "macOS": 7,
+          "Windows": 6,
+          "LinuxUbuntu": 8,
+          "LinuxKDE": 7
+        },
+        "medium": {
+          "macOS": 10,
+          "Windows": 10,
+          "LinuxUbuntu": 12,
+          "LinuxKDE": 11
+        },
+        "large": {
+          "macOS": 14,
+          "Windows": 13,
+          "LinuxUbuntu": 16,
+          "LinuxKDE": 14
+        },
+        "xlarge": {
+          "macOS": 21,
+          "Windows": 19,
+          "LinuxUbuntu": 23,
+          "LinuxKDE": 21
+        },
+        "xxlarge": {
+          "macOS": 28,
+          "Windows": 26,
+          "LinuxUbuntu": 31,
+          "LinuxKDE": 28
+        },
+        "xxxlarge": {
+          "macOS": 36,
+          "Windows": 30,
+          "LinuxUbuntu": 35,
+          "LinuxKDE": 32
+        }
+      }
+    },
+    "brand": {
+      "font-size": {
+        "root": {
+          "macOS": 15,
+          "Windows": 15,
+          "LinuxUbuntu": 15,
+          "LinuxKDE": 15
+        },
+        "small": {
+          "macOS": 13,
+          "Windows": 13,
+          "LinuxUbuntu": 13,
+          "LinuxKDE": 13
+        },
+        "xsmall": {
+          "macOS": 11,
+          "Windows": 11,
+          "LinuxUbuntu": 11,
+          "LinuxKDE": 11
+        },
+        "heading": {
+          "xlarge": {
+            "macOS": 26,
+            "Windows": 26,
+            "LinuxUbuntu": 26,
+            "LinuxKDE": 26
+          },
+          "large": {
+            "macOS": 22,
+            "Windows": 22,
+            "LinuxUbuntu": 22,
+            "LinuxKDE": 22
+          },
+          "medium": {
+            "macOS": 17,
+            "Windows": 17,
+            "LinuxUbuntu": 17,
+            "LinuxKDE": 17
+          }
+        }
+      },
+      "checkbox": {
+        "margin": {
+          "inline": {
+            "macOS": "{brand/space/small}",
+            "Windows": "{brand/space/small}",
+            "LinuxUbuntu": "{brand/space/small}",
+            "LinuxKDE": "{brand/space/small}"
+          }
+        }
+      },
+      "button": {
+        "padding": {
+          "block": {
+            "macOS": "{brand/space/xsmall}",
+            "Windows": "{brand/space/xsmall}",
+            "LinuxUbuntu": "{brand/space/xsmall}",
+            "LinuxKDE": "{brand/space/xsmall}"
+          },
+          "inline": {
+            "macOS": "{brand/space/large}",
+            "Windows": "{brand/space/large}",
+            "LinuxUbuntu": "{brand/space/large}",
+            "LinuxKDE": "{brand/space/large}"
+          }
+        }
+      },
+      "space": {
+        "xxsmall": {
+          "macOS": 2,
+          "Windows": 2,
+          "LinuxUbuntu": 2,
+          "LinuxKDE": 2
+        },
+        "xsmall": {
+          "macOS": 4,
+          "Windows": 4,
+          "LinuxUbuntu": 4,
+          "LinuxKDE": 4
+        },
+        "small": {
+          "macOS": 8,
+          "Windows": 8,
+          "LinuxUbuntu": 8,
+          "LinuxKDE": 8
+        },
+        "medium": {
+          "macOS": 12,
+          "Windows": 12,
+          "LinuxUbuntu": 12,
+          "LinuxKDE": 12
+        },
+        "large": {
+          "macOS": 16,
+          "Windows": 16,
+          "LinuxUbuntu": 16,
+          "LinuxKDE": 16
+        },
+        "xlarge": {
+          "macOS": 24,
+          "Windows": 24,
+          "LinuxUbuntu": 24,
+          "LinuxKDE": 24
+        },
+        "xxlarge": {
+          "macOS": 32,
+          "Windows": 32,
+          "LinuxUbuntu": 32,
+          "LinuxKDE": 32
+        },
+        "xxxlarge": {
+          "macOS": 40,
+          "Windows": 40,
+          "LinuxUbuntu": 40,
+          "LinuxKDE": 40
+        }
+      }
+    }
+  },
+  "Tab Group Theme": {
+    "theme-color-default": {
+      "Purple": "{tab/group/violet/default}",
+      "Yellow": "{tab/group/yellow/default}",
+      "Orange": "{tab/group/orange/default}",
+      "Red": "{tab/group/red/default}",
+      "Pink": "{tab/group/pink/default}",
+      "Blue": "{tab/group/blue/default}",
+      "Cyan": "{tab/group/cyan/default}",
+      "Green": "{tab/group/green/default}",
+      "Grey": "{tab/group/grey/default}"
+    },
+    "theme-color-hover": {
+      "Purple": "{tab/group/violet/hover}",
+      "Yellow": "{tab/group/yellow/hover}",
+      "Orange": "{tab/group/orange/hover}",
+      "Red": "{tab/group/red/hover}",
+      "Pink": "{tab/group/pink/hover}",
+      "Blue": "{tab/group/blue/hover}",
+      "Cyan": "{tab/group/cyan/hover}",
+      "Green": "{tab/group/green/hover}",
+      "Grey": "{tab/group/grey/hover}"
+    },
+    "theme-color-active": {
+      "Purple": "{tab/group/violet/focused}",
+      "Yellow": "{tab/group/yellow/focused}",
+      "Orange": "{tab/group/orange/focused}",
+      "Red": "{tab/group/red/focused}",
+      "Pink": "{tab/group/pink/focused}",
+      "Blue": "{tab/group/blue/focused}",
+      "Cyan": "{tab/group/cyan/focused}",
+      "Green": "{tab/group/green/focused}",
+      "Grey": "{tab/group/grey/focused}"
+    },
+    "theme-color-focus": {
+      "Purple": "{tab/group/violet/focused}",
+      "Yellow": "{tab/group/yellow/focused}",
+      "Orange": "{tab/group/orange/focused}",
+      "Red": "{tab/group/red/focused}",
+      "Pink": "{tab/group/pink/focused}",
+      "Blue": "{tab/group/blue/focused}",
+      "Cyan": "{tab/group/cyan/focused}",
+      "Green": "{tab/group/green/focused}",
+      "Grey": "{tab/group/grey/focused}"
+    },
+    "theme-color-text": {
+      "Purple": "{tab/group/violet/content}",
+      "Yellow": "{tab/group/yellow/content}",
+      "Orange": "{tab/group/orange/content}",
+      "Red": "{tab/group/red/content}",
+      "Pink": "{tab/group/pink/content}",
+      "Blue": "{tab/group/blue/content}",
+      "Cyan": "{tab/group/cyan/content}",
+      "Green": "{tab/group/green/content}",
+      "Grey": "{tab/group/grey/content}"
+    },
+    "theme-color-count": {
+      "Purple": "{tab/group/violet/default}",
+      "Yellow": "{tab/group/yellow/default}",
+      "Orange": "{tab/group/orange/default}",
+      "Red": "{tab/group/red/default}",
+      "Pink": "{tab/group/pink/default}",
+      "Blue": "{tab/group/blue/default}",
+      "Cyan": "{tab/group/cyan/default}",
+      "Green": "{tab/group/green/default}",
+      "Grey": "{tab/group/grey/default}"
+    }
+  },
+  "Components": {
+    "button": {
+      "border": {
+        "radius": {
+          "Value": "{border/radius/circle}"
+        },
+        "width": {
+          "Value": "{border/width}"
+        }
+      },
+      "min-height": {
+        "Value": "{size/item/large}"
+      },
+      "size": {
+        "icon": {
+          "Value": "{button/min-height}",
+          "small": {
+            "Value": "{size/item/medium}"
+          },
+          "lage": {
+            "Value": "{size/item/large}"
+          }
+        }
+      },
+      "padding": {
+        "icon": {
+          "Value": 0
+        }
+      }
+    },
+    "checkbox": {
+      "size": {
+        "Value": "{size/item/small}"
+      }
+    },
+    "icon": {
+      "size": {
+        "Value": "{icon/size/small}"
+      }
+    },
+    "input": {
+      "text": {
+        "min": {
+          "height": {
+            "Value": "{button/min/height}"
+          }
+        }
+      }
+    }
+  }
+}
