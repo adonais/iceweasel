@@ -3,3 +3,5 @@
 See INSTALL for build instructions.
 
 Licensed under an ISC-style license.  See LICENSE for details.
+
+Update library by using `./mach vendor media/libnestegg/moz.yaml`
