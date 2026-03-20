@@ -25,7 +25,7 @@ class ContentMediaControlKeyReceiver {
 
   // Use this method to handle the event from `ContentMediaAgent`.
   virtual void HandleMediaKey(MediaControlKey aKey,
-                              Maybe<SeekDetails> aDetails = Nothing()) = 0;
+                              const MediaControlActionParams& aParams = {}) = 0;
 
   virtual bool IsPlaying() const = 0;
 };
@@ -96,7 +96,7 @@ class ContentMediaController final : public ContentMediaAgent,
 
   // ContentMediaControlKeyReceiver method
   void HandleMediaKey(MediaControlKey aKey,
-                      Maybe<SeekDetails> aDetails = Nothing()) override;
+                      const MediaControlActionParams& aParams = {}) override;
 
  private:
   ~ContentMediaController() = default;

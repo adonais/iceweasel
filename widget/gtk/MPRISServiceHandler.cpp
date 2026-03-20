@@ -73,7 +73,7 @@ static void HandleMethodCall(GDBusConnection* aConnection, const gchar* aSender,
     return;
   }
 
-  dom::SeekDetails seekDetails{};
+  dom::MediaControlActionParams actionParams{};
   if (key.value() == dom::MediaControlKey::Seekto ||
       key.value() == dom::MediaControlKey::Seekforward) {
     RefPtr<GVariant> child = dont_AddRef(g_variant_get_child_value(
@@ -89,17 +89,18 @@ static void HandleMethodCall(GDBusConnection* aConnection, const gchar* aSender,
       return;
     }
     if (key.value() == dom::MediaControlKey::Seekto) {
-      seekDetails = dom::SeekDetails(seekValue, false /* fast seek */);
+      actionParams =
+          dom::MediaControlActionParams(seekValue, false /* fast seek */);
     } else if (seekValue > 0.0) {
-      seekDetails = dom::SeekDetails(seekValue);
+      actionParams = dom::MediaControlActionParams(seekValue);
     } else {
       key = Some(dom::MediaControlKey::Seekbackward);
-      seekDetails = dom::SeekDetails(-1 * seekValue);
+      actionParams = dom::MediaControlActionParams(-1 * seekValue);
     }
   }
 
   MPRISServiceHandler* handler = static_cast<MPRISServiceHandler*>(aUserData);
-  if (handler->PressKey(dom::MediaControlAction(key.value(), seekDetails))) {
+  if (handler->PressKey(dom::MediaControlAction(key.value(), actionParams))) {
     g_dbus_method_invocation_return_value(aInvocation, nullptr);
   } else {
     g_dbus_method_invocation_return_error(
@@ -127,6 +128,7 @@ enum class Property : uint8_t {
   eGetMetadata,
   eGetPosition,
   eGetRate,
+  eVolume,
 };
 
 static inline Maybe<dom::MediaControlKey> GetPairedKey(Property aProperty) {
@@ -168,7 +170,8 @@ static inline Maybe<Property> GetProperty(const gchar* aPropertyName) {
       {"PlaybackStatus", Property::eGetPlaybackStatus},
       {"Metadata", Property::eGetMetadata},
       {"Position", Property::eGetPosition},
-      {"Rate", Property::eGetRate}};
+      {"Rate", Property::eGetRate},
+      {"Volume", Property::eVolume}};
 
   auto it = map.find(aPropertyName);
   return (it == map.end() ? Nothing() : Some(it->second));
@@ -208,6 +211,8 @@ static GVariant* HandleGetProperty(GDBusConnection* aConnection,
     }
     case Property::eGetRate:
       return g_variant_new_double(handler->GetPlaybackRate());
+    case Property::eVolume:
+      return g_variant_new_double(handler->GetVolume());
     case Property::eIdentity:
       return g_variant_new_string(handler->Identity());
     case Property::eDesktopEntry:
@@ -241,9 +246,34 @@ static gboolean HandleSetProperty(GDBusConnection* aConnection,
                                   GError** aError, gpointer aUserData) {
   MOZ_ASSERT(aUserData);
   MOZ_ASSERT(NS_IsMainThread());
-  g_set_error(aError, G_IO_ERROR, G_IO_ERROR_FAILED,
-              "%s:%s setting is not supported", aInterfaceName, aPropertyName);
-  return false;
+
+  Maybe<Property> property = GetProperty(aPropertyName);
+  if (property.isNothing()) {
+    g_set_error(aError, G_DBUS_ERROR, G_DBUS_ERROR_NOT_SUPPORTED,
+                "%s.%s %s is not supported", aObjectPath, aInterfaceName,
+                aPropertyName);
+    return false;
+  }
+
+  MPRISServiceHandler* handler = static_cast<MPRISServiceHandler*>(aUserData);
+  switch (property.value()) {
+    case Property::eVolume: {
+      if (!g_variant_is_of_type(aValue, G_VARIANT_TYPE_DOUBLE)) {
+        g_set_error(aError, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                    "Invalid arguments for %s.%s.%s", aObjectPath,
+                    aInterfaceName, aPropertyName);
+        return false;
+      }
+      double volume = g_variant_get_double(aValue);
+      handler->SetVolume(volume);
+      return true;
+    }
+    default:
+      g_set_error(aError, G_IO_ERROR, G_IO_ERROR_FAILED,
+                  "%s:%s setting is not supported", aInterfaceName,
+                  aPropertyName);
+      return false;
+  }
 }
 
 static const GDBusInterfaceVTable gInterfaceVTable = {
@@ -892,6 +922,23 @@ double MPRISServiceHandler::GetPlaybackRate() const {
   }
   return 1.0;
 }
+
+void MPRISServiceHandler::SetVolume(double aVolume) {
+  if (mVolume == aVolume) {
+    return;
+  }
+  mVolume = aVolume;
+  LOGMPRIS("SetVolume: %f", mVolume);
+
+  EmitEvent(dom::MediaControlAction(
+      dom::MediaControlKey::Setvolume,
+      dom::MediaControlActionParams::FromVolume(mVolume)));
+  if (mVolume > 0.0) {
+    EmitEvent(dom::MediaControlAction(dom::MediaControlKey::Unmute));
+  }
+}
+
+double MPRISServiceHandler::GetVolume() const { return mVolume; }
 
 bool MPRISServiceHandler::IsMediaKeySupported(dom::MediaControlKey aKey) const {
   return mSupportedKeys & GetMediaKeyMask(aKey);

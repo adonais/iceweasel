@@ -79,6 +79,9 @@ class MPRISServiceHandler final : public dom::MediaControlKeySource {
   double GetPositionSeconds() const;
   double GetPlaybackRate() const;
 
+  void SetVolume(double aVolume);
+  double GetVolume() const;
+
   bool IsMediaKeySupported(dom::MediaControlKey aKey) const;
 
   void OwnName(GDBusConnection* aConnection);
@@ -111,6 +114,7 @@ class MPRISServiceHandler final : public dom::MediaControlKeySource {
   uint32_t mSupportedKeys = 0;
 
   Maybe<dom::PositionState> mPositionState;
+  double mVolume = 1.0;
 
   class MPRISMetadata : public dom::MediaMetadataBase {
    public:

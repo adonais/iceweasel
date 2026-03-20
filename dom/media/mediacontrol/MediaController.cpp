@@ -76,7 +76,9 @@ static const MediaControlKey sDefaultSupportedKeys[] = {
     MediaControlKey::Focus,       MediaControlKey::Play,
     MediaControlKey::Pause,       MediaControlKey::Playpause,
     MediaControlKey::Stop,        MediaControlKey::Seekto,
-    MediaControlKey::Seekforward, MediaControlKey::Seekbackward};
+    MediaControlKey::Seekforward, MediaControlKey::Seekbackward,
+    MediaControlKey::Mute,        MediaControlKey::Unmute,
+    MediaControlKey::Setvolume};
 
 static void GetDefaultSupportedKeys(nsTArray<MediaControlKey>& aKeys) {
   for (const auto& key : sDefaultSupportedKeys) {
@@ -144,13 +146,13 @@ void MediaController::NextTrack() {
 void MediaController::SeekBackward(double aSeekOffset) {
   LOG("Seek Backward");
   UpdateMediaControlActionToContentMediaIfNeeded(MediaControlAction(
-      MediaControlKey::Seekbackward, SeekDetails(aSeekOffset)));
+      MediaControlKey::Seekbackward, MediaControlActionParams(aSeekOffset)));
 }
 
 void MediaController::SeekForward(double aSeekOffset) {
   LOG("Seek Forward");
   UpdateMediaControlActionToContentMediaIfNeeded(MediaControlAction(
-      MediaControlKey::Seekforward, SeekDetails(aSeekOffset)));
+      MediaControlKey::Seekforward, MediaControlActionParams(aSeekOffset)));
 }
 
 void MediaController::SkipAd() {
@@ -162,7 +164,7 @@ void MediaController::SkipAd() {
 void MediaController::SeekTo(double aSeekTime, bool aFastSeek) {
   LOG("Seek To");
   UpdateMediaControlActionToContentMediaIfNeeded(MediaControlAction(
-      MediaControlKey::Seekto, SeekDetails(aSeekTime, aFastSeek)));
+      MediaControlKey::Seekto, MediaControlActionParams(aSeekTime, aFastSeek)));
 }
 
 void MediaController::Stop() {
@@ -170,6 +172,26 @@ void MediaController::Stop() {
   UpdateMediaControlActionToContentMediaIfNeeded(
       MediaControlAction(MediaControlKey::Stop));
   MediaStatusManager::ClearActiveMediaSessionContextIdIfNeeded();
+}
+
+void MediaController::SetVolume(double aVolume) {
+  double volume = std::clamp(aVolume, 0.0, 1.0);
+  LOG("SetVolume: %f, ClampedVolume: %f", aVolume, volume);
+  UpdateMediaControlActionToContentMediaIfNeeded(
+      MediaControlAction(MediaControlKey::Setvolume,
+                         MediaControlActionParams::FromVolume(volume)));
+}
+
+void MediaController::Mute() {
+  LOG("Mute");
+  UpdateMediaControlActionToContentMediaIfNeeded(
+      MediaControlAction(MediaControlKey::Mute));
+}
+
+void MediaController::Unmute() {
+  LOG("Unmute");
+  UpdateMediaControlActionToContentMediaIfNeeded(
+      MediaControlAction(MediaControlKey::Unmute));
 }
 
 uint64_t MediaController::Id() const { return mTopLevelBrowsingContextId; }
@@ -193,6 +215,9 @@ bool MediaController::ShouldPropagateActionToAllContexts(
       case MediaControlKey::Seekto:
       case MediaControlKey::Seekforward:
       case MediaControlKey::Seekbackward:
+      case MediaControlKey::Mute:
+      case MediaControlKey::Unmute:
+      case MediaControlKey::Setvolume:
         return true;
       default:
         return false;

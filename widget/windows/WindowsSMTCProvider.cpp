@@ -426,7 +426,8 @@ void WindowsSMTCProvider::OnPositionChangeRequested(double aPosition) const {
   for (const auto& listener : mListeners) {
     listener->OnActionPerformed(mozilla::dom::MediaControlAction(
         mozilla::dom::MediaControlKey::Seekto,
-        mozilla::dom::SeekDetails(aPosition, false /* fast seek */)));
+        mozilla::dom::MediaControlActionParams(aPosition,
+                                               false /* fast seek */)));
   }
 }
 

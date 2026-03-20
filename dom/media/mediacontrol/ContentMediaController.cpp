@@ -349,8 +349,8 @@ void ContentMediaController::RemoveReceiver(
   mReceivers.RemoveElement(aListener);
 }
 
-void ContentMediaController::HandleMediaKey(MediaControlKey aKey,
-                                            Maybe<SeekDetails> aDetails) {
+void ContentMediaController::HandleMediaKey(
+    MediaControlKey aKey, const MediaControlActionParams& aParams) {
   MOZ_ASSERT(NS_IsMainThread());
   if (mReceivers.IsEmpty()) {
     return;
@@ -368,11 +368,14 @@ void ContentMediaController::HandleMediaKey(MediaControlKey aKey,
     case MediaControlKey::Seekto:
     case MediaControlKey::Seekforward:
     case MediaControlKey::Seekbackward:
+    case MediaControlKey::Setvolume:
+    case MediaControlKey::Mute:
+    case MediaControlKey::Unmute:
       // When receiving `Stop`, the amount of receiver would vary during the
       // iteration, so we use the backward iteration to avoid accessing the
       // index which is over the array length.
       for (auto& receiver : Reversed(mReceivers)) {
-        receiver->HandleMediaKey(aKey, aDetails);
+        receiver->HandleMediaKey(aKey, aParams);
       }
       return;
     default:

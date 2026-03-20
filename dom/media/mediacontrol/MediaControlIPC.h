@@ -15,7 +15,7 @@ template <>
 struct ParamTraits<mozilla::dom::MediaControlKey>
     : public ContiguousEnumSerializerInclusive<
           mozilla::dom::MediaControlKey, mozilla::dom::MediaControlKey::Focus,
-          mozilla::dom::MediaControlKey::Stop> {};
+          mozilla::dom::MediaControlKey::Setvolume> {};
 
 template <>
 struct ParamTraits<mozilla::dom::MediaPlaybackState>
@@ -50,17 +50,19 @@ struct ParamTraits<mozilla::dom::AbsoluteSeek> {
 };
 
 template <>
-struct ParamTraits<mozilla::dom::SeekDetails> {
-  typedef mozilla::dom::SeekDetails paramType;
+struct ParamTraits<mozilla::dom::MediaControlActionParams> {
+  typedef mozilla::dom::MediaControlActionParams paramType;
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
     WriteParam(aWriter, aParam.mAbsolute);
     WriteParam(aWriter, aParam.mRelativeSeekOffset);
+    WriteParam(aWriter, aParam.mVolume);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
     if (!ReadParam(aReader, &aResult->mAbsolute) ||
-        !ReadParam(aReader, &aResult->mRelativeSeekOffset)) {
+        !ReadParam(aReader, &aResult->mRelativeSeekOffset) ||
+        !ReadParam(aReader, &aResult->mVolume)) {
       return false;
     }
     return true;
@@ -73,12 +75,12 @@ struct ParamTraits<mozilla::dom::MediaControlAction> {
 
   static void Write(MessageWriter* aWriter, const paramType& aParam) {
     WriteParam(aWriter, aParam.mKey);
-    WriteParam(aWriter, aParam.mDetails);
+    WriteParam(aWriter, aParam.mParams);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
     if (!ReadParam(aReader, &aResult->mKey) ||
-        !ReadParam(aReader, &aResult->mDetails)) {
+        !ReadParam(aReader, &aResult->mParams)) {
       return false;
     }
     return true;

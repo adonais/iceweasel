@@ -18,6 +18,9 @@ enum MediaControlKey {
   "skipad",
   "seekto",
   "stop",
+  "mute",
+  "unmute",
+  "setvolume",
 };
 
 /**

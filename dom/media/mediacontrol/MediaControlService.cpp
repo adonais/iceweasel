@@ -253,12 +253,16 @@ void MediaControlService::GenerateTestMediaControlKey(MediaControlKey aKey,
   switch (aKey) {
     case MediaControlKey::Seekto:
       mMediaKeysHandler->OnActionPerformed(MediaControlAction(
-          aKey, SeekDetails(aSeekValue, false /* fast seek */)));
+          aKey, MediaControlActionParams(aSeekValue, false /* fast seek */)));
       break;
     case MediaControlKey::Seekbackward:
     case MediaControlKey::Seekforward:
       mMediaKeysHandler->OnActionPerformed(
-          MediaControlAction(aKey, SeekDetails(aSeekValue)));
+          MediaControlAction(aKey, MediaControlActionParams(aSeekValue)));
+      break;
+    case MediaControlKey::Setvolume:
+      mMediaKeysHandler->OnActionPerformed(MediaControlAction(
+          aKey, MediaControlActionParams::FromVolume(aSeekValue)));
       break;
     default:
       mMediaKeysHandler->OnActionPerformed(MediaControlAction(aKey));

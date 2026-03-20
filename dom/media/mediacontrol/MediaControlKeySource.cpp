@@ -63,27 +63,39 @@ void MediaControlKeyHandler::OnActionPerformed(
       controller->NextTrack();
       return;
     case MediaControlKey::Seekbackward: {
-      const SeekDetails& details = *aAction.mDetails;
-      MOZ_ASSERT(details.mRelativeSeekOffset);
-      controller->SeekBackward(fmin(details.mRelativeSeekOffset.value(), 10.0));
+      const MediaControlActionParams& params = aAction.mParams;
+      MOZ_ASSERT(params.mRelativeSeekOffset);
+      controller->SeekBackward(fmin(params.mRelativeSeekOffset.value(), 10.0));
       return;
     }
     case MediaControlKey::Seekforward: {
-      const SeekDetails& details = *aAction.mDetails;
-      MOZ_ASSERT(details.mRelativeSeekOffset);
-      controller->SeekForward(fmin(details.mRelativeSeekOffset.value(), 10.0));
+      const MediaControlActionParams& params = aAction.mParams;
+      MOZ_ASSERT(params.mRelativeSeekOffset);
+      controller->SeekForward(fmin(params.mRelativeSeekOffset.value(), 10.0));
       return;
     }
     case MediaControlKey::Skipad:
       controller->SkipAd();
       return;
     case MediaControlKey::Seekto: {
-      const SeekDetails& details = *aAction.mDetails;
-      MOZ_ASSERT(details.mAbsolute);
-      controller->SeekTo(details.mAbsolute->mSeekTime,
-                         details.mAbsolute->mFastSeek);
+      const MediaControlActionParams& params = aAction.mParams;
+      MOZ_ASSERT(params.mAbsolute);
+      controller->SeekTo(params.mAbsolute->mSeekTime,
+                         params.mAbsolute->mFastSeek);
       return;
     }
+    case MediaControlKey::Setvolume: {
+      const MediaControlActionParams& params = aAction.mParams;
+      MOZ_ASSERT(params.mVolume);
+      controller->SetVolume(params.mVolume.value());
+      return;
+    }
+    case MediaControlKey::Mute:
+      controller->Mute();
+      return;
+    case MediaControlKey::Unmute:
+      controller->Unmute();
+      return;
     case MediaControlKey::Stop:
       controller->Stop();
       return;
