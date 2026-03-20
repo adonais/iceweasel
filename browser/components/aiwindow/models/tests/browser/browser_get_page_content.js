@@ -69,8 +69,8 @@ add_task(async function test_get_page_content_basic() {
     "Text should contain text from the second paragraph"
   );
   ok(
-    result.startsWith("Content (") && result.includes(") from"),
-    "Text should indicate the extraction mode used"
+    result.startsWith("Content from"),
+    "Text should start with content prefix"
   );
 
   await cleanup();

@@ -10,6 +10,26 @@ const TOKEN_LABELS = {
 };
 
 /**
+ * @import { ContextWebsite } from "chrome://browser/content/urlbar/SmartbarInput.mjs"
+ */
+
+/**
+ * The text content for a conversation.
+ *
+ * @typedef {object} TextContent
+ * @property {"text"} type - The type discriminator.
+ * @property {string} body - The body of the content.
+ * @property {Array<ContextWebsite>} [contextMentions] - The mentioned websites.
+ * @property {string} [contextPageUrl] - The URL of the context.
+ */
+
+/**
+ * @typedef {object} FunctionContent
+ * @property {"function"} type - The type discriminator
+ * @property {{tool_calls: Array<any>}} body - The body of the content.
+ */
+
+/**
  * A message in a conversation.
  */
 export class ChatMessage {
@@ -23,6 +43,12 @@ export class ChatMessage {
   modelId;
   params;
   usage;
+
+  /**
+   * The message content object.
+   *
+   * @type {TextContent | FunctionContent}
+   */
   content;
   convId;
   pageUrl;

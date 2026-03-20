@@ -252,12 +252,14 @@ add_task(async function test_chat_tool_call_get_page_content() {
         Assert.ok(
           Array.isArray(contentArray) &&
             typeof contentArray[0] === "string" &&
-            contentArray[0].includes("Headline Body text."),
+            contentArray[0].includes("Headline") &&
+            contentArray[0].includes("Body text."),
           "Page content should be extracted"
         );
       }
     );
   } finally {
+    window.document.documentElement.removeAttribute("ai-window");
     BrowserTestUtils.removeTab(tab);
     await new Promise(resolve => pageServer.stop(resolve));
   }

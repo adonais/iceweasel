@@ -34,6 +34,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 /**
+ * @import { ChatConversation } from "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
+ */
+
+/**
  * Chat
  */
 export const Chat = {};
@@ -227,7 +231,11 @@ Object.assign(Chat, {
             conversation._searchExecutedTurn = currentTurn;
           } else if (toolName === "get_page_content") {
             const startTime = new Date();
-            result = await toolFunc(params, undefined, secProps);
+            result = await toolFunc(
+              params,
+              conversation.getAllMentionURLs(),
+              secProps
+            );
             Glean.smartWindow.getPageContent.record({
               location: context?.telemetry?.location,
               chat_id: conversation.id,

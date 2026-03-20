@@ -46,18 +46,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
 // some users can have thousands of tabs open at once.
 const MAX_TABS = 15;
 
-// Allow list of URL protocols for tabs exposed to the LLM. Only http/https are
+// Allow list of URL protocols for tabs and pages exposed to the LLM. Only http/https are
 // permitted; internal (about:, chrome:, moz-extension:, file:, data:, etc.)
-// URLs are excluded to reduce the attack surface for prompt injection.
-const ALLOWED_TAB_PROTOCOLS = new Set(["http:", "https:"]);
+const ALLOWED_URL_PROTOCOLS = new Set(["http:", "https:"]);
 
 /**
  * @param {string} url
  * @returns {boolean}
  */
-function isAllowedTabUrl(url) {
+function isAllowedURL(url) {
   try {
-    return ALLOWED_TAB_PROTOCOLS.has(new URL(url).protocol);
+    return ALLOWED_URL_PROTOCOLS.has(new URL(url).protocol);
   } catch {
     return false;
   }
@@ -248,7 +247,7 @@ export async function getOpenTabs(_params, securityProperties) {
         const url = browser?.currentURI?.spec;
         const title = tab.label;
 
-        if (isAllowedTabUrl(url) && !isNewPageUrl(url)) {
+        if (isAllowedURL(url) && !isNewPageUrl(url)) {
           tabs.push({
             url,
             title: truncateUntrustedMetadata(title),
@@ -628,131 +627,103 @@ export class RunSearch {
  * Class for handling page content extraction with configurable modes and limits.
  */
 export class GetPageContent {
-  static DEFAULT_MODE = "reader";
-  static FALLBACK_MODE = "full";
   static MAX_CHARACTERS = 10000;
-
-  /**
-   * @type {Record<string, (pageExtractor: PageExtractor) => Promise<{ text: string }>>}
-   */
-  static MODE_HANDLERS = {
-    viewport: async pageExtractor =>
-      pageExtractor.getText({ justViewport: true }),
-    reader: async pageExtractor => pageExtractor.getReaderModeContent(),
-    full: async pageExtractor => pageExtractor.getText(),
-  };
 
   /**
    * Tool entrypoint for get_page_content.
    *
    * @param {object} toolParams
    * @param {string[]} toolParams.url_list
-   * @param {Set<string>} allowedUrls
+   * @param {Set<string>} mentionedUrls
    * @param {SecurityProperties} securityProperties
    * @returns {Promise<Array<string>>}
    *  A promise resolving to a string containing the extracted page content
    *  with a descriptive header, or an error message if extraction fails.
    */
-  static async getPageContent(
-    { url_list },
-    allowedUrls = new Set(),
-    securityProperties
-  ) {
-    // Ensure `url_list` is always an array
+  static async getPageContent({ url_list }, mentionedUrls, securityProperties) {
+    // This is a decision table for allowing and blocking fetches on the configuration of the
+    // SecurityProperties and the URLs. Tab URLs don't do any new page loads. Mention urls
+    // have been added by the user so they should be allowed. And all other URLs are
+    // restricted when both private and untrusted data has been seen.
+    //
+    // │ Flags               │ tab urls │ mention urls │ any urls │
+    // ├─────────────────────┼──────────┼──────────────┼──────────┤
+    // │ Private only        │ ALLOW    │ ALLOW        │ ALLOW    │
+    // │ Untrusted only      │ ALLOW    │ ALLOW        │ ALLOW    │
+    // │ Private + Untrusted │ ALLOW    │ ALLOW        │ BLOCK    │
+
+    // Sanitize the inputs from the language model:
     if (!Array.isArray(url_list)) {
-      throw new Error("getPageContent now requires { url_list: [...] }");
+      throw new Error("The url list must be an array of stirngs");
     }
 
-    const promises = url_list.map(url =>
-      GetPageContent.#processSingleURL(url, allowedUrls, securityProperties)
+    return Promise.all(
+      url_list.map(async (url, index) => {
+        if (!isAllowedURL(url)) {
+          return "This URL is not allowed: " + url;
+        }
+        try {
+          const text = await GetPageContent.#getPageContentsForSingleURL(
+            url,
+            mentionedUrls,
+            securityProperties
+          );
+          return text;
+        } catch (error) {
+          console.error(error);
+          return `Could not retrieve the content for the page: ${url_list[index]}`;
+        }
+      })
     );
-
-    // Run all fetches in parallel
-    const ret_contents = await Promise.all(promises);
-    securityProperties.setPrivateData();
-    securityProperties.setUntrustedInput();
-    return ret_contents;
   }
 
-  static async #processSingleURL(url, allowedUrls, securityProperties) {
-    try {
-      // Search through the allowed URLs and extract directly if exists
-      if (!allowedUrls.has(url)) {
-        //  Bug 2006418  - This will load the page headlessly, and then extract the content.
-        // It might be a better idea to have the lifetime of the page be tied to the chat
-        // while it's open, and with a "keep alive" timeout. For now it's simpler to just
-        // load the page fresh every time.
-        if (
-          securityProperties.untrustedInput &&
-          securityProperties.privateData
-        ) {
-          return `get_page_content is not available for ${url} when the conversation involves both untrusted input and private data.`;
-        }
-        return PageExtractorParent.getHeadlessExtractor(url, pageExtractor =>
-          GetPageContent.#runExtraction(
-            pageExtractor,
-            GetPageContent.DEFAULT_MODE,
-            url
-          )
-        );
+  /**
+   * Search through all AI Windows to find the tab with the matching URL.
+   *
+   * @param {string} url
+   * @returns {Tab | null}
+   */
+  static getTabWithURL(url) {
+    for (const win of lazy.BrowserWindowTracker.orderedWindows) {
+      if (!lazy.AIWindow.isAIWindowActive(win) || win.closed || !win.gBrowser) {
+        continue;
       }
 
-      // Search through all AI Windows to find the tab with the matching URL
-      let targetTab = null;
-      for (const win of lazy.BrowserWindowTracker.orderedWindows) {
-        if (!lazy.AIWindow.isAIWindowActive(win)) {
-          continue;
-        }
-
-        if (!win.closed && win.gBrowser) {
-          const tabs = win.gBrowser.tabs;
-
-          // Find the tab with the matching URL in this window
-          for (let i = 0; i < tabs.length; i++) {
-            const tab = tabs[i];
-            const currentURI = tab?.linkedBrowser?.currentURI;
-            if (currentURI?.spec === url) {
-              targetTab = tab;
-              break;
-            }
-          }
-
-          // If no match, try hostname matching for cases where protocols differ
-          if (!targetTab) {
-            try {
-              const inputHostPort = new URL(url).host;
-              targetTab = tabs.find(tab => {
-                try {
-                  const tabHostPort = tab.linkedBrowser.currentURI.hostPort;
-                  return tabHostPort === inputHostPort;
-                } catch {
-                  return false;
-                }
-              });
-            } catch {
-              // Invalid URL, continue with original logic
-            }
-          }
-
-          // If we found the tab, stop searching
-          if (targetTab) {
-            break;
-          }
+      for (const tab of win.gBrowser.tabs) {
+        if (tab?.linkedBrowser?.currentURI?.spec === url) {
+          return tab;
         }
       }
+    }
 
-      // If still no match, abort
-      if (!targetTab) {
-        return `Cannot find URL: ${url}, page content extraction failed.`;
-      }
+    return null;
+  }
 
-      // Attempt extraction
+  /**
+   * @param {string} url
+   * @param {Set<string>} mentionedUrls
+   * @param {object} securityProperties
+   *
+   * @returns {Promise<string>}
+   */
+  static async #getPageContentsForSingleURL(
+    url,
+    mentionedUrls,
+    securityProperties
+  ) {
+    // First try to get the contents from an existing tab. This is always allowed from
+    // a security perspective as it doesn't involve a network request, so there is
+    // no risk for data exfiltration.
+    const tab = GetPageContent.getTabWithURL(url);
+    if (tab) {
+      // Extract the tab contents.
       const currentWindowContext =
-        targetTab.linkedBrowser.browsingContext?.currentWindowContext;
+        tab.linkedBrowser.browsingContext?.currentWindowContext;
 
       if (!currentWindowContext) {
-        return `Cannot access content from "${truncateUntrustedMetadata(targetTab.label)}" at ${url}.`;
-        // Stripped message "The tab may still be loading or is not accessible." to not confuse the LLM
+        // The tab may still be loading or is not accessible. Just tell the language
+        // model that the content is not accessible to not confuse it.
+        return `Cannot access content from the tab "${truncateUntrustedMetadata(tab.label)}" at ${url}.`;
       }
 
       // Extract page content using PageExtractor
@@ -761,16 +732,29 @@ export class GetPageContent {
 
       return GetPageContent.#runExtraction(
         pageExtractor,
-        GetPageContent.DEFAULT_MODE,
-        `"${truncateUntrustedMetadata(targetTab.label)}" (${url})`
+        securityProperties,
+        `"${truncateUntrustedMetadata(tab.label)}" (${url})`
       );
-    } catch (error) {
-      // Bug 2006425 - Decide on the strategy for error handling in tool calls
-      // i.e., will the LLM keep retrying get_page_content due to error?
-      console.error(error);
-      return `Error retrieving content from ${url}.`;
-      // Stripped ${error.message} content to not confuse the LLM
     }
+
+    // Fetch the page headlessly since it's not loaded as a tab. This requires elevated
+    // security permissions since an external network request is required, and is a
+    // risk for the exfiltration of private data. If the URL is mentioned by the user
+    // then the security properties check is bypassed here.
+    if (
+      !mentionedUrls.has(url) &&
+      securityProperties.untrustedInput &&
+      securityProperties.privateData
+    ) {
+      return (
+        `Access is not allowed for ${url} because of untrusted and private content ` +
+        "in the conversation."
+      );
+    }
+
+    return PageExtractorParent.getHeadlessExtractor(url, pageExtractor =>
+      GetPageContent.#runExtraction(pageExtractor, securityProperties, url)
+    );
   }
 
   /**
@@ -778,90 +762,30 @@ export class GetPageContent {
    * label is of form `{tab.title} ({tab.url})`.
    *
    * @param {PageExtractor} pageExtractor
-   * @param {string} mode
+   * @param {SecurityProperties} securityProperties
    * @param {string} label
    * @returns {Promise<string>}
    *  A promise resolving to a formatted string containing the page content
    *  with mode and label information, or an error message if no content is available.
    */
-  static async #runExtraction(pageExtractor, mode, label) {
-    const selectedMode =
-      typeof mode === "string" && GetPageContent.MODE_HANDLERS[mode]
-        ? mode
-        : GetPageContent.DEFAULT_MODE;
-    const handler = GetPageContent.MODE_HANDLERS[selectedMode];
-    let extraction = null;
+  static async #runExtraction(pageExtractor, securityProperties, label) {
+    const { text } = await pageExtractor.getText({
+      sufficientLength: GetPageContent.MAX_CHARACTERS,
+      cleanWhitespace: true,
+      removeBoilerplate: true,
+    });
 
-    try {
-      extraction = await handler(pageExtractor);
-    } catch (err) {
-      console.error(
-        "[SmartWindow] get_page_content mode failed",
-        selectedMode,
-        err
-      );
+    if (!text) {
+      return `get_page_content returned no content for ${label}.`;
     }
 
-    let pageContent = extraction?.text ?? "";
+    // If an extraction succeeds set the security properties.
+    // The page content is private since it uses a web page load that has credentials.
+    // The information is untrusted since it's arbitrary web content.
+    securityProperties.setPrivateData();
+    securityProperties.setUntrustedInput();
 
-    // Track which mode was actually used (in case we fall back)
-    let actualMode = selectedMode;
-
-    // If reader mode returns no content, fall back to full mode
-    if (!pageContent && selectedMode === "reader") {
-      try {
-        const fallbackHandler =
-          GetPageContent.MODE_HANDLERS[GetPageContent.FALLBACK_MODE];
-        extraction = await fallbackHandler(pageExtractor);
-        pageContent = extraction?.text ?? "";
-        if (pageContent) {
-          actualMode = GetPageContent.FALLBACK_MODE;
-        }
-      } catch (err) {
-        console.error(
-          "[SmartWindow] get_page_content fallback mode failed",
-          GetPageContent.FALLBACK_MODE,
-          err
-        );
-      }
-    }
-
-    if (!pageContent) {
-      return `get_page_content(${selectedMode}) returned no content for ${label}.`;
-      // Stripped message "Try another mode if you still need information." to not confuse the LLM
-    }
-
-    // Clean and truncate content for better LLM consumption
-    //  Bug 2006436 - Consider doing this directly in pageExtractor if absolutely needed.
-    let cleanContent = pageContent
-      .replace(/\s+/g, " ") // Normalize whitespace
-      .replace(/\n\s*\n/g, "\n") // Clean up line breaks
-      .trim();
-
-    // Limit content length but be more generous for LLM processing
-    // Bug 1995043 - once reader mode has length truncation,
-    // we can remove this and directly do this in pageExtractor.
-    if (cleanContent.length > GetPageContent.MAX_CHARACTERS) {
-      // Try to cut at a sentence boundary
-      const truncatePoint = cleanContent.lastIndexOf(
-        ".",
-        GetPageContent.MAX_CHARACTERS
-      );
-      if (truncatePoint > GetPageContent.MAX_CHARACTERS - 100) {
-        cleanContent = cleanContent.substring(0, truncatePoint + 1);
-      } else {
-        cleanContent =
-          cleanContent.substring(0, GetPageContent.MAX_CHARACTERS) + "...";
-      }
-    }
-
-    const modeLabel = {
-      viewport: "current viewport",
-      reader: "reader mode",
-      full: "full page",
-    }[actualMode];
-
-    return `Content (${modeLabel}) from ${label}:\n\n${cleanContent}`;
+    return `Content from ${label}:\n\n${text}`;
   }
 }
 

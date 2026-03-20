@@ -798,19 +798,28 @@ export class AIWindow extends MozLitElement {
       // 1. contextMentions: "+" button mentions + implicit current tab (sidebar)
       // 2. Inline "@" mentions from the editor's mentions plugin
       const mentionUrls = new Set();
+      const allMentions = [];
 
       if (contextMentions?.length) {
         for (const mention of contextMentions) {
           if (mention.url) {
             mentionUrls.add(mention.url);
+            allMentions.push(mention);
           }
         }
       }
 
       const inlineMentions = this.#getInlineMentions();
+
       for (const mention of inlineMentions) {
         if (mention.id) {
           mentionUrls.add(mention.id);
+          // Add the missing inline mentions.
+          allMentions.push({
+            type: mention.type,
+            url: mention.id,
+            label: mention.label,
+          });
         }
       }
 
@@ -822,7 +831,7 @@ export class AIWindow extends MozLitElement {
           }
         }
       }
-      this.submitChatMessage(value, contextMentions, contextPageUrl);
+      this.submitChatMessage(value, allMentions, contextPageUrl);
     } else if (
       this.mode === MODE.SIDEBAR &&
       (action === ACTION.NAVIGATE || action === ACTION.SEARCH)

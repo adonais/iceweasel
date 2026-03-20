@@ -63,6 +63,7 @@ export class ChatConversation extends EventEmitter {
   updatedDate;
   status;
   securityProperties;
+  /** @type {ChatMessage[]} */
   #messages;
   #minNextOrdinal = 0;
   activeBranchTipMessageId;
@@ -267,6 +268,26 @@ export class ChatConversation extends EventEmitter {
     const newMessage = new ChatMessage(messageData);
 
     this.messages.push(newMessage);
+  }
+
+  /**
+   * Gets any URL mentioned in the conversation. These URLs have heightened security
+   * permissions as they have been explicitly added to the conversation by the user.
+   *
+   * @returns {Set<string>}
+   */
+  getAllMentionURLs() {
+    /** @type {Set<string>} */
+    const mentionUrls = new Set();
+    for (const message of this.#messages) {
+      const { contextMentions } = message.content;
+      if (contextMentions) {
+        for (const { url } of contextMentions) {
+          mentionUrls.add(url);
+        }
+      }
+    }
+    return mentionUrls;
   }
 
   /**
