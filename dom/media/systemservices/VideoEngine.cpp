@@ -42,89 +42,13 @@ int VideoEngine::SetAndroidObjects() {
 }
 #endif
 
-int32_t VideoEngine::CreateVideoCapture(const char* aDeviceUniqueIdUTF8,
-                                        uint64_t aWindowID) {
+VideoCaptureFactory::CreateVideoCaptureResult VideoEngine::CreateVideoCapture(
+    int32_t aCaptureId, const char* aDeviceUniqueIdUTF8) {
   LOG(("%s", __PRETTY_FUNCTION__));
   MOZ_ASSERT(aDeviceUniqueIdUTF8);
 
-  for (auto& it : mSharedCapturers) {
-    if (it.second.VideoCapture() &&
-        it.second.VideoCapture()->CurrentDeviceName() &&
-        strcmp(it.second.VideoCapture()->CurrentDeviceName(),
-               aDeviceUniqueIdUTF8) == 0) {
-      int32_t id = GenerateId();
-      LOG(("%sVideoEngine::%s(device=\"%s\", window=%" PRIu64
-           "): Reusing capturer with id %d. stream id=%d",
-           EnumValueToString(mCaptureDevType), __func__, aDeviceUniqueIdUTF8,
-           aWindowID, it.first, id));
-      mIdToCapturerMap.emplace(id, CaptureHandle{.mCaptureEntryNum = it.first,
-                                                 .mWindowID = aWindowID});
-      return id;
-    }
-  }
-
-  int32_t id = GenerateId();
-
-  VideoCaptureFactory::CreateVideoCaptureResult capturer =
-      mVideoCaptureFactory->CreateVideoCapture(id, aDeviceUniqueIdUTF8,
-                                               mCaptureDevType);
-
-  if (!capturer.mCapturer) {
-    LOG(("%sVideoEngine::%s(device=\"%s\", window=%" PRIu64
-         "): Creating video capturer for id %d failed.",
-         EnumValueToString(mCaptureDevType), __func__, aDeviceUniqueIdUTF8,
-         aWindowID, id));
-    return -1;
-  }
-
-  auto entry =
-      CaptureEntry(id, std::move(capturer.mCapturer), capturer.mDesktopImpl);
-
-  LOG(("%sVideoEngine::%s(device=\"%s\", window=%" PRIu64
-       "): Created new video capturer for id %d.",
-       EnumValueToString(mCaptureDevType), __func__, aDeviceUniqueIdUTF8,
-       aWindowID, id));
-
-  mSharedCapturers.emplace(id, std::move(entry));
-  mIdToCapturerMap.emplace(
-      id, CaptureHandle{.mCaptureEntryNum = id, .mWindowID = aWindowID});
-  return id;
-}
-
-int VideoEngine::ReleaseVideoCapture(const int32_t aId) {
-  bool found = false;
-
-#ifdef DEBUG
-  {
-    auto it = mIdToCapturerMap.find(aId);
-    MOZ_ASSERT(it != mIdToCapturerMap.end());
-    (void)it;
-  }
-#endif
-
-  for (auto& it : mIdToCapturerMap) {
-    if (it.first != aId &&
-        it.second.mCaptureEntryNum == mIdToCapturerMap[aId].mCaptureEntryNum) {
-      // There are other tracks still using this hardware.
-      found = true;
-    }
-  }
-
-  if (!found) {
-    WithEntry(aId, [&found](CaptureEntry& cap) {
-      cap.mVideoCaptureModule = nullptr;
-      found = true;
-    });
-    MOZ_ASSERT(found);
-    if (found) {
-      auto it = mSharedCapturers.find(mIdToCapturerMap[aId].mCaptureEntryNum);
-      MOZ_ASSERT(it != mSharedCapturers.end());
-      mSharedCapturers.erase(it);
-    }
-  }
-
-  mIdToCapturerMap.erase(aId);
-  return found ? 0 : (-1);
+  return mVideoCaptureFactory->CreateVideoCapture(
+      aCaptureId, aDeviceUniqueIdUTF8, mCaptureDevType);
 }
 
 std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo>
@@ -173,7 +97,7 @@ VideoEngine::GetOrCreateVideoCaptureDeviceInfo() {
     mDeviceInfo->DeRegisterVideoInputFeedBack(this);
   }
 
-  mDeviceInfo = mVideoCaptureFactory->CreateDeviceInfo(mId, mCaptureDevType);
+  mDeviceInfo = mVideoCaptureFactory->CreateDeviceInfo(mCaptureDevType);
 
   if (mDeviceInfo && mCaptureDevType == CaptureDeviceType::Camera) {
     mDeviceInfo->RegisterVideoInputFeedBack(this);
@@ -201,88 +125,18 @@ already_AddRefed<VideoEngine> VideoEngine::Create(
       new VideoEngine(aCaptureDeviceType, std::move(aVideoCaptureFactory)));
 }
 
-VideoEngine::CaptureEntry::CaptureEntry(
-    int32_t aCapnum, webrtc::scoped_refptr<webrtc::VideoCaptureModule> aCapture,
-    webrtc::DesktopCaptureImpl* aDesktopImpl)
-    : mCapnum(aCapnum),
-      mVideoCaptureModule(std::move(aCapture)),
-      mDesktopImpl(aDesktopImpl) {}
-
-webrtc::scoped_refptr<webrtc::VideoCaptureModule>
-VideoEngine::CaptureEntry::VideoCapture() {
-  return mVideoCaptureModule;
-}
-
-mozilla::MediaEventSource<void>*
-VideoEngine::CaptureEntry::CaptureEndedEvent() {
-  if (!mDesktopImpl) {
-    return nullptr;
-  }
-#if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS)
-  return mDesktopImpl->CaptureEndedEvent();
-#else
-  return nullptr;
-#endif
-}
-
-int32_t VideoEngine::CaptureEntry::Capnum() const { return mCapnum; }
-
-bool VideoEngine::WithEntry(
-    const int32_t entryCapnum,
-    const std::function<void(CaptureEntry& entry)>&& fn) {
-#ifdef DEBUG
-  {
-    auto it = mIdToCapturerMap.find(entryCapnum);
-    MOZ_ASSERT(it != mIdToCapturerMap.end());
-    (void)it;
-  }
-#endif
-
-  auto it =
-      mSharedCapturers.find(mIdToCapturerMap[entryCapnum].mCaptureEntryNum);
-  MOZ_ASSERT(it != mSharedCapturers.end());
-  if (it == mSharedCapturers.end()) {
-    return false;
-  }
-  fn(it->second);
-  return true;
-}
-
-bool VideoEngine::IsWindowCapturing(uint64_t aWindowID,
-                                    const nsCString& aUniqueIdUTF8) {
-  Maybe<int32_t> sharedId;
-  for (auto& [id, entry] : mSharedCapturers) {
-    if (entry.VideoCapture() && entry.VideoCapture()->CurrentDeviceName() &&
-        strcmp(entry.VideoCapture()->CurrentDeviceName(),
-               aUniqueIdUTF8.get()) == 0) {
-      sharedId = Some(id);
-      break;
-    }
-  }
-  if (!sharedId) {
-    return false;
-  }
-  for (auto& [id, handle] : mIdToCapturerMap) {
-    if (handle.mCaptureEntryNum == *sharedId && handle.mWindowID == aWindowID) {
-      return true;
-    }
-  }
-  return false;
-}
-
 int32_t VideoEngine::GenerateId() {
   // XXX Something better than this (a map perhaps, or a simple boolean TArray,
   // given the number in-use is O(1) normally!)
   static int sId = 0;
-  return mId = sId++;
+  return sId++;
 }
 
 void VideoEngine::OnDeviceChange() { mDeviceChangeEvent.Notify(); }
 
 VideoEngine::VideoEngine(const CaptureDeviceType& aCaptureDeviceType,
                          RefPtr<VideoCaptureFactory> aVideoCaptureFactory)
-    : mId(0),
-      mCaptureDevType(aCaptureDeviceType),
+    : mCaptureDevType(aCaptureDeviceType),
       mVideoCaptureFactory(std::move(aVideoCaptureFactory)),
       mDeviceInfo(nullptr) {
   MOZ_ASSERT(mVideoCaptureFactory);
@@ -291,10 +145,7 @@ VideoEngine::VideoEngine(const CaptureDeviceType& aCaptureDeviceType,
        EnumValueToString(mCaptureDevType)));
 }
 
-VideoEngine::~VideoEngine() {
-  MOZ_ASSERT(mSharedCapturers.empty());
-  MOZ_ASSERT(mIdToCapturerMap.empty());
-}
+VideoEngine::~VideoEngine() = default;
 
 #undef LOG
 #undef LOG_ENABLED

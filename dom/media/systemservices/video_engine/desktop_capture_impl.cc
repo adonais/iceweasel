@@ -32,7 +32,6 @@
 #include "nsThreadUtils.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
-#include "rtc_base/trace_event.h"
 #include "tab_capturer.h"
 
 #ifdef XP_MACOSX
@@ -51,10 +50,10 @@ static void CaptureFrameOnThread(nsITimer* aTimer, void* aClosure) {
 
 namespace webrtc {
 
-DesktopCaptureImpl* DesktopCaptureImpl::Create(const int32_t aModuleId,
+DesktopCaptureImpl* DesktopCaptureImpl::Create(int32_t aCaptureId,
                                                const char* aUniqueId,
                                                const CaptureDeviceType aType) {
-  return new webrtc::RefCountedObject<DesktopCaptureImpl>(aModuleId, aUniqueId,
+  return new webrtc::RefCountedObject<DesktopCaptureImpl>(aCaptureId, aUniqueId,
                                                           aType);
 }
 
@@ -115,8 +114,7 @@ static DesktopCaptureOptions CreateDesktopCaptureOptions() {
 }
 
 std::shared_ptr<VideoCaptureModule::DeviceInfo>
-DesktopCaptureImpl::CreateDeviceInfo(const int32_t aId,
-                                     const CaptureDeviceType aType) {
+DesktopCaptureImpl::CreateDeviceInfo(const CaptureDeviceType aType) {
   if (aType == CaptureDeviceType::Screen) {
     auto options = CreateDesktopCaptureOptions();
 #ifdef XP_MACOSX
@@ -126,14 +124,14 @@ DesktopCaptureImpl::CreateDeviceInfo(const int32_t aId,
       options.set_allow_sck_capturer(false);
     }
 #endif
-    return CreateDesktopDeviceInfo(aId, CreateScreenCaptureInfo(options));
+    return CreateDesktopDeviceInfo(CreateScreenCaptureInfo(options));
   }
   if (aType == CaptureDeviceType::Window) {
     return CreateDesktopDeviceInfo(
-        aId, CreateWindowCaptureInfo(CreateDesktopCaptureOptions()));
+        CreateWindowCaptureInfo(CreateDesktopCaptureOptions()));
   }
   if (aType == CaptureDeviceType::Browser) {
-    return CreateTabDeviceInfo(aId, CreateTabCaptureInfo());
+    return CreateTabDeviceInfo(CreateTabCaptureInfo());
   }
   return nullptr;
 }
@@ -253,10 +251,10 @@ static std::unique_ptr<DesktopCapturer> CreateDesktopCapturerAndThread(
   return capturer;
 }
 
-DesktopCaptureImpl::DesktopCaptureImpl(const int32_t aId, const char* aUniqueId,
+DesktopCaptureImpl::DesktopCaptureImpl(int32_t aCaptureId,
+                                       const char* aUniqueId,
                                        const CaptureDeviceType aType)
-    : mModuleId(aId),
-      mTrackingId(mozilla::TrackingId(CaptureEngineToTrackingSourceStr([&] {
+    : mTrackingId(mozilla::TrackingId(CaptureEngineToTrackingSourceStr([&] {
                                         switch (aType) {
                                           case CaptureDeviceType::Screen:
                                             return CaptureEngine::ScreenEngine;
@@ -268,7 +266,7 @@ DesktopCaptureImpl::DesktopCaptureImpl(const int32_t aId, const char* aUniqueId,
                                             return CaptureEngine::InvalidEngine;
                                         }
                                       }()),
-                                      aId)),
+                                      aCaptureId)),
       mDeviceUniqueId(aUniqueId),
       mDeviceType(aType),
       mControlThread(mozilla::GetCurrentSerialEventTarget()),
