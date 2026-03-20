@@ -8,13 +8,13 @@ way, and certainly anything using mozharness should use this approach.
 
 """
 
+import re
 from textwrap import dedent
+from typing import Literal, Optional, Union
 
 from mozpack import path as mozpath
 from taskgraph.util import json
-from taskgraph.util.schema import LegacySchema
-from voluptuous import Any, Optional, Required
-from voluptuous.validators import Match
+from taskgraph.util.schema import Schema
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
 from gecko_taskgraph.transforms.job.common import (
@@ -25,70 +25,78 @@ from gecko_taskgraph.transforms.job.common import (
 )
 from gecko_taskgraph.util.attributes import is_try
 
-mozharness_run_schema = LegacySchema({
-    Required("using"): "mozharness",
+
+class MozharnessRunSchema(Schema, kw_only=True):
+    using: Literal["mozharness"]
     # the mozharness script used to run this task, relative to the testing/
     # directory and using forward slashes even on Windows
-    Required("script"): str,
+    script: str
     # Additional paths to look for mozharness configs in. These should be
     # relative to the base of the source checkout
-    Optional("config-paths"): [str],
+    config_paths: Optional[list[str]] = None
     # the config files required for the task, relative to
     # testing/mozharness/configs or one of the paths specified in
     # `config-paths` and using forward slashes even on Windows
-    Required("config"): [str],
+    config: list[str]
     # any additional actions to pass to the mozharness command
-    Optional("actions"): [
-        Match("^[a-z0-9-]+$", "actions must be `-` seperated alphanumeric strings")
-    ],
+    actions: Optional[list[str]] = None
     # any additional options (without leading --) to be passed to mozharness
-    Optional("options"): [
-        Match(
-            "^[a-z0-9-]+(=[^ ]+)?$",
-            "options must be `-` seperated alphanumeric strings (with optional argument)",
-        )
-    ],
+    options: Optional[list[str]] = None
     # --custom-build-variant-cfg value
-    Optional("custom-build-variant-cfg"): str,
+    custom_build_variant_cfg: Optional[str] = None
     # Extra configuration options to pass to mozharness.
-    Optional("extra-config"): dict,
+    extra_config: Optional[dict] = None
     # If not false, tooltool downloads will be enabled via relengAPIProxy
     # for either just public files, or all files.  Not supported on Windows
-    Required("tooltool-downloads"): Any(
-        False,
-        "public",
-        "internal",
-    ),
+    tooltool_downloads: Union[bool, Literal["public", "internal"]]
     # The set of secret names to which the task has access; these are prefixed
     # with `project/releng/gecko/{treeherder.kind}/level-{level}/`.  Setting
     # this will enable any worker features required and set the task's scopes
     # appropriately.  `true` here means ['*'], all secrets.  Not supported on
     # Windows
-    Required("secrets"): Any(bool, [str]),
+    secrets: Union[bool, list[str]]
     # If true, taskcluster proxy will be enabled; note that it may also be enabled
     # automatically e.g., for secrets support.  Not supported on Windows.
-    Required("taskcluster-proxy"): bool,
+    taskcluster_proxy: bool
     # If false, indicate that builds should skip producing artifacts.  Not
     # supported on Windows.
-    Required("keep-artifacts"): bool,
+    keep_artifacts: bool
     # If specified, use the in-tree job script specified.
-    Optional("job-script"): str,
-    Required("requires-signed-builds"): bool,
+    job_script: Optional[str] = None
+    requires_signed_builds: bool
     # Whether or not to use caches.
-    Optional("use-caches"): Any(bool, [str]),
+    use_caches: Optional[Union[bool, list[str]]] = None
     # If false, don't set MOZ_SIMPLE_PACKAGE_NAME
     # Only disableable on windows
-    Required("use-simple-package"): bool,
+    use_simple_package: bool
     # If false don't pass --branch mozharness script
     # Only disableable on windows
-    Required("use-magic-mh-args"): bool,
+    use_magic_mh_args: bool
     # if true, perform a checkout of a comm-central based branch inside the
     # gecko checkout
-    Required("comm-checkout"): bool,
+    comm_checkout: bool
     # Base work directory used to set up the task.
-    Optional("workdir"): str,
-    Optional("run-as-root"): bool,
-})
+    workdir: Optional[str] = None
+    run_as_root: Optional[bool] = None
+
+    def __post_init__(self):
+        if self.tooltool_downloads is True:
+            raise ValueError(
+                "tooltool-downloads must be False, 'public', or 'internal'"
+            )
+        if self.actions:
+            for action in self.actions:
+                if not re.match(r"^[a-z0-9-]+$", action):
+                    raise ValueError(
+                        "actions must be `-` separated alphanumeric strings"
+                    )
+        if self.options:
+            for option in self.options:
+                if not re.match(r"^[a-z0-9-]+(=[^ ]+)?$", option):
+                    raise ValueError(
+                        "options must be `-` separated alphanumeric strings"
+                        " (with optional argument)"
+                    )
 
 
 mozharness_defaults = {
@@ -107,7 +115,7 @@ mozharness_defaults = {
 @run_job_using(
     "docker-worker",
     "mozharness",
-    schema=mozharness_run_schema,
+    schema=MozharnessRunSchema,
     defaults=mozharness_defaults,
 )
 def mozharness_on_docker_worker_setup(config, job, taskdesc):
@@ -200,7 +208,7 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
 @run_job_using(
     "generic-worker",
     "mozharness",
-    schema=mozharness_run_schema,
+    schema=MozharnessRunSchema,
     defaults=mozharness_defaults,
 )
 def mozharness_on_generic_worker(config, job, taskdesc):
