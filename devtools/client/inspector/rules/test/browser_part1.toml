@@ -3,6 +3,7 @@ tags = "devtools"
 subsuite = "devtools"
 support-files = [
   "doc_alert.svg",
+  "doc_anchor_names.html",
   "doc_at_scope.css",
   "doc_blob_stylesheet.html",
   "doc_copystyles.css",
@@ -69,6 +70,8 @@ support-files = [
 ["browser_rules_add-rule-with-menu.js"]
 
 ["browser_rules_add-rule.js"]
+
+["browser_rules_anchor-names-autocomplete.js"]
 
 ["browser_rules_at_scope.js"]
 

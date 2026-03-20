@@ -436,6 +436,7 @@ class TextPropertyEditor {
         multiline: true,
         maxWidth: () => this.container.getBoundingClientRect().width,
         cssProperties: this.cssProperties,
+        getCssAnchors: this.#getAnchorNames,
         getCssVariables,
         getGridLineNames: this.#getGridlineNames,
         showSuggestCompletionOnEmpty: true,
@@ -454,6 +455,27 @@ class TextPropertyEditor {
       });
     }
   }
+
+  /**
+   * Get the names of the anchors the currently selected element can be anchored to
+   *
+   * @return {Array<string>}
+   */
+  #getAnchorNames = async () => {
+    // @backward-compat { version 150 } This trait was added in 150, once we have it in
+    // release, we can remove this if block.
+    if (!this.ruleView.pageStyle.traits.hasGetAnchorNames) {
+      return [];
+    }
+
+    const names = await this.ruleView.pageStyle.getAnchorNames(
+      this.ruleView.inspector.selection.nodeFront
+    );
+
+    // Emit message for test files
+    this.ruleView.inspector.emitForTests("anchor-names-updated");
+    return names;
+  };
 
   /**
    * Get the grid line names of the grid that the currently selected element is

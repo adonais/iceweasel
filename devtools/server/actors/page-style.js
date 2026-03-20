@@ -150,6 +150,8 @@ class PageStyleActor extends Actor {
         // expected support of font-stretch at CSS Fonts Level 4.
         fontWeightLevel4:
           CSS.supports("font-weight: 1") && CSS.supports("font-stretch: 100%"),
+        // @backward-compat { version 150 } This trait can be removed once 150 hits release
+        hasGetAnchorNames: true,
       },
     };
   }
@@ -1600,6 +1602,16 @@ class PageStyleActor extends Actor {
         }
       }
     }
+  }
+
+  /**
+   * Returns an array of valid anchor names for the selected node
+   *
+   * @param {NodeActor} node: The node for which we want anchor names
+   * @return {Array<string>}
+   */
+  getAnchorNames(node) {
+    return InspectorUtils.getAnchorNamesFor(node.rawNode);
   }
 }
 exports.PageStyleActor = PageStyleActor;

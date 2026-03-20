@@ -417,7 +417,7 @@ class InplaceEditor extends EventEmitter {
       options.start(this, event);
     }
 
-    this.#getGridNamesBeforeCompletion(options.getGridLineNames);
+    this.#populatePropertySpecificDataBeforeCompletion(options);
   }
   static CONTENT_TYPES = CONTENT_TYPES;
 
@@ -1172,19 +1172,28 @@ class InplaceEditor extends EventEmitter {
   };
 
   /**
-   * Before offering autocomplete, set this.gridLineNames as the line names
-   * of the current grid, if they exist.
+   * Before offering autocomplete, set properties that require asynchronous calls.
    *
-   * @param {Function} getGridLineNames
+   * @param {object} options
+   * @param {Function} options.getGridLineNames
    *        A function which gets the line names of the current grid.
+   * @param {Function} options.getCssAnchors
+   *        A function which gets the possible anchors for the selected element.
    */
-  async #getGridNamesBeforeCompletion(getGridLineNames) {
+  async #populatePropertySpecificDataBeforeCompletion({
+    getGridLineNames,
+    getCssAnchors,
+  }) {
     if (
       getGridLineNames &&
       this.property &&
       GRID_PROPERTY_NAMES.includes(this.property.name)
     ) {
       this.gridLineNames = await getGridLineNames();
+    }
+
+    if (getCssAnchors && this.property?.name === "position-anchor") {
+      this.anchorNames = await getCssAnchors();
     }
 
     if (
@@ -1821,13 +1830,17 @@ class InplaceEditor extends EventEmitter {
         }
       }
 
-      // Sort items starting with [a-z0-9] first, to make sure vendor-prefixed
+      // Sort items starting with [a-z0-9] or -- first, to make sure vendor-prefixed
       // values and "!important" are suggested only after standard values.
+      const alphaNumOrDashedRegExp = /^(\w|--)/;
       finalList.sort((item1, item2) => {
         // Get the expected alphabetical comparison between the items.
         let comparison = item1.label.localeCompare(item2.label);
-        if (/^\w/.test(item1.label) != /^\w/.test(item2.label)) {
-          // One starts with [a-z0-9], one does not: flip the comparison.
+        if (
+          alphaNumOrDashedRegExp.test(item1.label) !=
+          alphaNumOrDashedRegExp.test(item2.label)
+        ) {
+          // One starts with [a-z0-9--], one does not: flip the comparison.
           comparison = -1 * comparison;
         }
         return comparison;
@@ -1915,7 +1928,7 @@ class InplaceEditor extends EventEmitter {
       });
     }
 
-    // TODO: Handle other functions, e.g. `anchor()` to display existing anchor names (Bug 1903278)
+    // TODO: Handle other functions, e.g. `anchor()` to display existing anchor names (Bug 2023114)
 
     return { list: [] };
   }
@@ -2052,18 +2065,22 @@ class InplaceEditor extends EventEmitter {
    * @return {Array} array of CSS property values (Strings)
    */
   #getCSSValuesForPropertyName(propertyName) {
-    const gridLineList = [];
+    const additionalItems = [];
     if (this.gridLineNames) {
       if (GRID_ROW_PROPERTY_NAMES.includes(this.property.name)) {
-        gridLineList.push(...this.gridLineNames.rows);
+        additionalItems.push(...this.gridLineNames.rows);
       }
       if (GRID_COL_PROPERTY_NAMES.includes(this.property.name)) {
-        gridLineList.push(...this.gridLineNames.cols);
+        additionalItems.push(...this.gridLineNames.cols);
       }
     }
+    if (this.property?.name === "position-anchor" && this.anchorNames) {
+      additionalItems.push(...this.anchorNames);
+    }
+
     // Must be alphabetically sorted before comparing the results with
     // the user input, otherwise we will lose some results.
-    return gridLineList
+    return additionalItems
       .concat(this.cssProperties.getValues(propertyName))
       .sort();
   }
