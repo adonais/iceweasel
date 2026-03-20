@@ -81,4 +81,68 @@
   <string name="mozac_browser_errorpages_corrupted_content_message"><![CDATA[<p>Fuulli ati ilaaluuf yaaltu dogongorri dabarsuu deetaa keessatti waan argameef mul\'ifamuu hin danda\'u.</p>\n<ul>\n<li>Maaloo abbootii qabeenyaa weeb saayitii qunnamaa, rakkoo kana isaan beeksisa.</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_content_crashed_title">Qabiyyee cabaa</string>
+  <string name="mozac_browser_errorpages_content_crashed_message"><![CDATA[<p>Fuulli ati ilaaluuf yaaltu dogongorri dabarsuu deetaa keessatti waan argameef mul\'ifamuu hin danda\'u.</p>\n<ul>\n<li>Maaloo abbootii qabeenyaa marsariitii qunnamaa rakkoo kana isaan beeksisan.</li>\n</ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_invalid_content_encoding_title">Dogoggora Inkoodii Qabiyyee</string>
+  <string name="mozac_browser_errorpages_invalid_content_encoding_message"><![CDATA[<p>Fuulli ati ilaaluuf yaaltu bifa dhiibbaa sirrii hin taane ykn hin deeggaramne waan fayyadamuuf mul\'ifamuu hin danda\'u.</p>\n<ul>\n<li>Maaloo abbootii qabeenyaa marsariitii qunnamaa rakkoo kana isaan beeksisan.</li>\n</ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_unknown_host_title">Teessoon Hin Argamne</string>
+  <!-- In the example, the two URLs in markup do not need to be translated. -->
+  <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>Biraawzariin teessoo kennameef sarvarii keessummeessituu argachuu hin dandeenye.</p>\n<ul>\n<li>Teessoo dogongora barreessuu kan akka <strong>ww</strong>.example.com bakka <strong>www</strong>.example.com.</li> ilaali\n<li>Yoo fuula kamiyyuu fe’uu hin dandeenye, daataa meeshaa keetii ykn walitti hidhamiinsa Wi-Fi ilaali.</li>\n</ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_title_2">Rakkoon interneetii keessanirra waan jiru fakkaata</string>
+  <!-- The main body text of this error page. It will be shown beneath the title -->
+  <string name="mozac_browser_errorpages_no_internet_message_2">Meeshaa adda ta\'e irratti wal qunnamsiisuuf yaali. Modem ykn router kee ilaali. Wi-Fi irraa addaan kutuun deebisii wal qunnamsiisi.</string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_error_code">Koodii Dogoggoraa: NS_ERROR_OFFLINE</string>
+  <!-- Text that will show up on the button at the bottom of the error page -->
+  <string name="mozac_browser_errorpages_no_internet_refresh_button">Irra deebi\'ii fe\'i</string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_malformed_uri_title">Teessoo Argamaa Sirrii Hin Taane</string>
+  <string name="mozac_browser_errorpages_malformed_uri_message"><![CDATA[<p>Teessoon kenname bifa beekamtii qabuun hin jiru. Maaloo dogongora jiraachuu isaa barruu iddoo ilaalii irra deebi\'ii yaali.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_malformed_uri_title_alternative">Teessoon sun sirrii miti</string>
+  <!-- This string contains markup. The URL should not be localized. -->
+  <string name="mozac_browser_errorpages_malformed_uri_message_alternative"><![CDATA[<ul>\n<li>Teessoowwan weeb yeroo baayyee akka <strong>http://www.example.com/</strong></li>tti barreeffama\n<li>Qaaqa fuulduraa fayyadamaa akka jirtu mirkaneessi (i.e. <strong>/</strong>).</li>\n</ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_unknown_protocol_title">Pirootokoolii Hin Beekamne</string>
+  <string name="mozac_browser_errorpages_unknown_protocol_message"><![CDATA[<p>Teessoon pirootokoolii ifteessa (fkn, <q>wxyz://</q>) biraawzariin hin beekne, kanaaf biraawzariin sirnaan marsariiticha waliin walqunnamsiisuu hin danda\'u.</p>\n<ul>\n<li>Tajaajila maltimiidiyaa ykn barreeffama hin taane biroo argachuuf yaalaa jirtuu? Ulaagaalee dabalataa argachuuf marsariiticha ilaali.</li>\n<li>Pirootokooliin tokko tokko osoo biraawzariin isaan hin beekin dura sooftiweerii qaama sadaffaa ykn pilaaginoota barbaaduu danda\'u.</li>\n</ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_file_not_found_title">Faayilliin Hin Argamne</string>
+  <string name="mozac_browser_errorpages_file_not_found_message"><![CDATA[<ul>\n<li>Wantichi maqaan jijjiiramuu, haqamuu, ykn bakka biraatti jijjiiramuu danda\'aa?</li>\n<li>Teessoo keessatti dogongorri qubee, qubee guddaa, ykn barreeffama biroo jiraa?</li>\n<li>Wanta gaafatame sanaaf hayyama qaqqabummaa gahaa qabdaa?</li>\n</ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_file_access_denied_title">Faayila kana argachuun dhorkameera</string>
+  <string name="mozac_browser_errorpages_file_access_denied_message"><![CDATA[<ul>\n<li>Haqamuu, socho\'uu danda\'a, ykn hayyamni faayilii qaqqabummaa dhorkaa ta\'uu danda\'a.</li>\n</ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_proxy_connection_refused_title">Tarjaa Bakka Bu\'aa Walitti Hidhamiinsa Dide</string>
+  <string name="mozac_browser_errorpages_proxy_connection_refused_message"><![CDATA[<p>The browser is configured to use a proxy server, but the proxy refused a connection.</p>\n<ul>\n<li>Is the browser’s proxy configuration correct? Check the settings and try again.</li>\n<li>Does the proxy service allow connections from this network?</li>\n<li>Still having trouble? Consult your network administrator or Internet provider for assistance.</li>\n</ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_unknown_proxy_host_title">Tarjaan Pirooksii Hin Argamne</string>
+  <string name="mozac_browser_errorpages_unknown_proxy_host_message"><![CDATA[<p>Biraawzariin akka sarvarii bakka bu\'aa fayyadamuuf qindaa\'eera, garuu bakka bu\'aan argamuu hin dandeenye.</p>\n<ul>\n<li>Qindaa’inni bakka bu’aa biraawzarii sirriidhaa? Sajoo ilaaliitii irra deebi\'ii yaali.</li>\n<li>Meeshaan kun neetworkii hojjetaa jiruun walqunnamee jiraa?</li>\n<li>Ammallee rakkinni jiraa? Gargaarsa argachuuf bulchaa networkii ykn dhiyeessaa interneetii kee mariisisi.</li>\n</ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_safe_browsing_malware_uri_title">Dhimma marsariitii malware</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_safe_browsing_malware_uri_message"><![CDATA[<p>Saayitiin %1$s irratti argamu akkaataa haleellaan marsariitii gabaafamee fi filannoo nageenyaa kee irratti hundaa\'uun uggurameera.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_safe_browsing_unwanted_uri_title">Dhimma saayitii hin barbaachifnee</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_safe_browsing_unwanted_uri_message"><![CDATA[<p>Saayitiin %1$s irratti argamu akka sooftiweerii hin barbaachifne tajaajilutti gabaafamee fi filannoo nageenyaa kee irratti hundaa\'uun uggurameera.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_safe_harmful_uri_title">Dhimma saayitii balaafamaa</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_safe_harmful_uri_message"><![CDATA[<p>Saayitiin %1$s irratti argamu akka marsariitii miidhaa geessisuu danda\'utti gabaafamee fi filannoo nageenyaa kee irratti hundaa\'uun uggurameera.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_safe_phishing_uri_title">Dhimma marsariitii gowwoomsaa</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Fuulli weebsaayitii %1$s irratti argamu kun akka marsariitii gowwoomsaatti gabaafamee akkasumas filannoo nageenyaa kee irratti hundaa\'uun uggurameera.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Nageenya keessaniif jecha marsariitiin cufame</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Fuulli weeb %1$s irratti argamu kun sababa dabalii keessaa tokko banuuf yaaleef uggurame. Buufanni kun odeeffannoo kee hatuuf itti fayyadamuu danda\'a — kanneen akka jecha darbii ykn lakkoofsa kaardii liqii.</p>]]></string>
+  <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
+  <string name="mozac_browser_errorpages_httpsonly_title">Marsariitiin Nageenya Qabu Hin Jiru</string>
+  <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->
+  <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[Nageenya fooyya’eef Haalata HTTPS-Qofaa dandeessifteetta, akkasumas gosti HTTPS <em>%1$s</em> hin mul\'atu.]]></string>
+  <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
+  <string name="mozac_browser_errorpages_httpsonly_button">HTTP Saayitiin itti fufi</string>
 </resources>

@@ -1438,10 +1438,10 @@
   <string name="create_tab_group_save_button">Захаваць</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Група</string>
-  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
-  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Назва групы картак</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
-  <string name="tab_group_name_label">Назва</string>
+  <string name="create_tab_group_name_label">Назва</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Назва</string>
   <!--
     History
 

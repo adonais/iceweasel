@@ -1638,8 +1638,8 @@
   <string name="edit_tab_group_bottom_sheet_close_content_description">بستن بونکۊ بلگه آلشت</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">بونکۊ</string>
-  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
-  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">نوم</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="create_tab_group_name_label">نوم</string>
   <!--
     History
 

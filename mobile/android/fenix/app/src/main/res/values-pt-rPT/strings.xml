@@ -1657,10 +1657,10 @@
     %d is the number of existing tab groups + 1.
   -->
   <string name="create_tab_group_form_default_name">Grupo %d</string>
-  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
-  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nome do grupo de separadores</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
-  <string name="tab_group_name_label">Nome</string>
+  <string name="create_tab_group_name_label">Nome</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nome</string>
   <!--
     History
 

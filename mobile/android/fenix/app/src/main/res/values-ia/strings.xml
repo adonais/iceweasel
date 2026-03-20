@@ -117,7 +117,7 @@
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">Accesso al camera necessari. Vade al parametros de Android, tocca Permissiones e tocca Permitter.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
-  <string name="camera_permissions_needed_positive_button_text">Vade a parametros</string>
+  <string name="camera_permissions_needed_positive_button_text">Ir a parametros</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
   <string name="camera_permissions_needed_negative_button_text">Dimitter</string>
   <!-- Text for the banner message to tell users about our auto close feature. -->
@@ -1657,10 +1657,10 @@
     %d is the number of existing tab groups + 1.
   -->
   <string name="create_tab_group_form_default_name">Gruppo %d</string>
-  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
-  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nomine</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
-  <string name="tab_group_name_label">Nomine</string>
+  <string name="create_tab_group_name_label">Nomine</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nomine</string>
   <!--
     History
 

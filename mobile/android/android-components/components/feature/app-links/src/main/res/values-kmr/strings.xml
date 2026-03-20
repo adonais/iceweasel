@@ -6,16 +6,16 @@
   ~ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- The tile for the list of external apps to open the link in -->
   <string name="mozac_feature_applinks_open_in">Veke di…</string>
   <!-- The description to warn users that their private browsing session changes -->
-  <string name="mozac_feature_applinks_confirm_dialog_title">Di sepanê de veke? Dibe ku çalakiyên te veşartî nemînin.</string>
+  <string name="mozac_feature_applinks_confirm_dialog_title" tools:ignore="UnusedResources" moz:removedIn="150">Di sepanê de veke? Dibe ku çalakiyên te veşartî nemînin.</string>
   <!--
     The description to warn users that their private browsing session changes
     %s is a placeholder that will be replaced by an app name
   -->
-  <string name="mozac_feature_applinks_confirm_dialog_title_with_app_name">Di %s de vekî? Dibe ku çalakiyên te êdî ne nepenî bin.</string>
+  <string name="mozac_feature_applinks_confirm_dialog_title_with_app_name" tools:ignore="UnusedResources" moz:removedIn="150">Di %s de vekî? Dibe ku çalakiyên te êdî ne nepenî bin.</string>
   <!-- The title of the prompt that warns users their normal browsing session is trying to open another app -->
   <string name="mozac_feature_applinks_normal_confirm_dialog_title">Di appeke din de veke</string>
   <!--

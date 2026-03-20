@@ -444,7 +444,7 @@
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">گچین ٹیب تے بند کبو</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
-  <string name="tab_group_name_label">پن</string>
+  <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">پن</string>
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">تاریخچہ مٹائفبو</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->

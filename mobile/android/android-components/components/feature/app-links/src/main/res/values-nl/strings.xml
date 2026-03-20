@@ -6,16 +6,16 @@
   ~ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- The tile for the list of external apps to open the link in -->
   <string name="mozac_feature_applinks_open_in">Openen in…</string>
   <!-- The description to warn users that their private browsing session changes -->
-  <string name="mozac_feature_applinks_confirm_dialog_title">Openen in een app? Uw activiteit is mogelijk niet langer privé.</string>
+  <string name="mozac_feature_applinks_confirm_dialog_title" tools:ignore="UnusedResources" moz:removedIn="150">Openen in een app? Uw activiteit is mogelijk niet langer privé.</string>
   <!--
     The description to warn users that their private browsing session changes
     %s is a placeholder that will be replaced by an app name
   -->
-  <string name="mozac_feature_applinks_confirm_dialog_title_with_app_name">Openen in %s? Uw activiteit is mogelijk niet langer privé.</string>
+  <string name="mozac_feature_applinks_confirm_dialog_title_with_app_name" tools:ignore="UnusedResources" moz:removedIn="150">Openen in %s? Uw activiteit is mogelijk niet langer privé.</string>
   <!-- The title of the prompt that warns users their normal browsing session is trying to open another app -->
   <string name="mozac_feature_applinks_normal_confirm_dialog_title">Openen in andere app</string>
   <!--
@@ -34,4 +34,18 @@
   <string name="mozac_feature_applinks_confirm_dialog_deny">Annuleren</string>
   <!-- The label of the checkbox that, depending of user's choice, can change the Open links in apps setting -->
   <string name="mozac_feature_applinks_confirm_dialog_checkbox_label">Koppelingen altijd in apps openen</string>
+  <!-- The label for the expandable section that shows additional details -->
+  <string name="mozac_feature_applinks_view_details">Details bekijken</string>
+  <!-- The label for the expandable section when details are shown -->
+  <string name="mozac_feature_applinks_hide_details">Details verbergen</string>
+  <!-- The label for the source URL in the details section -->
+  <string name="mozac_feature_applinks_source_url">Bron-URL</string>
+  <!-- The label for the destination URL in the details section -->
+  <string name="mozac_feature_applinks_destination_url">Bestemmings-URL</string>
+  <!-- The label for the URL if opening in the browser in the details section. %s is the browser name. -->
+  <string name="mozac_feature_applinks_firefox_url">URL bij openen in %s</string>
+  <!-- The label for the unique identifier in the details section -->
+  <string name="mozac_feature_applinks_unique_identifier">Unieke identificator</string>
+  <!-- The text shown when there is no Firefox URL -->
+  <string name="mozac_feature_applinks_none">Geen</string>
 </resources>

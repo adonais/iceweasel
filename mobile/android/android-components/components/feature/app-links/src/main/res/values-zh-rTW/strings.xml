@@ -6,16 +6,16 @@
   ~ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- The tile for the list of external apps to open the link in -->
   <string name="mozac_feature_applinks_open_in">開啟於…</string>
   <!-- The description to warn users that their private browsing session changes -->
-  <string name="mozac_feature_applinks_confirm_dialog_title">要使用 App 開啟？您的上網行為可能不再能保持隱私。</string>
+  <string name="mozac_feature_applinks_confirm_dialog_title" tools:ignore="UnusedResources" moz:removedIn="150">要使用 App 開啟？您的上網行為可能不再能保持隱私。</string>
   <!--
     The description to warn users that their private browsing session changes
     %s is a placeholder that will be replaced by an app name
   -->
-  <string name="mozac_feature_applinks_confirm_dialog_title_with_app_name">要使用 %s 開啟？您的上網行為可能不再能保持隱私。</string>
+  <string name="mozac_feature_applinks_confirm_dialog_title_with_app_name" tools:ignore="UnusedResources" moz:removedIn="150">要使用 %s 開啟？您的上網行為可能不再能保持隱私。</string>
   <!-- The title of the prompt that warns users their normal browsing session is trying to open another app -->
   <string name="mozac_feature_applinks_normal_confirm_dialog_title">用其他應用程式開啟</string>
   <!--
@@ -34,4 +34,18 @@
   <string name="mozac_feature_applinks_confirm_dialog_deny">取消</string>
   <!-- The label of the checkbox that, depending of user's choice, can change the Open links in apps setting -->
   <string name="mozac_feature_applinks_confirm_dialog_checkbox_label">一律使用 App 開啟連結</string>
+  <!-- The label for the expandable section that shows additional details -->
+  <string name="mozac_feature_applinks_view_details">檢視詳細資訊</string>
+  <!-- The label for the expandable section when details are shown -->
+  <string name="mozac_feature_applinks_hide_details">隱藏詳細資訊</string>
+  <!-- The label for the source URL in the details section -->
+  <string name="mozac_feature_applinks_source_url">來源網址</string>
+  <!-- The label for the destination URL in the details section -->
+  <string name="mozac_feature_applinks_destination_url">目的地網址</string>
+  <!-- The label for the URL if opening in the browser in the details section. %s is the browser name. -->
+  <string name="mozac_feature_applinks_firefox_url">使用 %s 開啟時的網址</string>
+  <!-- The label for the unique identifier in the details section -->
+  <string name="mozac_feature_applinks_unique_identifier">唯一識別符</string>
+  <!-- The text shown when there is no Firefox URL -->
+  <string name="mozac_feature_applinks_none">無</string>
 </resources>

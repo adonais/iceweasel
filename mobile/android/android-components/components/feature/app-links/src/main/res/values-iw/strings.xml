@@ -6,16 +6,16 @@
   ~ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- The tile for the list of external apps to open the link in -->
   <string name="mozac_feature_applinks_open_in">פתיחה ב…</string>
   <!-- The description to warn users that their private browsing session changes -->
-  <string name="mozac_feature_applinks_confirm_dialog_title">האם לפתוח ביישומון? ייתכן שהפעילות שלך כבר לא תהיה פרטית.</string>
+  <string name="mozac_feature_applinks_confirm_dialog_title" tools:ignore="UnusedResources" moz:removedIn="150">האם לפתוח ביישומון? ייתכן שהפעילות שלך כבר לא תהיה פרטית.</string>
   <!--
     The description to warn users that their private browsing session changes
     %s is a placeholder that will be replaced by an app name
   -->
-  <string name="mozac_feature_applinks_confirm_dialog_title_with_app_name">האם לפתוח ב־%s? ייתכן שהפעילות שלך כבר לא תהיה פרטית.</string>
+  <string name="mozac_feature_applinks_confirm_dialog_title_with_app_name" tools:ignore="UnusedResources" moz:removedIn="150">האם לפתוח ב־%s? ייתכן שהפעילות שלך כבר לא תהיה פרטית.</string>
   <!-- The title of the prompt that warns users their normal browsing session is trying to open another app -->
   <string name="mozac_feature_applinks_normal_confirm_dialog_title">פתיחה ביישומון אחר</string>
   <!--
@@ -34,4 +34,16 @@
   <string name="mozac_feature_applinks_confirm_dialog_deny">ביטול</string>
   <!-- The label of the checkbox that, depending of user's choice, can change the Open links in apps setting -->
   <string name="mozac_feature_applinks_confirm_dialog_checkbox_label">תמיד לפתוח קישורים ביישומונים</string>
+  <!-- The label for the expandable section that shows additional details -->
+  <string name="mozac_feature_applinks_view_details">הצגת פרטים</string>
+  <!-- The label for the expandable section when details are shown -->
+  <string name="mozac_feature_applinks_hide_details">הסתרת פרטים</string>
+  <!-- The label for the source URL in the details section -->
+  <string name="mozac_feature_applinks_source_url">כתובת מקור</string>
+  <!-- The label for the destination URL in the details section -->
+  <string name="mozac_feature_applinks_destination_url">כתובת יעד</string>
+  <!-- The label for the unique identifier in the details section -->
+  <string name="mozac_feature_applinks_unique_identifier">מזהה ייחודי</string>
+  <!-- The text shown when there is no Firefox URL -->
+  <string name="mozac_feature_applinks_none">ללא</string>
 </resources>

@@ -6,16 +6,16 @@
   ~ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- The tile for the list of external apps to open the link in -->
   <string name="mozac_feature_applinks_open_in">خلاص کړئ په…</string>
   <!-- The description to warn users that their private browsing session changes -->
-  <string name="mozac_feature_applinks_confirm_dialog_title">په اپليکېشن کې پرانيزئ؟ ښايي ستاسو فعالیت نور شخصي پاتې نه شي.</string>
+  <string name="mozac_feature_applinks_confirm_dialog_title" tools:ignore="UnusedResources" moz:removedIn="150">په اپليکېشن کې پرانيزئ؟ ښايي ستاسو فعالیت نور شخصي پاتې نه شي.</string>
   <!--
     The description to warn users that their private browsing session changes
     %s is a placeholder that will be replaced by an app name
   -->
-  <string name="mozac_feature_applinks_confirm_dialog_title_with_app_name">په %s کې پرانيزئ؟ ښايي ستاسو فعالیت نور شخصي پاتې نه شي.</string>
+  <string name="mozac_feature_applinks_confirm_dialog_title_with_app_name" tools:ignore="UnusedResources" moz:removedIn="150">په %s کې پرانيزئ؟ ښايي ستاسو فعالیت نور شخصي پاتې نه شي.</string>
   <!-- The title of the prompt that warns users their normal browsing session is trying to open another app -->
   <string name="mozac_feature_applinks_normal_confirm_dialog_title">په بل اپلیکیشن کې پرانیزئ</string>
   <!--

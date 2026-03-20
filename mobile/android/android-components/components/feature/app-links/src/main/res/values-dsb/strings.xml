@@ -6,16 +6,16 @@
   ~ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- The tile for the list of external apps to open the link in -->
   <string name="mozac_feature_applinks_open_in">Wócyniś w…</string>
   <!-- The description to warn users that their private browsing session changes -->
-  <string name="mozac_feature_applinks_confirm_dialog_title">W nałoženju wócyniś? Waša aktiwita wěcej njamóžo priwatna byś.</string>
+  <string name="mozac_feature_applinks_confirm_dialog_title" tools:ignore="UnusedResources" moz:removedIn="150">W nałoženju wócyniś? Waša aktiwita wěcej njamóžo priwatna byś.</string>
   <!--
     The description to warn users that their private browsing session changes
     %s is a placeholder that will be replaced by an app name
   -->
-  <string name="mozac_feature_applinks_confirm_dialog_title_with_app_name">W %s wócyniś? Waša aktiwita wěcej njamóžo priwatna byś.</string>
+  <string name="mozac_feature_applinks_confirm_dialog_title_with_app_name" tools:ignore="UnusedResources" moz:removedIn="150">W %s wócyniś? Waša aktiwita wěcej njamóžo priwatna byś.</string>
   <!-- The title of the prompt that warns users their normal browsing session is trying to open another app -->
   <string name="mozac_feature_applinks_normal_confirm_dialog_title">W drugem nałoženju wócyniś</string>
   <!--
@@ -34,4 +34,18 @@
   <string name="mozac_feature_applinks_confirm_dialog_deny">Pśetergnuś</string>
   <!-- The label of the checkbox that, depending of user's choice, can change the Open links in apps setting -->
   <string name="mozac_feature_applinks_confirm_dialog_checkbox_label">Wótkaze pśecej w nałoženjach wócyniś</string>
+  <!-- The label for the expandable section that shows additional details -->
+  <string name="mozac_feature_applinks_view_details">Drobnostki pokazaś</string>
+  <!-- The label for the expandable section when details are shown -->
+  <string name="mozac_feature_applinks_hide_details">Drobnostki schowaś</string>
+  <!-- The label for the source URL in the details section -->
+  <string name="mozac_feature_applinks_source_url">Žrědłowy URL</string>
+  <!-- The label for the destination URL in the details section -->
+  <string name="mozac_feature_applinks_destination_url">Celowy URL</string>
+  <!-- The label for the URL if opening in the browser in the details section. %s is the browser name. -->
+  <string name="mozac_feature_applinks_firefox_url">URL, gaž se w %s wócynja</string>
+  <!-- The label for the unique identifier in the details section -->
+  <string name="mozac_feature_applinks_unique_identifier">Jadnorazowy identfikator</string>
+  <!-- The text shown when there is no Firefox URL -->
+  <string name="mozac_feature_applinks_none">Žeden</string>
 </resources>
