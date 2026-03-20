@@ -658,6 +658,8 @@ class JujutsuRepository(Repository):
                 immutable_heads_key, immutable_heads_default_value
             )
 
+            self._set_default_if_missing("snapshot.auto-update-stale", True)
+
             # This enables `jj fix` which does `./mach lint --fix` on every commit in parallel
             fix_cmd = [f"{topsrcdir.as_posix()}/tools/lint/pipelint", "$path"]
             if sys.platform.startswith("win"):

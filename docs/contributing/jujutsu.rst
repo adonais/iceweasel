@@ -239,3 +239,24 @@ Instead of scanning the file system, ``jj`` will (much like ``hg``\ ’s
 ``fsmonitor`` extension) use file system events to be notified about
 file changes, resulting in much shorter operation time, without having
 to disable the snapshotting mechanism.
+
+Working with multiple workspaces
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default, ``./mach vcs-setup`` configures ``snapshot.auto-update-stale = true``, which
+causes ``jj`` to automatically update a workspace’s working copy when it becomes
+stale. A workspace becomes stale when a commit it depends on is rewritten from
+another workspace, for example by rebasing, editing, or squashing. We recommend this
+default because some ``mach`` commands invoke ``jj`` and can fail, sometimes
+silently, if the working copy is stale.
+
+If you use multiple workspaces and want to control when each workspace picks up
+changes, for example to avoid triggering a slow rebuild after rebasing patches
+in bulk from another workspace, you can disable this per-workspace:
+
+::
+
+   jj config set --workspace snapshot.auto-update-stale false
+
+With auto-update disabled, most ``jj`` commands will refuse to run until you
+manually update with ``jj workspace update-stale``.
