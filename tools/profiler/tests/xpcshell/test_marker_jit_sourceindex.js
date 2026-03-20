@@ -55,6 +55,21 @@ add_task(async () => {
   const stackFrameCol = mainThread.stackTable.schema.frame;
   const frameLocationCol = mainThread.frameTable.schema.location;
   const sourceUuidCol = profile.sources.schema.uuid;
+  const sourceMapURLCol = profile.sources.schema.sourceMapURL;
+
+  // Verify the sources schema has the expected fields
+  Assert.ok(
+    "uuid" in profile.sources.schema,
+    "Sources schema has 'uuid' field"
+  );
+  Assert.ok(
+    "filename" in profile.sources.schema,
+    "Sources schema has 'filename' field"
+  );
+  Assert.ok(
+    "sourceMapURL" in profile.sources.schema,
+    "Sources schema has 'sourceMapURL' field"
+  );
 
   let foundJITFrame = false;
   let currentStackIndex = stackIndex;
@@ -81,6 +96,13 @@ add_task(async () => {
 
       const sourceUuid = source[sourceUuidCol];
       Assert.ok(sourceUuid, "JIT frame sourceUuid should be non-empty");
+      const sourceMapURL = source[sourceMapURLCol];
+      Assert.ok(
+        sourceMapURL === null ||
+          sourceMapURL === undefined ||
+          typeof sourceMapURL === "string",
+        "Source entry has a valid nullable sourceMapURL"
+      );
       info(
         `Found JIT frame with sourceUuid: ${sourceUuid}, location: ${location}`
       );

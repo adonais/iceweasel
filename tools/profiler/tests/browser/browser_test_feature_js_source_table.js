@@ -80,10 +80,10 @@ add_task(async function test_source_table_schema() {
     // Verify each source entry has the correct structure.
     for (const source of data) {
       Assert.ok(Array.isArray(source), "Each source should be an array");
-      Assert.equal(
-        source.length,
+      Assert.greaterOrEqual(
         Object.keys(schema).length,
-        "Source entry should match schema length"
+        source.length,
+        "Source entry should be either the same length or lower due to omitted entries"
       );
 
       // Check uuid (should be a string).
