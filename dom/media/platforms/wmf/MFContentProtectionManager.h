@@ -10,10 +10,9 @@
 #include <windows.media.protection.h>
 #include <wrl.h>
 
-#include "MFCDMProxy.h"
-
 #include <functional>
 
+#include "MFCDMProxy.h"
 #include "nsISerialEventTarget.h"
 #include "nsITimer.h"
 

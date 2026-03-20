@@ -80,8 +80,8 @@ HRESULT MFContentProtectionManager::BeginEnableContent(
     // https://source.chromium.org/chromium/chromium/src/+/main:media/renderers/win/media_foundation_protection_manager.cc;l=201-203
     auto result = NS_NewTimerWithFuncCallback(
         &MFContentProtectionManager::WaitingForKeyTimerCallback, this, 500,
-        nsITimer::TYPE_ONE_SHOT,
-        "MFContentProtectionManager::WaitingForKey"_ns, mManagerThread);
+        nsITimer::TYPE_ONE_SHOT, "MFContentProtectionManager::WaitingForKey"_ns,
+        mManagerThread);
     if (result.isOk()) {
       mWaitingForKeyTimer = result.unwrap();
     }

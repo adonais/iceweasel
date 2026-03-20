@@ -252,13 +252,13 @@ class MediaFormatReader final
     return mTrackInfoUpdatedEvent;
   }
 
-#ifdef MOZ_WMF_CDM
+#  ifdef MOZ_WMF_CDM
   // Called when the MFCDM encrypted playback path signals that a decryption key
   // is needed before decoding can proceed.
   void NotifyWaitingForKeyForMFCDM() {
     NotifyWaitingForKey(TrackInfo::TrackType::kVideoTrack);
   }
-#endif
+#  endif
 
   template <typename T>
   friend struct DDLoggedTypeTraits;  // For DecoderData
