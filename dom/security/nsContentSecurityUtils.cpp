@@ -1323,10 +1323,12 @@ static nsLiteralCString sStyleSrcUnsafeInlineAllowList[] = {
 };
 // img-src moz-remote-image:
 static nsLiteralCString sImgSrcMozRemoteImageAllowList[] = {
+    "about:firefoxview"_ns,
     "about:preferences"_ns,
     "about:processes"_ns,
     "about:settings"_ns,
     "chrome://browser/content/aiwindow/aiWindow.html"_ns,
+    "chrome://browser/content/firefoxview/firefoxview.html"_ns,
     "chrome://browser/content/preferences/dialogs/applicationManager.xhtml"_ns,
     "chrome://browser/content/sidebar/sidebar-syncedtabs.html"_ns,
     "chrome://global/content/aboutProcesses.html"_ns,
