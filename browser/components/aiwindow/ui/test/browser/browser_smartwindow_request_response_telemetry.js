@@ -9,22 +9,30 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
 });
 
-add_setup(async function stubIntentClassifier() {
-  sinon.stub(lazy.IntentClassifier, "getPromptIntent").resolves("chat");
-  registerCleanupFunction(() => {
-    sinon.restore();
+describe("SmartWindowRequestResponseTelemetry", () => {
+  let win;
+  let sb;
+
+  beforeEach(async () => {
+    sb = sinon.createSandbox();
+    sb.stub(lazy.IntentClassifier, "getPromptIntent").resolves("chat");
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.smartwindow.firstrun.modelChoice", "0"]],
+    });
+    Services.fog.testResetFOG();
   });
-});
 
-add_task(async function test_model_no_error_telemetry() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.firstrun.modelChoice", "0"]],
+  afterEach(async () => {
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+      win = null;
+    }
+    sb.restore();
+    await SpecialPowers.popPrefEnv();
   });
 
-  Services.fog.testResetFOG();
-
-  const win = await openAIWindow();
-  try {
+  it("records model_request and model_response on success", async () => {
+    win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
 
     await withServer({ streamChunks: ["Hello from mock."] }, async () => {
@@ -134,25 +142,14 @@ add_task(async function test_model_no_error_telemetry() {
         "model_response: error is empty"
       );
     });
-  } finally {
-    await BrowserTestUtils.closeWindow(win);
-    await SpecialPowers.popPrefEnv();
-  }
-});
-
-add_task(async function test_model_with_error_telemetry() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.firstrun.modelChoice", "0"]],
   });
-  Services.fog.testResetFOG();
 
-  const sb = sinon.createSandbox();
-  const error = new Error("test error");
-  error.error = 1;
-  sb.stub(openAIEngine, "build").rejects(error);
+  it("records model_response with error when build fails", async () => {
+    const error = new Error("test error");
+    error.error = 1;
+    sb.stub(openAIEngine, "build").rejects(error);
 
-  const win = await openAIWindow();
-  try {
+    win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
     await typeInSmartbar(browser, "trigger error");
     await submitSmartbar(browser);
@@ -225,9 +222,5 @@ add_task(async function test_model_with_error_telemetry() {
       "1",
       "model_response: error code is captured"
     );
-  } finally {
-    await BrowserTestUtils.closeWindow(win);
-    sb.restore();
-    await SpecialPowers.popPrefEnv();
-  }
+  });
 });
