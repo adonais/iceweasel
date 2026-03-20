@@ -5077,7 +5077,7 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
 
   // This is only needed to know if we can know the drawing bounding box easily.
   const bool doCalculateBounds = NeedToCalculateBounds();
-  if (!IsTargetValid() || (presShell && presShell->IsDestroying())) {
+  if (presShell && presShell->IsDestroying()) {
     aError = NS_ERROR_FAILURE;
     return nullptr;
   }
