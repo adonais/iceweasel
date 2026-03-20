@@ -1244,10 +1244,15 @@ ipc::IPCResult CamerasParent::RecvStartCapture(
               capability.interlaced = aIpcCaps.interlaced();
 
               if (cbh) {
+                const auto oldCapability = cbh->CombinedCapability();
                 cbh->SetConfigurationFor(aStreamId, capability, aConstraints,
                                          aResizeMode, /*aStarted=*/true);
-                error = cap.VideoCapture()->StartCapture(
-                    *cbh->CombinedCapability());
+                const auto newCapability = cbh->CombinedCapability();
+                if (newCapability == oldCapability) {
+                  error = 0;
+                  return;
+                }
+                error = cap.VideoCapture()->StartCapture(*newCapability);
                 if (error) {
                   cbh->SetConfigurationFor(aStreamId, capability, aConstraints,
                                            aResizeMode, /*aStarted=*/false);
@@ -1428,18 +1433,26 @@ ipc::IPCResult CamerasParent::RecvStopCapture(const CaptureEngine& aCapEngine,
   nsresult rv = mVideoCaptureThread->Dispatch(NS_NewRunnableFunction(
       __func__, [this, self = RefPtr(this), aCapEngine, aStreamId] {
         auto* capturer = GetCapturer(aCapEngine, aStreamId);
-        if (capturer) {
-          capturer->SetConfigurationFor(
-              aStreamId, webrtc::VideoCaptureCapability{},
-              NormalizedConstraints{}, dom::VideoResizeModeEnum::None,
-              /*aStarted=*/false);
-          if (!capturer->CombinedCapability()) {
-            if (auto* engine = EnsureInitialized(aCapEngine)) {
-              engine->WithEntry(capturer->mCaptureId,
-                                [&](VideoEngine::CaptureEntry& aEntry) {
-                                  aEntry.VideoCapture()->StopCapture();
-                                });
-            }
+        if (!capturer) {
+          return;
+        }
+
+        const auto oldCapability = capturer->CombinedCapability();
+        capturer->SetConfigurationFor(
+            aStreamId, webrtc::VideoCaptureCapability{},
+            NormalizedConstraints{}, dom::VideoResizeModeEnum::None,
+            /*aStarted=*/false);
+        const auto newCapability = capturer->CombinedCapability();
+        if (oldCapability != newCapability) {
+          if (auto* engine = EnsureInitialized(aCapEngine)) {
+            engine->WithEntry(
+                capturer->mCaptureId, [&](VideoEngine::CaptureEntry& aEntry) {
+                  if (newCapability) {
+                    aEntry.VideoCapture()->StartCapture(*newCapability);
+                  } else {
+                    aEntry.VideoCapture()->StopCapture();
+                  }
+                });
           }
         }
       }));
