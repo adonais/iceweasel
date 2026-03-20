@@ -66,18 +66,6 @@ class ReviewPromptMiddleware(
             }
         }
 
-        /**
-         * WARNING!
-         *
-         * It's important that at least one criterion other than the 4 month limit evaluates to false
-         * if Nimbus SDK database fails and loses all events from the event store.
-         * In such case [hasNotBeenPromptedLastFourMonths] will return true and allow showing the prompt.
-         * Another check MUST return false to block the prompt from showing repeatedly.
-         *
-         * See also:
-         *  * [hasBeenOpenedSeveralTimes]
-         *  * https://bugzilla.mozilla.org/show_bug.cgi?id=2001801
-         */
         fun legacyCriteria(
             jexlHelper: NimbusMessagingHelperInterface,
         ): Sequence<Boolean> {
@@ -225,16 +213,6 @@ internal fun usedAppOnAtLeastFourOfLastSevenDays(
  * Kept so we can fall back to it in case the custom review prompt is disabled with a kill-switch.
  *
  * Note: Because Nimbus limits data to 4 calendar years, this will ignore app opens before then.
- *
- * WARNING!
- * This is intentionally using an expression based on the `app_opened` event,
- * not the `number_of_app_launches` custom attribute.
- * This means this condition will return false if the event store loses all events,
- * which helps protect from repeatedly showing the prompt in case Nimbus SDK database fails.
- *
- * See also:
- *  * [ReviewPromptMiddleware.TriggerBuilder.legacyCriteria]
- *  * https://bugzilla.mozilla.org/show_bug.cgi?id=2001801
  */
 @VisibleForTesting
 internal fun hasBeenOpenedSeveralTimes(
