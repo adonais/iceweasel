@@ -131,8 +131,8 @@ TEST_F(TestAggregateCapturer, FrameDelivery) {
   NormalizedConstraints constraints;
   dom::VideoResizeModeEnum resizeMode =
       dom::VideoResizeModeEnum::Crop_and_scale;
-  mAggregator->SetConfigurationFor(mAggregator->mCaptureId, cap, constraints,
-                                   resizeMode, /*aStarted=*/true);
+  mAggregator->StartStream(mAggregator->mCaptureId, cap, constraints,
+                           resizeMode);
 
   constexpr int width = 240, height = 160;
   constexpr int64_t time = 123;
