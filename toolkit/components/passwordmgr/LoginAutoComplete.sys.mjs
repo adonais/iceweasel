@@ -178,23 +178,8 @@ class GeneratedPasswordAutocompleteItem extends AutocompleteItem {
       fillMessageName: "PasswordManager:FillGeneratedPassword",
       generatedPassword,
       willAutoSaveGeneratedPassword,
-      primary: this.label,
-      secondary: this._autoSaveString(),
     });
-    // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
     this.image = "chrome://browser/skin/login.svg";
-  }
-
-  _autoSaveString() {
-    let brandShorterName = Services.strings
-      .createBundle("chrome://branding/locale/brand.properties")
-      .GetStringFromName("brandShorterName");
-
-    let autoSaveString = Services.strings
-      .createBundle("chrome://passwordmgr/locale/passwordmgr.properties")
-      .formatStringFromName("generatedPasswordWillBeSaved", [brandShorterName]);
-
-    return autoSaveString;
   }
 }
 

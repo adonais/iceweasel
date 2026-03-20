@@ -133,12 +133,6 @@ export class FormHistoryAutoCompleteResult {
 
   getImageAt(index) {
     const item = this.getAt(index);
-
-    if (this.getStyleAt(index) === "fromhistory") {
-      // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
-      return "chrome://browser/skin/history.svg";
-    }
-
     return item?.image || "";
   }
 

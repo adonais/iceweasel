@@ -7,49 +7,9 @@
 /* General popup rules */
 
 #PopupAutoComplete > richlistbox {
-  padding: var(--space-small);
-
-  &.autocomplete-row-item-container {
-    min-width: 250px;
-  }
+  padding: var(--space-medium);
 }
 
-#PopupAutoComplete > richlistbox > .autocomplete-row-item {
-  display: flex;
-
-  &:not(:only-child) {
-    margin-block-end: var(--space-xsmall);
-  }
-
-  &[selected] {
-    background-color: unset;
-
-    > autocomplete-row-item {
-      border-radius: var(--border-radius-large);
-      border: var(--focus-outline-width) solid var(--focus-outline-color);
-    }
-  }
-
-  &[footer] {
-    margin-block-end: 0;
-
-    &:not(:first-child) {
-      border-block-start: 1px solid var(--panel-separator-color);
-      padding-block-start: var(--space-xsmall);
-    }
-  }
-
-  &[type="payment"] > autocomplete-row-item {
-    --icon-height: var(--icon-size-small);
-  }
-
-  > autocomplete-row-item {
-    flex: 1;
-    border: var(--focus-outline-width) solid transparent;
-  }
-}
-
-/* TODO Remove styles below */
 /* Define the minimum width based on the style of result rows.
    The order of the min-width rules below must be in increasing order. */
 #PopupAutoComplete:is([resultstyles~="loginsFooter"], [resultstyles~="insecureWarning"])::part(content) {
@@ -60,7 +20,7 @@
   min-width: 22em;
 }
 
-#PopupAutoComplete > richlistbox > .autocomplete-richlistitem {
+#PopupAutoComplete > richlistbox > richlistitem {
   min-height: var(--size-item-medium);
   border: 0;
   border-radius: var(--border-radius-small);
@@ -321,8 +281,10 @@
       list-style-image: url(chrome://global/skin/icons/security-broken.svg);
     }
   }
+}
 
-  /* Popup states */
+/* Popup states */
+.autocomplete-richlistitem {
   &:not([disabled]):not([selected]):hover {
     background-color: var(--arrowpanel-dimmed);
     @media (forced-colors) {
