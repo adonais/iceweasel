@@ -406,6 +406,21 @@ netwerk/test/unit
 -----------------
 Performance tests from the 'netwerk/test/unit' folder.
 
+test_dns_stress.js
+==================
+
+:owner: Network Team
+:name: DNS Benchmark
+:Default options:
+
+::
+
+ --perfherder
+
+**Benchmark for DNS resolver lock contention under low and high concurrency.**
+
+This test measures DNS resolver throughput by comparing baseline resolution times with low concurrency (within the thread pool) against performance under high concurrency (far exceeding the thread pool). It validates that the resolver scales with available threads rather than serializing all requests.
+
 test_trr_bench.js
 =================
 
