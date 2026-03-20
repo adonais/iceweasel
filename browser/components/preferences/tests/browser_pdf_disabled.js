@@ -8,17 +8,14 @@ add_task(async function pdfIsAlwaysPresent() {
   // Try again with the pdf viewer enabled and disabled.
   for (let test of ["enabled", "disabled"]) {
     await SpecialPowers.pushPrefEnv({
-      set: [
-        ["pdfjs.disabled", test == "disabled"],
-        ["browser.settings-redesign.enabled", true],
-      ],
+      set: [["pdfjs.disabled", test == "disabled"]],
     });
 
     await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
 
     let win = gBrowser.selectedBrowser.contentWindow;
 
-    let container = win.document.getElementById("applicationsHandlersView");
+    let container = win.document.getElementById("handlersView");
 
     // First, find the PDF item.
     let pdfItem = container.querySelector(

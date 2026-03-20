@@ -14,12 +14,6 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
   "https://example.com"
 );
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-});
-
 async function getPdfCategoryItem() {
   await openPreferencesViaOpenPreferencesAPI("general", { leaveOpen: true });
   info("Preferences page opened on the general pane.");
@@ -28,7 +22,7 @@ async function getPdfCategoryItem() {
   info("Apps list loaded.");
 
   let win = gBrowser.selectedBrowser.contentWindow;
-  let container = win.document.getElementById("applicationsHandlersView");
+  let container = win.document.getElementById("handlersView");
   await container.updateComplete;
 
   let pdfCategory = container.querySelector(
