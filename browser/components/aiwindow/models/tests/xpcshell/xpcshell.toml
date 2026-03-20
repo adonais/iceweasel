@@ -32,6 +32,8 @@ support-files = [
 
 ["test_MemoriesManager.js"]
 
+["test_PromptOptimizer.js"]
+
 ["test_SearchBrowsingHistory.js"]
 
 ["test_SearchBrowsingHistoryDomainBoost.js"]

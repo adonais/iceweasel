@@ -21,6 +21,7 @@ import {
   extractMarkdownLinks,
   validateCitedUrls,
 } from "moz-src:///browser/components/aiwindow/models/CitationParser.sys.mjs";
+import { compactMessages } from "moz-src:///browser/components/aiwindow/models/PromptOptimizer.sys.mjs";
 
 // Hard limit on how many times run_search can execute per conversation turn.
 // Prevents infinite tool-call loops when the model repeatedly requests search.
@@ -101,15 +102,19 @@ Object.assign(Chat, {
     const searchExecuted = conversation._searchExecutedTurn === currentTurn;
     let blockedSearchAttempts = 0;
 
-    const streamModelResponse = () =>
-      engineInstance.runWithGenerator({
+    const streamModelResponse = () => {
+      const rawMessages = conversation.getMessagesInOpenAiFormat();
+      const compactedMessages = compactMessages(rawMessages);
+
+      return engineInstance.runWithGenerator({
         streamOptions: { enabled: true },
         fxAccountToken,
         tool_choice: "auto",
         tools: chatToolsConfig,
-        args: conversation.getMessagesInOpenAiFormat(),
+        args: compactedMessages,
         ...inferenceParams,
       });
+    };
 
     while (true) {
       let pendingToolCalls = null;

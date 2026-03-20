@@ -20,6 +20,7 @@ MOZ_SRC_FILES += [
     "CitationParser.sys.mjs",
     "ConversationSuggestions.sys.mjs",
     "IntentClassifier.sys.mjs",
+    "PromptOptimizer.sys.mjs",
     "SearchBrowsingHistory.sys.mjs",
     "SearchBrowsingHistoryDomainBoost.sys.mjs",
     "SecurityProperties.sys.mjs",
