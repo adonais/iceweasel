@@ -23,6 +23,7 @@ typedef BaseTimeDuration<TimeDurationValueCalculator> TimeDuration;
 namespace layers {
 class Image;
 class ImageContainer;
+struct PlanarYCbCrData;
 }  // namespace layers
 
 class FakeVideoSource {
@@ -56,6 +57,8 @@ class FakeVideoSource {
   EventTargetCapability<nsISerialEventTarget> mTarget;
   Maybe<TrackingId> mTrackingId MOZ_GUARDED_BY(mTarget);
   RefPtr<layers::ImageContainer> mImageContainer MOZ_GUARDED_BY(mTarget);
+  nsTArray<uint8_t> mFrame MOZ_GUARDED_BY(mTarget);
+  std::unique_ptr<layers::PlanarYCbCrData> mFrameData MOZ_GUARDED_BY(mTarget);
   int32_t mWidth MOZ_GUARDED_BY(mTarget) = -1;
   int32_t mHeight MOZ_GUARDED_BY(mTarget) = -1;
   int mCb MOZ_GUARDED_BY(mTarget) = 16;
