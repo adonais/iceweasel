@@ -460,11 +460,6 @@ fails-if(!xulRuntime.shell) script test262/staging/sm/Atomics/cross-compartment.
 fails-if(!xulRuntime.shell) script test262/staging/built-ins/Reflect/preventExtensions/preventExtensions-variable-length-typed-arrays.js
 fails-if(!xulRuntime.shell) script test262/staging/built-ins/Object/seal/seal-variable-length-typed-arrays.js
 
-# https://github.com/tc39/test262/pull/3955
-# https://bugzilla.mozilla.org/show_bug.cgi?id=1892186
-skip script test262/language/module-code/top-level-await/async-module-does-not-block-sibling-modules.js
-
-
 ##################################################
 # Test262 tests skipped due to SpiderMonkey bugs #
 ##################################################

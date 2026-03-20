@@ -8002,8 +8002,9 @@ void PromiseObject::dumpOwnStringContent(js::GenericPrinter& out) const {}
 
   if (!iter.isFunctionFrame() && iter.isModuleFrame()) {
     // The iterator is not a function frame, it is a module frame.
-    // Ignore this optimization for now.
-    return true;
+    // The await cannot be skipped for modules. During InnerModuleEvaluation, it
+    // must yield execution so other modules in the same module graph can run.
+    return false;
   }
 
   MOZ_ASSERT(iter.calleeTemplate()->isAsync());
