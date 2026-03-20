@@ -257,7 +257,7 @@ static void TestConstUnlockedConstReader(
   EXPECT_EQ(aData.Info().ThreadId(), aThreadId);
   EXPECT_FALSE(aData.Info().IsMainThread());
 
-#if defined(GP_OS_windows) && defined(MOZ_GECKO_PROFILER)
+#if defined(GP_OS_windows)
   HANDLE threadHandle = aData.PlatformDataCRef().ProfiledThread();
   EXPECT_NE(threadHandle, nullptr);
   EXPECT_EQ(ProfilerThreadId::FromNumber(::GetThreadId(threadHandle)),
@@ -266,7 +266,7 @@ static void TestConstUnlockedConstReader(
   // work, but at least it shouldn't crash.
   ULONG64 cycles;
   (void)QueryThreadCycleTime(threadHandle, &cycles);
-#elif defined(GP_OS_darwin) && defined(MOZ_GECKO_PROFILER)
+#elif defined(GP_OS_darwin)
   // Test calling thread_info, we cannot assume that it will always work, but at
   // least it shouldn't crash.
   thread_basic_info_data_t threadBasicInfo;
