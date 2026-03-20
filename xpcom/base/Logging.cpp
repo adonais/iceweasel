@@ -294,30 +294,6 @@ void empty_va(va_list* va, ...) {
   va_start(*va, va);
   va_end(*va);
 }
-
-struct LogMarker : public BaseMarkerType<LogMarker> {
-  static constexpr const char* Name = "Log";
-  static constexpr const char* TableLabel =
-      "[{marker.data.level}] {marker.name}: {marker.data.message}";
-  static constexpr const char* ColorField = "color";
-  using MS = MarkerSchema;
-  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
-                                               MS::Location::MarkerTable};
-  static constexpr MS::PayloadField PayloadFields[] = {
-      {"level", MS::InputType::CString, "Level", MS::Format::UniqueString},
-      {"message", MS::InputType::CString, "Message", MS::Format::String},
-      {"color", MS::InputType::CString, nullptr, MS::Format::String,
-       MS::PayloadFlags::Hidden},
-  };
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aLevel,
-                                   const ProfilerString8View& aText,
-                                   const ProfilerString8View& aColor) {
-    aWriter.UniqueStringProperty("level", aLevel);
-    aWriter.StringProperty("message", aText);
-    aWriter.StringProperty("color", aColor);
-  }
-};
 }  // namespace
 
 class LogModuleManager {
@@ -678,50 +654,39 @@ class LogModuleManager {
                    size_t aLogMessageSize) {
     long pid = static_cast<long>(base::GetCurrentProcId());
     if (profiler_thread_is_being_profiled_for_markers()) {
-      const char* color = [aLevel]() -> const char* {
-        switch (aLevel) {
-          case LogLevel::Error:
-            return "red";
-          case LogLevel::Warning:
-            return "orange";
-          case LogLevel::Info:
-            return "green";
-          case LogLevel::Debug:
-            return "blue";
-          case LogLevel::Verbose:
-          case LogLevel::Disabled:
-            return "grey";
+      struct LogMarker {
+        static constexpr Span<const char> MarkerTypeName() {
+          return MakeStringSpan("Log");
         }
-        MOZ_CRASH("Unexpected log level");
-      }();
-
-      const char* levelStr = [aLevel]() -> const char* {
-        switch (aLevel) {
-          case LogLevel::Error:
-            return "Error";
-          case LogLevel::Warning:
-            return "Warning";
-          case LogLevel::Info:
-            return "Info";
-          case LogLevel::Debug:
-            return "Debug";
-          case LogLevel::Verbose:
-            return "Verbose";
-          case LogLevel::Disabled:
-            return "Disabled";
+        static void StreamJSONMarkerData(
+            baseprofiler::SpliceableJSONWriter& aWriter,
+            const ProfilerString8View& aModule,
+            const ProfilerString8View& aText) {
+          aWriter.StringProperty("module", aModule);
+          aWriter.StringProperty("name", aText);
         }
-        MOZ_CRASH("Unexpected log level");
-      }();
+        static MarkerSchema MarkerTypeDisplay() {
+          using MS = MarkerSchema;
+          MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
+          schema.SetTableLabel("({marker.data.module}) {marker.data.name}");
+          schema.AddKeyLabelFormat("module", "Module", MS::Format::String);
+          schema.AddKeyLabelFormat("name", "Name", MS::Format::String);
+          return schema;
+        }
+      };
 
+      nsAutoCString levelAndName;
+      levelAndName.AppendASCII(ToLogStr(aLevel));
+      levelAndName.AppendLiteral("/");
+      levelAndName.AppendASCII(aName);
       profiler_add_marker(
-          ProfilerString8View::WrapNullTerminatedString(aName),
-          geckoprofiler::category::LOGS,
+          "LogMessages", geckoprofiler::category::OTHER,
           {aStart ? MarkerTiming::IntervalUntilNowFrom(*aStart)
                   : MarkerTiming::InstantNow(),
            MarkerStack::MaybeCapture(mCaptureProfilerStack)},
-          LogMarker{}, ProfilerString8View::WrapNullTerminatedString(levelStr),
-          ProfilerString8View::WrapNullTerminatedString(aLogMessage),
-          ProfilerString8View::WrapNullTerminatedString(color));
+          LogMarker{},
+          ProfilerString8View::WrapNullTerminatedString(levelAndName.get()),
+          ProfilerString8View::WrapNullTerminatedString(aLogMessage));
     }
 
     // Determine if a newline needs to be appended to the message.
