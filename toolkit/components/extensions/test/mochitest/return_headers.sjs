@@ -1,3 +1,5 @@
+/* -*- Mode: indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim: set ft=javascript sts=2 sw=2 et tw=80: */
 "use strict";
 
 /* exported handleRequest */

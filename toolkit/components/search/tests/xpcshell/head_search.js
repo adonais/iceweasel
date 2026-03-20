@@ -1,3 +1,6 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et: */
+
 ChromeUtils.defineESModuleGetters(this, {
   AddonTestUtils: "resource://testing-common/AddonTestUtils.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",

@@ -1,3 +1,5 @@
+// -*- mode: C++ -*-
+
 // Copyright (c) 2010 Google Inc.
 // All rights reserved.
 //
