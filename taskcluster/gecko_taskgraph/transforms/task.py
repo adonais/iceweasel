@@ -28,7 +28,7 @@ from taskgraph import MAX_DEPENDENCIES
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.transforms.task import payload_builder, payload_builders
 from taskgraph.util.copy import deepcopy
-from taskgraph.util.keyed_by import evaluate_keyed_by
+from taskgraph.util.keyed_by import evaluate_keyed_by, keymatch
 from taskgraph.util.schema import (
     LegacySchema,
     Schema,
@@ -522,8 +522,8 @@ def get_treeherder_project(config) -> str:
     ).get("branch-map", {})
 
     head_ref, _ = get_head_ref(config)
-    if head_ref and head_ref in th_branch_map:
-        return th_branch_map[head_ref]
+    if head_ref and (matches := keymatch(th_branch_map, head_ref)):
+        return matches[0]
 
     return get_project_alias(config)
 

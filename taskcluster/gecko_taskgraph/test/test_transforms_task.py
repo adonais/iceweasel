@@ -104,6 +104,28 @@ from gecko_taskgraph.transforms.task import (
             "test-project-pr",
             id="pull_request",
         ),
+        pytest.param(
+            {
+                "head_ref": "refs/heads/test-branch",
+                "project": "test-project",
+                "repository_type": "git",
+                "tasks_for": "github-push",
+            },
+            {"test-.*": "foo", "default": "bar"},
+            "foo",
+            id="regex",
+        ),
+        pytest.param(
+            {
+                "head_ref": "refs/heads/release",
+                "project": "test-project",
+                "repository_type": "git",
+                "tasks_for": "github-push",
+            },
+            {"test-.*": "foo", "default": "bar"},
+            "bar",
+            id="regex-default",
+        ),
     ],
 )
 def test_get_treeherder_project(params, branch_map, expected_project):
