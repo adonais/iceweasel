@@ -57,6 +57,9 @@ BROWSER_CHROME_MANIFESTS += [
     "tests/browser/windows/uia/browser.toml",
 ]
 
+if CONFIG["MOZ_ENABLE_SKIA_PDF"]:
+    DIRS += ["pdf"]
+
 with Files("**"):
     BUG_COMPONENT = ("Core", "Disability Access APIs")
 
