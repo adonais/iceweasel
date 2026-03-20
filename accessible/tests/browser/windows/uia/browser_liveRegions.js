@@ -14,7 +14,7 @@ const LiveSetting = {
 /**
  * Test the LiveSetting property.
  */
-addUiaTask(
+addAccessibleTask(
   `
 <div id="polite" aria-live="polite">
   <div id="inner">polite</div>
@@ -40,13 +40,11 @@ addUiaTask(
     // Chromium in the absence of good documentation.
     // 3. It's cheaper to expose it only on the root, since that avoids many
     // ancestor walks.
-    if (gIsUiaEnabled) {
-      is(
-        await runPython(`findUiaByDomId(doc, "inner").CurrentLiveSetting`),
-        LiveSetting.Off,
-        "inner has correct LiveSetting"
-      );
-    }
+    is(
+      await runPython(`findUiaByDomId(doc, "inner").CurrentLiveSetting`),
+      LiveSetting.Off,
+      "inner has correct LiveSetting"
+    );
     is(
       await runPython(`findUiaByDomId(doc, "assertive").CurrentLiveSetting`),
       LiveSetting.Assertive,
@@ -73,7 +71,7 @@ addUiaTask(
 /**
  * Test exposure of aria-atomic via the AriaProperties property.
  */
-addUiaTask(
+addAccessibleTask(
   `
 <div id="implicit" aria-live="polite">live</div>
 <div id="false" aria-live="polite" aria-atomic="false">false</div>
@@ -114,15 +112,13 @@ addUiaTask(
       -1,
       "AriaProperties for none doesn't contain atomic"
     );
-  },
-  // The IA2 -> UIA proxy doesn't support atomic.
-  { uiaEnabled: true, uiaDisabled: false }
+  }
 );
 
 /**
  * Test that a live region is exposed as a control element.
  */
-addUiaTask(
+addAccessibleTask(
   `
 <div id="live" aria-live="polite">
   <div id="inner">live</div>
@@ -135,15 +131,12 @@ addUiaTask(
       await runPython(`findUiaByDomId(doc, "live").CurrentIsControlElement`),
       "live is a control element"
     );
-    // The IA2 -> UIA proxy gets this wrong.
-    if (gIsUiaEnabled) {
-      ok(
-        !(await runPython(
-          `findUiaByDomId(doc, "inner").CurrentIsControlElement`
-        )),
-        "inner is not a control element"
-      );
-    }
+    ok(
+      !(await runPython(
+        `findUiaByDomId(doc, "inner").CurrentIsControlElement`
+      )),
+      "inner is not a control element"
+    );
     ok(
       !(await runPython(
         `findUiaByDomId(doc, "notLive").CurrentIsControlElement`
@@ -156,7 +149,7 @@ addUiaTask(
 /**
  * Test LiveRegionChanged events.
  */
-addUiaTask(
+addAccessibleTask(
   `
 <div id="live" aria-live="polite">
   a
@@ -206,7 +199,5 @@ addUiaTask(
     });
     await waitForUiaEvent();
     ok(true, "Got LiveRegionChanged on live");
-  },
-  // The IA2 -> UIA proxy doesn't fire LiveRegionChanged.
-  { uiaEnabled: true, uiaDisabled: false }
+  }
 );
