@@ -585,6 +585,10 @@ download-private-browsing-delete =
     .label = Delete files downloaded in private browsing when all private windows are closed
     .accesskey = D
 
+applications-header = Applications
+
+applications-description = Choose how { -brand-short-name } handles the files you download from the web or the applications you use while browsing.
+
 applications-setting =
     .label = Applications
     .description = Choose how { -brand-short-name } handles the files you download from the web or the applications you use while browsing.
@@ -676,6 +680,8 @@ applications-use-os-default-label =
     .value = { applications-use-os-default.label }
 
 ##
+
+applications-handle-new-file-types-description = What should { -brand-short-name } do with other files?
 
 applications-setting-new-file-types =
      .label = What should { -brand-short-name } do with other files?
