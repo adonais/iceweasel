@@ -4,7 +4,7 @@ from tests.support.asserts import assert_png
 pytestmark = pytest.mark.asyncio
 
 
-PAGE_BIG_IMAGE = "_mozilla/webdriver/bidi/network/get_data/support/big.png"
+PAGE_BIG_IMAGE = "_mozilla/webdriver/support/assets/big.png"
 # Test image is ~1MB, make sure to support at least 1MB as max total data size.
 TWO_MB = 2_000_000
 
