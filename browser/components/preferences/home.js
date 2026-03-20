@@ -650,6 +650,11 @@ var gHomePane = {
   },
 
   init() {
+    // The redesign renders the home pane via setting-pane elements;
+    // the legacy XUL-based init must not run alongside it.
+    if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
+      return;
+    }
     // Event Listeners
     document
       .getElementById("homePageUrl")

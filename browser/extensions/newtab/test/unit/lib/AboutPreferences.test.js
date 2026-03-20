@@ -136,6 +136,71 @@ describe("AboutPreferences Feed", () => {
       // Show or hide the "Restore defaults" button depending on prefs
       assert.calledOnce(toggleRestoreDefaults);
     });
+
+    describe("when browser.settings-redesign.enabled is true", () => {
+      let registerGroups;
+
+      beforeEach(() => {
+        sandbox.stub(Services.prefs, "getBoolPref").returns(true);
+        registerGroups = sandbox.stub();
+        // SettingGroupManager lives on the preferences window object.
+        globals.set("SettingGroupManager", { registerGroups });
+        // Stub the setup methods so we can focus on the routing logic in observe().
+        sandbox.stub(instance, "_registerPreferences");
+        sandbox.stub(instance, "_setupHomepageGroup").returns({});
+        sandbox.stub(instance, "_setupCustomHomepageGroup").returns({});
+        sandbox.stub(instance, "_setupHomeGroup").returns({});
+      });
+
+      it("should call SettingGroupManager.registerGroups with homepage, customHomepage, and home", async () => {
+        await instance.observe(window);
+
+        assert.calledOnce(registerGroups);
+        assert.hasAllKeys(registerGroups.firstCall.args[0], [
+          "homepage",
+          "customHomepage",
+          "home",
+        ]);
+      });
+
+      it("should not call renderPreferenceSection or toggleRestoreDefaults", async () => {
+        // The redesign path returns early; legacy DOM rendering must not run.
+        await instance.observe(window);
+
+        assert.notCalled(renderPreferenceSection);
+        assert.notCalled(toggleRestoreDefaults);
+      });
+    });
+  });
+
+  describe("#_registerPreferences", () => {
+    it("should call Preferences.addAll once with all pref ids", () => {
+      const addAll = sandbox.stub();
+
+      instance._registerPreferences({ Preferences: { addAll } });
+
+      assert.calledOnce(addAll);
+      // Spot-check prefs from the beginning, middle, and end of the list.
+      const [prefs] = addAll.firstCall.args;
+      assert.isArray(prefs);
+      assert.isTrue(
+        prefs.some(
+          p => p.id === "browser.newtabpage.activity-stream.showSearch"
+        )
+      );
+      assert.isTrue(
+        prefs.some(
+          p => p.id === "browser.newtabpage.activity-stream.feeds.topsites"
+        )
+      );
+      assert.isTrue(
+        prefs.some(
+          p =>
+            p.id ===
+            "browser.newtabpage.activity-stream.section.highlights.includeVisited"
+        )
+      );
+    });
   });
 
   describe("#renderPreferenceSection", () => {
