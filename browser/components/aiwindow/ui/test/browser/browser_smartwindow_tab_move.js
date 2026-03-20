@@ -7,6 +7,49 @@ const { TabStateFlusher } = ChromeUtils.importESModule(
   "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
 );
 
+async function addSmartTab(win) {
+  const tab = BrowserTestUtils.addTab(win.gBrowser, AIWINDOW_URL);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  return tab;
+}
+
+async function simulateActiveConversation(tab) {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    aiWindowElement.classList.add("chat-active");
+  });
+}
+
+async function adoptTabToWindow(tab, targetWin) {
+  const tabOpenPromise = BrowserTestUtils.waitForEvent(
+    targetWin.gBrowser.tabContainer,
+    "TabOpen"
+  );
+  targetWin.gBrowser.adoptTab(tab);
+  const { target: adoptedTab } = await tabOpenPromise;
+  return adoptedTab;
+}
+
+async function assertToggleButtonVisibility(tab) {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await ContentTaskUtils.waitForCondition(() => {
+      const el = content.document.querySelector("ai-window");
+      const btn = el?.shadowRoot?.querySelector("#smartbar-toggle-button");
+      return btn && !btn.hidden;
+    }, "Toggle button should be visible");
+  });
+}
+
+async function assertSmartBarVisibility(tab) {
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    await ContentTaskUtils.waitForCondition(() => {
+      const el = content.document.querySelector("ai-window");
+      const smartbar = el?.shadowRoot?.querySelector("#ai-window-smartbar");
+      return smartbar && !smartbar.hidden;
+    }, "Smartbar should be visible");
+  });
+}
+
 // Drag a tab out of a smart window to detach it into a new window.
 // The detached window should still be a smart window.
 add_task(async function test_smartwindow_detach_tab() {
@@ -55,3 +98,148 @@ add_task(async function test_smartwindow_detach_tab() {
   await BrowserTestUtils.closeWindow(detachedWin);
   await BrowserTestUtils.closeWindow(smartWin);
 });
+
+// Move a smart tab without conversation to a classic window.
+// The tab should be redirected to the classic new tab page.
+add_task(async function test_smarttab_no_conversation_becomes_classic() {
+  let classicWin, smartWin;
+  registerCleanupFunction(async () => {
+    if (smartWin && !smartWin.closed) {
+      await BrowserTestUtils.closeWindow(smartWin);
+    }
+    if (classicWin && !classicWin.closed) {
+      await BrowserTestUtils.closeWindow(classicWin);
+    }
+  });
+  classicWin = await BrowserTestUtils.openNewBrowserWindow({
+    aiWindow: false,
+  });
+  smartWin = await openAIWindow();
+  const smartTab = await addSmartTab(smartWin);
+  const adoptedTab = await adoptTabToWindow(smartTab, classicWin);
+
+  Assert.ok(
+    !AIWindow.isAIWindowActive(classicWin),
+    "Classic window should remain classic after adopting a smart tab"
+  );
+
+  await TestUtils.waitForCondition(
+    () => adoptedTab.linkedBrowser.currentURI.spec === "about:newtab"
+  );
+
+  Assert.equal(
+    adoptedTab.linkedBrowser.currentURI.spec,
+    "about:newtab",
+    "Smart tab without conversation should redirect to classic new tab"
+  );
+
+  await BrowserTestUtils.closeWindow(smartWin);
+  await BrowserTestUtils.closeWindow(classicWin);
+});
+
+// Move a smart tab with an active conversation to a classic window.
+// The tab should keep its content and show the toggle button.
+add_task(async function test_smarttab_with_conversation_becomes_classic() {
+  let classicWin, smartWin;
+  registerCleanupFunction(async () => {
+    if (smartWin && !smartWin.closed) {
+      await BrowserTestUtils.closeWindow(smartWin);
+    }
+    if (classicWin && !classicWin.closed) {
+      await BrowserTestUtils.closeWindow(classicWin);
+    }
+  });
+  classicWin = await BrowserTestUtils.openNewBrowserWindow({
+    aiWindow: false,
+  });
+  smartWin = await openAIWindow();
+  const smartTab = await addSmartTab(smartWin);
+  await BrowserTestUtils.switchTab(smartWin.gBrowser, smartTab);
+  await simulateActiveConversation(smartTab);
+
+  const adoptedTab = await adoptTabToWindow(smartTab, classicWin);
+
+  Assert.ok(
+    !AIWindow.isAIWindowActive(classicWin),
+    "Classic window should remain classic after adopting a smart tab with conversation"
+  );
+
+  Assert.equal(
+    adoptedTab.linkedBrowser.currentURI.spec,
+    AIWINDOW_URL,
+    "Smart tab with conversation should keep its content"
+  );
+
+  await assertToggleButtonVisibility(adoptedTab);
+
+  // Move the tab back to the smart window
+  const reAdoptedTab = await adoptTabToWindow(adoptedTab, smartWin);
+
+  Assert.ok(
+    AIWindow.isAIWindowActive(smartWin),
+    "Smart window should still be a smart window after re-adopting the tab"
+  );
+
+  await assertSmartBarVisibility(reAdoptedTab);
+
+  Assert.equal(
+    reAdoptedTab.linkedBrowser.currentURI.spec,
+    AIWINDOW_URL,
+    "Re-adopted tab should keep its AI window content"
+  );
+
+  await BrowserTestUtils.closeWindow(smartWin);
+  await BrowserTestUtils.closeWindow(classicWin);
+});
+
+// Move a smart tab with an active conversation to a smart window and then a classic window.
+// The tab should keep its content and show the toggle button in the classic window.
+add_task(
+  async function test_smarttab_with_conversation_becomes_smart_and_classic() {
+    let smartWin, smartWin2, classicWin;
+    registerCleanupFunction(async () => {
+      if (smartWin && !smartWin.closed) {
+        await BrowserTestUtils.closeWindow(smartWin);
+      }
+      if (smartWin2 && !smartWin2.closed) {
+        await BrowserTestUtils.closeWindow(smartWin2);
+      }
+      if (classicWin && !classicWin.closed) {
+        await BrowserTestUtils.closeWindow(classicWin);
+      }
+    });
+    smartWin = await openAIWindow();
+    smartWin2 = await openAIWindow();
+    const smartTab = await addSmartTab(smartWin);
+    await BrowserTestUtils.switchTab(smartWin.gBrowser, smartTab);
+    await simulateActiveConversation(smartTab);
+
+    const adoptedTab = await adoptTabToWindow(smartTab, smartWin2);
+
+    Assert.equal(
+      adoptedTab.linkedBrowser.currentURI.spec,
+      AIWINDOW_URL,
+      "Smart tab should continue being a smart tab when adopted by a smart window"
+    );
+
+    classicWin = await BrowserTestUtils.openNewBrowserWindow({
+      aiWindow: false,
+    });
+    const adoptedTab2 = await adoptTabToWindow(adoptedTab, classicWin);
+
+    Assert.ok(
+      !AIWindow.isAIWindowActive(classicWin),
+      "Classic window should remain classic after adopting a smart tab with conversation"
+    );
+
+    Assert.equal(
+      adoptedTab2.linkedBrowser.currentURI.spec,
+      AIWINDOW_URL,
+      "Smart tab with conversation should keep its content"
+    );
+
+    await BrowserTestUtils.closeWindow(smartWin);
+    await BrowserTestUtils.closeWindow(smartWin2);
+    await BrowserTestUtils.closeWindow(classicWin);
+  }
+);

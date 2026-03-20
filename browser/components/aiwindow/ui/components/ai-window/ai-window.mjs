@@ -124,6 +124,7 @@ export class AIWindow extends MozLitElement {
   #starters = [];
   #smartbarResizeObserver = null;
   #windowModeObserver = null;
+  #swapDocShellsChromeWindow = null;
   #addedContextWebsites = []; // TODO: replace once Bug 2016760 lands
   #hasMemories = false;
 
@@ -374,6 +375,11 @@ export class AIWindow extends MozLitElement {
     this.#loadPendingConversation();
     this.#setupWindowModeObserver();
 
+    // Saving the chrome window ref to avoid leaks when we drag a tab out
+    this.#registerSwapDocShellsListener(
+      window.browsingContext?.topChromeWindow
+    );
+
     this.#dispatchChromeEvent(
       "ai-window:connected",
       this.#getAIWindowEventOptions()
@@ -389,6 +395,25 @@ export class AIWindow extends MozLitElement {
     return this.#conversation?.id;
   }
 
+  #registerSwapDocShellsListener(win) {
+    if (!win) {
+      return;
+    }
+
+    this.#swapDocShellsChromeWindow?.removeEventListener(
+      "EndSwapDocShells",
+      this.#handleEndSwapDocShells,
+      true
+    );
+
+    this.#swapDocShellsChromeWindow = win;
+    this.#swapDocShellsChromeWindow?.addEventListener(
+      "EndSwapDocShells",
+      this.#handleEndSwapDocShells,
+      true
+    );
+  }
+
   handleEvent(event) {
     if (event.detail) {
       this.openConversation(event.detail);
@@ -397,6 +422,39 @@ export class AIWindow extends MozLitElement {
       this.onCreateNewChatClick();
     }
   }
+
+  /* Handles tab adoption (dragging out of a window) when
+   * Smart tab -> Classic window
+   * Smart tab -> Classic window -> Dragged back to a smart window
+   */
+  #handleEndSwapDocShells = () => {
+    const win = window.browsingContext?.topChromeWindow;
+
+    if (!win) {
+      return;
+    }
+
+    // Re-register on the new chrome window so future swaps are caught
+    this.#registerSwapDocShellsListener(win);
+
+    // needed if a smart tab became classic and then becomes smart again via dragging
+    this.#updateSmartbarVisibility();
+
+    const browser = window.browsingContext.embedderElement;
+
+    // if chat has messages, don't redirect to classic new tab
+    if (
+      !lazy.AIWindow.isAIWindowActive(win) &&
+      !lazy.AIWindow.hasActiveChatInBrowser(browser)
+    ) {
+      const classicNewTabURI = Services.io.newURI(win.BROWSER_NEW_TAB_URL);
+      const triggeringPrincipal =
+        Services.scriptSecurityManager.getSystemPrincipal();
+      browser.loadURI(classicNewTabURI, {
+        triggeringPrincipal,
+      });
+    }
+  };
 
   #setupWindowModeObserver() {
     this.#windowModeObserver = (subject, topic) => {
@@ -435,6 +493,13 @@ export class AIWindow extends MozLitElement {
       );
       this.#visibilityChangeHandler = null;
     }
+
+    this.#swapDocShellsChromeWindow?.removeEventListener(
+      "EndSwapDocShells",
+      this.#handleEndSwapDocShells,
+      true
+    );
+    this.#swapDocShellsChromeWindow = null;
 
     // Clean up window mode observer
     if (this.#windowModeObserver) {
