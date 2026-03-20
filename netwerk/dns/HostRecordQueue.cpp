@@ -10,7 +10,8 @@ namespace mozilla {
 namespace net {
 
 void HostRecordQueue::InsertRecord(nsHostRecord* aRec,
-                                   nsIDNSService::DNSFlags aFlags) {
+                                   nsIDNSService::DNSFlags aFlags,
+                                   const MutexAutoLock& aProofOfLock) {
   if (aRec->isInList()) {
     MOZ_DIAGNOSTIC_ASSERT(!mEvictionQ.contains(aRec),
                           "Already in eviction queue");
@@ -38,7 +39,8 @@ void HostRecordQueue::InsertRecord(nsHostRecord* aRec,
 
 void HostRecordQueue::AddToEvictionQ(
     nsHostRecord* aRec, uint32_t aMaxCacheEntries,
-    nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord>& aDB) {
+    nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord>& aDB,
+    const MutexAutoLock& aProofOfLock) {
   if (aRec->isInList()) {
     bool inEvictionQ = mEvictionQ.contains(aRec);
     MOZ_DIAGNOSTIC_ASSERT(!inEvictionQ, "Already in eviction queue");
@@ -89,10 +91,11 @@ void HostRecordQueue::AddToEvictionQ(
   }
 }
 
-void HostRecordQueue::MoveToEvictionQueueTail(nsHostRecord* aRec) {
+void HostRecordQueue::MoveToEvictionQueueTail(
+    nsHostRecord* aRec, const MutexAutoLock& aProofOfLock) {
   bool inEvictionQ = mEvictionQ.contains(aRec);
   if (!inEvictionQ) {
-    // Note: this function can be called when the record isn't in the
+    // Note: this function can be called when the record isn’t in the
     // mEvictionQ. For example, if we immediately start a TTL lookup (see
     // nsHostResolver::CompleteLookupLocked), the record may not be in
     // mEvictionQ.
@@ -103,7 +106,8 @@ void HostRecordQueue::MoveToEvictionQueueTail(nsHostRecord* aRec) {
   mEvictionQ.insertBack(aRec);
 }
 
-void HostRecordQueue::MaybeRenewHostRecord(nsHostRecord* aRec) {
+void HostRecordQueue::MaybeRenewHostRecord(nsHostRecord* aRec,
+                                           const MutexAutoLock& aProofOfLock) {
   if (!aRec->isInList()) {
     return;
   }
@@ -129,7 +133,8 @@ void HostRecordQueue::MaybeRenewHostRecord(nsHostRecord* aRec) {
 }
 
 void HostRecordQueue::FlushEvictionQ(
-    nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord>& aDB) {
+    nsRefPtrHashtable<nsGenericHashKey<nsHostKey>, nsHostRecord>& aDB,
+    const MutexAutoLock& aProofOfLock) {
   mEvictionQSize = 0;
 
   // Clear the evictionQ and remove all its corresponding entries from
@@ -143,7 +148,8 @@ void HostRecordQueue::FlushEvictionQ(
   }
 }
 
-void HostRecordQueue::MaybeRemoveFromQ(nsHostRecord* aRec) {
+void HostRecordQueue::MaybeRemoveFromQ(nsHostRecord* aRec,
+                                       const MutexAutoLock& aProofOfLock) {
   if (!aRec->isInList()) {
     return;
   }
@@ -161,7 +167,8 @@ void HostRecordQueue::MaybeRemoveFromQ(nsHostRecord* aRec) {
 }
 
 void HostRecordQueue::MoveToAnotherPendingQ(nsHostRecord* aRec,
-                                            nsIDNSService::DNSFlags aFlags) {
+                                            nsIDNSService::DNSFlags aFlags,
+                                            const MutexAutoLock& aProofOfLock) {
   if (!(mHighQ.contains(aRec) || mMediumQ.contains(aRec) ||
         mLowQ.contains(aRec))) {
     MOZ_ASSERT(false, "record is not in the pending queue");
@@ -173,10 +180,11 @@ void HostRecordQueue::MoveToAnotherPendingQ(nsHostRecord* aRec,
   // increment this value again.
   mPendingCount--;
 
-  InsertRecord(aRec, aFlags);
+  InsertRecord(aRec, aFlags, aProofOfLock);
 }
 
-already_AddRefed<nsHostRecord> HostRecordQueue::Dequeue(bool aHighQOnly) {
+already_AddRefed<nsHostRecord> HostRecordQueue::Dequeue(
+    bool aHighQOnly, const MutexAutoLock& aProofOfLock) {
   RefPtr<nsHostRecord> rec;
   if (!mHighQ.isEmpty()) {
     rec = mHighQ.popFirst();
@@ -194,7 +202,8 @@ already_AddRefed<nsHostRecord> HostRecordQueue::Dequeue(bool aHighQOnly) {
 }
 
 void HostRecordQueue::ClearAll(
-    const std::function<void(nsHostRecord*)>& aCallback) {
+    const std::function<void(nsHostRecord*)>& aCallback,
+    const MutexAutoLock& aProofOfLock) {
   mPendingCount = 0;
 
   auto clearPendingQ = [&](LinkedList<RefPtr<nsHostRecord>>& aPendingQ) {
