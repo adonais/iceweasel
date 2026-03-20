@@ -3446,7 +3446,7 @@ pub extern "C" fn Servo_ContainerRule_GetConditionText(
     rule: &ContainerRule,
     result: &mut nsACString,
 ) {
-    rule.condition.to_css(&mut CssWriter::new(result)).unwrap();
+    rule.conditions.to_css(&mut CssWriter::new(result)).unwrap();
 }
 
 #[no_mangle]
@@ -3464,7 +3464,8 @@ pub extern "C" fn Servo_ContainerRule_QueryContainerFor(
     rule: &ContainerRule,
     element: &RawGeckoElement,
 ) -> *const RawGeckoElement {
-    rule.condition
+    debug_assert_eq!(rule.conditions.0.len(), 1);
+    rule.conditions.0[0]
         .find_container(GeckoElement(element), None)
         .map_or(ptr::null(), |result| result.element.0)
 }
