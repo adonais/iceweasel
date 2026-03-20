@@ -25,10 +25,16 @@ add_task(async function () {
   let doc = gBrowser.contentDocument;
   await doc.l10n.ready;
 
-  let [msg] = await doc.l10n.formatMessages([{ id: "pane-general-title" }]);
+  let [msg] = await doc.l10n.formatMessages([{ id: "category-general" }]);
 
-  ok(msg.value, "pane-general-title message has a value");
-  Assert.equal(msg.attributes, null, "pane-general-title has no attributes");
+  let elem = doc.querySelector(`#category-general`);
+
+  Assert.deepEqual(msg, {
+    value: null,
+    attributes: [
+      { name: "tooltiptext", value: elem.getAttribute("tooltiptext") },
+    ],
+  });
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });

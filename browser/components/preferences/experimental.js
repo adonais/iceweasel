@@ -216,7 +216,8 @@ const gExperimentalPane = {
 
     if (
       shouldHide &&
-      document.getElementById("categories").currentView == "paneExperimental"
+      document.getElementById("categories").selectedItem?.id ==
+        "category-experimental"
     ) {
       // Leave the 'experimental' category if there are no available features
       gotoPref("general");
