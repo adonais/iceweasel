@@ -125,17 +125,6 @@ class MFMediaEngineVideoStream final : public MFMediaEngineStream {
 
   // Set when `CreateMediaType()` is called.
   bool mIsEncrypted = false;
-
-  // True when the stream begins with an unencrypted leading segment (ClearLead)
-  // followed by encrypted segments. Set during Create() from stream metadata.
-  // Used to distinguish a genuine unencrypted stream from one that has simply
-  // not yet been configured with an ITA, preventing spurious
-  // GetInputTrustAuthority calls on the clear portion.
-  bool mHasClearLead = false;
-
-  // True once the first encrypted config has been seen on a ClearLead stream.
-  // We want the engine to request an ITA only after the encrypted part starts.
-  bool mSwitchedClearToEncrypted = false;
 };
 
 }  // namespace mozilla

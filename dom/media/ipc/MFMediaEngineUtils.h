@@ -104,10 +104,6 @@ using MFMediaEngineError = MF_MEDIA_ENGINE_ERR;
 inline constexpr HRESULT DRM_E_TEE_INVALID_HWDRM_STATE =
     static_cast<HRESULT>(0x8004CD12);
 
-// AMD-specific hardware DRM state error (active display security failure).
-inline constexpr HRESULT DRM_OEM_E_ASD_ACTIVE_DISPLAY_FAIL =
-    static_cast<HRESULT>(0x8004CD00);
-
 // PlayReady CDM failed to create a decryptor for the stream. This typically
 // occurs when the system lacks hardware DRM support, such as a Trusted
 // Execution Environment (TEE) or secure video path. Most common when the

@@ -23,7 +23,14 @@ MFCDMProxy::MFCDMProxy(IMFContentDecryptionModule* aCDM, uint64_t aCDMParentId)
 MFCDMProxy::~MFCDMProxy() { LOG("MFCDMProxy destroyed"); }
 
 void MFCDMProxy::Shutdown() {
-  OnHardwareContextReset();
+  if (mTrustedInput) {
+    mTrustedInput = nullptr;
+  }
+  for (auto& inputAuthorities : mInputTrustAuthorities) {
+    SHUTDOWN_IF_POSSIBLE(inputAuthorities.second);
+  }
+  mInputTrustAuthorities.clear();
+  mCDM = nullptr;
   LOG("MFCDMProxy Shutdowned");
 }
 
@@ -47,9 +54,6 @@ HRESULT MFCDMProxy::GetInputTrustAuthority(uint32_t aStreamId,
   }
 
   if (!mTrustedInput) {
-    if (!mCDM) {
-      return MF_E_SHUTDOWN;
-    }
     RETURN_IF_FAILED(mCDM->CreateTrustedInput(
         aContentInitData, aContentInitDataSize, &mTrustedInput));
     LOG("Created a trust input for stream %u", aStreamId);
@@ -72,30 +76,17 @@ HRESULT MFCDMProxy::GetInputTrustAuthority(uint32_t aStreamId,
 HRESULT MFCDMProxy::SetContentEnabler(IUnknown* aRequest,
                                       IMFAsyncResult* aResult) {
   LOG("SetContentEnabler");
-  if (!mCDM) {
-    return MF_E_SHUTDOWN;
-  }
   ComPtr<IMFContentEnabler> contentEnabler;
   RETURN_IF_FAILED(aRequest->QueryInterface(IID_PPV_ARGS(&contentEnabler)));
   return mCDM->SetContentEnabler(contentEnabler.Get(), aResult);
 }
 
-void MFCDMProxy::ResetTrustedInput() {
-  LOG("ResetTrustedInput");
-  mTrustedInput = nullptr;
-  mInputTrustAuthorities.clear();
-}
-
 void MFCDMProxy::OnHardwareContextReset() {
   LOG("OnHardwareContextReset");
-  // Hardware context reset invalidates all crypto sessions and the CDM's
-  // hardware DRM context. Shut down ITAs and release the CDM reference so the
-  // stale COM object does not block a new CDM from acquiring TEE resources.
-  for (auto& inputAuthorities : mInputTrustAuthorities) {
-    SHUTDOWN_IF_POSSIBLE(inputAuthorities.second);
-  }
-  ResetTrustedInput();
-  mCDM = nullptr;
+  // Hardware context reset happens, all the crypto sessions are in invalid
+  // states. So drop everything here.
+  mTrustedInput.Reset();
+  mInputTrustAuthorities.clear();
 }
 
 #undef LOG
