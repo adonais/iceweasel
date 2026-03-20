@@ -109,6 +109,7 @@ export const MultiStageProtonScreen = props => {
       langPackInstallPhase={props.langPackInstallPhase}
       forceHideStepsIndicator={props.forceHideStepsIndicator}
       ariaRole={props.ariaRole}
+      requireAction={props.requireAction}
       aboveButtonStepsIndicator={props.aboveButtonStepsIndicator}
       isWideScreen={isWideScreen}
     />
@@ -268,7 +269,14 @@ export class ProtonScreen extends React.PureComponent {
     if (this.props.content?.position === "callout") {
       return;
     }
-    this.mainContentHeader.focus();
+    // For requireAction screens, focus the title heading instead of the
+    // alertdialog container to prevent Orca from misreading Tab-navigated
+    // elements. The alertdialog announcement still fires on open.
+    if (this.props.requireAction && this.titleHeader) {
+      this.titleHeader.focus();
+    } else {
+      this.mainContentHeader.focus();
+    }
   }
 
   getScreenClassName(includeNoodles, isVideoOnboarding, isAddonsPicker) {
@@ -291,6 +299,11 @@ export class ProtonScreen extends React.PureComponent {
   }
 
   renderTitle({ title, title_logo }) {
+    const titleRef = this.props.requireAction
+      ? input => {
+          this.titleHeader = input;
+        }
+      : null;
     if (title_logo) {
       const { alignment, ...rest } = title_logo;
       return (
@@ -300,14 +313,22 @@ export class ProtonScreen extends React.PureComponent {
         >
           {this.renderPicture({ ...rest })}
           <Localized text={title}>
-            <h1 id="mainContentHeader" />
+            <h1
+              id="mainContentHeader"
+              tabIndex={this.props.requireAction ? -1 : undefined}
+              ref={titleRef}
+            />
           </Localized>
         </div>
       );
     }
     return (
       <Localized text={title}>
-        <h1 id="mainContentHeader" />
+        <h1
+          id="mainContentHeader"
+          tabIndex={this.props.requireAction ? -1 : undefined}
+          ref={titleRef}
+        />
       </Localized>
     );
   }
