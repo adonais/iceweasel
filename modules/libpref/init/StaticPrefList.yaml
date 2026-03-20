@@ -10321,7 +10321,7 @@
 # Is multiple color items upported for color-mix()?
 - name: layout.css.color-mix-multi-color.enabled
   type: RelaxedAtomicBool
-  value: @IS_NIGHTLY_BUILD@
+  value: true
   mirror: always
   rust: true
 
