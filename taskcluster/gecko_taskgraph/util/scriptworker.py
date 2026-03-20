@@ -534,7 +534,7 @@ def generate_beetmover_upstream_artifacts(
             if dep not in map_config["mapping"][filename]["from"]:
                 continue
             if (
-                current_locale != "en-US"
+                current_locale not in ("en-US", "multi")
                 and not map_config["mapping"][filename]["all_locales"]
             ):
                 continue
