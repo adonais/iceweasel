@@ -533,8 +533,8 @@ export const NET_ERRORS = [
     category: "net",
     bodyTitleL10nId: "fileNotFound-title",
     introContent: {
-      dataL10nId: "neterror-file-not-found-intro",
-      dataL10nArgs: { path: null },
+      dataL10nId: "fp-neterror-offline-intro",
+      dataL10nArgs: { hostname: null },
     },
     descriptionParts: [
       { tag: "li", dataL10nId: "neterror-file-not-found-filename" },
@@ -546,7 +546,7 @@ export const NET_ERRORS = [
     },
     customNetError: {
       titleL10nId: "fileNotFound-title",
-      whatCanYouDoL10nId: "neterror-file-not-found-what-can-you-do",
+      whatCanYouDoL10nId: "neterror-http-error-page",
     },
     hasNoUserFix: true,
   },

@@ -85,11 +85,6 @@ neterror-dns-not-found-trr-unknown-problem = Unexpected problem.
 neterror-file-not-found-filename = Check the file name for capitalization or other typing errors.
 neterror-file-not-found-moved = Check to see if the file was moved, renamed or deleted.
 
-# Variables:
-#   $path (String) - Path of the local file that could not be found.
-neterror-file-not-found-intro = { -brand-short-name } can’t find the file at <strong>{ $path }</strong>. It either doesn’t exist or the path is incorrect.
-neterror-file-not-found-what-can-you-do = If you typed the address manually, check for capitalization mistakes or typos in the file name or path. If you followed a saved bookmark or link, the file may have been moved, renamed, or deleted since it was saved. Try locating it using your file manager or a recent search.
-
 neterror-access-denied = It may have been removed, moved, or file permissions may be preventing access.
 
 neterror-unknown-protocol = You might need to install other software to open this address.
