@@ -947,6 +947,11 @@ class MarkerSchema {
     return *this;
   }
 
+  MarkerSchema& SetColorField(std::string aKey) {
+    mColorField = std::move(aKey);
+    return *this;
+  }
+
   // Each data element that is streamed by `StreamJSONMarkerData()` can be
   // displayed as indicated by using one of the `Add...` function below.
   // Each `Add...` will add a line in the full marker description. Parameters:
@@ -1012,6 +1017,7 @@ class MarkerSchema {
   std::string mTooltipLabel;
   std::string mTableLabel;
   bool mIsStackBased = false;
+  std::string mColorField;
   // Main display, made of zero or more rows of key+label+format or label+value.
  private:
   struct DynamicData {
@@ -1104,6 +1110,7 @@ struct BaseMarkerType {
   static constexpr const char* ChartLabel = nullptr;
   static constexpr const char* TableLabel = nullptr;
   static constexpr const char* TooltipLabel = nullptr;
+  static constexpr const char* ColorField = nullptr;
 
   // Setting this property to true is a promise that the the marker will nest
   // properly.  i.e. it can't have a partially overlapping time range with any
@@ -1134,6 +1141,9 @@ struct BaseMarkerType {
     }
     if (T::IsStackBased) {
       schema.SetIsStackBased();
+    }
+    if (T::ColorField) {
+      schema.SetColorField(T::ColorField);
     }
     for (const MS::PayloadField field : T::PayloadFields) {
       if (field.Label) {
