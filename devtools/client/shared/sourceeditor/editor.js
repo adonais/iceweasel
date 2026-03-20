@@ -102,6 +102,7 @@ const CM_MAPPING = [
 ];
 
 const ONLY_SPACES_REGEXP = /^\s*$/;
+const PREF_CMNEXT_ENABLED = "devtools.webconsole.codemirrorNext";
 
 const editors = new WeakMap();
 
@@ -132,15 +133,16 @@ class Editor extends EventEmitter {
   /**
    * Returns a string representation of a shortcut 'key' with
    * a OS specific modifier. Cmd- for Macs, Ctrl- for other
-   * platforms. Useful with extraKeys configuration option.
+   * platforms (in cm5). For cm6 Mod- is used instead. Useful with extraKeys configuration option.
    *
    * CodeMirror defines all keys with modifiers in the following
    * order: Shift - Ctrl/Cmd - Alt - Key
    */
   static accel(key, modifiers = {}) {
+    const osShortcut = Services.appinfo.OS == "Darwin" ? "Cmd-" : "Ctrl-";
     return (
       (modifiers.shift ? "Shift-" : "") +
-      (Services.appinfo.OS == "Darwin" ? "Cmd-" : "Ctrl-") +
+      (Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED) ? "Mod-" : osShortcut) +
       (modifiers.alt ? "Alt-" : "") +
       key
     );
@@ -155,6 +157,33 @@ class Editor extends EventEmitter {
   static keyFor(cmd, opts = { noaccel: false }) {
     const key = L10N.getStr(cmd + ".commandkey");
     return opts.noaccel ? key : Editor.accel(key);
+  }
+
+  /**
+   * This maps key binding from the Codemirror 5 format (an Object) to the Codemirror 6
+   * expected format (an Array).
+   *
+   * @param {object} keyBindings
+   * @returns {Array}
+   */
+  static mapKeyBindings(keyBindings) {
+    // Key Events which have different key values from CM5 and CM6
+    const keyEvents = {
+      Up: "ArrowUp",
+      Down: "ArrowDown",
+      Left: "ArrowLeft",
+      Right: "ArrowRight",
+    };
+    const keyBindingsArr = [];
+    for (const key in keyBindings) {
+      if (typeof keyBindings[key] == "function") {
+        keyBindingsArr.push({
+          key: keyEvents[key] ? keyEvents[key] : key,
+          run: keyBindings[key],
+        });
+      }
+    }
+    return keyBindingsArr;
   }
 
   static modes = {
@@ -2158,6 +2187,21 @@ class Editor extends EventEmitter {
     return cm.getDoc().getRange({ line: 0, ch: 0 }, cm.getCursor());
   }
 
+  /**
+   * Gets the location of the cursor
+   *
+   * @returns {object}
+   */
+  getCursorPos() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const pos = cm.state.selection.main.head;
+      const line = cm.state.doc.lineAt(pos);
+      return { line: line.number, ch: pos - line.from };
+    }
+    return cm.getCursor();
+  }
+
   getDoc() {
     if (!this.config) {
       return null;
@@ -4139,13 +4183,14 @@ class Editor extends EventEmitter {
 
 // Since Editor is a thin layer over CodeMirror some methods
 // are mapped directly—without any changes.
-
-CM_MAPPING.forEach(name => {
-  Editor.prototype[name] = function (...args) {
-    const cm = editors.get(this);
-    return cm[name].apply(cm, args);
-  };
-});
+if (!Services.prefs.getBoolPref(PREF_CMNEXT_ENABLED)) {
+  CM_MAPPING.forEach(name => {
+    Editor.prototype[name] = function (...args) {
+      const cm = editors.get(this);
+      return cm[name].apply(cm, args);
+    };
+  });
+}
 
 /**
  * We compute the CSS property names, values, and color names to be used with
