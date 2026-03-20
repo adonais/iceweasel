@@ -121,6 +121,8 @@ support-files = [
 
 ["browser_smartwindow_run_search.js"]
 
+["browser_smartwindow_sanitize.js"]
+
 ["browser_smartwindow_shortcut.js"]
 
 ["browser_smartwindow_smartbar_tab_state.js"]

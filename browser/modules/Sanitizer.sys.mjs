@@ -8,6 +8,10 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AIWindow:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
+  ChatStore:
+    "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
@@ -863,6 +867,8 @@ export var Sanitizer = {
         timerId = Glean.browserSanitizer.downloads.start();
         await clearData(range, Ci.nsIClearDataService.CLEAR_DOWNLOADS);
         Glean.browserSanitizer.downloads.stopAndAccumulate(timerId);
+
+        await clearChatConversations(range, progress);
       },
     },
 
@@ -889,10 +895,32 @@ export var Sanitizer = {
         }
         await clearData(range, Ci.nsIClearDataService.CLEAR_MEDIA_DEVICES);
         Glean.browserSanitizer.cookies.stopAndAccumulate(timerId);
+
+        await clearChatConversations(range, progress);
       },
     },
   },
 };
+
+// Clear chat conversations if AI Window is enabled.
+// (ChatStore uses milliseconds.)
+async function clearChatConversations(range, progress) {
+  if (!lazy.AIWindow.isEnabled) {
+    return;
+  }
+  progress.step = "clearing Smart Window chat conversations";
+  try {
+    if (range) {
+      let startDate = new Date(range[0] / 1000);
+      let endDate = new Date(range[1] / 1000);
+      await lazy.ChatStore.deleteConversationsByDateRange(startDate, endDate);
+    } else {
+      await lazy.ChatStore.deleteAllConversations();
+    }
+  } catch (ex) {
+    log("Failed to clear chat conversations", ex);
+  }
+}
 
 async function sanitizeInternal(items, aItemsToClear, options) {
   let { ignoreTimespan = true, range, progress } = options;

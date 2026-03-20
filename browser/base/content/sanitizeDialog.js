@@ -16,6 +16,8 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AIWindow:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   DownloadUtils: "resource://gre/modules/DownloadUtils.sys.mjs",
   SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
 });
@@ -166,6 +168,26 @@ var gSanitizePromptDialog = {
 
     // Show loading spinners while data sizes are being fetched
     this.showLoadingSpinners();
+
+    // Update history labels to include chat conversations if Smart Window is enabled.
+    if (lazy.AIWindow.isEnabled) {
+      for (let checkbox of document.querySelectorAll(
+        "#browsingHistoryAndDownloads"
+      )) {
+        document.l10n.setAttributes(
+          checkbox,
+          "item-history-downloads-and-chat"
+        );
+      }
+      for (let desc of document.querySelectorAll(
+        "#browsing-history-downloads-description"
+      )) {
+        document.l10n.setAttributes(
+          desc,
+          "item-history-downloads-and-chat-description"
+        );
+      }
+    }
 
     document
       .getElementById("sanitizeDurationChoice")

@@ -181,3 +181,11 @@ firefoxview-search-chat-results-count = { $count ->
   [one] { $count } chat
  *[other] { $count } chats
 }
+
+## Clear browsing data dialog
+
+item-history-downloads-and-chat =
+    .label = Browsing, download, & chat history
+    .accesskey = B
+
+item-history-downloads-and-chat-description = Clears site, download, and chat history
