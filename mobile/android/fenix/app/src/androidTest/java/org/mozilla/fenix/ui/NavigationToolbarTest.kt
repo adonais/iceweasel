@@ -816,6 +816,7 @@ class NavigationToolbarTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135067
+    @SmokeTest
     @Test
     fun verifyTheNewTabButtonTest() {
         val firstPage = mockWebServer.getGenericAsset(1)
