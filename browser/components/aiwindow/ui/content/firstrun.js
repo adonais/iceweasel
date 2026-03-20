@@ -14,6 +14,9 @@ const MODEL_PREF = "browser.smartwindow.firstrun.modelChoice";
 const AUTO_ADVANCE_PREF = "browser.smartwindow.firstrun.autoAdvanceMS";
 const FIRST_RUN_COMPLETE_PREF = "browser.smartwindow.firstrun.hasCompleted";
 const EXPLAINER_PAGE_PREF = "browser.smartwindow.firstrun.explainerURL";
+const { MODELS } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs"
+);
 
 const autoAdvanceMS = Services.prefs.getIntPref(AUTO_ADVANCE_PREF);
 
@@ -103,7 +106,7 @@ const AI_WINDOW_CONFIG = {
               },
               subtitle: {
                 string_id: "aiwindow-firstrun-model-chip-subtitle",
-                args: { modelName: "gemini-flash-lite", ownerName: "Google" },
+                args: MODELS["1"],
               },
               action: {
                 type: "SET_PREF",
@@ -133,7 +136,7 @@ const AI_WINDOW_CONFIG = {
               },
               subtitle: {
                 string_id: "aiwindow-firstrun-model-chip-subtitle",
-                args: { modelName: "Qwen3-235B-A22B", ownerName: "Alibaba" },
+                args: MODELS["2"],
               },
               action: {
                 type: "SET_PREF",
@@ -163,7 +166,7 @@ const AI_WINDOW_CONFIG = {
               },
               subtitle: {
                 string_id: "aiwindow-firstrun-model-chip-subtitle",
-                args: { modelName: "gpt-oss-120B", ownerName: "OpenAI" },
+                args: MODELS["3"],
               },
               action: {
                 type: "SET_PREF",

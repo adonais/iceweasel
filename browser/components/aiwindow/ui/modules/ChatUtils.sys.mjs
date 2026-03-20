@@ -9,7 +9,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   CryptoUtils: "moz-src:///services/crypto/modules/utils.sys.mjs",
 });
 
-import { MESSAGE_ROLE } from "./ChatConstants.sys.mjs";
+import { MESSAGE_ROLE } from "./AIWindowConstants.sys.mjs";
 import { ChatConversation } from "./ChatConversation.sys.mjs";
 import { ChatMessage, ChatHistoryResult } from "./ChatMessage.sys.mjs";
 

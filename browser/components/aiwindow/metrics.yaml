@@ -332,6 +332,90 @@ smart_window:
         description: >
           Whether the memories feature is enabled or not. True for turning on and false for turning off
 
+  model_request:
+    type: event
+    description: |
+      A request is made to the backend model
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2021947
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287710
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - gcardieri@mozilla.com
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      request_id: &request_id
+        type: string
+        description: >
+          Identifier to be used to cross reference with backend telemetry
+      detected_intent:
+        type: string
+        description: >
+          What was the detected intent for the request navigate, search, chat, or action
+      intent: &intent
+        type: string
+        description: >
+          Intent of the request
+      tokens: &tokens
+        type: quantity
+        unit: count
+        description: >
+          number of tokens processed to fulfill the request
+      memories:
+        type: quantity
+        unit: count
+        description: >
+          Number of memories included in the response
+
+  model_response:
+    type: event
+    description: |
+      A response is received from the backend model
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2021947
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D287710
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - gcardieri@mozilla.com
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      request_id: *request_id
+      intent: *intent
+      tokens: *tokens
+      memories:
+        type: quantity
+        unit: count
+        description: >
+          Number of memories included in the response
+      latency:
+        type: quantity
+        unit: ms
+        description: >
+          Time in ms to start processing the request
+      duration:
+        type: quantity
+        unit: ms
+        description: >
+          Time in ms to process the request
+      error: &error
+        type: string
+        description: >
+          Error code if it's not a successful response
+      model: &model
+        type: string
+        description: >
+          Model selected by the user
+
   onboarding_screen_impression:
       type: event
       description: |

@@ -115,6 +115,8 @@ support-files = [
 
 ["browser_smartwindow_recentchats.js"]
 
+["browser_smartwindow_request_response_telemetry.js"]
+
 ["browser_smartwindow_run_search.js"]
 
 ["browser_smartwindow_shortcut.js"]

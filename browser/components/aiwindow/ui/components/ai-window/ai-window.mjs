@@ -42,6 +42,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/ConversationSuggestions.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
+  MODELS:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "log", function () {
@@ -1114,6 +1116,12 @@ export class AIWindow extends MozLitElement {
     this.#updateTabFavicon();
     this.#setBrowserContainerActiveState(true);
 
+    const requestStart = Date.now();
+    let firstTokenTime = null;
+    this.#conversation.once("chat-conversation:message-update", () => {
+      firstTokenTime = Date.now();
+    });
+
     try {
       const engineInstance = await lazy.openAIEngine.build(
         lazy.MODEL_FEATURES.CHAT,
@@ -1139,6 +1147,7 @@ export class AIWindow extends MozLitElement {
         // fill out these assistant message flags
         const assistantRoleOpts = new lazy.AssistantRoleOpts();
         this.#conversation.addAssistantMessage("text", "", assistantRoleOpts);
+        this.#sendModelRequestTelemetryEvent();
       }
 
       this.#addConversationTitle();
@@ -1150,9 +1159,17 @@ export class AIWindow extends MozLitElement {
           location: this.mode,
         },
       });
+
+      this.#sendModelResponseTelemetryEvent(
+        "",
+        this.#getModelRequestLatencyAndDuration(requestStart, firstTokenTime)
+      );
     } catch (e) {
       this.showSearchingIndicator(false, null);
-      this.#handleError(e);
+      this.#handleError(
+        e,
+        this.#getModelRequestLatencyAndDuration(requestStart, firstTokenTime)
+      );
       this.requestUpdate?.();
     }
   };
@@ -1167,6 +1184,71 @@ export class AIWindow extends MozLitElement {
     }
   };
 
+  #getModelRequestLatencyAndDuration(requestStart, firstTokenTime) {
+    const duration = Date.now() - requestStart;
+    const latency = firstTokenTime ? firstTokenTime - requestStart : 0;
+    return { duration, latency };
+  }
+
+  #getModelName() {
+    const modelChoice = Services.prefs.getStringPref(
+      "browser.smartwindow.firstrun.modelChoice",
+      ""
+    );
+    return lazy.MODELS[modelChoice]?.modelName;
+  }
+
+  #getConversationLastMessageAndCount(role) {
+    let lastMessage = null;
+    let messageCount = 0;
+    let countAtLastMatch = 0;
+    for (const message of this.#conversation.messages.slice(1)) {
+      if (message.content?.type === "text") {
+        messageCount++;
+      }
+      if (message.role === role) {
+        lastMessage = message;
+        countAtLastMatch = messageCount;
+      }
+    }
+    return { lastMessage, messageCount: countAtLastMatch };
+  }
+
+  #sendModelResponseTelemetryEvent(error, { duration, latency }) {
+    const { lastMessage: lastAssistantMessage, messageCount } =
+      this.#getConversationLastMessageAndCount(lazy.MESSAGE_ROLE.ASSISTANT);
+
+    Glean.smartWindow.modelResponse.record({
+      location: this.mode === MODE.FULLPAGE ? "home" : MODE.SIDEBAR,
+      chat_id: this.conversationId,
+      message_seq: messageCount,
+      request_id: lastAssistantMessage?.id,
+      intent: "chat",
+      tokens: lazy.Chat.lastUsage?.completion_tokens ?? 0,
+      memories: lastAssistantMessage?.memoriesApplied?.length ?? 0,
+      latency,
+      duration,
+      error: error ?? "",
+      model: this.#getModelName(),
+    });
+  }
+
+  #sendModelRequestTelemetryEvent() {
+    const { lastMessage: lastUserMessage, messageCount } =
+      this.#getConversationLastMessageAndCount(lazy.MESSAGE_ROLE.USER);
+
+    Glean.smartWindow.modelRequest.record({
+      location: this.mode === MODE.FULLPAGE ? "home" : MODE.SIDEBAR,
+      chat_id: this.conversationId,
+      message_seq: messageCount,
+      request_id: lastUserMessage?.id,
+      detected_intent: "chat",
+      intent: "chat",
+      tokens: lazy.Chat.lastUsage?.completion_tokens ?? 0,
+      memories: lastUserMessage?.memoriesApplied?.length ?? 0,
+    });
+  }
+
   #getBrowsingContext() {
     // Use the adjacent tab's browsing context for sidebar or current for
     // fullpage for tools that need context.
@@ -1176,8 +1258,8 @@ export class AIWindow extends MozLitElement {
       : window.browsingContext;
   }
 
-  #handleError(error) {
-    const errorMessage = error.error ?? error.metadata?.errorMessage;
+  #handleError(error, { latency, duration }) {
+    let errorMessage = error.error ?? error.metadata?.errorMessage;
     const newErrorMessage = {
       role: "",
       content: {
@@ -1185,6 +1267,14 @@ export class AIWindow extends MozLitElement {
         error: errorMessage,
       },
     };
+
+    if (typeof errorMessage != "number") {
+      errorMessage = "Generic error";
+    }
+    this.#sendModelResponseTelemetryEvent(String(errorMessage), {
+      latency,
+      duration,
+    });
     this.#dispatchMessageToChatContent(newErrorMessage);
   }
 

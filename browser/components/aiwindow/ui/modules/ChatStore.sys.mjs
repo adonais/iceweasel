@@ -54,7 +54,7 @@ export {
   CONVERSATION_STATUS,
   MESSAGE_ROLE,
   MEMORIES_FLAG_SOURCE,
-} from "./ChatConstants.sys.mjs";
+} from "./AIWindowConstants.sys.mjs";
 
 import {
   CURRENT_SCHEMA_VERSION,
@@ -62,7 +62,7 @@ import {
   DB_FILE_NAME,
   PREF_BRANCH,
   CONVERSATION_STATUS,
-} from "./ChatConstants.sys.mjs";
+} from "./AIWindowConstants.sys.mjs";
 
 import {
   parseConversationRow,
