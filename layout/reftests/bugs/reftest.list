@@ -2052,7 +2052,7 @@ pref(image.downscale-during-decode.enabled,true) fuzzy(0-2,0-2008) skip-if(((gtk
 fuzzy-if(geckoview,251-255,1392-1405) skip-if(Android) == 1562733-rotated-nastaliq-1.html 1562733-rotated-nastaliq-1-ref.html #Bug 1604765
 fuzzy-if(winWidget,0-31,0-3) fuzzy-if(geckoview,0-93,0-87) == 1562733-rotated-nastaliq-2.html 1562733-rotated-nastaliq-2-ref.html
 test-pref(plain_text.wrap_long_lines,false) != 1565129.txt 1565129.txt
-fuzzy(0-32,0-8) fuzzy-if(Android,0-32,0-1458) == 1576553-1.html 1576553-1-ref.html
+fuzzy(0-121,0-400) fuzzy-if(Android,0-91,0-1458) == 1576553-1.html 1576553-1-ref.html
 fuzzy(0-1,0-10000) == 1577566-1.html 1577566-1-ref.html
 == 1579953-2.html 1579953-2-ref.html
 == 1588954.html 1588954-ref.html

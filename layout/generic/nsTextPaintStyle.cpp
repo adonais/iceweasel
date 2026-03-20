@@ -294,8 +294,7 @@ bool nsTextPaintStyle::GetCustomHighlightTextColor(nsAtom* aHighlightName,
     return false;
   }
 
-  *aForeColor = highlightStyle->GetVisitedDependentColor(
-      &nsStyleText::mWebkitTextFillColor);
+  *aForeColor = highlightStyle->GetVisitedDependentColor(&nsStyleText::mColor);
 
   return highlightStyle->HasAuthorSpecifiedTextColor();
 }
@@ -461,8 +460,7 @@ bool nsTextPaintStyle::InitSelectionColorsAndShadow() {
           mFrame->ComputeSelectionStyle(selectionStatus)) {
     mSelectionBGColor =
         style->GetVisitedDependentColor(&nsStyleBackground::mBackgroundColor);
-    mSelectionTextColor =
-        style->GetVisitedDependentColor(&nsStyleText::mWebkitTextFillColor);
+    mSelectionTextColor = style->GetVisitedDependentColor(&nsStyleText::mColor);
     mSelectionPseudoStyle = std::move(style);
     return true;
   }
