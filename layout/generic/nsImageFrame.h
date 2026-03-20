@@ -205,6 +205,8 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   mozilla::AspectRatio ComputeIntrinsicRatioForImage(
       imgIContainer*, bool aIgnoreContainment = false) const;
 
+  nsSize GetComputedSize() const { return mComputedSize; }
+
  private:
   friend nsIFrame* NS_NewImageFrame(mozilla::PresShell*, ComputedStyle*);
   friend nsIFrame* NS_NewXULImageFrame(mozilla::PresShell*, ComputedStyle*);

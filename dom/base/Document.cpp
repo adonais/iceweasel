@@ -2614,6 +2614,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOnloadBlocker)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLazyLoadObserver)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAutoSizeImageObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mElementsObservedForLastRememberedSize)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDOMImplementation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mImageMaps)
@@ -2737,6 +2738,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSecurityInfo)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDisplayDocument)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLazyLoadObserver)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mAutoSizeImageObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mElementsObservedForLastRememberedSize);
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFaceSet)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadyForIdle)
@@ -14648,6 +14650,31 @@ void Document::DoUpdateSVGUseElementShadowTrees() {
 void Document::NotifyMediaFeatureValuesChanged() {
   for (RefPtr<HTMLImageElement> imageElement : mResponsiveContent) {
     imageElement->MediaFeatureValuesChanged();
+  }
+}
+
+void Document::ObserveAutoSizesImage(HTMLImageElement& aElement) {
+  auto* window = GetInnerWindow();
+  if (!window) {
+    // do not observe size changes if document is not attached to a window
+    return;
+  }
+  if (!mAutoSizeImageObserver) {
+    mAutoSizeImageObserver =
+        new ResizeObserver(window, this, [](const auto& aEntries) {
+          for (const auto& entry : aEntries) {
+            auto* element = HTMLImageElement::FromNode(entry->Target());
+            MOZ_ASSERT(element);
+            element->MaybeRecomputeAutoSizes(true);
+          }
+        });
+  }
+  mAutoSizeImageObserver->Observe(aElement, ResizeObserverOptions());
+}
+
+void Document::UnobserveAutoSizesImage(HTMLImageElement& aElement) {
+  if (mAutoSizeImageObserver) {
+    mAutoSizeImageObserver->Unobserve(aElement);
   }
 }
 

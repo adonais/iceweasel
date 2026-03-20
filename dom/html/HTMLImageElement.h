@@ -38,6 +38,8 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
   bool Draggable() const override;
 
+  void MaybeRecomputeAutoSizes(bool aQueueImageTask);
+
   ResponsiveImageSelector* GetResponsiveImageSelector() const {
     return mResponsiveSelector.get();
   }
@@ -256,6 +258,12 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
   FetchPriority GetFetchPriorityForImage() const override;
 
+  /**
+   * Whether we are lazy loaded with sizes=auto
+   * https://html.spec.whatwg.org/#allows-auto-sizes
+   */
+  bool AllowsAutoSizes() const;
+
  protected:
   virtual ~HTMLImageElement();
 
@@ -355,6 +363,9 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
  private:
   bool SourceElementMatches(Element* aSourceElement);
+
+  // Start or stop observing for resizes when sizes=auto
+  void UpdateAutoSizeObserver();
 
   static void MapAttributesIntoRule(MappedDeclarationsBuilder&);
   /**

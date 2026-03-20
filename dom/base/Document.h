@@ -3353,6 +3353,10 @@ class Document : public nsINode,
   // features values changing.
   void NotifyMediaFeatureValuesChanged();
 
+  // Observe loading=lazy sizes=auto image for size changes.
+  void ObserveAutoSizesImage(HTMLImageElement& aElement);
+  void UnobserveAutoSizesImage(HTMLImageElement& aElement);
+
   nsresult GetStateObject(JS::MutableHandle<JS::Value> aState);
 
   nsDOMNavigationTiming* GetNavigationTiming() const { return mTiming; }
@@ -5800,6 +5804,9 @@ class Document : public nsINode,
   nsTArray<CanvasUsage> mCanvasUsageData;
   // Timestamp (PR_Now microseconds) of the last update to mCanvasUsageData.
   uint64_t mCanvasUsageLastTimestamp = 0;
+
+  // ResizeObserver for loading=lazy sizes=auto images.
+  RefPtr<ResizeObserver> mAutoSizeImageObserver;
 
   RefPtr<class FragmentDirective> mFragmentDirective;
   UniquePtr<RadioGroupContainer> mRadioGroupContainer;

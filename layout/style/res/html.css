@@ -705,6 +705,12 @@ iframe {
   border: 2px inset;
 }
 
+/* https://html.spec.whatwg.org/#images-3 */
+img:is([sizes="auto" i], [sizes^="auto," i]) {
+  contain: size !important;
+  contain-intrinsic-size: 300px 150px;
+}
+
 spacer {
   position: static !important;
   float: none !important;

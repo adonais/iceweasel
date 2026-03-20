@@ -569,6 +569,10 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   // Whether we're in the doc responsive content set (HTMLImageElement only).
   bool mInDocResponsiveContent : 1 = false;
 
+  // Whether the document's mAutoSizeImageObserver is observing this
+  // (HTMLImageElement only).
+  bool mObservingResize : 1 = false;
+
  private:
   // Flags to indicate whether each of the current and pending requests are
   // registered with the refresh driver.

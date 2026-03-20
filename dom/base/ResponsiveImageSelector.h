@@ -85,6 +85,17 @@ class ResponsiveImageSelector {
   // return - true if the selected image result changed.
   bool SelectImage(bool aReselect = false);
 
+  // Set width to use for sizes=auto.
+  // Returns true if width has changed since last call.
+  bool SetAutoWidth(Maybe<nscoord> aWidth) {
+    nscoord width = aWidth.valueOr(-1);
+    if (mAutoWidth == width) {
+      return false;
+    }
+    mAutoWidth = width;
+    return true;
+  }
+
  protected:
   virtual ~ResponsiveImageSelector();
 
@@ -118,6 +129,8 @@ class ResponsiveImageSelector {
   // If this array contains an eCandidateType_Default, it should be the last
   // element, such that the Setters can preserve/replace it respectively.
   nsTArray<ResponsiveImageCandidate> mCandidates;
+  // Width if sizes=auto is used and it is known, -1 otherwise.
+  nscoord mAutoWidth = -1;
   int mSelectedCandidateIndex;
   // The cached resolved URL for mSelectedCandidateIndex, such that we only
   // resolve the absolute URL at selection time

@@ -13,6 +13,7 @@
 #include "mozilla/WritingModes.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMRect.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/ResizeObserverBinding.h"
 #include "nsCoord.h"
 #include "nsCycleCollectionParticipant.h"
@@ -125,7 +126,19 @@ class ResizeObserver final : public nsISupports, public nsWrapperCache {
 
   ResizeObserver(nsCOMPtr<nsPIDOMWindowInner>&& aOwner, Document* aDocument,
                  ResizeObserverCallback& aCb)
-      : mOwner(std::move(aOwner)), mDocument(aDocument), mCallback(&aCb) {
+      : mOwner(std::move(aOwner)),
+        mDocument(aDocument),
+        mCallback(RefPtr(&aCb)) {
+    MOZ_ASSERT(mOwner, "Need a non-null owner window");
+    MOZ_ASSERT(mDocument, "Need a non-null doc");
+    MOZ_ASSERT(mDocument == mOwner->GetExtantDoc());
+  }
+
+  using NativeCallback =
+      void (*)(const Sequence<OwningNonNull<ResizeObserverEntry>>& aCb);
+  ResizeObserver(nsCOMPtr<nsPIDOMWindowInner>&& aOwner, Document* aDocument,
+                 NativeCallback aCb)
+      : mOwner(std::move(aOwner)), mDocument(aDocument), mCallback(aCb) {
     MOZ_ASSERT(mOwner, "Need a non-null owner window");
     MOZ_ASSERT(mDocument, "Need a non-null doc");
     MOZ_ASSERT(mDocument == mOwner->GetExtantDoc());
@@ -200,7 +213,7 @@ class ResizeObserver final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsPIDOMWindowInner> mOwner;
   // The window's document at the time of ResizeObserver creation.
   RefPtr<Document> mDocument;
-  RefPtr<ResizeObserverCallback> mCallback;
+  Variant<RefPtr<ResizeObserverCallback>, NativeCallback> mCallback;
   nsTArray<RefPtr<ResizeObservation>> mActiveTargets;
   // The spec uses a list to store the skipped targets. However, it seems what
   // we want is to check if there are any skipped targets (i.e. existence).
