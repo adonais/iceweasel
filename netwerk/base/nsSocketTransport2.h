@@ -264,8 +264,8 @@ class nsSocketTransport final : public nsASocketHandler,
   nsCOMPtr<nsICancelable> mDNSRequest;
   nsCOMPtr<nsIDNSAddrRecord> mDNSRecord;
 
-  nsCString mEchConfig;
-  bool mEchConfigUsed = false;
+  nsCString mEchConfig MOZ_GUARDED_BY(mLock);
+  Atomic<bool, Relaxed> mEchConfigUsed{false};
   bool mResolvedByTRR{false};
   nsIRequest::TRRMode mEffectiveTRRMode{nsIRequest::TRR_DEFAULT_MODE};
   nsITRRSkipReason::value mTRRSkipReason{nsITRRSkipReason::TRR_UNSET};
@@ -281,7 +281,7 @@ class nsSocketTransport final : public nsASocketHandler,
   Atomic<bool, Relaxed> mNetAddrIsSet{false};
   Atomic<bool, Relaxed> mSelfAddrIsSet{false};
 
-  UniquePtr<NetAddr> mBindAddr;
+  UniquePtr<NetAddr> mBindAddr;  // socket thread only; Bind() is [noscript]
 
   // socket methods (these can only be called on the socket thread):
 
@@ -326,8 +326,8 @@ class nsSocketTransport final : public nsASocketHandler,
   // to scoping.
   RefPtr<nsSocketTransportService> mSocketTransportService;
 
-  nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
-  nsCOMPtr<nsITransportEventSink> mEventSink;
+  nsCOMPtr<nsIInterfaceRequestor> mCallbacks MOZ_GUARDED_BY(mLock);
+  nsCOMPtr<nsITransportEventSink> mEventSink MOZ_GUARDED_BY(mLock);
   nsCOMPtr<nsITLSSocketControl> mTLSSocketControl;
 
   UniquePtr<nsSocketInputStream> mInput;
@@ -336,15 +336,12 @@ class nsSocketTransport final : public nsASocketHandler,
   friend class nsSocketInputStream;
   friend class nsSocketOutputStream;
 
-  // socket timeouts are protected by mLock.
-  uint16_t mTimeouts[2]{0};
+  uint16_t mTimeouts[2] MOZ_GUARDED_BY(mLock){0};
 
-  // linger options to use when closing
-  bool mLingerPolarity{false};
-  int16_t mLingerTimeout{0};
+  bool mLingerPolarity MOZ_GUARDED_BY(mLock){false};
+  int16_t mLingerTimeout MOZ_GUARDED_BY(mLock){0};
 
-  // QoS setting for socket
-  uint8_t mQoSBits{0x00};
+  Atomic<uint32_t, Relaxed> mQoSBits{0};
 
   //
   // mFD access methods: called with mLock held.
