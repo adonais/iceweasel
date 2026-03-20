@@ -274,8 +274,6 @@ struct FormatInfo {
 
   //////
 
-  std::map<UnsizedFormat, const FormatInfo*> copyDecayFormats;
-
   const FormatInfo* GetCopyDecayFormat(UnsizedFormat) const;
 
   bool IsColorFormat() const {
