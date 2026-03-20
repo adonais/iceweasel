@@ -2269,6 +2269,7 @@ pref("browser.smartwindow.enabled", false);
 pref("browser.smartwindow.endpoint", "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1");
 pref("browser.smartwindow.memories.generateFromHistory", true);
 pref("browser.smartwindow.memories.generateFromConversation", true);
+pref("browser.smartwindow.memories.hasSeenMemories", false);
 pref("browser.smartwindow.memoriesLogLevel", "Warn");
 pref("browser.smartwindow.firstrun.autoAdvanceMS", 3000);
 pref("browser.smartwindow.firstrun.hasCompleted", false);

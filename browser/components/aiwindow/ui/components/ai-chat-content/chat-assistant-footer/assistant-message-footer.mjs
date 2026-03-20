@@ -38,12 +38,14 @@ export class AssistantMessageFooter extends MozLitElement {
   static properties = {
     messageId: { type: String, attribute: "message-id" },
     appliedMemories: { attribute: false },
+    showCallout: { type: Boolean },
   };
 
   constructor() {
     super();
     this.messageId = null;
     this.appliedMemories = [];
+    this.showCallout = false;
   }
 
   static eventBehaviors = {
@@ -109,6 +111,7 @@ export class AssistantMessageFooter extends MozLitElement {
         <applied-memories-button
           .messageId=${this.messageId}
           .appliedMemories=${this.appliedMemories ?? []}
+          .showCallout=${this.showCallout}
         >
         </applied-memories-button>
       </div>

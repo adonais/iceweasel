@@ -22,6 +22,10 @@ smartwindow-signin-btn = Sign in
 ## Assistant Message footer
 
 aiwindow-memories-used = Memories used
+aiwindow-memories-callout-description = Memories helped personalize this response.
+aiwindow-memories-learn-more = Learn more
+aiwindow-manage-memories =
+    .label = Memories settings
 aiwindow-retry-without-memories =
     .label = Retry without memories
 aiwindow-retry =

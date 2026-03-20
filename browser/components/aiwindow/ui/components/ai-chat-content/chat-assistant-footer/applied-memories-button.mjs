@@ -11,11 +11,12 @@ import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
  * TODO: Currently using placeholder "Highlights" icon which will be replaced
  * with the memories icon once ready
  *
- * Custom element that renders the “Memories applied” pill and popover for
+ * Custom element that renders the "Memories applied" pill and popover for
  * a single assistant message. The popover shows a list of applied
  * memories and allows the user to:
  *   - Remove an individual applied memory.
  *   - Retry the message without any applied memories.
+ *   - Manage memories (links to about:preferences#manageMemories).
  *
  * @property {string|null} messageId
  *   Identifier for the assistant message this control belongs to.
@@ -29,6 +30,10 @@ import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
  *   internally when the button is clicked and also reflected via the
  *   "toggle-applied-memories" event.
  *
+ * @property {boolean} showCallout
+ *   When true, the popover opens automatically and displays a callout banner.
+ *   Set by the parent on the first message where memories are applied.
+ *
  * Events dispatched:
  *   - "toggle-applied-memories"
  *       detail: { messageId, open }
@@ -36,19 +41,25 @@ import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
  *       detail: { memoryId }
  *   - "retry-without-memories"
  *       detail: { messageId }
+ *   - "manage-memories"
+ *   - "open-memories-learn-more"
  */
 export class AppliedMemoriesButton extends MozLitElement {
   static properties = {
     messageId: { type: String, attribute: "message-id" },
     appliedMemories: { attribute: false },
     open: { type: Boolean, reflect: false },
+    showCallout: { type: Boolean },
   };
+
+  #showCalloutState = false;
 
   constructor() {
     super();
     this.messageId = null;
     this.appliedMemories = [];
     this.open = false;
+    this.showCallout = false;
 
     this._onDocumentClick = this._onDocumentClick.bind(this);
   }
@@ -61,6 +72,45 @@ export class AppliedMemoriesButton extends MozLitElement {
   disconnectedCallback() {
     document.removeEventListener("click", this._onDocumentClick);
     super.disconnectedCallback();
+  }
+
+  willUpdate(changedProperties) {
+    super.willUpdate(changedProperties);
+    if (changedProperties.has("showCallout") && this.showCallout) {
+      this.#showCalloutState = true;
+    }
+  }
+
+  updated(changedProperties) {
+    super.updated(changedProperties);
+
+    if (changedProperties.has("showCallout")) {
+      this.#syncCalloutOpenState();
+    }
+  }
+
+  #syncCalloutOpenState() {
+    // If showCallout is true and the popover is not already open, force it open.
+    if (!this.showCallout || this.open) {
+      return;
+    }
+
+    this.open = true;
+    this.toggleAttribute("data-open", true);
+    this.#dispatchToggleAppliedMemories({ isOpen: true });
+  }
+
+  #dispatchToggleAppliedMemories({ isOpen }) {
+    this.dispatchEvent(
+      new CustomEvent("toggle-applied-memories", {
+        bubbles: true,
+        composed: true,
+        detail: {
+          messageId: this.messageId,
+          open: isOpen,
+        },
+      })
+    );
   }
 
   get _hasMemories() {
@@ -78,18 +128,12 @@ export class AppliedMemoriesButton extends MozLitElement {
     }
 
     this.open = !this.open;
+    if (!this.open) {
+      this.#showCalloutState = false;
+    }
     this.toggleAttribute("data-open", this.open);
 
-    this.dispatchEvent(
-      new CustomEvent("toggle-applied-memories", {
-        bubbles: true,
-        composed: true,
-        detail: {
-          messageId: this.messageId,
-          open: this.open,
-        },
-      })
-    );
+    this.#dispatchToggleAppliedMemories({ isOpen: this.open });
   }
 
   _onPopoverClick(event) {
@@ -101,19 +145,11 @@ export class AppliedMemoriesButton extends MozLitElement {
       return;
     }
     this.open = false;
+    this.#showCalloutState = false;
     this.toggleAttribute("data-open", false);
     this.requestUpdate();
 
-    this.dispatchEvent(
-      new CustomEvent("toggle-applied-memories", {
-        bubbles: true,
-        composed: true,
-        detail: {
-          messageId: this.messageId,
-          open: false,
-        },
-      })
-    );
+    this.#dispatchToggleAppliedMemories({ isOpen: false });
   }
 
   _onRemoveMemory(event, memory) {
@@ -145,12 +181,44 @@ export class AppliedMemoriesButton extends MozLitElement {
     );
   }
 
+  _onManageMemories() {
+    this.dispatchEvent(
+      new CustomEvent("manage-memories", {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  renderCallout() {
+    return html`
+      <div class="memories-callout">
+        <p
+          class="memories-callout-description"
+          data-l10n-id="aiwindow-memories-callout-description"
+        ></p>
+        <button
+          class="memories-callout-learn-more"
+          data-l10n-id="aiwindow-memories-learn-more"
+          @click=${() => {
+            this.dispatchEvent(
+              new CustomEvent("open-memories-learn-more", {
+                bubbles: true,
+                composed: true,
+              })
+            );
+          }}
+        ></button>
+      </div>
+    `;
+  }
+
   renderPopover() {
     if (!this._hasMemories) {
       return nothing;
     }
 
-    const isOpen = this.open;
+    const isOpen = this.open || this.#showCalloutState;
     const visibleMemories = this._visibleMemories;
 
     return html`
@@ -160,6 +228,8 @@ export class AppliedMemoriesButton extends MozLitElement {
         aria-hidden=${!isOpen}
         @click=${event => this._onPopoverClick(event)}
       >
+        ${this.#showCalloutState ? this.renderCallout() : nothing}
+
         <ul class="memories-list">
           ${visibleMemories.map(memory => {
             // @todo Bug 2010069
@@ -182,13 +252,26 @@ export class AppliedMemoriesButton extends MozLitElement {
           })}
         </ul>
 
-        <div class="retry-row">
+        <div class="popover-action-row">
+          <moz-button
+            type="ghost"
+            size="default"
+            iconsrc="chrome://global/skin/icons/settings.svg"
+            iconposition="start"
+            class="popover-action-row-button manage-memories-button"
+            data-l10n-id="aiwindow-manage-memories"
+            data-l10n-attrs="label"
+            @click=${() => this._onManageMemories()}
+          ></moz-button>
+        </div>
+
+        <div class="popover-action-row">
           <moz-button
             type="ghost"
             size="default"
             iconsrc="chrome://global/skin/icons/reload.svg"
             iconposition="start"
-            class="retry-row-button"
+            class="popover-action-row-button retry-without-memories-button"
             data-l10n-id="aiwindow-retry-without-memories"
             data-l10n-attrs="label"
             @click=${event => this._onRetryWithoutMemories(event)}

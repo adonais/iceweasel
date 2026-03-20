@@ -142,6 +142,14 @@ export class AIChatContent extends MozLitElement {
     this.addEventListener("toggle-applied-memories", event => {
       this.#dispatchAction("toggle-applied-memories", event.detail);
     });
+
+    this.addEventListener("manage-memories", event => {
+      this.#dispatchAction("manage-memories", event.detail);
+    });
+
+    this.addEventListener("open-memories-learn-more", event => {
+      this.#dispatchAction("open-memories-learn-more", event.detail);
+    });
   }
 
   #getAssistantMessageBody(messageId) {
@@ -297,6 +305,7 @@ export class AIChatContent extends MozLitElement {
       id: messageId,
       content,
       memoriesApplied,
+      showMemoriesCallout,
       webSearchQueries,
       followUpSuggestions = [],
     } = event.detail;
@@ -316,6 +325,7 @@ export class AIChatContent extends MozLitElement {
       messageId,
       body: content.body,
       appliedMemories: memoriesApplied ?? [],
+      showCallout: showMemoriesCallout ?? false,
       searchTokens: webSearchQueries ?? [],
     };
 
@@ -447,6 +457,7 @@ export class AIChatContent extends MozLitElement {
               <assistant-message-footer
                 .messageId=${msg.messageId}
                 .appliedMemories=${msg.appliedMemories}
+                .showCallout=${msg.showCallout}
               ></assistant-message-footer>
             `
           : nothing}

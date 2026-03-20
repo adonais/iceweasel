@@ -86,8 +86,9 @@ add_task(async function test_applied_memories_button_retry_without_memories() {
       trigger.click();
       await content.Promise.resolve();
 
-      const retryWithoutMemoriesButton =
-        button.shadowRoot.querySelector(".retry-row-button");
+      const retryWithoutMemoriesButton = button.shadowRoot.querySelector(
+        ".retry-without-memories-button"
+      );
       ok(retryWithoutMemoriesButton, "Found retry-without-memories button");
 
       let retryEventDetail = null;
@@ -102,6 +103,70 @@ add_task(async function test_applied_memories_button_retry_without_memories() {
 
       ok(retryEventDetail, "retry-without-memories event fired");
       is(retryEventDetail.messageId, "msg-1", "Event includes messageId");
+    });
+  });
+});
+
+add_task(async function test_applied_memories_button_showCallout_auto_opens() {
+  await BrowserTestUtils.withNewTab(TEST_PAGE, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      const button = content.document.getElementById("test-button");
+      button.messageId = "msg-1";
+      button.appliedMemories = ["User is vegan"];
+
+      await content.customElements.whenDefined("applied-memories-button");
+
+      let toggleEventDetail = null;
+      function onToggle(evt) {
+        button.removeEventListener("toggle-applied-memories", onToggle);
+        toggleEventDetail = evt.detail;
+      }
+      button.addEventListener("toggle-applied-memories", onToggle);
+
+      button.showCallout = true;
+      await button.updateComplete;
+
+      ok(button.open, "Popover auto-opens when showCallout is set");
+      ok(
+        button.shadowRoot.querySelector(".popover").classList.contains("open"),
+        "Popover has open class"
+      );
+      ok(toggleEventDetail, "toggle-applied-memories event fired");
+      is(toggleEventDetail.open, true, "Event detail indicates open");
+
+      const callout = button.shadowRoot.querySelector(".memories-callout");
+      ok(callout, "Callout element is rendered");
+    });
+  });
+});
+
+add_task(async function test_applied_memories_button_manage_memories() {
+  await BrowserTestUtils.withNewTab(TEST_PAGE, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      const button = content.document.getElementById("test-button");
+      button.messageId = "msg-1";
+      button.appliedMemories = ["User is vegan"];
+      button.showCallout = true;
+
+      await content.customElements.whenDefined("applied-memories-button");
+      await button.updateComplete;
+
+      const manageButton = button.shadowRoot.querySelector(
+        ".manage-memories-button"
+      );
+      ok(manageButton, "Found manage memories button");
+
+      let manageEventFired = false;
+      function onManage() {
+        button.removeEventListener("manage-memories", onManage);
+        manageEventFired = true;
+      }
+      button.addEventListener("manage-memories", onManage);
+
+      manageButton.click();
+      await content.Promise.resolve();
+
+      ok(manageEventFired, "manage-memories event fired");
     });
   });
 });

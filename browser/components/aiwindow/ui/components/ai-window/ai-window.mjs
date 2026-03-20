@@ -90,6 +90,8 @@ const PREF_MEMORIES_CONVERSATION =
   "browser.smartwindow.memories.generateFromConversation";
 const PREF_MEMORIES_HISTORY =
   "browser.smartwindow.memories.generateFromHistory";
+const PREF_MEMORIES_HAS_SEEN_MEMORIES =
+  "browser.smartwindow.memories.hasSeenMemories";
 const TAB_FAVICON_CHAT =
   "chrome://browser/content/aiwindow/assets/ask-icon.svg";
 const PREF_CHAT_INTERACTION_COUNT = "browser.smartwindow.chat.interactionCount";
@@ -273,6 +275,10 @@ export class AIWindow extends MozLitElement {
     if (this.#hostBrowser?.getAttribute("data-conversation-id")) {
       this.classList.add("chat-active");
     }
+  }
+
+  get #topChromeWindow() {
+    return window.browsingContext?.topChromeWindow;
   }
 
   #attachConversationListeners() {
@@ -1218,12 +1224,27 @@ export class AIWindow extends MozLitElement {
 
   #dispatchMessageToActor(actor, message) {
     const newMessage = { ...message };
+    this.#maybeSetMemoriesCalloutData(newMessage);
+
     if (typeof message.role !== "string") {
       const roleLabel = lazy.getRoleLabel(newMessage.role).toLowerCase();
       newMessage.role = roleLabel;
     }
 
     return actor.dispatchMessageToChatContent(newMessage);
+  }
+
+  #maybeSetMemoriesCalloutData(newMessage) {
+    if (
+      newMessage.role !== lazy.MESSAGE_ROLE.ASSISTANT ||
+      !newMessage.memoriesApplied?.length ||
+      Services.prefs.getBoolPref(PREF_MEMORIES_HAS_SEEN_MEMORIES, false)
+    ) {
+      return;
+    }
+
+    newMessage.showMemoriesCallout = true;
+    Services.prefs.setBoolPref(PREF_MEMORIES_HAS_SEEN_MEMORIES, true);
   }
 
   #dispatchMessageToChatContent(message) {
@@ -1482,7 +1503,23 @@ export class AIWindow extends MozLitElement {
           });
         }
         break;
+
+      case "manage-memories":
+        this.#openMemoriesSettings();
+        break;
+
+      case "open-memories-learn-more":
+        this.#openMemoriesLearnMore();
+        break;
     }
+  }
+
+  #openMemoriesSettings() {
+    this.#topChromeWindow?.openPreferences("manageMemories");
+  }
+
+  #openMemoriesLearnMore() {
+    this.#topChromeWindow?.openHelpLink("smart-window-memories");
   }
 
   #getMessageById(id) {

@@ -10,10 +10,14 @@
   --memories-accent-bg-hover: rgba(191, 143, 204, 0.2);
   --memories-accent-bg-active: rgba(191, 143, 204, 0.26);
   --memories-accent-border: rgba(0, 0, 0, 0);
+  --aiwindow-callout-text-color: light-dark(var(--color-violet-60), var(--color-violet-20));
+  --aiwindow-callout-text-color-hover: light-dark(var(--color-violet-70), var(--color-violet-10));
+  --aiwindow-callout-border-color: light-dark(transparent, var(--color-violet-50));
 }
 
 :host([data-open]) moz-button.memories-trigger {
   color: var(--aiwindow-text-accent);
+  --button-icon-fill: var(--aiwindow-text-accent);
   --button-background-color-ghost: var(--memories-accent-bg-hover);
   --button-border-color-ghost: var(--memories-accent-border);
   --button-background-color-ghost-selected: var(--memories-accent-bg-hover);
@@ -96,6 +100,45 @@ moz-button.memories-trigger:not([disabled]):hover::part(moz-button-label),
   }
 }
 
+.memories-callout {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  gap: var(--space-xsmall);
+  padding: var(--space-small);
+  border-radius: var(--border-radius-medium);
+  border: var(--border-width) solid;
+  border-color: var(--aiwindow-callout-border-color);
+  background: light-dark(
+    linear-gradient(97deg, rgba(50, 27, 253, 0.05) -7.07%, rgba(207, 48, 226, 0.05) 64.52%, rgba(255, 153, 0, 0.05) 101%, rgba(245, 196, 81, 0.05) 121.66%),
+    linear-gradient(63deg, rgba(114, 57, 255, 0.5) -3.99%, rgba(238, 231, 255, 0.5) 98.46%)
+  );
+}
+
+.memories-callout-description {
+  margin: 0;
+  font-size: var(--font-size-small, 13px);
+  color: var(--aiwindow-callout-text-color);
+}
+
+.memories-callout-learn-more {
+  all: unset;
+  font-size: var(--font-size-small, 13px);
+  color: var(--aiwindow-callout-text-color);
+  text-decoration: underline;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.memories-callout-learn-more:hover {
+  color: var(--aiwindow-callout-text-color-hover);
+}
+
+.memories-callout-learn-more:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
+}
+
 .memories-list {
   list-style: none;
   padding: 0;
@@ -134,7 +177,7 @@ moz-button.memories-trigger:not([disabled]):hover::part(moz-button-label),
   display: inline-flex;
 }
 
-.retry-row {
+.popover-action-row {
   padding: 0 var(--space-xsmall);
   display: flex;
   align-items: center;
@@ -143,7 +186,7 @@ moz-button.memories-trigger:not([disabled]):hover::part(moz-button-label),
   cursor: pointer;
 }
 
-.retry-row-button {
+.popover-action-row-button {
   border: none;
   height: var(--size-item-large);
   padding: 0;
