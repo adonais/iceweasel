@@ -114,3 +114,67 @@ add_task(async function test_source_table() {
       `referenced by ${framesWithSourceIndex} frames.`
   );
 });
+
+/**
+ * Test that sourceMapURL is properly captured from `//# sourceMappingURL=` comments.
+ */
+add_task(async function test_source_table_with_sourcemap() {
+  Assert.ok(
+    !Services.profiler.IsActive(),
+    "The profiler is not currently active"
+  );
+
+  info("Start profiler with 'js' feature");
+  await ProfilerTestUtils.startProfiler({
+    entries: 1000000,
+    interval: 1,
+    threads: ["GeckoMain"],
+    features: ["js"],
+  });
+
+  // Execute JavaScript with a sourceMappingURL comment
+  const testCode = `
+    function testFunctionWithSourceMap() {
+      const startTime = Date.now();
+      while (Date.now() - startTime < 10) {
+        // Busy wait for 10ms to ensure profiler captures samples
+      }
+      return 42;
+    }
+    testFunctionWithSourceMap();
+    //# sourceMappingURL=test-source-map.js.map
+  `;
+
+  // Eval the code to create a source with a sourceMapURL.
+  // eslint-disable-next-line no-eval
+  eval(testCode);
+
+  await ProfilerTestUtils.captureAtLeastOneJsSample();
+
+  const profile = await ProfilerTestUtils.stopNowAndGetProfile();
+
+  // Verify that the sources table exists.
+  Assert.ok(profile.sources, "Profile has a sources table");
+  Assert.ok(profile.sources.data, "Sources table has data");
+
+  const uuidCol = profile.sources.schema.uuid;
+  const filenameCol = profile.sources.schema.filename;
+  const sourceMapURLCol = profile.sources.schema.sourceMapURL;
+
+  // Find the source entry with the sourceMapURL.
+  let foundSourceWithMap = false;
+  for (const source of profile.sources.data) {
+    const sourceMapURL = source[sourceMapURLCol];
+    if (sourceMapURL === "test-source-map.js.map") {
+      foundSourceWithMap = true;
+      Assert.ok(source[uuidCol], "Source with sourceMapURL has a UUID");
+      Assert.ok(source[filenameCol], "Source with sourceMapURL has a filename");
+      break;
+    }
+  }
+
+  Assert.ok(
+    foundSourceWithMap,
+    "Should find at least one source with the test sourceMapURL"
+  );
+});
