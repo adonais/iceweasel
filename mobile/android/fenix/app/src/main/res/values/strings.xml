@@ -542,10 +542,16 @@
     <!-- ==== Project "Nova" onboarding strings ==== -->
 
     <!-- "Continue" onboarding button. -->
-    <string name="nova_onboarding_continue_button" >Continue</string>
+    <string name="nova_onboarding_continue_button">Continue</string>
+
+    <!-- "Continue browsing" onboarding button. -->
+    <string name="nova_onboarding_continue_browsing_button" tools:ignore="UnusedResources">Continue browsing</string>
 
     <!-- "Not now" onboarding button. -->
     <string name="nova_onboarding_negative_button">Not now</string>
+
+    <!-- "Skip" onboarding button. -->
+    <string name="nova_onboarding_skip_button" tools:ignore="UnusedResources">Skip</string>
 
     <!-- Terms of use (ToU) onboarding title. -->
     <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Get ready to run free</string>
@@ -642,6 +648,26 @@
 
     <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
     <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Add Firefox widget</string>
+
+    <!-- Customize prompt onboarding title. -->
+    <string name="nova_onboarding_customize_prompt_title" tools:ignore="UnusedResources">Easy to customize and more private with every tap</string>
+
+    <!-- Customize prompt onboarding body.
+        %1$s is replaced by the product name (for example "Firefox"),
+        %2$,d is replaced by the number of trackers blocked. -->
+    <plurals name="nova_onboarding_customize_prompt_body" tools:ignore="UnusedResources">
+        <item quantity="one">%1$s blocked %2$,d tracker while you roamed the web.</item>
+        <item quantity="other">%1$s blocked %2$,d trackers while you roamed the web.</item>
+    </plurals>
+
+    <!-- Customize prompt onboarding positive button. -->
+    <string name="nova_onboarding_customize_prompt_positive_button" tools:ignore="UnusedResources">Start customizing</string>
+
+    <!-- App icon onboarding title. -->
+    <string name="nova_onboarding_app_icon_prompt_title" tools:ignore="UnusedResources">Pick a custom app icon</string>
+
+    <!-- App icon onboarding body. -->
+    <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">Give your home screen a personal touch.</string>
 
     <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
