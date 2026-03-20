@@ -98,6 +98,8 @@ Object.assign(Chat, {
     }
 
     const allAllowedUrls = new Set();
+    await this._collectInitialAllowedUrls(conversation, allAllowedUrls);
+
     let fullResponseText = "";
     const searchExecuted = conversation._searchExecutedTurn === currentTurn;
     let blockedSearchAttempts = 0;
@@ -242,11 +244,7 @@ Object.assign(Chat, {
             conversation._searchExecutedTurn = currentTurn;
           } else if (toolName === "get_page_content") {
             const startTime = new Date();
-            result = await toolFunc(
-              params,
-              conversation.getAllMentionURLs(),
-              secProps
-            );
+            result = await toolFunc(params, allAllowedUrls, secProps);
             Glean.smartWindow.getPageContent.record({
               location: context?.telemetry?.location,
               chat_id: conversation.id,
@@ -315,6 +313,27 @@ Object.assign(Chat, {
       // Commit flags once all tool calls in this batch have finished so that
       // no tool call can observe flags staged by a sibling call.
       conversation.securityProperties.commit();
+    }
+  },
+
+  /**
+   * Pre-populate allowed URLs from open tabs and @mentioned URLs.
+   *
+   * @param {ChatConversation} conversation
+   * @param {Set<string>} allAllowedUrls - Set to populate
+   */
+  async _collectInitialAllowedUrls(conversation, allAllowedUrls) {
+    const openTabs = await this.toolMap.get_open_tabs(
+      undefined,
+      conversation.securityProperties
+    );
+    for (const url of extractValidUrls(openTabs)) {
+      allAllowedUrls.add(url);
+    }
+
+    // Add @mentioned URLs from conversation history
+    for (const mentionURL of conversation.getAllMentionURLs()) {
+      allAllowedUrls.add(mentionURL);
     }
   },
 

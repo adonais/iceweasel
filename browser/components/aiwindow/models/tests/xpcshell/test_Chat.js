@@ -47,6 +47,19 @@ function getLastAssistantResponse(conversation) {
     .at(-1);
 }
 
+function makeConversation(messages = []) {
+  const conversation = new ChatConversation({
+    title: "test",
+    description: "test",
+    pageUrl: new URL("https://www.firefox.com"),
+    pageMeta: {},
+  });
+  for (const msg of messages) {
+    conversation.messages.push(msg);
+  }
+  return conversation;
+}
+
 add_task(async function test_Chat_real_tools_are_registered() {
   Assert.strictEqual(
     typeof Chat.toolMap.get_open_tabs,
@@ -465,8 +478,8 @@ add_task(
         "Empty arguments string should be converted to '{}'"
       );
       Assert.ok(
-        Chat.toolMap.get_open_tabs.calledOnce,
-        "Tool should be called once even with empty args"
+        Chat.toolMap.get_open_tabs.calledTwice,
+        "Tool should be called twice: once by _collectInitialAllowedUrls, once by the tool call"
       );
       Assert.equal(
         getLastAssistantResponse(conversation).content.body,
@@ -823,3 +836,84 @@ add_task(
     }
   }
 );
+
+add_task(
+  async function test_collectInitialAllowedUrls_adds_open_tabs_and_mentions() {
+    const sb = sinon.createSandbox();
+    try {
+      sb.stub(Chat.toolMap, "get_open_tabs").resolves([
+        { url: "https://example.com/page1", title: "Page 1" },
+        { url: "https://example.com/page2", title: "Page 2" },
+      ]);
+
+      const conversation = makeConversation([
+        {
+          role: "user",
+          content: {
+            body: "Check these",
+            contextMentions: [
+              { url: "https://mentioned.example.com/article" },
+              { url: "https://mentioned.example.com/docs" },
+            ],
+          },
+        },
+      ]);
+
+      const allowedUrls = new Set();
+      await Chat._collectInitialAllowedUrls(
+        conversation,
+        allowedUrls,
+        conversation.securityProperties
+      );
+
+      Assert.equal(allowedUrls.size, 4, "Should have 2 tab + 2 mention URLs");
+      Assert.ok(allowedUrls.has("https://example.com/page1"));
+      Assert.ok(allowedUrls.has("https://example.com/page2"));
+      Assert.ok(allowedUrls.has("https://mentioned.example.com/article"));
+      Assert.ok(allowedUrls.has("https://mentioned.example.com/docs"));
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(
+  async function test_collectInitialAllowedUrls_empty_when_no_tabs_or_mentions() {
+    const sb = sinon.createSandbox();
+    try {
+      sb.stub(Chat.toolMap, "get_open_tabs").resolves([]);
+
+      const conversation = makeConversation([
+        { role: "user", content: { body: "Hello" } },
+      ]);
+
+      const allowedUrls = new Set();
+      await Chat._collectInitialAllowedUrls(
+        conversation,
+        allowedUrls,
+        conversation.securityProperties
+      );
+
+      Assert.equal(allowedUrls.size, 0, "Should be empty");
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(async function test_collectAllowedUrlsFromToolCall_get_open_tabs() {
+  const allowedUrls = new Set();
+
+  Chat._collectAllowedUrlsFromToolCall(
+    "get_open_tabs",
+    [
+      { url: "https://tab1.example.com", title: "Tab 1" },
+      { url: "https://tab2.example.com", title: "Tab 2" },
+    ],
+    allowedUrls
+  );
+
+  Assert.equal(allowedUrls.size, 2);
+  Assert.ok(allowedUrls.has("https://tab1.example.com"));
+  Assert.ok(allowedUrls.has("https://tab2.example.com"));
+});
