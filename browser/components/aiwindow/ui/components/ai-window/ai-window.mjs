@@ -890,47 +890,26 @@ export class AIWindow extends MozLitElement {
       this.conversationId
     );
 
-    const { value, action, contextMentions, contextPageUrl } = event.detail;
+    const {
+      value,
+      action,
+      contextMentions = [],
+      contextPageUrl,
+    } = event.detail;
     if (action === ACTION.CHAT) {
-      // Seed @mentioned URLs into security ledger at submission time.
-      // URLs come from two sources:
-      // 1. contextMentions: "+" button mentions + implicit current tab (sidebar)
-      // 2. Inline "@" mentions from the editor's mentions plugin
-      const mentionUrls = new Set();
-      const allMentions = [];
+      const { mergedMentions, allUrls } =
+        this.#calculateCurrentMentions(contextMentions);
 
-      if (contextMentions?.length) {
-        for (const mention of contextMentions) {
-          if (mention.url) {
-            mentionUrls.add(mention.url);
-            allMentions.push(mention);
-          }
-        }
-      }
-
-      const inlineMentions = this.#getInlineMentions();
-
-      for (const mention of inlineMentions) {
-        if (mention.id) {
-          mentionUrls.add(mention.id);
-          // Add the missing inline mentions.
-          allMentions.push({
-            type: mention.type,
-            url: mention.id,
-            label: mention.label,
-          });
-        }
-      }
-
-      if (mentionUrls.size) {
+      if (allUrls.size) {
         const actor = this.#getAIChatContentActor();
         if (actor && this.#conversation?.id) {
-          for (const url of mentionUrls) {
+          for (const url of allUrls) {
             actor.seedMentionedUrl(this.#conversation.id, url);
           }
         }
       }
-      this.submitChatMessage(value, allMentions, contextPageUrl);
+
+      this.submitChatMessage(value, mergedMentions, contextPageUrl);
     } else if (
       this.mode === MODE.SIDEBAR &&
       (action === ACTION.NAVIGATE || action === ACTION.SEARCH)
@@ -943,25 +922,49 @@ export class AIWindow extends MozLitElement {
   };
 
   /**
-   * Returns inline @mention data from the editor's mentions plugin.
+   * Merges "+" button chip mentions with inline "@" mentions, deduplicating
+   * by URL, and returns the combined list plus the full set of URLs.
    *
-   * Inline "@" mentions are not included in the smartbar-commit
-   * contextMentions, so we read them directly from the editor.
+   * @param {ContextWebsite[]} contextMentions - Chip mentions from the smartbar
+   * @returns {{mergedMentions: ContextWebsite[], allUrls: Set<string>}}
+   */
+  #calculateCurrentMentions(contextMentions) {
+    const contextUrls = new Set();
+    for (const mention of contextMentions) {
+      if (mention.url) {
+        contextUrls.add(mention.url);
+      }
+    }
+
+    const inlineMentions = this.#getInlineMentions();
+    const atMentions = [];
+    for (const mention of inlineMentions) {
+      if (mention.id && !contextUrls.has(mention.id)) {
+        atMentions.push({
+          type: mention.type,
+          url: mention.id,
+          label: mention.label,
+        });
+        contextUrls.add(mention.id);
+      }
+    }
+
+    const mergedMentions = [...contextMentions, ...atMentions];
+
+    return { mergedMentions, allUrls: contextUrls };
+  }
+
+  /**
+   * Returns inline @mention data from the editor's mentions plugin.
    *
    * @returns {Array<object>} Mention nodes from the editor
    */
   #getInlineMentions() {
     const editor = this.#smartbar?.inputField;
-    if (!editor?.plugins) {
+    if (!editor?.getAllMentions) {
       return [];
     }
-
-    const mentionsPlugin = editor.plugins.find(p => p.mentions);
-    if (!mentionsPlugin) {
-      return [];
-    }
-
-    return mentionsPlugin.mentions.getAll();
+    return editor.getAllMentions();
   }
 
   /**

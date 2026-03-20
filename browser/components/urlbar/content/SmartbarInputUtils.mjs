@@ -242,7 +242,8 @@ function setupMentionsPlugin(editorElement, panelList) {
         iconSrc: icon,
       });
     } else {
-      // Add inline mention when triggered by typing “@”
+      // Add inline mention when triggered by typing "@".
+      // Inline mentions are not added as context chips.
       plugin.mentions.insert(
         {
           type: "tab",
@@ -292,6 +293,9 @@ function setupMentionsPlugin(editorElement, panelList) {
     },
     hasMention: {
       get: () => plugin.mentions.hasMention(),
+    },
+    getAllMentions: {
+      value: () => plugin.mentions.getAll(),
     },
   });
 
