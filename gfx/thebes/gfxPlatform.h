@@ -546,6 +546,16 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
     return GetPlatform()->mCMSOutputProfile;
   }
 
+  static const mozilla::Maybe<nsTArray<uint8_t>>& GetCMSOutputICCProfileData() {
+    // This data only represents mCMSOutputProfile if it is not the sRGB
+    // profile, so this should not be called unless that is the case as there is
+    // no need for that data otherwise.
+    MOZ_ASSERT(qcms_profile_is_sRGB(GetPlatform()->mCMSsRGBProfile));
+    MOZ_ASSERT(GetPlatform()->mCMSsRGBProfile !=
+               GetPlatform()->mCMSOutputProfile);
+    return GetPlatform()->mCMSOutputProfileData;
+  }
+
   /**
    * Return the sRGB ICC profile.
    */
