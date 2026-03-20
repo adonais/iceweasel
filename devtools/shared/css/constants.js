@@ -33,7 +33,6 @@ exports.PSEUDO_CLASSES = [
   ":focus",
   ":focus-visible",
   ":focus-within",
-  ":visited",
   ":target",
 ];
 
@@ -43,4 +42,5 @@ exports.PSEUDO_CLASSES = [
  */
 exports.ELEMENT_SPECIFIC_PSEUDO_CLASSES = {
   ":open": new Set(["details", "dialog", "input", "select"]),
+  ":visited": new Set(["a", "area"]),
 };

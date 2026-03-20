@@ -6,6 +6,7 @@
 
 const {
   PSEUDO_CLASSES,
+  ELEMENT_SPECIFIC_PSEUDO_CLASSES,
 } = require("resource://devtools/shared/css/constants.js");
 const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
 
@@ -681,27 +682,41 @@ class MarkupContextMenu {
     return pasteSubmenu;
   }
 
+  _createPseudoClassMenuItem(pseudoClass, enabled) {
+    const suffix = pseudoClass.substring(1);
+    const menuitem = new MenuItem({
+      id: "node-menu-pseudo-" + suffix,
+      label: suffix,
+      type: "checkbox",
+      click: () => this.inspector.togglePseudoClass(pseudoClass),
+    });
+
+    if (enabled) {
+      const checked = this.selection.nodeFront.hasPseudoClassLock(pseudoClass);
+      menuitem.checked = checked;
+    } else {
+      menuitem.disabled = true;
+    }
+
+    return menuitem;
+  }
+
   _getPseudoClassSubmenu() {
     const menu = new Menu();
     const enabled = this.inspector.canTogglePseudoClassForSelectedNode();
 
     // Set the pseudo classes
     for (const name of PSEUDO_CLASSES) {
-      const menuitem = new MenuItem({
-        id: "node-menu-pseudo-" + name.substr(1),
-        label: name.substr(1),
-        type: "checkbox",
-        click: () => this.inspector.togglePseudoClass(name),
-      });
+      menu.append(this._createPseudoClassMenuItem(name, enabled));
+    }
 
-      if (enabled) {
-        const checked = this.selection.nodeFront.hasPseudoClassLock(name);
-        menuitem.checked = checked;
-      } else {
-        menuitem.disabled = true;
+    const tagName = this.selection.nodeFront.tagName?.toLowerCase();
+    for (const [pseudo, elementTypes] of Object.entries(
+      ELEMENT_SPECIFIC_PSEUDO_CLASSES
+    )) {
+      if (elementTypes.has(tagName)) {
+        menu.append(this._createPseudoClassMenuItem(pseudo, enabled));
       }
-
-      menu.append(menuitem);
     }
 
     return menu;

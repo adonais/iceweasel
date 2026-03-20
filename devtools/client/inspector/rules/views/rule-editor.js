@@ -7,6 +7,7 @@
 const { l10n } = require("resource://devtools/shared/inspector/css-logic.js");
 const {
   PSEUDO_CLASSES,
+  ELEMENT_SPECIFIC_PSEUDO_CLASSES,
 } = require("resource://devtools/shared/css/constants.js");
 const {
   style: { ELEMENT_STYLE, PRES_HINTS },
@@ -988,9 +989,10 @@ class RuleEditor extends EventEmitter {
           selectorClass = "ruleview-selector-element";
           break;
         case SELECTOR_PSEUDO_CLASS:
-          selectorClass = PSEUDO_CLASSES.some(
-            pseudo => selectorText.value === pseudo
-          )
+          selectorClass = [
+            ...PSEUDO_CLASSES,
+            ...Object.keys(ELEMENT_SPECIFIC_PSEUDO_CLASSES),
+          ].some(pseudo => selectorText.value === pseudo)
             ? "ruleview-selector-pseudo-class-lock"
             : "ruleview-selector-pseudo-class";
           break;

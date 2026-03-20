@@ -11,6 +11,11 @@ const TEST_CASES = [
     matchingElements: ["dialog", "details", "input[type='date']", "select"],
     nonMatchingElements: ["span"],
   },
+  {
+    pseudo: ":visited",
+    matchingElements: ["a", "area"],
+    nonMatchingElements: ["span"],
+  },
 ];
 
 const TEST_URI = `<style>
@@ -20,11 +25,29 @@ const TEST_URI = `<style>
     select:open {
       color: blue;
     }
+    a:visited,
+    area:visited {
+      color: red;
+    }
   </style>
-  <dialog open>dialog element</dialog>
-  <details open>details element</details>
+
+  <dialog>dialog element</dialog>
+  <details>details element</details>
   <input type="date" />
-  <select>select element</select>
+  <select>
+    <option selected>select element</option>
+  </select>
+
+  <a href="https://example.com">link element</a>
+  <map name="m">
+     <area
+       shape="circle"
+       coords="75,75,75"
+       href="https://example.com"
+       alt="Click to go Left"
+     />
+  </map>
+
   <span>span element</span>`;
 
 add_task(async function () {
@@ -60,6 +83,7 @@ add_task(async function () {
         !pseudoCheckbox.checked,
         `${pseudo} checkbox is not checked for ${element}`
       );
+      await assertDisplayedRulesCount(view, 1);
 
       info(
         `Toggle ${pseudo} pseudo-class on ${element} and verify it's applied`
@@ -70,6 +94,7 @@ add_task(async function () {
         pseudoCheckbox.checked,
         `${pseudo} checkbox is checked after toggle for ${element}`
       );
+      await assertDisplayedRulesCount(view, 2);
 
       info(
         `Remove ${pseudo} pseudo-class from ${element} and verify it's removed`
@@ -80,6 +105,7 @@ add_task(async function () {
         !pseudoCheckbox.checked,
         `${pseudo} checkbox is not checked after removing from ${element}`
       );
+      await assertDisplayedRulesCount(view, 1);
     }
 
     // Test non-matching elements where pseudo-class should be disabled
