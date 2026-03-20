@@ -2115,14 +2115,7 @@
     },
     "be": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-topsites-clear-input",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "bg": {
       "errors": null,
@@ -4849,23 +4842,11 @@
     },
     "cs": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "cy": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "da": {
       "errors": null,
@@ -4885,33 +4866,15 @@
     },
     "de": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "dsb": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "el": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "en-CA": {
       "errors": null,
@@ -4927,13 +4890,7 @@
     },
     "en-GB": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "en-US": {
       "errors": null,
@@ -4941,57 +4898,26 @@
     },
     "eo": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-topsites-clear-input",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "es-AR": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "es-CL": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "es-ES": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-topsites-clear-input",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "es-MX": {
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-activation-window-message-customization-focus-message",
-          "newtab-activation-window-message-values-focus-header",
-          "newtab-activation-window-message-values-focus-message",
           "newtab-toast-widgets-hidden",
           "newtab-wallpaper-error-upload-file-type",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback",
           "newtab-widget-section-maximize",
           "newtab-widget-section-minimize"
         ]
@@ -5257,13 +5183,7 @@
     },
     "eu": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "fa": {
       "errors": null,
@@ -5764,24 +5684,11 @@
     },
     "fi": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-topsites-clear-input",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "fr": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "frp": {
       "errors": null,
@@ -6133,13 +6040,7 @@
     },
     "fy-NL": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "ga-IE": {
       "errors": null,
@@ -6752,10 +6653,7 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-activation-window-message-values-focus-message",
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
+          "newtab-activation-window-message-values-focus-message"
         ]
       }
     },
@@ -7366,10 +7264,7 @@
           "newtab-discovery-empty-section-topstories-content",
           "newtab-discovery-empty-section-topstories-header",
           "newtab-discovery-empty-section-topstories-timed-out",
-          "newtab-menu-show-privacy-info",
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
+          "newtab-menu-show-privacy-info"
         ]
       }
     },
@@ -7644,23 +7539,11 @@
     },
     "hsb": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "hu": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "hy-AM": {
       "errors": null,
@@ -7965,13 +7848,7 @@
     },
     "ia": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "id": {
       "errors": null,
@@ -8068,12 +7945,7 @@
     },
     "it": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide"
-        ]
-      }
+      "missing": null
     },
     "ixl": {
       "errors": null,
@@ -8351,53 +8223,15 @@
     },
     "ja": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-card-dismiss-button",
-          "newtab-toast-widgets-hidden",
-          "newtab-topsites-clear-input",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "ja-JP-mac": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-card-dismiss-button",
-          "newtab-toast-widgets-hidden",
-          "newtab-topsites-clear-input",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "ka": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-activation-window-message-customization-focus-header",
-          "newtab-activation-window-message-customization-focus-message",
-          "newtab-activation-window-message-customization-focus-primary-button",
-          "newtab-activation-window-message-dismiss-button",
-          "newtab-activation-window-message-values-focus-header",
-          "newtab-activation-window-message-values-focus-message",
-          "newtab-card-dismiss-button",
-          "newtab-daily-briefing-card-menu-dismiss",
-          "newtab-daily-briefing-card-timestamp",
-          "newtab-daily-briefing-card-title",
-          "newtab-report-content-requires-payment-subscription",
-          "newtab-report-content-requires-payment-subscription-learn-more",
-          "newtab-toast-widgets-hidden",
-          "newtab-topsites-clear-input",
-          "newtab-weather-see-full-forecast",
-          "newtab-weather-todays-forecast",
-          "newtab-widget-manage-widget-button",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "kab": {
       "errors": null,
@@ -8519,13 +8353,7 @@
     },
     "kk": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "km": {
       "errors": null,
@@ -9083,13 +8911,7 @@
     },
     "ko": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "ks": {
       "errors": null,
@@ -13040,13 +12862,7 @@
     },
     "nb-NO": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "ne-NP": {
       "errors": null,
@@ -13334,30 +13150,17 @@
     },
     "nl": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "nn-NO": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "oc": {
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
           "newtab-activation-window-message-customization-focus-header",
-          "newtab-activation-window-message-customization-focus-message",
           "newtab-activation-window-message-customization-focus-primary-button",
           "newtab-activation-window-message-dismiss-button",
           "newtab-activation-window-message-values-focus-header",
@@ -13375,8 +13178,6 @@
           "newtab-custom-widget-section-toggle",
           "newtab-custom-widget-timer-toggle",
           "newtab-custom-widget-weather-toggle",
-          "newtab-customize-panel-icon-button",
-          "newtab-customize-panel-icon-button-label",
           "newtab-daily-briefing-card-menu-dismiss",
           "newtab-daily-briefing-card-timestamp",
           "newtab-daily-briefing-card-title",
@@ -13415,7 +13216,6 @@
           "newtab-section-block-button",
           "newtab-section-block-topic-button",
           "newtab-section-blocked-button",
-          "newtab-section-cancel-button",
           "newtab-section-confirm-block-topic-p1",
           "newtab-section-confirm-block-topic-p2",
           "newtab-section-follow-button",
@@ -13431,7 +13231,6 @@
           "newtab-section-mangage-topics-title",
           "newtab-section-unblock-button",
           "newtab-section-unfollow-button",
-          "newtab-shortcuts-highlight-subtitle",
           "newtab-shortcuts-highlight-title",
           "newtab-toast-thanks-for-reporting",
           "newtab-toast-widgets-hidden",
@@ -13476,12 +13275,7 @@
           "newtab-wallpaper-sky-with-pink-clouds",
           "newtab-wallpaper-starry-canyon",
           "newtab-wallpaper-suspension-bridge",
-          "newtab-wallpaper-upload-image",
-          "newtab-weather-error-not-available",
           "newtab-weather-menu-detect-my-location",
-          "newtab-weather-opt-in-not-now",
-          "newtab-weather-opt-in-see-weather",
-          "newtab-weather-opt-in-yes",
           "newtab-weather-see-full-forecast",
           "newtab-weather-static-city",
           "newtab-weather-todays-forecast",
@@ -13812,14 +13606,7 @@
     },
     "pa-IN": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-topsites-clear-input",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "pai": {
       "errors": null,
@@ -14145,25 +13932,11 @@
     },
     "pl": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-topsites-clear-input",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "pt-BR": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-topsites-clear-input",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "pt-PT": {
       "errors": null,
@@ -14237,13 +14010,7 @@
     },
     "ru": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "sat": {
       "errors": null,
@@ -15195,13 +14962,7 @@
     },
     "sk": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "skr": {
       "errors": null,
@@ -15706,16 +15467,7 @@
       "errors": null,
       "missing": {
         "browser/newtab/newtab.ftl": [
-          "newtab-activation-window-message-customization-focus-header",
-          "newtab-activation-window-message-customization-focus-message",
-          "newtab-activation-window-message-customization-focus-primary-button",
-          "newtab-activation-window-message-values-focus-header",
-          "newtab-activation-window-message-values-focus-message",
-          "newtab-daily-briefing-card-title",
-          "newtab-toast-widgets-hidden",
-          "newtab-topic-label-society-parenting",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
+          "newtab-topic-label-society-parenting"
         ]
       }
     },
@@ -15879,13 +15631,7 @@
     },
     "sv-SE": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "sw": {
       "errors": null,
@@ -16977,7 +16723,6 @@
         "browser/newtab/newtab.ftl": [
           "newtab-activation-window-message-values-focus-message",
           "newtab-toast-widgets-hidden",
-          "newtab-topsites-clear-input",
           "newtab-widget-menu-hide",
           "newtab-widget-section-feedback"
         ]
@@ -17259,13 +17004,7 @@
     },
     "tr": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "trs": {
       "errors": null,
@@ -18075,13 +17814,7 @@
     },
     "vi": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     },
     "wo": {
       "errors": null,
@@ -19071,13 +18804,7 @@
     },
     "zh-TW": {
       "errors": null,
-      "missing": {
-        "browser/newtab/newtab.ftl": [
-          "newtab-toast-widgets-hidden",
-          "newtab-widget-menu-hide",
-          "newtab-widget-section-feedback"
-        ]
-      }
+      "missing": null
     }
   },
   "message_dates": {
@@ -19402,7 +19129,7 @@
   },
   "meta": {
     "repository": "https://github.com/mozilla-l10n/firefox-l10n.git",
-    "revision": "fdedb1bedd25493880339fd8f8b7c7e94032dfb6",
-    "updated": "2026-03-02T23:23:40.405922"
+    "revision": "ffcfbf1f06967cbbf1eee03ca285db8144be4340",
+    "updated": "2026-03-17T20:21:58.191641"
   }
 }

@@ -8,6 +8,9 @@
 newtab-page-title = Onglet novèl
 newtab-settings-button =
     .title = Personalizar la pagina Onglet novèl
+newtab-customize-panel-icon-button =
+    .title = Personalizar aquesta pagina
+newtab-customize-panel-icon-button-label = Personalizar
 newtab-personalize-settings-icon-label =
     .title = Personalizar la pagina onglet novèl
     .aria-label = Paramètres
@@ -286,6 +289,7 @@ newtab-custom-settings = Gerir mai de paramètres
 
 newtab-wallpaper-title = Fonzes
 newtab-wallpaper-reset = Reïnicializar
+newtab-wallpaper-upload-image = Enviar un imatge
 newtab-wallpaper-light-red-panda = Panda ros
 newtab-wallpaper-light-mountain = Montanha blanca
 newtab-wallpaper-light-color = Fòrmas blavas, ròsas e jaunas
@@ -361,6 +365,13 @@ newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Passar en Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Passar en Celsius
 newtab-weather-menu-learn-more = Ne saber mai
+# This message is shown if user is working offline
+newtab-weather-error-not-available = Las informacions meteorologicas son pas disponiblas ara.
+newtab-weather-opt-in-see-weather = Volètz veire lo temps per vòstra localisazion ?
+newtab-weather-opt-in-not-now =
+    .label = Pas ara
+newtab-weather-opt-in-yes =
+    .label = Òc
 # Variables:
 #   $provider (string) - Service provider for weather data
 newtab-weather-see-forecast-description =
@@ -400,3 +411,18 @@ newtab-topic-selection-button-maybe-later = Benlèu mai tard
 newtab-topic-selection-privacy-link = Descobrissètz cossí protegissèm e gerissèm vòstras donadas
 newtab-topic-selection-button-update-interests = Metre a jorn vòstres interèsses
 newtab-topic-selection-button-pick-interests = Causir vòstres interèsses
+
+## Confirmation modal for blocking a section
+
+newtab-section-cancel-button = Pas ara
+
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-subtitle = Apondre un acorchi per gardar vòstres sites preferits a un clic.
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-customization-focus-message = Causissètz un fons d'ecran novèl, apondètz d’acorchis cap a vòstres sites preferits e demoratz al fial de las istòrias que vos interèssan.

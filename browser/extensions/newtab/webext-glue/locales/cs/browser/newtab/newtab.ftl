@@ -664,6 +664,8 @@ newtab-report-cancel = Zrušit
 newtab-report-submit = Odeslat
 newtab-toast-thanks-for-reporting =
     .message = Děkujeme za nahlášení.
+newtab-toast-widgets-hidden =
+    .message = Klepněte na ikonu tužky a widgety si můžete kdykoliv zpět přidat.
 
 ## Strings for task / to-do list productivity widget
 
@@ -704,6 +706,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nový seznam
 newtab-widget-section-title = Widgety
+newtab-widget-menu-hide = Skrýt widget
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Skrýt widgety
@@ -714,6 +717,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimalizovat wigety
     .aria-label = Sbalení všech widgetů na kompaktní velikost
+newtab-widget-section-feedback = Sdělte nám svůj názor
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

@@ -77,6 +77,11 @@ newtab-topsites-image-url-label = Oman kuvan osoite
 newtab-topsites-use-image-link = Käytä omaa kuvaa…
 newtab-topsites-image-validation = Kuvan lataaminen epäonnistui. Kokeile toista osoitetta.
 
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Tyhjennä teksti
+
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 
 newtab-topsites-cancel-button = Peruuta
@@ -636,6 +641,8 @@ newtab-report-cancel = Peruuta
 newtab-report-submit = Lähetä
 newtab-toast-thanks-for-reporting =
     .message = Kiitos, että ilmoitit tästä.
+newtab-toast-widgets-hidden =
+    .message = Voit lisätä pienoisohjelmia takaisin milloin tahansa valitsemalla kynäkuvakkeen.
 
 ## Strings for task / to-do list productivity widget
 
@@ -676,6 +683,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Uusi lista
 newtab-widget-section-title = Pienoisohjelmat
+newtab-widget-menu-hide = Piilota pienoisohjelma
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Piilota pienoisohjelmat
@@ -686,6 +694,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Pienennä pienoisohjelmat
     .aria-label = Supista pienoisohjelmat kompaktiin kokoon
+newtab-widget-section-feedback = Kerro meille mielipiteesi
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

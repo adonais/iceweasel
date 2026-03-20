@@ -140,7 +140,7 @@ newtab-menu-archive-pocket = 在 { -pocket-brand-name } 裡封存
 newtab-menu-show-privacy-info = 我們的贊助商與您的隱私權
 newtab-menu-about-fakespot = 關於 { -fakespot-brand-name }
 # Report is a verb (i.e. report issue with the content).
-newtab-menu-report = 回報
+newtab-menu-report = 檢舉
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = 封鎖
@@ -152,7 +152,7 @@ newtab-menu-section-unfollow = 取消追蹤主題
 
 newtab-menu-manage-sponsored-content = 管理贊助內容
 newtab-menu-our-sponsors-and-your-privacy = 我們的贊助商與您的隱私權
-newtab-menu-report-this-ad = 回報此廣告
+newtab-menu-report-this-ad = 檢舉此廣告
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 
@@ -632,7 +632,9 @@ newtab-report-content-requires-payment-subscription-learn-more = 更多資訊
 newtab-report-cancel = 取消
 newtab-report-submit = 送出
 newtab-toast-thanks-for-reporting =
-    .message = 感謝您回報此問題。
+    .message = 感謝您檢舉此問題。
+newtab-toast-widgets-hidden =
+    .message = 選擇鉛筆圖示，即可隨時新增小工具。
 
 ## Strings for task / to-do list productivity widget
 
@@ -673,6 +675,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = 新增清單
 newtab-widget-section-title = 小工具
+newtab-widget-menu-hide = 隱藏小工具
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = 隱藏小工具
@@ -683,6 +686,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = 最小化小工具
     .aria-label = 將所有小工具摺疊成精簡大小
+newtab-widget-section-feedback = 告訴我們您的想法
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

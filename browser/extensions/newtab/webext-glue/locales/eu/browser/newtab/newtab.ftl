@@ -636,6 +636,8 @@ newtab-report-cancel = Utzi
 newtab-report-submit = Bidali
 newtab-toast-thanks-for-reporting =
     .message = Eskerrik asko hau jakinarazteagatik.
+newtab-toast-widgets-hidden =
+    .message = Hautatu arkatzaren ikonoa edonoiz widgetak berriz gehitzeko.
 
 ## Strings for task / to-do list productivity widget
 
@@ -676,6 +678,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Zerrenda berria
 newtab-widget-section-title = Widgetak
+newtab-widget-menu-hide = Ezkutatu widgeta
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Ezkutatu widgetak
@@ -686,6 +689,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimizatu widgetak
     .aria-label = Tolestu widget guztiak tamaina trinkora
+newtab-widget-section-feedback = Emaguzu zure iritzia
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

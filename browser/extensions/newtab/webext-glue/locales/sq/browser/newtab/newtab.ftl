@@ -632,6 +632,8 @@ newtab-report-cancel = Anuloje
 newtab-report-submit = Parashtroje
 newtab-toast-thanks-for-reporting =
     .message = Faleminderit për njoftimin rreth kësaj.
+newtab-toast-widgets-hidden =
+    .message = Përzgjidhni ikonën laps për të rishtuar kurdo widget-e.
 
 ## Strings for task / to-do list productivity widget
 
@@ -672,6 +674,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Listë e re
 newtab-widget-section-title = Widget-e
+newtab-widget-menu-hide = Fshihe widget-in
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Fshihni widget-et
@@ -682,6 +685,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimizoji widget-et
     .aria-label = Tkurri krejt widget-et sa madhësia kompakte
+newtab-widget-section-feedback = Tregonani si ju duket
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -704,6 +708,8 @@ newtab-widget-timer-menu-notifications = Çaktivizoni njoftimet
 newtab-widget-timer-menu-notifications-on = Aktivizoni njoftimet
 newtab-widget-timer-menu-hide = Fshihe kohëmatësin
 newtab-widget-timer-menu-learn-more = Mësoni më tepër
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = Tituj Kryesues
 newtab-daily-briefing-card-menu-dismiss = Hidhe tej
 # Variables:
 #   $minutes (number) - Time since the feed has been refreshed
@@ -726,3 +732,16 @@ newtab-promo-card-dismiss-button =
 newtab-activation-window-message-dismiss-button =
     .title = Hidhe tej
     .aria-label = Hidhe tej
+# "This space" refers to about:newtab. The call to action here ("make it your own")
+# is to customize newtab with a background image or colour, or by tweaking the
+# existing widgetry that appears on it.
+newtab-activation-window-message-customization-focus-header = Bëjeni tuajën këtë hapësirë
+newtab-activation-window-message-customization-focus-message = Zgjidhni një sfond të ri, shtoni shkurtore për te sajtet tuaj të parapëlqyer, dhe qëndroni i përditësuar me histori që ju interesojnë.
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = Filloni ta përshtatni
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = Kjo hapësirë u bindet rregullave tuaja
+newtab-activation-window-message-values-focus-message = { -brand-product-name }-i ju lejon të shfletoni si doni, me një mënyrë më personale për t’ia filluar ditës suaj në internet. Bëjeni { -brand-product-name }-in tuajin.

@@ -637,6 +637,8 @@ newtab-report-cancel = Cancel
 newtab-report-submit = Submit
 newtab-toast-thanks-for-reporting =
     .message = Thank you for reporting this.
+newtab-toast-widgets-hidden =
+    .message = Select the pencil icon to add widgets back at any time.
 
 ## Strings for task / to-do list productivity widget
 
@@ -677,6 +679,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = New list
 newtab-widget-section-title = Widgets
+newtab-widget-menu-hide = Hide widget
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Hide widgets
@@ -687,6 +690,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimise widgets
     .aria-label = Collapse all widgets to compact size
+newtab-widget-section-feedback = Tell us what you think
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

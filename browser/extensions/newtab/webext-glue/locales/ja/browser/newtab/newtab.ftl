@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = パーソナライズ
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = 閉じる
+    .aria-label = 閉じる
 
 ## Search box component.
 
@@ -49,16 +52,16 @@ newtab-search-box-input =
     .placeholder = ウェブを検索
     .aria-label = ウェブを検索
 
-## Top Sites - General form dialog.
+## Clear text button for the URL and image URL input fields in the Top Sites form.
 
 newtab-topsites-add-search-engine-header = 検索エンジンを追加
 newtab-topsites-add-shortcut-header = 新しいショートカット
 newtab-topsites-edit-topsites-header = トップサイトを編集
 newtab-topsites-edit-shortcut-header = ショートカットを編集
-newtab-topsites-add-shortcut-label = ショートカット追加
+newtab-topsites-add-shortcut-label = ショートカットを追加
 newtab-topsites-add-shortcut-title =
-    .title = ショートカット追加
-    .aria-label = ショートカット追加
+    .title = ショートカットを追加
+    .aria-label = ショートカットを追加
 newtab-topsites-title-label = タイトル
 newtab-topsites-title-input =
     .placeholder = タイトルを入力
@@ -69,6 +72,11 @@ newtab-topsites-url-validation = 正しい URL を入力してください
 newtab-topsites-image-url-label = カスタム画像 URL
 newtab-topsites-use-image-link = カスタム画像を使用...
 newtab-topsites-image-validation = 画像を読み込めませんでした。別の URL を試してください。
+
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = テキストを消去
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 
@@ -623,6 +631,8 @@ newtab-report-cancel = キャンセル
 newtab-report-submit = 送信
 newtab-toast-thanks-for-reporting =
     .message = ご報告ありがとうございます。
+newtab-toast-widgets-hidden =
+    .message = 鉛筆アイコンを選択して、いつでもウィジェットを追加できます。
 
 ## Strings for task / to-do list productivity widget
 
@@ -663,6 +673,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = 新しいリスト
 newtab-widget-section-title = ウィジェット
+newtab-widget-menu-hide = ウィジェットを隠す
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = ウィジェットを隠します
@@ -673,6 +684,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = ウィジェットを最小化します
     .aria-label = すべてのウィジェットをコンパクトサイズに折りたたみます
+newtab-widget-section-feedback = ご感想をお寄せください
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

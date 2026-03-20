@@ -636,6 +636,8 @@ newtab-report-cancel = 취소
 newtab-report-submit = 보내기
 newtab-toast-thanks-for-reporting =
     .message = 신고해 주셔서 감사합니다.
+newtab-toast-widgets-hidden =
+    .message = 언제든지 위젯을 다시 추가하려면 연필 아이콘을 선택하세요.
 
 ## Strings for task / to-do list productivity widget
 
@@ -676,6 +678,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = 새 목록
 newtab-widget-section-title = 위젯
+newtab-widget-menu-hide = 위젯 숨기기
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = 위젯 숨기기
@@ -686,6 +689,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = 위젯 최소화
     .aria-label = 모든 위젯을 작은 크기로 접기
+newtab-widget-section-feedback = 의견을 알려주세요
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

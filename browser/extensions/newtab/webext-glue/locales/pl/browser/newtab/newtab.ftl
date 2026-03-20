@@ -73,6 +73,11 @@ newtab-topsites-image-url-label = Własny obraz
 newtab-topsites-use-image-link = Użyj własnego obrazu…
 newtab-topsites-image-validation = Wczytanie obrazu się nie powiodło. Spróbuj innego adresu.
 
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Wyczyść tekst
+
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 
 newtab-topsites-cancel-button = Anuluj
@@ -632,6 +637,8 @@ newtab-report-cancel = Anuluj
 newtab-report-submit = Wyślij
 newtab-toast-thanks-for-reporting =
     .message = Dziękujemy za zgłoszenie.
+newtab-toast-widgets-hidden =
+    .message = Aby z powrotem dodać widżety, kliknij ikonę ołówka.
 
 ## Strings for task / to-do list productivity widget
 
@@ -672,6 +679,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nowa lista
 newtab-widget-section-title = Widżety
+newtab-widget-menu-hide = Ukryj widżet
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Ukryj widżety
@@ -682,6 +690,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimalizuj widżety
     .aria-label = Zwiń wszystkie widżety do małego rozmiaru
+newtab-widget-section-feedback = Powiedz nam, co sądzisz
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

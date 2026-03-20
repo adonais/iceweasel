@@ -73,6 +73,11 @@ newtab-topsites-image-url-label = Personecitiga retadreso de bildo
 newtab-topsites-use-image-link = Uzi personecigitan bildon…
 newtab-topsites-image-validation = Ne eblis ŝargi la bildon. Klopodu alian retadreson.
 
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Viŝi tekston
+
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 
 newtab-topsites-cancel-button = Nuligi
@@ -628,6 +633,8 @@ newtab-report-cancel = Nuligi
 newtab-report-submit = Sendi
 newtab-toast-thanks-for-reporting =
     .message = Dankon pro via raporto.
+newtab-toast-widgets-hidden =
+    .message = Elektu la krajonan emblemon por realdoni komponantojn, iam ajn.
 
 ## Strings for task / to-do list productivity widget
 
@@ -668,6 +675,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nova listo
 newtab-widget-section-title = Komponantoj
+newtab-widget-menu-hide = Kaŝi komponanton
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Kaŝi komponantojn
@@ -678,6 +686,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Plejetigi komponantojn
     .aria-label = Faldi ĉiujn komponantojn en kompakta grando
+newtab-widget-section-feedback = Rakontu al ni vian opinion
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

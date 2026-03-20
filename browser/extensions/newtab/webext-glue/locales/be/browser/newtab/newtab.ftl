@@ -73,6 +73,11 @@ newtab-topsites-image-url-label = Уласны URL выявы
 newtab-topsites-use-image-link = Выкарыстоўваць уласную выяву…
 newtab-topsites-image-validation = Не ўдалося атрымаць выяву. Паспрабуйце іншы URL.
 
+## Clear text button for the URL and image URL input fields in the Top Sites form.
+
+newtab-topsites-clear-input =
+    .aria-label = Ачысціць тэкст
+
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 
 newtab-topsites-cancel-button = Скасаваць
@@ -633,6 +638,8 @@ newtab-report-cancel = Скасаваць
 newtab-report-submit = Даслаць
 newtab-toast-thanks-for-reporting =
     .message = Дзякуй, што паведамілі пра гэта.
+newtab-toast-widgets-hidden =
+    .message = Выберыце значок алоўка, каб ізноў дадаць віджэты ў любы час.
 
 ## Strings for task / to-do list productivity widget
 
@@ -673,6 +680,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Новы спіс
 newtab-widget-section-title = Віджэты
+newtab-widget-menu-hide = Схаваць віджэт
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Схаваць віджэты
@@ -683,6 +691,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Згарнуць віджэты
     .aria-label = Згарнуць усе віджэты ў кампактны памер
+newtab-widget-section-feedback = Раскажыце нам, што вы думаеце
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

@@ -633,6 +633,8 @@ newtab-report-cancel = Cancellar
 newtab-report-submit = Inviar
 newtab-toast-thanks-for-reporting =
     .message = Gratias pro iste reporto.
+newtab-toast-widgets-hidden =
+    .message = Selige le icone de stilo pro quandocunque re-adder widgets
 
 ## Strings for task / to-do list productivity widget
 
@@ -673,6 +675,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nove lista
 newtab-widget-section-title = Widgets
+newtab-widget-menu-hide = Celar widget
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Celar widgets
@@ -683,6 +686,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Minimisar widgets
     .aria-label = Collaber tote le widgets a dimension compacte
+newtab-widget-section-feedback = Conta nos lo que que tu pensa
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

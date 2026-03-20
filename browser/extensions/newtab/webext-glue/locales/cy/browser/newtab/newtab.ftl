@@ -642,6 +642,8 @@ newtab-report-cancel = Diddymu
 newtab-report-submit = Cyflwyno
 newtab-toast-thanks-for-reporting =
     .message = Diolch am adrodd am hyn.
+newtab-toast-widgets-hidden =
+    .message = Dewiswch yr eicon pensil i adfer teclynnau unrhyw bryd.
 
 ## Strings for task / to-do list productivity widget
 
@@ -682,6 +684,7 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Rhestr newydd
 newtab-widget-section-title = Teclynnau
+newtab-widget-menu-hide = Cuddio'r teclyn
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
     .title = Cuddio teclynnau
@@ -692,6 +695,7 @@ newtab-widget-section-maximize =
 newtab-widget-section-minimize =
     .title = Lleihau teclynnau
     .aria-label = Lleihau pob teclyn i faint llai
+newtab-widget-section-feedback = Dywedwch wrthym beth yw eich barn
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
