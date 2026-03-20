@@ -80,6 +80,8 @@ fail-if = [
   "a11y_checks", # Bug 1850591 clicked moz-page-nav-button button is not focusable
 ]
 
+["browser_opentabs_tab_favicons.js"]
+
 ["browser_opentabs_tab_indicators.js"]
 
 ["browser_recentlyclosed_firefoxview.js"]
