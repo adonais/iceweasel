@@ -4,10 +4,21 @@
 const RELATIVE_DIR = "toolkit/components/pdfjs/test/";
 const TESTROOT = "https://example.com/browser/" + RELATIVE_DIR;
 
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/toolkit/content/tests/browser/common/mockTransfer.js",
+  this
+);
+
 const MockFilePicker = SpecialPowers.MockFilePicker;
+const { promise: filePickerPromise, resolve: resolveFilePicker } =
+  Promise.withResolvers();
 add_setup(async function () {
   MockFilePicker.init(window.browsingContext);
-  MockFilePicker.returnValue = MockFilePicker.returnOK;
+  MockFilePicker.showCallback = function (fp) {
+    resolveFilePicker(fp.defaultString);
+    return MockFilePicker.returnCancel;
+  };
+
   registerCleanupFunction(function () {
     MockFilePicker.cleanup();
   });
@@ -325,6 +336,8 @@ add_task(async function test_pages_context_menu() {
       );
       await clickOnItem(browser, menuitems, "context-pdfjs-save-page");
       await savePromise;
+
+      await filePickerPromise;
 
       await waitForPdfJSClose(browser);
       await SpecialPowers.popPrefEnv();

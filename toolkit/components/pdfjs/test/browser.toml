@@ -99,6 +99,9 @@ support-files = [
   "file_pdfjs_object_stream.pdf^headers^",
 ]
 
+["browser_pdfjs_organize_telemetry.js"]
+support-files = ["file_pdfjs_numbered_pages.pdf"]
+
 ["browser_pdfjs_octet_stream.js"]
 support-files = [
   "file_pdfjs_object_stream.pdf",
