@@ -607,6 +607,9 @@ void AggregateCapturer::OnFrame(const webrtc::VideoFrame& aVideoFrame) {
     auto streamsGuard = mStreams.Lock();
 
     for (auto& stream : *streamsGuard) {
+      if (!stream->mStarted) {
+        continue;
+      }
       auto& c = stream->mConfiguration;
       const double maxFramerate = static_cast<double>(
           c.mCapability.maxFPS > 0 ? c.mCapability.maxFPS : 120);

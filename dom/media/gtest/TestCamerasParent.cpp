@@ -123,6 +123,17 @@ TEST_F(TestAggregateCapturer, TwoStreamsLifeCycle) {
 }
 
 TEST_F(TestAggregateCapturer, FrameDelivery) {
+  webrtc::VideoCaptureCapability cap;
+  cap.width = 640;
+  cap.height = 480;
+  cap.maxFPS = 30;
+  cap.videoType = webrtc::VideoType::kI420;
+  NormalizedConstraints constraints;
+  dom::VideoResizeModeEnum resizeMode =
+      dom::VideoResizeModeEnum::Crop_and_scale;
+  mAggregator->SetConfigurationFor(mAggregator->mCaptureId, cap, constraints,
+                                   resizeMode, /*aStarted=*/true);
+
   constexpr int width = 240, height = 160;
   constexpr int64_t time = 123;
 
