@@ -350,6 +350,10 @@ main-context-menu-send-to-device-2 =
     .label = Send to Device
     .accesskey = n
 
+main-context-menu-send-to-mobile-2 =
+    .label = Send to Mobile
+    .accesskey = n
+
 # Displayed when there are saved passwords and the user clicks inside a username or password field
 main-context-menu-use-saved-password =
     .label = Use Saved Password
@@ -373,6 +377,10 @@ main-context-menu-add-engine =
 
 main-context-menu-link-send-to-device =
     .label = Send Link to Device
+    .accesskey = n
+
+main-context-menu-link-send-to-mobile =
+    .label = Send Link to Mobile
     .accesskey = n
 
 main-context-menu-frame =
