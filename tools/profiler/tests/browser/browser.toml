@@ -10,9 +10,6 @@ skip-if = [
 ["browser_test_feature_ipcmessages.js"]
 support-files = ["simple.html"]
 
-["browser_test_feature_js_source_table.js"]
-support-files = ["simple.html", "inline_script_test.html"]
-
 ["browser_test_feature_js_sourceindex.js"]
 support-files = ["simple.html", "tracing.html"]
 

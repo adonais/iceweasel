@@ -30,16 +30,16 @@ struct ParamTraits;
 
 namespace mozilla {
 
-// Entry pairing ID strings with JS source data for WebChannel requests
+// Entry pairing UUID strings with JS source data for WebChannel requests
 struct JSSourceEntry {
-  nsCString id;
+  nsCString uuid;
   ProfilerJSSourceData sourceData;
 
   JSSourceEntry() = default;
-  JSSourceEntry(nsCString&& aId, ProfilerJSSourceData&& aSourceData)
-      : id(std::move(aId)), sourceData(std::move(aSourceData)) {}
+  JSSourceEntry(nsCString&& aUuid, ProfilerJSSourceData&& aSourceData)
+      : uuid(std::move(aUuid)), sourceData(std::move(aSourceData)) {}
 
-  size_t SizeOf() const { return id.Length() + sourceData.SizeOf(); }
+  size_t SizeOf() const { return uuid.Length() + sourceData.SizeOf(); }
 };
 
 // This structure contains additional information gathered while generating the

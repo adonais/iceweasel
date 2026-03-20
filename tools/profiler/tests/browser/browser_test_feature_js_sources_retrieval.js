@@ -57,15 +57,15 @@ add_task(async function test_js_sources_in_profile_additional_info() {
     info(`Total JS sources collected: ${sources.length}`);
 
     // Check the sources to verify they contain actual source text
-    for (const sourceId in sources) {
-      const sourceText = sources[sourceId];
+    for (const sourceUuid in sources) {
+      const sourceText = sources[sourceUuid];
       Assert.ok(
-        typeof sourceId === "string" && !!sourceId.length,
-        "sourceId should be a non-empty string"
+        typeof sourceUuid === "string" && !!sourceUuid.length,
+        "sourceUuid should be a non-empty string"
       );
       Assert.ok(
         typeof sourceText === "string" && !!sourceText.length,
-        `Source ${sourceId} should be a non-empty string`
+        `Source ${sourceUuid} should be a non-empty string`
       );
     }
   });
@@ -118,8 +118,8 @@ add_task(async function test_js_sources_different_types() {
     let inlineSourceCount = 0;
     let inlineSourceLength = 0;
 
-    for (const sourceId in sources) {
-      const sourceText = sources[sourceId];
+    for (const sourceUuid in sources) {
+      const sourceText = sources[sourceUuid];
       if (typeof sourceText === "string" && sourceText.length) {
         // Check if we found our test functions
         if (
@@ -189,8 +189,8 @@ add_task(async function test_js_sources_external_scripts() {
     let foundInlineScript = false;
     let externalScriptSource = null;
 
-    for (const sourceId in sources) {
-      const sourceText = sources[sourceId];
+    for (const sourceUuid in sources) {
+      const sourceText = sources[sourceUuid];
       if (typeof sourceText === "string" && sourceText.length) {
         // Check for external script content
         if (

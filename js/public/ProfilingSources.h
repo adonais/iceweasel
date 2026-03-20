@@ -68,70 +68,44 @@ struct JS_PUBLIC_API ProfilerJSSourceData {
 
   // Constructors
   ProfilerJSSourceData(uint32_t sourceId, JS::UniqueChars&& filePath,
-                       size_t pathLen, uint32_t startLine, uint32_t startColumn,
-                       JS::UniqueTwoByteChars&& sourceMapURL,
-                       size_t sourceMapURLLen)
+                       size_t pathLen)
       : sourceId_(sourceId),
         filePath_(std::move(filePath)),
         filePathLength_(pathLen),
-        data_(Unavailable{}),
-        startLine_(startLine),
-        startColumn_(startColumn),
-        sourceMapURL_(std::move(sourceMapURL)),
-        sourceMapURLLength_(sourceMapURLLen) {}
+        data_(Unavailable{}) {}
 
   // UTF-8 source text with filePath
   ProfilerJSSourceData(uint32_t sourceId, JS::UniqueChars&& chars,
                        size_t length, JS::UniqueChars&& filePath,
-                       size_t pathLen, uint32_t startLine, uint32_t startColumn,
-                       JS::UniqueTwoByteChars&& sourceMapURL,
-                       size_t sourceMapURLLen)
+                       size_t pathLen)
       : sourceId_(sourceId),
         filePath_(std::move(filePath)),
         filePathLength_(pathLen),
-        data_(SourceTextUTF8{std::move(chars), length}),
-        startLine_(startLine),
-        startColumn_(startColumn),
-        sourceMapURL_(std::move(sourceMapURL)),
-        sourceMapURLLength_(sourceMapURLLen) {}
+        data_(SourceTextUTF8{std::move(chars), length}) {}
 
   // UTF-16 source text with filePath
   ProfilerJSSourceData(uint32_t sourceId, JS::UniqueTwoByteChars&& chars,
                        size_t length, JS::UniqueChars&& filePath,
-                       size_t pathLen, uint32_t startLine, uint32_t startColumn,
-                       JS::UniqueTwoByteChars&& sourceMapURL,
-                       size_t sourceMapURLLen)
+                       size_t pathLen)
       : sourceId_(sourceId),
         filePath_(std::move(filePath)),
         filePathLength_(pathLen),
-        data_(SourceTextUTF16{std::move(chars), length}),
-        startLine_(startLine),
-        startColumn_(startColumn),
-        sourceMapURL_(std::move(sourceMapURL)),
-        sourceMapURLLength_(sourceMapURLLen) {}
+        data_(SourceTextUTF16{std::move(chars), length}) {}
 
   // For the cases where no sourceId and filepath are needed.
   ProfilerJSSourceData(JS::UniqueChars&& chars, size_t length)
       : sourceId_(0),
         filePath_(nullptr),
         filePathLength_(0),
-        data_(SourceTextUTF8{std::move(chars), length}),
-        sourceMapURL_(nullptr),
-        sourceMapURLLength_(0) {}
+        data_(SourceTextUTF8{std::move(chars), length}) {}
 
   ProfilerJSSourceData()
-      : sourceId_(0),
-        filePathLength_(0),
-        data_(Unavailable{}),
-        sourceMapURLLength_(0) {}
+      : sourceId_(0), filePathLength_(0), data_(Unavailable{}) {}
 
-  static ProfilerJSSourceData CreateRetrievableFile(
-      uint32_t sourceId, JS::UniqueChars&& filePath, size_t pathLength,
-      uint32_t startLine, uint32_t startColumn,
-      JS::UniqueTwoByteChars&& sourceMapURL, size_t sourceMapURLLength) {
-    ProfilerJSSourceData result(sourceId, std::move(filePath), pathLength,
-                                startLine, startColumn, std::move(sourceMapURL),
-                                sourceMapURLLength);
+  static ProfilerJSSourceData CreateRetrievableFile(uint32_t sourceId,
+                                                    JS::UniqueChars&& filePath,
+                                                    size_t pathLength) {
+    ProfilerJSSourceData result(sourceId, std::move(filePath), pathLength);
     result.data_.emplace<RetrievableFile>();
     return result;
   }
@@ -150,22 +124,12 @@ struct JS_PUBLIC_API ProfilerJSSourceData {
     return filePath_.get();
   }
   size_t filePathLength() const { return filePathLength_; }
-  // Consumer should always check for sourceMapURLLength before calling this.
-  const char16_t* sourceMapURL() const {
-    MOZ_ASSERT(sourceMapURL_);
-    return sourceMapURL_.get();
-  }
-  size_t sourceMapURLLength() const { return sourceMapURLLength_; }
   const ProfilerSourceVariant& data() const { return data_; }
-  uint32_t startLine() const { return startLine_; }
-  uint32_t startColumn() const { return startColumn_; }
 
   // Used only for memory reporting.
   size_t SizeOf() const {
-    // Size of sourceId + filepath + sourceMapURL + startLine + startColumn.
-    size_t size = sizeof(uint32_t) + filePathLength_ * sizeof(char) +
-                  sourceMapURLLength_ * sizeof(char16_t) + sizeof(uint32_t) +
-                  sizeof(uint32_t);
+    // Size of sourceId + filepath
+    size_t size = sizeof(uint32_t) + filePathLength_ * sizeof(char);
 
     data_.match(
         [&](const SourceTextUTF16& srcText) {
@@ -187,14 +151,6 @@ struct JS_PUBLIC_API ProfilerJSSourceData {
 
     if (filePathLength_ > 0) {
       hash = HashBytes(filePath_.get(), filePathLength_, hash);
-    }
-
-    hash = mozilla::AddToHash(hash, startLine_);
-    hash = mozilla::AddToHash(hash, startColumn_);
-
-    if (sourceMapURLLength_ > 0) {
-      hash = HashBytes(sourceMapURL_.get(),
-                       sourceMapURLLength_ * sizeof(char16_t), hash);
     }
 
     hash = data_.addTagToHash(hash);
@@ -225,18 +181,6 @@ struct JS_PUBLIC_API ProfilerJSSourceData {
   JS::UniqueChars filePath_;
   size_t filePathLength_;
   ProfilerSourceVariant data_;
-  // Line number within the file where this source starts (1-based).
-  // This is used for inline scripts within HTML pages.
-  uint32_t startLine_ = 1;
-  // Column number within the file where this source starts (1-based).
-  // This is used for inline scripts within HTML pages.
-  uint32_t startColumn_ = 1;
-  // Null-terminated source map URL for the source.
-  // It can be nullptr if:
-  // - The source has no sourceMapURL.
-  // - sourceMapURL allocation fails during copy.
-  JS::UniqueTwoByteChars sourceMapURL_;
-  size_t sourceMapURLLength_;
 };
 
 namespace js {
@@ -246,8 +190,8 @@ using ProfilerJSSources =
 
 /*
  * Main API for getting the profiled JS sources.
- * If gatherSourceText is false, only metadata (filename, sourceMapURL) will
- * be gathered, not the actual source text.
+ * If gatherSourceText is false, only metadata (filename) will be gathered, not
+ * the actual source text.
  */
 JS_PUBLIC_API ProfilerJSSources GetProfilerScriptSources(JSRuntime* rt,
                                                          bool gatherSourceText);

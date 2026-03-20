@@ -481,56 +481,30 @@ js::ProfilerJSSources GeckoProfilerRuntime::getProfilerScriptSources(
       }
     }
 
-    // Get the start line and column for inline scripts.
-    uint32_t startLine = scriptSource->startLine();
-    uint32_t startColumn = scriptSource->startColumn().oneOriginValue();
-
-    // Get sourceMapURL for all source types. Create single copy to be moved.
-    const char16_t* sourceMapURL = nullptr;
-    size_t sourceMapURLLen = 0;
-    JS::UniqueTwoByteChars sourceMapURLCopy;
-    if (scriptSource->hasSourceMapURL()) {
-      sourceMapURL = scriptSource->sourceMapURL();
-      sourceMapURLLen = js_strlen(sourceMapURL);
-      sourceMapURLCopy.reset(static_cast<char16_t*>(
-          js_malloc((sourceMapURLLen + 1) * sizeof(char16_t))));
-      if (sourceMapURLCopy) {
-        js_memcpy(sourceMapURLCopy.get(), sourceMapURL,
-                  sourceMapURLLen * sizeof(char16_t));
-        sourceMapURLCopy[sourceMapURLLen] = 0;
-      } else {
-        sourceMapURLLen = 0;
-      }
-    }
-
     // If not gathering source text, just store metadata
     if (!gatherSourceText) {
-      (void)result.append(ProfilerJSSourceData(
-          sourceId, std::move(filenameCopy), filenameLen, startLine,
-          startColumn, std::move(sourceMapURLCopy), sourceMapURLLen));
+      (void)result.append(
+          ProfilerJSSourceData(sourceId, std::move(filenameCopy), filenameLen));
       continue;
     }
 
     if (retrievableSource) {
       (void)result.append(ProfilerJSSourceData::CreateRetrievableFile(
-          sourceId, std::move(filenameCopy), filenameLen, startLine,
-          startColumn, std::move(sourceMapURLCopy), sourceMapURLLen));
+          sourceId, std::move(filenameCopy), filenameLen));
       continue;
     }
 
     if (!hasSourceText) {
-      (void)result.append(ProfilerJSSourceData(
-          sourceId, std::move(filenameCopy), filenameLen, startLine,
-          startColumn, std::move(sourceMapURLCopy), sourceMapURLLen));
+      (void)result.append(
+          ProfilerJSSourceData(sourceId, std::move(filenameCopy), filenameLen));
       continue;
     }
 
     size_t sourceLength = scriptSource->length();
     if (sourceLength == 0) {
-      (void)result.append(ProfilerJSSourceData(
-          sourceId, JS::UniqueTwoByteChars(), 0, std::move(filenameCopy),
-          filenameLen, startLine, startColumn, std::move(sourceMapURLCopy),
-          sourceMapURLLen));
+      (void)result.append(
+          ProfilerJSSourceData(sourceId, JS::UniqueTwoByteChars(), 0,
+                               std::move(filenameCopy), filenameLen));
       continue;
     }
 
@@ -541,10 +515,9 @@ js::ProfilerJSSources GeckoProfilerRuntime::getProfilerScriptSources(
       sourceResult = scriptSource->functionBodyStringChars(&charsLength);
 
       if (charsLength == 0) {
-        (void)result.append(ProfilerJSSourceData(
-            sourceId, JS::UniqueTwoByteChars(), 0, std::move(filenameCopy),
-            filenameLen, startLine, startColumn, std::move(sourceMapURLCopy),
-            sourceMapURLLen));
+        (void)result.append(
+            ProfilerJSSourceData(sourceId, JS::UniqueTwoByteChars(), 0,
+                                 std::move(filenameCopy), filenameLen));
         continue;
       }
     } else {
@@ -560,19 +533,17 @@ js::ProfilerJSSources GeckoProfilerRuntime::getProfilerScriptSources(
       if (!utf8Chars) {
         continue;
       }
-      (void)result.append(ProfilerJSSourceData(
-          sourceId, std::move(utf8Chars), charsLength, std::move(filenameCopy),
-          filenameLen, startLine, startColumn, std::move(sourceMapURLCopy),
-          sourceMapURLLen));
+      (void)result.append(
+          ProfilerJSSourceData(sourceId, std::move(utf8Chars), charsLength,
+                               std::move(filenameCopy), filenameLen));
     } else {
       auto& utf16Chars = sourceResult.as<JS::UniqueTwoByteChars>();
       if (!utf16Chars) {
         continue;
       }
-      (void)result.append(ProfilerJSSourceData(
-          sourceId, std::move(utf16Chars), charsLength, std::move(filenameCopy),
-          filenameLen, startLine, startColumn, std::move(sourceMapURLCopy),
-          sourceMapURLLen));
+      (void)result.append(
+          ProfilerJSSourceData(sourceId, std::move(utf16Chars), charsLength,
+                               std::move(filenameCopy), filenameLen));
     }
   }
 
