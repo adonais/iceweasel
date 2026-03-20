@@ -72,6 +72,13 @@ nav {
   }
 }
 
+slot[name="subheading"] {
+  display: block;
+  overflow-y: hidden;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
 .primary-nav-group,
 #secondary-nav-group {
   display: grid;
@@ -95,6 +102,10 @@ hr {
   border: 0;
   background-color: var(--page-nav-hr-color);
   flex-shrink: 0;
+
+  @media (max-width: 52rem) {
+    width: var(--button-size-icon);
+  }
 }
 
 :host([type="mobile"]) {
