@@ -19,11 +19,14 @@
   --col-width: calc(var(--mrec-width) / 4);
 
   // Bug 2020983: Enable property to set card height
-  // --mrec-height: 250px;
-  // --col-height: calc(var(--mrec-height) / 4);
+  --mrec-height: 250px;
+  --row-height: calc(var(--mrec-height) / 4);
 
   // Side Columns (.sidebar-inline-start/end) are 2 columns wide each side
   --side-col-width: calc(2 * var(--col-width));
+  // Usage note: We use --row-heigh as the spacing unit to create consistent spacing both
+  // vertically and horizontal for the logo
+  --side-col-space-logo: var(--row-height);
 
   // Content area (.content): minimum 4 columns wide, grows up to 16 columns max
   --content-col-width: minmax(calc((4 * var(--col-width)) + 34px), var(--content-max-width));
@@ -33,8 +36,11 @@
 }
 
 .container {
+  container-type: inline-size;
+  container-name: outer-grid;
   display: grid;
   grid-template-columns: var(--side-col-width) var(--content-col-width) var(--side-col-width);
+  grid-auto-rows: var(--row-height);
   gap: var(--space-medium);
   justify-content: center;
   margin-inline: auto;
@@ -47,8 +53,24 @@
   grid-template-columns: repeat(auto-fill, var(--col-width));
   gap: var(--space-medium);
   justify-content: center;
-  // Bug 1967304 - Large number (112px)
-  padding-block-start: calc(var(--space-large) * 7);
+  grid-column: 2;
+  grid-row: 3 / span 2;
+}
+
+.sidebar-inline-end {
+  grid-column: 3;
+  grid-row: 2 / span 2;
+}
+
+.sidebar-inline-start {
+  grid-column: 1;
+  grid-row: 2 / span 2;
+
+  @include at-outer-grid-cols(6) {
+    // Note - This is intentional (using the row height as horizontal spacing unit).
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    margin-inline-start: var(--side-col-space-logo);
+  }
 }
 
 .content > * {

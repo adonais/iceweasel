@@ -825,14 +825,20 @@ main section {
 :root {
   --mrec-width: 300px;
   --col-width: calc(var(--mrec-width) / 4);
+  --mrec-height: 250px;
+  --row-height: calc(var(--mrec-height) / 4);
   --side-col-width: calc(2 * var(--col-width));
+  --side-col-space-logo: var(--row-height);
   --content-col-width: minmax(calc((4 * var(--col-width)) + 34px), var(--content-max-width));
   --content-max-width: calc(16 * var(--col-width) + 15 * var(--space-medium));
 }
 
 .container {
+  container-type: inline-size;
+  container-name: outer-grid;
   display: grid;
   grid-template-columns: var(--side-col-width) var(--content-col-width) var(--side-col-width);
+  grid-auto-rows: var(--row-height);
   gap: var(--space-medium);
   justify-content: center;
   margin-inline: auto;
@@ -845,7 +851,24 @@ main section {
   grid-template-columns: repeat(auto-fill, var(--col-width));
   gap: var(--space-medium);
   justify-content: center;
-  padding-block-start: calc(var(--space-large) * 7);
+  grid-column: 2;
+  grid-row: 3/span 2;
+}
+
+.sidebar-inline-end {
+  grid-column: 3;
+  grid-row: 2/span 2;
+}
+
+.sidebar-inline-start {
+  grid-column: 1;
+  grid-row: 2/span 2;
+}
+@container outer-grid (inline-size >= calc(2 * 150px + 7 * 0.75rem + 6 * 75px)) {
+  .sidebar-inline-start {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    margin-inline-start: var(--side-col-space-logo);
+  }
 }
 
 .content > * {
@@ -915,6 +938,17 @@ main section {
   justify-content: center;
   margin-block-end: var(--space-xxlarge);
 }
+.nova-enabled .logo-and-wordmark .wordmark {
+  display: none;
+}
+@container outer-grid (inline-size >= calc(2 * 150px + 7 * 0.75rem + 6 * 75px)) {
+  .nova-enabled .logo-and-wordmark {
+    width: max-content;
+  }
+  .nova-enabled .logo-and-wordmark .wordmark {
+    display: inline-block;
+  }
+}
 .no-recommended-stories .logo-and-wordmark {
   margin-block-end: calc(var(--space-large) + var(--space-xlarge));
 }
@@ -942,12 +976,12 @@ main section {
   color-scheme: dark;
 }
 @media (max-width: 609px) {
-  .logo-and-wordmark .logo {
+  .classic-enabled .logo-and-wordmark .logo {
     background-size: 64px;
     height: 64px;
     width: 64px;
   }
-  .logo-and-wordmark .wordmark {
+  .classic-enabled .logo-and-wordmark .wordmark {
     background-size: 100px;
     height: 64px;
     width: 100px;

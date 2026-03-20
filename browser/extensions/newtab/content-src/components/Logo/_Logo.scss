@@ -7,6 +7,21 @@
   $logo-size: 64px;
   $wordmark-size: 105px;
 
+  // @nova-cleanup(remove-conditional): Make default behavior, remove .nova-enabled selector
+  .nova-enabled & {
+    .wordmark {
+      display: none;
+    }
+
+    @include at-outer-grid-cols(6) {
+      width: max-content;
+
+      .wordmark {
+        display: inline-block;
+      }
+    }
+  }
+
   align-items: center;
   display: flex;
   justify-content: center;
@@ -41,21 +56,24 @@
     @include wallpaper-contrast-fix;
   }
 
-  @media (max-width: $break-point-medium - 1) {
-    $logo-size-small: 64px;
-    $wordmark-small-size: 100px;
+  // @nova-cleanup(remove-conditional): Delete this entire .classic-enabled block and its contents
+  .classic-enabled & {
+    @media (max-width: $break-point-medium - 1) {
+      $logo-size-small: 64px;
+      $wordmark-small-size: 100px;
 
-    .logo {
-      background-size: $logo-size-small;
-      height: $logo-size-small;
-      width: $logo-size-small;
-    }
+      .logo {
+        background-size: $logo-size-small;
+        height: $logo-size-small;
+        width: $logo-size-small;
+      }
 
-    .wordmark {
-      background-size: $wordmark-small-size;
-      height: $logo-size-small;
-      width: $wordmark-small-size;
-      margin-inline-start: var(--space-medium);
+      .wordmark {
+        background-size: $wordmark-small-size;
+        height: $logo-size-small;
+        width: $wordmark-small-size;
+        margin-inline-start: var(--space-medium);
+      }
     }
   }
 }

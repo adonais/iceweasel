@@ -786,6 +786,17 @@ main section {
   justify-content: center;
   margin-block-end: var(--space-xxlarge);
 }
+.nova-enabled .logo-and-wordmark .wordmark {
+  display: none;
+}
+@container outer-grid (inline-size >= calc(2 * 150px + 7 * 0.75rem + 6 * 75px)) {
+  .nova-enabled .logo-and-wordmark {
+    width: max-content;
+  }
+  .nova-enabled .logo-and-wordmark .wordmark {
+    display: inline-block;
+  }
+}
 .no-recommended-stories .logo-and-wordmark {
   margin-block-end: calc(var(--space-large) + var(--space-xlarge));
 }
@@ -813,12 +824,12 @@ main section {
   color-scheme: dark;
 }
 @media (max-width: 609px) {
-  .logo-and-wordmark .logo {
+  .classic-enabled .logo-and-wordmark .logo {
     background-size: 64px;
     height: 64px;
     width: 64px;
   }
-  .logo-and-wordmark .wordmark {
+  .classic-enabled .logo-and-wordmark .wordmark {
     background-size: 100px;
     height: 64px;
     width: 100px;
