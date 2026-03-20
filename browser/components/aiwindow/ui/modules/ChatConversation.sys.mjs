@@ -140,8 +140,10 @@ export class ChatConversation extends EventEmitter {
 
     let pendingToolCalls = null;
     let fullResponseText = "";
+    let usage = null;
 
     for await (const chunk of stream) {
+      usage = chunk?.usage;
       if (chunk.text) {
         fullResponseText += chunk.text;
         this.handleChunk(chunk.text, currentMessage, parserState);
@@ -172,7 +174,7 @@ export class ChatConversation extends EventEmitter {
     await lazy.ChatStore.updateConversation(this);
     this.emit("chat-conversation:message-complete", currentMessage);
 
-    return { pendingToolCalls, fullResponseText };
+    return { pendingToolCalls, fullResponseText, usage };
   }
 
   #getCurrentAssistantResponse() {

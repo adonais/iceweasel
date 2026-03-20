@@ -294,6 +294,11 @@ export interface ChunkResponse {
     id: string;
     function: { name: string; arguments: any[] };
   }>;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
 }
 
 export type TypedArray =

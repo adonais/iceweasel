@@ -78,6 +78,23 @@ add_task(async function test_chat_streams_end_to_end() {
         message => message.role === MESSAGE_ROLE.TOOL
       );
       Assert.equal(toolMessages.length, 0, "No tool calls for plain response");
+
+      Assert.ok(Chat.lastUsage, "Usage should be captured from stream");
+      Assert.equal(
+        Chat.lastUsage.prompt_tokens,
+        10,
+        "prompt_tokens should be 10"
+      );
+      Assert.equal(
+        Chat.lastUsage.completion_tokens,
+        5,
+        "completion_tokens should be 5"
+      );
+      Assert.equal(
+        Chat.lastUsage.total_tokens,
+        15,
+        "total_tokens should be 15"
+      );
     }
   );
 });
@@ -145,6 +162,13 @@ add_task(async function test_chat_tool_call_get_open_tabs() {
           toolMessages[0].content.body.length,
           2,
           "Returns both tabs"
+        );
+
+        Assert.ok(Chat.lastUsage, "Usage should be captured after tool call");
+        Assert.equal(
+          Chat.lastUsage.total_tokens,
+          15,
+          "total_tokens should be 15"
         );
       }
     );

@@ -171,6 +171,7 @@ function startMockOpenAI({
         created: timestamp,
         model: "aiwindow-mock",
         choices: [{ index: 0, delta: {}, finish_reason: "tool_calls" }],
+        usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
       });
 
       response.write("data: [DONE]\n\n");
@@ -183,7 +184,8 @@ function startMockOpenAI({
 
       const timestamp = Math.floor(Date.now() / 1000);
       followupChunks.forEach((chunk, index) => {
-        sendSSE({
+        const isLast = index === followupChunks.length - 1;
+        const event = {
           id: `chatcmpl-aiwindow-stream-tool-followup-${index}`,
           object: "chat.completion.chunk",
           created: timestamp,
@@ -192,11 +194,18 @@ function startMockOpenAI({
             {
               index: 0,
               delta: { content: chunk },
-              finish_reason:
-                index === followupChunks.length - 1 ? "stop" : null,
+              finish_reason: isLast ? "stop" : null,
             },
           ],
-        });
+        };
+        if (isLast) {
+          event.usage = {
+            prompt_tokens: 10,
+            completion_tokens: 5,
+            total_tokens: 15,
+          };
+        }
+        sendSSE(event);
       });
 
       response.write("data: [DONE]\n\n");
@@ -209,7 +218,8 @@ function startMockOpenAI({
 
       const timestamp = Math.floor(Date.now() / 1000);
       streamChunks.forEach((chunk, index) => {
-        sendSSE({
+        const isLast = index === streamChunks.length - 1;
+        const event = {
           id: `chatcmpl-aiwindow-stream-${index}`,
           object: "chat.completion.chunk",
           created: timestamp,
@@ -218,10 +228,18 @@ function startMockOpenAI({
             {
               index: 0,
               delta: { content: chunk },
-              finish_reason: index === streamChunks.length - 1 ? "stop" : null,
+              finish_reason: isLast ? "stop" : null,
             },
           ],
-        });
+        };
+        if (isLast) {
+          event.usage = {
+            prompt_tokens: 10,
+            completion_tokens: 5,
+            total_tokens: 15,
+          };
+        }
+        sendSSE(event);
       });
 
       response.write("data: [DONE]\n\n");

@@ -109,6 +109,7 @@ export class OpenAIPipeline {
       port,
       isDone,
       toolCalls,
+      usage,
     } = args;
     port?.postMessage({
       text: content,
@@ -123,6 +124,7 @@ export class OpenAIPipeline {
         requestId,
         tokens: [],
         ...(toolCalls ? { toolCalls } : {}),
+        ...(usage ? { usage } : {}),
       },
       type: Progress.ProgressType.INFERENCE,
       statusText: isDone
@@ -218,6 +220,7 @@ export class OpenAIPipeline {
     let streamOutput = "";
     let toolAcc = new Map();
     let sawToolCallsFinish = false;
+    let usage = null;
 
     for await (const chunk of stream) {
       const choice = chunk?.choices?.[0];
@@ -237,6 +240,10 @@ export class OpenAIPipeline {
 
       if (Array.isArray(delta.tool_calls) && delta.tool_calls.length) {
         toolAcc = this.#mergeToolDeltas(toolAcc, delta.tool_calls);
+      }
+
+      if (chunk?.usage) {
+        usage = chunk.usage;
       }
 
       // If the model signals it wants tools now
@@ -265,6 +272,7 @@ export class OpenAIPipeline {
       inferenceProgressCallback,
       port,
       isDone: true,
+      ...(usage ? { usage } : {}),
     });
 
     return {
@@ -371,7 +379,9 @@ export class OpenAIPipeline {
         stream,
         tools,
       };
-
+      if (stream) {
+        completionParams.stream_options = { include_usage: true };
+      }
       const args = {
         client,
         completionParams,

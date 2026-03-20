@@ -57,6 +57,7 @@ Object.assign(Chat, {
     run_search: RunSearch.runSearch.bind(RunSearch),
     get_user_memories: getUserMemories,
   },
+  lastUsage: null,
 
   /**
    * Stream assistant output with tool-call support.
@@ -114,11 +115,16 @@ Object.assign(Chat, {
       let pendingToolCalls = null;
 
       try {
+        this.lastUsage = null;
         const response = await conversation.receiveResponse(
           streamModelResponse()
         );
         fullResponseText = response.fullResponseText;
         pendingToolCalls = response.pendingToolCalls;
+
+        if (response.usage) {
+          this.lastUsage = response.usage;
+        }
       } catch (err) {
         console.error("fetchWithHistory streaming error:", err);
         throw err;
