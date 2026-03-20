@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.6.65
- * pdfjsBuild = bda745672
+ * pdfjsVersion = 5.6.98
+ * pdfjsBuild = 977e4f2c4
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -2556,6 +2556,7 @@ class AnnotationEditorUIManager {
   #allEditableAnnotations = null;
   #allEditors = new Map();
   #allLayers = new Map();
+  #savedAllLayers = null;
   #altTextManager = null;
   #annotationStorage = null;
   #changedExistingAnnotations = null;
@@ -3433,6 +3434,59 @@ class AnnotationEditorUIManager {
         this.commentSelection("context_menu");
         break;
     }
+  }
+  updatePageIndex(oldPageIndex, newPageIndex) {
+    for (const editor of this.getEditors(oldPageIndex)) {
+      editor.pageIndex = newPageIndex;
+    }
+    const layer = this.#savedAllLayers.get(oldPageIndex);
+    if (layer) {
+      layer.pageIndex = newPageIndex;
+      this.#allLayers.set(newPageIndex, layer);
+      if (this.#isEnabled) {
+        layer.enable();
+      } else {
+        layer.disable();
+      }
+    }
+  }
+  startUpdatePages() {
+    this.#savedAllLayers = new Map(this.#allLayers);
+    this.#allLayers.clear();
+  }
+  endUpdatePages() {
+    this.#savedAllLayers = null;
+  }
+  clonePage(pageIndex, newPageIndex) {
+    for (const editor of this.getEditors(pageIndex)) {
+      const serialized = editor.serialize(editor.mode !== AnnotationEditorType.HIGHLIGHT);
+      if (!serialized) {
+        continue;
+      }
+      serialized.pageIndex = newPageIndex;
+      serialized.id = this.getId();
+      serialized.isClone = true;
+      delete serialized.popupRef;
+      this.#annotationStorage.setValue(serialized.id, serialized);
+    }
+  }
+  findClonesForPage(layer) {
+    const promises = [];
+    const {
+      pageIndex
+    } = layer;
+    for (const [id, editor] of this.#annotationStorage) {
+      if (editor.pageIndex === pageIndex && editor.isClone) {
+        this.#annotationStorage.remove(id);
+        promises.push(layer.deserialize(editor).then(deserializedEditor => {
+          if (deserializedEditor) {
+            deserializedEditor.isClone = true;
+            layer.addOrRebuild(deserializedEditor);
+          }
+        }));
+      }
+    }
+    return Promise.all(promises);
   }
   #dispatchUpdateStates(details) {
     const hasChanged = Object.entries(details).some(([key, value]) => this.#previousStates[key] !== value);
@@ -5042,7 +5096,7 @@ class AnnotationEditor {
   }
   static deleteAnnotationElement(editor) {
     const fakeEditor = new FakeEditor({
-      id: editor.parent.getNextId(),
+      id: editor._uiManager.getId(),
       parent: editor.parent,
       uiManager: editor._uiManager
     });
@@ -5189,6 +5243,10 @@ class AnnotationEditor {
     this.fixAndSetPosition();
   }
   _moveAfterPaste(baseX, baseY) {
+    if (this.isClone) {
+      delete this.isClone;
+      return;
+    }
     const [parentWidth, parentHeight] = this.parentDimensions;
     this.setAt(baseX * parentWidth, baseY * parentHeight, this.width * parentWidth, this.height * parentHeight);
     this._onTranslated();
@@ -6180,7 +6238,7 @@ class AnnotationEditor {
   static async deserialize(data, parent, uiManager) {
     const editor = new this.prototype.constructor({
       parent,
-      id: parent.getNextId(),
+      id: uiManager.getId(),
       uiManager,
       annotationElementId: data.annotationElementId,
       creationDate: data.creationDate,
@@ -13345,7 +13403,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.6.65",
+    apiVersion: "5.6.98",
     data,
     password,
     disableAutoFetch,
@@ -14252,13 +14310,10 @@ class WorkerTransport {
     this._params = params;
     this.canvasFactory = factory.canvasFactory;
     this.filterFactory = factory.filterFactory;
-    this.cMapReaderFactory = factory.cMapReaderFactory;
-    this.standardFontDataFactory = factory.standardFontDataFactory;
-    this.wasmFactory = factory.wasmFactory;
+    this.pagesMapper = pagesMapper;
     this.destroyed = false;
     this.destroyCapability = null;
     this.setupMessageHandler();
-    this.pagesMapper = pagesMapper;
   }
   updatePage(page) {
     const {
@@ -14581,9 +14636,6 @@ class WorkerTransport {
       }
       this.#onProgress(data);
     });
-    messageHandler.on("FetchBinaryData", async data => {
-      throw new Error("Not implemented: FetchBinaryData");
-    });
   }
   getData() {
     return this.messageHandler.sendWithPromise("GetData", null);
@@ -14606,8 +14658,20 @@ class WorkerTransport {
     });
   }
   extractPages(pageInfos) {
-    return this.messageHandler.sendWithPromise("ExtractPages", {
+    const params = {
       pageInfos
+    };
+    let transfer;
+    if (this.annotationStorage.size > 0) {
+      const {
+        map,
+        transfer: t
+      } = this.annotationStorage.serializable;
+      params.annotationStorage = map;
+      transfer = t;
+    }
+    return this.messageHandler.sendWithPromise("ExtractPages", params, transfer).finally(() => {
+      this.annotationStorage.resetModified();
     });
   }
   getPage(pageNumber) {
@@ -14956,8 +15020,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.6.65";
-const build = "bda745672";
+const version = "5.6.98";
+const build = "977e4f2c4";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -20822,6 +20886,7 @@ class HighlightEditor extends AnnotationEditor {
       color,
       quadPoints,
       inkLists,
+      outlines,
       opacity
     } = data;
     const editor = await super.deserialize(data, parent, uiManager);
@@ -20849,9 +20914,9 @@ class HighlightEditor extends AnnotationEditor {
       editor.#createOutlines();
       editor.#addToDrawLayer();
       editor.rotate(editor.rotation);
-    } else if (inkLists) {
+    } else if (inkLists || outlines) {
       editor.#isFreeHighlight = true;
-      const points = inkLists[0];
+      const points = (inkLists || outlines.points)[0];
       const point = {
         x: points[0] - pageX,
         y: pageHeight - (points[1] - pageY)
@@ -24213,32 +24278,6 @@ class AnnotationEditorLayer {
     this._structTree = structTreeLayer;
     this.#uiManager.addLayer(this);
   }
-  updatePageIndex(newPageIndex) {
-    for (const editor of this.#allEditorsIterator) {
-      editor.updatePageIndex(newPageIndex);
-    }
-    this.pageIndex = newPageIndex;
-    this.#uiManager.addLayer(this);
-  }
-  async setClonedFrom(clonedFrom) {
-    if (!clonedFrom) {
-      return;
-    }
-    const promises = [];
-    for (const editor of clonedFrom.#allEditorsIterator) {
-      const serialized = editor.serialize(true);
-      if (!serialized) {
-        continue;
-      }
-      serialized.isCopy = false;
-      promises.push(this.deserialize(serialized).then(deserialized => {
-        if (deserialized) {
-          this.addOrRebuild(deserialized);
-        }
-      }));
-    }
-    await Promise.all(promises);
-  }
   get isEmpty() {
     return this.#editors.size === 0;
   }
@@ -24656,9 +24695,6 @@ class AnnotationEditorLayer {
     }
     return null;
   }
-  getNextId() {
-    return this.#uiManager.getId();
-  }
   get #currentEditorType() {
     return AnnotationEditorLayer.#editorTypes.get(this.#uiManager.getMode());
   }
@@ -24679,7 +24715,7 @@ class AnnotationEditorLayer {
       offsetX,
       offsetY
     } = this.#getCenterPoint();
-    const id = this.getNextId();
+    const id = this.#uiManager.getId();
     const editor = this.#createNewEditor({
       parent: this,
       id,
@@ -24697,7 +24733,7 @@ class AnnotationEditorLayer {
     return (await AnnotationEditorLayer.#editorTypes.get(data.annotationType ?? data.annotationEditorType)?.deserialize(data, this, this.#uiManager)) || null;
   }
   createAndAddNewEditor(event, isCentered, data = {}) {
-    const id = this.getNextId();
+    const id = this.#uiManager.getId();
     const editor = this.#createNewEditor({
       parent: this,
       id,
@@ -24897,7 +24933,7 @@ class AnnotationEditorLayer {
       }
     }
   }
-  render({
+  async render({
     viewport
   }) {
     this.viewport = viewport;
@@ -24906,6 +24942,8 @@ class AnnotationEditorLayer {
       this.add(editor);
       editor.rebuild();
     }
+    await this.#uiManager.findClonesForPage(this);
+    this.div.hidden = this.isEmpty;
     this.updateMode();
   }
   update({
