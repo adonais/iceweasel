@@ -9,6 +9,7 @@ import org.mozilla.fenix.helpers.AppAndSystemHelper.clickSystemHomeScreenShortcu
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.textFragmentAsset
+import org.mozilla.fenix.helpers.TestHelper.waitUntilSnackbarGone
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.homeScreen
@@ -82,6 +83,7 @@ class TextFragmentsTest {
             verifyTextFragmentsPageContent("Firefox")
         }.openThreeDotMenu {
         }.clickBookmarkThisPageButton {
+            waitUntilSnackbarGone()
         }
         browserScreen(composeTestRule) {
         }.openTabDrawer(composeTestRule) {
