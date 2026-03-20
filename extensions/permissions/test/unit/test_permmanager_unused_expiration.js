@@ -7,6 +7,13 @@ const { TestUtils } = ChromeUtils.importESModule(
 
 const PERMISSIONS_FILE_NAME = "permissions.sqlite";
 
+add_setup(function () {
+  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("permissions.expireUnused.enabled");
+  });
+});
+
 function getPermissionsFile(profile) {
   let file = profile.clone();
   file.append(PERMISSIONS_FILE_NAME);
@@ -451,7 +458,6 @@ add_task(async function test_glean_telemetry_on_expiration() {
     "desktop-notification"
   );
   Services.prefs.setIntPref("permissions.expireUnusedThresholdSec", 1);
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -493,7 +499,6 @@ add_task(async function test_glean_telemetry_on_expiration() {
 
   pm.removeAll();
   Services.prefs.clearUserPref("permissions.expireUnusedThresholdSec");
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
 
 add_task(async function test_no_telemetry_when_disabled() {
@@ -540,7 +545,7 @@ add_task(async function test_no_telemetry_when_disabled() {
 
   pm.removeAll();
   Services.prefs.clearUserPref("permissions.expireUnusedThresholdSec");
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
+  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 });
 
 add_task(async function test_glean_by_type_multiple_types() {
@@ -552,7 +557,6 @@ add_task(async function test_glean_by_type_multiple_types() {
     "desktop-notification,geo"
   );
   Services.prefs.setIntPref("permissions.expireUnusedThresholdSec", 1);
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -596,7 +600,6 @@ add_task(async function test_glean_by_type_multiple_types() {
 
   pm.removeAll();
   Services.prefs.clearUserPref("permissions.expireUnusedThresholdSec");
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
 
 add_task(async function test_interaction_not_tracked_when_disabled() {
@@ -631,7 +634,7 @@ add_task(async function test_interaction_not_tracked_when_disabled() {
   );
 
   pm.removeAll();
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
+  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 });
 
 add_task(async function test_double_keyed_permission_expiration() {
@@ -641,7 +644,6 @@ add_task(async function test_double_keyed_permission_expiration() {
     "open-protocol-handler^"
   );
   Services.prefs.setIntPref("permissions.expireUnusedThresholdSec", 1);
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -680,14 +682,12 @@ add_task(async function test_double_keyed_permission_expiration() {
 
   pm.removeAll();
   Services.prefs.clearUserPref("permissions.expireUnusedThresholdSec");
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
 
 add_task(async function test_double_keyed_vs_regular_permission() {
   Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
   Services.prefs.setCharPref("permissions.expireUnusedTypes", "testperm^");
   Services.prefs.setIntPref("permissions.expireUnusedThresholdSec", 1);
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -716,14 +716,12 @@ add_task(async function test_double_keyed_vs_regular_permission() {
 
   pm.removeAll();
   Services.prefs.clearUserPref("permissions.expireUnusedThresholdSec");
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
 
 add_task(async function test_oa_isolated_permission_expiration() {
   Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
   Services.prefs.setCharPref("permissions.expireUnusedTypes", "geo,cookie");
   Services.prefs.setIntPref("permissions.expireUnusedThresholdSec", 1);
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
   Services.prefs.setBoolPref("permissions.isolateBy.userContext", true);
 
   let pm = Services.perms;
@@ -772,7 +770,6 @@ add_task(async function test_oa_isolated_permission_expiration() {
 
   pm.removeAll();
   Services.prefs.clearUserPref("permissions.expireUnusedThresholdSec");
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
   Services.prefs.clearUserPref("permissions.isolateBy.userContext");
 });
 
@@ -781,7 +778,6 @@ add_task(
     Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
     Services.prefs.setCharPref("permissions.expireUnusedTypes", "geo");
     Services.prefs.setIntPref("permissions.expireUnusedThresholdSec", 1);
-    Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
     Services.prefs.setBoolPref("permissions.isolateBy.userContext", true);
 
     let pm = Services.perms;
@@ -810,7 +806,6 @@ add_task(
 
     pm.removeAll();
     Services.prefs.clearUserPref("permissions.expireUnusedThresholdSec");
-    Services.prefs.clearUserPref("permissions.expireUnused.enabled");
     Services.prefs.clearUserPref("permissions.isolateBy.userContext");
   }
 );
@@ -821,7 +816,6 @@ add_task(async function test_no_interaction_tracking_for_private_browsing() {
     "permissions.expireUnusedTypes",
     "desktop-notification"
   );
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -858,7 +852,6 @@ add_task(async function test_no_interaction_tracking_for_private_browsing() {
   db.close();
 
   pm.removeAll();
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
 
 add_task(async function test_restart_does_not_reset_interaction_time() {
@@ -867,7 +860,6 @@ add_task(async function test_restart_does_not_reset_interaction_time() {
     "permissions.expireUnusedTypes",
     "desktop-notification"
   );
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -902,12 +894,10 @@ add_task(async function test_restart_does_not_reset_interaction_time() {
   );
 
   pm.removeAll();
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
 
 add_task(async function test_migration_seeds_interaction_records() {
   Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -959,14 +949,12 @@ add_task(async function test_migration_seeds_interaction_records() {
   Assert.greater(time2, 0, "Interaction time 2 should be positive");
 
   pm.removeAll();
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
 
 add_task(
   async function test_oa_stripped_permission_cleanup_preserves_oa_interactions() {
     Services.prefs.setCharPref("permissions.manager.defaultsUrl", "");
     Services.prefs.setCharPref("permissions.expireUnusedTypes", "cookie");
-    Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
     Services.prefs.setBoolPref("permissions.isolateBy.userContext", true);
 
     let pm = Services.perms;
@@ -1025,7 +1013,6 @@ add_task(
 
     pm.removeAll();
     Services.prefs.clearUserPref("permissions.isolateBy.userContext");
-    Services.prefs.clearUserPref("permissions.expireUnused.enabled");
   }
 );
 
@@ -1035,7 +1022,6 @@ add_task(async function test_removeAll_clears_interactions() {
     "permissions.expireUnusedTypes",
     "desktop-notification"
   );
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -1076,8 +1062,6 @@ add_task(async function test_removeAll_clears_interactions() {
     0,
     "All interaction records should be cleared after removeAll"
   );
-
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
 
 add_task(
@@ -1087,7 +1071,6 @@ add_task(
       "permissions.expireUnusedTypes",
       "desktop-notification"
     );
-    Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
     let pm = Services.perms;
     pm.removeAll();
@@ -1125,7 +1108,6 @@ add_task(
     );
 
     pm.removeAll();
-    Services.prefs.clearUserPref("permissions.expireUnused.enabled");
   }
 );
 
@@ -1136,7 +1118,6 @@ add_task(
       "permissions.expireUnusedTypes",
       "desktop-notification"
     );
-    Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
     let pm = Services.perms;
     pm.removeAll();
@@ -1192,7 +1173,6 @@ add_task(
     );
 
     pm.removeAll();
-    Services.prefs.clearUserPref("permissions.expireUnused.enabled");
   }
 );
 
@@ -1203,7 +1183,6 @@ add_task(
       "permissions.expireUnusedTypes",
       "desktop-notification"
     );
-    Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
     Services.prefs.setBoolPref("permissions.isolateBy.userContext", true);
 
     let pm = Services.perms;
@@ -1252,7 +1231,6 @@ add_task(
     );
 
     pm.removeAll();
-    Services.prefs.clearUserPref("permissions.expireUnused.enabled");
     Services.prefs.clearUserPref("permissions.isolateBy.userContext");
   }
 );
@@ -1263,7 +1241,6 @@ add_task(async function test_removePermission_clears_interactions() {
     "permissions.expireUnusedTypes",
     "desktop-notification"
   );
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -1318,7 +1295,6 @@ add_task(async function test_removePermission_clears_interactions() {
   );
 
   pm.removeAll();
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
 
 add_task(async function test_idle_daily_cleans_orphaned_interactions() {
@@ -1327,7 +1303,6 @@ add_task(async function test_idle_daily_cleans_orphaned_interactions() {
     "permissions.expireUnusedTypes",
     "desktop-notification"
   );
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -1361,7 +1336,6 @@ add_task(async function test_idle_daily_cleans_orphaned_interactions() {
   );
 
   pm.removeAll();
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
 
 add_task(async function test_session_permission_not_expired() {
@@ -1371,7 +1345,6 @@ add_task(async function test_session_permission_not_expired() {
     "desktop-notification"
   );
   Services.prefs.setIntPref("permissions.expireUnusedThresholdSec", 1);
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -1406,7 +1379,6 @@ add_task(async function test_session_permission_not_expired() {
 
   pm.removeAll();
   Services.prefs.clearUserPref("permissions.expireUnusedThresholdSec");
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
 
 add_task(async function test_private_browsing_permission_not_expired() {
@@ -1416,7 +1388,6 @@ add_task(async function test_private_browsing_permission_not_expired() {
     "desktop-notification"
   );
   Services.prefs.setIntPref("permissions.expireUnusedThresholdSec", 1);
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -1458,7 +1429,6 @@ add_task(async function test_private_browsing_permission_not_expired() {
 
   pm.removeAll();
   Services.prefs.clearUserPref("permissions.expireUnusedThresholdSec");
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
 
 add_task(async function test_no_interaction_record_keeps_permission() {
@@ -1468,7 +1438,6 @@ add_task(async function test_no_interaction_record_keeps_permission() {
     "desktop-notification"
   );
   Services.prefs.setIntPref("permissions.expireUnusedThresholdSec", 1);
-  Services.prefs.setBoolPref("permissions.expireUnused.enabled", true);
 
   let pm = Services.perms;
   pm.removeAll();
@@ -1512,5 +1481,4 @@ add_task(async function test_no_interaction_record_keeps_permission() {
 
   pm.removeAll();
   Services.prefs.clearUserPref("permissions.expireUnusedThresholdSec");
-  Services.prefs.clearUserPref("permissions.expireUnused.enabled");
 });
