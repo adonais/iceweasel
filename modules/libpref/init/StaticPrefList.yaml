@@ -7474,6 +7474,31 @@
   value: false
   mirror: always
 
+#if defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID)
+  # -1 = disabled (no preblend, original behavior)
+  #  0 = sRGB transfer
+  # >0 = value/100.0 exponent
+-   name: gfx.font_rendering.freetype.gamma
+    type: RelaxedAtomicInt32
+#ifdef MOZ_WIDGET_ANDROID
+    value: 140
+#else
+    # TODO(1910291): switch to gamma=0, enhanced_contrast=100 to fix subpixel bleed (major distros)
+    value: -1
+#endif
+    mirror: always
+
+  # value/100.0, only used when gamma >= 0
+-   name: gfx.font_rendering.freetype.enhanced_contrast
+    type: RelaxedAtomicInt32
+#ifdef MOZ_WIDGET_ANDROID
+    value: 0
+#else
+    value: 0
+#endif
+    mirror: always
+#endif
+
 #ifdef MOZ_WIDGET_GTK
 -   name: gfx.font_rendering.fontconfig.max_generic_substitutions
     type: RelaxedAtomicUint32

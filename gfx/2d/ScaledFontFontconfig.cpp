@@ -462,6 +462,11 @@ bool ScaledFontFontconfig::GetWRFontInstanceOptions(
     }
   }
 
+  platformOptions.gamma =
+      int16_t(StaticPrefs::gfx_font_rendering_freetype_gamma());
+  platformOptions.enhanced_contrast =
+      int16_t(StaticPrefs::gfx_font_rendering_freetype_enhanced_contrast());
+
   *aOutOptions = Some(options);
   *aOutPlatformOptions = Some(platformOptions);
 

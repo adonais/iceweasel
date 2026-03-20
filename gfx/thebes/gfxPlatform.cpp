@@ -2302,6 +2302,11 @@ void gfxPlatform::FontsPrefsChanged(const char* aPref) {
   } else if (!strcmp(GFX_PREF_OPENTYPE_SVG, aPref)) {
     gfxFontCache::GetCache()->Flush();
     gfxFontCache::GetCache()->NotifyGlyphsChanged();
+  } else if (!strcmp("gfx.font_rendering.freetype.gamma", aPref) ||
+             !strcmp("gfx.font_rendering.freetype.enhanced_contrast", aPref)) {
+    FlushFontAndWordCaches();
+    ForceGlobalReflow(GlobalReflowFlags::FontsChanged |
+                      GlobalReflowFlags::BroadcastToChildren);
   }
 }
 
