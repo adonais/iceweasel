@@ -8836,6 +8836,11 @@ void nsDisplayDestination::Paint(nsDisplayListBuilder* aBuilder,
       NSPointToPoint(GetPaintRect(aBuilder, aCtx).TopLeft(), appPerDev));
 }
 
+void nsDisplayAccessibleId::Paint(nsDisplayListBuilder* aBuilder,
+                                  gfxContext* aCtx) {
+  aCtx->GetDrawTarget()->AccessibleId(mBrowsingContextId, mAccId);
+}
+
 void nsDisplayListCollection::SerializeWithCorrectZOrder(
     nsDisplayList* aOutResultList, nsIContent* aContent) {
   // Sort PositionedDescendants() in CSS 'z-order' order.  The list is already

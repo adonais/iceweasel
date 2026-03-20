@@ -1451,6 +1451,13 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
   virtual void Destination(const char* aDestination, const Point& aPoint) {}
 
   /**
+   * Associate subsequent calls to other methods with a specific accessibility
+   * node. This is used to generate tagged PDF output. Specifying an id of (0,
+   * 0) disassociates subsequent calls from any accessibility node.
+   */
+  virtual void AccessibleId(uint64_t aBrowsingContextId, uint64_t aAccId) {}
+
+  /**
    * Returns a SourceSurface which is a snapshot of the current contents of the
    * DrawTarget. Multiple calls to Snapshot() without any drawing operations in
    * between will normally return the same SourceSurface object.

@@ -504,6 +504,13 @@ class nsDisplayHeaderFooter final : public nsPaintedDisplayItem {
     nsPageFrame* pageFrame = do_QueryFrame(mFrame);
     MOZ_ASSERT(pageFrame, "We should have an nsPageFrame");
 #endif
+#ifdef ACCESSIBILITY
+    // There will likely have been a prior AccessibleId item to associate all
+    // subsequent items  with a node in the accessibility tree. However, this
+    // header/footer isn't part of that accessibility node. An AccessibleId of
+    // (0, 0) disassociates subsequent content from any accessibility node.
+    aCtx->GetDrawTarget()->AccessibleId(0, 0);
+#endif
     static_cast<nsPageFrame*>(mFrame)->PaintHeaderFooter(
         *aCtx, ToReferenceFrame(), false);
   }

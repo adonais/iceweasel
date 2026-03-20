@@ -988,5 +988,11 @@ void DrawTargetRecording::EnsurePatternDependenciesStored(
   }
 }
 
+void DrawTargetRecording::AccessibleId(uint64_t aBrowsingContextId,
+                                       uint64_t aAccId) {
+  MarkChanged();
+  RecordEventSelf(RecordedAccessibleId(aBrowsingContextId, aAccId));
+}
+
 }  // namespace gfx
 }  // namespace mozilla
