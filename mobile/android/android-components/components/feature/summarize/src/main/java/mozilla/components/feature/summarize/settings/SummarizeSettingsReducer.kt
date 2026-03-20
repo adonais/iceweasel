@@ -11,13 +11,19 @@ fun summarizeSettingsReducer(
     state: SummarizeSettingsState,
     action: SummarizeSettingsAction,
 ) = when (action) {
+    is SettingsLoaded -> {
+        state.copy(isFeatureEnabled = action.isFeatureEnabled, isGestureEnabled = action.isGestureEnabled)
+    }
+
     SummarizePagesPreferenceToggled -> {
-        state.copy(summarizePagesEnabled = !state.summarizePagesEnabled)
+        state.copy(isFeatureEnabled = !state.isFeatureEnabled)
     }
 
     ShakeToSummarizePreferenceToggled -> {
-        state.copy(shakeToSummarizeEnabled = !state.shakeToSummarizeEnabled)
+        state.copy(isGestureEnabled = !state.isGestureEnabled)
     }
 
-    LearnMoreClicked -> state
+    ViewAppeared,
+    LearnMoreClicked,
+    -> state
 }

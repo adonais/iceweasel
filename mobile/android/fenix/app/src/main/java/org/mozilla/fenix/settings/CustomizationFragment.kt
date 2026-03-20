@@ -8,12 +8,20 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.navArgs
 import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
+import mozilla.components.feature.summarize.settings.SummarizationSettings
 import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.GleanMetrics.AppTheme
 import org.mozilla.fenix.GleanMetrics.CustomizationSettings
@@ -45,7 +53,33 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.customization_preferences, rootKey)
 
-        setupPreferences()
+        setupPreferences(
+            isSummarizationEnabled = false,
+            isSummarizationGestureEnabled = false,
+        )
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.CREATED) {
+                val dataStore = SummarizationSettings.dataStore(requireContext())
+                combine(
+                    dataStore.getFeatureEnabledUserStatus(),
+                    dataStore.getGestureEnabledUserStatus(),
+                ) { isFeatureEnabled, isGestureEnabled ->
+                    isFeatureEnabled to isGestureEnabled
+                }
+                    .distinctUntilChanged()
+                    .collect { (isFeatureEnabled, isGestureEnabled) ->
+                        setupPreferences(
+                            isSummarizationEnabled = isFeatureEnabled,
+                            isSummarizationGestureEnabled = isGestureEnabled,
+                        )
+                    }
+            }
+        }
     }
 
     override fun onResume() {
@@ -56,7 +90,10 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         }
     }
 
-    private fun setupPreferences() {
+    private fun setupPreferences(
+        isSummarizationEnabled: Boolean,
+        isSummarizationGestureEnabled: Boolean,
+    ) {
         bindFollowDeviceTheme()
         bindDarkTheme()
         bindLightTheme()
@@ -70,7 +107,11 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
 
         // if tab strip is enabled, swipe toolbar to switch tabs should not be enabled so the
         // preference is not shown
-        setupGesturesCategory(isSwipeToolbarToSwitchTabsVisible = !tabletAndTabStripEnabled)
+        setupGesturesCategory(
+            isSwipeToolbarToSwitchTabsVisible = !tabletAndTabStripEnabled,
+            isSummarizationEnabled = isSummarizationEnabled,
+            isSummarizationGestureEnabled = isSummarizationGestureEnabled,
+        )
         setupAppIconCategory()
     }
 
@@ -251,7 +292,11 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         }
     }
 
-    private fun setupGesturesCategory(isSwipeToolbarToSwitchTabsVisible: Boolean) {
+    private fun setupGesturesCategory(
+        isSwipeToolbarToSwitchTabsVisible: Boolean,
+        isSummarizationEnabled: Boolean,
+        isSummarizationGestureEnabled: Boolean,
+    ) {
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_website_pull_to_refresh).apply {
             isVisible = FeatureFlags.PULL_TO_REFRESH_ENABLED
             isChecked = context.settings().isPullToRefreshEnabledInBrowser
@@ -268,9 +313,15 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         }
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_shake_gesture_enabled).apply {
             isVisible = context.settings().shakeToSummarizeFeatureFlagEnabled &&
-                    context.settings().shakeToSummarizeFeatureUserPreference
-            isChecked = context.settings().shakeGestureEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
+                    isSummarizationEnabled
+            isChecked = isSummarizationGestureEnabled
+            onPreferenceChangeListener = { _, newValue ->
+                val updatedValue = (newValue as? Boolean) ?: false
+                viewLifecycleOwner.lifecycleScope.launch {
+                    SummarizationSettings.dataStore(requireContext()).setGestureEnabledUserStatus(updatedValue)
+                }
+                true
+            }
         }
     }
 

@@ -4,6 +4,9 @@
 
 package mozilla.components.feature.summarize.settings
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 
@@ -14,8 +17,9 @@ import mozilla.components.lib.state.Store
  * @param onLearnMoreClicked Callback invoked when the learn more link is clicked.
  */
 class SummarizeSettingsMiddleware(
-    private val settings: SummarizationFeatureSettings,
+    private val settings: SummarizationSettings,
     private val onLearnMoreClicked: () -> Unit,
+    private val scope: CoroutineScope,
 ) : Middleware<SummarizeSettingsState, SummarizeSettingsAction> {
 
     override fun invoke(
@@ -28,17 +32,31 @@ class SummarizeSettingsMiddleware(
         next(action)
 
         when (action) {
-            SummarizePagesPreferenceToggled -> {
-                settings.summarizePagesEnabled = store.state.summarizePagesEnabled
+            ViewAppeared -> scope.launch {
+                store.dispatch(
+                    SettingsLoaded(
+                        isFeatureEnabled = settings.getFeatureEnabledUserStatus().first(),
+                        isGestureEnabled = settings.getGestureEnabledUserStatus().first(),
+                    ),
+                )
             }
 
-            ShakeToSummarizePreferenceToggled -> {
-                settings.shakeToSummarizeEnabled = store.state.shakeToSummarizeEnabled
+            SummarizePagesPreferenceToggled -> scope.launch {
+                settings.setFeatureEnabledUserStatus(store.state.isFeatureEnabled)
+                if (!store.state.isFeatureEnabled) {
+                    settings.setGestureEnabledUserStatus(false)
+                }
+            }
+
+            ShakeToSummarizePreferenceToggled -> scope.launch {
+                settings.setGestureEnabledUserStatus(store.state.isGestureEnabled)
             }
 
             LearnMoreClicked -> {
                 onLearnMoreClicked()
             }
+
+            is SettingsLoaded -> Unit
         }
     }
 }
