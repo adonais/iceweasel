@@ -5,12 +5,14 @@
 package org.mozilla.fenix.summarization
 
 import android.app.Dialog
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.core.view.ViewCompat
 import androidx.fragment.app.viewModels
 import androidx.fragment.compose.content
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -29,6 +31,10 @@ import mozilla.components.feature.summarize.settings.SummarizeSettingsMiddleware
 import mozilla.components.feature.summarize.settings.SummarizeSettingsState
 import mozilla.components.feature.summarize.settings.SummarizeSettingsStore
 import mozilla.components.feature.summarize.settings.summarizeSettingsReducer
+import mozilla.components.support.ktx.android.view.setNavigationBarColorCompat
+import mozilla.components.support.utils.ext.left
+import mozilla.components.support.utils.ext.right
+import mozilla.components.support.utils.ext.top
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
@@ -96,8 +102,15 @@ class SummarizationFragment : BottomSheetDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         super.onCreateDialog(savedInstanceState).apply {
             setOnShowListener {
-                val bottomSheet = findViewById<View?>(materialR.id.design_bottom_sheet)
-                bottomSheet?.setBackgroundResource(android.R.color.transparent)
+                val bottomSheet = findViewById<View>(materialR.id.design_bottom_sheet) ?: return@setOnShowListener
+                ViewCompat.setOnApplyWindowInsetsListener(bottomSheet) { view, insets ->
+                    // edge-to-edge workaround
+                    // exclude the bottom insets so that we can handle the insets in compose
+                    view.setPadding(insets.left(), insets.top(), insets.right(), 0)
+                    insets
+                }
+                bottomSheet.setBackgroundResource(android.R.color.transparent)
+                dialog?.window?.setNavigationBarColorCompat(Color.TRANSPARENT)
             }
         }
 
