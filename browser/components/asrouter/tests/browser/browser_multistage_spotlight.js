@@ -205,6 +205,60 @@ add_task(async function test_disableEscClose() {
   sandbox.restore();
 });
 
+add_task(async function test_spotlight_isOpen_and_close() {
+  let message = (await PanelTestProvider.getMessages()).find(
+    m => m.id === "MULTISTAGE_SPOTLIGHT_MESSAGE"
+  );
+  let browser = gBrowser.selectedBrowser;
+  let win = browser.ownerGlobal;
+  const spotlight_url = "chrome://browser/content/spotlight.html";
+
+  Assert.ok(!Spotlight.isOpen, "Spotlight should not be open initially");
+
+  let openPromise = win.gDialogBox.open(spotlight_url, message.content);
+  Spotlight._dialog = win.gDialogBox.dialog;
+  await TestUtils.topicObserved("subdialog-loaded");
+
+  Assert.ok(Spotlight.isOpen, "Spotlight should be open after opening dialog");
+
+  Spotlight.close();
+  await openPromise;
+  Spotlight._dialog = null;
+
+  Assert.ok(
+    !Spotlight.isOpen,
+    "Spotlight should not be open after calling close()"
+  );
+});
+
+add_task(async function test_spotlight_closes_on_WindowIsClosing() {
+  let message = (await PanelTestProvider.getMessages()).find(
+    m => m.id === "MULTISTAGE_SPOTLIGHT_MESSAGE"
+  );
+  let browser = gBrowser.selectedBrowser;
+
+  let dialogPromise = Spotlight.showSpotlightDialog(browser, message);
+  await TestUtils.topicObserved("subdialog-loaded");
+
+  Assert.ok(Spotlight.isOpen, "Spotlight should be open");
+
+  // Open a second window so WindowIsClosing doesn't trigger last-window quit.
+  let otherWin = await BrowserTestUtils.openNewBrowserWindow();
+
+  // WindowIsClosing dismisses the Spotlight before checking permitUnload.
+  WindowIsClosing();
+
+  await dialogPromise;
+
+  Assert.ok(
+    !Spotlight.isOpen,
+    "Spotlight should be closed after WindowIsClosing"
+  );
+
+  delete window.skipNextCanClose;
+  await BrowserTestUtils.closeWindow(otherWin);
+});
+
 add_task(async function test_spotlight_modal_fullsize_and_nonzero() {
   let message = (await PanelTestProvider.getMessages()).find(
     m => m.id === "MULTISTAGE_SPOTLIGHT_MESSAGE"

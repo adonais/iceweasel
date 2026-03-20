@@ -3795,6 +3795,12 @@ function WindowIsClosing(event) {
     return false;
   }
 
+  // Dismiss Spotlight before permitUnload triggers beforeunload dialogs.
+  const { Spotlight } = ChromeUtils.importESModule(
+    "resource:///modules/asrouter/Spotlight.sys.mjs"
+  );
+  Spotlight.close();
+
   // In theory we should exit here and the Window's internal Close
   // method should trigger canClose on BrowserDOMWindow. However, by
   // that point it's too late to be able to show a prompt for
