@@ -23,9 +23,23 @@ fn get_rendering_intent(rendering_intent: &RenderingIntent, profile: &Profile) -
 // Initialized once, then shared across all decoder instances.
 static SRGB_PROFILE: LazyLock<Box<Profile>> = LazyLock::new(Profile::new_sRGB);
 
-// Always converts to sRGB, matching the output profile set in JxlApiDecoder::new.
 pub struct QcmsCms {
-    pub rendering_intent: RenderingIntent,
+    rendering_intent: RenderingIntent,
+    /// Borrowed reference to gfxPlatform::mCMSOutputProfile or mCMSsRGBProfile. Valid for the
+    /// process lifetime; the platform profile outlives every decoder instance.
+    output_profile: Option<&'static Profile>,
+}
+
+impl QcmsCms {
+    pub fn new(
+        rendering_intent: RenderingIntent,
+        output_profile: Option<&'static Profile>,
+    ) -> Self {
+        Self {
+            rendering_intent,
+            output_profile,
+        }
+    }
 }
 
 fn get_data_type(profile: &JxlColorProfile) -> DataType {
@@ -72,12 +86,25 @@ impl JxlCms for QcmsCms {
         _output: JxlColorProfile,
         _intensity_target: f32,
     ) -> Result<(usize, Vec<Box<dyn JxlCmsTransformer + Send>>)> {
+        // _output is not used since it should match the output profile we cache.
         let in_type = get_data_type(&input);
         let out_type = DataType::RGB8;
 
-        let input_icc = input.try_as_icc().ok_or(Error::InvalidIccStream)?;
-        let input_profile =
-            Profile::new_from_slice(&input_icc, false).ok_or(Error::InvalidIccStream)?;
+        // We could avoid generating icc bytes for some other simple color types, but for now we
+        // just special case srgb.
+        let input_profile_owned;
+        let input_profile: &Profile = if input.same_color_encoding(&JxlColorProfile::Simple(
+            JxlColorEncoding::srgb(/* grayscale */ false),
+        )) {
+            &SRGB_PROFILE
+        } else {
+            let input_icc = input.try_as_icc().ok_or(Error::InvalidIccStream)?;
+            input_profile_owned =
+                Profile::new_from_slice(&input_icc, false).ok_or(Error::InvalidIccStream)?;
+            &input_profile_owned
+        };
+
+        let output_profile: &Profile = self.output_profile.ok_or(Error::InvalidIccStream)?;
 
         let in_channels = channels_for_data_type(in_type);
         let out_channels = 3;
@@ -86,11 +113,11 @@ impl JxlCms for QcmsCms {
             Vec::with_capacity(num_transforms);
         for _ in 0..num_transforms {
             let transform = Transform::new_to(
-                &input_profile,
-                &SRGB_PROFILE,
+                input_profile,
+                output_profile,
                 in_type,
                 out_type,
-                get_rendering_intent(&self.rendering_intent, &input_profile),
+                get_rendering_intent(&self.rendering_intent, input_profile),
             )
             .ok_or(Error::InvalidIccStream)?;
             transformers.push(Box::new(QcmsTransformer {

@@ -8,6 +8,7 @@ use jxl::api::{
     JxlDecoderInner, JxlDecoderOptions, JxlOutputBuffer, JxlPixelFormat, ProcessingResult,
 };
 use jxl::headers::extra_channels::ExtraChannel;
+use qcms::Profile;
 
 pub struct JxlApiDecoder {
     pub inner: JxlDecoderInner,
@@ -39,19 +40,32 @@ impl From<jxl::error::Error> for Error {
 }
 
 impl JxlApiDecoder {
-    pub fn new(metadata_only: bool, premultiply: bool, rendering_intent: RenderingIntent) -> Self {
+    pub fn new(
+        metadata_only: bool,
+        premultiply: bool,
+        rendering_intent: RenderingIntent,
+        output_profile: Option<&'static Profile>,
+        output_icc: Option<&[u8]>,
+    ) -> Self {
         let mut options = JxlDecoderOptions::default();
         options.premultiply_output = premultiply;
-        options.cms = Some(Box::new(QcmsCms { rendering_intent }) as Box<dyn jxl::api::JxlCms>);
+        if output_profile.is_some() {
+            options.cms = Some(Box::new(QcmsCms::new(rendering_intent, output_profile))
+                as Box<dyn jxl::api::JxlCms>);
+        }
 
         let mut inner = JxlDecoderInner::new(options);
 
-        // Request gamma-encoded sRGB output for proper display
-        let srgb_output =
-            JxlColorProfile::Simple(JxlColorEncoding::srgb(/* grayscale */ false));
-        inner
-            .set_output_color_profile(srgb_output)
-            .expect("Simple sRGB profile should always be valid");
+        if output_profile.is_some() {
+            let output_profile = match output_icc {
+                // Unfortunately we have to copy the icc bytes here.
+                Some(icc) => JxlColorProfile::Icc(icc.to_vec()),
+                None => JxlColorProfile::Simple(JxlColorEncoding::srgb(/* grayscale */ false)),
+            };
+            inner
+                .set_output_color_profile(output_profile)
+                .expect("Output color profile should be valid");
+        }
 
         Self {
             inner,

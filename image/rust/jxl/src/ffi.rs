@@ -4,6 +4,7 @@
 
 use crate::cms::RenderingIntent;
 use crate::decoder::JxlApiDecoder;
+use qcms::Profile;
 use std::slice;
 
 #[repr(C)]
@@ -33,11 +34,19 @@ pub struct JxlFrameInfo {
     pub frame_duration_valid: bool,
 }
 
+/// # Safety
+/// - If `output_profile` is non-null, it must point to a valid `qcms::Profile` that outlives the
+///   returned decoder: it must be either gfxPlatform::mCMSOutputProfile or mCMSsRGBProfile.
+/// - If `output_icc_data` is non-null, it must point to a valid byte slice of
+///   length `output_icc_len`.
 #[no_mangle]
-pub extern "C" fn jxl_decoder_new(
+pub unsafe extern "C" fn jxl_decoder_new(
     metadata_only: bool,
     premultiply: bool,
     rendering_intent: i32,
+    output_profile: *const std::ffi::c_void,
+    output_icc_data: *const u8,
+    output_icc_len: usize,
 ) -> *mut JxlApiDecoder {
     let rendering_intent = match rendering_intent {
         0 => RenderingIntent::Intent(qcms::Intent::Perceptual),
@@ -46,10 +55,33 @@ pub extern "C" fn jxl_decoder_new(
         3 => RenderingIntent::Intent(qcms::Intent::AbsoluteColorimetric),
         _ => RenderingIntent::FromImageProfile,
     };
+
+    // output_profile (a pointer to a qcms profile) being non null turns on CMS
+    // processing. Assuming output_profile is not null, then either:
+    // (1) output_icc_data is not null and is the icc data for output_profile and
+    //     it is not sRGB, or
+    // (2) output_icc_data is null and output_profile is sRGB
+    let output_icc = if output_icc_data.is_null() || output_icc_len == 0 {
+        None
+    } else {
+        // SAFETY: Caller guarantees output_icc_data is non-null and points to a valid byte
+        // slice of length output_icc_len.
+        Some(unsafe { slice::from_raw_parts(output_icc_data, output_icc_len) })
+    };
+    let output_profile: Option<&'static Profile> = if output_profile.is_null() {
+        None
+    } else {
+        // SAFETY: Caller guarantees that when non-null, output_profile points to a valid
+        // qcms::Profile that outlives the returned decoder (gfxPlatform::mCMSOutputProfile
+        // or mCMSsRGBProfile, initialized once and valid for the process lifetime).
+        Some(unsafe { &*(output_profile as *const Profile) })
+    };
     Box::into_raw(Box::new(JxlApiDecoder::new(
         metadata_only,
         premultiply,
         rendering_intent,
+        output_profile,
+        output_icc,
     )))
 }
 
