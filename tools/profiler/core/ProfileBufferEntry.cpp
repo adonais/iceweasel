@@ -2572,7 +2572,8 @@ ProfileBuffer::StreamSourceTableToJSON(
     UUID = 0,
     FILENAME = 1,
     START_LINE = 2,
-    START_COLUMN = 3
+    START_COLUMN = 3,
+    SOURCE_MAP_URL = 4
   };
   nsTHashMap<SourceId, IndexIntoSourceTable> sourceIdToIndexMap;
 
@@ -2585,6 +2586,7 @@ ProfileBuffer::StreamSourceTableToJSON(
       schema.WriteField("filename");
       schema.WriteField("startLine");
       schema.WriteField("startColumn");
+      schema.WriteField("sourceMapURL");
     }
 
     // Write data array and build sourceId-to-index mapping.
@@ -2613,6 +2615,12 @@ ProfileBuffer::StreamSourceTableToJSON(
           aWriter.StringElement(MakeStringSpan(entry.sourceData.filePath()));
           aWriter.IntElement(entry.sourceData.startLine());
           aWriter.IntElement(entry.sourceData.startColumn());
+          if (entry.sourceData.sourceMapURLLength() > 0) {
+            aWriter.StringElement(
+                NS_ConvertUTF16toUTF8(entry.sourceData.sourceMapURL()));
+          }
+          // If you add a new element after sourceMapURL, make sure to write a
+          // null element for sourceMapURL when it's empty.
         }
         aWriter.EndArray();
 

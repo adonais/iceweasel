@@ -48,6 +48,10 @@ add_task(async function test_source_table() {
     "filename" in profile.sources.schema,
     "Sources schema has 'filename' field"
   );
+  Assert.ok(
+    "sourceMapURL" in profile.sources.schema,
+    "Sources schema has 'sourceMapURL' field"
+  );
 
   // Verify that we have at least one source entry
   Assert.greater(
@@ -59,10 +63,18 @@ add_task(async function test_source_table() {
   // Verify each source has the expected structure
   const uuidCol = profile.sources.schema.uuid;
   const filenameCol = profile.sources.schema.filename;
+  const sourceMapURLCol = profile.sources.schema.sourceMapURL;
 
   for (const source of profile.sources.data) {
     Assert.ok(source[uuidCol], "Source entry has a UUID");
     Assert.ok(source[filenameCol], "Source entry has a filename");
+    // sourceMapURL can be null or absent when not set.
+    Assert.ok(
+      source[sourceMapURLCol] === null ||
+        source[sourceMapURLCol] === undefined ||
+        typeof source[sourceMapURLCol] === "string",
+      "Source entry has a nullable sourceMapURL field"
+    );
   }
 
   // Verify that frames reference valid source indices

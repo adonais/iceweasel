@@ -1622,8 +1622,8 @@ class ActivePS {
     }
     JSContext* jsContext = mainThread->mJSContext;
 
-    // Always gather source metadata (filename), but only gather actual source
-    // text if the JS sources feature is enabled.
+    // Always gather source metadata (filename, sourceMapURL), but only gather
+    // actual source text if the JS sources feature is enabled.
     js::ProfilerJSSources threadSources = js::GetProfilerScriptSources(
         JS_GetRuntime(jsContext), gatherSourceText);
 
