@@ -4537,9 +4537,9 @@ criteria = "safe-to-deploy"
 delta = "0.2.6 -> 0.2.9"
 
 [[audits.mtu]]
-who = "Max Leonard Inden <mail@max-inden.de>"
+who = "Oskar Mansfeld <git@omansfeld.net>"
 criteria = "safe-to-deploy"
-delta = "0.3.0 -> 0.3.0@git:586ab2255a13c3bfedf77fca07bdd934375b91cd"
+delta = "0.3.0 -> 0.3.0@git:5b4e8507abb992c39e3e8787d9bf415a065b21dd"
 importable = false
 
 [[audits.naga]]
@@ -5404,6 +5404,11 @@ who = "Max Leonard Inden <mail@max-inden.de>"
 criteria = "safe-to-deploy"
 delta = "0.13.0 -> 0.15.2"
 
+[[audits.qlog]]
+who = "Oskar Mansfeld <git@omansfeld.net>"
+criteria = "safe-to-deploy"
+delta = "0.15.2 -> 0.16.0"
+
 [[audits.quick-xml]]
 who = "Lars Eggert <lars@eggert.org>"
 criteria = "safe-to-run"
@@ -5454,6 +5459,11 @@ delta = "0.5.11 -> 0.5.12"
 who = "Max Leonard Inden <mail@max-inden.de>"
 criteria = "safe-to-deploy"
 delta = "0.5.12 -> 0.5.13"
+
+[[audits.quinn-udp]]
+who = "Oskar Mansfeld <git@omansfeld.net>"
+criteria = "safe-to-deploy"
+delta = "0.5.13 -> 0.6.0"
 
 [[audits.quote]]
 who = "Nika Layzell <nika@thelayzells.com>"

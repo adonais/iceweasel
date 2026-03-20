@@ -15732,6 +15732,15 @@
   mirror: always
   rust: true
 
+# The slow start algorithm with which to configure neqo.
+# 0 => Classic
+# 1 => HyStart++
+- name: network.http.http3.slow_start_algorithm
+  type: RelaxedAtomicUint32
+  value: 0
+  mirror: always
+  rust: true
+
 # Whether to send an mlkem768x25519 key share in HTTP/3 TLS handshakes.
 # Has no effect unless security.tls.enable_kyber is true.
 - name: network.http.http3.enable_kyber

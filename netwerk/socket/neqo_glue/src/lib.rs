@@ -27,6 +27,7 @@ use firefox_on_glean::{
 #[cfg(not(windows))]
 use libc::{c_int, AF_INET, AF_INET6};
 use libc::{c_uchar, size_t};
+use log::debug;
 use neqo_common::{
     datagram, event::Provider as _, qdebug, qerror, qlog::Qlog, qwarn, Datagram, Decoder, Encoder,
     Header, Role, Tos,
@@ -37,8 +38,9 @@ use neqo_http3::{
     Http3ClientEvent, Http3Parameters, Http3State, Priority, WebTransportEvent,
 };
 use neqo_transport::{
-    stream_id::StreamType, CongestionControlAlgorithm, Connection, ConnectionParameters,
-    Error as TransportError, Output, OutputBatch, RandomConnectionIdGenerator, StreamId, Version,
+    stream_id::StreamType, CongestionControl, Connection, ConnectionParameters,
+    Error as TransportError, Output, OutputBatch, RandomConnectionIdGenerator, SlowStart, StreamId,
+    Version,
 };
 use nserror::{
     nsresult, NS_BASE_STREAM_WOULD_BLOCK, NS_ERROR_CONNECTION_REFUSED,
@@ -412,11 +414,21 @@ impl NeqoHttp3Conn {
         };
 
         let cc_algorithm = match static_prefs::pref!("network.http.http3.cc_algorithm") {
-            0 => CongestionControlAlgorithm::NewReno,
-            1 => CongestionControlAlgorithm::Cubic,
+            0 => CongestionControl::NewReno,
+            1 => CongestionControl::Cubic,
             _ => {
                 // Unknown preferences; default to Cubic
-                CongestionControlAlgorithm::Cubic
+                CongestionControl::Cubic
+            }
+        };
+
+        let slow_start = match static_prefs::pref!("network.http.http3.slow_start_algorithm") {
+            0 => SlowStart::Classic,
+            1 => SlowStart::HyStart,
+            _ => {
+                // Unknown preferences; default to Classic
+                debug!("Unknown http3.slow_start_algorithm pref, defaulting to SlowStart::Classic");
+                SlowStart::Classic
             }
         };
 
@@ -431,7 +443,8 @@ impl NeqoHttp3Conn {
 
         let mut params = ConnectionParameters::default()
             .versions(quic_version, version_list)
-            .cc_algorithm(cc_algorithm)
+            .congestion_control(cc_algorithm)
+            .slow_start(slow_start)
             .max_data(max_data)
             .max_stream_data(StreamType::BiDi, false, max_stream_data)
             .grease(static_prefs::pref!("security.tls.grease_http3_enable"))
@@ -695,39 +708,40 @@ impl NeqoHttp3Conn {
                 debug_assert!(false, "{msg}");
             }
 
-            // Record Slow Start Exit metrics
-            if let Some(exit_cwnd) = stats.cc.slow_start_exit_cwnd {
-                glean::http_3_slow_start_exited.get("exited").add(1);
-                glean::http_3_slow_start_exit_cwnd.accumulate(exit_cwnd as u64);
+            // Record congestion window and slow start exit related metrics
+            if let Some(final_cwnd) = stats.cc.cwnd {
+                if let Some(exit_cwnd) = stats.cc.slow_start_exit_cwnd {
+                    glean::http_3_slow_start_exited.get("exited").add(1);
+                    glean::http_3_slow_start_exit_cwnd.accumulate(exit_cwnd as u64);
 
-                // http_3_slow_start_exit_direction_loss
-                match exit_cwnd.cmp(&stats.cc.cwnd) {
-                    Ordering::Greater => glean::http_3_slow_start_exit_direction_loss
-                        .get("overshoot")
-                        .add(1),
-                    Ordering::Less => glean::http_3_slow_start_exit_direction_loss
-                        .get("undershoot")
-                        .add(1),
-                    Ordering::Equal => glean::http_3_slow_start_exit_direction_loss
-                        .get("exact")
-                        .add(1),
+                    // http_3_slow_start_exit_direction_loss
+                    match exit_cwnd.cmp(&final_cwnd) {
+                        Ordering::Greater => glean::http_3_slow_start_exit_direction_loss
+                            .get("overshoot")
+                            .add(1),
+                        Ordering::Less => glean::http_3_slow_start_exit_direction_loss
+                            .get("undershoot")
+                            .add(1),
+                        Ordering::Equal => glean::http_3_slow_start_exit_direction_loss
+                            .get("exact")
+                            .add(1),
+                    }
+
+                    // http_3_slow_start_exit_accuracy: Have to cast to f64 and back to i64 here to avoid truncating the ratio in the percentage calculation before multiplying with 100
+                    debug_assert!(
+                        final_cwnd > 0,
+                        "If `self.cc.cwnd.is_some()` then `final_cwnd > 0` must also be true"
+                    );
+                    let accuracy =
+                        ((exit_cwnd.abs_diff(final_cwnd) as f64) / final_cwnd as f64) * 100.0;
+                    glean::http_3_slow_start_exit_accuracy
+                        .get("ce_exit")
+                        .accumulate_single_sample_signed(accuracy as i64);
+                } else {
+                    glean::http_3_slow_start_exited.get("not_exited").add(1);
                 }
-
-                // http_3_slow_start_exit_accuracy: Have to cast to f64 and back to i64 here to avoid truncating the ratio in the percentage calculation before multiplying with 100
-                debug_assert!(
-                    stats.cc.cwnd > 0,
-                    "If `slow_start_exit_cwnd.is_some()` then `cwnd > 0` should also be true"
-                );
-                let accuracy =
-                    ((exit_cwnd.abs_diff(stats.cc.cwnd) as f64) / stats.cc.cwnd as f64) * 100.0;
-                glean::http_3_slow_start_exit_accuracy
-                    .get("ce_exit")
-                    .accumulate_single_sample_signed(accuracy as i64);
-            } else {
-                glean::http_3_slow_start_exited.get("not_exited").add(1);
+                glean::http_3_final_cwnd.accumulate(final_cwnd as u64);
             }
-
-            glean::http_3_final_cwnd.accumulate(stats.cc.cwnd as u64);
 
             glean::http_3_congestion_event_count.accumulate_single_sample_signed(
                 (stats.cc.congestion_events[CongestionEvent::Ecn]
