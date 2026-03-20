@@ -1314,20 +1314,6 @@ var DownloadObserver = {
       return;
     }
 
-    const isPromptGranted = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
-      Ci.nsISupportsPRBool
-    );
-    isPromptGranted.data = true;
-    Services.obs.notifyObservers(
-      isPromptGranted,
-      "before-cancel-download-prompt"
-    );
-
-    if (!isPromptGranted.data) {
-      aCancel.data = false;
-      return;
-    }
-
     // If user has already dismissed the request, then do nothing.
     if (aCancel instanceof Ci.nsISupportsPRBool && aCancel.data) {
       return;
