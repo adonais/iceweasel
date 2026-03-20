@@ -591,45 +591,19 @@ struct moz_wl_pointer_listener {
 #  define WL_POINTER_AXIS_VALUE120_SINCE_VERSION 8
 #endif
 
-#ifndef WL_FIXES_ERROR_ENUM
-#  define WL_FIXES_ERROR_ENUM
-/**
- * @ingroup iface_wl_fixes
- * wl_fixes error values
- *
- * These errors can be emitted in response to wl_fixes requests.
- */
-enum wl_fixes_error {
-  /**
-   * unknown global or the global is not removed
-   */
-  WL_FIXES_ERROR_INVALID_ACK_REMOVE = 0,
-};
-#endif /* WL_FIXES_ERROR_ENUM */
-
-#ifndef WL_FIXES_DESTROY
-#  define WL_FIXES_DESTROY 0
-#endif
-
-#ifndef WL_FIXES_DESTROY_REGISTRY
-#  define WL_FIXES_DESTROY_REGISTRY 1
-#endif
-
-#ifndef WL_FIXES_ACK_GLOBAL_REMOVE
-#  define WL_FIXES_ACK_GLOBAL_REMOVE 2
-#endif
-
 #ifndef WL_FIXES_DESTROY_SINCE_VERSION
 #  define WL_FIXES_DESTROY_SINCE_VERSION 1
-#endif
 
-#ifndef WL_FIXES_DESTROY_REGISTRY_SINCE_VERSION
+// Emulate what mozilla header wrapper does - make the
+// wl_fixes_interface always visible.
+#  pragma GCC visibility push(default)
+extern const struct wl_interface wl_fixes_interface;
+#  pragma GCC visibility pop
+
+#  define WL_FIXES_DESTROY 0
+#  define WL_FIXES_DESTROY_REGISTRY 1
+#  define WL_FIXES_DESTROY_SINCE_VERSION 1
 #  define WL_FIXES_DESTROY_REGISTRY_SINCE_VERSION 1
-#endif
-
-#ifndef WL_FIXES_ACK_GLOBAL_REMOVE_SINCE_VERSION
-#  define WL_FIXES_ACK_GLOBAL_REMOVE_SINCE_VERSION 2
-#endif
 
 static inline void wl_fixes_set_user_data(struct wl_fixes* wl_fixes,
                                           void* user_data) {
@@ -669,6 +643,28 @@ static inline void wl_fixes_destroy_registry(struct wl_fixes* wl_fixes,
                          NULL, wl_proxy_get_version((struct wl_proxy*)wl_fixes),
                          0, registry);
 }
+#endif
+
+#ifndef WL_FIXES_ERROR_ENUM
+#  define WL_FIXES_ERROR_ENUM
+/**
+ * @ingroup iface_wl_fixes
+ * wl_fixes error values
+ *
+ * These errors can be emitted in response to wl_fixes requests.
+ */
+enum wl_fixes_error {
+  /**
+   * unknown global or the global is not removed
+   */
+  WL_FIXES_ERROR_INVALID_ACK_REMOVE = 0,
+};
+#endif /* WL_FIXES_ERROR_ENUM */
+
+#ifndef WL_FIXES_ACK_GLOBAL_REMOVE_SINCE_VERSION
+#  define WL_FIXES_ACK_GLOBAL_REMOVE_SINCE_VERSION 2
+
+#  define WL_FIXES_ACK_GLOBAL_REMOVE 2
 
 /**
  * @ingroup iface_wl_fixes
@@ -703,6 +699,7 @@ static inline void wl_fixes_ack_global_remove(struct wl_fixes* wl_fixes,
                          NULL, wl_proxy_get_version((struct wl_proxy*)wl_fixes),
                          0, registry, name);
 }
+#endif
 
 #ifdef __cplusplus
 }
