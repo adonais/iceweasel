@@ -5,7 +5,6 @@
 pub mod gradient;
 pub mod box_shadow;
 pub mod repeat;
-pub mod image;
 
 use api::units::LayoutVector2D;
 use api::{ColorF, units::DeviceRect};

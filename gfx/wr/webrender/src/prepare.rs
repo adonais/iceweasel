@@ -246,12 +246,6 @@ fn prepare_prim_for_render(
             | PrimitiveInstanceKind::RadialGradient { .. }
             | PrimitiveInstanceKind::ConicGradient { .. }
             => false,
-            PrimitiveInstanceKind::Image { data_handle, .. } => {
-                !crate::prim_store::image::can_use_quad_shaders(
-                    &data_stores.image[*data_handle].kind,
-                    frame_state.resource_cache,
-                )
-            }
             PrimitiveInstanceKind::LinearGradient { .. } => {
                 !frame_context.fb_config.precise_linear_gradients
             }
@@ -265,7 +259,6 @@ fn prepare_prim_for_render(
         // and mask generation.
         let should_update_clip_task = match &mut prim_instance.kind {
             PrimitiveInstanceKind::Rectangle { use_legacy_path, .. }
-            | PrimitiveInstanceKind::Image { use_legacy_path, .. }
             | PrimitiveInstanceKind::RadialGradient { use_legacy_path, .. }
             | PrimitiveInstanceKind::ConicGradient { use_legacy_path, .. }
             | PrimitiveInstanceKind::LinearGradient { use_legacy_path, .. }
@@ -669,32 +662,13 @@ fn prepare_interned_prim_for_render(
                 }
             );
         }
-        PrimitiveInstanceKind::Image { data_handle, image_instance_index, use_legacy_path, .. } => {
+        PrimitiveInstanceKind::Image { data_handle, image_instance_index, .. } => {
             profile_scope!("Image");
 
             let prim_data = &mut data_stores.image[*data_handle];
             let common_data = &mut prim_data.common;
             let image_data = &mut prim_data.kind;
             let image_instance = &mut store.images[*image_instance_index];
-
-            if !*use_legacy_path {
-                crate::prim_store::image::prepare_image_quads(
-                    common_data,
-                    image_data,
-                    &prim_instance.vis.clip_chain,
-                    prim_instance_index,
-                    prim_spatial_node_index,
-                    device_pixel_scale,
-                    frame_context,
-                    pic_context,
-                    targets,
-                    &data_stores.clip,
-                    frame_state,
-                    scratch,
-                );
-
-                return;
-            }
 
             // Update the template this instance references, which may refresh the GPU
             // cache with any shared template data.
