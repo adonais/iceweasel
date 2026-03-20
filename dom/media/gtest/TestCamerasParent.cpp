@@ -224,6 +224,24 @@ TEST_F(TestAggregateCapturer, StartStreamCombined) {
   mAggregator->StopStream(otherStreamId);
 }
 
+TEST_F(TestAggregateCapturer, CombinedCapabilityBadType) {
+  const dom::VideoResizeModeEnum resizeMode = dom::VideoResizeModeEnum::None;
+  const NormalizedConstraints constraints;
+  webrtc::VideoCaptureCapability cap;
+  cap.width = 99999;
+  cap.height = 99999;
+  cap.maxFPS = 99999;
+  cap.videoType = webrtc::VideoType(99999);
+
+  auto capturer = mFactory->mCapturers[mAggregator->mCaptureId];
+  webrtc::VideoCaptureCapability expectedCap;
+  mFactory->mDeviceInfo->GetCapability(DeviceInfoFake::kId, 1, expectedCap);
+  EXPECT_CALL(*capturer, StartCapture(Eq(expectedCap))).WillOnce(Return(0));
+
+  mAggregator->StartStream(mAggregator->mCaptureId, cap, constraints,
+                           resizeMode);
+}
+
 TEST_F(TestAggregateCapturer, FrameDelivery) {
   webrtc::VideoCaptureCapability cap;
   mFactory->mDeviceInfo->GetCapability(DeviceInfoFake::kId, 0, cap);
