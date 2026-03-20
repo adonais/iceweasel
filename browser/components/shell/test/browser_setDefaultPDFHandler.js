@@ -34,9 +34,17 @@ const _userChoiceImpossibleTelemetryResultStub = sinon
 const setDefaultStub = sinon.stub();
 // We'll dynamically update this as needed during the tests.
 const queryCurrentDefaultHandlerForStub = sinon.stub();
+const launchOpenWithDefaultPickerForFileTypeStub = sinon.stub();
+const launchModernSettingsDialogDefaultAppsStub = sinon.stub();
 const shellStub = sinon.stub(ShellService, "shellService").value({
   setDefaultBrowser: setDefaultStub,
   queryCurrentDefaultHandlerFor: queryCurrentDefaultHandlerForStub,
+  QueryInterface: () => ({
+    launchOpenWithDefaultPickerForFileType:
+      launchOpenWithDefaultPickerForFileTypeStub,
+    launchModernSettingsDialogDefaultApps:
+      launchModernSettingsDialogDefaultAppsStub,
+  }),
 });
 
 registerCleanupFunction(() => {
@@ -218,6 +226,11 @@ add_task(async function test_setAsDefaultPDFHandler_knownBrowser() {
 
   const aumi = XreDirProvider.getInstallHash();
   const expectedArguments = [aumi, [".pdf", "FirefoxPDF"]];
+  const resetStubs = () => {
+    setDefaultExtensionHandlersUserChoiceStub.resetHistory();
+    launchOpenWithDefaultPickerForFileTypeStub.resetHistory();
+    launchModernSettingsDialogDefaultAppsStub.resetHistory();
+  };
 
   try {
     const pdfHandlerResult = { registered: true, knownBrowser: true };
@@ -226,54 +239,137 @@ add_task(async function test_setAsDefaultPDFHandler_knownBrowser() {
       .returns(pdfHandlerResult);
 
     info("Testing setAsDefaultPDFHandler(true) when knownBrowser = true");
-    ShellService.setAsDefaultPDFHandler(true);
+    await ShellService.setAsDefaultPDFHandler(true);
     Assert.ok(
       setDefaultExtensionHandlersUserChoiceStub.called,
-      "Called default browser agent"
+      "Used userChoice for .pdf"
     );
     Assert.deepEqual(
       setDefaultExtensionHandlersUserChoiceStub.firstCall.args,
       expectedArguments,
       "Called default browser agent with expected arguments"
     );
-    setDefaultExtensionHandlersUserChoiceStub.resetHistory();
+    Assert.ok(
+      launchOpenWithDefaultPickerForFileTypeStub.notCalled,
+      "Did not fall back to open-with picker"
+    );
+    Assert.ok(
+      launchModernSettingsDialogDefaultAppsStub.notCalled,
+      "Did not fall back to settings dialog"
+    );
+    resetStubs();
 
     info("Testing setAsDefaultPDFHandler(false) when knownBrowser = true");
-    ShellService.setAsDefaultPDFHandler(false);
+    await ShellService.setAsDefaultPDFHandler(false);
     Assert.ok(
       setDefaultExtensionHandlersUserChoiceStub.called,
-      "Called default browser agent"
+      "Used userChoice for .pdf"
     );
     Assert.deepEqual(
       setDefaultExtensionHandlersUserChoiceStub.firstCall.args,
       expectedArguments,
       "Called default browser agent with expected arguments"
     );
-    setDefaultExtensionHandlersUserChoiceStub.resetHistory();
+    Assert.ok(
+      launchOpenWithDefaultPickerForFileTypeStub.notCalled,
+      "Did not fall back to open-with picker"
+    );
+    Assert.ok(
+      launchModernSettingsDialogDefaultAppsStub.notCalled,
+      "Did not fall back to settings dialog"
+    );
+    resetStubs();
 
     pdfHandlerResult.knownBrowser = false;
 
     info("Testing setAsDefaultPDFHandler(true) when knownBrowser = false");
-    ShellService.setAsDefaultPDFHandler(true);
+    await ShellService.setAsDefaultPDFHandler(true);
     Assert.ok(
       setDefaultExtensionHandlersUserChoiceStub.notCalled,
-      "Did not call default browser agent"
+      "Did not use userChoice"
     );
-    setDefaultExtensionHandlersUserChoiceStub.resetHistory();
+    Assert.ok(
+      launchOpenWithDefaultPickerForFileTypeStub.notCalled,
+      "Did not fall back to open-with picker"
+    );
+    Assert.ok(
+      launchModernSettingsDialogDefaultAppsStub.notCalled,
+      "Did not fall back to settings dialog"
+    );
+    resetStubs();
 
     info("Testing setAsDefaultPDFHandler(false) when knownBrowser = false");
-    ShellService.setAsDefaultPDFHandler(false);
+    await ShellService.setAsDefaultPDFHandler(false);
     Assert.ok(
       setDefaultExtensionHandlersUserChoiceStub.called,
-      "Called default browser agent"
+      "Used userChoice for .pdf"
     );
     Assert.deepEqual(
       setDefaultExtensionHandlersUserChoiceStub.firstCall.args,
       expectedArguments,
       "Called default browser agent with expected arguments"
     );
-    setDefaultExtensionHandlersUserChoiceStub.resetHistory();
+    Assert.ok(
+      launchOpenWithDefaultPickerForFileTypeStub.notCalled,
+      "Did not fall back to open-with picker"
+    );
+    Assert.ok(
+      launchModernSettingsDialogDefaultAppsStub.notCalled,
+      "Did not fall back to settings dialog"
+    );
+    resetStubs();
   } finally {
+    sandbox.restore();
+  }
+});
+
+add_task(async function test_setAsDefaultPDFHandler_fallback() {
+  const sandbox = sinon.createSandbox();
+
+  try {
+    const userChoiceStub = sandbox
+      .stub(ShellService, "setAsDefaultPDFHandlerUserChoice")
+      .rejects(new Error("mock userChoice failure"));
+    sandbox.stub(ShellService, "_isWindows11").returns(true);
+
+    info(
+      "When userChoice fails and open-with picker succeeds, should not fall back to settings dialog"
+    );
+    await ShellService.setAsDefaultPDFHandler(false);
+
+    Assert.ok(userChoiceStub.called, "Attempted userChoice");
+    Assert.ok(
+      launchOpenWithDefaultPickerForFileTypeStub.calledWith(".pdf"),
+      "Fell back to open-with picker for .pdf"
+    );
+    Assert.ok(
+      launchModernSettingsDialogDefaultAppsStub.notCalled,
+      "Did not fall back to settings dialog"
+    );
+    userChoiceStub.resetHistory();
+    launchOpenWithDefaultPickerForFileTypeStub.resetHistory();
+    launchModernSettingsDialogDefaultAppsStub.resetHistory();
+
+    info(
+      "When userChoice fails and open-with picker fails, should fall back to settings dialog"
+    );
+    launchOpenWithDefaultPickerForFileTypeStub.throws(
+      new Error("mock IOpenWithLauncher failure")
+    );
+    await ShellService.setAsDefaultPDFHandler(false);
+
+    Assert.ok(userChoiceStub.called, "Attempted userChoice");
+    Assert.ok(
+      launchOpenWithDefaultPickerForFileTypeStub.calledWith(".pdf"),
+      "Attempted open-with picker for .pdf"
+    );
+    Assert.ok(
+      launchModernSettingsDialogDefaultAppsStub.called,
+      "Fell back to settings dialog"
+    );
+  } finally {
+    launchOpenWithDefaultPickerForFileTypeStub.reset();
+    launchModernSettingsDialogDefaultAppsStub.reset();
     sandbox.restore();
   }
 });

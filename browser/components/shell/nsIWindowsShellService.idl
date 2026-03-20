@@ -344,6 +344,27 @@ interface nsIWindowsShellService : nsIShellService
   );
 
   /*
+   * Launch the default app picker for a given file type via the Windows
+   * IOpenWithLauncher COM interface.
+   *
+   * @param aFileType
+   *        The file extension (e.g. ".pdf") for which to open
+   *        the default app picker.
+   * @throws NS_ERROR_FAILURE
+   *         If IOpenWithLauncher is unavailable or fails.
+   */
+  void launchOpenWithDefaultPickerForFileType(in AString aFileType);
+
+  /*
+   * Open the Windows modern settings dialog for choosing default apps
+   * (ms-settings:defaultapps).
+   *
+   * @throws NS_ERROR_FAILURE
+   *         If the settings dialog cannot be launched.
+   */
+  void launchModernSettingsDialogDefaultApps();
+
+  /*
    * Determine where a given shortcut likely appears in the shell.
    *
    * Returns one of:
