@@ -51,6 +51,8 @@ support-files = [
 
 ["browser_aiwindow_memories.js"]
 
+["browser_aiwindow_memories_toggle_prefs.js"]
+
 ["browser_aiwindow_new_chat_button.js"]
 
 ["browser_aiwindow_newtab_preload.js"]

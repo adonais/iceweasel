@@ -120,10 +120,20 @@ export class AIWindow extends MozLitElement {
   #memoriesButton = null;
   #memoriesToggled = null;
   #visibilityChangeHandler;
+
   #starters = [];
   #smartbarResizeObserver = null;
   #windowModeObserver = null;
   #addedContextWebsites = []; // TODO: replace once Bug 2016760 lands
+  #hasMemories = false;
+
+  get #memoriesIconShown() {
+    return (
+      this.memoriesConversationPref ||
+      this.memoriesHistoryPref ||
+      this.#hasMemories
+    );
+  }
 
   /**
    * Flags whether the #conversation reference has been updated but the messages
@@ -141,10 +151,6 @@ export class AIWindow extends MozLitElement {
    */
   get #hostBrowser() {
     return window.browsingContext?.embedderElement || null;
-  }
-
-  get #memoriesIconShown() {
-    return this.memoriesConversationPref || this.memoriesHistoryPref;
   }
 
   #detectModeFromContext() {
@@ -198,25 +204,41 @@ export class AIWindow extends MozLitElement {
     return this.renderRoot.querySelector("#browser-container");
   }
 
-  #syncSmartbarMemoriesStateFromConversation() {
+  async syncSmartbarMemoriesStateFromConversation() {
     if (!this.#smartbar) {
       return;
     }
 
     const lastUserMessage =
-      this.#conversation?.messages?.findLast?.(m => m.role === "user") ?? null;
+      this.#conversation?.messages?.findLast?.(
+        m => m.role === lazy.MESSAGE_ROLE.USER
+      ) ?? null;
     if (
       lastUserMessage?.memoriesFlagSource ===
       lazy.MEMORIES_FLAG_SOURCE.CONVERSATION
     ) {
       this.#memoriesToggled = lastUserMessage.memoriesEnabled;
     }
-    this.#syncMemoriesButtonUI();
+    await this.#syncMemoriesButtonUI();
   }
 
-  #syncMemoriesButtonUI() {
+  async #refreshHasMemories() {
+    try {
+      const memories = await lazy.MemoriesManager.getAllMemories();
+      this.#hasMemories = memories?.length > 0;
+    } catch (e) {
+      lazy.log.error("Failed to check for existing memories", e);
+      this.#hasMemories = false;
+    }
+  }
+
+  async #syncMemoriesButtonUI() {
     if (!this.#memoriesButton) {
       return;
+    }
+
+    if (!this.memoriesConversationPref && !this.memoriesHistoryPref) {
+      await this.#refreshHasMemories();
     }
 
     this.#memoriesButton.show = this.#memoriesIconShown;
@@ -684,7 +706,7 @@ export class AIWindow extends MozLitElement {
     }
     this.#smartbar = smartbar;
     this.#memoriesButton = smartbar.querySelector("memories-icon-button");
-    this.#syncSmartbarMemoriesStateFromConversation();
+    this.syncSmartbarMemoriesStateFromConversation();
     this.#observeSmartbarHeight();
 
     // Create toggle button, like with Smartbar above
@@ -1450,6 +1472,8 @@ export class AIWindow extends MozLitElement {
       if (this.#smartbar && this.mode === MODE.SIDEBAR) {
         this.#smartbar.updateContextChips();
       }
+
+      this.syncSmartbarMemoriesStateFromConversation();
 
       // This assumes "openConversation" opens an active conversation, possible todo to see
       // if convo has messages before hiding the footer element.

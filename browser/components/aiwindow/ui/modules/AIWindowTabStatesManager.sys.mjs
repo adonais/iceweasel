@@ -274,6 +274,7 @@ export class AIWindowTabStatesManager {
 
     // AI Window tab doesn't need sidebar
     if (isAIWindowTab) {
+      lazy.AIWindowUI.restoreMemoriesState(this.#window, this.#selectedTab);
       lazy.AIWindowUI.closeSidebar(this.#window);
       return;
     }

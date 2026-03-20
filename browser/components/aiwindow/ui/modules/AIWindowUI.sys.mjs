@@ -291,6 +291,21 @@ export const AIWindowUI = {
   },
 
   /**
+   * Restores the memories icon state on the sidebar or fullpage ai-window.
+   *
+   * @param {Window} win
+   * @param {MozTabbrowserTab} [tab] - If provided, targets the fullpage ai-window in that tab.
+   */
+  restoreMemoriesState(win, tab = null) {
+    const aiWindowEl = tab
+      ? tab.linkedBrowser?.contentDocument?.querySelector("ai-window:defined")
+      : this._getSidebarAiWindow(win);
+    if (aiWindowEl) {
+      aiWindowEl.syncSmartbarMemoriesStateFromConversation();
+    }
+  },
+
+  /**
    * Update the Ask Button style based on the sidebar state.
    *
    * @param {Window} win
