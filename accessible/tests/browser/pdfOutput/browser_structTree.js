@@ -234,3 +234,50 @@ addPdfStructTreeTest(
     },
   ]
 );
+
+addPdfStructTreeTest(
+  "testAriaOwns",
+  `
+<div aria-owns="h3 h2 h1">
+  <h1 id="h1">h1</h1>
+  <h2 id="h2">h2</h2>
+</div>
+<h3 id="h3">h3</h3>
+  `,
+  [
+    {
+      role: "Root",
+      children: [
+        {
+          role: "Document",
+          children: [
+            {
+              role: "NonStruct", // div
+              children: [
+                {
+                  role: "H3",
+                  children: [
+                    { role: "NonStruct", children: [{ content: ["h3"] }] },
+                  ],
+                },
+                {
+                  role: "H2",
+                  children: [
+                    { role: "NonStruct", children: [{ content: ["h2"] }] },
+                  ],
+                },
+                {
+                  role: "H1",
+                  children: [
+                    { role: "NonStruct", children: [{ content: ["h1"] }] },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  { chrome: true, topLevel: true }
+);

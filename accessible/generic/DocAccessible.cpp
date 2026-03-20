@@ -392,7 +392,10 @@ static uint64_t GetCacheDomainsQueueUpdateSuperset(uint64_t aCacheDomains) {
 
 void DocAccessible::QueueCacheUpdate(LocalAccessible* aAcc, uint64_t aNewDomain,
                                      bool aBypassActiveDomains) {
-  if (!mIPCDoc) {
+  if (!mIPCDoc || !HasLoadState(eTreeConstructed)) {
+    // If we're still building the initial tree, we don't need to queue cache
+    // updates because the initial cache hasn't been sent yet. The update will
+    // be included as part of the initial cache.
     return;
   }
   // These strong references aren't necessary because WithEntryHandle is
@@ -1848,6 +1851,13 @@ void DocAccessible::DoInitialUpdate() {
 
   // Build initial tree.
   CacheChildrenInSubtree(this);
+  // CacheChildrenInSubtree doesn't handle aria-owns relocations. Process the
+  // initial relocations now so they're reflected in the initial tree. This is
+  // more efficient for IPC because it avoids sending the initial tree and then
+  // immediately moving nodes afterward. It also avoids mutation event spam for
+  // clients. Mutation events are suppressed because we don't have the
+  // eTreeConstructed load state yet.
+  mNotificationController->ProcessRelocations();
 
   mLoadState |= eTreeConstructed;
 
@@ -2907,6 +2917,13 @@ void DocAccessible::PutChildrenBack(
 }
 
 void DocAccessible::TrackMovedAccessible(LocalAccessible* aAcc) {
+  MOZ_ASSERT(mIPCDoc);
+  if (!HasLoadState(eTreeConstructed)) {
+    // We're still building the initial tree, so it hasn't been sent over IPC
+    // yet. Any move at this point is thus an insertion from the perspective of
+    // IPC.
+    return;
+  }
   MOZ_ASSERT(aAcc->mDoc == this);
   // If an Accessible is inserted and moved during the same tick, don't track
   // it as a move because it hasn't been shown yet.

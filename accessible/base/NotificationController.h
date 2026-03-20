@@ -248,6 +248,8 @@ class NotificationController final : public EventQueue,
    */
   bool IsUpdatePending() const;
 
+  void ProcessRelocations();
+
  protected:
   virtual ~NotificationController();
 

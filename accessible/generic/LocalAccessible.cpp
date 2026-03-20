@@ -3060,9 +3060,12 @@ void LocalAccessible::RelocateChild(uint32_t aNewIndex,
   MOZ_DIAGNOSTIC_ASSERT(aNewIndex <= mChildren.Length(),
                         "Wrong new index was given");
 
-  RefPtr<AccHideEvent> hideEvent = new AccHideEvent(aChild, false);
-  if (mDoc->Controller()->QueueMutationEvent(hideEvent)) {
-    aChild->SetHideEventTarget(true);
+  // Don't queue events while we're still building the initial tree.
+  if (mDoc->HasLoadState(DocAccessible::eTreeConstructed)) {
+    RefPtr<AccHideEvent> hideEvent = new AccHideEvent(aChild, false);
+    if (mDoc->Controller()->QueueMutationEvent(hideEvent)) {
+      aChild->SetHideEventTarget(true);
+    }
   }
 
   mEmbeddedObjCollector = nullptr;
@@ -3095,10 +3098,12 @@ void LocalAccessible::RelocateChild(uint32_t aNewIndex,
     mChildren[idx]->mStateFlags |= eGroupInfoDirty;
   }
 
-  RefPtr<AccShowEvent> showEvent = new AccShowEvent(aChild);
-  DebugOnly<bool> added = mDoc->Controller()->QueueMutationEvent(showEvent);
-  MOZ_ASSERT(added);
-  aChild->SetShowEventTarget(true);
+  if (mDoc->HasLoadState(DocAccessible::eTreeConstructed)) {
+    RefPtr<AccShowEvent> showEvent = new AccShowEvent(aChild);
+    DebugOnly<bool> added = mDoc->Controller()->QueueMutationEvent(showEvent);
+    MOZ_ASSERT(added);
+    aChild->SetShowEventTarget(true);
+  }
 }
 
 LocalAccessible* LocalAccessible::LocalChildAt(uint32_t aIndex) const {
