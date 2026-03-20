@@ -316,7 +316,7 @@ def get_binary_path(config: UpdateTestConfig, **kwargs) -> str:
             policy_path = fx_path / "Contents" / "Resources" / "distribution"
         else:
             raise ValueError("Invalid OS.")
-        makedirs(policy_path)
+        makedirs(policy_path, exist_ok=True)
         policy_loc = policy_path / "policies.json"
         print(f"Creating {policy_loc}...")
         with policy_loc.open("w") as fh:
