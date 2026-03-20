@@ -12,9 +12,7 @@ addons = [
     "normandydriver-a-2.0",
 ]
 
-output_dir = (
-    OBJDIR_FILES._tests.testing.mochitest.browser.toolkit.components.normandy.test.browser.addons
-)
+output_dir = OBJDIR_FILES._tests.testing.mochitest.browser.toolkit.components.normandy.test.browser.addons
 
 for addon in addons:
     indir = "addons/%s" % addon
