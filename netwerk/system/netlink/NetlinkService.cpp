@@ -201,9 +201,8 @@ class NetlinkNeighbor {
     _retval.AppendInt(mNeigh.ndm_ifindex);
     if (mHasMAC) {
       _retval.Append(" mac=");
-      _retval.Append(nsPrintfCString("%02x:%02x:%02x:%02x:%02x:%02x", mMAC[0],
-                                     mMAC[1], mMAC[2], mMAC[3], mMAC[4],
-                                     mMAC[5]));
+      _retval.AppendPrintf("%02x:%02x:%02x:%02x:%02x:%02x", mMAC[0], mMAC[1],
+                           mMAC[2], mMAC[3], mMAC[4], mMAC[5]);
     }
   }
 

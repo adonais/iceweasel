@@ -6,6 +6,7 @@
 #include "nsIClassInfoImpl.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
+#include "nsReadableUtils.h"
 #include "nsURLHelper.h"
 #include "urlpattern_glue/URLPatternGlue.h"
 
@@ -64,8 +65,7 @@ NS_IMETHODIMP DefaultURI::Read(nsIObjectInputStream* aInputStream) {
 }
 
 NS_IMETHODIMP DefaultURI::Write(nsIObjectOutputStream* aOutputStream) {
-  nsAutoCString spec(mURL->Spec());
-  return aOutputStream->WriteStringZ(spec.get());
+  return aOutputStream->WriteStringZ(PromiseFlatCString(mURL->Spec()).get());
 }
 
 //----------------------------------------------------------------------------
@@ -89,12 +89,11 @@ NS_IMETHODIMP DefaultURI::GetScheme(nsACString& aScheme) {
 
 NS_IMETHODIMP DefaultURI::GetUserPass(nsACString& aUserPass) {
   aUserPass = mURL->Username();
-  nsAutoCString pass(mURL->Password());
-  if (pass.IsEmpty()) {
+  if (mURL->Password().IsEmpty()) {
     return NS_OK;
   }
   aUserPass.Append(':');
-  aUserPass.Append(pass);
+  aUserPass.Append(mURL->Password());
   return NS_OK;
 }
 
