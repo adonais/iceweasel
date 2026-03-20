@@ -371,15 +371,8 @@ function init_all() {
   gMainPane.preInit();
 
   let categories = document.getElementById("categories");
-  categories.addEventListener("select", event => gotoPref(event.target.value));
-
-  document.documentElement.addEventListener("keydown", function (event) {
-    if (event.keyCode == KeyEvent.DOM_VK_TAB) {
-      categories.setAttribute("keyboard-navigation", "true");
-    }
-  });
-  categories.addEventListener("mousedown", function () {
-    this.removeAttribute("keyboard-navigation");
+  categories.addEventListener("change-view", event => {
+    gotoPref(event.target.view);
   });
 
   maybeDisplayPoliciesNotice();
@@ -465,12 +458,16 @@ async function gotoPref(
     }
 
     item = /** @type {HTMLElement} */ (
-      categories.querySelector(".category[value=" + CSS.escape(category) + "]")
+      categories.querySelector(
+        'moz-page-nav-button[view="' + CSS.escape(category) + '"]'
+      )
     );
     if (!item || item.hidden) {
       unknownCategory = true;
       category = kDefaultCategoryInternalName;
-      item = categories.querySelector(".category[value=" + category + "]");
+      item = categories.querySelector(
+        'moz-page-nav-button[view="' + category + '"]'
+      );
     }
   }
 
@@ -494,17 +491,11 @@ async function gotoPref(
       document.location.hash = friendlyName;
     }
   }
-  // Need to set the gLastCategory before setting categories.selectedItem since
-  // the categories 'select' event will re-enter the gotoPref codepath.
+  // Need to set the gLastCategory before setting categories.currentView since
+  // the change-view event will re-enter the gotoPref codepath.
   gLastCategory.category = category;
   gLastCategory.subcategory = subcategory;
-  if (item) {
-    // @ts-ignore MozElements.RichListBox
-    categories.selectedItem = item;
-  } else {
-    // @ts-ignore MozElements.RichListBox
-    categories.clearSelection();
-  }
+  categories.currentView = item ? item.getAttribute("view") : category;
   window.history.replaceState(category, document.title);
 
   let categoryInfo = gCategoryInits.get(category);
@@ -744,25 +735,11 @@ function appendSearchKeywords(aId, keywords) {
   element.setAttribute("searchkeywords", keywords.join(" "));
 }
 
-async function ensureScrollPadding() {
-  let stickyContainer = document.querySelector(".sticky-container");
-  let height = await window.browsingContext.topChromeWindow
-    .promiseDocumentFlushed(() => stickyContainer.clientHeight)
-    .catch(console.error); // Can reject if the window goes away.
-
-  // Make it a bit more, to ensure focus rectangles etc. don't get cut off.
-  // This being 8px causes us to end up with 90px if the policies container
-  // is not visible (the common case), which matches the CSS and thus won't
-  // cause a style change, repaint, or other changes.
-  height += 8;
-  stickyContainer
-    .closest(".main-content")
-    .style.setProperty("scroll-padding-top", height + "px");
-}
-
 function maybeDisplayPoliciesNotice() {
   if (Services.policies.status == Services.policies.ACTIVE) {
     document.getElementById("policies-container").removeAttribute("hidden");
+    document
+      .getElementById("policies-container-content")
+      .removeAttribute("hidden");
   }
-  ensureScrollPadding();
 }

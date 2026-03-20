@@ -117,9 +117,14 @@ add_task(async function testSettingGroupTelemetry() {
       };
       group.getSetting = win.Preferences.getSetting.bind(win.Preferences);
       group.dataset.category = "paneGeneral";
-      doc.body.append(group);
+      doc.getElementById("mainPrefPane").append(group);
 
       // Ensure all elements have updated.
+      await new Promise(r => win.requestAnimationFrame(r));
+
+      // Scroll the group into view so synthesized mouse clicks land on the
+      // correct elements rather than on the sticky sidebar.
+      group.scrollIntoView();
       await new Promise(r => win.requestAnimationFrame(r));
 
       let checkbox = doc.getElementById("test-checkbox");
