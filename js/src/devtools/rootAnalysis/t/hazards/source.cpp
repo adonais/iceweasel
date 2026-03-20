@@ -605,6 +605,32 @@ void partial_assignments() {
   struct D {
     A as[3];
   } d;
+  struct Cw {
+    B b1;
+    B b2;
+  } cw1;
+  struct TwoPointers {
+    Cw bar;
+  } twop1, twop2;
+  struct PairOfPointers {
+    struct TwoPointers two;
+    int nonPointer;
+  } pair1, pair2;
+  struct As {
+    A array[2];
+  };
+  struct Ases {
+    As as;
+  } ases1, ases2;
+  union Av {
+    A a;
+    void* vp;
+  } av1, av2;
+  union AAv {
+    A a1;
+    A a2;
+    void* vp;
+  } aav1, aav2;
 
   a1.cell = makecell();
   a2.cell = makecell();
@@ -623,6 +649,24 @@ void partial_assignments() {
   d.as[0].cell = makecell();
   d.as[1].cell = makecell();
   d.as[2].cell = makecell();
+  cw1.b1.a.cell = makecell();
+  cw1.b2.a.cell = makecell();
+  twop1.bar.b1.a.cell = makecell();
+  twop1.bar.b2.a.cell = makecell();
+  twop2.bar.b1.a.cell = makecell();
+  twop2.bar.b2.a.cell = makecell();
+  pair1.two.bar.b1.a.cell = makecell();
+  pair1.two.bar.b2.a.cell = makecell();
+  pair2.two.bar.b1.a.cell = makecell();
+  pair2.two.bar.b2.a.cell = makecell();
+  ases1.as.array[0].cell = makecell();
+  ases1.as.array[1].cell = makecell();
+  ases2.as.array[0].cell = makecell();
+  ases2.as.array[1].cell = makecell();
+  av1.a.cell = makecell();
+  av2.a.cell = makecell();
+  aav1.a1.cell = makecell();
+  aav2.a2.cell = makecell();
 
   GC();
 
@@ -643,6 +687,17 @@ void partial_assignments() {
   bw3.b = B{A{makecell(), 7},
             nullptr};  // no hazard for bw3 - whole nested struct reassigned
   d.as[1].cell = makecell();  // hazard for d - other elements are still live
+  cw1.b1 = B{A{makecell(), 7}, nullptr};  // hazard for cw1, cw1.b2 still live
+  twop1.bar.b1.a.cell = makecell();
+  twop2.bar = cw1;
+  pair1.two.bar.b1.a.cell = makecell();
+  pair2.two.bar = cw1;
+  ases1.as.array[0].cell = makecell();
+  ases2.as = ases1.as;
+  av1.vp = nullptr;
+  av2.a.cell = makecell();
+  aav1.a1.i = 7;
+  aav2.a2.cell = makecell();
 
   usecell(a1.cell);
   usecell(a2.cell);
@@ -659,6 +714,18 @@ void partial_assignments() {
   usecell(bw2.b.a.cell);
   usecell(bw3.b.a.cell);
   usecell(d.as[0].cell);
+  usecell(cw1.b1.a.cell);
+  usecell(cw1.b2.a.cell);
+  usecell(twop1.bar.b1.a.cell);
+  usecell(twop2.bar.b1.a.cell);
+  usecell(pair1.two.bar.b1.a.cell);
+  usecell(pair2.two.bar.b1.a.cell);
+  usecell(ases1.as.array[0].cell);
+  usecell(ases2.as.array[0].cell);
+  usecell(av1.a.cell);
+  usecell(av2.a.cell);
+  usecell(aav1.a1.cell);
+  usecell(aav2.a2.cell);
 }
 
 void closure() {

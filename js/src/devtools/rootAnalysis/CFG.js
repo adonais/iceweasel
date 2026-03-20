@@ -627,6 +627,23 @@ function referencedCSUName(type) {
     }
 }
 
+function containsGCPointer(typeInfo, type) {
+    if (type.Kind == "CSU") {
+        if (!(type.Name in typeInfo.AllGCPointers)) {
+            return false;
+        }
+    } else if (type.Kind == "Pointer") {
+        const pointeeType = type.Type;
+        if (pointeeType.Kind != "CSU" || !(pointeeType.Name in typeInfo.AllGCTypes)) {
+            return false;
+        }
+    } else {
+        // Not a GC pointer.
+        return false;
+    }
+    return true;
+}
+
 // Test to see if `exp` is simply the given variable or is a field of the given
 // variable that comprises the whole of the interesting parts of that variable's
 // type. The latter is to handle anonymous lambda closures that capture a single
@@ -658,10 +675,16 @@ function exprCoversVariable(typeInfo, exp, decl)
     if (exp.Kind == "Var") {
         return sameVariable(exp.Variable, decl.Variable);
     } else if (exp.Kind == "Fld") {
-        // Treat x.f = val as "setting" the variable x and overwriting its
-        // previous value if x is a type containing exactly one GC pointer
-        // (because the assignment *does* overwrite the only part of the
-        // variable we care about), and f covers that GC pointer.
+        // Treat x.f1.f2 = val as "setting" the variable x and overwriting its
+        // previous value if x and x.f1 have types with a single field
+        // containing GC pointers (because the assignment overwrites the only
+        // part of the variable we care about), *and* if x.f1.f2 has at least
+        // one GC pointer (if it has zero, then we're overwriting a different
+        // part of x.f1 that doesn't touch the GC pointer-containing part. If it
+        // has more than 1, that's fine; we may be overwriting multiple GC
+        // pointers at once). If any intervening type has multiple GC pointer
+        // fields, then it doesn't count (because the rest of that type isn't
+        // being overwritten).
 
         // Only CSUs (classes/structs/unions) are eligible for this partial
         // assignment treatment.
@@ -669,43 +692,44 @@ function exprCoversVariable(typeInfo, exp, decl)
             return false;
         }
 
-        // The type of the expression being assigned to needs to be a type that
-        // contains a single GC pointer, directly or indirectly. Otherwise, we
-        // might be assigning a different field, perhaps an integer, that does
-        // not overwrite the one value we care about. In `x.f1.f2.f3`, this is
-        // the type of the "f3" field.
-        const lhsCSUName = referencedCSUName(exp.Field.Type);
-        if (!lhsCSUName || !typeInfo.SingleGCField[lhsCSUName]) {
+        // Check that the innermost field assignment (eg x.f1.f2) is a GC
+        // pointer type, since otherwise we're overwriting the wrong field.
+        if (!containsGCPointer(typeInfo, exp.Field.Type)) {
             return false;
         }
 
-        // Dig all the way through the series of field accesses to find the
-        // innermost level, which is actually the topmost value.
-        //
-        // Example: for `x.f1.f2.f3`, `top` is the `x` variable and `topField`
-        // is the access of "f1" in `x`. Note that this is "inner" in terms of
-        // the data structure, but it's the toplevel CSU that we're getting
-        // fields from.
-
-        let top = exp;
-        let topField;
-        while (top.Kind === "Fld") {
-            topField = top;
-            top = top.Exp[0];
+        // Loop through each nested field access, other than the innermost, to
+        // check that there aren't any sibling fields containing GC pointers we
+        // are not overwriting.
+        let trail = exp;
+        let e = exp.Exp[0]; // Advance past the innermost field assignment (eg x.f1.f2 -> x.f1)
+        while (e.Kind == "Fld") {
+            const csu = referencedCSUName(e.Field.Type);
+            if (!csu || !(csu in typeInfo.SingleGCField)) {
+                return false;
+            }
+            trail = e;
+            e = e.Exp[0];
         }
 
-        // Are we assigning into a field of the variable we're looking for?
-        if (top.Kind != "Var" || !sameVariable(top.Variable, decl.Variable)) {
+        // We also need to know that the original variable (`x` in the example)
+        // is a SingleGCField type, but the expression CFG does not contain its
+        // type. Fortunately, we know we're accessing a field, and field
+        // accesses contain the type of the Class/Struct/Union they are field
+        // accesses of, so the innermost expr with Kind="Fld" has the type.
+        if (trail && !(trail.Field.FieldCSU.Type.Name in typeInfo.SingleGCField)) {
             return false;
         }
 
-        // We really want the type of `top`, but variables don't carry their
-        // types. Fortunately, a field access *does* give the CSU it's an access
-        // in, so use that. (Alternatively, we could look up the variable's
-        // declaration to figure out its type, but this is faster and simpler.)
-        // (Forgive me for describing any of this as simple.)
-        const typeName = referencedCSUName(topField.Field.FieldCSU.Type);
-        return typeName && (typeName in typeInfo.SingleGCField);
+        // ...and now make sure `x` is the variable we care about in the first
+        // place. Note that `e` is the most deeply nested expression in the CFG,
+        // but it represents the outermost part of the `x.f1.f2` field access
+        // expression.
+        if (e.Kind != "Var" || !sameVariable(e.Variable, decl.Variable)) {
+            return false;
+        }
+
+        return true;
     }
 
     return false;

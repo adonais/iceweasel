@@ -16,8 +16,8 @@ var options = parse_options([
 ]);
 
 var typeInfo = {
-    'GCPointers': [],
-    'GCThings': [],
+    'GCPointers': [], // Types annotated as GC pointers
+    'GCThings': [], // Types annotated as GC things
     'GCInvalidated': [],
     'GCRefs': [],
     'NonGCTypes': {}, // unused
@@ -29,7 +29,13 @@ var typeInfo = {
     'OtherCSUTags': {},
     'OtherFieldTags': {},
 
-    // See below.
+    'AllGCPointers': {},
+    'AllGCThings': {},
+
+    // A table of all CSUs that contain a single field with any unrooted GC
+    // pointers in it. The values are the type of that field (or one of the
+    // fields, for unions), but the values are just for explanatory purposes and
+    // not used by the analysis.
     'SingleGCField': new Map(),
 
     // RAII types within which we should assume GC is suppressed, eg
@@ -37,36 +43,29 @@ var typeInfo = {
     'GCSuppressors': {},
 };
 
-// typeInfo.SingleGCField is a map from parent struct => true, for unrooted GC
-// pointers, or to the singleGCField type name that contains a single GC pointer
-// field. In other words, every type that contains a single GC pointer, directly
-// or indirectly, will be a key in this map. Recursively looking up the value
-// will traverse the chain of container types that hold that GC pointer.
-
-// Example:
+// Example for SingleGCField:
 //
 //   struct MyStruct {
 //     int something;
-//     class MaybeString {
+//     class MaybePointer {
 //       union {
 //         JSString* str;
+//         JSObject* obj;
 //         bool nope;
 //       } u;
-//     } maybeStringField;
+//     } maybePointerField;
 //     class NonPointer {
 //       bool yep;
 //     } otherField;
+//     JSObject* obj2;
 //   }
 //
-// The singleGCField table will be:
-//   "MyStruct" => "MaybeString"
-//   "MaybeString" => (anonymous union type name)
-//   (anonymous union type name) => true
-
-// Note that if there are multiple fields with a singleGCField type, then there
-// is no possibility of collision that would create ambiguity of which field is
-// responsible, because that would mean there are *multiple* GC fields and so
-// the type will not be entered into the table at all.
+// The SingleGCField table will be:
+//   "MaybePointer" => (anonymous union type name)
+//   (anonymous union type name) => JSString (or JSObject)
+//
+// MyStruct will not be in the table, since maybePointerField and obj2 both may
+// contain GC pointers.
 
 var structureParents = {}; // Map from field => list of <parent, fieldName>
 var pointerParents = {}; // Map from field => list of <parent, fieldName>
@@ -497,17 +496,29 @@ function addGCPointer(typeName)
     pendingGCTypes.push([typeName, '<pointer-annotation>', '(annotation)', 1, 0]);
 }
 
+// Initialize with the base GC types and pointer types. We only really care
+// about the pointer types, but for a field that is a pointer to a GC type, it's
+// useful to have the base type in the table.
+for (const [typeName, reason, _] of pendingGCTypes) {
+  typeInfo.SingleGCField[typeName] = reason;
+}
+
+// Recursively mark all GC types and GC pointer types.
 for (const pending of pendingGCTypes) {
     markGCType(...pending);
 }
 
-// If a type holds GC pointer directly or indirectly, "unwrap" the type to find
-// the simple type within it that hold the pointer. So eg JSObject* -> JSObject,
-// JS::Value -> JS::Value, struct { Cell* cell; } MyStruct -> MyStruct.
+typeInfo.AllGCTypes = gcTypes;
+typeInfo.AllGCPointers = gcPointers;
+
+// If a type holds a GC pointer directly or indirectly, "unwrap" the type to
+// find the simple type within it that holds the pointer. So eg JSObject* ->
+// JSObject, JS::Value -> JS::Value, struct { Cell* cell; } MyStruct ->
+// MyStruct.
 //
 // Return value: a simple type name if the type holds a GC pointer, or undefined
 // if not. Note that JSObject and JSObject** will both return undefined; this
-// only works for direct pointers to GC things.
+// only works for pointers to GC things.
 function getGCPointerFieldType(type) {
     if (type.Kind == "Pointer") {
         var target = type.Type;
@@ -537,7 +548,7 @@ function getGCPointerFieldType(type) {
 // it to any type that contains a single GC pointer. If that field is
 // overwritten, then the whole previous value can be treated as dead for the
 // purposes of the static rooting hazard analysis.
-function checkSingleGCPointer(csu, decl) {
+function populateSinglePointerFieldTable(table, csu, decl) {
     if (!(csu in gcPointers)) return;
 
     let singleGCPointerField;
@@ -546,7 +557,13 @@ function checkSingleGCPointer(csu, decl) {
         if (pointerField) {
             if (singleGCPointerField) {
                 // Second field found.
-                return;
+                if (decl.Kind == "Union") {
+                    // Use the first GC pointer field found.
+                    break;
+                } else {
+                    // Multiple GC pointer fields; discard.
+                    return;
+                }
             } else {
                 singleGCPointerField = pointerField;
             }
@@ -554,27 +571,38 @@ function checkSingleGCPointer(csu, decl) {
     }
 
     if (singleGCPointerField) {
-        typeInfo.SingleGCField[csu] = singleGCPointerField;
+        table[csu] = singleGCPointerField;
     }
 }
 
+// Scan through all types and collect a table of the ones that have a single
+// field containing 1 or more GC pointers. The table will be a map from a type
+// to the type of its single pointer-containing field.
+//
+// The table will include types with multiple GC pointers within a single field.
+// Example:
+//
+//   struct TwoPointers {
+//     JSObject* one;
+//     JSObject* two;
+//   };
+//   struct Bundled {
+//     TwoPointers pair;
+//     int nonPointer;
+//   };
+//
+// `TwoPointers` will not be in the table, because it contains multiple fields
+// containing GC pointers. `Bundled` *will* be in the table, because it only
+// contains a single field with GC pointer(s).
+//
 for (var csuIndex = minStream; csuIndex <= maxStream; csuIndex++) {
     var csuData = xdb.read_key(csuIndex);
     var data = xdb.read_entry(csuData);
     var decl = JSON.parse(data.readString())[0];
     const csu = csuData.readString();
-    checkSingleGCPointer(csu, decl);
+    populateSinglePointerFieldTable(typeInfo.SingleGCField, csu, decl);
     xdb.free_string(csuData);
     xdb.free_string(data);
-}
-
-// SingleGCField does not have the "base" GC types (Cell, JSObject, etc.) as
-// values, only as keys. Add them so that we can check field accesses against a
-// comprehensive list of valid candidates.
-for (const typeName of Object.values(typeInfo.SingleGCField)) {
-    if (!(typeName in typeInfo.SingleGCField)) {
-        typeInfo.SingleGCField[typeName] = (typeName in gcTypes) ? "<GC type>" : "<GC pointer>";
-    }
 }
 
 // Call a function for a type and every type that contains the type in a field
