@@ -13,3 +13,4 @@ license = "MPL-2.0"
 jxl = { version = "0.4", features = ["all-simd"] }
 log = "0.4"
 qcms = { path = "../../../gfx/qcms", features = ["cmyk", "iccv4-enabled"] }
+static_prefs = { path = "../../../modules/libpref/init/static_prefs" }

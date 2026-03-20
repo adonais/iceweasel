@@ -3815,6 +3815,7 @@ dependencies = [
  "jxl",
  "log",
  "qcms",
+ "static_prefs",
 ]
 
 [[package]]

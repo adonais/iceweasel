@@ -23,6 +23,12 @@ fn get_rendering_intent(rendering_intent: &RenderingIntent, profile: &Profile) -
 // Initialized once, then shared across all decoder instances.
 static SRGB_PROFILE: LazyLock<Box<Profile>> = LazyLock::new(Profile::new_sRGB);
 
+pub(crate) static SRGB_ICC: LazyLock<Vec<u8>> = LazyLock::new(|| {
+    JxlColorProfile::Simple(JxlColorEncoding::srgb(/* grayscale */ false))
+        .as_icc()
+        .into_owned()
+});
+
 pub struct QcmsCms {
     rendering_intent: RenderingIntent,
     /// Borrowed reference to gfxPlatform::mCMSOutputProfile or mCMSsRGBProfile. Valid for the

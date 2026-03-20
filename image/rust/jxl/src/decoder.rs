@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-use crate::cms::{QcmsCms, RenderingIntent};
+use crate::cms::{QcmsCms, RenderingIntent, SRGB_ICC};
 use jxl::api::{
     JxlBitstreamInput, JxlColorEncoding, JxlColorProfile, JxlColorType, JxlDataFormat,
     JxlDecoderInner, JxlDecoderOptions, JxlOutputBuffer, JxlPixelFormat, ProcessingResult,
@@ -60,7 +60,13 @@ impl JxlApiDecoder {
             let output_profile = match output_icc {
                 // Unfortunately we have to copy the icc bytes here.
                 Some(icc) => JxlColorProfile::Icc(icc.to_vec()),
-                None => JxlColorProfile::Simple(JxlColorEncoding::srgb(/* grayscale */ false)),
+                None => {
+                    if static_prefs::pref!("image.jxl.force_icc_slow_path") {
+                        JxlColorProfile::Icc(SRGB_ICC.clone())
+                    } else {
+                        JxlColorProfile::Simple(JxlColorEncoding::srgb(/* grayscale */ false))
+                    }
+                }
             };
             inner
                 .set_output_color_profile(output_profile)
