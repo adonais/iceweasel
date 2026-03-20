@@ -230,6 +230,7 @@ class Editor extends EventEmitter {
   // for the source and the values are the scroll snapshots for the sources.
   #scrollSnapshots = new Map();
   #updateListener = null;
+  #beforeUpdateListener = null;
 
   // This stores the language support objects used to syntax highlight code,
   // These are keyed of the modes.
@@ -511,6 +512,10 @@ class Editor extends EventEmitter {
   // to the codemiror editor.
   setUpdateListener(listener = null) {
     this.#updateListener = listener;
+  }
+
+  setBeforeUpdateListener(listener = null) {
+    this.#beforeUpdateListener = listener;
   }
 
   /**
@@ -843,6 +848,25 @@ class Editor extends EventEmitter {
       highlightSelectionMatches(),
       // keep last so other extension take precedence
       codemirror.minimalSetup,
+      EditorState.transactionFilter.of(tr => {
+        if (tr.docChanged) {
+          // A change is about to happen, any custom defined
+          // before update listener  should be called
+          if (typeof this.#beforeUpdateListener == "function") {
+            const a = [];
+            tr.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+              a.push({
+                from: lezerUtils.positionToLocation(tr.state.doc, fromA),
+                to: lezerUtils.positionToLocation(tr.newDoc, toB),
+                origin: !inserted.length ? "+delete" : "+input",
+                text: inserted.toString(),
+              });
+            });
+            this.#beforeUpdateListener(a);
+          }
+        }
+        return tr;
+      }),
     ];
 
     if (!this.config.disableSearchAddon && this.config.useSearchAddonPanel) {
@@ -3584,7 +3608,8 @@ class Editor extends EventEmitter {
         return false;
       }
       const { x, y, width, height } = cm.dom.getBoundingClientRect();
-      const gutterWidth = cm.dom.querySelector(".cm-gutters").clientWidth;
+      const gutterEl = cm.dom.querySelector(".cm-gutters");
+      const gutterWidth = gutterEl ? gutterEl.clientWidth : 0;
 
       inXView = coords.left > x + gutterWidth && coords.right < x + width;
       inYView = coords.top > y && coords.bottom < y + height;
@@ -3916,6 +3941,7 @@ class Editor extends EventEmitter {
     this.version = null;
     this.#ownerDoc = null;
     this.#updateListener = null;
+    this.#beforeUpdateListener = null;
     this.#lineGutterMarkers.clear();
     this.#lineContentMarkers.clear();
     this.#scrollSnapshots.clear();
