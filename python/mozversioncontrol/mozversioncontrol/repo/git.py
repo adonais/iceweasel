@@ -529,25 +529,17 @@ class GitRepository(Repository):
         return datetime.strptime(out.strip(), "%Y-%m-%d %H:%M:%S %z")
 
     def get_config_key_value(self, key: str):
-        try:
-            value = subprocess.check_output(
-                [self._tool, "config", "--get", key],
-                stderr=subprocess.DEVNULL,
-                text=True,
-            ).strip()
-            return value or None
-        except subprocess.CalledProcessError:
-            return None
+        value = self._run(
+            "config", "--get", key, stderr=subprocess.DEVNULL, return_codes=[0, 1]
+        ).strip()
+        return value or None
 
     def set_config_key_value(self, key: str, value: str):
         """
         Set a git config value in the given repo and print
         logging output indicating what was done.
         """
-        subprocess.check_call(
-            [self._tool, "config", key, value],
-            cwd=str(self.path),
-        )
+        self._run("config", key, value)
         print(f'Set git config: "{key} = {value}"')
 
     def configure(self, state_dir: Path, update_only: bool = False):
