@@ -339,15 +339,6 @@ ORDER BY created_date DESC
 LIMIT :limit OFFSET :offset;
 `;
 
-export const DELETE_CONVERSATIONS_BY_DATE = `
-DELETE FROM conversation
-WHERE created_date >= :start_date AND created_date <= :end_date;
-`;
-
-export const DELETE_ALL_CONVERSATIONS = `
-DELETE FROM conversation;
-`;
-
 export const DELETE_CONVERSATION_BY_ID = `
 DELETE FROM conversation WHERE conv_id = :conv_id;
 `;
