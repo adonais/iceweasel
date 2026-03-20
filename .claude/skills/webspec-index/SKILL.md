@@ -1,17 +1,17 @@
 ---
 name: webspec-index
-description: Use webspec-index to query WHATWG, W3C, and TC39 web specifications from the command line
+description: Use webspec-index to query WHATWG, W3C, IETF and TC39 web specifications from the command line
 ---
 
 # webspec-index
 
-Query WHATWG, W3C, and TC39 web specifications from the command line.
+Query WHATWG, W3C, IETF and TC39 web specifications from the command line.
 
 Use `webspec-index` whenever you need to understand what a web spec says — algorithm steps, section content, cross-references, or whether a spec anchor exists. Specs are fetched and cached locally on first use.
 
 ## Available specs
 
-Assume that all specs from WHATWG, W3C and TC39 are indexed. If in doubt, run `webspec-index specs` to list all spec names and their base URLs.
+Assume that all specs from WHATWG, W3C, IETF and TC39 are indexed. If in doubt, run `webspec-index specs` to list all spec names and their base URLs.
 
 ## Installation
 
@@ -34,6 +34,9 @@ webspec-index query 'HTML#navigate'
 webspec-index query 'DOM#concept-tree'
 webspec-index query 'CSS-GRID#grid-container'
 webspec-index query 'https://html.spec.whatwg.org/#navigate'
+webspec-index query 'DOM#concept-tree'
+webspec-index query "RFC9000#section-22"
+webspec-index query "draft-ietf-tsvwg-sctp-dtls-chunk#name-security-considerations"
 ```
 
 Returns the section's title, type (heading/algorithm/definition), full content as markdown, navigation tree (parent/prev/next/children), and cross-references. This is the primary command — use it to read what a spec section says.
