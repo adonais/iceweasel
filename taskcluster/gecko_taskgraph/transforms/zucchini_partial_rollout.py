@@ -14,7 +14,6 @@ transforms = TransformSequence()
 # hold it in beta for a few cycles, or let it ride the train to release.
 # If holding in beta, we'll need to uplift a patch to remove the release entry.
 LEGACY_PARTIALS_PROJECTS = {
-    "mozilla-beta",
     "mozilla-release",
     "mozilla-esr115",
     "mozilla-esr128",
