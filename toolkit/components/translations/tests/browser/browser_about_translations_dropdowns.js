@@ -83,18 +83,11 @@ add_task(
       }
     );
 
-    await aboutTranslationsTestUtils.assertIsVisible({
-      pageHeader: true,
-      languageLoadErrorMessage: true,
-      mainUserInterface: false,
-      sourceLanguageSelector: false,
-      targetLanguageSelector: false,
-      copyButton: false,
-      swapLanguagesButton: false,
-      sourceSectionTextArea: false,
-      targetSectionTextArea: false,
-      unsupportedInfoMessage: false,
-    });
+    await aboutTranslationsTestUtils.assertIsVisible(
+      aboutTranslationsStandaloneMessageVisibilityExpectations({
+        languageLoadErrorMessage: true,
+      })
+    );
 
     await aboutTranslationsTestUtils.assertEvents(
       {
@@ -108,18 +101,11 @@ add_task(
       }
     );
 
-    await aboutTranslationsTestUtils.assertIsVisible({
-      pageHeader: true,
-      languageLoadErrorMessage: true,
-      mainUserInterface: false,
-      sourceLanguageSelector: false,
-      targetLanguageSelector: false,
-      copyButton: false,
-      swapLanguagesButton: false,
-      sourceSectionTextArea: false,
-      targetSectionTextArea: false,
-      unsupportedInfoMessage: false,
-    });
+    await aboutTranslationsTestUtils.assertIsVisible(
+      aboutTranslationsStandaloneMessageVisibilityExpectations({
+        languageLoadErrorMessage: true,
+      })
+    );
 
     await aboutTranslationsTestUtils.assertEvents(
       {
@@ -133,18 +119,9 @@ add_task(
       }
     );
 
-    await aboutTranslationsTestUtils.assertIsVisible({
-      pageHeader: true,
-      languageLoadErrorMessage: false,
-      mainUserInterface: true,
-      sourceLanguageSelector: true,
-      targetLanguageSelector: true,
-      copyButton: true,
-      swapLanguagesButton: true,
-      sourceSectionTextArea: true,
-      targetSectionTextArea: true,
-      unsupportedInfoMessage: false,
-    });
+    await aboutTranslationsTestUtils.assertIsVisible(
+      aboutTranslationsVisibilityExpectations()
+    );
     await aboutTranslationsTestUtils.assertSourceLanguageSelector({
       value: "detect",
     });

@@ -25,10 +25,11 @@ add_task(
         });
       cleanup = openCleanup;
 
-      await aboutTranslationsTestUtils.assertIsVisible({
-        pageHeader: true,
-        languageLoadErrorMessage: true,
-      });
+      await aboutTranslationsTestUtils.assertIsVisible(
+        aboutTranslationsStandaloneMessageVisibilityExpectations({
+          languageLoadErrorMessage: true,
+        })
+      );
 
       await TestTranslationsTelemetry.assertEvent(
         Glean.translationsAboutTranslationsPage.open,
@@ -82,10 +83,11 @@ add_task(
       }
     );
 
-    await aboutTranslationsTestUtils.assertIsVisible({
-      pageHeader: true,
-      unsupportedInfoMessage: true,
-    });
+    await aboutTranslationsTestUtils.assertIsVisible(
+      aboutTranslationsStandaloneMessageVisibilityExpectations({
+        unsupportedInfoMessage: true,
+      })
+    );
 
     await TestTranslationsTelemetry.assertEvent(
       Glean.translationsAboutTranslationsPage.open,
@@ -138,10 +140,11 @@ add_task(
       }
     );
 
-    await aboutTranslationsTestUtils.assertIsVisible({
-      pageHeader: true,
-      policyDisabledInfoMessage: true,
-    });
+    await aboutTranslationsTestUtils.assertIsVisible(
+      aboutTranslationsStandaloneMessageVisibilityExpectations({
+        policyDisabledInfoMessage: true,
+      })
+    );
 
     await TestTranslationsTelemetry.assertEvent(
       Glean.translationsAboutTranslationsPage.open,

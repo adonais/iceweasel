@@ -114,6 +114,55 @@ function logAction(...params) {
 }
 
 /**
+ * Returns the baseline visibility expectations for the main about:translations UI.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function aboutTranslationsVisibilityExpectations(overrides = {}) {
+  return {
+    pageHeader: true,
+    mainUserInterface: true,
+    sourceLanguageSelector: true,
+    targetLanguageSelector: true,
+    clearButton: undefined,
+    copyButton: true,
+    swapLanguagesButton: true,
+    sourceSectionTextArea: true,
+    targetSectionTextArea: true,
+    detectedLanguageUnsupportedMessage: false,
+    translationErrorMessage: false,
+    unsupportedInfoMessage: false,
+    policyDisabledInfoMessage: false,
+    featureBlockedInfoMessage: false,
+    languageLoadErrorMessage: false,
+    ...overrides,
+  };
+}
+
+/**
+ * Returns the baseline visibility expectations for about:translations when showing
+ * a stand-alone message bar.
+ *
+ * @param {object} [overrides={}]
+ * @returns {object}
+ */
+function aboutTranslationsStandaloneMessageVisibilityExpectations(
+  overrides = {}
+) {
+  return aboutTranslationsVisibilityExpectations({
+    mainUserInterface: false,
+    sourceLanguageSelector: false,
+    targetLanguageSelector: false,
+    copyButton: false,
+    swapLanguagesButton: false,
+    sourceSectionTextArea: false,
+    targetSectionTextArea: false,
+    ...overrides,
+  });
+}
+
+/**
  * Generates a sorted list of Translation model file names for the given language pairs.
  *
  * @param {Array<{ fromLang: string, toLang: string }>} languagePairs - An array of language pair objects.
