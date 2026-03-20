@@ -8,11 +8,10 @@ import {
   defaultMarkdownParser,
   DOMSerializer,
 } from "chrome://browser/content/multilineeditor/prosemirror.bundle.mjs";
-
-const SERIALIZER = DOMSerializer.fromSchema(defaultMarkdownParser.schema);
-
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-chat-search-button.mjs";
+
+const SERIALIZER = DOMSerializer.fromSchema(defaultMarkdownParser.schema);
 
 /**
  * A custom element for managing AI Chat Content
@@ -67,7 +66,14 @@ export class AIChatMessage extends MozLitElement {
             new CustomEvent("AIChatContent:OpenLink", {
               bubbles: true,
               composed: true,
-              detail: { url: target.href },
+              detail: {
+                url: target.href,
+                shiftKey: event.shiftKey,
+                metaKey: event.metaKey,
+                ctrlKey: event.ctrlKey,
+                altKey: event.altKey,
+                button: event.button,
+              },
             })
           );
           return;

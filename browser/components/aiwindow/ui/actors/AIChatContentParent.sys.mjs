@@ -12,6 +12,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/SmartWindowTelemetry.sys.mjs",
   AIWindowUI:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs",
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
 
 /**
@@ -206,13 +208,29 @@ export class AIChatContentParent extends JSWindowActorParent {
         return;
       }
 
-      const tabFound = window.switchToTabHavingURI(url, false, {});
-      if (!tabFound) {
-        window.gBrowser.selectedTab = window.gBrowser.addTab(url, {
-          triggeringPrincipal:
-            Services.scriptSecurityManager.createNullPrincipal({}),
-        });
+      const { userContextId } =
+        window.gBrowser.selectedBrowser.browsingContext.originAttributes;
+      const triggeringPrincipal =
+        Services.scriptSecurityManager.createNullPrincipal({ userContextId });
+      const where = lazy.BrowserUtils.whereToOpenLink(data);
+
+      if (where === "current") {
+        const tabFound = lazy.URILoadingHelper.switchToTabHavingURI(
+          window,
+          url,
+          false,
+          {}
+        );
+        if (tabFound) {
+          return;
+        }
       }
+
+      lazy.URILoadingHelper.openWebLinkIn(window, url, where, {
+        triggeringPrincipal,
+        userContextId,
+        forceForeground: false,
+      });
     } catch (e) {
       console.warn("Could not open link from AI Window chat", e);
     }
