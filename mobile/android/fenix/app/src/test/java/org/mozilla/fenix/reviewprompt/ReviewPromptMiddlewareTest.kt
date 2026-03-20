@@ -14,6 +14,8 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.ReviewPromptAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.nimbus.FakeNimbusEventStore
+import org.mozilla.fenix.nimbus.RecordEventMode.CompleteSuccessfully
+import org.mozilla.fenix.nimbus.RecordEventMode.ThrowException
 import org.mozilla.fenix.reviewprompt.ReviewPromptState.Eligible.Type
 
 class ReviewPromptMiddlewareTest {
@@ -31,6 +33,7 @@ class ReviewPromptMiddlewareTest {
             ReviewPromptMiddleware(
                 shouldUseNewTriggerCriteria = { shouldUseNewTriggerCriteria },
                 shouldShowCustomPrompt = { shouldShowCustomPrompt },
+                disableCustomPrompt = { shouldShowCustomPrompt = false },
                 createJexlHelper = {
                     object : NimbusMessagingHelperInterface {
                         override fun evalJexl(expression: String) = assertUnused()
@@ -217,9 +220,21 @@ class ReviewPromptMiddlewareTest {
 
     @Test
     fun `WHEN review prompt shown THEN an event is recorded`() {
+        eventStore.recordEventMode = CompleteSuccessfully
+
         store.dispatch(ReviewPromptAction.ReviewPromptShown)
 
         eventStore.assertRecorded("review_prompt_shown")
+    }
+
+    @Test
+    fun `WHEN recordEvent fails THEN disables custom prompt`() {
+        shouldShowCustomPrompt = true
+        eventStore.recordEventMode = ThrowException
+
+        store.dispatch(ReviewPromptAction.ReviewPromptShown)
+
+        assertFalse(shouldShowCustomPrompt)
     }
 
     @Test

@@ -5,12 +5,14 @@
 package org.mozilla.fenix.reviewprompt
 
 import androidx.annotation.VisibleForTesting
+import kotlinx.coroutines.CancellationException
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.components.service.nimbus.evalJexlSafe
 import mozilla.components.service.nimbus.messaging.use
 import org.mozilla.experiments.nimbus.NimbusEventStore
 import org.mozilla.experiments.nimbus.NimbusMessagingHelperInterface
+import org.mozilla.fenix.GleanMetrics.CustomReviewPrompt
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.ReviewPromptAction.CheckIfEligibleForReviewPrompt
 import org.mozilla.fenix.components.appstate.AppAction.ReviewPromptAction.DoNotShowReviewPrompt
@@ -27,6 +29,7 @@ private const val REVIEW_PROMPT_SHOWN_NIMBUS_EVENT_ID = "review_prompt_shown"
  *
  * @param shouldUseNewTriggerCriteria If true uses new main and sub-criteria, if false falls back to legacy criteria.
  * @param shouldShowCustomPrompt If true enables showing custom prompt UI, if false falls back to Play Store prompt.
+ * @param disableCustomPrompt Update settings to disable the custom prompt UI.
  * @param createJexlHelper Returns a helper for evaluating JEXL expressions.
  * @param buildTriggerMainCriteria Builds a sequence of trigger's main criteria that all need to be true.
  * @param buildTriggerSubCriteria Builds a sequence of trigger's sub-criteria.
@@ -37,6 +40,7 @@ private const val REVIEW_PROMPT_SHOWN_NIMBUS_EVENT_ID = "review_prompt_shown"
 class ReviewPromptMiddleware(
     private val shouldUseNewTriggerCriteria: () -> Boolean,
     private val shouldShowCustomPrompt: () -> Boolean,
+    private val disableCustomPrompt: () -> Unit,
     private val createJexlHelper: () -> NimbusMessagingHelperInterface,
     private val buildTriggerMainCriteria: (NimbusMessagingHelperInterface) -> Sequence<Boolean> =
         TriggerBuilder::mainCriteria,
@@ -97,7 +101,7 @@ class ReviewPromptMiddleware(
 
         when (action) {
             CheckIfEligibleForReviewPrompt -> handleReviewPromptCheck(store)
-            ReviewPromptShown -> nimbusEventStore.recordEvent(REVIEW_PROMPT_SHOWN_NIMBUS_EVENT_ID)
+            ReviewPromptShown -> handleReviewPromptShown()
             DoNotShowReviewPrompt -> Unit
             ShowCustomReviewPrompt -> Unit
             ShowPlayStorePrompt -> Unit
@@ -140,6 +144,31 @@ class ReviewPromptMiddleware(
         } else {
             store.dispatch(DoNotShowReviewPrompt)
         }
+    }
+
+    private fun handleReviewPromptShown() {
+        nimbusEventStore.recordEventOrThrow(eventId = REVIEW_PROMPT_SHOWN_NIMBUS_EVENT_ID)
+            .invokeOnCompletion { cause ->
+                when (cause) {
+                    null -> recordResult("success")
+                    is CancellationException -> recordResult("cancelled")
+                    else -> {
+                        // Failed.
+                        disableCustomPrompt()
+                        recordResult("error")
+                    }
+                }
+            }
+    }
+
+    /**
+     * Send telemetry for a result of [NimbusEventStore.recordEventOrThrow].
+     */
+    private fun recordResult(result: String) {
+        CustomReviewPrompt.nimbusEventRecorded.record(
+            CustomReviewPrompt.NimbusEventRecordedExtra(result),
+        )
+        CustomReviewPrompt.recordNimbusEventAttempts[result].add(1)
     }
 }
 
