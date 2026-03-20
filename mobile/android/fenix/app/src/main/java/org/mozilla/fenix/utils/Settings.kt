@@ -2913,6 +2913,14 @@ class Settings(
     )
 
     /**
+     * Whether the private mode and stories entry point experiment is enabled.
+     */
+    var privateModeAndStoriesEntryPointEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_private_mode_and_stories_entry_point),
+        default = { FxNimbus.features.privateModeAndStoriesEntryPoint.value().enabled },
+    )
+
+    /**
      * Whether the Tab Groups feature is enabled.
      */
     var tabGroupsEnabled by booleanPreference(

@@ -565,6 +565,9 @@
     <!-- Tab Search -->
     <string name="pref_key_tab_search" translatable="false">pref_key_tab_search_feature</string>
 
+    <!-- Private Mode and Stories Entry Point -->
+    <string name="pref_key_private_mode_and_stories_entry_point" translatable="false">pref_key_private_mode_and_stories_entry_point</string>
+
     <!-- Tab Groups -->
     <string name="pref_key_tab_groups" translatable="false">pref_key_tab_groups_feature</string>
 
