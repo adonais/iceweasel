@@ -141,8 +141,7 @@ class AppLinksInterceptor(
             if ((launchFromInterceptor || isAuthenticationFlow) &&
                 result is RequestInterceptor.InterceptionResponse.AppIntent
             ) {
-                result.appIntent.flags = result.appIntent.flags or Intent.FLAG_ACTIVITY_NEW_TASK
-                useCases.openAppLink(result.appIntent)
+                useCases.openAppLink(result.appIntent, clearTop = isAuthenticationFlow)
 
                 return RequestInterceptor.InterceptionResponse.Deny
             }

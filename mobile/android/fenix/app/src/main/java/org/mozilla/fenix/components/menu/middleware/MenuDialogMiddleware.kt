@@ -5,7 +5,6 @@
 package org.mozilla.fenix.components.menu.middleware
 
 import android.app.PendingIntent
-import android.content.Intent
 import android.content.SharedPreferences
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineDispatcher
@@ -355,8 +354,6 @@ class MenuDialogMiddleware(
         }
 
         settings.openInAppOpened = true
-
-        redirect.appIntent?.flags = Intent.FLAG_ACTIVITY_NEW_TASK
 
         appLinksUseCases.openAppLink.invoke(redirect.appIntent)
         onDismiss()

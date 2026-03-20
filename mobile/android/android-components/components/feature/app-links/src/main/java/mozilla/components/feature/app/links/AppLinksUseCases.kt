@@ -239,11 +239,13 @@ class AppLinksUseCases(
          *
          * @param appIntent the [Intent] to open the external app for.
          * @param launchInNewTask whether or not the app should be launched in a new task.
+         * @param clearTop whether if the app should be launched with the top of the back stack cleared.
          * @param failedToLaunchAction callback invoked in case opening the external app fails.
          */
         operator fun invoke(
             appIntent: Intent?,
             launchInNewTask: Boolean = true,
+            clearTop: Boolean = false,
             failedToLaunchAction: (fallbackUrl: String?) -> Unit = {},
         ) {
             appIntent?.let {
@@ -255,6 +257,9 @@ class AppLinksUseCases(
 
                     if (launchInNewTask) {
                         it.flags = it.flags or Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    if (clearTop) {
+                        it.flags = it.flags or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     }
                     context.startActivity(it)
                 } catch (e: Exception) {
