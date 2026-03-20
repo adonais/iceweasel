@@ -14,9 +14,6 @@ loadRelativeToScript('dumpCFG.js');
 
 var sourceRoot = (os.getenv('SOURCE') || '') + '/';
 
-var functionName;
-var functionBodies;
-
 try {
     var options = parse_options([
         {
@@ -125,13 +122,13 @@ function isUnrootedPointerDeclType(decl)
     }
 }
 
-function edgeCanGC(functionName, body, edge, scopeAttrs, functionBodies)
+function edgeCanGC(ffg, body, edge, scopeAttrs)
 {
     if (edge.Kind != "Call") {
         return false;
     }
 
-    for (const { callee, attrs } of getCallees(typeInfo, body, edge, scopeAttrs, functionBodies)) {
+    for (const { callee, attrs } of getCallees(ffg, body, edge, scopeAttrs)) {
         if (attrs & (ATTR_GC_SUPPRESSED | ATTR_REPLACED)) {
             continue;
         }
@@ -142,7 +139,7 @@ function edgeCanGC(functionName, body, edge, scopeAttrs, functionBodies)
                 return `'${func}$${gcFunctions[func]}'`;
             return false;
         } else if (callee.kind == "indirect") {
-            if (!indirectCallCannotGC(functionName, callee.variable)) {
+            if (!indirectCallCannotGC(ffg.name, callee.variable)) {
                 return "'*" + callee.variable + "'";
             }
         } else if (callee.kind == "field") {
@@ -229,7 +226,7 @@ function edgeCanGC(functionName, body, edge, scopeAttrs, functionBodies)
 //
 //  - 'gcInfo': a direct pointer to the GC call edge
 //
-function findGCBeforeValueUse(start_body, start_point, funcAttrs, decl)
+function findGCBeforeValueUse(ffg, start_body, start_point, funcAttrs, decl)
 {
     // Scan through all edges preceding an unrooted variable use, using an
     // explicit worklist, looking for a GC call and a preceding point where the
@@ -281,10 +278,6 @@ function findGCBeforeValueUse(start_body, start_point, funcAttrs, decl)
     let bestPathWithAnyUse = null;
 
     const visitor = new class extends Visitor {
-        constructor() {
-            super(functionBodies);
-        }
-
         // Do a BFS upwards through the CFG, starting from a use of the
         // variable and searching for a path containing a GC followed by an
         // initializing use of the variable (or, in forward direction, a start
@@ -369,13 +362,13 @@ function findGCBeforeValueUse(start_body, start_point, funcAttrs, decl)
 
             assert(ppoint == edge.Index[0]);
 
-            if (edgeEndsValueLiveRange(typeInfo, edge, decl, body)) {
+            if (edgeEndsValueLiveRange(ffg, edge, decl, body)) {
                 // Terminate the search through this point.
                 return null;
             }
 
-            const edge_starts = edgeStartsValueLiveRange(typeInfo, edge, decl);
-            const edge_uses = edgeUsesVariable(typeInfo, edge, decl, body);
+            const edge_starts = edgeStartsValueLiveRange(ffg, edge, decl);
+            const edge_uses = edgeUsesVariable(ffg, edge, decl, body);
 
             if (edge_starts || edge_uses) {
                 if (!body.minimumUse || ppoint < body.minimumUse)
@@ -405,7 +398,7 @@ function findGCBeforeValueUse(start_body, start_point, funcAttrs, decl)
             const had_gcInfo = Boolean(path.gcInfo);
             const edgeAttrs = body.attrs[ppoint] | funcAttrs;
             if (!path.gcInfo && !(edgeAttrs & (ATTR_GC_SUPPRESSED | ATTR_REPLACED))) {
-                var gcName = edgeCanGC(functionName, body, edge, edgeAttrs, functionBodies);
+                var gcName = edgeCanGC(ffg, body, edge, edgeAttrs);
                 if (gcName) {
                     path.gcInfo = {name:gcName, body, ppoint, edge: edge.Index};
                 }
@@ -503,9 +496,9 @@ function findGCBeforeValueUse(start_body, start_point, funcAttrs, decl)
 
             return path;
         };
-    };
+    }(ffg);
 
-    const result = BFS_upwards(start_body, start_point, functionBodies, visitor, new Path());
+    const result = BFS_upwards(start_body, start_point, ffg, visitor, new Path());
     if (result && result.gcInfo && result.anyUse) {
         return result;
     } else {
@@ -513,16 +506,17 @@ function findGCBeforeValueUse(start_body, start_point, funcAttrs, decl)
     }
 }
 
-function variableLiveAcrossGC(funcAttrs, decl, liveToEnd=false)
+function variableLiveAcrossGC(ffg, funcAttrs, decl, liveToEnd=false)
 {
     // A variable is live across a GC if (1) it is used by an edge (as in, it
     // was at least initialized), and (2) it is used after a GC in a successor
     // edge.
 
-    for (var body of functionBodies)
+    for (const body of ffg.bodies) {
         body.minimumUse = 0;
+    }
 
-    for (var body of functionBodies) {
+    for (const body of ffg.bodies) {
         if (!("PEdge" in body))
             continue;
         for (var edge of body.PEdge) {
@@ -551,12 +545,12 @@ function variableLiveAcrossGC(funcAttrs, decl, liveToEnd=false)
             //
 
             // Ignore uses that are just invalidating the previous value.
-            if (edgeEndsValueLiveRange(typeInfo, edge, decl, body))
+            if (edgeEndsValueLiveRange(ffg, edge, decl, body))
                 continue;
 
-            var usePoint = edgeUsesVariable(typeInfo, edge, decl, body, liveToEnd);
+            var usePoint = edgeUsesVariable(ffg, edge, decl, body, liveToEnd);
             if (usePoint) {
-                var call = findGCBeforeValueUse(body, usePoint, funcAttrs, decl);
+                var call = findGCBeforeValueUse(ffg, body, usePoint, funcAttrs, decl);
                 if (!call)
                     continue;
 
@@ -574,9 +568,9 @@ function variableLiveAcrossGC(funcAttrs, decl, liveToEnd=false)
 // live across a GC. If it is passed into a function that can GC, then it's
 // sort of like a Handle to an unrooted location, and the callee could GC
 // before overwriting it or rooting it.
-function unsafeVariableAddressTaken(funcAttrs, variable)
+function unsafeVariableAddressTaken(ffg, funcAttrs, variable)
 {
-    for (var body of functionBodies) {
+    for (const body of ffg.bodies) {
         if (!("PEdge" in body))
             continue;
         for (var edge of body.PEdge) {
@@ -584,7 +578,7 @@ function unsafeVariableAddressTaken(funcAttrs, variable)
                 if (funcAttrs & (ATTR_GC_SUPPRESSED | ATTR_REPLACED)) {
                     continue;
                 }
-                if (edge.Kind == "Assign" || edgeCanGC(functionName, body, edge, funcAttrs, functionBodies)) {
+                if (edge.Kind == "Assign" || edgeCanGC(ffg, body, edge, funcAttrs)) {
                     return {body:body, ppoint:edge.Index[0]};
                 }
             }
@@ -595,13 +589,12 @@ function unsafeVariableAddressTaken(funcAttrs, variable)
 
 // Read out the brief (non-JSON, semi-human-readable) CFG description for the
 // given function and store it.
-function loadPrintedLines(functionName)
+function loadPrintedLines(ffg)
 {
-    assert(!os.system("xdbfind src_body.xdb '" + functionName + "' > " + options.tmpfile));
+    assert(!os.system("xdbfind src_body.xdb '" + ffg.name + "' > " + options.tmpfile));
     var lines = snarf(options.tmpfile).split('\n');
 
-    for (var body of functionBodies)
-        body.lines = [];
+    ffg.forEachBody(body => { body.lines = []; });
 
     // Distribute lines of output to the block they originate from.
     var currentBody = null;
@@ -610,7 +603,7 @@ function loadPrintedLines(functionName)
             if (match = /:(loop#[\d#]+)/.exec(line)) {
                 var loop = match[1];
                 var found = false;
-                for (var body of functionBodies) {
+                for (const body of ffg.bodies) {
                     if (body.BlockId.Kind == "Loop" && body.BlockId.Loop == loop) {
                         assert(!found);
                         found = true;
@@ -619,7 +612,7 @@ function loadPrintedLines(functionName)
                 }
                 assert(found);
             } else {
-                for (var body of functionBodies) {
+                for (const body of ffg.bodies) {
                     if (body.BlockId.Kind == "Function")
                         currentBody = body;
                 }
@@ -654,14 +647,14 @@ function locationLine(text)
     return 0;
 }
 
-function getEntryTrace(functionName, entry)
+function getEntryTrace(ffg, entry)
 {
     const trace = [];
 
     var gcPoint = entry.gcInfo ? entry.gcInfo.ppoint : 0;
 
-    if (!functionBodies[0].lines)
-        loadPrintedLines(functionName);
+    if (!ffg.mainBody().lines)
+        loadPrintedLines(ffg);
 
     while (entry.successor) {
         var ppoint = entry.ppoint;
@@ -713,36 +706,36 @@ function getEntryTrace(functionName, entry)
     return trace;
 }
 
-function isRootedDeclType(decl)
+function isRootedDeclType(ffg, decl)
 {
     // Treat non-temporary T& references as if they were the underlying type T.
     const type = isReferenceDecl(decl) ? decl.Type.Type : decl.Type;
-    return type.Kind == "CSU" && ((type.Name in typeInfo.RootedPointers) ||
-                                  (type.Name in typeInfo.RootedGCThings));
+    return type.Kind == "CSU" && ((type.Name in ffg.typeInfo.RootedPointers) ||
+                                  (type.Name in ffg.typeInfo.RootedGCThings));
 }
 
 function printRecord(record) {
     print(JSON.stringify(record));
 }
 
-function processBodies(functionName, wholeBodyAttrs)
+function processBodies(ffg)
 {
-    if (!("DefineVariable" in functionBodies[0]))
+    if (!("DefineVariable" in ffg.mainBody()))
       return;
-    const funcInfo = limitedFunctions[mangled(functionName)] || { attributes: 0 };
-    const funcAttrs = funcInfo.attributes | wholeBodyAttrs;
+    const funcInfo = limitedFunctions[mangled(ffg.name)] || { attributes: 0 };
+    const funcAttrs = funcInfo.attributes;
 
     // Look for the JS_EXPECT_HAZARDS annotation, so as to output a different
     // message in that case that won't be counted as a hazard.
     var annotations = new Set();
-    for (const variable of functionBodies[0].DefineVariable) {
-        if (variable.Variable.Kind == "Func" && variable.Variable.Name[0] == functionName) {
-            for (const { Name: [tag, value] } of (variable.Type.Annotation || [])) {
+    ffg.forEachDecl(decl => {
+        if (decl.Variable.Kind == "Func" && decl.Variable.Name[0] == ffg.name) {
+            for (const { Name: [tag, value] } of (decl.Type.Annotation || [])) {
                 if (tag == 'annotate')
                     annotations.add(value);
             }
         }
-    }
+    });
 
     let missingExpectedHazard = annotations.has("Expect Hazards");
 
@@ -771,8 +764,8 @@ function processBodies(functionName, wholeBodyAttrs)
     // Maybe<SomethingArgument>. Or Maybe<SpiderMonkeyInterfaceRooter<T>>. It's
     // a harsh world.
     const ignoreVars = new Set();
-    if (functionName.match(/mozilla::dom::/)) {
-        const vars = functionBodies[0].DefineVariable.filter(
+    if (ffg.name.match(/mozilla::dom::/)) {
+        const vars = ffg.mainBody().DefineVariable.filter(
             v => v.Type.Kind == 'CSU' && v.Variable.Kind == 'Local'
         ).map(
             v => [ v.Variable.Name[0], v.Type.Name ]
@@ -787,9 +780,9 @@ function processBodies(functionName, wholeBodyAttrs)
         }
     }
 
-    const [mangledSymbol, readable] = splitFunction(functionName);
+    const [mangledSymbol, readable] = splitFunction(ffg.name);
 
-    for (let decl of functionBodies[0].DefineVariable) {
+    ffg.forEachDecl(decl => {
         var name;
         if (decl.Variable.Kind == "This")
             name = "this";
@@ -799,7 +792,7 @@ function processBodies(functionName, wholeBodyAttrs)
             name = decl.Variable.Name[0];
 
         if (ignoreVars.has(name))
-            continue;
+            return;
 
         let liveToEnd = false;
         if (decl.Variable.Kind == "Arg" && isReferenceDecl(decl) && decl.Type.Reference == 2) {
@@ -812,11 +805,11 @@ function processBodies(functionName, wholeBodyAttrs)
             liveToEnd = true;
         }
 
-        if (isRootedDeclType(decl)) {
-            if (!variableLiveAcrossGC(funcAttrs, decl)) {
+        if (isRootedDeclType(ffg, decl)) {
+            if (!variableLiveAcrossGC(ffg, funcAttrs, decl)) {
                 // The earliest use of the variable should be its constructor.
                 var lineText;
-                for (var body of functionBodies) {
+                for (const body of ffg.bodies) {
                     if (body.minimumUse) {
                         var text = findLocation(body, body.minimumUse);
                         if (!lineText || locationLine(lineText) > locationLine(text))
@@ -825,7 +818,7 @@ function processBodies(functionName, wholeBodyAttrs)
                 }
                 const record = {
                     record: "unnecessary",
-                    functionName,
+                    functionName: ffg.name,
                     mangled: mangledSymbol,
                     readable,
                     variable: name,
@@ -836,7 +829,7 @@ function processBodies(functionName, wholeBodyAttrs)
                 printRecord(record);
             }
         } else if (isUnrootedPointerDeclType(decl)) {
-            var result = variableLiveAcrossGC(funcAttrs, decl, liveToEnd);
+            var result = variableLiveAcrossGC(ffg, funcAttrs, decl, liveToEnd);
             if (result) {
                 assert(result.gcInfo);
                 const edge = result.gcInfo.edge;
@@ -847,7 +840,7 @@ function processBodies(functionName, wholeBodyAttrs)
                 const record = {
                     record: "unrooted",
                     expected: annotations.has("Expect Hazards"),
-                    functionName,
+                    functionName: ffg.name,
                     mangled: mangledSymbol,
                     readable,
                     variable: name,
@@ -855,29 +848,29 @@ function processBodies(functionName, wholeBodyAttrs)
                     gccall: result.gcInfo.name.replaceAll("'", ""),
                     gcrange: range,
                     loc: lineText,
-                    trace: getEntryTrace(functionName, result),
+                    trace: getEntryTrace(ffg, result),
                 };
                 missingExpectedHazard = false;
                 print(",");
                 printRecord(record);
             }
-            result = unsafeVariableAddressTaken(funcAttrs, decl.Variable);
+            result = unsafeVariableAddressTaken(ffg, funcAttrs, decl.Variable);
             if (result) {
                 var lineText = findLocation(result.body, result.ppoint);
                 const record = {
                     record: "address",
-                    functionName,
+                    functionName: ffg.name,
                     mangled: mangledSymbol,
                     readable,
                     variable: name,
                     loc: lineText,
-                    trace: getEntryTrace(functionName, {body:result.body, ppoint:result.ppoint}),
+                    trace: getEntryTrace(ffg, {body:result.body, ppoint:result.ppoint}),
                 };
                 print(",");
                 printRecord(record);
             }
         }
-    }
+    });
 
     if (missingExpectedHazard) {
         const {
@@ -885,14 +878,14 @@ function processBodies(functionName, wholeBodyAttrs)
                 { CacheString: startfile, Line: startline },
                 { CacheString: endfile, Line: endline }
             ]
-        } = functionBodies[0];
+        } = ffg.mainBody();
 
         const loc = (startfile == endfile) ? `${startfile}:${startline}-${endline}`
               : `${startfile}:${startline}`;
 
         const record = {
             record: "missing",
-            functionName,
+            functionName: ffg.name,
             mangled: mangledSymbol,
             readable,
             loc,
@@ -915,51 +908,50 @@ var maxStream = xdb.max_data_stream()|0;
 var start = batchStart(options.batch, options.numBatches, minStream, maxStream);
 var end = batchLast(options.batch, options.numBatches, minStream, maxStream);
 
-function process(name, json) {
-    functionName = name;
-    functionBodies = JSON.parse(json);
-
+function process(ffg) {
     // Annotate body with a table of all points within the body that may be in
     // a limited scope (eg within the scope of a GC suppression RAII class.)
     // body.attrs is a plain object indexed by point, with the value being a
     // bit set stored in an integer.
-    for (var body of functionBodies)
-        body.attrs = [];
-
-    for (var body of functionBodies) {
-        for (var [pbody, id, attrs] of allRAIIGuardedCallPoints(typeInfo, functionBodies, body))
+    ffg.bodies.forEach(body => { body.attrs = []; });
+    for (const body of ffg.bodies) {
+        for (const [pbody, id, attrs] of allRAIIGuardedCallPoints(ffg, body))
         {
             if (attrs)
                 pbody.attrs[id] = attrs;
         }
     }
 
-    processBodies(functionName);
+    processBodies(ffg);
 }
 
 if (options.function) {
-    var data = xdb.read_entry(options.function);
-    var json = data.readString();
+    const data = xdb.read_entry(options.function);
+    const json = data.readString();
+    const bodies = JSON.parse(json);
+    const ffg = new FunctionFlowGraph({ name: options.function, bodies, typeInfo });
     debugger;
-    process(options.function, json);
+    process(ffg);
     xdb.free_string(data);
     print("\n]\n");
     quit(0);
 }
 
 for (var nameIndex = start; nameIndex <= end; nameIndex++) {
-    var name = xdb.read_key(nameIndex);
-    var functionName = name.readString();
-    var data = xdb.read_entry(name);
-    xdb.free_string(name);
-    var json = data.readString();
+    const nameData = xdb.read_key(nameIndex);
+    const name = nameData.readString();
+    xdb.free_string(nameData);
+    const bodiesData = xdb.read_entry(name);
+    const bodiesJson = bodiesData.readString();
+    xdb.free_string(bodiesData);
+    const bodies = JSON.parse(bodiesJson);
+    const ffg = new FunctionFlowGraph({ name, bodies, typeInfo });
     try {
-        process(functionName, json);
+        process(ffg);
     } catch (e) {
-        printErr("Exception caught while handling " + functionName);
+        printErr("Exception caught while handling " + name);
         throw(e);
     }
-    xdb.free_string(data);
 }
 
 print("\n]\n");

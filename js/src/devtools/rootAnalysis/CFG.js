@@ -15,28 +15,84 @@ var PTR_POINTER = 0;
 var PTR_REFERENCE = 1;
 var PTR_RVALUE_REF = 2;
 
-// Find all points (positions within the code) of the body given by the list of
-// bodies and the blockId to match (which will specify an outer function or a
-// loop within it), recursing into loops if needed.
-function findAllPoints(bodies, blockId, bits)
-{
-    var points = [];
-    var body;
+// A class wrapping information about a single function, plus access to global
+// information.
+var FunctionFlowGraph = class FunctionFlowGraph {
+    constructor({ name, bodies, typeInfo }) {
+        // Full name ("<unmangled>$<mangled>") of the function.
+        assert(name);
+        this.name = name;
 
-    for (var xbody of bodies) {
-        if (sameBlockId(xbody.BlockId, blockId)) {
-            assert(!body);
-            body = xbody;
-        }
+        // The loop bodies within this function. There will always be 1 main
+        // body at the end of the list, and additional bodies for all the loops.
+        // (It's not a simple 1-1 relationship; there could be nested loops and
+        // artificial loops created to produce a reducible control flow graph.)
+        // https://firefox-source-docs.mozilla.org/js/HazardAnalysis/CFG.html
+        assert(bodies);
+        this.bodies = bodies;
+
+        // typeInfo is global data, not tied to this function, but we only want
+        // to be passing around one thing everywhere.
+        assert(typeInfo);
+        this.typeInfo = typeInfo;
     }
-    assert(body);
+
+    mainBody() {
+        // Loops come first, then the main body.
+        return this.bodies.at(-1);
+    }
+
+    forEachBody(f) {
+        this.bodies.forEach(f);
+    }
+
+    // Look up a variable declaration with a Variable object from the CFG. Note
+    // that the body does not matter, because for some strange reason all the
+    // variable declarations are duplicated across all bodies. If the same name
+    // is used in different bodies (or within the same body in different
+    // scopes), the variable name will be disambiguated by appending ":<n>".
+    lookupDecl(variable) {
+        return this.mainBody().DefineVariable?.find(
+            decl => sameVariable(decl.Variable, variable)
+        );
+    }
+
+    forEachDecl(f) {
+        this.mainBody().DefineVariable?.forEach(f);
+    }
+
+    getAttrsForTypeName(typeName) {
+        let attrs = 0;
+        if (typeName in this.typeInfo.GCSuppressors) {
+            attrs = attrs | ATTR_GC_SUPPRESSED;
+        }
+        return attrs;
+    }
+
+    getBodyByBlockId(blockId) {
+        const body = this.bodies.find(
+            body => sameBlockId(body.BlockId, blockId)
+        );
+        assert(body);
+        return body;
+    }
+};
+
+// Find all points (positions within the code) within the body (an outer
+// function or a loop within it), recursing into loops if needed. Return them as
+// a list of <body, edgeSourceId, bits> tuples, where `bits` is just the same
+// value passed in here (in the future, perhaps it could be updated to reflect
+// RAII or other scopes).
+function findAllPoints(ffg, blockId, bits) {
+    const body = ffg.getBodyByBlockId(blockId);
 
     if (!("PEdge" in body))
         return;
+    const points = [];
     for (var edge of body.PEdge) {
         points.push([body, edge.Index[0], bits]);
         if (edge.Kind == "Loop")
-            points.push(...findAllPoints(bodies, edge.BlockId, bits));
+            points.push(...findAllPoints(ffg, edge.BlockId, bits));
     }
 
     return points;
@@ -48,11 +104,9 @@ function findAllPoints(bodies, blockId, bits)
 // Uses the syntax `var Visitor = class { ... }` rather than `class Visitor`
 // to allow reloading this file with the JS debugger.
 var Visitor = class {
-    constructor(bodies) {
+    constructor(ffg) {
         this.visited_bodies = new Map();
-        for (const body of bodies) {
-            this.visited_bodies.set(body, new Map());
-        }
+        ffg.forEachBody(body => { this.visited_bodies.set(body, new Map()); });
     }
 
     // Prepend `edge` to the info stored at the successor node, returning
@@ -104,15 +158,6 @@ var Visitor = class {
     }
 };
 
-function findMatchingBlock(bodies, blockId) {
-    for (const body of bodies) {
-        if (sameBlockId(body.BlockId, blockId)) {
-            return body;
-        }
-    }
-    assert(false);
-}
-
 // For a given function containing a set of bodies, each containing a set of
 // ppoints, perform a mostly breadth-first traversal through the complete graph
 // of all <body, ppoint> nodes throughout all the bodies of the function.
@@ -153,7 +198,7 @@ function findMatchingBlock(bodies, blockId) {
 //
 // See the Visitor base class's implementation of visit(), above, for the
 // most commonly used visit logic.
-function BFS_upwards(start_body, start_ppoint, bodies, visitor,
+function BFS_upwards(start_body, start_ppoint, ffg, visitor,
                      initial_successor_value = {},
                      entrypoint_fallback_value=null)
 {
@@ -188,7 +233,7 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
         for (const edge of (predecessors[ppoint] || [])) {
             if (edge.Kind == "Loop") {
                 // Propagate the search into the exit point of the loop body.
-                const loopBody = findMatchingBlock(bodies, edge.BlockId);
+                const loopBody = ffg.getBodyByBlockId(edge.BlockId);
                 const loopEnd = loopBody.Index[1];
                 work.push([loopBody, loopEnd, null, value]);
                 // Don't continue to predecessors here without going through
@@ -202,7 +247,7 @@ function BFS_upwards(start_body, start_ppoint, bodies, visitor,
         if (ppoint == body.Index[0] && body.BlockId.Kind == "Loop") {
             // Propagate to outer body parents that enter the loop body.
             for (const parent of (body.BlockPPoint || [])) {
-                const parentBody = findMatchingBlock(bodies, parent.BlockId);
+                const parentBody = ffg.getBodyByBlockId(parent.BlockId);
                 work.push([parentBody, parent.Index, null, value]);
             }
 
@@ -265,7 +310,7 @@ function isMatchingDestructor(edge, constructed)
 // to treat each instance separately, such as when different regions of a
 // function body were guarded by these constructors and you needed to do
 // something different with each.)
-function allRAIIGuardedCallPoints(typeInfo, bodies, body)
+function allRAIIGuardedCallPoints(ffg, body)
 {
     if (!("PEdge" in body))
         return [];
@@ -273,9 +318,9 @@ function allRAIIGuardedCallPoints(typeInfo, bodies, body)
     var points = [];
 
     for (const edge of body.PEdge) {
-        const result = matchConstructorEdge(typeInfo, edge);
+        const result = matchConstructorEdge(ffg, edge);
         if (result && result.attrs != 0) {
-            points.push(...pointsInRAIIScope(bodies, body, edge, result.attrs, result.constructed));
+            points.push(...pointsInRAIIScope(ffg, body, edge, result.attrs, result.constructed));
         }
     }
 
@@ -337,7 +382,7 @@ function findMatchingConstructor(destructorEdge, body, warnIfNotFound=true)
 // Return an array of all points within the RAII scope, each point being a tuple
 // [<body>, <point>, <attributes>].
 //
-//   bodies - the set of all (loop) bodies for this function.
+//   ffg - information about the function being processed.
 //   body - the body containing the starting point.
 //   constructorEdge - the edge representing the constructor invocation. Used
 //     only to initialize the search to the point just after the ctor call.
@@ -346,7 +391,7 @@ function findMatchingConstructor(destructorEdge, body, warnIfNotFound=true)
 //   constructed - the variable that was constructed. For a regular constructor
 //     call, this could be trivially inferred from `constructorEdge`, but for
 //     inlined constexpr constructors, the caller needs to figure it out.
-function pointsInRAIIScope(bodies, body, constructorEdge, bits, constructed) {
+function pointsInRAIIScope(ffg, body, constructorEdge, bits, constructed) {
     var seen = {};
     var worklist = [constructorEdge.Index[1]];
     var points = [];
@@ -363,7 +408,7 @@ function pointsInRAIIScope(bodies, body, constructorEdge, bits, constructed) {
             if (isMatchingDestructor(nedge, constructed))
                 continue;
             if (nedge.Kind == "Loop")
-                points.push(...findAllPoints(bodies, nedge.BlockId, bits));
+                points.push(...findAllPoints(ffg, nedge.BlockId, bits));
             worklist.push(nedge.Index[1]);
         }
     }
@@ -513,7 +558,7 @@ function isReturningImmobileValue(edge, variable)
 //     obj = someFunction(obj);
 //     obj->foo = someFunction();
 //
-function edgeUsesVariable(typeInfo, edge, decl, body, liveToEnd=false)
+function edgeUsesVariable(ffg, edge, decl, body, liveToEnd=false)
 {
     const variable = decl.Variable;
 
@@ -545,7 +590,7 @@ function edgeUsesVariable(typeInfo, edge, decl, body, liveToEnd=false)
             return src;
         // Detect `...variable... := rhs` but not `variable := rhs`. The latter
         // overwrites the previous value of `variable` without using it.
-        if (expressionUsesVariable(lhs, variable) && !exprCoversVariable(typeInfo, lhs, decl)) {
+        if (expressionUsesVariable(lhs, variable) && !exprCoversVariable(ffg, lhs, decl)) {
             return src;
         }
         return 0;
@@ -560,7 +605,7 @@ function edgeUsesVariable(typeInfo, edge, decl, body, liveToEnd=false)
             return src;
         if ("PEdgeCallInstance" in edge) {
             if (expressionUsesVariable(edge.PEdgeCallInstance.Exp, variable)) {
-                if (edgeStartsValueLiveRange(typeInfo, edge, decl)) {
+                if (edgeStartsValueLiveRange(ffg, edge, decl)) {
                     // If the variable is being constructed, then the incoming
                     // value is not used here; it didn't exist before
                     // construction. (The analysis doesn't get told where
@@ -585,7 +630,7 @@ function edgeUsesVariable(typeInfo, edge, decl, body, liveToEnd=false)
 
         // Assigning call result to a variable.
         const lhs = edge.Exp[1];
-        if (expressionUsesVariable(lhs, variable) && !exprCoversVariable(typeInfo, lhs, decl))
+        if (expressionUsesVariable(lhs, variable) && !exprCoversVariable(ffg, lhs, decl))
             return src;
         return 0;
     }
@@ -627,14 +672,14 @@ function referencedCSUName(type) {
     }
 }
 
-function containsGCPointer(typeInfo, type) {
+function containsGCPointer(ffg, type) {
     if (type.Kind == "CSU") {
-        if (!(type.Name in typeInfo.AllGCPointers)) {
+        if (!(type.Name in ffg.typeInfo.AllGCPointers)) {
             return false;
         }
     } else if (type.Kind == "Pointer") {
         const pointeeType = type.Type;
-        if (pointeeType.Kind != "CSU" || !(pointeeType.Name in typeInfo.AllGCTypes)) {
+        if (pointeeType.Kind != "CSU" || !(pointeeType.Name in ffg.typeInfo.AllGCTypes)) {
             return false;
         }
     } else {
@@ -670,7 +715,7 @@ function containsGCPointer(typeInfo, type) {
 //    b.a = get_a_struct(); // Covers whole variable
 //    c.a1.obj = nullptr; // Does not cover whole variable (c.a2 was not overwritten)
 //
-function exprCoversVariable(typeInfo, exp, decl)
+function exprCoversVariable(ffg, exp, decl)
 {
     if (exp.Kind == "Var") {
         return sameVariable(exp.Variable, decl.Variable);
@@ -694,7 +739,7 @@ function exprCoversVariable(typeInfo, exp, decl)
 
         // Check that the innermost field assignment (eg x.f1.f2) is a GC
         // pointer type, since otherwise we're overwriting the wrong field.
-        if (!containsGCPointer(typeInfo, exp.Field.Type)) {
+        if (!containsGCPointer(ffg, exp.Field.Type)) {
             return false;
         }
 
@@ -705,7 +750,7 @@ function exprCoversVariable(typeInfo, exp, decl)
         let e = exp.Exp[0]; // Advance past the innermost field assignment (eg x.f1.f2 -> x.f1)
         while (e.Kind == "Fld") {
             const csu = referencedCSUName(e.Field.Type);
-            if (!csu || !(csu in typeInfo.SingleGCField)) {
+            if (!csu || !(csu in ffg.typeInfo.SingleGCField)) {
                 return false;
             }
             trail = e;
@@ -717,7 +762,7 @@ function exprCoversVariable(typeInfo, exp, decl)
         // type. Fortunately, we know we're accessing a field, and field
         // accesses contain the type of the Class/Struct/Union they are field
         // accesses of, so the innermost expr with Kind="Fld" has the type.
-        if (trail && !(trail.Field.FieldCSU.Type.Name in typeInfo.SingleGCField)) {
+        if (trail && !(trail.Field.FieldCSU.Type.Name in ffg.typeInfo.SingleGCField)) {
             return false;
         }
 
@@ -761,13 +806,13 @@ function expressionIsMethodOnVariableDecl(exp, decl)
 //     obj = foo(obj);         // uses previous value but then sets to new value
 //     SomeClass obj(true, 1); // constructor
 //
-function edgeStartsValueLiveRange(typeInfo, edge, decl)
+function edgeStartsValueLiveRange(ffg, edge, decl)
 {
     // Direct assignments start live range of lhs: var = value (but not
     // including <returnval> = nullptr).
     if (edge.Kind == "Assign") {
         const [lhs, rhs] = edge.Exp;
-        return (exprCoversVariable(typeInfo, lhs, decl) &&
+        return (exprCoversVariable(ffg, lhs, decl) &&
                 !isReturningImmobileValue(edge, decl.Variable));
     }
 
@@ -777,7 +822,7 @@ function edgeStartsValueLiveRange(typeInfo, edge, decl)
     // Assignments of call results start live range: var = foo()
     if (1 in edge.Exp) {
         var lhs = edge.Exp[1];
-        if (exprCoversVariable(typeInfo, lhs, decl))
+        if (exprCoversVariable(ffg, lhs, decl))
             return true;
     }
 
@@ -789,7 +834,7 @@ function edgeStartsValueLiveRange(typeInfo, edge, decl)
         if (instance.Kind == "Drf")
             instance = instance.Exp[0];
 
-        if (!exprCoversVariable(typeInfo, instance, decl))
+        if (!exprCoversVariable(ffg, instance, decl))
             return false;
 
         var callee = edge.Exp[0];
@@ -896,12 +941,12 @@ function parseTypeName(typeName) {
 //     foo(uobj);
 //     gc();
 //
-function edgeEndsValueLiveRange(typeInfo, edge, decl, body)
+function edgeEndsValueLiveRange(ffg, edge, decl, body)
 {
     if (edge.Kind == "Assign") {
         // [c++] somevar = nullptr;
         const [lhs, rhs] = edge.Exp;
-        if (exprCoversVariable(typeInfo, lhs, decl) && isImmobileValue(rhs)) {
+        if (exprCoversVariable(ffg, lhs, decl) && isImmobileValue(rhs)) {
             return true;
         }
         // Resetting a Maybe<> as part of a constexpr constructor.
@@ -970,7 +1015,7 @@ function edgeEndsValueLiveRange(typeInfo, edge, decl, body)
         // variable we care about.
 
         const lhs = edge.Exp[1].Variable;
-        if (basicBlockEatsVariable(typeInfo, lhs, body, edge.Index[1]))
+        if (basicBlockEatsVariable(ffg, lhs, body, edge.Index[1]))
           return true;
     }
 
@@ -1036,16 +1081,6 @@ function edgeEndsValueLiveRange(typeInfo, edge, decl, body)
     return false;
 }
 
-// Look up a variable in the list of declarations for this body.
-function lookupVariable(body, variable) {
-    for (const decl of (body.DefineVariable || [])) {
-        if (sameVariable(decl.Variable, variable)) {
-            return decl;
-        }
-    }
-    return undefined;
-}
-
 function edgeMovesVariable(edge, decl)
 {
     if (edge.Kind != 'Call')
@@ -1082,9 +1117,10 @@ function edgeMovesVariable(edge, decl)
 // Scan forward through the basic block in 'body' starting at 'startpoint',
 // looking for a call that passes 'variable' to a move constructor that
 // "consumes" it (eg UniquePtr::UniquePtr(UniquePtr&&)).
-function basicBlockEatsVariable(typeInfo, variable, body, startpoint)
+function basicBlockEatsVariable(ffg, variable, body, startpoint)
 {
-    let decl = lookupVariable(body, variable);
+    const decl = ffg.lookupDecl(variable);
+    assert(decl);
 
     const successors = getSuccessors(body);
     let point = startpoint;
@@ -1104,7 +1140,7 @@ function basicBlockEatsVariable(typeInfo, variable, body, startpoint)
         // a new value. Never observed in practice, since this function is only
         // called with a temporary resulting from std::move(), which is used
         // immediately for a call. But just to be robust to future uses:
-        if (edgeStartsValueLiveRange(typeInfo, edge, decl)) {
+        if (edgeStartsValueLiveRange(ffg, edge, decl)) {
             return false;
         }
 
@@ -1160,7 +1196,7 @@ function synthesizeDestructorName(className) {
     return mangled_dtor + "$" + pretty_dtor;
 }
 
-function getCallEdgeProperties(typeInfo, body, edge, calleeName, functionBodies) {
+function getCallEdgeProperties(ffg, body, edge, calleeName) {
     let attrs = 0;
     let extraCalls = [];
 
@@ -1231,7 +1267,7 @@ function getCallEdgeProperties(typeInfo, body, edge, calleeName, functionBodies)
     // the variable is used in any way that does *not* ensure that it is
     // trivially destructible.
 
-    const decl = lookupVariable(body, instance.Variable);
+    const decl = ffg.lookupDecl(instance.Variable);
 
     const visitor = new class DominatorVisitor extends Visitor {
         // Do not revisit nodes. For new nodes, relay the decision made by
@@ -1248,12 +1284,12 @@ function getCallEdgeProperties(typeInfo, body, edge, calleeName, functionBodies)
                 return "continue";
             }
 
-            if (!edgeUsesVariable(typeInfo, edge, decl, body)) {
+            if (!edgeUsesVariable(ffg, edge, decl, body)) {
                 // Nothing of interest on this edge, keep searching.
                 return "continue";
             }
 
-            if (edgeEndsValueLiveRange(typeInfo, edge, decl, body)) {
+            if (edgeEndsValueLiveRange(ffg, edge, decl, body)) {
                 // This path is safe!
                 return "prune";
             }
@@ -1262,7 +1298,7 @@ function getCallEdgeProperties(typeInfo, body, edge, calleeName, functionBodies)
             // nonzero refcount.
             return "done";
         }
-    }(functionBodies);
+    }(ffg);
 
     // Searching upwards from a destructor call, return the opposite of: is
     // there a path to a use or the start of the function that does NOT hit a
@@ -1270,7 +1306,7 @@ function getCallEdgeProperties(typeInfo, body, edge, calleeName, functionBodies)
     //
     // In graph terms: return whether the destructor call is dominated by forget() calls (or similar).
     const edgeIsNonReleasingDtor = !BFS_upwards(
-        body, edge.Index[0], functionBodies, visitor, "start",
+        body, edge.Index[0], ffg, visitor, "start",
         false // Return value if we do not reach the root without finding a non-forget() use.
     );
     if (edgeIsNonReleasingDtor) {

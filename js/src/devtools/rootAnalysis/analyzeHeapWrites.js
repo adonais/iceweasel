@@ -931,7 +931,7 @@ function get_location(rawLocation) {
     return addPrefix + filename + "#" + rawLocation.Line;
 }
 
-function process(entry, body, addCallee)
+function process(ffg, entry, body, addCallee)
 {
     if (!("PEdge" in body))
         return;
@@ -965,7 +965,7 @@ function process(entry, body, addCallee)
 
         var location = get_location(body.PPoint[edge.Index[0] - 1].Location);
 
-        var callees = getCallees(typeInfo, edge);
+        var callees = getCallees(ffg, body, edge);
         for (var callee of callees) {
             switch (callee.kind) {
             case "direct":
@@ -1096,10 +1096,11 @@ function processRoot(name)
             assignments = {};
             reachableLoops = {};
             var bodies = JSON.parse(dataString).reverse();
+            const ffg = new FunctionFlowGraph({ name: entry.name, bodies, typeInfo });
             for (var body of bodies) {
                 if (!body.BlockId.Loop || body.BlockId.Loop in reachableLoops) {
                     currentBody = body;
-                    process(entry, body, Array.prototype.push.bind(callees));
+                    process(ffg, entry, body, Array.prototype.push.bind(callees));
                 }
             }
         } else {
