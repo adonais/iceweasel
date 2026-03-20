@@ -87,6 +87,8 @@ skip-if = [
 
 ["test_storage_ext_fts5.js"]
 
+["test_storage_ext_percentile.js"]
+
 ["test_storage_ext_vec.js"]
 run-if = [
   "buildapp == 'browser'",
