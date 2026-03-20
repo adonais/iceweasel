@@ -358,7 +358,8 @@ export class AIWindow extends MozLitElement {
   handleEvent(event) {
     if (event.detail) {
       this.openConversation(event.detail);
-    } else if (!this.#conversation?.messages?.length) {
+    } else {
+      // Handle a null conversation reference by starting a new empty conversation
       this.onCreateNewChatClick();
     }
   }
@@ -454,7 +455,8 @@ export class AIWindow extends MozLitElement {
   }
 
   /**
-   * Loads a conversation if one is set on the data-conversation-id attribute.
+   * Loads a conversation if one is set on the data-conversation-id attribute
+   * on firstUpdated()
    */
   async #loadPendingConversation() {
     const conversationId = this.#getPendingConversationId();

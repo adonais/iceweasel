@@ -23,8 +23,6 @@ support-files = [
 
 ["browser_actor_user_prompt.js"]
 
-["browser_aiwindow_session_restore.js"]
-
 ["browser_aichat_content_actors.js"]
 
 ["browser_aichat_content_message_event.js"]
