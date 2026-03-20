@@ -3860,6 +3860,11 @@ nsresult nsDocShell::ReloadNavigable(
     nsIStructuredCloneContainer* aNavigationAPIState,
     UserNavigationInvolvement aUserInvolvement,
     NavigationAPIMethodTracker* aNavigationAPIMethodTracker) {
+  AUTO_PROFILER_MARKER_UNTYPED(
+      "nsDocShell:ReloadNavigable", DOM,
+      MarkerOptions(MarkerStack::Capture(),
+                    MarkerInnerWindowIdFromDocShell(this)));
+
   if (!IsNavigationAllowed()) {
     return NS_OK;  // JS may not handle returning of an error code
   }
