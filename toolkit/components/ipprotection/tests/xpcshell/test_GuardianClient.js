@@ -7,7 +7,7 @@ const { HttpServer, HTTP_404 } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
 const { GuardianClient } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs"
 );
 const { JsonSchemaValidator } = ChromeUtils.importESModule(
   "resource://gre/modules/components-utils/JsonSchemaValidator.sys.mjs"

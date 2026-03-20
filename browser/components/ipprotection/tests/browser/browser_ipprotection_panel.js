@@ -12,7 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionPanel:
     "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs",
   IPPProxyManager:
-    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
 });
 
 /**

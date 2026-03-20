@@ -7,7 +7,7 @@ const { IPProtectionPanel } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs"
 );
 const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
 );
 
 /**

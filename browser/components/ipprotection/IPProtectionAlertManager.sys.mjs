@@ -13,11 +13,11 @@ ChromeUtils.defineLazyGetter(lazy, "ipProtectionLocalization", () => {
 ChromeUtils.defineESModuleGetters(lazy, {
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
   IPPEnrollAndEntitleManager:
-    "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
   IPPProxyManager:
-    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPPProxyStates:
-    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
 });
 
 /**

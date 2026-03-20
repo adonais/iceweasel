@@ -5,13 +5,13 @@
 "use strict";
 
 const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
 );
 const { scheduleCallback } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
 );
 const { IPPStartupCache } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPStartupCache.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPStartupCache.sys.mjs"
 );
 
 add_setup(async function () {
@@ -806,7 +806,7 @@ add_task(async function test_IPPProxyManager_restores_cached_usage() {
   Services.prefs.setBoolPref("browser.ipProtection.cacheDisabled", false);
 
   const { ProxyUsage } = ChromeUtils.importESModule(
-    "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs"
+    "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs"
   );
 
   const cachedUsage = new ProxyUsage(
@@ -817,7 +817,7 @@ add_task(async function test_IPPProxyManager_restores_cached_usage() {
   IPPStartupCache.storeUsageInfo(cachedUsage);
 
   const { IPPProxyManager } = ChromeUtils.importESModule(
-    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs"
+    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
   );
   IPPProxyManager.init();
 

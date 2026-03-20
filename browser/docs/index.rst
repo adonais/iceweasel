@@ -28,7 +28,6 @@ This is the documentation for the code powering the Firefox Desktop front-end.
    places/index
    components/asrouter/docs/index
    search/index
-   ipprotection/index
    base/tabbrowser/index
    touchbar/index
    components/uitour/docs/index

@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-03-18T18:49:44.401390+00:00'
+updated_at: '2026-03-20T09:34:11.282579+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -3750,10 +3750,11 @@ modules:
         description: Built-in IP Protection (VPN) in the browser.
         includes:
           - browser/components/ipprotection/**/*
+          - toolkit/components/ipprotection/**/*
         meta:
           components:
             - Firefox::IP Protection
-          url: https://firefox-source-docs.mozilla.org/browser/ipprotection/
+          url: https://firefox-source-docs.mozilla.org/toolkit/ipprotection/
           review_group: ip-protection-reviewers
         owners:
           - *fchasen
@@ -4755,5 +4756,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 3e259c52e14ac4eff7c518c64cfbf5b0148ea9df
-  export: ca08d90e1fce6e8b05e9648a916bb809097080f3
+  config: 8a84000338470da76a72781426a74b0e160c8a2e
+  export: d1955b830228b17ffcf1ed35b2798978aeb77381

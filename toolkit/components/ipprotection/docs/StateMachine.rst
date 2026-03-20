@@ -60,7 +60,7 @@ Proxy transitions
   - Service ``READY`` → proxy ``READY`` (resets connection/error history).
   - Any other service state → proxy ``NOT_READY`` (stops active connections).
 - ``start(userAction)`` from ``READY`` moves to ``ACTIVATING``.
-  - Successful activation → ``ACTIVE`` and telemetry ``ipprotection.toggled``.
+  - Successful activation → ``ACTIVE`` and telemetry ``ipprotection.started``.
   - Failures during activation (missing entitlement, server list, proxy pass…) call ``updateState()`` to demote the proxy back to its previous state.
   - Errors after the proxy is connected  → ``ERROR`` via ``#setErrorState``.
 - ``stop(userAction)`` from ``ACTIVE`` → ``READY`` after closing the channel filter and observers.

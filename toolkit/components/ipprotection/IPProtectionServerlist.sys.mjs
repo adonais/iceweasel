@@ -9,13 +9,22 @@
 
 const lazy = {};
 
+ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
+  console.createInstance({
+    prefix: "IPProtectionServerlist",
+    maxLogLevel: Services.prefs.getBoolPref("browser.ipProtection.log", false)
+      ? "Debug"
+      : "Warn",
+  })
+);
+
 ChromeUtils.defineESModuleGetters(lazy, {
   IPPStartupCache:
-    "moz-src:///browser/components/ipprotection/IPPStartupCache.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPStartupCache.sys.mjs",
   IPProtectionService:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
 });
 
@@ -386,7 +395,9 @@ export class PrefServerList extends IPProtectionServerlistBase {
       const value = Services.prefs.getStringPref(this.PREF_NAME);
       return JSON.parse(value);
     } catch (e) {
-      console.error(`IPProtection: Error parsing serverlist pref value: ${e}`);
+      lazy.logConsole.error(
+        `IPProtection: Error parsing serverlist pref value: ${e}`
+      );
       return null;
     }
   }

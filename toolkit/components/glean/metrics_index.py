@@ -85,6 +85,7 @@ gecko_metrics = [
     "toolkit/components/formautofill/metrics.yaml",
     "toolkit/components/gecko-trace/generated-metrics.yaml",
     "toolkit/components/glean/metrics.yaml",
+    "toolkit/components/ipprotection/metrics.yaml",
     "toolkit/components/mediasniffer/metrics.yaml",
     "toolkit/components/messaging-system/metrics.yaml",
     "toolkit/components/ml/metrics.yaml",

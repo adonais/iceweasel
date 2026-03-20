@@ -19,13 +19,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionPanel:
     "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs",
   IPProtectionService:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   IPPSignInWatcher:
-    "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPSignInWatcher.sys.mjs",
   IPPNimbusHelper:
-    "moz-src:///browser/components/ipprotection/IPPNimbusHelper.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPNimbusHelper.sys.mjs",
   IPPEnrollAndEntitleManager:
-    "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
 });
 
 const PANELSTATES = {

@@ -4,10 +4,10 @@
 "use strict";
 
 const { IPPChannelFilter } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPChannelFilter.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPChannelFilter.sys.mjs"
 );
 const { IPPExceptionsManager } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPExceptionsManager.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
 );
 
 add_task(async function test_createConnection_and_proxy() {

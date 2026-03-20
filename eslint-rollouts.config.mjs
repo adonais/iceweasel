@@ -448,9 +448,9 @@ export default [
     // TODO: Bug 1997306. Fix these instances after the jsdoc 60.8.0 upgrade.
     name: "rollout-jsdoc-valid-types-updates",
     files: [
-      "browser/components/ipprotection/IPPNetworkErrorObserver.sys.mjs",
-      "browser/components/ipprotection/IPProtectionService.sys.mjs",
       "browser/components/uitour/UITour-lib.js",
+      "toolkit/components/ipprotection/IPPNetworkErrorObserver.sys.mjs",
+      "toolkit/components/ipprotection/IPProtectionService.sys.mjs",
     ],
     rules: {
       "jsdoc/valid-types": "off",

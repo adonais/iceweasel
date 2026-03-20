@@ -1,9 +1,8 @@
 Constants
 =========
 
-Shared constants for the IP Protection feature live in
-``content/ipprotection-constants.mjs`` and are imported by both the
-chrome-side modules and the content-side UI components.
+The ``ERRORS`` constants for the IP Protection feature are defined in
+``toolkit/components/ipprotection/IPPProxyManager.sys.mjs``.
 
 Error Codes
 -----------
@@ -40,6 +39,11 @@ the UI layer.
   Internal consistency guard: the abort controller was unexpectedly
   absent while stopping an in-progress activation. Should never occur
   in normal operation.
+
+``ERRORS.CANCELED``
+  The activation was canceled by calling ``stop()`` while the proxy was
+  still in the ``ACTIVATING`` state. The UI suppresses the error message
+  in this case.
 
 Error propagation
 ~~~~~~~~~~~~~~~~~

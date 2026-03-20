@@ -8,17 +8,15 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   GuardianClient:
-    "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs",
   IPPEnrollAndEntitleManager:
-    "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
-  IPPHelpers:
-    "moz-src:///browser/components/ipprotection/IPProtectionHelpers.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
   IPPNimbusHelper:
-    "moz-src:///browser/components/ipprotection/IPPNimbusHelper.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPNimbusHelper.sys.mjs",
   IPPSignInWatcher:
-    "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPSignInWatcher.sys.mjs",
   IPPStartupCache:
-    "moz-src:///browser/components/ipprotection/IPPStartupCache.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPStartupCache.sys.mjs",
 });
 
 const ENABLED_PREF = "browser.ipProtection.enabled";
@@ -57,7 +55,7 @@ class IPProtectionServiceSingleton extends EventTarget {
 
   #guardian = null;
 
-  #helpers = null;
+  #helpers = [];
 
   /**
    * Returns the state of the service. See the description of the state
@@ -80,8 +78,15 @@ class IPProtectionServiceSingleton extends EventTarget {
     super();
     this.updateState = this.#updateState.bind(this);
     this.setState = this.#setState.bind(this);
+  }
 
-    this.#helpers = lazy.IPPHelpers;
+  /**
+   * Sets the list of helpers to be initialized/uninitialized with the service.
+   *
+   * @param {Array} helpers
+   */
+  setHelpers(helpers) {
+    this.#helpers = helpers;
   }
 
   /**

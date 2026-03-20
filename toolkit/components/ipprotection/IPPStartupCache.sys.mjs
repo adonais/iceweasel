@@ -12,15 +12,15 @@ const lazy = {};
  */
 ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionService:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
-    "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
   IPPProxyManager:
-    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   Entitlement:
-    "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs",
   ProxyUsage:
-    "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs",
+    "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs",
 });
 
 const STATE_CACHE_PREF = "browser.ipProtection.stateCache";

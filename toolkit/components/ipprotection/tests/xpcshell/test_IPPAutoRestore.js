@@ -5,10 +5,10 @@
 "use strict";
 
 const { IPPAutoRestoreSingleton } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPAutoRestore.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPAutoRestore.sys.mjs"
 );
 const { IPProtectionServerlist } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPProtectionServerlist.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs"
 );
 
 add_setup(async function () {

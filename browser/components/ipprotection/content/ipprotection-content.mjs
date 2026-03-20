@@ -7,8 +7,11 @@ import { html, ifDefined } from "chrome://global/content/vendor/lit.all.mjs";
 import {
   BANDWIDTH,
   LINKS,
-  ERRORS,
 } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
+
+const { ERRORS } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
+);
 
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/ipprotection/ipprotection-message-bar.mjs";

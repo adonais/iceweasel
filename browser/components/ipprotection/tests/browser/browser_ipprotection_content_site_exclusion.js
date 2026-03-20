@@ -5,7 +5,7 @@
 "use strict";
 
 const { IPPExceptionsManager } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPExceptionsManager.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
 );
 
 const MOCK_SITE_NAME = "https://example.com";

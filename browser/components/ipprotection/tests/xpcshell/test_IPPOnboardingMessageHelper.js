@@ -30,6 +30,7 @@ add_task(async function test_IPPOnboardingMessage() {
     () => IPProtectionService.state === IPProtectionStates.READY
   );
 
+  IPPOnboardingMessage.init();
   IPProtectionService.init();
 
   await readyEventPromise;

@@ -4,7 +4,7 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
 const { IPPExceptionsManager } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPExceptionsManager.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
 );
 
 const EXCLUSION_CHANGED_EVENT = "IPPExceptionsManager:ExclusionChanged";

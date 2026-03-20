@@ -9,7 +9,7 @@ const {
   RemoteSettingsServerlist,
   IPProtectionServerlistFactory,
 } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPProtectionServerlist.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs"
 );
 
 const COLLECTION_NAME = "vpn-serverlist";

@@ -10,11 +10,11 @@ const { IPProtection, IPProtectionWidget } = ChromeUtils.importESModule(
 );
 
 const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs"
 );
 
 const { IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
 );
 
 const { IPProtectionAlertManager } = ChromeUtils.importESModule(
@@ -22,11 +22,11 @@ const { IPProtectionAlertManager } = ChromeUtils.importESModule(
 );
 
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPSignInWatcher.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPSignInWatcher.sys.mjs"
 );
 
 const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
 );
 
 const { HttpServer, HTTP_403 } = ChromeUtils.importESModule(
@@ -38,7 +38,7 @@ const { NimbusTestUtils } = ChromeUtils.importESModule(
 );
 
 const { Server } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPProtectionServerlist.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs"
 );
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -49,7 +49,7 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 const { ProxyPass, ProxyUsage, Entitlement } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/GuardianClient.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/GuardianClient.sys.mjs"
 );
 const { RemoteSettings } = ChromeUtils.importESModule(
   "resource://services-settings/remote-settings.sys.mjs"

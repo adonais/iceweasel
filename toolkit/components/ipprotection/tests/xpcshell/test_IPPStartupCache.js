@@ -5,7 +5,7 @@
 "use strict";
 
 const { IPPStartupCacheSingleton } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPStartupCache.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPStartupCache.sys.mjs"
 );
 
 /**

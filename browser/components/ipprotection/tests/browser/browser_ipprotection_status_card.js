@@ -8,7 +8,7 @@ const { LINKS, BANDWIDTH } = ChromeUtils.importESModule(
   "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
 );
 const { IPPExceptionsManager } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPExceptionsManager.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
 );
 
 const mockLocation = {

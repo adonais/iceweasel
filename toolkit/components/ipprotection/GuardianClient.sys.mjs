@@ -26,6 +26,14 @@ ChromeUtils.defineLazyGetter(
       "resource://gre/modules/components-utils/JsonSchemaValidator.sys.mjs"
     ).JsonSchemaValidator
 );
+ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
+  console.createInstance({
+    prefix: "GuardianClient",
+    maxLogLevel: Services.prefs.getBoolPref("browser.ipProtection.log", false)
+      ? "Debug"
+      : "Warn",
+  })
+);
 
 if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
   throw new Error("Guardian.sys.mjs should only run in the parent process");
@@ -204,7 +212,7 @@ export class GuardianClient {
     try {
       usage = ProxyUsage.fromResponse(response);
     } catch (error) {
-      console.warn(
+      lazy.logConsole.warn(
         "Usage headers missing or invalid, continuing without usage:",
         error
       );
@@ -227,7 +235,7 @@ export class GuardianClient {
       }
       return { pass, status, usage };
     } catch (error) {
-      console.error("Error parsing pass:", error);
+      lazy.logConsole.error("Error parsing pass:", error);
       return { status, error: "parse_error", usage };
     }
   }
@@ -293,7 +301,7 @@ export class GuardianClient {
     try {
       return ProxyUsage.fromResponse(response);
     } catch (error) {
-      console.warn(
+      lazy.logConsole.warn(
         "Usage headers missing or invalid, continuing without usage:",
         error
       );
@@ -414,7 +422,7 @@ export class ProxyPass extends EventTarget {
   static async fromResponse(response) {
     // if the response is not 200 return null
     if (!response.ok) {
-      console.error(
+      lazy.logConsole.error(
         `Failed to fetch proxy pass: ${response.status} ${response.statusText}`
       );
       return null;
@@ -426,12 +434,12 @@ export class ProxyPass extends EventTarget {
       const token = responseData?.token;
 
       if (!token || typeof token !== "string") {
-        console.error("Missing or invalid token in response");
+        lazy.logConsole.error("Missing or invalid token in response");
         return null;
       }
       return new ProxyPass(token);
     } catch (error) {
-      console.error("Error parsing proxy pass response:", error);
+      lazy.logConsole.error("Error parsing proxy pass response:", error);
       return null;
     }
   }

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { IPPProxyManager } from "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs";
+import { IPPProxyManager } from "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs";
 import { BANDWIDTH } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
 
 /**

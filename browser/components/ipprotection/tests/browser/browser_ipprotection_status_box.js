@@ -4,8 +4,11 @@
 
 "use strict";
 
-const { BANDWIDTH, LINKS, ERRORS } = ChromeUtils.importESModule(
+const { BANDWIDTH, LINKS } = ChromeUtils.importESModule(
   "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
+);
+const { ERRORS } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
 );
 const lazy = {};
 

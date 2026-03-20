@@ -5,10 +5,10 @@
 "use strict";
 
 const { ERRORS } = ChromeUtils.importESModule(
-  "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs"
 );
 const { IPPNetworkUtils } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/ipprotection/IPPNetworkUtils.sys.mjs"
+  "moz-src:///toolkit/components/ipprotection/IPPNetworkUtils.sys.mjs"
 );
 
 /**
