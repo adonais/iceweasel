@@ -5,7 +5,7 @@
 // @ts-check
 
 /**
- * @import { GetTextOptions, GetDOMOptions, CanvasSnapshot, ExtractionResult, PageMetadata } from './PageExtractor.d.ts'
+ * @import { GetTextOptions, CanvasSnapshot, ExtractionResult, PageMetadata, ReaderModeDocument } from './PageExtractor.d.ts'
  * @import { PageExtractorParent } from './PageExtractorParent.sys.mjs'
  */
 
@@ -65,6 +65,7 @@ export class PageExtractorChild extends JSWindowActorChild {
             canvasSnapshots: [],
           };
         }
+        await this.waitForPageReady();
         return this.getText(data);
       case "PageExtractorParent:WaitForPageReady":
         return this.waitForPageReady();
@@ -233,19 +234,20 @@ export class PageExtractorChild extends JSWindowActorChild {
       return EMPTY_EXTRACTION_RESULT;
     }
 
-    const article = await lazy.ReaderMode.parseDocument(document);
-    if (!article) {
+    /** @type {ReaderModeDocument} */
+    const readerModeDocument = await lazy.ReaderMode.parseDocument(document);
+    if (!readerModeDocument) {
       return EMPTY_EXTRACTION_RESULT;
     }
 
-    let text = (article?.textContent || "")
-      .trim()
-      // Replace duplicate whitespace with either a single newline or space
-      .replace(/(\s*\n\s*)|\s{2,}/g, (_, newline) => (newline ? "\n" : " "));
+    const { textContent, title } = readerModeDocument;
 
-    if (article.title) {
-      text = article.title + "\n\n" + text;
+    let text = collapseWhitespace(textContent);
+
+    if (title) {
+      text = title + "\n\n" + text;
     }
+
     lazy.console.log("GetReaderModeContent", { force });
     lazy.console.debug(text);
 
@@ -420,4 +422,76 @@ export class PageExtractorChild extends JSWindowActorChild {
       return null;
     }
   }
+}
+
+/**
+ * Reader mode provides the textContent of the HTMLElement and not the innerText so the
+ * whitespace is not de-duplicated. This algorithm maintains at most 2 newlines in
+ * some whitespace, or 1 whitespace character. Only "\n" and " " are retained. This is
+ * similar to the whitespace collapsing behavior of rendered HTML. Note that this
+ * algorithm ignores Unicode whitespace characters, which are a larger set of potential
+ * characters.
+ *
+ * https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Text/Whitespace
+ *
+ * So:
+ *   "\t\n \t"       => "\n"
+ *   "\t\n \t\n\n\n" => "\n\n"
+ *   "example     text" => "example text"
+ *   "\n\r"      => ""
+ *
+ * @param {string} textContent
+ * @returns {string}
+ */
+function collapseWhitespace(textContent) {
+  textContent = textContent.trim();
+  let text = "";
+  let prevWasWhitespace = false;
+  let newLinesCount = 0;
+
+  for (let i = 0; i < textContent.length; i++) {
+    const ch = textContent[i];
+
+    if (
+      // Is this a whitespace character that is used in HTML whitespace collapsing?
+      ch === " " ||
+      ch === "\n" ||
+      ch === "\t" ||
+      ch === "\r"
+    ) {
+      // Remember that there was whitespace and count the newlines.
+      if (ch === "\n") {
+        newLinesCount++;
+      }
+      prevWasWhitespace = true;
+    } else {
+      // There is a character that needs to be added. Also add any whitespace that
+      // was encountered.
+
+      if (prevWasWhitespace) {
+        // Add the collapsed version of the whitespace.
+        if (newLinesCount == 0) {
+          text += " ";
+        } else if (newLinesCount == 1) {
+          text += "\n";
+        } else {
+          text += "\n\n";
+        }
+        // Reset the whitespace tracking varaibles.
+        newLinesCount = 0;
+        prevWasWhitespace = false;
+      }
+
+      // Add the next character.
+      text += ch;
+    }
+  }
+
+  if (prevWasWhitespace) {
+    throw new Error(
+      "Expected all of the trailing whitespace to be handled by String#trim"
+    );
+  }
+
+  return text;
 }

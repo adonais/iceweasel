@@ -85,6 +85,136 @@ add_task(async function test_dom_extractor_sufficient_length_option() {
 });
 
 add_task(
+  async function test_dom_extractor_sufficient_length_with_reader_mode() {
+    const { actor, cleanup } = await html`
+      <article>
+        <p>
+          This is some article text that has some kind of sufficient length. It
+          is going to try and get some text at a sentence boundary.
+        </p>
+      </article>
+    `;
+
+    const sufficientLength =
+      "This is some article text that has some kind of sufficient length. It is going to try and"
+        .length;
+
+    is(
+      (
+        await actor.getText({
+          sufficientLength,
+          removeBoilerplate: true,
+          _forceRemoveBoilerplate: true,
+        })
+      ).text,
+      "This is some article text that has some kind of sufficient length.",
+      `The text is cutoff at a period.`
+    );
+
+    return cleanup();
+  }
+);
+
+add_task(async function test_dom_extractor_whitespace_collapse_reader_mode() {
+  // prettier-ignore
+  const { actor, cleanup } = await html`
+      <article>
+        <!-- A single newlines by count -->
+        <pre>newlines\nrepeated</pre>
+        <pre>newlines\n\nrepeated</pre>
+        <pre>newlines\n\n\nrepeated</pre>
+        <pre>newlines\n\n\n\nrepeated</pre>
+
+        <!-- Mixed newline and spaces -->
+        <pre>mixed\t\n \t newlines</pre>
+        <pre>mixed\t\n \t \nnewlines</pre>
+        <pre>mixed\t\n \t\r \n \n \tnewlines</pre>
+
+        <!-- Space behavior -->
+        <pre>space behavior</pre>
+        <pre>space  behavior</pre>
+        <pre>space   behavior</pre>
+        <pre>space\tbehavior</pre>
+        <pre>space\t \tbehavior</pre>
+      </article>
+    `;
+
+  is(
+    (
+      await actor.getText({
+        removeBoilerplate: true,
+        _forceRemoveBoilerplate: true,
+      })
+    ).text,
+    [
+      "newlines\nrepeated",
+      "newlines\n\nrepeated",
+      "newlines\n\nrepeated",
+      "newlines\n\nrepeated",
+      "",
+      "mixed\nnewlines",
+      "mixed\n\nnewlines",
+      "mixed\n\nnewlines",
+      "",
+      "space behavior",
+      "space behavior",
+      "space behavior",
+      "space behavior",
+      "space behavior",
+    ].join("\n"),
+    `Whitespace is collapsed in various capacities.`
+  );
+
+  return cleanup();
+});
+
+/**
+ * Test whitespace collapse behavior.
+ */
+add_task(async function test_dom_extractor_normalize_whitespace() {
+  // Ignore prettier since newlines get rewritten making this test case harder to read.
+  // prettier-ignore
+  const { actor, cleanup } = await html`
+    <!-- The HTML algorithm already collapses whitespace -->
+    <p>aaaa      aaaa</p>
+    <p>bbbb\n\n\ncccc</p>
+
+    <!-- Multiple blank tags are ignored -->
+    <p></p>
+    <p></p>
+    <p></p>
+
+    <!-- Even random types of whitespace is ignored. -->
+    <p> </p>
+    <p>&nbsp;</p>
+    <p>&#9;</p>
+
+    <!-- Here the whitespace is preserved -->
+    <pre>dddd      dddd</pre>
+    <pre>eeee\n\n\nffff</pre>
+  `;
+
+  is(
+    (await actor.getText()).text,
+
+    [
+      // The whitespace is removed by the html rendering algorithm..
+      "aaaa aaaa",
+      "bbbb cccc",
+      // The whitespace is preserved by the <pre> tag.
+      "dddd      dddd",
+      "eeee",
+      "",
+      "",
+      "ffff",
+    ].join("\n"),
+    `DOMExtractor has correct whitespace behavior.`
+  );
+
+  await cleanup();
+});
+
+add_task(
   async function test_dom_extractor_ignores_hidden_and_collapsed_nodes() {
     const { actor, cleanup } = await html`
       <article>
