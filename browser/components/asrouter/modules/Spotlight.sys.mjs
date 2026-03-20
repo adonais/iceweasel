@@ -16,16 +16,6 @@ ChromeUtils.defineLazyGetter(
 );
 
 export const Spotlight = {
-  _dialog: null,
-
-  get isOpen() {
-    return !!this._dialog;
-  },
-
-  close() {
-    this._dialog?.close();
-  },
-
   sendUserEventTelemetry(event, message, dispatch) {
     const ping = {
       message_id: message.content.id,
@@ -69,27 +59,18 @@ export const Spotlight = {
     this.sendUserEventTelemetry("IMPRESSION", message, dispatchCFRAction);
     dispatchCFRAction({ type: "IMPRESSION", data: message });
 
-    try {
-      if (message.content?.modal === "tab") {
-        let { closedPromise, dialog } = win.gBrowser
-          .getTabDialogBox(browser)
-          .open(
-            spotlight_url,
-            {
-              features: "resizable=no",
-              allowDuplicateDialogs: false,
-            },
-            message.content
-          );
-        this._dialog = dialog;
-        await closedPromise;
-      } else {
-        let openPromise = win.gDialogBox.open(spotlight_url, message.content);
-        this._dialog = win.gDialogBox.dialog;
-        await openPromise;
-      }
-    } finally {
-      this._dialog = null;
+    if (message.content?.modal === "tab") {
+      let { closedPromise } = win.gBrowser.getTabDialogBox(browser).open(
+        spotlight_url,
+        {
+          features: "resizable=no",
+          allowDuplicateDialogs: false,
+        },
+        message.content
+      );
+      await closedPromise;
+    } else {
+      await win.gDialogBox.open(spotlight_url, message.content);
     }
 
     // If dismissed report telemetry and exit
