@@ -3490,7 +3490,7 @@ SettingGroupManager.registerGroups({
         control: "moz-box-link",
         l10nId: "ip-protection-vpn-upgrade-link",
         controlAttrs: {
-          href: "https://www.mozilla.org/products/vpn/",
+          href: "https://www.mozilla.org/products/vpn/?utm_medium=fx-desktop&utm_campaign=fx-vpn&utm_source=settings",
         },
       },
     ],
