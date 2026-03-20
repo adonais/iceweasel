@@ -30,8 +30,8 @@ class VideoCaptureFactory : webrtc::VideoCaptureOptions::Callback {
 
   VideoCaptureFactory();
 
-  std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> CreateDeviceInfo(
-      mozilla::camera::CaptureDeviceType aType);
+  virtual std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo>
+  CreateDeviceInfo(mozilla::camera::CaptureDeviceType aType);
 
   struct CreateVideoCaptureResult {
     webrtc::scoped_refptr<webrtc::VideoCaptureModule> mCapturer;
@@ -40,7 +40,7 @@ class VideoCaptureFactory : webrtc::VideoCaptureOptions::Callback {
     webrtc::DesktopCaptureImpl* mDesktopImpl = nullptr;
   };
 
-  CreateVideoCaptureResult CreateVideoCapture(
+  virtual CreateVideoCaptureResult CreateVideoCapture(
       int32_t aCaptureId, const char* aUniqueId,
       mozilla::camera::CaptureDeviceType aType);
 
@@ -70,8 +70,10 @@ class VideoCaptureFactory : webrtc::VideoCaptureOptions::Callback {
    */
   void Invalidate();
 
- private:
+ protected:
   ~VideoCaptureFactory() = default;
+
+ private:
   // aka OnCameraBackendInitialized
   // this method override has to follow webrtc::VideoCaptureOptions::Callback
   void OnInitialized(webrtc::VideoCaptureOptions::Status status) override;
