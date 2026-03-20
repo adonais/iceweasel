@@ -103,6 +103,8 @@ html {
   .screen[pos='split'][fullscreen] {
     .section-main {
       .main-content {
+        text-align: start;
+
         .welcome-text {
           margin-block: 15px 22px;
 
@@ -143,6 +145,7 @@ html {
   --tile-info-hover-background-color: oklch(from var(--color-violet-10) l c h / 30%);
   --screen-1-yellow-circle-background-color: var(--color-purple-60);
   --screen-2-yellow-circle-background-color: var(--color-pink-50);
+  --message-bar-icon-color: light-dark(var(--color-blue-60), var(--color-blue-20));
 
   @media (forced-colors: active) {
     --picker-background-color: ButtonFace;
@@ -1790,6 +1793,10 @@ html {
 
       .cta-paragraph-icon {
         display: inline-block;
+        fill: currentColor;
+        stroke: currentColor;
+        color: var(--message-bar-icon-color);
+        -moz-context-properties: fill, stroke;
       }
 
       &.info-tile {
@@ -1798,6 +1805,7 @@ html {
         border-radius: var(--border-radius-small);
         border: 1px solid var(--card-border-color);
         padding: 10px 12px;
+        gap: 0.5em;
       }
 
       a {

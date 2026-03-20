@@ -29,13 +29,14 @@ export const CTAParagraph = props => {
       }}
     >
       <div className="cta-paragraph-icon-wrapper">
-        <div
+        <img
           className="cta-paragraph-icon"
+          src={content?.icon?.iconURL}
           style={AboutWelcomeUtils.getValidStyle(
             content?.icon,
             CONFIGURABLE_STYLES
           )}
-        ></div>
+        ></img>
       </div>
       <Localized text={content.text}>
         {content.text.string_name && typeof handleAction === "function" ? (

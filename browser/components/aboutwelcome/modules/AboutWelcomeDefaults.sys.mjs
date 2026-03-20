@@ -89,8 +89,7 @@ const MR_ABOUT_WELCOME_DEFAULT = {
         },
         cta_paragraph: {
           icon: {
-            background:
-              "center / contain no-repeat url('chrome://global/skin/icons/info.svg')",
+            iconURL: "chrome://global/skin/icons/info-filled.svg",
             height: "16px",
             width: "16px",
             marginInline: "0 4px",

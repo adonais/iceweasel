@@ -360,15 +360,17 @@ export default class RestoreFromBackup extends MozLitElement {
     }
     return html`
       <fieldset id="backup-restore-controls">
-        <div>
-          <a
-            id="restore-from-backup-support-link"
-            slot="support-link"
-            is="moz-support-link"
-            support-page="firefox-backup"
-            data-l10n-id="restore-from-backup-support-link1"
-          ></a>
-        </div>
+        ${this.aboutWelcomeEmbedded
+          ? null
+          : html`<div>
+              <a
+                id="restore-from-backup-support-link"
+                slot="support-link"
+                is="moz-support-link"
+                support-page="firefox-backup"
+                data-l10n-id="restore-from-backup-support-link1"
+              ></a>
+            </div>`}
         <fieldset id="backup-filepicker-controls">
           <label
             id="backup-filepicker-label"

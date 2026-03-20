@@ -1091,6 +1091,9 @@ html {
   min-height: 100vh;
 }
 
+.onboardingContainer:has(.embedded-backup-restore-container) .screen[pos=split][fullscreen] .section-main .main-content {
+  text-align: start;
+}
 .onboardingContainer:has(.embedded-backup-restore-container) .screen[pos=split][fullscreen] .section-main .main-content .welcome-text {
   margin-block: 15px 22px;
 }
@@ -1126,6 +1129,7 @@ html {
   --tile-info-hover-background-color: oklch(from var(--color-violet-10) l c h / 30%);
   --screen-1-yellow-circle-background-color: var(--color-purple-60);
   --screen-2-yellow-circle-background-color: var(--color-pink-50);
+  --message-bar-icon-color: light-dark(var(--color-blue-60), var(--color-blue-20));
   font-family: system-ui;
   font-size: 16px;
   position: relative;
@@ -2736,6 +2740,10 @@ html {
 }
 .onboardingContainer .welcome-text .cta-paragraph .cta-paragraph-icon {
   display: inline-block;
+  fill: currentColor;
+  stroke: currentColor;
+  color: var(--message-bar-icon-color);
+  -moz-context-properties: fill, stroke;
 }
 .onboardingContainer .welcome-text .cta-paragraph.info-tile {
   display: flex;
@@ -2743,6 +2751,7 @@ html {
   border-radius: var(--border-radius-small);
   border: 1px solid var(--card-border-color);
   padding: 10px 12px;
+  gap: 0.5em;
 }
 .onboardingContainer .welcome-text .cta-paragraph a {
   margin: 0;
