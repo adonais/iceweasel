@@ -37,6 +37,21 @@ namespace mozilla {
           ("MFMediaEngineParent=%p, Id=%" PRId64 ", " msg, this, this->Id(), \
            ##__VA_ARGS__))
 
+// Helper for IPC handler methods that set up the CDM: log the failure,
+// notify the content process with a fatal error, and return IPC_OK() so
+// the IPC channel stays alive.
+#define CDM_SETUP_IPC_RETURN_IF_FAILED(rv, description)             \
+  do {                                                              \
+    if (MOZ_UNLIKELY(FAILED(rv))) {                                 \
+      LOG(description " failed, hr=%lx", rv);                       \
+      (void)SendNotifyError(                                        \
+          MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,                 \
+                      nsPrintfCString(description " (hr=%lx)", rv), \
+                      Some(static_cast<int32_t>(rv))));             \
+      return IPC_OK();                                              \
+    }                                                               \
+  } while (false)
+
 using MediaEngineMap = nsTHashMap<nsUint64HashKey, MFMediaEngineParent*>;
 static StaticAutoPtr<MediaEngineMap> sMediaEngines;
 
@@ -295,7 +310,7 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
   switch (aError) {
     case MF_MEDIA_ENGINE_ERR_ABORTED:
     case MF_MEDIA_ENGINE_ERR_NETWORK:
-      // We ignore these two because we fetch data by ourselves.
+      // We ignore these because we fetch data by ourselves.
       return;
     case MF_MEDIA_ENGINE_ERR_DECODE: {
       MediaResult error(NS_ERROR_DOM_MEDIA_DECODE_ERR,
@@ -518,24 +533,30 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
   LOG("SetCDMProxy, Id=%" PRIu64, aProxyId);
   MFCDMParent* cdmParent = MFCDMParent::GetCDMById(aProxyId);
   MOZ_DIAGNOSTIC_ASSERT(cdmParent);
-  RETURN_PARAM_IF_FAILED(
-      MakeAndInitialize<MFContentProtectionManager>(&mContentProtectionManager),
-      IPC_OK());
+  HRESULT rv =
+      MakeAndInitialize<MFContentProtectionManager>(&mContentProtectionManager);
+  CDM_SETUP_IPC_RETURN_IF_FAILED(rv,
+                                 "Failed to create content protection manager");
 
   ComPtr<IMFMediaEngineProtectedContent> protectedMediaEngine;
-  RETURN_PARAM_IF_FAILED(mMediaEngine.As(&protectedMediaEngine), IPC_OK());
-  RETURN_PARAM_IF_FAILED(protectedMediaEngine->SetContentProtectionManager(
-                             mContentProtectionManager.Get()),
-                         IPC_OK());
+  rv = mMediaEngine.As(&protectedMediaEngine);
+  CDM_SETUP_IPC_RETURN_IF_FAILED(rv, "Failed to get protected media engine");
+
+  rv = protectedMediaEngine->SetContentProtectionManager(
+      mContentProtectionManager.Get());
+  CDM_SETUP_IPC_RETURN_IF_FAILED(rv,
+                                 "Failed to set content protection manager");
 
   RefPtr<MFCDMProxy> proxy = cdmParent->GetMFCDMProxy();
   if (!proxy) {
     LOG("Failed to get MFCDMProxy!");
+    (void)SendNotifyError(
+        MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR, "Failed to get CDM proxy"));
     return IPC_OK();
   }
 
-  RETURN_PARAM_IF_FAILED(mContentProtectionManager->SetCDMProxy(proxy),
-                         IPC_OK());
+  rv = mContentProtectionManager->SetCDMProxy(proxy);
+  CDM_SETUP_IPC_RETURN_IF_FAILED(rv, "Failed to set CDM proxy");
   // TODO : is it possible to set CDM proxy before creating media source? If so,
   // handle that as well.
   if (mMediaSource) {
