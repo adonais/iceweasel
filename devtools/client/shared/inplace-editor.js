@@ -40,6 +40,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   getAutocompleteDataForColorFunction:
     "resource://devtools/client/shared/inplace-editor-utils/autocomplete-color-function.mjs",
+  getAutocompleteDataForAnchorFunction:
+    "resource://devtools/client/shared/inplace-editor-utils/autocomplete-anchor-function.mjs",
 });
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
@@ -83,6 +85,22 @@ const GRID_COL_PROPERTY_NAMES = [
   "grid-column-start",
   "grid-column-end",
 ];
+const ACCEPT_ANCHOR_PROPERTY_NAMES = new Set([
+  // position-anchor directly accepts anchor names
+  "position-anchor",
+  //  inset properties that accept an anchor() function as a value
+  "top",
+  "left",
+  "bottom",
+  "right",
+  "inset",
+  "inset-block-start",
+  "inset-block-end",
+  "inset-block",
+  "inset-inline-start",
+  "inset-inline-end",
+  "inset-inline",
+]);
 
 /**
  * Helper to check if the provided key matches one of the expected keys.
@@ -1192,7 +1210,10 @@ class InplaceEditor extends EventEmitter {
       this.gridLineNames = await getGridLineNames();
     }
 
-    if (getCssAnchors && this.property?.name === "position-anchor") {
+    if (
+      getCssAnchors &&
+      ACCEPT_ANCHOR_PROPERTY_NAMES.has(this.property?.name)
+    ) {
       this.anchorNames = await getCssAnchors();
     }
 
@@ -1670,11 +1691,20 @@ class InplaceEditor extends EventEmitter {
             if (currentFunction) {
               currentFunction.tokens.push(token);
             }
-          } else if (currentFunction && currentFunction.tokens.length) {
-            // Here we have a whitespace or a comment, we don't want to put them in the
+          }
+          if (
+            currentFunction &&
+            currentFunction.tokens.length &&
+            // If we have a whitespace or a comment, we don't want to put them in the
             // list of tokens, but we can mark the last token as "complete".
             // This way we can differentiate between an incomplete item that we should
             // autocomplete (e.g. `color(f`)), and one for which we shouldn't (e.g. `color(from `))
+            (token.tokenType === "WhiteSpace" ||
+              token.tokenType === "Comment" ||
+              // We also want to have comma or delimiter marked as complete
+              token.tokenType === "Comma" ||
+              token.tokenType === "Delim")
+          ) {
             currentFunction.tokens.at(-1).complete = true;
           }
           if (
@@ -1912,6 +1942,13 @@ class InplaceEditor extends EventEmitter {
       return null;
     }
 
+    if (functionName === "anchor") {
+      return lazy.getAutocompleteDataForAnchorFunction({
+        functionTokens: functionStackEntry.tokens,
+        anchorNames: this.anchorNames,
+      });
+    }
+
     if (functionName === "var") {
       return this.#getAutocompleteDataForVarFunction(functionStackEntry);
     }
@@ -1928,8 +1965,7 @@ class InplaceEditor extends EventEmitter {
       });
     }
 
-    // TODO: Handle other functions, e.g. `anchor()` to display existing anchor names (Bug 2023114)
-
+    // For unhandled functions, return an empty list
     return { list: [] };
   }
 

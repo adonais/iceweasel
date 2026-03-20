@@ -11,6 +11,19 @@ add_task(async function () {
     "none",
     ...InspectorUtils.getCSSWideKeywords(),
   ].sort();
+  const ANCHOR_SIDES = [
+    "bottom",
+    "center",
+    "end",
+    "inside",
+    "left",
+    "outside",
+    "right",
+    "self-end",
+    "self-start",
+    "start",
+    "top",
+  ];
 
   await addTab(TEST_URL);
   const { inspector, view } = await openRuleView();
@@ -28,6 +41,17 @@ add_task(async function () {
       ...COMMON_ITEMS,
     ],
   });
+  await autocompleteInsetAnchorFunction({
+    inspector,
+    view,
+    ruleIndex: 1,
+    expectedItems: [
+      "--anchor-alias",
+      "--another-anchor",
+      "--my-anchor",
+      ...ANCHOR_SIDES,
+    ],
+  });
 
   info("Select non absolutely positioned element");
   await selectNode("#not-abs-pos", inspector);
@@ -36,6 +60,13 @@ add_task(async function () {
     view,
     ruleIndex: 1,
     expectedItems: COMMON_ITEMS,
+  });
+  await autocompleteInsetAnchorFunction({
+    inspector,
+    view,
+    ruleIndex: 1,
+    // no anchors for non absolutely positioned elements
+    expectedItems: ANCHOR_SIDES,
   });
 
   info("Select pseudo element");
@@ -58,6 +89,19 @@ add_task(async function () {
       ...COMMON_ITEMS,
     ],
   });
+  await autocompleteInsetAnchorFunction({
+    inspector,
+    view,
+    ruleIndex: 0,
+    expectedItems: [
+      "--anchor-alias",
+      "--another-anchor",
+      // we're getting the abs-pos anchor since #with-pseudo is placed after #abs-pos-anchor
+      "--my-abs-pos-anchor",
+      "--my-anchor",
+      ...ANCHOR_SIDES,
+    ],
+  });
 
   info("Select shadow dom element");
   const nodeFrontInShadowDom = await getNodeFrontInShadowDom(
@@ -74,6 +118,16 @@ add_task(async function () {
       "--my-shadow-anchor",
       "--shadow-anchor-alias",
       ...COMMON_ITEMS,
+    ],
+  });
+  await autocompleteInsetAnchorFunction({
+    inspector,
+    view,
+    ruleIndex: 1,
+    expectedItems: [
+      "--my-shadow-anchor",
+      "--shadow-anchor-alias",
+      ...ANCHOR_SIDES,
     ],
   });
 });
@@ -106,6 +160,51 @@ async function autocompletePositionAnchor({
     popupItems.map(item => item.label),
     expectedItems,
     "Popup has expected items"
+  );
+
+  info("Close the popup");
+  const onPopupClosed = editor.popup.once("popup-closed");
+  EventUtils.synthesizeKey("KEY_Escape", {}, view.styleWindow);
+  await onPopupClosed;
+
+  info("Hit Escape to cancel the edit");
+  const onRuleViewChanged = view.once("ruleview-changed");
+  EventUtils.synthesizeKey("KEY_Escape", {}, view.styleWindow);
+  await onRuleViewChanged;
+}
+
+async function autocompleteInsetAnchorFunction({
+  inspector,
+  view,
+  ruleIndex,
+  expectedItems,
+}) {
+  const positionAnchorProp = getTextProperty(view, ruleIndex, {
+    inset: "initial",
+  });
+
+  info("Focusing the value of the inset declaration");
+  const anchorNamesUpdated = inspector.once("anchor-names-updated");
+  const editor = await focusEditableField(
+    view,
+    positionAnchorProp.editor.valueSpan
+  );
+  await anchorNamesUpdated;
+
+  const onPopupOpened = once(editor.popup, "popup-opened");
+
+  // fill the input with "anchor" and then actually type the opening parenthesis so we
+  // get the proper autocomplete.
+  editor.input.value = "anchor";
+  EventUtils.synthesizeKey("(", {}, view.styleWindow);
+  await onPopupOpened;
+
+  ok(editor.popup.isOpen, "Popup is open for the anchor() function");
+  const popupItems = editor.popup.getItems();
+  Assert.deepEqual(
+    popupItems.map(item => item.label),
+    expectedItems,
+    "Popup for anchor() has expected items"
   );
 
   info("Close the popup");

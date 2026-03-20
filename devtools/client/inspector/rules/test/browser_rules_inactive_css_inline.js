@@ -166,13 +166,13 @@ add_task(async function () {
 
   info("Set an inactive property on the element style");
   const inlineStyleRuleIndex = 1;
-  await addProperty(view, inlineStyleRuleIndex, "left", "10px");
+  await addProperty(view, inlineStyleRuleIndex, "flex-grow", "1");
   await checkDeclarationIsInactive(
     view,
     inlineStyleRuleIndex,
     {
-      left: "10px",
+      "flex-grow": "1",
     },
-    "inactive-css-position-property-on-unpositioned-box"
+    "inactive-css-not-flex-item"
   );
 });

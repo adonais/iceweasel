@@ -22,11 +22,13 @@
 
   #not-abs-pos {
     position-anchor: initial;
+    inset: initial;
   }
 
   .abs-pos {
     position: absolute;
     position-anchor: initial;
+    inset: initial;
   }
 
   #with-pseudo::before {
@@ -36,6 +38,7 @@
     height: 10px;
     position: absolute;
     position-anchor: initial;
+    inset: initial;
   }
 </style>
 
@@ -59,6 +62,7 @@
     .shadow-abs-pos {
       position: absolute;
       position-anchor: initial;
+      inset: initial;
     }
   `);
   const shadow = document.getElementById("host").attachShadow({ mode: "open" });
