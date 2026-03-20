@@ -2568,7 +2568,12 @@ nsTHashMap<SourceId, IndexIntoSourceTable>
 ProfileBuffer::StreamSourceTableToJSON(
     SpliceableJSONWriter& aWriter,
     const nsTArray<mozilla::JSSourceEntry>& aJSSourceEntries) const {
-  enum Schema : uint32_t { UUID = 0, FILENAME = 1 };
+  enum Schema : uint32_t {
+    UUID = 0,
+    FILENAME = 1,
+    START_LINE = 2,
+    START_COLUMN = 3
+  };
   nsTHashMap<SourceId, IndexIntoSourceTable> sourceIdToIndexMap;
 
   aWriter.StartObjectProperty("sources");
@@ -2578,6 +2583,8 @@ ProfileBuffer::StreamSourceTableToJSON(
       JSONSchemaWriter schema(aWriter);
       schema.WriteField("uuid");
       schema.WriteField("filename");
+      schema.WriteField("startLine");
+      schema.WriteField("startColumn");
     }
 
     // Write data array and build sourceId-to-index mapping.
@@ -2604,6 +2611,8 @@ ProfileBuffer::StreamSourceTableToJSON(
           // Currently string tables are per-thread.
           aWriter.StringElement(MakeStringSpan(entry.uuid.get()));
           aWriter.StringElement(MakeStringSpan(entry.sourceData.filePath()));
+          aWriter.IntElement(entry.sourceData.startLine());
+          aWriter.IntElement(entry.sourceData.startColumn());
         }
         aWriter.EndArray();
 
