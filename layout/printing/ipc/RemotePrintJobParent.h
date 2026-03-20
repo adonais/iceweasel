@@ -65,6 +65,10 @@ class RemotePrintJobParent final : public PRemotePrintJobParent {
  private:
   ~RemotePrintJobParent() final;
 
+  void InitializePrint(const nsAString& aDocumentTitle,
+                       const uint64_t& aBrowsingContextId,
+                       const int32_t& aStartPage, const int32_t& aEndPage);
+
   nsresult InitializePrintDevice(const nsAString& aDocumentTitle,
                                  const uint64_t& aBrowsingContextId,
                                  const int32_t& aStartPage,

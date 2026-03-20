@@ -19,6 +19,10 @@
 #include "nsString.h"
 #include "skia/src/pdf/SkPDFUtils.h"
 
+#ifdef ACCESSIBILITY
+#  include "mozilla/a11y/PdfStructTreeBuilder.h"
+#endif
+
 using namespace mozilla::image;
 using namespace mozilla;
 
@@ -223,6 +227,17 @@ nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
 
   metadata.jpegDecoder = DecodeJpeg;
   metadata.jpegEncoder = EncodeJpeg;
+
+#ifdef ACCESSIBILITY
+  // structRoot needs to survive until SkPDF::MakeDocument returns.
+  SkPDF::StructureElementNode structRoot = {};
+  if (auto* builder =
+          mozilla::a11y::PdfStructTreeBuilder::Get(aBrowsingContextId)) {
+    if (builder->BuildStructTree(structRoot)) {
+      metadata.fStructureElementTreeRoot = &structRoot;
+    }
+  }
+#endif
 
   // SkDocument stores a non-owning raw pointer to aStream
   mPDFDoc = SkPDF::MakeDocument(mOStream.get(), metadata);

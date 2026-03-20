@@ -19,6 +19,10 @@
 #include "nsIWebProgressListener.h"
 #include "private/pprio.h"
 
+#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#  include "mozilla/a11y/PdfStructTreeBuilder.h"
+#endif
+
 namespace mozilla::layout {
 
 RemotePrintJobParent::RemotePrintJobParent(nsIPrintSettings* aPrintSettings)
@@ -31,8 +35,30 @@ RemotePrintJobParent::RemotePrintJobParent(nsIPrintSettings* aPrintSettings)
 mozilla::ipc::IPCResult RemotePrintJobParent::RecvInitializePrint(
     const nsAString& aDocumentTitle, const uint64_t& aBrowsingContextId,
     const int32_t& aStartPage, const int32_t& aEndPage) {
+#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+  if (auto* builder =
+          mozilla::a11y::PdfStructTreeBuilder::Get(aBrowsingContextId)) {
+    nsString title;
+    title.Assign(aDocumentTitle);
+    RefPtr{builder->GetReadyPromise()}->Then(
+        GetMainThreadSerialEventTarget(), __func__,
+        [self = RefPtr{this}, title, aBrowsingContextId, aStartPage, aEndPage] {
+          self->InitializePrint(title, aBrowsingContextId, aStartPage,
+                                aEndPage);
+        });
+    return IPC_OK();
+  }
+#endif
+  InitializePrint(aDocumentTitle, aBrowsingContextId, aStartPage, aEndPage);
+  return IPC_OK();
+}
+
+void RemotePrintJobParent::InitializePrint(const nsAString& aDocumentTitle,
+                                           const uint64_t& aBrowsingContextId,
+                                           const int32_t& aStartPage,
+                                           const int32_t& aEndPage) {
   PROFILER_MARKER_TEXT("RemotePrintJobParent", LAYOUT_Printing, {},
-                       "RemotePrintJobParent::RecvInitializePrint"_ns);
+                       "RemotePrintJobParent::InitializePrint"_ns);
 
   nsresult rv = InitializePrintDevice(aDocumentTitle, aBrowsingContextId,
                                       aStartPage, aEndPage);
@@ -40,7 +66,7 @@ mozilla::ipc::IPCResult RemotePrintJobParent::RecvInitializePrint(
     (void)SendPrintInitializationResult(rv, FileDescriptor());
     mStatus = rv;
     (void)Send__delete__(this);
-    return IPC_OK();
+    return;
   }
 
   mPrintTranslator = MakeUnique<PrintTranslator>(mPrintDeviceContext);
@@ -50,11 +76,10 @@ mozilla::ipc::IPCResult RemotePrintJobParent::RecvInitializePrint(
     (void)SendPrintInitializationResult(rv, FileDescriptor());
     mStatus = rv;
     (void)Send__delete__(this);
-    return IPC_OK();
+    return;
   }
 
   (void)SendPrintInitializationResult(NS_OK, fd);
-  return IPC_OK();
 }
 
 nsresult RemotePrintJobParent::InitializePrintDevice(
