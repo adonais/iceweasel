@@ -1086,6 +1086,22 @@ interface TestInterface {
   undefined passUnionArrayBuffer((DOMString or ArrayBuffer) foo);
   undefined passUnionAllowSharedArrayBuffer((DOMString or [AllowShared] ArrayBuffer) foo);
 
+  // [AllowLarge] tests
+  attribute [AllowLarge] ArrayBufferView allowLargeArrayBufferView;
+  attribute [AllowLarge] ArrayBufferView? allowLargeNullableArrayBufferView;
+  attribute [AllowLarge] ArrayBuffer allowLargeArrayBuffer;
+  attribute [AllowLarge] ArrayBuffer? allowLargeNullableArrayBuffer;
+
+  undefined passAllowLargeArrayBufferView([AllowLarge] ArrayBufferView foo);
+  undefined passAllowLargeNullableArrayBufferView([AllowLarge] ArrayBufferView? foo);
+  undefined passAllowLargeArrayBuffer([AllowLarge] ArrayBuffer foo);
+  undefined passAllowLargeNullableArrayBuffer([AllowLarge] ArrayBuffer? foo);
+  undefined passUnionAllowLargeArrayBuffer((DOMString or [AllowLarge] ArrayBuffer) foo);
+
+  // [AllowShared, AllowLarge] combined tests
+  attribute [AllowShared, AllowLarge] ArrayBufferView allowSharedAllowLargeArrayBufferView;
+  undefined passAllowSharedAllowLargeArrayBufferView([AllowShared, AllowLarge] ArrayBufferView foo);
+
   [Frozen, ReflectedHTMLAttributeReturningFrozenArray]
   attribute sequence<Element>? reflectedHTMLAttributeReturningFrozenArray;
 
@@ -1287,6 +1303,13 @@ dictionary DictWithAllowSharedMembers {
   [AllowShared] ArrayBuffer? d;
   [AllowShared] ArrayBufferViewTypedef e;
   AllowSharedArrayBufferViewTypedef f;
+};
+
+dictionary DictWithAllowLargeMembers {
+  [AllowLarge] ArrayBufferView a;
+  [AllowLarge] ArrayBufferView? b;
+  [AllowLarge] ArrayBuffer c;
+  [AllowLarge] ArrayBuffer? d;
 };
 
 dictionary DictWithBinaryType {

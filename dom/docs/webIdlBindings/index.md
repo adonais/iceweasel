@@ -1360,6 +1360,15 @@ should use `ErrorResult::ThrowTypeError()` instead of calling
 Our Web IDL parser and code generator recognize several extended
 attributes that are not present in the Web IDL spec.
 
+### `[AllowLarge]`
+
+Can be specified on buffer source types (`ArrayBuffer`, `ArrayBufferView`,
+typed arrays) to skip the default 2 GB size check. This allows
+incremental migration of consumers to support buffers larger than 2 GB.
+Can be combined with `[AllowShared]`. On the C++ side, use
+`ProcessData<true>(...)` or `ProcessFixedData<true>(...)` to access the
+data.
+
 ### `[Alias=propName]`
 
 This extended attribute can be specified on a method and indicates that
@@ -2096,6 +2105,10 @@ the relevant type (`uint8_t` for `ArrayBuffer` and
 in units of `*Data()`. So for example, `Int32Array` has a `Data()`
 returning `int32_t*` and a `Length()` that returns the number of
 32-bit ints in the array.
+
+By default, the generated bindings reject typed arrays, `ArrayBuffer`,
+and `ArrayBufferView` objects larger than 2 GB. To allow larger buffers,
+use the [`[AllowLarge]`](#allowlarge) extended attribute.
 
 ### `Sequence<T>`
 

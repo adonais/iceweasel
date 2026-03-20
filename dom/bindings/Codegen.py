@@ -5787,6 +5787,7 @@ def getJSToNativeConversionInfo(
     isClamp = type.hasClamp()
     isEnforceRange = type.hasEnforceRange()
     isAllowShared = type.hasAllowShared()
+    isAllowLarge = type.hasAllowLarge()
 
     # If exceptionCode is not set, we'll just rethrow the exception we got.
     # Note that we can't just set failureCode to exceptionCode, because setting
@@ -6903,19 +6904,17 @@ def getJSToNativeConversionInfo(
                     objRef=objRef,
                     badType=onFailureIsShared().define(),
                 )
-            # For now reject large (> 2 GB) ArrayBuffers and ArrayBufferViews.
-            # Supporting this will require changing dom::TypedArray and
-            # consumers.
-            template += fill(
-                """
-                if (${isLargeMethod}(${objRef}.Obj())) {
-                  $*{badType}
-                }
-                """,
-                isLargeMethod=isLargeMethod,
-                objRef=objRef,
-                badType=onFailureIsLarge().define(),
-            )
+            if not isAllowLarge:
+                template += fill(
+                    """
+                    if (${isLargeMethod}(${objRef}.Obj())) {
+                      $*{badType}
+                    }
+                    """,
+                    isLargeMethod=isLargeMethod,
+                    objRef=objRef,
+                    badType=onFailureIsLarge().define(),
+                )
             # For now reject resizable ArrayBuffers and growable
             # SharedArrayBuffers. Supporting this will require changing
             # dom::TypedArray and consumers.

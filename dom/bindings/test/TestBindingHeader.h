@@ -1139,6 +1139,28 @@ class TestInterface : public nsISupports, public nsWrapperCache {
   void passAllowSharedInt8ArrayOrInt16Array(
       const MaybeSharedInt8ArrayOrMaybeSharedInt16Array&);
 
+  void SetAllowLargeArrayBufferView(const ArrayBufferView&);
+  void GetAllowLargeArrayBufferView(JSContext*, JS::MutableHandle<JSObject*>);
+  void SetAllowLargeNullableArrayBufferView(const Nullable<ArrayBufferView>&);
+  void GetAllowLargeNullableArrayBufferView(JSContext*,
+                                            JS::MutableHandle<JSObject*>);
+  void SetAllowLargeArrayBuffer(const ArrayBuffer&);
+  void GetAllowLargeArrayBuffer(JSContext*, JS::MutableHandle<JSObject*>);
+  void SetAllowLargeNullableArrayBuffer(const Nullable<ArrayBuffer>&);
+  void GetAllowLargeNullableArrayBuffer(JSContext*,
+                                        JS::MutableHandle<JSObject*>);
+
+  void PassAllowLargeArrayBufferView(const ArrayBufferView&);
+  void PassAllowLargeNullableArrayBufferView(const Nullable<ArrayBufferView>&);
+  void PassAllowLargeArrayBuffer(const ArrayBuffer&);
+  void PassAllowLargeNullableArrayBuffer(const Nullable<ArrayBuffer>&);
+  void PassUnionAllowLargeArrayBuffer(const StringOrAllowLargeArrayBuffer& foo);
+
+  void SetAllowSharedAllowLargeArrayBufferView(const ArrayBufferView&);
+  void GetAllowSharedAllowLargeArrayBufferView(JSContext*,
+                                               JS::MutableHandle<JSObject*>);
+  void PassAllowSharedAllowLargeArrayBufferView(const ArrayBufferView&);
+
   void GetReflectedHTMLAttributeReturningFrozenArray(
       bool*, Nullable<nsTArray<RefPtr<Element>>>&) const;
   void SetReflectedHTMLAttributeReturningFrozenArray(

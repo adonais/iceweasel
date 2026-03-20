@@ -653,7 +653,7 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
         std::forward<Processor>(aProcessor));
   }
 
-  template <typename Processor>
+  template <bool AllowLargeTypedArrays = false, typename Processor>
   [[nodiscard]] ProcessReturnType<Processor> ProcessFixedData(
       Processor&& aProcessor) const {
     mozilla::dom::AutoJSAPI jsapi;
@@ -697,7 +697,8 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
     }
     LengthPinner pinner(this);
 
-    return CallProcessor(GetCurrentData(), std::forward<Processor>(aProcessor));
+    return CallProcessor(GetCurrentData<AllowLargeTypedArrays>(),
+                         std::forward<Processor>(aProcessor));
   }
 
  private:

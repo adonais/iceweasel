@@ -872,6 +872,22 @@ interface TestExampleInterface {
   undefined passUnionAllowSharedArrayBuffer((DOMString or [AllowShared] ArrayBuffer) foo);
   undefined passAllowSharedInt8ArrayOrInt16Array([AllowShared] (Int8Array or Int16Array) foo);
 
+  // [AllowLarge] tests
+  attribute [AllowLarge] ArrayBufferView allowLargeArrayBufferView;
+  attribute [AllowLarge] ArrayBufferView? allowLargeNullableArrayBufferView;
+  attribute [AllowLarge] ArrayBuffer allowLargeArrayBuffer;
+  attribute [AllowLarge] ArrayBuffer? allowLargeNullableArrayBuffer;
+
+  undefined passAllowLargeArrayBufferView([AllowLarge] ArrayBufferView foo);
+  undefined passAllowLargeNullableArrayBufferView([AllowLarge] ArrayBufferView? foo);
+  undefined passAllowLargeArrayBuffer([AllowLarge] ArrayBuffer foo);
+  undefined passAllowLargeNullableArrayBuffer([AllowLarge] ArrayBuffer? foo);
+  undefined passUnionAllowLargeArrayBuffer((DOMString or [AllowLarge] ArrayBuffer) foo);
+
+  // [AllowShared, AllowLarge] combined tests
+  attribute [AllowShared, AllowLarge] ArrayBufferView allowSharedAllowLargeArrayBufferView;
+  undefined passAllowSharedAllowLargeArrayBufferView([AllowShared, AllowLarge] ArrayBufferView foo);
+
   [Frozen, ReflectedHTMLAttributeReturningFrozenArray]
   attribute sequence<Element>? reflectedHTMLAttributeReturningFrozenArray;
 
