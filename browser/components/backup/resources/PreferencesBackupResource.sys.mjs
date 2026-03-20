@@ -24,6 +24,9 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
 });
 
 const PROFILE_RESTORATION_DATE_PREF = "browser.backup.profile-restoration-date";
+const PROFILES_ENABLED_PREF = "browser.profiles.enabled";
+const PROFILES_CREATED_PREF = "browser.profiles.created";
+const STOREID_PREF = "toolkit.profiles.storeID";
 
 /**
  * Class representing files that modify preferences and permissions within a user profile.
@@ -260,7 +263,18 @@ export class PreferencesBackupResource extends BackupResource {
       mode: "appendOrCreate",
     });
 
-    if (lazy.SelectableProfileService.currentProfile) {
+    // If selectable profile's aren't enabled on the current profile, we need to make sure that
+    // we don't use stale prefs from the backup
+    if (!lazy.SelectableProfileService.isEnabled) {
+      let setToLegacyPrefs =
+        `user_pref("${PROFILES_ENABLED_PREF}", ${Services.prefs.getBoolPref(PROFILES_ENABLED_PREF, false)});${LINEBREAK}` +
+        `user_pref("${PROFILES_CREATED_PREF}", ${Services.prefs.getBoolPref(PROFILES_CREATED_PREF, false)});${LINEBREAK}` +
+        `user_pref("${STOREID_PREF}", "");${LINEBREAK}`;
+
+      await IOUtils.writeUTF8(prefsFile.path, setToLegacyPrefs, {
+        mode: "appendOrCreate",
+      });
+    } else if (lazy.SelectableProfileService.currentProfile) {
       lazy.logConsole.debug(
         `We're recovering into a profile group, let's make sure to set the right selectable profile prefs`
       );

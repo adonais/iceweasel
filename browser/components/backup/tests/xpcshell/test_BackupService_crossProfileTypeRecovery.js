@@ -170,17 +170,32 @@ async function createBackupAndRecover(
     "launchInstance"
   );
 
-  // currentProfile is null only when staying in legacy mode:
-  // legacy backup + legacy recovery + replaceCurrentProfile
+  // currentProfile is null when staying in legacy mode or when selectable
+  // profiles are disabled entirely.
   let staysLegacy =
     backupIsLegacy && recoveryIsLegacy && options.replaceCurrentProfile;
-  currentProfileValue = staysLegacy ? null : currentSelectableProfile;
+  let profilesDisabled = !!options.selectableProfilesDisabled;
+  currentProfileValue =
+    staysLegacy || profilesDisabled ? null : currentSelectableProfile;
+
+  // When selectable profiles are disabled, the toolkit profile should not have
+  // a storeID. #getEnabledState() returns true when storeID is set, regardless
+  // of the browser.profiles.enabled pref.
+  if (profilesDisabled) {
+    fakeToolkitProfile.storeID = "";
+  }
 
   // Setting browser.profiles.enabled triggers updateEnabledState() via the
   // pref observer, which must happen before setting browser.profiles.created
   // because migrateToProfilesCreatedPref() can overwrite it.
-  Services.prefs.setBoolPref("browser.profiles.enabled", !staysLegacy);
-  Services.prefs.setBoolPref("browser.profiles.created", !recoveryIsLegacy);
+  Services.prefs.setBoolPref(
+    "browser.profiles.enabled",
+    !staysLegacy && !profilesDisabled
+  );
+  Services.prefs.setBoolPref(
+    "browser.profiles.created",
+    !recoveryIsLegacy && !profilesDisabled
+  );
 
   await bs.getBackupFileInfo(archivePath);
   const restoreID = bs.state.restoreID;
@@ -605,6 +620,51 @@ add_task(
       launchInstanceStub.firstCall.args[1],
       ["about:editprofile#restoredProfile"],
       "launchInstance should be called with about:editprofile#restoredProfile URL"
+    );
+
+    sandbox.restore();
+  }
+);
+
+/**
+ * Selectable backup recovered into an environment where selectable profiles
+ * are disabled (isEnabled=false). No conversion should happen, the
+ * SelectableProfileBackupResource should NOT be recovered, and the legacy
+ * recovery path (recoverFromSnapshotFolder) should be used.
+ */
+add_task(
+  async function test_selectable_backup_into_disabled_selectable_profiles() {
+    let sandbox = sinon.createSandbox();
+
+    let {
+      createNewProfileStub,
+      maybeSetupDataStoreStub,
+      selectableProfileRecoverStub,
+      recoverFromSnapshotFolderSpy,
+      recoverFromSnapshotFolderIntoSelectableProfileSpy,
+    } = await createBackupAndRecover(sandbox, false, true, {
+      selectableProfilesDisabled: true,
+    });
+
+    Assert.ok(
+      !maybeSetupDataStoreStub.called,
+      "maybeSetupDataStore should NOT be called when selectable profiles are disabled"
+    );
+    Assert.ok(
+      !createNewProfileStub.called,
+      "createNewProfile should NOT be called when selectable profiles are disabled"
+    );
+    Assert.ok(
+      !selectableProfileRecoverStub.called,
+      "SelectableProfileBackupResource.recover should NOT be called when selectable profiles are disabled"
+    );
+    Assert.ok(
+      recoverFromSnapshotFolderSpy.calledOnce,
+      "recoverFromSnapshotFolder should be called for legacy recovery path"
+    );
+    Assert.ok(
+      !recoverFromSnapshotFolderIntoSelectableProfileSpy.called,
+      "recoverFromSnapshotFolderIntoSelectableProfile should NOT be called when selectable profiles are disabled"
     );
 
     sandbox.restore();
