@@ -241,7 +241,7 @@ def push_to_try(
             else:
                 with vcs.try_commit(commit_message, changed_files) as head:
                     ref = vcs.branch or head
-                    vcs.push(MACH_TRY_REMOTE, ref=ref)
+                    vcs.push(MACH_TRY_REMOTE, ref=ref, force=True)
         else:
             job_id = push_to_lando_try(vcs, commit_message, changed_files, metrics)
             if job_id:

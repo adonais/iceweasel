@@ -272,6 +272,7 @@ def test_push_to_try_routing(
                 mock_vcs.push.assert_called_once_with(
                     url,
                     ref="feature-branch",
+                    force=True,
                 )
         else:
             mock_lando.assert_called_once()

@@ -336,7 +336,12 @@ class JujutsuRepository(Repository):
             cmd.extend(paths)
         self._run(*cmd, **run_kwargs)
 
-    def push(self, remote: Optional[str] = None, ref: Optional[str] = None):
+    def push(
+        self,
+        remote: Optional[str] = None,
+        ref: Optional[str] = None,
+        force: bool = False,
+    ):
         if ref and not remote:
             raise ValueError("Cannot specify ref without specifying remote")
 

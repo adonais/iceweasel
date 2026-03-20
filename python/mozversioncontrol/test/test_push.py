@@ -83,14 +83,15 @@ def verify_push_succeeded(repo):
 
 
 @pytest.mark.parametrize(
-    "remote,ref",
+    "remote,ref,kwargs",
     [
-        pytest.param(None, None, id="no_args"),
-        pytest.param("remote", None, id="with_remote"),
-        pytest.param("remote", "ref", id="with_remote_and_ref"),
+        pytest.param(None, None, {}, id="no_args"),
+        pytest.param("remote", None, {}, id="with_remote"),
+        pytest.param("remote", "ref", {}, id="with_remote_and_ref"),
+        pytest.param("remote", "ref", {"force": True}, id="with_force"),
     ],
 )
-def test_push(repo, remote, ref):
+def test_push(repo, remote, ref, kwargs):
     vcs = get_repository_object(repo.dir)
 
     repo.execute_next_step()
@@ -111,7 +112,7 @@ def test_push(repo, remote, ref):
         elif repo.vcs == "jj":
             ref = "test-bookmark"
 
-    vcs.push(remote=remote, ref=ref)
+    vcs.push(remote=remote, ref=ref, **kwargs)
     verify_push_succeeded(repo)
 
 
