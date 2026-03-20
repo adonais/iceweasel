@@ -155,12 +155,10 @@ static bool CreateMFTDecoderOnMTA(const WMFStreamType& aType) {
       }
       break;
     }
-#ifdef MOZ_AV1
     case WMFStreamType::AV1:
       result = SUCCEEDED(decoder->Create(MFT_CATEGORY_VIDEO_DECODER,
                                          MFVideoFormat_AV1, GUID_NULL));
       break;
-#endif
     case WMFStreamType::HEVC:
       if (StaticPrefs::media_hevc_enabled()) {
         result =

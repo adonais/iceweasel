@@ -4,6 +4,7 @@
 
 #include "MediaChangeMonitor.h"
 
+#include "AOMDecoder.h"
 #include "Adts.h"
 #include "AnnexB.h"
 #include "GeckoProfiler.h"
@@ -14,14 +15,11 @@
 #include "MediaInfo.h"
 #include "PDMFactory.h"
 #include "VPXDecoder.h"
-#include "nsPrintfCString.h"
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
 #include "gfxUtils.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/TaskQueue.h"
+#include "nsPrintfCString.h"
 
 namespace mozilla {
 
@@ -679,7 +677,6 @@ class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
   double mPixelAspectRatio;
 };
 
-#ifdef MOZ_AV1
 class AV1ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
  public:
   explicit AV1ChangeMonitor(const VideoInfo& aInfo)
@@ -810,7 +807,6 @@ class AV1ChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
   RefPtr<TrackInfoSharedPtr> mTrackInfo;
   double mPixelAspectRatio;
 };
-#endif
 
 class AACCodecChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
  public:
@@ -898,10 +894,8 @@ RefPtr<PlatformDecoderModule::CreateDecoderPromise> MediaChangeMonitor::Create(
     const VideoInfo& config = aParams.VideoConfig();
     if (VPXDecoder::IsVPX(config.mMimeType)) {
       changeMonitor = MakeUnique<VPXChangeMonitor>(config);
-#ifdef MOZ_AV1
     } else if (AOMDecoder::IsAV1(config.mMimeType)) {
       changeMonitor = MakeUnique<AV1ChangeMonitor>(config);
-#endif
     } else if (MP4Decoder::IsHEVC(config.mMimeType)) {
       changeMonitor = MakeUnique<HEVCChangeMonitor>(config);
     } else {

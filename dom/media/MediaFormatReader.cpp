@@ -7,10 +7,8 @@
 #include <algorithm>
 #include <queue>
 
+#include "AOMDecoder.h"
 #include "AllocationPolicy.h"
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
 #include "MP4Decoder.h"
 #include "MediaData.h"
 #include "MediaDataDecoderProxy.h"
@@ -2077,12 +2075,9 @@ void MediaFormatReader::DecoderData::StartRecordDecodingPerf(
       flag |= MediaInfoFlag::VIDEO_VP9;
     } else if (MP4Decoder::IsHEVC(mimeType)) {
       flag |= MediaInfoFlag::VIDEO_HEVC;
-    }
-#ifdef MOZ_AV1
-    else if (AOMDecoder::IsAV1(mimeType)) {
+    } else if (AOMDecoder::IsAV1(mimeType)) {
       flag |= MediaInfoFlag::VIDEO_AV1;
     }
-#endif
   }
   mDecodePerfRecorder->Start(aSample->mTime.ToMicroseconds(),
                              MediaStage::RequestDecode, height, flag);

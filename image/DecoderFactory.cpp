@@ -20,9 +20,8 @@
 #include "nsICODecoder.h"
 #include "nsIconDecoder.h"
 #include "nsWebPDecoder.h"
-#ifdef MOZ_AV1
-#  include "nsAVIFDecoder.h"
-#endif
+#include "nsAVIFDecoder.h"
+
 #ifdef MOZ_JXL
 #  include "nsJXLDecoder.h"
 #endif
@@ -85,12 +84,9 @@ DecoderType DecoderFactory::GetDecoderType(const char* aMimeType) {
     type = DecoderType::WEBP;
 
     // AVIF
-  }
-#ifdef MOZ_AV1
-  else if (!strcmp(aMimeType, IMAGE_AVIF)) {
+  } else if (!strcmp(aMimeType, IMAGE_AVIF)) {
     type = DecoderType::AVIF;
   }
-#endif
 #ifdef MOZ_JXL
   else if (!strcmp(aMimeType, IMAGE_JXL) && StaticPrefs::image_jxl_enabled()) {
     type = DecoderType::JXL;
@@ -136,11 +132,9 @@ already_AddRefed<Decoder> DecoderFactory::GetDecoder(DecoderType aType,
     case DecoderType::WEBP:
       decoder = new nsWebPDecoder(aImage);
       break;
-#ifdef MOZ_AV1
     case DecoderType::AVIF:
       decoder = new nsAVIFDecoder(aImage);
       break;
-#endif
 #ifdef MOZ_JXL
     case DecoderType::JXL:
       decoder = new nsJXLDecoder(aImage);

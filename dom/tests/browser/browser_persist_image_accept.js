@@ -50,13 +50,7 @@ function expectedImageAcceptHeader() {
 
   let header = "";
 
-  // Check if AVIF is supported (compiled with MOZ_AV1)
-  try {
-    Services.catMan.getCategoryEntry("Gecko-Content-Viewers", "image/avif");
-    header += "image/avif,";
-  } catch (e) {
-    // AVIF not registered, skip it
-  }
+  header += "image/avif,";
 
   if (Services.prefs.getBoolPref("image.jxl.enabled", false)) {
     header += "image/jxl,";

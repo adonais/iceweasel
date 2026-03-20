@@ -4,9 +4,7 @@
 
 #include "PDMFactory.h"
 
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
+#include "AOMDecoder.h"
 #include "AgnosticDecoderModule.h"
 #include "AudioTrimmer.h"
 #include "BlankDecoderModule.h"
@@ -444,9 +442,7 @@ PDMFactory::CreateDecoderWithPDM(PlatformDecoderModule* aPDM,
   }
 
   if ((MP4Decoder::IsH264(config.mMimeType) ||
-#ifdef MOZ_AV1
        AOMDecoder::IsAV1(config.mMimeType) ||
-#endif
        VPXDecoder::IsVPX(config.mMimeType) ||
        MP4Decoder::IsHEVC(config.mMimeType)) &&
       !aParams.mUseNullDecoder.mUse &&
@@ -886,11 +882,9 @@ DecodeSupportSet PDMFactory::SupportsMimeType(
     if (VPXDecoder::IsVP8(aMimeType)) {
       return MCSInfo::GetDecodeSupportSet(MediaCodec::VP8, aSupported);
     }
-#ifdef MOZ_AV1
     if (AOMDecoder::IsAV1(aMimeType)) {
       return MCSInfo::GetDecodeSupportSet(MediaCodec::AV1, aSupported);
     }
-#endif
     if (MP4Decoder::IsHEVC(aMimeType)) {
       return MCSInfo::GetDecodeSupportSet(MediaCodec::HEVC, aSupported);
     }

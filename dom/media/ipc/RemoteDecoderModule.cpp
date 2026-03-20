@@ -3,9 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "RemoteDecoderModule.h"
 
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
+#include "AOMDecoder.h"
 #include "RemoteAudioDecoder.h"
 #include "RemoteMediaDataDecoder.h"
 #include "RemoteMediaManagerChild.h"

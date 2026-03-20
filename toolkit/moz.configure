@@ -101,6 +101,7 @@ option(
 set_config("BUILT_BY_MOZILLA", depends("--built-by-mozilla")(lambda v: bool(v) or None))
 set_define("BUILT_BY_MOZILLA", depends("--built-by-mozilla")(lambda v: bool(v) or None))
 
+
 @depends("MOZ_APP_VENDOR", build_project)
 def check_moz_app_vendor(moz_app_vendor, build_project):
     if not moz_app_vendor:
@@ -174,12 +175,8 @@ set_config("MOZ_FOLD_LIBS", fold_libs)
 
 # Enable perfetto on Android if gecko profiling is enabled and only for
 # nightly builds. Linux support requires at least linux-headers-3.18 for <linux/vm_sockets.h>
-set_config(
-    "MOZ_PERFETTO", True, when=target_is_android & milestone.is_nightly
-)
-set_define(
-    "MOZ_PERFETTO", True, when=target_is_android & milestone.is_nightly
-)
+set_config("MOZ_PERFETTO", True, when=target_is_android & milestone.is_nightly)
+set_define("MOZ_PERFETTO", True, when=target_is_android & milestone.is_nightly)
 
 
 # Whether code to parse ELF binaries should be compiled for the Gecko profiler
@@ -852,28 +849,19 @@ set_define("MOZ_FFMPEG", ffmpeg)
 
 # AV1 Video Codec Support
 # ==============================================================
-option("--disable-av1", help="Disable av1 video support")
-
-
-@depends("--enable-av1")
-def av1(value):
-    if value:
-        return True
-
-
 option("--with-system-av1", help="Use system av1 (located with pkg-config)")
 
 pkg_check_modules("MOZ_SYSTEM_LIBAOM", "aom >= 3.0.0", when="--with-system-av1")
 pkg_check_modules("MOZ_SYSTEM_LIBDAV1D", "dav1d >= 1.2.1", when="--with-system-av1")
 
 
-@depends(target, "--with-system-av1", when=av1 & compile_environment)
+@depends(target, "--with-system-av1", when=compile_environment)
 def dav1d_asm(target, system_av1):
     if not system_av1 and target.cpu in ("arm", "aarch64", "x86", "x86_64"):
         return True
 
 
-@depends(target, "--with-system-av1", when=av1 & compile_environment)
+@depends(target, "--with-system-av1", when=compile_environment)
 def dav1d_nasm(target, system_av1):
     if not system_av1 and target.cpu in ("x86", "x86_64"):
         return namespace(version="2.14", what="AV1")
@@ -881,8 +869,6 @@ def dav1d_nasm(target, system_av1):
 
 set_config("MOZ_DAV1D_ASM", dav1d_asm)
 set_define("MOZ_DAV1D_ASM", dav1d_asm)
-set_config("MOZ_AV1", av1)
-set_define("MOZ_AV1", av1)
 set_config("MOZ_SYSTEM_AV1", True, when="--with-system-av1")
 
 # JXL Image Codec Support
@@ -2390,8 +2376,7 @@ with only_when(compile_environment):
             flags=jpeg_flags.cflags,
             check_msg="for sufficient jpeg library version",
             onerror=lambda: die(
-                "Insufficient JPEG library version for "
-                "--with-system-jpeg (62 required)"
+                "Insufficient JPEG library version for --with-system-jpeg (62 required)"
             ),
         )
 
@@ -2409,7 +2394,7 @@ with only_when(compile_environment):
             flags=jpeg_flags.cflags,
             check_msg="for sufficient libjpeg-turbo JCS_EXTENSIONS",
             onerror=lambda: die(
-                "libjpeg-turbo JCS_EXTENSIONS required for " "--with-system-jpeg"
+                "libjpeg-turbo JCS_EXTENSIONS required for --with-system-jpeg"
             ),
         )
 
@@ -3303,7 +3288,6 @@ confvar(
 
 
 with only_when(target_is_android):
-
     confvar(
         env="ANDROID_APPEND_USERNAME_TO_PACKAGE_NAME",
         set_as_config=False,

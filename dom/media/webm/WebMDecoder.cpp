@@ -6,16 +6,14 @@
 
 #include <utility>
 
-#include "VPXDecoder.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/StaticPrefs_media.h"
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
+#include "AOMDecoder.h"
 #include "MediaContainerType.h"
 #include "PDMFactory.h"
 #include "PlatformDecoderModule.h"
+#include "VPXDecoder.h"
 #include "VideoUtils.h"
+#include "mozilla/Preferences.h"
+#include "mozilla/StaticPrefs_media.h"
 
 namespace mozilla {
 
@@ -61,7 +59,6 @@ nsTArray<UniquePtr<TrackInfo>> WebMDecoder::GetTracksInfo(
         continue;
       }
     }
-#ifdef MOZ_AV1
     if (StaticPrefs::media_av1_enabled() && IsAV1CodecString(codec)) {
       auto trackInfo =
           CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
@@ -70,7 +67,6 @@ nsTArray<UniquePtr<TrackInfo>> WebMDecoder::GetTracksInfo(
       tracks.AppendElement(std::move(trackInfo));
       continue;
     }
-#endif
     // Unknown codec
     aError = MediaResult(
         NS_ERROR_DOM_MEDIA_FATAL_ERR,

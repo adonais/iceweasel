@@ -4,9 +4,7 @@
 
 #include "MatroskaDecoder.h"
 
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
+#include "AOMDecoder.h"
 #include "MediaContainerType.h"
 #include "PDMFactory.h"
 #include "PlatformDecoderModule.h"
@@ -96,7 +94,6 @@ nsTArray<UniquePtr<TrackInfo>> MatroskaDecoder::GetTracksInfo(
       tracks.AppendElement(std::move(trackInfo));
       continue;
     }
-#ifdef MOZ_AV1
     if (StaticPrefs::media_av1_enabled() && IsAV1CodecString(codec)) {
       auto trackInfo =
           CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
@@ -105,7 +102,6 @@ nsTArray<UniquePtr<TrackInfo>> MatroskaDecoder::GetTracksInfo(
       tracks.AppendElement(std::move(trackInfo));
       continue;
     }
-#endif
     aError = MediaResult(
         NS_ERROR_DOM_MEDIA_FATAL_ERR,
         RESULT_DETAIL("Unknown codec:%s", NS_ConvertUTF16toUTF8(codec).get()));
@@ -166,13 +162,11 @@ bool MatroskaDecoder::IsSupportedType(const MediaContainerType& aContainerType,
     tracks.AppendElement(
         CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
             "video/vp9"_ns, aContainerType));
-#ifdef MOZ_AV1
     if (StaticPrefs::media_av1_enabled()) {
       tracks.AppendElement(
           CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
               "video/av1"_ns, aContainerType));
     }
-#endif
   }
 
   // Check that something is supported at least.

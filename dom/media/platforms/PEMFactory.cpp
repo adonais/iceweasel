@@ -516,10 +516,8 @@ media::EncodeSupportSet PEMFactory::SupportsCodec(
         return media::MCSInfo::GetEncodeSupportSet(MediaCodec::VP8, aSupported);
       case CodecType::VP9:
         return media::MCSInfo::GetEncodeSupportSet(MediaCodec::VP9, aSupported);
-#ifdef MOZ_AV1
       case CodecType::AV1:
         return media::MCSInfo::GetEncodeSupportSet(MediaCodec::AV1, aSupported);
-#endif
       default:
         break;
     }

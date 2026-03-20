@@ -4,9 +4,7 @@
 
 #include "MatroskaDemuxer.h"
 
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
+#include "AOMDecoder.h"
 #include "H264.h"
 #include "H265.h"
 #include "VPXDecoder.h"
@@ -250,10 +248,8 @@ bool MatroskaDemuxer::CheckKeyFrameByExamineByteStream(
       return VPXDecoder::IsKeyframe(*aSample, VPXDecoder::Codec::VP8);
     case NESTEGG_CODEC_VP9:
       return VPXDecoder::IsKeyframe(*aSample, VPXDecoder::Codec::VP9);
-#ifdef MOZ_AV1
     case NESTEGG_CODEC_AV1:
       return AOMDecoder::IsKeyframe(*aSample);
-#endif
     default:
       MOZ_ASSERT_UNREACHABLE(
           "Cannot detect keyframes in unknown Matroska video codec");

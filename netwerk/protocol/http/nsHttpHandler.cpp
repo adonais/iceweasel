@@ -217,9 +217,7 @@ already_AddRefed<nsHttpHandler> nsHttpHandler::GetInstance() {
 static nsCString ImageAcceptHeader() {
   nsCString mimeTypes;
 
-#ifdef MOZ_AV1
   mimeTypes.Append("image/avif,");
-#endif
 
 #ifdef MOZ_JXL
   if (mozilla::StaticPrefs::image_jxl_enabled()) {
@@ -244,9 +242,7 @@ static nsCString DocumentAcceptHeader() {
 
   // we also insert all of the image formats before */* when the pref is set
   if (mozilla::StaticPrefs::network_http_accept_include_images()) {
-#ifdef MOZ_AV1
     mimeTypes.Append("image/avif,");
-#endif
 
 #ifdef MOZ_JXL
     if (mozilla::StaticPrefs::image_jxl_enabled()) {

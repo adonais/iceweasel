@@ -2124,13 +2124,7 @@ bool WebrtcVideoConduit::HasH264Hardware() {
          status == nsIGfxInfo::FEATURE_STATUS_OK;
 }
 
-bool WebrtcVideoConduit::HasAv1() {
-#if defined(MOZ_AV1)
-  return true;
-#else
-  return false;
-#endif
-}
+bool WebrtcVideoConduit::HasAv1() { return true; }
 
 Maybe<int> WebrtcVideoConduit::ActiveSendPayloadType() const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());

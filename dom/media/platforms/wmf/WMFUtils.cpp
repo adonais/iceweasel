@@ -10,9 +10,7 @@
 #include <shlwapi.h>
 #include <stdint.h>
 
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
+#include "AOMDecoder.h"
 #include "MP4Decoder.h"
 #include "VPXDecoder.h"
 #include "VideoUtils.h"
@@ -69,11 +67,9 @@ WMFStreamType GetStreamTypeFromMimeType(const nsCString& aMimeType) {
   if (VPXDecoder::IsVP9(aMimeType)) {
     return WMFStreamType::VP9;
   }
-#ifdef MOZ_AV1
   if (AOMDecoder::IsAV1(aMimeType)) {
     return WMFStreamType::AV1;
   }
-#endif
   if (MP4Decoder::IsHEVC(aMimeType)) {
     return WMFStreamType::HEVC;
   }
@@ -353,11 +349,9 @@ GUID VideoMimeTypeToMediaFoundationSubtype(const nsACString& aMimeType) {
   if (VPXDecoder::IsVP9(aMimeType)) {
     return MFVideoFormat_VP90;
   }
-#ifdef MOZ_AV1
   if (AOMDecoder::IsAV1(aMimeType)) {
     return MFVideoFormat_AV1;
   }
-#endif
   if (MP4Decoder::IsHEVC(aMimeType)) {
     return MFVideoFormat_HEVC;
   }

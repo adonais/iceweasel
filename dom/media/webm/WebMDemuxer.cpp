@@ -2,23 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "MediaResource.h"
-#include "nsError.h"
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
+#include "WebMDemuxer.h"
+
 #include <opus/opus.h>
 #include <stdint.h>
 
 #include <algorithm>
 #include <numeric>
 
+#include "AOMDecoder.h"
 #include "MediaDataDemuxer.h"
+#include "MediaResource.h"
 #include "NesteggPacketHolder.h"
 #include "VPXDecoder.h"
 #include "VideoUtils.h"
 #include "WebMBufferedParser.h"
-#include "WebMDemuxer.h"
 #include "XiphExtradata.h"
 #include "gfx2DGlue.h"
 #include "gfxUtils.h"
@@ -27,6 +25,7 @@
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/Sprintf.h"
 #include "nsAutoRef.h"
+#include "nsError.h"
 #include "prprf.h"  // leaving it for PR_vsnprintf()
 
 #define WEBM_DEBUG(arg, ...)                                          \
@@ -652,10 +651,8 @@ bool WebMDemuxer::CheckKeyFrameByExamineByteStream(
       return VPXDecoder::IsKeyframe(*aSample, VPXDecoder::Codec::VP8);
     case NESTEGG_CODEC_VP9:
       return VPXDecoder::IsKeyframe(*aSample, VPXDecoder::Codec::VP9);
-#ifdef MOZ_AV1
     case NESTEGG_CODEC_AV1:
       return AOMDecoder::IsKeyframe(*aSample);
-#endif
     default:
       MOZ_ASSERT_UNREACHABLE(
           "Cannot detect keyframes in unknown WebM video codec");

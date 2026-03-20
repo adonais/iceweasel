@@ -4,15 +4,13 @@
 
 #include "MP4Decoder.h"
 
+#include "AOMDecoder.h"
 #include "H264.h"
-#include "VPXDecoder.h"
-#ifdef MOZ_AV1
-#  include "AOMDecoder.h"
-#endif
 #include "MP4Demuxer.h"
 #include "MediaContainerType.h"
 #include "PDMFactory.h"
 #include "PlatformDecoderModule.h"
+#include "VPXDecoder.h"
 #include "VideoUtils.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/gfx/Tools.h"
@@ -87,7 +85,6 @@ nsTArray<UniquePtr<TrackInfo>> MP4Decoder::GetTracksInfo(
       tracks.AppendElement(std::move(trackInfo));
       continue;
     }
-#ifdef MOZ_AV1
     if (StaticPrefs::media_av1_enabled() && IsAV1CodecString(codec)) {
       auto trackInfo =
           CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(
@@ -96,7 +93,6 @@ nsTArray<UniquePtr<TrackInfo>> MP4Decoder::GetTracksInfo(
       tracks.AppendElement(std::move(trackInfo));
       continue;
     }
-#endif
     if (StaticPrefs::media_hevc_enabled() && IsH265CodecString(codec)) {
       auto trackInfo =
           CreateTrackInfoWithMIMETypeAndContainerTypeExtraParameters(

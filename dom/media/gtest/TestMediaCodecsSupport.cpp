@@ -209,10 +209,8 @@ TEST(MediaCodecsSupport, GetMediaCodecsSupportedString)
 TEST(MediaCodecsSupport, GetMediaCodecFromMimeType)
 {
   std::vector<std::pair<nsCString, MediaCodec>> testPairs = {
-// Video codecs
-#ifdef MOZ_AV1
+      // Video codecs
       {"video/av1"_ns, MediaCodec::AV1},
-#endif
       {"video/avc"_ns, MediaCodec::H264},
       {"video/mp4"_ns, MediaCodec::H264},
       {"video/vp8"_ns, MediaCodec::VP8},
