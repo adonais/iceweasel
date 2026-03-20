@@ -66,7 +66,7 @@ unpack_build () {
             fi
             update_settings_file="${appdir}/update-settings.ini"
             ;;
-        win32|WINNT_*)
+        win|win32|WINNT_*)
             7z x "$pkg_file" > /dev/null
             if [ -d localized ]
             then
