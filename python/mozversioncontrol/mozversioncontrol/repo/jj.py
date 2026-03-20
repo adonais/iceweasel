@@ -536,7 +536,7 @@ class JujutsuRepository(Repository):
     def get_last_modified_time_for_file(self, path: Path) -> datetime:
         """Return last modified in VCS time for the specified file."""
         escaped_path = str(path).replace("\\", "\\\\")
-        date = self._run_read_only(
+        date = self._run(
             "log",
             "--no-graph",
             "-n1",
