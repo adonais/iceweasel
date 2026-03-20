@@ -10,11 +10,11 @@ import androidx.lifecycle.viewModelScope
 import mozilla.components.concept.llm.CloudLlmProvider
 import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.feature.summarize.SummarizationMiddleware
-import mozilla.components.feature.summarize.SummarizationSettings
 import mozilla.components.feature.summarize.SummarizationState
 import mozilla.components.feature.summarize.SummarizationStore
 import mozilla.components.feature.summarize.content.PageContentExtractor
 import mozilla.components.feature.summarize.content.PageMetadataExtractor
+import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.feature.summarize.summarizationReducer
 
 /**

@@ -247,8 +247,8 @@ private fun SummarizationScreenPreview(
             ),
             settingsStore = SummarizeSettingsStore(
                 initialState = SummarizeSettingsState(
-                    summarizePagesEnabled = true,
-                    shakeToSummarizeEnabled = true,
+                    isFeatureEnabled = true,
+                    isGestureEnabled = true,
                 ),
                 reducer = ::summarizeSettingsReducer,
                 middleware = listOf(),

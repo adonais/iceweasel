@@ -20,6 +20,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,10 @@ fun SummarizeSettingsContent(
     store: SummarizeSettingsStore,
     modifier: Modifier = Modifier,
 ) {
+    LaunchedEffect(Unit) {
+        store.dispatch(ViewAppeared)
+    }
+
     val state by store.stateFlow.collectAsStateWithLifecycle()
 
     SummarizeSettingsContent(
@@ -77,7 +82,7 @@ fun SummarizeSettingsContent(
             description = stringResource(
                 id = R.string.mozac_summarize_settings_summarize_pages_cloud,
             ),
-            checked = state.summarizePagesEnabled,
+            checked = state.isFeatureEnabled,
             onToggle = onSummarizePagesToggled,
         )
 
@@ -108,8 +113,8 @@ fun SummarizeSettingsContent(
             description = stringResource(
                 id = R.string.mozac_summarize_settings_shake_to_summarize_description,
             ),
-            checked = state.shakeToSummarizeEnabled,
-            enabled = state.summarizePagesEnabled,
+            checked = state.isGestureEnabled,
+            enabled = state.isFeatureEnabled,
             onToggle = onShakeToSummarizeToggled,
         )
     }
