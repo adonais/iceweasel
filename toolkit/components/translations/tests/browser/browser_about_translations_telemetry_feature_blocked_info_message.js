@@ -95,7 +95,7 @@ add_task(async function test_about_translations_telemetry_unblock_feature() {
       ],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickUnblockFeatureButton();
+      await aboutTranslationsTestUtils.invokeUnblockFeatureButton();
     }
   );
 

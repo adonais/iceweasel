@@ -196,7 +196,7 @@ add_task(
         expected: [[AboutTranslationsTestUtils.Events.ClearSourceText]],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickClearButton();
+        await aboutTranslationsTestUtils.invokeClearButton();
       }
     );
 
@@ -592,7 +592,7 @@ add_task(
         ],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickTranslationErrorButton();
+        await aboutTranslationsTestUtils.invokeTranslationErrorButton();
         await firstRetryErrorMessageHidden;
         await aboutTranslationsTestUtils.rejectDownloads(1);
         await aboutTranslationsTestUtils.waitForTranslationErrorMessage({
@@ -647,7 +647,7 @@ add_task(
         ],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickTranslationErrorButton();
+        await aboutTranslationsTestUtils.invokeTranslationErrorButton();
         await secondRetryErrorMessageHidden;
         await aboutTranslationsTestUtils.resolveDownloads(1);
       }

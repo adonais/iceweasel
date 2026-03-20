@@ -411,7 +411,7 @@ add_task(
         ],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickSwapLanguagesButton();
+        await aboutTranslationsTestUtils.invokeSwapLanguagesButton();
       }
     );
 
@@ -516,7 +516,7 @@ add_task(
         ],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickSwapLanguagesButton();
+        await aboutTranslationsTestUtils.invokeSwapLanguagesButton();
       }
     );
 

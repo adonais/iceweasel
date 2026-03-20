@@ -56,7 +56,7 @@ add_task(async function test_about_translations_telemetry_swap_button() {
       unexpected: [AboutTranslationsTestUtils.Events.TranslationRequested],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickSwapLanguagesButton();
+      await aboutTranslationsTestUtils.invokeSwapLanguagesButton();
     }
   );
   await TestTranslationsTelemetry.assertEvent(
@@ -76,7 +76,7 @@ add_task(async function test_about_translations_telemetry_swap_button() {
       unexpected: [AboutTranslationsTestUtils.Events.TranslationRequested],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickSwapLanguagesButton();
+      await aboutTranslationsTestUtils.invokeSwapLanguagesButton();
     }
   );
   await TestTranslationsTelemetry.assertEvent(

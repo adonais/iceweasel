@@ -4983,9 +4983,9 @@ class AboutTranslationsTestUtils {
   }
 
   /**
-   * Clicks the swap-languages button in the about:translations UI.
+   * Invokes the swap-languages button in the about:translations UI.
    */
-  async clickSwapLanguagesButton() {
+  async invokeSwapLanguagesButton() {
     logAction();
     try {
       await this.#runInPage(selectors => {
@@ -5000,9 +5000,9 @@ class AboutTranslationsTestUtils {
   }
 
   /**
-   * Clicks the copy button in the about:translations UI.
+   * Invokes the copy button in the about:translations UI.
    */
-  async clickCopyButton() {
+  async invokeCopyButton() {
     logAction();
     try {
       await this.#runInPage(selectors => {
@@ -5015,9 +5015,9 @@ class AboutTranslationsTestUtils {
   }
 
   /**
-   * Clicks the translation error retry button in the about:translations UI.
+   * Invokes the translation error retry button in the about:translations UI.
    */
-  async clickTranslationErrorButton() {
+  async invokeTranslationErrorButton() {
     logAction();
     try {
       await this.#runInPage(selectors => {
@@ -5032,9 +5032,9 @@ class AboutTranslationsTestUtils {
   }
 
   /**
-   * Clicks the language-load error retry button in the about:translations UI.
+   * Invokes the language-load error retry button in the about:translations UI.
    */
-  async clickLanguageLoadErrorButton() {
+  async invokeLanguageLoadErrorButton() {
     logAction();
     try {
       await this.#runInPage(selectors => {
@@ -5049,9 +5049,9 @@ class AboutTranslationsTestUtils {
   }
 
   /**
-   * Clicks the feature-blocked "unblock" button in the about:translations UI.
+   * Invokes the feature-blocked "unblock" button in the about:translations UI.
    */
-  async clickUnblockFeatureButton() {
+  async invokeUnblockFeatureButton() {
     logAction();
     try {
       await this.#runInPage(selectors => {
@@ -6118,7 +6118,7 @@ class AboutTranslationsTestUtils {
    *
    * @returns {Promise<void>}
    */
-  async clickClearButton() {
+  async invokeClearButton() {
     await doubleRaf(document);
     try {
       await this.#runInPage(selectors => {

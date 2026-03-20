@@ -87,7 +87,7 @@ add_task(
         ],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickClearButton();
+        await aboutTranslationsTestUtils.invokeClearButton();
       }
     );
 

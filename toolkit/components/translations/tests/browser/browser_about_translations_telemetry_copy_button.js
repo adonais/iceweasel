@@ -44,7 +44,7 @@ add_task(async function test_about_translations_telemetry_copy_button() {
       expected: [[AboutTranslationsTestUtils.Events.CopyButtonShowCopied]],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickCopyButton();
+      await aboutTranslationsTestUtils.invokeCopyButton();
     }
   );
   await TestTranslationsTelemetry.assertEvent(
@@ -60,7 +60,7 @@ add_task(async function test_about_translations_telemetry_copy_button() {
       expected: [[AboutTranslationsTestUtils.Events.CopyButtonShowCopied]],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickCopyButton();
+      await aboutTranslationsTestUtils.invokeCopyButton();
     }
   );
   await TestTranslationsTelemetry.assertEvent(

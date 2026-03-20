@@ -74,7 +74,7 @@ add_task(async function test_copy_button_copies_text_and_resets() {
       expected: [[AboutTranslationsTestUtils.Events.CopyButtonShowCopied]],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickCopyButton();
+      await aboutTranslationsTestUtils.invokeCopyButton();
     }
   );
   await aboutTranslationsTestUtils.assertCopyButton({
@@ -160,7 +160,7 @@ add_task(async function test_copy_button_reset_clears_copied_state() {
       expected: [[AboutTranslationsTestUtils.Events.CopyButtonShowCopied]],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickCopyButton();
+      await aboutTranslationsTestUtils.invokeCopyButton();
     }
   );
   await aboutTranslationsTestUtils.assertCopyButton({
@@ -173,7 +173,7 @@ add_task(async function test_copy_button_reset_clears_copied_state() {
       expected: [[AboutTranslationsTestUtils.Events.CopyButtonShowCopied]],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickCopyButton();
+      await aboutTranslationsTestUtils.invokeCopyButton();
     }
   );
   await aboutTranslationsTestUtils.assertCopyButton({
@@ -199,7 +199,7 @@ add_task(async function test_copy_button_reset_clears_copied_state() {
       expected: [[AboutTranslationsTestUtils.Events.CopyButtonShowCopied]],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickCopyButton();
+      await aboutTranslationsTestUtils.invokeCopyButton();
     }
   );
   await aboutTranslationsTestUtils.assertCopyButton({
@@ -264,7 +264,7 @@ add_task(async function test_copy_button_reset_when_target_language_changes() {
       expected: [[AboutTranslationsTestUtils.Events.CopyButtonShowCopied]],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickCopyButton();
+      await aboutTranslationsTestUtils.invokeCopyButton();
     }
   );
   await aboutTranslationsTestUtils.assertCopyButton({
@@ -375,7 +375,7 @@ add_task(async function test_copy_button_reset_timeout_fires_event() {
       expected: [[AboutTranslationsTestUtils.Events.CopyButtonShowCopied]],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickCopyButton();
+      await aboutTranslationsTestUtils.invokeCopyButton();
     }
   );
 

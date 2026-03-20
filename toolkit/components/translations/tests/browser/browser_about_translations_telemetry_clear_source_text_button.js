@@ -38,7 +38,7 @@ add_task(
         expected: [[AboutTranslationsTestUtils.Events.ClearSourceText]],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickClearButton();
+        await aboutTranslationsTestUtils.invokeClearButton();
       }
     );
     await TestTranslationsTelemetry.assertEvent(
@@ -60,7 +60,7 @@ add_task(
         expected: [[AboutTranslationsTestUtils.Events.ClearSourceText]],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickClearButton();
+        await aboutTranslationsTestUtils.invokeClearButton();
       }
     );
     await TestTranslationsTelemetry.assertEvent(

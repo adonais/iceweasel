@@ -104,7 +104,7 @@ add_task(
         ],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickLanguageLoadErrorButton();
+        await aboutTranslationsTestUtils.invokeLanguageLoadErrorButton();
       }
     );
 
@@ -129,7 +129,7 @@ add_task(
         ],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickLanguageLoadErrorButton();
+        await aboutTranslationsTestUtils.invokeLanguageLoadErrorButton();
       }
     );
 

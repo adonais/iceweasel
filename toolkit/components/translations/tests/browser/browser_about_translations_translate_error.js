@@ -60,7 +60,7 @@ add_task(async function test_about_translations_translate_error_retry_cycle() {
       ],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickTranslationErrorButton();
+      await aboutTranslationsTestUtils.invokeTranslationErrorButton();
       await aboutTranslationsTestUtils.rejectDownloads(1);
     }
   );
@@ -91,7 +91,7 @@ add_task(async function test_about_translations_translate_error_retry_cycle() {
       ],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickTranslationErrorButton();
+      await aboutTranslationsTestUtils.invokeTranslationErrorButton();
       await aboutTranslationsTestUtils.resolveDownloads(1);
     }
   );

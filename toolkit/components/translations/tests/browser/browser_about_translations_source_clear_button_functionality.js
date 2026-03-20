@@ -61,7 +61,7 @@ add_task(
         ],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickClearButton();
+        await aboutTranslationsTestUtils.invokeClearButton();
       }
     );
 
@@ -139,7 +139,7 @@ add_task(
         ],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickClearButton();
+        await aboutTranslationsTestUtils.invokeClearButton();
       }
     );
 
@@ -247,7 +247,7 @@ add_task(async function test_source_clear_button_can_be_undone() {
       ],
     },
     async () => {
-      await aboutTranslationsTestUtils.clickClearButton();
+      await aboutTranslationsTestUtils.invokeClearButton();
     }
   );
 

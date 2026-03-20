@@ -284,7 +284,7 @@ add_task(
         ],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickUnblockFeatureButton();
+        await aboutTranslationsTestUtils.invokeUnblockFeatureButton();
       }
     );
 
@@ -363,7 +363,7 @@ add_task(
         ],
       },
       async () => {
-        await aboutTranslationsTestUtils.clickUnblockFeatureButton();
+        await aboutTranslationsTestUtils.invokeUnblockFeatureButton();
       }
     );
 
