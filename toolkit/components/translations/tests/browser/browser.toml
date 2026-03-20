@@ -63,6 +63,8 @@ skip-if = [
 
 ["browser_about_translations_swap_languages_button_explicit.js"]
 
+["browser_about_translations_tab_focus_order.js"]
+
 ["browser_about_translations_telemetry_clear_source_text_button.js"]
 
 ["browser_about_translations_telemetry_copy_button.js"]

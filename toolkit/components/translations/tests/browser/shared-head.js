@@ -319,6 +319,7 @@ async function openAboutTranslations({
    */
   const selectors = {
     pageHeader: "header#about-translations-header",
+    learnMoreLink: "a#about-translations-learn-more-link",
     mainUserInterface: "section#about-translations-main-user-interface",
     sourceLanguageSelector: "moz-select#about-translations-source-select",
     targetLanguageSelector: "moz-select#about-translations-target-select",
@@ -6075,6 +6076,66 @@ class AboutTranslationsTestUtils {
       } else {
         ok(isDisabled, "Expected swap-languages button to be disabled.");
       }
+    }
+  }
+
+  /**
+   * Asserts the tab order across the provided selectors, starting from the
+   * first selector focused directly.
+   *
+   * @param {string[]} selectorKeys
+   * @returns {Promise<void>}
+   */
+  async assertTabFocusOrder(selectorKeys) {
+    await doubleRaf(document);
+    logAction(selectorKeys.join(", "));
+
+    try {
+      await this.#runInPage(
+        async (selectors, { selectorKeys }) => {
+          const { document } = content;
+          const EventUtils = ContentTaskUtils.getEventUtils(content);
+          const doubleRaf = () =>
+            new Promise(resolve => {
+              content.requestAnimationFrame(() => {
+                content.requestAnimationFrame(resolve);
+              });
+            });
+
+          const elements = selectorKeys.map(selectorKey => {
+            const selector = selectors[selectorKey];
+            const element = document.querySelector(selector);
+            if (!element) {
+              throw new Error(`Could not find element for "${selectorKey}".`);
+            }
+            return element;
+          });
+
+          const activeElementAtStart = document.activeElement;
+
+          elements[0].focus();
+          await doubleRaf();
+
+          for (let index = 0; index < elements.length; index++) {
+            const element = elements[index];
+            if (document.activeElement !== element) {
+              throw new Error(
+                `Expected "${selectorKeys[index]}" (#${element.id}) to have focus.`
+              );
+            }
+
+            if (index + 1 < elements.length) {
+              EventUtils.synthesizeKey("KEY_Tab", {}, content);
+              await doubleRaf();
+            }
+          }
+
+          activeElementAtStart?.focus?.();
+        },
+        { selectorKeys }
+      );
+    } catch (error) {
+      AboutTranslationsTestUtils.#reportTestFailure(error);
     }
   }
 
