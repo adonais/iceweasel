@@ -136,7 +136,7 @@ class TabsTrayTelemetryMiddlewareTest {
         assertEquals("1", snapshot.single().extra?.getValue("tab_count"))
         assertEquals(1, Metrics.bookmarksAdd["tabs_tray"].testGetValue())
 
-        eventStore.assertSingleEventEquals("bookmark_added")
+        eventStore.assertRecorded("bookmark_added")
     }
 
     @Test
@@ -151,7 +151,7 @@ class TabsTrayTelemetryMiddlewareTest {
         assertEquals("2", snapshot.single().extra?.getValue("tab_count"))
         assertEquals(2, Metrics.bookmarksAdd["tabs_tray"].testGetValue())
 
-        eventStore.assertEventsEqual(listOf("bookmark_added", "bookmark_added"))
+        eventStore.assertRecorded("bookmark_added", "bookmark_added")
     }
 
     @Test

@@ -219,7 +219,7 @@ class ReviewPromptMiddlewareTest {
     fun `WHEN review prompt shown THEN an event is recorded`() {
         store.dispatch(ReviewPromptAction.ReviewPromptShown)
 
-        eventStore.assertSingleEventEquals("review_prompt_shown")
+        eventStore.assertRecorded("review_prompt_shown")
     }
 
     @Test

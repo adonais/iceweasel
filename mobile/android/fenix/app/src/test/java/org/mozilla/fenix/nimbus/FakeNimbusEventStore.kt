@@ -27,15 +27,8 @@ class FakeNimbusEventStore : NimbusEventStore {
     /**
      * Asserts that recorded events are exactly equal to [events] (including order).
      */
-    fun assertEventsEqual(events: List<String>) {
-        assertEquals(events, recordedEvents)
-    }
-
-    /**
-     * Asserts that there was only a single event recorded and it's equal to [eventId].
-     */
-    fun assertSingleEventEquals(eventId: String) {
-        assertEquals(eventId, recordedEvents.single())
+    fun assertRecorded(vararg events: String) {
+        assertEquals(events.asList(), recordedEvents)
     }
 
     /**
