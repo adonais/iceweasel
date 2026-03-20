@@ -129,27 +129,6 @@ void CachedInheritingStyles::AppendTo(
   aArray.AppendElement(AsDirect());
 }
 
-void CachedInheritingStyles::AppendEntriesTo(
-    nsTArray<CachedStyleEntry>& aArray) const {
-  if (IsEmpty()) {
-    return;
-  }
-
-  if (IsIndirect()) {
-    aArray.AppendElements(*AsIndirect());
-    return;
-  }
-
-  if (IsNullDirect()) {
-    aArray.AppendElement(CachedStyleEntry{nullptr, nullptr, NullDirectType()});
-    return;
-  }
-
-  auto* direct = AsDirect();
-  aArray.AppendElement(
-      CachedStyleEntry{do_AddRef(direct), nullptr, direct->GetPseudoType()});
-}
-
 void CachedInheritingStyles::AddSizeOfIncludingThis(nsWindowSizes& aSizes,
                                                     size_t* aCVsSize) const {
   if (IsIndirect()) {

@@ -9,7 +9,6 @@
 #include "StickyScrollContainer.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/CachedInheritingStyles.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/DocumentStyleRootIterator.h"
@@ -2754,28 +2753,21 @@ static nsChangeHint DiffCachedHighlightPseudos(Element& aElement,
                                                const ComputedStyle& aOldStyle,
                                                ComputedStyle& aNewStyle) {
   nsChangeHint hint = nsChangeHint(0);
-
-  AutoTArray<CachedStyleEntry, 4> oldEntries;
-  aOldStyle.GetCachedLazyPseudoEntries(oldEntries);
-  for (const auto& entry : oldEntries) {
-    if (!PseudoStyle::IsPseudoElement(entry.mPseudoType) ||
-        PseudoStyle::IsEagerlyCascadedInServo(entry.mPseudoType)) {
-      continue;
-    }
-    RefPtr<ComputedStyle> newPseudo = aStyleSet.ProbePseudoElementStyle(
-        aElement, entry.mPseudoType, entry.mFunctionalPseudoParameter,
-        &aNewStyle);
-    if (!entry.mStyle && !newPseudo) {
-      continue;
-    }
-    if (!entry.mStyle || !newPseudo) {
-      hint |= nsChangeHint_RepaintFrame | nsChangeHint_UpdateSubtreeOverflow;
-      continue;
-    }
-    uint32_t equalStructs = 0;
-    hint |= entry.mStyle->CalcStyleDifference(*newPseudo, &equalStructs);
-  }
-
+  aOldStyle.ForEachCachedLazyPseudoEntry(
+      [&](ComputedStyle* aStyle, nsAtom* aParam, PseudoStyleType aType) {
+        RefPtr<ComputedStyle> newPseudo = aStyleSet.ProbePseudoElementStyle(
+            aElement, aType, aParam, &aNewStyle);
+        if (!aStyle && !newPseudo) {
+          return;
+        }
+        if (!aStyle || !newPseudo) {
+          hint |=
+              nsChangeHint_RepaintFrame | nsChangeHint_UpdateSubtreeOverflow;
+          return;
+        }
+        uint32_t equalStructs = 0;
+        hint |= aStyle->CalcStyleDifference(*newPseudo, &equalStructs);
+      });
   return hint;
 }
 

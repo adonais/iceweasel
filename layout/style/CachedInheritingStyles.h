@@ -54,9 +54,11 @@ class CachedInheritingStyles {
   // Skips null entries.
   void AppendTo(nsTArray<const ComputedStyle*>& aArray) const;
 
-  // Appends all cached entries (with functional parameters) to the given array.
-  // Includes null entries.
-  void AppendEntriesTo(nsTArray<CachedStyleEntry>& aArray) const;
+  // Calls aFunc(ComputedStyle*, nsAtom*, PseudoStyleType) for each
+  // lazily-cascaded pseudo element entry (null or non-null). Anon box entries
+  // are skipped. The ComputedStyle* and nsAtom* are non-owning.
+  template <typename Func>
+  void ForEachLazyPseudoEntry(Func&& aFunc) const;
 
   CachedInheritingStyles() : mBits(0) {}
   ~CachedInheritingStyles() {

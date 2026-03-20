@@ -14,7 +14,9 @@
 
 #include "MainThreadUtils.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/CachedInheritingStyles.h"
 #include "mozilla/ComputedStyle.h"
+#include "mozilla/PseudoStyleType.h"
 #include "nsStyleStructInlines.h"
 #include "nsStyleStructList.h"
 
@@ -122,6 +124,43 @@ bool ComputedStyle::IsAbsPosContainingBlock(
   // should also handle will-change appropriately.
   return StyleDisplay()->IsPositionedStyle() &&
          !aContextFrame->IsInSVGTextSubtree();
+}
+
+template <typename Func>
+void CachedInheritingStyles::ForEachLazyPseudoEntry(Func&& aFunc) const {
+  if (IsEmpty()) {
+    return;
+  }
+  if (IsNullDirect()) {
+    aFunc(nullptr, nullptr, NullDirectType());
+    return;
+  }
+  if (!IsIndirect()) {
+    ComputedStyle* direct = AsDirect();
+    if (direct->IsLazilyCascadedPseudoElement()) {
+      aFunc(direct, nullptr, direct->GetPseudoType());
+    }
+    return;
+  }
+  for (const auto& entry : *AsIndirect()) {
+    if (!entry.mStyle) {
+      if (PseudoStyle::IsPseudoElement(entry.mPseudoType) &&
+          !PseudoStyle::IsEagerlyCascadedInServo(entry.mPseudoType)) {
+        aFunc(nullptr, entry.mFunctionalPseudoParameter.get(),
+              entry.mPseudoType);
+      }
+      continue;
+    }
+    if (entry.mStyle->IsLazilyCascadedPseudoElement()) {
+      aFunc(entry.mStyle.get(), entry.mFunctionalPseudoParameter.get(),
+            entry.mPseudoType);
+    }
+  }
+}
+
+template <typename Func>
+void ComputedStyle::ForEachCachedLazyPseudoEntry(Func&& aFunc) const {
+  mCachedInheritingStyles.ForEachLazyPseudoEntry(aFunc);
 }
 
 }  // namespace mozilla
