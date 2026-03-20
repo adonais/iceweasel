@@ -37,7 +37,6 @@
 #include "mozilla/RenderingPhase.h"
 #include "mozilla/Result.h"
 #include "mozilla/SegmentedVector.h"
-#include "mozilla/ServoStyleSet.h"
 #include "mozilla/StorageAccessAPIHelper.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -271,6 +270,7 @@ enum class OrientationType : uint8_t;
 enum class PopoverAttributeState : uint8_t;
 class ProcessingInstruction;
 class Promise;
+struct PropertyDefinition;
 class ScriptLoader;
 class Selection;
 class ServiceWorkerDescriptor;
