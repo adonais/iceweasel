@@ -35,8 +35,8 @@ class VideoCaptureFactory : webrtc::VideoCaptureOptions::Callback {
 
   struct CreateVideoCaptureResult {
     webrtc::scoped_refptr<webrtc::VideoCaptureModule> mCapturer;
-    // Pointer to the DesktopCaptureImpl instance if mCapturer is of this type.
-    // nullptr otherwise.
+    // Pointer to the DesktopCaptureImpl instance if mCapturer is of this
+    // type. nullptr otherwise.
     webrtc::DesktopCaptureImpl* mDesktopImpl = nullptr;
   };
 

@@ -29,6 +29,7 @@
 #include "mozilla/DataMutex.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/media/DesktopCaptureInterface.h"
 #include "nsCOMPtr.h"
 
 class nsIThread;
@@ -45,7 +46,8 @@ class VideoCaptureEncodeInterface;
 // Reuses the video engine pipeline for screen sharing.
 // As with video, DesktopCaptureImpl is a proxy for screen sharing
 // and follows the video pipeline design
-class DesktopCaptureImpl : public DesktopCapturer::Callback,
+class DesktopCaptureImpl : public mozilla::DesktopCaptureInterface,
+                           public DesktopCapturer::Callback,
                            public VideoCaptureModule {
  public:
   /* Create a screen capture modules object
@@ -78,7 +80,7 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
   int32_t CaptureSettings(VideoCaptureCapability& aSettings) override;
 
   void CaptureFrameOnThread();
-  mozilla::MediaEventSource<void>* CaptureEndedEvent();
+  mozilla::MediaEventSource<void>* CaptureEndedEvent() override;
 
   const int32_t mModuleId;
   const mozilla::TrackingId mTrackingId;

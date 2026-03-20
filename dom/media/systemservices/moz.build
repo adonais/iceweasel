@@ -50,7 +50,11 @@ if CONFIG["MOZ_WEBRTC"]:
             "-fobjc-arc",
         ]
 
-    if CONFIG["OS_TARGET"] != "Android":
+    if CONFIG["OS_TARGET"] == "Android":
+        UNIFIED_SOURCES += [
+            "EmptyDesktopCapturer.cpp",
+        ]
+    else:
         SOURCES += [
             "video_engine/desktop_capture_impl.cc",
             "video_engine/tab_capturer.cc",
@@ -78,6 +82,7 @@ EXPORTS.mozilla += [
 
 EXPORTS.mozilla.media += [
     "CamerasTypes.h",
+    "DesktopCaptureInterface.h",
     "MediaChild.h",
     "MediaParent.h",
     "MediaSystemResourceClient.h",

@@ -110,10 +110,11 @@ VideoCaptureFactory::CreateVideoCapture(
   MOZ_ASSERT("CreateVideoCapture NO DESKTOP CAPTURE IMPL ON ANDROID" ==
              nullptr);
 #else
-  result.mDesktopImpl =
+  RefPtr desktopImpl =
       webrtc::DesktopCaptureImpl::Create(aModuleId, aUniqueId, aType);
+  result.mDesktopImpl = desktopImpl;
   result.mCapturer =
-      webrtc::scoped_refptr<webrtc::VideoCaptureModule>(result.mDesktopImpl);
+      webrtc::scoped_refptr<webrtc::VideoCaptureModule>(desktopImpl);
 #endif
 
   return result;
