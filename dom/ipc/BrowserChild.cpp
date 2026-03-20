@@ -6,6 +6,7 @@
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/DocAccessibleChild.h"
+#  include "nsAccessibilityService.h"
 #endif
 #include <utility>
 
@@ -4223,6 +4224,17 @@ void BrowserChild::OnPointerRawUpdateEventListenerRemoved(
           ("Removed for %p (remaining: %u)", aWindow,
            mPointerRawUpdateWindowCount));
 }
+
+#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+mozilla::ipc::IPCResult BrowserChild::RecvRequestDocAccessibleForPrint() {
+  if (RefPtr<Document> doc = GetTopLevelDocument()) {
+    if (nsAccessibilityService* serv = GetAccService()) {
+      serv->NotifyOfPrintDocument(doc);
+    }
+  }
+  return IPC_OK();
+}
+#endif
 
 BrowserChildMessageManager::BrowserChildMessageManager(
     BrowserChild* aBrowserChild)

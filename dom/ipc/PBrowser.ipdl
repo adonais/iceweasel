@@ -1068,6 +1068,10 @@ child:
      */
     async DispatchToDropTargetAndResumeEndDragSession(bool aShouldDrop, StringHashSet aAllowedFilePaths);
 
+#if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+    async RequestDocAccessibleForPrint();
+#endif
+
 parent:
     /**
      * Fetches whether this window supports protected media, which is sent back in response.

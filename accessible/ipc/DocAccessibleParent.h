@@ -294,6 +294,10 @@ class DocAccessibleParent : public RemoteAccessible,
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) override;
 
+#ifdef MOZ_ENABLE_SKIA_PDF
+  mozilla::ipc::IPCResult RecvPrinting();
+#endif
+
  private:
   ~DocAccessibleParent();
 

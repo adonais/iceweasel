@@ -150,9 +150,8 @@ void PdfStructTreeBuilder::InitInternal(
     // iframe.
     bp->VisitAllDescendants([this](dom::BrowserParent* descBp) {
       if (!descBp->GetTopLevelDocAccessible()) {
-        // XXX This will become possible in the next patch.
-        //(void)descBp->SendRequestDocAccessibleForPrint();
-        //++mPendingOopIframes;
+        (void)descBp->SendRequestDocAccessibleForPrint();
+        ++mPendingOopIframes;
       }
     });
   }
