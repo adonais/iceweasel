@@ -47,8 +47,8 @@ add_task(async function test_source_table_schema() {
 
     // Verify the schema includes all necessary keys.
     Assert.ok(
-      Object.keys(schema).includes("uuid"),
-      "Schema should include 'uuid' key"
+      Object.keys(schema).includes("id"),
+      "Schema should include 'id' key"
     );
     Assert.ok(
       Object.keys(schema).includes("filename"),
@@ -72,7 +72,7 @@ add_task(async function test_source_table_schema() {
     Assert.greater(data.length, 0, "Should have at least one source");
 
     // Find the expected field indices from the schema.
-    const uuidIndex = schema.uuid;
+    const idIndex = schema.id;
     const filenameIndex = schema.filename;
     const startLineIndex = schema.startLine;
     const startColumnIndex = schema.startColumn;
@@ -86,9 +86,9 @@ add_task(async function test_source_table_schema() {
         "Source entry should be either the same length or lower due to omitted entries"
       );
 
-      // Check uuid (should be a string).
-      const uuid = source[uuidIndex];
-      Assert.equal(typeof uuid, "string", "UUID should be a string");
+      // Check id (should be a string).
+      const id = source[idIndex];
+      Assert.equal(typeof id, "string", "Id should be a string");
 
       // Check filename (can be null or a string).
       const filename = source[filenameIndex];
@@ -116,7 +116,7 @@ add_task(async function test_source_table_schema() {
       );
 
       info(
-        `Source: uuid=${uuid}, filename=${filename}, ` +
+        `Source: id=${id}, filename=${filename}, ` +
           `startLine=${startLine}, startColumn=${startColumn}`
       );
     }
