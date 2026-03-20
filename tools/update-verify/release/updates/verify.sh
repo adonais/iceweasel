@@ -207,7 +207,7 @@ do
           echo "TEST-UNEXPECTED-FAIL: [$release $locale $patch_type] couldn't download updater package"
           continue
         fi
-        unpack_build "$updater_platform" updater "$updater_package_filename" "$locale" "$product"
+        unpack_build "$updater_platform" updater "$MY_DIR/$updater_package_filename" "$locale" "$product"
 
         # Even on Windows, we want Unix-style paths for the updater, because of MSYS.
         cwd=$(\ls -d "$PWD"/updater/"$platform_dirname")
@@ -269,7 +269,7 @@ do
         if [ -e ${diff_file} ]; then
           rm ${diff_file}
         fi
-        check_updates "${platform}" "downloads/${source_file}" "downloads/${target_file}" "${locale}" "${updater}" ${diff_file} "${channel}" "${mar_channel_IDs}" ${update_to_dep} "${mac_update_settings_dir_override}" "${product}"
+        check_updates "${platform}" "${MY_DIR}/downloads/${source_file}" "${MY_DIR}/downloads/${target_file}" "${locale}" "${updater}" ${diff_file} "${channel}" "${mar_channel_IDs}" ${update_to_dep} "${mac_update_settings_dir_override}" "${product}"
         err=$?
         if [ "$err" == "0" ]; then
           continue
