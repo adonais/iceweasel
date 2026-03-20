@@ -10,6 +10,7 @@ import android.util.SparseArray;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import androidx.annotation.UiThread;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -155,6 +156,7 @@ public class AndroidGamepadManager {
         });
   }
 
+  @UiThread
   /* package */ static void doStart(final Context context) {
     ThreadUtils.assertOnUiThread();
     if (!sStarted) {
@@ -175,6 +177,7 @@ public class AndroidGamepadManager {
         });
   }
 
+  @UiThread
   /* package */ static void doStop(final Context context) {
     ThreadUtils.assertOnUiThread();
     if (sStarted) {
@@ -185,6 +188,7 @@ public class AndroidGamepadManager {
     }
   }
 
+  @UiThread
   /* package */ static void handleGamepadAdded(final int deviceId, final byte[] gamepadHandle) {
     ThreadUtils.assertOnUiThread();
     if (!sStarted) {
@@ -234,6 +238,7 @@ public class AndroidGamepadManager {
     }
   }
 
+  @UiThread
   public static boolean handleMotionEvent(final MotionEvent ev) {
     ThreadUtils.assertOnUiThread();
     if (!sStarted) {
@@ -287,6 +292,7 @@ public class AndroidGamepadManager {
     return true;
   }
 
+  @UiThread
   public static boolean handleKeyEvent(final KeyEvent ev) {
     ThreadUtils.assertOnUiThread();
     if (!sStarted) {
