@@ -39,11 +39,7 @@ run-if = [
 
 ["browser_application_xml_handle_internally.js"]
 
-["browser_application_xml_handle_internally_xul.js"]
-
 ["browser_applications_selection.js"]
-
-["browser_applications_selection_xul.js"]
 
 ["browser_backup_visibility.js"]
 
@@ -76,11 +72,6 @@ support-files = ["browser_bug1184989_prevent_scrolling_when_preferences_flipped.
 ["browser_cert_export.js"]
 
 ["browser_change_app_handler.js"]
-run-if = [
-  "os == 'win'", # Windows-specific handler application selection dialog
-]
-
-["browser_change_app_handler_xul.js"]
 run-if = [
   "os == 'win'", # Windows-specific handler application selection dialog
 ]
@@ -164,8 +155,6 @@ skip-if = [
 ]
 
 ["browser_filetype_dialog.js"]
-
-["browser_filetype_dialog_xul.js"]
 
 ["browser_fluent.js"]
 
@@ -259,16 +248,11 @@ fail-if = [
 ["browser_open_download_preferences.js"]
 support-files = ["empty_pdf_file.pdf"]
 
-["browser_open_download_preferences_xul.js"]
-support-files = ["empty_pdf_file.pdf"]
-
 ["browser_open_migration_wizard.js"]
 
 ["browser_password_management.js"]
 
 ["browser_pdf_disabled.js"]
-
-["browser_pdf_disabled_xul.js"]
 
 ["browser_performance.js"]
 

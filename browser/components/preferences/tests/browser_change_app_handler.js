@@ -27,10 +27,6 @@ function setupFakeHandler() {
 }
 
 add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.settings-redesign.enabled", true]],
-  });
-
   setupFakeHandler();
 
   let appHandlerInitialized = TestUtils.topicObserved("app-handler-loaded");
@@ -44,7 +40,7 @@ add_task(async function () {
 
   await appHandlerInitialized;
 
-  let container = win.document.getElementById("applicationsHandlersView");
+  let container = win.document.getElementById("handlersView");
   ok(container, "handlersView is present");
 
   let ourItem = container.querySelector(`moz-box-item[type="${testItemType}"]`);
