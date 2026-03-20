@@ -9,6 +9,7 @@ import json
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
+from taskgraph.util.schema import resolve_keyed_by
 from taskgraph.util.treeherder import inherit_treeherder_from_dep
 
 from gecko_taskgraph.util.attributes import release_level
@@ -43,6 +44,7 @@ def make_task_description(config, tasks):
     # If no balrog release history, then don't generate partials
     if not config.params.get("release_history"):
         return
+
     for task in tasks:
         dep_task = get_primary_dependency(config, task)
         assert dep_task
@@ -70,8 +72,6 @@ def make_task_description(config, tasks):
         # Fetches from upstream repackage task
         task["fetches"][dep_task.kind] = [artifact_path]
 
-        cert_type = identify_desired_signing_keys(config).replace("-signing", "")
-
         from_data = []
         update_number = 1
         for build in sorted(builds):
@@ -92,8 +92,17 @@ def make_task_description(config, tasks):
             f"--from-mars-json='{from_mars_json}'",
             f"--mar-channel-id='{mar_channel_id}'",
             f"--branch={config.params['project']}",
-            f"--cert-path=/builds/worker/workspace/keys/{cert_type}.pubkey",
         ]
+
+        resolve_keyed_by(
+            task, "validate-cert", task["name"], project=config.params["project"]
+        )
+        validate_cert = task.pop("validate-cert")
+        cert_type = identify_desired_signing_keys(config).replace("-signing", "")
+        if validate_cert:
+            extra_params.append(
+                f"--cert-path=/builds/worker/workspace/keys/{cert_type}.pubkey"
+            )
 
         if release_level(config.params) == "staging":
             extra_params.append("--allow-staging-urls")
