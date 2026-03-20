@@ -307,7 +307,7 @@ add_task(async function test_chat_tool_call_get_user_memories() {
         conversation.addUserMessage(
           "Tell me everything you know about me",
           "https://example.com",
-          { memoriesEnabled: true }
+          0
         );
         conversation.addAssistantMessage("text", "");
 

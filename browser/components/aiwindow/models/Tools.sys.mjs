@@ -75,11 +75,11 @@ function isAllowedTabUrl(url) {
 // through prompt injection could leak the contents of a user's entire history.
 const MAX_HISTORY_RESULTS = 15;
 
-export const GET_OPEN_TABS = "get_open_tabs";
-export const SEARCH_BROWSING_HISTORY = "search_browsing_history";
-export const GET_PAGE_CONTENT = "get_page_content";
-export const RUN_SEARCH = "run_search";
-export const GET_USER_MEMORIES = "get_user_memories";
+const GET_OPEN_TABS = "get_open_tabs";
+const SEARCH_BROWSING_HISTORY = "search_browsing_history";
+const GET_PAGE_CONTENT = "get_page_content";
+const RUN_SEARCH = "run_search";
+const GET_USER_MEMORIES = "get_user_memories";
 
 export const TOOLS = [
   GET_OPEN_TABS,
