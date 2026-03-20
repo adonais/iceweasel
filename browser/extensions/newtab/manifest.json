@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "New Tab",
   "description": "",
-  "version": "150.2.0",
+  "version": "150.3.0",
 
   "browser_specific_settings": {
     "gecko": {
