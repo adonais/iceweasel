@@ -131,6 +131,7 @@ void MFMediaEngineParent::DestroyEngineIfExists(
   mRequestSampleListener.DisconnectIfExists();
   if (mDXGIDeviceManager) {
     mDXGIDeviceManager = nullptr;
+    wmf::MFUnlockDXGIDeviceManager();
   }
   if (aError) {
     (void)SendNotifyError(*aError);
