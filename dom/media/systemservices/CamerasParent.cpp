@@ -438,8 +438,8 @@ AggregateCapturer::~AggregateCapturer() {
   mCaptureEndedListener.DisconnectIfExists();
   mEngine->WithEntry(mCaptureId, [&](VideoEngine::CaptureEntry& aEntry) {
     if (auto* cap = aEntry.VideoCapture().get()) {
-      cap->DeRegisterCaptureDataCallback(this);
-      cap->StopCaptureIfAllClientsClose();
+      cap->DeRegisterCaptureDataCallback();
+      cap->StopCapture();
     }
   });
   MOZ_ALWAYS_FALSE(mEngine->ReleaseVideoCapture(mCaptureId));

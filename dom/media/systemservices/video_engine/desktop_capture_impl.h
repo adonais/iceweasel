@@ -16,7 +16,6 @@
  */
 
 #include <memory>
-#include <set>
 #include <string>
 
 #include "MediaEventSource.h"
@@ -64,9 +63,7 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
       webrtc::VideoSinkInterface<VideoFrame>* aCallback) override;
   void RegisterCaptureDataCallback(
       RawVideoSinkInterface* dataCallback) override {}
-  void DeRegisterCaptureDataCallback(
-      webrtc::VideoSinkInterface<VideoFrame>* aCallback) override;
-  int32_t StopCaptureIfAllClientsClose() override;
+  void DeRegisterCaptureDataCallback() override;
 
   int32_t SetCaptureRotation(VideoRotation aRotation) override;
   bool SetApplyRotation(bool aEnable) override;
@@ -130,10 +127,9 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
       RTC_GUARDED_BY(mCaptureThreadChecker);
   // Used to make sure incoming timestamp is increasing for every frame.
   webrtc::Timestamp mNextFrameMinimumTime RTC_GUARDED_BY(mCaptureThreadChecker);
-  // Callbacks for captured frames. Mutated on mControlThread, callbacks happen
+  // Callback for captured frames. Mutated on mControlThread, callbacks happen
   // on mCaptureThread.
-  mozilla::DataMutex<std::set<webrtc::VideoSinkInterface<VideoFrame>*>>
-      mCallbacks;
+  mozilla::DataMutex<webrtc::VideoSinkInterface<VideoFrame>*> mCallback;
   // Subscribers to this event will be notified when the capture has ended.
   mozilla::MediaEventProducer<void> mCaptureEndedEvent;
 

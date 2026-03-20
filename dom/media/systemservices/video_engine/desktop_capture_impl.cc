@@ -273,7 +273,7 @@ DesktopCaptureImpl::DesktopCaptureImpl(const int32_t aId, const char* aUniqueId,
       mDeviceType(aType),
       mControlThread(mozilla::GetCurrentSerialEventTarget()),
       mNextFrameMinimumTime(Timestamp::Zero()),
-      mCallbacks("DesktopCaptureImpl::mCallbacks"),
+      mCallback("DesktopCaptureImpl::mCallback"),
       mBufferPool(false, 2) {}
 
 DesktopCaptureImpl::~DesktopCaptureImpl() {
@@ -283,27 +283,13 @@ DesktopCaptureImpl::~DesktopCaptureImpl() {
 
 void DesktopCaptureImpl::RegisterCaptureDataCallback(
     webrtc::VideoSinkInterface<VideoFrame>* aDataCallback) {
-  auto callbacks = mCallbacks.Lock();
-  callbacks->insert(aDataCallback);
+  auto callback = mCallback.Lock();
+  *callback = aDataCallback;
 }
 
-void DesktopCaptureImpl::DeRegisterCaptureDataCallback(
-    webrtc::VideoSinkInterface<VideoFrame>* aDataCallback) {
-  auto callbacks = mCallbacks.Lock();
-  auto it = callbacks->find(aDataCallback);
-  if (it != callbacks->end()) {
-    callbacks->erase(it);
-  }
-}
-
-int32_t DesktopCaptureImpl::StopCaptureIfAllClientsClose() {
-  {
-    auto callbacks = mCallbacks.Lock();
-    if (!callbacks->empty()) {
-      return 0;
-    }
-  }
-  return StopCapture();
+void DesktopCaptureImpl::DeRegisterCaptureDataCallback() {
+  auto callback = mCallback.Lock();
+  *callback = nullptr;
 }
 
 int32_t DesktopCaptureImpl::SetCaptureRotation(VideoRotation aRotation) {
@@ -530,8 +516,8 @@ void DesktopCaptureImpl::NotifyOnFrame(const VideoFrame& aFrame) {
   MOZ_ASSERT(nextFrameMinimumTime >= mNextFrameMinimumTime);
 
   mNextFrameMinimumTime = nextFrameMinimumTime;
-  auto callbacks = mCallbacks.Lock();
-  for (auto* cb : *callbacks) {
+  auto callback = mCallback.Lock();
+  if (auto& cb = *callback) {
     cb->OnFrame(aFrame);
   }
 }
