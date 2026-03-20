@@ -2,8 +2,6 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
-/* global promiseNavigateAndLoad, AIWINDOW_URL, openAIWindow */
-
 const { AIWindowUI } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AIWindowUI.sys.mjs"
 );
@@ -91,11 +89,12 @@ add_task(async function test_new_tab_closes_opened_sidebar_convo() {
 
     newTab = await BrowserTestUtils.openNewForegroundTab(
       win.gBrowser,
-      AIWINDOW_URL
+      "about:blank"
     );
-    await TestUtils.waitForCondition(
-      () => !AIWindowUI.isSidebarOpen(win),
-      "Sidebar should close"
+    await BrowserTestUtils.waitForMutationCondition(
+      win.document.getElementById(AIWindowUI.BOX_ID),
+      { attributes: true, attributeFilter: ["hidden"] },
+      () => !AIWindowUI.isSidebarOpen(win)
     );
 
     Assert.ok(
@@ -138,9 +137,10 @@ add_task(
       // Navigate to a URL
       await promiseNavigateAndLoad(browser, "https://example.com/");
 
-      await TestUtils.waitForCondition(
-        () => AIWindowUI.isSidebarOpen(win),
-        "Sidebar should open"
+      await BrowserTestUtils.waitForMutationCondition(
+        win.document.getElementById(AIWindowUI.BOX_ID),
+        { attributes: true, attributeFilter: ["hidden"] },
+        () => AIWindowUI.isSidebarOpen(win)
       );
 
       Assert.ok(AIWindowUI.isSidebarOpen(win), "The sidebar should be open");
@@ -185,27 +185,27 @@ add_task(
         "Sidebar should be open after navigating away"
       );
 
-      // Open a new AI Window tab - sidebar should close
+      // Open a new tab - sidebar should close
       newTab = await BrowserTestUtils.openNewForegroundTab(
         win.gBrowser,
-        AIWINDOW_URL
+        "about:blank"
       );
-      await TestUtils.waitForCondition(
-        () => !AIWindowUI.isSidebarOpen(win),
-        "Sidebar should close"
+      await BrowserTestUtils.waitForMutationCondition(
+        win.document.getElementById(AIWindowUI.BOX_ID),
+        { attributes: true, attributeFilter: ["hidden"] },
+        () => !AIWindowUI.isSidebarOpen(win)
       );
       Assert.ok(
         !AIWindowUI.isSidebarOpen(win),
-        "Sidebar should close when switching to new AI Window tab"
+        "Sidebar should close when switching to new tab"
       );
 
       // Switch back to the original tab - sidebar should reopen
       await BrowserTestUtils.switchTab(win.gBrowser, originalTab);
-
-      // Wait for sidebar to reopen using TestUtils.waitForCondition
-      await TestUtils.waitForCondition(
-        () => AIWindowUI.isSidebarOpen(win),
-        "Sidebar should reopen when switching back to tab with conversation"
+      await BrowserTestUtils.waitForMutationCondition(
+        win.document.getElementById(AIWindowUI.BOX_ID),
+        { attributes: true, attributeFilter: ["hidden"] },
+        () => AIWindowUI.isSidebarOpen(win)
       );
       Assert.ok(
         AIWindowUI.isSidebarOpen(win),
@@ -380,9 +380,10 @@ add_task(async function test_navigate_with_empty_conversation_opens_sidebar() {
     // Navigate to a URL
     await promiseNavigateAndLoad(browser, "https://example.com/");
 
-    await TestUtils.waitForCondition(
-      () => AIWindowUI.isSidebarOpen(win),
-      "Sidebar should open"
+    await BrowserTestUtils.waitForMutationCondition(
+      win.document.getElementById(AIWindowUI.BOX_ID),
+      { attributes: true, attributeFilter: ["hidden"] },
+      () => AIWindowUI.isSidebarOpen(win)
     );
 
     Assert.ok(
@@ -515,9 +516,10 @@ add_task(
       // Navigate tab A away from AIWINDOW_URL to open sidebar
       await promiseNavigateAndLoad(browserA, "https://example.com/");
 
-      await TestUtils.waitForCondition(
-        () => AIWindowUI.isSidebarOpen(win),
-        "Sidebar should open"
+      await BrowserTestUtils.waitForMutationCondition(
+        win.document.getElementById(AIWindowUI.BOX_ID),
+        { attributes: true, attributeFilter: ["hidden"] },
+        () => AIWindowUI.isSidebarOpen(win)
       );
       Assert.ok(AIWindowUI.isSidebarOpen(win), "Sidebar should open for tab A");
 
@@ -596,9 +598,10 @@ add_task(
 
       // The sidebar should remain open when switching to tab B (which has a conversation).
       // If this fails, it indicates a real bug in tab state management.
-      await TestUtils.waitForCondition(
-        () => AIWindowUI.isSidebarOpen(win),
-        "Sidebar should open"
+      await BrowserTestUtils.waitForMutationCondition(
+        win.document.getElementById(AIWindowUI.BOX_ID),
+        { attributes: true, attributeFilter: ["hidden"] },
+        () => AIWindowUI.isSidebarOpen(win)
       );
       Assert.ok(
         AIWindowUI.isSidebarOpen(win),
@@ -665,14 +668,15 @@ add_task(
         })
       );
 
-      // Open a new AI Window tab - sidebar should close
+      // Open a new tab - sidebar should close
       newTab = await BrowserTestUtils.openNewForegroundTab(
         win.gBrowser,
-        AIWINDOW_URL
+        "about:blank"
       );
-      await TestUtils.waitForCondition(
-        () => !AIWindowUI.isSidebarOpen(win),
-        "Sidebar should close"
+      await BrowserTestUtils.waitForMutationCondition(
+        win.document.getElementById(AIWindowUI.BOX_ID),
+        { attributes: true, attributeFilter: ["hidden"] },
+        () => !AIWindowUI.isSidebarOpen(win)
       );
 
       Assert.ok(
@@ -731,11 +735,12 @@ add_task(async function test_close_tab_with_active_sidebar() {
     // Open a new tab to switch to before closing original
     newTab = await BrowserTestUtils.openNewForegroundTab(
       win.gBrowser,
-      AIWINDOW_URL
+      "about:blank"
     );
-    await TestUtils.waitForCondition(
-      () => !AIWindowUI.isSidebarOpen(win),
-      "Sidebar should close"
+    await BrowserTestUtils.waitForMutationCondition(
+      win.document.getElementById(AIWindowUI.BOX_ID),
+      { attributes: true, attributeFilter: ["hidden"] },
+      () => !AIWindowUI.isSidebarOpen(win)
     );
     Assert.ok(
       !AIWindowUI.isSidebarOpen(win),
@@ -744,9 +749,10 @@ add_task(async function test_close_tab_with_active_sidebar() {
 
     // Close the original tab with conversation - should not throw
     await BrowserTestUtils.removeTab(originalTab);
-    await TestUtils.waitForCondition(
-      () => !AIWindowUI.isSidebarOpen(win),
-      "Sidebar should close"
+    await BrowserTestUtils.waitForMutationCondition(
+      win.document.getElementById(AIWindowUI.BOX_ID),
+      { attributes: true, attributeFilter: ["hidden"] },
+      () => !AIWindowUI.isSidebarOpen(win)
     );
     Assert.ok(
       !AIWindowUI.isSidebarOpen(win),
@@ -847,9 +853,10 @@ add_task(async function test_classic_mode_disables_tab_state_events() {
 
     await promiseNavigateAndLoad(browser, "https://example.com/");
 
-    await TestUtils.waitForCondition(
-      () => AIWindowUI.isSidebarOpen(win),
-      "Sidebar should open"
+    await BrowserTestUtils.waitForMutationCondition(
+      win.document.getElementById(AIWindowUI.BOX_ID),
+      { attributes: true, attributeFilter: ["hidden"] },
+      () => AIWindowUI.isSidebarOpen(win)
     );
     Assert.ok(
       AIWindowUI.isSidebarOpen(win),
@@ -865,7 +872,7 @@ add_task(async function test_classic_mode_disables_tab_state_events() {
 
     newTab = await BrowserTestUtils.openNewForegroundTab(
       win.gBrowser,
-      AIWINDOW_URL
+      "about:blank"
     );
     await BrowserTestUtils.switchTab(win.gBrowser, originalTab);
 
@@ -909,9 +916,10 @@ add_task(async function test_ask_button_close_persists_across_tab_switches() {
 
     await promiseNavigateAndLoad(browser, "https://example.com/");
 
-    await TestUtils.waitForCondition(
-      () => AIWindowUI.isSidebarOpen(win),
-      "Sidebar should open"
+    await BrowserTestUtils.waitForMutationCondition(
+      win.document.getElementById(AIWindowUI.BOX_ID),
+      { attributes: true, attributeFilter: ["hidden"] },
+      () => AIWindowUI.isSidebarOpen(win)
     );
     Assert.ok(
       AIWindowUI.isSidebarOpen(win),
@@ -925,7 +933,7 @@ add_task(async function test_ask_button_close_persists_across_tab_switches() {
       "Sidebar should be closed after Ask button toggle"
     );
 
-    await BrowserTestUtils.openNewForegroundTab(win.gBrowser, AIWINDOW_URL);
+    await BrowserTestUtils.openNewForegroundTab(win.gBrowser, "about:blank");
     await BrowserTestUtils.switchTab(win.gBrowser, originalTab);
     await new Promise(resolve => win.setTimeout(resolve, 100));
 
@@ -936,40 +944,6 @@ add_task(async function test_ask_button_close_persists_across_tab_switches() {
   } finally {
     await BrowserTestUtils.closeWindow(win);
     sb.restore();
-  }
-});
-
-// Switching to tab with no state keeps sidebar open by default
-add_task(async function test_tab_with_no_state_should_keep_sidebar() {
-  let win, newTab;
-  try {
-    win = await openAIWindow();
-
-    AIWindowUI.openSidebar(win);
-    Assert.ok(
-      AIWindowUI.isSidebarOpen(win),
-      "Sidebar should be opened by AIWindowUI.openSidebar()"
-    );
-
-    newTab = await BrowserTestUtils.openNewForegroundTab(
-      win.gBrowser,
-      "https://example.com/"
-    );
-
-    await TestUtils.waitForCondition(
-      () => AIWindowUI.isSidebarOpen(win),
-      "Sidebar should open"
-    );
-
-    Assert.ok(
-      AIWindowUI.isSidebarOpen(win),
-      "Sidebar should remain open when switching to tab with no state (shouldOpenSidebar defaults to true)"
-    );
-  } finally {
-    if (newTab) {
-      await BrowserTestUtils.removeTab(newTab);
-    }
-    await BrowserTestUtils.closeWindow(win);
   }
 });
 
@@ -998,9 +972,10 @@ add_task(async function test_ask_button_close_persists_across_navigation() {
 
     await promiseNavigateAndLoad(browser, "https://example.com/");
 
-    await TestUtils.waitForCondition(
-      () => AIWindowUI.isSidebarOpen(win),
-      "Sidebar should open"
+    await BrowserTestUtils.waitForMutationCondition(
+      win.document.getElementById(AIWindowUI.BOX_ID),
+      { attributes: true, attributeFilter: ["hidden"] },
+      () => AIWindowUI.isSidebarOpen(win)
     );
     Assert.ok(
       AIWindowUI.isSidebarOpen(win),

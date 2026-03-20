@@ -87,9 +87,6 @@ add_task(async function test_chat_intent_in_aiwindow() {
   // We want a normal visit, not a 404, to have it appear in the urlbar results.
   await lazy.PlacesTestUtils.addVisits(Services.io.newURI(url + "hello"));
 
-  // Close the sidebar so it doesn't interfere with urlbar focus.
-  AIWindowUI.closeSidebar(win);
-
   // Make a search in the urlbar.
   await lazy.UrlbarTestUtils.promiseAutocompleteResultPopup({
     window: win,
