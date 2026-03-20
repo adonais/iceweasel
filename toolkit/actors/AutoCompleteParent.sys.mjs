@@ -224,11 +224,19 @@ export class AutoCompleteParent extends JSWindowActorParent {
     // the layout varies according to different result type
     this.openedPopup.setAttribute("resultstyles", [...resultStyles].join(" "));
     this.openedPopup.hidden = false;
-    // don't allow the popup to become overly narrow
-    this.openedPopup.style.setProperty(
-      "--panel-width",
-      Math.max(100, rect.width) + "px"
-    );
+
+    if (
+      !Services.prefs.getBoolPref("browser.autocomplete-row-item-ui.enabled")
+    ) {
+      // don't allow the popup to become overly narrow
+      this.openedPopup.style.setProperty(
+        "--panel-width",
+        Math.max(100, rect.width) + "px"
+      );
+    } else {
+      this.openedPopup.style.removeProperty("--panel-width");
+    }
+
     this.openedPopup.style.direction = dir;
 
     AutoCompleteResultView.setResults(this, results);

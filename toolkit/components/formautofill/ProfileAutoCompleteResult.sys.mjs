@@ -381,6 +381,13 @@ export class AddressResult extends ProfileAutoCompleteResult {
         primary,
         secondary,
         ariaLabel,
+        image: Services.prefs.getBoolPref(
+          "browser.autocomplete-row-item-ui.enabled"
+        )
+          ? // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+            "chrome://browser/skin/fxa/avatar-empty.svg"
+          : "",
+        type: "address",
       });
     }
 
@@ -507,6 +514,7 @@ export class CreditCardResult extends ProfileAutoCompleteResult {
           secondary: secondary.toString().replaceAll("*", "•"),
           ariaLabel,
           image,
+          type: "payment",
         };
       });
 

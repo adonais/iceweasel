@@ -7,6 +7,11 @@
 // This is loaded into all XUL windows. Wrap in a block to prevent
 // leaking to window scope.
 {
+  ChromeUtils.importESModule(
+    "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
+    { global: "current" }
+  );
+
   const MozPopupElement = MozElements.MozElementMixin(XULPopupElement);
   MozElements.MozAutocompleteRichlistboxPopup = class MozAutocompleteRichlistboxPopup extends (
     MozPopupElement
@@ -275,8 +280,17 @@
         // clear any previous selection, see bugs 400671 and 488357
         this.selectedIndex = -1;
 
-        var width = aElement.getBoundingClientRect().width;
-        this.style.setProperty("--panel-width", Math.max(width, 100) + "px");
+        if (
+          !Services.prefs.getBoolPref(
+            "browser.autocomplete-row-item-ui.enabled"
+          )
+        ) {
+          var width = aElement.getBoundingClientRect().width;
+          this.style.setProperty("--panel-width", Math.max(width, 100) + "px");
+        } else {
+          this.style.removeProperty("--panel-width");
+        }
+
         // invalidate() depends on the width attribute
         this._invalidate();
 
@@ -316,7 +330,31 @@
       if (this._appendResultTimeout) {
         clearTimeout(this._appendResultTimeout);
       }
-      this._appendCurrentResult(reason);
+
+      // ensure we clear the old/new UI items first if this is the first
+      // time we are rendering the richlistbox children for either pref
+      if (
+        Services.prefs.getBoolPref("browser.autocomplete-row-item-ui.enabled")
+      ) {
+        if (
+          !this.richlistbox.classList.contains(
+            "autocomplete-row-item-container"
+          )
+        ) {
+          this.richlistbox.replaceChildren();
+        }
+
+        this.richlistbox.classList.add("autocomplete-row-item-container");
+        this._appendAutocompleteResults();
+      } else {
+        if (
+          this.richlistbox.classList.contains("autocomplete-row-item-container")
+        ) {
+          this.richlistbox.replaceChildren();
+        }
+        this.richlistbox.classList.remove("autocomplete-row-item-container");
+        this._appendCurrentResult(reason);
+      }
     }
 
     _collapseUnusedItems() {
@@ -381,6 +419,81 @@
       // We need to get the ceiling of the calculated value to ensure that the
       // box fully contains all of its contents and doesn't cause a scrollbar.
       this.richlistbox.style.maxHeight = Math.ceil(height) + "px";
+    }
+
+    _createAutocompleteRowItem() {
+      const item = document.createXULElement("richlistitem");
+      item.className = "autocomplete-row-item";
+      item.appendChild(document.createElement("autocomplete-row-item"));
+      return item;
+    }
+
+    _appendAutocompleteResults() {
+      const controller = this.mInput.controller;
+      const matchCount = this.matchCount;
+
+      // Process maxRows per chunk to improve performance and user experience
+      for (let i = 0; i < this.maxRows; i++) {
+        if (this._currentIndex >= matchCount) {
+          break;
+        }
+
+        let style = controller.getStyleAt(this._currentIndex);
+        let value =
+          style && style.includes("autofill")
+            ? controller.getFinalCompleteValueAt(this._currentIndex)
+            : controller.getValueAt(this._currentIndex);
+        let label = controller.getLabelAt(this._currentIndex);
+        let comment = controller.getCommentAt(this._currentIndex);
+        let image = controller.getImageAt(this._currentIndex);
+
+        const parsedComment = comment.length ? JSON.parse(comment) : null;
+
+        // Reuse the existing row item for an existing result if possible.
+        if (!this.richlistbox.children[this._currentIndex]) {
+          this.richlistbox.appendChild(this._createAutocompleteRowItem());
+        }
+
+        const item = this.richlistbox.children[this._currentIndex];
+        const row = item.querySelector("autocomplete-row-item");
+
+        if (row) {
+          row.label = label;
+          row.description = parsedComment?.secondary ?? null;
+          row.icon = image;
+          row.value = value;
+          row.actions = { primaryAction: () => {} };
+        }
+
+        item.setAttribute("dir", this.style.direction);
+        item.setAttribute("originaltype", style);
+        item.toggleAttribute(
+          "footer",
+          ["action", "loginsFooter"].includes(style)
+        );
+
+        if (parsedComment?.ariaLabel) {
+          item.setAttribute("aria-label", parsedComment.ariaLabel);
+        } else {
+          item.removeAttribute("aria-label");
+        }
+
+        if (parsedComment?.type) {
+          item.setAttribute("type", parsedComment.type);
+        } else {
+          item.removeAttribute("type");
+        }
+        item.collapsed = false;
+
+        this._currentIndex++;
+      }
+
+      if (this._currentIndex < matchCount) {
+        this._appendResultTimeout = setTimeout(
+          () => this._appendAutocompleteResults(),
+          0
+        );
+      }
     }
 
     _appendCurrentResult(invalidateReason) {
