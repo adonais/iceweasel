@@ -18,6 +18,101 @@ android-components:
         - "'test-components"
         - "^source-test 'android-components"
 
+android-fenix:
+    selector: fuzzy
+    description: >-
+        Run Fenix builds and tests.
+    query:
+        - "'build-apk-fenix-debug"
+        - "'signing-apk-fenix-debug"
+        - "'build-apk-fenix-android-test-debug"
+        - "'signing-apk-fenix-android-test-debug"
+        - "'test-apk-fenix-debug"
+        - "'ui-test-apk-fenix-arm-debug"
+        - "^source-test 'fenix"
+        - "'generate-baseline-profile-firebase-fenix"
+
+android-frontend:
+    selector: fuzzy
+    description: >-
+        Run android-components, Focus, and Fenix builds and tests.
+    query:
+        - "'build-components"
+        - "'test-components"
+        - "'build-apk-fenix-debug"
+        - "'signing-apk-fenix-debug"
+        - "'build-apk-fenix-android-test-debug"
+        - "'signing-apk-fenix-android-test-debug"
+        - "'test-apk-fenix-debug"
+        - "'ui-test-apk-fenix-arm-debug"
+        - "'build-apk-focus-debug"
+        - "'signing-apk-focus-debug"
+        - "'build-apk-focus-android-test-debug"
+        - "'signing-apk-focus-android-test-debug"
+        - "'test-apk-focus-debug"
+        - "'ui-test-apk-focus-arm-debug"
+        - "^source-test 'android | 'fenix | 'focus"
+        - "'generate-baseline-profile-firebase-fenix"
+
+android-focus:
+    selector: fuzzy
+    description: >-
+        Run Focus builds and tests.
+    query:
+        - "'build-apk-focus-debug"
+        - "'signing-apk-focus-debug"
+        - "'build-apk-focus-android-test-debug"
+        - "'signing-apk-focus-android-test-debug"
+        - "'test-apk-focus-debug"
+        - "'ui-test-apk-focus-arm-debug"
+        - "^source-test 'focus"
+
+android-fullstack:
+    selector: fuzzy
+    full: true
+    no_artifact: true
+    description: >-
+        Run GeckoView, android-components, Focus, and Fenix builds and tests.
+    query:
+        # All Android lints
+        - "^source-test-mozlint 'android"
+        # Firefox Android builds and tests (from firefox-android preset)
+        - "'build-components !nightly- !beta- !release-"
+        - "'test-components"
+        - "'build-apk-fenix-debug"
+        - "'signing-apk-fenix-debug"
+        - "'build-apk-fenix-android-test-debug"
+        - "'signing-apk-fenix-android-test-debug"
+        - "'test-apk-fenix-debug"
+        - "'ui-test-apk-fenix-arm-debug"
+        - "'build-apk-focus-debug"
+        - "'signing-apk-focus-debug"
+        - "'build-apk-focus-android-test-debug"
+        - "'signing-apk-focus-android-test-debug"
+        - "'test-apk-focus-debug"
+        - "'ui-test-apk-focus-arm-debug"
+        - "^source-test 'android | 'fenix | 'focus"
+        - "'generate-baseline-profile-firebase-fenix"
+        # GeckoView tests (from android-geckoview preset)
+        - "^source-test-mozlint eslint$ | rejected-words$ | file-perm$ | file-whitespace$"
+        # Miscellaneous Tests
+        - "^test-android !shippable '64 'em-14 'gtest | 'cpp | junit-fis"
+        # Mochitests
+        - "^test-android !shippable !cf !gli !iso      'em-14 'media | 'plain"
+        - "^test-android !shippable !cf !gli !iso !swr 'hw 'media 'debug"
+        - "^test-android !shippable !cf !gli !iso !swr 'hw 'mochitest-webgl 'nofis"
+        # Reftests
+        - "^test-android !shippable !iso 'em-14 'geckoview-crashtest | 'geckoview-reftest 'nofis"
+        # Web Platform Tests
+        - "^test-android !shippable !headless 'em-14 'wdspec"
+        - "^test-android !shippable       !cf !iso            'em-14 'web-platform-tests-crashtest 'debug"
+        - "^test-android !shippable       !cf !iso       !swr 'em-14 'web-platform-tests-crashtest"
+        - "^test-android !shippable !back !cf !iso !ship !swr 'em-14 'web-platform-tests-nofis"
+        - "^test-android !shippable !back !cf !iso            'em-14 'web-platform-tests-reftest 'nofis 'debug"
+        - "^test-android !shippable !back !cf !iso       !swr 'em-14 'web-platform-tests-reftest 'nofis"
+        # XPCShell
+        - "^test-android !shippable !iso 'em-14 'xpcshell"
+
 android-geckoview:
     selector: fuzzy
     full: true
@@ -137,101 +232,6 @@ devtools-linux:
         - "'mozlint-eslint"
         - "'mochitest-devtools-chrome | 'mochitest-chrome-1proc 'linux !spi !asan !tsan"
         - "'xpcshell 'linux !nofis !asan !tsan !condprof !ioi"
-
-fenix:
-    selector: fuzzy
-    description: >-
-        Run Fenix builds and tests.
-    query:
-        - "'build-apk-fenix-debug"
-        - "'signing-apk-fenix-debug"
-        - "'build-apk-fenix-android-test-debug"
-        - "'signing-apk-fenix-android-test-debug"
-        - "'test-apk-fenix-debug"
-        - "'ui-test-apk-fenix-arm-debug"
-        - "^source-test 'fenix"
-        - "'generate-baseline-profile-firebase-fenix"
-
-firefox-android:
-    selector: fuzzy
-    description: >-
-        Run android-components, Focus, and Fenix builds and tests.
-    query:
-        - "'build-components"
-        - "'test-components"
-        - "'build-apk-fenix-debug"
-        - "'signing-apk-fenix-debug"
-        - "'build-apk-fenix-android-test-debug"
-        - "'signing-apk-fenix-android-test-debug"
-        - "'test-apk-fenix-debug"
-        - "'ui-test-apk-fenix-arm-debug"
-        - "'build-apk-focus-debug"
-        - "'signing-apk-focus-debug"
-        - "'build-apk-focus-android-test-debug"
-        - "'signing-apk-focus-android-test-debug"
-        - "'test-apk-focus-debug"
-        - "'ui-test-apk-focus-arm-debug"
-        - "^source-test 'android | 'fenix | 'focus"
-        - "'generate-baseline-profile-firebase-fenix"
-
-focus:
-    selector: fuzzy
-    description: >-
-        Run Focus builds and tests.
-    query:
-        - "'build-apk-focus-debug"
-        - "'signing-apk-focus-debug"
-        - "'build-apk-focus-android-test-debug"
-        - "'signing-apk-focus-android-test-debug"
-        - "'test-apk-focus-debug"
-        - "'ui-test-apk-focus-arm-debug"
-        - "^source-test 'focus"
-
-android-fullstack:
-    selector: fuzzy
-    full: true
-    no_artifact: true
-    description: >-
-        Run GeckoView, android-components, Focus, and Fenix builds and tests.
-    query:
-        # All Android lints
-        - "^source-test-mozlint 'android"
-        # Firefox Android builds and tests (from firefox-android preset)
-        - "'build-components !nightly- !beta- !release-"
-        - "'test-components"
-        - "'build-apk-fenix-debug"
-        - "'signing-apk-fenix-debug"
-        - "'build-apk-fenix-android-test-debug"
-        - "'signing-apk-fenix-android-test-debug"
-        - "'test-apk-fenix-debug"
-        - "'ui-test-apk-fenix-arm-debug"
-        - "'build-apk-focus-debug"
-        - "'signing-apk-focus-debug"
-        - "'build-apk-focus-android-test-debug"
-        - "'signing-apk-focus-android-test-debug"
-        - "'test-apk-focus-debug"
-        - "'ui-test-apk-focus-arm-debug"
-        - "^source-test 'android | 'fenix | 'focus"
-        - "'generate-baseline-profile-firebase-fenix"
-        # GeckoView tests (from android-geckoview preset)
-        - "^source-test-mozlint eslint$ | rejected-words$ | file-perm$ | file-whitespace$"
-        # Miscellaneous Tests
-        - "^test-android !shippable '64 'em-14 'gtest | 'cpp | junit-fis"
-        # Mochitests
-        - "^test-android !shippable !cf !gli !iso      'em-14 'media | 'plain"
-        - "^test-android !shippable !cf !gli !iso !swr 'hw 'media 'debug"
-        - "^test-android !shippable !cf !gli !iso !swr 'hw 'mochitest-webgl 'nofis"
-        # Reftests
-        - "^test-android !shippable !iso 'em-14 'geckoview-crashtest | 'geckoview-reftest 'nofis"
-        # Web Platform Tests
-        - "^test-android !shippable !headless 'em-14 'wdspec"
-        - "^test-android !shippable       !cf !iso            'em-14 'web-platform-tests-crashtest 'debug"
-        - "^test-android !shippable       !cf !iso       !swr 'em-14 'web-platform-tests-crashtest"
-        - "^test-android !shippable !back !cf !iso !ship !swr 'em-14 'web-platform-tests-nofis"
-        - "^test-android !shippable !back !cf !iso            'em-14 'web-platform-tests-reftest 'nofis 'debug"
-        - "^test-android !shippable !back !cf !iso       !swr 'em-14 'web-platform-tests-reftest 'nofis"
-        # XPCShell
-        - "^test-android !shippable !iso 'em-14 'xpcshell"
 
 fpush-linux-android:
     selector: fuzzy
