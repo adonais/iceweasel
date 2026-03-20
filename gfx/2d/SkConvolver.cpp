@@ -486,7 +486,7 @@ bool SkConvolutionFilter1D::ComputeFilterValues(
 
     // Compute the (inclusive) range of source pixels the filter covers.
     float srcBegin = std::max(0.0f, floorf(srcPixel - srcSupport));
-    float srcEnd = std::min(aSrcSize - 1.0f, ceilf(srcPixel + srcSupport));
+    float srcEnd = std::min(float(aSrcSize - 1), ceilf(srcPixel + srcSupport));
 
     // Compute the unnormalized filter value at each location of the source
     // it covers.
