@@ -22,6 +22,8 @@ import org.mozilla.fenix.helpers.TestHelper.closeApp
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.restartApp
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
+import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
+import org.mozilla.fenix.helpers.TestHelper.waitUntilSnackbarGone
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.homeScreen
@@ -507,7 +509,7 @@ class TabbedBrowsingTest {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3024942
     @Test
-    fun verifyTabsTrayListView() {
+    fun verifyTabsTrayListViewTest() {
         appContext.settings().gridTabView = false
 
         val webPages = mockWebServer.genericAssets
@@ -528,13 +530,16 @@ class TabbedBrowsingTest {
             verifyOpenTabsOrder(title = webPages[2].title, position = 3, isListViewEnabled = true)
             verifyOpenTabsOrder(title = webPages[3].title, position = 4, isListViewEnabled = true)
             swipeTabLeft(title = webPages[0].title, isListViewEnabled = true)
+            verifySnackBarText("Tab closed")
+            waitUntilSnackbarGone()
+            verifyNoExistingOpenTabs(webPages[0].title)
             verifyOpenTabsOrder(title = webPages[1].title, position = 1, isListViewEnabled = true)
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1126911
     @Test
-    fun verifyTabsTrayGridView() {
+    fun verifyTabsTrayGridViewTest() {
         appContext.settings().gridTabView = true
 
         val webPages = mockWebServer.genericAssets
