@@ -16,7 +16,20 @@
 }
 
 .chat-content-wrapper {
-  align-items: flex-start;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  padding-block: var(--space-large);
+  width: 100%;
+
+  @media (prefers-reduced-motion: no-preference) {
+    scroll-behavior: smooth;
+  }
+}
+
+.chat-inner-wrapper {
   /*
    * Without this box-sizing, even a medium size chat-bubble-user flexes this
    * element horizontally, and since it has width: 100% and a lot of padding,
@@ -25,24 +38,12 @@
    */
   box-sizing: border-box;
   display: flex;
-  flex: 1;
   flex-direction: column;
   gap: var(--space-small);
-  margin-inline: auto;
-  min-height: 0;
-  overflow-y: auto;
-  padding-block: var(--space-large);
   padding-inline: max(var(--space-medium), calc((100% - var(--smartwindow-content-max-width)) / 2));
-  scroll-behavior: smooth;
+  --content-height: 100%;
+  min-height: var(--content-height);
   width: 100%;
-}
-
-/* Spacer that pushes chat content to the bottom when there's minimal content.
-   Collapses when content fills the available space, allowing proper scrolling. */
-.chat-content-wrapper::before {
-  content: "";
-  flex: 1;
-  min-height: 0;
 }
 
 /* Temporary chat bubble styling */

@@ -34,6 +34,8 @@ export class AIChatContent extends MozLitElement {
     trustedUrls: { type: Array, attribute: false },
   };
 
+  #lastScrollReq = null;
+
   constructor() {
     super();
     this.assistantIsLoading = false;
@@ -229,7 +231,6 @@ export class AIChatContent extends MozLitElement {
     this.isSearching = !!isSearching;
     this.assistantIsLoading = true;
     this.requestUpdate();
-    this.#scrollToBottom();
   }
 
   handleErrorEvent(error) {
@@ -260,7 +261,7 @@ export class AIChatContent extends MozLitElement {
       ordinal,
     };
     this.requestUpdate();
-    this.#scrollToBottom();
+    this.#scrollUserMessageIntoView();
   }
 
   retryUserMessageAfterError() {
@@ -321,12 +322,32 @@ export class AIChatContent extends MozLitElement {
     this.requestUpdate();
   }
 
-  #scrollToBottom() {
+  #scrollUserMessageIntoView() {
+    let scrollReq = {};
+    this.#lastScrollReq = scrollReq;
     this.updateComplete.then(() => {
-      const wrapper = this.shadowRoot?.querySelector(".chat-content-wrapper");
-      wrapper?.lastElementChild?.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
+      const msgs = this.shadowRoot?.querySelectorAll(".chat-bubble-user");
+      if (!msgs?.length) {
+        return;
+      }
+      let lastMessage = msgs[msgs.length - 1];
+      let haveMultipleMessages = msgs.length > 1;
+      requestAnimationFrame(() => {
+        if (scrollReq !== this.#lastScrollReq) {
+          return;
+        }
+        let elTop = lastMessage.offsetTop;
+        let spacer = haveMultipleMessages ? "small" : "large";
+        lastMessage.parentNode.style.setProperty(
+          "--content-height",
+          `calc(${elTop}px + 100% - var(--space-${spacer}))`
+        );
+
+        requestAnimationFrame(() => {
+          if (scrollReq == this.#lastScrollReq) {
+            lastMessage.scrollIntoView({ block: "start" });
+          }
+        });
       });
     });
   }
@@ -482,8 +503,10 @@ export class AIChatContent extends MozLitElement {
         href="chrome://browser/content/aiwindow/components/ai-chat-content.css"
       />
       <div class="chat-content-wrapper">
-        ${this.#renderMessages()} ${this.#renderFollowUpSuggestions()}
-        ${this.#renderLoader()} ${this.#renderError()}
+        <div class="chat-inner-wrapper">
+          ${this.#renderMessages()} ${this.#renderFollowUpSuggestions()}
+          ${this.#renderLoader()} ${this.#renderError()}
+        </div>
       </div>
     `;
   }
