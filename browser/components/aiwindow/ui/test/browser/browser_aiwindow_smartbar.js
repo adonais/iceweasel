@@ -10,14 +10,6 @@
 
 "use strict";
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  IntentClassifier:
-    "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
-});
-
-let gIntentEngineStub;
-
 add_setup(async function () {
   // Prevent network requests for remote search suggestions during testing.
   await SpecialPowers.pushPrefEnv({
@@ -86,7 +78,6 @@ add_setup(async function () {
         formattedPrompt.includes(keyword)
       );
 
-      // Simulate model confidence scores
       if (isSearch) {
         return [
           { label: "search", score: 0.95 },
@@ -100,12 +91,7 @@ add_setup(async function () {
     },
   };
 
-  gIntentEngineStub = sinon
-    .stub(lazy.IntentClassifier, "_createEngine")
-    .resolves(fakeIntentEngine);
-  registerCleanupFunction(() => {
-    sinon.restore();
-  });
+  gIntentEngineStub.resolves(fakeIntentEngine);
 });
 
 add_task(async function test_smartbar_submit_chat() {

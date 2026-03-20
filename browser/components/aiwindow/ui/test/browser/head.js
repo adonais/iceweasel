@@ -13,6 +13,8 @@ ChromeUtils.defineESModuleGetters(this, {
   Chat: "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs",
   ChatConversation:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs",
+  IntentClassifier:
+    "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
   openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   SessionStore: "resource:///modules/sessionstore/SessionStore.sys.mjs",
   SessionWindowUI: "resource:///modules/sessionstore/SessionWindowUI.sys.mjs",
@@ -20,6 +22,8 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
+
+let gIntentEngineStub;
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -30,6 +34,20 @@ add_setup(async function () {
       ["browser.smartwindow.chat.interactionCount", 0],
     ],
   });
+
+  // Stub intent engine so it doesn't attempt network requests
+  const fakeIntentEngine = {
+    run() {
+      return [
+        { label: "chat", score: 0.95 },
+        { label: "search", score: 0.05 },
+      ];
+    },
+  };
+  gIntentEngineStub = sinon
+    .stub(IntentClassifier, "_createEngine")
+    .resolves(fakeIntentEngine);
+  registerCleanupFunction(() => gIntentEngineStub.restore());
 });
 
 /**

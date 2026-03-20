@@ -3,30 +3,9 @@
 
 "use strict";
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  IntentClassifier:
-    "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
-});
-
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.search.suggest.enabled", false]],
-  });
-
-  const fakeIntentEngine = {
-    run() {
-      return [
-        { label: "chat", score: 0.95 },
-        { label: "search", score: 0.05 },
-      ];
-    },
-  };
-
-  const originalCreateEngine = lazy.IntentClassifier._createEngine;
-  lazy.IntentClassifier._createEngine = () => Promise.resolve(fakeIntentEngine);
-  registerCleanupFunction(() => {
-    lazy.IntentClassifier._createEngine = originalCreateEngine;
   });
 });
 
