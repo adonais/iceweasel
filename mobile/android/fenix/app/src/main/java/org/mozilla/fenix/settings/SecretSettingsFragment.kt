@@ -570,6 +570,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
     private fun showResetConfirmationDialog() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.preferences_debug_settings_reset_defaults)
+            .setMessage(R.string.preferences_debug_settings_reset_defaults_message)
             .setPositiveButton(R.string.preferences_debug_settings_reset_defaults_confirm) { _, _ ->
                 SecretSettingsPrefDefaults(requireContext()).resetAll(preferenceScreen)
                 reloadPreferenceFragment()
