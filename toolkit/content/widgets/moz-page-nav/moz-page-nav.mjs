@@ -21,11 +21,6 @@ import "chrome://global/content/elements/moz-support-link.mjs";
  * @property {string} currentView - The currently selected view.
  * @property {string} heading - A heading to be displayed at the top of the navigation.
  * @property {PageNavType} [type] - The type of the component
- * @property {boolean} [allowNoSelection=false] - When false (default), the
- *   component auto-selects the first visible button whenever currentView does
- *   not match any button. When true, a non-matching currentView is allowed to
- *   persist without forcing a selection — used by about:preferences to support
- *   sub-pages and search-results states where no category should be highlighted.
  * @slot [default] - Used to append moz-page-nav-button elements to the navigation.
  * @slot [subheading] - Used to append page specific search input or notification to the nav.
  */
@@ -34,7 +29,6 @@ export default class MozPageNav extends MozLitElement {
     currentView: { type: String },
     heading: { type: String, fluent: true },
     type: { type: String, reflect: true },
-    allowNoSelection: { type: Boolean },
   };
 
   static queries = {
@@ -133,11 +127,8 @@ export default class MozPageNav extends MozLitElement {
       button.selected = button.view == this.currentView;
       isViewSelected = isViewSelected || button.selected;
     }
-    if (
-      !isViewSelected &&
-      assignedPageNavButtons.length &&
-      (!this.currentView || !this.allowNoSelection)
-    ) {
+    if (!isViewSelected && assignedPageNavButtons.length) {
+      // Current page nav has no matching view, reset to the first view.
       assignedPageNavButtons[0].activate();
     }
   }
