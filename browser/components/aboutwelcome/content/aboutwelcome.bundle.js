@@ -482,7 +482,6 @@ const MultiStageAboutWelcome = props => {
       langPackInstallPhase: langPackInstallPhase,
       forceHideStepsIndicator: currentScreen.force_hide_steps_indicator,
       ariaRole: props.ariaRole,
-      requireAction: props.requireAction,
       aboveButtonStepsIndicator: currentScreen.above_button_steps_indicator,
       installedAddons: installedAddons,
       setInstalledAddons: setInstalledAddons,
@@ -1036,7 +1035,6 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       autoAdvance: this.props.autoAdvance,
       forceHideStepsIndicator: this.props.forceHideStepsIndicator,
       ariaRole: this.props.ariaRole,
-      requireAction: this.props.requireAction,
       aboveButtonStepsIndicator: this.props.aboveButtonStepsIndicator,
       addonId: this.props.addonId,
       addonType: this.props.addonType,
@@ -1280,7 +1278,6 @@ const MultiStageProtonScreen = props => {
     langPackInstallPhase: props.langPackInstallPhase,
     forceHideStepsIndicator: props.forceHideStepsIndicator,
     ariaRole: props.ariaRole,
-    requireAction: props.requireAction,
     aboveButtonStepsIndicator: props.aboveButtonStepsIndicator,
     isWideScreen: isWideScreen
   });
@@ -1400,14 +1397,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     if (this.props.content?.position === "callout") {
       return;
     }
-    // For requireAction screens, focus the title heading instead of the
-    // alertdialog container to prevent Orca from misreading Tab-navigated
-    // elements. The alertdialog announcement still fires on open.
-    if (this.props.requireAction && this.titleHeader) {
-      this.titleHeader.focus();
-    } else {
-      this.mainContentHeader.focus();
-    }
+    this.mainContentHeader.focus();
   }
   getScreenClassName(includeNoodles, isVideoOnboarding, isAddonsPicker) {
     if (isVideoOnboarding) {
@@ -1425,9 +1415,6 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     title,
     title_logo
   }) {
-    const titleRef = this.props.requireAction ? input => {
-      this.titleHeader = input;
-    } : null;
     if (title_logo) {
       const {
         alignment,
@@ -1441,17 +1428,13 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
         text: title
       }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", {
-        id: "mainContentHeader",
-        tabIndex: this.props.requireAction ? -1 : undefined,
-        ref: titleRef
+        id: "mainContentHeader"
       })));
     }
     return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: title
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", {
-      id: "mainContentHeader",
-      tabIndex: this.props.requireAction ? -1 : undefined,
-      ref: titleRef
+      id: "mainContentHeader"
     }));
   }
   renderPicture({
@@ -4441,7 +4424,6 @@ class AboutWelcome extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       startScreen: props.startScreen || 0,
       appAndSystemLocaleInfo: props.appAndSystemLocaleInfo,
       ariaRole: props.aria_role,
-      requireAction: props.requireAction,
       gateInitialPaint: true
     });
   }
