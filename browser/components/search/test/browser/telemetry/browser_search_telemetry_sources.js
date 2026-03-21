@@ -278,8 +278,9 @@ add_task(async function test_source_urlbar_handoff() {
 
       info("Focus on search input in newtab content");
       await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-        let handoffUI = content.document.querySelector(
-          "content-search-handoff-ui"
+        let handoffUI = await ContentTaskUtils.waitForCondition(
+          () => content.document.querySelector("content-search-handoff-ui"),
+          "Wait for content-search-handoff-ui to be created"
         );
         await handoffUI.updateComplete;
         let fakeEditable = handoffUI.shadowRoot.querySelector(".fake-editable");
