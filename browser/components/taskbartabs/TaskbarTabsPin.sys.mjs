@@ -39,7 +39,7 @@ export const TaskbarTabsPin = {
 
       let shortcut = await createShortcut(aTaskbarTab, iconPath, aRegistry);
 
-      if (AppConstants.platform === "win") {
+      if (AppConstants.platform === "win" && !lazy.TaskbarTabsUtils.isMSIX()) {
         await lazy.ShellService.pinShortcutToTaskbar(
           aTaskbarTab.id,
           "Programs",
@@ -64,13 +64,14 @@ export const TaskbarTabsPin = {
     let unpinError = null;
     let removalError = null;
 
+    let isMSIX = lazy.TaskbarTabsUtils.isMSIX();
     try {
       lazy.logConsole.info("Unpinning Taskbar Tab from the taskbar.");
 
       let relativePath = aTaskbarTab.shortcutRelativePath;
 
       try {
-        if (AppConstants.platform === "win") {
+        if (AppConstants.platform === "win" && !isMSIX) {
           lazy.ShellService.unpinShortcutFromTaskbar("Programs", relativePath);
         }
       } catch (e) {
@@ -84,11 +85,14 @@ export const TaskbarTabsPin = {
       lazy.logConsole.debug(`Deleting ${iconFile.path}`);
 
       let deleteShortcut = Promise.resolve();
-      if (relativePath && AppConstants.platform === "win") {
+      if (relativePath && AppConstants.platform === "win" && !isMSIX) {
         deleteShortcut = lazy.ShellService.deleteShortcut(
           "Programs",
           relativePath
         );
+      } else if (relativePath && AppConstants.platform === "win" && isMSIX) {
+        deleteShortcut =
+          lazy.ShellService.requestDeleteSecondaryTile(relativePath);
       } else if (relativePath && AppConstants.platform === "linux") {
         deleteShortcut = lazy.ShellService.deleteLinuxDesktopEntry(
           relativePath.replace(/\.desktop$/, "")
@@ -175,7 +179,24 @@ async function createShortcut(aTaskbarTab, aFileIcon, aRegistry) {
     aTaskbarTab.userContextId.toString(),
   ];
 
+  if (AppConstants.platform === "win" && lazy.TaskbarTabsUtils.isMSIX()) {
+    let secondaryTileId = "taskbartab-" + aTaskbarTab.id;
+    await lazy.ShellService.requestCreateAndPinSecondaryTile(
+      secondaryTileId,
+      aTaskbarTab.name,
+      aFileIcon.path,
+      args
+    );
+
+    aRegistry.patchTaskbarTab(aTaskbarTab, {
+      shortcutRelativePath: secondaryTileId,
+    });
+
+    return secondaryTileId;
+  }
+
   if (AppConstants.platform === "win") {
+    // non-MSIX
     let { relativePath, description } = await generateShortcutInfo(aTaskbarTab);
     lazy.logConsole.debug(
       `Using shortcut path relative to Programs folder: ${relativePath}`

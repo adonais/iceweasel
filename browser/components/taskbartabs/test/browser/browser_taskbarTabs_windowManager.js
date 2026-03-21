@@ -172,13 +172,7 @@ add_task(async function test_window_aumid() {
     "org.mozilla.firefox.webapp-" + taskbarTab1.id,
     "The window's `windowclass` attribute should match the Taskbar Tab ID when opened."
   );
-  if (AppConstants.platform === "win") {
-    is(
-      WinTaskbar.getGroupIdForWindow(winOpen),
-      taskbarTab1.id,
-      "The window AUMID should match the Taskbar Tab ID when opened."
-    );
-  }
+  checkWindowAumid(taskbarTab1, winOpen);
 
   let tab1_adopted = await BrowserTestUtils.addTab(window.gBrowser, url1.spec);
   windowPromise = BrowserTestUtils.waitForNewWindow();
@@ -195,19 +189,36 @@ add_task(async function test_window_aumid() {
     "org.mozilla.firefox.webapp-" + taskbarTab1.id,
     "The window's `windowclass` attribute should match the Taskbar Tab ID when opened."
   );
-  if (AppConstants.platform === "win") {
-    is(
-      WinTaskbar.getGroupIdForWindow(winReplace),
-      taskbarTab1.id,
-      "The window AUMID should match the Taskbar Tab ID when a tab was replaced with a Taskbar Tab window."
-    );
-  }
+  checkWindowAumid(taskbarTab1, winReplace);
 
   await Promise.all([
     BrowserTestUtils.closeWindow(winOpen),
     BrowserTestUtils.closeWindow(winReplace),
   ]);
 });
+
+function checkWindowAumid(aTaskbarTab, aWindow) {
+  if (AppConstants.platform === "win") {
+    if (TaskbarTabsUtils.isMSIX()) {
+      // The format of this doesn't seem to be documented anywhere; I got it
+      // through a small custom utility using the undocumented IPinnedList3 API
+      // (the one we use for pinning on Windows 10). It's possible that Windows
+      // could change it, in which case the Taskbar Tab window wouldn't line up
+      // with its taskbar entry.
+      is(
+        WinTaskbar.getGroupIdForWindow(aWindow),
+        `${Services.sysinfo.getProperty("winPackageFamilyName")}!App:taskbartab-${aTaskbarTab.id}`,
+        "The window AUMID should match the ID likely assigned by Windows."
+      );
+    } else {
+      is(
+        WinTaskbar.getGroupIdForWindow(aWindow),
+        taskbarTab1.id,
+        "The window AUMID should match the Taskbar Tab ID when opened."
+      );
+    }
+  }
+}
 
 add_task(async function testTaskbarTabCount() {
   const count = () => TaskbarTabs.getCountForId(taskbarTab1.id);

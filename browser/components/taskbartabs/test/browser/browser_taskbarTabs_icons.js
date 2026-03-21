@@ -30,6 +30,8 @@ add_setup(async function setup() {
     pinShortcutToTaskbar: sinon.stub().resolves(),
     unpinShortcutFromTaskbar: sinon.stub().resolves(),
   });
+  sandbox.stub(ShellService, "requestCreateAndPinSecondaryTile").resolves();
+  sandbox.stub(ShellService, "requestDeleteSecondaryTile").resolves();
   registerCleanupFunction(() => sandbox.restore());
 
   gFaviconUri = Services.io.newURI(

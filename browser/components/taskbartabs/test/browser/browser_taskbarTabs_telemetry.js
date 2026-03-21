@@ -52,6 +52,10 @@ sinon.stub(ShellService, "createLinuxDesktopEntry").resolves();
 sinon
   .stub(ShellService, "deleteLinuxDesktopEntry")
   .callsFake(exposeDeleteResult);
+sinon.stub(ShellService, "requestCreateAndPinSecondaryTile").resolves();
+sinon
+  .stub(ShellService, "requestDeleteSecondaryTile")
+  .callsFake(exposeDeleteResult);
 
 registerCleanupFunction(() => {
   sinon.restore();
@@ -110,11 +114,11 @@ add_task(async function testPinMetricSuccess() {
 
 add_task(async function testPinMetricFail() {
   await testPinMetricCustom("Pin fail!");
-}).skip(AppConstants.platform !== "win"); // Pinning shortcuts is Windows-only.
+}).skip(AppConstants.platform !== "win" || TaskbarTabsUtils.isMSIX()); // Pinning shortcuts is Windows-non-MSIX-only.
 
 add_task(async function testPinMetricInvalid() {
   await testPinMetricCustom(undefined, "Unknown exception");
-}).skip(AppConstants.platform !== "win"); // Pinning shortcuts is Windows-only.
+}).skip(AppConstants.platform !== "win" || TaskbarTabsUtils.isMSIX()); // Pinning shortcuts is Windows-non-MSIX-only.
 
 async function testUnpinMetricCustom(
   aUnpinResult,
@@ -160,7 +164,7 @@ add_task(async function testPinAndUnpinMetric_UnpinSuccessDeleteSuccess() {
 
 add_task(async function testPinAndUnpinMetric_UnpinFailDeleteSuccess() {
   await testUnpinMetricCustom("Unpin fail!", null);
-}).skip(AppConstants.platform !== "win"); // Unpinning shortcuts is Windows-only.
+}).skip(AppConstants.platform !== "win" || TaskbarTabsUtils.isMSIX()); // Unpinning shortcuts is Windows-non-MSIX-only.
 
 add_task(async function testPinAndUnpinMetric_UnpinSuccessDeleteFail() {
   await testUnpinMetricCustom(null, "Deletion fail!");
@@ -168,11 +172,10 @@ add_task(async function testPinAndUnpinMetric_UnpinSuccessDeleteFail() {
 
 add_task(async function testPinAndUnpinMetric_UnpinSuccessDeleteFail() {
   await testUnpinMetricCustom("Unpin fail!", "Deletion fail!");
-}).skip(AppConstants.platform !== "win"); // Unpinning shortcuts is Windows-only.
-
+}).skip(AppConstants.platform !== "win" || TaskbarTabsUtils.isMSIX()); // Unpinning shortcuts is Windows-non-MSIX-only.
 add_task(async function testPinAndUnpinMetric_UnpinInvalid() {
   await testUnpinMetricCustom(undefined, null, "Unknown exception", null);
-}).skip(AppConstants.platform !== "win"); // Unpinning shortcuts is Windows-only.
+}).skip(AppConstants.platform !== "win" || TaskbarTabsUtils.isMSIX()); // Unpinning shortcuts is Windows-non-MSIX-only.
 
 add_task(async function testPinAndUnpinMetric_DeleteInvalid() {
   await testUnpinMetricCustom(null, undefined, null, "Unknown exception");

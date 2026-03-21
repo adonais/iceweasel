@@ -125,7 +125,20 @@ export class TaskbarTabsWindowManager {
 
     if (AppConstants.platform === "win") {
       lazy.WindowsUIUtils.setWindowIcon(win, aIcon, aIcon);
-      lazy.WinTaskbar.setGroupIdForWindow(win, aTaskbarTab.id);
+
+      // If on MSIX, we need to match the system's expectations.
+      let pfn = Services.sysinfo.getProperty("winPackageFamilyName");
+      if (pfn) {
+        lazy.WinTaskbar.setGroupIdForWindow(
+          win,
+          // This is based on the tile ID set when we create the secondary tile
+          // in TaskbarTabsPin.sys.mjs.
+          `${pfn}!App:taskbartab-${aTaskbarTab.id}`
+        );
+      } else {
+        // If on non-MSIX, use the AUMID of the shortcut (which is just the ID).
+        lazy.WinTaskbar.setGroupIdForWindow(win, aTaskbarTab.id);
+      }
     }
 
     this.#attachWindowFocusTelemetry(win);
