@@ -67,6 +67,10 @@ struct StructureElementNode {
     AttributeList fAttributes;
     SkString fAlt;
     SkString fLang;
+    /** If false, fAlt will be used as the title of headings in the outline, but
+        not exposed as alt text.
+        */
+    bool fExposeAlt = true;
 };
 
 struct DateTime {

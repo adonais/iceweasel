@@ -12,4 +12,6 @@ prefs = [
   "accessibility.tagged_pdf_output.enabled=true",
 ]
 
+["browser_outline.js"]
+
 ["browser_structTree.js"]

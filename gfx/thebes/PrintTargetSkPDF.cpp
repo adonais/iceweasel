@@ -235,6 +235,7 @@ nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
           mozilla::a11y::PdfStructTreeBuilder::Get(aBrowsingContextId)) {
     if (builder->BuildStructTree(structRoot)) {
       metadata.fStructureElementTreeRoot = &structRoot;
+      metadata.fOutline = SkPDF::Metadata::Outline::StructureElementHeaders;
     }
   }
 #endif

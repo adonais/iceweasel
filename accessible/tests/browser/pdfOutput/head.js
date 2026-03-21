@@ -4,7 +4,7 @@
 
 "use strict";
 
-/* exported addPdfStructTreeTest */
+/* exported addPdfStructTreeTest, addPdfOutlineTest */
 
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
@@ -63,6 +63,21 @@ function simplifyStructTreeNode(node, contentItems) {
   }
 }
 
+/**
+ * PDF outline nodes contain a lot of properties we can't or don't want to test
+ * yet. Remove any properties we're not interested in.
+ */
+function simplifyOutlineNode(node) {
+  for (const key in node) {
+    if (!["items", "title"].includes(key)) {
+      delete node[key];
+    }
+  }
+  for (const child of node.items) {
+    simplifyOutlineNode(child);
+  }
+}
+
 function addPdfTest(testName, doc, task, options = {}) {
   async function pdfTask(browser) {
     const helper = new PrintHelper(browser);
@@ -108,6 +123,25 @@ function addPdfStructTreeTest(testName, doc, pageTrees, options = {}) {
         `Page ${pageNum} struct tree correct`
       );
     }
+  }
+  addPdfTest(testName, doc, task, options);
+}
+
+/**
+ * Add a PDF outline test.
+ *
+ * @param testName The name of the test to show in log output.
+ * @param doc The markup to convert to PDF.
+ * @param outline An array of PDF outline node information.
+ * @param options Options to pass to addAccessibleTask.
+ */
+function addPdfOutlineTest(testName, doc, outline, options = {}) {
+  async function task(pdf) {
+    const actualOutline = await pdf.getOutline();
+    for (const node of actualOutline) {
+      simplifyOutlineNode(node);
+    }
+    SimpleTest.isDeeply(actualOutline, outline, "Outline correct");
   }
   addPdfTest(testName, doc, task, options);
 }

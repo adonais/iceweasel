@@ -225,7 +225,11 @@ void SkPDFStructTree::move(SkPDF::StructureElementNode& node,
 
     static SkString nonStruct("NonStruct");
     structElem->fStructType = node.fTypeString.isEmpty() ? nonStruct : std::move(node.fTypeString);
-    structElem->fAlt = std::move(node.fAlt);
+    if (node.fExposeAlt) {
+        structElem->fAlt = std::move(node.fAlt);
+    } else {
+        structElem->fTitle = std::move(node.fAlt);
+    }
     structElem->fLang = std::move(node.fLang);
 
     size_t childCount = node.fChildVector.size();
