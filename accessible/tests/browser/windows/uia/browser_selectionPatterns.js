@@ -146,7 +146,7 @@ addAccessibleTask(SNIPPET, async function testSelection(browser) {
 /**
  * Test the SelectionItem pattern.
  */
-addAccessibleTask(SNIPPET, async function testSelection(browser) {
+addAccessibleTask(SNIPPET, async function testSelectionItem(browser) {
   await definePyVar("doc", `getDocUia()`);
   await testPatternAbsent("selectList", "SelectionItem");
   await testSelectionItemProps("sl1", true, "selectList");
@@ -179,6 +179,23 @@ addAccessibleTask(SNIPPET, async function testSelection(browser) {
   await waitForUiaEvent();
   ok(true, "sm3 got ElementRemovedFromSelection event");
   await testSelectionItemProps("sm3", false, "selectMulti");
+
+  await testSelectionItemProps("al1", true, "ariaListbox");
+  await testSelectionItemProps("al2", false, "ariaListbox");
+  info("Calling Select on al2");
+  // Select on a single select option should click it.
+  await invokeContentTask(browser, [], () => {
+    content.document.getElementById("al2").addEventListener("click", evt => {
+      evt.target.ariaSelected = "true";
+      content.document.getElementById("al1").ariaSelected = "false";
+    });
+  });
+  await setUpWaitForUiaEvent("SelectionItem_ElementSelected", "al2");
+  await runPython(`pattern.Select()`);
+  await waitForUiaEvent();
+  ok(true, "al2 got ElementSelected event");
+  await testSelectionItemProps("al1", false, "ariaListbox");
+  await testSelectionItemProps("al2", true, "ariaListbox");
 
   await testSelectionItemProps("t2", true, "tablist");
   await testSelectionItemProps("t1", false, "tablist");
