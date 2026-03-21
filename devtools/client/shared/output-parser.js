@@ -260,7 +260,9 @@ class OutputParser {
         functionData.push(text.substring(token.startOffset, token.endOffset));
       }
 
-      tokens.push(token);
+      if (token.tokenType !== "WhiteSpace") {
+        tokens.push(token);
+      }
     }
 
     return { tokens, functionData, sawComma: false, sawVariable, depth };
@@ -295,10 +297,12 @@ class OutputParser {
     const variableNode = this.#createNode("span", {}, varText);
 
     // Parse the first variable name within the parens of var().
-    const { tokens, functionData, sawComma, sawVariable } =
-      this.#parseMatchingParens(text, tokenStream, options, true);
-
-    const result = sawVariable ? "" : functionData.join("");
+    const { tokens, sawComma } = this.#parseMatchingParens(
+      text,
+      tokenStream,
+      options,
+      true
+    );
 
     // Display options for the first and second argument in the var().
     const firstOpts = {};
@@ -367,7 +371,7 @@ class OutputParser {
         firstOpts["data-registered-property-inherits"] = `${inherits}`;
       }
 
-      const customPropNode = this.#createNode("span", firstOpts, result);
+      const customPropNode = this.#createNode("span", firstOpts, varName);
       if (options.showJumpToVariableButton) {
         customPropNode.append(
           this.#createNode("button", {
@@ -387,7 +391,7 @@ class OutputParser {
         "rule.variableUnset",
         varName
       );
-      variableNode.appendChild(this.#createNode("span", firstOpts, result));
+      variableNode.appendChild(this.#createNode("span", firstOpts, varName));
     }
 
     // If we saw a ",", then append it and show the remainder using
@@ -1132,7 +1136,7 @@ class OutputParser {
       // We first need to find the comma that comes after the attribute name
       if (t.tokenType === "Comma") {
         foundSeparator = true;
-        this.#appendTextNode(t.text);
+        this.#appendTextNode(t.text + " ");
         continue;
       }
 

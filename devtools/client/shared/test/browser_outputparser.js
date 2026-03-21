@@ -1109,6 +1109,34 @@ function testParseVariable(doc, parser) {
       // This shouldn't have a Jump to variable button
       expected: `<span>var(<span data-variable="10px">--x</span>)</span>`,
     },
+    {
+      // var() with spaces between params/parenthesis
+      text: "var(  --foo  ,  500px  )",
+      variables: { "--foo": "1px" },
+      expected:
+        // prettier-ignore
+        `<span>` +
+          `var(` +
+            `<span data-variable="1px">--foo${getJumpToVariableButton("--foo")}</span>` +
+            `,` +
+            `<span class="unmatched-class">  500px  </span>` +
+          `)` +
+        `</span>`,
+    },
+    {
+      // multiline var()
+      text: "var(\n--foo, 500px\n)",
+      variables: { "--foo": "1px" },
+      expected:
+        // prettier-ignore
+        `<span>` +
+          `var(` +
+            `<span data-variable="1px">--foo${getJumpToVariableButton("--foo")}</span>` +
+            `,` +
+            `<span class="unmatched-class"> 500px\n</span>` +
+          `)` +
+        `</span>`,
+    },
   ];
 
   const target = doc.querySelector("div");
@@ -1847,6 +1875,18 @@ function testParseAttr(doc, parser) {
       propertyValue: `attr(data-x, "fallback")`,
       attributes: { "data-x": "" },
       expected: `attr(<span class="inspector-attribute" data-attribute="&quot;&quot;">data-x</span>, <span class="inspector-attr-fallback unmatched-class">"fallback"</span>)`,
+    },
+    {
+      message: "Checking attr() + spaces",
+      propertyValue: `attr(  data-x  ,  "fallback"  )`,
+      attributes: { "data-x": "" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+          `<span class="inspector-attribute" data-attribute="&quot;&quot;">data-x</span>` +
+          `, ` +
+          `<span class="inspector-attr-fallback unmatched-class">"fallback"</span>` +
+        `)`,
     },
   ];
 
