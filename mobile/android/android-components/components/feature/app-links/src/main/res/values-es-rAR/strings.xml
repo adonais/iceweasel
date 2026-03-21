@@ -47,5 +47,5 @@
   <!-- The label for the unique identifier in the details section -->
   <string name="mozac_feature_applinks_unique_identifier">Identificador único</string>
   <!-- The text shown when there is no Firefox URL -->
-  <string name="mozac_feature_applinks_none">Ninguno</string>
+  <string name="mozac_feature_applinks_none">Ninguna</string>
 </resources>
