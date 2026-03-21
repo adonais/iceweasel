@@ -27,6 +27,7 @@ EXTRA_JS_MODULES += [
     "ChromeProfileMigrator.sys.mjs",
     "FileMigrators.sys.mjs",
     "FirefoxProfileMigrator.sys.mjs",
+    "FirefoxSelectableProfileMigrator.sys.mjs",
     "InternalTestingProfileMigrator.sys.mjs",
     "MigrationUtils.sys.mjs",
     "MigratorBase.sys.mjs",

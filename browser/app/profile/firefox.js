@@ -3545,8 +3545,6 @@ pref("browser.profiles.enabled", true);
 pref("browser.profiles.profile-name.updated", false);
 // Whether to allow the user to merge profile data
 pref("browser.profiles.sync.allow-danger-merge", false);
-// Allow Firefox Refresh even if profile is ineligible, see Bug 1928138
-pref("browser.profiles.forceEnableRefresh", false);
 
 pref("startup.homepage_override_url_nimbus", "");
 // These prefs are referring to the Fx update version

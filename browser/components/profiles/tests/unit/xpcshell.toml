@@ -35,6 +35,8 @@ skip-if = [
 
 ["test_relative_profile_path.js"]
 
+["test_reset_profile_supported.js"]
+
 ["test_selectable_profile_launch.js"]
 
 ["test_selectable_profile_service_exists.js"]

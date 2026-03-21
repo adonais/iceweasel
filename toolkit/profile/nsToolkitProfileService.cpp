@@ -1506,6 +1506,41 @@ nsresult nsToolkitProfileService::SelectStartupProfile(
   nsresult rv;
   const char* arg;
 
+  // Use the profile specified in the environment variables. This is set if we
+  // are resetting a selectable profile
+  nsCOMPtr<nsIFile> resetDir = GetFileFromEnv("SELECTABLE_PROFILE_RESET_PATH");
+  nsAutoCString storeID(PR_GetEnv("SELECTABLE_PROFILE_RESET_STORE_ID"));
+  RefPtr<nsToolkitProfile> profile = GetProfileByStoreID(storeID);
+  if (resetDir && profile) {
+    // Clear out flags that we handled (or should have handled!) last startup.
+    const char* dummy;
+    CheckArg(*aArgc, aArgv, "p", &dummy);
+    CheckArg(*aArgc, aArgv, "profile", &dummy);
+    CheckArg(*aArgc, aArgv, "profilemanager");
+
+    // Because this is a selectable profile, the rootDir changes when profile
+    // windows are focused. So we set the rootDir to the profile we are
+    // resetting so it is the correct rootDir during the refresh.
+    profile->SetRootDir(resetDir);
+
+    nsCOMPtr<nsIFile> localDir;
+    rv = nsToolkitProfileService::gService->GetLocalDirFromRootDir(
+        resetDir, getter_AddRefs(localDir));
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    // This has to be a profile reset
+    mStartupReason = "profile-reset"_ns;
+
+    mCurrent = profile;
+    resetDir.forget(aRootDir);
+    localDir.forget(aLocalDir);
+    NS_IF_ADDREF(*aProfile = profile);
+    return NS_OK;
+  }
+  // Clear out the profile reset variables if no profile was found
+  PR_SetEnv("SELECTABLE_PROFILE_RESET_PATH=");
+  PR_SetEnv("SELECTABLE_PROFILE_RESET_STORE_ID=");
+
   // Use the profile specified in the environment variables (generally from an
   // app initiated restart).
   nsCOMPtr<nsIFile> lf = GetFileFromEnv("XRE_PROFILE_PATH");

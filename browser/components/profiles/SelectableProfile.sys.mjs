@@ -452,7 +452,7 @@ export class SelectableProfile {
   }
 
   saveUpdatesToDB() {
-    SelectableProfileService.updateProfile(this);
+    return SelectableProfileService.updateProfile(this);
   }
 
   /**

@@ -11,7 +11,7 @@ Services.scriptloader.loadSubScript(
 );
 
 add_setup(async function () {
-  makeProfileResettable();
+  await makeProfileResettable();
 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
