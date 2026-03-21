@@ -46,9 +46,7 @@ export const TaskbarTabsPageAction = {
     let isPopupWindow = !aWindow.toolbar.visible;
     let isPrivate = lazy.PrivateBrowsingUtils.isWindowPrivate(aWindow);
 
-    let isSupportedWin =
-      AppConstants.platform === "win" &&
-      !Services.sysinfo.getProperty("hasWinPackageId", false); // Bug 1979190
+    let isSupportedWin = AppConstants.platform === "win";
     let isSupportedLinux =
       AppConstants.platform === "linux" &&
       !lazy.gioService.isRunningUnderFlatpak && // Bug 2019113
