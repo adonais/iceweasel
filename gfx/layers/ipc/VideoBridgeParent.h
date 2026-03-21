@@ -48,8 +48,7 @@ class VideoBridgeParent final : public PVideoBridgeParent,
   base::ProcessId GetChildProcessId() override { return OtherPid(); }
   void NotifyNotUsed(PTextureParent* aTexture,
                      uint64_t aTransactionId) override;
-  void SendAsyncMessage(
-      const nsTArray<AsyncParentMessageData>& aMessage) override;
+  void SendAsyncMessage(Span<const AsyncParentMessageData>) override;
 
   // ISurfaceAllocator
   IShmemAllocator* AsShmemAllocator() override { return this; }

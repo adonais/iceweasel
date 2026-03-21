@@ -11,6 +11,7 @@
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"
+#include "nsIMemoryReporter.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla {

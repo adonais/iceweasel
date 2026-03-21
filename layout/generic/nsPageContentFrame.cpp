@@ -6,6 +6,7 @@
 #include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/Document.h"
 #include "nsCSSFrameConstructor.h"

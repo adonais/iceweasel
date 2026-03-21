@@ -209,8 +209,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   dom::ContentParentId GetContentId() override;
   void NotifyNotUsed(PTextureParent* aTexture,
                      uint64_t aTransactionId) override;
-  void SendAsyncMessage(
-      const nsTArray<AsyncParentMessageData>& aMessage) override;
+  void SendAsyncMessage(Span<const AsyncParentMessageData>) override;
   void SendPendingAsyncMessages() override;
   void SetAboutToSendAsyncMessages() override;
 

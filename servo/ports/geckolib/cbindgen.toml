@@ -30,7 +30,7 @@ line_length = 80
 tab_width = 2
 language = "C++"
 namespaces = ["mozilla"]
-includes = ["mozilla/ServoStyleConstsForwards.h", "mozilla/ServoStyleSet.h"]
+includes = ["mozilla/ServoStyleConstsForwards.h"]
 after_includes = """
 // Work-around silly windows.h define.
 #pragma push_macro("STRICT")

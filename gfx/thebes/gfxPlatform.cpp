@@ -1852,7 +1852,7 @@ bool gfxPlatform::UseGraphiteShaping() {
 
 bool gfxPlatform::IsFontFormatSupported(
     StyleFontFaceSourceFormatKeyword aFormatHint,
-    StyleFontFaceSourceTechFlags aTechFlags) {
+    const StyleFontFaceSourceTechFlags& aTechFlags) {
   // By default, font resources are assumed to be supported; but if the format
   // hint or technology flags explicitly indicate something we don't support,
   // then return false.
@@ -1906,19 +1906,18 @@ bool gfxPlatform::IsKnownIconFontFamily(const nsAtom* aFamilyName) const {
 
 gfxFontEntry* gfxPlatform::LookupLocalFont(
     FontVisibilityProvider* aFontVisibilityProvider,
-    const nsACString& aFontName, WeightRange aWeightForEntry,
-    StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) {
+    const nsACString& aFontName, const WeightRange& aWeightForEntry,
+    const StretchRange& aStretchForEntry,
+    const SlantStyleRange& aStyleForEntry) {
   return gfxPlatformFontList::PlatformFontList()->LookupLocalFont(
       aFontVisibilityProvider, aFontName, aWeightForEntry, aStretchForEntry,
       aStyleForEntry);
 }
 
-gfxFontEntry* gfxPlatform::MakePlatformFont(const nsACString& aFontName,
-                                            WeightRange aWeightForEntry,
-                                            StretchRange aStretchForEntry,
-                                            SlantStyleRange aStyleForEntry,
-                                            const uint8_t* aFontData,
-                                            uint32_t aLength) {
+gfxFontEntry* gfxPlatform::MakePlatformFont(
+    const nsACString& aFontName, const WeightRange& aWeightForEntry,
+    const StretchRange& aStretchForEntry, const SlantStyleRange& aStyleForEntry,
+    const uint8_t* aFontData, uint32_t aLength) {
   return gfxPlatformFontList::PlatformFontList()->MakePlatformFont(
       aFontName, aWeightForEntry, aStretchForEntry, aStyleForEntry, aFontData,
       aLength);

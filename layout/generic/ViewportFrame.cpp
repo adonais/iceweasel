@@ -16,6 +16,7 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ScrollContainerFrame.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/dom/ViewTransition.h"
 #include "nsCanvasFrame.h"
 #include "nsGkAtoms.h"

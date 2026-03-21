@@ -53,6 +53,7 @@ EXPORTS += [
     "gfxRect.h",
     "gfxSharedImageSurface.h",
     "gfxSkipChars.h",
+    "gfxSparseBitSet.h",
     "gfxSVGGlyphs.h",
     "gfxTextRun.h",
     "gfxTypes.h",

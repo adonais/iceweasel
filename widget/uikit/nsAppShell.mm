@@ -7,6 +7,7 @@
 #import <UIKit/UIWindow.h>
 
 #include "mozilla/Components.h"
+#include "mozilla/Services.h"
 #include "mozilla/dom/Document.h"
 #include "nsIObserverService.h"
 #include "gfxPlatform.h"

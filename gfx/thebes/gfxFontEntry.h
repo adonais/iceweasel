@@ -11,10 +11,11 @@
 #include <utility>
 #include "COLRFonts.h"
 #include "ThebesRLBoxTypes.h"
-#include "gfxFontUtils.h"
 #include "gfxFontVariations.h"
 #include "gfxRect.h"
 #include "gfxTypes.h"
+#include "gfxSparseBitSet.h"
+#include "gfxFontUtils.h"
 #include "gfxFontFeatures.h"
 #include "harfbuzz/hb.h"
 #include "mozilla/AlreadyAddRefed.h"

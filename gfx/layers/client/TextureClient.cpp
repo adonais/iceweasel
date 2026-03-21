@@ -27,6 +27,7 @@
 #include "mozilla/layers/CanvasRenderer.h"
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/ISurfaceAllocator.h"
+#include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/ImageBridgeChild.h"
 #include "mozilla/layers/ImageDataSerializer.h"
 #include "mozilla/layers/PTextureChild.h"
@@ -1783,7 +1784,9 @@ ShmemTextureReadLock::~ShmemTextureReadLock() {
 
 bool ShmemTextureReadLock::Serialize(ReadLockDescriptor& aOutput,
                                      base::ProcessId aOther) {
-  aOutput = ReadLockDescriptor(GetShmemSection().AsUntrusted());
+  aOutput = ReadLockDescriptor(UntrustedShmemSection(
+      Shmem(mShmemSection.shmem()), std::move(mShmemSection.offset()),
+      std::move(mShmemSection.size())));
   return true;
 }
 

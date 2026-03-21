@@ -7,6 +7,7 @@
 #include "PseudoStyleType.h"
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/DeclarationBlock.h"
+#include "mozilla/PseudoStyleRequest.h"
 #include "mozilla/PseudoStyleType.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/dom/CSSScopeRule.h"

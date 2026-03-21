@@ -17,6 +17,7 @@
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoCSSParser.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/TimingParams.h"

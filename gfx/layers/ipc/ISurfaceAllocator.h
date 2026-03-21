@@ -9,10 +9,13 @@
 #include <stdint.h>  // for uint32_t
 #include "gfxTypes.h"
 #include "mozilla/dom/ipc/IdType.h"
-#include "mozilla/gfx/Point.h"              // for IntSize
-#include "nsIMemoryReporter.h"              // for nsIMemoryReporter
-#include "mozilla/Atomics.h"                // for Atomic
-#include "mozilla/layers/LayersMessages.h"  // for ShmemSection
+#include "mozilla/ipc/Shmem.h"
+#include "mozilla/gfx/Point.h"  // for IntSize
+#include "nsIMemoryReporter.h"  // for nsIMemoryReporter
+#include "mozilla/Atomics.h"    // for Atomic
+#include "nsTArray.h"
+
+class MessageLoop;
 
 namespace mozilla {
 namespace ipc {
@@ -25,9 +28,12 @@ class DataSourceSurface;
 
 namespace layers {
 
+class PTextureParent;
+class AsyncParentMessageData;
 class CompositableForwarder;
 class CompositorBridgeParentBase;
 class TextureForwarder;
+class UntrustedShmemSection;
 
 class ShmemSectionAllocator;
 class LegacySurfaceDescriptorAllocator;
@@ -135,9 +141,7 @@ class HostIPCAllocator : public ISurfaceAllocator {
   virtual void NotifyNotUsed(PTextureParent* aTexture,
                              uint64_t aTransactionId) = 0;
 
-  virtual void SendAsyncMessage(
-      const nsTArray<AsyncParentMessageData>& aMessage) = 0;
-
+  virtual void SendAsyncMessage(Span<const AsyncParentMessageData>) = 0;
   virtual void SendPendingAsyncMessages();
 
   virtual void SetAboutToSendAsyncMessages() {
@@ -147,7 +151,7 @@ class HostIPCAllocator : public ISurfaceAllocator {
   bool IsAboutToSendAsyncMessages() { return mAboutToSendAsyncMessages; }
 
  protected:
-  std::vector<AsyncParentMessageData> mPendingAsyncMessage;
+  nsTArray<AsyncParentMessageData> mPendingAsyncMessage;
   bool mAboutToSendAsyncMessages = false;
 };
 
@@ -156,7 +160,6 @@ class ShmemSection {
   static Maybe<ShmemSection> FromUntrusted(
       const UntrustedShmemSection& aUntrusted);
   bool Init(const mozilla::ipc::Shmem& aShm, uint32_t offset, uint32_t size);
-  UntrustedShmemSection AsUntrusted();
 
   uint32_t size() const { return mSize; }
   uint32_t offset() const { return mOffset; }

@@ -12,6 +12,7 @@
 #include "mozilla/layers/CompositableClient.h"  // for CompositableClient
 #include "mozilla/layers/CompositorTypes.h"     // for CompositableType, etc
 #include "mozilla/layers/LayersSurfaces.h"      // for SurfaceDescriptor
+#include "ImageContainer.h"                     // for ClearImagesType
 #include "mozilla/layers/TextureClient.h"       // for TextureClient, etc
 #include "mozilla/mozalloc.h"                   // for operator delete
 #include "nsCOMPtr.h"                           // for already_AddRefed

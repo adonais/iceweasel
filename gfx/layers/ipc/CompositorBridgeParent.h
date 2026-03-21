@@ -130,8 +130,7 @@ class CompositorBridgeParentBase : public PCompositorBridgeParent,
   dom::ContentParentId GetContentId() override;
   void NotifyNotUsed(PTextureParent* aTexture,
                      uint64_t aTransactionId) override;
-  void SendAsyncMessage(
-      const nsTArray<AsyncParentMessageData>& aMessage) override;
+  void SendAsyncMessage(Span<const AsyncParentMessageData>) override;
 
   // IShmemAllocator
   bool AllocShmem(size_t aSize, mozilla::ipc::Shmem* aShmem) override;

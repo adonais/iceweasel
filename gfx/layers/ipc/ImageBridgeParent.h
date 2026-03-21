@@ -64,8 +64,7 @@ class ImageBridgeParent final : public PImageBridgeParent,
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   // CompositableParentManager
-  void SendAsyncMessage(
-      const nsTArray<AsyncParentMessageData>& aMessage) override;
+  void SendAsyncMessage(Span<const AsyncParentMessageData>) override;
 
   void NotifyNotUsed(PTextureParent* aTexture,
                      uint64_t aTransactionId) override;

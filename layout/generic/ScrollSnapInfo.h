@@ -10,6 +10,7 @@
 #include "mozilla/ScrollSnapTargetId.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsPoint.h"
 

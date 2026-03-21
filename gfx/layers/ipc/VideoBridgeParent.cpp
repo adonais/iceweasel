@@ -270,8 +270,8 @@ bool VideoBridgeParent::DeallocPTextureParent(PTextureParent* actor) {
 }
 
 void VideoBridgeParent::SendAsyncMessage(
-    const nsTArray<AsyncParentMessageData>& aMessage) {
-  MOZ_ASSERT(false, "AsyncMessages not supported");
+    Span<const AsyncParentMessageData> aMessage) {
+  MOZ_ASSERT_UNREACHABLE("AsyncMessages not supported");
 }
 
 bool VideoBridgeParent::AllocShmem(size_t aSize, ipc::Shmem* aShmem) {

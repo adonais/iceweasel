@@ -1841,6 +1841,217 @@ bool gfxFontUtils::IsCffFont(const uint8_t* aFontData) {
 }
 #endif
 
+double StyleDistance(const mozilla::SlantStyleRange& aRange,
+                     const mozilla::StyleFontStyle& aTargetStyle,
+                     bool aItalicToObliqueFallback) {
+  const mozilla::FontSlantStyle minStyle = aRange.Min();
+  const mozilla::FontSlantStyle maxStyle = aRange.Max();
+  if (aTargetStyle == minStyle || aTargetStyle == maxStyle) {
+    return 0.0;  // styles match exactly ==> 0
+  }
+
+  // bias added to angle difference when searching in the non-preferred
+  // direction from a target angle
+  const double kReverse = 100.0;
+
+  // bias added when we've crossed from positive to negative angles or
+  // vice versa
+  const double kNegate = 200.0;
+
+  // bias added for oblique faces when italic is requested, and only-oblique
+  // font-synthesis-style is in effect
+  const double kBadFallback = 400.0;
+
+  if (aTargetStyle.IsNormal()) {
+    if (minStyle.IsItalic() || maxStyle.IsItalic()) {
+      // italic is the worst match (prefer any oblique; 0deg was requested)
+      return kBadFallback + kNegate + kReverse;
+    }
+    const double minAngle = minStyle.ObliqueAngle();
+    if (minAngle >= 0.0) {
+      return minAngle;
+    }
+    const double maxAngle = maxStyle.ObliqueAngle();
+    if (maxAngle >= 0.0) {
+      // [min,max] range includes 0.0, so it's a perfect match
+      return 0.0;
+    }
+    return kNegate - maxAngle;
+  }
+
+  const double kDefaultAngle = mozilla::FontSlantStyle::DEFAULT_OBLIQUE_DEGREES;
+
+  if (aTargetStyle.IsItalic()) {
+    MOZ_ASSERT(!minStyle.IsItalic());  // we checked for equality above
+    double targetAngle = kDefaultAngle;
+    double fallbackBias = 0.0;
+    if (!aItalicToObliqueFallback) {
+      // If 'font-style-synthesis: oblique-only' is applied, we should not use
+      // oblique as a fallback for italic, so we add a large "fallback bias" to
+      // all results here, and prefer an angle as close to zero as possible.
+      targetAngle = 0.0;
+      fallbackBias = kBadFallback;
+    }
+    const double minAngle = minStyle.ObliqueAngle();
+    if (minAngle >= targetAngle) {
+      // Add 1.0 to ensure italic vs non-italic never returns 0.0, even if the
+      // angle matches.
+      return fallbackBias + minAngle - targetAngle + 1.0;
+    }
+    const double maxAngle = maxStyle.ObliqueAngle();
+    if (maxAngle >= targetAngle) {
+      return fallbackBias + 1.0;
+    }
+    if (maxAngle > 0.0) {
+      // wrong direction but still > 0, add bias of 100
+      return fallbackBias + kReverse + (targetAngle - maxAngle);
+    }
+    // negative oblique angle, add bias of 300
+    return fallbackBias + kReverse + kNegate + (targetAngle - maxAngle);
+  }
+
+  // target is oblique <angle>: four different cases depending on
+  // the value of the <angle>, which determines the preferred direction
+  // of search
+  const double targetAngle = aTargetStyle.ObliqueAngle();
+
+  // italic is a bad fallback if it was not requested
+  if (minStyle.IsItalic() || maxStyle.IsItalic()) {
+    return kBadFallback + kNegate + kReverse;
+  }
+
+  if (targetAngle >= kDefaultAngle) {
+    const double minAngle = minStyle.ObliqueAngle();
+    if (minAngle >= targetAngle) {
+      return minAngle - targetAngle;
+    }
+    const double maxAngle = maxStyle.ObliqueAngle();
+    if (maxAngle >= targetAngle) {
+      return 0.0;
+    }
+    if (maxAngle > 0.0) {
+      return kReverse + (targetAngle - maxAngle);
+    }
+    return kReverse + kNegate + (targetAngle - maxAngle);
+  }
+
+  if (targetAngle <= -kDefaultAngle) {
+    const double maxAngle = maxStyle.ObliqueAngle();
+    if (maxAngle <= targetAngle) {
+      return targetAngle - maxAngle;
+    }
+    const double minAngle = minStyle.ObliqueAngle();
+    if (minAngle <= targetAngle) {
+      return 0.0;
+    }
+    if (minAngle < 0.0) {
+      return kReverse + (minAngle - targetAngle);
+    }
+    return kReverse + kNegate + (minAngle - targetAngle);
+  }
+
+  if (targetAngle >= 0.0) {
+    const double minAngle = minStyle.ObliqueAngle();
+    if (minAngle > targetAngle) {
+      return kReverse + (minAngle - targetAngle);
+    }
+    const double maxAngle = maxStyle.ObliqueAngle();
+    if (maxAngle >= targetAngle) {
+      return 0.0;
+    }
+    if (maxAngle > 0.0) {
+      return targetAngle - maxAngle;
+    }
+    return kReverse + kNegate + (targetAngle - maxAngle);
+  }
+
+  // last case: (targetAngle < 0.0 && targetAngle > kDefaultAngle)
+  const double maxAngle = maxStyle.ObliqueAngle();
+  if (maxAngle < targetAngle) {
+    return kReverse + (targetAngle - maxAngle);
+  }
+  const double minAngle = minStyle.ObliqueAngle();
+  if (minAngle <= targetAngle) {
+    return 0.0;
+  }
+  if (minAngle < 0.0) {
+    return minAngle - targetAngle;
+  }
+  return kReverse + kNegate + (minAngle - targetAngle);
+}
+
+double StretchDistance(const mozilla::StretchRange& aRange,
+                       const mozilla::StyleFontStretch& aTargetStretch) {
+  const double kReverseDistance = 1000.0;
+
+  mozilla::FontStretch minStretch = aRange.Min();
+  mozilla::FontStretch maxStretch = aRange.Max();
+
+  // The stretch value is a (non-negative) percentage; currently we support
+  // values in the range 0 .. 1000. (If the upper limit is ever increased,
+  // the kReverseDistance value used here may need to be adjusted.)
+  // If aTargetStretch is >100, we prefer larger values if available;
+  // if <=100, we prefer smaller values if available.
+  if (aTargetStretch < minStretch) {
+    if (aTargetStretch > mozilla::FontStretch::NORMAL) {
+      return minStretch.ToFloat() - aTargetStretch.ToFloat();
+    }
+    return (minStretch.ToFloat() - aTargetStretch.ToFloat()) + kReverseDistance;
+  }
+  if (aTargetStretch > maxStretch) {
+    if (aTargetStretch <= mozilla::FontStretch::NORMAL) {
+      return aTargetStretch.ToFloat() - maxStretch.ToFloat();
+    }
+    return (aTargetStretch.ToFloat() - maxStretch.ToFloat()) + kReverseDistance;
+  }
+  return 0.0;
+}
+
+double WeightDistance(const mozilla::WeightRange& aRange,
+                      const mozilla::StyleFontWeight& aTargetWeight) {
+  const double kNotWithinCentralRange = 100.0;
+  const double kReverseDistance = 600.0;
+
+  mozilla::FontWeight minWeight = aRange.Min();
+  mozilla::FontWeight maxWeight = aRange.Max();
+
+  if (aTargetWeight >= minWeight && aTargetWeight <= maxWeight) {
+    // Target is within the face's range, so it's a perfect match
+    return 0.0;
+  }
+
+  if (aTargetWeight < mozilla::FontWeight::NORMAL) {
+    // Requested a lighter-than-400 weight
+    if (maxWeight < aTargetWeight) {
+      return aTargetWeight.ToFloat() - maxWeight.ToFloat();
+    }
+    // Add reverse-search penalty for bolder faces
+    return (minWeight.ToFloat() - aTargetWeight.ToFloat()) + kReverseDistance;
+  }
+
+  if (aTargetWeight > mozilla::FontWeight::FromInt(500)) {
+    // Requested a bolder-than-500 weight
+    if (minWeight > aTargetWeight) {
+      return minWeight.ToFloat() - aTargetWeight.ToFloat();
+    }
+    // Add reverse-search penalty for lighter faces
+    return (aTargetWeight.ToFloat() - maxWeight.ToFloat()) + kReverseDistance;
+  }
+
+  // Special case for requested weight in the [400..500] range
+  if (minWeight > aTargetWeight) {
+    if (minWeight <= mozilla::FontWeight::FromInt(500)) {
+      // Bolder weight up to 500 is first choice
+      return minWeight.ToFloat() - aTargetWeight.ToFloat();
+    }
+    // Other bolder weights get a reverse-search penalty
+    return (minWeight.ToFloat() - aTargetWeight.ToFloat()) + kReverseDistance;
+  }
+  // Lighter weights are not as good as bolder ones within [400..500]
+  return (aTargetWeight.ToFloat() - maxWeight.ToFloat()) +
+         kNotWithinCentralRange;
+}
+
 #undef acceptablePlatform
 #undef isSymbol
 #undef isUVSEncoding

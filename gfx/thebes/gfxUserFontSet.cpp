@@ -15,6 +15,7 @@
 #include "mozilla/gfx/2D.h"
 #include "gfxPlatformFontList.h"
 #include "mozilla/PostTraversalTask.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "gfxOTSUtils.h"
 #include "nsFontFaceLoader.h"

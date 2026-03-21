@@ -3050,7 +3050,7 @@ void WebRenderBridgeParent::ClearAnimationResources() {
 }
 
 void WebRenderBridgeParent::SendAsyncMessage(
-    const nsTArray<AsyncParentMessageData>& aMessage) {
+    Span<const AsyncParentMessageData> aMessage) {
   MOZ_ASSERT_UNREACHABLE("unexpected to be called");
 }
 

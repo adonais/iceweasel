@@ -6,8 +6,10 @@
 #ifndef mozilla_dom_InspectorUtils_h
 #define mozilla_dom_InspectorUtils_h
 
-#include "mozilla/dom/InspectorUtilsBinding.h"
-#include "nsLayoutUtils.h"
+#include "Units.h"
+#include "mozilla/RefPtr.h"
+#include "mozilla/dom/InspectorUtilsBindingFwd.h"
+#include "nsTArray.h"
 
 class nsAtom;
 class nsINode;
@@ -15,15 +17,20 @@ class nsINodeList;
 class nsRange;
 
 namespace mozilla {
+class ErrorResult;
 class StyleSheet;
 namespace css {
 class Rule;
 }  // namespace css
 namespace dom {
+class BrowsingContext;
+enum class InspectorPropertyType : uint8_t;
 class CharacterData;
 class Document;
 class Element;
+class GlobalObject;
 class InspectorFontFace;
+class OwningCSSRuleOrInspectorDeclaration;
 }  // namespace dom
 }  // namespace mozilla
 
@@ -215,7 +222,7 @@ class InspectorUtils {
                                uint32_t aMaxRanges,  // max number of ranges to
                                                      // record for each face
                                bool aSkipCollapsedWhitespace,
-                               nsLayoutUtils::UsedFontFaceList& aResult,
+                               nsTArray<UniquePtr<InspectorFontFace>>& aResult,
                                ErrorResult& aRv);
 
   /**

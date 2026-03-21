@@ -26,6 +26,7 @@ headers = [
     "mozilla/ServoBindings.h",
     "mozilla/ComputedStyle.h",
     "mozilla/PresShell.h",
+    "mozilla/ServoStyleSet.h",
     "mozilla/ServoTraversalStatistics.h",
     "mozilla/SizeOfState.h",
     "nsDeviceContext.h",
