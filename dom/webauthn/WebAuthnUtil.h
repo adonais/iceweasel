@@ -10,6 +10,8 @@
 
 namespace mozilla::dom {
 
+static const size_t kWebAuthnMaxAllowedCredentials = 20;
+
 class WindowGlobalParent;
 
 bool IsValidAppId(const nsCOMPtr<nsIPrincipal>& aPrincipal,

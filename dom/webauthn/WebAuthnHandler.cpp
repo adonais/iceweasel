@@ -415,8 +415,6 @@ void WebAuthnHandler::MakeCredential(
       ->Track(mTransaction.ref().mRegisterHolder);
 }
 
-const size_t MAX_ALLOWED_CREDENTIALS = 20;
-
 void WebAuthnHandler::GetAssertion(
     JSContext* aCx, const PublicKeyCredentialRequestOptions& aOptions,
     const bool aConditionallyMediated,
@@ -463,7 +461,7 @@ void WebAuthnHandler::GetAssertion(
   uint32_t adjustedTimeout = WebAuthnTimeout(aOptions.mTimeout);
 
   // Abort the request if the allowCredentials set is too large
-  if (aOptions.mAllowCredentials.Length() > MAX_ALLOWED_CREDENTIALS) {
+  if (aOptions.mAllowCredentials.Length() > kWebAuthnMaxAllowedCredentials) {
     aPromise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
     return;
   }
