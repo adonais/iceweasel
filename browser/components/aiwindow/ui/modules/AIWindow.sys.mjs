@@ -650,7 +650,9 @@ export const AIWindow = {
         }
 
         if (lazy.hasFirstrunCompleted) {
-          lazy.AIWindowUI.openSidebar(win);
+          this._aiWindowTabStateManagers
+            .get(win)
+            ?.openSidebarForReturningUser();
         }
 
         lazy.MemoriesSchedulers.maybeRunAndSchedule();

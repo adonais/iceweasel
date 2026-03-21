@@ -136,8 +136,10 @@ export const AIWindowUI = {
     const { box, splitter } = nodes;
     const aiBrowser = this.ensureBrowserIsAppended(win.document, box);
 
-    this._showSidebarElements(box, splitter);
-    this._setAskButtonStyle(win, true);
+    if (!this.isSidebarOpen(win)) {
+      this._showSidebarElements(box, splitter);
+      this._setAskButtonStyle(win, true);
+    }
 
     Glean.smartWindow.sidebarOpen.record({
       chat_id: conversation?.id ?? "",
@@ -150,6 +152,7 @@ export const AIWindowUI = {
         detail: {
           tab: win.gBrowser.selectedTab,
           isOpen: true,
+          source: "open",
         },
       })
     );
@@ -158,10 +161,6 @@ export const AIWindowUI = {
       aiBrowser.setAttribute("data-conversation-id", conversation.id);
     } else {
       aiBrowser.removeAttribute("data-conversation-id");
-    }
-
-    if (!aiBrowser.contentDocument || !aiBrowser.contentWindow) {
-      return;
     }
 
     const aiWindowElement = await this.getAiWindowElement(win, aiBrowser);
@@ -173,7 +172,6 @@ export const AIWindowUI = {
       aiWindowElement.openConversation(conversation);
       return;
     }
-
     aiWindowElement.onCreateNewChatClick();
   },
 
@@ -277,6 +275,7 @@ export const AIWindowUI = {
         detail: {
           tab: win.gBrowser?.selectedTab,
           isOpen: true,
+          source: "toggle",
         },
       })
     );
