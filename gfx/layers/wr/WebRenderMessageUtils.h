@@ -220,7 +220,7 @@ inline auto TiedFields<mozilla::wr::FontInstancePlatformOptions>(
 #elif defined(XP_MACOSX)
   return std::tie(a.unused);
 #else
-  return std::tie(a.lcd_filter, a.hinting, a.gamma, a.enhanced_contrast);
+  return std::tie(a.lcd_filter, a.hinting);
 #endif
 }
 

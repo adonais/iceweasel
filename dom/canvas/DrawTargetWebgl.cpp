@@ -6153,14 +6153,8 @@ bool SharedContextWebgl::DrawGlyphsAccel(ScaledFont* aFont,
   // AA.
   bool usePreblend =
       aUseSubpixelAA || aOptions.mAntialiasMode != AntialiasMode::NONE;
-#elif defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID)
-  // FreeType preblend is conditional on gamma pref being enabled.
-  bool usePreblend =
-      (StaticPrefs::gfx_font_rendering_freetype_gamma() >= 0 ||
-       StaticPrefs::gfx_font_rendering_freetype_enhanced_contrast() > 0) &&
-      (aUseSubpixelAA || aOptions.mAntialiasMode != AntialiasMode::NONE);
 #else
-  // Other platforms (uikit) do not use preblend.
+  // FreeType backends currently don't use any preblending.
   bool usePreblend = false;
 #endif
 

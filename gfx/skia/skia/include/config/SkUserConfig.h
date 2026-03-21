@@ -166,6 +166,10 @@
 
 #define SK_DISABLE_LEGACY_IMAGE_READBUFFER
 
-#define SK_GAMMA_APPLY_TO_A8
+#ifdef SK_BUILD_FOR_ANDROID
+#  define SK_GAMMA_APPLY_TO_A8
+#  define SK_GAMMA_EXPONENT 1.4
+#  define SK_GAMMA_CONTRAST 0.0
+#endif
 
 #endif

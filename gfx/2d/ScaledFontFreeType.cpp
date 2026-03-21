@@ -102,11 +102,6 @@ bool ScaledFontFreeType::GetWRFontInstanceOptions(
   platformOptions.lcd_filter = wr::FontLCDFilter::None;
   platformOptions.hinting = wr::FontHinting::None;
 
-  platformOptions.gamma =
-      int16_t(StaticPrefs::gfx_font_rendering_freetype_gamma());
-  platformOptions.enhanced_contrast =
-      int16_t(StaticPrefs::gfx_font_rendering_freetype_enhanced_contrast());
-
   *aOutOptions = Some(options);
   *aOutPlatformOptions = Some(platformOptions);
 

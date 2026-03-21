@@ -304,9 +304,9 @@ public:
         }
 
 #ifndef SK_GAMMA_APPLY_TO_A8
-        if (!isLCD(*rec)) {
-            rec->ignorePreBlend();
-        }
+        // Don't apply any gamma so that we match cairo-ft's results.
+        // Only do this if not requesting gamma in build config.
+        rec->ignorePreBlend();
 #endif
     }
 

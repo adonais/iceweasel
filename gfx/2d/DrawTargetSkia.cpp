@@ -1825,33 +1825,6 @@ static inline SkPixelGeometry GetSkPixelGeometry() {
   }
 }
 
-static Maybe<SkSurfaceProps> sSurfaceProps;
-
-static const SkSurfaceProps& GetSkSurfaceProps() {
-  if (!sSurfaceProps ||
-      sSurfaceProps->pixelGeometry() != GetSkPixelGeometry()) {
-    DrawTargetSkia::UpdateSurfaceProps();
-  }
-  return *sSurfaceProps;
-}
-
-void DrawTargetSkia::UpdateSurfaceProps() {
-#if defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID)
-  int32_t gammaVal = StaticPrefs::gfx_font_rendering_freetype_gamma();
-  int32_t contrastVal =
-      StaticPrefs::gfx_font_rendering_freetype_enhanced_contrast();
-  if (gammaVal >= 0 || contrastVal > 0) {
-    SkScalar gamma =
-        gammaVal < 0 ? SK_Scalar1 : SkScalar(std::min(gammaVal, 400)) / 100;
-    SkScalar contrast = SkScalar(std::clamp(contrastVal, 0, 100)) / 100;
-    sSurfaceProps =
-        Some(SkSurfaceProps(0, GetSkPixelGeometry(), contrast, gamma));
-    return;
-  }
-#endif
-  sSurfaceProps = Some(SkSurfaceProps(0, GetSkPixelGeometry(), 0, SK_Scalar1));
-}
-
 template <typename T>
 [[nodiscard]] static already_AddRefed<T> AsRefPtr(sk_sp<T>&& aSkPtr) {
   return already_AddRefed<T>(aSkPtr.release());
@@ -1874,7 +1847,7 @@ bool DrawTargetSkia::Init(const IntSize& aSize, SurfaceFormat aFormat) {
   if (stride.isNothing() || size_t(stride.value()) < info.minRowBytes64()) {
     return false;
   }
-  SkSurfaceProps props = GetSkSurfaceProps();
+  SkSurfaceProps props(0, GetSkPixelGeometry());
 
   if (aFormat == SurfaceFormat::A8) {
     // Skia does not fully allocate the last row according to stride.
@@ -1945,7 +1918,7 @@ bool DrawTargetSkia::Init(unsigned char* aData, const IntSize& aSize,
     return false;
   }
 
-  SkSurfaceProps props = GetSkSurfaceProps();
+  SkSurfaceProps props(0, GetSkPixelGeometry());
   mSurface = AsRefPtr(SkSurfaces::WrapPixels(info, aData, aStride, &props));
   if (!mSurface) {
     return false;
@@ -1979,7 +1952,7 @@ bool DrawTargetSkia::Init(RefPtr<DataSourceSurface>&& aSurface) {
     return false;
   }
 
-  SkSurfaceProps props = GetSkSurfaceProps();
+  SkSurfaceProps props(0, GetSkPixelGeometry());
   mSurface = AsRefPtr(SkSurfaces::WrapPixels(
       MakeSkiaImageInfo(size, format), map->GetData(), map->GetStride(),
       DrawTargetSkia::ReleaseMappedSkSurface, map, &props));
