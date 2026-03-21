@@ -166,10 +166,8 @@
 
 #define SK_DISABLE_LEGACY_IMAGE_READBUFFER
 
-#ifdef SK_BUILD_FOR_ANDROID
+#if defined(MOZ_WIDGET_GTK) || defined(MOZ_WIDGET_ANDROID)
 #  define SK_GAMMA_APPLY_TO_A8
-#  define SK_GAMMA_EXPONENT 1.4
-#  define SK_GAMMA_CONTRAST 0.0
 #endif
 
 #endif
