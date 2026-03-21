@@ -254,6 +254,13 @@ export class AIWindowTabStatesManager {
    * Handles TabSelect events from a new browser tab to
    * update the state of the sidebar.
    *
+   * Sidebar behavior logic:
+   * - shouldOpenSidebar defaults to true when no explicit state is set
+   * - keepSidebarOpen can be explicitly set to false to close sidebar
+   * - When shouldOpenSidebar is true, openSidebar is called with the tab's conversation
+   * - If conversation is null/undefined, openSidebar will kick off creating a new conversation
+   * - AI Window tabs (AIWINDOW_URL) always close the sidebar regardless of state
+   *
    * @param {Event} event
    *
    * @private
@@ -266,10 +273,10 @@ export class AIWindowTabStatesManager {
     this.#selectedTab = event.target;
 
     const tabState = this.#getTabState(this.#selectedTab);
-    const convId = tabState?.state?.conversationId;
     const tabUrl = this.#selectedTab.linkedBrowser.currentURI.spec;
     const isAIWindowTab = tabUrl === lazy.AIWINDOW_URL;
-    const shouldKeepSidebar = tabState?.state?.keepSidebarOpen ?? !!convId;
+    const keepSidebarOpen = tabState?.state?.keepSidebarOpen;
+    const shouldOpenSidebar = keepSidebarOpen !== false;
     const conversation = tabState?.state?.conversation;
 
     // AI Window tab doesn't need sidebar
@@ -280,12 +287,14 @@ export class AIWindowTabStatesManager {
     }
 
     // Regular tab - open sidebar if we should keep it open
-    if (shouldKeepSidebar) {
+    if (shouldOpenSidebar) {
       lazy.AIWindowUI.openSidebar(this.#window, conversation);
-      lazy.AIWindowUI.updateSidebarInput(
-        this.#window,
-        tabState.state.input ?? ""
-      );
+      if (tabState?.state) {
+        lazy.AIWindowUI.updateSidebarInput(
+          this.#window,
+          tabState.state.input ?? ""
+        );
+      }
     } else {
       lazy.AIWindowUI.closeSidebar(this.#window);
     }
