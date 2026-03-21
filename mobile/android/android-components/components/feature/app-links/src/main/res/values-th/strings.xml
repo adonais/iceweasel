@@ -34,18 +34,4 @@
   <string name="mozac_feature_applinks_confirm_dialog_deny">ยกเลิก</string>
   <!-- The label of the checkbox that, depending of user's choice, can change the Open links in apps setting -->
   <string name="mozac_feature_applinks_confirm_dialog_checkbox_label">เปิดลิงก์ในแอปเสมอ</string>
-  <!-- The label for the expandable section that shows additional details -->
-  <string name="mozac_feature_applinks_view_details">ดูรายละเอียด</string>
-  <!-- The label for the expandable section when details are shown -->
-  <string name="mozac_feature_applinks_hide_details">ซ่อนรายละเอียด</string>
-  <!-- The label for the source URL in the details section -->
-  <string name="mozac_feature_applinks_source_url">URL ต้นทาง</string>
-  <!-- The label for the destination URL in the details section -->
-  <string name="mozac_feature_applinks_destination_url">URL ปลายทาง</string>
-  <!-- The label for the URL if opening in the browser in the details section. %s is the browser name. -->
-  <string name="mozac_feature_applinks_firefox_url">URL หากเปิดใน %s</string>
-  <!-- The label for the unique identifier in the details section -->
-  <string name="mozac_feature_applinks_unique_identifier">ตัวระบุเฉพาะ</string>
-  <!-- The text shown when there is no Firefox URL -->
-  <string name="mozac_feature_applinks_none">ไม่มี</string>
 </resources>
