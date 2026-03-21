@@ -6753,9 +6753,11 @@ version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "log",
+ "moz_task",
  "nserror",
  "nsstring",
  "sha2",
+ "thin-vec",
  "windows",
  "xpcom",
 ]

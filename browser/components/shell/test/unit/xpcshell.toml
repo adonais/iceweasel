@@ -15,6 +15,11 @@ run-if = [
   "os == 'mac'",
 ]
 
+["test_secondaryTileJs.js"]
+run-if = [
+  "os == 'win'"
+]
+
 ["test_writeShortcutIcon.js"]
 run-if = [
   "os == 'win'",

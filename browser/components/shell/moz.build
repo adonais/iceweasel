@@ -53,6 +53,7 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
 elif CONFIG["OS_ARCH"] == "WINNT":
     XPIDL_SOURCES += [
         "nsILimitedAccessFeature.idl",
+        "nsISecondaryTile.idl",
         "nsIWindowsShellService.idl",
     ]
     SOURCES += [

@@ -12,6 +12,7 @@
 
 extern "C" {
 nsresult new_limited_access_feature_service(REFNSIID iid, void** result);
+nsresult shell_windows_new_secondary_tile_service(REFNSIID iid, void** result);
 };
 
 #endif  // SHELL_WINDOWS_RUST_SRC_LAF_SERVICE_H_

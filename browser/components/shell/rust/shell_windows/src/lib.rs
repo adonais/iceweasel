@@ -9,3 +9,4 @@
 //! with the Windows shell.
 
 mod limited_access_features;
+mod secondary_tiles;

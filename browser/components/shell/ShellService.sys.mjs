@@ -42,6 +42,13 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsIINIParserFactory
 );
 
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "secondaryTileService",
+  "@mozilla.org/browser/secondary-tile-service;1",
+  Ci.nsISecondaryTileService
+);
+
 ChromeUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.importESModule(
     "resource://gre/modules/Console.sys.mjs"
@@ -785,6 +792,45 @@ let ShellServiceInternal = {
     }
 
     return PathUtils.join(dataHome, "applications", `${appId}.desktop`);
+  },
+
+  async requestCreateAndPinSecondaryTile(tileId, name, iconPath, args) {
+    let resolver = Promise.withResolvers();
+
+    lazy.secondaryTileService.requestCreateAndPin(
+      tileId,
+      name,
+      iconPath,
+      args,
+      this._secondaryTileListener("Secondary tile pinning failed", resolver)
+    );
+
+    return resolver.promise;
+  },
+
+  async requestDeleteSecondaryTile(tileId) {
+    let resolver = Promise.withResolvers();
+
+    lazy.secondaryTileService.requestDelete(
+      tileId,
+      this._secondaryTileListener("Secondary tile unpinning failed", resolver)
+    );
+
+    return resolver.promise;
+  },
+
+  _secondaryTileListener(errorMessage, resolver) {
+    return {
+      QueryInterface: ChromeUtils.generateQI([Ci.nsISecondaryTileListener]),
+      succeeded(outcome) {
+        resolver.resolve(outcome);
+      },
+      failed(hresult) {
+        let formatted = hresult.toString(16).padStart(8, "0");
+        let error = new Error(`${errorMessage} (HRESULT ${formatted})`);
+        resolver.reject(error);
+      },
+    };
   },
 };
 
