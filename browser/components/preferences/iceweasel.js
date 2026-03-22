@@ -18,6 +18,8 @@ Preferences.addAll([
   { id: "javascript.enabled", type: "bool" },
   // Pin tabs to taskbar
   { id: "browser.taskbarTabs.enabled", type: "bool" },
+  // handoff to urlbar
+  { id: "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", type: "bool" },
   // compactmode
   { id: "browser.compactmode.show", type: "bool" },
   // lastclose
@@ -60,6 +62,11 @@ var gIceweaselPane = {
       "iceweasel-taskbartabs-checkbox",
       ["browser.taskbarTabs.enabled"],
       [false,                       ],
+    );
+    setBoolSyncListeners(
+      "iceweasel-searchhand-checkbox",
+      ["browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar"],
+      [true,                                                                 ],
     );
     setBoolSyncListeners(
       "iceweasel-tabcompactmode-checkbox",
