@@ -1870,7 +1870,6 @@ void P2PTransportChannel::SwitchSelectedConnectionInternal(
     }
     RTC_LOG(LS_INFO) << ToString() << ": New selected connection: "
                      << selected_connection_->ToString();
-    SignalRouteChange(this, selected_connection_->remote_candidate());
     // This is a temporary, but safe fix to webrtc issue 5705.
     // TODO(honghaiz): Make all ENOTCONN error routed through the transport
     // channel so that it knows whether the media channel is allowed to
@@ -2284,7 +2283,7 @@ void P2PTransportChannel::OnReadPacket(Connection* connection,
 void P2PTransportChannel::OnSentPacket(const SentPacketInfo& sent_packet) {
   RTC_DCHECK_RUN_ON(network_thread_);
 
-  SignalSentPacket(this, sent_packet);
+  NotifySentPacket(this, sent_packet);
 }
 
 void P2PTransportChannel::OnReadyToSend(Connection* connection) {

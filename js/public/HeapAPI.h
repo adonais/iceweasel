@@ -34,7 +34,7 @@ static constexpr size_t TypicalCacheLineSize = 64;
 namespace gc {
 
 class Arena;
-struct Cell;
+class Cell;
 class ArenaChunk;
 class StoreBuffer;
 class TenuredCell;
@@ -892,7 +892,7 @@ static MOZ_ALWAYS_INLINE void ExposeGCThingToActiveJS(JS::GCCellPtr thing) {
   MOZ_ASSERT(!thing.mayBeOwnedByOtherRuntime());
 
   auto* zone = JS::shadow::Zone::from(detail::GetTenuredGCThingZone(cell));
-  if (zone->needsIncrementalBarrier()) {
+  if (zone->needsMarkingBarrier()) {
     PerformIncrementalReadBarrier(thing);
   } else if (!zone->isGCPreparing() && detail::NonBlackCellIsMarkedGray(cell)) {
     MOZ_ALWAYS_TRUE(JS::UnmarkGrayGCThingRecursively(thing));
@@ -911,8 +911,7 @@ static MOZ_ALWAYS_INLINE void IncrementalReadBarrier(JS::GCCellPtr thing) {
 
   auto* cell = reinterpret_cast<TenuredCell*>(thing.asCell());
   auto* zone = JS::shadow::Zone::from(detail::GetTenuredGCThingZone(cell));
-  if (zone->needsIncrementalBarrier() &&
-      !detail::TenuredCellIsMarkedBlack(cell)) {
+  if (zone->needsMarkingBarrier() && !detail::TenuredCellIsMarkedBlack(cell)) {
     // GC things owned by other runtimes are always black.
     MOZ_ASSERT(!thing.mayBeOwnedByOtherRuntime());
     PerformIncrementalReadBarrier(thing);

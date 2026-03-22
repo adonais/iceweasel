@@ -29,6 +29,8 @@ with Files("profile/channel-prefs.js"):
 with Files("profile/firefox.js"):
     BUG_COMPONENT = ("Firefox", "General")
 
+DIRS += ["distribution"]
+
 if CONFIG["MOZ_MACBUNDLE_NAME"]:
     DIRS += ["macbuild/Contents"]
 

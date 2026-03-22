@@ -710,11 +710,11 @@ AutoTrackLineBreak::AutoTrackLineBreak(RangeUpdater& aRangeUpdater,
   MOZ_ASSERT(aLineBreak->IsPreformattedLineBreak());
 }
 
-void AutoTrackLineBreak::FlushAndStopTracking() {
+void AutoTrackLineBreak::Flush(enum StopTracking aStopTracking) {
   if (!mLineBreak) {
     return;
   }
-  mTracker.FlushAndStopTracking();
+  mTracker.Flush(aStopTracking);
   if (mPoint.GetContainer() == mLineBreak->mContent) {
     mLineBreak->mOffsetInText = Some(mPoint.Offset());
   }

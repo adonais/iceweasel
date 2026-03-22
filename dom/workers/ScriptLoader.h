@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_workers_scriptloader_h__
-#define mozilla_dom_workers_scriptloader_h__
+#ifndef mozilla_dom_workers_scriptloader_h_
+#define mozilla_dom_workers_scriptloader_h_
 
 #include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ScriptLoadRequest.h"
@@ -378,4 +378,4 @@ void Load(WorkerPrivate* aWorkerPrivate,
 }  // namespace dom
 }  // namespace mozilla
 
-#endif /* mozilla_dom_workers_scriptloader_h__ */
+#endif /* mozilla_dom_workers_scriptloader_h_ */

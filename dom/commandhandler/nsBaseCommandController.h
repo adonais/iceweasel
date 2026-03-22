@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsBaseCommandController_h__
-#define nsBaseCommandController_h__
+#ifndef nsBaseCommandController_h_
+#define nsBaseCommandController_h_
 
 #include "nsIController.h"
 #include "nsIWeakReferenceUtils.h"

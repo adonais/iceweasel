@@ -55,25 +55,24 @@ async function doTest({
     "Policy engine is active"
   );
 
-  const { initExperimentAPI, cleanup, loader } =
-    await NimbusTestUtils.setupTest({
-      init: false,
-      storePath: await NimbusTestUtils.createStoreWith(store => {
-        for (const slug of existingEnrollments) {
-          NimbusTestUtils.addEnrollmentForRecipe(
-            RECIPES.find(e => e.slug === slug),
-            { store }
-          );
-        }
-      }),
-      experiments: RECIPES,
-      migrationState: NimbusTestUtils.migrationState.UNMIGRATED,
-    });
+  const { cleanup, loader } = await NimbusTestUtils.setupTest({
+    init: false,
+    storePath: await NimbusTestUtils.createStoreWith(store => {
+      for (const slug of existingEnrollments) {
+        NimbusTestUtils.addEnrollmentForRecipe(
+          RECIPES.find(e => e.slug === slug),
+          { store }
+        );
+      }
+    }),
+    experiments: RECIPES,
+    migrationState: NimbusTestUtils.migrationState.UNMIGRATED,
+  });
 
   sinon.spy(loader, "updateRecipes");
   sinon.spy(loader, "setTimer");
 
-  await initExperimentAPI();
+  await ExperimentAPI.init();
 
   Assert.equal(
     ExperimentAPI.labsEnabled,

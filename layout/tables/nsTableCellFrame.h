@@ -2,8 +2,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#ifndef nsTableCellFrame_h__
-#define nsTableCellFrame_h__
+#ifndef nsTableCellFrame_h_
+#define nsTableCellFrame_h_
 
 #include "celldata.h"
 #include "mozilla/ComputedStyle.h"

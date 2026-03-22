@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _ENCODING_CONSTRAINTS_H_
-#define _ENCODING_CONSTRAINTS_H_
+#ifndef ENCODING_CONSTRAINTS_H_
+#define ENCODING_CONSTRAINTS_H_
 
 #include "mozilla/Maybe.h"
 
@@ -63,4 +63,4 @@ class VideoEncodingConstraints {
 };
 }  // namespace mozilla
 
-#endif  // _ENCODING_CONSTRAINTS_H_
+#endif  // ENCODING_CONSTRAINTS_H_

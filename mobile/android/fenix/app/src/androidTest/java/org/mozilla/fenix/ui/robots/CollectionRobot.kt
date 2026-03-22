@@ -92,16 +92,36 @@ class CollectionRobot(private val composeTestRule: ComposeTestRule) {
     @OptIn(ExperimentalTestApi::class)
     fun verifyTabSavedInCollection(title: String, visible: Boolean = true) {
         if (visible) {
-            Log.i(TAG, "verifyTabSavedInCollection: Waiting for $waitingTime until tab with title: $title exists")
-            composeTestRule.waitUntilAtLeastOneExists(hasText(title), waitingTime)
-            Log.i(TAG, "verifyTabSavedInCollection: Waited for $waitingTime until tab with title: $title exists")
+            Log.i(TAG, "verifyTabSavedInCollection: Waiting for tab with title '$title' to appear")
+            composeTestRule.waitUntil(waitingTime) {
+                composeTestRule
+                    .onAllNodesWithText(title)
+                    .fetchSemanticsNodes()
+                    .isNotEmpty()
+            }
+            Log.i(TAG, "verifyTabSavedInCollection: Tab with title '$title' is now present")
+
+            Log.i(TAG, "verifyTabSavedInCollection: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "verifyTabSavedInCollection: Waited for compose rule to be idle")
+
             Log.i(TAG, "verifyTabSavedInCollection: Trying to verify that tab with title: $title is displayed")
             composeTestRule.onNodeWithText(title).assertIsDisplayed()
             Log.i(TAG, "verifyTabSavedInCollection: Verified that tab with title: $title is displayed")
         } else {
-            Log.i(TAG, "verifyTabSavedInCollection: Waiting for $waitingTime until tab with title: $title does not exists")
-            composeTestRule.waitUntilDoesNotExist(hasText(title), waitingTime)
-            Log.i(TAG, "verifyTabSavedInCollection: Waited for $waitingTime until tab with title: $title does not exists")
+            Log.i(TAG, "verifyTabSavedInCollection: Waiting for tab with title '$title' to be removed")
+            composeTestRule.waitUntil(waitingTime) {
+                composeTestRule
+                    .onAllNodesWithText(title)
+                    .fetchSemanticsNodes()
+                    .isEmpty()
+            }
+            Log.i(TAG, "verifyTabSavedInCollection: Tab with title '$title' is no longer present")
+
+            Log.i(TAG, "verifyTabSavedInCollection: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "verifyTabSavedInCollection: Waited for compose rule to be idle")
+
             Log.i(TAG, "verifyTabSavedInCollection: Trying to verify that tab with title: $title is not displayed")
             composeTestRule.onNodeWithText(title).assertIsNotDisplayed()
             Log.i(TAG, "verifyTabSavedInCollection: Verified that tab with title: $title is not displayed")
@@ -227,14 +247,14 @@ class CollectionRobot(private val composeTestRule: ComposeTestRule) {
 
     fun swipeTabLeft(title: String) {
         Log.i(TAG, "swipeTabLeft: Trying to swipe left the collections tab with title: $title")
-        mDevice.findObject(By.textContains(title)).swipe(Direction.LEFT, 1.0f, 200)
+        mDevice.findObject(By.textContains(title)).swipe(Direction.LEFT, 1.0f, 8000)
         Log.i(TAG, "swipeTabLeft: Swiped left the collections tab with title: $title")
         waitForAppWindowToBeUpdated()
     }
 
     fun swipeTabRight(title: String) {
         Log.i(TAG, "swipeTabRight: Trying to swipe right the collections tab with title: $title")
-        mDevice.findObject(By.textContains(title)).swipe(Direction.RIGHT, 1.0f, 200)
+        mDevice.findObject(By.textContains(title)).swipe(Direction.RIGHT, 1.0f, 8000)
         Log.i(TAG, "swipeTabRight: Swiped right the collections tab with title: $title")
         waitForAppWindowToBeUpdated()
     }

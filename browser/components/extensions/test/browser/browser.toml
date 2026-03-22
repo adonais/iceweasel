@@ -53,6 +53,8 @@ support-files = [
 
 ["browser_browserSetting_vertical_tabs.js"]
 
+["browser_ext_action_openPopup.js"]
+
 ["browser_ext_action_popup_allowed_urls.js"]
 
 ["browser_ext_activeScript.js"]
@@ -343,6 +345,8 @@ https_first_disabled = true
 
 ["browser_ext_pageAction_click_types.js"]
 
+["browser_ext_pageAction_color_scheme_svg.js"]
+
 ["browser_ext_pageAction_context.js"]
 https_first_disabled = true
 
@@ -384,7 +388,7 @@ run-if = [
 
 ["browser_ext_popup_select_in_oopif.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && swgl && fission && tsan", # high frequency intermittent
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan && fission && swgl", # high frequency intermittent
 ]
 
 ["browser_ext_popup_sendMessage.js"]
@@ -632,6 +636,8 @@ https_first_disabled = true
 ["browser_ext_tabs_sharingState.js"]
 https_first_disabled = true
 
+["browser_ext_tabs_splitViewId.js"]
+
 ["browser_ext_tabs_successors.js"]
 
 ["browser_ext_tabs_update.js"]
@@ -661,6 +667,9 @@ skip-if = [
 ]
 
 ["browser_ext_user_events.js"]
+
+["browser_ext_webNavigation_bookmark_transitions.js"]
+support-files = ["!/browser/components/places/tests/browser/head.js"]
 
 ["browser_ext_webNavigation_containerIsolation.js"]
 https_first_disabled = true

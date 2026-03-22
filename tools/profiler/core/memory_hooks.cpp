@@ -28,7 +28,6 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #ifdef XP_WIN
 #  include <windows.h>

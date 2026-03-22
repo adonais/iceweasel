@@ -252,6 +252,12 @@ WebAuthnRegisterArgs::GetHints(nsTArray<nsString>& aHints) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+WebAuthnRegisterArgs::GetJson(nsAString& aJSON) {
+  aJSON = mInfo.Json();
+  return NS_OK;
+}
+
 NS_IMPL_ISUPPORTS(WebAuthnSignArgs, nsIWebAuthnSignArgs)
 
 NS_IMETHODIMP
@@ -494,6 +500,12 @@ WebAuthnSignArgs::GetLargeBlobWrite(nsTArray<uint8_t>& aLargeBlobWrite) {
 NS_IMETHODIMP
 WebAuthnSignArgs::GetHints(nsTArray<nsString>& aHints) {
   aHints.Assign(mInfo.Hints());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+WebAuthnSignArgs::GetJson(nsAString& aJSON) {
+  aJSON = mInfo.Json();
   return NS_OK;
 }
 

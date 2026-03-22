@@ -28,6 +28,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/UserContextManager.sys.mjs",
   WindowGlobalMessageHandler:
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.sys.mjs",
+  workerListenerRegistry:
+    "chrome://remote/content/shared/js-process-actors/WebDriverWorkerListenerActor.sys.mjs",
 });
 
 /**
@@ -882,6 +884,12 @@ class ScriptModule extends RootBiDiModule {
     return rv;
   }
 
+  #getBrowsingContextIdByInnerWindowId(innerWindowId) {
+    const windowGlobalParent =
+      WindowGlobalParent.getByInnerWindowId(innerWindowId);
+    return windowGlobalParent?.browsingContext.id;
+  }
+
   async #getContextFromTarget({
     contextId,
     realmId,
@@ -932,6 +940,53 @@ class ScriptModule extends RootBiDiModule {
         return realm;
       })
       .filter(realm => realm.context !== null);
+  }
+
+  /**
+   * Retrieve all browsing contexts related to a given worker.
+   *
+   * @param {object} workerData
+   *     Worker event payload from the WorkerListenerRegistry
+   *
+   * @returns {Array<BrowsingContext>}
+   *     Array of browsing contexts related to the worker.
+   */
+  #getWorkerBrowsingContexts(workerData) {
+    // Bug 2014206: For shared workers, windowIDs currently crash and the event
+    // contains an empty array.
+    // Bug 2016096: For service workers, windowIDs is currently always empty.
+    return workerData.windowIDs
+      .map(innerWindowId =>
+        this.#getBrowsingContextIdByInnerWindowId(innerWindowId)
+      )
+      .filter(Boolean);
+  }
+
+  /**
+   * Implements https://w3c.github.io/webdriver-bidi/#get-the-workers-owners
+   * This implementation diverges from the spec since the worker global is not
+   * accessible in the parent process.
+   *
+   * @param {object} workerData
+   *     Worker event payload from the WorkerListenerRegistry
+   *
+   * @returns {Array<string>}
+   *     Array of realm ids.
+   */
+  #getWorkerOwners(workerData) {
+    const owners = [];
+    for (const innerWindowId of workerData.windowIDs) {
+      const windowRealms = this.messageHandler.realms.get(innerWindowId);
+      if (windowRealms) {
+        const defaultRealm = [...windowRealms.values()].find(
+          realm => !realm.sandbox
+        );
+        if (defaultRealm) {
+          owners.push(defaultRealm.realm);
+        }
+      }
+    }
+    return owners;
   }
 
   #hasEventSubscriptionToContextCreated(browsingContext) {
@@ -987,6 +1042,66 @@ class ScriptModule extends RootBiDiModule {
     });
   };
 
+  #onWorkerRegistered = (eventName, workerData) => {
+    const { id, isChrome, type, url } = workerData;
+
+    if (isChrome) {
+      // Bug 2016576: Support workers for chrome scope.
+      return;
+    }
+
+    const realmInfo = {};
+    switch (type) {
+      case Ci.nsIWorkerDebugger.TYPE_DEDICATED: {
+        const owners = this.#getWorkerOwners(workerData);
+        realmInfo.origin = url;
+        realmInfo.owners = owners;
+        realmInfo.realm = id;
+        realmInfo.type = lazy.RealmType.DedicatedWorker;
+        break;
+      }
+      case Ci.nsIWorkerDebugger.TYPE_SHARED: {
+        realmInfo.origin = url;
+        realmInfo.realm = id;
+        realmInfo.type = lazy.RealmType.SharedWorker;
+        break;
+      }
+      case Ci.nsIWorkerDebugger.TYPE_SERVICE: {
+        realmInfo.origin = url;
+        realmInfo.realm = id;
+        realmInfo.type = lazy.RealmType.ServiceWorker;
+        break;
+      }
+      default:
+        throw new Error(`Unexpected worker type ${type}`);
+    }
+
+    this._emitEventForBrowsingContexts(
+      this.#getWorkerBrowsingContexts(workerData),
+      "script.realmCreated",
+      realmInfo
+    );
+  };
+
+  #onWorkerUnregistered = (eventName, workerData) => {
+    const { id, isChrome } = workerData;
+
+    if (isChrome) {
+      // Bug 2016576: Support workers for chrome scope.
+      return;
+    }
+
+    const realmInfo = {
+      realm: id,
+    };
+
+    this._emitEventForBrowsingContexts(
+      this.#getWorkerBrowsingContexts(workerData),
+      "script.realmDestroyed",
+      realmInfo
+    );
+  };
+
   #sendDelayedRealmCreatedEvent(browsingContext) {
     const realmInfo = this.#realmInfoMap.get(browsingContext);
     // Resolve browsing context to a TabManager id.
@@ -1015,6 +1130,10 @@ class ScriptModule extends RootBiDiModule {
         this.#onContextCreatedSubmitted
       );
       this.#contextListener.startListening();
+      lazy.workerListenerRegistry.on(
+        "worker-registered",
+        this.#onWorkerRegistered
+      );
     }
   }
 
@@ -1026,18 +1145,30 @@ class ScriptModule extends RootBiDiModule {
         this.#onContextCreatedSubmitted
       );
       this.#contextListener.stopListening();
+      lazy.workerListenerRegistry.off(
+        "worker-registered",
+        this.#onWorkerRegistered
+      );
     }
   }
 
   #startListeningOnRealmDestroyed() {
     if (!this.#subscribedEvents.has("script.realmDestroyed")) {
       this.messageHandler.on("realm-destroyed", this.#onRealmDestroyed);
+      lazy.workerListenerRegistry.on(
+        "worker-unregistered",
+        this.#onWorkerUnregistered
+      );
     }
   }
 
   #stopListeningOnRealmDestroyed() {
     if (this.#subscribedEvents.has("script.realmDestroyed")) {
       this.messageHandler.off("realm-destroyed", this.#onRealmDestroyed);
+      lazy.workerListenerRegistry.off(
+        "worker-unregistered",
+        this.#onWorkerUnregistered
+      );
     }
   }
 

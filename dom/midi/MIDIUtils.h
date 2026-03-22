@@ -4,6 +4,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#ifndef DOM_MIDI_MIDIUTILS_H_
+#define DOM_MIDI_MIDIUTILS_H_
+
 #include "mozilla/TimeStamp.h"
 #include "nsTArray.h"
 
@@ -25,3 +28,5 @@ bool ParseMessages(const nsTArray<uint8_t>& aByteBuffer,
 bool IsSysexMessage(const MIDIMessage& a);
 }  // namespace MIDIUtils
 }  // namespace mozilla::dom
+
+#endif  // DOM_MIDI_MIDIUTILS_H_

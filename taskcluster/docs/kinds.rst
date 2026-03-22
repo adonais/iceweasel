@@ -131,6 +131,11 @@ code-review
 Publish issues found by source-test tasks on Phabricator.
 This is a part of Release Management code review Bot.
 
+code-coverage
+-------------
+
+Publish a pulse message when all ccov coverage tasks in the task group finish.
+
 upload-symbols
 --------------
 
@@ -354,20 +359,10 @@ particular platform+locale. For example: fileUrl templates, versions, and platfo
 Toplevel tasks are also responsible for updating test channel rules to point at the Release
 being generated.
 
-release-secondary-balrog-submit-toplevel
-----------------------------------------
-Performs the same function as `release-balrog-submit-toplevel`, but against the beta channel
-during RC builds.
-
 release-balrog-scheduling
 -------------------------
 Schedules a Release for shipping in Balrog. If a `release_eta` was provided when starting the Release,
 it will be scheduled to go live at that day and time.
-
-release-secondary-balrog-scheduling
------------------------------------
-Performs the same function as `release-balrog-scheduling`, except for the beta channel as part of RC
-Releases.
 
 release-binary-transparency
 ---------------------------
@@ -377,11 +372,6 @@ release auditing. https://wiki.mozilla.org/Security/Binary_Transparency
 release-flatpak-push
 --------------------
 Pushes Flatpak repackage on Flathub
-
-release-secondary-flatpak-push
-------------------------------
-Performs the same function as `release-flatpak-push`, except for the beta channel as part of RC
-Releases.
 
 release-notify-av-announce
 --------------------------
@@ -394,10 +384,6 @@ Notify when a release has been pushed to CDNs.
 release-notify-ship
 -------------------
 Notify when a release has been shipped.
-
-release-secondary-notify-ship
------------------------------
-Notify when an RC release has been shipped to the beta channel.
 
 release-notify-promote
 ----------------------
@@ -451,10 +437,6 @@ release-final-verify
 --------------------
 Verifies the contents and package of release update MARs.
 
-release-secondary-final-verify
-------------------------------
-Verifies the contents and package of release update MARs for RC releases.
-
 release-push-langpacks
 -------------------------------
 Publishes language packs onto addons.mozilla.org.
@@ -470,10 +452,6 @@ Publishes signed langpacks to archive.mozilla.org
 release-update-verify
 ---------------------
 Verifies the contents and package of release update MARs.
-release-secondary-update-verify
--------------------------------
-Verifies the contents and package of release update MARs.
-
 release-update-verify-next
 --------------------------
 Verifies the contents and package of release and updare MARs from the previous ESR release.
@@ -481,10 +459,6 @@ Verifies the contents and package of release and updare MARs from the previous E
 release-update-verify-config
 ----------------------------
 Creates configs for release-update-verify tasks
-
-release-secondary-update-verify-config
---------------------------------------
-Creates configs for release-secondary-update-verify tasks
 
 release-update-verify-config-next
 ---------------------------------
@@ -631,6 +605,10 @@ These repackage tasks take the signed langpacks (.xpi) binaries and puts them in
 repackage-rpm
 ----------------
 These repackage tasks take signed Firefox Linux binaries and puts them in RPM packages.
+
+repackage-rpm-signing
+---------------------
+Repackage-rpm-signing takes the repackaged RPMs and signs them.
 
 repackage-flatpak
 -----------------
@@ -798,6 +776,10 @@ Signing for geckodriver binary.
 geckodriver-mac-notarization
 ----------------------------
 Apple notarization for mac geckodriver binary.
+
+mark-as-merged
+--------------
+Mark merge automation as completed in shipit.
 
 maybe-release
 -------------

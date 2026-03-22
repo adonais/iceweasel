@@ -15,6 +15,12 @@ import org.mozilla.focus.ext.beautifyUrl
 import java.lang.ref.WeakReference
 import mozilla.components.ui.icons.R as iconsR
 
+/**
+ * [RecyclerView.ViewHolder] implementation for displaying a tab session or action items
+ * (like "Add New Tab" or "Close All Tabs") in the tabs tray.
+ *
+ * @param binding The [ItemSessionBinding] for the layout of this view holder.
+ */
 class TabViewHolder(
     private val binding: ItemSessionBinding,
 ) : RecyclerView.ViewHolder(binding.root) {
@@ -29,6 +35,9 @@ class TabViewHolder(
      * @param selectSession Function to call when the tab is selected.
      * @param closeSession Function to call when the tab is closed.
      * @param closeOtherSessions Function to call when closing all other tabs.
+     * @param addNewTab Function to call when adding a new tab.
+     * @param isCloseAllItem Indicates if this item should represent the "Close All Tabs" action.
+     * @param isAddNewTabItem Indicates if this item should represent the "Add New Tab" action.
      */
 
     fun bind(
@@ -37,6 +46,9 @@ class TabViewHolder(
         selectSession: (TabSessionState) -> Unit,
         closeSession: (TabSessionState) -> Unit,
         closeOtherSessions: () -> Unit = {},
+        addNewTab: () -> Unit,
+        isCloseAllItem: Boolean,
+        isAddNewTabItem: Boolean,
     ) {
         val drawable = if (isCurrentSession) {
             R.drawable.background_list_item_current_session
@@ -44,10 +56,16 @@ class TabViewHolder(
             R.drawable.background_list_item_session
         }
 
-        if (tab != null) {
-            bindTab(tab, drawable, selectSession, closeSession)
-        } else {
-            bindCloseAllTabs(drawable, closeOtherSessions)
+        when {
+            tab != null -> {
+                bindTab(tab, drawable, selectSession, closeSession)
+            }
+            isCloseAllItem -> {
+                bindCloseAllTabs(drawable, closeOtherSessions)
+            }
+            isAddNewTabItem -> {
+                bindNewTabItem(drawable, addNewTab)
+            }
         }
     }
 
@@ -113,6 +131,23 @@ class TabViewHolder(
 
             setOnClickListener {
                 closeOtherSessions.invoke()
+            }
+        }
+
+        binding.closeButton.isVisible = false
+    }
+
+    private fun bindNewTabItem(drawable: Int, addNewTab: () -> Unit) {
+        binding.sessionItem.setBackgroundResource(drawable)
+
+        AppCompatResources.getDrawable(binding.root.context, iconsR.drawable.mozac_ic_tab_new)?.intrinsicWidth ?: 0
+
+        binding.sessionTitle.apply {
+            text = binding.root.context.getString(R.string.tabs_tray_action_add_new_tab)
+            setCompoundDrawablesWithIntrinsicBounds(iconsR.drawable.mozac_ic_tab_new, 0, 0, 0)
+
+            setOnClickListener {
+                addNewTab.invoke()
             }
         }
 

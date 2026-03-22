@@ -67,7 +67,7 @@ export class UrlbarProviderClipboard extends UrlbarProvider {
       return false;
     }
     textFromClipboard =
-      controller.input.sanitizeTextFromClipboard(textFromClipboard);
+      UrlbarUtils.sanitizeTextFromClipboard(textFromClipboard);
     const validUrl = this.#validUrl(textFromClipboard);
     if (!validUrl) {
       return false;

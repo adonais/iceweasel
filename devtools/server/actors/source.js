@@ -382,9 +382,15 @@ class SourceActor extends Actor {
       try {
         newScript = this._source.reparse();
       } catch (e) {
-        // reparse() will throw if the source is not valid JS. This can happen
-        // if this source is the resurrection of a GC'ed source and there are
-        // parse errors in the refetched contents.
+        // Parsing the source as a normal script failed. Try again to parse it
+        // as a module.
+        try {
+          newScript = this._source.reparse(/* asModule */ true);
+        } catch (ex) {
+          // reparse() will throw if the source is not valid JS. This can happen
+          // if this source is the resurrection of a GC'ed source and there are
+          // parse errors in the refetched contents.
+        }
       }
       if (newScript) {
         scripts = [newScript];

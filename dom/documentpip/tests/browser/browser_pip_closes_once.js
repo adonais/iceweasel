@@ -27,11 +27,14 @@ add_task(async function closing_pip_sends_exactly_one_DOMWindowClosed() {
   });
 
   // close PiP
+  info("Closing PiP window");
+  const closedPromise = BrowserTestUtils.windowClosed(chromePiP);
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
     content.documentPictureInPicture.window.close();
   });
-  await BrowserTestUtils.windowClosed(chromePiP);
+  await closedPromise;
 
+  info("Querying close count");
   const closeCount = await SpecialPowers.spawn(
     tab.linkedBrowser,
     [],

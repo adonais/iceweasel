@@ -388,8 +388,7 @@ static void StatsCellCallback(JSRuntime* rt, void* data, JS::GCCellPtr cellptr,
       BaseScript* base = &cellptr.as<BaseScript>();
       RealmStats& realmStats = base->realm()->realmStats();
       realmStats.scriptsGCHeap += thingSize;
-      realmStats.scriptsMallocHeapData +=
-          base->sizeOfExcludingThis(rtStats->mallocSizeOf_);
+      realmStats.scriptsGCBuffers += base->sizeOfExcludingThis();
       if (base->hasJitScript()) {
         JSScript* script = static_cast<JSScript*>(base);
         script->addSizeOfJitScript(rtStats->mallocSizeOf_,
@@ -453,8 +452,7 @@ static void StatsCellCallback(JSRuntime* rt, void* data, JS::GCCellPtr cellptr,
         size += Nursery::nurseryCellHeaderSize();
       }
       zStats->bigIntsGCHeap += size;
-      zStats->bigIntsMallocHeap +=
-          bi->sizeOfExcludingThis(rtStats->mallocSizeOf_);
+      zStats->bigIntsGCBuffers += bi->sizeOfExcludingThis();
       break;
     }
 
@@ -516,7 +514,7 @@ static void StatsCellCallback(JSRuntime* rt, void* data, JS::GCCellPtr cellptr,
     case JS::TraceKind::Scope: {
       Scope* scope = &cellptr.as<Scope>();
       zStats->scopesGCHeap += thingSize;
-      zStats->scopesMallocHeap += scope->sizeOfExcludingThis();
+      zStats->scopesGCBuffers += scope->sizeOfExcludingThis();
       break;
     }
 

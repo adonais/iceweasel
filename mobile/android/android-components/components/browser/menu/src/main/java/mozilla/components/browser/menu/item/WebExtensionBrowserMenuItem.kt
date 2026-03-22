@@ -145,7 +145,7 @@ class WebExtensionBrowserMenuItem(
                 "Failed to load browser action icon, falling back to default.",
             )
 
-            getDrawable(context, iconsR.drawable.mozac_ic_web_extension_default_icon)
+            getDrawable(context, iconsR.drawable.mozac_ic_extension_fill_24)
         }
     }
 

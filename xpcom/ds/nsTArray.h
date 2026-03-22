@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsTArray_h__
-#define nsTArray_h__
+#ifndef nsTArray_h_
+#define nsTArray_h_
 
 #include <string.h>
 
@@ -68,13 +68,7 @@ template <typename, typename>
 class RecordEntry;
 }
 
-namespace mozilla::dom::ipc {
-class StructuredCloneData;
-}  // namespace mozilla::dom::ipc
-
 namespace mozilla::dom {
-class ClonedMessageData;
-class MessageData;
 class MessagePortIdentifier;
 template <typename T>
 struct Nullable;
@@ -746,17 +740,12 @@ MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::layers::TileClient)
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
     mozilla::SerializedStructuredCloneBuffer)
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
-    mozilla::dom::ipc::StructuredCloneData)
-MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::dom::ClonedMessageData)
-MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
     mozilla::dom::indexedDB::ObjectStoreCursorResponse)
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
     mozilla::dom::indexedDB::IndexCursorResponse)
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(
     mozilla::dom::indexedDB::SerializedStructuredCloneReadInfo);
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(JSStructuredCloneData)
-MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::dom::MessageData)
-MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::dom::RefMessageData)
 MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::SourceBufferTask)
 
 namespace detail {
@@ -3768,4 +3757,4 @@ std::ostream& operator<<(std::ostream& aOut,
   return aOut << mozilla::Span(aTArray);
 }
 
-#endif  // nsTArray_h__
+#endif  // nsTArray_h_

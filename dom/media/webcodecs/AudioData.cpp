@@ -177,8 +177,8 @@ Result<Ok, nsCString> IsValidAudioDataInit(const AudioDataInit& aInit) {
 
   if (!bytesNeeded.isValid()) {
     return LogAndReturnErr(
-        FMT_STRING("Overflow when computing the number of bytes needed to hold "
-                   "audio samples ({}*{}*{})"),
+        "Overflow when computing the number of bytes needed to hold "
+        "audio samples ({}*{}*{})",
         aInit.mNumberOfFrames, aInit.mNumberOfChannels,
         BytesPerSamples(aInit.mFormat));
   }
@@ -189,7 +189,7 @@ Result<Ok, nsCString> IsValidAudioDataInit(const AudioDataInit& aInit) {
       });
   if (arraySizeBytes < bytesNeeded.value()) {
     return LogAndReturnErr(
-        FMT_STRING("Array of size {} not big enough, should be at least {}"),
+        "Array of size {} not big enough, should be at least {}",
         arraySizeBytes, bytesNeeded.value());
   }
   return Ok();
@@ -385,9 +385,10 @@ size_t AudioData::ComputeCopyElementCount(
     }
   } else {
     if (aOptions.mPlaneIndex >= mNumberOfChannels) {
-      auto msg = nsFmtCString(FMT_STRING("Plane index {} greater or equal "
-                                         "than the number of channels {}"),
-                              aOptions.mPlaneIndex, mNumberOfChannels);
+      auto msg = nsFmtCString(
+          "Plane index {} greater or equal "
+          "than the number of channels {}",
+          aOptions.mPlaneIndex, mNumberOfChannels);
       LOGD("{}", msg.get());
       aRv.ThrowRangeError(msg);
       return 0;
@@ -398,9 +399,9 @@ size_t AudioData::ComputeCopyElementCount(
   uint64_t frameCount = mNumberOfFrames;
   // 7
   if (aOptions.mFrameOffset >= frameCount) {
-    auto msg = nsFmtCString(
-        FMT_STRING("Frame offset of {} greater or equal than frame count {}"),
-        aOptions.mFrameOffset, frameCount);
+    auto msg =
+        nsFmtCString("Frame offset of {} greater or equal than frame count {}",
+                     aOptions.mFrameOffset, frameCount);
     LOGD("{}", msg.get());
     aRv.ThrowRangeError(msg);
     return 0;
@@ -409,10 +410,11 @@ size_t AudioData::ComputeCopyElementCount(
   uint64_t copyFrameCount = frameCount - aOptions.mFrameOffset;
   if (aOptions.mFrameCount.WasPassed()) {
     if (aOptions.mFrameCount.Value() > copyFrameCount) {
-      auto msg = nsFmtCString(FMT_STRING("Passed copy frame count of {} "
-                                         "greater than available source frames "
-                                         "for copy of {}"),
-                              aOptions.mFrameCount.Value(), copyFrameCount);
+      auto msg = nsFmtCString(
+          "Passed copy frame count of {} "
+          "greater than available source frames "
+          "for copy of {}",
+          aOptions.mFrameCount.Value(), copyFrameCount);
       LOGD("{}", msg.get());
       aRv.ThrowRangeError(msg);
       return 0;
@@ -538,7 +540,7 @@ nsCString AudioData::ToString() const {
   if (!mResource) {
     return nsCString("AudioData[detached]");
   }
-  return nsFmtCString(FMT_STRING("AudioData[{} bytes {} {}Hz {} x {}ch]"),
+  return nsFmtCString("AudioData[{} bytes {} {}Hz {} x {}ch]",
                       mResource->Data().LengthBytes(),
                       GetEnumString(mAudioSampleFormat.value()).get(),
                       mSampleRate, mNumberOfFrames, mNumberOfChannels);
@@ -547,9 +549,8 @@ nsCString AudioData::ToString() const {
 nsCString CopyToToString(size_t aDestBufSize,
                          const AudioDataCopyToOptions& aOptions) {
   return nsFmtCString(
-      FMT_STRING(
-          "AudioDataCopyToOptions[data: {} bytes, {}, frame count: {}, frame "
-          "offset: {}, plane: {}]"),
+      "AudioDataCopyToOptions[data: {} bytes, {}, frame count: {}, frame "
+      "offset: {}, plane: {}]",
       aDestBufSize,
       aOptions.mFormat.WasPassed()
           ? GetEnumString(aOptions.mFormat.Value()).get()
@@ -636,10 +637,11 @@ void AudioData::CopyTo(const AllowSharedBufferSource& aDestination,
   uint32_t bytesPerSample = BytesPerSamples(destFormat.value());
   CheckedInt<uint32_t> copyLength = bytesPerSample;
   copyLength *= copyElementCount;
-  if (copyLength.value() > destLength) {
-    auto msg = nsFmtCString(FMT_STRING("destination buffer of length {} too "
-                                       "small for copying {} elements"),
-                            destLength, bytesPerSample * copyElementCount);
+  if (!copyLength.isValid() || copyLength.value() > destLength) {
+    auto msg = nsFmtCString(
+        "destination buffer of length {} too "
+        "small for copying {} elements",
+        destLength, bytesPerSample * copyElementCount);
     LOGD("{}", msg.get());
     aRv.ThrowRangeError(msg);
     return;

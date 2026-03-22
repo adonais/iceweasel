@@ -462,9 +462,10 @@ add_task(async function test_register_session_idempotent() {
   const ledger2 = orchestrator.getSessionLedger(TEST_SESSION_ID);
 
   Assert.equal(ledger1, ledger2, "Should return same ledger instance");
-  Assert.ok(
-    ledger2.forTab("tab-1").has("https://example.com"),
-    "Ledger data should be preserved"
+  Assert.equal(
+    ledger2.forTab("tab-1").lookup("https://example.com"),
+    "https://example.com/",
+    "Should return normalized URL, confirming ledger data preserved"
   );
 
   await teardown();

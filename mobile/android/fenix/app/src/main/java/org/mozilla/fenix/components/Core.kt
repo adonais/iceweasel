@@ -6,6 +6,7 @@ package org.mozilla.fenix.components
 
 import android.content.Context
 import android.content.res.Configuration
+import android.os.Environment
 import androidx.core.content.ContextCompat
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,7 @@ import mozilla.components.browser.engine.gecko.cookiebanners.GeckoCookieBannersS
 import mozilla.components.browser.engine.gecko.cookiebanners.ReportSiteDomainsRepository
 import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.browser.engine.gecko.permission.GeckoSitePermissionsStorage
+import mozilla.components.browser.engine.gecko.util.EngineDownloadDelegate
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.session.storage.SessionStorage
 import mozilla.components.browser.state.engine.EngineMiddleware
@@ -40,8 +42,6 @@ import mozilla.components.concept.engine.mediaquery.PreferredColorScheme
 import mozilla.components.concept.fetch.Client
 import mozilla.components.feature.awesomebar.provider.SessionAutocompleteProvider
 import mozilla.components.feature.customtabs.store.CustomTabsServiceStore
-import mozilla.components.feature.downloads.DateTimeProvider
-import mozilla.components.feature.downloads.DefaultDateTimeProvider
 import mozilla.components.feature.downloads.DefaultFileSizeFormatter
 import mozilla.components.feature.downloads.DownloadEstimator
 import mozilla.components.feature.downloads.DownloadMiddleware
@@ -84,6 +84,8 @@ import mozilla.components.service.digitalassetlinks.local.StatementApi
 import mozilla.components.service.digitalassetlinks.local.StatementRelationChecker
 import mozilla.components.service.location.LocationService
 import mozilla.components.service.location.MozillaLocationService
+import mozilla.components.service.mars.MacTopSitesProvider
+import mozilla.components.service.mars.MacTopSitesRequestConfig
 import mozilla.components.service.mars.MarsTopSitesProvider
 import mozilla.components.service.mars.MarsTopSitesRequestConfig
 import mozilla.components.service.mars.NEW_TAB_TILE_1_PLACEMENT_KEY
@@ -92,9 +94,7 @@ import mozilla.components.service.mars.Placement
 import mozilla.components.service.mars.contile.ContileTopSitesUpdater
 import mozilla.components.service.pocket.ContentRecommendationsRequestConfig
 import mozilla.components.service.pocket.PocketStoriesConfig
-import mozilla.components.service.pocket.PocketStoriesRequestConfig
 import mozilla.components.service.pocket.PocketStoriesService
-import mozilla.components.service.pocket.Profile
 import mozilla.components.service.pocket.mars.api.MarsSpocsRequestConfig
 import mozilla.components.service.pocket.mars.api.NEW_TAB_SPOCS_PLACEMENT_KEY
 import mozilla.components.service.sync.autofill.AutofillCreditCardsAddressesStorage
@@ -103,6 +103,8 @@ import mozilla.components.support.base.worker.Frequency
 import mozilla.components.support.ktx.android.content.appVersionName
 import mozilla.components.support.ktx.android.content.res.readJSONObject
 import mozilla.components.support.locale.LocaleManager
+import mozilla.components.support.utils.DateTimeProvider
+import mozilla.components.support.utils.DefaultDateTimeProvider
 import mozilla.components.support.utils.RunWhenReadyQueue
 import org.mozilla.fenix.AppRequestInterceptor
 import org.mozilla.fenix.BuildConfig
@@ -133,7 +135,6 @@ import org.mozilla.fenix.share.SaveToPDFMiddleware
 import org.mozilla.fenix.telemetry.TelemetryMiddleware
 import org.mozilla.fenix.utils.getUndoDelay
 import org.mozilla.geckoview.GeckoRuntime
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 import mozilla.components.service.pocket.mars.api.Placement as MarsSpocsPlacement
 
@@ -198,7 +199,15 @@ class Core(
             lnaFeatureEnabled = context.settings().isLnaFeatureEnabled,
             lnaTrackerBlockingEnabled = context.settings().isLnaTrackerBlockingEnabled,
             crliteChannel = FxNimbus.features.pki.value().crliteChannel,
-        )
+            downloadDelegate = EngineDownloadDelegate(
+                context = context,
+                downloadLocationGetter = {
+                    Environment.getExternalStoragePublicDirectory(
+                        Environment.DIRECTORY_DOWNLOADS,
+                    ).absolutePath
+                },
+            ),
+            )
 
         // Apply fingerprinting protection overrides if the feature is enabled in Nimbus
         if (FxNimbus.features.fingerprintingProtection.value().enabled) {
@@ -233,9 +242,9 @@ class Core(
         }
 
         GeckoEngine(
-            context,
-            defaultSettings,
-            geckoRuntime,
+            context = context,
+            defaultSettings = defaultSettings,
+            runtime = geckoRuntime,
         ).also {
             WebCompatFeature.install(it)
         }
@@ -559,19 +568,6 @@ class Core(
         PocketStoriesConfig(
             client,
             Frequency(4, TimeUnit.HOURS),
-            Profile(
-                profileId = UUID.fromString(context.settings().pocketSponsoredStoriesProfileId),
-                appId = BuildConfig.POCKET_CONSUMER_KEY,
-            ),
-            sponsoredStoriesParams = if (context.settings().useCustomConfigurationForSponsoredStories) {
-                PocketStoriesRequestConfig(
-                    context.settings().pocketSponsoredStoriesSiteId,
-                    context.settings().pocketSponsoredStoriesCountry,
-                    context.settings().pocketSponsoredStoriesCity,
-                )
-            } else {
-                PocketStoriesRequestConfig()
-            },
             contentRecommendationsParams = ContentRecommendationsRequestConfig(
                 locale = LocaleManager.getSelectedLocale(context).toLanguageTag(),
             ),
@@ -611,11 +607,28 @@ class Core(
         )
     }
 
+    val macTopSitesProvider by lazyMonitored {
+        MacTopSitesProvider(
+            adsClientProvider = context.components.ads.lazyAdsClientProvider,
+            requestConfig = MacTopSitesRequestConfig(
+                placements = listOf(
+                    NEW_TAB_TILE_1_PLACEMENT_KEY,
+                    NEW_TAB_TILE_2_PLACEMENT_KEY,
+                ),
+            ),
+            crashReporter = crashReporter,
+        )
+    }
+
     @Suppress("MagicNumber")
     val contileTopSitesUpdater by lazyMonitored {
         ContileTopSitesUpdater(
             context = context,
-            provider = marsTopSitesProvider,
+            provider = if (context.settings().enableMozillaAdsClient) {
+                macTopSitesProvider
+            } else {
+                marsTopSitesProvider
+            },
             frequency = Frequency(3, TimeUnit.HOURS),
         )
     }
@@ -624,7 +637,11 @@ class Core(
         DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSiteStorage,
             historyStorage = historyStorage,
-            topSitesProvider = marsTopSitesProvider,
+            topSitesProvider = if (context.settings().enableMozillaAdsClient) {
+                macTopSitesProvider
+            } else {
+                marsTopSitesProvider
+            },
         )
     }
 

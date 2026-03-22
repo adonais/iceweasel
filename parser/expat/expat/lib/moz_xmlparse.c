@@ -149,3 +149,14 @@ MOZ_XML_ParserFree(XML_Parser parser) {
 XML_Bool MOZ_XML_SetReparseDeferralEnabled(XML_Parser parser, int enabled) {
   return XML_SetReparseDeferralEnabled(parser, enabled);
 }
+
+const XML_Char * XMLCALL
+MOZ_XML_GetMismatchedTag(XML_Parser parser)
+{
+  return parser->m_mismatch;
+}
+
+XML_Bool XMLCALL
+MOZ_XML_ProcessingEntityValue(XML_Parser parser) {
+  return parser->m_openInternalEntities != NULL;
+}

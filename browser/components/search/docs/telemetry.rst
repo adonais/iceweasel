@@ -1,5 +1,7 @@
-Telemetry
-=========
+.. _browser-search-telemetry:
+
+Search UI Telemetry
+===================
 
 This section describes existing telemetry probes measuring interaction with
 search engines from the browser UI.
@@ -95,6 +97,8 @@ SEARCH_COUNTS - SAP usage
     - ``contextmenu``
     - ``newtab``
     - ``searchbar``
+    - ``smartbar`` Used when searching from Smart Window.
+    - ``smartwindow_assistant`` Used when searching from Smart Window assistant.
     - ``system``
     - ``urlbar`` Except aliases and search mode.
     - ``urlbar-handoff`` Used when searching from about:newtab.
@@ -118,6 +122,8 @@ browser.engagement.navigation.*
       was in a Persisted Search state.
     - ``urlbar_searchmode``  Used when the Urlbar is in search mode.
     - ``searchbar``
+    - ``smartbar`` Used when searching from Smart Window.
+    - ``smartwindow_assistant`` Used when searching from Smart Window assistant.
     - ``about_home``
     - ``about_newtab``
     - ``contextmenu``
@@ -177,6 +183,8 @@ browser.search.content.*
     was in a Persisted Search state.
   - ``urlbar_searchmode``  Used when the Urlbar is in search mode.
   - ``searchbar``
+  - ``smartbar`` Used when searching from Smart Window.
+  - ``smartwindow_assistant`` Used for search hand-off from Smart Window assistant.
   - ``about_home``
   - ``about_newtab``
   - ``contextmenu``

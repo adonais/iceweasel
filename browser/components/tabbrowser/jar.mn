@@ -11,7 +11,6 @@ browser.jar:
    content/browser/tabbrowser/opentabs.html               (content/opentabs.html)
    content/browser/tabbrowser/opentabs-splitview.css      (content/opentabs-splitview.css)
    content/browser/tabbrowser/opentabs-splitview.mjs      (content/opentabs-splitview.mjs)
-   content/browser/tabbrowser/tab-stacking.js             (content/tab-stacking.js)
    content/browser/tabbrowser/split-view-footer.js        (content/split-view-footer.js)
    content/browser/tabbrowser/tab.js                      (content/tab.js)
    content/browser/tabbrowser/tab-hover-preview.mjs       (content/tab-hover-preview.mjs)

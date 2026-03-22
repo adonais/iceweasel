@@ -7,6 +7,7 @@
  */
 
 import { JSONFile } from "resource://gre/modules/JSONFile.sys.mjs";
+import { CATEGORY_TO_ID_PREFIX } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs";
 
 /**
  * MemoryStore
@@ -26,6 +27,9 @@ import { JSONFile } from "resource://gre/modules/JSONFile.sys.mjs";
 
 const MEMORY_STORE_FILE = "memories.json.lz4";
 const MEMORY_STORE_VERSION = 1;
+
+// Observer notification topic
+const MEMORY_STORE_CHANGED = "memory-store-changed";
 
 // In-memory state
 let gState = {
@@ -95,6 +99,9 @@ async function loadMemories() {
 
 // Public API object
 export const MemoryStore = {
+  // Observer notification topic
+  MEMORY_STORE_CHANGED,
+
   /**
    * Initialize the store: set up JSONFile and load from disk.
    *
@@ -131,6 +138,7 @@ export const MemoryStore = {
    * @property {string} memory_summary - Short human-readable summary of the memory.
    * @property {string} category - Category label for the memory.
    * @property {string} intent - Intent label associated with the memory.
+   * @property {string} reasoning - Explanation of why this memory was created.
    * @property {number} score - Numeric score representing the memory's relevance.
    * @property {number} updated_at - Last-updated time in milliseconds since Unix epoch.
    * @property {boolean} is_deleted - Whether the memory is marked as deleted.
@@ -141,6 +149,7 @@ export const MemoryStore = {
    * @property {string} [memory_summary] Optional summary; defaults to an empty string.
    * @property {string} [category] Optional category label; defaults to an empty string.
    * @property {string} [intent] Optional intent label; defaults to an empty string.
+   * @property {string} [reasoning] Optional reasoning explanation; defaults to an empty string.
    * @property {number} [score] Optional numeric score; non-finite values are ignored.
    * @property {number} [updated_at] Optional last-updated time in milliseconds since Unix epoch.
    * @property {boolean} [is_deleted] Optional deleted flag; defaults to false.
@@ -162,7 +171,12 @@ export const MemoryStore = {
     let memory = gState.memories.find(i => i.id === id);
 
     if (memory) {
-      const simpleProperties = ["memory_summary", "category", "intent"];
+      const simpleProperties = [
+        "memory_summary",
+        "category",
+        "intent",
+        "reasoning",
+      ];
       for (const prop of simpleProperties) {
         if (prop in memoryPartial) {
           memory[prop] = memoryPartial[prop];
@@ -183,6 +197,7 @@ export const MemoryStore = {
       memory.updated_at = memoryPartial.updated_at || now;
 
       gJSONFile?.saveSoon();
+      Services.obs.notifyObservers(null, MEMORY_STORE_CHANGED);
       return memory;
     }
 
@@ -192,6 +207,7 @@ export const MemoryStore = {
       memory_summary: memoryPartial.memory_summary || "",
       category: memoryPartial.category || "",
       intent: memoryPartial.intent || "",
+      reasoning: memoryPartial.reasoning || "",
       score: Number.isFinite(memoryPartial.score) ? memoryPartial.score : 0,
       updated_at: memoryPartial.updated_at || now,
       is_deleted: memoryPartial.is_deleted ?? false,
@@ -199,6 +215,7 @@ export const MemoryStore = {
 
     gState.memories.push(memory);
     gJSONFile?.saveSoon();
+    Services.obs.notifyObservers(null, MEMORY_STORE_CHANGED);
     return memory;
   },
 
@@ -217,7 +234,12 @@ export const MemoryStore = {
       return null;
     }
 
-    const simpleProperties = ["memory_summary", "category", "intent"];
+    const simpleProperties = [
+      "memory_summary",
+      "category",
+      "intent",
+      "reasoning",
+    ];
     for (const prop of simpleProperties) {
       if (prop in updates) {
         memory[prop] = updates[prop];
@@ -238,6 +260,7 @@ export const MemoryStore = {
     memory.updated_at = updates.updated_at || Date.now();
 
     gJSONFile?.saveSoon();
+    Services.obs.notifyObservers(null, MEMORY_STORE_CHANGED);
     return memory;
   },
 
@@ -250,7 +273,9 @@ export const MemoryStore = {
    * @returns {Promise<Memory|null>}
    */
   async softDeleteMemory(id) {
-    return this.updateMemory(id, { is_deleted: true });
+    let memory = await this.updateMemory(id, { is_deleted: true });
+    Services.obs.notifyObservers(null, MEMORY_STORE_CHANGED);
+    return memory;
   },
 
   /**
@@ -267,6 +292,7 @@ export const MemoryStore = {
     }
     gState.memories.splice(idx, 1);
     gJSONFile?.saveSoon();
+    Services.obs.notifyObservers(null, MEMORY_STORE_CHANGED);
     return true;
   },
 
@@ -281,12 +307,15 @@ export const MemoryStore = {
    *   Sort direction.
    * @param {boolean} [options.includeSoftDeleted=false]
    *   Whether to include soft-deleted memories.
+   * @param {Array<string>} [options.memoryIds=[]]
+   *   Optional list of memory IDs; will return all if list is empty
    * @returns {Promise<Memory[]>}
    */
   async getMemories({
     sortBy = "updated_at",
     sortDir = "desc",
     includeSoftDeleted = false,
+    memoryIds = [],
   } = {}) {
     await this.ensureInitialized();
 
@@ -294,6 +323,10 @@ export const MemoryStore = {
 
     if (!includeSoftDeleted) {
       res = res.filter(i => !i.is_deleted);
+    }
+
+    if (memoryIds.length) {
+      res = res.filter(i => memoryIds.includes(i.id));
     }
 
     if (sortBy) {
@@ -375,9 +408,17 @@ function hashStringToHex(str) {
  *
  * @param {object} memoryPartial
  */
-function makeMemoryId(memoryPartial) {
+export function makeMemoryId(memoryPartial) {
   if (memoryPartial.id) {
     return memoryPartial.id;
+  }
+
+  let id_prefix;
+  if (CATEGORY_TO_ID_PREFIX.hasOwnProperty(memoryPartial.category)) {
+    id_prefix = CATEGORY_TO_ID_PREFIX[memoryPartial.category];
+  } else {
+    // Fallback in case the model returns an invalid category
+    id_prefix = "mem";
   }
 
   const summary = (memoryPartial.memory_summary || "").trim().toLowerCase();
@@ -387,5 +428,5 @@ function makeMemoryId(memoryPartial) {
   const key = `${summary}||${category}||${intent}`;
   const hex = hashStringToHex(key);
 
-  return `ins-${hex}`;
+  return `${id_prefix}.${hex}`;
 }

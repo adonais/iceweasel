@@ -21,6 +21,7 @@ UNIFIED_SOURCES += [
     "Identifier.cpp",
     "NativeStack.cpp",
     "Printf.cpp",
+    "RandomSeed.cpp",
     "StringBuilder.cpp",
     "StructuredSpewer.cpp",
     "Text.cpp",

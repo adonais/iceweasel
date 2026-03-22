@@ -77,7 +77,7 @@ fail-if = [
 
 ["test_logFromPreference.js"]
 skip-if = [
-  "(os == 'android' && release_or_beta)", # bug 1841818
+  "os == 'android' && release_or_beta", # bug 1841818
 ]
 
 ["test_mac_bundle.js"]

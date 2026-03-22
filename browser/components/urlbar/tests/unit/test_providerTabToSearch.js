@@ -25,7 +25,7 @@ add_setup(async () => {
     0
   );
   await SearchTestUtils.installSearchExtension({ name: "Test" });
-  testEngine = await Services.search.getEngineByName("Test");
+  testEngine = await SearchService.getEngineByName("Test");
 
   registerCleanupFunction(async () => {
     Services.prefs.clearUserPref(
@@ -99,8 +99,8 @@ add_task(async function noAutofill() {
     context,
     matches: [
       makeSearchResult(context, {
-        engineName: Services.search.defaultEngine.name,
-        engineIconUri: await Services.search.defaultEngine.getIconURL(),
+        engineName: SearchService.defaultEngine.name,
+        engineIconUri: await SearchService.defaultEngine.getIconURL(),
         heuristic: true,
         providerName: "UrlbarProviderHeuristicFallback",
       }),
@@ -195,7 +195,7 @@ add_task(async function ignoreWww() {
     },
     { skipUnload: true }
   );
-  let wwwTestEngine = Services.search.getEngineByName("TestWww");
+  let wwwTestEngine = SearchService.getEngineByName("TestWww");
   context = createContext("foo", { isPrivate: false });
   await check_results({
     context,
@@ -287,8 +287,8 @@ add_task(async function conflictingEngines() {
     },
     { skipUnload: true }
   );
-  let fooBarTestEngine = Services.search.getEngineByName("TestFooBar");
-  let fooTestEngine = Services.search.getEngineByName("TestFoo");
+  let fooBarTestEngine = SearchService.getEngineByName("TestFooBar");
+  let fooTestEngine = SearchService.getEngineByName("TestFoo");
 
   // Search for "foo", autofilling foo.com. Observe that the foo.com
   // tab-to-search result is shown, even though the foobar.com engine was added
@@ -470,7 +470,7 @@ add_task(async function test_publicSuffix() {
     },
     { skipUnload: true }
   );
-  let engine = Services.search.getEngineByName("MyTest");
+  let engine = SearchService.getEngineByName("MyTest");
   await PlacesTestUtils.addVisits([
     {
       url: "https://test.mytest.it/",
@@ -482,8 +482,8 @@ add_task(async function test_publicSuffix() {
     context,
     matches: [
       makeSearchResult(context, {
-        engineName: Services.search.defaultEngine.name,
-        engineIconUri: await Services.search.defaultEngine.getIconURL(),
+        engineName: SearchService.defaultEngine.name,
+        engineIconUri: await SearchService.defaultEngine.getIconURL(),
         heuristic: true,
         providerName: "UrlbarProviderHeuristicFallback",
       }),
@@ -553,7 +553,7 @@ add_task(async function test_disabledEngine() {
     },
     { skipUnload: true }
   );
-  let engine = Services.search.getEngineByName("Disabled");
+  let engine = SearchService.getEngineByName("Disabled");
   await PlacesTestUtils.addVisits([
     {
       url: "https://disabled.com/",

@@ -21,24 +21,21 @@ UNSUPPORTED_FEATURES = set([
     "source-phase-imports-module-source",
     "import-defer",
     "nonextensible-applies-to-private",  # Bug 1991478
+    "ShadowRealm",
 ])
 FEATURE_CHECK_NEEDED = {
     "Atomics": "!this.hasOwnProperty('Atomics')",
     "SharedArrayBuffer": "!this.hasOwnProperty('SharedArrayBuffer')",
     "Temporal": "!this.hasOwnProperty('Temporal')",
     "decorators": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('decorators'))",  # Bug 1435869
-    "uint8array-base64": "!Uint8Array.fromBase64",  # Bug 1985120
     "explicit-resource-management": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('explicit-resource-management'))",  # Bug 1569081
     "Atomics.pause": "!this.hasOwnProperty('Atomics')||!Atomics.pause",  # Bug 1918717
     "Error.isError": "!Error.isError",  # Bug 1923733
     "iterator-sequencing": "!Iterator.concat",  # Bug 1923732
-    "Math.sumPrecise": "!Math.sumPrecise",  # Bug 1985121
-    "upsert": "!Map.prototype.getOrInsertComputed",  # Bug 1986668
     "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",  # Bug 1952253
 }
 RELEASE_OR_BETA = set(["legacy-regexp"])
 SHELL_OPTIONS = {
-    "ShadowRealm": "--enable-shadow-realms",
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
     "explicit-resource-management": "--enable-explicit-resource-management",
     "iterator-sequencing": "--enable-iterator-sequencing",

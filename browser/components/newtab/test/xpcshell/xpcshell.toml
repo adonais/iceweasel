@@ -24,6 +24,8 @@ support-files = [
 
 ["test_AboutNewTabRedirector.js"]
 
+["test_AboutNewTabResourceMapping_emergencyFallback.js"]
+
 ["test_disableNewTabAsAddon_pref.js"]
 prefs = ["browser.newtabpage.disableNewTabAsAddon=true"]
 

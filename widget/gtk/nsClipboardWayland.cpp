@@ -12,7 +12,6 @@
 #include "prtime.h"
 
 #include <gtk/gtk.h>
-#include <string.h>
 
 using namespace mozilla;
 

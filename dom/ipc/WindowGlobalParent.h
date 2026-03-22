@@ -288,9 +288,9 @@ class WindowGlobalParent final : public WindowContext,
   mozilla::ipc::IPCResult RecvSetClientInfo(
       const IPCClientInfo& aIPCClientInfo);
   mozilla::ipc::IPCResult RecvDestroy();
-  mozilla::ipc::IPCResult RecvRawMessage(
-      const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
-      const UniquePtr<ClonedMessageData>& aStack);
+  mozilla::ipc::IPCResult RecvRawMessage(const JSActorMessageMeta& aMeta,
+                                         JSIPCValue&& aData,
+                                         StructuredCloneData* aStack);
 
   mozilla::ipc::IPCResult RecvGetContentBlockingEvents(
       GetContentBlockingEventsResolver&& aResolver);
@@ -351,6 +351,9 @@ class WindowGlobalParent final : public WindowContext,
   AllocPWebAuthnTransactionParent();
 
   already_AddRefed<dom::PWebIdentityParent> AllocPWebIdentityParent();
+
+  already_AddRefed<dom::PDigitalCredentialParent>
+  AllocPDigitalCredentialParent();
 
  private:
   WindowGlobalParent(CanonicalBrowsingContext* aBrowsingContext,

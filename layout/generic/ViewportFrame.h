@@ -101,10 +101,6 @@ class ViewportFrame : public nsContainerFrame {
  private:
   nsDisplayWrapList* MaybeWrapTopLayerList(nsDisplayListBuilder*,
                                            uint16_t aIndex, nsDisplayList&);
-
-  mozilla::FrameChildListID GetAbsoluteListID() const override {
-    return FrameChildListID::Fixed;
-  }
 };
 
 }  // namespace mozilla

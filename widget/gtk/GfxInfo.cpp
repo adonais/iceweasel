@@ -1213,6 +1213,13 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         DRIVER_LESS_THAN, V(25, 0, 4, 0),
         "FEATURE_FAILURE_WEBGPU_MESA_BUG_1979007", "Mesa 25.0.4");
 
+    APPEND_TO_DRIVER_BLOCKLIST_EXT(
+        OperatingSystem::Linux, ScreenSizeStatus::All, BatteryStatus::All,
+        WindowProtocol::All, DriverVendor::MesaLLVMPipe, DeviceFamily::All,
+        nsIGfxInfo::FEATURE_WEBGPU, nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION,
+        DRIVER_LESS_THAN, V(25, 2, 5, 0),
+        "FEATURE_FAILURE_WEBGPU_MESA_LLVMPipe_BUG_1995054", "Mesa 25.2.5");
+
     ////////////////////////////////////
 
     APPEND_TO_DRIVER_BLOCKLIST_EXT(

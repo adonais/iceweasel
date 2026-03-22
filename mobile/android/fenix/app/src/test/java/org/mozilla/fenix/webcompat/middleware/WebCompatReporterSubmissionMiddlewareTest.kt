@@ -7,6 +7,7 @@ package org.mozilla.fenix.webcompat.middleware
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
@@ -21,7 +22,6 @@ import mozilla.components.concept.engine.EngineSession
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.telemetry.glean.private.NoReasonCodes
 import mozilla.telemetry.glean.private.PingType
 import mozilla.telemetry.glean.testing.GleanTestRule
@@ -54,12 +54,9 @@ import org.mozilla.fenix.webcompat.store.WebCompatReporterAction
 import org.mozilla.fenix.webcompat.store.WebCompatReporterState
 import org.mozilla.fenix.webcompat.store.WebCompatReporterStore
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(AndroidJUnit4::class) // for GleanTestRule
 class WebCompatReporterSubmissionMiddlewareTest {
-    private val appStore: AppStore = mockk()
-
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
+    private val appStore: AppStore = mockk(relaxed = true)
 
     @get:Rule
     val gleanTestRule = GleanTestRule(testContext)
@@ -108,6 +105,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
         val store = createStore(
             enteredUrl = "https://www.mozilla.org",
             nimbusExperimentsProvider = nimbusExperimentsProvider,
+            scope = this,
         )
 
         val job = Pings.brokenSiteReport.testBeforeNextSubmit {
@@ -281,14 +279,16 @@ class WebCompatReporterSubmissionMiddlewareTest {
         }
 
         store.dispatch(WebCompatReporterAction.SendReportClicked)
+        testScheduler.advanceUntilIdle()
         job.join()
     }
 
     @Test
-    fun `WHEN the report is sent successfully THEN appState is updated`() {
-        val store = createStore()
+    fun `WHEN the report is sent successfully THEN appState is updated`() = runTest {
+        val store = createStore(scope = this)
 
         store.dispatch(WebCompatReporterAction.SendReportClicked)
+        testScheduler.advanceUntilIdle()
 
         verify { appStore.dispatch(AppAction.WebCompatAction.WebCompatReportSent) }
     }
@@ -317,6 +317,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
 
         val store = createStore(
             enteredUrl = "https://example.com",
+            scope = this,
             nimbusExperimentsProvider = nimbusExperimentsProvider,
         )
 
@@ -456,6 +457,8 @@ class WebCompatReporterSubmissionMiddlewareTest {
         }
 
         store.dispatch(WebCompatReporterAction.SendReportClicked)
+        testScheduler.advanceUntilIdle()
+
         job.join()
     }
 
@@ -480,6 +483,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
 
         val store = createStore(
             service = webCompatReporterRetrievalService,
+            scope = this,
             nimbusExperimentsProvider = nimbusExperimentsProvider,
         )
 
@@ -546,6 +550,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
         }
 
         store.dispatch(WebCompatReporterAction.SendReportClicked)
+        testScheduler.advanceUntilIdle()
         job.join()
     }
 
@@ -555,6 +560,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
 
         val store = createStore(
             service = FakeWebCompatReporterRetrievalService(),
+            scope = this,
             nimbusExperimentsProvider = nimbusExperimentsProvider,
         )
 
@@ -570,6 +576,8 @@ class WebCompatReporterSubmissionMiddlewareTest {
         }
 
         store.dispatch(WebCompatReporterAction.SendReportClicked)
+        testScheduler.advanceUntilIdle()
+
         job.join()
     }
 
@@ -615,12 +623,14 @@ class WebCompatReporterSubmissionMiddlewareTest {
                 createMiddleware(
                     browserStore = browserStore,
                     service = FakeWebCompatReporterRetrievalService(),
+                    scope = this,
                     webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
                 ),
             ),
         )
 
         store.dispatch(WebCompatReporterAction.AddMoreInfoClicked)
+        testScheduler.advanceUntilIdle()
 
         assertTrue(moreWebCompatInfoSent)
         captureActionsMiddleware.assertFirstAction(WebCompatReporterAction.SendMoreInfoSubmitted::class)
@@ -646,6 +656,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
                             selectedTabId = "t1",
                         ),
                     ),
+                    scope = this,
                     service = FakeWebCompatReporterRetrievalService(),
                     webCompatReporterMoreInfoSender = FakeWebCompatReporterMoreInfoSender(),
                 ),
@@ -653,6 +664,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
         )
 
         store.dispatch(WebCompatReporterAction.OpenPreviewClicked)
+        testScheduler.advanceUntilIdle()
 
         val actual = store.state.previewJSON
         val expected = JSONObject(
@@ -673,6 +685,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
         service: WebCompatReporterRetrievalService = FakeWebCompatReporterRetrievalService(),
         webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender = FakeWebCompatReporterMoreInfoSender(),
         nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(),
+        scope: CoroutineScope,
     ): WebCompatReporterStore {
         val engineSession: EngineSession = mock()
         val tab = createTab(
@@ -700,6 +713,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
                     service = service,
                     webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
                     nimbusExperimentsProvider = nimbusExperimentsProvider,
+                    scope = scope,
                 ),
             ),
         )
@@ -709,13 +723,14 @@ class WebCompatReporterSubmissionMiddlewareTest {
         browserStore: BrowserStore,
         service: WebCompatReporterRetrievalService,
         webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender,
+        scope: CoroutineScope,
         nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(),
     ) = WebCompatReporterSubmissionMiddleware(
         appStore = appStore,
         browserStore = browserStore,
         webCompatReporterRetrievalService = service,
         webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
-        scope = coroutinesTestRule.scope,
+        scope = scope,
         nimbusExperimentsProvider = nimbusExperimentsProvider,
     )
 

@@ -38,10 +38,18 @@ struct RunnableMarker : BaseMarkerType<RunnableMarker> {
 
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
-      {"name", MS::InputType::CString, "Runnable Name", MS::Format::String,
-       MS::PayloadFlags::Searchable},
-      {"runnable", MS::InputType::Uint64, "Runnable",
-       MS::Format::TerminatingFlow, MS::PayloadFlags::Searchable},
+      {
+          "name",
+          MS::InputType::CString,
+          "Runnable Name",
+          MS::Format::String,
+      },
+      {
+          "runnable",
+          MS::InputType::Uint64,
+          "Runnable",
+          MS::Format::TerminatingFlow,
+      },
   };
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,

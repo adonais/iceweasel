@@ -378,8 +378,8 @@ gfxMatrix SVGForeignObjectFrame::GetCanvasTM() {
     NS_ASSERTION(GetParent(), "null parent");
     auto* parent = static_cast<SVGContainerFrame*>(GetParent());
     auto* content = static_cast<SVGForeignObjectElement*>(GetContent());
-    mCanvasTM = MakeUnique<gfxMatrix>(content->ChildToUserSpaceTransform() *
-                                      parent->GetCanvasTM());
+    mCanvasTM = std::make_unique<gfxMatrix>(
+        content->ChildToUserSpaceTransform() * parent->GetCanvasTM());
   }
   return *mCanvasTM;
 }
@@ -415,7 +415,7 @@ void SVGForeignObjectFrame::DoReflow() {
   }
 
   // initiate a synchronous reflow here and now:
-  UniquePtr<gfxContext> renderingContext =
+  std::unique_ptr<gfxContext> renderingContext =
       presContext->PresShell()->CreateReferenceRenderingContext();
 
   WritingMode wm = kid->GetWritingMode();

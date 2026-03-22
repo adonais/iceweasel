@@ -24,7 +24,7 @@ add_task(async function test_email_field_is_address_dropdown() {
       // a login autocomplete on focus, otherwise the popup could appear too early.
       await focusAndWaitForFieldsIdentified(browser, "#given-name");
       await openPopupOn(browser, focusInput);
-      const item = getDisplayedPopupItems(browser)[2];
+      const item = getDisplayedPopupItems(browser)[1];
 
       is(
         item.getAttribute("ac-value"),
@@ -84,7 +84,7 @@ add_task(async function test_email_field_is_address_dropdown_onfocus() {
         content.document.getElementById("email").focus();
       });
       await runAndWaitForAutocompletePopupOpen(browser, () => {});
-      const item = getDisplayedPopupItems(browser)[2];
+      const item = getDisplayedPopupItems(browser)[1];
 
       is(
         item.getAttribute("ac-value"),

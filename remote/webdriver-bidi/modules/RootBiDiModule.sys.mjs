@@ -24,18 +24,40 @@ export class RootBiDiModule extends Module {
    *     The name of the event to be emitted.
    * @param {object} eventPayload
    *     The payload to be sent with the event.
+   *
    * @returns {boolean}
    *     Returns `true` if the event was successfully emitted, otherwise `false`.
    */
   _emitEventForBrowsingContext(browsingContextId, eventName, eventPayload) {
+    return this._emitEventForBrowsingContexts(
+      [browsingContextId],
+      eventName,
+      eventPayload
+    );
+  }
+
+  /**
+   * Emits an event for a set of related browsing contexts.
+   *
+   * @param {Array<string>} browsingContextIds
+   *     An array of browsing context ids to which the event is related.
+   * @param {string} eventName
+   *     The name of the event to be emitted.
+   * @param {object} eventPayload
+   *     The payload to be sent with the event.
+   *
+   * @returns {boolean}
+   *     Returns `true` if the event was successfully emitted, otherwise `false`.
+   */
+  _emitEventForBrowsingContexts(browsingContextIds, eventName, eventPayload) {
     // This event is emitted from the parent process but for a given browsing
     // context. Set the event's contextInfo to the message handler corresponding
     // to this browsing context.
-    const contextInfo = {
-      contextId: browsingContextId,
+    const relatedContexts = browsingContextIds.map(contextId => ({
+      contextId,
       type: lazy.WindowGlobalMessageHandler.type,
-    };
-    return this.emitEvent(eventName, eventPayload, contextInfo);
+    }));
+    return this.emitEvent(eventName, eventPayload, relatedContexts);
   }
 
   /**

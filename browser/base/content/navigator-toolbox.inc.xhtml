@@ -476,8 +476,20 @@
                      removable="false"/>
     </hbox>
 
+    <toolbarbutton id="document-pip-return-to-opener-button" class="toolbarbutton-1"
+                    data-l10n-id="browser-window-return-to-opener"
+                    command="cmd_returnToOpener"/>
+
     <toolbarbutton id="taskbar-tabs-audio" class="toolbarbutton-1 chromeclass-toolbar-additional"
                     removable="false" overflows="false"/>
+
+    <toolbarbutton id="smartwindow-ask-button"
+                    class="toolbarbutton-1 chromeclass-toolbar-additional"
+                    data-l10n-id="smartwindow-ask-button"
+                    hidden="true"
+                    overflows="false"
+                    removable="false">
+    </toolbarbutton>
 
     <toolbarbutton id="nav-bar-overflow-button"
                    class="toolbarbutton-1 chromeclass-toolbar-additional"
@@ -553,6 +565,7 @@
           <menupopup id="PlacesChevronPopup"
                       is="places-popup"
                       placespopup="true"
+                      native="false"
                       class="toolbar-menupopup"
                       tooltip="bhTooltip" popupsinherittooltip="true"
                       context="placesContext"/>
@@ -593,6 +606,7 @@
                  is="places-popup-arrow"
                  class="toolbar-menupopup animatable-menupopup"
                  placespopup="true"
+                 native="false"
                  context="placesContext"
                  openInTabs="children"
                  side="top"
@@ -616,6 +630,7 @@
           <menupopup id="BMB_bookmarksToolbarPopup"
                      is="places-popup"
                      placespopup="true"
+                     native="false"
                      context="placesContext">
             <menuitem id="BMB_viewBookmarksToolbar"
                       data-l10n-id="bookmarks-tools-toolbar-visibility-menuitem"
@@ -631,6 +646,7 @@
           <menupopup id="BMB_unsortedBookmarksPopup"
                      is="places-popup"
                      placespopup="true"
+                     native="false"
                      context="placesContext"/>
         </menu>
         <menu id="BMB_mobileBookmarks"
@@ -641,6 +657,7 @@
           <menupopup id="BMB_mobileBookmarksPopup"
                      is="places-popup"
                      placespopup="true"
+                     native="false"
                      context="placesContext"/>
         </menu>
 

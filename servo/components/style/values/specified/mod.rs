@@ -26,7 +26,7 @@ use std::ops::Add;
 use style_traits::values::specified::AllowedNumericType;
 use style_traits::{
     CssString, CssWriter, NumericValue, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss,
-    ToTyped, TypedValue,
+    ToTyped, TypedValue, UnitValue,
 };
 
 pub use self::align::{ContentDistribution, ItemPlacement, JustifyItems, SelfAlignment};
@@ -45,12 +45,12 @@ pub use self::border::{
     LineWidth,
 };
 pub use self::box_::{
-    Appearance, BaselineSource, BreakBetween, BreakWithin, Clear, Contain, ContainIntrinsicSize,
-    ContainerName, ContainerType, ContentVisibility, Display, Float, LineClamp, Overflow,
-    OverflowAnchor, OverflowClipMargin, OverscrollBehavior, Perspective, PositionProperty, Resize,
-    ScrollSnapAlign, ScrollSnapAxis, ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType,
-    ScrollbarGutter, TouchAction, VerticalAlign, WillChange, WillChangeBits, WritingModeProperty,
-    Zoom,
+    AlignmentBaseline, Appearance, BaselineShift, BaselineSource, BreakBetween, BreakWithin, Clear,
+    Contain, ContainIntrinsicSize, ContainerName, ContainerType, ContentVisibility, Display,
+    DominantBaseline, Float, LineClamp, Overflow, OverflowAnchor, OverflowClipMargin,
+    OverscrollBehavior, Perspective, PositionProperty, Resize, ScrollSnapAlign, ScrollSnapAxis,
+    ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter, TouchAction, WillChange,
+    WillChangeBits, WritingModeProperty, Zoom,
 };
 pub use self::color::{
     Color, ColorOrAuto, ColorPropertyValue, ColorScheme, ForcedColorAdjust, PrintColorAdjust,
@@ -78,7 +78,6 @@ pub use self::length::{NoCalcLength, ViewportPercentageLength, ViewportVariant};
 pub use self::length::{
     NonNegativeLength, NonNegativeLengthPercentage, NonNegativeLengthPercentageOrAuto,
 };
-#[cfg(feature = "gecko")]
 pub use self::list::ListStyleType;
 pub use self::list::Quotes;
 pub use self::motion::{OffsetPath, OffsetPosition, OffsetRotate};
@@ -87,10 +86,13 @@ pub use self::page::{PageName, PageOrientation, PageSize, PageSizeOrientation, P
 pub use self::percentage::{NonNegativePercentage, Percentage};
 pub use self::position::AnchorFunction;
 pub use self::position::AnchorName;
+pub use self::position::AnchorNameIdent;
 pub use self::position::AnchorScope;
+pub use self::position::AnchorScopeKeyword;
 pub use self::position::AspectRatio;
 pub use self::position::Inset;
 pub use self::position::PositionAnchor;
+pub use self::position::PositionAnchorKeyword;
 pub use self::position::PositionTryFallbacks;
 pub use self::position::PositionTryOrder;
 pub use self::position::PositionVisibility;
@@ -111,6 +113,7 @@ pub use self::text::{InitialLetter, LetterSpacing, LineBreak, TextAlign, TextInd
 pub use self::text::{OverflowWrap, TextEmphasisPosition, TextEmphasisStyle, WordBreak};
 pub use self::text::{TextAlignKeyword, TextDecorationLine, TextOverflow, WordSpacing};
 pub use self::text::{TextAlignLast, TextAutospace, TextUnderlinePosition};
+pub use self::text::{TextBoxEdge, TextBoxTrim};
 pub use self::text::{
     TextDecorationInset, TextDecorationLength, TextDecorationSkipInk, TextJustify, TextTransform,
 };
@@ -358,7 +361,10 @@ impl ToTyped for Number {
     fn to_typed(&self) -> Option<TypedValue> {
         let value = self.value;
         let unit = CssString::from("number");
-        Some(TypedValue::Numeric(NumericValue::Unit { value, unit }))
+        Some(TypedValue::Numeric(NumericValue::Unit(UnitValue {
+            value,
+            unit,
+        })))
     }
 }
 

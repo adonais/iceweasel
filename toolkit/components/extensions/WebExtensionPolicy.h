@@ -88,6 +88,8 @@ class WebExtensionPolicyCore final {
 
   const nsString& Name() const { return mName; }
 
+  const nsString& Version() const { return mVersion; }
+
   nsAtom* Type() const { return mType; }
 
   uint32_t ManifestVersion() const { return mManifestVersion; }
@@ -189,6 +191,7 @@ class WebExtensionPolicyCore final {
   /* const */ nsCOMPtr<nsIURI> mBaseURI;
 
   const nsString mName;
+  const nsString mVersion;
   const RefPtr<nsAtom> mType;
   const uint32_t mManifestVersion;
   /* const */ nsString mExtensionPageCSP;
@@ -297,6 +300,9 @@ class WebExtensionPolicy final : public nsISupports, public nsWrapperCache {
 
   const nsString& Name() const { return mCore->Name(); }
   void GetName(nsAString& aName) const { aName = Name(); }
+
+  const nsString& Version() const { return mCore->Version(); }
+  void GetVersion(nsAString& aVersion) const { aVersion = Version(); }
 
   nsAtom* Type() const { return mCore->Type(); }
   void GetType(nsAString& aType) const {

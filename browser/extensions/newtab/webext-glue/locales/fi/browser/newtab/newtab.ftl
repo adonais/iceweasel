@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = Muokkaa
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = Hylkää
+    .aria-label = Hylkää
 
 ## Search box component.
 
@@ -64,7 +67,11 @@ newtab-topsites-title-input =
     .placeholder = Kirjoita otsikko
 newtab-topsites-url-label = Osoite
 newtab-topsites-url-input =
-    .placeholder = Kirjoita tai liitä osoite
+    .placeholder =
+        { PLATFORM() ->
+            [macos] Kirjoita tai sijoita osoite
+           *[other] Kirjoita tai liitä osoite
+        }
 newtab-topsites-url-validation = Kelvollinen osoite vaaditaan
 newtab-topsites-image-url-label = Oman kuvan osoite
 newtab-topsites-use-image-link = Käytä omaa kuvaa…
@@ -329,18 +336,18 @@ newtab-custom-recent-subtitle = Valikoima viimeisimpiä sivustoja ja sisältöä
 newtab-custom-weather-toggle =
     .label = Sää
     .description = Päivän sääennuste yhdellä vilkaisulla
-newtab-custom-trending-search-toggle =
-    .label = Nousussa olevat haut
-    .description = Suosittuja ja usein haettuja aiheita
 newtab-custom-widget-weather-toggle =
     .label = Sää
-newtab-custom-widget-trending-search-toggle =
-    .label = Nousussa olevat haut
 newtab-custom-widget-lists-toggle =
     .label = Listat
 newtab-custom-widget-timer-toggle =
     .label = Ajastin
-newtab-custom-widget-section-title = Widgetit
+newtab-custom-widget-section-title = Pienoisohjelmat
+newtab-custom-widget-section-toggle =
+    .label = Pienoisohjelmat
+newtab-widget-manage-title = Pienoisohjelmat
+newtab-widget-manage-widget-button =
+    .label = Hallitse pienoisohjelmia
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Sulje
@@ -468,6 +475,8 @@ newtab-weather-change-location-search-input-placeholder =
     .placeholder = Hae sijaintia
     .aria-label = Hae sijaintia
 newtab-weather-menu-weather-display = Sään näkymä
+newtab-weather-todays-forecast = Tämän päivän ennuste
+newtab-weather-see-full-forecast = Katso koko ennuste
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -480,6 +489,7 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Vaihda Fahrenheitiin
 newtab-weather-menu-change-temperature-units-celsius = Vaihda Celsiukseen
+newtab-weather-menu-hide-weather-v2 = Piilota sää
 newtab-weather-menu-hide-weather = Piilota sää uudessa välilehdessä
 newtab-weather-menu-learn-more = Lue lisää
 newtab-weather-menu-detect-my-location = Havaitse sijaintini
@@ -492,6 +502,11 @@ newtab-weather-opt-in-yes =
     .label = Kyllä
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = Helsinki
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Katso ennuste palvelussa { $provider }
+    .aria-description = { $provider } ∙ Sponsoroitu
 
 ## Topic Labels
 
@@ -596,7 +611,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Suosikkisi sormiesi ulottuvilla
 newtab-shortcuts-highlight-subtitle = Lisää pikakuvake, niin suosikkisivustosi ovat yhden napsautuksen päässä.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Miksi ilmoitat tästä?
@@ -614,21 +629,13 @@ newtab-report-content-inappropriate-offensive =
     .label = Sopimaton tai loukkaava
 newtab-report-content-spam-misleading =
     .label = Roskapostia tai harhaanjohtavaa
+newtab-report-content-requires-payment-subscription =
+    .label = Vaatii maksun tai tilauksen
+newtab-report-content-requires-payment-subscription-learn-more = Lue lisää
 newtab-report-cancel = Peruuta
 newtab-report-submit = Lähetä
 newtab-toast-thanks-for-reporting =
     .message = Kiitos, että ilmoitit tästä.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Näytä nousussa olevat haut
-newtab-trending-searches-hide-trending =
-    .title = Piilota nousussa olevat haut
-newtab-trending-searches-learn-more = Lue lisää
-newtab-trending-searches-dismiss = Piilota nousussa olevat haut
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Nousussa olevat haut
 
 ## Strings for task / to-do list productivity widget
 
@@ -668,17 +675,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Uusi lista
-newtab-widget-section-title = Widgetit
+newtab-widget-section-title = Pienoisohjelmat
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =
-    .title = Piilota widgetit
-    .aria-label = Piilota kaikki widgetit
+    .title = Piilota pienoisohjelmat
+    .aria-label = Piilota kaikki pienoisohjelmat
 newtab-widget-section-maximize =
-    .title = Laajenna widgetit
-    .aria-label = Laajenna widgetit täyteen kokoon
+    .title = Laajenna pienoisohjelmat
+    .aria-label = Laajenna pienoisohjelmat täyteen kokoon
 newtab-widget-section-minimize =
-    .title = Pienennä widgetit
-    .aria-label = Supista widgetit kompaktiin kokoon
+    .title = Pienennä pienoisohjelmat
+    .aria-label = Supista pienoisohjelmat kompaktiin kokoon
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -701,6 +708,12 @@ newtab-widget-timer-menu-notifications = Poista ilmoitukset käytöstä
 newtab-widget-timer-menu-notifications-on = Ota ilmoitukset käyttöön
 newtab-widget-timer-menu-hide = Piilota ajastin
 newtab-widget-timer-menu-learn-more = Lue lisää
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = Pääotsikot
+newtab-daily-briefing-card-menu-dismiss = Hylkää
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = Päivitetty { $minutes } min sitten
 newtab-widget-message-title = Pysy keskittyneenä listojen ja sisäänrakennetun ajastimen avulla
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Nopeista muistutuksista päivittäisiin tehtäviin, keskittymisharjoituksista venyttelytaukoihin – pysy tehtävässäsi ja aikataulussa.
@@ -710,3 +723,25 @@ newtab-promo-card-cta = Lue lisää
 newtab-promo-card-dismiss-button =
     .title = Hylkää
     .aria-label = Hylkää
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-dismiss-button =
+    .title = Hylkää
+    .aria-label = Hylkää
+# "This space" refers to about:newtab. The call to action here ("make it your own")
+# is to customize newtab with a background image or colour, or by tweaking the
+# existing widgetry that appears on it.
+newtab-activation-window-message-customization-focus-header = Tee tästä tilasta omasi
+newtab-activation-window-message-customization-focus-message = Valitse uusi taustakuva, lisää oikotiet suosikkisivustoillesi ja pysy ajan tasalla sinua kiinnostavista tarinoista.
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = Aloita mukauttaminen
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = Tämä tila toimii sinun säännöilläsi
+newtab-activation-window-message-values-focus-message = { -brand-product-name } antaa sinun selata verkkoa haluamallasi tavalla, tarjoten henkilökohtaisemman tavan aloittaa päiväsi verkossa. Tee { -brand-product-name }ista omasi.

@@ -333,11 +333,10 @@ class Stepper {
     });
 
     showBoxesCheckbox.addEventListener("change", () => {
-      if (showBoxesCheckbox.checked) {
-        this.pageContainer.classList.add("showDebugBoxes");
-      } else {
-        this.pageContainer.classList.remove("showDebugBoxes");
-      }
+      this.pageContainer.classList.toggle(
+        "showDebugBoxes",
+        showBoxesCheckbox.checked
+      );
     });
   }
 

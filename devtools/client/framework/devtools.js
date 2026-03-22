@@ -77,7 +77,7 @@ const DEVTOOLS_ALWAYS_ON_TOP = "devtools.toolbox.alwaysOnTop";
  * DevTools is a class that represents a set of developer tools, it holds a
  * set of tools and keeps track of open toolboxes in the browser.
  */
-class DevTools {
+class DevTools extends EventEmitter {
   // We should be careful to always load a unique instance of this module:
   // - only in the parent process
   // - only in the "shared JSM global" spawn by mozJSModuleLoader
@@ -96,13 +96,14 @@ class DevTools {
       );
     }
 
+    super();
+
     this._tools = new Map(); // Map<toolId, tool>
     this._themes = new Map(); // Map<themeId, theme>
     this._toolboxesPerCommands = new Map(); // Map<commands, toolbox>
     // List of toolboxes that are still in process of creation
     this._creatingToolboxes = new Map(); // Map<commands, toolbox Promise>
 
-    EventEmitter.decorate(this);
     this._telemetry = new Telemetry();
 
     // List of all commands of debugged local Web Extension.

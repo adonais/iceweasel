@@ -1862,6 +1862,13 @@ void nsJSContext::EnsureStatics() {
       "javascript.options.mem.gc_max_parallel_marking_threads",
       (void*)JSGC_MAX_MARKING_THREADS);
 
+#ifdef JS_GC_CONCURRENT_MARKING
+  Preferences::RegisterCallbackAndCall(
+      SetMemoryPrefChangedCallbackBool,
+      "javascript.options.mem.gc_experimental_concurrent_marking",
+      (void*)JSGC_CONCURRENT_MARKING_ENABLED);
+#endif
+
   Preferences::RegisterCallbackAndCall(
       SetMemoryGCSliceTimePrefChangedCallback,
       "javascript.options.mem.gc_incremental_slice_ms");

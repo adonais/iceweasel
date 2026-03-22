@@ -30,20 +30,19 @@ export class SyncHistory {
   }
 
   /**
-   * Store the synchronization status. The ETag is converted and stored as
+   * Store the synchronization status. The timestamp is converted and stored as
    * a millisecond epoch timestamp.
    * The entries with the oldest timestamps will be deleted to maintain the
    * history size under the configured maximum.
    *
-   * @param {string} etag the ETag value from the server (eg. `"1647961052593"`)
+   * @param {int} timestamp the timestamp value from the server (eg. 1647961052593)
    * @param {string} status the synchronization status (eg. `"success"`)
    * @param {object} infos optional additional information to keep track of
    */
-  async store(etag, status, infos = {}) {
+  async store(timestamp, status, infos = {}) {
     const rkv = await this.#init();
-    const timestamp = parseInt(etag.replace('"', ""), 10);
-    if (Number.isNaN(timestamp)) {
-      throw new Error(`Invalid ETag value ${etag}`);
+    if (!Number.isInteger(timestamp)) {
+      throw new Error(`Invalid timestamp value ${timestamp}`);
     }
     const key = `v1-${this.source}\t${timestamp}`;
     const value = { timestamp, status, infos };
@@ -51,8 +50,8 @@ export class SyncHistory {
     // Trim old entries.
     const allEntries = await this.list();
     for (let i = this.size; i < allEntries.length; i++) {
-      let { timestamp } = allEntries[i];
-      await rkv.delete(`v1-${this.source}\t${timestamp}`);
+      let { timestamp: entryTimestamp } = allEntries[i];
+      await rkv.delete(`v1-${this.source}\t${entryTimestamp}`);
     }
   }
 

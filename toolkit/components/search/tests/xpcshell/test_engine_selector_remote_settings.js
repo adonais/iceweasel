@@ -274,7 +274,7 @@ add_task(async function test_selector_db_modification_never_succeeds() {
       locale: "en-US",
       region: "default",
     }),
-    ex => ex.result == Cr.NS_ERROR_UNEXPECTED,
+    ex => ex.message.startsWith("Failed to get engine data"),
     "Should have rejected loading the engine configuration"
   );
 

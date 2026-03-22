@@ -205,8 +205,83 @@ testRule({
       code: ".bg { background-color: color-mix(in srgb, var(--background-color-box) 20%, transparent); }",
       description: "Using color-mix() with valid token and keyword is valid.",
     },
+    {
+      code: ".bg { background-color: oklch(from var(--background-color-box-info) l c h / 30%); }",
+      description: "Using oklch() with valid colors is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: var(--color-blue-50); }
+        .bg { background-color: var(--custom-token); }
+      `,
+      description:
+        "Using a custom token that resolves to a base color token is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: oklch(from var(--color-blue-50) l c h / 20%); }
+        .bg { background-color: var(--custom-token); }
+      `,
+      description:
+        "Using a custom token that resolves to a base color token in a color function is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: color-mix(in oklch, var(--color-blue-50) 20%, transparent); }
+        .bg { background-color: var(--custom-token); }
+      `,
+      description:
+        "Using a custom token that resolves to a base color token in a color-mix function is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: light-dark(var(--color-gray-05), var(--color-gray-100)); }
+        .bg { background-color: var(--custom-token); }
+      `,
+      description:
+        "Using a custom token that resolves to a base color token in a light-dark function is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: var(--color-orange-100); }
+        .bg { background-color: var(--random-token, var(--custom-token)); }
+      `,
+      description:
+        "Using a custom token with a fallback that resolves to a base color token is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: var(--text-color); }
+        .bg { background-color: var(--custom-token); }
+      `,
+      description:
+        "Using a custom token that resolves to a text-color token is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: var(--border-color); }
+        .bg { background-color: var(--custom-token); }
+      `,
+      description:
+        "Using a custom token that resolves to a border-color token is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: ButtonFace; }
+        .bg { background-color: var(--custom-token); }
+      `,
+      description:
+        "Using a custom token that resolves to a system color is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: ButtonText; }
+        .bg { background-color: var(--custom-token); }
+      `,
+      description:
+        "Using a custom token that resolves to a system color, even if non-semantic, is valid.",
+    },
   ],
-
   reject: [
     {
       code: ".bg { background-color: #666; }",
@@ -242,8 +317,14 @@ testRule({
     },
     {
       code: ".bg { background-color: ButtonFace; }",
-      message: messages.rejected("ButtonFace", ["background-color"]),
-      description: "ButtonFace should use a background-color design token.",
+      message: messages.warning("ButtonFace", "var(--button-background-color)"),
+      description:
+        "ButtonFace should use var(--button-background-color) instead.",
+    },
+    {
+      code: ".bg { background-color: Field; }",
+      message: messages.rejected("Field", ["background-color"]),
+      description: "Field should use a background-color design token.",
     },
     {
       code: ".bg { background-color: var(--random-token, oklch(69% 0.19 15)); }",
@@ -254,6 +335,14 @@ testRule({
         "var(--random-token, oklch(69% 0.19 15)) should use a background-color design token.",
     },
     {
+      code: ".bg { background-color: var(--random-token, var(--color-gray-30)); }",
+      message: messages.rejected("var(--random-token, var(--color-gray-30))", [
+        "background-color",
+      ]),
+      description:
+        "var(--random-token, var(--color-gray-30)) should use a background-color design token.",
+    },
+    {
       code: `
         :root { --custom-token: #666; }
         .bg { background-color: var(--custom-token); }
@@ -261,6 +350,34 @@ testRule({
       message: messages.rejected("var(--custom-token)", ["background-color"]),
       description:
         "var(--custom-token) should use a background-color design token.",
+    },
+    {
+      code: `
+        :root { --fallback-token: #666; }
+        .bg { background-color: var(--custom-token, var(--fallback-token)); }
+      `,
+      message: messages.rejected("var(--custom-token, var(--fallback-token))", [
+        "background-color",
+      ]),
+      description:
+        "var(--custom-token, var(--fallback-token)) should use a background-color design token.",
+    },
+    {
+      code: `
+        :root { --custom-token: #666; }
+        .bg { background-color: var(--random-token, var(--custom-token)); }
+      `,
+      message: messages.rejected("var(--random-token, var(--custom-token))", [
+        "background-color",
+      ]),
+      description:
+        "var(--random-token, var(--custom-token)) should use a background-color design token.",
+    },
+    {
+      code: ".bg { background-color: var(--color-blue-50); }",
+      message: messages.rejected("var(--color-blue-50)", ["background-color"]),
+      description:
+        "var(--color-blue-50) should use a background-color design token",
     },
     {
       code: ".bg { background: #666; }",
@@ -324,6 +441,31 @@ testRule({
         "rgba(42 42 42 / 0.15) should use a background design token.",
     },
     {
+      code: ".bg { background-color: light-dark(#666, #333); }",
+      message: messages.rejected("light-dark(#666, #333)", [
+        "background-color",
+      ]),
+      description:
+        "light-dark(#666, #333) should use a background-color design token.",
+    },
+    {
+      code: ".bg { background-color: color-mix(in oklch, #666 20%, transparent); }",
+      message: messages.rejected("color-mix(in oklch, #666 20%, transparent)", [
+        "background-color",
+      ]),
+      description:
+        "color-mix(in oklch, #666 20%, transparent) should use a background-color design token.",
+    },
+    {
+      code: ".bg { background-color: oklch(from var(--color-blue-50) l c h / 20%); }",
+      message: messages.rejected(
+        "oklch(from var(--color-blue-50) l c h / 20%)",
+        ["background-color"]
+      ),
+      description:
+        "oklch(from var(--color-blue-50) l c h / 20%) should use a background-color design token.",
+    },
+    {
       code: ".bg { background: border-box #666; }",
       message: messages.rejected("border-box #666", [
         "background-color",
@@ -382,14 +524,11 @@ testRule({
     },
     {
       code: ".bg { background: url('image.png') Canvas; }",
-      message: messages.rejected("url('image.png') Canvas", [
-        "background-color",
-        "size",
-        "space",
-        "icon-size",
-      ]),
-      description:
-        "url('image.png') Canvas should use a background design token.",
+      message: messages.warning(
+        "url('image.png') Canvas",
+        "url('image.png') var(--background-color-canvas)"
+      ),
+      description: "Canvas should use var(--background-color-canvas) instead.",
     },
     {
       code: `
@@ -437,6 +576,33 @@ testRule({
         "background-color",
       ]),
       description: "color-mix() with invalid second color should be rejected.",
+    },
+    {
+      code: ".bg { background-color: color-mix(in srgb, ButtonFace 10%, #fff); }",
+      message: messages.rejected(
+        "color-mix(in srgb, ButtonFace 10%, #fff)",
+        ["background-color"],
+        "color-mix(in srgb, ButtonFace 10%, white)"
+      ),
+      description:
+        "Fixable errors in values with multiple problems should be prioritized.",
+    },
+    {
+      code: ".bg { background-color: color-mix(in srgb, ButtonFace 10%, white); }",
+      message: messages.warning(
+        "color-mix(in srgb, ButtonFace 10%, white)",
+        "color-mix(in srgb, var(--button-background-color) 10%, white)"
+      ),
+      description:
+        "Warnings should be reported after autofixable problems have been fixed.",
+    },
+    {
+      code: ".bg { background-color: color-mix(in srgb, ButtonFace 10%, #ccc); }",
+      message: messages.rejected("color-mix(in srgb, ButtonFace 10%, #ccc)", [
+        "background-color",
+      ]),
+      description:
+        "When a warning and non-autofixable error appear in the same value, prioritize the error.",
     },
   ],
 });

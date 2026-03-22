@@ -636,7 +636,7 @@ addAccessibleTask(
     });
     await expectedEvents;
     is(getAccessibleDOMNodeID(p.lastChild), "btn", "'p' owns relocated btn");
-    is(textbox.value, "Hello World");
+    is(textbox.value, "HelloWorld");
 
     expectedEvents = Promise.all([
       waitForStateChange(textbox, EXT_STATE_EDITABLE, true, true),

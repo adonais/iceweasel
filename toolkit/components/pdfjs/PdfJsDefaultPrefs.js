@@ -43,6 +43,7 @@ pref("pdfjs.enablePermissions", false);
 pref("pdfjs.enablePrintAutoRotate", true);
 pref("pdfjs.enableScripting", true);
 pref("pdfjs.enableSignatureEditor", false);
+pref("pdfjs.enableSplitMerge", false);
 pref("pdfjs.enableUpdatedAddImage", false);
 pref("pdfjs.enableXfa", true);
 pref("pdfjs.externalLinkTarget", 0);

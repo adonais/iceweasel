@@ -140,8 +140,8 @@ static void moz_app_launch_context_init(MozAppLaunchContext* self) {
 }
 
 MozAppLaunchContext* moz_app_launch_context_new(const char* activation_token) {
-  MozAppLaunchContext* self =
-      MOZ_APP_LAUNCH_CONTEXT(g_object_new(MOZ_TYPE_APP_LAUNCH_CONTEXT, NULL));
+  MozAppLaunchContext* self = MOZ_APP_LAUNCH_CONTEXT(
+      g_object_new(MOZ_TYPE_APP_LAUNCH_CONTEXT, nullptr));
   self->activation_token = g_strdup(activation_token);
   return self;
 }
@@ -496,7 +496,7 @@ gboolean g_app_info_launch_default_for_uri_openbsd(const char* uri,
 
 static NS_IMETHODIMP LaunchWithURIImpl(RefPtr<GAppInfo> aInfo, nsIURI* aUri,
                                        const char* aXDGToken = nullptr) {
-  GList uris = {0};
+  GList uris = {nullptr};
   nsCString spec;
   aUri->GetSpec(spec);
   // nsPromiseFlatCString flatUri(aUri);
@@ -715,6 +715,9 @@ nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
                                  nsIHandlerApp** aApp) {
   *aApp = nullptr;
 
+  LOG("nsGIOService::GetAppForURIScheme() %s",
+      PromiseFlatCString(aURIScheme).get());
+
   // Portals works with DBus only.
 #ifdef MOZ_ENABLE_DBUS
   // Application in flatpak sandbox does not have access to the list
@@ -722,7 +725,9 @@ nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
   // method to check if the URI scheme is supported and then use
   // generic nsFlatpakHandlerApp which forwards launch call to the system.
   if (widget::ShouldUsePortal(widget::PortalKind::MimeHandler)) {
+    LOG("  using portal");
     if (mozilla::net::IsLoopbackHostname(aURIScheme)) {
+      LOG("  quit, IsLoopbackHostname");
       // When the user writes foo:1234, we try to handle it natively using
       // GetAppForURIScheme, and if that fails, we carry on. On flatpak there's
       // no way to know if an app has handlers or not. Some things like
@@ -758,7 +763,7 @@ nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
       if (error->code == G_DBUS_ERROR_UNKNOWN_METHOD) {
         // The method "SchemeSupported" not available, seems like we're running
         // older portal. Be optimistic about supported scheme handler
-        LOG("SchemeSupported method not found, fallback to flatpak handler");
+        LOG("  SchemeSupported method not found, fallback to flatpak handler");
         RefPtr<nsFlatpakHandlerApp> mozApp = new nsFlatpakHandlerApp();
         mozApp.forget(aApp);
         return NS_OK;
@@ -770,11 +775,11 @@ nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
     gboolean supported;
     g_variant_get(result, "(b)", &supported);
     if (!supported) {
-      LOG("Scheme '%s' is NOT supported.\n",
+      LOG("  Scheme '%s' is NOT supported.",
           PromiseFlatCString(aURIScheme).get());
       return NS_ERROR_FAILURE;
     }
-    LOG("Scheme '%s' is supported.\n", PromiseFlatCString(aURIScheme).get());
+    LOG("  Scheme '%s' is supported.", PromiseFlatCString(aURIScheme).get());
     RefPtr<nsFlatpakHandlerApp> mozApp = new nsFlatpakHandlerApp();
     mozApp.forget(aApp);
     return NS_OK;
@@ -784,8 +789,11 @@ nsGIOService::GetAppForURIScheme(const nsACString& aURIScheme,
   RefPtr<GAppInfo> app_info = dont_AddRef(g_app_info_get_default_for_uri_scheme(
       PromiseFlatCString(aURIScheme).get()));
   if (!app_info) {
+    LOG("  Failed to get info from g_app_info_get_default_for_uri_scheme()");
     return NS_ERROR_FAILURE;
   }
+  LOG("  g_app_info_get_default_for_uri_scheme() provides %s : %s",
+      g_app_info_get_name(app_info), g_app_info_get_executable(app_info));
   RefPtr<nsGIOMimeApp> mozApp = new nsGIOMimeApp(app_info.forget());
   mozApp.forget(aApp);
   return NS_OK;
@@ -807,6 +815,8 @@ nsGIOService::GetAppsForURIScheme(const nsACString& aURIScheme,
   nsAutoCString contentType("x-scheme-handler/");
   contentType.Append(aURIScheme);
 
+  LOG("nsGIOService::GetAppsForURIScheme() %s", contentType.get());
+
   GList* appInfoList = g_app_info_get_all_for_type(contentType.get());
   // g_app_info_get_all_for_type returns NULL when no appinfo is found
   // or error occurs (contentType is NULL). We are fine with empty app list
@@ -817,9 +827,13 @@ nsGIOService::GetAppsForURIScheme(const nsACString& aURIScheme,
       nsCOMPtr<nsIGIOMimeApp> mimeApp =
           new nsGIOMimeApp(dont_AddRef(G_APP_INFO(appInfo->data)));
       handlersArray->AppendElement(mimeApp);
+      LOG("  adding %s : %s", g_app_info_get_name(G_APP_INFO(appInfo->data)),
+          g_app_info_get_executable(G_APP_INFO(appInfo->data)));
       appInfo = appInfo->next;
     }
     g_list_free(appInfoList);
+  } else {
+    LOG("  g_app_info_get_all_for_type() is empty");
   }
   handlersArray.forget(aResult);
   return NS_OK;
@@ -830,17 +844,24 @@ nsGIOService::GetAppForMimeType(const nsACString& aMimeType,
                                 nsIHandlerApp** aApp) {
   *aApp = nullptr;
 
+  LOG("nsGIOService::GetAppForMimeType() %s",
+      PromiseFlatCString(aMimeType).get());
+
   // Flatpak does not reveal installed application to the sandbox,
   // we need to create generic system handler.
   if (widget::ShouldUsePortal(widget::PortalKind::MimeHandler)) {
+    LOG("  using portal");
     RefPtr<nsFlatpakHandlerApp> mozApp = new nsFlatpakHandlerApp();
     mozApp.forget(aApp);
     return NS_OK;
   }
 
+  LOG("  g_content_type_from_mime_type(%s)",
+      PromiseFlatCString(aMimeType).get());
   GUniquePtr<char> content_type(
       g_content_type_from_mime_type(PromiseFlatCString(aMimeType).get()));
   if (!content_type) {
+    LOG("  g_content_type_from_mime_type() failed.");
     return NS_ERROR_FAILURE;
   }
 
@@ -848,14 +869,18 @@ nsGIOService::GetAppForMimeType(const nsACString& aMimeType,
   // useless. It's better to fallback to create appinfo from file extension
   // later.
   if (g_content_type_is_unknown(content_type.get())) {
+    LOG("  g_content_type_from_mime_type() return unknown app.");
     return NS_ERROR_NOT_AVAILABLE;
   }
 
   RefPtr<GAppInfo> app_info =
       dont_AddRef(g_app_info_get_default_for_type(content_type.get(), false));
   if (!app_info) {
+    LOG("  g_app_info_get_default_for_type() failed.");
     return NS_ERROR_FAILURE;
   }
+  LOG("  g_app_info_get_default_for_type() gives us %s : %s",
+      g_app_info_get_name(app_info), g_app_info_get_executable(app_info));
 #ifdef __OpenBSD__
   char* t;
   t = g_find_program_in_path(g_app_info_get_executable(app_info));
@@ -896,6 +921,8 @@ static nsresult ShowURIImpl(nsIURI* aURI, const char* aXDGToken = nullptr) {
   nsAutoCString spec;
   MOZ_TRY(aURI->GetSpec(spec));
   GUniquePtr<GError> error;
+  LOG("ShowURIImpl() spec %s : aXDGToken %s", spec.get(),
+      aXDGToken ? aXDGToken : "none");
 #ifdef __OpenBSD__
   if (!g_app_info_launch_default_for_uri_openbsd(
           spec.get(), GetLaunchContext(aXDGToken).get(),
@@ -914,14 +941,22 @@ static nsresult ShowURIImpl(nsIURI* aURI, const char* aXDGToken = nullptr) {
 nsresult nsGIOService::ShowURI(nsIURI* aURI) {
   auto promise = mozilla::widget::RequestWaylandFocusPromise();
   if (!promise) {
+    LOG("nsGIOService::ShowURI() failed to get focus promise, fallback to "
+        "ShowURIImpl()");
     return ShowURIImpl(aURI);
   }
   promise->Then(
       GetMainThreadSerialEventTarget(), __func__,
       /* resolve */
-      [uri = RefPtr{aURI}](nsCString token) { ShowURIImpl(uri, token.get()); },
+      [uri = RefPtr{aURI}](nsCString token) {
+        LOG("nsGIOService::ShowURI() received XDG focus token");
+        ShowURIImpl(uri, token.get());
+      },
       /* reject */
-      [uri = RefPtr{aURI}](bool state) { ShowURIImpl(uri); });
+      [uri = RefPtr{aURI}](bool state) {
+        LOG("nsGIOService::ShowURI() without XDG focus token");
+        ShowURIImpl(uri);
+      });
   return NS_OK;
 }
 
@@ -930,6 +965,8 @@ static nsresult LaunchPathImpl(const nsACString& aPath,
   RefPtr<GFile> file = dont_AddRef(
       g_file_new_for_commandline_arg(PromiseFlatCString(aPath).get()));
   GUniquePtr<char> spec(g_file_get_uri(file));
+  LOG("LaunchPathImpl() file %s : aXDGToken %s",
+      PromiseFlatCString(aPath).get(), aXDGToken ? aXDGToken : "none");
   GUniquePtr<GError> error;
 #ifdef __OpenBSD__
   g_app_info_launch_default_for_uri_openbsd(spec.get(),
@@ -949,16 +986,22 @@ static nsresult LaunchPathImpl(const nsACString& aPath,
 static nsresult LaunchPath(const nsACString& aPath) {
   auto promise = mozilla::widget::RequestWaylandFocusPromise();
   if (!promise) {
+    LOG("LaunchPath() failed to get focus promise, fallback to "
+        "LaunchPathImpl()");
     return LaunchPathImpl(aPath);
   }
   promise->Then(
       GetMainThreadSerialEventTarget(), __func__,
       /* resolve */
       [path = nsCString{aPath}](nsCString token) {
+        LOG("LaunchPath() received XDG focus token");
         LaunchPathImpl(path, token.get());
       },
       /* reject */
-      [path = nsCString{aPath}](bool state) { LaunchPathImpl(path); });
+      [path = nsCString{aPath}](bool state) {
+        LOG("LaunchPath() without XDG focus token");
+        LaunchPathImpl(path);
+      });
   return NS_OK;
 }
 
@@ -968,11 +1011,13 @@ nsresult nsGIOService::LaunchFile(const nsACString& aPath) {
 
 nsresult nsGIOService::GetIsRunningUnderFlatpak(bool* aResult) {
   *aResult = mozilla::widget::IsRunningUnderFlatpak();
+  LOG("nsGIOService::GetIsRunningUnderFlatpak() %d", *aResult);
   return NS_OK;
 }
 
 nsresult nsGIOService::GetIsRunningUnderSnap(bool* aResult) {
   *aResult = mozilla::widget::IsRunningUnderSnap();
+  LOG("nsGIOService::IsRunningUnderSnap() %d", *aResult);
   return NS_OK;
 }
 
@@ -1146,12 +1191,16 @@ nsGIOService::FindAppFromCommand(nsACString const& aCmd,
                                  nsIGIOMimeApp** aAppInfo) {
   RefPtr<GAppInfo> app_info;
 
+  LOG("nsGIOService::FindAppFromCommand() %s", PromiseFlatCString(aCmd).get());
+
   GList* apps = g_app_info_get_all();
 
   // Try to find relevant and existing GAppInfo in all installed application
   // We do this by comparing each GAppInfo's executable with out own
   for (GList* node = apps; node; node = node->next) {
     RefPtr<GAppInfo> app_info_from_list = dont_AddRef((GAppInfo*)node->data);
+    LOG("  checking %s : %s", g_app_info_get_name(app_info_from_list),
+        g_app_info_get_executable(app_info_from_list));
     node->data = nullptr;
     if (!app_info) {
       // If the executable is not absolute, get it's full path
@@ -1161,6 +1210,8 @@ nsGIOService::FindAppFromCommand(nsACString const& aCmd,
       if (executable &&
           strcmp(executable.get(), PromiseFlatCString(aCmd).get()) == 0) {
         app_info = std::move(app_info_from_list);
+        LOG("  found %s : %s", g_app_info_get_name(app_info),
+            g_app_info_get_executable(app_info));
         // Can't break here because we need to keep iterating to unref the other
         // nodes.
       }
@@ -1169,6 +1220,7 @@ nsGIOService::FindAppFromCommand(nsACString const& aCmd,
 
   g_list_free(apps);
   if (!app_info) {
+    LOG("  failed to get application");
     *aAppInfo = nullptr;
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -1185,9 +1237,12 @@ nsGIOService::FindAppFromCommand(nsACString const& aCmd,
 NS_IMETHODIMP
 nsGIOService::CreateHandlerAppFromAppId(const char* aAppId,
                                         nsIGIOHandlerApp** aResult) {
+  LOG("nsGIOService::CreateHandlerAppFromAppId() %s", aAppId);
+
   RefPtr<GAppInfo> appInfo =
       dont_AddRef((GAppInfo*)g_desktop_app_info_new(aAppId));
   if (!appInfo) {
+    LOG("  Appinfo not found");
     g_warning("Appinfo not found for: %s", aAppId);
     return NS_ERROR_FAILURE;
   }
@@ -1212,6 +1267,9 @@ nsGIOService::CreateAppFromCommand(nsACString const& cmd,
                                    nsIGIOMimeApp** appInfo) {
   *appInfo = nullptr;
 
+  LOG("nsGIOService::CreateAppFromCommand() %s : %s",
+      PromiseFlatCString(appName).get(), PromiseFlatCString(cmd).get());
+
   // Using G_APP_INFO_CREATE_SUPPORTS_URIS calling
   // g_app_info_create_from_commandline appends %u to the cmd even when cmd
   // already contains this parameter. To avoid that we're going to remove
@@ -1234,6 +1292,7 @@ nsGIOService::CreateAppFromCommand(nsACString const& cmd,
   GUniquePtr<gchar> executableWithFullPath(
       g_find_program_in_path(commandWithoutArgs.BeginReading()));
   if (!executableWithFullPath) {
+    LOG("  quit, program not found in path");
     return NS_ERROR_FILE_NOT_FOUND;
   }
   RefPtr<nsGIOMimeApp> mozApp = new nsGIOMimeApp(app_info.forget());

@@ -672,13 +672,15 @@ MapObject* GlobalObject::getOrCreateMapTemplateObject(JSContext* cx) {
   return mapObj;
 }
 
-size_t MapObject::sizeOfData(mozilla::MallocSizeOf mallocSizeOf) {
-  size_t size = 0;
-  size += Table(this).sizeOfExcludingObject(mallocSizeOf);
+size_t MapObject::sizeOfBufferData() {
+  return Table(this).sizeOfExcludingObject();
+}
+
+size_t MapObject::sizeOfMallocData(mozilla::MallocSizeOf mallocSizeOf) {
   if (NurseryKeysVector* nurseryKeys = GetNurseryKeys(this)) {
-    size += nurseryKeys->sizeOfIncludingThis(mallocSizeOf);
+    return nurseryKeys->sizeOfIncludingThis(mallocSizeOf);
   }
-  return size;
+  return 0;
 }
 
 size_t MapObject::objectMoved(JSObject* obj, JSObject* old) {
@@ -1402,13 +1404,15 @@ void SetObject::trace(JSTracer* trc, JSObject* obj) {
   Table(setobj).trace(trc);
 }
 
-size_t SetObject::sizeOfData(mozilla::MallocSizeOf mallocSizeOf) {
-  size_t size = 0;
-  size += Table(this).sizeOfExcludingObject(mallocSizeOf);
+size_t SetObject::sizeOfBufferData() {
+  return Table(this).sizeOfExcludingObject();
+}
+
+size_t SetObject::sizeOfMallocData(mozilla::MallocSizeOf mallocSizeOf) {
   if (NurseryKeysVector* nurseryKeys = GetNurseryKeys(this)) {
-    size += nurseryKeys->sizeOfIncludingThis(mallocSizeOf);
+    return nurseryKeys->sizeOfIncludingThis(mallocSizeOf);
   }
-  return size;
+  return 0;
 }
 
 size_t SetObject::objectMoved(JSObject* obj, JSObject* old) {

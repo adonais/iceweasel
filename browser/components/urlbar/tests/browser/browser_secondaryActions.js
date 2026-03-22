@@ -153,7 +153,7 @@ add_task(async function test_sitesearch() {
   await loadURI(gBrowser.selectedBrowser, ENGINE_TEST_URL);
 
   const query = "search";
-  let engine = Services.search.getEngineByName("Contextual");
+  let engine = SearchService.getEngineByName("Contextual");
   const [expectedUrl] = UrlbarUtils.getSearchQueryUrl(engine, query);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({

@@ -67,25 +67,6 @@ class JS_PUBLIC_API JobQueue {
       JSContext* cx, JS::MutableHandle<JSObject*> data) const = 0;
 
   /**
-   * Enqueue a reaction job `job` for `promise`, which was allocated at
-   * `allocationSite`. Provide `hostDefineData` as the host defined data for
-   * the reaction job's execution.
-   *
-   * The `hostDefinedData` value comes from `getHostDefinedData` method.
-   * The object is unwrapped, and it can belong to a different compartment
-   * than the current compartment. It can be `nullptr` if `getHostDefinedData`
-   * returns `nullptr`.
-   *
-   * `promise` can be null if the promise is optimized out.
-   * `promise` is guaranteed not to be optimized out if the promise has
-   * non-default user-interaction flag.
-   */
-  virtual bool enqueuePromiseJob(JSContext* cx, JS::HandleObject promise,
-                                 JS::HandleObject job,
-                                 JS::HandleObject allocationSite,
-                                 JS::HandleObject hostDefinedData) = 0;
-
-  /**
    * Run all jobs in the queue. Running one job may enqueue others; continue to
    * run jobs until the queue is empty.
    *
@@ -101,11 +82,6 @@ class JS_PUBLIC_API JobQueue {
    * AutoDebuggerJobQueueInterruption.
    */
   virtual void runJobs(JSContext* cx) = 0;
-
-  /**
-   * Return true if the job queue is empty, false otherwise.
-   */
-  virtual bool empty() const = 0;
 
   /**
    * Returns true if the job queue stops draining, which results in `empty()`

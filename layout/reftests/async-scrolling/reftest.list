@@ -104,6 +104,9 @@ skip-if(useDrawSnapshot||Android) pref(apz.overscroll.enabled,true) pref(apz.ove
 skip-if(useDrawSnapshot||Android) fuzzy(0-56,0-33) pref(apz.overscroll.enabled,true) pref(apz.overscroll.test_async_scroll_offset.enabled,true) fuzzy-if(cocoaWidget&&isDebugBuild&&swgl,0-117,0-46) fuzzy-if(cocoaWidget&&optimized&&!swgl,0-118,0-29) fuzzy-if(winWidget,0-107,0-17) == overscroll-scrollbar.html overscroll-scrollbar-ref.html # Bug 1934898
 skip-if(useDrawSnapshot||Android) pref(apz.overscroll.enabled,false) pref(apz.overscroll.test_async_scroll_offset.enabled,true) == overscroll-disabled.html no-overscroll-ref.html
 
+# Bug 2012700: We pass (layout.dynamic-toolbar-max-height,50) and (apz.fixed-margin-override.bottom,-25)
+# to simulate a fully-collapsed dynamic toolbar at the bottom
+pref(apz.allow_zooming,true) test-pref(layout.dynamic-toolbar-max-height,50) test-pref(apz.fixed-margin-override.enabled,true) test-pref(apz.fixed-margin-override.bottom,-25) == dynamic-toolbar-fixed-bottom-zoomed.html dynamic-toolbar-fixed-bottom-zoomed-ref.html
 # for this test, apz.allow_zooming is needed to ensure we take the containerless scrolling codepath that creates
 # an async zoom container (since we are testing a regression in that codepath)
 skip-if(!Android) pref(apz.allow_zooming,true) test-pref(apz.fixed-margin-override.enabled,true) test-pref(apz.fixed-margin-override.bottom,50) == dynamic-toolbar-fixed-bottom-1.html dynamic-toolbar-fixed-bottom-1-ref.html

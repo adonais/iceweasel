@@ -4,9 +4,28 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 148.0 (In Development)
+# 149.0 (In Development)
+* **lib-state**
+  * ⚠️ **Breaking change**: Removed the composableStore API from `ComposeExtensions.kt` in favor of the newer one from `StoreProvider.kt`. [Bug 2017822](https://bugzilla.mozilla.org/show_bug.cgi?id=2017822)
+* **feature-search**
+  * `RegionMiddleware` will not anymore handle `BrowserStore`'s `InitAction`. If you need the region set when the application starts ensure either of `UpdateDistribution` or `RefreshSearchEnginesAction` is dispatched. [Bug 2012962] (https://bugzilla.mozilla.org/show_bug.cgi?id=2012962)
+
+* **browser-engine-gecko**
+    * 🆕 New Settings API `DownloadDelegate` that used for `getSuggestedFilename` inside `GeckoEngineSession`.[Bug 2014471] (https://bugzilla.mozilla.org/show_bug.cgi?id=2014471)
+* **browser-engine-gecko** and **concept-engine**
+  * 🆕 New Engine Settings API `firefoxRelay` that can be see to different modes with `FirefoxRelayMode`.
+  * Updated GeckoEngine and BrowserPreferencesRuntime to accommodate registering and unregistering multiple browser preferences at a time for observation. [Bug 2006095](https://bugzilla.mozilla.org/show_bug.cgi?id=2006095)
+  * Added `processBackPressed` API to `EngineSession` to handle back navigation events to dismiss some HTML elements such as &lt;dialog&gt;. [Bug 1966467](https://bugzilla.mozilla.org/show_bug.cgi?id=1966467)
+
+* **concept-storage**
+  * Introduced `Login.hint` for context on the login origin that an embedder can use to determine how to handle it.
+
+* **lib-state**
+  * ⚠️ **Breaking change**: Removed flowScoped with the default `coroutineScope` set to `MainScope()`. Always provide your own `CoroutineDispatcher`.
+
+# 148.0
 * **support-utils**
-  * 🆕 New `keyboardAsState` available to use in Jetpack Compose code to know when the IME is shown or hidden. This works more reliably on older Android versions than the frameworks `isImeVisible` API. [Bug 1988730](https://bugzilla.mozilla.org/show_bug.cgi?id=1988730).
+  * `keyboardAsState` available to use in Jetpack Compose code to know when the IME is shown or hidden. This works more reliably on older Android versions than the frameworks `isImeVisible` API. [Bug 1988730](https://bugzilla.mozilla.org/show_bug.cgi?id=1988730).
 * **browser-engine-gecko** and **concept-engine**
   * Add optional link text support to HitResult.UNKNOWN to allow getting the text associated with a link in response to a long click
 * **feature-contextmenu**

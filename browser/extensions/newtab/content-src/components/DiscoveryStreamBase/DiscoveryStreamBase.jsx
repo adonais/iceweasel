@@ -5,7 +5,6 @@
 import { CardGrid } from "content-src/components/DiscoveryStreamComponents/CardGrid/CardGrid";
 import { CollapsibleSection } from "content-src/components/CollapsibleSection/CollapsibleSection";
 import { connect } from "react-redux";
-import { DSMessage } from "content-src/components/DiscoveryStreamComponents/DSMessage/DSMessage";
 import { ReportContent } from "../DiscoveryStreamComponents/ReportContent/ReportContent";
 import { Highlights } from "content-src/components/DiscoveryStreamComponents/Highlights/Highlights";
 import { HorizontalRule } from "content-src/components/DiscoveryStreamComponents/HorizontalRule/HorizontalRule";
@@ -119,16 +118,6 @@ export class _DiscoveryStreamBase extends React.PureComponent {
             <TopSites isFixed={true} title={component.header?.title} />
           </div>
         );
-      case "Message":
-        return (
-          <DSMessage
-            title={component.header && component.header.title}
-            subtitle={component.header && component.header.subtitle}
-            link_text={component.header && component.header.link_text}
-            link_url={component.header && component.header.link_url}
-            icon={component.header && component.header.icon}
-          />
-        );
       case "SectionTitle":
         return <SectionTitle header={component.header} />;
       case "Navigation":
@@ -217,17 +206,11 @@ export class _DiscoveryStreamBase extends React.PureComponent {
     });
     const sectionsEnabled =
       this.props.Prefs.values["discoverystream.sections.enabled"];
-    const { config } = this.props.DiscoveryStream;
     const topicSelectionEnabled =
       this.props.Prefs.values["discoverystream.topicSelection.enabled"];
     const reportAdsEnabled =
       this.props.Prefs.values["discoverystream.reportAds.enabled"];
     const spocsEnabled = this.props.Prefs.values["unifiedAds.spocs.enabled"];
-
-    // Allow rendering without extracting special components
-    if (!config.collapsible) {
-      return this.renderLayout(layoutRender);
-    }
 
     // Find the first component of a type and remove it from layout
     const extractComponent = type => {

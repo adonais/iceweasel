@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_idbkeyrange_h__
-#define mozilla_dom_idbkeyrange_h__
+#ifndef mozilla_dom_idbkeyrange_h_
+#define mozilla_dom_idbkeyrange_h_
 
 #include "js/RootingAPI.h"
 #include "js/Value.h"
@@ -115,4 +115,4 @@ class IDBKeyRange {
 }  // namespace dom
 }  // namespace mozilla
 
-#endif  // mozilla_dom_idbkeyrange_h__
+#endif  // mozilla_dom_idbkeyrange_h_

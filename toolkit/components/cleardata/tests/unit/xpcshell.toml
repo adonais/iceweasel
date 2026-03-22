@@ -42,6 +42,8 @@ skip-if = [
   "condprof", # Bug 1769154 - expected fail w/condprof
 ]
 
+["test_pbm_cleanup.js"]
+
 ["test_permissions.js"]
 
 ["test_quota.js"]

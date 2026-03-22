@@ -95,9 +95,8 @@ pub(crate) const FREXP_FUNCTION: &str = "naga_frexp";
 // Must match code in glsl_built_in
 pub const FIRST_INSTANCE_BINDING: &str = "naga_vs_first_instance";
 
-#[cfg(any(feature = "serialize", feature = "deserialize"))]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
-#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+#[cfg(feature = "deserialize")]
+#[derive(serde::Deserialize)]
 struct BindingMapSerialization {
     resource_binding: crate::ResourceBinding,
     bind_target: u8,
@@ -455,7 +454,7 @@ struct IdGenerator(u32);
 
 impl IdGenerator {
     /// Generates a number that's guaranteed to be unique for this `IdGenerator`
-    fn generate(&mut self) -> u32 {
+    const fn generate(&mut self) -> u32 {
         // It's just an increasing number but it does the job
         let ret = self.0;
         self.0 += 1;

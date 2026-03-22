@@ -32,11 +32,7 @@ task-defaults:
                     default: true
             default: false
     docker-image:
-        by-test-platform:
-            linux1804.*:
-                in-tree: ubuntu1804-test
-            default:
-                in-tree: ubuntu2404-test
+        in-tree: ubuntu2404-test
     fetches:
         toolchain:
             by-test-platform:
@@ -123,9 +119,6 @@ tasks:
                 webrender-sw+no-fission:
                     by-test-platform:
                         android-em.*/debug: built-projects
-                        linux1804-64(-qr)?/.*: ['mozilla-central']
-                        linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
@@ -142,9 +135,6 @@ tasks:
                 no-fission:
                     by-test-platform:
                         android-em.*/debug-isolated-process: []
-                        linux1804-64(-qr)?/.*: ['mozilla-central']
-                        linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
@@ -212,7 +202,6 @@ tasks:
                 windows.*-ccov.*/opt: 5
                 windows.*/opt: 2
                 linux.*64-ccov.*/.*: 5
-                linux1804-64(-qr)?/opt: 4
                 linux2404-64/opt: 4
                 linux.*/debug: 5
                 .*-tsan(-qr)?/opt: 8
@@ -229,9 +218,6 @@ tasks:
             by-variant:
                 no-fission:
                     by-test-platform:
-                        linux1804-64(-qr)?/.*: ['mozilla-central']
-                        linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
@@ -259,8 +245,6 @@ tasks:
         chunks:
             by-test-platform:
                 android-em.*: 6
-                linux1804-64(-shippable)?(-qr)?/opt: 5
-                linux1804-64-devedition(-qr)?/opt: 5
                 linux2404-64(-shippable)?/opt: 5
                 linux2404-64-devedition/opt: 5
                 linux.*64-tsan(-qr)?/opt: 16
@@ -288,24 +272,17 @@ tasks:
             by-variant:
                 draw-snapshot:
                     by-test-platform:
-                        linux1804.*/debug: built-projects
                         linux2404.*/debug: built-projects
                         default: []
                 webrender-sw+no-fission:
                     by-test-platform:
                         android-em.*/debug: built-projects
-                        linux1804-64(-qr)?/debug: ['mozilla-central']
-                        linux1804-64(-shippable)?(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/debug: ['mozilla-central']
                         linux2404-64(-shippable)?/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
                         default: []
                 webrender-sw:
                     by-test-platform:
-                        linux1804-64(-qr)?/.*: built-projects
-                        linux1804-64-asan(-qr)?/opt: built-projects
-                        linux1804-64-tsan(-qr)?/opt: built-projects
                         linux2404-64/.*: built-projects
                         linux2404-64-asan/opt: built-projects
                         linux2404-64-tsan/opt: built-projects
@@ -315,9 +292,6 @@ tasks:
                 no-fission:
                     by-test-platform:
                         android-em.*/debug-isolated-process: ['trunk']
-                        linux1804-64(-qr)?/debug: ['mozilla-central']
-                        linux1804-64(-shippable)?(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/debug: ['mozilla-central']
                         linux2404-64(-shippable)?/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']

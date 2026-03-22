@@ -33,6 +33,7 @@ add_task(async function test_extension_tab_create() {
   const id = "ext-create-tab@mochitest";
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
+      version: "1.2.3",
       browser_specific_settings: {
         gecko: { id },
       },
@@ -78,7 +79,7 @@ add_task(async function test_extension_tab_create() {
   await extension.awaitMessage("load-tab:done");
 
   info("Wait for custom Glean ping submit");
-  const gleanEvents = Glean.network.urlclassifierAddonBlock
+  const gleanEvents = Glean.network.urlclassifierHarmfulAddonBlock
     .testGetValue()
     ?.map(evt => evt.extra);
   Assert.deepEqual(
@@ -86,6 +87,7 @@ add_task(async function test_extension_tab_create() {
     [
       {
         addon_id: id,
+        addon_version: "1.2.3",
         table: "harmfuladdon-blocklist-pref",
         etld: "example.org",
       },
@@ -101,7 +103,8 @@ add_task(async function test_extension_tab_create() {
   extension.sendMessage("load-tab", "http://extra.example.org");
   await extension.awaitMessage("load-tab:done");
 
-  const newGleanEvents = Glean.network.urlclassifierAddonBlock.testGetValue();
+  const newGleanEvents =
+    Glean.network.urlclassifierHarmfulAddonBlock.testGetValue();
   Assert.deepEqual(newGleanEvents, null, "No glean event received");
 
   await extension.unload();

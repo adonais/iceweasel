@@ -54,9 +54,14 @@ add_task(async function testNonPublicFeaturesShouldntGetDisplayed() {
   );
   const doc = gBrowser.contentDocument;
 
+  // When there are no features, paneExperimental redirects to paneGeneral.
+  // Wait for the redirect to complete.
   await TestUtils.waitForCondition(
-    () => doc.getElementById("category-experimental").hidden,
-    "Wait for Experimental Features section to get hidden"
+    () =>
+      doc.querySelector(".category[selected]").id === "category-general" &&
+      doc.getElementById("category-experimental").hidden &&
+      doc.getElementById("firefoxExperimentalCategory").hidden,
+    "Wait for redirect to general and elements to be hidden"
   );
 
   ok(

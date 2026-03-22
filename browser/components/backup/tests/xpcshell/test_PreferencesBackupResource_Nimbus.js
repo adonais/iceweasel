@@ -249,6 +249,7 @@ async function performBackup() {
   const simpleCopyFiles = [
     { path: "xulstore.json" },
     { path: "containers.json" },
+    { path: "customKeys.json" },
     { path: "handlers.json" },
     { path: "search.json.mozlz4" },
     { path: "user.js" },

@@ -204,19 +204,19 @@ export const IntentClassifier = {
       const engine = await this._createEngine({
         featureId: "smart-intent",
         modelId: "mozilla/mobilebert-query-intent-detection",
-        modelRevision: "v0.2.0",
+        modelRevision: "v0.3.0",
         taskName: "text-classification",
       });
       const threshold = 0.8;
       const resp = await engine.run({ args: [[cleanedQuery]] });
-      // resp example: [{ label: "chat", score: 0.95 }, { label: "search", score: 0.04 }]
+      // resp example: [{ label: "chat", score: 0.05 }, { label: "search", score: 0.94 }]
       if (
-        resp[0].label.toLowerCase() === "chat" &&
+        resp[0].label.toLowerCase() === "search" &&
         resp[0].score >= threshold
       ) {
-        return "chat";
+        return "search";
       }
-      return "search";
+      return "chat";
     } catch (error) {
       console.error("Error using intent detection model:", error);
       throw error;

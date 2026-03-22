@@ -25,7 +25,7 @@
                                       \
   _(ExecutionTracerInstanceLock, 250) \
                                       \
-  _(StoreBuffer, 275)                 \
+  _(Sweeping, 275)                    \
                                       \
   _(GCLock, 300)                      \
                                       \

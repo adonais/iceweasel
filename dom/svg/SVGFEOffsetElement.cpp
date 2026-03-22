@@ -54,9 +54,9 @@ FilterPrimitiveDescription SVGFEOffsetElement::GetPrimitiveDescription(
     nsTArray<RefPtr<SourceSurface>>& aInputImages) {
   OffsetAttributes atts;
   IntPoint offset(int32_t(aInstance->GetPrimitiveNumber(
-                      SVGContentUtils::X, &mNumberAttributes[DX])),
+                      SVGLength::Axis::X, &mNumberAttributes[DX])),
                   int32_t(aInstance->GetPrimitiveNumber(
-                      SVGContentUtils::Y, &mNumberAttributes[DY])));
+                      SVGLength::Axis::Y, &mNumberAttributes[DY])));
   atts.mValue = offset;
   return FilterPrimitiveDescription(AsVariant(std::move(atts)));
 }

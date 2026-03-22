@@ -154,12 +154,12 @@ ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetStart(
   // Collapse if not positioned yet, or if positioned in another document.
   if (!IsPositioned() || newRoot != mRoot) {
     mRoot = newRoot;
-    mStart.CopyFrom(aStart, RangeBoundaryIsMutationObserved::Yes);
-    mEnd.CopyFrom(aStart, RangeBoundaryIsMutationObserved::Yes);
+    mStart.CopyFrom(aStart, RangeBoundarySetBy::Ref);
+    mEnd.CopyFrom(aStart, RangeBoundarySetBy::Ref);
     return NS_OK;
   }
 
-  mStart.CopyFrom(aStart, RangeBoundaryIsMutationObserved::Yes);
+  mStart.CopyFrom(aStart, RangeBoundarySetBy::Ref);
   AssertStartIsBeforeOrEqualToEnd();
   return NS_OK;
 }
@@ -180,12 +180,12 @@ ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetEnd(
   // Collapse if not positioned yet, or if positioned in another document.
   if (!IsPositioned() || newRoot != mRoot) {
     mRoot = newRoot;
-    mStart.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
-    mEnd.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
+    mStart.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
+    mEnd.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
     return NS_OK;
   }
 
-  mEnd.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
+  mEnd.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
   AssertStartIsBeforeOrEqualToEnd();
   return NS_OK;
 }
@@ -193,8 +193,8 @@ ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetEnd(
 template <typename NodeType, typename RangeBoundaryType>
 nsresult
 ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetEndAfter(
-    nsINode* aEndContainer) {
-  return SetEnd(RangeUtils::GetRawRangeBoundaryAfter(aEndContainer));
+    nsIContent* aEndContainer) {
+  return SetEnd(RawRangeBoundary::After(*aEndContainer));
 }
 
 template <typename NodeType, typename RangeBoundaryType>
@@ -224,8 +224,8 @@ nsresult ContentEventHandler::SimpleRangeBase<
     MOZ_ASSERT(*aStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets) <=
                *aEnd.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets));
     mRoot = newStartRoot;
-    mStart.CopyFrom(aStart, RangeBoundaryIsMutationObserved::Yes);
-    mEnd.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
+    mStart.CopyFrom(aStart, RangeBoundarySetBy::Ref);
+    mEnd.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
     return NS_OK;
   }
 
@@ -240,15 +240,15 @@ nsresult ContentEventHandler::SimpleRangeBase<
   // If they have different root, this should be collapsed at the end point.
   if (newStartRoot != newEndRoot) {
     mRoot = newEndRoot;
-    mStart.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
-    mEnd.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
+    mStart.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
+    mEnd.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
     return NS_OK;
   }
 
   // Otherwise, set the range as specified.
   mRoot = newStartRoot;
-  mStart.CopyFrom(aStart, RangeBoundaryIsMutationObserved::Yes);
-  mEnd.CopyFrom(aEnd, RangeBoundaryIsMutationObserved::Yes);
+  mStart.CopyFrom(aStart, RangeBoundarySetBy::Ref);
+  mEnd.CopyFrom(aEnd, RangeBoundarySetBy::Ref);
   AssertStartIsBeforeOrEqualToEnd();
   return NS_OK;
 }
@@ -457,7 +457,8 @@ nsresult ContentEventHandler::InitCommon(EventMessage aEventMessage,
 
   // But otherwise, we need to assume that there is a selection range at the
   // beginning of the root content if aSelectionType is eNormal.
-  rv = mFirstSelectedSimpleRange.CollapseTo(RawRangeBoundary(mRootElement, 0u));
+  rv = mFirstSelectedSimpleRange.CollapseTo(
+      RawRangeBoundary::StartOfParent(*mRootElement));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -1198,7 +1199,8 @@ ContentEventHandler::ConvertFlatTextOffsetToDOMRangeBase(
 
   // Special case like <br contenteditable>
   if (!mRootElement->HasChildren()) {
-    nsresult rv = result.mRange.CollapseTo(RawRangeBoundary(mRootElement, 0u));
+    nsresult rv = result.mRange.CollapseTo(
+        RawRangeBoundary::StartOfParent(*mRootElement));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return Err(rv);
     }
@@ -3211,7 +3213,8 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
       }
     } else if (endPosition.GetContainer() != aRootElement) {
       // Offset is past node's length; set end of range to end of node
-      rv = prevSimpleRange.SetEndAfter(endPosition.GetContainer());
+      rv = prevSimpleRange.SetEndAfter(
+          nsIContent::FromNode(endPosition.GetContainer()));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -3325,11 +3328,12 @@ nsresult ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(
   if (startPoint.IsStartOfContainer()) {
     // If the range is the start of the container, adjusted the range to the
     // start of the first child.
-    if (!startPoint.GetContainer()->GetFirstChild()->IsText()) {
+    nsIContent* const firstChild = startPoint.GetContainer()->GetFirstChild();
+    if (!firstChild->IsText()) {
       return NS_OK;
     }
-    nsresult rv = aSimpleRange.CollapseTo(
-        RawRangeBoundary(startPoint.GetContainer()->GetFirstChild(), 0u));
+    nsresult rv =
+        aSimpleRange.CollapseTo(RawRangeBoundary::StartOfParent(*firstChild));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -3345,8 +3349,8 @@ nsresult ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(
   if (!startPoint.Ref()->IsText()) {
     return NS_OK;
   }
-  nsresult rv = aSimpleRange.CollapseTo(
-      RawRangeBoundary(startPoint.Ref(), startPoint.Ref()->Length()));
+  nsresult rv =
+      aSimpleRange.CollapseTo(RawRangeBoundary::EndOfParent(*startPoint.Ref()));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

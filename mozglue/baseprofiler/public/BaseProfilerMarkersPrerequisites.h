@@ -867,8 +867,7 @@ class MarkerSchema {
   // Flags which describe additional information for a PayloadField.
   enum class PayloadFlags : uint32_t {
     None = 0,
-    Searchable = 1 << 0,
-    Hidden = 1 << 1,
+    Hidden = 1 << 0,
   };
 
   // This is one field of payload to be used for additional marker data.

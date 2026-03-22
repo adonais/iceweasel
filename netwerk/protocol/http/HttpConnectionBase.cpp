@@ -24,6 +24,7 @@
 #include "nsIOService.h"
 #include "nsISocketTransport.h"
 #include "ConnectionEntry.h"
+#include "xpcpublic.h"
 
 namespace mozilla {
 namespace net {
@@ -105,7 +106,9 @@ void HttpConnectionBase::RecordConnectionAddressType() {
 
   NetAddr addr;
   GetPeerAddr(&addr);
-  if (addr.GetIpAddressSpace() != nsILoadInfo::IPAddressSpace::Public) {
+  // We allow recording this metric in the test environment.
+  if (addr.GetIpAddressSpace() != nsILoadInfo::IPAddressSpace::Public &&
+      !xpc::AreNonLocalConnectionsDisabled()) {
     return;
   }
 

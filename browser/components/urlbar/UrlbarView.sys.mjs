@@ -17,6 +17,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
   L10nCache: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarProviderOpenTabs:
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
@@ -608,6 +609,10 @@ export class UrlbarView {
     if (this.#pickSearchTipIfPresent(event)) {
       return false;
     }
+    if (this.input.inOverflowPanel) {
+      // The results panel is currently disabled in the overflow panel.
+      return false;
+    }
 
     if (!event) {
       return false;
@@ -939,12 +944,6 @@ export class UrlbarView {
       // noticeable on Mac. Use `openPopup()` with x and y coords instead. See
       // bug 1831760 and bug 1710459.
       let rect = getBoundsWithoutFlushing(anchor);
-      rect = this.window.windowUtils.toScreenRectInCSSUnits(
-        rect.x,
-        rect.y,
-        rect.width,
-        rect.height
-      );
       this.resultMenu.openPopup(null, {
         x: rect.x,
         y: rect.y + rect.height,
@@ -1147,7 +1146,19 @@ export class UrlbarView {
 
     this.controller.notify(this.controller.NOTIFICATIONS.VIEW_OPEN);
 
-    if (lazy.UrlbarPrefs.get("closeOtherPanelsOnOpen")) {
+    this.maybeRollupPopups();
+  }
+
+  /**
+   * Depending on the pref, rolls up all popups in the window.
+   * If the moz-urlbar is in the overflow panel, it does nothing
+   * to avoid closing the overflow panel.
+   */
+  maybeRollupPopups() {
+    if (
+      lazy.UrlbarPrefs.get("closeOtherPanelsOnOpen") &&
+      !this.input.inOverflowPanel
+    ) {
       this.window.docShell.treeOwner
         .QueryInterface(Ci.nsIInterfaceRequestor)
         .getInterface(Ci.nsIAppWindow)
@@ -1174,8 +1185,8 @@ export class UrlbarView {
   #resultIsSearchSuggestion(result) {
     return Boolean(
       result &&
-        result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH &&
-        result.payload.suggestion
+      result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH &&
+      result.payload.suggestion
     );
   }
 
@@ -1708,6 +1719,67 @@ export class UrlbarView {
     item._elements.set("bottom", bottom);
   }
 
+  #createRowContentForNova(item, _result) {
+    item._content.toggleAttribute("selectable", true);
+
+    let favicon = this.#createElement("img");
+    favicon.className = "urlbarView-favicon";
+    item._content.appendChild(favicon);
+    item._elements.set("favicon", favicon);
+
+    let body = this.#createElement("span");
+    body.className = "urlbarView-row-body";
+    item._content.appendChild(body);
+
+    let top = this.#createElement("div");
+    top.className = "urlbarView-row-body-top";
+    body.appendChild(top);
+
+    let noWrap = this.#createElement("div");
+    noWrap.className = "urlbarView-row-body-top-no-wrap";
+    top.appendChild(noWrap);
+    item._elements.set("noWrap", noWrap);
+
+    let title = this.#createElement("span");
+    title.classList.add("urlbarView-title", "urlbarView-overflowable");
+    noWrap.appendChild(title);
+    item._elements.set("title", title);
+
+    let subtitleSeparator = this.#createElement("span");
+    subtitleSeparator.className = "urlbarView-subtitle-separator";
+    noWrap.appendChild(subtitleSeparator);
+    item._elements.set("subtitleSeparator", subtitleSeparator);
+
+    let subtitle = this.#createElement("span");
+    subtitle.className = "urlbarView-subtitle";
+    noWrap.appendChild(subtitle);
+    item._elements.set("subtitle", subtitle);
+
+    let description = this.#createElement("div");
+    description.classList.add("urlbarView-row-body-description");
+    body.appendChild(description);
+    item._elements.set("description", description);
+
+    let bottom = this.#createElement("div");
+    bottom.className = "urlbarView-row-body-bottom";
+    body.appendChild(bottom);
+
+    let bottomLabel = this.#createElement("span");
+    bottomLabel.className = "urlbarView-bottom-label";
+    bottom.appendChild(bottomLabel);
+    item._elements.set("bottomLabel", bottomLabel);
+
+    let bottomSeparator = this.#createElement("span");
+    bottomSeparator.className = "urlbarView-bottom-separator";
+    bottom.appendChild(bottomSeparator);
+    item._elements.set("bottomSeparator", bottomSeparator);
+
+    let url = this.#createElement("span");
+    url.className = "urlbarView-url";
+    bottom.appendChild(url);
+    item._elements.set("url", url);
+  }
+
   #needsNewButtons(item, oldResult, newResult) {
     if (!oldResult) {
       return true;
@@ -1973,6 +2045,10 @@ export class UrlbarView {
       }
     }
 
+    if (oldResult.isNovaSuggestion != newResult.isNovaSuggestion) {
+      return true;
+    }
+
     return newResult.testForceNewContent;
   }
 
@@ -2005,8 +2081,11 @@ export class UrlbarView {
           item.classList.remove(className);
         }
       }
+
       if (item.result.type == lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC) {
         this.#createRowContentForDynamicType(item, result);
+      } else if (result.isNovaSuggestion) {
+        this.#createRowContentForNova(item, result);
       } else if (result.isRichSuggestion) {
         this.#createRowContentForRichSuggestion(item, result);
       } else {
@@ -2022,6 +2101,11 @@ export class UrlbarView {
     this.#updateRowButtons(item, oldResult, result);
 
     item._content.id = item.id + "-inner";
+
+    if (result.isNovaSuggestion) {
+      this.#updateRowContentForNova(item, result);
+      return;
+    }
 
     let isFirstChild = item === this.#rows.children[0];
     let secAction = result.payload.action;
@@ -2164,6 +2248,13 @@ export class UrlbarView {
         };
         setURL = true;
         break;
+      case lazy.UrlbarUtils.RESULT_TYPE.AI_CHAT:
+        actionSetter = () => {
+          this.#l10nCache.setElementL10n(action, {
+            id: "urlbar-result-action-ai-chat",
+          });
+        };
+        break;
       case lazy.UrlbarUtils.RESULT_TYPE.SEARCH:
         if (
           result.payload.suggestionObject?.suggestionType == "important_dates"
@@ -2260,7 +2351,7 @@ export class UrlbarView {
 
     this.#setRowSelectable(item, isRowSelectable);
 
-    action.toggleAttribute(
+    action?.toggleAttribute(
       "slide-in",
       result.providerName == "UrlbarProviderTabToSearch"
     );
@@ -2521,6 +2612,50 @@ export class UrlbarView {
     }
   }
 
+  #updateRowContentForNova(item, result) {
+    item.toggleAttribute("nova", true);
+    item.toggleAttribute("rich-suggestion", true);
+    item.setAttribute(
+      "type",
+      lazy.UrlbarUtils.searchEngagementTelemetryType(result)
+    );
+    item.toggleAttribute("sponsored", result.payload.isSponsored);
+
+    this.#setRowSelectable(item, true);
+
+    let favicon = item._elements.get("favicon");
+    favicon.src = this.#iconForResult(result);
+    if (result.richSuggestionIconSize) {
+      item.setAttribute("icon-size", result.richSuggestionIconSize);
+      favicon.setAttribute("icon-size", result.richSuggestionIconSize);
+    } else {
+      item.removeAttribute("icon-size");
+      favicon.removeAttribute("icon-size");
+    }
+
+    let title = item._elements.get("title");
+    this.#setResultTitle(result, title);
+
+    let subtitle = item._elements.get("subtitle");
+    if (result.payload.subtitleL10n) {
+      this.#l10nCache.setElementL10n(subtitle, result.payload.subtitleL10n);
+    } else {
+      this.#l10nCache.removeElementL10n(subtitle);
+      if (result.payload.subtitle) {
+        subtitle.textContent = result.payload.subtitle;
+      }
+    }
+
+    let description = item._elements.get("description");
+    description.textContent = result.payload.description;
+
+    let bottomLabel = item._elements.get("bottomLabel");
+    this.#l10nCache.setElementL10n(bottomLabel, result.payload.bottomTextL10n);
+
+    let url = item._elements.get("url");
+    url.textContent = lazy.UrlbarUtils.prepareUrlForDisplay(result.payload.url);
+  }
+
   /**
    * Performs a final pass over all rows in the view after a view update, stale
    * rows are removed, and other changes to the number of rows. Sets `rowIndex`
@@ -2688,7 +2823,7 @@ export class UrlbarView {
     }
 
     let engineName =
-      row.result.payload.engine || Services.search.defaultEngine.name;
+      row.result.payload.engine || lazy.SearchService.defaultEngine.name;
 
     if (row.result.payload.trending) {
       return {
@@ -2701,23 +2836,10 @@ export class UrlbarView {
       return { id: "urlbar-group-recent-searches" };
     }
 
-    if (
-      row.result.isBestMatch &&
-      row.result.providerName == lazy.UrlbarProviderQuickSuggest.name
-    ) {
-      switch (row.result.payload.telemetryType) {
-        case "adm_sponsored":
-          if (!lazy.UrlbarPrefs.get("quickSuggestSponsoredPriority")) {
-            return { id: "urlbar-group-sponsored" };
-          }
-          break;
-        case "amo":
-          return { id: "urlbar-group-addon" };
-        case "mdn":
-          return { id: "urlbar-group-mdn" };
-        case "yelp":
-          return { id: "urlbar-group-local" };
-      }
+    if (row.result.providerName == lazy.UrlbarProviderQuickSuggest.name) {
+      return row.result.isBestMatch
+        ? null
+        : { id: "urlbar-group-firefox-suggest" };
     }
 
     if (row.result.isBestMatch) {
@@ -2734,16 +2856,6 @@ export class UrlbarView {
 
     if (!this.#queryContext?.searchString || row.result.heuristic) {
       return null;
-    }
-
-    if (row.result.providerName == lazy.UrlbarProviderQuickSuggest.name) {
-      if (
-        row.result.payload.provider == "Weather" &&
-        !row.result.payload.showRowLabel
-      ) {
-        return null;
-      }
-      return { id: "urlbar-group-firefox-suggest" };
     }
 
     switch (row.result.type) {
@@ -3197,7 +3309,6 @@ export class UrlbarView {
     );
 
     if (
-      lazy.UrlbarPrefs.get("switchTabs.searchAllContainers") &&
       result.type == lazy.UrlbarUtils.RESULT_TYPE.TAB_SWITCH &&
       lazy.UrlbarProviderOpenTabs.isContainerUserContextId(
         result.payload.userContextId
@@ -3239,9 +3350,11 @@ export class UrlbarView {
     } else {
       tabGroupAction?.remove();
     }
-
+    let isSplitViewActive = this.window.gBrowser.selectedTab.splitview;
     this.#l10nCache.setElementL10n(actionNode, {
-      id: "urlbar-result-action-switch-tab",
+      id: isSplitViewActive
+        ? "urlbar-result-action-move-tab-to-split-view"
+        : "urlbar-result-action-switch-tab",
     });
   }
 
@@ -3466,34 +3579,17 @@ export class UrlbarView {
       { id: "urlbar-result-action-switch-tab" },
       { id: "urlbar-result-action-visit" },
       { id: "urlbar-result-action-visit-from-clipboard" },
+      { id: "urlbar-result-action-move-tab-to-split-view" },
     ];
-
-    let suggestSponsoredEnabled =
-      lazy.UrlbarPrefs.get("quickSuggestEnabled") &&
-      lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored");
 
     if (lazy.UrlbarPrefs.get("groupLabels.enabled")) {
       idArgs.push({ id: "urlbar-group-firefox-suggest" });
       idArgs.push({ id: "urlbar-group-best-match" });
-      if (lazy.UrlbarPrefs.get("quickSuggestEnabled")) {
-        if (lazy.UrlbarPrefs.get("addonsFeatureGate")) {
-          idArgs.push({ id: "urlbar-group-addon" });
-        }
-        if (lazy.UrlbarPrefs.get("mdn.featureGate")) {
-          idArgs.push({ id: "urlbar-group-mdn" });
-        }
-        if (lazy.UrlbarPrefs.get("yelpFeatureGate")) {
-          idArgs.push({ id: "urlbar-group-local" });
-        }
-        if (
-          suggestSponsoredEnabled &&
-          lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold")
-        ) {
-          idArgs.push({ id: "urlbar-group-sponsored" });
-        }
-      }
     }
 
+    let suggestSponsoredEnabled =
+      lazy.UrlbarPrefs.get("quickSuggestEnabled") &&
+      lazy.UrlbarPrefs.get("suggest.quicksuggest.sponsored");
     if (suggestSponsoredEnabled) {
       idArgs.push({ id: "urlbar-result-action-sponsored" });
     }
@@ -3518,13 +3614,13 @@ export class UrlbarView {
     // ongoing. Generally there's no reason for our string-caching paths to be
     // async and it may even be a bad idea (except for the final necessary
     // `this.#l10nCache.ensureAll()` call).
-    if (!Services.search.hasSuccessfullyInitialized) {
+    if (!lazy.SearchService.hasSuccessfullyInitialized) {
       return [];
     }
 
     let idArgs = [];
 
-    let { defaultEngine, defaultPrivateEngine } = Services.search;
+    let { defaultEngine, defaultPrivateEngine } = lazy.SearchService;
     let engineNames = [defaultEngine?.name, defaultPrivateEngine?.name].filter(
       name => name
     );
@@ -3833,7 +3929,9 @@ export class UrlbarView {
       return;
     }
 
-    this.window.top.addEventListener("mouseup", this);
+    // Attaching the event listener to the window so we can capture `mouseup`
+    // outside of the panel when the mouse is dragged.
+    this.panel.ownerGlobal.addEventListener("mouseup", this);
 
     // Select the element and open a speculative connection unless it's a
     // button. Buttons are special in the two ways listed below. Some buttons
@@ -3874,13 +3972,19 @@ export class UrlbarView {
       return;
     }
 
-    this.window.top.removeEventListener("mouseup", this);
+    this.panel.ownerGlobal.removeEventListener("mouseup", this);
 
+    // Since the listener must be on the window use `event.composedPath()`
+    // instead of `event.target` to handle shadow DOM encapsulation while
+    // `event.target` may be retargeted to a shadow host.
+    const eventTarget = event.composedPath()[0];
     // When mouseup outside of browser, as the target will not be element,
     // ignore it.
     let element =
-      event.target.nodeType === event.target.ELEMENT_NODE
-        ? this.#getClosestSelectableElement(event.target, { byMouse: true })
+      eventTarget.nodeType === eventTarget.ELEMENT_NODE
+        ? this.#getClosestSelectableElement(eventTarget, {
+            byMouse: true,
+          })
         : null;
     if (element) {
       this.input.pickElement(element, event);

@@ -12,7 +12,7 @@ mod logging;
 mod phc;
 
 #[cfg(target_os = "android")]
-use crash_helper_common::RawAncillaryData;
+use crash_helper_common::RawIPCConnector;
 use crash_helper_common::{BreakpadData, BreakpadRawData, IPCConnector, IPCListener, Pid};
 use std::{
     ffi::{c_char, CStr, OsString},
@@ -93,7 +93,7 @@ pub unsafe extern "C" fn crash_generator_logic_android(
     pid: Pid,
     breakpad_data: BreakpadRawData,
     minidump_path: *const c_char,
-    pipe: RawAncillaryData,
+    pipe: RawIPCConnector,
 ) {
     logging::init();
 
@@ -116,7 +116,7 @@ pub unsafe extern "C" fn crash_generator_logic_android(
         // SAFETY: The `pipe` file descriptor passed in from the caller is
         // guaranteed to be valid.
         let connector = unwrap_with_message(
-            unsafe { IPCConnector::from_raw_ancillary(pipe) },
+            unsafe { IPCConnector::from_raw_connector(pipe) },
             "Could not use the pipe",
         );
         let ipc_server = unwrap_with_message(

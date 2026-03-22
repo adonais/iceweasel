@@ -465,6 +465,7 @@ class DataChannel {
   dom::RTCDataChannel* mMainthreadDomDataChannel = nullptr;
   bool mHasWorkerDomDataChannel = false;
   bool mEverOpened = false;
+  bool mAnnouncedOpen = false;
   bool mAnnouncedClosed = false;
   uint16_t mStream;
   RefPtr<GenericNonExclusivePromise> mMessagesSentPromise;

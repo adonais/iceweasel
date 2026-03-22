@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_a11y_TextLeafRange_h__
-#define mozilla_a11y_TextLeafRange_h__
+#ifndef mozilla_a11y_TextLeafRange_h_
+#define mozilla_a11y_TextLeafRange_h_
 
 #include <stdint.h>
 
@@ -348,6 +348,8 @@ class TextLeafRange final {
    * container Accessible.
    */
   nsTArray<TextLeafRange> VisibleLines(Accessible* aContainer) const;
+
+  void GetFlattenedText(nsAString& aText) const;
 
  private:
   TextLeafPoint mStart;

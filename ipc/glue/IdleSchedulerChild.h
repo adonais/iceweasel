@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_ipc_IdleSchedulerChild_h__
-#define mozilla_ipc_IdleSchedulerChild_h__
+#ifndef mozilla_ipc_IdleSchedulerChild_h_
+#define mozilla_ipc_IdleSchedulerChild_h_
 
 #include "mozilla/RefPtr.h"
 #include "mozilla/ipc/PIdleSchedulerChild.h"
@@ -72,4 +72,4 @@ class IdleSchedulerChild final : public PIdleSchedulerChild {
 }  // namespace ipc
 }  // namespace mozilla
 
-#endif  // mozilla_ipc_IdleSchedulerChild_h__
+#endif  // mozilla_ipc_IdleSchedulerChild_h_

@@ -396,47 +396,4 @@ class MenuStoreTest {
                 webExtensionMenuItemList,
             )
         }
-
-    @Test
-    fun `WHEN update show extensions onboarding dispatched THEN extension state is updated`() =
-        runTest {
-            val initialState = MenuState()
-            val store = MenuStore(initialState = initialState)
-
-            store.dispatch(MenuAction.UpdateShowExtensionsOnboarding(true))
-
-            assertTrue(store.state.extensionMenuState.showExtensionsOnboarding)
-        }
-
-    @Test
-    fun `WHEN update manage extensions menu item visibility is dispatched THEN extension state is updated`() =
-        runTest {
-            val addon = Addon(id = "ext1")
-            val addonTwo = Addon(id = "ext2")
-            val store = MenuStore(
-                initialState = MenuState(
-                    extensionMenuState = ExtensionMenuState(
-                        recommendedAddons = listOf(
-                            addon,
-                            addonTwo,
-                        ),
-                    ),
-                ),
-            )
-
-            store.dispatch(MenuAction.UpdateManageExtensionsMenuItemVisibility(true))
-
-            assertTrue(store.state.extensionMenuState.shouldShowManageExtensionsMenuItem)
-        }
-
-    @Test
-    fun `WHEN update show disabled extensions onboarding dispatched THEN extension state is updated`() =
-        runTest {
-            val initialState = MenuState()
-            val store = MenuStore(initialState = initialState)
-
-            store.dispatch(MenuAction.UpdateShowDisabledExtensionsOnboarding(true))
-
-            assertTrue(store.state.extensionMenuState.showDisabledExtensionsOnboarding)
-        }
 }

@@ -108,11 +108,6 @@ extern "C" int statvfs(const char*, struct statvfs*);
 
 using namespace mozilla;
 
-#define ENSURE_STAT_CACHE()                            \
-  do {                                                 \
-    if (!FillStatCache()) return NSRESULT_FOR_ERRNO(); \
-  } while (0)
-
 #define CHECK_mPath()                                     \
   do {                                                    \
     if (mPath.IsEmpty()) return NS_ERROR_NOT_INITIALIZED; \
@@ -144,7 +139,8 @@ static PRTime TimespecToMillis(const struct timespec& aTimeSpec) {
 class nsDirEnumeratorUnix final : public nsSimpleEnumerator,
                                   public nsIDirectoryEnumerator {
  public:
-  nsDirEnumeratorUnix();
+  static nsresult Create(nsLocalFile* aParent,
+                         RefPtr<nsDirEnumeratorUnix>& aResult);
 
   // nsISupports interface
   NS_DECL_ISUPPORTS_INHERITED
@@ -155,16 +151,14 @@ class nsDirEnumeratorUnix final : public nsSimpleEnumerator,
   // nsIDirectoryEnumerator interface
   NS_DECL_NSIDIRECTORYENUMERATOR
 
-  NS_IMETHOD Init(nsLocalFile* aParent, bool aIgnored);
-
   NS_FORWARD_NSISIMPLEENUMERATORBASE(nsSimpleEnumerator::)
 
   const nsID& DefaultInterface() override { return NS_GET_IID(nsIFile); }
 
  private:
+  nsDirEnumeratorUnix() : mDir(nullptr), mEntry(nullptr) {}
   ~nsDirEnumeratorUnix() override;
 
- protected:
   NS_IMETHOD GetNextEntry();
 
   DIR* mDir;
@@ -172,37 +166,39 @@ class nsDirEnumeratorUnix final : public nsSimpleEnumerator,
   nsCString mParentPath;
 };
 
-nsDirEnumeratorUnix::nsDirEnumeratorUnix() : mDir(nullptr), mEntry(nullptr) {}
-
 nsDirEnumeratorUnix::~nsDirEnumeratorUnix() { Close(); }
 
 NS_IMPL_ISUPPORTS_INHERITED(nsDirEnumeratorUnix, nsSimpleEnumerator,
                             nsIDirectoryEnumerator)
 
-NS_IMETHODIMP
-nsDirEnumeratorUnix::Init(nsLocalFile* aParent,
-                          bool aResolveSymlinks /*ignored*/) {
-  nsAutoCString dirPath;
-  if (NS_FAILED(aParent->GetNativePath(dirPath)) || dirPath.IsEmpty()) {
+nsresult nsDirEnumeratorUnix::Create(nsLocalFile* aParent,
+                                     RefPtr<nsDirEnumeratorUnix>& aResult) {
+  RefPtr<nsDirEnumeratorUnix> self = new nsDirEnumeratorUnix();
+
+  if (NS_FAILED(aParent->GetNativePath(self->mParentPath)) ||
+      self->mParentPath.IsEmpty()) {
     return NS_ERROR_FILE_INVALID_PATH;
   }
 
   // When enumerating the directory, the paths must have a slash at the end.
-  nsAutoCString dirPathWithSlash(dirPath);
+  nsAutoCString dirPathWithSlash(self->mParentPath);
   dirPathWithSlash.Append('/');
   if (!FilePreferences::IsAllowedPath(dirPathWithSlash)) {
     return NS_ERROR_FILE_ACCESS_DENIED;
   }
 
-  if (NS_FAILED(aParent->GetNativePath(mParentPath))) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mDir = opendir(dirPath.get());
-  if (!mDir) {
+  self->mDir = opendir(self->mParentPath.get());
+  if (!self->mDir) {
     return NSRESULT_FOR_ERRNO();
   }
-  return GetNextEntry();
+
+  nsresult rv = self->GetNextEntry();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  aResult = std::move(self);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -274,7 +270,7 @@ nsDirEnumeratorUnix::Close() {
   return NS_OK;
 }
 
-nsLocalFile::nsLocalFile() : mCachedStat() {}
+nsLocalFile::nsLocalFile() {}
 
 nsLocalFile::nsLocalFile(const nsLocalFile& aOther) : mPath(aOther.mPath) {}
 
@@ -296,19 +292,19 @@ nsresult nsLocalFile::nsLocalFileConstructor(const nsIID& aIID,
   return inst->QueryInterface(aIID, aInstancePtr);
 }
 
-bool nsLocalFile::FillStatCache() {
+nsresult nsLocalFile::StatFile(struct STAT* statInfo) {
   if (!FilePreferences::IsAllowedPath(mPath)) {
-    errno = EACCES;
-    return false;
+    return NS_ERROR_FILE_ACCESS_DENIED;
   }
 
-  if (STAT(mPath.get(), &mCachedStat) == -1) {
+  if (STAT(mPath.get(), statInfo) == -1) {
     // try lstat it may be a symlink
-    if (LSTAT(mPath.get(), &mCachedStat) == -1) {
-      return false;
+    if (LSTAT(mPath.get(), statInfo) == -1) {
+      return NSRESULT_FOR_ERRNO();
     }
   }
-  return true;
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -1271,65 +1267,51 @@ nsLocalFile::MoveToFollowingLinksNative(nsIFile* aNewParent,
 NS_IMETHODIMP
 nsLocalFile::Remove(bool aRecursive, uint32_t* aRemoveCount) {
   CHECK_mPath();
-  ENSURE_STAT_CACHE();
 
-  bool isSymLink;
-
-  nsresult rv = IsSymlink(&isSymLink);
+  bool isLink = false;
+  nsresult rv = IsSymlink(&isLink);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  if (isSymLink || !S_ISDIR(mCachedStat.st_mode)) {
-    rv = NSRESULT_FOR_RETURN(unlink(mPath.get()));
-    if (NS_SUCCEEDED(rv) && aRemoveCount) {
-      *aRemoveCount += 1;
-    }
-    return rv;
-  }
-
-  if (aRecursive) {
-    auto* dir = new nsDirEnumeratorUnix();
-
-    RefPtr<nsSimpleEnumerator> dirRef(dir);  // release on exit
-
-    rv = dir->Init(this, false);
+  // only check to see if we have a directory if it isn't a link
+  bool isDir = false;
+  if (!isLink) {
+    rv = IsDirectory(&isDir);
     if (NS_FAILED(rv)) {
       return rv;
     }
+  }
 
-    bool more;
-    while (NS_SUCCEEDED(dir->HasMoreElements(&more)) && more) {
-      nsCOMPtr<nsISupports> item;
-      rv = dir->GetNext(getter_AddRefs(item));
-      if (NS_FAILED(rv)) {
-        return NS_ERROR_FAILURE;
-      }
-
-      nsCOMPtr<nsIFile> file = do_QueryInterface(item, &rv);
-      if (NS_FAILED(rv)) {
-        return NS_ERROR_FAILURE;
-      }
-      // XXX: We care the result of the removal here while
-      // nsLocalFileWin does not. We should align the behavior. (bug 1779696)
-      rv = file->Remove(aRecursive, aRemoveCount);
-
-#ifdef ANDROID
-      // See bug 580434 - Bionic gives us just deleted files
-      if (rv == NS_ERROR_FILE_NOT_FOUND) {
-        continue;
-      }
-#endif
+  if (isDir) {
+    if (aRecursive) {
+      RefPtr<nsDirEnumeratorUnix> dirEnum;
+      rv = nsDirEnumeratorUnix::Create(this, dirEnum);
       if (NS_FAILED(rv)) {
         return rv;
       }
+
+      nsCOMPtr<nsIFile> file;
+      while (NS_SUCCEEDED(dirEnum->GetNextFile(getter_AddRefs(file))) && file) {
+        file->Remove(aRecursive, aRemoveCount);
+      }
+    }
+
+    rv = NSRESULT_FOR_RETURN(rmdir(mPath.get()));
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+  } else {
+    rv = NSRESULT_FOR_RETURN(unlink(mPath.get()));
+    if (NS_FAILED(rv)) {
+      return rv;
     }
   }
 
-  rv = NSRESULT_FOR_RETURN(rmdir(mPath.get()));
-  if (NS_SUCCEEDED(rv) && aRemoveCount) {
+  if (aRemoveCount) {
     *aRemoveCount += 1;
   }
+
   return rv;
 }
 
@@ -1344,7 +1326,7 @@ nsresult nsLocalFile::GetTimeImpl(PRTime* aTime,
   using StatFn = int (*)(const char*, struct STAT*);
   StatFn statFn = aFollowLinks ? &STAT : &LSTAT;
 
-  struct STAT fileStats{};
+  struct STAT fileStats {};
   if (statFn(mPath.get(), &fileStats) < 0) {
     return NSRESULT_FOR_ERRNO();
   }
@@ -1390,8 +1372,6 @@ nsresult nsLocalFile::SetTimeImpl(PRTime aTime,
   }
 #endif
 
-  ENSURE_STAT_CACHE();
-
   if (aTime == 0) {
     aTime = PR_Now();
   }
@@ -1411,13 +1391,19 @@ nsresult nsLocalFile::SetTimeImpl(PRTime aTime,
   const size_t writeIndex = aTimeField == TimeField::AccessedTime ? 0 : 1;
   const size_t copyIndex = aTimeField == TimeField::AccessedTime ? 1 : 0;
 
+  struct STAT statInfo {};
+  nsresult rv = StatFile(&statInfo);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
 #if (defined(__APPLE__) && defined(__MACH__))
   auto* copyFrom = aTimeField == TimeField::AccessedTime
-                       ? &mCachedStat.st_mtimespec
-                       : &mCachedStat.st_atimespec;
+                       ? &statInfo.st_mtimespec
+                       : &statInfo.st_atimespec;
 #else
-  auto* copyFrom = aTimeField == TimeField::AccessedTime ? &mCachedStat.st_mtim
-                                                         : &mCachedStat.st_atim;
+  auto* copyFrom = aTimeField == TimeField::AccessedTime ? &statInfo.st_mtim
+                                                         : &statInfo.st_atim;
 #endif
 
   times[copyIndex].tv_sec = copyFrom->tv_sec;
@@ -1499,7 +1485,7 @@ nsresult nsLocalFile::GetCreationTimeImpl(PRTime* aCreationTime,
   using StatFn = int (*)(const char*, struct STAT*);
   StatFn statFn = aFollowLinks ? &STAT : &LSTAT;
 
-  struct STAT fileStats{};
+  struct STAT fileStats {};
   if (statFn(mPath.get(), &fileStats) < 0) {
     return NSRESULT_FOR_ERRNO();
   }
@@ -1523,8 +1509,14 @@ nsLocalFile::GetPermissions(uint32_t* aPermissions) {
   if (NS_WARN_IF(!aPermissions)) {
     return NS_ERROR_INVALID_ARG;
   }
-  ENSURE_STAT_CACHE();
-  *aPermissions = NORMALIZE_PERMS(mCachedStat.st_mode);
+
+  struct STAT statInfo {};
+  nsresult rv = StatFile(&statInfo);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  *aPermissions = NORMALIZE_PERMS(statInfo.st_mode);
   return NS_OK;
 }
 
@@ -1583,10 +1575,15 @@ nsLocalFile::GetFileSize(int64_t* aFileSize) {
     return NS_ERROR_INVALID_ARG;
   }
   *aFileSize = 0;
-  ENSURE_STAT_CACHE();
 
-  if (!S_ISDIR(mCachedStat.st_mode)) {
-    *aFileSize = (int64_t)mCachedStat.st_size;
+  struct STAT statInfo {};
+  nsresult rv = StatFile(&statInfo);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  if (!S_ISDIR(statInfo.st_mode)) {
+    *aFileSize = (int64_t)statInfo.st_size;
   }
   return NS_OK;
 }
@@ -1739,13 +1736,14 @@ nsresult nsLocalFile::GetDiskInfo(StatInfoFunc&& aStatInfoFunc,
 
 #  if defined(USE_LINUX_QUOTACTL)
 
-  if (!FillStatCache()) {
-    // Returns info from statfs
-    return NS_OK;
+  struct STAT statInfo {};
+  nsresult rv = StatFile(&statInfo);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
 
   nsAutoCString deviceName;
-  if (!GetDeviceName(major(mCachedStat.st_dev), minor(mCachedStat.st_dev),
+  if (!GetDeviceName(major(statInfo.st_dev), minor(statInfo.st_dev),
                      deviceName)) {
     // Returns info from statfs
     return NS_OK;
@@ -2023,9 +2021,17 @@ nsLocalFile::IsDirectory(bool* aResult) {
   if (NS_WARN_IF(!aResult)) {
     return NS_ERROR_INVALID_ARG;
   }
+
   *aResult = false;
-  ENSURE_STAT_CACHE();
-  *aResult = S_ISDIR(mCachedStat.st_mode);
+
+  struct STAT statInfo {};
+  nsresult rv = StatFile(&statInfo);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  *aResult = S_ISDIR(statInfo.st_mode);
+
   return NS_OK;
 }
 
@@ -2035,8 +2041,14 @@ nsLocalFile::IsFile(bool* aResult) {
     return NS_ERROR_INVALID_ARG;
   }
   *aResult = false;
-  ENSURE_STAT_CACHE();
-  *aResult = S_ISREG(mCachedStat.st_mode);
+
+  struct STAT statInfo {};
+  nsresult rv = StatFile(&statInfo);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  *aResult = S_ISREG(statInfo.st_mode);
   return NS_OK;
 }
 
@@ -2071,12 +2083,18 @@ nsLocalFile::IsSpecial(bool* aResult) {
   if (NS_WARN_IF(!aResult)) {
     return NS_ERROR_INVALID_ARG;
   }
-  ENSURE_STAT_CACHE();
-  *aResult = S_ISCHR(mCachedStat.st_mode) || S_ISBLK(mCachedStat.st_mode) ||
+
+  struct STAT statInfo {};
+  nsresult rv = StatFile(&statInfo);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  *aResult = S_ISCHR(statInfo.st_mode) || S_ISBLK(statInfo.st_mode) ||
 #ifdef S_ISSOCK
-             S_ISSOCK(mCachedStat.st_mode) ||
+             S_ISSOCK(statInfo.st_mode) ||
 #endif
-             S_ISFIFO(mCachedStat.st_mode);
+             S_ISFIFO(statInfo.st_mode);
 
   return NS_OK;
 }
@@ -2248,9 +2266,8 @@ nsLocalFile::GetNativeTarget(nsACString& aResult) {
 
 NS_IMETHODIMP
 nsLocalFile::GetDirectoryEntriesImpl(nsIDirectoryEnumerator** aEntries) {
-  RefPtr<nsDirEnumeratorUnix> dir = new nsDirEnumeratorUnix();
-
-  nsresult rv = dir->Init(this, false);
+  RefPtr<nsDirEnumeratorUnix> dir;
+  nsresult rv = nsDirEnumeratorUnix::Create(this, dir);
   if (NS_FAILED(rv)) {
     *aEntries = nullptr;
   } else {
@@ -2781,17 +2798,18 @@ nsLocalFile::IsPackage(bool* aResult) {
     return rv;
   }
 
-  LSItemInfoRecord info;
-  OSStatus status =
-      ::LSCopyItemInfoForURL(url, kLSRequestBasicFlagsOnly, &info);
+  CFBooleanRef isPackage = nullptr;
+  Boolean success = ::CFURLCopyResourcePropertyForKey(url, kCFURLIsPackageKey,
+                                                      &isPackage, nullptr);
 
   ::CFRelease(url);
 
-  if (status != noErr) {
+  if (!success) {
     return NS_ERROR_FAILURE;
   }
 
-  *aResult = !!(info.flags & kLSItemInfoIsPackage);
+  *aResult = ::CFBooleanGetValue(isPackage);
+  ::CFRelease(isPackage);
 
   return NS_OK;
 }

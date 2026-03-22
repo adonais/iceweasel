@@ -39,7 +39,7 @@ XPIDL_MODULE = "necko_http"
 EXPORTS += [
     "nsCORSListenerProxy.h",
     "nsHttp.h",
-    "nsHttpAtomList.h",
+    "nsHttpAtomList.inc",
     "nsHttpHeaderArray.h",
     "nsHttpRequestHead.h",
     "nsHttpResponseHead.h",

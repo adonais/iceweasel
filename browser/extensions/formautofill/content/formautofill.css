@@ -22,7 +22,7 @@
       }
     }
 
-    &[disabled="true"] {
+    &[disabled] {
       opacity: 0.5;
     }
   }

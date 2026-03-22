@@ -524,10 +524,6 @@ def run_mochitest_general(
 
         harness_args = kwargs.copy()
         harness_args.update(suite["kwargs"])
-        # Pass in the full suite name as defined in moztest/resolve.py in case
-        # chunk-by-runtime is called, in which case runtime information for
-        # specific mochitest suite has to be loaded. See Bug 1637463.
-        harness_args.update({"suite_name": suite_name})
 
         result = run_mochitest(
             command_context._mach_context, tests=tests, **harness_args

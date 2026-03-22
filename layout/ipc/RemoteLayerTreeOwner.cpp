@@ -84,20 +84,17 @@ void RemoteLayerTreeOwner::Destroy() {
 }
 
 void RemoteLayerTreeOwner::EnsureLayersConnected(
-    CompositorOptions* aCompositorOptions) {
+    Maybe<CompositorOptions>& aCompositorOptions) {
   RefPtr<WindowRenderer> renderer = GetWindowRenderer(mBrowserParent);
-  if (!renderer) {
-    return;
-  }
-
-  if (!renderer->GetCompositorBridgeChild()) {
+  if (!renderer || !renderer->GetCompositorBridgeChild()) {
+    aCompositorOptions = Nothing();
     return;
   }
 
   mLayersConnected =
       renderer->GetCompositorBridgeChild()->SendNotifyChildRecreated(
           mLayersId, &mCompositorOptions);
-  *aCompositorOptions = mCompositorOptions;
+  aCompositorOptions = Some(mCompositorOptions);
 }
 
 bool RemoteLayerTreeOwner::AttachWindowRenderer() {

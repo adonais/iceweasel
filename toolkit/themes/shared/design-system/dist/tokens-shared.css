@@ -20,6 +20,14 @@
     --promo-background-color: var(--background-color-box-info);
     --table-row-background-color: var(--background-color-canvas);
 
+    /** Badge **/
+    --badge-background-color: transparent;
+    --badge-background-color-filled: light-dark(var(--color-green-70), var(--color-green-40));
+    --badge-border-color: var(--border-color);
+    --badge-border-color-filled: light-dark(rgba(251, 251, 254, 0.4), rgba(21, 20, 26, 0.4));
+    --badge-text-color: var(--text-color);
+    --badge-text-color-filled: light-dark(var(--color-white), var(--color-gray-100));
+
     /** Border **/
     --border-color-card: color-mix(in srgb, currentColor 10%, transparent);
     --border-color-interactive-hover: var(--border-color-interactive);
@@ -60,6 +68,10 @@
     --button-background-color-ghost-active: var(--button-background-color-active);
     --button-background-color-ghost-disabled: var(--button-background-color-ghost);
     --button-background-color-ghost-selected: var(--button-background-color-ghost-active);
+    --button-background-color-menu: var(--button-background-color-ghost);
+    --button-background-color-menu-hover: var(--button-background-color-ghost-hover);
+    --button-background-color-menu-active: var(--button-background-color-ghost-active);
+    --button-background-color-menu-disabled: var(--button-background-color-ghost-disabled);
     --button-background-color-primary: var(--color-accent-primary);
     --button-background-color-primary-hover: var(--color-accent-primary-hover);
     --button-background-color-primary-active: var(--color-accent-primary-active);
@@ -113,6 +125,10 @@
     --button-text-color-ghost-active: inherit;
     --button-text-color-ghost-disabled: inherit;
     --button-text-color-ghost-selected: var(--button-text-color-ghost-active);
+    --button-text-color-menu: var(--button-text-color-ghost);
+    --button-text-color-menu-hover: var(--button-text-color-ghost-hover);
+    --button-text-color-menu-active: var(--button-text-color-ghost-active);
+    --button-text-color-menu-disabled: var(--button-text-color-ghost-disabled);
     --button-text-color-primary-hover: var(--button-text-color-primary);
     --button-text-color-primary-active: var(--button-text-color-primary-hover);
     --button-text-color-primary-disabled: var(--button-text-color-primary);
@@ -262,6 +278,41 @@
     --color-yellow-100: oklch(27% 0.13 90);
     --color-yellow-110: oklch(20% 0.08 90);
 
+    /** Dimension **/
+    --dimension-2: 2px;
+    --dimension-4: 4px;
+    --dimension-8: 8px;
+    --dimension-12: 12px;
+    --dimension-16: 16px;
+    --dimension-20: 20px;
+    --dimension-24: 24px;
+    --dimension-32: 32px;
+    --dimension-40: 40px;
+    --dimension-48: 48px;
+    --dimension-56: 56px;
+    --dimension-64: 64px;
+    --dimension-80: 80px;
+    --dimension-96: 96px;
+    --dimension-100: 100px;
+    --dimension-200: 200px;
+    --dimension-300: 300px;
+    --dimension-400: 400px;
+    --dimension-500: 500px;
+    --dimension-relative-025: 0.25rem;
+    --dimension-relative-050: 0.5rem;
+    --dimension-relative-075: 0.75rem;
+    --dimension-relative-100: 1rem;
+    --dimension-relative-125: 1.25rem;
+    --dimension-relative-0125: 0.125rem;
+    --dimension-relative-150: 1.5rem;
+    --dimension-relative-200: 2rem;
+    --dimension-relative-250: 2.5rem;
+    --dimension-relative-300: 3rem;
+    --dimension-relative-350: 3.5rem;
+    --dimension-relative-400: 4rem;
+    --dimension-relative-500: 5rem;
+    --dimension-relative-600: 6rem;
+
     /** Focus Outline **/
     --focus-outline: var(--focus-outline-width) solid var(--focus-outline-color);
     --focus-outline-color: var(--color-accent-primary);
@@ -287,11 +338,11 @@
     --icon-color-success: light-dark(var(--color-green-60), var(--color-green-20));
     --icon-color-warning: light-dark(var(--color-yellow-60), var(--color-yellow-20));
     --icon-size: var(--icon-size-small);
-    --icon-size-xsmall: var(--size-item-xsmall);
-    --icon-size-small: var(--size-item-small);
-    --icon-size-medium: 20px;
-    --icon-size-large: var(--size-item-medium);
-    --icon-size-xlarge: var(--size-item-large);
+    --icon-size-xsmall: var(--dimension-12);
+    --icon-size-small: var(--dimension-16);
+    --icon-size-medium: var(--dimension-20);
+    --icon-size-large: var(--dimension-24);
+    --icon-size-xlarge: var(--dimension-32);
 
     /** Input - Text **/
     --input-text-min-height: var(--button-min-height);
@@ -308,20 +359,38 @@
     --outline-color-error: light-dark(var(--color-red-70), var(--color-red-20));
 
     /** Size **/
-    --size-item-xsmall: 12px;
-    --size-item-small: 16px;
-    --size-item-medium: 24px;
-    --size-item-large: 32px;
-    --size-item-xlarge: 48px;
+    --size-image-xsmall: var(--dimension-40);
+    --size-image-small: var(--dimension-48);
+    --size-image-medium: var(--dimension-56);
+    --size-image-large: var(--dimension-64);
+    --size-image-xlarge: var(--dimension-80);
+    --size-image-xxlarge: var(--dimension-96);
+    --size-item-xsmall: var(--dimension-12);
+    --size-item-small: var(--dimension-16);
+    --size-item-medium: var(--dimension-24);
+    --size-item-large: var(--dimension-32);
+    --size-item-xlarge: var(--dimension-48);
+    --size-layout-xsmall: var(--dimension-100);
+    --size-layout-small: var(--dimension-200);
+    --size-layout-medium: var(--dimension-300);
+    --size-layout-large: var(--dimension-400);
+    --size-layout-xlarge: var(--dimension-500);
+    --size-sidebar: 280px;
+    --size-sidebar-narrow: 118px;
 
     /** Space **/
-    --space-xxsmall: calc(0.5 * var(--space-xsmall)); /* 2px */
-    --space-xsmall: 0.267rem; /* 4px */
-    --space-small: calc(2 * var(--space-xsmall)); /* 8px */
-    --space-medium: calc(3 * var(--space-xsmall)); /* 12px */
-    --space-large: calc(4 * var(--space-xsmall)); /* 16px */
-    --space-xlarge: calc(6 * var(--space-xsmall)); /* 24px */
-    --space-xxlarge: calc(8 * var(--space-xsmall)); /* 32px */
+    --space-xxsmall: var(--dimension-relative-0125); /* 0.125rem */
+    --space-xsmall: var(--dimension-relative-025); /* 0.25rem */
+    --space-small: var(--dimension-relative-050); /* 0.5rem */
+    --space-medium: var(--dimension-relative-075); /* 0.75rem */
+    --space-large: var(--dimension-relative-100); /* 1rem */
+    --space-xlarge: var(--dimension-relative-150); /* 1.5rem */
+    --space-xxlarge: var(--dimension-relative-200); /* 2rem */
+
+    /** Table **/
+    --table-background-color: light-dark(#f8f8fa, rgb(35, 34, 43));
+    --table-border-color: color-mix(in srgb, currentColor 41%, transparent);
+    --table-header-background-color: var(--color-accent-primary);
 
     /** Text **/
     --text-color-disabled: color-mix(in srgb, currentColor 40%, transparent);
@@ -390,6 +459,13 @@
       /** Background Color **/
       --table-row-background-color-alternate: var(--background-color-canvas); /* TODO Bug 1821203 - Gray use needs to be consolidated */
 
+      /** Badge **/
+      --badge-background-color: Canvas;
+      --badge-background-color-filled: AccentColor;
+      --badge-border-color-filled: CanvasText;
+      --badge-text-color: CanvasText;
+      --badge-text-color-filled: AccentColorText;
+
       /** Border **/
       --border-color-card: CanvasText;
       --border-color-deemphasized: ButtonText;
@@ -408,6 +484,8 @@
       --button-background-color-destructive-hover: var(--button-background-color-primary-hover);
       --button-background-color-destructive-active: var(--button-background-color-primary-active);
       --button-background-color-destructive-disabled: var(--button-background-color-primary-disabled);
+      --button-background-color-menu-hover: var(--button-background-color-primary);
+      --button-background-color-menu-active: var(--button-background-color-primary);
       --button-background-color-primary-disabled: var(--button-text-color-disabled);
       --button-border-color: var(--border-color-interactive);
       --button-border-color-hover: var(--border-color-interactive-hover);
@@ -431,6 +509,8 @@
       --button-text-color-destructive-disabled: var(--button-text-color-primary-disabled);
       --button-text-color-ghost-hover: var(--button-text-color-hover);
       --button-text-color-ghost-active: var(--button-text-color-active);
+      --button-text-color-menu-hover: var(--button-text-color-primary);
+      --button-text-color-menu-active: var(--button-text-color-primary);
       --button-text-color-primary: ButtonFace;
       --button-text-color-primary-hover: SelectedItemText;
 
@@ -448,6 +528,12 @@
       --link-color-hover: LinkText;
       --link-color-active: ActiveText;
       --link-color-visited: var(--link-color);
+
+      /** Table **/
+      --table-background-color: Canvas;
+      --table-border-color: CanvasText;
+      --table-header-background-color: AccentColor;
+      --table-header-text-color: AccentColorText;
 
       /** Text **/
       --text-color-disabled: GrayText;

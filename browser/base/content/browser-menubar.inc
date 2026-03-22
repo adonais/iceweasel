@@ -154,7 +154,7 @@
                     <menuitem id="toggle_zoom"
                               type="checkbox"
                               command="cmd_fullZoomToggle"
-                              checked="false" data-l10n-id="menu-view-full-zoom-toggle"/>
+                              data-l10n-id="menu-view-full-zoom-toggle"/>
                   </menupopup>
                 </menu>
                 <menu id="pageStyleMenu" data-l10n-id="menu-view-page-style-menu">

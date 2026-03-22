@@ -94,6 +94,7 @@
 ^tools/browsertime/node_modules/
 ^tools/lint/eslint/eslint-plugin-mozilla/node_modules/
 ^tools/lint/stylelint/stylelint-plugin-mozilla/node_modules/
+^tools/terser/node_modules/
 ^browser/components/asrouter/node_modules/
 ^browser/components/aboutwelcome/node_modules/
 ^browser/extensions/newtab/node_modules/
@@ -193,7 +194,6 @@ _OPT\.OBJ/
 ^remote/test/puppeteer/experimental/
 ^remote/test/puppeteer/lib/
 ^remote/test/puppeteer/node_modules/
-^remote/test/puppeteer/package-lock\.json
 ^remote/test/puppeteer/packages/browsers/src/generated
 ^remote/test/puppeteer/packages/ng-schematics/test/build
 ^remote/test/puppeteer/packages/puppeteer/.*/README\.md
@@ -237,7 +237,6 @@ _OPT\.OBJ/
 ^mobile/android/.*/build
 ^mobile/android/.*/.kotlin
 ^mobile/android/.*/bin
-^mobile/android/.*/generated
 
 # app-services build artifacts.
 services/app-services/tools/nimbus-gradle-plugin/.gradle
@@ -322,6 +321,9 @@ tps_result\.json$
 \.vs/
 \.vscode/
 \.user$
+
+# Ignore Zed editor configuration files.
+\.zed/
 
 # Thunderbird source tree
 ^comm/

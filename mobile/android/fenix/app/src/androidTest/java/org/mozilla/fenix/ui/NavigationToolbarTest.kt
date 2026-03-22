@@ -14,7 +14,6 @@ import androidx.core.net.toUri
 import androidx.test.espresso.Espresso
 import androidx.test.filters.SdkSuppress
 import androidx.test.rule.ActivityTestRule
-import mozilla.components.concept.engine.utils.EngineReleaseChannel
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.After
 import org.junit.Assume
@@ -22,16 +21,13 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.FenixApplication
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
-import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.AppAndSystemHelper.enableOrDisableBackGestureNavigationOnDevice
 import org.mozilla.fenix.helpers.AppAndSystemHelper.grantSystemPermission
-import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithCondition
 import org.mozilla.fenix.helpers.AppAndSystemHelper.verifyKeyboardVisibility
 import org.mozilla.fenix.helpers.DataGenerationHelper.createCustomTabIntent
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
@@ -44,7 +40,6 @@ import org.mozilla.fenix.helpers.MockBrowserDataHelper.setCustomSearchEngine
 import org.mozilla.fenix.helpers.SearchDispatcher
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.htmlControlsFormAsset
-import org.mozilla.fenix.helpers.TestAssetHelper.loremIpsumAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
@@ -54,7 +49,6 @@ import org.mozilla.fenix.helpers.TestHelper.verifyLightThemeApplied
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.nimbus.FxNimbus
-import org.mozilla.fenix.ui.robots.checkTextSizeOnWebsite
 import org.mozilla.fenix.ui.robots.clickContextMenuItem
 import org.mozilla.fenix.ui.robots.customTabScreen
 import org.mozilla.fenix.ui.robots.homeScreen
@@ -145,23 +139,18 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifySecurePageSecuritySubMenuTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val defaultWebPage = "https://mozilla-mobile.github.io/testapp/loginForm"
-            val defaultWebPageTitle = "Login_form"
+        val defaultWebPage = "https://mozilla-mobile.github.io/testapp/loginForm"
+        val defaultWebPageTitle = "Login_form"
 
-            navigationToolbar(composeTestRule) {
-            }.enterURLAndEnterToBrowser(
-                defaultWebPage.toUri(),
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(
+            defaultWebPage.toUri(),
             ) {
-                verifyPageContent("Login Form")
-            }.openSiteSecuritySheet {
-                verifyQuickActionSheet(defaultWebPage, true)
-                openSecureConnectionSubMenu(true)
-                verifySecureConnectionSubMenu(defaultWebPageTitle, defaultWebPage, true)
-            }
+            verifyPageContent("Login Form")
+        }.openSiteSecuritySheet {
+            verifyQuickActionSheet(defaultWebPage, true)
+            openSecureConnectionSubMenu(true)
+            verifySecureConnectionSubMenu(defaultWebPageTitle, defaultWebPage, true)
         }
     }
 
@@ -169,24 +158,19 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyInsecurePageSecuritySubMenuTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val defaultWebPage = mockWebServer.getGenericAsset(1)
+        val defaultWebPage = mockWebServer.getGenericAsset(1)
 
-            navigationToolbar(composeTestRule) {
-            }.enterURLAndEnterToBrowser(defaultWebPage.url) {
-                verifyPageContent(defaultWebPage.content)
-            }.openSiteSecuritySheet {
-                verifyQuickActionSheet(defaultWebPage.url.toString(), false)
-                openSecureConnectionSubMenu(false)
-                verifySecureConnectionSubMenu(
-                    defaultWebPage.title,
-                    defaultWebPage.url.toString(),
-                    false,
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(defaultWebPage.url) {
+            verifyPageContent(defaultWebPage.content)
+        }.openSiteSecuritySheet {
+            verifyQuickActionSheet(defaultWebPage.url.toString(), false)
+            openSecureConnectionSubMenu(false)
+            verifySecureConnectionSubMenu(
+                defaultWebPage.title,
+                defaultWebPage.url.toString(),
+                false,
                 )
-            }
         }
     }
 
@@ -195,20 +179,15 @@ class NavigationToolbarTest : TestSetup() {
     @Test
     @SkipLeaks
     fun verifyClearCookiesFromQuickSettingsTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val loginPage = "https://mozilla-mobile.github.io/testapp/loginForm"
-            val originWebsite = "mozilla-mobile.github.io"
+        val loginPage = "https://mozilla-mobile.github.io/testapp/loginForm"
+        val originWebsite = "mozilla-mobile.github.io"
 
-            navigationToolbar(composeTestRule) {
-            }.enterURLAndEnterToBrowser(loginPage.toUri()) {
-                waitForPageToLoad(waitingTimeLong)
-            }.openSiteSecuritySheet {
-                clickQuickActionSheetClearSiteData()
-                verifyClearSiteDataPrompt(originWebsite)
-            }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(loginPage.toUri()) {
+            waitForPageToLoad(waitingTimeLong)
+        }.openSiteSecuritySheet {
+            clickQuickActionSheetClearSiteData()
+            verifyClearSiteDataPrompt(originWebsite)
         }
     }
 
@@ -216,30 +195,25 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifySearchForBookmarkedItemsTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val firstWebPage = mockWebServer.getGenericAsset(1)
-            val secondWebPage = mockWebServer.htmlControlsFormAsset
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.htmlControlsFormAsset
 
-            val newFolder = generateBookmarkFolder(title = bookmarkFolderName, position = null)
-            createBookmarkItem(firstWebPage.url.toString(), firstWebPage.title, null, newFolder)
-            createBookmarkItem(secondWebPage.url.toString(), secondWebPage.title, null)
+        val newFolder = generateBookmarkFolder(title = bookmarkFolderName, position = null)
+        createBookmarkItem(firstWebPage.url.toString(), firstWebPage.title, null, newFolder)
+        createBookmarkItem(secondWebPage.url.toString(), secondWebPage.title, null)
 
-            homeScreen(composeTestRule) {
-            }.openThreeDotMenu {
-            }.clickBookmarksButton {
-            }.clickSearchButton {
-                // Search for a valid term
-                typeSearch(firstWebPage.title)
-                verifySearchSuggestionsAreDisplayed(firstWebPage.url.toString())
-                verifySuggestionsAreNotDisplayed(secondWebPage.url.toString())
-                // Search for invalid term
-                typeSearch("Android")
-                verifySuggestionsAreNotDisplayed(firstWebPage.url.toString())
-                verifySuggestionsAreNotDisplayed(secondWebPage.url.toString())
-            }
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickBookmarksButton {
+        }.clickSearchButton {
+            // Search for a valid term
+            typeSearch(firstWebPage.title)
+            verifySearchSuggestionsAreDisplayed(firstWebPage.url.toString())
+            verifySuggestionsAreNotDisplayed(secondWebPage.url.toString())
+            // Search for invalid term
+            typeSearch("Android")
+            verifySuggestionsAreNotDisplayed(firstWebPage.url.toString())
+            verifySuggestionsAreNotDisplayed(secondWebPage.url.toString())
         }
     }
 
@@ -247,25 +221,20 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyTheCustomTabsMainMenuItemsTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val customMenuItem = "TestMenuItem"
-            val customTabPage = mockWebServer.getGenericAsset(1)
+        val customMenuItem = "TestMenuItem"
+        val customTabPage = mockWebServer.getGenericAsset(1)
 
-            intentReceiverActivityTestRule.launchActivity(
-                createCustomTabIntent(
-                    customTabPage.url.toString(),
-                    customMenuItem,
+        intentReceiverActivityTestRule.launchActivity(
+            createCustomTabIntent(
+                customTabPage.url.toString(),
+                customMenuItem,
                 ),
             )
 
-            customTabScreen(composeTestRule) {
-                verifyCustomTabCloseButton()
-            }.openMainMenu {
-                verifyCustomTabsMainMenuItems(customMenuItem, true)
-            }
+        customTabScreen(composeTestRule) {
+            verifyCustomTabCloseButton()
+        }.openMainMenu {
+            verifyCustomTabsMainMenuItems(customMenuItem, true)
         }
     }
 
@@ -274,33 +243,28 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyShowSearchSuggestionsToggleTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                // The Google related suggestions aren't always displayed on cold run
-                // Bugzilla ticket: https://bugzilla.mozilla.org/show_bug.cgi?id=1813587
-                clickSearchSelectorButton()
-                selectTemporarySearchMethod("DuckDuckGo")
-                typeSearch("mozilla ")
-                verifySearchSuggestionsAreDisplayed("mozilla firefox")
-            }.dismissSearchBar {
-            }.openThreeDotMenu {
-            }.clickSettingsButton {
-            }.openSearchSubMenu {
-                toggleShowSearchSuggestions()
-            }.goBack {
-            }.goBack(composeTestRule) {
-            }.openSearch {
-                // The Google related suggestions aren't always displayed on cold run
-                // Bugzilla ticket: https://bugzilla.mozilla.org/show_bug.cgi?id=1813587
-                clickSearchSelectorButton()
-                selectTemporarySearchMethod("DuckDuckGo")
-                typeSearch("mozilla")
-                verifySuggestionsAreNotDisplayed()
-            }
+        homeScreen(composeTestRule) {
+        }.openSearch {
+            // The Google related suggestions aren't always displayed on cold run
+            // Bugzilla ticket: https://bugzilla.mozilla.org/show_bug.cgi?id=1813587
+            clickSearchSelectorButton()
+            selectTemporarySearchMethod("DuckDuckGo")
+            typeSearch("mozilla ")
+            verifySearchSuggestionsAreDisplayed("mozilla firefox")
+        }.dismissSearchBar {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openSearchSubMenu {
+            toggleShowSearchSuggestions()
+        }.goBack {
+        }.goBack(composeTestRule) {
+        }.openSearch {
+            // The Google related suggestions aren't always displayed on cold run
+            // Bugzilla ticket: https://bugzilla.mozilla.org/show_bug.cgi?id=1813587
+            clickSearchSelectorButton()
+            selectTemporarySearchMethod("DuckDuckGo")
+            typeSearch("mozilla")
+            verifySuggestionsAreNotDisplayed()
         }
     }
 
@@ -308,23 +272,18 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyTheDefaultSearchEngineCanBeChangedTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            // Goes through the settings and changes the default search engine, then verifies it has changed.
-            defaultSearchEngineList.forEach {
-                homeScreen(composeTestRule) {
-                }.openThreeDotMenu {
-                }.clickSettingsButton {
-                }.openSearchSubMenu {
-                    openDefaultSearchEngineMenu()
-                    changeDefaultSearchEngine(it)
-                    exitMenu()
-                }
-                searchScreen(composeTestRule) {
-                    verifySearchEngineIcon(name = it)
-                }
+        // Goes through the settings and changes the default search engine, then verifies it has changed.
+        defaultSearchEngineList.forEach {
+            homeScreen(composeTestRule) {
+            }.openThreeDotMenu {
+            }.clickSettingsButton {
+            }.openSearchSubMenu {
+                openDefaultSearchEngineMenu()
+                changeDefaultSearchEngine(it)
+                exitMenu()
+            }
+            searchScreen(composeTestRule) {
+                verifySearchEngineIcon(name = it)
             }
         }
     }
@@ -333,20 +292,15 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun scanQRCodeToOpenAWebpageTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val cameraManager =
-                TestHelper.appContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-            Assume.assumeTrue(cameraManager.cameraIdList.isNotEmpty())
+        val cameraManager =
+            TestHelper.appContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        Assume.assumeTrue(cameraManager.cameraIdList.isNotEmpty())
 
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                clickScanButton()
-                grantSystemPermission()
-                verifyScannerOpen()
-            }
+        homeScreen(composeTestRule) {
+        }.openSearch {
+            clickScanButton()
+            grantSystemPermission()
+            verifyScannerOpen()
         }
     }
 
@@ -354,34 +308,29 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun verifyHistorySearchWithBrowsingHistoryTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val firstPageUrl = searchMockServer.getGenericAsset(1)
-            val secondPageUrl = searchMockServer.getGenericAsset(2)
+        val firstPageUrl = searchMockServer.getGenericAsset(1)
+        val secondPageUrl = searchMockServer.getGenericAsset(2)
 
-            createHistoryItem(firstPageUrl.url.toString())
-            createHistoryItem(secondPageUrl.url.toString())
+        createHistoryItem(firstPageUrl.url.toString())
+        createHistoryItem(secondPageUrl.url.toString())
 
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                clickSearchSelectorButton()
-                selectTemporarySearchMethod(searchEngineName = "History")
-                typeSearch(searchTerm = "Mozilla")
-                verifySuggestionsAreNotDisplayed("Mozilla")
-                clickClearButton()
-                typeSearch(searchTerm = "generic")
-                // verifyTypedToolbarText("generic", exists = true)
-                verifySearchSuggestionsAreDisplayed(
-                    searchSuggestions = arrayOf(
-                        firstPageUrl.url.toString(),
-                        secondPageUrl.url.toString(),
+        homeScreen(composeTestRule) {
+        }.openSearch {
+            clickSearchSelectorButton()
+            selectTemporarySearchMethod(searchEngineName = "History")
+            typeSearch(searchTerm = "Mozilla")
+            verifySuggestionsAreNotDisplayed("Mozilla")
+            clickClearButton()
+            typeSearch(searchTerm = "generic")
+            // verifyTypedToolbarText("generic", exists = true)
+            verifySearchSuggestionsAreDisplayed(
+                searchSuggestions = arrayOf(
+                    firstPageUrl.url.toString(),
+                    secondPageUrl.url.toString(),
                     ),
                 )
-            }.clickSearchSuggestion(firstPageUrl.url.toString()) {
-                verifyUrl(firstPageUrl.url.toString())
-            }
+        }.clickSearchSuggestion(firstPageUrl.url.toString()) {
+            verifyUrl(firstPageUrl.url.toString())
         }
     }
 
@@ -390,21 +339,16 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun searchEnginesCanBeChangedTemporarilyFromSearchSelectorMenuTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            (generalEnginesList + topicEnginesList).forEach {
-                homeScreen(composeTestRule) {
-                }.openSearch {
-                    clickSearchSelectorButton()
-                    verifySearchShortcutList(it, isSearchEngineDisplayed = true)
-                    selectTemporarySearchMethod(it)
-                    verifySearchEngineIcon(it)
-                }.submitQuery("mozilla ") {
-                    verifyUrl("mozilla")
-                }.goToHomescreen {
-                }
+        (generalEnginesList + topicEnginesList).forEach {
+            homeScreen(composeTestRule) {
+            }.openSearch {
+                clickSearchSelectorButton()
+                verifySearchShortcutList(it, isSearchEngineDisplayed = true)
+                selectTemporarySearchMethod(it)
+                verifySearchEngineIcon(it)
+            }.submitQuery("mozilla ") {
+                verifyUrl("mozilla")
+            }.goToHomescreen {
             }
         }
     }
@@ -413,83 +357,74 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun searchHistoryNotRememberedInPrivateBrowsingTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            TestHelper.appContext.settings().shouldShowSearchSuggestionsInPrivate = true
+        TestHelper.appContext.settings().shouldShowSearchSuggestionsInPrivate = true
 
-            val firstPageUrl = searchMockServer.getGenericAsset(1)
-            val searchEngineName = "TestSearchEngine"
+        val firstPageUrl = searchMockServer.getGenericAsset(1)
+        val searchEngineName = "TestSearchEngine"
 
-            setCustomSearchEngine(searchMockServer, searchEngineName)
-            createBookmarkItem(firstPageUrl.url.toString(), firstPageUrl.title, 1u)
+        setCustomSearchEngine(searchMockServer, searchEngineName)
+        createBookmarkItem(firstPageUrl.url.toString(), firstPageUrl.title, 1u)
 
-            homeScreen(composeTestRule) {
-            }.openSearch {
-            }.submitQuery("test page 1") {
-            }.goToHomescreen {
-                togglePrivateBrowsingModeOnOff()
-            }.openSearch {
-            }.submitQuery("test page 2") {
-            }.openSearch {
-                typeSearch(searchTerm = "test page")
-                verifyTheSuggestionsHeader(firefoxSuggestHeader)
-                verifyTheSuggestionsHeader("TestSearchEngine search")
-                verifySearchSuggestionsAreDisplayed(
-                    searchSuggestions = arrayOf(
-                        "test page 1",
-                        firstPageUrl.url.toString(),
+        homeScreen(composeTestRule) {
+        }.openSearch {
+        }.submitQuery("test page 1") {
+        }.goToHomescreen {
+            togglePrivateBrowsingModeOnOff()
+        }.openSearch {
+        }.submitQuery("test page 2") {
+        }.openSearch {
+            typeSearch(searchTerm = "test page")
+            verifyTheSuggestionsHeader(firefoxSuggestHeader)
+            verifyTheSuggestionsHeader("TestSearchEngine search")
+            verifySearchSuggestionsAreDisplayed(
+                searchSuggestions = arrayOf(
+                    "test page 1",
+                    firstPageUrl.url.toString(),
                     ),
                 )
                 // 2 search engine suggestions and 2 browser suggestions (1 history, 1 bookmark)
-                verifySearchSuggestionsCount(
-                    numberOfSuggestions = 4,
-                    searchTerm = "test page",
+            verifySearchSuggestionsCount(
+                numberOfSuggestions = 4,
+                searchTerm = "test page",
                 )
-                verifySuggestionsAreNotDisplayed(
+            verifySuggestionsAreNotDisplayed(
                     searchSuggestions = arrayOf(
                         "test page 2",
                     ),
                 )
-            }
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135012
+    @Ignore("Failing: https://bugzilla.mozilla.org/show_bug.cgi?id=2014561")
     @SmokeTest
     @Test
     fun searchResultsOpenedInNewTabsGenerateSearchGroupsTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val firstPageUrl = searchMockServer.getGenericAsset(1).url
-            val secondPageUrl = searchMockServer.getGenericAsset(2).url
-            val searchEngineName = "TestSearchEngine"
-            // setting our custom mockWebServer search URL
-            setCustomSearchEngine(searchMockServer, searchEngineName)
+        val firstPageUrl = searchMockServer.getGenericAsset(1).url
+        val secondPageUrl = searchMockServer.getGenericAsset(2).url
+        val searchEngineName = "TestSearchEngine"
+        // setting our custom mockWebServer search URL
+        setCustomSearchEngine(searchMockServer, searchEngineName)
 
-            // Performs a search and opens 2 dummy search results links to create a search group
-            homeScreen(composeTestRule) {
-            }.openSearch {
-            }.submitQuery(queryString) {
-                longClickPageObject(composeTestRule, itemWithText("Link 1"))
-                clickContextMenuItem("Open link in new tab")
-                clickSnackbarButton(composeTestRule, "SWITCH")
-                verifyUrl(firstPageUrl.toString())
-                Espresso.pressBack()
-                longClickPageObject(composeTestRule, itemWithText("Link 2"))
-                clickContextMenuItem("Open link in new tab")
-                clickSnackbarButton(composeTestRule, "SWITCH")
-                verifyUrl(secondPageUrl.toString())
-            }.goToHomescreen {
-                verifyRecentlyVisitedSearchGroupDisplayed(
-                    shouldBeDisplayed = true,
-                    searchTerm = queryString,
-                    groupSize = 3,
+        // Performs a search and opens 2 dummy search results links to create a search group
+        homeScreen(composeTestRule) {
+        }.openSearch {
+        }.submitQuery(queryString) {
+            longClickPageObject(composeTestRule, itemWithText("Link 1"))
+            clickContextMenuItem("Open link in new tab")
+            clickSnackbarButton(composeTestRule, "SWITCH")
+            verifyUrl(firstPageUrl.toString())
+            Espresso.pressBack()
+            longClickPageObject(composeTestRule, itemWithText("Link 2"))
+            clickContextMenuItem("Open link in new tab")
+            clickSnackbarButton(composeTestRule, "SWITCH")
+            verifyUrl(secondPageUrl.toString())
+        }.goToHomescreen {
+            verifyRecentlyVisitedSearchGroupDisplayed(
+                shouldBeDisplayed = true,
+                searchTerm = queryString,
+                groupSize = 3,
                 )
-            }
         }
     }
 
@@ -497,38 +432,33 @@ class NavigationToolbarTest : TestSetup() {
     @SmokeTest
     @Test
     fun searchGroupIsNotGeneratedForLinksOpenedInPrivateTabsTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            // setting our custom mockWebServer search URL
-            val searchEngineName = "TestSearchEngine"
-            setCustomSearchEngine(searchMockServer, searchEngineName)
+        // setting our custom mockWebServer search URL
+        val searchEngineName = "TestSearchEngine"
+        setCustomSearchEngine(searchMockServer, searchEngineName)
 
-            // Performs a search and opens 2 dummy search results links to create a search group
-            homeScreen(composeTestRule) {
-            }.openSearch {
-            }.submitQuery(queryString) {
-                longClickPageObject(composeTestRule, itemWithText("Link 1"))
-                clickContextMenuItem("Open link in private tab")
-                longClickPageObject(composeTestRule, itemWithText("Link 2"))
-                clickContextMenuItem("Open link in private tab")
-            }.openTabDrawer(composeTestRule) {
-            }.toggleToPrivateTabs {
-            }.openPrivateTab(0) {
-            }.openTabDrawer(composeTestRule) {
-            }.openPrivateTab(1) {
-            }.goToHomescreen(isPrivateModeEnabled = true) {
-                togglePrivateBrowsingModeOnOff()
-                verifyRecentlyVisitedSearchGroupDisplayed(
-                    shouldBeDisplayed = false,
-                    searchTerm = queryString,
-                    groupSize = 3,
+        // Performs a search and opens 2 dummy search results links to create a search group
+        homeScreen(composeTestRule) {
+        }.openSearch {
+        }.submitQuery(queryString) {
+            longClickPageObject(composeTestRule, itemWithText("Link 1"))
+            clickContextMenuItem("Open link in private tab")
+            longClickPageObject(composeTestRule, itemWithText("Link 2"))
+            clickContextMenuItem("Open link in private tab")
+        }.openTabDrawer(composeTestRule) {
+        }.toggleToPrivateTabs {
+        }.openPrivateTab(0) {
+        }.openTabDrawer(composeTestRule) {
+        }.openPrivateTab(1) {
+        }.goToHomescreen(isPrivateModeEnabled = true) {
+            togglePrivateBrowsingModeOnOff()
+            verifyRecentlyVisitedSearchGroupDisplayed(
+                shouldBeDisplayed = false,
+                searchTerm = queryString,
+                groupSize = 3,
                 )
-            }.openThreeDotMenu {
-            }.clickHistoryButton {
-                verifyHistoryItemExists(shouldExist = false, item = "3 sites")
-            }
+        }.openThreeDotMenu {
+        }.clickHistoryButton {
+            verifyHistoryItemExists(shouldExist = false, item = "3 sites")
         }
     }
 
@@ -538,132 +468,112 @@ class NavigationToolbarTest : TestSetup() {
     @Test
     @SkipLeaks
     fun swipeToSwitchTabTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val firstWebPage = mockWebServer.getGenericAsset(1)
-            val secondWebPage = mockWebServer.getGenericAsset(2)
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.getGenericAsset(2)
 
-            // Disable the back gesture from the edge of the screen on the device.
-            enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
+        // Disable the back gesture from the edge of the screen on the device.
+        enableOrDisableBackGestureNavigationOnDevice(backGestureNavigationEnabled = false)
 
-            navigationToolbar(composeTestRule) {
-            }.enterURLAndEnterToBrowser(firstWebPage.url) {
-            }.openTabDrawer(composeTestRule) {
-            }.openNewTab {
-            }.submitQuery(secondWebPage.url.toString()) {
-                swipeNavBarRight(secondWebPage.url.toString())
-                verifyUrl(firstWebPage.url.toString())
-                swipeNavBarLeft(firstWebPage.url.toString())
-                verifyUrl(secondWebPage.url.toString())
-            }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstWebPage.url) {
+        }.openTabDrawer(composeTestRule) {
+        }.openNewTab {
+        }.submitQuery(secondWebPage.url.toString()) {
+            swipeNavBarRight(secondWebPage.url.toString())
+            verifyUrl(firstWebPage.url.toString())
+            swipeNavBarLeft(firstWebPage.url.toString())
+            verifyUrl(secondWebPage.url.toString())
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135000
     @Test
     fun changeThemeOfTheAppTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            homeScreen(composeTestRule) {
-            }.openThreeDotMenu {
-            }.clickSettingsButton {
-            }.openCustomizeSubMenu {
-                verifyThemes()
-                selectDarkMode()
-                verifyDarkThemeApplied(getUiTheme())
-                selectLightMode()
-                verifyLightThemeApplied(getUiTheme())
-            }
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            verifyThemes()
+            selectDarkMode()
+            verifyDarkThemeApplied(getUiTheme())
+            selectLightMode()
+            verifyLightThemeApplied(getUiTheme())
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135001
     @Test
     fun setToolbarPositionTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            homeScreen(composeTestRule) {
-            }.openThreeDotMenu {
-            }.clickSettingsButton {
-            }.openCustomizeSubMenu {
-                verifyAddressBarPositionPreference("Top")
-                clickBottomToolbarToggle()
-                verifyAddressBarPositionPreference("Bottom")
-            }.goBack {
-            }.goBack(composeTestRule) {
-                verifyToolbarPosition(bottomPosition = true)
-            }.openThreeDotMenu {
-            }.clickSettingsButton {
-            }.openCustomizeSubMenu {
-                clickTopToolbarToggle()
-                verifyAddressBarPositionPreference("Top")
-                exitMenu()
-            }
-            homeScreen(composeTestRule) {
-                verifyToolbarPosition(bottomPosition = false)
-            }
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            verifyAddressBarPositionPreference("Top")
+            clickBottomToolbarToggle()
+            verifyAddressBarPositionPreference("Bottom")
+        }.goBack {
+        }.goBack(composeTestRule) {
+            verifyToolbarPosition(bottomPosition = true)
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            clickTopToolbarToggle()
+            verifyAddressBarPositionPreference("Top")
+            exitMenu()
+        }
+        homeScreen(composeTestRule) {
+            verifyToolbarPosition(bottomPosition = false)
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135099
     @Test
     fun verifyEnabledUrlAutocompleteToggleTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            // Currently part of an experiment https://bugzilla.mozilla.org/show_bug.cgi?id=1842106
-            // Check if "Top domain" suggestions for the address bar's autocomplete are enabled
-            if (FxNimbus.features.suggestShippedDomains.value().enabled) {
-                // If true it will use the hardcoded list of "top domain" suggestions for the address bar's autocomplete suggestions
-                homeScreen(composeTestRule) {
-                }.openSearch {
-                    typeSearch("mo")
-                    verifyTypedToolbarText("monster.com", exists = true)
-                    typeSearch("moz")
-                    verifyTypedToolbarText("mozilla.org", exists = true)
-                }
-            } else {
-                // The suggestions for the address bar's autocomplete will take use of the user's local browsing history and bookmarks
-                createHistoryItem("https://github.com/mozilla-mobile/fenix")
-                createBookmarkItem(
-                    "https://github.com/mozilla-mobile/focus-android",
-                    "focus-android",
-                    1u,
+        // Currently part of an experiment https://bugzilla.mozilla.org/show_bug.cgi?id=1842106
+        // Check if "Top domain" suggestions for the address bar's autocomplete are enabled
+        if (FxNimbus.features.suggestShippedDomains.value().enabled) {
+            // If true it will use the hardcoded list of "top domain" suggestions for the address bar's autocomplete suggestions
+            homeScreen(composeTestRule) {
+            }.openSearch {
+                typeSearch("mo")
+                verifyTypedToolbarText("monster.com", exists = true)
+                typeSearch("moz")
+                verifyTypedToolbarText("mozilla.org", exists = true)
+            }
+        } else {
+            // The suggestions for the address bar's autocomplete will take use of the user's local browsing history and bookmarks
+            createHistoryItem("https://github.com/mozilla-mobile/fenix")
+            createBookmarkItem(
+                "https://github.com/mozilla-mobile/focus-android",
+                "focus-android",
+                1u,
                 )
 
-                homeScreen(composeTestRule) {
-                }.openSearch {
-                    typeSearch("moz")
-                    // "Top domain" suggestions from the address bar's autocomplete are disabled, "moz" shouldn't autocomplete to mozilla.org
-                    verifyTypedToolbarText("mozilla.org", exists = false)
-                    // The address bar's autocomplete should take use of the browsing history
-                    // Autocomplete with the history items url
-                    typeSearch("github.com/mozilla-mobile/f")
-                    verifyTypedToolbarText(
-                        "github.com/mozilla-mobile/fenix",
-                        exists = true,
+            homeScreen(composeTestRule) {
+            }.openSearch {
+                typeSearch("moz")
+                // "Top domain" suggestions from the address bar's autocomplete are disabled, "moz" shouldn't autocomplete to mozilla.org
+                verifyTypedToolbarText("mozilla.org", exists = false)
+                // The address bar's autocomplete should take use of the browsing history
+                // Autocomplete with the history items url
+                typeSearch("github.com/mozilla-mobile/f")
+                verifyTypedToolbarText(
+                    "github.com/mozilla-mobile/fenix",
+                    exists = true,
                     )
-                    // The address bar's autocomplete should also take use of the saved bookmarks
-                    // Autocomplete with the bookmarked items url
-                    typeSearch("github.com/mozilla-mobile/fo")
-                    verifyTypedToolbarText(
-                        "github.com/mozilla-mobile/focus-android",
-                        exists = true,
+                // The address bar's autocomplete should also take use of the saved bookmarks
+                // Autocomplete with the bookmarked items url
+                typeSearch("github.com/mozilla-mobile/fo")
+                verifyTypedToolbarText(
+                    "github.com/mozilla-mobile/focus-android",
+                    exists = true,
                     )
-                    // It should not autocomplete with links that are not part of browsing history or bookmarks
-                    typeSearch("github.com/mozilla-mobile/fi")
-                    verifyTypedToolbarText(
-                        "github.com/mozilla-mobile/firefox-android",
-                        exists = false,
+                // It should not autocomplete with links that are not part of browsing history or bookmarks
+                typeSearch("github.com/mozilla-mobile/fi")
+                verifyTypedToolbarText(
+                    "github.com/mozilla-mobile/firefox-android",
+                    exists = false,
                     )
-                }
             }
         }
     }
@@ -671,63 +581,53 @@ class NavigationToolbarTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135102
     @Test
     fun disableSearchBrowsingHistorySuggestionsToggleTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val websiteURL = mockWebServer.getGenericAsset(1).url.toString()
+        val websiteURL = mockWebServer.getGenericAsset(1).url.toString()
 
-            createHistoryItem(websiteURL)
+        createHistoryItem(websiteURL)
 
-            homeScreen(composeTestRule) {
-            }.openThreeDotMenu {
-            }.clickSettingsButton {
-            }.openSearchSubMenu {
-                switchSearchHistoryToggle()
-                exitMenu()
-            }
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openSearchSubMenu {
+            switchSearchHistoryToggle()
+            exitMenu()
+        }
 
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                typeSearch("test")
-                verifySuggestionsAreNotDisplayed(
-                    "Firefox Suggest",
-                    websiteURL,
+        homeScreen(composeTestRule) {
+        }.openSearch {
+            typeSearch("test")
+            verifySuggestionsAreNotDisplayed(
+                "Firefox Suggest",
+                websiteURL,
                 )
-            }
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135103
     @Test
     fun disableSearchBookmarksToggleTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val website = mockWebServer.getGenericAsset(1)
+        val website = mockWebServer.getGenericAsset(1)
 
-            createBookmarkItem(website.url.toString(), website.title, 1u)
+        createBookmarkItem(website.url.toString(), website.title, 1u)
 
-            homeScreen(composeTestRule) {
-            }.openThreeDotMenu {
-            }.clickSettingsButton {
-            }.openSearchSubMenu {
-                switchSearchBookmarksToggle()
-                // We want to avoid confusion between history and bookmarks searches,
-                // so we'll disable this too.
-                switchSearchHistoryToggle()
-                exitMenu()
-            }
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openSearchSubMenu {
+            switchSearchBookmarksToggle()
+            // We want to avoid confusion between history and bookmarks searches,
+            // so we'll disable this too.
+            switchSearchHistoryToggle()
+            exitMenu()
+        }
 
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                typeSearch("test")
-                verifySuggestionsAreNotDisplayed(
-                    "Firefox Suggest",
-                    website.title,
+        homeScreen(composeTestRule) {
+        }.openSearch {
+            typeSearch("test")
+            verifySuggestionsAreNotDisplayed(
+                "Firefox Suggest",
+                website.title,
                 )
-            }
         }
     }
 
@@ -735,110 +635,85 @@ class NavigationToolbarTest : TestSetup() {
     @SdkSuppress(minSdkVersion = 34)
     @Test
     fun verifyShowVoiceSearchToggleTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                verifyVoiceSearchButton(isDisplayed = true)
-                startVoiceSearch()
-                closeVoiceSearchDialog()
-            }.dismissSearchBar {
-            }.openThreeDotMenu {
-            }.clickSettingsButton {
-            }.openSearchSubMenu {
-                toggleVoiceSearch()
-                exitMenu()
-            }
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                verifyVoiceSearchButton(isDisplayed = false)
-            }
+        homeScreen(composeTestRule) {
+        }.openSearch {
+            verifyVoiceSearchButton(isDisplayed = true)
+            startVoiceSearch()
+            closeVoiceSearchDialog()
+        }.dismissSearchBar {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openSearchSubMenu {
+            toggleVoiceSearch()
+            exitMenu()
+        }
+        homeScreen(composeTestRule) {
+        }.openSearch {
+            verifyVoiceSearchButton(isDisplayed = false)
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135107
     @Test
     fun doNotAllowSearchSuggestionsInPrivateBrowsingTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            homeScreen(composeTestRule) {
-                togglePrivateBrowsingModeOnOff()
-            }.openSearch {
-                typeSearch("mozilla")
-                verifyAllowSuggestionsInPrivateModeDialog()
-                denySuggestionsInPrivateMode()
-                verifySuggestionsAreNotDisplayed("mozilla firefox")
-            }
+        homeScreen(composeTestRule) {
+            togglePrivateBrowsingModeOnOff()
+        }.openSearch {
+            typeSearch("mozilla")
+            verifyAllowSuggestionsInPrivateModeDialog()
+            denySuggestionsInPrivateMode()
+            verifySuggestionsAreNotDisplayed("mozilla firefox")
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135006
     @Test
     fun verifyClearSearchButtonTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                typeSearch(queryString)
-                clickClearButton()
-                verifySearchBarPlaceholder("Search or enter address")
-            }
+        homeScreen(composeTestRule) {
+        }.openSearch {
+            typeSearch(queryString)
+            clickClearButton()
+            verifySearchBarPlaceholder("Search or enter address")
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135044
     @Test
     fun verifySearchForHistoryItemsTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val firstWebPage = mockWebServer.getGenericAsset(1)
-            val secondWebPage = mockWebServer.htmlControlsFormAsset
+        val firstWebPage = mockWebServer.getGenericAsset(1)
+        val secondWebPage = mockWebServer.htmlControlsFormAsset
 
-            navigationToolbar(composeTestRule) {
-            }.enterURLAndEnterToBrowser(firstWebPage.url) {
-            }
-            navigationToolbar(composeTestRule) {
-            }.enterURLAndEnterToBrowser(secondWebPage.url) {
-            }.openThreeDotMenu {
-            }.clickHistoryButton {
-            }.clickSearchButton {
-                // Search for a valid term
-                typeSearch(firstWebPage.title)
-                verifySearchSuggestionsAreDisplayed(firstWebPage.url.toString())
-                verifySuggestionsAreNotDisplayed(secondWebPage.url.toString())
-                clickClearButton()
-                // Search for invalid term
-                typeSearch("Android")
-                verifySuggestionsAreNotDisplayed(firstWebPage.url.toString())
-                verifySuggestionsAreNotDisplayed(secondWebPage.url.toString())
-            }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstWebPage.url) {
+        }
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(secondWebPage.url) {
+        }.openThreeDotMenu {
+        }.clickHistoryButton {
+        }.clickSearchButton {
+            // Search for a valid term
+            typeSearch(firstWebPage.title)
+            verifySearchSuggestionsAreDisplayed(firstWebPage.url.toString())
+            verifySuggestionsAreNotDisplayed(secondWebPage.url.toString())
+            clickClearButton()
+            // Search for invalid term
+            typeSearch("Android")
+            verifySuggestionsAreNotDisplayed(firstWebPage.url.toString())
+            verifySuggestionsAreNotDisplayed(secondWebPage.url.toString())
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135049
     @Test
     fun verifyHistorySearchWithoutBrowsingHistoryTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                clickSearchSelectorButton()
-                selectTemporarySearchMethod("History")
-                typeSearch(searchTerm = "Mozilla")
-                verifySuggestionsAreNotDisplayed("Mozilla")
-                clickClearButton()
-                verifySearchBarPlaceholder("Search history")
-            }
+        homeScreen(composeTestRule) {
+        }.openSearch {
+            clickSearchSelectorButton()
+            selectTemporarySearchMethod("History")
+            typeSearch(searchTerm = "Mozilla")
+            verifySuggestionsAreNotDisplayed("Mozilla")
+            clickClearButton()
+            verifySearchBarPlaceholder("Search history")
         }
     }
 
@@ -846,45 +721,35 @@ class NavigationToolbarTest : TestSetup() {
     @SdkSuppress(minSdkVersion = 34)
     @Test
     fun verifySearchBarItemsTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            navigationToolbar(composeTestRule) {
-                verifyDefaultSearchEngine("Google")
-                verifySearchBarPlaceholder()
-            }.clickURLBar {
-                verifyKeyboardVisibility(isExpectedToBeVisible = true)
-                verifyScanButton(isDisplayed = true)
-                verifyVoiceSearchButton(isDisplayed = true)
-                verifySearchBarPlaceholder("Search or enter address")
-                typeSearch("mozilla ")
-                verifyScanButton(isDisplayed = false)
-                verifyVoiceSearchButton(isDisplayed = true)
-            }
+        navigationToolbar(composeTestRule) {
+            verifyDefaultSearchEngine("Google")
+            verifySearchBarPlaceholder()
+        }.clickURLBar {
+            verifyKeyboardVisibility(isExpectedToBeVisible = true)
+            verifyScanButton(isDisplayed = true)
+            verifyVoiceSearchButton(isDisplayed = true)
+            verifySearchBarPlaceholder("Search or enter address")
+            typeSearch("mozilla ")
+            verifyScanButton(isDisplayed = false)
+            verifyVoiceSearchButton(isDisplayed = true)
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135016
     @Test
     fun verifySearchSelectorMenuItemsTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            homeScreen(composeTestRule) {
-            }.openSearch {
-                clickSearchSelectorButton()
-                verifySearchShortcutList(
-                    *generalEnginesList.toTypedArray(),
-                    *topicEnginesList.toTypedArray(),
-                    "Bookmarks",
-                    "Tabs",
-                    "History",
-                    "Search settings",
-                    isSearchEngineDisplayed = true,
+        homeScreen(composeTestRule) {
+        }.openSearch {
+            clickSearchSelectorButton()
+            verifySearchShortcutList(
+                *generalEnginesList.toTypedArray(),
+                *topicEnginesList.toTypedArray(),
+                "Bookmarks",
+                "Tabs",
+                "History",
+                "Search settings",
+                isSearchEngineDisplayed = true,
                 )
-            }
         }
     }
 
@@ -892,17 +757,12 @@ class NavigationToolbarTest : TestSetup() {
     @SdkSuppress(minSdkVersion = 34)
     @Test
     fun verifyTabsSearchItemsTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            searchScreen(composeTestRule) {
-                clickSearchSelectorButton()
-                selectTemporarySearchMethod("Tabs")
-                verifyVoiceSearchButton(isDisplayed = true)
-                verifySearchBarPlaceholder("Search tabs")
-                verifyScanButton(isDisplayed = false)
-            }
+        searchScreen(composeTestRule) {
+            clickSearchSelectorButton()
+            selectTemporarySearchMethod("Tabs")
+            verifyVoiceSearchButton(isDisplayed = true)
+            verifySearchBarPlaceholder("Search tabs")
+            verifyScanButton(isDisplayed = false)
         }
     }
 
@@ -910,48 +770,87 @@ class NavigationToolbarTest : TestSetup() {
     @SdkSuppress(minSdkVersion = 34)
     @Test
     fun verifyHistorySearchItemsTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            searchScreen(composeTestRule) {
-                clickSearchSelectorButton()
-                selectTemporarySearchMethod("History")
-                verifyVoiceSearchButton(isDisplayed = true)
-                verifySearchBarPlaceholder("Search history")
-                verifyScanButton(isDisplayed = false)
-            }
+        searchScreen(composeTestRule) {
+            clickSearchSelectorButton()
+            selectTemporarySearchMethod("History")
+            verifyVoiceSearchButton(isDisplayed = true)
+            verifySearchBarPlaceholder("Search history")
+            verifyScanButton(isDisplayed = false)
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135036
     @Test
     fun verifyCustomTabViewItemsTest() {
-        runWithCondition(
-            composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.BETA &&
-                composeTestRule.activity.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE,
-        ) {
-            val customTabPage = mockWebServer.getGenericAsset(1)
+        val customTabPage = mockWebServer.getGenericAsset(1)
 
-            intentReceiverActivityTestRule.launchActivity(
-                createCustomTabIntent(
-                    pageUrl = customTabPage.url.toString(),
-                    customActionButtonDescription = customTabActionButton,
+        intentReceiverActivityTestRule.launchActivity(
+            createCustomTabIntent(
+                pageUrl = customTabPage.url.toString(),
+                customActionButtonDescription = customTabActionButton,
                 ),
             )
 
-            customTabScreen(composeTestRule) {
-                verifyCustomTabCloseButton()
-                verifyCustomTabsSiteInfoButton()
-                verifyCustomTabToolbarTitle(customTabPage.title)
-                verifyCustomTabUrl(customTabPage.url.toString())
-                verifyCustomTabActionButton(customTabActionButton)
-                verifyMainMenuButton()
-                clickCustomTabCloseButton()
-            }
-            homeScreen(composeTestRule) {
-                verifyHomeScreenAppBarItems()
-            }
+        customTabScreen(composeTestRule) {
+            verifyCustomTabCloseButton()
+            verifyCustomTabsSiteInfoButton()
+            verifyCustomTabToolbarTitle(customTabPage.title)
+            verifyCustomTabUrl(customTabPage.url.toString())
+            verifyCustomTabActionButton(customTabActionButton)
+            verifyMainMenuButton()
+            clickCustomTabCloseButton()
+        }
+        homeScreen(composeTestRule) {
+            verifyHomeScreenAppBarItems()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135066
+    @Test
+    fun verifyTheToolbarItemsTest() {
+        navigationToolbar(composeTestRule) {
+            verifyDefaultSearchEngine("Google")
+            verifySearchBarPlaceholder()
+            verifyTheTabCounter("0")
+            verifyTheMainMenuButton()
+        }
+        homeScreen(composeTestRule) {
+        }.togglePrivateBrowsingMode()
+        navigationToolbar(composeTestRule) {
+            verifyDefaultSearchEngine("Google")
+            verifySearchBarPlaceholder()
+            verifyTheTabCounter("0", isPrivateBrowsingEnabled = true)
+            verifyTheMainMenuButton()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3135067
+    @Test
+    fun verifyTheNewTabButtonTest() {
+        val firstPage = mockWebServer.getGenericAsset(1)
+        val secondPage = mockWebServer.getGenericAsset(2)
+
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstPage.url) {
+            verifyTabCounter("1")
+        }
+        navigationToolbar(composeTestRule) {
+            verifyTheNewTabButton()
+        }.clickTheNewTabButton {
+        }.submitQuery(secondPage.url.toString()) {
+            verifyTabCounter("2")
+        }.goToHomescreen {
+        }.togglePrivateBrowsingMode()
+
+        navigationToolbar(composeTestRule) {
+        }.enterURLAndEnterToBrowser(firstPage.url) {
+            verifyTabCounter("1", isPrivateBrowsingEnabled = true)
+        }
+        navigationToolbar(composeTestRule) {
+            verifyTheNewTabButton(isPrivateModeEnabled = true)
+        }.clickTheNewTabButton(isPrivateModeEnabled = true) {
+        }.submitQuery(secondPage.url.toString()) {
+            verifyTabCounter("2", isPrivateBrowsingEnabled = true)
         }
     }
 }

@@ -757,6 +757,21 @@ CSSSize MobileViewportManager::GetIntrinsicCompositionSize() const {
   return ScreenSize(compositionSize) / intrinsicScale;
 }
 
+CSSToScreenScale MobileViewportManager::GetIntrinsicScaleForFixedViewport()
+    const {
+  const ScreenIntSize displaySize = GetLayoutDisplaySize();
+  const ScreenIntSize compositionSize = GetCompositionSize(displaySize);
+  const nsViewportInfo viewportInfo = mContext->GetViewportInfo(displaySize);
+
+  CSSSize contentSize{};
+  if (Maybe<CSSRect> scrollableRect =
+          mContext->CalculateScrollableRectForRSF()) {
+    contentSize = scrollableRect->Size();
+  }
+
+  return ComputeIntrinsicScale(viewportInfo, compositionSize, contentSize);
+}
+
 ParentLayerSize MobileViewportManager::GetCompositionSizeWithoutDynamicToolbar()
     const {
   return ViewAs<ParentLayerPixel>(

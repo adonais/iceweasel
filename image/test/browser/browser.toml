@@ -47,3 +47,6 @@ run-if = [
 ["browser_offscreen_image_in_out_of_process_iframe.js"]
 https_first_disabled = true
 support-files = ["empty.html"]
+
+["browser_remote_image_svg.js"]
+support-files = ["file_light_dark.svg"]

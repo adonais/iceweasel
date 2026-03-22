@@ -13,7 +13,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
-#include "mozilla/UniquePtr.h"
 #include "nsHashKeys.h"
 #include "nsID.h"
 #include "nsISupports.h"
@@ -76,8 +75,7 @@ class RefMessageBody final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefMessageBody)
 
-  RefMessageBody(const nsID& aPortID,
-                 UniquePtr<ipc::StructuredCloneData>&& aCloneData);
+  RefMessageBody(const nsID& aPortID, ipc::StructuredCloneData* aCloneData);
 
   const nsID& PortID() const { return mPortID; }
 
@@ -99,7 +97,7 @@ class RefMessageBody final {
   // different threads.
   Mutex mMutex MOZ_UNANNOTATED;
 
-  UniquePtr<ipc::StructuredCloneData> mCloneData;
+  RefPtr<ipc::StructuredCloneData> mCloneData;
 
   // When mCount reaches mMaxCount, this object is released by the service.
   Maybe<uint32_t> mMaxCount;

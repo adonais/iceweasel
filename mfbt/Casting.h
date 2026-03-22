@@ -143,14 +143,12 @@ inline void DiagnosticMessage(In aIn, char aDiagnostic[1024]) {
     // It's always possible to cast them to int64_t for lossless printing of the
     // value.
     auto [out, size] = fmt::format_to_n(
-        aDiagnostic, 1023,
-        FMT_STRING("Cannot cast {:x} from {} to {}: out of range"),
+        aDiagnostic, 1023, "Cannot cast {:x} from {} to {}: out of range",
         static_cast<int64_t>(aIn), TypeToString<In>(), TypeToString<Out>());
     *out = 0;
   } else {
     auto [out, size] = fmt::format_to_n(
-        aDiagnostic, 1023,
-        FMT_STRING("Cannot cast {} from {} to {}: out of range"), aIn,
+        aDiagnostic, 1023, "Cannot cast {} from {} to {}: out of range", aIn,
         TypeToString<In>(), TypeToString<Out>());
     *out = 0;
   }

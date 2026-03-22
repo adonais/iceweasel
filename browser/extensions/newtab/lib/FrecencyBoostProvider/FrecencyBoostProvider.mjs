@@ -2,17 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-// We use importESModule here instead of static import so that
-// the Karma test environment won't choke on this module. This
-// is because the Karma test environment already stubs out
-// AppConstants, and overrides importESModule to be a no-op (which
-// can't be done for a static import statement).
-
-// eslint-disable-next-line mozilla/use-static-import
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -29,20 +18,6 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
     "resource://messaging-system/lib/Logger.sys.mjs"
   );
   return new Logger("FrecencyBoostProvider");
-});
-
-ChromeUtils.defineLazyGetter(lazy, "pageFrecencyThreshold", () => {
-  // @backward-compat { version 147 }
-  // Frecency was changed in 147 Nightly.
-  if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "147.0a1") >= 0) {
-    // 30 days ago, 5 visits. The threshold avoids one non-typed visit from
-    // immediately being included in recent history to mimic the original
-    // threshold which aimed to prevent first-run visits from being included in
-    // Top Sites.
-    return lazy.PlacesUtils.history.pageFrecencyThreshold(30, 5, false);
-  }
-  // The old threshold used for classic frecency: Slightly over one visit.
-  return 101;
 });
 
 const CACHE_KEY = "frecency_boost_cache";
@@ -174,7 +149,15 @@ export class FrecencyBoostProvider {
       return [];
     }
 
-    const topsiteFrecency = lazy.pageFrecencyThreshold;
+    // 30 days ago, 5 visits. The threshold avoids one non-typed visit from
+    // immediately being included in recent history to mimic the original
+    // threshold which aimed to prevent first-run visits from being included in
+    // Top Sites.
+    const topsiteFrecency = lazy.PlacesUtils.history.pageFrecencyThreshold(
+      30,
+      5,
+      false
+    );
 
     // Get all frecent sites from history.
     const frecent = await this.frecentCache.request({

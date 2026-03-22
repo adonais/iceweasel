@@ -5,8 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __MOZ_WAYLAND_DISPLAY_H__
-#define __MOZ_WAYLAND_DISPLAY_H__
+#ifndef MOZ_WAYLAND_DISPLAY_H_
+#define MOZ_WAYLAND_DISPLAY_H_
 
 #include "DMABufDevice.h"
 
@@ -235,4 +235,4 @@ static inline T* WaylandRegistryBind(struct wl_registry* wl_registry,
   return reinterpret_cast<T*>(id);
 }
 
-#endif  // __MOZ_WAYLAND_DISPLAY_H__
+#endif  // MOZ_WAYLAND_DISPLAY_H_

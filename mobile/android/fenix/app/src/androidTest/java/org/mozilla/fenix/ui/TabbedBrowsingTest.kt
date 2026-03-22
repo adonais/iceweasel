@@ -13,7 +13,6 @@ import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
-import org.mozilla.fenix.helpers.RetryTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.genericAssets
 import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestHelper.appContext
@@ -63,7 +62,6 @@ class TabbedBrowsingTest : TestSetup() {
     // val retryTestRule = RetryTestRule(3)
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/903599
-    @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     fun closeAllTabsTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
@@ -90,7 +88,7 @@ class TabbedBrowsingTest : TestSetup() {
         }.openThreeDotMenu {
             verifyCloseAllTabsButton()
         }.closeAllTabs {
-            verifyTabCounter("0")
+            verifyTabCounter("0", isPrivateBrowsingEnabled = true)
         }
     }
 
@@ -301,12 +299,6 @@ class TabbedBrowsingTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2343663
     @Test
-    @SkipLeaks(
-        reasons = [
-            "https://bugzilla.mozilla.org/show_bug.cgi?id=1962065",
-            "https://bugzilla.mozilla.org/show_bug.cgi?id=1962070",
-        ],
-    )
     fun tabsCounterShortcutMenuNewPrivateTabTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
@@ -323,7 +315,6 @@ class TabbedBrowsingTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2343662
     @Test
-    @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1962065"])
     fun tabsCounterShortcutMenuNewTabTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
@@ -340,7 +331,6 @@ class TabbedBrowsingTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/927315
     @Test
-    @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1962065"])
     fun privateTabsCounterShortcutMenuCloseTabTest() {
         val firstWebPage = mockWebServer.getGenericAsset(1)
         val secondWebPage = mockWebServer.getGenericAsset(2)
@@ -374,7 +364,6 @@ class TabbedBrowsingTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2344199
     @Test
-    @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1962065"])
     fun privateTabsCounterShortcutMenuNewPrivateTabTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 
@@ -395,7 +384,6 @@ class TabbedBrowsingTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2344198
     @Test
-    @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1962065"])
     fun privateTabsCounterShortcutMenuNewTabTest() {
         val defaultWebPage = mockWebServer.getGenericAsset(1)
 

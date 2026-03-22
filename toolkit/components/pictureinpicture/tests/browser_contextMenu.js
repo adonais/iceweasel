@@ -83,9 +83,8 @@ async function runTaskOpenClosePiPWithContextMenu(isCtrlClick = false) {
           !menuItem.hidden,
           "Should show Picture-in-Picture menu item."
         );
-        Assert.equal(
-          menuItem.getAttribute("checked"),
-          "false",
+        Assert.ok(
+          !menuItem.hasAttribute("checked"),
           "Picture-in-Picture should be unchecked."
         );
 
@@ -155,9 +154,8 @@ add_task(async () => {
           !menuItem.hidden,
           "Should show Picture-in-Picture menu item."
         );
-        Assert.equal(
-          menuItem.getAttribute("checked"),
-          "false",
+        Assert.ok(
+          !menuItem.hasAttribute("checked"),
           "Picture-in-Picture should be unchecked."
         );
         await closeContextMenu(menu);
@@ -177,9 +175,8 @@ add_task(async () => {
           !menuItem.hidden,
           "Should show Picture-in-Picture menu item."
         );
-        Assert.equal(
-          menuItem.getAttribute("checked"),
-          "true",
+        Assert.ok(
+          menuItem.hasAttribute("checked"),
           "Picture-in-Picture should be checked."
         );
         await closeContextMenu(menu);
@@ -202,9 +199,8 @@ add_task(async () => {
           !menuItem.hidden,
           "Should show Picture-in-Picture menu item."
         );
-        Assert.equal(
-          menuItem.getAttribute("checked"),
-          "false",
+        Assert.ok(
+          !menuItem.hasAttribute("checked"),
           "Picture-in-Picture should be unchecked."
         );
         await closeContextMenu(menu);
@@ -230,9 +226,8 @@ add_task(async () => {
           !menuItem.hidden,
           "Should be showing Picture-in-Picture menu item."
         );
-        Assert.equal(
-          menuItem.getAttribute("checked"),
-          "false",
+        Assert.ok(
+          !menuItem.hasAttribute("checked"),
           "Picture-in-Picture should be unchecked."
         );
         await closeContextMenu(menu);
@@ -252,9 +247,8 @@ add_task(async () => {
           !menuItem.hidden,
           "Should show Picture-in-Picture menu item."
         );
-        Assert.equal(
-          menuItem.getAttribute("checked"),
-          "true",
+        Assert.ok(
+          menuItem.hasAttribute("checked"),
           "Picture-in-Picture should be checked."
         );
         await closeContextMenu(menu);

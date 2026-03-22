@@ -37,9 +37,9 @@ add_task(async function test_default_telemetry() {
     "Default menu shown for test"
   );
   Assert.equal(
-    Glean.genaiChatbot.page.testGetValue() ?? false,
-    false,
-    "Default no page feature for test"
+    Glean.genaiChatbot.page.testGetValue() ?? true,
+    true,
+    "Default page feature for test"
   );
   Assert.equal(
     Glean.genaiChatbot.provider.testGetValue() ?? "none",

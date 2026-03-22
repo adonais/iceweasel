@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef NetworkMarker_h__
-#define NetworkMarker_h__
+#ifndef NetworkMarker_h_
+#define NetworkMarker_h_
 
 #include "mozilla/ProfilerMarkers.h"
 #include "nsHttp.h"
@@ -43,4 +43,4 @@ void profiler_add_network_marker(
 }  // namespace net
 }  // namespace mozilla
 
-#endif  // NetworkMarker_h__
+#endif  // NetworkMarker_h_

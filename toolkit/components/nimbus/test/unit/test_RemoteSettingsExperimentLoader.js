@@ -38,12 +38,13 @@ add_task(async function test_lazy_pref_getters() {
 });
 
 add_task(async function test_init() {
-  const { sandbox, loader, initExperimentAPI, cleanup } =
-    await NimbusTestUtils.setupTest({ init: false });
+  const { sandbox, loader, cleanup } = await NimbusTestUtils.setupTest({
+    init: false,
+  });
   sandbox.spy(loader, "setTimer");
   sandbox.spy(loader, "updateRecipes");
 
-  await initExperimentAPI();
+  await ExperimentAPI.init();
 
   Assert.ok(loader.setTimer.calledOnce, "should call .setTimer");
   Assert.ok(loader.updateRecipes.calledOnce, "should call .updateRecipes");
@@ -52,17 +53,16 @@ add_task(async function test_init() {
 });
 
 add_task(async function test_init_with_opt_in() {
-  const { sandbox, loader, initExperimentAPI, cleanup } =
-    await NimbusTestUtils.setupTest({
-      init: false,
-      migrationState: NimbusTestUtils.migrationState.LATEST,
-    });
+  const { sandbox, loader, cleanup } = await NimbusTestUtils.setupTest({
+    init: false,
+    migrationState: NimbusTestUtils.migrationState.LATEST,
+  });
   sandbox.spy(loader, "setTimer");
   sandbox.spy(loader, "updateRecipes");
 
   Services.prefs.setBoolPref(STUDIES_OPT_OUT_PREF, false);
 
-  await initExperimentAPI();
+  await ExperimentAPI.init();
 
   Assert.equal(
     loader.setTimer.callCount,
@@ -93,16 +93,17 @@ add_task(async function test_updateRecipes() {
     targeting: "false",
   });
 
-  const { sandbox, loader, manager, initExperimentAPI, cleanup } =
-    await NimbusTestUtils.setupTest({
+  const { sandbox, loader, manager, cleanup } = await NimbusTestUtils.setupTest(
+    {
       init: false,
       experiments: [passRecipe, failRecipe],
-    });
+    }
+  );
 
   sandbox.spy(loader, "updateRecipes");
   sandbox.stub(manager, "onRecipe").resolves();
 
-  await initExperimentAPI();
+  await ExperimentAPI.init();
 
   Assert.ok(loader.updateRecipes.calledOnce, "should call .updateRecipes");
   Assert.equal(
@@ -216,13 +217,12 @@ add_task(async function test_optIn_debug_disabled() {
   const recipe = NimbusTestUtils.factories.recipe("foo", {
     targeting: "false",
   });
-  const { loader, initExperimentAPI, cleanup } =
-    await NimbusTestUtils.setupTest({
-      init: false,
-      experiments: [recipe],
-    });
+  const { loader, cleanup } = await NimbusTestUtils.setupTest({
+    init: false,
+    experiments: [recipe],
+  });
 
-  await initExperimentAPI();
+  await ExperimentAPI.init();
 
   Services.prefs.setBoolPref(DEBUG_PREF, false);
   Services.prefs.setBoolPref(UPLOAD_PREF, true);
@@ -251,14 +251,13 @@ add_task(async function test_optIn_studies_disabled() {
   const recipe = NimbusTestUtils.factories.recipe("foo", {
     targeting: "false",
   });
-  const { loader, initExperimentAPI, cleanup } =
-    await NimbusTestUtils.setupTest({
-      init: false,
-      experiments: [recipe],
-      migrationState: NimbusTestUtils.migrationState.LATEST,
-    });
+  const { loader, cleanup } = await NimbusTestUtils.setupTest({
+    init: false,
+    experiments: [recipe],
+    migrationState: NimbusTestUtils.migrationState.LATEST,
+  });
 
-  await initExperimentAPI();
+  await ExperimentAPI.init();
 
   Services.prefs.setBoolPref(DEBUG_PREF, true);
 
@@ -287,14 +286,16 @@ add_task(async function test_optIn_studies_disabled() {
 add_task(async function test_enrollment_changed_notification() {
   const recipe = NimbusTestUtils.factories.recipe("foo");
 
-  const { sandbox, loader, initExperimentAPI, cleanup } =
-    await NimbusTestUtils.setupTest({ init: false, experiments: [recipe] });
+  const { sandbox, loader, cleanup } = await NimbusTestUtils.setupTest({
+    init: false,
+    experiments: [recipe],
+  });
   sandbox.spy(loader, "updateRecipes");
   sandbox.stub(loader.manager, "onRecipe").resolves();
 
   const enrollmentChanged = promiseEnrollmentsUpdated();
 
-  await initExperimentAPI();
+  await ExperimentAPI.init();
   await enrollmentChanged;
 
   Assert.ok(loader.updateRecipes.called, "should call .updateRecipes");

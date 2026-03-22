@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsDebug_h___
-#define nsDebug_h___
+#ifndef nsDebug_h_
+#define nsDebug_h_
 
 #include "nscore.h"
 #include "nsError.h"
@@ -325,4 +325,4 @@ void NS_ABORT_OOM(size_t aSize);
 inline void NS_ABORT_OOM(size_t) { MOZ_CRASH(); }
 #endif
 
-#endif /* nsDebug_h___ */
+#endif /* nsDebug_h_ */

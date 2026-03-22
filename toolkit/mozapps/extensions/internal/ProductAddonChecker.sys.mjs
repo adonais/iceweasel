@@ -224,17 +224,10 @@ async function verifyGmpContentSignature(
  *         The url to download from.
  * @param  allowNonBuiltIn
  *         Whether to trust SSL certificates without a built-in CA issuer.
- * @param  allowedCerts
- *         The list of certificate attributes to match the SSL certificate
- *         against or null to skip checks.
  * @return a promise that resolves to the ServiceRequest request on success or
  *         rejects with a JS exception in case of error.
  */
-function downloadXMLWithRequest(
-  url,
-  allowNonBuiltIn = false,
-  allowedCerts = null
-) {
+function downloadXMLWithRequest(url, allowNonBuiltIn = false) {
   return new Promise((resolve, reject) => {
     let request = new lazy.ServiceRequest();
     // This is here to let unit test code override the ServiceRequest.
@@ -292,7 +285,7 @@ function downloadXMLWithRequest(
       let request = event.target;
 
       try {
-        CertUtils.checkCert(request.channel, allowNonBuiltIn, allowedCerts);
+        CertUtils.checkCert(request.channel, allowNonBuiltIn);
       } catch (ex) {
         logger.error("Request failed certificate checks: " + ex);
         ex.status = getRequestStatus(request).requestStatus;
@@ -322,9 +315,6 @@ function downloadXMLWithRequest(
  *         The url to download from.
  * @param  allowNonBuiltIn
  *         Whether to trust SSL certificates without a built-in CA issuer.
- * @param  allowedCerts
- *         The list of certificate attributes to match the SSL certificate
- *         against or null to skip checks.
  * @param  verifyContentSignature
  *         When true, will verify the content signature information from the
  *         response header. Failure to verify will result in an error.
@@ -337,15 +327,10 @@ function downloadXMLWithRequest(
 async function downloadXML(
   url,
   allowNonBuiltIn = false,
-  allowedCerts = null,
   verifyContentSignature = false,
   trustedContentSignatureRoot = null
 ) {
-  let request = await downloadXMLWithRequest(
-    url,
-    allowNonBuiltIn,
-    allowedCerts
-  );
+  let request = await downloadXMLWithRequest(url, allowNonBuiltIn);
   if (verifyContentSignature) {
     await verifyGmpContentSignature(
       request.response,
@@ -560,9 +545,6 @@ export const ProductAddonChecker = {
    *         The url to download from.
    * @param  allowNonBuiltIn
    *         Whether to trust SSL certificates without a built-in CA issuer.
-   * @param  allowedCerts
-   *         The list of certificate attributes to match the SSL certificate
-   *         against or null to skip checks.
    * @param  verifyContentSignature
    *         When true, will verify the content signature information from the
    *         response header. Failure to verify will result in an error.
@@ -578,14 +560,12 @@ export const ProductAddonChecker = {
   getProductAddonList(
     url,
     allowNonBuiltIn = false,
-    allowedCerts = null,
     verifyContentSignature = false,
     trustedContentSignatureRoot = null
   ) {
     return downloadXML(
       url,
       allowNonBuiltIn,
-      allowedCerts,
       verifyContentSignature,
       trustedContentSignatureRoot
     ).then(parseXML);

@@ -3386,4 +3386,29 @@ class NavigationDelegateTest : BaseSessionTest() {
             }
         }
     }
+
+    @Test
+    fun textDirectiveUserActivationExternalLoad() {
+        // External app links (LOAD_FLAGS_EXTERNAL) are always user-initiated, so
+        // text fragment directives should be allowed to scroll.
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf(
+                "dom.text_fragments.enabled" to true,
+            ),
+        )
+
+        val session = sessionRule.createOpenSession()
+        session.load(
+            Loader()
+                .uri(createTestUrl(TRANSLATIONS_ES + "#:~:text=moverse"))
+                .flags(GeckoSession.LOAD_FLAGS_EXTERNAL),
+        )
+        session.waitForPageStop()
+
+        assertThat(
+            "External load should scroll to text fragment",
+            session.evaluateJS("window.scrollY") as Double,
+            not(equalTo(0.0)),
+        )
+    }
 }

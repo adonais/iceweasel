@@ -426,6 +426,25 @@ var BrowserCommands = {
   },
 
   /**
+   * This is part of the Document Picture-in-Picture API.
+   * Close this window and bring the opener tab back to foreground.
+   *
+   * @param event
+   *        Used to determine how close was triggered.
+   */
+  returnToOpenerFromPiP(event) {
+    // Switch to and focus the opener
+    const openerBC = gBrowser.selectedBrowser.browsingContext.opener;
+    const openerBrowser = openerBC.embedderElement;
+    const openerWindow = openerBrowser.ownerGlobal;
+    const openerTab = openerWindow.gBrowser.getTabForBrowser(openerBrowser);
+    openerWindow.gBrowser.selectedTab = openerTab;
+    openerWindow.focus();
+
+    this.tryToCloseWindow(event);
+  },
+
+  /**
    * Open the View Source dialog.
    *
    * @param args

@@ -8,6 +8,7 @@
   --visual-picker-item-border-color: var(--border-color-interactive);
 
   cursor: default;
+  display: flex;
 }
 
 .picker-item {
@@ -17,6 +18,7 @@
   border: var(--visual-picker-item-border-width) solid var(--visual-picker-item-border-color);
   border-radius: var(--visual-picker-item-border-radius);
   margin: 2px;
+  flex: 1;
 
   &:focus {
     outline: none;
@@ -38,9 +40,23 @@
     border-radius: var(--visual-picker-item-child-border-radius);
   }
 
+  .text-content:has(.label, .description) {
+    padding: var(--space-small) var(--space-medium) var(--space-medium);
+    text-align: center;
+  }
+
   .label {
     margin: 0;
-    padding: var(--space-small);
+  }
+
+  .description {
+    margin: 0;
+    font-size: var(--font-size-small);
+    color: var(--text-color-deemphasized);
+  }
+
+  .label + .description {
+    margin-block-start: var(--space-xsmall);
   }
 
   img {

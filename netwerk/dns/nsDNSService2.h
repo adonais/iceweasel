@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsDNSService2_h__
-#define nsDNSService2_h__
+#ifndef nsDNSService2_h_
+#define nsDNSService2_h_
 
 #include "DNSServiceBase.h"
 #include "nsClassHashtable.h"
@@ -130,4 +130,4 @@ class nsDNSService final : public mozilla::net::DNSServiceBase,
 
 already_AddRefed<nsIDNSService> GetOrInitDNSService();
 
-#endif  // nsDNSService2_h__
+#endif  // nsDNSService2_h_

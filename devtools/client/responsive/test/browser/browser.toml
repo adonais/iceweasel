@@ -8,6 +8,9 @@ prefs = [
   "devtools.responsive.reloadNotification.enabled=false",
   # Don't show the setting onboarding tooltip in the test suites.
   "devtools.responsive.show-setting-tooltip=false",
+  # Bug 2013722: Investigate regular intermittents which seem to involve the
+  # browser screenshot UI
+  "screenshots.browser.component.enabled=false",
 ]
 support-files = [
   "contextual_identity.html",
@@ -21,6 +24,7 @@ support-files = [
   "favicon.ico",
   "geolocation.html",
   "head.js",
+  "helper_touch_all_events.js",
   "hover.html",
   "page_style.html",
   "sjs_redirection.sjs",
@@ -153,6 +157,8 @@ https_first_disabled = true
 
 ["browser_tab_close.js"]
 
+["browser_tab_discard.js"]
+
 ["browser_tab_not_selected.js"]
 
 ["browser_tab_remoteness_change.js"]
@@ -176,6 +182,26 @@ https_first_disabled = true
 ["browser_tooltip.js"]
 
 ["browser_touch_all_events.js"]
+skip-if = [
+  "a11y_checks",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1980013
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1980013
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1980013
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1980013
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && verify", # can be too slow in chaos mode to trigger dblclick events
+  "os == 'win'", # Bug 1977557 and Bug 1977558
+]
+
+["browser_touch_all_events_long_tap.js"]
+skip-if = [
+  "a11y_checks",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 2012028, Frequently failing on all linux variants
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1980013
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && verify", # can be too slow in chaos mode to trigger dblclick events
+  "os == 'win'", # Bug 1977557 and Bug 1977558
+]
+
+["browser_touch_all_events_zoom.js"]
 skip-if = [
   "a11y_checks",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1980013

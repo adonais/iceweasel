@@ -10,9 +10,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
 });
-const MODEL_PREF = "browser.aiwindow.firstrun.modelChoice";
-const AUTO_ADVANCE_PREF = "browser.aiwindow.firstrun.autoAdvanceMS";
-const BRAND_DARK_PURPLE = "#210340";
+const MODEL_PREF = "browser.smartwindow.firstrun.modelChoice";
+const AUTO_ADVANCE_PREF = "browser.smartwindow.firstrun.autoAdvanceMS";
+const FIRST_RUN_COMPLETE_PREF = "browser.smartwindow.firstrun.hasCompleted";
+const EXPLAINER_PAGE_PREF = "browser.smartwindow.firstrun.explainerURL";
 
 const autoAdvanceMS = Services.prefs.getIntPref(AUTO_ADVANCE_PREF);
 
@@ -75,7 +76,6 @@ const AI_WINDOW_CONFIG = {
           string_id: "aiwindow-firstrun-model-subtitle",
           fontSize: "17px",
           fontWeight: 320,
-          color: BRAND_DARK_PURPLE,
         },
         tiles: {
           type: "single-select",
@@ -91,7 +91,6 @@ const AI_WINDOW_CONFIG = {
                 string_id: "aiwindow-firstrun-model-fast-label",
                 fontSize: "20px",
                 fontWeight: 613,
-                color: BRAND_DARK_PURPLE,
               },
               icon: {
                 background:
@@ -99,7 +98,6 @@ const AI_WINDOW_CONFIG = {
               },
               body: {
                 string_id: "aiwindow-firstrun-model-fast-body",
-                color: BRAND_DARK_PURPLE,
                 fontSize: "15px",
                 fontWeight: 320,
               },
@@ -119,7 +117,6 @@ const AI_WINDOW_CONFIG = {
                 string_id: "aiwindow-firstrun-model-allpurpose-label",
                 fontSize: "20px",
                 fontWeight: 613,
-                color: BRAND_DARK_PURPLE,
               },
               icon: {
                 background:
@@ -127,7 +124,6 @@ const AI_WINDOW_CONFIG = {
               },
               body: {
                 string_id: "aiwindow-firstrun-model-allpurpose-body",
-                color: BRAND_DARK_PURPLE,
                 fontSize: "15px",
                 fontWeight: 320,
               },
@@ -147,7 +143,6 @@ const AI_WINDOW_CONFIG = {
                 string_id: "aiwindow-firstrun-model-personal-label",
                 fontSize: "20px",
                 fontWeight: 613,
-                color: BRAND_DARK_PURPLE,
               },
               icon: {
                 background:
@@ -155,7 +150,6 @@ const AI_WINDOW_CONFIG = {
               },
               body: {
                 string_id: "aiwindow-firstrun-model-personal-body",
-                color: BRAND_DARK_PURPLE,
                 fontSize: "15px",
                 fontWeight: 320,
               },
@@ -176,6 +170,13 @@ const AI_WINDOW_CONFIG = {
             string_id: "aiwindow-firstrun-button",
           },
           action: {
+            type: "SET_PREF",
+            data: {
+              pref: {
+                name: FIRST_RUN_COMPLETE_PREF,
+                value: true,
+              },
+            },
             navigate: true,
           },
         },
@@ -199,6 +200,16 @@ function renderFirstRun() {
   window.AWGetInstalledAddons = () => [];
   window.AWSendToParent = (name, data) => receive(name)(data);
   window.AWFinish = () => {
+    window.AWSendToParent("SPECIAL_ACTION", {
+      type: "OPEN_URL",
+      data: {
+        args: Services.prefs.getStringPref(
+          EXPLAINER_PAGE_PREF,
+          "https://www.mozilla.org/"
+        ),
+        where: "tab",
+      },
+    });
     window.location.href = lazy.AIWindow.newTabURL;
   };
 

@@ -14,7 +14,7 @@
     --attention-dot-color: AccentColor;
 
     /** Background Color **/
-    --background-color-box-info: color-mix(in srgb, currentColor 20%, transparent);
+    --background-color-box-info: color-mix(in srgb, currentColor 6%, transparent);
     --background-color-canvas: Canvas;
     --background-color-list-item-hover: color-mix(in srgb, currentColor 20%, transparent);
     --table-row-background-color-alternate: light-dark(
@@ -54,6 +54,9 @@
     --link-color-hover: color-mix(in srgb, black 10%, var(--link-color));
     --link-color-active: color-mix(in srgb, black 20%, var(--link-color));
     --link-color-visited: var(--link-color);
+
+    /** Table **/
+    --table-header-text-color: AccentColorText;
 
     /** Text **/
     --text-color: currentColor;

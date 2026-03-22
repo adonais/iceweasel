@@ -43,6 +43,12 @@ static mozilla::LazyLogModule sEventDispatchAndRunLog("events");
 #define LOG1_ENABLED() \
   MOZ_LOG_TEST(sEventDispatchAndRunLog, mozilla::LogLevel::Error)
 
+namespace mozilla {
+namespace net {
+bool OnSocketThread();
+}
+}  // namespace mozilla
+
 using namespace mozilla;
 
 #ifndef XPCOM_GLUE_AVOID_NSPR
@@ -130,7 +136,7 @@ PrioritizableRunnable::GetName(nsACString& aName) {
 
 NS_IMETHODIMP
 PrioritizableRunnable::Run() {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread() || net::OnSocketThread());
   return mRunnable->Run();
 }
 
@@ -714,7 +720,7 @@ nsresult NS_DispatchBackgroundTask(
                                                            aDispatchFlags);
 }
 
-nsresult NS_CreateBackgroundTaskQueue(const char* aName,
+nsresult NS_CreateBackgroundTaskQueue(mozilla::StaticString aName,
                                       nsISerialEventTarget** aTarget) {
   nsCOMPtr<nsISerialEventTarget> target =
       nsThreadManager::get().CreateBackgroundTaskQueue(aName);

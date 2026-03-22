@@ -13,11 +13,12 @@ use crate::spatial_node::SpatialNodeType;
 use crate::spatial_tree::{SpatialTree, SpatialNodeIndex};
 use crate::composite::{CompositorKind, CompositeState, CompositeStatePreallocator};
 use crate::debug_item::DebugItem;
-use crate::gpu_types::{ImageBrushPrimitiveData, PrimitiveHeaders, TransformPalette, ZBufferIdGenerator};
-use crate::gpu_types::{QuadSegment, TransformData};
+use crate::gpu_types::{ImageBrushPrimitiveData, PrimitiveHeaders, ZBufferIdGenerator};
+use crate::gpu_types::QuadSegment;
 use crate::internal_types::{FastHashMap, PlaneSplitter, FrameStamp};
 use crate::invalidation::DirtyRegion;
 use crate::tile_cache::{SliceId, TileCacheInstance};
+use crate::picture::PicturePrimitive;
 use crate::picture::{SurfaceInfo, SurfaceIndex, ResolvedSurfaceTexture};
 use crate::picture::{SubpixelMode, RasterConfig, PictureCompositeMode};
 use crate::prepare::prepare_picture;
@@ -36,6 +37,7 @@ use crate::scene::{BuiltScene, SceneProperties};
 use crate::space::SpaceMapper;
 use crate::segment::SegmentBuilder;
 use crate::surface::SurfaceBuilder;
+use crate::transform::{TransformPalette, TransformData};
 use std::sync::Arc;
 use std::{f32, mem};
 use crate::util::{MaxRect, VecHelper, Preallocator};
@@ -70,8 +72,6 @@ pub struct FrameBuilderConfig {
     pub max_shared_surface_size: i32,
     pub enable_dithering: bool,
     pub precise_linear_gradients: bool,
-    pub precise_radial_gradients: bool,
-    pub precise_conic_gradients: bool,
 }
 
 /// A set of default / global resources that are re-built each frame.
@@ -503,6 +503,13 @@ impl FrameBuilder {
             profile.end_time(profiler::FRAME_VISIBILITY_TIME);
         }
 
+        self.skip_occluded_pictures_with_clips(
+            &scene.tile_cache_pictures,
+            &mut scene.prim_store.pictures,
+            tile_caches,
+            &frame_context,
+            composite_state);
+
         profile.start_time(profiler::FRAME_PREPARE_TIME);
 
         // Reset the visited pictures for the prepare pass.
@@ -740,7 +747,6 @@ impl FrameBuilder {
                 let mut ctx = RenderTargetContext {
                     global_device_pixel_scale,
                     prim_store: &scene.prim_store,
-                    clip_store: &scene.clip_store,
                     resource_cache,
                     use_dual_source_blending,
                     use_advanced_blending: scene.config.gpu_supports_advanced_blend,
@@ -781,7 +787,6 @@ impl FrameBuilder {
             if present {
                 let mut ctx = RenderTargetContext {
                     global_device_pixel_scale,
-                    clip_store: &scene.clip_store,
                     prim_store: &scene.prim_store,
                     resource_cache,
                     use_dual_source_blending,
@@ -978,6 +983,85 @@ impl FrameBuilder {
           }
         }
       });
+    }
+
+    /// Skip pictures that are fully covered by another opaque picture with the same rounded rect clip.
+    ///
+    /// Since the clip adds some transparency to the occluder, the opaque rectangles occlusion detection
+    /// fails to discard stacks of opaque rounded corners.
+    /// This is done specifically to avoid conflation artifacts with the rounded rectangle around web content
+    /// in Firefox.
+    fn skip_occluded_pictures_with_clips(
+        &self,
+        tile_cache_pictures: &Vec<PictureIndex>,
+        pictures: &mut [PicturePrimitive],
+        tile_caches: &mut FastHashMap<SliceId, Box<TileCacheInstance>>,
+        frame_context: &FrameBuildingContext,
+        composite_state: &mut CompositeState,
+    ) {
+        let mut current_opaque_clip = None;
+
+        for pic_index in tile_cache_pictures.iter().rev() {
+            let pic = &mut pictures[pic_index.0];
+
+            match pic.raster_config {
+                Some(RasterConfig { composite_mode: PictureCompositeMode::TileCache { slice_id }, .. }) => {
+                    let tile_cache = tile_caches
+                        .get_mut(&slice_id)
+                        .expect("bug: non-existent tile cache");
+                    // Only check for compositor clips (rounded clips). The main
+                    // rectangle occlusion for compositor tiles handles the rest fine.
+                    if tile_cache.compositor_clip.is_none() {
+                        continue;
+                    }
+
+                    // Get the rounded clip for this picture cache.
+                    let (rounded_clip_rect, rounded_clip_radii) = composite_state.compositor_clip_params(
+                        tile_cache.compositor_clip,
+                        DeviceRect::max_rect(),
+                    );
+
+                    // Simple compare against the previous compositor clip we found
+                    if let Some((current_clip_rect, current_clip_radius)) = current_opaque_clip {
+                        if current_clip_rect == rounded_clip_rect &&
+                        current_clip_radius == rounded_clip_radii {
+                            for sub_slice in tile_cache.sub_slices.iter_mut() {
+                                for tile in sub_slice.tiles.values_mut() {
+                                    tile.is_visible = false;
+                                }
+                            }
+                        }
+                    }
+
+                    let backdrop_rect = tile_cache.backdrop.backdrop_rect
+                        .intersection(&tile_cache.local_rect)
+                        .and_then(|r| {
+                            r.intersection(&tile_cache.local_clip_rect)
+                    });
+
+                    if let Some(backdrop_rect) = backdrop_rect {
+                        let map_local_to_world = SpaceMapper::new_with_target(
+                            frame_context.root_spatial_node_index,
+                            tile_cache.spatial_node_index,
+                            frame_context.global_screen_world_rect,
+                            frame_context.spatial_tree,
+                        );
+                        let world_backdrop_rect = map_local_to_world
+                            .map(&backdrop_rect)
+                            .expect("bug: unable to map backdrop rect");
+                        let device_backdrop_rect = (world_backdrop_rect * frame_context.global_device_pixel_scale).round();
+
+                        if device_backdrop_rect.contains_box(&rounded_clip_rect) {
+                            // Save compositor clip for checking against subsequent slices
+                            current_opaque_clip = Some((rounded_clip_rect, rounded_clip_radii));
+                        }
+                    }
+                }
+                _ => {
+                     panic!("bug: found a top-level prim that isn't a tile cache");
+                }
+            }
+        }
     }
 
     fn build_composite_pass(

@@ -93,7 +93,9 @@ parent:
 
   async PWebSocketEventListener(uint64_t aInnerWindowID);
 
-  async SpeculativeConnect(nullable nsIURI uri,
+  async SpeculativeConnect(nullable PBrowser browser,
+                           SerializedLoadContext loadContext,
+                           nullable nsIURI uri,
                            nullable nsIPrincipal principal,
                            OriginAttributes? originAttributes,
                            bool anonymous);

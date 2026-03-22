@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef NSFONTMETRICS__H__
-#define NSFONTMETRICS__H__
+#ifndef NSFONTMETRICS_H_
+#define NSFONTMETRICS_H_
 
 #include <stdint.h>          // for uint32_t
 #include <sys/types.h>       // for int32_t
@@ -78,6 +78,51 @@ class nsFontMetrics final {
    * the font metrics and the pres context.
    */
   void Destroy();
+
+  /**
+   * Return the font's alphabetic baseline.
+   */
+  nscoord AlphabeticBaseline() const;
+
+  /**
+   * Return the font's central baseline.
+   */
+  nscoord CentralBaseline() const;
+
+  /**
+   * Return the font's x-middle baseline.
+   */
+  nscoord XMiddleBaseline() const;
+
+  /**
+   * Return the font's ideographic-under baseline.
+   */
+  nscoord IdeographicUnderBaseline() const;
+
+  /**
+   * Return the font's ideographic-over baseline.
+   */
+  nscoord IdeographicOverBaseline() const;
+
+  /**
+   * Return the font's ideographic-ink-under baseline.
+   */
+  nscoord IdeographicInkUnderBaseline() const;
+
+  /**
+   * Return the font's ideographic-ink-over baseline.
+   */
+  nscoord IdeographicInkOverBaseline() const;
+
+  /**
+   * Return the font's hanging baseline.
+   */
+  nscoord HangingBaseline() const;
+
+  /**
+   * Return the font's math baseline.
+   */
+  nscoord MathBaseline() const;
 
   /**
    * Return the font's x-height.
@@ -291,4 +336,4 @@ class nsFontMetrics final {
   mozilla::StyleTextOrientation mTextOrientation;
 };
 
-#endif /* NSFONTMETRICS__H__ */
+#endif /* NSFONTMETRICS_H_ */

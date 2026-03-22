@@ -63,6 +63,12 @@ support-files = [
   "../../../mozapps/extensions/test/xpcshell/data/productaddons/content_signing_int.pem",
   "../../../mozapps/extensions/test/xpcshell/data/productaddons/bad.xml",
   "../../../mozapps/extensions/test/xpcshell/data/productaddons/good.xml",
+  "../../../mozapps/extensions/test/xpcshell/data/productaddons/missing.xml",
+  "../../../mozapps/extensions/test/xpcshell/data/productaddons/empty.xml",
+  "../../../mozapps/extensions/test/xpcshell/data/productaddons/singleaddon.xml",
+  "../../../mozapps/extensions/test/xpcshell/data/productaddons/sizedaddon.xml",
+  "../../../mozapps/extensions/test/xpcshell/data/productaddons/invalidaddons.xml",
+  "../../../mozapps/extensions/test/xpcshell/data/productaddons/updatesaddons.xml",
 ]
 
 ["test_IgnoreList.js"]

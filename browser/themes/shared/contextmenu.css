@@ -22,8 +22,6 @@
     height: auto;
     padding: 7px;
     margin: 0;
-    -moz-context-properties: fill;
-    fill: currentColor;
   }
 }
 
@@ -58,6 +56,4 @@
 
 #context-media-eme-learnmore {
   --menuitem-icon: url("chrome://browser/skin/drm-icon.svg");
-  -moz-context-properties: fill;
-  fill: currentColor;
 }

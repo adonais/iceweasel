@@ -5,6 +5,9 @@
 
 #include "RemoteImageProtocolHandler.h"
 
+#include "gfxContext.h"
+#include "gfxUtils.h"
+#include "ImageRegion.h"
 #include "imgITools.h"
 #include "nsContentUtils.h"
 #include "nsIPipe.h"
@@ -13,10 +16,11 @@
 #include "nsNetUtil.h"
 #include "nsStreamUtils.h"
 #include "nsURLHelper.h"
-#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentProcessManager.h"
+#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/SVGImageContext.h"
 
 namespace mozilla::image {
 
@@ -89,6 +93,7 @@ static nsresult EncodeImage(const dom::IPCImage& aImage,
 
 static void AsyncReEncodeImage(nsIURI* aRemoteURI, ImageIntSize aSize,
                                const Maybe<ContentParentId> aContentParentId,
+                               ColorScheme aColorScheme,
                                nsIAsyncOutputStream* aOutputStream) {
   UniqueContentParentKeepAlive cp =
       GetLaunchingContentParentForDecode(aContentParentId);
@@ -100,9 +105,10 @@ static void AsyncReEncodeImage(nsIURI* aRemoteURI, ImageIntSize aSize,
   cp->WaitForLaunchAsync()
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [remoteURI = nsCOMPtr{aRemoteURI},
-           aSize](UniqueContentParentKeepAlive&& aCp) {
-            return aCp->SendDecodeImage(WrapNotNull(remoteURI), aSize);
+          [remoteURI = nsCOMPtr{aRemoteURI}, aSize,
+           aColorScheme](UniqueContentParentKeepAlive&& aCp) {
+            return aCp->SendDecodeImage(WrapNotNull(remoteURI), aSize,
+                                        aColorScheme);
           },
           [](nsresult aError) {
             return ContentParent::DecodeImagePromise::CreateAndReject(
@@ -146,7 +152,8 @@ static void AsyncReEncodeImage(nsIURI* aRemoteURI, ImageIntSize aSize,
 
 // Parse out the relevant parts of the moz-remote-image URL
 static nsresult ParseURI(nsIURI* aURI, nsIURI** aRemoteURI, ImageIntSize* aSize,
-                         Maybe<ContentParentId>& aContentParentId) {
+                         Maybe<ContentParentId>& aContentParentId,
+                         ColorScheme* aColorScheme) {
   MOZ_ASSERT(aURI->SchemeIs("moz-remote-image"));
 
   nsAutoCString query;
@@ -181,6 +188,14 @@ static nsresult ParseURI(nsIURI* aURI, nsIURI** aRemoteURI, ImageIntSize* aSize,
             return false;
           }
           aContentParentId = Some(ContentParentId(uint64_t(id)));
+        } else if (aName.EqualsLiteral("colorScheme")) {
+          if (aValue.EqualsLiteral("light")) {
+            *aColorScheme = ColorScheme::Light;
+          } else if (aValue.EqualsLiteral("dark")) {
+            *aColorScheme = ColorScheme::Dark;
+          } else {
+            return false;
+          }
         }
         return true;
       });
@@ -202,7 +217,9 @@ NS_IMETHODIMP RemoteImageProtocolHandler::NewChannel(nsIURI* aURI,
   nsCOMPtr<nsIURI> remoteURI;
   ImageIntSize size;
   Maybe<ContentParentId> contentParentId;
-  MOZ_TRY(ParseURI(aURI, getter_AddRefs(remoteURI), &size, contentParentId));
+  ColorScheme colorScheme = ColorScheme::Light;
+  MOZ_TRY(ParseURI(aURI, getter_AddRefs(remoteURI), &size, contentParentId,
+                   &colorScheme));
 
   nsCOMPtr<nsIAsyncInputStream> pipeIn;
   nsCOMPtr<nsIAsyncOutputStream> pipeOut;
@@ -214,10 +231,69 @@ NS_IMETHODIMP RemoteImageProtocolHandler::NewChannel(nsIURI* aURI,
       /* aContentType */ nsLiteralCString(IMAGE_PNG),
       /* aContentCharset */ ""_ns, aLoadInfo));
 
-  AsyncReEncodeImage(remoteURI, size, contentParentId, pipeOut);
+  AsyncReEncodeImage(remoteURI, size, contentParentId, colorScheme, pipeOut);
 
   channel.forget(aOutChannel);
   return NS_OK;
+}
+
+/* static */
+already_AddRefed<gfx::SourceSurface>
+RemoteImageProtocolHandler::GetImageSurface(imgIContainer* aContainer,
+                                            gfx::IntSize aSize,
+                                            ColorScheme aColorScheme) {
+  const int32_t kFlags =
+      imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY;
+
+  if (aContainer->GetType() == imgIContainer::TYPE_VECTOR) {
+    gfx::IntSize size = aSize;
+    if (!size.Width() || !size.Height()) {
+      int32_t width, height;
+      if (NS_FAILED(aContainer->GetWidth(&width)) ||
+          NS_FAILED(aContainer->GetHeight(&height)) || width <= 0 ||
+          height <= 0) {
+        NS_ERROR("SVG missing intrinsic size");
+        return nullptr;
+      }
+
+      size = gfx::IntSize(width, height);
+    }
+
+    RefPtr<gfx::DrawTarget> drawTarget =
+        gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
+            size, gfx::SurfaceFormat::B8G8R8A8);
+    if (!drawTarget || !drawTarget->IsValid()) {
+      NS_ERROR("Failed to create valid DrawTarget");
+      return nullptr;
+    }
+
+    gfxContext context(drawTarget);
+
+    SVGImageContext svgContext;
+    svgContext.SetViewportSize(Some(CSSIntSize(size.width, size.height)));
+    svgContext.SetColorScheme(Some(aColorScheme));
+
+    ImgDrawResult res = aContainer->Draw(
+        &context, size, ImageRegion::Create(size), imgIContainer::FRAME_FIRST,
+        gfx::SamplingFilter::LINEAR, svgContext, kFlags, 1.0);
+
+    if (res != ImgDrawResult::SUCCESS) {
+      return nullptr;
+    }
+
+    return drawTarget->Snapshot();
+  }
+
+  if (!aSize.Width() || !aSize.Height()) {
+    return aContainer->GetFrame(imgIContainer::FRAME_FIRST, kFlags);
+  }
+
+  RefPtr<gfx::SourceSurface> surface =
+      aContainer->GetFrameAtSize(aSize, imgIContainer::FRAME_FIRST, kFlags);
+  if (surface && surface->GetSize() != aSize) {
+    surface = gfxUtils::ScaleSourceSurface(*surface, aSize);
+  }
+  return surface.forget();
 }
 
 }  // namespace mozilla::image

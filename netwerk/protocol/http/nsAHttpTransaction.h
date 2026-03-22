@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsAHttpTransaction_h__
-#define nsAHttpTransaction_h__
+#ifndef nsAHttpTransaction_h_
+#define nsAHttpTransaction_h_
 
 #include "nsTArray.h"
 #include "nsWeakReference.h"
@@ -310,4 +310,4 @@ class nsAHttpSegmentWriter {
 }  // namespace net
 }  // namespace mozilla
 
-#endif  // nsAHttpTransaction_h__
+#endif  // nsAHttpTransaction_h_

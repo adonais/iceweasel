@@ -120,7 +120,7 @@ tags = "vertical-tabs"
 
 ["browser_lastAccessedTab.js"]
 skip-if = [
-  "os == 'windows'", # Disabled on Windows due to frequent failures (bug 969405)
+  "os == 'win'", # Disabled on Windows due to frequent failures (bug 969405)
 ]
 tags = "vertical-tabs"
 
@@ -205,6 +205,9 @@ skip-if = [
 ["browser_list_all_tabs_telemetry.js"]
 
 ["browser_long_data_url_label_truncation.js"]
+tags = "vertical-tabs"
+
+["browser_tab_label_character_cap.js"]
 tags = "vertical-tabs"
 
 ["browser_middle_click_new_tab_button_loads_clipboard.js"]
@@ -463,6 +466,8 @@ tags = "vertical-tabs"
 support-files = ["tab_that_opens_dialog.html"]
 tags = "vertical-tabs"
 
+["browser_replacewithwindow_splitview.js"]
+
 ["browser_restore_isAppTab.js"]
 run-if = [
   "crashreporter", # test requires crashreporter due to 1536221
@@ -624,22 +629,35 @@ tags = "vertical-tabs"
 
 ["browser_tab_preview.js"]
 tags = "vertical-tabs"
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 2010318
+]
+
+["browser_tab_note_preview.js"]
 
 ["browser_tab_splitview.js"]
 
 ["browser_tab_splitview_about_opentabs.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 2014213
+]
+
 
 ["browser_tab_splitview_contextmenu.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1996471
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1994508
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1996471
 ]
 
 ["browser_tab_splitview_footer.js"]
 support-files = ["file_withicon.html"]
 
 ["browser_tab_splitview_keyboard_focus.js"]
+
+["browser_tab_splitview_splitter_keyboard.js"]
+
+["browser_tab_splitview_splitter_keyboard_boundary.js"]
+
+["browser_tab_splitview_telemetry.js"]
 
 ["browser_tab_tooltips.js"]
 tags = "vertical-tabs"

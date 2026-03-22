@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsError_h__
-#define nsError_h__
+#ifndef nsError_h_
+#define nsError_h_
 
 #ifndef __cplusplus
 #  error nsError.h no longer supports C sources

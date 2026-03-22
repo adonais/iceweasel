@@ -9,8 +9,8 @@
  * for internal use
  */
 
-#ifndef nsICSSDeclaration_h__
-#define nsICSSDeclaration_h__
+#ifndef nsICSSDeclaration_h_
+#define nsICSSDeclaration_h_
 
 /**
  * This interface provides access to methods analogous to those of
@@ -127,4 +127,4 @@ class nsICSSDeclaration : public nsISupports, public nsWrapperCache {
   uint32_t Length() override;                                                  \
   mozilla::css::Rule* GetParentRule() override;
 
-#endif  // nsICSSDeclaration_h__
+#endif  // nsICSSDeclaration_h_

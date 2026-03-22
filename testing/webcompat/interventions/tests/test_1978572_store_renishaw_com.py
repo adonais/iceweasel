@@ -25,7 +25,14 @@ async def does_left_slider_work(client):
     orig_value = slider_value()
 
     coords = client.get_element_screen_position(slider)
-    coords = [coords[0] + 4, coords[1] + 4]
+    padding = client.execute_script(
+        """
+            const s = getComputedStyle(arguments[0]);
+            return [parseFloat(s['padding-left']), parseFloat(s['padding-top'])];
+        """,
+        slider,
+    )
+    coords = [coords[0] + padding[0] + 4, coords[1] + padding[1] + 4]
     await client.apz_down(coords=coords)
     for i in range(25):
         await asyncio.sleep(0.01)

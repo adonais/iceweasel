@@ -19,8 +19,8 @@ function doLoad(url, forceMediaDocument, contentFn) {
   });
 }
 
-add_task(async function test_img() {
-  await doLoad(TEST_PATH + "file_image_header.sjs?imagePNG", "image", () => {
+add_task(async function test_img_png() {
+  await doLoad(TEST_PATH + "file_media_header.sjs?imagePNG", "image", () => {
     // The image was successfully displayed inline, which means
     // we sent the right Accept header and ignored the Content-Disposition.
     let img = content.document.querySelector("img");
@@ -29,9 +29,9 @@ add_task(async function test_img() {
   });
 });
 
-add_task(async function test_img() {
+add_task(async function test_img_svg() {
   await doLoad(
-    TEST_PATH + "file_image_header.sjs?imageSVG",
+    TEST_PATH + "file_media_header.sjs?imageSVG",
     "image",
     async () => {
       let img = content.document.querySelector("img");
@@ -50,4 +50,12 @@ add_task(async function test_img() {
       is(img.height, 100, "SVG height");
     }
   );
+});
+
+add_task(async function test_video() {
+  await doLoad(TEST_PATH + "file_media_header.sjs?videoWebM", "video", () => {
+    let video = content.document.querySelector("video");
+    ok(video, "Video element exists");
+    is(video.autoplay, false, "video does not autoplay");
+  });
 });

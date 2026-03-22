@@ -48,7 +48,7 @@ add_task(async function search_strings() {
   for (let searchString of searches) {
     info("Search for term:", searchString);
     let [searchUrl] = UrlbarUtils.getSearchQueryUrl(
-      Services.search.defaultEngine,
+      SearchService.defaultEngine,
       searchString
     );
     let browserLoadedPromise = BrowserTestUtils.browserLoaded(

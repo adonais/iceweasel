@@ -1,8 +1,8 @@
 // Copyright 2022 the V8 project authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-#ifndef jit_riscv64_constant_Base_constant_riscv__h_
-#define jit_riscv64_constant_Base_constant_riscv__h_
+#ifndef jit_riscv64_constant_Base_constant_riscv_h_
+#define jit_riscv64_constant_Base_constant_riscv_h_
 
 #include "mozilla/Assertions.h"
 
@@ -28,11 +28,11 @@ static_assert(kMaxTracepointCode < kMaxStopCode);
 // For example:
 //
 // __ Debug(TRACE_ENABLE | LOG_TRACE);
-// starts tracing: set v8_flags.trace-sim is true.
+// starts tracing: set riscv-sim-trace is true.
 // __ Debug(TRACE_ENABLE | LOG_REGS);
 // PrintAllregs.
 // __ Debug(TRACE_DISABLE | LOG_TRACE);
-// stops tracing: set v8_flags.trace-sim is false.
+// stops tracing: set riscv-sim-trace is false.
 const uint32_t kDebuggerTracingDirectivesMask = 0b111 << 3;
 enum DebugParameters : uint32_t {
   NO_PARAM = 1 << 5,
@@ -1064,4 +1064,4 @@ bool InstructionGetters<P>::IsTrap() const {
 
 }  // namespace jit
 }  // namespace js
-#endif  //  jit_riscv64_constant_Base_constant_riscv__h_
+#endif  //  jit_riscv64_constant_Base_constant_riscv_h_

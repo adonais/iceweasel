@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Jangan tinggalkan jejak pada perangkat ini</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s menghapus kuki, riwayat, dan data situs Anda saat Anda menutup semua tab pribadi. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -323,6 +316,10 @@
   <string name="browser_menu_save_as_pdf_2">Simpan sebagai PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Terjemahkan laman</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Ringkas laman</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Baru</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Laporkan situs rusak…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -646,6 +643,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Kelola pengaturan</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Ucapkan selamat tinggal pada pelacak menyeramkan</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Buka semua tautan Anda dengan privasi bawaan</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Kami melindungi data Anda dan secara otomatis memblokir perusahaan dari memata-matai klik Anda.</string>
   <!-- "Set to default" onboarding button. -->
@@ -923,8 +922,6 @@
   <string name="preferences_search_browsing_history">Cari riwayat jelajah</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Cari markah</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Tampilkan pintasan</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Cari tab tersinkron</string>
   <!-- Preference for account settings -->
@@ -971,7 +968,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">Anda tidak memiliki izin untuk menggunakan folder ini. Coba pilih yang lain.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Anda tidak memiliki izin untuk menggunakan folder ini. Coba pilih yang lain.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Kelola unduhan dengan aplikasi lain</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1032,11 +1029,7 @@
   <string name="customize_addon_collection_user_hint">Pemilik koleksi (ID Pengguna)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Koleksi ekstensi dimodifikasi. Keluar dari aplikasi untuk menerapkan perubahan…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Lompat kembali</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Markah</string>
@@ -1595,6 +1588,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Bagikan</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Tambahkan ke koleksi</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Tambahkan ke grup</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Bagikan tab terpilih</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1635,6 +1630,27 @@
   <string name="pwa_site_controls_title_private">%1$s (Mode Privat)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Buka pencarian tab</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Buat grup tab</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Edit grup</string>
+  <string name="create_tab_group_save_button">Simpan</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Tutup Edit Grup Tab</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grup</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Grup %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nama grup tab</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Nama</string>
   <!--
     History
 
@@ -1736,6 +1752,8 @@
   <string name="download_share_url">Bagikan URL</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Bagikan berkas</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Ganti nama berkas</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Yakin ingin menghapus item yang dipilih?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
@@ -1748,6 +1766,26 @@
   <string name="download_rename_dialog_label">Nama</string>
   <string name="download_rename_dialog_confirm_button">Simpan</string>
   <string name="download_rename_dialog_cancel_button">Batal</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Berkas bernama “%s” sudah ada di lokasi ini</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Nama berkas tidak boleh menggunakan “/”</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">Tidak dapat mengganti nama berkas</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Berkas ini tidak dapat diganti namanya karena pembatasan sistem atau penyimpanan.</string>
+  <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Ubah jenis berkas menjadi %s?</string>
+  <string name="change_file_extension_description">Ini mungkin membuka berkas di aplikasi yang berbeda dan berrisiko untuk perangkat Anda.</string>
+  <string name="change_file_extension_cancel_button">Batal</string>
+  <string name="change_file_extension_confirm_button">Ya, ubah</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Sedang berlangsung</string>
   <!--
@@ -1947,7 +1985,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Ubah</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Salin</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Salin</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Bagikan</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2003,11 +2041,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s terhapus</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">URUNGKAN</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">URUNGKAN</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">%s dihapus</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s dihapus</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">Item yang dihapus: %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Item yang dihapus: %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Navigasi mundur</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2277,23 +2315,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Jadikan Firefox sebagai peramban baku Anda</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Coba penjelajahan pribadi</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Coba penjelajahan pribadi</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Menjelajah tanpa kuki atau riwayat tersimpan di %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Menjelajah tanpa kuki atau riwayat tersimpan di %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Menjelajah tanpa jejak</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Menjelajah tanpa jejak</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Penjelajahan pribadi di %1$s tidak menyimpan info Anda.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Penjelajahan pribadi di %1$s tidak menyimpan info Anda.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Mulai pencarian pertama Anda</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Mulai pencarian pertama Anda</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Temukan informasi sekitar, Atau ketahui hal menarik lainnya.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Temukan informasi sekitar, Atau ketahui hal menarik lainnya.</string>
   <!--
     Survey
 
@@ -2865,6 +2903,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Pelajari lebih lanjut</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Kelola topeng surel</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Anda telah menggunakan 5 topeng surel gratis, jadi kami memilih satu untuk Anda gunakan kembali.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Topeng surel tidak tersedia saat ini. Coba lagi dalam beberapa menit.</string>
   <!--
     Autofill
 
@@ -3635,6 +3677,13 @@
   -->
   <string name="connection_security_panel_verified_by">Diverifikasi oleh %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Diterbitkan untuk %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Memenuhi syarat sebagaimana ditentukan dalam Regulasi (EU) 2024/1183.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3684,6 +3733,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Tambahkan ke tab pribadi</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -3722,6 +3773,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Saya tidak melakukan pencarian di Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Saya tidak menggunakan sinkronisasi</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Lambat atau bermasalah</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Fitur sulit ditemukan atau hilang</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Membingungkan atau sulit digunakan</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Oke, tetapi tidak lebih baik dari peramban lain</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Saya berrencana untuk tetap menggunakan Firefox</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Bantu membuat pencetakan di Firefox menjadi lebih baik. Hanya butuh beberapa detik</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3736,6 +3797,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Seberapa puaskah Anda dengan pengalaman pencarian di Firefox?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Seberapa puaskah Anda dengan pengalaman sinkronisasi di Firefox?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Bantu kami meningkatkan Firefox. Mana yang paling menggambarkan pengalaman Anda sejauh ini?</string>
   <!--
     Accessibility
 
@@ -4034,8 +4097,6 @@
   <string name="content_description_settings_search_navigate_back">Navigasi Mundur</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Tidak ada pencarian terkini</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Terjadi kesalahan</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Bersihkan semua</string>
   <!-- Section header for recent search results -->

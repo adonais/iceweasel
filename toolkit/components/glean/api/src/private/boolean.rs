@@ -244,19 +244,17 @@ mod test {
 
         parent_metric.set(false);
 
-        {
-            let child_metric = parent_metric.child_metric();
-
-            // scope for need_ipc RAII
+        if let super::BooleanMetric::Child(meta) = parent_metric.child_metric() {
             let _raii = ipc::test_set_need_ipc(true);
-
-            child_metric.set(true);
+            super::BooleanMetric::UnorderedChild(meta).set(true);
+        } else {
+            panic!("Not an ordered child!");
         }
 
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
 
         assert!(
-            !parent_metric
+            parent_metric
                 .test_get_value(Some("test-ping".to_string()))
                 .unwrap(),
             "Boolean metrics can unsafely work in child processes"

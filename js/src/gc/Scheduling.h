@@ -516,7 +516,7 @@
   _(JSGC_STORE_BUFFER_ENTRIES, size_t, storeBufferEntries, ConvertSize,        \
     CheckNonZero, 16384)                                                       \
   _(JSGC_STORE_BUFFER_SCALING, double, storeBufferScaling, ConvertTimes100,    \
-    NoCheck, 0.25)
+    CheckNonZeroUnitRange, 0.25)
 
 namespace js {
 
@@ -524,7 +524,7 @@ class ZoneAllocator;
 
 namespace gc {
 
-struct Cell;
+class Cell;
 
 /*
  * Default settings for tuning the GC.  Some of these can be set at runtime,
@@ -556,6 +556,9 @@ static const bool NurseryEnabled = true;
 
 /* JSGC_PARALLEL_MARKING_ENABLED */
 static const bool ParallelMarkingEnabled = false;
+
+/* JSGC_CONCURRENT_MARKING_ENABLED */
+static const bool ConcurrentMarkingEnabled = false;
 
 /* JSGC_INCREMENTAL_WEAKMAP_ENABLED */
 static const bool IncrementalWeakMapMarkingEnabled = true;

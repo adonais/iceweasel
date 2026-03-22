@@ -20,7 +20,6 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/CookieStoreParent.h"
 #include "mozilla/dom/DOMTypes.h"
-#include "mozilla/dom/EndpointForReportParent.h"
 #include "mozilla/dom/FetchParent.h"
 #include "mozilla/dom/FileCreatorParent.h"
 #include "mozilla/dom/FileSystemManagerParentFactory.h"
@@ -1320,22 +1319,6 @@ BackgroundParentImpl::RecvPServiceWorkerRegistrationConstructor(
   return IPC_OK();
 }
 
-dom::PEndpointForReportParent*
-BackgroundParentImpl::AllocPEndpointForReportParent(
-    const nsAString& aGroupName, const PrincipalInfo& aPrincipalInfo) {
-  RefPtr<dom::EndpointForReportParent> actor =
-      new dom::EndpointForReportParent();
-  return actor.forget().take();
-}
-
-mozilla::ipc::IPCResult BackgroundParentImpl::RecvPEndpointForReportConstructor(
-    PEndpointForReportParent* aActor, const nsAString& aGroupName,
-    const PrincipalInfo& aPrincipalInfo) {
-  static_cast<dom::EndpointForReportParent*>(aActor)->Run(aGroupName,
-                                                          aPrincipalInfo);
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult
 BackgroundParentImpl::RecvEnsureRDDProcessAndCreateBridge(
     EnsureRDDProcessAndCreateBridgeResolver&& aResolver) {
@@ -1444,27 +1427,6 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvRequestCameraAccess(
 #else
   aResolver(CamerasAccessStatus::Error);
 #endif
-  return IPC_OK();
-}
-
-bool BackgroundParentImpl::DeallocPEndpointForReportParent(
-    PEndpointForReportParent* aActor) {
-  RefPtr<dom::EndpointForReportParent> actor =
-      dont_AddRef(static_cast<dom::EndpointForReportParent*>(aActor));
-  return true;
-}
-
-mozilla::ipc::IPCResult BackgroundParentImpl::RecvRemoveEndpoint(
-    const nsAString& aGroupName, const nsACString& aEndpointURL,
-    const PrincipalInfo& aPrincipalInfo) {
-  NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "BackgroundParentImpl::RecvRemoveEndpoint(",
-      [aGroupName = nsString(aGroupName),
-       aEndpointURL = nsCString(aEndpointURL), aPrincipalInfo]() {
-        dom::ReportingHeader::RemoveEndpoint(aGroupName, aEndpointURL,
-                                             aPrincipalInfo);
-      }));
-
   return IPC_OK();
 }
 

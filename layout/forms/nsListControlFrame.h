@@ -3,13 +3,12 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#ifndef nsListControlFrame_h___
-#define nsListControlFrame_h___
+#ifndef nsListControlFrame_h_
+#define nsListControlFrame_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPtr.h"
-#include "nsISelectControlFrame.h"
 
 class nsComboboxControlFrame;
 class nsPresContext;
@@ -30,8 +29,7 @@ class HTMLOptionsCollection;
  * Frame-based listbox.
  */
 
-class nsListControlFrame final : public mozilla::ScrollContainerFrame,
-                                 public nsISelectControlFrame {
+class nsListControlFrame final : public mozilla::ScrollContainerFrame {
  public:
   using HTMLOptionElement = mozilla::dom::HTMLOptionElement;
 
@@ -49,8 +47,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame,
   nsresult HandleEvent(nsPresContext* aPresContext,
                        mozilla::WidgetGUIEvent* aEvent,
                        nsEventStatus* aEventStatus) final;
-
-  void SetInitialChildList(ChildListID aListID, nsFrameList&& aChildList) final;
 
   nscoord IntrinsicISize(const mozilla::IntrinsicSizeInput& aInput,
                          mozilla::IntrinsicISizeType aType) final;
@@ -94,22 +90,19 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame,
   uint32_t GetNumberOfOptions();
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnContentReset();
-
-  // nsISelectControlFrame
-  NS_IMETHOD AddOption(int32_t index) final;
-  NS_IMETHOD RemoveOption(int32_t index) final;
+  void AddOption(int32_t aIndex);
+  void RemoveOption(int32_t aIndex);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  NS_IMETHOD DoneAddingChildren(bool aIsDone) final;
+  void DoneAddingChildren();
 
   /**
    * Gets the content (an option) by index and then set it as
    * being selected or not selected.
    */
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  NS_IMETHOD OnOptionSelected(int32_t aIndex, bool aSelected) final;
+  void OnOptionSelected(int32_t aIndex, bool aSelected);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  NS_IMETHOD_(void)
-  OnSetSelectedIndex(int32_t aOldIndex, int32_t aNewIndex) final;
+  void OnSetSelectedIndex(int32_t aOldIndex, int32_t aNewIndex);
 
   /**
    * Mouse event listeners.
@@ -283,9 +276,6 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame,
   nscoord mBSizeOfARow = -1;
   bool mChangesSinceDragStart : 1;
 
-  bool mIsAllContentHere : 1;
-  bool mIsAllFramesHere : 1;
-  bool mHasBeenInitialized : 1;
   bool mNeedToReset : 1;
   bool mPostChildrenLoadedReset : 1;
 
@@ -299,4 +289,4 @@ class nsListControlFrame final : public mozilla::ScrollContainerFrame,
   RefPtr<mozilla::HTMLSelectEventListener> mEventListener;
 };
 
-#endif /* nsListControlFrame_h___ */
+#endif /* nsListControlFrame_h_ */

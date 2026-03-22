@@ -49,9 +49,8 @@ namespace mozilla {
 using namespace dom;
 using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 using EmptyCheckOptions = HTMLEditUtils::EmptyCheckOptions;
-using LeafNodeType = HTMLEditUtils::LeafNodeType;
-using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
-using WalkTreeOption = HTMLEditUtils::WalkTreeOption;
+using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
+using LeafNodeOptions = HTMLEditUtils::LeafNodeOptions;
 
 Result<EditActionResult, nsresult>
 HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
@@ -1060,7 +1059,9 @@ nsresult HTMLEditor::AutoInsertParagraphHandler::
   if (!backwardScanFromPointToCreateNewBRElementResult
            .InVisibleOrCollapsibleCharacters() &&
       !backwardScanFromPointToCreateNewBRElementResult
-           .ReachedSpecialContent()) {
+           .ReachedSpecialContent() &&
+      !backwardScanFromPointToCreateNewBRElementResult
+           .ReachedEmptyInlineContainerElement()) {
     return NS_SUCCESS_DOM_NO_OPERATION;
   }
   const WSScanResult forwardScanFromPointAfterNewBRElementResult =
@@ -1075,6 +1076,8 @@ nsresult HTMLEditor::AutoInsertParagraphHandler::
   if (!forwardScanFromPointAfterNewBRElementResult
            .InVisibleOrCollapsibleCharacters() &&
       !forwardScanFromPointAfterNewBRElementResult.ReachedSpecialContent() &&
+      !forwardScanFromPointAfterNewBRElementResult
+           .ReachedEmptyInlineContainerElement() &&
       // In case we're at the very end.
       !forwardScanFromPointAfterNewBRElementResult
            .ReachedCurrentBlockBoundary()) {
@@ -1216,7 +1219,8 @@ bool HTMLEditor::AutoInsertParagraphHandler::ShouldCreateNewParagraph(
       const auto* const precedingBRElement =
           HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetPreviousSibling(
               *aPointToSplit.ContainerAs<Text>(),
-              {WalkTreeOption::IgnoreNonEditableNode}));
+              {LeafNodeOption::IgnoreNonEditableNode},
+              BlockInlineCheck::UseComputedDisplayOutsideStyle));
       return !IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(
           precedingBRElement);
     }
@@ -1228,7 +1232,8 @@ bool HTMLEditor::AutoInsertParagraphHandler::ShouldCreateNewParagraph(
       const auto* const followingBRElement =
           HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetNextSibling(
               *aPointToSplit.ContainerAs<Text>(),
-              {WalkTreeOption::IgnoreNonEditableNode}));
+              {LeafNodeOption::IgnoreNonEditableNode},
+              BlockInlineCheck::UseComputedDisplayOutsideStyle));
       return !IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(
           followingBRElement);
     }
@@ -1246,9 +1251,9 @@ bool HTMLEditor::AutoInsertParagraphHandler::ShouldCreateNewParagraph(
   //     moving to the caret, but I think that this could be handled in fewer
   //     cases than this.
   const auto* const precedingBRElement =
-      HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetPreviousContent(
-          aPointToSplit, {WalkTreeOption::IgnoreNonEditableNode},
-          BlockInlineCheck::Unused, &mEditingHost));
+      HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetPreviousLeafContent(
+          aPointToSplit, {LeafNodeOption::IgnoreNonEditableNode},
+          BlockInlineCheck::Auto, &mEditingHost));
   if (!IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(
           precedingBRElement)) {
     return true;
@@ -1257,9 +1262,9 @@ bool HTMLEditor::AutoInsertParagraphHandler::ShouldCreateNewParagraph(
   // followed by a <br> or followed by an invisible <br>, we should not create a
   // new paragraph.
   const auto* followingBRElement =
-      HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetNextContent(
-          aPointToSplit, {WalkTreeOption::IgnoreNonEditableNode},
-          BlockInlineCheck::Unused, &mEditingHost));
+      HTMLBRElement::FromNodeOrNull(HTMLEditUtils::GetNextLeafContent(
+          aPointToSplit, {LeafNodeOption::IgnoreNonEditableNode},
+          BlockInlineCheck::Auto, &mEditingHost));
   return !IsNullOrInvisibleBRElementOrPaddingOneForEmptyLastLine(
       followingBRElement);
 }
@@ -1377,44 +1382,59 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AutoInsertParagraphHandler::
   const WSScanResult prevVisibleThing =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
           {}, aPointToSplit, &aBlockElementToSplit);
-  Maybe<EditorLineBreak> precedingInvisibleLineBreak;
-  if (prevVisibleThing.ReachedBRElement()) {
-    precedingInvisibleLineBreak.emplace(*prevVisibleThing.BRElementPtr());
-  } else if (prevVisibleThing.ReachedPreformattedLineBreak()) {
-    precedingInvisibleLineBreak.emplace(*prevVisibleThing.TextPtr(),
-                                        prevVisibleThing.Offset_Deprecated());
-  } else {
+  if (!prevVisibleThing.ReachedLineBreak()) {
     return aPointToSplit;
   }
   EditorDOMPoint pointToSplit = aPointToSplit;
+  EditorLineBreak precedingLineBreak =
+      prevVisibleThing.CreateEditorLineBreak<EditorLineBreak>();
   {
     // FIXME: Once bug 1951041 is fixed in the layout level, we don't need to
     // treat collapsible white-spaces before invisible <br> elements here.
     AutoTrackDOMPoint trackPointToSplit(mHTMLEditor.RangeUpdaterRef(),
                                         &pointToSplit);
+    Maybe<AutoTrackLineBreak> trackPrecedingLineBreak;
+    if (precedingLineBreak.IsPreformattedLineBreak()) {
+      trackPrecedingLineBreak.emplace(mHTMLEditor.RangeUpdaterRef(),
+                                      &precedingLineBreak);
+    }
     Result<EditorDOMPoint, nsresult>
         normalizePrecedingWhiteSpacesResultOrError =
+            [&]() MOZ_CAN_RUN_SCRIPT -> Result<EditorDOMPoint, nsresult> {
+      if (precedingLineBreak.IsHTMLBRElement() ||
+          precedingLineBreak.IsPreformattedLineBreakAtStartOfText()) {
+        Result<EditorDOMPoint, nsresult> ret =
             WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore(
-                mHTMLEditor, precedingInvisibleLineBreak->To<EditorDOMPoint>(),
-                {});
-    if (MOZ_UNLIKELY(normalizePrecedingWhiteSpacesResultOrError.isErr())) {
-      NS_WARNING(
-          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore() failed");
+                mHTMLEditor, precedingLineBreak.To<EditorDOMPoint>(), {});
+        NS_WARNING_ASSERTION(
+            ret.isOk(),
+            "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesBefore() failed");
+        return ret;
+      }
+      Result<EditorDOMPoint, nsresult> ret =
+          WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt(
+              mHTMLEditor, precedingLineBreak.To<EditorDOMPoint>(), {});
+      NS_WARNING_ASSERTION(
+          ret.isOk(),
+          "WhiteSpaceVisibilityKeeper::NormalizeWhiteSpacesToSplitAt() failed");
+      return ret;
+    }();
+    if (NS_WARN_IF(normalizePrecedingWhiteSpacesResultOrError.isErr())) {
       return normalizePrecedingWhiteSpacesResultOrError.propagateErr();
     }
   }
   if (NS_WARN_IF(!pointToSplit.IsInContentNodeAndValidInComposedDoc()) ||
       NS_WARN_IF(!pointToSplit.GetContainer()->IsInclusiveDescendantOf(
-          &aBlockElementToSplit))) {
+          &aBlockElementToSplit)) ||
+      NS_WARN_IF(!precedingLineBreak.IsDeletableFromComposedDoc())) {
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
   {
     AutoTrackDOMPoint trackPointToSplit(mHTMLEditor.RangeUpdaterRef(),
                                         &pointToSplit);
     Result<EditorDOMPoint, nsresult> deleteInvisibleLineBreakResult =
-        mHTMLEditor.DeleteLineBreakWithTransaction(*precedingInvisibleLineBreak,
-                                                   nsIEditor::eNoStrip,
-                                                   aBlockElementToSplit);
+        mHTMLEditor.DeleteLineBreakWithTransaction(
+            precedingLineBreak, nsIEditor::eNoStrip, aBlockElementToSplit);
     if (MOZ_UNLIKELY(deleteInvisibleLineBreakResult.isErr())) {
       NS_WARNING("HTMLEditor::DeleteLineBreakWithTransaction() failed");
       return deleteInvisibleLineBreakResult.propagateErr();
@@ -1498,8 +1518,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::AutoInsertParagraphHandler::
         if (nextVisibleThing.ReachedBRElement()) {
           unnecessaryLineBreak.emplace(*nextVisibleThing.BRElementPtr());
         } else if (nextVisibleThing.ReachedPreformattedLineBreak()) {
-          unnecessaryLineBreak.emplace(*nextVisibleThing.TextPtr(),
-                                       nextVisibleThing.Offset_Deprecated());
+          unnecessaryLineBreak.emplace(
+              nextVisibleThing.CreateEditorLineBreak<EditorLineBreak>());
         }
         return candidatePoint;
       }();
@@ -1607,7 +1627,7 @@ HTMLEditor::AutoInsertParagraphHandler::SplitParagraphWithTransaction(
   // white-spaces at the split point.
   Result<EditorDOMPoint, nsresult> preparationResult =
       WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement(
-          mHTMLEditor, aPointToSplit, aBlockElementToSplit);
+          mHTMLEditor, pointToSplit, aBlockElementToSplit);
   if (MOZ_UNLIKELY(preparationResult.isErr())) {
     NS_WARNING(
         "WhiteSpaceVisibilityKeeper::PrepareToSplitBlockElement() failed");
@@ -1749,7 +1769,7 @@ HTMLEditor::AutoInsertParagraphHandler::SplitParagraphWithTransaction(
 
   // Let's put caret at start of the first leaf container.
   nsIContent* child = HTMLEditUtils::GetFirstLeafContent(
-      *rightDivOrParagraphElement, {LeafNodeType::LeafNodeOrChildBlock},
+      *rightDivOrParagraphElement, {LeafNodeOption::TreatChildBlockAsLeafNode},
       BlockInlineCheck::UseComputedDisplayStyle);
   if (MOZ_UNLIKELY(!child)) {
     return SplitNodeResult(std::move(splitDivOrPResult),
@@ -1830,8 +1850,9 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInListItemElement(
     // If the given list item element is not the last list item element of
     // its parent nor not followed by sub list elements, split the parent
     // before it.
-    if (!HTMLEditUtils::IsLastChild(aListItemElement,
-                                    {WalkTreeOption::IgnoreNonEditableNode})) {
+    if (!HTMLEditUtils::IsLastChild(
+            aListItemElement, {LeafNodeOption::IgnoreNonEditableNode},
+            BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
       Result<SplitNodeResult, nsresult> splitListItemParentResult =
           mHTMLEditor.SplitNodeWithTransaction(
               EditorDOMPoint(&aListItemElement));

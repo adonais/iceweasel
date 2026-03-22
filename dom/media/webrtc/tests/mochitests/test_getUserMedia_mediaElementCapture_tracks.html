@@ -38,7 +38,7 @@ runTest(async () => {
     await haveEvent(audioElement, "loadedmetadata", wait(50000, new Error("Timeout")));
 
     info("Capturing audio element (loadedmetadata -> captureStream)");
-    audioCaptureStream = audioElement.mozCaptureStream();
+    audioCaptureStream = audioElement.captureStream?.() || audioElement.mozCaptureStream();
 
     is(audioCaptureStream.getAudioTracks().length, 2,
       "audio element should capture two audio tracks");
@@ -50,7 +50,7 @@ runTest(async () => {
     videoElement = createMediaElement("video", "gUMVideo");
 
     info("Capturing video element (captureStream -> loadedmetadata)");
-    videoCaptureStream = videoElement.mozCaptureStream();
+    videoCaptureStream = videoElement.captureStream?.() || videoElement.mozCaptureStream();
     videoElement.srcObject = audioElement.srcObject.clone();
 
     is(videoCaptureStream.getTracks().length, 0,

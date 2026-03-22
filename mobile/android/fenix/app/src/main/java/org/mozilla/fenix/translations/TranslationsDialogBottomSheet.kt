@@ -50,8 +50,8 @@ import org.mozilla.fenix.compose.InfoType
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import java.util.Locale
 import mozilla.components.ui.icons.R as iconsR
 
@@ -735,7 +735,7 @@ internal fun getTranslateToLanguageList(): List<Language> {
 @Preview
 @Composable
 private fun TranslationsDialogBottomSheetPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         Surface {

@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsPACMan_h__
-#define nsPACMan_h__
+#ifndef nsPACMan_h_
+#define nsPACMan_h_
 
 #include "mozilla/Atomics.h"
 #include "mozilla/DataMutex.h"
@@ -295,4 +295,4 @@ extern LazyLogModule gProxyLog;
 }  // namespace net
 }  // namespace mozilla
 
-#endif  // nsPACMan_h__
+#endif  // nsPACMan_h_

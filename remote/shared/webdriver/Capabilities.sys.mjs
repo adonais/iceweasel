@@ -84,39 +84,23 @@ export class Timeouts {
     let t = new Timeouts();
 
     for (let [type, ms] of Object.entries(json)) {
-      switch (type) {
-        case "implicit":
-          t.implicit = lazy.assert.positiveInteger(
-            ms,
-            `Expected "${type}" to be a positive integer, ` +
-              lazy.pprint`got ${ms}`
-          );
-          break;
-
-        case "script":
-          if (ms !== null) {
-            lazy.assert.positiveInteger(
-              ms,
-              `Expected "${type}" to be a positive integer, ` +
-                lazy.pprint`got ${ms}`
-            );
-          }
-          t.script = ms;
-          break;
-
-        case "pageLoad":
-          t.pageLoad = lazy.assert.positiveInteger(
-            ms,
-            `Expected "${type}" to be a positive integer, ` +
-              lazy.pprint`got ${ms}`
-          );
-          break;
-
-        default:
-          throw new lazy.error.InvalidArgumentError(
-            `Unrecognized timeout: ${type}`
-          );
+      const supportedTimeouts = ["implicit", "pageLoad", "script"];
+      if (!supportedTimeouts.includes(type)) {
+        throw new lazy.error.InvalidArgumentError(
+          `Expected type of timeout to be one of "${supportedTimeouts.join(", ")}", ` +
+            lazy.pprint`got ${type}`
+        );
       }
+
+      if (ms !== null) {
+        lazy.assert.positiveInteger(
+          ms,
+          `Expected "${type}" to be a positive integer, ` +
+            lazy.pprint`got ${ms}`
+        );
+      }
+
+      t[type] = ms;
     }
 
     return t;

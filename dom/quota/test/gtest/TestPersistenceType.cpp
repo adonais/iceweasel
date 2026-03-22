@@ -39,4 +39,12 @@ TEST(PersistenceType, FromFile)
   testPersistenceType(u"foobar"_ns, Nothing());
 }
 
+TEST(PersistenceType, Temporary)
+{
+  EXPECT_TRUE(IsTemporaryPersistenceType(PERSISTENCE_TYPE_TEMPORARY));
+  EXPECT_TRUE(IsTemporaryPersistenceType(PERSISTENCE_TYPE_DEFAULT));
+  EXPECT_TRUE(IsTemporaryPersistenceType(PERSISTENCE_TYPE_PRIVATE));
+  EXPECT_FALSE(IsTemporaryPersistenceType(PERSISTENCE_TYPE_PERSISTENT));
+}
+
 }  // namespace mozilla::dom::quota

@@ -39,6 +39,8 @@
     /** @type {MozTabbrowserTab[]} */
     #tabs = [];
 
+    #isClosing = false;
+
     #storedPanelWidths = new WeakMap();
 
     /**
@@ -58,14 +60,44 @@
     }
 
     /**
+     * @typedef {object} TabSplitViewStateData
+     *   State of a tab group inside of an open window.
+     * @property {number} id
+     *   Unique ID of the tab splitview.
+     * @property {number} numberOfTabs
+     *   Number of expected tabs in the splitview.
+     *
+     * Collect data related to a single tab splitview, synchronously.
+     *
+     * @returns {TabSplitViewStateData}
+     *   Serialized splitview data
+     */
+    get state() {
+      return {
+        id: this.splitViewId,
+        numberOfTabs: this.tabs.length,
+      };
+    }
+
+    /**
      * @param {boolean} val
      */
     set hasActiveTab(val) {
       this.toggleAttribute("hasactivetab", val);
     }
 
+    get multiselected() {
+      return this.hasAttribute("multiselected");
+    }
+
     constructor() {
       super();
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "_hasUsedSplitView",
+        "browser.tabs.splitview.hasUsed",
+        false
+      );
     }
 
     connectedCallback() {
@@ -82,6 +114,10 @@
 
       if (this._initialized) {
         return;
+      }
+
+      if (!this._hasUsedSplitView) {
+        Services.prefs.setBoolPref("browser.tabs.splitview.hasUsed", true);
       }
 
       this._initialized = true;
@@ -117,12 +153,17 @@
               tab.setAttribute("aria-setsize", this.tabs.length);
               tab.updateSplitViewAriaLabel(index);
             });
+            this.dispatchEvent(
+              new CustomEvent("SplitViewTabChange", {
+                bubbles: true,
+              })
+            );
           } else {
             this.remove();
           }
 
           if (this.tabs.length < 2) {
-            this.unsplitTabs();
+            this.unsplitTabs("tab_close");
           }
         });
       }
@@ -132,7 +173,7 @@
     }
 
     get splitViewId() {
-      return this.getAttribute("splitViewId");
+      return parseInt(this.getAttribute("splitViewId"));
     }
 
     set splitViewId(val) {
@@ -148,6 +189,10 @@
 
     get visible() {
       return this.tabs.every(tab => tab.visible);
+    }
+
+    get pinned() {
+      return false;
     }
 
     /**
@@ -185,10 +230,10 @@
     /**
      * Remove Split View tabs from the content area.
      */
-    #deactivate(skipHidePanels = false) {
-      if (!skipHidePanels) {
-        gBrowser.hideSplitViewPanels(this.#tabs);
-      }
+    #deactivate() {
+      gBrowser.hideSplitViewPanels(
+        this.#tabs.filter(tab => !tab.splitview || tab.splitview === this)
+      );
       updateUrlbarButton.arm();
       this.container.dispatchEvent(
         new CustomEvent("TabSplitViewDeactivate", {
@@ -227,11 +272,25 @@
     }
 
     /**
+     * Reset custom width on the right panel, allowing it to fill the rest of
+     * the available space.
+     */
+    resetRightPanelWidth() {
+      const panel = this.panels[1];
+      this.#storedPanelWidths.delete(panel);
+      panel.removeAttribute("width");
+      panel.style.removeProperty("width");
+    }
+
+    /**
      * add tabs to the split view wrapper
      *
      * @param {MozTabbrowserTab[]} tabs
+     * @param {object} [options]
+     * @param {boolean} [options.isSessionRestore]
+     * @param {int} [options.indexOfReplacedTab] [optional] Used if replacing a tab in the split view
      */
-    addTabs(tabs) {
+    addTabs(tabs, { isSessionRestore = false, indexOfReplacedTab = -1 } = {}) {
       for (let tab of tabs) {
         if (tab.pinned) {
           return;
@@ -243,50 +302,112 @@
                 tabIndex: gBrowser.tabs.at(-1)._tPos + 1,
                 selectTab: tab.selected,
               });
-        this.#tabs.push(tabToMove);
-        gBrowser.moveTabToSplitView(tabToMove, this);
+        if (indexOfReplacedTab > -1 && indexOfReplacedTab < this.#tabs.length) {
+          this.#tabs[indexOfReplacedTab] = tabToMove;
+        } else {
+          this.#tabs.push(tabToMove);
+        }
+        isSessionRestore
+          ? this.appendChild(tab)
+          : gBrowser.moveTabToSplitView(tabToMove, this, indexOfReplacedTab);
         if (tab === gBrowser.selectedTab) {
           this.hasActiveTab = true;
         }
       }
-      if (this.hasActiveTab) {
+
+      if (this.hasActiveTab || isSessionRestore) {
         this.#activate();
-        gBrowser.setIsSplitViewActive(true, this.#tabs);
+        gBrowser.setIsSplitViewActive(this.hasActiveTab, this.#tabs);
+      }
+      // Attempt to update uriCount metric using the resulting tabs collection,
+      // as tabs may not be added to the splitview if they are pinned etc.
+      for (let tab of this.tabs) {
+        let tabURI = tab.linkedBrowser.currentURI.spec;
+        if (!isBlankPageURL(tabURI) && tabURI !== "about:opentabs") {
+          // Add to the counter which tracks the number of URIs loaded into splitview tabs
+          const index = tabs.indexOf(tab);
+          const label = String(index + 1); // 0 -> "1" (LTR left), 1 -> "2" (LTR right)
+          Glean.splitview.uriCount[label].add(1);
+        }
       }
     }
 
     /**
      * Remove all tabs from the split view wrapper and delete the split view.
+     *
+     * @param {string} [trigger]
+     *   The trigger method for ending the split view. Used for telemetry.
      */
-    unsplitTabs() {
-      gBrowser.unsplitTabs(this);
-      gBrowser.setIsSplitViewActive(false, this.#tabs);
+    unsplitTabs(trigger = null) {
+      gBrowser.unsplitTabs(this, this.#isClosing ? null : trigger);
+      gBrowser.setIsSplitViewActive(
+        false,
+        this.#tabs.filter(tab => !tab.splitview || tab.splitview === this)
+      );
     }
 
     /**
      * Replace a tab in the split view with another tab
      */
     replaceTab(tabToReplace, newTab) {
-      this.#tabs = this.#tabs.filter(tab => tab != tabToReplace);
-      this.addTabs([newTab]);
+      let indexOfReplacedTab = this.tabs.indexOf(tabToReplace);
+      this.addTabs([newTab], { isSessionRestore: false, indexOfReplacedTab });
+
+      // Get the adopted tab reference from the split view's internal tabs array.
+      // If the tab was adopted from another window, the original newTab reference
+      // is stale and points to the tab in the old window.
+      let adoptedTab = this.#tabs[indexOfReplacedTab];
+
+      // Select the adopted tab BEFORE removing the old one to prevent Firefox
+      // from auto-selecting the wrong tab when the old selected tab is removed.
+      if (tabToReplace.selected) {
+        gBrowser.selectedTab = adoptedTab;
+      }
+
       gBrowser.removeTab(tabToReplace);
+
+      // We need to re-activate after removing one of the split view tabs
+      this.#activate();
+      gBrowser.setIsSplitViewActive(true, this.#tabs);
     }
 
     /**
      * Reverse order of the tabs in the split view wrapper.
+     *
+     * @param {string} [trigger]
+     *   The trigger method for reversing tabs. Used for telemetry.
      */
-    reverseTabs() {
+    reverseTabs(trigger = null) {
       const [firstTab, secondTab] = this.#tabs;
       gBrowser.moveTabBefore(secondTab, firstTab);
       this.#tabs = [secondTab, firstTab];
       gBrowser.showSplitViewPanels(this.#tabs);
       updateUrlbarButton.arm();
+
+      // Record telemetry
+      if (trigger) {
+        Glean.splitview.reverse.record({ trigger });
+      }
     }
 
     /**
      * Close all tabs in the split view wrapper and delete the split view.
+     *
+     * @param {string} [trigger]
+     *   The trigger method for ending the split view. Used for telemetry.
      */
-    close() {
+    close(trigger = null) {
+      // Record telemetry before closing
+      if (trigger) {
+        const tab_layout = gBrowser.tabContainer.verticalMode
+          ? "vertical"
+          : "horizontal";
+        Glean.splitview.end.record({
+          tab_layout,
+          trigger,
+        });
+      }
+      this.#isClosing = true;
       gBrowser.removeTabs(this.#tabs);
     }
 
@@ -299,7 +420,7 @@
       if (this.hasActiveTab) {
         this.#activate();
       } else {
-        this.#deactivate(true);
+        this.#deactivate();
       }
     }
   }

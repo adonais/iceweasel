@@ -3814,15 +3814,15 @@ TEST_P(TestQuotaManagerAndClearStorageWithBoolPair,
 
   if (createThumbnailPrivateIdentityOrigins) {
     ASSERT_NO_FATAL_FAILURE(InitializeTemporaryOrigin(
-        GetOriginMetadata(nsFmtCString(FMT_STRING("^userContextId={}"),
-                                       thumbnailPrivateIdentityId),
-                          "mozilla.org"_ns, "http://www.mozilla.org"_ns),
+        GetOriginMetadata(
+            nsFmtCString("^userContextId={}", thumbnailPrivateIdentityId),
+            "mozilla.org"_ns, "http://www.mozilla.org"_ns),
         /* aCreateIfNonExistent */ true));
 
     ASSERT_NO_FATAL_FAILURE(InitializeTemporaryOrigin(
-        GetOriginMetadata(nsFmtCString(FMT_STRING("^userContextId={}"),
-                                       thumbnailPrivateIdentityId),
-                          "mozilla.com"_ns, "http://www.mozilla.com"_ns),
+        GetOriginMetadata(
+            nsFmtCString("^userContextId={}", thumbnailPrivateIdentityId),
+            "mozilla.com"_ns, "http://www.mozilla.com"_ns),
         /* aCreateIfNonExistent */ true));
   }
 
@@ -3832,8 +3832,8 @@ TEST_P(TestQuotaManagerAndClearStorageWithBoolPair,
 
   const auto iterationsBefore = TotalDirectoryIterations();
 
-  ClearStoragesForOriginAttributesPattern(nsFmtString(
-      FMT_STRING(u"{{ \"userContextId\": {} }}"), thumbnailPrivateIdentityId));
+  ClearStoragesForOriginAttributesPattern(
+      nsFmtString(u"{{ \"userContextId\": {} }}", thumbnailPrivateIdentityId));
 
   const auto iterationsAfter = TotalDirectoryIterations();
 
@@ -3844,12 +3844,11 @@ TEST_P(TestQuotaManagerAndClearStorageWithBoolPair,
                                                                       : 0u;
   ASSERT_EQ(iterations, expectedIterations);
 
-  const auto matchesUserContextId =
-      [thumbnailPrivateIdentityId](const auto& origin) {
-        return FindInReadable(nsFmtCString(FMT_STRING("userContextId={}"),
-                                           thumbnailPrivateIdentityId),
-                              origin);
-      };
+  const auto matchesUserContextId = [thumbnailPrivateIdentityId](
+                                        const auto& origin) {
+    return FindInReadable(
+        nsFmtCString("userContextId={}", thumbnailPrivateIdentityId), origin);
+  };
 
   const auto origins = ListOrigins();
 
@@ -3924,17 +3923,15 @@ TEST_F(TestQuotaManagerAndShutdownFixture,
       ASSERT_EQ(quotaManager->ThumbnailPrivateIdentityTemporaryOriginCount(),
                 0u);
 
-      quotaManager->AddTemporaryOrigin(
-          GetFullOriginMetadata(nsFmtCString(FMT_STRING("^userContextId={}"),
-                                             thumbnailPrivateIdentityId),
-                                "mozilla.org"_ns, "http://www.mozilla.org"_ns));
+      quotaManager->AddTemporaryOrigin(GetFullOriginMetadata(
+          nsFmtCString("^userContextId={}", thumbnailPrivateIdentityId),
+          "mozilla.org"_ns, "http://www.mozilla.org"_ns));
       ASSERT_EQ(quotaManager->ThumbnailPrivateIdentityTemporaryOriginCount(),
                 1u);
 
-      quotaManager->AddTemporaryOrigin(
-          GetFullOriginMetadata(nsFmtCString(FMT_STRING("^userContextId={}"),
-                                             thumbnailPrivateIdentityId),
-                                "mozilla.com"_ns, "http://www.mozilla.com"_ns));
+      quotaManager->AddTemporaryOrigin(GetFullOriginMetadata(
+          nsFmtCString("^userContextId={}", thumbnailPrivateIdentityId),
+          "mozilla.com"_ns, "http://www.mozilla.com"_ns));
       ASSERT_EQ(quotaManager->ThumbnailPrivateIdentityTemporaryOriginCount(),
                 2u);
 
@@ -3955,17 +3952,15 @@ TEST_F(TestQuotaManagerAndShutdownFixture,
       ASSERT_EQ(quotaManager->ThumbnailPrivateIdentityTemporaryOriginCount(),
                 2u);
 
-      quotaManager->RemoveTemporaryOrigin(
-          GetFullOriginMetadata(nsFmtCString(FMT_STRING("^userContextId={}"),
-                                             thumbnailPrivateIdentityId),
-                                "mozilla.org"_ns, "http://www.mozilla.org"_ns));
+      quotaManager->RemoveTemporaryOrigin(GetFullOriginMetadata(
+          nsFmtCString("^userContextId={}", thumbnailPrivateIdentityId),
+          "mozilla.org"_ns, "http://www.mozilla.org"_ns));
       ASSERT_EQ(quotaManager->ThumbnailPrivateIdentityTemporaryOriginCount(),
                 1u);
 
-      quotaManager->RemoveTemporaryOrigin(
-          GetFullOriginMetadata(nsFmtCString(FMT_STRING("^userContextId={}"),
-                                             thumbnailPrivateIdentityId),
-                                "mozilla.com"_ns, "http://www.mozilla.com"_ns));
+      quotaManager->RemoveTemporaryOrigin(GetFullOriginMetadata(
+          nsFmtCString("^userContextId={}", thumbnailPrivateIdentityId),
+          "mozilla.com"_ns, "http://www.mozilla.com"_ns));
       ASSERT_EQ(quotaManager->ThumbnailPrivateIdentityTemporaryOriginCount(),
                 0u);
     }
@@ -3991,17 +3986,15 @@ TEST_F(TestQuotaManagerAndShutdownFixture,
       ASSERT_EQ(quotaManager->ThumbnailPrivateIdentityTemporaryOriginCount(),
                 0u);
 
-      quotaManager->AddTemporaryOrigin(
-          GetFullOriginMetadata(nsFmtCString(FMT_STRING("^userContextId={}"),
-                                             thumbnailPrivateIdentityId),
-                                "mozilla.org"_ns, "http://www.mozilla.org"_ns));
+      quotaManager->AddTemporaryOrigin(GetFullOriginMetadata(
+          nsFmtCString("^userContextId={}", thumbnailPrivateIdentityId),
+          "mozilla.org"_ns, "http://www.mozilla.org"_ns));
       ASSERT_EQ(quotaManager->ThumbnailPrivateIdentityTemporaryOriginCount(),
                 1u);
 
-      quotaManager->AddTemporaryOrigin(
-          GetFullOriginMetadata(nsFmtCString(FMT_STRING("^userContextId={}"),
-                                             thumbnailPrivateIdentityId),
-                                "mozilla.com"_ns, "http://www.mozilla.com"_ns));
+      quotaManager->AddTemporaryOrigin(GetFullOriginMetadata(
+          nsFmtCString("^userContextId={}", thumbnailPrivateIdentityId),
+          "mozilla.com"_ns, "http://www.mozilla.com"_ns));
       ASSERT_EQ(quotaManager->ThumbnailPrivateIdentityTemporaryOriginCount(),
                 2u);
 
@@ -4035,17 +4028,15 @@ TEST_F(TestQuotaManagerAndShutdownFixture,
       ASSERT_EQ(quotaManager->ThumbnailPrivateIdentityTemporaryOriginCount(),
                 0u);
 
-      quotaManager->AddTemporaryOrigin(
-          GetFullOriginMetadata(nsFmtCString(FMT_STRING("^userContextId={}"),
-                                             thumbnailPrivateIdentityId),
-                                "mozilla.org"_ns, "http://www.mozilla.org"_ns));
+      quotaManager->AddTemporaryOrigin(GetFullOriginMetadata(
+          nsFmtCString("^userContextId={}", thumbnailPrivateIdentityId),
+          "mozilla.org"_ns, "http://www.mozilla.org"_ns));
       ASSERT_EQ(quotaManager->ThumbnailPrivateIdentityTemporaryOriginCount(),
                 1u);
 
-      quotaManager->AddTemporaryOrigin(
-          GetFullOriginMetadata(nsFmtCString(FMT_STRING("^userContextId={}"),
-                                             thumbnailPrivateIdentityId),
-                                "mozilla.com"_ns, "http://www.mozilla.com"_ns));
+      quotaManager->AddTemporaryOrigin(GetFullOriginMetadata(
+          nsFmtCString("^userContextId={}", thumbnailPrivateIdentityId),
+          "mozilla.com"_ns, "http://www.mozilla.com"_ns));
       ASSERT_EQ(quotaManager->ThumbnailPrivateIdentityTemporaryOriginCount(),
                 2u);
 

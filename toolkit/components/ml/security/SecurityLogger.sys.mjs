@@ -15,18 +15,8 @@
  * To enable debug-level output:
  *   ./mach run --setpref browser.ml.logLevel=Debug
  *
- * Or using MOZ_LOG:
- *   MOZ_LOG=SecurityLogger:5 ./mach run
- *
- * To filter in Browser Console:
- *   Type "SecurityLogger" in the filter box
- *
- * To save logs from Browser Console:
- *   Right-click --> "Save all Messages to File"
- *   Then filter: grep "SecurityLogger" security.log
- *
- * To capture terminal output:
- *   ./mach run 2>&1 | grep "SecurityLogger" | tee security.log
+ * Then filter for "SecurityLogger".
+ * For all security & ML/AI related messages filter for "[MLSecurity]".
  */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
@@ -59,17 +49,17 @@ export function logSecurityEvent(event) {
   // Summary line for quick visibility
   if (error) {
     lazy.console.error(
-      `[${phase}] Security evaluation error:`,
+      `[MLSecurity][${phase}] Security evaluation error:`,
       error.message || error
     );
   } else if (decision.effect === lazy.EFFECT_DENY) {
     lazy.console.warn(
-      `[${phase}] DENY: ${decision.code} - ${decision.reason} (${durationMs}ms)`
+      `[MLSecurity][${phase}] DENY: ${decision.code} - ${decision.reason} (${durationMs}ms)`
     );
   } else {
-    lazy.console.debug(`[${phase}] ALLOW (${durationMs}ms)`);
+    lazy.console.debug(`[MLSecurity][${phase}] ALLOW (${durationMs}ms)`);
   }
 
   // Full event for detailed debugging (object for Browser Console interactivity)
-  lazy.console.debug(`[${phase}] Event:`, event);
+  lazy.console.debug(`[MLSecurity][${phase}] Event:`, event);
 }

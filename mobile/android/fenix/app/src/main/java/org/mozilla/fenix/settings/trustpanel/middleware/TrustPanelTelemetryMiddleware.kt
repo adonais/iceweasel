@@ -8,6 +8,7 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.TrackingProtection
+import org.mozilla.fenix.GleanMetrics.TrustPanel
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelAction
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelState
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelStore
@@ -30,6 +31,10 @@ class TrustPanelTelemetryMiddleware : Middleware<TrustPanelState, TrustPanelActi
         when (action) {
             TrustPanelAction.ToggleTrackingProtection -> if (currentState.isTrackingProtectionEnabled) {
                 TrackingProtection.exceptionAdded.record(NoExtras())
+            }
+
+            is TrustPanelAction.Navigate.SecurityCertificate -> {
+                TrustPanel.securityCertificate.record(NoExtras())
             }
 
             is TrustPanelAction.ClearSiteData,

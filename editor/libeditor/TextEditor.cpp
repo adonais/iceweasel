@@ -10,8 +10,8 @@
 #include "EditAction.h"
 #include "EditAggregateTransaction.h"
 #include "EditorDOMPoint.h"
+#include "EditorUtils.h"
 #include "HTMLEditor.h"
-#include "HTMLEditUtils.h"
 #include "InternetCiter.h"
 #include "PlaceholderTransaction.h"
 #include "gfxFontUtils.h"
@@ -88,9 +88,6 @@ static void LogOrWarn(const TextEditor* aTextEditor, LazyLogModule& aLog,
 }
 
 using namespace dom;
-
-using LeafNodeType = HTMLEditUtils::LeafNodeType;
-using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 
 template EditorDOMPoint TextEditor::FindBetterInsertionPoint(
     const EditorDOMPoint& aPoint) const;

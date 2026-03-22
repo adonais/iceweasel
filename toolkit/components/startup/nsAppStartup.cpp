@@ -1030,7 +1030,7 @@ nsAppStartup::TrackStartupCrashEnd() {
     // On a successful startup in automatic safe mode, allow the user one more
     // crash in regular mode before returning to safe mode.
     int32_t maxResumedCrashes = 0;
-    int32_t prefType;
+    nsIPrefBranch::PreferenceType prefType;
     rv = Preferences::GetRootBranch(PrefValueKind::Default)
              ->GetPrefType(kPrefMaxResumedCrashes, &prefType);
     NS_ENSURE_SUCCESS(rv, rv);

@@ -285,23 +285,13 @@ class BookmarkFragment : Fragment() {
     }
 
     private fun showTabTray(openInPrivate: Boolean = false) {
-        val directions = if (requireContext().settings().tabManagerEnhancementsEnabled) {
-            BookmarkFragmentDirections.actionGlobalTabManagementFragment(
-                page = if (openInPrivate) {
-                    Page.PrivateTabs
-                } else {
-                    Page.NormalTabs
-                },
-            )
-        } else {
-            BookmarkFragmentDirections.actionGlobalTabsTrayFragment(
-                page = if (openInPrivate) {
-                    Page.PrivateTabs
-                } else {
-                    Page.NormalTabs
-                },
-            )
-        }
+        val directions = BookmarkFragmentDirections.actionGlobalTabManagementFragment(
+            page = if (openInPrivate) {
+                Page.PrivateTabs
+            } else {
+                Page.NormalTabs
+            },
+        )
         navigateToBookmarkFragment(directions = directions)
     }
 

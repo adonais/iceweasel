@@ -236,7 +236,7 @@ export class EmbeddingsGenerator {
    *   A promise that resolves with the embedding result from the engine.
    */
   async embed(text) {
-    await this.createEngineIfNotPresent();
+    await this.ensureEngine();
     if (typeof text !== "string" || text.trim() === "") {
       throw new Error("Invalid input: text must be a non-empty string");
     }
@@ -264,7 +264,7 @@ export class EmbeddingsGenerator {
    *  `#embeddingSize`.
    */
   async embedMany(texts) {
-    await this.createEngineIfNotPresent();
+    await this.ensureEngine();
 
     if (!Array.isArray(texts)) {
       throw new Error("Expected an array of texts");

@@ -185,10 +185,10 @@ class ExtensionStorageActor extends BaseStorageActor {
       const storageChange = changes[key];
       let { newValue, oldValue } = storageChange;
       if (isStructuredCloneHolder(newValue)) {
-        newValue = newValue.deserialize(this);
+        newValue = newValue.deserialize(this, true /* keepData */);
       }
       if (isStructuredCloneHolder(oldValue)) {
-        oldValue = oldValue.deserialize(this);
+        oldValue = oldValue.deserialize(this, true /* keepData */);
       }
 
       let action;

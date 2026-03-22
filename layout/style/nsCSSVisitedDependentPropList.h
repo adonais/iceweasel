@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsCSSVisitedDependentPropList_h__
-#define nsCSSVisitedDependentPropList_h__
+#ifndef nsCSSVisitedDependentPropList_h_
+#define nsCSSVisitedDependentPropList_h_
 
 /* a list of style struct's member variables which can be visited-dependent */
 
@@ -40,4 +40,4 @@
   MACRO(SVG, (mFill, mStroke)) \
   MACRO(UI, (mCaretColor))
 
-#endif // nsCSSVisitedDependentPropList_h__
+#endif // nsCSSVisitedDependentPropList_h_

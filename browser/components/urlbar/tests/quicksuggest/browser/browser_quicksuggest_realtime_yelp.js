@@ -136,8 +136,8 @@ add_task(async function ui_single() {
   Assert.ok(result.isBestMatch);
 
   info("Check the group label");
-  Assert.equal(getComputedStyle(row, "::before").content, "attr(label)");
-  Assert.equal(row.getAttribute("label"), "Yelp · Sponsored");
+  Assert.equal(getComputedStyle(row, "::before").content, "none");
+  Assert.ok(!row.hasAttribute("label"));
 
   Assert.deepEqual(
     document.l10n.getAttributes(row._content),

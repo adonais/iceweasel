@@ -4,6 +4,10 @@
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+plugins {
+    alias(libs.plugins.dependency.analysis)
+}
+
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
@@ -13,6 +17,11 @@ android {
 
 tasks.register("updateBuiltInExtensionVersion", Copy) { task ->
     updateExtensionVersion(task, 'src/main/assets/extensions/fxawebchannel')
+}
+
+// Make sure DAGP asset-source exploding happens after ExtensionVersion tasks
+tasks.matching { it.name.startsWith("explodeAssetSource") }.configureEach { t ->
+    t.dependsOn(tasks.named("updateBuiltInExtensionVersion"))
 }
 
 dependencies {

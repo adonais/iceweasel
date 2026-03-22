@@ -4,6 +4,8 @@
 
 JAR_MANIFESTS += ["jar.mn"]
 
+BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
+
 # NOTE: xpi-build/moz.build is used by jobs that generates system-signed XPIs.
 DIRS += ["xpi-build"]
 

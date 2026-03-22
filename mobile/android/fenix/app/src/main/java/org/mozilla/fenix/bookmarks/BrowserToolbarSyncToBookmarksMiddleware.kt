@@ -5,6 +5,7 @@
 package org.mozilla.fenix.bookmarks
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -21,6 +22,9 @@ internal class BrowserToolbarSyncToBookmarksMiddleware(
     private val toolbarStore: BrowserToolbarStore,
     private val scope: CoroutineScope,
 ) : Middleware<BookmarksState, BookmarksAction> {
+
+    private var syncJob: Job? = null
+
     override fun invoke(
         store: Store<BookmarksState, BookmarksAction>,
         next: (BookmarksAction) -> Unit,
@@ -29,7 +33,8 @@ internal class BrowserToolbarSyncToBookmarksMiddleware(
         next(action)
 
         if (action is Init) {
-            toolbarStore.flow()
+            syncJob?.cancel()
+            syncJob = toolbarStore.flow()
                 .map { it.isEditMode() }
                 .onEach { isInEditMode ->
                     if (store.state.isSearching && !isInEditMode) {

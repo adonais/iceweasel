@@ -4,11 +4,8 @@
 
 package org.mozilla.fenix.components.menu
 
-import mozilla.components.browser.state.state.ReaderState
-import mozilla.components.browser.state.state.createTab
 import mozilla.components.feature.addons.Addon
 import mozilla.components.service.fxa.manager.AccountState
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.telemetry.glean.private.CounterMetricType
 import mozilla.telemetry.glean.private.EventMetricType
@@ -26,7 +23,6 @@ import org.mozilla.fenix.GleanMetrics.Menu
 import org.mozilla.fenix.GleanMetrics.ReaderMode
 import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.components.menu.middleware.MenuTelemetryMiddleware
-import org.mozilla.fenix.components.menu.store.BrowserMenuState
 import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
@@ -76,16 +72,6 @@ class MenuTelemetryMiddlewareTest {
         store.dispatch(MenuAction.AddShortcut)
 
         assertTelemetryRecorded(Events.browserMenuAction, item = "add_to_top_sites")
-    }
-
-    @Test
-    fun `WHEN open in regular tab THEN record open in regular tab menu telemetry`() {
-        val store = createStore()
-        assertNull(Events.browserMenuAction.testGetValue())
-
-        store.dispatch(MenuAction.OpenInRegularTab)
-
-        assertTelemetryRecorded(Events.browserMenuAction, item = "open_in_regular_tab")
     }
 
     @Test
@@ -171,20 +157,6 @@ class MenuTelemetryMiddlewareTest {
         store.dispatch(MenuAction.Navigate.Passwords)
 
         assertTelemetryRecorded(Events.browserMenuAction, item = "passwords")
-    }
-
-    @Test
-    fun `WHEN navigating to the release notes page from home page menu THEN record the whats new interaction telemetry`() {
-        val store = createStore()
-        assertNull(Events.whatsNewTapped.testGetValue())
-
-        store.dispatch(MenuAction.Navigate.ReleaseNotes)
-
-        assertNotNull(Events.whatsNewTapped.testGetValue())
-        val snapshot = Events.whatsNewTapped.testGetValue()!!
-
-        assertEquals(1, snapshot.size)
-        assertEquals("MENU", snapshot.single().extra?.getValue("source"))
     }
 
     @Test
@@ -417,62 +389,6 @@ class MenuTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN reader view is not active WHEN toggle reader view action is dispatched THEN record the reader mode opened telemetry`() {
-        val url = "https://www.mozilla.org"
-        val title = "Mozilla"
-        val readerState = ReaderState(
-            readerable = true,
-            active = false,
-        )
-        val browserMenuState = BrowserMenuState(
-            selectedTab = createTab(
-                url = url,
-                title = title,
-                readerState = readerState,
-            ),
-        )
-        val store = createStore(
-            menuState = MenuState(
-                browserMenuState = browserMenuState,
-            ),
-        )
-
-        assertNull(ReaderMode.opened.testGetValue())
-
-        store.dispatch(MenuAction.ToggleReaderView)
-
-        assertTelemetryRecorded(ReaderMode.opened)
-    }
-
-    @Test
-    fun `GIVEN reader view is active WHEN toggle reader view action is dispatched THEN record the reader mode closed telemetry`() {
-        val url = "https://www.mozilla.org"
-        val title = "Mozilla"
-        val readerState = ReaderState(
-            readerable = true,
-            active = true,
-        )
-        val browserMenuState = BrowserMenuState(
-            selectedTab = createTab(
-                url = url,
-                title = title,
-                readerState = readerState,
-            ),
-        )
-        val store = createStore(
-            menuState = MenuState(
-                browserMenuState = browserMenuState,
-            ),
-        )
-
-        assertNull(ReaderMode.closed.testGetValue())
-
-        store.dispatch(MenuAction.ToggleReaderView)
-
-        assertTelemetryRecorded(ReaderMode.closed)
-    }
-
-    @Test
     fun `WHEN requesting desktop site THEN record the desktop view ON telemetry`() {
         val store = createStore()
         assertNull(Events.browserMenuAction.testGetValue())
@@ -529,16 +445,6 @@ class MenuTelemetryMiddlewareTest {
         store.dispatch(MenuAction.Navigate.DiscoverMoreExtensions)
 
         assertTelemetryRecorded(Events.browserMenuAction, item = "discover_more_extensions")
-    }
-
-    @Test
-    fun `WHEN navigating to the sumo page for installing add-ons THEN record the extensions learn more browser menu telemetry`() {
-        val store = createStore()
-        assertNull(Events.browserMenuAction.testGetValue())
-
-        store.dispatch(MenuAction.Navigate.ExtensionsLearnMore)
-
-        assertTelemetryRecorded(Events.browserMenuAction, item = "extensions_learn_more")
     }
 
     @Test

@@ -179,13 +179,13 @@ wix-3.14.0:
         sha256: 13f067f38969faf163d93a804b48ea0576790a202c8f10291f2000f0e356e934
         size: 41282726
 
-zlib-1.3.1:
-    description: zlib 1.3.1 source code
+zlib-1.3.2:
+    description: zlib 1.3.2 source code
     fetch:
         type: static-url
-        url: https://zlib.net/fossils/zlib-1.3.1.tar.gz
-        sha256: 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
-        size: 1512791
+        url: https://github.com/madler/zlib/releases/download/v1.3.2/zlib-1.3.2.tar.xz
+        sha256: d7a0654783a4da529d1bb793b7ad9c3318020af77667bcae35f95d0e42a792f3
+        size: 1320064
 
 nsis-3.07:
     description: nsis 3.07 source code
@@ -222,9 +222,9 @@ wine:
     description: wine source code
     fetch:
         type: static-url
-        url: https://dl.winehq.org/wine/source/10.x/wine-10.18.tar.xz
-        sha256: 51fb7273d65d09dea032c4a5e2197b12724b27ca360e1a622b2373d1ee50ad7b
-        size: 32970828
+        url: https://dl.winehq.org/wine/source/11.x/wine-11.2.tar.xz
+        sha256: 1756227bdb3feb41750afa97b44ac50a22890a88704a1f0fa14d88c4f921e183
+        size: 33227804
         gpg-signature:
             sig-url: "{url}.sign"
             key-path: build/unix/build-gcc/DA23579A74D4AD9AF9D3F945CEFAC8EAAF17519D.key
@@ -245,7 +245,7 @@ cctools-port:
     fetch:
         type: git
         repo: https://github.com/tpoechtrager/cctools-port
-        revision: 55943b0c68c0eaf8b8ad2f51f63738bbc7b0c86b
+        revision: 1cce4a06877992f708b2e0e2ab217a0cfb923a4f
 
 libtapi:
     description: libtapi source code
@@ -392,11 +392,11 @@ clang-20:
         revision: 87f0227cb60147a26a1eeb4fb06e3b505e9c7261
 
 clang-21:
-    description: clang 21.1.7 source code
+    description: clang 21.1.8 source code
     fetch:
         type: git
         repo: https://github.com/llvm/llvm-project
-        revision: 292dc2b86f66e39f4b85ec8b185fd8b60f5213ce
+        revision: 2078da43e25a4623cab2d0d60decddf709aaea28
 
 clang-trunk:
     description: clang main branch source code
@@ -482,7 +482,7 @@ dump-syms:
     fetch:
         type: git
         repo: https://github.com/mozilla/dump_syms/
-        revision: f5e0c9d493a725c11cdcab38fd02bce4d6888361
+        revision: 5ba29a30c1c25eb5c6aa21890b390e3d51db6b4a
 
 rust-minidump:
     description: rust-minidump 0.25.0 source code (for minidump-stackwalk)
@@ -670,25 +670,25 @@ pkgconf:
         add-prefix: pkgconf/
 
 afl-plus-plus-4.0:
-    description: AFL++ 4.0x source
+    description: AFL++ 4.x source
     fetch:
         type: git
         repo: https://github.com/AFLplusplus/AFLplusplus
-        revision: 10db3a35cf17600594946edb6662d606bd4e4207
+        revision: ada0855022ac6e77de74622d0ab61ca7a37b9a9c
 
 cargo-vet:
     description: cargo-vet source
     fetch:
         type: git
         repo: https://github.com/mozilla/cargo-vet
-        revision: c178261c96c9f820f67817e9c5458db655ddc21f
+        revision: 28f617ea97392d527799649db588a6dbb695da8d
 
 symbol-scrapers:
     description: System symbols scraper source
     fetch:
         type: git
         repo: https://github.com/mozilla/symbol-scrapers
-        revision: 4a589bc872995b76fa18b5f8746715e5c86fa4bb
+        revision: c9f6fe6a16cb9bba11976d85fc924efaad643a9d
 
 xz-5.8.1:
     description: xz 5.8.1 source code
@@ -766,7 +766,7 @@ mozilla-pdf.js:
     fetch:
         type: git
         repo: https://github.com/mozilla/pdf.js
-        revision: 2ac8185956b0e222cbb798a9d455e82bca954462
+        revision: 81cf42df470f85eb60150bdffca380e3eee79c08
 
 xmlstarlet-1.6.1:
     description: xmlstarlet for Android Performance Tests
@@ -789,7 +789,7 @@ dxc-src:
     fetch:
         type: git
         repo: https://github.com/FirefoxGraphics/DirectXShaderCompiler
-        revision: 81378be83a1690cac0e727941e1a963518d67c26
+        revision: dc9cb8960f8d4fbb5f904eac1e3bf7f1821e4be1
 
 jj:
     description: jj 0.29.0 source code
@@ -810,7 +810,7 @@ windowsappsdk-redist:
     description: Windows App SDK Redistributable
     fetch:
         type: static-url
-        url: https://aka.ms/windowsappsdk/1.8/1.8.250916003/Microsoft.WindowsAppRuntime.Redist.1.8.zip
-        sha256: a2dccd1d4d3b47857e1f4c36a140b976ff2da61fff8dc9fcf029cd8e829a61fc
-        size: 463549393
+        url: https://aka.ms/windowsappsdk/1.8/1.8.251106002/Microsoft.WindowsAppRuntime.Redist.1.8.zip
+        sha256: 57748c37e2b0ce381518bbe7ac72e015c150771a343af89f9f0bd95aa5e9bbc0
+        size: 465986932
         artifact-name: Microsoft.WindowsAppRuntime.Redist.tar.zst

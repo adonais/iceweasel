@@ -92,6 +92,15 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
   void RepaintHighlightSelection(Highlight& aHighlight);
 
+  /**
+   * @brief Repaints all highlight selections.
+   *
+   * This is called after style changes to ensure highlight pseudo-element
+   * styles are properly repainted, since they are resolved lazily during
+   * painting and don't generate change hints during restyle.
+   */
+  void RepaintAllHighlightSelections();
+
   // WebIDL interface
 
   Document* GetParentObject() const { return mDocument; };

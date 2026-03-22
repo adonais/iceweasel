@@ -38,7 +38,7 @@ const CATEGORICAL_HISTOGRAM = "PWMGR_IMPORT_LOGINS_FROM_FILE_CATEGORICAL";
 async function setupCsv(csvLines, extension) {
   // Cleanup state.
   TTU.getAndClearHistogram(CATEGORICAL_HISTOGRAM);
-  Services.logins.removeAllUserFacingLogins();
+  await Services.logins.removeAllUserFacingLoginsAsync();
   let tmpFile = await LoginTestUtils.file.setupCsvFileWithLines(
     csvLines,
     extension

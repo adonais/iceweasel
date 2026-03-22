@@ -3,8 +3,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#ifndef nsScreen_h___
-#define nsScreen_h___
+#ifndef nsScreen_h_
+#define nsScreen_h_
 
 #include "Units.h"
 #include "mozilla/DOMEventTargetHelper.h"
@@ -125,4 +125,4 @@ inline const nsScreen* EventTarget::AsScreen() const {
 
 }  // namespace mozilla::dom
 
-#endif /* nsScreen_h___ */
+#endif /* nsScreen_h_ */

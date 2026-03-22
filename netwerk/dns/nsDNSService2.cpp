@@ -910,6 +910,10 @@ nsDNSService::Init() {
     mTrrService = nullptr;
   }
 
+  if (mTrrService && httpsEnabled) {
+    mTrrService->ReadEtcHostsFile();
+  }
+
   return NS_OK;
 }
 
@@ -1539,6 +1543,14 @@ nsDNSService::GetTrrDomain(nsACString& aTRRDomain) {
 
 nsresult nsDNSService::GetTRRDomainKey(nsACString& aTRRDomain) {
   aTRRDomain = TRRService::ProviderKey();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDNSService::SetHttp3FirstForServer(const nsACString& aServer, bool aEnabled) {
+  if (mTrrService) {
+    mTrrService->SetHttp3FirstForServer(aServer, aEnabled);
+  }
   return NS_OK;
 }
 

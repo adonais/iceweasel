@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsIHTMLCollection_h___
-#define nsIHTMLCollection_h___
+#ifndef nsIHTMLCollection_h_
+#define nsIHTMLCollection_h_
 
 #include "js/TypeDecls.h"
 #include "nsISupports.h"
@@ -78,4 +78,4 @@ class nsIHTMLCollection : public nsISupports {
   virtual void PreserveWrapperInternal(nsISupports* aScriptObjectHolder) = 0;
 };
 
-#endif /* nsIHTMLCollection_h___ */
+#endif /* nsIHTMLCollection_h_ */

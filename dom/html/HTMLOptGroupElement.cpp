@@ -37,12 +37,8 @@ void HTMLOptGroupElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
   nsGenericHTMLElement::GetEventTargetParent(aVisitor);
 }
 
-Element* HTMLOptGroupElement::GetSelect() {
-  Element* parent = nsINode::GetParentElement();
-  if (!parent || !parent->IsHTMLElement(nsGkAtoms::select)) {
-    return nullptr;
-  }
-  return parent;
+HTMLSelectElement* HTMLOptGroupElement::GetSelect() const {
+  return HTMLSelectElement::FromNodeOrNull(GetParentNode());
 }
 
 void HTMLOptGroupElement::InsertChildBefore(

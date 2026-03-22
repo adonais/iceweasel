@@ -10,4 +10,7 @@ ac_add_options --with-branding=mobile/android/branding/nightly
 
 ac_add_options --enable-mozsearch-plugin
 
+ac_add_options --without-mozilla-api-keyfile
+ac_add_options --without-google-safebrowsing-api-keyfile
+
 . "$topsrcdir/mobile/android/config/mozconfigs/common.override"

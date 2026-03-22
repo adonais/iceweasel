@@ -132,7 +132,13 @@ class LoadedScript : public nsIMemoryReporter {
     // This script is cached from the previous load.
     // mStencil holds the cached stencil, and mSRIAndSerializedStencil holds
     // the SRI. mScriptData is unused.
-    eCachedStencil
+    eCachedStencil,
+
+    // This is a wasm module, which is used when the response mime type essence
+    // is application/wasm.
+    // mScriptData holds the wasm source as uint8_t from the channel.
+    // mStencil and mSRIAndSerializedStencil are unused.
+    eWasmBytes,
   };
 
   // Use a vector backed by the JS allocator for script text so that contents
@@ -152,6 +158,7 @@ class LoadedScript : public nsIMemoryReporter {
     return mDataType == DataType::eSerializedStencil;
   }
   bool IsCachedStencil() const { return mDataType == DataType::eCachedStencil; }
+  bool IsWasmBytes() const { return mDataType == DataType::eWasmBytes; }
 
   // ==== Methods to convert the data type ====
 
@@ -177,6 +184,12 @@ class LoadedScript : public nsIMemoryReporter {
     mDataType = DataType::eCachedStencil;
   }
 
+  void SetWasmBytes() {
+    MOZ_ASSERT(IsUnknownDataType());
+    mDataType = DataType::eWasmBytes;
+    mScriptData.emplace(VariantType<ScriptTextBuffer<uint8_t>>());
+  }
+
   bool IsUTF16Text() const {
     return mScriptData->is<ScriptTextBuffer<char16_t>>();
   }
@@ -184,7 +197,7 @@ class LoadedScript : public nsIMemoryReporter {
     return mScriptData->is<ScriptTextBuffer<Utf8Unit>>();
   }
 
-  // ==== Methods to access the text soutce ====
+  // ==== Methods to access the text source ====
 
   template <typename Unit>
   const ScriptTextBuffer<Unit>& ScriptText() const {
@@ -195,6 +208,11 @@ class LoadedScript : public nsIMemoryReporter {
   ScriptTextBuffer<Unit>& ScriptText() {
     MOZ_ASSERT(IsTextSource());
     return mScriptData->as<ScriptTextBuffer<Unit>>();
+  }
+
+  ScriptTextBuffer<uint8_t>& WasmBytes() {
+    MOZ_ASSERT(IsWasmBytes());
+    return mScriptData->as<ScriptTextBuffer<uint8_t>>();
   }
 
   size_t ScriptTextLength() const {
@@ -214,9 +232,13 @@ class LoadedScript : public nsIMemoryReporter {
                          : ScriptText<Utf8Unit>().clearAndFree();
   }
 
-  size_t ReceivedScriptTextLength() const { return mReceivedScriptTextLength; }
+  size_t ReceivedScriptTextLength() const {
+    MOZ_ASSERT(IsTextSource());
+    return mReceivedScriptTextLength;
+  }
 
   void SetReceivedScriptTextLength(size_t aLength) {
+    MOZ_ASSERT(IsTextSource());
     mReceivedScriptTextLength = aLength;
   }
 
@@ -423,9 +445,10 @@ class LoadedScript : public nsIMemoryReporter {
   nsCOMPtr<nsIURI> mBaseURL;
 
  public:
-  // Holds script source data for non-inline scripts.
-  mozilla::Maybe<
-      Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>>>
+  // Holds script source data for non-inline scripts, or raw bytes for wasm
+  // modules.
+  mozilla::Maybe<Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>,
+                         ScriptTextBuffer<uint8_t>>>
       mScriptData;
 
   // The length of script source text, set when reading completes. This is used
@@ -502,12 +525,15 @@ class LoadedScriptDelegate {
     return GetLoadedScript()->IsSerializedStencil();
   }
   bool IsCachedStencil() const { return GetLoadedScript()->IsCachedStencil(); }
+  bool IsWasmBytes() const { return GetLoadedScript()->IsWasmBytes(); }
 
   void SetUnknownDataType() { GetLoadedScript()->SetUnknownDataType(); }
 
   void SetTextSource(LoadContextBase* maybeLoadContext) {
     GetLoadedScript()->SetTextSource(maybeLoadContext);
   }
+
+  void SetWasmBytes() { GetLoadedScript()->SetWasmBytes(); }
 
   void SetSerializedStencil() { GetLoadedScript()->SetSerializedStencil(); }
 
@@ -523,6 +549,11 @@ class LoadedScriptDelegate {
   ScriptTextBuffer<Unit>& ScriptText() {
     LoadedScript* loader = GetLoadedScript();
     return loader->ScriptText<Unit>();
+  }
+
+  ScriptTextBuffer<uint8_t>& WasmBytes() {
+    LoadedScript* loader = GetLoadedScript();
+    return loader->WasmBytes();
   }
 
   size_t ScriptTextLength() const {

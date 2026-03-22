@@ -36,23 +36,6 @@ class MessageManagerGlobal {
     }
     mMessageManager->RemoveMessageListener(aMessageName, aListener, aError);
   }
-  void AddWeakMessageListener(const nsAString& aMessageName,
-                              MessageListener& aListener, ErrorResult& aError) {
-    if (!mMessageManager) {
-      aError.Throw(NS_ERROR_NOT_INITIALIZED);
-      return;
-    }
-    mMessageManager->AddWeakMessageListener(aMessageName, aListener, aError);
-  }
-  void RemoveWeakMessageListener(const nsAString& aMessageName,
-                                 MessageListener& aListener,
-                                 ErrorResult& aError) {
-    if (!mMessageManager) {
-      aError.Throw(NS_ERROR_NOT_INITIALIZED);
-      return;
-    }
-    mMessageManager->RemoveWeakMessageListener(aMessageName, aListener, aError);
-  }
 
   // MessageSender
   void SendAsyncMessage(JSContext* aCx, const nsAString& aMessageName,

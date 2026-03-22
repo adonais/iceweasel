@@ -6,8 +6,8 @@
 
 /* rendering object for the HTML <canvas> element */
 
-#ifndef nsHTMLCanvasFrame_h___
-#define nsHTMLCanvasFrame_h___
+#ifndef nsHTMLCanvasFrame_h_
+#define nsHTMLCanvasFrame_h_
 
 #include "nsContainerFrame.h"
 #include "nsStringFwd.h"
@@ -87,4 +87,4 @@ class nsHTMLCanvasFrame final : public nsContainerFrame {
   virtual ~nsHTMLCanvasFrame();
 };
 
-#endif /* nsHTMLCanvasFrame_h___ */
+#endif /* nsHTMLCanvasFrame_h_ */

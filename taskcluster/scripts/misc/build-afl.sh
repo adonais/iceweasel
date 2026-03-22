@@ -8,11 +8,10 @@ scripts="$(realpath "${0%/*}")"
 
 # these lists are copied from AFLplusplus/GNUmakefile
 PROGS="afl-fuzz afl-showmap afl-tmin afl-gotcpu afl-analyze"
-SH_PROGS="afl-plot afl-cmin afl-cmin.bash afl-whatsup afl-addseeds afl-system-config afl-persistent-config"
+SH_PROGS="afl-plot afl-cmin.awk afl-cmin.bash afl-cmin.py afl-whatsup afl-addseeds afl-system-config afl-persistent-config"
 
 cd "$MOZ_FETCHES_DIR/AFLplusplus"
 patch -p1 -i "$scripts/afl-nyx.patch"
-patch -p1 -i "$scripts/afl-llvm20.patch"
 
 make -f GNUmakefile $PROGS \
     CC="$MOZ_FETCHES_DIR/clang/bin/clang" \

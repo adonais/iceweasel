@@ -9,8 +9,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
 
-#include "jsmath.h"
-
 #include "jit/arm64/MoveEmitter-arm64.h"
 #include "jit/arm64/SharedICRegisters-arm64.h"
 #include "jit/Bailouts.h"
@@ -19,6 +17,7 @@
 #include "jit/MacroAssembler.h"
 #include "jit/ProcessExecutableMemory.h"
 #include "util/Memory.h"
+#include "util/PortableMath.h"
 #include "vm/BigIntType.h"
 #include "vm/JitActivation.h"  // js::jit::JitActivation
 #include "vm/JSContext.h"

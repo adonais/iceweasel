@@ -5237,7 +5237,7 @@ fail-if = [
 ["generated/test_2_conformance2__attribs__gl-vertex-attrib-i-render.html"]
 subsuite = "webgl2-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__attribs__gl-vertex-attrib-normalized-int.html"]
@@ -5246,7 +5246,7 @@ subsuite = "webgl2-core"
 ["generated/test_2_conformance2__attribs__gl-vertex-attrib.html"]
 subsuite = "webgl2-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__attribs__gl-vertexattribipointer-offsets.html"]
@@ -5288,7 +5288,7 @@ subsuite = "webgl2-core"
 ["generated/test_2_conformance2__buffers__get-buffer-sub-data.html"]
 subsuite = "webgl2-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__buffers__one-large-uniform-buffer.html"]
@@ -5390,7 +5390,7 @@ subsuite = "webgl2-core"
 ["generated/test_2_conformance2__extensions__ovr_multiview2.html"]
 subsuite = "webgl2-core"
 fail-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
@@ -5408,7 +5408,7 @@ skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
 ]
 fail-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug",
+  "os == 'win' && os_version == '11.26100' && debug",
 ]
 
 ["generated/test_2_conformance2__extensions__ovr_multiview2_flat_varying.html"]
@@ -5548,7 +5548,7 @@ subsuite = "webgl2-ext"
 ["generated/test_2_conformance2__glsl3__loops-with-side-effects.html"]
 subsuite = "webgl2-ext"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__glsl3__matrix-row-major-dynamic-indexing.html"]
@@ -5609,13 +5609,13 @@ subsuite = "webgl2-ext"
 ["generated/test_2_conformance2__glsl3__switch-case.html"]
 subsuite = "webgl2-ext"
 fail-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__glsl3__texture-bias.html"]
 subsuite = "webgl2-ext"
 fail-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__glsl3__texture-offset-non-constant-offset.html"]
@@ -5630,7 +5630,7 @@ subsuite = "webgl2-ext"
 ["generated/test_2_conformance2__glsl3__tricky-loop-conditions.html"]
 subsuite = "webgl2-ext"
 fail-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__glsl3__uint-int-shift-bug.html"]
@@ -5648,7 +5648,7 @@ subsuite = "webgl2-ext"
 ["generated/test_2_conformance2__glsl3__uniform-location-length-limits.html"]
 subsuite = "webgl2-ext"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug",
+  "os == 'win' && os_version == '11.26100' && debug",
 ]
 
 ["generated/test_2_conformance2__glsl3__uniform-struct-with-non-square-matrix.html"]
@@ -5677,7 +5677,7 @@ fail-if = [
 subsuite = "webgl2-ext"
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__misc__blend-integer.html"]
@@ -5708,7 +5708,7 @@ subsuite = "webgl2-core"
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__misc__views-with-offsets.html"]
@@ -5913,7 +5913,7 @@ subsuite = "webgl2-core"
 subsuite = "webgl2-core"
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__rendering__draw-buffers.html"]
@@ -5934,13 +5934,13 @@ subsuite = "webgl2-core"
 ["generated/test_2_conformance2__rendering__framebuffer-mismatched-attachment-targets.html"]
 subsuite = "webgl2-core"
 fail-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__rendering__framebuffer-render-to-layer-angle-issue.html"]
 subsuite = "webgl2-core"
 fail-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__rendering__framebuffer-render-to-layer.html"]
@@ -8464,7 +8464,7 @@ skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__textures__misc__copy-texture-image-webgl-specific.html"]
@@ -8515,7 +8515,7 @@ skip-if = [
 ["generated/test_2_conformance2__textures__misc__tex-3d-mipmap-levels-intel-bug.html"]
 subsuite = "webgl2-core"
 fail-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__textures__misc__tex-3d-size-limit.html"]
@@ -8543,7 +8543,7 @@ subsuite = "webgl2-core"
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'", # Bug 1687073
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__textures__misc__tex-image-with-bad-args.html"]
@@ -8556,7 +8556,7 @@ subsuite = "webgl2-core"
 subsuite = "webgl2-core"
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__textures__misc__tex-mipmap-levels.html"]
@@ -8565,7 +8565,7 @@ fail-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance2__textures__misc__tex-new-formats.html"]
@@ -9655,7 +9655,7 @@ subsuite = "webgl2-core"
 ["generated/test_2_conformance__canvas__to-data-url-test.html"]
 subsuite = "webgl2-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance__canvas__viewport-unchanged-upon-resize.html"]
@@ -9991,7 +9991,7 @@ skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance__glsl__constructors__glsl-construct-vec2.html"]
@@ -10762,7 +10762,7 @@ subsuite = "webgl2-core"
 subsuite = "webgl2-core"
 skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance__misc__boolean-argument-conversion.html"]
@@ -10813,13 +10813,13 @@ fail-if = [
 ]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64' && debug",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug",
+  "os == 'win' && os_version == '11.26100' && debug",
 ]
 
 ["generated/test_2_conformance__misc__webgl-specific-stencil-settings.html"]
 subsuite = "webgl2-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance__misc__webgl-specific.html"]
@@ -11134,7 +11134,7 @@ subsuite = "webgl2-ext"
 ["generated/test_2_conformance__ogles__GL__built_in_varying_array_out_of_bounds__built_in_varying_array_out_of_bounds_001_to_001.html"]
 subsuite = "webgl2-ext"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance__ogles__GL__ceil__ceil_001_to_006.html"]
@@ -11386,7 +11386,7 @@ subsuite = "webgl2-ext"
 ["generated/test_2_conformance__ogles__GL__struct__struct_025_to_032.html"]
 subsuite = "webgl2-ext"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance__ogles__GL__struct__struct_033_to_040.html"]
@@ -11638,7 +11638,7 @@ subsuite = "webgl2-core"
 ["generated/test_2_conformance__rendering__preservedrawingbuffer-leak.html"]
 subsuite = "webgl2-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance__rendering__rendering-sampling-feedback-loop.html"]
@@ -11651,7 +11651,7 @@ fail-if = [
 ]
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance__rendering__scissor-rect-repeated-rendering.html"]
@@ -12017,7 +12017,7 @@ subsuite = "webgl2-core"
 ["generated/test_2_conformance__textures__misc__tex-video-using-tex-unit-non-zero.html"]
 subsuite = "webgl2-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
   "os == 'android' && os_version == '14' && arch == 'aarch64' && debug",
 ]
 
@@ -12066,7 +12066,7 @@ subsuite = "webgl2-core"
 ["generated/test_2_conformance__textures__misc__texture-size-cube-maps.html"]
 subsuite = "webgl2-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance__textures__misc__texture-size-limit.html"]
@@ -12079,7 +12079,7 @@ skip-if = [
 subsuite = "webgl2-core"
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance__textures__misc__texture-srgb-upload.html"]
@@ -12290,7 +12290,7 @@ subsuite = "webgl2-core"
 subsuite = "webgl2-core"
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_2_conformance__uniforms__uniform-default-values.html"]
@@ -14900,7 +14900,7 @@ skip-if = [
 ["generated/test_conformance__context__context-size-change.html"]
 subsuite = "webgl1-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_conformance__context__context-type-test.html"]
@@ -15395,7 +15395,7 @@ skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_conformance__glsl__constructors__glsl-construct-vec2.html"]
@@ -16214,7 +16214,7 @@ skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_conformance__misc__boolean-argument-conversion.html"]
@@ -16280,7 +16280,7 @@ skip-if = [
 ["generated/test_conformance__misc__webgl-specific-stencil-settings.html"]
 subsuite = "webgl1-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_conformance__misc__webgl-specific.html"]
@@ -16601,7 +16601,7 @@ subsuite = "webgl1-ext"
 ["generated/test_conformance__ogles__GL__built_in_varying_array_out_of_bounds__built_in_varying_array_out_of_bounds_001_to_001.html"]
 subsuite = "webgl1-ext"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_conformance__ogles__GL__ceil__ceil_001_to_006.html"]
@@ -16751,7 +16751,7 @@ subsuite = "webgl1-ext"
 ["generated/test_conformance__ogles__GL__mat3__mat3_001_to_006.html"]
 subsuite = "webgl1-ext"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_conformance__ogles__GL__mat__mat_001_to_008.html"]
@@ -17116,7 +17116,7 @@ subsuite = "webgl1-core"
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_conformance__rendering__negative-one-index.html"]
@@ -17146,7 +17146,7 @@ subsuite = "webgl1-core"
 ["generated/test_conformance__rendering__preservedrawingbuffer-leak.html"]
 subsuite = "webgl1-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_conformance__rendering__rendering-sampling-feedback-loop.html"]
@@ -17160,7 +17160,7 @@ fail-if = [
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_conformance__rendering__scissor-rect-repeated-rendering.html"]
@@ -17544,7 +17544,7 @@ subsuite = "webgl1-core"
 ["generated/test_conformance__textures__misc__tex-image-and-sub-image-2d-with-array-buffer-view.html"]
 subsuite = "webgl1-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug",
+  "os == 'win' && os_version == '11.26100' && debug",
 ]
 
 ["generated/test_conformance__textures__misc__tex-image-and-uniform-binding-bugs.html"]
@@ -17581,7 +17581,7 @@ subsuite = "webgl1-core"
 subsuite = "webgl1-core"
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64' && debug",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_conformance__textures__misc__texparameter-test.html"]
@@ -17638,7 +17638,7 @@ skip-if = [
 ["generated/test_conformance__textures__misc__texture-npot-video.html"]
 subsuite = "webgl1-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # win11 - 50/50 intermittent
+  "os == 'win' && os_version == '11.26100'", # win11 - 50/50 intermittent
   "os == 'android' && os_version == '14' && arch == 'aarch64'", # Bug 1873144
 ]
 
@@ -17664,7 +17664,7 @@ skip-if = [
 subsuite = "webgl1-core"
 skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'", # Bug 1796057
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_conformance__textures__misc__texture-srgb-upload.html"]
@@ -17688,7 +17688,7 @@ subsuite = "webgl1-core"
 ["generated/test_conformance__textures__misc__texture-upload-size.html"]
 subsuite = "webgl1-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
 ]
 
@@ -17914,7 +17914,7 @@ skip-if = [
   "os == 'android' && os_version == '14' && arch == 'aarch64'",
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_conformance__uniforms__uniform-location.html"]
@@ -17926,7 +17926,7 @@ subsuite = "webgl1-core"
 ["generated/test_conformance__uniforms__uniform-values-per-program.html"]
 subsuite = "webgl1-core"
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'",
+  "os == 'win' && os_version == '11.26100'",
 ]
 
 ["generated/test_deqp__data__gles2__shaders__conditionals.html"]

@@ -28,6 +28,8 @@ import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SharedPreferenceUpdater
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.requirePreference
+import org.mozilla.fenix.utils.canShowAddSearchWidgetPrompt
+import org.mozilla.fenix.utils.maybeShowAddSearchWidgetPrompt
 import org.mozilla.gecko.search.SearchWidgetProvider
 
 class SearchEngineFragment : PreferenceFragmentCompat() {
@@ -46,6 +48,9 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
         }
         requirePreference<Preference>(R.string.pref_key_learn_about_fx_suggest).apply {
             isVisible = context.settings().enableFxSuggest
+        }
+        requirePreference<Preference>(R.string.pref_key_search_widget_installed_2).apply {
+            isVisible = canShowAddSearchWidgetPrompt(AppWidgetManager.getInstance(requireContext()))
         }
 
         view?.hideKeyboard()
@@ -68,6 +73,11 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
         val searchSuggestionsPreference =
             requirePreference<SwitchPreference>(R.string.pref_key_show_search_suggestions).apply {
                 isChecked = context.settings().shouldShowSearchSuggestions
+            }
+
+        val searchWidgetPreference =
+            requirePreference<SwitchPreference>(R.string.pref_key_search_widget_installed_2).apply {
+                isChecked = context.settings().searchWidgetInstalled
             }
 
         val trendingSearchSuggestionsPreference =
@@ -131,6 +141,13 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
                 )
             }
 
+        searchWidgetPreference.onPreferenceChangeListener = object : SharedPreferenceUpdater() {
+            override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                // We cannot remove a widget added to device's homescreen so this cannot be toggled by users.
+                // The toggle status is set separately from our widget AppWidgetProvider.
+                return false
+            }
+        }
         searchSuggestionsPreference.onPreferenceChangeListener = SharedPreferenceUpdater()
         showHistorySuggestions.onPreferenceChangeListener = SharedPreferenceUpdater()
         showBookmarkSuggestions.onPreferenceChangeListener = SharedPreferenceUpdater()
@@ -217,6 +234,9 @@ class SearchEngineFragment : PreferenceFragmentCompat() {
             }
             getPreferenceKey(R.string.pref_key_manage_search_shortcuts) -> {
                 openSearchShortcutsSettings()
+            }
+            getPreferenceKey(R.string.pref_key_search_widget_installed_2) -> {
+                maybeShowAddSearchWidgetPrompt(requireActivity())
             }
             getPreferenceKey(R.string.pref_key_learn_about_fx_suggest) -> {
                 openLearnMoreLink()

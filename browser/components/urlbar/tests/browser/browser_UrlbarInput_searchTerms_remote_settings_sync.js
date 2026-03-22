@@ -57,7 +57,7 @@ add_setup(async function () {
     set: [["browser.urlbar.showSearchTerms.featureGate", true]],
   });
   let cleanup = await installPersistTestEngines();
-  defaultTestEngine = Services.search.getEngineByName("Example");
+  defaultTestEngine = SearchService.getEngineByName("Example");
   registerCleanupFunction(async function () {
     await PlacesUtils.history.clear();
     // Clear existing records.

@@ -57,15 +57,13 @@ const WebCompatExtension = new (class WebCompatExtension {
   async resetInterventionsAndShimsToDefaults() {
     return this.#run(async function () {
       await content.wrappedJSObject._downgradeForTesting();
-      await content.wrappedJSObject.interventions._resetToDefaultInterventions();
-      await content.wrappedJSObject.shims._resetToDefaultShims();
-    });
+    }).catch(_ => {});
   }
 
   async availableInterventions() {
     return this.#run(async function () {
       const available =
-        content.wrappedJSObject.interventions._availableInterventions;
+        content.wrappedJSObject.interventions.getAvailableInterventions();
       // structured cloning won't work, so get the interesting bits for tests.
       return JSON.parse(JSON.stringify(available));
     });
@@ -89,41 +87,38 @@ const WebCompatExtension = new (class WebCompatExtension {
     });
   }
 
-  async interventionsReady() {
+  async promiseUpdateReceived(_version) {
+    return this.#run(async function (version) {
+      await new Promise(updated => {
+        const updateCheck = content.setInterval(() => {
+          if (content.wrappedJSObject.latestReceivedUpdate == version) {
+            content.clearInterval(updateCheck);
+            updated();
+          }
+        }, 100);
+      });
+    }, _version);
+  }
+
+  async interventionsSettled() {
     return this.#run(async function () {
-      await content.wrappedJSObject.interventions.ready();
+      await content.wrappedJSObject.interventions.allSettled();
     });
   }
 
   async overrideFirefoxVersion(_ver) {
     this.#run(async function (ver) {
-      content.wrappedJSObject.interventions.versionForTesting = ver;
+      content.wrappedJSObject.interventions.appVersionOverride = ver
+        ? parseFloat(ver)
+        : undefined;
     }, _ver);
-  }
-
-  async noOngoingInterventionChanges() {
-    return this.#run(async function () {
-      await new Promise(lock1 => {
-        return new Promise(lock2 => {
-          content.wrappedJSObject.navigator.locks.request(
-            "pref_check_lock",
-            lock2
-          );
-        }).then(() =>
-          content.wrappedJSObject.navigator.locks.request(
-            "intervention_lock",
-            lock1
-          )
-        );
-      });
-    });
   }
 
   async getInterventionById(_id) {
     return this.#run(function (id) {
-      return content.wrappedJSObject.interventions._availableInterventions.find(
-        i => i.id === id
-      );
+      return content.wrappedJSObject.interventions.getInterventionsByIds(
+        Cu.cloneInto([id], content)
+      )[0];
     }, _id);
   }
 
@@ -160,12 +155,8 @@ const WebCompatExtension = new (class WebCompatExtension {
 
   async disableInterventions(_ids) {
     return this.#run(async function (ids) {
-      const which =
-        content.wrappedJSObject.interventions._availableInterventions.filter(
-          i => ids.includes(i.id)
-        );
       return await content.wrappedJSObject.interventions.disableInterventions(
-        Cu.cloneInto(which, content)
+        Cu.cloneInto(ids, content)
       );
     }, _ids);
   }
@@ -178,6 +169,11 @@ const WebCompatExtension = new (class WebCompatExtension {
     }, _config);
   }
 })();
+
+registerCleanupFunction(async () => {
+  await WebCompatExtension.overrideFirefoxVersion(undefined);
+  await WebCompatExtension.resetInterventionsAndShimsToDefaults();
+});
 
 async function testShimRuns(
   testPage,
@@ -497,6 +493,7 @@ async function generateTestShims() {
         "embedClicked",
         "smartblockEmbedReplaced",
         "smartblockGetFluentString",
+        "shouldShowEmbedContentInPlaceholders",
       ],
       isSmartblockEmbedShim: true,
       onlyIfBlockedByETP: true,

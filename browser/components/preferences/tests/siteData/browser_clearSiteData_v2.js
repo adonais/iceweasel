@@ -195,10 +195,6 @@ async function testClearData(clearSiteData, clearCache) {
 }
 
 add_setup(function () {
-  SpecialPowers.pushPrefEnv({
-    set: [["privacy.sanitize.useOldClearHistoryDialog", false]],
-  });
-
   // The tests in this file all test specific interactions with the new clear
   // history dialog and can't be split up.
   requestLongerTimeout(2);

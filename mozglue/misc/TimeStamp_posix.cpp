@@ -234,7 +234,7 @@ uint64_t TimeStamp::ComputeProcessUptime() {
     return 0;
   }
 
-  pthread_join(uptime_pthread, NULL);
+  pthread_join(uptime_pthread, nullptr);
 
   return uptime / kNsPerUs;
 }

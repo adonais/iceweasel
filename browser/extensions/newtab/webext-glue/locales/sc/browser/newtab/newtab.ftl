@@ -328,18 +328,16 @@ newtab-custom-recent-subtitle = Una seletzione de sitos e cuntenutos reghentes
 newtab-custom-weather-toggle =
     .label = Tempus
     .description = Is previsiones de oe in curtzu
-newtab-custom-trending-search-toggle =
-    .label = Chircas populares
-    .description = Argumentos populares e chircados a s’ispissu
 newtab-custom-widget-weather-toggle =
     .label = Tempus
-newtab-custom-widget-trending-search-toggle =
-    .label = Chircas populares
 newtab-custom-widget-lists-toggle =
     .label = Listas
 newtab-custom-widget-timer-toggle =
     .label = Temporizadore
 newtab-custom-widget-section-title = Widgets
+newtab-custom-widget-section-toggle =
+    .label = Widgets
+newtab-widget-manage-title = Widgets
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Serra
@@ -491,6 +489,11 @@ newtab-weather-opt-in-yes =
     .label = Eja
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Càstia is previsiones in { $provider }
+    .aria-description = { $provider } ∙ Patrotzinadu
 
 ## Topic Labels
 
@@ -595,7 +598,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Is preferidos tuos a unu clic
 newtab-shortcuts-highlight-subtitle = Agiunghe unu curtzadòrgiu pro mantènnere is sitos preferidos tuos a unu clic isceti.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Pro ite ses sinnalende custu?
@@ -617,17 +620,6 @@ newtab-report-cancel = Annulla
 newtab-report-submit = Imbia
 newtab-toast-thanks-for-reporting =
     .message = Gràtzias de sa sinnalatzione.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Ammustra is chircas populares
-newtab-trending-searches-hide-trending =
-    .title = Cua is chircas populares
-newtab-trending-searches-learn-more = Àteras informatziones
-newtab-trending-searches-dismiss = Cua is chircas populares
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Chircas populares
 
 ## Strings for task / to-do list productivity widget
 

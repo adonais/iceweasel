@@ -10,6 +10,7 @@
 #define ProfilerBindings_h
 
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
+#include "mozilla/ProfilerThreadRegistrationData.h"
 
 #include <cstddef>
 #include <stdint.h>
@@ -38,6 +39,9 @@ extern "C" {
 
 void gecko_profiler_register_thread(const char* aName);
 void gecko_profiler_unregister_thread();
+
+bool gecko_profiler_current_thread_is_registered(
+    ThreadProfilingFeatures aThreadProfilingFeatures);
 
 void gecko_profiler_construct_label(mozilla::AutoProfilerLabel* aAutoLabel,
                                     JS::ProfilingCategoryPair aCategoryPair);

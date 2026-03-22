@@ -28,10 +28,10 @@ async function setPropertyOnAllRules(view, inspector) {
   // events and the DOM mutation that it causes refreshes the rules view, so we need to
   // get the list of rules again later.
   info("Adding font-weight:bold in the inline style rule");
-  const inlineStyleRuleEditor = view._elementStyle.rules[0].editor;
+  const inlineStyleRuleEditor = view.elementStyle.rules[0].editor;
 
   const onMutation = inspector.once("markupmutation");
-  const onRuleViewRefreshed = view.once("ruleview-refreshed");
+  const onRuleViewRefreshed = inspector.once("rule-view-refreshed");
 
   inlineStyleRuleEditor.addProperty("font-weight", "bold", "", true);
 
@@ -55,7 +55,7 @@ async function setPropertyOnAllRules(view, inspector) {
 }
 
 function getAllEditableRules(view) {
-  return [...view._elementStyle.rules].filter(rule => rule.editor.isEditable);
+  return [...view.elementStyle.rules].filter(rule => rule.editor.isEditable);
 }
 
 function checkPropertyOnAllRules(view) {

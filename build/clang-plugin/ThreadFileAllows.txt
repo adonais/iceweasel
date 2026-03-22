@@ -26,6 +26,7 @@ xpcom/threads/nsThreadPool.cpp
 xpcom/tests/gtest/TestThreadManager.cpp
 xpcom/tests/gtest/TestThreads.cpp
 xpcom/tests/gtest/TestThreadUtils.cpp
+xpcom/tests/gtest/TestTaskQueue.cpp
 
 # Tests which use dynamic thread names.
 xpcom/tests/gtest/TestHandleWatcher.cpp

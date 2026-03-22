@@ -1516,8 +1516,7 @@ struct HistogramMarker {
   using MS = mozilla::MarkerSchema;
   static MS MarkerTypeDisplay() {
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("id", "Histogram Name", MS::Format::UniqueString,
-                             MS::PayloadFlags::Searchable);
+    schema.AddKeyLabelFormat("id", "Histogram Name", MS::Format::UniqueString);
     schema.AddKeyLabelFormat("key", "Key", MS::Format::String);
     schema.AddKeyLabelFormat("val", "Sample", MS::Format::Integer);
     schema.SetTooltipLabel(

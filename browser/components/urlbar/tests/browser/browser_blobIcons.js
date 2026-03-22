@@ -47,7 +47,8 @@ add_task(async function test() {
       }),
     ],
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   // Do some searches.
   let blobUrl = await doSearches(provider, spies);
@@ -71,7 +72,7 @@ add_task(async function test() {
 
   // Remove the provider, do another search, and close the view. Since no
   // results with blob icons are matched, the call counts should not change.
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "test",

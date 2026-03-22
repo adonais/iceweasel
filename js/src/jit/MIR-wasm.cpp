@@ -310,6 +310,16 @@ bool MAsmJSLoadHeap::congruentTo(const MDefinition* ins) const {
   return load->accessType() == accessType() && congruentIfOperandsEqual(load);
 }
 
+bool MWasmI31RefGet::congruentTo(const MDefinition* ins) const {
+  if (!ins->isWasmI31RefGet()) {
+    return false;
+  }
+  // Make sure that we have a signed/signed or unsigned/unsigned pair to be
+  // considered congruent.
+  return congruentIfOperandsEqual(ins) &&
+         ins->toWasmI31RefGet()->wideningOp() == wideningOp();
+}
+
 MDefinition::AliasType MWasmLoadInstanceDataField::mightAlias(
     const MDefinition* def) const {
   if (def->isWasmStoreInstanceDataField()) {
@@ -1022,6 +1032,11 @@ MDefinition* MWasmRefCastConcrete::foldsTo(TempAllocator& alloc) {
     return folded;
   }
   return this;
+}
+
+bool MWasmRefCastInfallible::congruentTo(const MDefinition* ins) const {
+  return congruentIfOperandsEqual(ins) &&
+         destType() == ins->toWasmRefCastInfallible()->destType();
 }
 
 MDefinition* MWasmRefAsNonNull::foldsTo(TempAllocator& alloc) {

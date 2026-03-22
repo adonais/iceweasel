@@ -8,8 +8,8 @@
  * This is a mock Link object which can be used in tests.
  */
 
-#ifndef mock_Link_h__
-#define mock_Link_h__
+#ifndef mock_Link_h_
+#define mock_Link_h_
 
 #include "mozilla/dom/Link.h"
 #include "mozilla/StaticPrefs_layout.h"
@@ -68,4 +68,4 @@ class mock_Link : public mozilla::dom::Link {
 
 NS_IMPL_ISUPPORTS(mock_Link, mozilla::dom::Link)
 
-#endif  // mock_Link_h__
+#endif  // mock_Link_h_

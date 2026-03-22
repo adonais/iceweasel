@@ -23,7 +23,7 @@ import org.mozilla.fenix.components.appstate.readerview.ReaderViewState.ShowCont
  * A binding for observing [AppState.readerViewState] in the [AppStore] and toggling the
  * reader view feature and controls.
  *
- * @param appStore The [AppStore] used to observe [AppState.isReaderViewActive].
+ * @param appStore The [AppStore] used to observe [AppState.readerViewState].
  * @param readerMenuController The [ReaderModeController] that will used for toggling the reader
  * view feature and controls.
  * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur.

@@ -3,11 +3,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef HttpConnectionBase_h__
-#define HttpConnectionBase_h__
+#ifndef HttpConnectionBase_h_
+#define HttpConnectionBase_h_
 
 #include "nsHttpConnectionInfo.h"
-#include "nsHttpResponseHead.h"
 #include "nsAHttpTransaction.h"
 #include "nsCOMPtr.h"
 #include "nsProxyRelease.h"
@@ -34,6 +33,7 @@ class ConnectionEntry;
 class nsHttpHandler;
 class ASpdySession;
 class WebTransportSessionBase;
+class nsHttpResponseHead;
 
 enum class ConnectionState : uint32_t {
   HALF_OPEN = 0,
@@ -266,4 +266,4 @@ class HttpConnectionBase : public nsSupportsWeakReference {
 }  // namespace net
 }  // namespace mozilla
 
-#endif  // HttpConnectionBase_h__
+#endif  // HttpConnectionBase_h_

@@ -5483,10 +5483,10 @@ bool ClientWebGLContext::ReadPixels_SharedPrecheck(
     std::swap(validHalfFloatType, forbiddenHalfFloatType);  // Tragic.
   }
   if (*inout_readType == forbiddenHalfFloatType) {
-    const auto msg = fmt::format(
-        FMT_STRING("For WebGL {}, for `type`, enum {} is forbidden. Use {}."),
-        mIsWebGL2 ? "2" : "1", EnumString(forbiddenHalfFloatType),
-        EnumString(validHalfFloatType));
+    const auto msg =
+        fmt::format("For WebGL {}, for `type`, enum {} is forbidden. Use {}.",
+                    mIsWebGL2 ? "2" : "1", EnumString(forbiddenHalfFloatType),
+                    EnumString(validHalfFloatType));
     EnqueueError({LOCAL_GL_INVALID_ENUM, msg});
     return false;
   }

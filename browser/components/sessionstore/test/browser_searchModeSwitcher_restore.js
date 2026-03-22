@@ -6,6 +6,7 @@
 requestLongerTimeout(4);
 
 ChromeUtils.defineESModuleGetters(this, {
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
@@ -56,7 +57,7 @@ add_task(async function () {
       updateCalled++;
     });
 
-  let defaultEngine = await Services.search.getDefault();
+  let defaultEngine = await SearchService.getDefault();
   let defaultEngineIconURL = await defaultEngine.getIconURL();
 
   let defaultEngineIconCallsStack = [];

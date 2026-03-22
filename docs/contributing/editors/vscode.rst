@@ -94,12 +94,11 @@ Recommended Preferences
    * This sets the default formatter to prettier using the recommended prettier
      extension.
 
-``*.jsm`` and ``*.sjs`` file extensions should also be associated with JavaScript:
+The ``*.sjs`` file extension should also be associated with JavaScript:
 
 .. code::
 
    "files.associations": {
-      "*.jsm": "javascript",
       "*.sjs": "javascript",
    },
 

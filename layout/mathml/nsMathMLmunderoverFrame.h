@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsMathMLmunderoverFrame_h___
-#define nsMathMLmunderoverFrame_h___
+#ifndef nsMathMLmunderoverFrame_h_
+#define nsMathMLmunderoverFrame_h_
 
 #include "nsIReflowCallback.h"
 #include "nsMathMLContainerFrame.h"
@@ -87,4 +87,4 @@ class nsMathMLmunderoverFrame final : public nsMathMLContainerFrame,
       mPostReflowIncrementScriptLevelCommands;
 };
 
-#endif /* nsMathMLmunderoverFrame_h___ */
+#endif /* nsMathMLmunderoverFrame_h_ */

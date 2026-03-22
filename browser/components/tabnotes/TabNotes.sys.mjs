@@ -67,6 +67,10 @@ RETURNING
   id, canonical_url, created, note_text
 `;
 
+const GET_NOTE_COUNT = `
+SELECT COUNT(*) FROM tabnotes
+`;
+
 /**
  * Provides the CRUD interface for tab notes.
  */
@@ -77,8 +81,36 @@ export class TabNotesStorage {
     TAB_HOVER_PREVIEW_PANEL: "hover_menu",
   });
 
-  /** @type {OpenedConnection|undefined} */
-  #connection;
+  /**
+   * In-flight or completed init Promise. Concurrent callers to `init()` share
+   * this Promise so that only one `Sqlite.openConnection()` is ever started.
+   *
+   * @type {Promise<void>|undefined}
+   */
+  #initPromise;
+
+  /**
+   * Single instance of SQLite connection to tabnotes.sqlite. Do not use this
+   * directly because it could be undefined; instead, `await this.#connection`
+   * to ensure that you always get an initialized connection.
+   *
+   * @type {OpenedConnection|undefined}
+   */
+  #databaseConnection;
+
+  /**
+   * Reference to the shutdown blocker function, used to remove the blocker
+   * when deinit() is called.
+   *
+   * @see {Sqlite.shutdown}
+   * @type {Function|undefined}
+   */
+  #shutdownBlocker;
+
+  /** @type {Promise<OpenedConnection>} */
+  get #connection() {
+    return this.init().then(() => this.#databaseConnection);
+  }
 
   /**
    * @param {object} [options={}]
@@ -86,18 +118,29 @@ export class TabNotesStorage {
    *   Base file path to a folder where the database file should live.
    *   Defaults to the current profile's root directory.
    * @returns {Promise<void>}
+   *   After this Promise completes, TabNotes API functions will work.
    */
   init(options) {
+    if (this.#initPromise) {
+      return this.#initPromise;
+    }
+
     const basePath = options?.basePath ?? PathUtils.profileDir;
     this.dbPath = PathUtils.join(basePath, this.DATABASE_FILE_NAME);
-    return Sqlite.openConnection({
+    this.#initPromise = Sqlite.openConnection({
       path: this.dbPath,
     }).then(async connection => {
-      this.#connection = connection;
-      await this.#connection.execute("PRAGMA journal_mode = WAL");
-      await this.#connection.execute("PRAGMA wal_autocheckpoint = 16");
+      this.#databaseConnection = connection;
+      this.#shutdownBlocker = () => this.deinit();
+      Sqlite.shutdown.addBlocker(
+        "Closing tabnotes database",
+        this.#shutdownBlocker
+      );
 
-      let currentVersion = await this.#connection.getSchemaVersion();
+      await connection.execute("PRAGMA journal_mode = WAL");
+      await connection.execute("PRAGMA wal_autocheckpoint = 16");
+
+      let currentVersion = await connection.getSchemaVersion();
 
       if (currentVersion == 1) {
         // tabnotes schema is up to date
@@ -106,27 +149,34 @@ export class TabNotesStorage {
 
       if (currentVersion == 0) {
         // version 0: create `tabnotes` table
-        await this.#connection.executeTransaction(async () => {
-          await this.#connection.execute(`
+        await connection.executeTransaction(async () => {
+          await connection.execute(`
           CREATE TABLE IF NOT EXISTS "tabnotes" (
             id            INTEGER PRIMARY KEY,
             canonical_url TEXT NOT NULL,
             created       INTEGER NOT NULL,
             note_text     TEXT NOT NULL
           );`);
-          await this.#connection.setSchemaVersion(1);
+          await connection.setSchemaVersion(1);
         });
       }
     });
+
+    return this.#initPromise;
   }
 
   /**
    * @returns {Promise<void>}
    */
   deinit() {
-    if (this.#connection) {
-      return this.#connection.close().then(() => {
-        this.#connection = null;
+    if (this.#shutdownBlocker) {
+      Sqlite.shutdown.removeBlocker(this.#shutdownBlocker);
+      this.#shutdownBlocker = null;
+    }
+    if (this.#databaseConnection) {
+      return this.#databaseConnection.close().then(() => {
+        this.#databaseConnection = null;
+        this.#initPromise = undefined;
       });
     }
     return Promise.resolve();
@@ -154,7 +204,8 @@ export class TabNotesStorage {
     if (!this.isEligible(tab)) {
       return undefined;
     }
-    const results = await this.#connection.executeCached(GET_NOTE_BY_URL, {
+    const connection = await this.#connection;
+    const results = await connection.executeCached(GET_NOTE_BY_URL, {
       url: tab.canonicalUrl,
     });
     if (!results?.length) {
@@ -195,9 +246,10 @@ export class TabNotesStorage {
       return existingNote;
     }
 
-    return this.#connection.executeTransaction(async () => {
+    const connection = await this.#connection;
+    return connection.executeTransaction(async () => {
       if (!existingNote) {
-        const insertResult = await this.#connection.executeCached(CREATE_NOTE, {
+        const insertResult = await connection.executeCached(CREATE_NOTE, {
           url: tab.canonicalUrl,
           note: sanitized,
         });
@@ -215,7 +267,7 @@ export class TabNotesStorage {
         return insertedRecord;
       }
 
-      const updateResult = await this.#connection.executeCached(UPDATE_NOTE, {
+      const updateResult = await connection.executeCached(UPDATE_NOTE, {
         url: tab.canonicalUrl,
         note: sanitized,
       });
@@ -246,8 +298,9 @@ export class TabNotesStorage {
    *   True if there was a note and it was deleted; false otherwise
    */
   async delete(tab, options = {}) {
+    const connection = await this.#connection;
     /** @type {mozIStorageRow[]} */
-    const deleteResult = await this.#connection.executeCached(DELETE_NOTE, {
+    const deleteResult = await connection.executeCached(DELETE_NOTE, {
       url: tab.canonicalUrl,
     });
 
@@ -282,12 +335,30 @@ export class TabNotesStorage {
   }
 
   /**
+   * @returns {Promise<number>}
+   *   The number of stored tab notes. Returns 0 if there was a problem
+   *   retrieving the real count.
+   */
+  async count() {
+    try {
+      const connection = await this.#connection;
+      /** @type {mozIStorageRow[]} */
+      const countResult = await connection.executeCached(GET_NOTE_COUNT);
+      if (countResult?.length == 1) {
+        return countResult[0].getDouble(0);
+      }
+    } catch {}
+    return 0;
+  }
+
+  /**
    * Clear all notes for all URLs.
    *
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  reset() {
-    this.#connection.execute(`
+  async reset() {
+    const connection = await this.#connection;
+    return connection.execute(`
       DELETE FROM "tabnotes"`);
   }
 

@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
@@ -45,6 +46,12 @@ tasks.register("updateBorderifyExtensionVersion", Copy) { task ->
 
 tasks.register("updateTestExtensionVersion", Copy) { task ->
     updateExtensionVersion(task, 'src/main/assets/extensions/test')
+}
+
+// Make sure DAGP asset-source exploding happens after ExtensionVersion tasks
+tasks.matching { it.name.startsWith("explodeAssetSource") }.configureEach { t ->
+    t.dependsOn(tasks.named("updateBorderifyExtensionVersion"))
+    t.dependsOn(tasks.named("updateTestExtensionVersion"))
 }
 
 dependencies {

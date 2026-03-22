@@ -26,7 +26,6 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1375833
     let chromeScript = null;
     if (SpecialPowers.Services.appinfo.sessionHistoryInParent) {
       chromeScript = SpecialPowers.loadChromeScript(() => {
-        /* eslint-env mozilla/chrome-script */
         function doSend(message, fn) {
           try {
             sendAsyncMessage(message, {success: true, value: fn()});

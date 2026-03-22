@@ -6,8 +6,8 @@
 
 /* rendering object for CSS "display: grid | inline-grid" */
 
-#ifndef nsGridContainerFrame_h___
-#define nsGridContainerFrame_h___
+#ifndef nsGridContainerFrame_h_
+#define nsGridContainerFrame_h_
 
 #include "mozilla/CSSOrderAwareFrameIterator.h"
 #include "mozilla/HashTable.h"
@@ -594,4 +594,4 @@ class nsGridContainerFrame final : public nsContainerFrame,
   PerLogicalAxis<PerBaseline<nscoord>> mBaseline;
 };
 
-#endif /* nsGridContainerFrame_h___ */
+#endif /* nsGridContainerFrame_h_ */

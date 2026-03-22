@@ -95,7 +95,7 @@ class MultitaskingTest : TestSetup() {
         browserScreen {
             verifyNumberOfTabsOpened(4)
         }.openTabsTray {
-            verifyTabsOrder(tab1.title, tab3.title, tab2.title, customTabPage.title)
+            verifyTabsOrder("Add new tab", tab1.title, tab3.title, tab2.title, customTabPage.title)
         }.selectTab(tab1.title) {
             verifyPageContent("Tab 1")
         }.clearBrowsingData {
@@ -120,11 +120,14 @@ class MultitaskingTest : TestSetup() {
             openLinkInNewTab()
             verifyNumberOfTabsOpened(3)
         }.openTabsTray {
-            verifyTabsOrder(tab1.title, tab3.title, tab2.title)
+            verifyTabsOrder("Add new tab", tab1.title, tab3.title, tab2.title)
         }.closeTab(tab1.title) {
         }.openTabsTray {
-            verifyTabsOrder(tab3.title, tab2.title)
+            verifyTabsOrder("Add new tab", tab3.title, tab2.title)
         }.closeTab(tab3.title) {
+        }.openTabsTray {
+            verifyTabsOrder("Add new tab", tab2.title)
+        }.closeTab(tab2.title) {
             verifyTabsCounterNotShown()
         }
     }

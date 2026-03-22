@@ -119,7 +119,6 @@ async function doOptInTest(useKeyboard) {
 
   let { element, result } = await openRealtimeSuggestion({ input: "stock" });
   Assert.ok(result.isBestMatch);
-  Assert.ok(result.hideRowLabel);
   Assert.equal(result.payload.suggestionType, "market_opt_in");
   Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.TIP);
 

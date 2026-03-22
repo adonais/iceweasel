@@ -127,14 +127,6 @@ ExtensionControlled.args = {
     id: "extension-controlled-example",
     l10nId: "extension-controlled-input",
     pref: "privacy.userContext.enabled",
-    controllingExtensionInfo: {
-      storeId: "privacy.containers",
-      /* Example of a Fluent string used for the message bar:
-       * extension-controlled-message = <strong>{ $name }</strong> requires Container Tabs.
-       * */
-      l10nId: "extension-controlled-message",
-      supportPage: "preferences",
-    },
   },
   setting: {
     ...DEFAULT_SETTING,
@@ -151,6 +143,8 @@ ExtensionControlled.args = {
       l10nId: "extension-controlled-message",
       name: "My Extension",
       supportPage: "preferences",
+      // NOTE: allowControl defaults to false, but it can be set to true
+      allowControl: false,
     },
   },
 };

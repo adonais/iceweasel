@@ -23,6 +23,8 @@ const TEST_URI = `
 `;
 
 add_task(async function () {
+  // enable prefers-reduced-motion so the scroll happens instantly
+  await pushPref("ui.prefersReducedMotion", 1);
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const { inspector, view } = await openRuleView();
 
@@ -37,7 +39,7 @@ add_task(async function () {
   );
 
   let onHighlightProperty = view.once("element-highlighted");
-  let isHighlighted = view.highlightProperty("border-left-width");
+  let isHighlighted = await view.highlightProperty("border-left-width");
   await onHighlightProperty;
 
   ok(isHighlighted, "border-left-property is highlighted.");
@@ -51,7 +53,7 @@ add_task(async function () {
 
   info("Wait for the view to scroll to the property.");
   onHighlightProperty = view.once("element-highlighted");
-  isHighlighted = view.highlightProperty("font-size");
+  isHighlighted = await view.highlightProperty("font-size");
   await onHighlightProperty;
 
   ok(isHighlighted, "font-size property is highlighted.");
@@ -62,7 +64,7 @@ add_task(async function () {
 
   info("Wait for the view to scroll to the property.");
   onHighlightProperty = view.once("element-highlighted");
-  isHighlighted = view.highlightProperty("color");
+  isHighlighted = await view.highlightProperty("color");
   await onHighlightProperty;
 
   ok(isHighlighted, "color property is highlighted.");

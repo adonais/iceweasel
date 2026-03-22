@@ -200,6 +200,11 @@ pdfjs-thumb-page-title =
 pdfjs-thumb-page-canvas =
     .aria-label = Thumbnail of Page { $page }
 
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Select page { $page }
+
 ## Find panel button title and messages
 
 pdfjs-find-input =
@@ -532,15 +537,6 @@ pdfjs-editor-alt-text-settings-automatic-title = Automatic alt text
 pdfjs-editor-alt-text-settings-create-model-button-label = Create alt text automatically
 pdfjs-editor-alt-text-settings-create-model-description = Suggests descriptions to help people who can’t see the image or when the image doesn’t load.
 
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Alt text AI model ({ $totalSize } MB)
-
-pdfjs-editor-alt-text-settings-ai-model-description = Runs locally on your device so your data stays private. Required for automatic alt text.
-pdfjs-editor-alt-text-settings-delete-model-button = Delete
-pdfjs-editor-alt-text-settings-download-model-button = Download
-pdfjs-editor-alt-text-settings-downloading-model-button = Downloading…
-
 pdfjs-editor-alt-text-settings-editor-title = Alt text editor
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Show alt text editor right away when adding an image
 pdfjs-editor-alt-text-settings-show-dialog-description = Helps you make sure all your images have alt text.
@@ -561,6 +557,7 @@ pdfjs-editor-undo-bar-message-freetext = Text removed
 pdfjs-editor-undo-bar-message-ink = Drawing removed
 pdfjs-editor-undo-bar-message-stamp = Image removed
 pdfjs-editor-undo-bar-message-signature = Signature removed
+pdfjs-editor-undo-bar-message-comment = Comment removed
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -701,6 +698,8 @@ pdfjs-toggle-views-manager-button-label = Toggle Sidebar
 
 pdfjs-views-manager-sidebar =
     .aria-label = Sidebar
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Sidebar resizer
 pdfjs-views-manager-view-selector-button =
     .title = Views
 pdfjs-views-manager-view-selector-button-label = Views
@@ -767,3 +766,4 @@ pdfjs-views-manager-status-undo-button-label = Undo
 pdfjs-views-manager-status-close-button =
     .title = Close
 pdfjs-views-manager-status-close-button-label = Close
+pdfjs-views-manager-paste-button-label = Paste

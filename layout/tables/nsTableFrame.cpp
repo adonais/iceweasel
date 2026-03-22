@@ -18,7 +18,6 @@
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/Likely.h"
-#include "mozilla/MathAlgorithms.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/Range.h"
@@ -30,7 +29,6 @@
 #include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "nsCOMPtr.h"
-#include "nsCSSAnonBoxes.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSProps.h"
 #include "nsCSSRendering.h"
@@ -633,7 +631,7 @@ nsTableColGroupFrame* nsTableFrame::CreateSyntheticColGroupFrame() {
 
   RefPtr<ComputedStyle> colGroupStyle;
   colGroupStyle = presShell->StyleSet()->ResolveNonInheritingAnonymousBoxStyle(
-      PseudoStyleType::tableColGroup);
+      PseudoStyleType::MozTableColumnGroup);
   // Create a col group frame
   nsTableColGroupFrame* newFrame =
       NS_NewTableColGroupFrame(presShell, colGroupStyle);
@@ -687,7 +685,7 @@ void nsTableFrame::AppendAnonymousColFrames(
     nsIContent* iContent = aColGroupFrame->GetContent();
     RefPtr<ComputedStyle> computedStyle =
         presShell->StyleSet()->ResolveNonInheritingAnonymousBoxStyle(
-            PseudoStyleType::tableCol);
+            PseudoStyleType::MozTableColumn);
     // ASSERTION to check for bug 54454 sneaking back in...
     NS_ASSERTION(iContent, "null content in CreateAnonymousColFrames");
 
@@ -6033,8 +6031,7 @@ BCPaintBorderIterator::BCPaintBorderIterator(nsTableFrame* aTable)
 bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
   nsSize containerSize = mTable->GetSize();
   LogicalRect dirtyRect(mTableWM, aDirtyRect, containerSize);
-  uint32_t startRowIndex, endRowIndex, startColIndex, endColIndex;
-  startRowIndex = endRowIndex = startColIndex = endColIndex = 0;
+  uint32_t startRowIndex = 0, endRowIndex = 0;
   bool done = false;
   bool haveIntersect = false;
   // find startRowIndex, endRowIndex
@@ -6100,8 +6097,8 @@ bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
   mInitialOffsetI = bp.IStart(mTableWM);
 
   nscoord x = 0;
-  int32_t colIdx;
-  for (colIdx = 0; colIdx != mNumTableCols; colIdx++) {
+  uint32_t startColIndex = 0, endColIndex = 0;
+  for (int32_t colIdx = 0; colIdx != mNumTableCols; colIdx++) {
     nsTableColFrame* colFrame = mTableFirstInFlow->GetColFrame(colIdx);
     if (!colFrame) ABORT1(false);
     const nscoord onePx = mTable->PresContext()->DevPixelsToAppUnits(1);
@@ -6130,9 +6127,9 @@ bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
   if (!haveIntersect) {
     return false;
   }
+  MOZ_ASSERT(endColIndex >= startColIndex);
   mDamageArea =
-      TableArea(startColIndex, startRowIndex,
-                1 + DeprecatedAbs<int32_t>(endColIndex - startColIndex),
+      TableArea(startColIndex, startRowIndex, 1 + endColIndex - startColIndex,
                 1 + endRowIndex - startRowIndex);
 
   Reset();
@@ -7318,8 +7315,9 @@ void nsTableFrame::InvalidateTableFrame(nsIFrame* aFrame,
 void nsTableFrame::AppendDirectlyOwnedAnonBoxes(
     nsTArray<OwnedAnonBox>& aResult) {
   nsIFrame* wrapper = GetParent();
-  MOZ_ASSERT(wrapper->Style()->GetPseudoType() == PseudoStyleType::tableWrapper,
-             "What happened to our parent?");
+  MOZ_ASSERT(
+      wrapper->Style()->GetPseudoType() == PseudoStyleType::MozTableWrapper,
+      "What happened to our parent?");
   aResult.AppendElement(
       OwnedAnonBox(wrapper, &UpdateStyleOfOwnedAnonBoxesForTableWrapper));
 }
@@ -7328,13 +7326,13 @@ void nsTableFrame::AppendDirectlyOwnedAnonBoxes(
 void nsTableFrame::UpdateStyleOfOwnedAnonBoxesForTableWrapper(
     nsIFrame* aOwningFrame, nsIFrame* aWrapperFrame,
     ServoRestyleState& aRestyleState) {
-  MOZ_ASSERT(
-      aWrapperFrame->Style()->GetPseudoType() == PseudoStyleType::tableWrapper,
-      "What happened to our parent?");
+  MOZ_ASSERT(aWrapperFrame->Style()->GetPseudoType() ==
+                 PseudoStyleType::MozTableWrapper,
+             "What happened to our parent?");
 
   RefPtr<ComputedStyle> newStyle =
       aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-          PseudoStyleType::tableWrapper, aOwningFrame->Style());
+          PseudoStyleType::MozTableWrapper, aOwningFrame->Style());
 
   // Figure out whether we have an actual change.  It's important that we do
   // this, even though all the wrapper's changes are due to properties it

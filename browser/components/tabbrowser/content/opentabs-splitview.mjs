@@ -100,15 +100,17 @@ class OpenTabsInSplitView extends MozLitElement {
     const { gBrowser } = this.getWindow();
     const tab = event.originalTarget.tabElement;
     if (this.currentSplitView) {
-      this.currentSplitView.replaceTab(gBrowser.selectedTab, tab);
+      let aboutOpenTabsTab = gBrowser.getTabForBrowser(
+        window.browsingContext.embedderElement
+      );
+      this.currentSplitView.replaceTab(aboutOpenTabsTab, tab);
     }
   }
 
   get nonSplitViewUnpinnedTabs() {
     const { gBrowser } = this.getWindow();
-    return gBrowser.tabs.filter(tab => {
+    return gBrowser.visibleTabs.filter(tab => {
       return (
-        !tab.hidden &&
         !tab.pinned &&
         !tab.splitview &&
         tab?.linkedBrowser?.currentURI?.spec !== BROWSER_OPEN_TABS_URL

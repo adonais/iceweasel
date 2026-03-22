@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef ConnectionEntry_h__
-#define ConnectionEntry_h__
+#ifndef ConnectionEntry_h_
+#define ConnectionEntry_h_
 
 #include "PendingTransactionInfo.h"
 #include "PendingTransactionQueue.h"
@@ -39,6 +39,7 @@ class ConnectionEntry : public SupportsWeakPtr {
                          bool aInsertAsFirstForTheSamePriority = false);
 
   size_t UrgentStartQueueLength();
+  bool UrgentStartQueueIsEmpty() const;
 
   void PrintPendingQ();
 
@@ -179,6 +180,7 @@ class ConnectionEntry : public SupportsWeakPtr {
   // Return the count of pending transactions for all window ids.
   size_t PendingQueueLength() const;
   size_t PendingQueueLengthForWindow(uint64_t windowId) const;
+  bool PendingQueueIsEmpty() const;
 
   void AppendPendingUrgentStartQ(
       nsTArray<RefPtr<PendingTransactionInfo>>& result);
@@ -255,4 +257,4 @@ class ConnectionEntry : public SupportsWeakPtr {
 }  // namespace net
 }  // namespace mozilla
 
-#endif  // !ConnectionEntry_h__
+#endif  // !ConnectionEntry_h_

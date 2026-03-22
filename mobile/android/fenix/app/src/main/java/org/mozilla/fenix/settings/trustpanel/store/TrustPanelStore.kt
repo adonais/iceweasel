@@ -11,6 +11,8 @@ import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import org.mozilla.fenix.settings.PhoneFeature
+import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_ALLOW_ALL
+import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_ALL
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -77,7 +79,7 @@ class TrustPanelStore(
                 when (phoneFeature) {
                     PhoneFeature.AUTOPLAY -> {
                         WebsitePermission.Autoplay(
-                            autoplayValue = sitePermissions.toAutoplayValue(),
+                            autoplayValue = sitePermissions.toAutoplayValue(settings),
                             isVisible = sitePermissions != null || permissionHighlights.isAutoPlayBlocking,
                             deviceFeature = phoneFeature,
                         )
@@ -106,12 +108,18 @@ class TrustPanelStore(
                 }
             }
 
-        private fun SitePermissions?.toAutoplayValue() = this?.let { sitePermissions ->
-            AutoplayValue.entries.find {
-                it.autoplayAudibleStatus == sitePermissions.autoplayAudible &&
-                    it.autoplayInaudibleStatus == sitePermissions.autoplayInaudible
+        private fun SitePermissions?.toAutoplayValue(settings: Settings): AutoplayValue =
+            this?.let { sitePermissions ->
+                AutoplayValue.entries.find {
+                    it.autoplayAudibleStatus == sitePermissions.autoplayAudible &&
+                            it.autoplayInaudibleStatus == sitePermissions.autoplayInaudible
+                }
+            } ?: when (settings.getAutoplayUserSetting()) {
+                AUTOPLAY_ALLOW_ALL -> AutoplayValue.AUTOPLAY_ALLOW_ALL
+                AUTOPLAY_BLOCK_ALL -> AutoplayValue.AUTOPLAY_BLOCK_ALL
+                // Fallback for AUTOPLAY_ALLOW_ON_WIFI
+                else -> AutoplayValue.AUTOPLAY_BLOCK_AUDIBLE
             }
-        } ?: AutoplayValue.AUTOPLAY_BLOCK_AUDIBLE
     }
 }
 

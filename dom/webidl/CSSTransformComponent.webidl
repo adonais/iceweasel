@@ -12,7 +12,7 @@
 // TODO: Expose to LayoutWorklet
 [Exposed=(Window, Worker), Pref="layout.css.typed-om.enabled"]
 interface CSSTransformComponent {
-  stringifier;
+  stringifier UTF8String();
   attribute boolean is2D;
   [Throws] DOMMatrix toMatrix();
 };

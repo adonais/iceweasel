@@ -5,13 +5,13 @@
 package org.mozilla.fenix.settings.settingssearch
 
 /**
- * This interface provides a static methods for indexing settings and querying the index.
+ * This interface provides methods for indexing settings and querying the index.
  */
 interface SettingsIndexer {
     /**
      * Indexes all settings in the app.
      */
-    fun indexAllSettings()
+    suspend fun indexAllSettings()
 
     /**
      * Get all settings that match the query.

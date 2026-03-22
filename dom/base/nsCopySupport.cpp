@@ -346,7 +346,7 @@ static nsresult PutToClipboard(
 
 nsresult nsCopySupport::EncodeDocumentWithContextAndPutToClipboard(
     Selection* aSel, Document* aDoc, nsIClipboard::ClipboardType aClipboardID,
-    bool aWithRubyAnnotation) {
+    bool aWithRubyAnnotation, UpdateClipboard aUpdateClipboard /* = Yes */) {
   NS_ENSURE_TRUE(aDoc, NS_ERROR_NULL_POINTER);
 
   uint32_t additionalFlags = nsIDocumentEncoder::SkipInvisibleContent;
@@ -364,8 +364,10 @@ nsresult nsCopySupport::EncodeDocumentWithContextAndPutToClipboard(
                                           encodedDocumentWithContext);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = PutToClipboard(encodedDocumentWithContext, aClipboardID, *aDoc);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (aUpdateClipboard == UpdateClipboard::Yes) {
+    rv = PutToClipboard(encodedDocumentWithContext, aClipboardID, *aDoc);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   return rv;
 }

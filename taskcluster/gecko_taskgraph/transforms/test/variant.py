@@ -6,7 +6,7 @@ import datetime
 import jsone
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.copy import deepcopy
-from taskgraph.util.schema import Schema, resolve_keyed_by, validate_schema
+from taskgraph.util.schema import LegacySchema, resolve_keyed_by, validate_schema
 from taskgraph.util.templates import merge
 from taskgraph.util.treeherder import join_symbol, split_symbol
 from voluptuous import Any, Optional, Required
@@ -18,7 +18,7 @@ transforms = TransformSequence()
 """List of available test variants defined."""
 
 
-variant_description_schema = Schema({
+variant_description_schema = LegacySchema({
     str: {
         Required("description"): str,
         Required("suffix"): str,

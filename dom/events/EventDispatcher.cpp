@@ -827,12 +827,20 @@ struct DOMEventMarker : public BaseMarkerType<DOMEventMarker> {
 
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
-      {"target", MS::InputType::CString, "Event Target", MS::Format::String,
-       MS::PayloadFlags::Searchable},
+      {
+          "target",
+          MS::InputType::CString,
+          "Event Target",
+          MS::Format::String,
+      },
       {"latency", MS::InputType::TimeDuration, "Latency", MS::Format::Duration,
        MS::PayloadFlags::None},
-      {"eventType", MS::InputType::String, "Event Type", MS::Format::String,
-       MS::PayloadFlags::Searchable}};
+      {
+          "eventType",
+          MS::InputType::String,
+          "Event Type",
+          MS::Format::String,
+      }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable,

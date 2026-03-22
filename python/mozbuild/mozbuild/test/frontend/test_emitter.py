@@ -1721,6 +1721,31 @@ class TestEmitterBasic(unittest.TestCase):
         ):
             self.read_topsrcdir(reader)
 
+    def test_rust_program_features(self):
+        """Test that RustProgram features are correctly emitted."""
+        reader = self.reader(
+            "rust-program-features",
+            extra_substs=dict(RUST_TARGET="i686-pc-windows-msvc", BIN_SUFFIX=".exe"),
+        )
+        objs = self.read_topsrcdir(reader)
+
+        self.assertEqual(len(objs), 5)
+        ldflags, host_cflags, host_ldflags, cflags, prog = objs
+        self.assertIsInstance(ldflags, ComputedFlags)
+        self.assertIsInstance(cflags, ComputedFlags)
+        self.assertIsInstance(host_cflags, ComputedFlags)
+        self.assertIsInstance(host_ldflags, ComputedFlags)
+        self.assertIsInstance(prog, RustProgram)
+        self.assertEqual(prog.features, ["musthave", "cantlivewithout"])
+
+    def test_rust_program_duplicate_features(self):
+        """Test that duplicate RustProgram features are rejected."""
+        reader = self.reader("rust-program-duplicate-features")
+        with self.assertRaisesRegex(
+            SandboxValidationError, "features for .* should not contain duplicates"
+        ):
+            self.read_topsrcdir(reader)
+
     def test_rust_program_no_cargo_toml(self):
         """Test that specifying RUST_PROGRAMS without a Cargo.toml fails."""
         reader = self.reader("rust-program-no-cargo-toml")

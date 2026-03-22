@@ -18,7 +18,6 @@ import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionProvider
-import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -26,7 +25,6 @@ import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.HomeActivity
@@ -45,9 +43,6 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class SearchFragmentStoreTest {
-    @get:Rule
-    val mainCoroutineRule = MainCoroutineRule()
-
     @MockK private lateinit var searchEngine: SearchEngine
 
     @MockK private lateinit var activity: HomeActivity
@@ -1326,7 +1321,14 @@ class SearchFragmentStoreTest {
         val initialState = emptyDefaultState()
         val store = SearchFragmentStore(initialState)
 
-        store.dispatch(SearchStarted(selectedSearchEngine, false, true, false))
+        store.dispatch(
+            SearchStarted(
+                selectedSearchEngine,
+                isUserSelected = false,
+                inPrivateMode = true,
+                searchStartedForCurrentUrl = false,
+            ),
+        )
 
         assertEquals(initialState, store.state)
     }

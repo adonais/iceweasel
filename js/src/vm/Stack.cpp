@@ -668,6 +668,8 @@ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry(
     // TODO: get the realm ID of wasm frames. Bug 1596235.
     frame.realmID = 0;
     frame.sourceId = 0;
+    frame.line = 0;
+    frame.column = 0;
     return mozilla::Some(frame);
   }
 
@@ -733,6 +735,10 @@ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry(
   }
   frame.activation = activation_;
   frame.endStackAddress = endStackAddress_;
+  // Initialize line and column info (will be populated later during
+  // extractStack)
+  frame.line = 0;
+  frame.column = 0;
   return mozilla::Some(frame);
 }
 
@@ -775,6 +781,8 @@ uint32_t JS::ProfilingFrameIterator::extractStack(Frame* frames,
     frames[offset + i] = physicalFrame.value();
     frames[offset + i].label = frameInfos[i].label;
     frames[offset + i].sourceId = frameInfos[i].sourceId;
+    frames[offset + i].line = frameInfos[i].line;
+    frames[offset + i].column = frameInfos[i].column;
   }
 
   return depth;

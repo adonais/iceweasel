@@ -13,6 +13,7 @@ use crate::renderer::{FullFrameStats, PipelineInfo};
 use crate::gpu_types::BlurEdgeMode;
 use crate::frame_builder::Frame;
 use crate::profiler::TransactionProfile;
+use crate::segment::EdgeMask;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::prim_store::PrimitiveInstanceIndex;
 use crate::svg_filter::{FilterGraphNode, FilterGraphOp, FilterGraphPictureReference};
@@ -829,6 +830,18 @@ pub struct LayoutPrimitiveInfo {
     pub rect: LayoutRect,
     pub clip_rect: LayoutRect,
     pub flags: PrimitiveFlags,
+    /// Which edges should get anti-aliasing if the primitive is axis-aligned.
+    ///
+    /// Typically none for CSS primitives and all for SVG primitives.
+    /// If a display item is split into multiple primitives, removing anti-aliasing
+    /// for the edges where the item is split ensures that there is no seam.
+    pub aligned_aa_edges: EdgeMask,
+    /// Which edges should get anti-aliasing if the primitive is not axis-aligned.
+    ///
+    /// Typically all edges, or at least a superset of aa_edges.
+    /// If a display item is split into multiple primitives, removing anti-aliasing
+    /// for the edges where the item is split ensures that there is no seam.
+    pub transformed_aa_edges: EdgeMask,
 }
 
 impl LayoutPrimitiveInfo {
@@ -837,6 +850,8 @@ impl LayoutPrimitiveInfo {
             rect,
             clip_rect,
             flags: PrimitiveFlags::default(),
+            aligned_aa_edges: EdgeMask::empty(),
+            transformed_aa_edges: EdgeMask::all(),
         }
     }
 }

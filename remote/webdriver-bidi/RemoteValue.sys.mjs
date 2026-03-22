@@ -722,7 +722,7 @@ function serializeNode(
 
     const shadowRoot = node.openOrClosedShadowRoot;
     serialized.shadowRoot = null;
-    if (shadowRoot !== null) {
+    if (shadowRoot !== null && !shadowRoot.isUAWidget()) {
       serialized.shadowRoot = serialize(
         shadowRoot,
         serializationOptions,

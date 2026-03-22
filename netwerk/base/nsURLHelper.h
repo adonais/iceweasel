@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsURLHelper_h__
-#define nsURLHelper_h__
+#ifndef nsURLHelper_h_
+#define nsURLHelper_h_
 
 #include "nsString.h"
 #include "nsTArray.h"
@@ -355,4 +355,4 @@ class URLParams final {
 };
 }  // namespace mozilla
 
-#endif  // !nsURLHelper_h__
+#endif  // !nsURLHelper_h_

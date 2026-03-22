@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = Tilpass
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = Ignorer
+    .aria-label = Ignorer
 
 ## Search box component.
 
@@ -152,7 +155,7 @@ newtab-privacy-modal-button-done = Ferdig
 newtab-privacy-modal-button-manage = Behandle innstillinger for sponset innhold
 newtab-privacy-modal-header = Personvernet ditt er viktig.
 newtab-privacy-modal-paragraph-2 =
-    I tillegg til å servere fengslende historier, viser vi deg også relevant og
+    I tillegg til å servere fengslende artikler, viser vi deg også relevant og
     høyt kontrollert innhold fra utvalgte sponsorer. Du kan være sikker på, <strong>at dine surfedata
     aldri forlater ditt personlige eksemplar av  { -brand-product-name }</strong> — vi ser dem ikke, og sponsorerene våre ser dem ikke heller.
 newtab-privacy-modal-link = Les mer om hvordan personvernet fungerer på den nye fanen
@@ -328,18 +331,18 @@ newtab-custom-recent-subtitle = Et utvalg av nylige nettsteder og innhold
 newtab-custom-weather-toggle =
     .label = Vær
     .description = Dagens værmelding i korte trekk
-newtab-custom-trending-search-toggle =
-    .label = Populære søk
-    .description = Populære og ofte søkte emner
 newtab-custom-widget-weather-toggle =
     .label = Vær
-newtab-custom-widget-trending-search-toggle =
-    .label = Populære søk
 newtab-custom-widget-lists-toggle =
     .label = Lister
 newtab-custom-widget-timer-toggle =
     .label = Nedtelling
 newtab-custom-widget-section-title = Widgeter
+newtab-custom-widget-section-toggle =
+    .label = Widgeter
+newtab-widget-manage-title = Widgeter
+newtab-widget-manage-widget-button =
+    .label = Behandle widgeter
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Lukk
@@ -467,6 +470,8 @@ newtab-weather-change-location-search-input-placeholder =
     .placeholder = Søk plassering
     .aria-label = Søk plassering
 newtab-weather-menu-weather-display = Værvisning
+newtab-weather-todays-forecast = Dagens værmelding
+newtab-weather-see-full-forecast = Se fullstendig værmelding
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -479,6 +484,7 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Bytt til Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Bytt til Celsius
+newtab-weather-menu-hide-weather-v2 = Skjul vær
 newtab-weather-menu-hide-weather = Skjul været på ny fane
 newtab-weather-menu-learn-more = Les mer
 newtab-weather-menu-detect-my-location = Oppdag posisjonen min
@@ -491,6 +497,11 @@ newtab-weather-opt-in-yes =
     .label = Ja
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Se værmelding hos { $provider }.
+    .aria-description = { $provider } ∙ Sponset
 
 ## Topic Labels
 
@@ -595,7 +606,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Dine favoritter lett tilgjengelig
 newtab-shortcuts-highlight-subtitle = Legg til en snarvei for å ha favorittnettstedene dine ett klikk unna.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Hvorfor rapporterer du dette?
@@ -613,21 +624,13 @@ newtab-report-content-inappropriate-offensive =
     .label = Upassende eller støtende
 newtab-report-content-spam-misleading =
     .label = Spam eller villedende
+newtab-report-content-requires-payment-subscription =
+    .label = Krever betaling eller abonnement
+newtab-report-content-requires-payment-subscription-learn-more = Les mer
 newtab-report-cancel = Avbryt
 newtab-report-submit = Send
 newtab-toast-thanks-for-reporting =
     .message = Takk for at du rapporterte dette.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Vis populære søk
-newtab-trending-searches-hide-trending =
-    .title = Skjul populære søk
-newtab-trending-searches-learn-more = Les mer
-newtab-trending-searches-dismiss = Skjul populære søk
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Populære søk
 
 ## Strings for task / to-do list productivity widget
 
@@ -700,6 +703,12 @@ newtab-widget-timer-menu-notifications = Slå av varsler
 newtab-widget-timer-menu-notifications-on = Slå på varsler
 newtab-widget-timer-menu-hide = Skjul nedteller
 newtab-widget-timer-menu-learn-more = Les mer
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = Toppoverskrifter
+newtab-daily-briefing-card-menu-dismiss = Ignorer
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = Oppdatert for { $minutes } minutter siden
 newtab-widget-message-title = Hold fokus med lister og en innebygd nedteller
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Fra kjappe påminnelser til daglige gjøremål, fokuserte arbeidsøkter til strekkpauser — hold deg til oppgaven og tidsplanen.
@@ -709,3 +718,25 @@ newtab-promo-card-cta = Les mer
 newtab-promo-card-dismiss-button =
     .title = Avvis
     .aria-label = Avvis
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-dismiss-button =
+    .title = Ignorer
+    .aria-label = Ignorer
+# "This space" refers to about:newtab. The call to action here ("make it your own")
+# is to customize newtab with a background image or colour, or by tweaking the
+# existing widgetry that appears on it.
+newtab-activation-window-message-customization-focus-header = Gjør dette området til ditt eget
+newtab-activation-window-message-customization-focus-message = Velg et nytt bakgrunnsbilde, legg til snarveier til favorittnettstedene dine, og hold deg oppdatert på artikler som interesserer deg.
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = Begynn å tilpasse
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = Dette området følger reglene dine
+newtab-activation-window-message-values-focus-message = { -brand-product-name } lar deg surfe slik du vil, med en mer personlig måte å starte dagen din på nettet. Gjør { -brand-product-name } til ditt eget.

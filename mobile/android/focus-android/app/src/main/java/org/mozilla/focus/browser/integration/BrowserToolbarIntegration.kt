@@ -21,10 +21,10 @@ import androidx.core.view.children
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.selector.findCustomTabOrSelectedTab
@@ -253,10 +253,11 @@ class BrowserToolbarIntegration(
 
     private fun setBrowserActionButtons() {
         tabsCounterScope =
-            store.flowScoped(coroutineScope = CoroutineScope(coroutineDispatcher + SupervisorJob())) { flow ->
-                flow.distinctUntilChangedBy { state -> state.tabs.size > 1 }
-                    .collect { state ->
-                        if (state.tabs.size > 1) {
+            store.flowScoped(dispatcher = coroutineDispatcher) { flow ->
+                flow.map { it.tabs.isNotEmpty() }
+                    .distinctUntilChanged()
+                    .collect { hasTabs ->
+                        if (hasTabs) {
                             toolbar.addBrowserAction(tabsAction)
                         } else {
                             toolbar.removeBrowserAction(tabsAction)
@@ -291,9 +292,7 @@ class BrowserToolbarIntegration(
     internal fun observeEraseCfr() {
         eraseTabsCfrScope =
             fragment.components?.appStore?.flowScoped(
-                coroutineScope = CoroutineScope(
-                    coroutineDispatcher + SupervisorJob(),
-                ),
+                dispatcher = coroutineDispatcher,
             ) { flow ->
                 flow.mapNotNull { state -> state.showEraseTabsCfr }
                     .distinctUntilChanged()
@@ -348,7 +347,7 @@ class BrowserToolbarIntegration(
     internal fun observeCookieBannerCfr() {
         cookieBannerCfrScope =
             fragment.components?.appStore?.flowScoped(
-                coroutineScope = CoroutineScope(coroutineDispatcher + SupervisorJob()),
+                dispatcher = coroutineDispatcher,
             ) { flow ->
                 flow.mapNotNull { state -> state.showCookieBannerCfr }
                     .distinctUntilChanged()
@@ -414,9 +413,7 @@ class BrowserToolbarIntegration(
     internal fun observeTrackingProtectionCfr() {
         trackingProtectionCfrScope =
             fragment.components?.appStore?.flowScoped(
-                coroutineScope = CoroutineScope(
-                    coroutineDispatcher + SupervisorJob(),
-                ),
+                dispatcher = coroutineDispatcher,
             ) { flow ->
                 flow.mapNotNull { state -> state.showTrackingProtectionCfrForTab }
                     .distinctUntilChanged()
@@ -488,7 +485,7 @@ class BrowserToolbarIntegration(
     @VisibleForTesting
     internal fun observerSecurityIndicatorChanges() {
         securityIndicatorScope =
-            store.flowScoped(coroutineScope = CoroutineScope(coroutineDispatcher + SupervisorJob())) { flow ->
+            store.flowScoped(dispatcher = coroutineDispatcher) { flow ->
                 flow.mapNotNull { state -> state.findCustomTabOrSelectedTab(customTabId) }
                     .distinctUntilChangedBy { tab -> tab.content.securityInfo }
                     .collect {

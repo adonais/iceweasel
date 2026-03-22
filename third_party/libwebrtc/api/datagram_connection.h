@@ -10,12 +10,15 @@
 #ifndef API_DATAGRAM_CONNECTION_H_
 #define API_DATAGRAM_CONNECTION_H_
 
-#include <memory>
+#include <cstddef>
+#include <cstdint>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/candidate.h"
 #include "api/ref_count.h"
+#include "api/units/timestamp.h"
 #include "p2p/base/transport_description.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -29,14 +32,43 @@ namespace webrtc {
 // networking internals.
 class RTC_EXPORT DatagramConnection : public RefCountInterface {
  public:
+  enum class WireProtocol {
+    kDtls,
+    kDtlsSrtp,
+  };
+
+  using PacketId = uint32_t;
+
   class Observer {
    public:
     virtual ~Observer() = default;
     virtual void OnCandidateGathered(const Candidate& candidate) = 0;
-    virtual void OnPacketReceived(ArrayView<const uint8_t> data) = 0;
-    // Notification of an asynchronous failure to an earlier call to SendPacket.
-    // TODO(crbug.com/443019066): Associate this with a specific send call.
-    virtual void OnSendError() = 0;
+
+    struct PacketMetadata {
+      Timestamp receive_time;
+    };
+    virtual void OnPacketReceived(ArrayView<const uint8_t> data,
+                                  PacketMetadata metadata) = 0;
+
+    // Notification of outcome of an earlier call to SendPacket.
+    struct SendOutcome {
+      PacketId id;
+
+      enum class Status {
+        kSuccess,
+        kNotSent,
+      };
+      Status status;
+      // Time sent on network.
+      Timestamp send_time = Timestamp::MinusInfinity();
+      // Actual UDP payload bytes sent on the network.
+      size_t bytes_sent = 0;
+    };
+    virtual void OnSendOutcome(SendOutcome send_outcome) {}
+
+    // TODO(crbug.com/443019066): Migrate to OnSent.
+    virtual void OnSendError() {}
+
     // Notification of an error unrelated to sending. Observers should
     // check the current state of the connection.
     virtual void OnConnectionError() = 0;
@@ -58,8 +90,23 @@ class RTC_EXPORT DatagramConnection : public RefCountInterface {
                                        const uint8_t* digest,
                                        size_t digest_len,
                                        SSLRole ssl_role) = 0;
-  // SendPacket on this connection, returning whether the send succeeded.
-  virtual bool SendPacket(ArrayView<const uint8_t> data) = 0;
+  struct PacketSendParameters {
+    // Used to tie to async feedback of the sending outcome. No deduping is
+    // performed, the caller is responsible for ensuring uniqueness and handing
+    // rollovers.
+    PacketId id = 0;
+  };
+
+  // SendPacket on this connection. Listen to Observer::OnSendOutcome for
+  // whether sending was successful or not.
+  virtual void SendPacket(ArrayView<const uint8_t> data,
+                          PacketSendParameters params) {}
+
+  // TODO(crbug.com/443019066): Migrate to version with params.
+  virtual bool SendPacket(ArrayView<const uint8_t> data) {
+    SendPacket(data, PacketSendParameters());
+    return true;
+  }
 
   // Initiate closing connection and releasing resources. Must be called before
   // destruction.

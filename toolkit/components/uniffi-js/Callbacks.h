@@ -37,6 +37,23 @@ void RegisterCallbackHandler(uint64_t aInterfaceId,
 void DeregisterCallbackHandler(uint64_t aInterfaceId, ErrorResult& aError);
 
 /**
+ * Create a new Callback interface handle
+ */
+uint64_t CallbackHandleCreate();
+
+/**
+ * Increase the refcount for a callback interface handle.  Returns the new
+ * refcount.
+ */
+uint32_t CallbackHandleAddRef(uint64_t aHandle);
+
+/**
+ * Decrease the refconut for a callback interface handle.  Returns the new
+ * refcount.
+ */
+uint32_t CallbackHandleRelease(uint64_t aHandle);
+
+/**
  * Base class for async callback interface method handlers
  *
  * In addition to handling actual async methods this also handles

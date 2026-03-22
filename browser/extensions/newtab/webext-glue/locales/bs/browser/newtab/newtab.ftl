@@ -319,9 +319,6 @@ newtab-custom-recent-subtitle = Izbor najnovijih stranica i sadržaja
 newtab-custom-weather-toggle =
     .label = Vrijeme
     .description = Ukratko o današnjoj prognozi
-newtab-custom-trending-search-toggle =
-    .label = Popularne pretrage
-    .description = Popularne i često tražene teme
 newtab-custom-close-button = Zatvori
 newtab-custom-settings = Upravljajte više postavki
 
@@ -456,6 +453,11 @@ newtab-weather-menu-hide-weather = Sakrij vrijeme na novom tabu
 newtab-weather-menu-learn-more = Saznajte više
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Vremenski podaci trenutno nisu dostupni.
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Pogledajte prognozu na { $provider }
+    .aria-description = { $provider } ∙ Sponzorisano
 
 ## Topic Labels
 
@@ -554,7 +556,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Vaši favoriti na dohvat ruke
 newtab-shortcuts-highlight-subtitle = Dodajte prečicu da biste svoje omiljene stranice imali pri ruci na jedan klik.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Zašto ovo prijavljujete?
@@ -576,14 +578,3 @@ newtab-report-cancel = Otkaži
 newtab-report-submit = Pošalji
 newtab-toast-thanks-for-reporting =
     .message = Hvala vam što ste ovo prijavili.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Prikaži popularne pretrage
-newtab-trending-searches-hide-trending =
-    .title = Sakrij popularne pretrage
-newtab-trending-searches-learn-more = Saznajte više
-newtab-trending-searches-dismiss = Sakrij popularne pretrage
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Popularne pretrage

@@ -21,6 +21,7 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
+struct StyleUnitValue;
 
 namespace dom {
 
@@ -30,6 +31,9 @@ class CSSUnitValue final : public CSSNumericValue {
  public:
   CSSUnitValue(nsCOMPtr<nsISupports> aParent, double aValue,
                const nsACString& aUnit);
+
+  static RefPtr<CSSUnitValue> Create(nsCOMPtr<nsISupports> aParent,
+                                     const StyleUnitValue& aUnitValue);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -52,6 +56,8 @@ class CSSUnitValue final : public CSSNumericValue {
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              nsACString& aDest) const;
+
+  StyleUnitValue ToStyleUnitValue() const;
 
  private:
   virtual ~CSSUnitValue() = default;

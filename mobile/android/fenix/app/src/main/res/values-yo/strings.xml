@@ -341,11 +341,7 @@
   <string name="customize_addon_collection_hint">Àkójọpọ̀ orúkọ</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">Àkọ́jọpọ̀ ẹni (ID Aṣàmúlò)</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Wọlé padà sínu</string>
   <!--
     Title for the customize home screen section with recently visited. Recently visited is
@@ -679,7 +675,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Ṣàtúnṣe</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Ṣe ẹ̀dà</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Ṣe ẹ̀dà</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Pín</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -713,7 +709,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Ti párẹ́ %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">ÌFISÍPÒ PADÀ</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">ÌFISÍPÒ PADÀ</string>
   <!--
     Site Permissions
 

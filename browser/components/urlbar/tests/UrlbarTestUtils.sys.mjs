@@ -21,6 +21,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
   UrlbarController:
     "moz-src:///browser/components/urlbar/UrlbarController.sys.mjs",
@@ -250,6 +251,16 @@ class UrlbarInputTestUtils {
     return this.getRowAt(win, resultIndex).querySelector(
       `.urlbarView-button-${buttonName}`
     );
+  }
+
+  /**
+   * Returns the UrlbarInput input element for the requested window.
+   *
+   * @param {ChromeWindow} window
+   * @returns {UrlbarInput}
+   */
+  getUrlbar(window) {
+    return this.#urlbar(window);
   }
 
   /**
@@ -798,8 +809,8 @@ class UrlbarInputTestUtils {
    * Open the input field context menu and run a task on it.
    *
    * @param {ChromeWindow} win the current window
-   * @param {Function} task a task function to run, gets the contextmenu popup
-   *        as argument.
+   * @param {(popup: MozMenuPopup) => Promise<void>|void} task
+   *   A task function to run. Gets the contextmenu popup as argument.
    */
   async withContextMenu(win, task) {
     let textBox = this.#urlbar(win).querySelector("moz-input-box");
@@ -829,6 +840,54 @@ class UrlbarInputTestUtils {
         await closePromise;
       }
     }
+  }
+
+  /**
+   * Opens the moz-urlbar context menu by synthesizing a click.
+   * Activates a menu item that is specified by an id.
+   *
+   * @param {ChromeWindow} win
+   *   The current window.
+   * @param {string} anonid
+   *   Identifier of a menu item of the url bar context menu.
+   * @returns {Promise<void>}
+   *   The menuitem that has the corresponding identifier.
+   */
+  async activateContextMenuItem(win, anonid) {
+    await this.withContextMenu(win, popup => {
+      let mozInputBox = popup.parentNode;
+      let menuitem = mozInputBox.getMenuItem(anonid);
+      this.Assert.ok(
+        lazy.BrowserTestUtils.isVisible(menuitem),
+        "Menu item is visible"
+      );
+      this.Assert.ok(
+        lazy.BrowserTestUtils.isVisible(menuitem),
+        "Menu item is visible"
+      );
+      this.Assert.ok(!menuitem.disabled, "Menu item enabled");
+      menuitem.closest("menupopup").activateItem(menuitem);
+    });
+  }
+
+  /**
+   * Opens the moz-urlbar context menu by synthesizing a click.
+   * Returns a menu item that is specified by an id.
+   *
+   * @param {ChromeWindow} win
+   *   The current window.
+   * @param {string} anonid
+   *   Identifier of a menu item of the url bar context menu.
+   * @returns {Promise<MozMenuItem>}
+   *   The menuitem that has the corresponding identifier.
+   */
+  async getContextMenuItem(win, anonid) {
+    let menuitem;
+    await this.withContextMenu(win, popup => {
+      let mozInputBox = popup.parentNode;
+      menuitem = mozInputBox.getMenuItem(anonid);
+    });
+    return menuitem;
   }
 
   /**
@@ -879,7 +938,9 @@ class UrlbarInputTestUtils {
       let keywordEnabled = Services.prefs.getBoolPref("keyword.enabled");
 
       let expectedPlaceholder;
-      if (keywordEnabled && engineName) {
+      if (this.#urlbar(window).sapName == "searchbar") {
+        expectedPlaceholder = { id: "searchbar-input" };
+      } else if (keywordEnabled && engineName) {
         expectedPlaceholder = {
           id: "urlbar-placeholder-with-name",
           args: { name: engineName },
@@ -914,7 +975,7 @@ class UrlbarInputTestUtils {
 
     let isGeneralPurposeEngine = false;
     if (expectedSearchMode.engineName) {
-      let engine = Services.search.getEngineByName(
+      let engine = lazy.SearchService.getEngineByName(
         expectedSearchMode.engineName
       );
       isGeneralPurposeEngine = engine.isGeneralPurposeEngine;
@@ -1029,7 +1090,7 @@ class UrlbarInputTestUtils {
             "Search mode result matches engine name."
           );
         } else {
-          let engine = Services.search.getEngineByName(
+          let engine = lazy.SearchService.getEngineByName(
             expectedSearchMode.engineName
           );
           let engineRootDomain =
@@ -1077,7 +1138,7 @@ class UrlbarInputTestUtils {
     let buttons = oneOffs.getSelectableButtons(true);
     if (!searchMode) {
       searchMode = { engineName: buttons[0].engine.name };
-      let engine = Services.search.getEngineByName(searchMode.engineName);
+      let engine = lazy.SearchService.getEngineByName(searchMode.engineName);
       if (engine.isGeneralPurposeEngine) {
         searchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
       }
@@ -1262,11 +1323,24 @@ class UrlbarInputTestUtils {
    * @returns {UrlbarController} A new controller.
    */
   newMockController(options = {}) {
+    // Ensure a sapName is defined, as otherwise we'd not get the same
+    // ProvidersManager instance across tests.
+    if (options.input && !options.input.sapName) {
+      Object.defineProperty(options.input, "sapName", {
+        get() {
+          return "urlbar";
+        },
+        configurable: true,
+      });
+    }
     return new lazy.UrlbarController(
       Object.assign(
         {
           input: {
             isPrivate: false,
+            get sapName() {
+              return "urlbar";
+            },
             onFirstResult() {
               return false;
             },
@@ -1440,6 +1514,9 @@ class UrlbarInputTestUtils {
   }
 
   async openSearchModeSwitcher(win) {
+    //Flush the popup previous state since it might be still remaining.
+    await new Promise(resolve => win.requestAnimationFrame(resolve));
+
     let popup = this.searchModeSwitcherPopup(win);
     let button = this.#urlbar(win).querySelector(".searchmode-switcher");
     this.Assert.ok(lazy.BrowserTestUtils.isVisible(button));
@@ -1483,6 +1560,9 @@ class UrlbarInputTestUtils {
 
   async openTrustPanel(win) {
     let btn = win.document.getElementById("trust-icon");
+    if (!btn.checkVisibility()) {
+      btn = win.document.getElementById("identity-icon-box");
+    }
     let popupShown = lazy.BrowserTestUtils.waitForEvent(
       win.document,
       "popupshown"

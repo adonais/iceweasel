@@ -18,6 +18,7 @@ add_setup(async function setup() {
       ["browser.urlbar.scotchBonnet.enableOverride", true],
       ["browser.urlbar.suggest.topsites", true],
       ["browser.newtabpage.activity-stream.default.sites", TOPSITES],
+      ["widget.macos.native-anchored-menus", false],
     ],
   });
   await PlacesUtils.history.clear();
@@ -81,7 +82,8 @@ add_task(
     ];
 
     let provider = new UrlbarTestUtils.TestProvider({ results, priority: 1 });
-    UrlbarProvidersManager.registerProvider(provider);
+    let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+    providersManager.registerProvider(provider);
 
     const FOCUS_ORDER_ASSERTIONS = [
       () =>
@@ -129,7 +131,7 @@ add_task(
       gURLBar.handleRevert();
     }
 
-    UrlbarProvidersManager.unregisterProvider(provider);
+    providersManager.unregisterProvider(provider);
     await SpecialPowers.popPrefEnv();
   }
 );

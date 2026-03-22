@@ -247,8 +247,14 @@ export default class MozMessageBar extends MozLitElement {
   }
 
   dismiss() {
-    this.dispatchEvent(new CustomEvent("message-bar:user-dismissed"));
-    this.close();
+    let event = new CustomEvent("message-bar:user-dismissed", {
+      bubbles: true,
+      cancelable: true,
+    });
+    this.dispatchEvent(event);
+    if (!event.defaultPrevented) {
+      this.close();
+    }
   }
 
   close() {

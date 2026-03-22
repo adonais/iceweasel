@@ -100,6 +100,9 @@ terms:
 | profilerstacks       | Profiler| | When profiling with the Firefox Profiler and log modules are enabled, capture the call  |
 |                      |         | | stack for each log statement.                                                           |
 +----------------------+---------+-------------------------------------------------------------------------------------------+
+| jsstacks             | Any     | Enables logging JavaScript stack traces when logging JavaScript console messages.         |
+|                      |         | (this may be extended outside of only console messages)                                   |
++----------------------+---------+-------------------------------------------------------------------------------------------+
 
 This syntax is used for most methods of enabling logging.
 
@@ -527,13 +530,6 @@ When using the ``console`` API, the console methods calls will be visible
 in the Developer Tools, as well as through MOZ_LOG stdout, file or profiler
 outputs.
 
-Note that because of `Bug 1923985
-<https://bugzilla.mozilla.org/show_bug.cgi?id=1923985>`_,
-there is some discrepancies between console log level and MOZ_LOG one.
-So that ``console.shouldLog()`` only consider the level set by
-``createInstance``'s ``maxLogLevel{Pref}`` arguments.
-
-
 .. code-block:: javascript
 
   // The following two logs can be visible through MOZ_LOG by using:
@@ -555,6 +551,22 @@ So that ``console.shouldLog()`` only consider the level set by
   logger.warn("something failed");
 
   logger.debug("some debug info");
+
+To avoid unnecessarily computing expensive log-only strings, use
+``console.shouldLog()`` to check if a given log level would actually be logged
+based on either the ``maxLogLevel{Pref}`` setting from ``createInstance`` or
+the current ``MOZ_LOG`` environment variable.
+
+.. code-block:: javascript
+
+  const logger = console.createInstance({
+    prefix: "example_logger",
+    maxLogLevel: "Warn",
+  });
+
+  if (logger.shouldLog("Debug")) {
+    logger.debug("Expensive computation:", computeExpensiveDebugInfo());
+  }
 
 
 Logging from Java

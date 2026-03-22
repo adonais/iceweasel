@@ -99,7 +99,7 @@ class WindowsGamepadService;
 // it will be created and destroyed by background thread and
 // used by gMonitorThread
 WindowsGamepadService* MOZ_NON_OWNING_REF gService = nullptr;
-MOZ_RUNINIT nsCOMPtr<nsIThread> gMonitorThread = nullptr;
+constinit nsCOMPtr<nsIThread> gMonitorThread;
 static bool sIsShutdown = false;
 
 class Gamepad {

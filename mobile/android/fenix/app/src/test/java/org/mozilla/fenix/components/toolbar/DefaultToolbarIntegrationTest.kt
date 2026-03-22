@@ -38,7 +38,6 @@ class DefaultToolbarIntegrationTest {
             context = context,
             toolbar = mockk(relaxed = true),
             scrollableToolbar = mockk(relaxed = true),
-            toolbarMenu = mockk(relaxed = true),
             lifecycleOwner = mockk(),
             customTabId = null,
             isPrivate = false,

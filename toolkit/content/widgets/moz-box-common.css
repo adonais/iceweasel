@@ -12,6 +12,15 @@
     --box-padding: var(--space-large);
     --box-icon-size: var(--icon-size);
     --box-icon-fill: var(--icon-color);
+    --box-icon-stroke: var(--box-icon-fill);
+    --box-button-background-color: var(--button-background-color-menu);
+    --box-button-background-color-hover: var(--button-background-color-menu-hover);
+    --box-button-background-color-active: var(--button-background-color-menu-active);
+    --box-button-background-color-disabled: var(--button-background-color-menu-disabled);
+    --box-button-text-color: var(--button-text-color-menu);
+    --box-button-text-color-hover: var(--button-text-color-menu-hover);
+    --box-button-text-color-active: var(--button-text-color-menu-active);
+    --box-button-text-color-disabled: var(--button-text-color-menu-disabled);
 
     border-inline-start: var(--box-border-inline-start, var(--box-border));
     border-inline-end: var(--box-border-inline-end, var(--box-border));
@@ -67,6 +76,20 @@
     &:not(.nav-icon) {
       fill: var(--box-icon-start-fill, var(--box-icon-fill));
       stroke: var(--box-icon-start-stroke, var(--box-icon-stroke));
+
+      .button & {
+        fill: var(--box-icon-start-fill, var(--button-icon-fill));
+        stroke: var(--box-icon-start-stroke, var(--button-icon-stroke));
+      }
+    }
+
+    @media (prefers-contrast) {
+      .button & {
+        --box-icon-fill: var(--button-icon-fill);
+        --box-icon-stroke: var(--button-icon-stroke);
+        --box-icon-start-fill: var(--box-icon-fill);
+        --box-icon-start-stroke: var(--box-icon-stroke);
+      }
     }
   }
 
@@ -87,8 +110,8 @@
   font-family: inherit;
   font-size: inherit;
   appearance: none;
-  background-color: var(--button-background-color-ghost);
-  color: var(--button-text-color-ghost);
+  background-color: var(--box-button-background-color);
+  color: var(--box-button-text-color);
   display: flex;
   padding: var(--box-padding);
   text-align: start;
@@ -104,18 +127,18 @@
   }
 
   &:hover {
-    background-color: var(--button-background-color-ghost-hover);
-    color: var(--button-text-color-ghost-hover);
+    background-color: var(--box-button-background-color-hover);
+    color: var(--box-button-text-color-hover);
   }
 
   &:hover:active:not(:disabled) {
-    background-color: var(--button-background-color-ghost-active);
-    color: var(--button-text-color-ghost-active);
+    background-color: var(--box-button-background-color-active);
+    color: var(--box-button-text-color-active);
   }
 
   &:disabled {
-    background-color: var(--button-background-color-ghost-disabled);
-    color: var(--button-text-color-ghost-disabled);
+    background-color: var(--box-button-background-color-disabled);
+    color: var(--box-button-text-color-disabled);
     opacity: var(--button-opacity-disabled);
   }
 }

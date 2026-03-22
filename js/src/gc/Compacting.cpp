@@ -86,14 +86,14 @@ IncrementalProgress GCRuntime::compactPhase(JS::GCReason reason,
     zonesToMaybeCompact.ref().removeFront();
 
     MOZ_ASSERT(nursery().isEmpty());
-    zone->changeGCState(Zone::Finished, Zone::Compact);
+    zone->changeGCState(this, Zone::Finished, Zone::Compact);
 
     if (relocateArenas(zone, reason, relocatedArenas, sliceBudget)) {
       updateZonePointersToRelocatedCells(zone);
       relocatedZones.append(zone);
       zonesCompacted++;
     } else {
-      zone->changeGCState(Zone::Compact, Zone::Finished);
+      zone->changeGCState(this, Zone::Compact, Zone::Finished);
     }
 
     if (sliceBudget.isOverBudget()) {
@@ -107,7 +107,7 @@ IncrementalProgress GCRuntime::compactPhase(JS::GCReason reason,
     do {
       Zone* zone = relocatedZones.front();
       relocatedZones.removeFront();
-      zone->changeGCState(Zone::Compact, Zone::Finished);
+      zone->changeGCState(this, Zone::Compact, Zone::Finished);
     } while (!relocatedZones.isEmpty());
   }
 
@@ -479,7 +479,7 @@ void GCRuntime::sweepZoneAfterCompacting(MovingTracer* trc, Zone* zone) {
   traceWeakFinalizationObserverEdges(trc, zone);
 
   for (auto* cache : zone->weakCaches()) {
-    cache->traceWeak(trc, JS::detail::WeakCacheBase::DontLockStoreBuffer);
+    cache->traceWeak(trc, JS::detail::WeakCacheBase::DontLock);
   }
 
   if (jit::JitZone* jitZone = zone->jitZone()) {
@@ -851,7 +851,7 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
   // Sweep everything to fix up weak pointers.
   jit::JitRuntime::TraceWeakJitcodeGlobalTable(rt, &trc);
   for (JS::detail::WeakCacheBase* cache : rt->weakCaches()) {
-    cache->traceWeak(&trc, JS::detail::WeakCacheBase::DontLockStoreBuffer);
+    cache->traceWeak(&trc, JS::detail::WeakCacheBase::DontLock);
   }
 
   if (rt->hasJitRuntime() && rt->jitRuntime()->hasInterpreterEntryMap()) {

@@ -7,10 +7,11 @@
 #ifndef DOM_SMIL_SMILANIMATIONCONTROLLER_H_
 #define DOM_SMIL_SMILANIMATIONCONTROLLER_H_
 
+#include <memory>
+
 #include "mozilla/SMILCompositorTable.h"
 #include "mozilla/SMILMilestone.h"
 #include "mozilla/SMILTimeContainer.h"
-#include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsHashKeys.h"
 #include "nsTArray.h"
@@ -49,8 +50,8 @@ class SMILAnimationController final : public SMILTimeContainer {
   void Disconnect();
 
   // SMILContainer
-  void Pause(uint32_t aType) override;
-  void Resume(uint32_t aType) override;
+  void Pause(PauseType aType) override;
+  void Resume(PauseType aType) override;
   SMILTime GetParentTime() const override;
 
   // Returns mDocument's refresh driver, if it's got one.
@@ -166,6 +167,16 @@ class SMILAnimationController final : public SMILTimeContainer {
   // differently such as not dispatching events).
   SMILTime mAvgTimeBetweenSamples = 0;
 
+  // Store raw ptr to mDocument.  It owns the controller, so controller
+  // shouldn't outlive it
+  mozilla::dom::Document* mDocument;
+
+  // Contains compositors used in our last sample.  We keep this around
+  // so we can detect when an element/attribute used to be animated,
+  // but isn't anymore for some reason. (e.g. if its <animate> element is
+  // removed or retargeted)
+  std::unique_ptr<SMILCompositorTable> mLastCompositorTable;
+
   bool mResampleNeeded = false;
   bool mRunningSample = false;
 
@@ -175,16 +186,6 @@ class SMILAnimationController final : public SMILTimeContainer {
   // Whether we've started sampling. This is only needed because the first
   // sample is supposed to run sync.
   bool mIsSampling = false;
-
-  // Store raw ptr to mDocument.  It owns the controller, so controller
-  // shouldn't outlive it
-  mozilla::dom::Document* mDocument;
-
-  // Contains compositors used in our last sample.  We keep this around
-  // so we can detect when an element/attribute used to be animated,
-  // but isn't anymore for some reason. (e.g. if its <animate> element is
-  // removed or retargeted)
-  UniquePtr<SMILCompositorTable> mLastCompositorTable;
 };
 
 }  // namespace mozilla

@@ -40,8 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import kotlin.math.roundToInt
 
 private const val HALF_ALPHA = 0.5F
@@ -258,7 +258,7 @@ private fun FilledTrack(fraction: Float, isEnabled: Boolean) {
 @Preview
 @Composable
 private fun FontSizePreferencePreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         FontSizePreference(
@@ -273,7 +273,7 @@ private fun FontSizePreferencePreview(
 @Preview
 @Composable
 private fun FontSizePreferenceDisabledPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         FontSizePreference(

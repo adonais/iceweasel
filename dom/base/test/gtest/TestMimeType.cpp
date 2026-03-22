@@ -820,8 +820,8 @@ TEST(MimeTypeParsing, contentTypes1)
 
   bool parsed = CMimeType::Parse(val, contentType, contentCharset);
 
-  ASSERT_FALSE(parsed);
-  ASSERT_TRUE(contentType.EqualsLiteral(""));
+  ASSERT_TRUE(parsed);
+  ASSERT_TRUE(contentType.EqualsLiteral("text/plain"));
   ASSERT_TRUE(contentCharset.EqualsLiteral(""));
 }
 
@@ -1132,4 +1132,28 @@ TEST(MimeTypeParsing, countParameters3)
   RefPtr<CMimeType> parsed = CMimeType::Parse(val);
   ASSERT_TRUE(parsed);
   ASSERT_TRUE(parsed->GetParameterCount() == 3);
+}
+
+TEST(MimeTypeParsing, EmptyParsing)
+{
+  constexpr nsLiteralCString val("");
+  nsCString contentType;
+  nsCString contentCharset;
+  bool parsed = CMimeType::Parse(val, contentType, contentCharset);
+
+  ASSERT_FALSE(parsed);
+  ASSERT_TRUE(contentType.EqualsLiteral(""));
+  ASSERT_TRUE(contentCharset.EqualsLiteral(""));
+}
+
+TEST(MimeTypeParsing, EmptySubtype)
+{
+  constexpr nsLiteralCString val("audio/");
+  nsCString contentType;
+  nsCString contentCharset;
+  bool parsed = CMimeType::Parse(val, contentType, contentCharset);
+
+  ASSERT_FALSE(parsed);
+  ASSERT_TRUE(contentType.EqualsLiteral(""));
+  ASSERT_TRUE(contentCharset.EqualsLiteral(""));
 }

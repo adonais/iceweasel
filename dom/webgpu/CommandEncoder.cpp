@@ -223,7 +223,11 @@ already_AddRefed<RenderPassEncoder> CommandEncoder::BeginRenderPass(
     return view;
   };
 
-  for (auto& at : desc.mColorAttachments) {
+  for (auto& atOrNull : desc.mColorAttachments) {
+    if (atOrNull.IsNull()) {
+      continue;
+    }
+    auto& at = atOrNull.Value();
     TrackPresentationContext(coerceToViewInPlace(at.mView)->GetTargetContext());
     if (at.mResolveTarget.WasPassed()) {
       TrackPresentationContext(

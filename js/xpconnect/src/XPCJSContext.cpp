@@ -867,8 +867,8 @@ static void LoadStartupJSPrefs(XPCJSContext* xpccx) {
   //
   // 'Live' prefs are handled by ReloadPrefsCallback below.
 
-  // Note: JS::Prefs are set earlier in startup, in InitializeJS in
-  // XPCOMInit.cpp.
+  // Note: JS::Prefs are set earlier in startup, in InitJSEngine in
+  // nsXPConnect.cpp.
 
   JSContext* cx = xpccx->Context();
 

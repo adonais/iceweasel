@@ -14,7 +14,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8b5653392e88ccd0c
  2 files changed, 5 insertions(+)
 
 diff --git a/video/config/video_encoder_config.h b/video/config/video_encoder_config.h
-index e647cd6beb..d1cc8c05cc 100644
+index cbb3bf1ce9..06dcbf8a6d 100644
 --- a/video/config/video_encoder_config.h
 +++ b/video/config/video_encoder_config.h
 @@ -26,6 +26,7 @@
@@ -36,10 +36,10 @@ index e647cd6beb..d1cc8c05cc 100644
      ~VideoStreamFactoryInterface() override {}
    };
 diff --git a/video/video_stream_encoder.cc b/video/video_stream_encoder.cc
-index d437837911..90c9f141aa 100644
+index 4da0dd556b..f0c6a1b8fb 100644
 --- a/video/video_stream_encoder.cc
 +++ b/video/video_stream_encoder.cc
-@@ -1096,6 +1096,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
+@@ -1099,6 +1099,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
    std::vector<VideoStream> streams;
    if (encoder_config_.video_stream_factory) {
      // Note: only tests set their own EncoderStreamFactory...

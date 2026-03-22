@@ -7,9 +7,9 @@
 
 #if defined(XP_WIN)
 #  include <windows.h>  // for HANDLE
-#endif                  // defined(XP_WIN)
-
-#if defined(XP_LINUX)
+#elif defined(XP_DARWIN)
+#  include <mach/port.h>  // for mach_port_t
+#elif defined(XP_LINUX)
 // For DirectAuxvDumpInfo
 #  include "mozilla/toolkit/crashreporter/rust_minidump_writer_linux_ffi_generated.h"
 #endif  // defined(XP_LINUX)

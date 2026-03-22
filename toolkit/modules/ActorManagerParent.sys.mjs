@@ -103,6 +103,7 @@ let JSWINDOWACTORS = {
     },
 
     matches: ["about:certificate"],
+    remoteTypes: ["privilegedabout"],
   },
 
   AboutHttpsOnlyError: {

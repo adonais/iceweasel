@@ -24,6 +24,7 @@ use crate::media_queries::Device;
 use crate::properties;
 use crate::properties::{ComputedValues, StyleBuilder};
 use crate::rule_cache::RuleCacheConditions;
+use crate::rule_tree::CascadeLevel;
 use crate::stylesheets::container_rule::{
     ContainerInfo, ContainerSizeQuery, ContainerSizeQueryResult,
 };
@@ -54,11 +55,12 @@ pub use self::border::{
     BorderImageWidth, BorderRadius, BorderSideOffset, BorderSideWidth, BorderSpacing, LineWidth,
 };
 pub use self::box_::{
-    Appearance, BaselineSource, BreakBetween, BreakWithin, Clear, Contain, ContainIntrinsicSize,
-    ContainerName, ContainerType, ContentVisibility, Display, Float, LineClamp, Overflow,
-    OverflowAnchor, OverflowClipMargin, OverscrollBehavior, Perspective, PositionProperty, Resize,
-    ScrollSnapAlign, ScrollSnapAxis, ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType,
-    ScrollbarGutter, TouchAction, VerticalAlign, WillChange, WritingModeProperty, Zoom,
+    AlignmentBaseline, Appearance, BaselineShift, BaselineSource, BreakBetween, BreakWithin, Clear,
+    Contain, ContainIntrinsicSize, ContainerName, ContainerType, ContentVisibility, Display,
+    DominantBaseline, Float, LineClamp, Overflow, OverflowAnchor, OverflowClipMargin,
+    OverscrollBehavior, Perspective, PositionProperty, Resize, ScrollSnapAlign, ScrollSnapAxis,
+    ScrollSnapStop, ScrollSnapStrictness, ScrollSnapType, ScrollbarGutter, TouchAction, WillChange,
+    WritingModeProperty, Zoom,
 };
 pub use self::color::{
     Color, ColorOrAuto, ColorPropertyValue, ColorScheme, ForcedColorAdjust, PrintColorAdjust,
@@ -81,7 +83,6 @@ pub use self::length::{CSSPixelLength, NonNegativeLength};
 pub use self::length::{Length, LengthOrNumber, LengthPercentage, NonNegativeLengthOrNumber};
 pub use self::length::{LengthOrAuto, LengthPercentageOrAuto, Margin, MaxSize, Size};
 pub use self::length::{NonNegativeLengthPercentage, NonNegativeLengthPercentageOrAuto};
-#[cfg(feature = "gecko")]
 pub use self::list::ListStyleType;
 pub use self::list::Quotes;
 pub use self::motion::{OffsetPath, OffsetPosition, OffsetRotate};
@@ -113,6 +114,7 @@ pub use self::text::{InitialLetter, LetterSpacing, LineBreak, TextIndent};
 pub use self::text::{OverflowWrap, RubyPosition, TextOverflow, WordBreak, WordSpacing};
 pub use self::text::{TextAlign, TextAlignLast, TextEmphasisPosition, TextEmphasisStyle};
 pub use self::text::{TextAutospace, TextUnderlinePosition};
+pub use self::text::{TextBoxEdge, TextBoxTrim};
 pub use self::text::{
     TextDecorationInset, TextDecorationLength, TextDecorationSkipInk, TextJustify,
 };
@@ -176,7 +178,7 @@ pub struct Context<'a> {
     ///
     /// See properties/longhands/font.mako.rs
     #[cfg(feature = "gecko")]
-    pub cached_system_font: Option<properties::longhands::system_font::ComputedSystemFont>,
+    pub cached_system_font: Option<properties::gecko::system_font::ComputedSystemFont>,
 
     /// A dummy option for servo so initializing a computed::Context isn't
     /// painful.
@@ -213,6 +215,9 @@ pub struct Context<'a> {
     /// FIXME(emilio): Drop the refcell.
     pub rule_cache_conditions: RefCell<&'a mut RuleCacheConditions>,
 
+    /// The cascade level in the shadow tree hierarchy.
+    pub scope: CascadeLevel,
+
     /// Container size query for this context.
     container_size_query: RefCell<ContainerSizeQuery<'a>>,
 }
@@ -242,6 +247,7 @@ impl<'a> Context<'a> {
             container_info: None,
             for_non_inherited_property: false,
             rule_cache_conditions: RefCell::new(&mut conditions),
+            scope: CascadeLevel::same_tree_author_normal(),
             container_size_query: RefCell::new(ContainerSizeQuery::none()),
         };
         f(&context)
@@ -278,6 +284,7 @@ impl<'a> Context<'a> {
             container_info,
             for_non_inherited_property: false,
             rule_cache_conditions: RefCell::new(&mut conditions),
+            scope: CascadeLevel::same_tree_author_normal(),
             container_size_query: RefCell::new(container_size_query),
         };
 
@@ -301,6 +308,7 @@ impl<'a> Context<'a> {
             for_smil_animation: false,
             for_non_inherited_property: false,
             rule_cache_conditions: RefCell::new(rule_cache_conditions),
+            scope: CascadeLevel::same_tree_author_normal(),
             container_size_query: RefCell::new(container_size_query),
         }
     }
@@ -323,6 +331,7 @@ impl<'a> Context<'a> {
             for_smil_animation,
             for_non_inherited_property: false,
             rule_cache_conditions: RefCell::new(rule_cache_conditions),
+            scope: CascadeLevel::same_tree_author_normal(),
             container_size_query: RefCell::new(container_size_query),
         }
     }
@@ -345,6 +354,7 @@ impl<'a> Context<'a> {
             for_smil_animation: false,
             for_non_inherited_property: false,
             rule_cache_conditions: RefCell::new(rule_cache_conditions),
+            scope: CascadeLevel::same_tree_author_normal(),
             container_size_query: RefCell::new(ContainerSizeQuery::none()),
         }
     }
@@ -428,6 +438,11 @@ impl<'a> Context<'a> {
     /// The current style.
     pub fn style(&self) -> &StyleBuilder<'a> {
         &self.builder
+    }
+
+    /// The current tree scope.
+    pub fn current_scope(&self) -> CascadeLevel {
+        self.scope
     }
 
     /// Apply text-zoom if enabled.
@@ -719,6 +734,7 @@ trivial_to_computed_value!(bool);
 trivial_to_computed_value!(f32);
 trivial_to_computed_value!(i32);
 trivial_to_computed_value!(u8);
+trivial_to_computed_value!(i8);
 trivial_to_computed_value!(u16);
 trivial_to_computed_value!(u32);
 trivial_to_computed_value!(usize);

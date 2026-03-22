@@ -2560,6 +2560,7 @@ bool DebuggerObject::forceLexicalInitializationByName(
         v.whyMagic() == JS_UNINITIALIZED_LEXICAL) {
       globalLexical->as<NativeObject>().setSlot(propInfo.slot(),
                                                 UndefinedValue());
+      cx->hasDebuggerForcedLexicalInit = true;
       result = true;
     }
   }

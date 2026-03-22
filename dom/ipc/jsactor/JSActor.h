@@ -67,15 +67,15 @@ class JSActor : public nsISupports, public nsWrapperCache {
   // |ReceiveMessage| method on the other side asynchronously.
   virtual void SendRawMessage(const JSActorMessageMeta& aMetadata,
                               JSIPCValue&& aData,
-                              UniquePtr<ipc::StructuredCloneData> aStack,
+                              ipc::StructuredCloneData* aStack,
                               ErrorResult& aRv) = 0;
 
   // Helper method to send an in-process raw message.
   using OtherSideCallback = std::function<already_AddRefed<JSActorManager>()>;
-  static void SendRawMessageInProcess(
-      const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
-      UniquePtr<ipc::StructuredCloneData> aStack,
-      OtherSideCallback&& aGetOtherSide);
+  static void SendRawMessageInProcess(const JSActorMessageMeta& aMeta,
+                                      JSIPCValue&& aData,
+                                      ipc::StructuredCloneData* aStack,
+                                      OtherSideCallback&& aGetOtherSide);
 
   virtual ~JSActor() = default;
 

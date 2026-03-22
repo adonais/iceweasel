@@ -1,8 +1,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
-#ifndef _TRANSCEIVERIMPL_H_
-#define _TRANSCEIVERIMPL_H_
+#ifndef TRANSCEIVERIMPL_H_
+#define TRANSCEIVERIMPL_H_
 
 #include <string>
 
@@ -285,4 +285,4 @@ class RTCRtpTransceiver : public nsISupports, public nsWrapperCache {
 
 }  // namespace mozilla
 
-#endif  // _TRANSCEIVERIMPL_H_
+#endif  // TRANSCEIVERIMPL_H_

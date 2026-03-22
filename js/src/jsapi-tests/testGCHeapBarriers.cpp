@@ -619,7 +619,7 @@ BEGIN_TEST(testGCHeapPreBarriers) {
   while (gc->state() != gc::State::Mark) {
     gc->debugGCSlice(budget);
   }
-  MOZ_ASSERT(cx->zone()->needsIncrementalBarrier());
+  MOZ_ASSERT(cx->zone()->needsMarkingBarrier());
 
   CHECK(TestWrapper<HeapPtr<JSObject*>>(testObjects));
   CHECK(TestWrapper<PreBarriered<JSObject*>>(testObjects));

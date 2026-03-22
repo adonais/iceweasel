@@ -490,6 +490,10 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "ReadableStreamDefaultReader",
   // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "ReportBody", insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "ReportingObserver", insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
   "Request",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "Response",

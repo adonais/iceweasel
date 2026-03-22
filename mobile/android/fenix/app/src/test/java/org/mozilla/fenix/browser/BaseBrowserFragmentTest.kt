@@ -610,9 +610,7 @@ class BaseBrowserFragmentTest {
 
         fragment.expandBrowserView()
 
-        verify { browserToolbarView.collapse() }
         verify { browserToolbarView.gone() }
-        verify { browserNavigationBar.collapse() }
         verify { browserNavigationBar.gone() }
         verify { toolbarContainerView.collapse() }
         verify { toolbarContainerView.isVisible = false }
@@ -644,7 +642,6 @@ class BaseBrowserFragmentTest {
         verify { browserToolbarView.visible() }
         verify { toolbarContainerView.isVisible = true }
         verify { browserToolbarView.expand() }
-        verify { browserNavigationBar.expand() }
         verify { toolbarContainerView.expand() }
     }
 

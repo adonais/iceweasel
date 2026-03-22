@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsJSProtocolHandler_h___
-#define nsJSProtocolHandler_h___
+#ifndef nsJSProtocolHandler_h_
+#define nsJSProtocolHandler_h_
 
 #include "nsIClassInfo.h"
 #include "nsINestedURI.h"
@@ -124,4 +124,4 @@ class nsJSURI final : public mozilla::net::nsSimpleURI {
   friend BaseURIMutator<nsJSURI>;
 };
 
-#endif /* nsJSProtocolHandler_h___ */
+#endif /* nsJSProtocolHandler_h_ */

@@ -70,6 +70,7 @@ void DOMSecurityMonitor::AuditParsingOfHTMLXMLFragments(
       "resource://devtools/client/shared/widgets/Spectrum.js"_ns,
       "resource://gre/modules/narrate/VoiceSelect.sys.mjs"_ns,
       "chrome://global/content/vendor/react-dom.js"_ns,
+      "chrome://browser/content/aiwindow/components/ai-chat-message.mjs"_ns,
       // ------------------------------------------------------------------
       // test pages
       // ------------------------------------------------------------------

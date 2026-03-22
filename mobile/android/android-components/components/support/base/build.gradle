@@ -2,6 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+plugins {
+    alias(libs.plugins.dependency.analysis)
+}
+
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
@@ -105,11 +109,11 @@ tasks.register("generateComponentEnum") {
 }
 
 afterEvaluate {
-    tasks.matching { it.name.startsWith("compile") && it.name.endsWith("Kotlin") }.configureEach {
-        dependsOn("generateComponentEnum")
-    }
-
-    tasks.matching { it.name == "sourceReleaseJar" || it.name == "sourcesJar" }.configureEach {
+    tasks.matching {
+        (it.name.startsWith("compile") && it.name.endsWith("Kotlin")) ||
+        it.name.startsWith("explodeCodeSource") ||
+        it.name in ["sourceReleaseJar", "sourcesJar"]
+    }.configureEach {
         dependsOn("generateComponentEnum")
     }
 }

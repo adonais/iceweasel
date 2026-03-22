@@ -10,8 +10,8 @@
  * utility methods for subclasses, and so forth.
  */
 
-#ifndef mozilla_dom_Element_h__
-#define mozilla_dom_Element_h__
+#ifndef mozilla_dom_Element_h_
+#define mozilla_dom_Element_h_
 
 #include <cstdint>
 #include <cstdio>
@@ -215,6 +215,7 @@ ASSERT_NODE_FLAGS_SPACE(ELEMENT_TYPE_SPECIFIC_BITS_OFFSET);
 
 namespace mozilla {
 enum class PseudoStyleType : uint8_t;
+struct PseudoStyleRequest;
 class EventChainPostVisitor;
 class EventChainPreVisitor;
 class EventChainVisitor;
@@ -260,24 +261,25 @@ class TrustedHTMLOrTrustedScriptOrTrustedScriptURLOrString;
     SetOrRemoveNullableStringAttr(nsGkAtoms::attr, aValue, aRv); \
   }
 
-#define REFLECT_NULLABLE_ELEMENT_ATTR(method, attr)      \
-  Element* Get##method() const {                         \
-    return GetAttrAssociatedElement(nsGkAtoms::attr);    \
-  }                                                      \
-                                                         \
-  void Set##method(Element* aElement) {                  \
-    ExplicitlySetAttrElement(nsGkAtoms::attr, aElement); \
+#define REFLECT_NULLABLE_ELEMENT_ATTR(method, attr)              \
+  Element* Get##method() const {                                 \
+    return GetAttrAssociatedElementForBindings(nsGkAtoms::attr); \
+  }                                                              \
+                                                                 \
+  void Set##method(Element* aElement) {                          \
+    ExplicitlySetAttrElement(nsGkAtoms::attr, aElement);         \
   }
 
-#define REFLECT_NULLABLE_ELEMENTS_ATTR(method, attr)                        \
-  void Get##method(bool* aUseCachedValue,                                   \
-                   Nullable<nsTArray<RefPtr<Element>>>& aElements) {        \
-    GetAttrAssociatedElements(nsGkAtoms::attr, aUseCachedValue, aElements); \
-  }                                                                         \
-                                                                            \
-  void Set##method(                                                         \
-      const Nullable<Sequence<OwningNonNull<Element>>>& aElements) {        \
-    ExplicitlySetAttrElements(nsGkAtoms::attr, aElements);                  \
+#define REFLECT_NULLABLE_ELEMENTS_ATTR(method, attr)                       \
+  void Get##method(bool* aUseCachedValue,                                  \
+                   Nullable<nsTArray<RefPtr<Element>>>& aElements) {       \
+    GetAttrAssociatedElementsForBindings(nsGkAtoms::attr, aUseCachedValue, \
+                                         aElements);                       \
+  }                                                                        \
+                                                                           \
+  void Set##method(                                                        \
+      const Nullable<Sequence<OwningNonNull<Element>>>& aElements) {       \
+    ExplicitlySetAttrElements(nsGkAtoms::attr, aElements);                 \
   }
 
 class Element : public FragmentOrElement {
@@ -1374,14 +1376,71 @@ class Element : public FragmentOrElement {
       const nsAString& aClassNames);
 
   /**
-   * Returns attribute associated element for the given attribute name, see
-   * https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#attr-associated-element
+   * Returns attribute-associated element for the given attribute name. See
+   * https://whatpr.org/html/10995/common-microsyntaxes.html#get-the-attr-associated-element
    */
-  Element* GetAttrAssociatedElement(nsAtom* aAttr) const;
-  void GetAttrAssociatedElements(
+  Element* GetAttrAssociatedElementInternal(nsAtom* aAttr,
+                                            bool aForBindings = false) const;
+  /**
+   * The getter for the IDL attribute which reflects the given attribute. See
+   * https://whatpr.org/html/10995/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:reflected-idl-attribute-31
+   */
+  Element* GetAttrAssociatedElementForBindings(nsAtom* aAttr) const;
+
+  /**
+   * Returns attribute associated elements for the given attribute name. See
+   * https://whatpr.org/html/10995/common-microsyntaxes.html#attr-associated-elements
+   */
+  Maybe<nsTArray<RefPtr<Element>>> GetAttrAssociatedElementsInternal(
+      nsAtom* aAttr, bool aForBindings = false);
+  /**
+   * The getter for the IDL attribute which reflects the given attribute. See
+   * https://whatpr.org/html/10995/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:reflected-idl-attribute-33
+   */
+  void GetAttrAssociatedElementsForBindings(
       nsAtom* aAttr, bool* aUseCachedValue,
       Nullable<nsTArray<RefPtr<Element>>>& aElements);
 
+  typedef bool (*AttrTargetObserver)(Element* aOldElement, Element* aNewElement,
+                                     Element* thisElement);
+  /**
+   * Add an attr-associated element observer for a given attribute. The observer
+   * will fire whenever the element associated with |aAttr| for this element
+   * changes. This can occur in multiple scenarios:
+   * - The attribute value or explicitly set attr-element changes;
+   * - An element with an ID matching the attribute value is added or removed
+   *   from the document or shadow root containing the element with the
+   *   attribute;
+   * - The explicitly set attr-element is added or removed from the document or
+   *   shadow root containing the element with the attribute;
+   * - The reference target of the element directly referred to by the attribute
+   *   changes.
+   * @return the current attr-associated element for |aAttr| for this element,
+   * if any.
+   */
+  Element* AddAttrAssociatedElementObserver(nsAtom* aAttr,
+                                            AttrTargetObserver aObserver);
+  void RemoveAttrAssociatedElementObserver(nsAtom* aAttr,
+                                           AttrTargetObserver aObserver);
+  bool AttrAssociatedElementUpdated(nsAtom* aAttr);
+
+ protected:
+  void IDREFAttributeValueChanged(nsAtom* aAttr, const nsAttrValue* aValue);
+
+ private:
+  FragmentOrElement::nsExtendedDOMSlots::AttrElementObserverData*
+  GetAttrElementObserverData(nsAtom* aAttr);
+  void DeleteAttrAssociatedElementObserverData(nsAtom* aAttr);
+  void AddDocOrShadowObserversForAttrAssociatedElement(
+      DocumentOrShadowRoot& aContainingDocOrShadow, nsAtom* aAttr);
+  void RemoveDocOrShadowObserversForAttrAssociatedElement(
+      DocumentOrShadowRoot& aContainingDocOrShadow, nsAtom* aAttr);
+  void BindAttrAssociatedElementObservers(
+      DocumentOrShadowRoot& aContainingDocOrShadow);
+  void UnbindAttrAssociatedElementObservers(
+      DocumentOrShadowRoot& aContainingDocOrShadow);
+
+ public:
   /**
    * Sets an attribute element for the given attribute.
    * https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#explicitly-set-attr-element
@@ -1411,8 +1470,47 @@ class Element : public FragmentOrElement {
    * shadow-including ancestors. It also does not attempt to retrieve elements
    * using the ids set in the content attribute.
    */
-  void GetExplicitlySetAttrElements(nsAtom* aAttr,
-                                    nsTArray<Element*>& aElements) const;
+  Maybe<nsTArray<RefPtr<dom::Element>>> GetExplicitlySetAttrElements(
+      nsAtom* aAttr) const;
+
+  /**
+   * Callback called when an element's resolved reference target changes.
+   * @param aData The callback data which was stored using
+   * AddReferenceTargetChangeObserver.
+   * @return true to keep the callback in the callback set, false to remove
+   * it.
+   */
+  typedef bool (*ReferenceTargetChangeObserver)(void* aData);
+
+  /**
+   * Listen for changes to the given element's resolved reference target. This
+   * could happen in a number of ways:
+   * - The given element's shadow root's referenceTarget property changes, or is
+   *   added or removed;
+   * - The element referred to by the referenceTarget property changes (e.g.
+   *   because an element with that ID is added to the shadow root);
+   * - Recursively: that is, when the resolved reference target of the element
+   *   referred to by the referenceTarget property changes for one of the above
+   *   two reasons (i.e. the referenceTarget property refers to an element foo,
+   *   which also has a shadow root, and foo's resolved reference target
+   *   changes).
+   * @param aElement an element on which to listen for resolved
+   * reference target changes. The element must have this document or shadow
+   * root as its root (i.e. aElement.GetUncomposedDocOrConnectedShadowRoot() ==
+   * this).
+   * @param aObserver The callback to fire when the resolved reference target
+   * changes.
+   * @param aData Data to pass to the callback.
+   */
+  void AddReferenceTargetChangeObserver(ReferenceTargetChangeObserver aObserver,
+                                        void* aData);
+  void RemoveReferenceTargetChangeObserver(
+      ReferenceTargetChangeObserver aObserver, void* aData);
+  /**
+   * Called when aElement's resolved reference target changes.
+   * @param aElement the element whose reference target has changed
+   */
+  void NotifyReferenceTargetChanged();
 
   PseudoStyleType GetPseudoElementType() const {
     nsresult rv = NS_OK;
@@ -1502,6 +1600,16 @@ class Element : public FragmentOrElement {
   void GetLoading(nsAString& aValue) const;
   bool ParseLoadingAttribute(const nsAString& aValue, nsAttrValue& aResult);
 
+ protected:
+  // Returns whether the element started lazy-loading.
+  // If this function returns true, it is the caller's responsibility to call
+  // LazyLoadingElementBindToTree/UnbindFromTree and/or StopLazyLoading().
+  [[nodiscard]] bool MaybeStartLazyLoading();
+  void StopLazyLoading();
+  void LazyLoadingElementBindToTree(BindContext&);
+  void LazyLoadingElementUnbindFromTree(UnbindContext&);
+
+ public:
   // https://html.spec.whatwg.org/#potentially-render-blocking
   virtual bool IsPotentiallyRenderBlocking() { return false; }
   bool BlockingContainsRender() const;
@@ -1523,7 +1631,7 @@ class Element : public FragmentOrElement {
       SlotAssignmentMode aSlotAssignmentMode = SlotAssignmentMode::Named,
       ShadowRootClonable aClonable = ShadowRootClonable::No,
       ShadowRootSerializable aSerializable = ShadowRootSerializable::No,
-      const nsAString& aReferenceTarget = EmptyString());
+      const nsAString& aReferenceTarget = VoidString());
 
   // Attach UA Shadow Root if it is not attached.
   enum class NotifyUAWidgetSetup : bool { No, Yes };
@@ -1553,6 +1661,9 @@ class Element : public FragmentOrElement {
     const nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
     return slots ? slots->mShadowRoot.get() : nullptr;
   }
+
+  Element* ResolveReferenceTarget() const;
+  Element* RetargetReferenceTargetForBindings(Element* aElement) const;
 
   const Maybe<float> GetLastRememberedBSize() const {
     const nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
@@ -2483,6 +2594,10 @@ inline mozilla::dom::Element* nsINode::GetParentElement() const {
 }
 
 inline mozilla::dom::Element* nsINode::GetPreviousElementSibling() const {
+  auto* parent = GetParentNode();
+  if (!parent || !parent->HasFlag(NODE_MAY_HAVE_ELEMENT_CHILDREN)) {
+    return nullptr;
+  }
   nsIContent* previousSibling = GetPreviousSibling();
   while (previousSibling) {
     if (previousSibling->IsElement()) {
@@ -2504,6 +2619,10 @@ inline mozilla::dom::Element* nsINode::GetAsElementOrParentElement() const {
 }
 
 inline mozilla::dom::Element* nsINode::GetNextElementSibling() const {
+  auto* parent = GetParentNode();
+  if (!parent || !parent->HasFlag(NODE_MAY_HAVE_ELEMENT_CHILDREN)) {
+    return nullptr;
+  }
   nsIContent* nextSibling = GetNextSibling();
   while (nextSibling) {
     if (nextSibling->IsElement()) {
@@ -2552,4 +2671,4 @@ inline mozilla::dom::Element* nsINode::GetNextElementSibling() const {
 #define NS_IMPL_ELEMENT_CLONE_WITH_INIT_AND_PARSER(_elementName) \
   NS_IMPL_ELEMENT_CLONE_WITH_INIT(_elementName, NOT_FROM_PARSER)
 
-#endif  // mozilla_dom_Element_h__
+#endif  // mozilla_dom_Element_h_

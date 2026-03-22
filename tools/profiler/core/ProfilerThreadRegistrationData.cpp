@@ -42,6 +42,7 @@ struct ThreadCpuUseMarker {
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
     schema.AddKeyLabelFormat("time", "CPU Time", MS::Format::Milliseconds);
     schema.AddKeyLabelFormat("wakeups", "Wake ups", MS::Format::Integer);
+    schema.AddKeyFormat("label", MS::Format::String, MS::PayloadFlags::Hidden);
     schema.SetTooltipLabel("{marker.name} - {marker.data.label}");
     schema.SetTableLabel(
         "{marker.data.label}: {marker.data.time} of CPU time, "

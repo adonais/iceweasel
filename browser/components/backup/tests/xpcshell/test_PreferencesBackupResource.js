@@ -17,7 +17,7 @@ const { SearchUtils } = ChromeUtils.importESModule(
 add_task(async function test_measure() {
   Services.fog.testResetFOG();
 
-  const EXPECTED_PREFERENCES_KILOBYTES_SIZE = 55;
+  const EXPECTED_PREFERENCES_KILOBYTES_SIZE = 56;
   const tempDir = await IOUtils.createUniqueDirectory(
     PathUtils.tempDir,
     "PreferencesBackupResource-measure-test"
@@ -26,6 +26,7 @@ add_task(async function test_measure() {
     { path: "prefs.js", sizeInKB: 20 },
     { path: "xulstore.json", sizeInKB: 1 },
     { path: "containers.json", sizeInKB: 1 },
+    { path: "customKeys.json", sizeInKB: 1 },
     { path: "handlers.json", sizeInKB: 1 },
     { path: "search.json.mozlz4", sizeInKB: 1 },
     { path: "user.js", sizeInKB: 2 },
@@ -78,6 +79,7 @@ add_task(async function test_backup() {
   const simpleCopyFiles = [
     { path: "xulstore.json" },
     { path: "containers.json" },
+    { path: "customKeys.json" },
     { path: "handlers.json" },
     { path: "search.json.mozlz4" },
     { path: "user.js" },
@@ -180,6 +182,7 @@ add_task(async function test_recover() {
     { path: "prefs.js" },
     { path: "xulstore.json" },
     { path: "containers.json" },
+    { path: "customKeys.json" },
     { path: "handlers.json" },
     { path: "user.js" },
     { path: ["chrome", "userChrome.css"] },
@@ -339,4 +342,81 @@ add_task(async function test_recover() {
   await maybeRemovePath(recoveryPath);
   await maybeRemovePath(destProfilePath);
   sandbox.restore();
+});
+
+/**
+ * Test that getPrefsFromBuffer correctly parses pref values from
+ * prefs.js file content.
+ */
+add_task(async function test_getPrefsFromBuffer() {
+  const mockPrefsContent = `// Mozilla User Preferences
+user_pref("test.boolean.enabled", true);
+user_pref("test.boolean.disabled", false);
+user_pref("test.string.value", "hello world");
+user_pref("test.number.value", 42);
+`;
+  const encoder = new TextEncoder();
+  const mockPrefsBuffer = encoder.encode(mockPrefsContent);
+
+  const allPrefs =
+    PreferencesBackupResource.getPrefsFromBuffer(mockPrefsBuffer);
+
+  Assert.strictEqual(
+    allPrefs.get("test.boolean.enabled"),
+    true,
+    "Should correctly parse boolean true"
+  );
+
+  Assert.strictEqual(
+    allPrefs.get("test.boolean.disabled"),
+    false,
+    "Should correctly parse boolean false"
+  );
+
+  Assert.strictEqual(
+    allPrefs.get("test.string.value"),
+    "hello world",
+    "Should correctly parse string value"
+  );
+
+  Assert.strictEqual(
+    allPrefs.get("test.number.value"),
+    42,
+    "Should correctly parse number value"
+  );
+
+  Assert.strictEqual(
+    allPrefs.has("nonexistent.pref"),
+    false,
+    "Should not have nonexistent pref in map"
+  );
+
+  const filteredPrefs = PreferencesBackupResource.getPrefsFromBuffer(
+    mockPrefsBuffer,
+    ["test.boolean.enabled", "test.number.value"]
+  );
+
+  Assert.strictEqual(
+    filteredPrefs.size,
+    2,
+    "Should only have 2 prefs when filtering"
+  );
+
+  Assert.strictEqual(
+    filteredPrefs.get("test.boolean.enabled"),
+    true,
+    "Should have filtered pref"
+  );
+
+  Assert.strictEqual(
+    filteredPrefs.get("test.number.value"),
+    42,
+    "Should have filtered pref"
+  );
+
+  Assert.strictEqual(
+    filteredPrefs.has("test.string.value"),
+    false,
+    "Should not have non-filtered pref"
+  );
 });

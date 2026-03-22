@@ -7,8 +7,6 @@
 #ifndef DOM_SVG_SVGPATHDATA_H_
 #define DOM_SVG_SVGPATHDATA_H_
 
-#include <string.h>
-
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/SVGElement.h"

@@ -35,7 +35,7 @@ import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTab
 import org.mozilla.fenix.tabstray.Page
-import org.mozilla.fenix.tabstray.TabsTrayAccessPoint
+import org.mozilla.fenix.tabstray.ui.AccessPoint
 import org.mozilla.fenix.utils.Settings
 
 @RunWith(AndroidJUnit4::class)
@@ -49,7 +49,7 @@ class DefaultRecentSyncedTabControllerTest {
     private val navController: NavController = mockk()
     private val appStore: AppStore = mockk(relaxed = true)
     private val settings: Settings = mockk(relaxed = true)
-    private val accessPoint = TabsTrayAccessPoint.HomeRecentSyncedTab
+    private val accessPoint = AccessPoint.HomeRecentSyncedTab
 
     private lateinit var controller: RecentSyncedTabController
 
@@ -173,7 +173,7 @@ class DefaultRecentSyncedTabControllerTest {
 
         verify {
             navController.navigate(
-                HomeFragmentDirections.actionGlobalTabsTrayFragment(
+                HomeFragmentDirections.actionGlobalTabManagementFragment(
                     page = Page.SyncedTabs,
                     accessPoint = accessPoint,
                 ),

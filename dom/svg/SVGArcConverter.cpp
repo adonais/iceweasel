@@ -34,8 +34,8 @@ SVGArcConverter::SVGArcConverter(const Point& from, const Point& to,
 
   // Convert to center parameterization as shown in
   // http://www.w3.org/TR/SVG/implnote.html
-  mRx = fabs(radii.x);
-  mRy = fabs(radii.y);
+  mRx = std::abs(radii.x);
+  mRy = std::abs(radii.y);
 
   mSinPhi = sin(angle * radPerDeg);
   mCosPhi = cos(angle * radPerDeg);
@@ -85,13 +85,13 @@ SVGArcConverter::SVGArcConverter(const Point& from, const Point& to,
     dtheta += 2.0 * M_PI;
 
   // Convert into cubic bezier segments <= 90deg
-  mNumSegs = static_cast<int>(ceil(fabs(dtheta / (M_PI / 2.0))));
+  mNumSegs = static_cast<int>(ceil(std::abs(dtheta / (M_PI / 2.0))));
   mDelta = dtheta / mNumSegs;
   mT = 8.0 / 3.0 * sin(mDelta / 4.0) * sin(mDelta / 4.0) / sin(mDelta / 2.0);
 
   mFrom = from;
 
-  if (fabs(dtheta) < 1e-8) {
+  if (std::abs(dtheta) < 1e-8) {
     // If the angle dtheta is extremely small, then the resulting portion of the
     // arc is indistinguishable from a line.
     // In this situation we are likely dealing with quantities that are large or

@@ -57,7 +57,9 @@ impl IPCQueue {
         };
 
         if port.is_null() {
-            return Err(IPCQueueError::CreationFailure(get_last_error()));
+            return Err(IPCQueueError::CreationFailure(
+                PlatformError::CreateIoCompletionPortFailed(get_last_error()),
+            ));
         }
 
         let mut queue = IPCQueue {
@@ -101,7 +103,9 @@ impl IPCQueue {
         };
 
         if port.is_null() {
-            return Err(IPCQueueError::RegistrationFailure(get_last_error()));
+            return Err(IPCQueueError::RegistrationFailure(
+                PlatformError::CreateIoCompletionPortFailed(get_last_error()),
+            ));
         }
 
         Ok(())
@@ -128,7 +132,7 @@ impl IPCQueue {
             }
         }
 
-        if self.connectors.len() == 0 {
+        if self.connectors.is_empty() {
             // The last client disconnected.
             return Ok(events);
         }
@@ -169,7 +173,7 @@ impl IPCQueue {
                 debug_assert!(element.is_some(), "Completion on missing connector");
                 events.push(IPCEvent::Disconnect(completion_key));
             } else {
-                return Err(IPCQueueError::WaitError(err));
+                return Err(IPCQueueError::WaitError(PlatformError::IOError(err)));
             }
         } else {
             // SAFETY: `GetQueueCompletionStatus()` successfully retrieved a
@@ -189,9 +193,7 @@ impl IPCQueue {
                 );
                 let operation = self.listen_operation.take();
                 if let Some(operation) = operation {
-                    operation
-                        .accept()
-                        .map_err(|_e| IPCQueueError::RegistrationFailure(0))?;
+                    operation.accept().map_err(IPCQueueError::WaitError)?;
                 }
                 let connector = Rc::new(self.listener.replace_pipe()?);
                 self.insert_connector(&connector);

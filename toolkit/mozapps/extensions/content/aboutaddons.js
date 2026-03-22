@@ -127,9 +127,8 @@ function getUpdateInstall(addon) {
 
 function isManualUpdate(install) {
   const isExistingHidden = install.existingAddon?.hidden;
-  // NOTE: some of the existing test cases are mocking an AddonInstall
-  // instance without an `install.addon` property set
-  // (e.g. browser_html_pending_updates.js).
+  // install.addon can be missing if the install was retrieved from an update
+  // check, without having downloaded and parsed the linked xpi yet.
   const isNewHidden = install.addon?.hidden;
   // Not a manual update installation if both the existing and old
   // addon are hidden (which also ensures we are going to hide pending
@@ -1420,10 +1419,25 @@ class CategoriesBox extends customElements.get("button-group") {
   }
 
   async updateAvailableCount() {
+    // Note: This list includes new installs and updates, potentially multiple
+    // for the same add-on (because they are not cleaned up - bug 2007749).
     let installs = await AddonManager.getAllInstalls();
-    var count = installs.filter(install => {
-      return isManualUpdate(install) && !install.installed;
-    }).length;
+    let addonIdsWithUpdate = new Set();
+    for (const install of installs) {
+      if (isManualUpdate(install) && install.existingAddon) {
+        // Note: install.existingAddon points to the existing addon at the time
+        // of the update check, which is not necessarily the current version.
+        const addon = await AddonManager.getAddonByID(install.existingAddon.id);
+        if (
+          addon &&
+          getUpdateInstall(addon) === install &&
+          Services.vc.compare(install.version, addon.version) > 0
+        ) {
+          addonIdsWithUpdate.add(addon.id);
+        }
+      }
+    }
+    const count = addonIdsWithUpdate.size;
     let availableButton = this.getButtonByName("available-updates");
     availableButton.hidden = !availableButton.selected && count == 0;
     availableButton.badgeCount = count;
@@ -3456,6 +3470,7 @@ class AddonList extends HTMLElement {
     this.pendingUninstallAddons = new Set();
     this._addonsToUpdate = new Set();
     this._userFocusListenersAdded = false;
+    this._listeningForInstallUpdates = false;
   }
 
   async connectedCallback() {
@@ -3485,6 +3500,10 @@ class AddonList extends HTMLElement {
 
   /**
    * Configure the sections in the list.
+   *
+   * Warning: if filterFn uses criteria that are not tied to add-on events,
+   * make sure to add an implementation that calls updateAddon(addon) as
+   * needed. Not doing so can result in missing or out-of-date add-on cards!
    *
    * @param {object[]} sections
    *        The options for the section. Each entry in the array should have:
@@ -3833,6 +3852,11 @@ class AddonList extends HTMLElement {
   }
 
   _updateAddon(addon) {
+    if (this._listeningForInstallUpdates) {
+      // For stability of the UI, do not remove the card from the updates view
+      // when it is already there, even when an update is installed.
+      return;
+    }
     let card = this.getCard(addon);
     if (card) {
       let sectionIndex = this._addonSectionIndex(addon);
@@ -3972,16 +3996,42 @@ class AddonList extends HTMLElement {
   }
 
   onInstalled(addon) {
-    if (this.querySelector(`addon-card[addon-id="${addon.id}"]`)) {
-      return;
-    }
-    this.addAddon(addon);
+    this.updateAddon(addon);
   }
 
   onUninstalled(addon) {
     this.pendingUninstallAddons.delete(addon);
     this.removePendingUninstallBar(addon);
     this.removeAddon(addon);
+  }
+
+  onNewInstall(install) {
+    if (this._listeningForInstallUpdates) {
+      this._updateOnNewInstall(install);
+    }
+  }
+
+  onInstallPostponed(install) {
+    if (this._listeningForInstallUpdates) {
+      this._updateOnNewInstall(install);
+    }
+  }
+
+  listenForUpdates() {
+    this._listeningForInstallUpdates = true;
+  }
+
+  async _updateOnNewInstall(install) {
+    if (!install.existingAddon) {
+      // Not from an update check.
+      return;
+    }
+    // install.existingAddon can differ from the actual add-on (bug 2007749).
+    // To make sure that we use the real, live add-on state, look it up again.
+    const addon = await AddonManager.getAddonByID(install.existingAddon.id);
+    if (addon) {
+      this.updateAddon(addon);
+    }
   }
 }
 customElements.define("addon-list", AddonList);
@@ -4433,12 +4483,13 @@ gViewController.defineView("updates", async param => {
         filterFn: addon => {
           // Filter the addons visible in the updates view using the same
           // criteria that is being used to compute the counter on the
-          // available updates category button badge.
+          // available updates category button badge (updateAvailableCount).
           const install = getUpdateInstall(addon);
-          return install && isManualUpdate(install) && !install.installed;
+          return install && isManualUpdate(install);
         },
       },
     ]);
+    list.listenForUpdates();
   } else if (param == "recent") {
     list.sortByFn = (a, b) => {
       if (a.updateDate > b.updateDate) {

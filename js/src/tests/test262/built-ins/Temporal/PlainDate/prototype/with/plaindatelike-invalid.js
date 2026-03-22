@@ -23,6 +23,8 @@ const tests = [
   [Symbol(), "symbol"],
   [42, "number"],
   [42n, "bigint"],
+  [NaN, "NaN"],
+  [Infinity, "Infinity"],
 
   // Step 4.
   //   RejectObjectWithCalendarOrTimeZone step 2.
@@ -37,10 +39,10 @@ const tests = [
   //   RejectObjectWithCalendarOrTimeZone step 5-6.
   [{ year: 2021, timeZone: "UTC" }, "timeZone"],
 
-  // Step 7.
+  // Step 6.
   [{}, "empty object"],
+  [[], "array"],
   [{ months: 12 }, "only plural property"],
-
 ];
 
 for (const [value, message = String(value)] of tests) {

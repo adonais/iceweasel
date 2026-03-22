@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_shadowroot_h__
-#define mozilla_dom_shadowroot_h__
+#ifndef mozilla_dom_shadowroot_h_
+#define mozilla_dom_shadowroot_h_
 
 #include "mozilla/BindgenUniquePtr.h"
 #include "mozilla/DOMEventTargetHelper.h"
@@ -48,6 +48,45 @@ class OwningTrustedHTMLOrNullIsEmptyString;
 class TrustedHTMLOrString;
 class TrustedHTMLOrNullIsEmptyString;
 
+#define SHADOW_ROOT_FLAG_BIT(n_) \
+  NODE_FLAG_BIT(NODE_TYPE_SPECIFIC_BITS_OFFSET + (n_))
+
+// ShadowRoot-specific flags
+enum : uint32_t {
+  // Mode: open (0) or closed (1)
+  SHADOW_ROOT_MODE_CLOSED = SHADOW_ROOT_FLAG_BIT(0),
+
+  // Whether focus is delegated
+  SHADOW_ROOT_DELEGATES_FOCUS = SHADOW_ROOT_FLAG_BIT(1),
+
+  // Slot assignment: named (0) or manual (1)
+  SHADOW_ROOT_SLOT_ASSIGNMENT_MANUAL = SHADOW_ROOT_FLAG_BIT(2),
+
+  // https://dom.spec.whatwg.org/#shadowroot-declarative
+  SHADOW_ROOT_IS_DECLARATIVE = SHADOW_ROOT_FLAG_BIT(3),
+
+  // https://dom.spec.whatwg.org/#shadowroot-clonable
+  SHADOW_ROOT_IS_CLONABLE = SHADOW_ROOT_FLAG_BIT(4),
+
+  // https://dom.spec.whatwg.org/#shadowroot-serializable
+  SHADOW_ROOT_IS_SERIALIZABLE = SHADOW_ROOT_FLAG_BIT(5),
+
+  // https://dom.spec.whatwg.org/#shadowroot-available-to-element-internals
+  SHADOW_ROOT_IS_AVAILABLE_TO_ELEMENT_INTERNALS = SHADOW_ROOT_FLAG_BIT(6),
+
+  // Whether this is the <details> internal shadow tree
+  SHADOW_ROOT_IS_DETAILS_SHADOW_TREE = SHADOW_ROOT_FLAG_BIT(7),
+
+  // Remaining bits are unused
+  SHADOW_ROOT_FLAGS_BITS_USED = 8
+};
+
+#undef SHADOW_ROOT_FLAG_BIT
+
+// Make sure we have space for our bits
+ASSERT_NODE_FLAGS_SPACE(NODE_TYPE_SPECIFIC_BITS_OFFSET +
+                        SHADOW_ROOT_FLAGS_BITS_USED);
+
 class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   friend class DocumentOrShadowRoot;
 
@@ -86,14 +125,19 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
     return GetHost();
   }
 
-  ShadowRootMode Mode() const { return mMode; }
-  bool DelegatesFocus() const {
-    return mDelegatesFocus == Element::DelegatesFocus::Yes;
+  ShadowRootMode Mode() const {
+    return HasFlag(SHADOW_ROOT_MODE_CLOSED) ? ShadowRootMode::Closed
+                                            : ShadowRootMode::Open;
   }
-  SlotAssignmentMode SlotAssignment() const { return mSlotAssignment; }
-  bool Clonable() const { return mIsClonable == IsClonable::Yes; }
-  bool IsClosed() const { return mMode == ShadowRootMode::Closed; }
-  bool Serializable() const { return mIsSerializable == IsSerializable::Yes; }
+  bool DelegatesFocus() const { return HasFlag(SHADOW_ROOT_DELEGATES_FOCUS); }
+  SlotAssignmentMode SlotAssignment() const {
+    return HasFlag(SHADOW_ROOT_SLOT_ASSIGNMENT_MANUAL)
+               ? SlotAssignmentMode::Manual
+               : SlotAssignmentMode::Named;
+  }
+  bool Clonable() const { return HasFlag(SHADOW_ROOT_IS_CLONABLE); }
+  bool IsClosed() const { return HasFlag(SHADOW_ROOT_MODE_CLOSED); }
+  bool Serializable() const { return HasFlag(SHADOW_ROOT_IS_SERIALIZABLE); }
 
   void RemoveSheetFromStyles(StyleSheet&);
   void RuleAdded(StyleSheet&, css::Rule&);
@@ -150,6 +194,10 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
     InsertSheetAt(SheetCount(), aSheet);
   }
 
+  bool IsDetailsShadowTree() const {
+    return HasFlag(SHADOW_ROOT_IS_DETAILS_SHADOW_TREE);
+  }
+
   /**
    * Represents the insertion point in a slot for a given node.
    */
@@ -181,7 +229,7 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   /**
    * Re-assign the current main summary if it has changed.
    *
-   * Must be called only if mIsDetailsShadowTree is true.
+   * Must be called only if IsDetailsShadowTree() is true.
    */
   enum class SummaryChangeReason { Deletion, Insertion };
   void MaybeReassignMainSummary(SummaryChangeReason);
@@ -241,21 +289,25 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   }
 
   bool IsAvailableToElementInternals() const {
-    return mIsAvailableToElementInternals;
+    return HasFlag(SHADOW_ROOT_IS_AVAILABLE_TO_ELEMENT_INTERNALS);
   }
 
   void SetAvailableToElementInternals() {
-    mIsAvailableToElementInternals = true;
+    SetFlags(SHADOW_ROOT_IS_AVAILABLE_TO_ELEMENT_INTERNALS);
   }
 
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
-  bool IsDeclarative() const { return mIsDeclarative == Declarative::Yes; }
+  bool IsDeclarative() const { return HasFlag(SHADOW_ROOT_IS_DECLARATIVE); }
   void SetIsDeclarative(Declarative aIsDeclarative) {
-    mIsDeclarative = aIsDeclarative;
+    SetIsDeclarative(aIsDeclarative == Declarative::Yes);
   }
   void SetIsDeclarative(bool aIsDeclarative) {
-    mIsDeclarative = aIsDeclarative ? Declarative::Yes : Declarative::No;
+    if (aIsDeclarative) {
+      SetFlags(SHADOW_ROOT_IS_DECLARATIVE);
+    } else {
+      UnsetFlags(SHADOW_ROOT_IS_DECLARATIVE);
+    }
   }
 
   void SetHTML(const nsAString& aInnerHTML, const SetHTMLOptions& aOptions,
@@ -275,17 +327,24 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
 
   void GetHTML(const GetHTMLOptions& aOptions, nsAString& aResult);
 
+  bool HasReferenceTarget() const { return mReferenceTarget; }
   void GetReferenceTarget(nsAString& aResult) const {
+    if (!mReferenceTarget) {
+      aResult.SetIsVoid(true);
+      return;
+    }
     mReferenceTarget->ToString(aResult);
   }
   nsAtom* ReferenceTarget() const { return mReferenceTarget; }
   void SetReferenceTarget(const nsAString& aValue) {
+    if (aValue.IsVoid()) {
+      return SetReferenceTarget(nullptr);
+    }
     SetReferenceTarget(NS_Atomize(aValue));
   }
   void SetReferenceTarget(RefPtr<nsAtom> aTarget);
   Element* GetReferenceTargetElement() const {
-    return mReferenceTarget->IsEmpty() ? nullptr
-                                       : GetElementById(mReferenceTarget);
+    return mReferenceTarget ? GetElementById(mReferenceTarget) : nullptr;
   }
 
  protected:
@@ -313,28 +372,13 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   // tree.
   nsTArray<const Element*> mParts;
 
-  const ShadowRootMode mMode;
-
-  Element::DelegatesFocus mDelegatesFocus;
-
-  const SlotAssignmentMode mSlotAssignment;
-
-  // Whether this is the <details> internal shadow tree.
-  bool mIsDetailsShadowTree : 1;
-
-  // https://dom.spec.whatwg.org/#shadowroot-available-to-element-internals
-  bool mIsAvailableToElementInternals : 1;
-
-  // https://dom.spec.whatwg.org/#shadowroot-declarative
-  Declarative mIsDeclarative;
-
-  // https://dom.spec.whatwg.org/#shadowroot-clonable
-  const IsClonable mIsClonable;
-
-  // https://dom.spec.whatwg.org/#shadowroot-serializable
-  const IsSerializable mIsSerializable;
-
   RefPtr<nsAtom> mReferenceTarget;
+
+  static bool ReferenceTargetIDTargetChanged(Element* aOldElement,
+                                             Element* aNewElement, void* aData);
+  static bool RecursiveReferenceTargetChanged(void* aData);
+
+  void NotifyReferenceTargetChangedObservers();
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 };
@@ -342,4 +386,4 @@ class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
 }  // namespace dom
 }  // namespace mozilla
 
-#endif  // mozilla_dom_shadowroot_h__
+#endif  // mozilla_dom_shadowroot_h_

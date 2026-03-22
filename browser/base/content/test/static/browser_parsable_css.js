@@ -197,20 +197,16 @@ let propNameAllowlist = [
   { propName: "--tab-group-color-gray-invert", isFromDevTools: false },
   { propName: "--tab-group-color-gray-pale", isFromDevTools: false },
 
-  // These properties are used as an anchor-name/position-anchor value
-  //
-  // This test appears to be overly aggresive in treating a dashed-ident as a
-  // custom property definition. In this case it is just an identifier, not a
-  // custom property. Bug 2012304
-  { propName: "--ai-controls-description", isFromDevTools: false },
-  { propName: "--browser-with-dialog", isFromDevTools: false },
-
   /* Allow design tokens in devtools without all variables being used there */
   { sourceName: /\/design-system\/tokens-.*\.css$/, isFromDevTools: true },
 
   // Ignore token properties that follow the patterns --color-[name], --color-[name]-[number], or --color-[name]-alpha-[number]
   // This enables us to provide our full color palette for developers.
   { propName: /--color-[a-z]+(-alpha)?(-\d+)?/, isFromDevTools: false },
+
+  // Ignore token properties that follow the patterns --dimension-[number] or --dimension-relative-[number]
+  // This enables us to provide our full size/spacing system for developers.
+  { propName: /--dimension(-relative)?-\d+/, isFromDevTools: false },
 ];
 
 // Add suffix to stylesheets' URI so that we always load them here and
@@ -386,57 +382,99 @@ function processCSSRules(container) {
     if (!rule.style) {
       continue; // @layer (statement), @font-feature-values, @counter-style
     }
-    // Extract urls from the css text.
-    // Note: CSSRule.style.cssText always has double quotes around URLs even
-    //       when the original CSS file didn't.
+
+    // We want to extract urls and variables from the css text.
+    // Let's parse the css text so we can iterate through the tokens, which is more
+    // reliable than trying to extract data with regexes.
     let cssText = rule.style.cssText;
-    let urls = cssText.match(/url\("[^"]*"\)/g);
-    // Extract props by searching all "--" preceded by "var(" or a non-word
-    // character.
-    let props = cssText.match(/(var\(\s*|\W|^)(--[\w\-]+)/g);
-    if (!urls && !props) {
-      continue;
-    }
+    {
+      const lexer = new InspectorCSSParser(cssText);
+      let token;
+      let currentDeclarationName;
+      let foundVarFunc = false;
+      let foundUrlFunc = false;
 
-    for (let url of urls || []) {
-      // Remove the url(" prefix and the ") suffix.
-      url = url.replace(/url\("(.*)"\)/, "$1");
-      if (url.startsWith("data:")) {
-        continue;
-      }
+      while ((token = lexer.nextToken())) {
+        // At the beginning, we're looking for the declaration name
+        if (!currentDeclarationName) {
+          // which should be the first Ident token we see
+          if (token.tokenType === "Ident") {
+            currentDeclarationName = token.text;
 
-      // Make the url absolute and remove the ref.
-      let baseURI = Services.io.newURI(rule.parentStyleSheet.href);
-      url = Services.io.newURI(url, null, baseURI).specIgnoringRef;
-
-      // Store the image url along with the css file referencing it.
-      let baseUrl = baseURI.spec.split("?always-parse-css")[0];
-      if (!imageURIsToReferencesMap.has(url)) {
-        imageURIsToReferencesMap.set(url, new Set([baseUrl]));
-      } else {
-        imageURIsToReferencesMap.get(url).add(baseUrl);
-      }
-    }
-
-    for (let prop of props || []) {
-      if (prop.startsWith("var(")) {
-        prop = prop.substring(4).trim();
-        let prevValue = customPropsToReferencesMap.get(prop) || 0;
-        customPropsToReferencesMap.set(prop, prevValue + 1);
-      } else {
-        // Remove the extra non-word character captured by the regular
-        // expression if needed.
-        if (prop[0] != "-") {
-          prop = prop.substring(1);
-        }
-        if (!customPropsToReferencesMap.has(prop)) {
-          customPropsToReferencesMap.set(prop, undefined);
-          if (!customPropsDefinitionFileMap.has(prop)) {
-            customPropsDefinitionFileMap.set(prop, new Set());
+            // If it starts with "--", we have a custom property declaration
+            if (token.text.startsWith("--")) {
+              const prop = token.text;
+              if (!customPropsToReferencesMap.has(prop)) {
+                customPropsToReferencesMap.set(prop, undefined);
+                if (!customPropsDefinitionFileMap.has(prop)) {
+                  customPropsDefinitionFileMap.set(prop, new Set());
+                }
+                customPropsDefinitionFileMap
+                  .get(prop)
+                  .add(container.href || container.parentStyleSheet.href);
+              }
+            }
           }
-          customPropsDefinitionFileMap
-            .get(prop)
-            .add(container.href || container.parentStyleSheet.href);
+          continue;
+        }
+        // At this point, we found the declaration name, so we're parsing the declaration value
+
+        // we're looking for usages of the `var()` function to collect referenced custom property names
+        if (token.tokenType === "Function" && token.value === "var") {
+          foundVarFunc = true;
+          continue;
+        }
+        // If we saw a `var(` token before, then the next Ident should contain a custom
+        // property name
+        if (
+          foundVarFunc &&
+          token.tokenType === "Ident" &&
+          token.text.startsWith("--")
+        ) {
+          foundVarFunc = false;
+          const prop = token.text;
+          let prevValue = customPropsToReferencesMap.get(prop) || 0;
+          customPropsToReferencesMap.set(prop, prevValue + 1);
+          continue;
+        }
+
+        // we're also looking for usages of the `url()` function
+        if (token.tokenType === "Function" && token.value === "url") {
+          foundUrlFunc = true;
+          continue;
+        }
+        // If we saw a `url(` token before, then the next QuotedString should contain
+        // the actual URL (CSSRule.style.cssText always has double quotes around URLs
+        // even when the original CSS file didn't).
+        if (foundUrlFunc && token.tokenType === "QuotedString") {
+          foundUrlFunc = false;
+          let url = token.value;
+          if (url.startsWith("data:")) {
+            continue;
+          }
+
+          // Make the url absolute and remove the ref.
+          let baseURI = Services.io.newURI(rule.parentStyleSheet.href);
+          url = Services.io.newURI(url, null, baseURI).specIgnoringRef;
+
+          // Store the image url along with the css file referencing it.
+          let baseUrl = baseURI.spec.split("?always-parse-css")[0];
+          if (!imageURIsToReferencesMap.has(url)) {
+            imageURIsToReferencesMap.set(url, new Set([baseUrl]));
+          } else {
+            imageURIsToReferencesMap.get(url).add(baseUrl);
+          }
+
+          continue;
+        }
+
+        // When seeing a semi colon, we can reset the work variable so we're ready
+        // to parse the next declaration
+        if (token.tokenType === "Semicolon") {
+          foundVarFunc = false;
+          foundUrlFunc = false;
+          currentDeclarationName = null;
+          continue;
         }
       }
     }

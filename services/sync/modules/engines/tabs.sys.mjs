@@ -30,7 +30,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
   getTabsStore: "resource://services-sync/TabsStore.sys.mjs",
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   RemoteTabRecord:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustTabs.sys.mjs",
+  LocalTabsInfo:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustTabs.sys.mjs",
+  TabGroup:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustTabs.sys.mjs",
+  Window:
+    "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustTabs.sys.mjs",
+  WindowType:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustTabs.sys.mjs",
   setupLoggerForTarget: "resource://gre/modules/AppServicesTracing.sys.mjs",
 });
@@ -73,14 +82,10 @@ TabEngine.prototype = {
     };
 
     // We shouldn't upload tabs past what the server will accept
-    let tabs = await this.getTabsWithinPayloadSize();
-    await this._rustStore.setLocalTabs(
-      tabs.map(tab => {
-        // rust wants lastUsed in MS but the provider gives it in seconds
-        tab.lastUsed = tab.lastUsed * 1000;
-        return new lazy.RemoteTabRecord(tab);
-      })
-    );
+    const maxPayloadSize = this.service.getMaxRecordPayloadSize();
+    let tabsInfo = await TabProvider.getLocalTabsInfo(maxPayloadSize);
+
+    await this._rustStore.setLocalTabsInfo(tabsInfo);
 
     for (let remoteClient of clientsEngine.remoteClients) {
       let id = remoteClient.id;
@@ -188,13 +193,6 @@ TabEngine.prototype = {
     if (this._modified.count() > 0) {
       this._tracker.modified = true;
     }
-  },
-
-  async getTabsWithinPayloadSize() {
-    const maxPayloadSize = this.service.getMaxRecordPayloadSize();
-    // See bug 535326 comment 8 for an explanation of the estimation
-    const maxSerializedSize = (maxPayloadSize / 4) * 3 - 1500;
-    return TabProvider.getAllTabsWithEstimatedMax(true, maxSerializedSize);
   },
 
   // Support for "quick writes"
@@ -338,29 +336,10 @@ TabEngine.prototype = {
 Object.setPrototypeOf(TabEngine.prototype, BridgedEngine.prototype);
 
 export const TabProvider = {
-  getWindowEnumerator() {
-    return Services.wm.getEnumerator("navigator:browser");
-  },
-
-  shouldSkipWindow(win) {
-    return win.closed || lazy.PrivateBrowsingUtils.isWindowPrivate(win);
-  },
-
-  getAllBrowserTabs() {
-    let tabs = [];
-    for (let win of this.getWindowEnumerator()) {
-      if (this.shouldSkipWindow(win)) {
-        continue;
-      }
-      // Get all the tabs from the browser
-      for (let tab of win.gBrowser.tabs) {
-        tabs.push(tab);
-      }
-    }
-
-    return tabs.sort(function (a, b) {
-      return b.lastAccessed - a.lastAccessed;
-    });
+  // Get ordered non-private windows - can be overridden in tests
+  // Windows are ordered from most recently used to least recently used
+  getOrderedNonPrivateWindows() {
+    return lazy.BrowserWindowTracker.getOrderedWindows({ private: false });
   },
 
   // This function creates tabs records up to a specified amount of bytes
@@ -372,15 +351,33 @@ export const TabProvider = {
     let iconPromises = [];
     let runningByteLength = 0;
     let encoder = new TextEncoder();
+    let referencedWindowIds = new Set();
+    let referencedGroupIds = new Set();
 
-    // Fetch all the tabs the user has open
-    let winTabs = this.getAllBrowserTabs();
+    // Get ordered windows once - order determines the index we report (lower index = more recent)
+    let orderedWindows = this.getOrderedNonPrivateWindows();
 
-    for (let tab of winTabs) {
+    // Build a map of window -> windowId and collect all tabs
+    let windowIdMap = new Map();
+    let allWinTabs = [];
+    for (let [winIndex, win] of orderedWindows.entries()) {
+      let windowId = `window-${winIndex}`;
+      windowIdMap.set(win, windowId);
+
+      for (let tabIndex = 0; tabIndex < win.gBrowser.tabs.length; tabIndex++) {
+        let tab = win.gBrowser.tabs[tabIndex];
+        allWinTabs.push({ tab, windowId, windowIndex: winIndex, tabIndex });
+      }
+    }
+
+    // Sort by last accessed to prioritize recently used tabs
+    allWinTabs.sort((a, b) => b.tab.lastAccessed - a.tab.lastAccessed);
+
+    for (let { tab, windowId, tabIndex } of allWinTabs) {
       // We don't want to process any more tabs than we can sync
       if (runningByteLength >= bytesMax) {
         log.warn(
-          `Can't fit all tabs in sync payload: have ${winTabs.length},
+          `Can't fit all tabs in sync payload: have ${allWinTabs.length},
               but can only fit ${tabRecords.length}.`
         );
         break;
@@ -415,13 +412,26 @@ export const TabProvider = {
         continue;
       }
 
+      let tabGroupId = tab.group?.id || "";
+
       let thisTab = new lazy.RemoteTabRecord({
         title: tab.linkedBrowser.contentTitle || "",
         urlHistory: [url],
         icon: "",
-        lastUsed: Math.floor((tab.lastAccessed || 0) / 1000),
+        lastUsed: tab.lastAccessed || 0,
+        inactive: false, // desktop doesn't have "inactive" tabs.
+        windowId,
+        index: tabIndex,
+        tabGroupId,
+        pinned: tab.pinned,
       });
       tabRecords.push(thisTab);
+
+      // Track which windows and groups are referenced
+      referencedWindowIds.add(windowId);
+      if (tabGroupId) {
+        referencedGroupIds.add(tabGroupId);
+      }
 
       // we don't want to wait for each favicon to resolve to get the bytes
       // so we estimate a conservative 100 chars for the favicon and json overhead
@@ -445,7 +455,83 @@ export const TabProvider = {
     }
 
     await Promise.allSettled(iconPromises);
-    return tabRecords;
+    return {
+      tabs: tabRecords,
+      referencedWindowIds,
+      referencedGroupIds,
+      orderedWindows, // Return windows so we only collect them once
+    };
+  },
+
+  _collectReferencedTabGroups(referencedGroupIds, orderedWindows) {
+    let tabGroups = new Map();
+    for (let win of orderedWindows) {
+      if (!win.gBrowser.tabGroups) {
+        continue;
+      }
+      for (let group of win.gBrowser.tabGroups) {
+        if (referencedGroupIds.has(group.id)) {
+          tabGroups.set(
+            group.id,
+            new lazy.TabGroup({
+              id: group.id,
+              name: group.label,
+              color: group.color,
+              collapsed: group.collapsed,
+            })
+          );
+        }
+      }
+    }
+    return tabGroups;
+  },
+
+  _collectReferencedWindows(referencedWindowIds, orderedWindows) {
+    let windows = new Map();
+    // because we've generated the IDs based on the index we don't need to look
+    // inside the array, just know it's length
+    for (let winIndex = 0; winIndex < orderedWindows.length; winIndex++) {
+      let windowId = `window-${winIndex}`;
+      if (referencedWindowIds.has(windowId)) {
+        windows.set(
+          windowId,
+          new lazy.Window({
+            id: windowId,
+            // We don't have a "lastUsed" available for windows.
+            lastUsed: 0,
+            index: winIndex + 1,
+            windowType: lazy.WindowType.NORMAL,
+          })
+        );
+      }
+    }
+    return windows;
+  },
+
+  // This function returns the LocalTabsInfo used by the Rust engine.
+  async getLocalTabsInfo(maxPayloadSize) {
+    // See bug 535326 comment 8 for an explanation of the estimation
+    const maxSerializedSize = (maxPayloadSize / 4) * 3 - 1500;
+    let { tabs, referencedWindowIds, referencedGroupIds, orderedWindows } =
+      await this.getAllTabsWithEstimatedMax(true, maxSerializedSize);
+
+    // Collect metadata for windows and groups that have tabs being synced.
+    // This will almost always be all windows and groups, but we might as well
+    // avoid including groups or windows if we ended up not including tabs in them.
+    let tabGroups = this._collectReferencedTabGroups(
+      referencedGroupIds,
+      orderedWindows
+    );
+    let windows = this._collectReferencedWindows(
+      referencedWindowIds,
+      orderedWindows
+    );
+
+    return new lazy.LocalTabsInfo({
+      tabs,
+      tabGroups,
+      windows,
+    });
   },
 };
 

@@ -994,9 +994,8 @@ add_task(async function test_unpin_overflowed_widget() {
         !pinToToolbar.hidden,
         "expected 'Pin to Toolbar' to be visible"
       );
-      Assert.equal(
-        pinToToolbar.getAttribute("checked"),
-        "true",
+      Assert.ok(
+        pinToToolbar.hasAttribute("checked"),
         "expected 'Pin to Toolbar' to be checked"
       );
 

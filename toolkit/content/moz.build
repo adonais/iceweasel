@@ -39,9 +39,6 @@ if CONFIG["OS_TARGET"] == "Android":
 if CONFIG["MOZ_INSTALL_TRACKING"]:
     DEFINES["MOZ_INSTALL_TRACKING"] = 1
 
-if CONFIG["MOZ_BUILD_APP"] == "mobile/android":
-    DEFINES["MOZ_GECKOVIEW"] = True
-
 JAR_MANIFESTS += ["jar.mn"]
 
 SPHINX_TREES["toolkit_widgets"] = "widgets/docs"

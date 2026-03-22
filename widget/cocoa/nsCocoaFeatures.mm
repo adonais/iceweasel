@@ -11,16 +11,9 @@
 // The formula for the version integer is (major << 16) + (minor << 8) + bugfix.
 
 #define MACOS_VERSION_MASK 0x00FFFFFF
-#define MACOS_MAJOR_VERSION_MASK 0x00FFFFFF
-#define MACOS_MINOR_VERSION_MASK 0x00FFFFFF
-#define MACOS_BUGFIX_VERSION_MASK 0x00FFFFFF
-#define MACOS_VERSION_10_0_HEX 0x000A0000
-#define MACOS_VERSION_10_9_HEX 0x000A0900
-#define MACOS_VERSION_10_10_HEX 0x000A0A00
-#define MACOS_VERSION_10_11_HEX 0x000A0B00
-#define MACOS_VERSION_10_12_HEX 0x000A0C00
-#define MACOS_VERSION_10_13_HEX 0x000A0D00
-#define MACOS_VERSION_10_14_HEX 0x000A0E00
+#define MACOS_MAJOR_VERSION_MASK 0x00FF0000
+#define MACOS_MINOR_VERSION_MASK 0x0000FF00
+#define MACOS_BUGFIX_VERSION_MASK 0x000000FF
 #define MACOS_VERSION_10_15_HEX 0x000A0F00
 #define MACOS_VERSION_10_16_HEX 0x000A1000
 #define MACOS_VERSION_11_0_HEX 0x000B0000
@@ -64,7 +57,7 @@ int32_t nsCocoaFeatures::ExtractBugFixVersion(int32_t aVersion) {
 }
 
 static int intAtStringIndex(NSArray* array, int index) {
-  return [(NSString*)[array objectAtIndex:index] integerValue];
+  return [(NSString*)[array objectAtIndex:index] intValue];
 }
 
 void nsCocoaFeatures::GetSystemVersion(int& major, int& minor, int& bugfix) {
@@ -98,12 +91,12 @@ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor,
   int32_t macOSVersion;
   if (aMajor < 10) {
     aMajor = 10;
-    NS_ERROR("Couldn't determine macOS version, assuming 10.9");
-    macOSVersion = MACOS_VERSION_10_9_HEX;
-  } else if (aMajor == 10 && aMinor < 9) {
-    aMinor = 9;
-    NS_ERROR("macOS version too old, assuming 10.9");
-    macOSVersion = MACOS_VERSION_10_9_HEX;
+    NS_ERROR("Couldn't determine macOS version, assuming 10.15");
+    macOSVersion = MACOS_VERSION_10_15_HEX;
+  } else if (aMajor == 10 && aMinor < 15) {
+    aMinor = 15;
+    NS_ERROR("macOS version too old, assuming 10.15");
+    macOSVersion = MACOS_VERSION_10_15_HEX;
   } else {
     MOZ_ASSERT(aMajor >= 10);
     MOZ_ASSERT(aMajor < 256);
@@ -172,8 +165,7 @@ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor,
   // launched from the command line, see bug 1727624. (This only applies to
   // the Intel build - the arm64 build is linked against a Big Sur SDK and
   // always sees the correct version.)
-  return ((macOSVersion() >= MACOS_VERSION_10_16_HEX) ||
-          (macOSVersion() >= MACOS_VERSION_11_0_HEX));
+  return (macOSVersion() >= MACOS_VERSION_10_16_HEX);
 }
 
 /* static */ bool nsCocoaFeatures::OnMontereyOrLater() {

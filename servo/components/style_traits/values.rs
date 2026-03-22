@@ -258,6 +258,12 @@ impl<'a, 'b, W> SequenceWriter<'a, 'b, W>
 where
     W: Write + 'b,
 {
+    /// Returns whether this writer has written any item.
+    pub fn has_written(&self) -> bool {
+        // See comment in item()
+        self.inner.prefix.is_none()
+    }
+
     /// Create a new sequence writer.
     #[inline]
     pub fn new(inner: &'a mut CssWriter<'b, W>, separator: &'static str) -> Self {
@@ -595,11 +601,37 @@ pub mod specified {
     }
 }
 
+/// A single numeric value with an associated unit.
+///
+/// This corresponds to `CSSUnitValue` in the Typed OM specification. The
+/// numeric component is stored separately from the textual unit identifier.
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct UnitValue {
+    /// The numeric component of the value.
+    pub value: f32,
+
+    /// The textual unit string (e.g. `"px"`, `"em"`, `"%"`, `"deg"`).
+    pub unit: CssString,
+}
+
+/// A sum of numeric values.
+///
+/// This corresponds to `CSSMathSum` in the Typed OM specification. A sum
+/// value represents an expression such as `10px + 2em`. Each entry is itself
+/// a `NumericValue`, allowing nested sums if needed.
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct MathSum {
+    /// The list of numeric terms that make up the sum.
+    pub values: ThinVec<NumericValue>,
+}
+
 /// A numeric value used by the Typed OM.
 ///
 /// This corresponds to `CSSNumericValue` and its subclasses in the Typed OM
 /// specification. It represents numbers that can appear in CSS values,
-/// including both simple unit quantities and sums of numeric terms.
+/// including both simple unit quantities and composite expressions..
 ///
 /// Unlike the parser-level representation, `NumericValue` is property-agnostic
 /// and suitable for conversion to or from the `CSSNumericValue` family of DOM
@@ -609,25 +641,13 @@ pub mod specified {
 pub enum NumericValue {
     /// A single numeric value with a concrete unit.
     ///
-    /// This corresponds to `CSSUnitValue`. The `value` field stores the raw
-    /// numeric component, and the `unit` field stores the textual unit
-    /// identifier (e.g. `"px"`, `"em"`, `"%"`, `"deg"`).
-    Unit {
-        /// The numeric component of the value.
-        value: f32,
-        /// The textual unit string (e.g. `"px"`, `"em"`, `"deg"`).
-        unit: CssString,
-    },
+    /// This corresponds to `CSSUnitValue`.
+    Unit(UnitValue),
 
-    /// A sum of multiple numeric values.
+    /// A sum of numeric values.
     ///
-    /// This corresponds to `CSSMathSum`, representing an expression such as
-    /// `10px + 2em`. Each entry in `values` is another `NumericValue`, which
-    /// may itself be a unit value or a nested sum.
-    Sum {
-        /// The list of numeric terms that make up the sum.
-        values: ThinVec<NumericValue>,
-    },
+    /// This corresponds to `CSSMathSum`.
+    Sum(MathSum),
 }
 
 /// A property-agnostic representation of a value, used by Typed OM.
@@ -693,6 +713,15 @@ pub trait ToTyped {
     }
 }
 
+impl<'a, T> ToTyped for &'a T
+where
+    T: ToTyped + ?Sized,
+{
+    fn to_typed(&self) -> Option<TypedValue> {
+        (*self).to_typed()
+    }
+}
+
 impl<T> ToTyped for Box<T>
 where
     T: ?Sized + ToTyped,
@@ -706,7 +735,10 @@ impl ToTyped for Au {
     fn to_typed(&self) -> Option<TypedValue> {
         let value = self.to_f32_px();
         let unit = CssString::from("px");
-        Some(TypedValue::Numeric(NumericValue::Unit { value, unit }))
+        Some(TypedValue::Numeric(NumericValue::Unit(UnitValue {
+            value,
+            unit,
+        })))
     }
 }
 

@@ -368,13 +368,14 @@ function getSuppressFocusPromise(win = window) {
 
 async function withAwaitProvider(args, promise, callback) {
   let provider = new AwaitPromiseProvider(args, promise);
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
   try {
     await callback();
   } catch (ex) {
     console.error(ex);
   } finally {
-    UrlbarProvidersManager.unregisterProvider(provider);
+    providersManager.unregisterProvider(provider);
   }
 }
 

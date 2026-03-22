@@ -51,10 +51,8 @@ struct HostResolverMarker {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
     schema.SetTableLabel("{marker.data.host}");
-    schema.AddKeyFormat("host", MS::Format::SanitizedString,
-                        MS::PayloadFlags::Searchable);
-    schema.AddKeyFormat("originSuffix", MS::Format::SanitizedString,
-                        MS::PayloadFlags::Searchable);
+    schema.AddKeyFormat("host", MS::Format::SanitizedString);
+    schema.AddKeyFormat("originSuffix", MS::Format::SanitizedString);
     schema.AddKeyFormat("qtype", MS::Format::Integer);
     schema.AddKeyFormat("flags", MS::Format::String);
     return schema;

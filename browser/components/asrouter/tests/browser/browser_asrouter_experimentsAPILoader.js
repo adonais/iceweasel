@@ -262,14 +262,6 @@ add_task(async function test_exposure_ping() {
   });
 
   Assert.strictEqual(exposureSpy.callCount, 1, "Should send exposure ping");
-  const scalars = TelemetryTestUtils.getProcessScalars("parent", true, true);
-  TelemetryTestUtils.assertKeyedScalar(
-    scalars,
-    "telemetry.event_counts",
-    "normandy#expose#nimbus_experiment",
-    1
-  );
-
   exposureSpy.restore();
   await cleanup();
 });

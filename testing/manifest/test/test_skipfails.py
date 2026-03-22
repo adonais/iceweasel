@@ -757,7 +757,7 @@ def test_task_to_skip_if():
                 },
                 "runtime": {
                     "no-fission": True,
-                    "socketprocess_networking": True,
+                    "socketprocess": True,
                     "http3": True,
                 },
                 "platform": {

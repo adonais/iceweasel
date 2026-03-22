@@ -40,7 +40,7 @@ class JSProcessActorChild final : public JSActor {
   // message metadata |aMetadata|. The underlying transport should call the
   // |ReceiveMessage| method on the other side asynchronously.
   void SendRawMessage(const JSActorMessageMeta& aMetadata, JSIPCValue&& aData,
-                      UniquePtr<ipc::StructuredCloneData> aStack,
+                      ipc::StructuredCloneData* aStack,
                       ErrorResult& aRv) override;
 
  private:

@@ -16,7 +16,7 @@ use crate::tile_cache::{TileCacheInstance, TileSurface};
 use crate::tile_cache::TileId;
 use crate::prim_store::DeferredResolve;
 use crate::resource_cache::{ImageRequest, ResourceCache};
-use crate::segment::EdgeAaSegmentMask;
+use crate::segment::EdgeMask;
 use crate::util::{extract_inner_rect_safe, Preallocator, ScaleOffset};
 use crate::tile_cache::PictureCacheDebugInfo;
 use crate::device::Device;
@@ -628,7 +628,7 @@ pub struct CompositorClip {
 pub struct CompositeRoundedCorner {
     pub rect: LayoutRect,
     pub radius: LayoutSize,
-    pub edge_flags: EdgeAaSegmentMask,
+    pub edge_flags: EdgeMask,
 }
 
 impl Eq for CompositeRoundedCorner {}
@@ -681,6 +681,8 @@ pub struct CompositeState {
     low_quality_pinch_zoom: bool,
     /// List of registered clips used by picture cache and/or external surfaces
     pub clips: FrameVec<CompositorClip>,
+    /// Set to true when any tile is rasterized (has is_valid = false)
+    pub did_rasterize_any_tile: bool,
 }
 
 impl CompositeState {
@@ -713,10 +715,11 @@ impl CompositeState {
             transforms: memory.new_vec(),
             low_quality_pinch_zoom,
             clips,
+            did_rasterize_any_tile: false,
         }
     }
 
-    fn compositor_clip_params(
+    pub fn compositor_clip_params(
         &self,
         clip_index: Option<CompositorClipIndex>,
         default_rect: DeviceRect,

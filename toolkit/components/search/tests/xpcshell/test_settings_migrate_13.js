@@ -69,11 +69,11 @@ add_setup(async function () {
     { compress: true }
   );
   SearchTestUtils.updateRemoteSettingsConfig(CONFIG);
-  await Services.search.init();
+  await SearchService.init();
 });
 
 add_task(async function test_migration() {
-  let engines = await Services.search.getEngines();
+  let engines = await SearchService.getEngines();
   Assert.ok(
     engines[0] instanceof UserInstalledConfigEngine,
     "First engine stayed user-installed"
@@ -83,6 +83,6 @@ add_task(async function test_migration() {
     "Second engine stayed app-provided"
   );
 
-  let settings = await Services.search.wrappedJSObject._settings.get();
+  let settings = await SearchService._settings.get();
   Assert.deepEqual(settings.engines, EXPECTED_ENGINES);
 });

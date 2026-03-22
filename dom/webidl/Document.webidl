@@ -546,11 +546,6 @@ partial interface Document {
   Promise<boolean> hasStorageAccess();
   [Pref="dom.storage_access.enabled", NewObject]
   Promise<undefined> requestStorageAccess();
-  // https://github.com/privacycg/storage-access/pull/100
-  [Pref="dom.storage_access.forward_declared.enabled", NewObject]
-  Promise<undefined> requestStorageAccessUnderSite(DOMString serializedSite);
-  [Pref="dom.storage_access.forward_declared.enabled", NewObject]
-  Promise<undefined> completeStorageAccessRequestFromSite(DOMString serializedSite);
 };
 
 // A privileged API to give chrome privileged code and the content script of the
@@ -790,3 +785,5 @@ partial interface Document {
   [Throws, Pref="dom.security.sanitizer.enabled"]
   static Document parseHTML(DOMString html, optional SetHTMLOptions options = {});
 };
+
+Document includes ARIANotifyMixin;

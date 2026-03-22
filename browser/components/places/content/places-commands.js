@@ -16,7 +16,11 @@ document.getElementById("placesCommands").addEventListener("command", event => {
       PlacesCommandHook.showPlacesOrganizer("UnfiledBookmarks");
       break;
     case "Browser:ShowAllHistory":
-      PlacesCommandHook.showPlacesOrganizer("History");
+      if (AIWindow.isAIWindowActive(window)) {
+        FirefoxViewHandler.openTab("history");
+      } else {
+        PlacesCommandHook.showPlacesOrganizer("History");
+      }
       break;
 
     case "placesCmd_open":

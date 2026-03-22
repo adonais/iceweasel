@@ -122,9 +122,17 @@ PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(
     return nullptr;
   }
 
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aGlobal.Context()), aError);
+  if (aError.Failed()) {
+    return nullptr;
+  }
+
   RefPtr<WebAuthnHandler> handler =
       window->Navigator()->Credentials()->GetWebAuthnHandler();
-  return handler->IsUVPAA(aGlobal, aError);
+  handler->IsUVPAA(promise);
+
+  return promise.forget();
 }
 
 /* static */

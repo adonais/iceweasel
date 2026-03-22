@@ -38,7 +38,7 @@
 
 /* The default styling is to dim the default, but here override it so that it still uses
    the primary color. */
-.translations-panel-button-group > button[default][disabled="true"] {
+.translations-panel-button-group > button[default][disabled] {
   color: var(--button-text-color-primary);
   background-color: var(--color-accent-primary);
 }

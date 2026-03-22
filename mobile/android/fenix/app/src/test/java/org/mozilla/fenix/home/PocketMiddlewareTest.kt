@@ -298,71 +298,6 @@ class PocketMiddlewareTest {
         }
     }
 
-    /**
-     * Assert that the Pocket categories with [expected] names are currently selected
-     * and that this selection happened in the past 10 seconds.
-     */
-    private fun FakeDataStore.assertSelectedCategories(vararg expected: String) {
-        val now = System.currentTimeMillis()
-        val actualSelections = currentCategorySelection.valuesList
-        assertEquals(expected.size, actualSelections.size)
-        actualSelections.forEachIndexed { index, selection ->
-            assertEquals(expected[index], selection.name)
-            assertTrue(selection.selectionTimestamp in now - 10000..now)
-        }
-    }
-
-    /**
-     * Assert that the Pocket categories with [expected] names are currently selected
-     * and that this selection happened in the past 10 seconds.
-     */
-    private fun AppStore.assertSelectedCategories(vararg expected: String) {
-        val now = System.currentTimeMillis()
-        val actualSelections = state.recommendationState.pocketStoriesCategoriesSelections
-        assertEquals(expected.size, actualSelections.size)
-        actualSelections.forEachIndexed { index, selection ->
-            assertEquals(expected[index], selection.name)
-            assertTrue(selection.selectionTimestamp in now - 10000..now)
-        }
-    }
-
-    @Test
-    fun `GIVEN hasPocketSponsoredStoriesProfileMigrated is false WHEN App is Started THEN delete the old Pocket profile`() = runTest {
-        val pocketService: PocketStoriesService = mockk(relaxed = true)
-        val pocketMiddleware = PocketMiddleware(
-            lazy { pocketService },
-            mockk(),
-            FakePocketSettings(hasPocketSponsoredStoriesProfileMigrated = false),
-            RunWhenReadyQueue(this).also { it.ready() },
-            this,
-        )
-
-        pocketMiddleware.invoke(mockk(), {}, AppAction.AppLifecycleAction.StartAction)
-        testScheduler.advanceUntilIdle()
-
-        verify {
-            pocketService.deleteProfile()
-        }
-    }
-
-    @Test
-    fun `GIVEN hasPocketSponsoredStoriesProfileMigrated is true WHEN App is Started THEN don't try to delete the old Pocket profile`() = runTest {
-        val pocketService: PocketStoriesService = mockk(relaxed = true)
-        val pocketMiddleware = PocketMiddleware(
-            lazy { pocketService },
-            mockk(),
-            FakePocketSettings(),
-            RunWhenReadyQueue(this).also { it.ready() },
-            this,
-        )
-
-        pocketMiddleware.invoke(mockk(), {}, AppAction.AppLifecycleAction.StartAction)
-
-        verify(exactly = 0) {
-            pocketService.deleteProfile()
-        }
-    }
-
     @Test
     fun `GIVEN pocket settings are true WHEN App is Started THEN start the Pocket workers`() = runTest {
         val pocketService: PocketStoriesService = mockk(relaxed = true)
@@ -440,6 +375,33 @@ class FakeDataStore(
 
 data class FakePocketSettings(
     override val showPocketRecommendationsFeature: Boolean = true,
-    override var hasPocketSponsoredStoriesProfileMigrated: Boolean = true,
     override val showPocketSponsoredStories: Boolean = true,
 ) : PocketSettings
+
+/**
+ * Assert that the Pocket categories with [expected] names are currently selected
+ * and that this selection happened in the past 10 seconds.
+ */
+private fun FakeDataStore.assertSelectedCategories(vararg expected: String) {
+    val now = System.currentTimeMillis()
+    val actualSelections = currentCategorySelection.valuesList
+    assertEquals(expected.size, actualSelections.size)
+    actualSelections.forEachIndexed { index, selection ->
+        assertEquals(expected[index], selection.name)
+        assertTrue(selection.selectionTimestamp in now - 10000..now)
+    }
+}
+
+/**
+ * Assert that the Pocket categories with [expected] names are currently selected
+ * and that this selection happened in the past 10 seconds.
+ */
+private fun AppStore.assertSelectedCategories(vararg expected: String) {
+    val now = System.currentTimeMillis()
+    val actualSelections = state.recommendationState.pocketStoriesCategoriesSelections
+    assertEquals(expected.size, actualSelections.size)
+    actualSelections.forEachIndexed { index, selection ->
+        assertEquals(expected[index], selection.name)
+        assertTrue(selection.selectionTimestamp in now - 10000..now)
+    }
+}

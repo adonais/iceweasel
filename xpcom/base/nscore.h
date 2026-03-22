@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nscore_h___
-#define nscore_h___
+#ifndef nscore_h_
+#define nscore_h_
 
 /* Definitions of functions and operators that allocate memory. */
 #if !defined(NS_NO_XPCOM) && !defined(MOZ_NO_MOZALLOC)
@@ -252,4 +252,4 @@ inline Result<Ok, E> ToResult(nsresult aValue);
 #  define MOZ_SEH_EXCEPT(expr) else
 #endif
 
-#endif /* nscore_h___ */
+#endif /* nscore_h_ */

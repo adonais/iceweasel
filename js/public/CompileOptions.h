@@ -62,7 +62,8 @@
 
 #include "js/CharacterEncoding.h"  // JS::ConstUTF8CharsZ
 #include "js/ColumnNumber.h"       // JS::ColumnNumberOneOrigin
-#ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
+#if defined(ENABLE_EXPLICIT_RESOURCE_MANAGEMENT) || \
+    defined(ENABLE_SOURCE_PHASE_IMPORTS)
 #  include "js/Prefs.h"  // JS::Prefs::*
 #endif
 #include "js/TypeDecls.h"  // JS::MutableHandle (fwd)
@@ -133,6 +134,9 @@ class JS_PUBLIC_API PrefableCompileOptions {
         explicitResourceManagement_(
             JS::Prefs::experimental_explicit_resource_management()),
 #endif
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+        sourcePhaseImports_(JS::Prefs::experimental_source_phase_imports()),
+#endif
         throwOnAsmJSValidationFailure_(false) {
   }
 
@@ -142,6 +146,14 @@ class JS_PUBLIC_API PrefableCompileOptions {
   }
   PrefableCompileOptions& setExplicitResourceManagement(bool enabled) {
     explicitResourceManagement_ = enabled;
+    return *this;
+  }
+#endif
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  bool sourcePhaseImports() const { return sourcePhaseImports_; }
+  PrefableCompileOptions& setSourcePhaseImports(bool enabled) {
+    sourcePhaseImports_ = enabled;
     return *this;
   }
 #endif
@@ -185,6 +197,9 @@ class JS_PUBLIC_API PrefableCompileOptions {
 #  ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     PrintFields_(explicitResourceManagement_);
 #  endif
+#  ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    PrintFields_(sourcePhaseImports_);
+#  endif
 #  undef PrintFields_
 
     switch (asmJSOption_) {
@@ -217,6 +232,12 @@ class JS_PUBLIC_API PrefableCompileOptions {
   // The context has specified that explicit resource management syntax
   // should be parsed.
   bool explicitResourceManagement_ : 1;
+#endif
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  // The context has specified that source phase imports syntax
+  // should be parsed.
+  bool sourcePhaseImports_ : 1;
 #endif
 
   // ==== asm.js options. ====
@@ -403,6 +424,11 @@ class JS_PUBLIC_API TransitiveCompileOptions {
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   bool explicitResourceManagement() const {
     return prefableOptions_.explicitResourceManagement();
+  }
+#endif
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  bool sourcePhaseImports() const {
+    return prefableOptions_.sourcePhaseImports();
   }
 #endif
   bool throwOnAsmJSValidationFailure() const {

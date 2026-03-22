@@ -20,9 +20,9 @@ pub struct IPCChannel {
 }
 
 impl IPCChannel {
-    /// Create a new IPCChannel, this includes a listening endpoint that
-    /// will use the current process PID as part of its address and two
-    /// connected endpoints.
+    /// Create a new IPC channel for use between the browser main process and
+    /// the crash helper. This includes a listener that will use the current
+    /// process PID as part of its address and two connected endpoints.
     pub fn new() -> Result<IPCChannel, IPCChannelError> {
         let pid = process::id() as Pid;
         let mut listener = IPCListener::new(server_addr(pid))?;
@@ -37,9 +37,8 @@ impl IPCChannel {
         })
     }
 
-    /// Deconstruct the IPC channel, returning the listening endpoint,
-    /// the connected server-side endpoint and the connected client-side
-    /// endpoint.
+    /// Deconstruct the IPC channel, returning the listener, the connected
+    /// server-side endpoint and the connected client-side endpoint.
     pub fn deconstruct(self) -> (IPCListener, IPCConnector, IPCConnector) {
         (self.listener, self.server_endpoint, self.client_endpoint)
     }
@@ -96,9 +95,8 @@ impl IPCClientChannel {
         ))
     }
 
-    /// Deconstruct the IPC channel, returning the listening endpoint,
-    /// the connected server-side endpoint and the connected client-side
-    /// endpoint.
+    /// Deconstruct the IPC channel, returning the connected server-side
+    /// endpoint and the connected client-side endpoint.
     pub fn deconstruct(self) -> (IPCConnector, IPCConnector) {
         (self.server_endpoint, self.client_endpoint)
     }

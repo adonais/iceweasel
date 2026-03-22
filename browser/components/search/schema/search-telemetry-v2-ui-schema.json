@@ -25,6 +25,7 @@
     "isSPA",
     "defaultPageQueryParam",
     "pageTypeParam",
-    "subframes"
+    "subframes",
+    "impressionAttributes"
   ]
 }

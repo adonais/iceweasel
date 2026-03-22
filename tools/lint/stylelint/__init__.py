@@ -114,7 +114,12 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
 
         log.debug("Stylelint command: {}".format(" ".join(cmd_args)))
 
-        result = run(cmd_args, config, fix)
+        # Set up environment for stylelint subprocess
+        env = os.environ.copy()
+        if lintargs.get("skip_rollouts", False):
+            env["STYLELINT_SKIP_ROLLOUTS"] = "1"
+
+        result = run(cmd_args, config, fix, env)
         if result == 1:
             return result
 
@@ -148,7 +153,7 @@ def lint(paths, config, binary=None, fix=None, rules=[], setup=None, **lintargs)
     return result
 
 
-def run(cmd_args, config, fix):
+def run(cmd_args, config, fix, env):
     shell = False
     if prettier_utils.is_windows():
         # The stylelint binary needs to be run from a shell with msys
@@ -157,7 +162,7 @@ def run(cmd_args, config, fix):
 
     orig = signal.signal(signal.SIGINT, signal.SIG_IGN)
     proc = subprocess.Popen(
-        cmd_args, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        cmd_args, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
     )
     signal.signal(signal.SIGINT, orig)
 

@@ -14,8 +14,8 @@
  * templated over.
  */
 
-#ifndef mozilla_RootedRefPtr_h__
-#define mozilla_RootedRefPtr_h__
+#ifndef mozilla_RootedRefPtr_h_
+#define mozilla_RootedRefPtr_h_
 
 #include "js/GCPolicyAPI.h"
 #include "js/TypeDecls.h"
@@ -45,4 +45,4 @@ struct WrappedPtrOperations<RefPtr<T>, Wrapper> {
 };
 }  // namespace js
 
-#endif /* mozilla_RootedRefPtr_h__ */
+#endif /* mozilla_RootedRefPtr_h_ */

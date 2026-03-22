@@ -5,7 +5,11 @@
 "use strict";
 
 /* import-globals-from ../../mochitest/attributes.js */
-loadScripts({ name: "attributes.js", dir: MOCHITESTS_DIR });
+/* import-globals-from ../../mochitest/states.js */
+loadScripts(
+  { name: "attributes.js", dir: MOCHITESTS_DIR },
+  { name: "states.js", dir: MOCHITESTS_DIR }
+);
 /* import-globals-from ../../mochitest/text.js */
 
 /**
@@ -835,4 +839,34 @@ ij
       content.document.designMode = "on";
     },
   }
+);
+
+/**
+ * Test setting the caret in a document which isn't focused.
+ */
+addAccessibleTask(
+  `<div id="editable" contenteditable>abc</div>`,
+  async function testCaretUnfocusedDoc(browser, docAcc, topDocAcc) {
+    testStates(topDocAcc, STATE_FOCUSED);
+    const editable = findAccessibleChildByID(docAcc, "editable", [
+      nsIAccessibleText,
+    ]);
+    info("Moving caret to b");
+    await contentSpawnMutation(
+      browser,
+      { unexpected: [[EVENT_TEXT_CARET_MOVED, editable]] },
+      function () {
+        const sel = content.getSelection();
+        const editableLeaf =
+          content.document.getElementById("editable").firstChild;
+        sel.setBaseAndExtent(editableLeaf, 1, editableLeaf, 1);
+      }
+    );
+    info("Focusing editable");
+    let focused = waitForEvent(EVENT_FOCUS, editable);
+    editable.takeFocus();
+    await focused;
+    is(editable.caretOffset, 1, "editable caretOffset is 1");
+  },
+  { chrome: false, topLevel: false, iframe: true, remoteIframe: true }
 );

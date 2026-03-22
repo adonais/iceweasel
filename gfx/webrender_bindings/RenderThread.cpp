@@ -7,12 +7,14 @@
 #include "base/task.h"
 #include "GeckoProfiler.h"
 #include "gfxPlatform.h"
+#include "GfxInfoBase.h"
 #include "GLContext.h"
 #include "RenderThread.h"
 #include "nsThread.h"
 #include "nsThreadUtils.h"
 #include "transport/runnable_utils.h"
 #include "mozilla/BackgroundHangMonitor.h"
+#include "mozilla/Components.h"
 #include "mozilla/layers/AsyncImagePipelineManager.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUParent.h"
@@ -1278,6 +1280,23 @@ void RenderThread::InitDeviceTask() {
   // Query the shared GL context to force the
   // lazy initialization to happen now.
   SingletonGL();
+
+#ifdef MOZ_WIDGET_ANDROID
+  // On Android we must report the GL context's strings to gfxInfo. This allows
+  // gfxInfo to avoid creating a GL context during startup.
+  if (mSingletonGL) {
+    gfx::GfxInfoGLStrings strings(mSingletonGL->VendorString(),
+                                  mSingletonGL->RendererString(),
+                                  mSingletonGL->VersionString(),
+                                  mSingletonGL->ExtensionStrings().Clone());
+    if (XRE_IsGPUProcess()) {
+      gfx::GPUParent::GetSingleton()->ReportGLStrings(std::move(strings));
+    } else if (nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service()) {
+      static_cast<widget::GfxInfoBase*>(gfxInfo.get())
+          ->ReportGLStrings(std::move(strings));
+    }
+  }
+#endif
 
   const auto maxDurationMs = 3 * 1000;
   const auto end = TimeStamp::Now();

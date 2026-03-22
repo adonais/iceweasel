@@ -9,8 +9,8 @@ origin:
   description: The OpenTelemetry C++ Client
   url: https://opentelemetry.io/
 
-  release: v1.23.0 (2025-09-26T02:04:33+02:00).
-  revision: v1.23.0
+  release: v1.24.0 (2025-11-21T11:26:29+01:00).
+  revision: v1.24.0
 
   license: Apache-2.0
   license-file: LICENSE
@@ -70,7 +70,6 @@ vendoring:
    - third_party/
 
   patches:
-   - patches/fix-ambiguous-holds_alternative.patch # Maybe we should upstream this
    - patches/remove-non-vendored-context_value-variant.patch
    - patches/remove-log-related-entries-from-otlp-exporter.patch
 

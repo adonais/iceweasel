@@ -62,8 +62,6 @@ skip-if = [
 
 ["test_getAdaptedProfiles_locales.js"]
 
-["test_getCategoriesFromFieldNames.js"]
-
 ["test_getCreditCardLogo.js"]
 
 ["test_getInfo.js"]

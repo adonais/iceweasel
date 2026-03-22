@@ -17,14 +17,20 @@ internal fun relayEligibilityReducer(
         is RelayEligibilityAction.AccountLoginStatusChanged ->
             relayState.copy(
                 eligibilityState = if (action.isLoggedIn) Ineligible.NoRelay else Ineligible.FirefoxAccountNotLoggedIn,
-                lastEntitlementCheckMs = NO_ENTITLEMENT_CHECK_YET_MS,
+                // If the user logs out, reset the last entitlement check for the previous account.
+                // Otherwise, keep it to preserve the entitlement check cooldown.
+                lastEntitlementCheckMs = if (!action.isLoggedIn) {
+                    NO_ENTITLEMENT_CHECK_YET_MS
+                } else {
+                    relayState.lastEntitlementCheckMs
+                },
             )
 
         is RelayEligibilityAction.RelayStatusResult -> {
             val eligibility = when {
                 !action.fetchSucceeded -> Ineligible.NoRelay
                 action.relayPlanTier == RelayPlanTier.NONE -> Ineligible.NoRelay
-                action.relayPlanTier == RelayPlanTier.FREE -> Eligible.Free(action.remaining)
+                action.relayPlanTier == RelayPlanTier.FREE -> Eligible.Free(action.totalMasksUsed)
                 action.relayPlanTier == RelayPlanTier.PREMIUM -> Eligible.Premium
                 else -> return relayState
             }
@@ -33,6 +39,9 @@ internal fun relayEligibilityReducer(
                 eligibilityState = eligibility,
                 lastEntitlementCheckMs = action.lastCheckedMs,
             )
+        }
+        is RelayEligibilityAction.UpdateLastUsed -> {
+            relayState.copy(lastUsed = action.emailMask)
         }
 
         is RelayEligibilityAction.AccountProfileUpdated,

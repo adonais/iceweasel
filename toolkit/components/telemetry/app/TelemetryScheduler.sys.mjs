@@ -22,7 +22,7 @@ const MIN_SUBSESSION_LENGTH_MS =
 const LOGGER_NAME = "Toolkit.Telemetry";
 
 // Seconds of idle time before pinging.
-// On idle-daily a gather-telemetry notification is fired, during it probes can
+// On idle-daily a notification is fired, during it probes can
 // start asynchronous tasks to gather data.
 const IDLE_TIMEOUT_SECONDS = Services.prefs.getIntPref(
   "toolkit.telemetry.idleTimeout",

@@ -399,19 +399,24 @@ export class ExperimentManager {
       return;
     }
 
-    // Unenrollment due to studies becoming disabled is handled in
-    // `_handleStudiesOptOut`.
-    if (result.status === lazy.MatchStatus.DISABLED) {
-      return;
-    }
-
-    if (recipe.isFirefoxLabsOptIn) {
+    if (
+      recipe.isFirefoxLabsOptIn &&
+      result.status !== lazy.MatchStatus.DISABLED
+    ) {
       // We do not enroll directly into Firefox Labs opt-ins.
       this.optInRecipes.push(recipe);
       return;
     }
 
     switch (result.status) {
+      case lazy.MatchStatus.DISABLED:
+        lazy.NimbusTelemetry.recordEnrollmentStatus({
+          slug: recipe.slug,
+          status: EnrollmentStatus.NOT_ENROLLED,
+          reason: EnrollmentStatusReason.OPT_OUT,
+        });
+        break;
+
       case lazy.MatchStatus.ENROLLMENT_PAUSED:
         lazy.NimbusTelemetry.recordEnrollmentStatus({
           slug: recipe.slug,
@@ -874,10 +879,14 @@ export class ExperimentManager {
       lazy.NimbusTelemetry;
 
     if (result.ok) {
-      // Unenrollment due to studies becoming disabled is handled in
-      // `_handleStudiesOptOut`. Firefox Labs can only be disabled by policy and
-      // thus its enabled state cannot change after Nimbus is initialized.
+      // Unenrollment due to studies or rollouts becoming disabled are handled in
+      // `_handleStudiesOptOut` or `_handleRolloutsOptOut` respectively.
       if (result.status === lazy.MatchStatus.DISABLED) {
+        lazy.NimbusTelemetry.recordEnrollmentStatus({
+          slug: recipe.slug,
+          status: EnrollmentStatus.NOT_ENROLLED,
+          reason: EnrollmentStatusReason.OPT_OUT,
+        });
         return false;
       }
 

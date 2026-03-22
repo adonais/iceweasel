@@ -107,6 +107,7 @@ class SourceTreeItemContents extends Component {
     if (item.type == "source") {
       const { source, sourceActor } = item;
       return React.createElement(SourceIcon, {
+        className: this.props.isSourceOverridden ? " has-network-override" : "",
         location: createLocation({
           source,
           sourceActor,
@@ -117,10 +118,7 @@ class SourceTreeItemContents extends Component {
           if (icon === "extension") {
             return sourceTypes[source.displayURL.fileExtension] || "javascript";
           }
-          return (
-            icon +
-            (this.props.isSourceOverridden ? " has-network-override" : "")
-          );
+          return icon;
         },
       });
     }

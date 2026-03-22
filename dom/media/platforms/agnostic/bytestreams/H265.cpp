@@ -194,15 +194,14 @@ bool HVCCConfig::HasSPS() const {
 
 nsCString HVCCConfig::ToString() const {
   return nsFmtCString(
-      FMT_STRING(
-          "HVCCConfig - version={}, profile_space={}, tier={}, "
-          "profile_idc={}, profile_compatibility_flags={:#08x}, "
-          "constraint_indicator_flags={:#016x}, level_idc={}, "
-          "min_spatial_segmentation_idc={}, parallelismType={}, "
-          "chroma_format_idc={}, bit_depth_luma_minus8={}, "
-          "bit_depth_chroma_minus8={}, avgFrameRate={}, constantFrameRate={}, "
-          "numTemporalLayers={}, temporalIdNested={}, lengthSizeMinusOne={}, "
-          "nalus={}, buffer={}(bytes), NaluSize={}, NumSPS={}"),
+      "HVCCConfig - version={}, profile_space={}, tier={}, "
+      "profile_idc={}, profile_compatibility_flags={:#08x}, "
+      "constraint_indicator_flags={:#016x}, level_idc={}, "
+      "min_spatial_segmentation_idc={}, parallelismType={}, "
+      "chroma_format_idc={}, bit_depth_luma_minus8={}, "
+      "bit_depth_chroma_minus8={}, avgFrameRate={}, constantFrameRate={}, "
+      "numTemporalLayers={}, temporalIdNested={}, lengthSizeMinusOne={}, "
+      "nalus={}, buffer={}(bytes), NaluSize={}, NumSPS={}",
       configurationVersion, general_profile_space, general_tier_flag,
       general_profile_idc, general_profile_compatibility_flags,
       general_constraint_indicator_flags, general_level_idc,

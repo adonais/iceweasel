@@ -8,9 +8,10 @@
 #define mozilla_dom_URLPattern_h
 
 #include "mozilla/dom/URLPatternBinding.h"
-#include "mozilla/net/URLPatternGlue.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
+
+using UrlPatternGlue = void*;
 
 namespace mozilla::dom {
 
@@ -19,7 +20,7 @@ class URLPattern final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(URLPattern)
 
-  explicit URLPattern(nsISupports* aParent, UrlpPattern aPattern,
+  explicit URLPattern(nsISupports* aParent, UrlPatternGlue aPattern,
                       bool aIgnoreCase)
       : mParent(aParent),
         mPattern(std::move(aPattern)),
@@ -59,7 +60,9 @@ class URLPattern final : public nsISupports, public nsWrapperCache {
  private:
   ~URLPattern();
   nsCOMPtr<nsISupports> mParent;
-  UrlpPattern mPattern;
+
+  // dom holds onto opaque pointer to urlpattern::UrlPattern (lib.rs)
+  UrlPatternGlue mPattern;
   bool mIgnoreCase;
 };
 

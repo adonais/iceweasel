@@ -57,7 +57,7 @@ describe("ContentSection", () => {
     assert.ok(wrapper.exists());
   });
 
-  it("should look for a data-eventSource attribute and dispatch an event for INPUT", () => {
+  it("should look for a data-event-source attribute and dispatch an event for INPUT", () => {
     wrapper.instance().onPreferenceSelect({
       target: {
         nodeName: "INPUT",
@@ -77,18 +77,18 @@ describe("ContentSection", () => {
     assert.calledWith(DEFAULT_PROPS.setPref, "foo", true);
   });
 
-  it("should have data-eventSource attributes on relevant pref changing inputs", () => {
+  it("should have data-event-source attributes on relevant pref changing inputs", () => {
     wrapper = mount(<ContentSection {...DEFAULT_PROPS} />);
     assert.equal(
-      wrapper.find("#weather-toggle").prop("data-eventSource"),
+      wrapper.find("#weather-toggle").prop("data-event-source"),
       "WEATHER"
     );
     assert.equal(
-      wrapper.find("#shortcuts-toggle").prop("data-eventSource"),
+      wrapper.find("#shortcuts-toggle").prop("data-event-source"),
       "TOP_SITES"
     );
     assert.equal(
-      wrapper.find("#pocket-toggle").prop("data-eventSource"),
+      wrapper.find("#pocket-toggle").prop("data-event-source"),
       "TOP_STORIES"
     );
   });
@@ -217,5 +217,82 @@ describe("ContentSection", () => {
       ),
     });
     assert.isFalse(wrapper.find("#timer-widget-section").exists());
+  });
+
+  it("should dispatch WIDGETS_ENABLED with widget_size=medium when widgetsMayBeMaximized is false", () => {
+    const dispatch = sinon.spy();
+    wrapper = mount(
+      <ContentSection
+        {...DEFAULT_PROPS}
+        dispatch={dispatch}
+        enabledWidgets={{
+          listsEnabled: false,
+          timerEnabled: false,
+          widgetsMaximized: false,
+          widgetsMayBeMaximized: false,
+        }}
+      />
+    );
+
+    wrapper.instance().onPreferenceSelect({
+      target: {
+        nodeName: "INPUT",
+        checked: true,
+        dataset: {
+          preference: "widgets.lists.enabled",
+          eventSource: "WIDGET_LISTS",
+        },
+      },
+    });
+
+    const widgetsEnabledCall = dispatch
+      .getCalls()
+      .find(call => call.args[0].type === "WIDGETS_ENABLED");
+    assert.ok(widgetsEnabledCall, "Expected WIDGETS_ENABLED to be dispatched");
+    assert.equal(
+      widgetsEnabledCall.args[0].data.widget_size,
+      "medium",
+      "widget_size should be medium when widgets.system.maximized is false"
+    );
+  });
+
+  it("should dispatch WIDGETS_ENABLED with widget_size=mini for Weather widget", () => {
+    const dispatch = sinon.spy();
+    wrapper = mount(
+      <ContentSection
+        {...DEFAULT_PROPS}
+        dispatch={dispatch}
+        enabledWidgets={{
+          widgetsMaximized: false,
+          widgetsMayBeMaximized: false,
+        }}
+      />
+    );
+
+    wrapper.instance().onPreferenceSelect({
+      target: {
+        nodeName: "INPUT",
+        checked: true,
+        dataset: {
+          preference: "showWeather",
+          eventSource: "WEATHER",
+        },
+      },
+    });
+
+    const widgetsEnabledCall = dispatch
+      .getCalls()
+      .find(call => call.args[0].type === "WIDGETS_ENABLED");
+    assert.ok(widgetsEnabledCall, "Expected WIDGETS_ENABLED to be dispatched");
+    assert.equal(
+      widgetsEnabledCall.args[0].data.widget_name,
+      "weather",
+      "widget_name should be weather"
+    );
+    assert.equal(
+      widgetsEnabledCall.args[0].data.widget_size,
+      "mini",
+      "widget_size should always be mini for Weather widget"
+    );
   });
 });

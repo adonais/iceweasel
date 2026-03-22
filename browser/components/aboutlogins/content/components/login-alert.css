@@ -21,13 +21,13 @@
 }
 
 :host([variant="error"]) {
-  background-color: #a4000f;
-  color: white;
+  background-color: var(--background-color-critical);
+  color: var(--text-color);
 }
 
 :host([variant="warning"]) {
-  background: #d7b600;
-  color: black;
+  background: var(--background-color-warning);
+  color: var(--text-color);
 }
 
 :host(login-alert) img {

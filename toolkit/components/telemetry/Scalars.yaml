@@ -3017,10 +3017,11 @@ dom.contentprocess:
       - 1817104
       - 1866197
       - 1928259
+      - 2010454
     description: >
       The number of times a process crashed early but we could verify it was not
       because of buildID mismatch between the parent and the content processes.
-    expires: "150"
+    expires: "170"
     kind: uint
     notification_emails:
       - alissy@mozilla.com
@@ -3688,26 +3689,6 @@ telemetry:
       - 'fennec'
     record_in_processes:
       - 'main'
-
-  event_counts:
-    bug_numbers:
-      - 1440673
-    description: >
-      The counts of events recorded in the process, category, method, and
-      object of the key, even if event recording for the category was not
-      enabled.
-    expires: never
-    kind: uint
-    keyed: true
-    notification_emails:
-      - telemetry-client-dev@mozilla.com
-      - chutten@mozilla.com
-    release_channel_collection: opt-out
-    products:
-      - 'firefox'
-      - 'fennec'
-    record_in_processes:
-      - 'all'
 
   data_upload_optin:
     bug_numbers:
@@ -5285,10 +5266,11 @@ startup:
       - 1916867
       - 1958171
       - 1994608
+      - 2010455
     description: >
       The version of the profiles.ini database loaded during startup. A value
       of "0" is used to indicate that no file was present during startup.
-    expires: "150"
+    expires: "156"
     keyed: false
     kind: string
     notification_emails:
@@ -5310,10 +5292,11 @@ startup:
       - 1916867
       - 1958171
       - 1994608
+      - 2010455
     description: >
       This records the number of known profiles after startup completes. This
       includes any profiles that were created during startup.
-    expires: "150"
+    expires: "156"
     keyed: false
     kind: uint
     notification_emails:
@@ -7199,6 +7182,17 @@ telemetry.test:
     expires: never
     kind: boolean
     keyed: true
+    notification_emails: [glean-team@mozilla.com]
+    products: ["firefox", "thunderbird"]
+    record_in_processes: ["all"]
+    release_channel_collection: opt-out
+
+  mirror_for_unordered_quantity:
+    bug_numbers: [2012590]
+    description: >
+      Test only. This is a mirror probe for a Glean quantity metric.
+    expires: never
+    kind: uint
     notification_emails: [glean-team@mozilla.com]
     products: ["firefox", "thunderbird"]
     record_in_processes: ["all"]

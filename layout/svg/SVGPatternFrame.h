@@ -7,10 +7,11 @@
 #ifndef LAYOUT_SVG_SVGPATTERNFRAME_H_
 #define LAYOUT_SVG_SVGPATTERNFRAME_H_
 
+#include <memory>
+
 #include "gfxMatrix.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/SVGPaintServerFrame.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/2D.h"
 
 class nsIFrame;
@@ -126,7 +127,7 @@ class SVGPatternFrame final : public SVGPaintServerFrame {
   // referencing our pattern.  This must be temporary because different
   // referencing frames will all reference this one frame
   SVGGeometryFrame* mSource;
-  UniquePtr<gfxMatrix> mCTM;
+  std::unique_ptr<gfxMatrix> mCTM;
 
  protected:
   // This flag is used to detect loops in xlink:href processing

@@ -23,7 +23,7 @@ import kotlin.coroutines.CoroutineContext
  * @param config Lambda expression that returns [TopSitesConfig] which species the number of top
  * sites to return and whether or not to include frequently visited sites.
  */
-internal class DefaultTopSitesPresenter(
+class DefaultTopSitesPresenter(
     override val view: TopSitesView,
     override val storage: TopSitesStorage,
     private val config: () -> TopSitesConfig,

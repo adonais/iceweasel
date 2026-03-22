@@ -23,14 +23,13 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "jsexn.h"
 #include "jsfriendapi.h"
-#include "jsmath.h"
 #include "jstypes.h"
 
 #include "builtin/AtomicsObject.h"
 #include "builtin/Eval.h"
 #include "builtin/JSON.h"
+#include "builtin/Math.h"
 #include "builtin/Promise.h"
 #include "builtin/Symbol.h"
 #include "frontend/FrontendContext.h"  // AutoReportFrontendContext
@@ -4122,12 +4121,12 @@ JS::AutoSaveExceptionState::~AutoSaveExceptionState() {
   }
 }
 
-JS_PUBLIC_API JSErrorReport* JS_ErrorFromException(JSContext* cx,
-                                                   HandleObject obj) {
+JS_PUBLIC_API bool JS_ErrorFromException(JSContext* cx, HandleObject obj,
+                                         JS::BorrowedErrorReport& errorReport) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
   cx->check(obj);
-  return ErrorFromException(cx, obj);
+  return ErrorFromException(cx, obj, errorReport);
 }
 
 void JSErrorReport::initBorrowedLinebuf(const char16_t* linebufArg,
@@ -4986,16 +4985,6 @@ JS_PUBLIC_API void JS::SetOutOfMemoryCallback(JSContext* cx,
                                               void* data) {
   cx->runtime()->oomCallback = cb;
   cx->runtime()->oomCallbackData = data;
-}
-
-JS_PUBLIC_API void JS::SetShadowRealmInitializeGlobalCallback(
-    JSContext* cx, JS::GlobalInitializeCallback callback) {
-  cx->runtime()->shadowRealmInitializeGlobalCallback = callback;
-}
-
-JS_PUBLIC_API void JS::SetShadowRealmGlobalCreationCallback(
-    JSContext* cx, JS::GlobalCreationCallback callback) {
-  cx->runtime()->shadowRealmGlobalCreationCallback = callback;
 }
 
 JS_PUBLIC_API bool JS::SetLoggingInterface(LoggingInterface& iface) {

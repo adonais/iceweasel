@@ -86,6 +86,7 @@ MACH_COMMANDS = {
         "python/mozbuild/mozbuild/compilation/codecomplete.py"
     ),
     "configure": MachCommandReference("python/mozbuild/mozbuild/build_commands.py"),
+    "coverage-report": MachCommandReference("tools/code-coverage/mach_commands.py"),
     "cppunittest": MachCommandReference("testing/mach_commands.py"),
     "crash-ping-metrics": MachCommandReference(
         "toolkit/crashreporter/crashping/glean_metrics.py"
@@ -102,6 +103,8 @@ MACH_COMMANDS = {
     "event-into-legacy": MachCommandReference(
         "toolkit/components/glean/build_scripts/mach_commands.py"
     ),
+    "eval": MachCommandReference("toolkit/components/ml/eval/mach_commands.py"),
+    "eval-tools": MachCommandReference("toolkit/components/ml/eval/mach_commands.py"),
     "fetch-condprofile": MachCommandReference("testing/condprofile/mach_commands.py"),
     "file-info": MachCommandReference(
         "python/mozbuild/mozbuild/frontend/mach_commands.py"
@@ -139,6 +142,9 @@ MACH_COMMANDS = {
     ),
     "hazards": MachCommandReference("js/src/devtools/rootAnalysis/mach_commands.py"),
     "ide": MachCommandReference("python/mozbuild/mozbuild/backend/mach_commands.py"),
+    "rust-analyzer-config": MachCommandReference(
+        "python/mozbuild/mozbuild/backend/mach_commands.py"
+    ),
     "import-pr": MachCommandReference("tools/vcs/mach_commands.py"),
     "install": MachCommandReference("python/mozbuild/mozbuild/mach_commands.py"),
     "intermittents": MachCommandReference("testing/intermittents_mach_commands.py"),
@@ -169,6 +175,7 @@ MACH_COMMANDS = {
     "newtab": MachCommandReference("browser/extensions/newtab/mach_commands.py"),
     "node": MachCommandReference("tools/mach_commands.py"),
     "npm": MachCommandReference("tools/mach_commands.py"),
+    "npx": MachCommandReference("tools/mach_commands.py"),
     "nss-uplift": MachCommandReference("security/mach_commands.py"),
     "package": MachCommandReference("python/mozbuild/mozbuild/mach_commands.py"),
     "package-multi-locale": MachCommandReference(
@@ -208,6 +215,7 @@ MACH_COMMANDS = {
     "rusttests": MachCommandReference("testing/mach_commands.py"),
     "settings": MachCommandReference("python/mach/mach/commands/settings.py"),
     "show-log": MachCommandReference("python/mozbuild/mozbuild/mach_commands.py"),
+    "source-package": MachCommandReference("python/mozbuild/mozbuild/mach_commands.py"),
     "static-analysis": MachCommandReference(
         "python/mozbuild/mozbuild/code_analysis/mach_commands.py"
     ),

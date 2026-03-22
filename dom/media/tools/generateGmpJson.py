@@ -4,12 +4,12 @@
 
 import argparse
 import hashlib
-import json
 import logging
 import re
 from urllib.parse import urlparse, urlunparse
 
 import requests
+from mozfile import json
 
 
 def fetch_url_for_cdms(cdms, urlParams):

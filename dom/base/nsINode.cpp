@@ -54,6 +54,7 @@
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Exceptions.h"
+#include "mozilla/dom/FeaturePolicyUtils.h"
 #include "mozilla/dom/HTMLButtonElement.h"
 #include "mozilla/dom/HTMLDetailsElement.h"
 #include "mozilla/dom/HTMLDialogElement.h"
@@ -118,6 +119,7 @@
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/dom/AccessibleNode.h"
+#  include "nsAccessibilityService.h"
 #endif
 
 using namespace mozilla;
@@ -132,11 +134,8 @@ static bool ShouldUseUAWidgetScope(const nsINode* aNode) {
 }
 
 void* nsINode::operator new(size_t aSize, nsNodeInfoManager* aManager) {
-  if (StaticPrefs::dom_arena_allocator_enabled_AtStartup()) {
-    MOZ_ASSERT(aManager, "nsNodeInfoManager needs to be initialized");
-    return aManager->Allocate(aSize);
-  }
-  return ::operator new(aSize);
+  MOZ_ASSERT(aManager, "nsNodeInfoManager needs to be initialized");
+  return aManager->Allocate(aSize);
 }
 void nsINode::operator delete(void* aPtr) { free_impl(aPtr); }
 
@@ -310,7 +309,25 @@ nsIPolicyContainer* nsINode::GetPolicyContainer() const {
   return OwnerDoc()->GetPolicyContainer();
 }
 
-nsINode::nsSlots* nsINode::CreateSlots() { return new nsSlots(); }
+void* nsINode::AllocateSlots(size_t aSize) {
+  DOMArena* arena = nullptr;
+  if (HasFlag(NODE_KEEPS_DOMARENA)) {
+    arena = nsContentUtils::GetEntryFromDOMArenaTable(this);
+  }
+  if (!arena) {
+    arena = NodeInfo()->NodeInfoManager()->GetArenaAllocator();
+  }
+
+  if (arena) {
+    return arena->Allocate(aSize);
+  }
+  return malloc(aSize);
+}
+
+nsINode::nsSlots* nsINode::CreateSlots() {
+  void* mem = AllocateSlots(sizeof(nsSlots));
+  return new (mem) nsSlots();
+}
 
 static const nsINode* GetClosestCommonInclusiveAncestorForRangeInSelection(
     const nsINode* aNode) {
@@ -399,31 +416,43 @@ class IsItemInRangeComparator {
 bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
                          SelectionNodeCache* aCache) const {
   MOZ_ASSERT(aStartOffset <= aEndOffset);
-  const nsINode* n = GetClosestCommonInclusiveAncestorForRangeInSelection(this);
-  NS_ASSERTION(n || !IsMaybeSelected(),
+  const nsINode* ancestorForCache =
+      GetClosestCommonInclusiveAncestorForRangeInSelection(this);
+  NS_ASSERTION(ancestorForCache || !IsMaybeSelected(),
                "A node without a common inclusive ancestor for a range in "
                "Selection is for sure not selected.");
 
   // Collect the selection objects for potential ranges.
   AutoTArray<Selection*, 1> ancestorSelections;
-  for (; n; n = GetClosestCommonInclusiveAncestorForRangeInSelection(
-                n->GetParentNode())) {
-    const LinkedList<AbstractRange>* ranges =
-        n->GetExistingClosestCommonInclusiveAncestorRanges();
-    if (!ranges) {
-      continue;
-    }
-    for (const AbstractRange* range : *ranges) {
-      MOZ_ASSERT(range->IsInAnySelection(),
-                 "Why is this range registered with a node?");
-      // Looks like that IsInSelection() assert fails sometimes...
-      if (range->IsInAnySelection()) {
-        for (const WeakPtr<Selection>& selection : range->GetSelections()) {
-          if (selection && !ancestorSelections.Contains(selection)) {
-            ancestorSelections.AppendElement(selection);
+  if (const auto* cached =
+          aCache ? aCache->LastCommonAncestorSelections(ancestorForCache)
+                 : nullptr) {
+    ancestorSelections.AppendElements(*cached);
+  } else {
+    for (const nsINode* n = ancestorForCache; n;
+         n = GetClosestCommonInclusiveAncestorForRangeInSelection(
+             n->GetParentNode())) {
+      const LinkedList<AbstractRange>* ranges =
+          n->GetExistingClosestCommonInclusiveAncestorRanges();
+      if (!ranges) {
+        continue;
+      }
+      for (const AbstractRange* range : *ranges) {
+        MOZ_ASSERT(range->IsInAnySelection(),
+                   "Why is this range registered with a node?");
+        // Looks like that IsInSelection() assert fails sometimes...
+        if (range->IsInAnySelection()) {
+          for (const WeakPtr<Selection>& selection : range->GetSelections()) {
+            if (selection && !ancestorSelections.Contains(selection)) {
+              ancestorSelections.AppendElement(selection);
+            }
           }
         }
       }
+    }
+    if (aCache) {
+      aCache->SetLastCommonAncestorSelections(ancestorForCache,
+                                              ancestorSelections);
     }
   }
   if (aCache && aCache->MaybeCollectNodesAndCheckIfFullySelectedInAnyOf(
@@ -477,19 +506,18 @@ bool nsINode::IsSelected(const uint32_t aStartOffset, const uint32_t aEndOffset,
         // if node end > start of middle+1, result = 1
         if (middle + 1 < high &&
             (middlePlus1 = selection->GetAbstractRangeAt(middle + 1)) &&
-            ComparePoints(
-                ConstRawRangeBoundary(this, aEndOffset,
-                                      RangeBoundaryIsMutationObserved::No),
-                middlePlus1->StartRef(), &cache)
+            ComparePoints(ConstRawRangeBoundary(this, aEndOffset,
+                                                RangeBoundarySetBy::Offset),
+                          middlePlus1->StartRef(), &cache)
                     .valueOr(1) > 0) {
           result = 1;
           // if node start < end of middle - 1, result = -1
         } else if (middle >= 1 &&
                    (middleMinus1 = selection->GetAbstractRangeAt(middle - 1)) &&
-                   ComparePoints(ConstRawRangeBoundary(
-                                     this, aStartOffset,
-                                     RangeBoundaryIsMutationObserved::No),
-                                 middleMinus1->EndRef(), &cache)
+                   ComparePoints(
+                       ConstRawRangeBoundary(this, aStartOffset,
+                                             RangeBoundarySetBy::Offset),
+                       middleMinus1->EndRef(), &cache)
                            .valueOr(1) < 0) {
           result = -1;
         } else {
@@ -871,8 +899,9 @@ void nsINode::LastRelease() {
       }
     }
 
-    delete slots;
+    slots->~nsSlots();
     mSlots = nullptr;
+    free(slots);
   }
 
   // Kill properties first since that may run external code, so we want to
@@ -3549,7 +3578,8 @@ Element* nsINode::GetParentFlexElement() {
 
 Element* nsINode::GetNearestInclusiveOpenPopover() const {
   for (auto* el : InclusiveFlatTreeAncestorsOfType<Element>()) {
-    if (el->IsPopoverOpenedInMode(PopoverAttributeState::Auto)) {
+    if (el->IsPopoverOpenedInMode(PopoverAttributeState::Auto) ||
+        el->IsPopoverOpenedInMode(PopoverAttributeState::Hint)) {
       return el;
     }
   }
@@ -3559,12 +3589,14 @@ Element* nsINode::GetNearestInclusiveOpenPopover() const {
 Element* nsINode::GetNearestInclusiveTargetPopoverForInvoker() const {
   for (auto* el : InclusiveFlatTreeAncestorsOfType<Element>()) {
     if (auto* popover = el->GetEffectiveCommandForElement()) {
-      if (popover->IsPopoverOpenedInMode(PopoverAttributeState::Auto)) {
+      if (popover->IsPopoverOpenedInMode(PopoverAttributeState::Auto) ||
+          popover->IsPopoverOpenedInMode(PopoverAttributeState::Hint)) {
         return popover;
       }
     }
     if (auto* popover = el->GetEffectivePopoverTargetElement()) {
-      if (popover->IsPopoverOpenedInMode(PopoverAttributeState::Auto)) {
+      if (popover->IsPopoverOpenedInMode(PopoverAttributeState::Auto) ||
+          popover->IsPopoverOpenedInMode(PopoverAttributeState::Hint)) {
         return popover;
       }
     }
@@ -3586,7 +3618,7 @@ nsGenericHTMLElement* nsINode::GetEffectiveCommandForElement() const {
 
   if (const auto* buttonControl = HTMLButtonElement::FromNodeOrNull(this)) {
     if (auto* popover = nsGenericHTMLElement::FromNodeOrNull(
-            buttonControl->GetCommandForElement())) {
+            buttonControl->GetCommandForElementInternal())) {
       if (popover->GetPopoverAttributeState() != PopoverAttributeState::None) {
         return popover;
       }
@@ -3603,7 +3635,7 @@ nsGenericHTMLElement* nsINode::GetEffectivePopoverTargetElement() const {
     return nullptr;
   }
   if (auto* popover = nsGenericHTMLElement::FromNodeOrNull(
-          formControl->GetPopoverTargetElement())) {
+          formControl->GetPopoverTargetElementInternal())) {
     if (popover->GetPopoverAttributeState() != PopoverAttributeState::None) {
       return popover;
     }
@@ -3617,8 +3649,18 @@ Element* nsINode::GetTopmostClickedPopover() const {
   if (!clickedPopover) {
     return invokedPopover;
   }
+  auto hintPopoverList =
+      clickedPopover->OwnerDoc()->PopoverListOf(PopoverAttributeState::Hint);
+
+  for (Element* el : Reversed(hintPopoverList)) {
+    if (el == clickedPopover || el == invokedPopover) {
+      return el;
+    }
+  }
+
   auto autoPopoverList =
       clickedPopover->OwnerDoc()->PopoverListOf(PopoverAttributeState::Auto);
+
   for (Element* el : Reversed(autoPopoverList)) {
     if (el == clickedPopover || el == invokedPopover) {
       return el;
@@ -3898,17 +3940,15 @@ already_AddRefed<nsINode> nsINode::CloneAndAdopt(
     // node isn't allocated by the NodeInfoManager of this document,
     // so we need to do this SetArenaAllocator logic to bypass
     // the !HasChildren() check in NodeInfoManager::Allocate.
-    if (mozilla::StaticPrefs::dom_arena_allocator_enabled_AtStartup()) {
-      if (!newDoc->NodeInfoManager()->HasAllocated()) {
-        if (DocGroup* docGroup = newDoc->GetDocGroup()) {
-          newDoc->NodeInfoManager()->SetArenaAllocator(
-              docGroup->ArenaAllocator());
-        }
+    if (!newDoc->NodeInfoManager()->HasAllocated()) {
+      if (DocGroup* docGroup = newDoc->GetDocGroup()) {
+        newDoc->NodeInfoManager()->SetArenaAllocator(
+            docGroup->ArenaAllocator());
       }
+    }
 
-      if (domArenaToStore && newDoc->GetDocGroup() != oldDoc->GetDocGroup()) {
-        nsContentUtils::AddEntryToDOMArenaTable(aNode, domArenaToStore);
-      }
+    if (domArenaToStore && newDoc->GetDocGroup() != oldDoc->GetDocGroup()) {
+      nsContentUtils::AddEntryToDOMArenaTable(aNode, domArenaToStore);
     }
   }
 
@@ -4264,6 +4304,18 @@ void nsINode::AncestorRevealingAlgorithm(ErrorResult& aRv) {
       }
     }
   }
+}
+
+void nsINode::AriaNotify(const nsAString& aAnnouncement,
+                         const AriaNotificationOptions& aOptions) {
+  if (!FeaturePolicyUtils::IsFeatureAllowed(OwnerDoc(), u"aria-notify"_ns)) {
+    return;
+  }
+#ifdef ACCESSIBILITY
+  if (nsAccessibilityService* accService = GetAccService()) {
+    accService->AriaNotify(this, aAnnouncement, aOptions);
+  }
+#endif
 }
 
 NS_IMPL_ISUPPORTS(nsNodeWeakReference, nsIWeakReference)

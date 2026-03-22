@@ -253,6 +253,10 @@ WorkerEventTarget::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   return mWorkerPrivate->UnregisterShutdownTask(aTask);
 }
 
+nsIEventTarget::FeatureFlags WorkerEventTarget::GetFeatures() {
+  return SUPPORTS_SHUTDOWN_TASK_DISPATCH | SUPPORTS_SHUTDOWN_TASKS;
+}
+
 NS_IMETHODIMP_(bool)
 WorkerEventTarget::IsOnCurrentThreadInfallible() {
   MutexAutoLock lock(mMutex);

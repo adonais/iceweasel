@@ -9,22 +9,26 @@
 
 """
 Problem:
+
     ./mach vendor needs to be able to add or remove files from moz.build files automatically to
     be able to effectively update a library automatically and send useful try runs in.
 
     So far, it has been difficult to do that.
 
-    Why:
-        - Some files need to go into UNIFIED_SOURCES vs SOURCES
-        - Some files are os-specific, and need to go into per-OS conditionals
-        - Some files are both UNIFIED_SOURCES/SOURCES sensitive and OS-specific.
+Why:
+
+    - Some files need to go into UNIFIED_SOURCES vs SOURCES
+    - Some files are os-specific, and need to go into per-OS conditionals
+    - Some files are both UNIFIED_SOURCES/SOURCES sensitive and OS-specific.
 
 Proposal:
+
     Design an algorithm that maps a third party library file to a suspected moz.build location.
     Run the algorithm on all files specified in all third party libraries' moz.build files.
     See if the proposed place in the moz.build file matches the actual place.
 
-Initial Algorithm
+Initial Algorithm:
+
     Given a file, which includes the filename and the path from gecko root, we want to find the
     correct moz.build file and location within that file.
     Take the path of the file, and iterate up the directory tree, looking for moz.build files as
@@ -39,23 +43,24 @@ Initial Algorithm
     the block containing the longest prefix. (We call this 'guessing'.)
 
 Result of the proposal:
+
     The initial implementation works on 1675 of 1977 elligible files.
     The files it does not work on include:
+
         - general failures. Such as when we find that avutil.cpp wants to be next to adler32.cpp
           but avutil.cpp is in SOURCES and adler32.cpp is in UNIFIED_SOURCES. (And many similar
           cases.)
         - per-cpu-feature files, where only a single file is added under a conditional
         - When guessing, because of a len(...) > longest_so_far comparison, we would prefer the
-          first block we found.
-          - Changing this to prefer UNIFIED_SOURCES in the event of a tie
-            yielded 17 additional correct assignments (about a 1% improvement)
+          first block we found. Changing this to prefer UNIFIED_SOURCES in the event of a tie
+          yielded 17 additional correct assignments (about a 1% improvement)
         - As a result of the change immediately above, when guessing, because given equal
           prefixes, we would prefer a UNIFIED_SOURCES block over other blocks, even if the other
-          blocks are longer
-          - Changing this (again) to prefer the block containing more files yielded 49 additional
-            correct assignments (about a 2.5% improvement)
+          blocks are longer. Changing this (again) to prefer the block containing more files yielded
+          49 additional correct assignments (about a 2.5% improvement)
 
     The files that are ineligible for consideration are:
+
         - Those in libwebrtc
         - Those specified in source assignments composed of generators (e.g. [f for f in '%.c'])
         - Those specified in source assignments to subscripted variables
@@ -166,8 +171,8 @@ normalized-filename
 
 statistic
     Using some hacky stuff, we report statistics about how many times we hit certain branches of
-    the code.
-    e.g.
+    the code, e.g.:
+
       - "How many times did we refine a guess based on prefix length"
       - "How many times did we refine a guess based on the number of files in the block"
       - "What is the histogram of guess candidates"

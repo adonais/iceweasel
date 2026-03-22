@@ -28,6 +28,7 @@ export class _LinkMenu extends React.PureComponent {
       isPrivateBrowsingEnabled,
       siteInfo,
       platform,
+      privacyInfoUrl,
       dispatch,
       options,
       shouldSendImpressionStats,
@@ -48,7 +49,8 @@ export class _LinkMenu extends React.PureComponent {
           source,
           isPrivateBrowsingEnabled,
           siteInfo,
-          platform
+          platform,
+          privacyInfoUrl
         )
       )
       .map(option => {
@@ -152,5 +154,6 @@ export class _LinkMenu extends React.PureComponent {
 const getState = state => ({
   isPrivateBrowsingEnabled: state.Prefs.values.isPrivateBrowsingEnabled,
   platform: state.Prefs.values.platform,
+  privacyInfoUrl: state.Prefs.values["privacyInfo.url"],
 });
 export const LinkMenu = connect(getState)(_LinkMenu);

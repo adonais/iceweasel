@@ -35,6 +35,10 @@ export let gHasSts = gIsCertError && getCSSClass() === "badStsCert";
 export let gNoConnectivity =
   gErrorCode == "dnsNotFound" && !RPMHasConnectivity();
 export let gOffline = gErrorCode === "netOffline" || gNoConnectivity;
+export const VPN_ACTIVE = RPMGetBoolPref(
+  "browser.ipProtection.userEnabled",
+  false
+);
 
 export function isCaptive() {
   return searchParams.get("captive") == "true";

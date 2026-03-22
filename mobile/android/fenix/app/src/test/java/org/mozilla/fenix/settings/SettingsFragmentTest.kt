@@ -14,6 +14,10 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.fetch.Client
 import mozilla.components.service.fxa.manager.FxaAccountManager
+import mozilla.components.service.fxrelay.eligibility.Eligible
+import mozilla.components.service.fxrelay.eligibility.Ineligible
+import mozilla.components.service.fxrelay.eligibility.RelayEligibilityStore
+import mozilla.components.service.fxrelay.eligibility.RelayState
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -408,5 +412,57 @@ class SettingsFragmentTest {
         settingsFragment.onStop()
 
         verify { accountManager.unregister(settingsFragment.accountObserver) }
+    }
+
+    @Test
+    fun `GIVEN email mask feature is available for the user WHEN relay eligibility is Eligible THEN preference is visible`() {
+        val preference = settingsFragment.requirePreference<Preference>(
+            R.string.pref_key_email_masks,
+        )
+        every { testContext.settings().isEmailMaskFeatureEnabled } returns true
+        every { testContext.components.relayEligibilityStore } returns RelayEligibilityStore(RelayState(Eligible.Premium))
+
+        settingsFragment.setupEmailMaskPreference(testContext.settings(), testContext.components)
+
+        assertTrue(preference.isVisible)
+    }
+
+    @Test
+    fun `GIVEN email mask feature is available for the user WHEN relay eligibility is Ineligible THEN preference is hidden`() {
+        val preference = settingsFragment.requirePreference<Preference>(
+            R.string.pref_key_email_masks,
+        )
+        every { testContext.settings().isEmailMaskFeatureEnabled } returns true
+        every { testContext.components.relayEligibilityStore } returns RelayEligibilityStore(RelayState(Ineligible.FirefoxAccountNotLoggedIn))
+
+        settingsFragment.setupEmailMaskPreference(testContext.settings(), testContext.components)
+
+        assertFalse(preference.isVisible)
+    }
+
+    @Test
+    fun `GIVEN email mask feature is not available for the user WHEN relay eligibility is Eligible THEN preference is hidden`() {
+        val preference = settingsFragment.requirePreference<Preference>(
+            R.string.pref_key_email_masks,
+        )
+        every { testContext.settings().isEmailMaskFeatureEnabled } returns false
+        every { testContext.components.relayEligibilityStore } returns RelayEligibilityStore(RelayState(Eligible.Premium))
+
+        settingsFragment.setupEmailMaskPreference(testContext.settings(), testContext.components)
+
+        assertFalse(preference.isVisible)
+    }
+
+    @Test
+    fun `GIVEN email mask feature is not available for the user WHEN relay eligibility is Ineligible THEN preference is hidden`() {
+        val preference = settingsFragment.requirePreference<Preference>(
+            R.string.pref_key_email_masks,
+        )
+        every { testContext.settings().isEmailMaskFeatureEnabled } returns false
+        every { testContext.components.relayEligibilityStore } returns RelayEligibilityStore(RelayState(Ineligible.FirefoxAccountNotLoggedIn))
+
+        settingsFragment.setupEmailMaskPreference(testContext.settings(), testContext.components)
+
+        assertFalse(preference.isVisible)
     }
 }

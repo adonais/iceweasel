@@ -651,9 +651,8 @@ void HTMLTableElement::DeleteCaption() {
 }
 
 already_AddRefed<nsGenericHTMLElement> HTMLTableElement::CreateTBody() {
-  RefPtr<mozilla::dom::NodeInfo> nodeInfo =
-      OwnerDoc()->NodeInfoManager()->GetNodeInfo(
-          nsGkAtoms::tbody, nullptr, kNameSpaceID_XHTML, ELEMENT_NODE);
+  RefPtr<mozilla::dom::NodeInfo> nodeInfo = NodeInfoManager()->GetNodeInfo(
+      nsGkAtoms::tbody, nullptr, kNameSpaceID_XHTML, ELEMENT_NODE);
   MOZ_ASSERT(nodeInfo);
 
   RefPtr<nsGenericHTMLElement> newBody =

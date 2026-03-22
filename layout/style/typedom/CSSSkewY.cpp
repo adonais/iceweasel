@@ -11,11 +11,13 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSSkewYBinding.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 
 CSSSkewY::CSSSkewY(nsCOMPtr<nsISupports> aParent)
-    : CSSTransformComponent(std::move(aParent)) {}
+    : CSSTransformComponent(std::move(aParent), TransformComponentType::SkewY) {
+}
 
 JSObject* CSSSkewY::WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) {
@@ -41,5 +43,26 @@ void CSSSkewY::SetAy(CSSNumericValue& aArg, ErrorResult& aRv) {
 }
 
 // end of CSSSkewY Web IDL implementation
+
+void CSSSkewY::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                     nsACString& aDest) const {
+  // XXX: This is not yet fully implemented.
+
+  aDest.Append("skewY()"_ns);
+}
+
+const CSSSkewY& CSSTransformComponent::GetAsCSSSkewY() const {
+  MOZ_DIAGNOSTIC_ASSERT(mTransformComponentType ==
+                        TransformComponentType::SkewY);
+
+  return *static_cast<const CSSSkewY*>(this);
+}
+
+CSSSkewY& CSSTransformComponent::GetAsCSSSkewY() {
+  MOZ_DIAGNOSTIC_ASSERT(mTransformComponentType ==
+                        TransformComponentType::SkewY);
+
+  return *static_cast<CSSSkewY*>(this);
+}
 
 }  // namespace mozilla::dom

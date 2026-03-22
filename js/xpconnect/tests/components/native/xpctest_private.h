@@ -6,8 +6,8 @@
 
 /* local header for xpconnect tests components */
 
-#ifndef xpctest_private_h___
-#define xpctest_private_h___
+#ifndef xpctest_private_h_
+#define xpctest_private_h_
 
 #include "nsISupports.h"
 #include "nsString.h"
@@ -87,4 +87,4 @@ class xpcTestCEnums final : public nsIXPCTestCEnums {
  private:
   ~xpcTestCEnums() = default;
 };
-#endif /* xpctest_private_h___ */
+#endif /* xpctest_private_h_ */

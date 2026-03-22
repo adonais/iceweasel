@@ -325,18 +325,16 @@ newtab-custom-recent-subtitle = Një përzgjedhje sajtesh dhe lënde së fundi
 newtab-custom-weather-toggle =
     .label = Moti
     .description = Parashikimi i motit për sot me një vështrim
-newtab-custom-trending-search-toggle =
-    .label = Prirje kërkimesh
-    .description = Subjekte popullore dhe të kërkuar shpesh
 newtab-custom-widget-weather-toggle =
     .label = Moti
-newtab-custom-widget-trending-search-toggle =
-    .label = Prirje kërkimesh
 newtab-custom-widget-lists-toggle =
     .label = Lista
 newtab-custom-widget-timer-toggle =
     .label = Kohëmatës
 newtab-custom-widget-section-title = Widget-e
+newtab-custom-widget-section-toggle =
+    .label = Widget-e
+newtab-widget-manage-title = Widget-e
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Mbylle
@@ -488,6 +486,11 @@ newtab-weather-opt-in-yes =
     .label = Po
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = Nju Jork Siti
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Shihni parashikimin në { $provider }
+    .aria-description = { $provider } ∙ E sponsorizuar
 
 ## Topic Labels
 
@@ -591,7 +594,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Të parapëlqyerat tuaja në majë të gishtave
 newtab-shortcuts-highlight-subtitle = Shtoni një shkurtore, për t’i mbajtur sajtet e parapëlqyer vetëm një klikim larg.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Pse po njoftoni për këtë?
@@ -609,21 +612,13 @@ newtab-report-content-inappropriate-offensive =
     .label = E papërshtatshme ose fyese
 newtab-report-content-spam-misleading =
     .label = Mesazh i padëshiruar, ose ngatërrues
+newtab-report-content-requires-payment-subscription =
+    .label = Lyp pagesë ose pajtim
+newtab-report-content-requires-payment-subscription-learn-more = Mësoni më tepër
 newtab-report-cancel = Anuloje
 newtab-report-submit = Parashtroje
 newtab-toast-thanks-for-reporting =
     .message = Faleminderit për njoftimin rreth kësaj.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Shfaq prirje kërkimesh
-newtab-trending-searches-hide-trending =
-    .title = Fshihi prirjet e kërkimeve
-newtab-trending-searches-learn-more = Mësoni më tepër
-newtab-trending-searches-dismiss = Fshihi prirjet e kërkimeve
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Prirje kërkimesh
 
 ## Strings for task / to-do list productivity widget
 
@@ -663,6 +658,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Listë e re
+newtab-widget-section-title = Widget-e
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Fshihni widget-et
+    .aria-label = Fshihni krejt widget-et
+newtab-widget-section-maximize =
+    .title = Zgjeroji widget-et
+    .aria-label = Zgjeroji krejt widget-et sa madhësia e plotë
+newtab-widget-section-minimize =
+    .title = Minimizoji widget-et
+    .aria-label = Tkurri krejt widget-et sa madhësia kompakte
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

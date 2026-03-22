@@ -87,35 +87,19 @@ class TabsTrayStoreTest {
     }
 
     @Test
-    fun `GIVEN the tab manager enhancements are enabled WHEN position is converted to page THEN page is correct`() {
-        assert(Page.positionToPage(position = 0, enhancementsEnabled = true) == Page.PrivateTabs)
-        assert(Page.positionToPage(position = 1, enhancementsEnabled = true) == Page.NormalTabs)
-        assert(Page.positionToPage(position = 2, enhancementsEnabled = true) == Page.SyncedTabs)
-        assert(Page.positionToPage(position = 3, enhancementsEnabled = true) == Page.SyncedTabs)
-        assert(Page.positionToPage(position = -1, enhancementsEnabled = true) == Page.SyncedTabs)
+    fun `WHEN position is converted to page THEN page is correct`() {
+        assert(Page.positionToPage(position = 0) == Page.PrivateTabs)
+        assert(Page.positionToPage(position = 1) == Page.NormalTabs)
+        assert(Page.positionToPage(position = 2) == Page.SyncedTabs)
+        assert(Page.positionToPage(position = 3) == Page.SyncedTabs)
+        assert(Page.positionToPage(position = -1) == Page.SyncedTabs)
     }
 
     @Test
-    fun `GIVEN the tab manager enhancements are disabled WHEN position is converted to page THEN page is correct`() {
-        assert(Page.positionToPage(position = 0, enhancementsEnabled = false) == Page.NormalTabs)
-        assert(Page.positionToPage(position = 1, enhancementsEnabled = false) == Page.PrivateTabs)
-        assert(Page.positionToPage(position = 2, enhancementsEnabled = false) == Page.SyncedTabs)
-        assert(Page.positionToPage(position = 3, enhancementsEnabled = false) == Page.SyncedTabs)
-        assert(Page.positionToPage(position = -1, enhancementsEnabled = false) == Page.SyncedTabs)
-    }
-
-    @Test
-    fun `GIVEN the tab manager enhancements are enabled WHEN Page is converted to an index THEN the index is correct`() {
-        assert(Page.pageToPosition(page = Page.PrivateTabs, enhancementsEnabled = true) == 0)
-        assert(Page.pageToPosition(page = Page.NormalTabs, enhancementsEnabled = true) == 1)
-        assert(Page.pageToPosition(page = Page.SyncedTabs, enhancementsEnabled = true) == 2)
-    }
-
-    @Test
-    fun `GIVEN the tab manager enhancements are disabled WHEN Page is converted to an index THEN the index is correct`() {
-        assert(Page.pageToPosition(page = Page.NormalTabs, enhancementsEnabled = false) == 0)
-        assert(Page.pageToPosition(page = Page.PrivateTabs, enhancementsEnabled = false) == 1)
-        assert(Page.pageToPosition(page = Page.SyncedTabs, enhancementsEnabled = false) == 2)
+    fun `WHEN Page is converted to an index THEN the index is correct`() {
+        assert(Page.pageToPosition(page = Page.PrivateTabs) == 0)
+        assert(Page.pageToPosition(page = Page.NormalTabs) == 1)
+        assert(Page.pageToPosition(page = Page.SyncedTabs) == 2)
     }
 
     @Test

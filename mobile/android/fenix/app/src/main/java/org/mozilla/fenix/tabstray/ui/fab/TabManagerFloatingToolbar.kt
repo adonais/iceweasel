@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,7 +48,6 @@ import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.modifier.animateRotation
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.theme.surfaceDimVariant
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.TabsTrayAction
@@ -92,7 +92,7 @@ internal fun TabManagerFloatingToolbar(
     onAccountSettingsClick: () -> Unit,
     onDeleteAllTabsClick: () -> Unit,
 ) {
-    val state by tabsTrayStore.observeAsState(initialValue = tabsTrayStore.state) { it }
+    val state by tabsTrayStore.stateFlow.collectAsState()
     val privateTabsLocked = pbmLocked && state.selectedPage == Page.PrivateTabs
 
     AnimatedVisibility(

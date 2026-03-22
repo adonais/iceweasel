@@ -42,8 +42,8 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.debugsettings.ui.DebugDrawer
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import java.util.UUID
 import mozilla.components.ui.icons.R as iconsR
 
@@ -156,6 +156,9 @@ internal class FakeLoginsStorage : LoginsStorage {
     override suspend fun get(guid: String): Login? = null
     override suspend fun touch(guid: String) = Unit
     override suspend fun list(): List<Login> = listOf()
+    override suspend fun count(): Long {
+        return list().size.toLong()
+    }
     override suspend fun findLoginToUpdate(entry: LoginEntry): Login? = null
     override suspend fun add(entry: LoginEntry): Login {
         val guid = UUID.randomUUID().toString()
@@ -189,7 +192,7 @@ internal class FakeLoginsStorage : LoginsStorage {
 @Preview
 @Composable
 private fun LoginsScreenPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         val selectedTab = createTab("https://example.com")

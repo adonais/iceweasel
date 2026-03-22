@@ -174,6 +174,11 @@ class XREAppData {
   CharPtr sourceURL;
 
   /**
+   * The source revision for this build of the application.
+   */
+  CharPtr sourceRevision;
+
+  /**
    * The URL to use to check for updates.
    */
   CharPtr updateURL;
@@ -224,6 +229,7 @@ struct StaticXREAppData {
   const char* profile;
   const char* UAName;
   const char* sourceURL;
+  const char* sourceRevision;
   const char* updateURL;
 };
 

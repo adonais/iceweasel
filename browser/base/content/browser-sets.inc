@@ -33,6 +33,7 @@
     <command id="cmd_help_importFromAnotherBrowser" />
     <command id="cmd_close" />
     <command id="cmd_closeWindow" />
+    <command id="cmd_returnToOpener" />
     <command id="cmd_minimizeWindow" />
     <command id="cmd_maximizeWindow" />
     <command id="cmd_restoreWindow" />

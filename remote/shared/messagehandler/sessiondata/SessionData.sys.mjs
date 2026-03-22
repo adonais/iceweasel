@@ -319,8 +319,8 @@ export class SessionData {
     return this.#data.filter(
       item =>
         this.#matchItem(item, moduleName, category) &&
-        this.#messageHandler.contextMatchesDescriptor(
-          context,
+        this.#messageHandler.contextsMatchDescriptor(
+          [context],
           item.contextDescriptor
         )
     );

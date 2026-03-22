@@ -6,8 +6,8 @@
 
 /* representation of one line within a block frame, a CSS line box */
 
-#ifndef nsLineBox_h___
-#define nsLineBox_h___
+#ifndef nsLineBox_h_
+#define nsLineBox_h_
 
 #include <algorithm>
 
@@ -1119,4 +1119,4 @@ class nsLineIterator final : public nsILineIterator {
   const bool mRightToLeft;
 };
 
-#endif /* nsLineBox_h___ */
+#endif /* nsLineBox_h_ */

@@ -32,7 +32,7 @@ The ``gDevTools`` API can be used to register new tools, themes and handle toolb
 
 .. code-block:: JavaScript
 
-  const { gDevTools } = require("resource:///modules/devtools/gDevTools.jsm");
+  const { gDevTools } = require("resource://devtools/client/framework/devtools.js");
 
 
 Methods
@@ -736,9 +736,6 @@ If the loaded document exposes a ``window.setPanel(ToolPanel)`` function, the si
 
   * - ``{tabId}-selected``
     - Tab has been selected and is visible
-
-  * - ``{tabId}-unselected``
-    - Tab has been unselected and is not visible
 
   * - ``show``
     - The sidebar has been opened.

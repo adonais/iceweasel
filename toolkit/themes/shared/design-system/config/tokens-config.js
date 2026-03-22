@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env node */
-
 const StyleDictionary = require("style-dictionary");
 const { createPropertyFormatter } = StyleDictionary.formatHelpers;
 const figmaConfig = require("./figma-tokens-config");
@@ -11,11 +9,13 @@ const figmaConfig = require("./figma-tokens-config");
 const TOKEN_SECTIONS = {
   "Attention Dot": "attention-dot",
   "Background Color": ["background-color", "promo", "table-row"],
+  Badge: "badge",
   Border: "border",
   "Box Shadow": "box-shadow",
   Button: "button",
   Checkbox: "checkbox",
   Color: ["brand-color", "color", "platform-color"],
+  Dimension: "dimension",
   "Focus Outline": "focus-outline",
   "Font Size": "font-size",
   "Font Weight": "font-weight",
@@ -28,6 +28,7 @@ const TOKEN_SECTIONS = {
   Page: "page",
   Size: "size",
   Space: "space",
+  Table: "table",
   Text: "text",
   Unspecified: "",
 };
@@ -480,7 +481,9 @@ function formatTokensTableData(tokensData) {
 }
 
 const SINGULAR_TABLE_CATEGORIES = [
+  "badge",
   "button",
+  "dimension",
   "color",
   "size",
   "space",
@@ -518,7 +521,7 @@ function getTableName(tokenName) {
   }
 
   let replacePattern =
-    /^(button-|input-text-|input-|focus-|checkbox-|table-row-|attention-dot-|promo-)/;
+    /^(badge-|button-|input-text-|input-|focus-|checkbox-|table-row-|attention-dot-|promo-)/;
   if (tokenName.match(replacePattern)) {
     tokenName = tokenName.replace(replacePattern, "");
   }

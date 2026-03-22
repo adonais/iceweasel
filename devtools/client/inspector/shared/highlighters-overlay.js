@@ -113,12 +113,13 @@ const GLEAN_COUNTER_NAMES = {
 /**
  * HighlightersOverlay manages the visibility of highlighters in the Inspector.
  */
-class HighlightersOverlay {
+class HighlightersOverlay extends EventEmitter {
   /**
    * @param  {Inspector} inspector
    *         Inspector toolbox panel.
    */
   constructor(inspector) {
+    super();
     this.inspector = inspector;
     this.store = this.inspector.store;
 
@@ -213,8 +214,6 @@ class HighlightersOverlay {
     if (this.toolbox.win.matchMedia("(prefers-reduced-motion)").matches) {
       this.#showSimpleHighlightersMessage();
     }
-
-    EventEmitter.decorate(this);
   }
 
   // Map of active highlighter types to objects with the highlighted nodeFront and the

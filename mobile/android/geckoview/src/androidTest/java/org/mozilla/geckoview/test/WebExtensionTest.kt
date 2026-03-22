@@ -1814,7 +1814,7 @@ class WebExtensionTest : BaseSessionTest() {
             override fun onShowNotification(notification: WebNotification) {
                 assertEquals(notification.title, "Time for cake!")
                 assertEquals(notification.text, "Something something cake")
-                assertEquals(notification.imageUrl, "https://example.com/img.svg")
+                assertEquals(notification.imageUrl, "http://localhost:4245/assets/www/images/test.gif")
                 // This should be filled out, Bug 1589693
                 assertEquals(notification.source, null)
                 notification.show()

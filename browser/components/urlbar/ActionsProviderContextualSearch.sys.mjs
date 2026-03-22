@@ -21,6 +21,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/search/OpenSearchLoader.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
@@ -125,8 +126,8 @@ class ProviderContextualSearch extends ActionsProvider {
 
     // Don't match the default engine for non-query-matches.
     let defaultEngine = queryContext.isPrivate
-      ? Services.search.defaultPrivateEngine
-      : Services.search.defaultEngine;
+      ? lazy.SearchService.defaultPrivateEngine
+      : lazy.SearchService.defaultEngine;
 
     let browser =
       lazy.BrowserWindowTracker.getTopWindow()?.gBrowser.selectedBrowser;
@@ -154,7 +155,7 @@ class ProviderContextualSearch extends ActionsProvider {
         // the current host. If the user is on ecosia.com and starts searching
         // offer ecosia's search.
         let contextualEngineConfig =
-          await Services.search.findContextualSearchEngineByHost(host);
+          await lazy.SearchService.findContextualSearchEngineByHost(host);
         if (contextualEngineConfig) {
           hostEngine = {
             type: CONTEXTUAL_SEARCH_ENGINE,
@@ -226,9 +227,16 @@ class ProviderContextualSearch extends ActionsProvider {
   async #matchTabToSearchEngine(queryContext) {
     let searchStr = queryContext.trimmedSearchString.toLocaleLowerCase();
 
-    for (let engine of await Services.search.getVisibleEngines()) {
+    for (let engine of await lazy.SearchService.getVisibleEngines()) {
+      let engineName = engine.name.toLocaleLowerCase();
+      let engineAliases = engine.aliases.map(a => a.toLocaleLowerCase());
+
+      const matches = (search, name) =>
+        search.length < 3 ? name.startsWith(search) : name.includes(search);
+
       if (
-        engine.name.toLocaleLowerCase().startsWith(searchStr) &&
+        (matches(searchStr, engineName) ||
+          engineAliases.some(alias => matches(searchStr, alias))) &&
         ((await this.#shouldskipRecentVisitCheck(searchStr)) ||
           (await this.#engineDomainHasRecentVisits(engine.searchUrlDomain)))
       ) {
@@ -310,14 +318,14 @@ class ProviderContextualSearch extends ActionsProvider {
     this.#performSearch(
       engine,
       queryContext.searchString,
-      controller.input,
+      controller,
       type == INSTALLED_ENGINE
     );
 
     if (
       !queryContext.isPrivate &&
       type != INSTALLED_ENGINE &&
-      (await Services.search.shouldShowInstallPrompt(engine))
+      (await lazy.SearchService.shouldShowInstallPrompt(engine))
     ) {
       this.#showInstallPrompt(controller, engine);
     }
@@ -327,24 +335,23 @@ class ProviderContextualSearch extends ActionsProvider {
     this.#visitedEngineDomains.clear();
   }
 
-  async #performSearch(engine, search, input, enterSearchMode) {
+  async #performSearch(engine, search, controller, enterSearchMode) {
     const [url] = UrlbarUtils.getSearchQueryUrl(engine, search);
     if (enterSearchMode) {
-      input.search(search, { searchEngine: engine });
+      controller.input.search(search, { searchEngine: engine });
     }
-    input.window.gBrowser.fixupAndLoadURIString(url, {
+    controller.browserWindow.gBrowser.fixupAndLoadURIString(url, {
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
-    input.window.gBrowser.selectedBrowser.focus();
+    controller.browserWindow.gBrowser.selectedBrowser.focus();
   }
 
   #showInstallPrompt(controller, engineData) {
-    let win = controller.input.window;
     let buttons = [
       {
         "l10n-id": "install-search-engine-add",
         callback() {
-          Services.search.addSearchEngine(engineData);
+          lazy.SearchService.addSearchEngine(engineData);
         },
       },
       {
@@ -353,7 +360,7 @@ class ProviderContextualSearch extends ActionsProvider {
       },
     ];
 
-    win.gNotificationBox.appendNotification(
+    controller.browserWindow.gNotificationBox.appendNotification(
       "install-search-engine",
       {
         label: {
@@ -361,7 +368,7 @@ class ProviderContextualSearch extends ActionsProvider {
           "l10n-args": { engineName: engineData.name },
         },
         image: "chrome://global/skin/icons/question-64.png",
-        priority: win.gNotificationBox.PRIORITY_INFO_LOW,
+        priority: controller.browserWindow.gNotificationBox.PRIORITY_INFO_LOW,
       },
       buttons
     );

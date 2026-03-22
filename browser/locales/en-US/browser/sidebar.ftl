@@ -36,7 +36,8 @@ sidebar-history-delete =
 sidebar-history-clear =
   .label = Clear history
 
-sidebar-history-sort-by-heading = Sort by:
+sidebar-history-sort-by-heading-menucaption =
+  .label = Sort by:
 sidebar-history-sort-option-date =
   .label = Date
 sidebar-history-sort-option-site =

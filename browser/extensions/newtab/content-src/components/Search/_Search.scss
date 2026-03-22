@@ -1,10 +1,8 @@
-/* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
 $search-height: var(--size-item-xlarge);
 $search-height-new: 52px;
 $search-icon-size: 24px;
 $search-icon-padding: 16px;
 $search-icon-width: 2 * $search-icon-padding + $search-icon-size - 4px; // 52px
-/* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
 $search-button-width: var(--size-item-xlarge);
 $glyph-forward: url('chrome://browser/skin/forward.svg');
 

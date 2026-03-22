@@ -34,7 +34,7 @@ class ThumbnailDiskCache(private val isPrivate: Boolean = false) {
     internal fun clear(context: Context) {
         synchronized(thumbnailCacheWriteLock) {
             try {
-                getThumbnailCache(context).delete()
+                getThumbnailCache(context)?.delete()
             } catch (e: IOException) {
                 logger.warn("Thumbnail cache could not be cleared. Perhaps there are none?")
             }
@@ -50,7 +50,7 @@ class ThumbnailDiskCache(private val isPrivate: Boolean = false) {
      * @return the [ByteArray] of the thumbnail or null if the snapshot of the entry does not exist.
      */
     internal fun getThumbnailData(context: Context, request: ImageLoadRequest): ByteArray? {
-        val snapshot = getThumbnailCache(context).get(request.id) ?: return null
+        val snapshot = getThumbnailCache(context)?.get(request.id) ?: return null
 
         return try {
             snapshot.getInputStream(0).use {
@@ -72,8 +72,7 @@ class ThumbnailDiskCache(private val isPrivate: Boolean = false) {
     internal fun putThumbnailBitmap(context: Context, request: ImageSaveRequest, bitmap: Bitmap) {
         try {
             synchronized(thumbnailCacheWriteLock) {
-                val editor = getThumbnailCache(context)
-                    .edit(request.id) ?: return
+                val editor = getThumbnailCache(context)?.edit(request.id) ?: return
 
                 editor.newOutputStream(0).use { stream ->
                     bitmap.compress(Bitmap.CompressFormat.JPEG, ENCODING_QUALITY, stream)
@@ -95,7 +94,7 @@ class ThumbnailDiskCache(private val isPrivate: Boolean = false) {
     internal fun removeThumbnailData(context: Context, sessionIdOrUrl: String) {
         try {
             synchronized(thumbnailCacheWriteLock) {
-                getThumbnailCache(context).remove(sessionIdOrUrl)
+                getThumbnailCache(context)?.remove(sessionIdOrUrl)
             }
         } catch (e: IOException) {
             logger.info("Failed to remove thumbnail bitmap from disk", e)
@@ -109,14 +108,19 @@ class ThumbnailDiskCache(private val isPrivate: Boolean = false) {
     }
 
     @Synchronized
-    private fun getThumbnailCache(context: Context): DiskLruCache {
+    private fun getThumbnailCache(context: Context): DiskLruCache? {
         thumbnailCache?.let { return it }
 
-        return DiskLruCache.open(
-            getThumbnailCacheDirectory(context),
-            THUMBNAIL_DISK_CACHE_VERSION,
-            1,
-            MAXIMUM_CACHE_THUMBNAIL_DATA_BYTES,
-        ).also { thumbnailCache = it }
+        return try {
+            DiskLruCache.open(
+                getThumbnailCacheDirectory(context),
+                THUMBNAIL_DISK_CACHE_VERSION,
+                1,
+                MAXIMUM_CACHE_THUMBNAIL_DATA_BYTES,
+            ).also { thumbnailCache = it }
+        } catch (e: IOException) {
+            logger.warn("Thumbnail cache could not be created.", e)
+            null
+        }
     }
 }

@@ -121,7 +121,6 @@ void DisplayListClipState::ClipContentDescendants(
 
 void DisplayListClipState::InvalidateCurrentCombinedClipChain(
     const ActiveScrolledRoot* aInvalidateUpTo) {
-  mClippedToDisplayPort = false;
   mCurrentCombinedClipChainIsValid = false;
   while (mCurrentCombinedClipChain &&
          ActiveScrolledRoot::IsAncestor(aInvalidateUpTo,

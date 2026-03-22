@@ -249,7 +249,7 @@ class SessionControlInteractorTest {
 
     @Test
     fun `GIVEN a PocketStoriesInteractor WHEN stories are shown THEN handle it in a PocketStoriesController`() {
-        val shownStories: List<PocketStory> = mockk()
+        val shownStories: List<PocketStory> = emptyList()
 
         interactor.onStoriesShown(shownStories)
 

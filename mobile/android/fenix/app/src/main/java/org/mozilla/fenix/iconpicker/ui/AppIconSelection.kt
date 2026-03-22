@@ -34,6 +34,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -57,7 +58,6 @@ import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.displaySnackbar
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.button.RadioButton
 import org.mozilla.fenix.iconpicker.AppIcon
@@ -72,8 +72,8 @@ import org.mozilla.fenix.iconpicker.IconGroupTitle
 import org.mozilla.fenix.iconpicker.SystemAction
 import org.mozilla.fenix.iconpicker.UserAction
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 private val ListItemHeight = 56.dp
 private val AppIconSize = 40.dp
@@ -96,7 +96,7 @@ fun AppIconSelection(
     store: AppIconStore,
     shortcutRemovalWarning: () -> Boolean,
 ) {
-    val state by store.observeAsState(store.state) { it }
+    val state by store.stateFlow.collectAsState()
     val selectedIcon = state.userSelectedAppIcon ?: state.currentAppIcon
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -392,7 +392,7 @@ private fun AppIconSelectionPreview() {
 @FlexibleWindowPreview
 @Composable
 private fun AppIconOptionPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         AppIconOption(AppIcon.AppDefault, false) {}
@@ -402,7 +402,7 @@ private fun AppIconOptionPreview(
 @FlexibleWindowPreview
 @Composable
 private fun AppIconOptionWithSubtitlePreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         AppIconOption(AppIcon.AppMomo, false) {}
@@ -412,7 +412,7 @@ private fun AppIconOptionWithSubtitlePreview(
 @FlexibleWindowPreview
 @Composable
 private fun RestartWarningDialogPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         RestartWarningDialog(
@@ -427,7 +427,7 @@ private fun RestartWarningDialogPreview(
 @FlexibleWindowPreview
 @Composable
 private fun ShortcutRemovalWarningDialogPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         RestartWarningDialog(

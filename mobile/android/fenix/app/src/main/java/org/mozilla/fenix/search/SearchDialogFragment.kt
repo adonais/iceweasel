@@ -102,6 +102,7 @@ import org.mozilla.fenix.navigation.DefaultNavControllerProvider
 import org.mozilla.fenix.navigation.NavControllerProvider
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.search.awesomebar.AwesomeBarView
+import org.mozilla.fenix.search.awesomebar.DeleteHistoryEntryDelegate
 import org.mozilla.fenix.search.awesomebar.toSearchProviderState
 import org.mozilla.fenix.search.ext.searchEngineShortcuts
 import org.mozilla.fenix.search.toolbar.IncreasedTapAreaActionDecorator
@@ -111,6 +112,7 @@ import org.mozilla.fenix.search.toolbar.ToolbarView
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.telemetry.ACTION_QR_CLICKED
 import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
+import kotlin.LazyThreadSafetyMode.NONE
 import mozilla.components.browser.toolbar.R as toolbarR
 import org.mozilla.fenix.GleanMetrics.Toolbar as GleanMetricsToolbar
 
@@ -262,6 +264,10 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
             ),
         )
 
+        val deleteHistoryDelegate by lazy(NONE) {
+            DeleteHistoryEntryDelegate(binding.root, requireComponents, store)
+        }
+
         controller = SearchDialogController(
             appStore = requireComponents.appStore,
             context = requireContext(),
@@ -286,6 +292,9 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
             },
             dismissDialogAndGoBack = {
                 dismissDialogAndGoBack()
+            },
+            showDeleteHistoryItemSnackbar = {
+                deleteHistoryDelegate.handleDeletingHistoryEntry(it)
             },
         )
         nullableInteractor = SearchDialogInteractor(searchController = requireNotNull(controller))
@@ -321,6 +330,9 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
         }
 
         awesomeBarView.view.setOnEditSuggestionListener(toolbarView.view::setSearchTerms)
+        awesomeBarView.view.setOnRemoveSuggestionButtonClicked {
+            interactor.onRemoveHistorySuggestionButtonClicked(it)
+        }
 
         inlineAutocompleteEditText.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
 
@@ -498,6 +510,7 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
         ImeInsetsSynchronizer.setup(view)
         observeClipboardState()
         observeSuggestionProvidersState()
+        observeHiddenSearchSuggestions()
 
         val shouldShowSuggestions = store.state.run {
             (showTrendingSearches || showRecentSearches) &&
@@ -591,6 +604,11 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
             .collect { (shouldShowView) ->
                 updateClipboardSuggestion(shouldShowView)
             }
+    }
+
+    private fun observeHiddenSearchSuggestions() = consumeFlow(store) { flow ->
+        flow.distinctUntilChangedBy { it.hiddenSuggestions }
+            .collect { awesomeBarView.view.updateHiddenSuggestions(it.hiddenSuggestions) }
     }
 
     private fun updateAccessibilityTraversalOrder() {

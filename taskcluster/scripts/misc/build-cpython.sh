@@ -43,9 +43,6 @@ case `uname -s` in
         export LDFLAGS="${LDFLAGS} ${sysroot_flags} -L${xz_prefix}/lib"
         configure_flags_extra=--with-openssl=/usr/local/opt/openssl
 
-        # see https://bugs.python.org/issue22490
-        unset __PYVENV_LAUNCHER__
-
         # see https://bugs.python.org/issue44065
         sed -i -e 's,$CC --print-multiarch,:,' ${python_src}/configure
         export LDFLAGS="${LDFLAGS} -Wl,-rpath -Wl,@loader_path/../.."

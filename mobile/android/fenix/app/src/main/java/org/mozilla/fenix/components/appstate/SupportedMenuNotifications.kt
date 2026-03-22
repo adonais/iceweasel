@@ -19,4 +19,10 @@ sealed class SupportedMenuNotifications {
      * This is used to indicate the link can be opened in an external app.
      */
     object OpenInApp : SupportedMenuNotifications()
+
+    /**
+     * Represents a notification related to the main menu button (the hamburger menu).
+     * The menu button is highlighted after onboarding when the app is not the default browser.
+     */
+    object NotDefaultBrowser : SupportedMenuNotifications()
 }

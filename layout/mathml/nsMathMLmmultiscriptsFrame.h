@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsMathMLmmultiscriptsFrame_h___
-#define nsMathMLmmultiscriptsFrame_h___
+#ifndef nsMathMLmmultiscriptsFrame_h_
+#define nsMathMLmmultiscriptsFrame_h_
 
 #include "nsMathMLContainerFrame.h"
 
@@ -48,4 +48,4 @@ class nsMathMLmmultiscriptsFrame final : public nsMathMLContainerFrame {
   virtual ~nsMathMLmmultiscriptsFrame();
 };
 
-#endif /* nsMathMLmmultiscriptsFrame_h___ */
+#endif /* nsMathMLmmultiscriptsFrame_h_ */

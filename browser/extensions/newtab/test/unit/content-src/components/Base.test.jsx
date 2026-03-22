@@ -80,7 +80,6 @@ describe("<BaseContent>", () => {
     Prefs: { values: {} },
     Sections: [],
     DiscoveryStream: { config: { enabled: false }, spocs: {} },
-    Weather: {},
     dispatch: () => {},
     document: {
       visibilityState: "visible",

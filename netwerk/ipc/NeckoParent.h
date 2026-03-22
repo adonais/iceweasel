@@ -5,15 +5,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#ifndef mozilla_net_NeckoParent_h
+#define mozilla_net_NeckoParent_h
+
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/net/PNeckoParent.h"
 #include "mozilla/net/NeckoCommon.h"
 #include "mozilla/MozPromise.h"
 #include "nsIAuthPrompt2.h"
+#include "nsIInterfaceRequestor.h"
 #include "nsNetUtil.h"
-
-#ifndef mozilla_net_NeckoParent_h
-#  define mozilla_net_NeckoParent_h
 
 namespace mozilla {
 namespace net {
@@ -142,6 +143,7 @@ class NeckoParent : public PNeckoParent {
       const OriginAttributes& aOriginAttributes,
       const nsIDNSService::DNSFlags& flags) override;
   mozilla::ipc::IPCResult RecvSpeculativeConnect(
+      PBrowserParent* aBrowser, const IPC::SerializedLoadContext& aSerialized,
       nsIURI* aURI, nsIPrincipal* aPrincipal,
       Maybe<OriginAttributes>&& aOriginAttributes, const bool& aAnonymous);
   mozilla::ipc::IPCResult RecvHTMLDNSPrefetch(
@@ -158,7 +160,7 @@ class NeckoParent : public PNeckoParent {
 
   mozilla::ipc::IPCResult RecvConnectBaseChannel(const uint32_t& channelId);
 
-#  ifdef MOZ_WIDGET_GTK
+#ifdef MOZ_WIDGET_GTK
   PGIOChannelParent* AllocPGIOChannelParent(
       PBrowserParent* aBrowser, const SerializedLoadContext& aSerialized,
       const GIOChannelCreationArgs& aOpenArgs);
@@ -168,8 +170,8 @@ class NeckoParent : public PNeckoParent {
       PGIOChannelParent* aActor, PBrowserParent* aBrowser,
       const SerializedLoadContext& aSerialized,
       const GIOChannelCreationArgs& aOpenArgs) override;
-#  endif
-#  ifdef MOZ_WIDGET_ANDROID
+#endif
+#ifdef MOZ_WIDGET_ANDROID
   already_AddRefed<PGeckoViewContentChannelParent>
   AllocPGeckoViewContentChannelParent(
       PBrowserParent* aBrowser, const SerializedLoadContext& aSerialized,
@@ -179,7 +181,7 @@ class NeckoParent : public PNeckoParent {
       PGeckoViewContentChannelParent* aActor, PBrowserParent* aBrowser,
       const SerializedLoadContext& aSerialized,
       const GeckoViewContentChannelArgs& args) override;
-#  endif
+#endif
 
   mozilla::ipc::IPCResult RecvNotifyFileChannelOpened(
       const FileChannelInfo& aInfo);

@@ -14,10 +14,6 @@ Feature enablement and experiments
 ``browser.ipProtection.userEnabled`` (boolean, default: ``false``)
   For testing; simulates user‑enabled state.
 
-``browser.ipProtection.variant`` (string, default: ``""``)
-  Stores the current UI experiment variant. The value is passed to
-  ``IPProtectionPanel`` to render variant-specific strings and layouts.
-
 ``browser.ipProtection.added`` (boolean, default: ``false``)
   Tracks whether the toolbar button was auto-placed next to the FxA button.
   Once true, the widget is not reinserted automatically after manual removal.
@@ -58,11 +54,20 @@ Networking and routing
 ``browser.ipProtection.override.serverlist`` (string)
   A JSON Payload that overrides the server list. Follows the Remote-Settings Schema.
 
+UI Features
+~~~~~~~~~~~
+
+``browser.ipProtection.bandwidth.enabled`` (boolean, default: ``false``)
+  Controls whether bandwidth usage information is displayed in the status panel.
+
+``browser.ipProtection.egressLocationEnabled`` (boolean, default: ``false``)
+  Controls whether the VPN egress location is displayed in the status panel.
+
 Diagnostics
 ~~~~~~~~~~~
 
 ``browser.ipProtection.log`` (boolean, default: ``false``)
   Enable/disable logging.
 
-``browser.ipProtection.panelOpenCount`` (integer, default: ``0``)
-  Counts the number of times the VPN panel is opened.
+``browser.ipProtection.everOpenedPanel`` (boolean, default: ``false``)
+  Tracks if the user has ever opened the VPN panel

@@ -10,8 +10,7 @@
 
 #include <memory>  // std::uninitialized_fill_n
 
-#include "jsnum.h"  // CharsToNumber
-
+#include "builtin/Number.h"  // CharsToNumber
 #include "frontend/CompilationStencil.h"
 #include "js/GCAPI.h"            // JS::AutoSuppressGCAnalysis
 #include "js/Printer.h"          // Sprinter, QuoteString

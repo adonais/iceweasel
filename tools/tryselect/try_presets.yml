@@ -216,18 +216,69 @@ geckodriver:
         - "'platform 'wdspec 'debug 'nofis"
         - "'browsertime 'amazon 'shippable 'firefox 'nofis"
 
-layout:
+layout-all-platforms:
     selector: fuzzy
     description: >-
-        Runs the tests most relevant to layout.
+        Runs the tests most relevant to layout, in all platforms.
+        Consider using layout-linux, layout-linux-debug, or layout-linux-opt
+        for faster results and less resource consumption.
         This preset can be filtered down further to limit it to
-        a specific platform or build configuration. For example:
-        |mach try --preset layout -xq "linux64 'opt"|
-    query:
+        other platforms or build configurations. For example:
+        |mach try --preset layout-all-platforms -xq "windows 'opt"|
+    query: &layout-all-platforms-query
         # Most mochitest + reftest + crashtest + wpt
         - "!asan !tsan !jsreftest !shippable !webgl !condprof !media !webgpu !a11y-checks 'mochitest | 'web-platform | 'crashtest | 'reftest"
         # Style system unit tests
         - "'rusttests"
+
+layout-linux:
+    selector: fuzzy
+    description: >-
+        Like the layout-all-platforms preset, but runs only linux tests.
+    query: *layout-all-platforms-query
+    intersect_query: ["linux64"]
+
+layout-linux-debug:
+    selector: fuzzy
+    description: Like layout-all-platforms, but runs only linux debug tests.
+    query: *layout-all-platforms-query
+    intersect_query: ["linux64 'debug"]
+
+layout-linux-opt:
+    selector: fuzzy
+    description: Like layout-all-platforms, but runs only linux opt tests.
+    query: *layout-all-platforms-query
+    intersect_query: ["linux64 'opt"]
+
+wpt-all-platforms:
+    selector: fuzzy
+    description: >-
+        Runs web platform tests in all platforms.
+        Consider using wpt-linux, wpt-linux-debug, or wpt-linux-opt
+        for faster results and less resource consumption.
+        This preset can be filtered down further to limit it to
+        other platforms or build configurations. For example:
+        |mach try --preset wpt-all-platforms -xq "windows 'opt"|
+    query: &wpt-all-platforms-query
+        - "'web-platform !asan !tsan"
+
+wpt-linux:
+    selector: fuzzy
+    description: Like wpt-all-platforms, but runs only linux tests.
+    query: *wpt-all-platforms-query
+    intersect_query: ["linux64"]
+
+wpt-linux-debug:
+    selector: fuzzy
+    description: Like wpt-all-platforms, but runs only linux debug tests.
+    query: *wpt-all-platforms-query
+    intersect_query: ["linux64 'debug"]
+
+wpt-linux-opt:
+    selector: fuzzy
+    description: Like wpt-all-platforms, but runs only linux opt tests.
+    query: *wpt-all-platforms-query
+    intersect_query: ["linux64 'opt"]
 
 media-full:
     selector: fuzzy

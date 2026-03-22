@@ -573,7 +573,7 @@ void nsMozIconURI::Serialize(URIParams& aParams) {
   params.iconScale() = mScale;
   params.iconDark() = mDark;
 
-  aParams = params;
+  aParams = std::move(params);
 }
 
 bool nsMozIconURI::Deserialize(const URIParams& aParams) {

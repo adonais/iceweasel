@@ -2,13 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use std::num::TryFromIntError;
 use thiserror::Error;
-
-#[cfg(not(target_os = "windows"))]
-pub use nix::errno::Errno as SystemError;
-#[cfg(target_os = "windows")]
-pub use windows_sys::Win32::Foundation::WIN32_ERROR as SystemError;
 
 use crate::{
     messages::{self, MessageError},
@@ -19,16 +13,18 @@ use crate::{
 pub enum IPCError {
     #[error("Message error")]
     BadMessage(#[from] MessageError),
-    #[error("Could not connect to a socket: {0}")]
-    ConnectionFailure(SystemError),
+    #[error("Could not connect to the server: {0}")]
+    ConnectionFailure(PlatformError),
     #[error("Failed to create a connector: {0}")]
     CreationFailure(PlatformError),
-    #[error("Buffer length exceeds a 32-bit integer")]
-    InvalidSize(#[from] TryFromIntError),
-    #[error("Error while parsing a file descriptor string")]
-    ParseError,
+    #[error("Failed to deserialize connector: {0}")]
+    Deserialize(PlatformError),
+    #[error("Invalid ancillary data was provided")]
+    InvalidAncillary,
     #[error("Could not receive data: {0}")]
     ReceptionFailure(PlatformError),
+    #[error("Could not serialize connector for use in another process: {0}")]
+    Serialize(PlatformError),
     #[error("An operation timed out")]
     Timeout,
     #[error("Could not send data: {0}")]

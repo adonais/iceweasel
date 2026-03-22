@@ -412,8 +412,7 @@ already_AddRefed<TextureClient> D3D11TextureData::CreateTextureClient(
     ID3D11Texture2D* aTexture, uint32_t aIndex, gfx::IntSize aSize,
     gfx::SurfaceFormat aFormat, gfx::ColorSpace2 aColorSpace,
     gfx::ColorRange aColorRange, KnowsCompositor* aKnowsCompositor,
-    RefPtr<ZeroCopyUsageInfo> aUsageInfo,
-    const RefPtr<FenceD3D11> aWriteFence) {
+    ZeroCopyUsageInfo* aUsageInfo, const RefPtr<FenceD3D11> aWriteFence) {
   MOZ_ASSERT(aTexture);
 
   RefPtr<ID3D11Device> device;

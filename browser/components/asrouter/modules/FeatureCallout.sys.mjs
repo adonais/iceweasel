@@ -1022,8 +1022,13 @@ export class FeatureCallout {
     }
 
     const { autohide, ignorekeys, padding } = this.currentScreen.content;
-    const { panel_position, hide_arrow, no_open_on_anchor, arrow_width } =
-      anchor;
+    const {
+      panel_position,
+      hide_arrow,
+      no_open_on_anchor,
+      arrow_width,
+      arrow_corner_distance,
+    } = anchor;
     const needsPanel =
       "MozXULElement" in this.win && !!panel_position?.panel_position_string;
 
@@ -1070,6 +1075,14 @@ export class FeatureCallout {
         this._container.style.setProperty("--arrow-width", `${arrow_width}px`);
       } else {
         this._container.style.removeProperty("--arrow-width");
+      }
+      if (arrow_corner_distance) {
+        this._container.style.setProperty(
+          "--arrow-corner-distance",
+          `${arrow_corner_distance}px`
+        );
+      } else {
+        this._container.style.removeProperty("--arrow-corner-distance");
       }
       if (padding) {
         // This property used to accept a number value, either a number or a

@@ -577,7 +577,7 @@ nscoord nsTableRowFrame::CalcCellActualBSize(nsTableCellFrame* aCellFrame,
     // https://quirks.spec.whatwg.org/#the-table-cell-height-box-sizing-quirk
     specifiedBSize = bsizeStyleCoord->ToLength();
     if (PresContext()->CompatibilityMode() != eCompatibility_NavQuirks &&
-        position->mBoxSizing == StyleBoxSizing::Content) {
+        position->mBoxSizing == StyleBoxSizing::ContentBox) {
       specifiedBSize +=
           aCellFrame->GetLogicalUsedBorderAndPadding(aWM).BStartEnd(aWM);
     }

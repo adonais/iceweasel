@@ -6,6 +6,9 @@
 
 /* A template class for tagged unions. */
 
+#ifndef mozilla_Variant_h
+#define mozilla_Variant_h
+
 #include <algorithm>
 #include <new>
 #include <stdint.h>
@@ -16,9 +19,6 @@
 
 #include <type_traits>
 #include <utility>
-
-#ifndef mozilla_Variant_h
-#  define mozilla_Variant_h
 
 namespace IPC {
 template <typename T>

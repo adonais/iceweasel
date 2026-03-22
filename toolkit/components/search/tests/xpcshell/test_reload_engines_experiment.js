@@ -43,9 +43,9 @@ add_setup(async function () {
 // This is to verify that the loaded configuration matches what we expect for
 // the test.
 add_task(async function test_initial_config_correct() {
-  await Services.search.init();
+  await SearchService.init();
 
-  const installedEngines = await Services.search.getAppProvidedEngines();
+  const installedEngines = await SearchService.getAppProvidedEngines();
   Assert.deepEqual(
     installedEngines.map(e => e.id),
     ["appDefault", "non-experiment"],
@@ -53,7 +53,7 @@ add_task(async function test_initial_config_correct() {
   );
 
   Assert.equal(
-    (await Services.search.getDefault()).id,
+    (await SearchService.getDefault()).id,
     "appDefault",
     "Should have loaded the expected default engine"
   );
@@ -69,11 +69,11 @@ add_task(async function test_config_updated_engine_changes() {
 
   function enginesObs(subject, topic, data) {
     if (data == SearchUtils.MODIFIED_TYPE.ADDED) {
-      enginesAdded.push(subject.QueryInterface(Ci.nsISearchEngine).id);
+      enginesAdded.push(subject.wrappedJSObject.id);
     } else if (data == SearchUtils.MODIFIED_TYPE.CHANGED) {
-      enginesModified.push(subject.QueryInterface(Ci.nsISearchEngine).id);
+      enginesModified.push(subject.wrappedJSObject.id);
     } else if (data == SearchUtils.MODIFIED_TYPE.REMOVED) {
-      enginesRemoved.push(subject.QueryInterface(Ci.nsISearchEngine).id);
+      enginesRemoved.push(subject.wrappedJSObject.id);
     }
   }
   Services.obs.addObserver(enginesObs, SearchUtils.TOPIC_ENGINE_MODIFIED);
@@ -104,7 +104,7 @@ add_task(async function test_config_updated_engine_changes() {
     "Should have removed the expected engine"
   );
 
-  const installedEngines = await Services.search.getAppProvidedEngines();
+  const installedEngines = await SearchService.getAppProvidedEngines();
 
   Assert.deepEqual(
     installedEngines.map(e => e.id),
@@ -112,7 +112,7 @@ add_task(async function test_config_updated_engine_changes() {
     "Should have the correct list of engines installed in the expected order."
   );
 
-  const engineWithSameName = await Services.search.getEngineByName("same-name");
+  const engineWithSameName = await SearchService.getEngineByName("same-name");
   Assert.equal(
     engineWithSameName.getSubmission("test").uri.spec,
     "https://www.example.com/search?q=test",
@@ -120,9 +120,7 @@ add_task(async function test_config_updated_engine_changes() {
   );
 
   Assert.equal(
-    Services.search.wrappedJSObject._settings.getMetaDataAttribute(
-      "useSavedOrder"
-    ),
+    SearchService._settings.getMetaDataAttribute("useSavedOrder"),
     false,
     "Should not have set the useSavedOrder preference"
   );

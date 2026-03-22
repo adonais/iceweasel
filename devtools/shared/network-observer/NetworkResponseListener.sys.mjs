@@ -588,7 +588,19 @@ export class NetworkResponseListener {
     }
 
     response.bodySize = this.#bodySize;
-    response.size = this.#receivedBodySize;
+
+    try {
+      response.size = lazy.NetworkUtils.isRedirect(
+        this.#httpActivity.channel.responseStatus
+      )
+        ? 0
+        : this.#receivedBodySize;
+    } catch (e) {
+      // this.#httpActivity.channel.responseStatus is likely to throw
+      // NS_ERROR_NOT_AVAILABLE if the response has not been received.
+      response.size = 0;
+    }
+
     response.headersSize = this.#httpActivity.headersSize;
     response.transferredSize = this.#bodySize + this.#httpActivity.headersSize;
 

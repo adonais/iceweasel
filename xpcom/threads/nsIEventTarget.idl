@@ -254,6 +254,25 @@ public:
    *   accepting events, or that the shutdown task cannot be found.
    */
   [noscript] void unregisterShutdownTask(in nsITargetShutdownTask task);
+
+  cenum FeatureFlags : 32 {
+      SUPPORTS_BASE = 0,
+      // Indicates that the event target supports shutdown tasks.
+      SUPPORTS_SHUTDOWN_TASKS = 1 << 0,
+      // Indicates whether or not it is possible to dispatch events to this
+      // event target while its shutdown tasks are executed from those.
+      SUPPORTS_SHUTDOWN_TASK_DISPATCH = 1 << 1,
+      // Indicates whether the event target supports prioritization.
+      // Events implementing nsIRunnablePriority can get run in a different
+      // order than they were dispatched.
+      SUPPORTS_PRIORITIZATION = 1 << 2,
+  };
+
+  /**
+   * Returns a FeatureFlags bitmask indicating supported features.
+   */
+  [noscript, notxpcom] nsIEventTarget_FeatureFlags getFeatures();
+
 };
 
 %{C++
@@ -266,6 +285,7 @@ public:
 
 // Convenience bitwise operators for the flag cenum
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsIEventTarget::DispatchFlags)
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsIEventTarget::FeatureFlags)
 
 // Convenient NS_DECL variant that includes some C++-only methods.
 #define NS_DECL_NSIEVENTTARGET_FULL                                   \

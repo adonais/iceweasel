@@ -386,7 +386,9 @@ void HTMLSlotElement::FireSlotChangeEvent() {
 
 void HTMLSlotElement::RemoveManuallyAssignedNode(nsIContent& aNode) {
   mManuallyAssignedNodes.RemoveElement(&aNode);
-  RemoveAssignedNode(aNode);
+  if (aNode.GetAssignedSlot() == this) {
+    RemoveAssignedNode(aNode);
+  }
 }
 
 JSObject* HTMLSlotElement::WrapNode(JSContext* aCx,

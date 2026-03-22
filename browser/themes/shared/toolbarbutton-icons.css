@@ -189,6 +189,10 @@
   list-style-image: url("chrome://browser/skin/login.svg");
 }
 
+#share-tab-button {
+  list-style-image: url("chrome://browser/skin/share.svg");
+}
+
 #sidebar-button {
   /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.revamp") {
@@ -258,8 +262,6 @@
 .bookmark-item {
   --bookmark-item-icon: url("chrome://global/skin/icons/defaultFavicon.svg");
   --menuitem-icon: var(--bookmark-item-icon);
-  -moz-context-properties: fill;
-  fill: currentColor;
 
   &:is(toolbarbutton) {
     -moz-context-properties: fill, fill-opacity;
@@ -319,14 +321,44 @@
   list-style-image: url("chrome://browser/content/logos/ipprotection-off.svg");
   -moz-context-properties: fill, stroke, fill-opacity;
 
+  &:is([overflowedItem="true"], [cui-areatype="panel"]) {
+    list-style-image: url("chrome://browser/content/ipprotection/assets/states/ipprotection-off.svg");
+
+    > .toolbarbutton-icon {
+      width: var(--icon-size-small);
+      height: var(--icon-size-small);
+    }
+  }
+
   &.ipprotection-on {
     list-style-image: url("chrome://browser/content/logos/ipprotection-on.svg");
     stroke: var(--icon-color-success);
+
+    &:is([overflowedItem="true"], [cui-areatype="panel"]) {
+      list-style-image: url("chrome://browser/content/ipprotection/assets/states/ipprotection-on.svg");
+      fill: var(--icon-color-success);
+    }
   }
 
   &.ipprotection-error {
     list-style-image: url("chrome://browser/content/logos/ipprotection-error.svg");
     stroke: var(--icon-color-critical);
+
+    &:is([overflowedItem="true"], [cui-areatype="panel"]) {
+      list-style-image: url("chrome://browser/content/ipprotection/assets/states/ipprotection-error.svg");
+      fill: var(--icon-color-critical);
+    }
+  }
+
+  &.ipprotection-excluded {
+    list-style-image: url("chrome://browser/content/logos/ipprotection-excluded.svg");
+    stroke: var(--icon-color-success);
+
+    &:is([overflowedItem="true"], [cui-areatype="panel"]) {
+      list-style-image: url("chrome://browser/content/ipprotection/assets/states/ipprotection-excluded.svg");
+      fill: transparent;
+      stroke: var(--icon-color-success);
+    }
   }
 }
 
@@ -352,4 +384,16 @@
   &[muted] {
     list-style-image: url("chrome://global/skin/media/audio-muted.svg");
   }
+}
+
+#smartwindow-ask-button {
+  list-style-image: url("chrome://browser/content/aiwindow/assets/ask-icon.svg");
+
+  &.sidebar-is-open {
+    list-style-image: url("chrome://global/skin/icons/close.svg");
+  }
+}
+
+#document-pip-return-to-opener-button {
+  list-style-image: url("chrome://global/skin/media/picture-in-picture-closed.svg");
 }

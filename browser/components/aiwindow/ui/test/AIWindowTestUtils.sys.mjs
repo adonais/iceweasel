@@ -7,7 +7,7 @@ import { BrowserTestUtils } from "resource://testing-common/BrowserTestUtils.sys
 export const AIWindowTestUtils = {
   async toggleAIWindowPref(SpecialPowers, enabled) {
     await SpecialPowers.pushPrefEnv({
-      set: [["browser.aiwindow.enabled", enabled]],
+      set: [["browser.smartwindow.enabled", enabled]],
     });
   },
 

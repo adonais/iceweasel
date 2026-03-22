@@ -652,11 +652,9 @@ already_AddRefed<dom::Promise> Adapter::RequestDevice(
     ffi::WGPUDeviceQueueId ids =
         ffi::wgpu_client_request_device(GetClient(), GetId(), &ffiDesc);
 
-    auto pending_promise = WebGPUChild::PendingRequestDevicePromise{
-        RefPtr(promise), ids.device, ids.queue, aDesc.mLabel, RefPtr(this),
-        features,        limits,     mInfo,     lost_promise};
-    GetChild()->mPendingRequestDevicePromises.push_back(
-        std::move(pending_promise));
+    GetChild()->EnqueueRequestDevicePromise(PendingRequestDevicePromise{
+        promise, ids.device, ids.queue, aDesc.mLabel, this, std::move(features),
+        std::move(limits), mInfo, std::move(lost_promise)});
 
   }();
 

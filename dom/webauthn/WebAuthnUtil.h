@@ -32,6 +32,18 @@ bool IsValidRpId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
 
 nsresult HashCString(const nsACString& aIn, /* out */ nsTArray<uint8_t>& aOut);
 
+uint32_t WebAuthnTimeout(const Optional<uint32_t>& aTimeout);
+
+nsresult SerializeWebAuthnCreationOptions(
+    JSContext* aCx, const nsString& aRpId,
+    const PublicKeyCredentialCreationOptions& aOptions,
+    /* out */ nsString& aOut);
+
+nsresult SerializeWebAuthnRequestOptions(
+    JSContext* aCx, const nsString& aRpId,
+    const PublicKeyCredentialRequestOptions& aOptions,
+    /* out */ nsString& aOut);
+
 }  // namespace mozilla::dom
 
 #endif  // mozilla_dom_WebAuthnUtil_h

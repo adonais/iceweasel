@@ -285,15 +285,22 @@ export var ScreenshotsUtils = {
     let newBrowser = event.detail;
 
     const currentUIPhase = this.getUIPhase(oldBrowser);
+    const previousState = this.browserToScreenshotsState.get(oldBrowser) || {};
+
+    this.browserToScreenshotsState.delete(oldBrowser);
+
     if (currentUIPhase === UIPhases.OVERLAYSELECTION) {
       newBrowser.addEventListener("SwapDocShells", this);
       newBrowser.addEventListener("EndSwapDocShells", this);
       oldBrowser.removeEventListener("SwapDocShells", this);
 
-      let perBrowserState =
-        this.browserToScreenshotsState.get(oldBrowser) || {};
-      this.browserToScreenshotsState.set(newBrowser, perBrowserState);
-      this.browserToScreenshotsState.delete(oldBrowser);
+      // We only keep interaction state and remove element references which will be
+      // invalid in the new document.
+      this.browserToScreenshotsState.set(newBrowser, {
+        hasOverlaySelection: previousState.hasOverlaySelection,
+        overlayState: previousState.overlayState,
+        exitOnPreviewClose: previousState.exitOnPreviewClose,
+      });
 
       this.getActor(oldBrowser).sendAsyncMessage(
         "Screenshots:RemoveEventListeners"
@@ -523,12 +530,16 @@ export var ScreenshotsUtils = {
     this.closePanel(browser);
     this.closeOverlay(browser);
     this.resetMethodsUsed();
-    this.attemptToRestoreFocus(browser);
+
+    const gBrowser = browser.getTabBrowser();
+    // Only attempt to restore focus if we're exiting to the same browser.
+    if (gBrowser.selectedBrowser == browser) {
+      this.attemptToRestoreFocus(browser);
+    }
 
     this.revokeBlobURL(browser);
 
     browser.removeEventListener("SwapDocShells", this);
-    const gBrowser = browser.getTabBrowser();
     gBrowser.tabContainer.removeEventListener("TabSelect", this);
     browser.ownerDocument.removeEventListener("keydown", this);
 
@@ -556,7 +567,6 @@ export var ScreenshotsUtils = {
    */
   setPerBrowserState(browser, nameValues = {}) {
     if (!this.browserToScreenshotsState.has(browser)) {
-      // we should really have this state already, created when the preview dialog was opened
       this.browserToScreenshotsState.set(browser, {});
     }
     let perBrowserState = this.browserToScreenshotsState.get(browser);
@@ -777,22 +787,20 @@ export var ScreenshotsUtils = {
    * @returns The buttons panel
    */
   panelForBrowser(browser) {
-    let buttonsPanel = browser.ownerDocument.getElementById(
-      "screenshotsPagePanel"
-    );
-    if (!buttonsPanel) {
-      let doc = browser.ownerDocument;
-      let template = doc.getElementById("screenshotsPagePanelTemplate");
-      let fragmentClone = template.content.cloneNode(true);
-      buttonsPanel = fragmentClone.firstElementChild;
-      template.replaceWith(buttonsPanel);
-      browser.closest("#tabbrowser-tabbox").prepend(buttonsPanel);
-    }
+    let perBrowserState = this.browserToScreenshotsState.get(browser);
+    // We store the buttons panel element as a weakref to allow it to get destroyed along
+    // with the <browser> if the tab closes
+    return perBrowserState?.buttonsPanel
+      ? perBrowserState.buttonsPanel.get()
+      : null;
+  },
 
-    return (
-      buttonsPanel ??
-      browser.ownerDocument.getElementById("screenshotsPagePanel")
-    );
+  createPanel(browser, containerElem) {
+    const doc = browser.ownerDocument;
+    const template = doc.getElementById("screenshotsPagePanelTemplate");
+    const fragmentClone = doc.importNode(template.content, true);
+
+    return containerElem.appendChild(fragmentClone.firstElementChild);
   },
 
   /**
@@ -802,9 +810,25 @@ export var ScreenshotsUtils = {
    */
   openPanel(browser) {
     let buttonsPanel = this.panelForBrowser(browser);
-    if (!buttonsPanel.hidden) {
+    if (buttonsPanel && !buttonsPanel.hidden) {
       return null;
     }
+    const { gBrowser } = browser.ownerGlobal;
+    const browserWrapper = gBrowser.getPanel(browser);
+    // The element may exist but be associated with a different browser
+    if (!buttonsPanel) {
+      buttonsPanel = gBrowser.tabpanels.querySelector(".screenshotsPagePanel");
+    }
+    if (!buttonsPanel) {
+      buttonsPanel = this.createPanel(browser, browserWrapper);
+    }
+    if (buttonsPanel.parentElement !== browserWrapper) {
+      browserWrapper.appendChild(buttonsPanel);
+    }
+    this.setPerBrowserState(browser, {
+      buttonsPanel: Cu.getWeakReference(buttonsPanel),
+    });
+
     buttonsPanel.hidden = false;
 
     return new Promise(resolve => {
@@ -837,11 +861,11 @@ export var ScreenshotsUtils = {
    *
    * @param browser The current browser.
    */
-  async showPanelAndOverlay(browser, data) {
+  showPanelAndOverlay(browser, data) {
     let actor = this.getActor(browser);
     actor.sendAsyncMessage("Screenshots:ShowOverlay");
     this.recordTelemetryEvent("started" + data);
-    this.openPanel(browser);
+    return this.openPanel(browser);
   },
 
   /**

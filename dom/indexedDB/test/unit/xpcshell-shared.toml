@@ -148,7 +148,7 @@ skip-if = [
 
 ["test_put_get_values_autoIncrement.js"]
 skip-if = [
-  "verify && debug && os == 'win'",
+  "os == 'win' && debug && verify",
 ]
 
 ["test_readonly_transactions.js"]

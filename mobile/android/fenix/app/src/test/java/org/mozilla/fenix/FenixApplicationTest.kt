@@ -13,6 +13,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.runBlocking
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode
 import mozilla.components.concept.engine.webextension.DisabledFlags
@@ -64,7 +65,7 @@ class FenixApplicationTest {
     private lateinit var browserStore: BrowserStore
 
     private val testDistributionProviderChecker = object : DistributionProviderChecker {
-        override fun queryProvider(): String? = null
+        override suspend fun queryProvider(): String? = null
     }
 
     private val testDistributionSettings = object : DistributionSettings {
@@ -121,7 +122,7 @@ class FenixApplicationTest {
 
     @Test
     @Config(sdk = [Build.VERSION_CODES.O])
-    fun `WHEN setStartupMetrics is called THEN sets some base metrics`() {
+    fun `WHEN setStartupMetrics is called THEN sets some base metrics`() = runBlocking {
         val expectedAppName = "org.mozilla.fenix"
         val expectedAppInstallSource = "org.mozilla.install.source"
         val settings = spyk(Settings(testContext))
@@ -141,6 +142,7 @@ class FenixApplicationTest {
         every { settings.adjustNetwork } returns "network"
         // Testing [settings.migrateSearchWidgetInstalledPrefIfNeeded]
         settings.preferences.edit().putInt("pref_key_search_widget_installed", 5).apply()
+        settings.preferences.edit().putString("pref_key_current_wallpaper", "default").apply()
         every { settings.openTabsCount } returns 1
         every { settings.topSitesSize } returns 2
         every { settings.installedAddonsCount } returns 3
@@ -277,42 +279,44 @@ class FenixApplicationTest {
 
     @Test
     @Config(sdk = [28])
-    fun `GIVEN the current etp mode is custom WHEN tracking the etp metric THEN track also the cookies option on SDK 28`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { shouldUseTrackingProtection } returns true
-            every { useCustomTrackingProtection } returns true
-            every { blockCookiesSelectionInCustomTrackingProtection } returns "Test"
+    fun `GIVEN the current etp mode is custom WHEN tracking the etp metric THEN track also the cookies option on SDK 28`() =
+        runBlocking {
+            val settings: Settings = mockk(relaxed = true) {
+                every { shouldUseTrackingProtection } returns true
+                every { useCustomTrackingProtection } returns true
+                every { blockCookiesSelectionInCustomTrackingProtection } returns "Test"
+            }
+
+            application.setStartupMetrics(
+                browserStore = browserStore,
+                settings = settings,
+                browsersCache = browsersCache,
+                mozillaProductDetector = mozillaProductDetector,
+            )
+
+            assertEquals("Test", Preferences.etpCustomCookiesSelection.testGetValue())
         }
-
-        application.setStartupMetrics(
-            browserStore = browserStore,
-            settings = settings,
-            browsersCache = browsersCache,
-            mozillaProductDetector = mozillaProductDetector,
-        )
-
-        assertEquals("Test", Preferences.etpCustomCookiesSelection.testGetValue())
-    }
 
     @Test
-    fun `GIVEN the current etp mode is custom WHEN tracking the etp metric THEN track also the cookies option`() {
-        val settings: Settings = mockk(relaxed = true) {
-            every { shouldUseTrackingProtection } returns true
-            every { useCustomTrackingProtection } returns true
-            every { blockCookiesSelectionInCustomTrackingProtection } returns "Test"
+    fun `GIVEN the current etp mode is custom WHEN tracking the etp metric THEN track also the cookies option`() =
+        runBlocking {
+            val settings: Settings = mockk(relaxed = true) {
+                every { shouldUseTrackingProtection } returns true
+                every { useCustomTrackingProtection } returns true
+                every { blockCookiesSelectionInCustomTrackingProtection } returns "Test"
+            }
+
+            val packageManager: PackageManager = testContext.packageManager
+            shadowOf(packageManager)
+                .setInstallSourceInfo(testContext.packageName, "initiating.package", "installing.package")
+
+            application.setStartupMetrics(
+                browserStore = browserStore,
+                settings = settings,
+                browsersCache = browsersCache,
+                mozillaProductDetector = mozillaProductDetector,
+            )
+
+            assertEquals("Test", Preferences.etpCustomCookiesSelection.testGetValue())
         }
-
-        val packageManager: PackageManager = testContext.packageManager
-        shadowOf(packageManager)
-            .setInstallSourceInfo(testContext.packageName, "initiating.package", "installing.package")
-
-        application.setStartupMetrics(
-            browserStore = browserStore,
-            settings = settings,
-            browsersCache = browsersCache,
-            mozillaProductDetector = mozillaProductDetector,
-        )
-
-        assertEquals("Test", Preferences.etpCustomCookiesSelection.testGetValue())
-    }
 }

@@ -23,10 +23,10 @@
 #include <string_view>
 #include <utility>
 
-#include "jsnum.h"
 #include "jspubtd.h"
 #include "NamespaceImports.h"
 
+#include "builtin/Number.h"
 #include "builtin/temporal/PlainDate.h"
 #include "builtin/temporal/PlainDateTime.h"
 #include "builtin/temporal/PlainMonthDay.h"
@@ -598,7 +598,7 @@ static double FractionToDoubleSlow(const T& numerator, const T& denominator) {
     // Move the ignored bits into the proper significand position and adjust the
     // exponent to reflect the now moved out extra bits.
     significand >>= extraBitsCount;
-    exponent += extraBitsCount;
+    exponent += static_cast<int32_t>(extraBitsCount);
 
     MOZ_ASSERT((significand >> SignificandWidthWithImplicitOne) == 0,
                "no excess bits in the significand");
@@ -647,11 +647,11 @@ static double FractionToDoubleSlow(const T& numerator, const T& denominator) {
   if (significandZeros < SignificandLeadingZeros) {
     uint32_t shift = SignificandLeadingZeros - significandZeros;
     significand >>= shift;
-    exponent += shift;
+    exponent += static_cast<int32_t>(shift);
   } else if (significandZeros > SignificandLeadingZeros) {
     uint32_t shift = significandZeros - SignificandLeadingZeros;
     significand <<= shift;
-    exponent -= shift;
+    exponent -= static_cast<int32_t>(shift);
   }
 
   // Combine the individual bits of the double value and return it.

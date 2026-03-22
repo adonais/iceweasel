@@ -26,10 +26,10 @@
     <html:setting-group groupid="firefoxSuggest" data-category="paneSearch" hidden="true" data-subcategory="locationBar" />
 
     <!-- Search Shortcuts -->
-    <groupbox id="oneClickSearchProvidersGroup" data-category="paneSearch" hidden="true">
+    <html:setting-group groupid="searchShortcuts" hidden="true" data-category="paneSearch" />
+    <groupbox id="oneClickSearchProvidersGroup" data-category="paneSearch" hidden="true" data-srd-groupid="searchShortcuts">
       <label><html:h2 data-l10n-id="search-one-click-header2" /></label>
       <description class="description-deemphasized" data-l10n-id="search-one-click-desc" />
-
       <tree id="engineList" flex="1" rows="11" hidecolumnpicker="true" editable="true"
             seltype="single" allowunderflowscroll="true">
         <treechildren id="engineChildren" flex="1"/>

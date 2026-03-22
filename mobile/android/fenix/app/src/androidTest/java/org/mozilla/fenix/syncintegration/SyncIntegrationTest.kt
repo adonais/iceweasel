@@ -114,7 +114,7 @@ class SyncIntegrationTest {
         }.openThreeDotMenu {
         }.clickSettingsButton {
         }.openLoginsAndPasswordSubMenu {
-        }.openSyncLogins {
+        }.openSyncLogins(composeTestRule) {
             // Tap to sign in from Logins menu
             tapOnUseEmailToSignIn()
             typeEmail()

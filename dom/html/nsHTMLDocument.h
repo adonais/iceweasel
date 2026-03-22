@@ -3,8 +3,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#ifndef nsHTMLDocument_h___
-#define nsHTMLDocument_h___
+#ifndef nsHTMLDocument_h_
+#define nsHTMLDocument_h_
 
 #include "PLDHashTable.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -204,4 +204,4 @@ inline const nsHTMLDocument* Document::AsHTMLDocument() const {
 
 }  // namespace mozilla::dom
 
-#endif /* nsHTMLDocument_h___ */
+#endif /* nsHTMLDocument_h_ */

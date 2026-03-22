@@ -272,7 +272,7 @@ pub struct Device {
     pub(crate) default_external_texture_params_buffer: ManuallyDrop<Box<dyn hal::DynBuffer>>,
     // needs to be dropped last
     #[cfg(feature = "trace")]
-    pub(crate) trace: Mutex<Option<trace::Trace>>,
+    pub(crate) trace: Mutex<Option<Box<dyn trace::Trace + Send + Sync + 'static>>>,
 }
 
 pub(crate) enum DeferredDestroy {
@@ -385,9 +385,41 @@ impl Device {
             }
         };
         #[cfg(feature = "trace")]
-        let trace_dir_name: Option<&std::path::PathBuf> = match &desc.trace {
+        let trace: Option<Box<dyn trace::Trace + Send + Sync + 'static>> = match &desc.trace {
             wgt::Trace::Off => None,
-            wgt::Trace::Directory(d) => Some(d),
+            wgt::Trace::Directory(dir) => match trace::DiskTrace::new(dir.clone()) {
+                Ok(mut trace) => {
+                    trace::Trace::add(
+                        &mut trace,
+                        trace::Action::Init {
+                            desc: wgt::DeviceDescriptor {
+                                trace: wgt::Trace::Off,
+                                ..desc.clone()
+                            },
+                            backend: adapter.backend(),
+                        },
+                    );
+                    Some(Box::new(trace))
+                }
+                Err(e) => {
+                    log::error!("Unable to start a trace in '{dir:?}': {e}");
+                    None
+                }
+            },
+            wgt::Trace::Memory => {
+                let mut trace = trace::MemoryTrace::new();
+                trace::Trace::add(
+                    &mut trace,
+                    trace::Action::Init {
+                        desc: wgt::DeviceDescriptor {
+                            trace: wgt::Trace::Off,
+                            ..desc.clone()
+                        },
+                        backend: adapter.backend(),
+                    },
+                );
+                Some(Box::new(trace))
+            }
             // The enum is non_exhaustive, so we must have a fallback arm (that should be
             // unreachable in practice).
             t => {
@@ -483,25 +515,7 @@ impl Device {
             tracker_indices: TrackerIndexAllocators::new(),
             bgl_pool: ResourcePool::new(),
             #[cfg(feature = "trace")]
-            trace: Mutex::new(
-                rank::DEVICE_TRACE,
-                trace_dir_name.and_then(|path| match trace::Trace::new(path.clone()) {
-                    Ok(mut trace) => {
-                        trace.add(trace::Action::Init {
-                            desc: wgt::DeviceDescriptor {
-                                trace: wgt::Trace::Off,
-                                ..desc.clone()
-                            },
-                            backend: adapter.backend(),
-                        });
-                        Some(trace)
-                    }
-                    Err(e) => {
-                        log::error!("Unable to start a trace in '{path:?}': {e}");
-                        None
-                    }
-                }),
-            ),
+            trace: Mutex::new(rank::DEVICE_TRACE, trace),
             alignments,
             limits: desc.required_limits.clone(),
             features: desc.required_features,
@@ -626,6 +640,14 @@ impl Device {
         } else {
             Err(DeviceError::Lost)
         }
+    }
+
+    /// Stop tracing and return the trace object.
+    ///
+    /// This is mostly useful for in-memory traces.
+    #[cfg(feature = "trace")]
+    pub fn take_trace(&self) -> Option<Box<dyn trace::Trace + Send + Sync + 'static>> {
+        self.trace.lock().take()
     }
 
     /// Checks that we are operating within the memory budget reported by the native APIs.
@@ -993,7 +1015,7 @@ impl Device {
         }
 
         if desc.mapped_at_creation {
-            if desc.size % wgt::COPY_BUFFER_ALIGNMENT != 0 {
+            if !desc.size.is_multiple_of(wgt::COPY_BUFFER_ALIGNMENT) {
                 return Err(resource::CreateBufferError::UnalignedSize);
             }
             if !desc.usage.contains(wgt::BufferUsages::MAP_WRITE) {
@@ -1340,7 +1362,7 @@ impl Device {
         if desc.format.is_compressed() {
             let (block_width, block_height) = desc.format.block_dimensions();
 
-            if desc.size.width % block_width != 0 {
+            if !desc.size.width.is_multiple_of(block_width) {
                 return Err(CreateTextureError::InvalidDimension(
                     TextureDimensionError::NotMultipleOfBlockWidth {
                         width: desc.size.width,
@@ -1350,7 +1372,7 @@ impl Device {
                 ));
             }
 
-            if desc.size.height % block_height != 0 {
+            if !desc.size.height.is_multiple_of(block_height) {
                 return Err(CreateTextureError::InvalidDimension(
                     TextureDimensionError::NotMultipleOfBlockHeight {
                         height: desc.size.height,
@@ -1397,7 +1419,7 @@ impl Device {
                 height_multiple <<= desc.mip_level_count.saturating_sub(1);
             }
 
-            if desc.size.width % width_multiple != 0 {
+            if !desc.size.width.is_multiple_of(width_multiple) {
                 return Err(CreateTextureError::InvalidDimension(
                     TextureDimensionError::WidthNotMultipleOf {
                         width: desc.size.width,
@@ -1407,7 +1429,7 @@ impl Device {
                 ));
             }
 
-            if desc.size.height % height_multiple != 0 {
+            if !desc.size.height.is_multiple_of(height_multiple) {
                 return Err(CreateTextureError::InvalidDimension(
                     TextureDimensionError::HeightNotMultipleOf {
                         height: desc.size.height,
@@ -1800,7 +1822,7 @@ impl Device {
                 }
             }
             TextureViewDimension::CubeArray => {
-                if resolved_array_layer_count % 6 != 0 {
+                if !resolved_array_layer_count.is_multiple_of(6) {
                     return Err(
                         resource::CreateTextureViewError::InvalidCubemapArrayTextureDepth {
                             depth: resolved_array_layer_count,
@@ -2578,8 +2600,10 @@ impl Device {
                 Bt::StorageTexture {
                     access,
                     view_dimension,
-                    format: _,
+                    format,
                 } => {
+                    use wgt::{StorageTextureAccess as Access, TextureFormatFeatureFlags as Flags};
+
                     match view_dimension {
                         TextureViewDimension::Cube | TextureViewDimension::CubeArray => {
                             return Err(binding_model::CreateBindGroupLayoutError::Entry {
@@ -2600,6 +2624,30 @@ impl Device {
                         }
                         _ => (),
                     }
+
+                    let format_features =
+                        self.describe_format_features(format).map_err(|error| {
+                            binding_model::CreateBindGroupLayoutError::Entry {
+                                binding: entry.binding,
+                                error: BindGroupLayoutEntryError::MissingFeatures(error),
+                            }
+                        })?;
+
+                    let required_feature_flag = match access {
+                        Access::WriteOnly => Flags::STORAGE_WRITE_ONLY,
+                        Access::ReadOnly => Flags::STORAGE_READ_ONLY,
+                        Access::ReadWrite => Flags::STORAGE_READ_WRITE,
+                        Access::Atomic => Flags::STORAGE_ATOMIC,
+                    };
+
+                    if !format_features.flags.contains(required_feature_flag) {
+                        return Err(binding_model::CreateBindGroupLayoutError::UnsupportedStorageTextureAccess {
+                            binding: entry.binding,
+                            access,
+                            format,
+                        });
+                    }
+
                     (
                         Some(
                             wgt::Features::TEXTURE_BINDING_ARRAY
@@ -2778,7 +2826,7 @@ impl Device {
 
         let (align, align_limit_name) =
             binding_model::buffer_binding_type_alignment(&self.limits, binding_ty);
-        if bb.offset % align as u64 != 0 {
+        if !bb.offset.is_multiple_of(align as u64) {
             return Err(Error::UnalignedBufferOffset(
                 bb.offset,
                 align_limit_name,
@@ -3484,52 +3532,14 @@ impl Device {
                     });
                 }
 
-                let internal_use = match access {
-                    wgt::StorageTextureAccess::WriteOnly => {
-                        if !view
-                            .format_features
-                            .flags
-                            .contains(wgt::TextureFormatFeatureFlags::STORAGE_WRITE_ONLY)
-                        {
-                            return Err(Error::StorageWriteNotSupported(view.desc.format));
-                        }
-                        wgt::TextureUses::STORAGE_WRITE_ONLY
-                    }
-                    wgt::StorageTextureAccess::ReadOnly => {
-                        if !view
-                            .format_features
-                            .flags
-                            .contains(wgt::TextureFormatFeatureFlags::STORAGE_READ_ONLY)
-                        {
-                            return Err(Error::StorageReadNotSupported(view.desc.format));
-                        }
-                        wgt::TextureUses::STORAGE_READ_ONLY
-                    }
-                    wgt::StorageTextureAccess::ReadWrite => {
-                        if !view
-                            .format_features
-                            .flags
-                            .contains(wgt::TextureFormatFeatureFlags::STORAGE_READ_WRITE)
-                        {
-                            return Err(Error::StorageReadWriteNotSupported(view.desc.format));
-                        }
-
-                        wgt::TextureUses::STORAGE_READ_WRITE
-                    }
-                    wgt::StorageTextureAccess::Atomic => {
-                        if !view
-                            .format_features
-                            .flags
-                            .contains(wgt::TextureFormatFeatureFlags::STORAGE_ATOMIC)
-                        {
-                            return Err(Error::StorageAtomicNotSupported(view.desc.format));
-                        }
-
-                        wgt::TextureUses::STORAGE_ATOMIC
-                    }
-                };
                 view.check_usage(wgt::TextureUsages::STORAGE_BINDING)?;
-                Ok(internal_use)
+
+                Ok(match access {
+                    wgt::StorageTextureAccess::ReadOnly => wgt::TextureUses::STORAGE_READ_ONLY,
+                    wgt::StorageTextureAccess::WriteOnly => wgt::TextureUses::STORAGE_WRITE_ONLY,
+                    wgt::StorageTextureAccess::ReadWrite => wgt::TextureUses::STORAGE_READ_WRITE,
+                    wgt::StorageTextureAccess::Atomic => wgt::TextureUses::STORAGE_ATOMIC,
+                })
             }
             wgt::BindingType::ExternalTexture => {
                 if view.desc.dimension != TextureViewDimension::D2 {
@@ -3600,7 +3610,10 @@ impl Device {
                 max: self.limits.max_immediate_size,
             });
         }
-        if desc.immediate_size % wgt::IMMEDIATE_DATA_ALIGNMENT != 0 {
+        if !desc
+            .immediate_size
+            .is_multiple_of(wgt::IMMEDIATE_DATA_ALIGNMENT)
+        {
             return Err(Error::MisalignedImmediateSize {
                 size: desc.immediate_size,
             });

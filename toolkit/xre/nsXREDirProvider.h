@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _nsXREDirProvider_h__
-#define _nsXREDirProvider_h__
+#ifndef _nsXREDirProvider_h_
+#define _nsXREDirProvider_h_
 
 #include "nsIDirectoryService.h"
 #include "nsIProfileMigrator.h"

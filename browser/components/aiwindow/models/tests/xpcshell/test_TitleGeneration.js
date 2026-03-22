@@ -17,9 +17,9 @@ const { sinon } = ChromeUtils.importESModule(
 /**
  * Constants for preference keys and test values
  */
-const PREF_API_KEY = "browser.aiwindow.apiKey";
-const PREF_ENDPOINT = "browser.aiwindow.endpoint";
-const PREF_MODEL = "browser.aiwindow.model";
+const PREF_API_KEY = "browser.smartwindow.apiKey";
+const PREF_ENDPOINT = "browser.smartwindow.endpoint";
+const PREF_MODEL = "browser.smartwindow.model";
 
 const API_KEY = "test-api-key";
 const ENDPOINT = "https://api.test-endpoint.com/v1";
@@ -48,13 +48,7 @@ add_task(async function test_generateChatTitle_success() {
   try {
     // Mock the engine response
     const mockResponse = {
-      choices: [
-        {
-          message: {
-            content: "Weather Forecast Query",
-          },
-        },
-      ],
+      finalOutput: "Weather Forecast Query",
     };
 
     const fakeEngineInstance = {
@@ -85,30 +79,31 @@ add_task(async function test_generateChatTitle_success() {
 
     // Verify the messages structure passed to the engine
     const callArgs = fakeEngineInstance.run.firstCall.args[0];
-    Assert.ok(callArgs.messages, "Should pass messages to the engine");
+    Assert.ok(callArgs.args, "Should pass args to the engine");
+    Assert.ok(!callArgs.messages, "Should not pass messages at top level");
     Assert.equal(
-      callArgs.messages.length,
+      callArgs.args.length,
       2,
       "Should have system and user messages"
     );
     Assert.equal(
-      callArgs.messages[0].role,
+      callArgs.args[0].role,
       "system",
       "First message should be system"
     );
     Assert.equal(
-      callArgs.messages[1].role,
+      callArgs.args[1].role,
       "user",
       "Second message should be user"
     );
     Assert.equal(
-      callArgs.messages[1].content,
+      callArgs.args[1].content,
       message,
       "User message should contain the input message"
     );
 
     // Verify the system prompt contains the tab information
-    const systemContent = callArgs.messages[0].content;
+    const systemContent = callArgs.args[0].content;
     Assert.ok(
       systemContent.includes(currentTab.url),
       "System prompt should include tab URL"
@@ -137,13 +132,7 @@ add_task(async function test_generateChatTitle_no_tab_info() {
   const sb = sinon.createSandbox();
   try {
     const mockResponse = {
-      choices: [
-        {
-          message: {
-            content: "General Question",
-          },
-        },
-      ],
+      finalOutput: "General Question",
     };
 
     const fakeEngineInstance = {
@@ -165,7 +154,7 @@ add_task(async function test_generateChatTitle_no_tab_info() {
 
     // Verify the system prompt handles null tab
     const callArgs = fakeEngineInstance.run.firstCall.args[0];
-    Assert.ok(callArgs.messages, "Should pass messages even with null tab");
+    Assert.ok(callArgs.args, "Should pass args even with null tab");
   } finally {
     sb.restore();
   }
@@ -182,13 +171,7 @@ add_task(async function test_generateChatTitle_empty_tab_fields() {
   const sb = sinon.createSandbox();
   try {
     const mockResponse = {
-      choices: [
-        {
-          message: {
-            content: "Untitled Chat",
-          },
-        },
-      ],
+      finalOutput: "Untitled Chat",
     };
 
     const fakeEngineInstance = {
@@ -210,10 +193,7 @@ add_task(async function test_generateChatTitle_empty_tab_fields() {
 
     // Verify the system prompt includes the empty tab object
     const callArgs = fakeEngineInstance.run.firstCall.args[0];
-    Assert.ok(
-      callArgs.messages,
-      "Should pass messages even with empty tab fields"
-    );
+    Assert.ok(callArgs.args, "Should pass args even with empty tab fields");
   } finally {
     sb.restore();
   }
@@ -264,7 +244,7 @@ add_task(async function test_generateChatTitle_malformed_response() {
 
   const sb = sinon.createSandbox();
   try {
-    // Test with missing choices
+    // Test with missing finalOutput
     const mockResponse1 = {};
     let fakeEngineInstance = {
       run: sb.stub().resolves(mockResponse1),
@@ -275,13 +255,13 @@ add_task(async function test_generateChatTitle_malformed_response() {
     Assert.equal(
       title,
       "test message one two...",
-      "Should return first four words for missing choices"
+      "Should return first four words for missing finalOutput"
     );
 
-    // Test with empty choices array
+    // Test with empty string finalOutput
     sb.restore();
     const sb2 = sinon.createSandbox();
-    const mockResponse2 = { choices: [] };
+    const mockResponse2 = { finalOutput: "" };
     fakeEngineInstance = {
       run: sb2.stub().resolves(mockResponse2),
     };
@@ -291,15 +271,13 @@ add_task(async function test_generateChatTitle_malformed_response() {
     Assert.equal(
       title,
       "another test message here...",
-      "Should return first four words for empty choices"
+      "Should return first four words for empty finalOutput"
     );
 
-    // Test with null content
+    // Test with null finalOutput
     sb2.restore();
     const sb3 = sinon.createSandbox();
-    const mockResponse3 = {
-      choices: [{ message: { content: null } }],
-    };
+    const mockResponse3 = { finalOutput: null };
     fakeEngineInstance = {
       run: sb3.stub().resolves(mockResponse3),
     };
@@ -309,7 +287,7 @@ add_task(async function test_generateChatTitle_malformed_response() {
     Assert.equal(
       title,
       "short test here...",
-      "Should return first four words for null content"
+      "Should return first four words for null finalOutput"
     );
 
     sb3.restore();
@@ -329,13 +307,7 @@ add_task(async function test_generateChatTitle_trim_whitespace() {
   const sb = sinon.createSandbox();
   try {
     const mockResponse = {
-      choices: [
-        {
-          message: {
-            content: "  Title With Spaces  \n\n",
-          },
-        },
-      ],
+      finalOutput: "  Title With Spaces  \n\n",
     };
 
     const fakeEngineInstance = {

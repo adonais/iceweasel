@@ -68,7 +68,7 @@ class Debugger;
 class DebuggerEnvironment;
 class PromiseObject;
 namespace gc {
-struct Cell;
+class Cell;
 } /* namespace gc */
 namespace wasm {
 class Instance;
@@ -348,8 +348,7 @@ class DebuggerWeakMap : private WeakMap<Referent*, Wrapper*, ZoneAllocPolicy> {
   using ReferentType = Referent;
   using WrapperType = Wrapper;
 
-  explicit DebuggerWeakMap(JSContext* cx)
-      : Base(cx), compartment(cx->compartment()) {}
+  explicit DebuggerWeakMap(JSContext* cx);
 
  public:
   // Expose those parts of HashMap public interface that are used by Debugger

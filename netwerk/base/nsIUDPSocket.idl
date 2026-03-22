@@ -305,6 +305,23 @@ interface nsIUDPSocket : nsISupports
     [noscript, notxpcom] void addInputBytes(in uint32_t aBytes);
 
     /**
+     * markAsTRRServiceChannel
+     *
+     * Mark this socket as being used for a TRR service channel connection.
+     * This affects prioritization of socket events.
+     */
+    [noscript, notxpcom] void markAsTRRServiceChannel();
+
+    /**
+     * isTRRServiceChannel
+     *
+     * Check if this socket is marked as being used for a TRR service channel.
+     *
+     * @return true if the socket is for TRR, false otherwise.
+     */
+    [noscript, notxpcom] boolean isTRRServiceChannel();
+
+    /**
      * multicastLoopback
      *
      * Whether multicast datagrams sent via this socket should be looped back to

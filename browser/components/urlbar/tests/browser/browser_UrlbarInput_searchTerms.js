@@ -54,7 +54,7 @@ add_task(async function go_back_to_newtab() {
   );
 
   let [expectedSearchUrl] = UrlbarUtils.getSearchQueryUrl(
-    Services.search.defaultEngine,
+    SearchService.defaultEngine,
     SEARCH_STRING
   );
   let browserLoadedPromise = BrowserTestUtils.browserLoaded(
@@ -102,7 +102,7 @@ add_task(async function go_back_to_newtab() {
 add_task(async function load_url() {
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
   let [expectedSearchUrl] = UrlbarUtils.getSearchQueryUrl(
-    Services.search.defaultEngine,
+    SearchService.defaultEngine,
     SEARCH_STRING
   );
   let browserLoadedPromise = BrowserTestUtils.browserLoaded(
@@ -225,7 +225,7 @@ add_task(async function focus_after_top_sites() {
   }
 
   let [expectedSearchUrl] = UrlbarUtils.getSearchQueryUrl(
-    Services.search.defaultEngine,
+    SearchService.defaultEngine,
     SEARCH_STRING
   );
   await UrlbarTestUtils.promiseAutocompleteResultPopup({

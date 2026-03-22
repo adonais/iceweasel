@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __Helpers_h
-#define __Helpers_h
+#ifndef Helpers_h
+#define Helpers_h
 
 #include "nsCOMPtr.h"
 #include "nsIAsyncInputStream.h"
@@ -251,6 +251,8 @@ struct RunnableQueue : public nsISerialEventTarget {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
+  NS_IMETHOD_(FeatureFlags) GetFeatures() override { return SUPPORTS_BASE; }
+
   // nsISupports methods
 
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -261,4 +263,4 @@ struct RunnableQueue : public nsISerialEventTarget {
 
 }  // namespace testing
 
-#endif  // __Helpers_h
+#endif  // Helpers_h

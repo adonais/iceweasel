@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsStringStream_h__
-#define nsStringStream_h__
+#ifndef nsStringStream_h_
+#define nsStringStream_h_
 
 #include "nsIStringStream.h"
 #include "nsString.h"
@@ -86,4 +86,4 @@ extern nsresult NS_NewCStringInputStream(nsIInputStream** aStreamResult,
 extern nsresult NS_NewCStringInputStream(nsIInputStream** aStreamResult,
                                          nsCString&& aStringToRead);
 
-#endif  // nsStringStream_h__
+#endif  // nsStringStream_h_

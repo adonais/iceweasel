@@ -16,6 +16,7 @@
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/MouseEvent.h"
 #include "nsComboboxControlFrame.h"
+#include "nsComputedDOMStyle.h"
 #include "nsListControlFrame.h"
 
 using namespace mozilla;
@@ -30,11 +31,6 @@ static bool IsOptionInteractivelySelectable(HTMLSelectElement& aSelect,
   if (!aIsCombobox) {
     return aOption.GetPrimaryFrame();
   }
-  // In dropdown mode no options have frames, but we can check whether they
-  // are rendered / not in a display: none subtree.
-  if (!aOption.HasServoData() || Servo_Element_IsDisplayNone(&aOption)) {
-    return false;
-  }
   // TODO(emilio): This is a bit silly and doesn't match the options that we
   // show / don't show in the dropdown, but matches the frame construction we
   // do for multiple selects. For backwards compat also don't allow selecting
@@ -44,7 +40,12 @@ static bool IsOptionInteractivelySelectable(HTMLSelectElement& aSelect,
   // SelectChild.sys.mjs should be changed to match it.
   for (Element* el = &aOption; el && el != &aSelect;
        el = el->GetParentElement()) {
-    if (Servo_Element_IsDisplayContents(el)) {
+    RefPtr style = nsComputedDOMStyle::GetComputedStyleNoFlush(el);
+    if (!style) {
+      return false;
+    }
+    auto display = style->StyleDisplay()->mDisplay;
+    if (display == StyleDisplay::None || display == StyleDisplay::Contents) {
       return false;
     }
   }
@@ -91,8 +92,7 @@ class MOZ_RAII AutoIncrementalSearchHandler {
   bool mResettingCancelled = false;
 };
 
-NS_IMPL_ISUPPORTS(HTMLSelectEventListener, nsIMutationObserver,
-                  nsIDOMEventListener)
+NS_IMPL_ISUPPORTS(HTMLSelectEventListener, nsIDOMEventListener)
 
 HTMLSelectEventListener::~HTMLSelectEventListener() {
   if (sLastKeyListener == uintptr_t(this)) {
@@ -253,10 +253,6 @@ void HTMLSelectEventListener::Attach() {
   mElement->AddSystemEventListener(u"mousedown"_ns, this, false, false);
   mElement->AddSystemEventListener(u"mouseup"_ns, this, false, false);
   mElement->AddSystemEventListener(u"mousemove"_ns, this, false, false);
-
-  if (mIsCombobox) {
-    mElement->AddMutationObserver(this);
-  }
 }
 
 void HTMLSelectEventListener::Detach() {
@@ -265,26 +261,6 @@ void HTMLSelectEventListener::Detach() {
   mElement->RemoveSystemEventListener(u"mousedown"_ns, this, false);
   mElement->RemoveSystemEventListener(u"mouseup"_ns, this, false);
   mElement->RemoveSystemEventListener(u"mousemove"_ns, this, false);
-
-  if (mIsCombobox) {
-    mElement->RemoveMutationObserver(this);
-    if (mElement->OpenInParentProcess()) {
-      nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-          "HTMLSelectEventListener::Detach", [element = mElement] {
-            // Don't hide the dropdown if the element has another frame already,
-            // this prevents closing dropdowns on reframe, see bug 1440506.
-            //
-            // FIXME(emilio): The flush is needed to deal with reframes started
-            // from DOM node removal. But perhaps we can be a bit smarter here.
-            if (!element->IsCombobox() ||
-                !element->GetPrimaryFrame(FlushType::Frames)) {
-              nsContentUtils::DispatchChromeEvent(
-                  element->OwnerDoc(), element, u"mozhidedropdown"_ns,
-                  CanBubble::eYes, Cancelable::eNo);
-            }
-          }));
-    }
-  }
 }
 
 const uint32_t kMaxDropdownRows = 20;  // matches the setting for 4.x browsers
@@ -306,76 +282,6 @@ int32_t HTMLSelectEventListener::ItemsPerPage() const {
     return INT32_MAX - 1;
   }
   return AssertedCast<int32_t>(size - 1u);
-}
-
-void HTMLSelectEventListener::OptionValueMightHaveChanged(
-    nsIContent* aMutatingNode) {
-#ifdef ACCESSIBILITY
-  if (nsAccessibilityService* acc = GetAccService()) {
-    acc->ComboboxOptionMaybeChanged(mElement->OwnerDoc()->GetPresShell(),
-                                    aMutatingNode);
-  }
-#endif
-}
-
-void HTMLSelectEventListener::AttributeChanged(dom::Element* aElement,
-                                               int32_t aNameSpaceID,
-                                               nsAtom* aAttribute, AttrModType,
-                                               const nsAttrValue* aOldValue) {
-  if (aElement->IsHTMLElement(nsGkAtoms::option) &&
-      aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::label) {
-    // A11y has its own mutation listener for this so no need to do
-    // OptionValueMightHaveChanged().
-    ComboboxMightHaveChanged();
-  }
-}
-
-void HTMLSelectEventListener::CharacterDataChanged(
-    nsIContent* aContent, const CharacterDataChangeInfo&) {
-  if (nsContentUtils::IsInSameAnonymousTree(mElement, aContent)) {
-    OptionValueMightHaveChanged(aContent);
-    ComboboxMightHaveChanged();
-  }
-}
-
-void HTMLSelectEventListener::ContentWillBeRemoved(nsIContent* aChild,
-                                                   const ContentRemoveInfo&) {
-  if (nsContentUtils::IsInSameAnonymousTree(mElement, aChild)) {
-    OptionValueMightHaveChanged(aChild);
-    ComboboxMightHaveChanged();
-  }
-}
-
-void HTMLSelectEventListener::ContentAppended(nsIContent* aFirstNewContent,
-                                              const ContentAppendInfo&) {
-  if (nsContentUtils::IsInSameAnonymousTree(mElement, aFirstNewContent)) {
-    OptionValueMightHaveChanged(aFirstNewContent);
-    ComboboxMightHaveChanged();
-  }
-}
-
-void HTMLSelectEventListener::ContentInserted(nsIContent* aChild,
-                                              const ContentInsertInfo&) {
-  if (nsContentUtils::IsInSameAnonymousTree(mElement, aChild)) {
-    OptionValueMightHaveChanged(aChild);
-    ComboboxMightHaveChanged();
-  }
-}
-
-void HTMLSelectEventListener::ComboboxMightHaveChanged() {
-  nsIFrame* f = mElement->GetPrimaryFrame();
-  if (!f) {
-    return;
-  }
-  PresShell* ps = f->PresShell();
-#ifdef ACCESSIBILITY
-  if (nsAccessibilityService* acc = GetAccService()) {
-    acc->ScheduleAccessibilitySubtreeUpdate(ps, mElement);
-  }
-#endif
-  if (nsComboboxControlFrame* combobox = do_QueryFrame(f)) {
-    combobox->RedisplaySelectedText();
-  }
 }
 
 void HTMLSelectEventListener::FireOnInputAndOnChange() {
@@ -735,7 +641,7 @@ nsresult HTMLSelectEventListener::KeyDown(dom::Event* aKeyEvent) {
     mControlSelectMode = false;
   }
 
-  auto isVerticalRL = [=]() -> bool {
+  auto isVerticalRL = [this]() -> bool {
     if (nsIFrame* f = mElement->GetPrimaryFrame()) {
       return f->GetWritingMode().IsVerticalRL();
     }

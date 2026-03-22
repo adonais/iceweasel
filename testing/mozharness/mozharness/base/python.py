@@ -10,7 +10,6 @@ import os
 import shutil
 import site
 import socket
-import subprocess
 import sys
 import traceback
 from pathlib import Path
@@ -628,26 +627,6 @@ class VirtualenvMixin:
                 cwd=dirs["abs_work_dir"],
                 error_list=VirtualenvErrorList,
                 halt_on_failure=True,
-            )
-
-        self.info(self.platform_name())
-        if self.platform_name().startswith("macos"):
-            tmp_path = f"{venv_path}/bin/bak"
-            self.info(
-                f"Copying venv python binaries to {tmp_path} to clear for re-sign"
-            )
-            subprocess.call(f"mkdir -p {tmp_path}", shell=True)
-            subprocess.call(f"cp {venv_path}/bin/python* {tmp_path}/", shell=True)
-            self.info("Replacing venv python binaries with reset copies")
-            subprocess.call(f"mv -f {tmp_path}/* {venv_path}/bin/", shell=True)
-            self.info(
-                "codesign -s - --preserve-metadata=identifier,entitlements,flags,runtime "
-                f"-f {venv_path}/bin/*"
-            )
-            subprocess.call(
-                "codesign -s - --preserve-metadata=identifier,entitlements,flags,runtime -f "
-                f"{venv_path}/bin/python*",
-                shell=True,
             )
 
         if not modules:

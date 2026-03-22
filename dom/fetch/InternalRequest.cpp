@@ -32,6 +32,7 @@ SafeRefPtr<InternalRequest> InternalRequest::GetRequestConstructorCopy(
   copy->mHeaders = new InternalHeaders(*mHeaders);
   copy->mTriggeringPrincipalOverride = mTriggeringPrincipalOverride;
   copy->mNeverTaint = mNeverTaint;
+  copy->mCookieJarSettings = mCookieJarSettings;
   copy->SetUnsafeRequest();
   copy->mBodyStream = mBodyStream;
   copy->mBodyLength = mBodyLength;
@@ -285,6 +286,7 @@ RequestDestination InternalRequest::MapContentPolicyTypeToRequestDestination(
     case nsIContentPolicy::TYPE_INTERNAL_IMAGE:
     case nsIContentPolicy::TYPE_INTERNAL_IMAGE_PRELOAD:
     case nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON:
+    case nsIContentPolicy::TYPE_INTERNAL_IMAGE_NOTIFICATION:
     case nsIContentPolicy::TYPE_IMAGE:
       return RequestDestination::Image;
     case nsIContentPolicy::TYPE_STYLESHEET:

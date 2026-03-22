@@ -428,10 +428,7 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   unsigned mClosingWhilePrinting : 1;
   unsigned mCloseWindowAfterPrint : 1;
 
-#  if NS_PRINT_PREVIEW
   RefPtr<nsPrintJob> mPrintJob;
-#  endif  // NS_PRINT_PREVIEW
-
 #endif  // NS_PRINTING
 
   /* character set member data */
@@ -804,7 +801,7 @@ nsresult nsDocumentViewer::InitInternal(nsIWidget* aParentWidget,
           mDocument, nsPresContext::eContext_Galley, containerFrame);
       mPresContext->Init(mDeviceContext);
 
-#if defined(NS_PRINTING) && defined(NS_PRINT_PREVIEW)
+#ifdef NS_PRINTING
       makeCX = !GetIsPrintPreview() &&
                aNeedMakeCX;  // needs to be true except when we are already in
                              // PP or we are enabling/disabling paginated mode.
@@ -1654,11 +1651,9 @@ nsDocumentViewer::Destroy() {
 #ifdef NS_PRINTING
   if (mPrintJob) {
     RefPtr<nsPrintJob> printJob = std::move(mPrintJob);
-#  ifdef NS_PRINT_PREVIEW
     if (printJob->CreatedForPrintPreview()) {
       printJob->FinishPrintPreview();
     }
-#  endif
     printJob->Destroy();
     MOZ_ASSERT(!mPrintJob,
                "mPrintJob shouldn't be recreated while destroying it");
@@ -2742,7 +2737,6 @@ NS_IMETHODIMP
 nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
                                nsIWebProgressListener* aWebProgressListener,
                                PrintPreviewResolver&& aCallback) {
-#  ifdef NS_PRINT_PREVIEW
   RefPtr<Document> doc = mDocument.get();
   NS_ENSURE_STATE(doc);
 
@@ -2779,9 +2773,6 @@ nsDocumentViewer::PrintPreview(nsIPrintSettings* aPrintSettings,
     OnDonePrinting();
   }
   return rv;
-#  else
-  return NS_ERROR_FAILURE;
-#  endif  // NS_PRINT_PREVIEW
 }
 
 static const nsIFrame* GetTargetPageFrame(int32_t aTargetPageNum,
@@ -3012,7 +3003,6 @@ nsDocumentViewer::ExitPrintPreview() {
     return NS_OK;
   }
 
-#  ifdef NS_PRINT_PREVIEW
   mPrintJob->Destroy();
   mPrintJob = nullptr;
 
@@ -3022,7 +3012,6 @@ nsDocumentViewer::ExitPrintPreview() {
   // unblock navigation, we do not call `SetOverrideDPPX` to reset the
   // devicePixelRatio, and we do not call `Show` to make such changes take
   // affect.
-#  endif  // NS_PRINT_PREVIEW
 
   return NS_OK;
 }
@@ -3122,7 +3111,7 @@ void nsDocumentViewer::DecrementDestroyBlockedCount() {
 //   and print preview
 //
 void nsDocumentViewer::OnDonePrinting() {
-#if defined(NS_PRINTING) && defined(NS_PRINT_PREVIEW)
+#ifdef NS_PRINTING
   // If Destroy() has been called during calling nsPrintJob::Print() or
   // nsPrintJob::PrintPreview(), mPrintJob is already nullptr here.
   // So, the following clean up does nothing in such case.
@@ -3165,7 +3154,7 @@ void nsDocumentViewer::OnDonePrinting() {
       mClosingWhilePrinting = false;
     }
   }
-#endif  // NS_PRINTING && NS_PRINT_PREVIEW
+#endif  // NS_PRINTING
 }
 
 NS_IMETHODIMP nsDocumentViewer::SetPrintSettingsForSubdocument(

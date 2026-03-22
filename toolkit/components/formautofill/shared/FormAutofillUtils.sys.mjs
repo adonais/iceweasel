@@ -81,6 +81,10 @@ const EDIT_CREDITCARD_L10N_IDS = [
   "autofill-card-expires-month",
   "autofill-card-expires-year",
   "autofill-card-network",
+
+  // This string isn't ever displayed, but is used to make the payment methods
+  // section easier to find via the search input in about:settings.
+  "autofill-card-search-term-credit-cards",
 ];
 const FIELD_STATES = {
   NORMAL: "",
@@ -143,6 +147,9 @@ FormAutofillUtils = {
     // combined they form address-line1
     "address-streetname": "address",
     "address-housenumber": "address",
+    // NL forms often split the suffix from the house number;
+    // for example 35B becomes '35' as the number and 'B' as the suffix.
+    "address-extra-housesuffix": "address",
     "postal-code": "address",
     country: "address",
     "country-name": "address",
@@ -222,7 +229,7 @@ FormAutofillUtils = {
     return fields.size >= this.AUTOFILL_FIELDS_THRESHOLD;
   },
 
-  queryEligibleElements(element, includeIframe = false) {
+  queryEligibleElements(element, includeIframe = true) {
     const types = includeIframe
       ? [...ELIGIBLE_ELEMENT_TYPES, "iframe"]
       : ELIGIBLE_ELEMENT_TYPES;
@@ -300,17 +307,6 @@ FormAutofillUtils = {
 
   getCategoryFromFieldName(fieldName) {
     return this._fieldNameInfo[fieldName];
-  },
-
-  getCategoriesFromFieldNames(fieldNames) {
-    let categories = new Set();
-    for (let fieldName of fieldNames) {
-      let info = this.getCategoryFromFieldName(fieldName);
-      if (info) {
-        categories.add(info);
-      }
-    }
-    return Array.from(categories);
   },
 
   getCollectionNameFromFieldName(fieldName) {

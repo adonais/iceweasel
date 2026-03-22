@@ -29,8 +29,6 @@ import time
 import traceback
 from datetime import datetime
 
-from six import binary_type
-
 # Define our own FATAL_LEVEL
 FATAL_LEVEL = logging.CRITICAL + 10
 logging.addLevelName(FATAL_LEVEL, "FATAL")
@@ -362,7 +360,7 @@ class OutputParser(LogMixin):
             if not line or line.isspace():
                 continue
 
-            if isinstance(line, binary_type):
+            if isinstance(line, bytes):
                 line = line.decode("utf-8", "replace")
 
             line = line.rstrip()

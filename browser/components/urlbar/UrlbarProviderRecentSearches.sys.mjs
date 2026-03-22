@@ -49,9 +49,11 @@ export class UrlbarProviderRecentSearches extends UrlbarProvider {
     return (
       lazy.UrlbarPrefs.get(ENABLED_PREF) &&
       lazy.UrlbarPrefs.get(SUGGEST_PREF) &&
-      !queryContext.restrictSource &&
       !queryContext.searchString &&
-      !queryContext.searchMode
+      // On the searchbar, we show recent searches of all engines,
+      // regardless of the searchmode.
+      ((!queryContext.searchMode && !queryContext.restrictSource) ||
+        queryContext.sapName == "searchbar")
     );
   }
 
@@ -67,16 +69,14 @@ export class UrlbarProviderRecentSearches extends UrlbarProvider {
 
   onEngagement(queryContext, controller, details) {
     let { result } = details;
-    let engine = lazy.UrlbarSearchUtils.getDefaultEngine(
-      queryContext.isPrivate
-    );
 
     if (details.selType == "dismiss") {
+      // Unlike in startQuery, do not pass the engine as `source`,
+      // otherwise it will only remove the source relation.
       lazy.FormHistory.update({
         op: "remove",
         fieldname: lazy.DEFAULT_FORM_HISTORY_PARAM,
         value: result.payload.suggestion,
-        source: engine.name,
       }).catch(error =>
         console.error(`Removing form history failed: ${error}`)
       );
@@ -92,29 +92,41 @@ export class UrlbarProviderRecentSearches extends UrlbarProvider {
    *   Callback invoked by the provider to add a new result.
    */
   async startQuery(queryContext, addCallback) {
-    let engine = lazy.UrlbarSearchUtils.getDefaultEngine(
-      queryContext.isPrivate
-    );
+    let engine;
+    if (queryContext.searchMode?.engineName) {
+      engine = lazy.UrlbarSearchUtils.getEngineByName(
+        queryContext.searchMode.engineName
+      );
+    } else {
+      engine = lazy.UrlbarSearchUtils.getDefaultEngine(queryContext.isPrivate);
+    }
     if (!engine) {
       return;
     }
+
     let results = await lazy.FormHistory.search(["value", "lastUsed"], {
       fieldname: lazy.DEFAULT_FORM_HISTORY_PARAM,
-      source: engine.name,
+      // Use undefined to show recent searches of all engines.
+      source: queryContext.sapName == "searchbar" ? undefined : engine.name,
     });
 
-    let expiration = parseInt(lazy.UrlbarPrefs.get(EXPIRATION_PREF), 10);
-    let lastDefaultChanged = parseInt(
-      lazy.UrlbarPrefs.get(LASTDEFAULTCHANGED_PREF),
-      10
-    );
     let now = Date.now();
 
-    // We only want to show searches since the last engine change, if we
-    // havent changed the engine we expire the display of the searches
-    // after a period of time.
-    if (lastDefaultChanged != -1) {
-      expiration = Math.min(expiration, now - lastDefaultChanged);
+    let expiration;
+    if (queryContext.sapName != "searchbar") {
+      expiration = parseInt(lazy.UrlbarPrefs.get(EXPIRATION_PREF), 10);
+      let lastDefaultChanged = parseInt(
+        lazy.UrlbarPrefs.get(LASTDEFAULTCHANGED_PREF),
+        10
+      );
+      // We only want to show searches since the last engine change, if we
+      // havent changed the engine we expire the display of the searches
+      // after a period of time.
+      if (lastDefaultChanged != -1) {
+        expiration = Math.min(expiration, now - lastDefaultChanged);
+      }
+    } else {
+      expiration = Infinity;
     }
 
     results = results.filter(

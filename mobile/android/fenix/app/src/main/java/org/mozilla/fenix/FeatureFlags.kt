@@ -51,11 +51,6 @@ object FeatureFlags {
     const val DISCOVER_MORE_STORIES = true
 
     /**
-     * Enables the Mozilla Ads Client.
-     */
-    const val MOZILLA_ADS_CLIENT_ENABLED = false
-
-    /**
      * Enables Firefox Labs.
      */
     const val FIREFOX_LABS = false

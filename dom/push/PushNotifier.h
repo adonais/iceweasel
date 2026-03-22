@@ -74,14 +74,14 @@ class MOZ_STACK_CLASS PushDispatcher {
  */
 class PushNotifier final : public nsIPushNotifier {
  public:
-  PushNotifier();
+  PushNotifier() = default;
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(PushNotifier, nsIPushNotifier)
   NS_DECL_NSIPUSHNOTIFIER
 
  private:
-  ~PushNotifier();
+  ~PushNotifier() = default;
 
   nsresult Dispatch(PushDispatcher& aDispatcher);
 };

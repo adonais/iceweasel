@@ -282,6 +282,34 @@ def npm(command_context, args):
     )
 
 
+@Command(
+    "npx",
+    category="devenv",
+    description="Run the npx executable from the NodeJS used for building.",
+)
+@CommandArgument("args", nargs=argparse.REMAINDER)
+def npx(command_context, args):
+    from mozbuild.nodeutil import find_npx_executable
+
+    # Avoid logging the command
+    command_context.log_manager.terminal_handler.setLevel(logging.CRITICAL)
+
+    import os
+
+    npx_path, _ = find_npx_executable()
+    if not npx_path:
+        print("error: could not find npx executable")
+        sys.exit(-1)
+    path = os.path.abspath(os.path.dirname(npx_path))
+    os.environ["PATH"] = "{}{}{}".format(path, os.pathsep, os.environ["PATH"])
+
+    return command_context.run_process(
+        [npx_path] + args,
+        pass_thru=True,
+        ensure_exit_code=False,
+    )
+
+
 def logspam_create_parser(subcommand):
     # Create the logspam command line parser.
     # if logspam is not installed, or not up to date, it will

@@ -21,16 +21,13 @@
  * worker-based API directly for optimal performance in Firefox.
  */
 
-/* globals exportFunction, cloneInto */
+if (!window.RTCRtpSender.prototype.createEncodedStreams) {
+  console.info(
+    "createEncodedStreams() is being shimmed for compatibility reasons. Please consider updating to the RTCRtpScriptTransform API for optimal performance! See https://bugzil.la/1913599 for details."
+  );
 
-console.info(
-  "createEncodedStreams() is being shimmed for compatibility reasons. Please consider updating to the RTCRtpScriptTransform API for optimal performance! See https://bugzil.la/1913599 for details."
-);
-
-const win = window.wrappedJSObject;
-if (!win.RTCRtpSender.prototype.createEncodedStreams) {
-  win.RTCRtpSender.prototype.createEncodedStreams =
-    win.RTCRtpReceiver.prototype.createEncodedStreams = exportFunction(
+  window.RTCRtpSender.prototype.createEncodedStreams =
+    window.RTCRtpReceiver.prototype.createEncodedStreams =
       function createEncodedStreams() {
         let onrtctransform; // appease linter
         function work() {
@@ -77,16 +74,9 @@ if (!win.RTCRtpSender.prototype.createEncodedStreams) {
         haveData
           .then(({ writable }) => writableNow.readable.pipeTo(writable))
           .catch(e => writableNow.readable.cancel(e));
-
-        const result = new win.Object();
-        result.readable = cloneInto(readableNow.readable, window, {
-          wrapReflectors: true,
-        });
-        result.writable = cloneInto(writableNow.writable, window, {
-          wrapReflectors: true,
-        });
-        return result;
-      },
-      window
-    );
+        return {
+          readable: readableNow.readable,
+          writable: writableNow.writable,
+        };
+      };
 }

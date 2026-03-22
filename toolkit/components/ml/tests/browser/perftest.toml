@@ -24,6 +24,9 @@ skip-if = [
   "true", #  Bug 1952456
 ]
 
+["browser_ml_security_perf.js"]
+disabled = "Disabled as we want to run this only as perftest, not regular CI"
+
 ["browser_ml_semantic_history_search_perf.js"]
 disabled = "Disabled as we want to run this only as perftest, not regular CI"
 

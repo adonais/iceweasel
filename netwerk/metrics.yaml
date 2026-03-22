@@ -1760,13 +1760,14 @@ networking:
       Whether the request is crossing to a more private addresspace
     bugs:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=2010463
     data_reviews:
     - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     notification_emails:
      - smayya@mozilla.com
      - vgosu@mozilla.com
      - necko@gmail.com
-    expires: 150
+    expires: 155
     labels:
       - private_to_local_http
       - private_to_local_https
@@ -1788,13 +1789,14 @@ networking:
     histogram_type: linear
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010463
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     notification_emails:
      - smayya@mozilla.com
      - vgosu@mozilla.com
      - necko@gmail.com
-    expires: 150
+    expires: 155
 
   local_network_access_prompts_shown:
     type: labeled_counter
@@ -1804,13 +1806,14 @@ networking:
       are used when the requesting origin differs from the top-level origin.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010463
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     notification_emails:
       - smayya@mozilla.com
       - vgosu@mozilla.com
-      - necko@gmail.com
-    expires: 150
+      - necko@mozilla.com
+    expires: 155
     labels:
       - localhost
       - local_network
@@ -1837,6 +1840,7 @@ networking:
       Recorded when a site attempts to access local network resources.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1989916
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010465
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1989916#c5
     data_sensitivity:
@@ -1847,7 +1851,7 @@ networking:
       - necko@mozilla.com
     send_in_pings:
       - local-network-access
-    expires: 150
+    expires: 155
     extra_keys:
       top_level_site:
         description: The base domain (eTLD+1) of the top-level document/main window.
@@ -2776,7 +2780,7 @@ network:
     expires: never
     telemetry_mirror: h#REL_PRELOAD_MISS_RATIO
 
-  urlclassifier_addon_block:
+  urlclassifier_harmful_addon_block:
     type: event
     description: >
       A classified network request initiated by a WebExtension was blocked by the
@@ -2788,10 +2792,15 @@ network:
     notification_emails:
       - amarchesini@mozilla.com
       - addons-dev-internal@mozilla.com
+    send_in_pings:
+      - url-classifier-harmful-addon
     expires: never
     extra_keys:
       addon_id:
         description: The add-on ID
+        type: string
+      addon_version:
+        description: The add-on version
         type: string
       etld:
         description: The eTLD+1 of the request URL
@@ -2799,3 +2808,38 @@ network:
       table:
         description: Classifier table name(s) that matched
         type: string
+
+  ssl_token_cache_hits:
+    type: labeled_counter
+    description: >
+      Counts session resumption token cache hits and misses.
+      A 'hit' means a valid cached token was found and can be used for session
+      resumption. A 'miss' means no valid token was available.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2012485
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2012485
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+    labels:
+      - hit
+      - miss
+    expires: never
+
+  ssl_token_cache_expired:
+    type: counter
+    description: >
+      Counts the number of expired session resumption tokens encountered
+      during cache lookups. High values may indicate token lifetime issues or
+      long delays between connections to the same host.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2012485
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2012485
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+    expires: never

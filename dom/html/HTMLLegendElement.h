@@ -62,8 +62,8 @@ class HTMLLegendElement final : public nsGenericHTMLElement {
   /**
    * WebIDL Interface
    */
-
-  HTMLFormElement* GetForm() const;
+  Element* GetFormForBindings() const;
+  HTMLFormElement* GetFormInternal() const;
 
   void GetAlign(DOMString& aAlign) { GetHTMLAttr(nsGkAtoms::align, aAlign); }
 
@@ -72,7 +72,7 @@ class HTMLLegendElement final : public nsGenericHTMLElement {
   }
 
   nsINode* GetScopeChainParent() const override {
-    Element* form = GetForm();
+    Element* form = GetFormInternal();
     return form ? form : nsGenericHTMLElement::GetScopeChainParent();
   }
 

@@ -118,9 +118,6 @@ https_first_disabled = true
 ["browser_policy_privatebrowsingmodeavailability_srd.js"]
 
 ["browser_policy_search_engine.js"]
-skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt && verify-standalone",
-]
 
 ["browser_policy_searchbar.js"]
 

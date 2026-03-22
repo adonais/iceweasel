@@ -1,4 +1,3 @@
-// |reftest| skip-if(!Math.sumPrecise) -- Math.sumPrecise is not enabled unconditionally
 // Copyright (C) 2024 Kevin Gibbons. All rights reserved.
 // This code is governed by the BSD license found in the LICENSE file.
 /*---

@@ -23,7 +23,6 @@ import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertItemIsChecked
-import org.mozilla.fenix.helpers.MatcherHelper.assertItemIsEnabledAndVisible
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectIsGone
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
@@ -132,22 +131,6 @@ class TranslationsRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyAlwaysOfferToTranslateOptionIsChecked: Verified the \"Always offer to translate\" option is checked.")
     }
 
-    fun verifyAlwaysOfferToTranslateOptionIsEnabled(isEnabled: Boolean) {
-        Log.i(TAG, "verifyAlwaysOfferToTranslateOptionIsEnabled: Waiting for compose test rule to be idle")
-        composeTestRule.waitForIdle()
-        Log.i(TAG, "verifyAlwaysOfferToTranslateOptionIsEnabled: Waited for compose test rule to be idle")
-        Log.i(TAG, "verifyAlwaysOfferToTranslateOptionIsEnabled: Trying to verify the \"Always offer to translate\" option is enabled.")
-        assertItemIsEnabledAndVisible(
-            mDevice.findObject(
-                UiSelector()
-                    .index(3)
-                    .className("android.view.View"),
-            ),
-            isEnabled = isEnabled,
-        )
-        Log.i(TAG, "verifyAlwaysOfferToTranslateOptionIsEnabled: Verified the \"Always offer to translate\" option is enabled.")
-    }
-
     fun verifyAlwaysTranslateOptionIsChecked(isChecked: Boolean) {
         Log.i(TAG, "verifyAlwaysTranslateOptionIsChecked: Waiting for compose test rule to be idle")
         composeTestRule.waitForIdle()
@@ -162,22 +145,6 @@ class TranslationsRobot(private val composeTestRule: ComposeTestRule) {
             isChecked = isChecked,
         )
         Log.i(TAG, "verifyAlwaysTranslateOptionIsChecked: Verified the \"Always translate\" description is checked.")
-    }
-
-    fun verifyAlwaysTranslateOptionIsEnabled(isEnabled: Boolean) {
-        Log.i(TAG, "verifyAlwaysTranslateOptionIsEnabled: Waiting for compose test rule to be idle")
-        composeTestRule.waitForIdle()
-        Log.i(TAG, "verifyAlwaysTranslateOptionIsEnabled: Waited for compose test rule to be idle")
-        Log.i(TAG, "verifyAlwaysTranslateOptionIsEnabled: Trying to verify the \"Always translate\" option is enabled.")
-        assertItemIsEnabledAndVisible(
-            mDevice.findObject(
-                UiSelector()
-                    .index(4)
-                    .className("android.view.View"),
-            ),
-            isEnabled = isEnabled,
-        )
-        Log.i(TAG, "verifyAlwaysTranslateOptionIsEnabled: Verified the \"Always translate\" option is enabled.")
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -211,22 +178,6 @@ class TranslationsRobot(private val composeTestRule: ComposeTestRule) {
             isChecked = isChecked,
         )
         Log.i(TAG, "verifyTheNeverTranslateLanguageOptionIsChecked: Verified the \"Never translate this site\" description is checked.")
-    }
-
-    fun verifyTheNeverTranslateLanguageOptionIsEnabled(isEnabled: Boolean) {
-        Log.i(TAG, "verifyTheNeverTranslateLanguageOptionIsEnabled: Waiting for compose test rule to be idle")
-        composeTestRule.waitForIdle()
-        Log.i(TAG, "verifyTheNeverTranslateLanguageOptionIsEnabled: Waited for compose test rule to be idle")
-        Log.i(TAG, "verifyTheNeverTranslateLanguageOptionIsEnabled: Trying to verify the \"Never translate this site\" description is enabled.")
-        assertItemIsEnabledAndVisible(
-            mDevice.findObject(
-                UiSelector()
-                    .index(4)
-                    .className("android.view.View"),
-            ),
-            isEnabled = isEnabled,
-        )
-        Log.i(TAG, "verifyTheNeverTranslateLanguageOptionIsEnabled: Verified the \"Never translate this site\" description is enabled.")
     }
 
     fun clickTranslateToDropdown() {

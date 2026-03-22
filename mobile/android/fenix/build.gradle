@@ -6,16 +6,8 @@ import io.gitlab.arturbosch.detekt.DetektCreateBaselineTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
-    // This logic is duplicated in the allprojects block: I don't know how to fix that.
     repositories {
-        gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
-            maven {
-                url = repository
-                if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
-                    allowInsecureProtocol = true
-                }
-            }
-        }
+        gradle.configureMavenRepositories(delegate)
     }
 
     dependencies {
@@ -31,8 +23,8 @@ buildscript {
 }
 
 plugins {
-    id 'ApkSizePlugin'
     id "mozac.ConfigPlugin"
+    alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.detekt)
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
@@ -40,22 +32,6 @@ plugins {
 }
 
 allprojects {
-    // This logic is duplicated in the buildscript block: I don't know how to fix that.
-    repositories {
-        gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
-            maven {
-                url = repository
-                if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
-                    allowInsecureProtocol = true
-                }
-            }
-        }
-
-        maven {
-            url = "${gradle.mozconfig.topobjdir}/gradle/maven"
-        }
-    }
-
     ext {
         gleanVersion = libs.versions.glean.get()
     }
@@ -144,6 +120,27 @@ subprojects {
 
 tasks.register('clean', Delete) {
     delete rootProject.layout.buildDirectory
+}
+
+dependencyAnalysis {
+    structure {
+        bundle("leakcanary") {
+            includeGroup("com.squareup.leakcanary")
+        }
+        bundle("mockk") {
+            includeGroup("io.mockk")
+        }
+        // Ignore Android KTX dependencies. See https://developer.android.com/kotlin/ktx#modules
+        //ignoreKtx(true)
+    }
+    issues {
+        all {
+            onAny {
+                // Fail the run if any issues are found (default = 'warn')
+                //severity('fail')
+            }
+        }
+    }
 }
 
 detekt {

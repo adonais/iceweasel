@@ -83,6 +83,9 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
   mozilla::ipc::IPCResult RecvCheckContentOnlyTDR(
       const uint32_t& sequenceNum, bool* isContentOnlyTDR) override;
 
+  mozilla::ipc::IPCResult RecvCheckAndClearWRDidRasterize(
+      const LayersId& aId, bool* aDidRasterize) override;
+
   mozilla::ipc::IPCResult RecvDynamicToolbarOffsetChanged(
       const int32_t& aOffset) override {
     return IPC_FAIL_NO_REASON(this);
@@ -154,6 +157,9 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
       const wr::PipelineId& aPipelineId, const LayoutDeviceIntSize& aSize,
       const WindowKind& aWindowKind) override;
   bool DeallocPWebRenderBridgeParent(PWebRenderBridgeParent* aActor) override;
+  // Nothing to do as content WebRenderBridgeParents are fully initialized at
+  // construction time.
+  void EnsureWebRenderBridgeParentInitialized() override {}
 
   void ObserveLayersUpdate(LayersId aLayersId, bool aActive) override;
 

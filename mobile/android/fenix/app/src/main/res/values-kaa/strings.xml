@@ -401,11 +401,7 @@
   <string name="customize_addon_collection_hint">Toplam ataması</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">Toplam iyesi (Paydalanıwshı ID)</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Artqa qaytıw</string>
   <!--
     Title for the customize home screen section with recently visited. Recently visited is
@@ -785,7 +781,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Ózgeris kirgiziw</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Kóshirip alıw</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Kóshirip alıw</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Bólisiw</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -823,7 +819,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s óshirildi</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">BIYKARLAW</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">BIYKARLAW</string>
   <!--
     Site Permissions
 
@@ -1019,12 +1015,12 @@
   -->
   <string name="nimbus_notification_default_browser_title" tools:ignore="BrandUsage,UnusedResources">Firefox — tez hám jeke</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Jeke kóriwdi sınap kóriń</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Jeke kóriwdi sınap kóriń</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">%1$sda saqlanǵan cookielarsız yamasa tariyxsız kóriw</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$sda saqlanǵan cookielarsız yamasa tariyxsız kóriw</string>
   <!-- Preference for not taking the short survey. -->
   <string name="preferences_not_take_survey">Yaq, raxmet</string>
   <!--

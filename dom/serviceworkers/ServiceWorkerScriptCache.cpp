@@ -927,7 +927,7 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader,
 
   if (isExtension) {
     // NOTE: trying to register any moz-extension use that doesn't ends
-    // with .js/.jsm/.mjs seems to be already completing with an error
+    // with .js//.mjs seems to be already completing with an error
     // in aStatus and they never reach this point.
 
     // TODO: look into avoid duplicated parts that could be shared with the HTTP

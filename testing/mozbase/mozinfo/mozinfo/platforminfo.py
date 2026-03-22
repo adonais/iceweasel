@@ -183,6 +183,7 @@ class PlatformInfo:
         filename = (
             os.environ.get("GECKO_PATH", ".") + "/taskcluster/test_configs/variants.yml"
         )
+
         with open(filename) as f:
             PlatformInfo.variant_data = yaml.safe_load(f.read())
 

@@ -1163,8 +1163,9 @@ nsresult HTMLEditor::UpdateResizerOrGrabberPositionTo(
     int32_t yThreshold =
         LookAndFeel::GetInt(LookAndFeel::IntID::DragThresholdY, 1);
 
-    if (DeprecatedAbs(aClientPoint.x - mOriginalX) * 2 >= xThreshold ||
-        DeprecatedAbs(aClientPoint.y - mOriginalY) * 2 >= yThreshold) {
+    MOZ_ASSERT(xThreshold >= 0 && yThreshold >= 0);
+    if (Abs(aClientPoint.x - mOriginalX) * 2 >= (uint32_t)xThreshold ||
+        Abs(aClientPoint.y - mOriginalY) * 2 >= (uint32_t)yThreshold) {
       mGrabberClicked = false;
       DebugOnly<nsresult> rvIgnored = StartMoving();
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),

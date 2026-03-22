@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef MozNewTabWallpaperProtocolHandler_h___
-#define MozNewTabWallpaperProtocolHandler_h___
+#ifndef MozNewTabWallpaperProtocolHandler_h_
+#define MozNewTabWallpaperProtocolHandler_h_
 
 #include "mozilla/Result.h"
 #include "mozilla/MozPromise.h"
@@ -88,4 +88,4 @@ class MozNewTabWallpaperProtocolHandler final
 }  // namespace net
 }  // namespace mozilla
 
-#endif /* MozNewTabWallpaperProtocolHandler_h___ */
+#endif /* MozNewTabWallpaperProtocolHandler_h_ */

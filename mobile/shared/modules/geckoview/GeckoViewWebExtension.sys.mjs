@@ -97,6 +97,15 @@ export class ExtensionActionHelper {
     this.extension = extension;
   }
 
+  static isShowingAnyExtensionActionPopup() {
+    // On desktop we query the popup state for a window, but on mobile the
+    // implementation does not track the relation between the popup and the
+    // "window" for which it is opened, so we cannot meaningfully query the
+    // status of the current popup. Since we only support one popup at a time,
+    // just query the global state.
+    return Services.wm.getEnumerator("navigator:popup").hasMoreElements();
+  }
+
   getTab(aTabId) {
     if (aTabId !== null) {
       return this.tabTracker.getTab(aTabId);

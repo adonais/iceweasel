@@ -21,7 +21,7 @@
 
 namespace mozilla {
 
-LazyIdleThread::LazyIdleThread(uint32_t aIdleTimeoutMS, const char* aName,
+LazyIdleThread::LazyIdleThread(uint32_t aIdleTimeoutMS, StaticString aName,
                                ShutdownMethod aShutdownMethod)
     : mOwningEventTarget(GetCurrentSerialEventTarget()),
       mThreadPool(new nsThreadPool()),
@@ -101,6 +101,10 @@ LazyIdleThread::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
 NS_IMETHODIMP
 LazyIdleThread::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   return mTaskQueue->UnregisterShutdownTask(aTask);
+}
+
+nsIEventTarget::FeatureFlags LazyIdleThread::GetFeatures() {
+  return mTaskQueue->GetFeatures();
 }
 
 NS_IMETHODIMP

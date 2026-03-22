@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsDigestAuth_h__
-#define nsDigestAuth_h__
+#ifndef nsDigestAuth_h_
+#define nsDigestAuth_h_
 
 #include "nsICryptoHash.h"
 #include "nsIHttpAuthenticator.h"

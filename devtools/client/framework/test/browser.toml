@@ -148,6 +148,11 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan",
 ]
 
+["browser_toolbox_content_modal_overlap.js"]
+skip-if = [
+  "a11y_checks", # we only click in the toolbox area for it to get focused, no need to check that the actual target is accessible
+]
+
 ["browser_toolbox_contentpage_contextmenu.js"]
 
 ["browser_toolbox_disable_f12.js"]
@@ -235,6 +240,8 @@ disabled = "Bug 962258"
 ["browser_toolbox_selected_tool_unavailable.js"]
 
 ["browser_toolbox_selectionchanged_event.js"]
+
+["browser_toolbox_server_error.js"]
 
 ["browser_toolbox_show_toolbox_tool_ready.js"]
 

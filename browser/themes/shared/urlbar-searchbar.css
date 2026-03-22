@@ -4,6 +4,7 @@
 
 @namespace html url("http://www.w3.org/1999/xhtml");
 
+:host,
 :root {
   --urlbar-container-min-width: 310px;
   /* Usually we wouldn't need snapping border widths manually, but we use this
@@ -55,6 +56,13 @@ toolbar[inactive="true"] .urlbar,
 .urlbar:not(#searchbar-new, [focused]) > .urlbar-input-container > .urlbar-go-button,
 #urlbar-revert-button-container {
   display: none;
+}
+
+/* Document Picture-in-Picture API window */
+@media (display-mode: picture-in-picture) {
+  #page-action-buttons {
+    display: none;
+  }
 }
 
 /* When rich suggestions are enabled the urlbar identity icon is given extra padding to
@@ -152,7 +160,7 @@ toolbar[inactive="true"] .urlbar,
   outline: none;
 }
 
-.urlbar-input {
+#urlbar .urlbar-input {
   mask-repeat: no-repeat;
   unicode-bidi: plaintext;
   text-align: match-parent;
@@ -362,9 +370,11 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .urlbar-input-box {
-  /* Show the url scheme in a static box when overflowing to the left */
-  position: relative;
-  direction: ltr;
+  #urlbar & {
+    /* Show the url scheme in a static box when overflowing to the left */
+    position: relative;
+    direction: ltr;
+  }
 
   :root[customizing] & {
     visibility: hidden;
@@ -576,19 +586,24 @@ toolbar[inactive="true"] .urlbar,
  * will be barely visible. For now we try to make them more visible through
  * some filtering tricks.
  *
- * TODO(emilio): Evaluate removing this. SVGs can use prefers-color-scheme to
- * determine the right color-scheme to use, see bug 1779457.
+ * TODO(Bug 2016509): disable the deprecated filter applied to the pageAction icon
+ * on all channels (extensions will be able to use prefer-color-scheme inside
+ * their SVG icons instead, see Bug 2001318 for additional context).
+ *
  */
-.urlbar-addon-page-action[style*=".svg"] > .urlbar-icon {
-  :root[lwt-toolbar-field="dark"] #urlbar:not([focused]) &,
-  :root[lwt-toolbar-field-focus="dark"] #urlbar[focused] & {
-    filter: grayscale(100%) brightness(20%) invert();
-  }
-
-  /* As above, but for the default theme in dark mode, which suffers from the same issue */
-  @media (prefers-color-scheme: dark) {
-    :root:not([lwtheme]) & {
+/* stylelint-disable-next-line media-query-no-invalid */
+@media -moz-pref("extensions.webextensions.pageActionIconDarkModeFilter.enabled") {
+  .urlbar-addon-page-action[style*=".svg"] > .urlbar-icon {
+    :root[lwt-toolbar-field="dark"] #urlbar:not([focused]) &,
+    :root[lwt-toolbar-field-focus="dark"] #urlbar[focused] & {
       filter: grayscale(100%) brightness(20%) invert();
+    }
+
+    /* As above, but for the default theme in dark mode, which suffers from the same issue */
+    @media (prefers-color-scheme: dark) {
+      :root:not([lwtheme]) & {
+        filter: grayscale(100%) brightness(20%) invert();
+      }
     }
   }
 }
@@ -650,8 +665,7 @@ toolbar[inactive="true"] .urlbar,
   }
 }
 
-#pageActionButton,
-.share-more-button {
+#pageActionButton {
   list-style-image: url("chrome://global/skin/icons/more.svg");
 }
 
@@ -1163,21 +1177,19 @@ toolbar[inactive="true"] .urlbar,
 
   .urlbar[searchmode] & {
     background-color: var(--urlbar-box-bgcolor);
-    margin-inline-end: 0;
-    border-start-end-radius: 0;
-    border-end-end-radius: 0;
   }
 
-  /* The background rule should match to .searchmode-switcher-chicklet */
   .urlbar[focused] & {
     background-color: var(--urlbar-box-focus-bgcolor);
   }
 
-  /* stylelint-disable media-query-no-invalid */
-  @media (not -moz-pref("browser.urlbar.searchModeSwitcher.featureGate")) and (not -moz-pref("browser.urlbar.scotchBonnet.enableOverride")) {
-    display: none;
+  .urlbar:not(#searchbar-new) & {
+    /* stylelint-disable media-query-no-invalid */
+    @media (not -moz-pref("browser.urlbar.searchModeSwitcher.featureGate")) and (not -moz-pref("browser.urlbar.scotchBonnet.enableOverride")) {
+      display: none;
+    }
+    /* stylelint-enable media-query-no-invalid */
   }
-  /* stylelint-enable media-query-no-invalid */
 }
 
 .searchmode-switcher-icon {
@@ -1188,50 +1200,25 @@ toolbar[inactive="true"] .urlbar,
   list-style-image: url("chrome://global/skin/icons/search-glass.svg");
 }
 
-.searchmode-switcher-chicklet {
-  background-color: var(--urlbar-box-bgcolor);
-  border-start-end-radius: var(--urlbar-inner-border-radius);
-  border-end-end-radius: var(--urlbar-inner-border-radius);
-  align-items: center;
-  height: 100%;
-  max-width: 40%;
-  margin-inline-end: var(--urlbar-searchmodeswitcher-margin-inline-end);
-  display: none;
-
-  /* stylelint-disable-next-line media-query-no-invalid */
-  @media -moz-pref("browser.urlbar.searchModeSwitcher.featureGate") or -moz-pref("browser.urlbar.scotchBonnet.enableOverride") {
-    .urlbar[searchmode] & {
-      display: inline-flex;
-    }
-  }
-
-  .urlbar[focused] & {
-    background-color: var(--urlbar-box-focus-bgcolor);
-  }
-}
-
 .searchmode-switcher-title {
+  display: none;
   margin: 0;
   align-items: center;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
   max-width: var(--search-engine-name-max-width);
-  margin-inline-end: var(--urlbar-searchmodeswitcher-inline-padding);
+  margin-inline: var(--urlbar-searchmodeswitcher-inline-padding);
 
-  &:empty {
-    display: none;
-  }
-
-  #searchbar-new & {
-    display: none;
+  .urlbar:not(#searchbar-new)[searchmode] & {
+    display: inline-flex;
   }
 }
 
 .searchmode-switcher-close {
+  display: none;
   appearance: none;
   pointer-events: all;
-  margin-inline-end: var(--urlbar-searchmodeswitcher-inline-padding);
 
   .urlbar[searchmode] & {
     display: inline-flex;
@@ -1276,8 +1263,7 @@ toolbar[inactive="true"] .urlbar,
 }
 
 .searchmode-switcher-popup-description {
-  margin-inline: 4px;
-  padding: var(--arrowpanel-menuitem-padding);
+  font-weight: revert;
 }
 
 .searchmode-switcher-popup-search-settings-button,
@@ -1291,27 +1277,29 @@ toolbar[inactive="true"] .urlbar,
   #urlbar[searchmode] > .urlbar-input-container > #urlbar-search-mode-indicator {
     display: none;
   }
-
   /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
-    .searchmode-switcher {
-      background-color: var(--urlbar-box-bgcolor);
-      .urlbar:not([unifiedsearchbutton-available]) > .urlbar-input-container > & {
-        /* Display as off-screen to get focus */
-        position: fixed;
-        top: -999px;
-      }
-    }
-
-    .searchmode-switcher-dropmarker {
-      margin-inline-start: var(--urlbar-searchmodeswitcher-inline-padding);
-    }
-
     #urlbar[pageproxystate="invalid"] {
       #identity-box,
       #tracking-protection-icon-container {
         display: none;
       }
     }
+  }
+}
+
+/* stylelint-disable-next-line media-query-no-invalid */
+@media not -moz-pref("browser.urlbar.unifiedSearchButton.always") {
+  .searchmode-switcher {
+    background-color: var(--urlbar-box-bgcolor);
+    .urlbar:not([unifiedsearchbutton-available]) > .urlbar-input-container > & {
+      /* Display as off-screen to get focus */
+      position: fixed;
+      top: -999px;
+    }
+  }
+
+  .searchmode-switcher-dropmarker {
+    margin-inline-start: var(--urlbar-searchmodeswitcher-inline-padding);
   }
 }

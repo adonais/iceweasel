@@ -7,13 +7,10 @@
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
-  PageDataService:
-    "moz-src:///browser/components/pagedata/PageDataService.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
   renderPrompt: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
-  relevantMemoriesContextPrompt:
-    "moz-src:///browser/components/aiwindow/models/prompts/MemoriesPrompts.sys.mjs",
+  MODEL_FEATURES: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
 });
 
 /**
@@ -38,7 +35,6 @@ function resolveTabMetadataDependencies(overrides = {}) {
   return {
     BrowserWindowTracker:
       overrides.BrowserWindowTracker ?? lazy.BrowserWindowTracker,
-    PageDataService: overrides.PageDataService ?? lazy.PageDataService,
   };
 }
 
@@ -49,8 +45,7 @@ function resolveTabMetadataDependencies(overrides = {}) {
  * @returns {Promise<{url: string, title: string, description: string}>}
  */
 export async function getCurrentTabMetadata(depsOverride) {
-  const { BrowserWindowTracker, PageDataService } =
-    resolveTabMetadataDependencies(depsOverride);
+  const { BrowserWindowTracker } = resolveTabMetadataDependencies(depsOverride);
   const win = BrowserWindowTracker.getTopWindow();
   const browser = win?.gBrowser?.selectedBrowser;
   if (!browser) {
@@ -61,26 +56,10 @@ export async function getCurrentTabMetadata(depsOverride) {
   const title = browser.contentTitle || browser.documentTitle || "";
 
   let description = "";
-  if (url) {
-    const cachedData = PageDataService.getCached(url);
-    if (cachedData?.description) {
-      description = cachedData.description;
-    } else {
-      try {
-        const actor =
-          browser.browsingContext?.currentWindowGlobal?.getActor("PageData");
-        if (actor) {
-          const pageData = await actor.collectPageData();
-          description = pageData?.description || "";
-        }
-      } catch (e) {
-        console.error(
-          "Failed to collect page description data from current tab:",
-          e
-        );
-      }
-    }
-  }
+  /**
+   * TODO: BUG 2015574
+   * Need to extract page description in PageExtractor
+   */
 
   return { url, title, description };
 }
@@ -91,7 +70,7 @@ export async function getCurrentTabMetadata(depsOverride) {
  * messages list.
  *
  * @param {object} [depsOverride]
- * @returns {Promise<{role: string, content: string}>}
+ * @returns {Promise<{url, title, description, locale, timezone, isoTimestamp, todayDate, hasTabInfo}>}
  */
 export async function constructRealTimeInfoInjectionMessage(depsOverride) {
   const { url, title, description } = await getCurrentTabMetadata(depsOverride);
@@ -100,28 +79,16 @@ export async function constructRealTimeInfoInjectionMessage(depsOverride) {
   const locale = Services.locale.appLocaleAsBCP47;
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const hasTabInfo = Boolean(url || title || description);
-  const tabSection = hasTabInfo
-    ? [
-        `Current active browser tab details:`,
-        `- URL: ${url}`,
-        `- Title: ${title}`,
-        `- Description: ${description}`,
-      ]
-    : [`No active browser tab.`];
-
-  const content = [
-    `Below are some real-time context details you can use to inform your response:`,
-    `Locale: ${locale}`,
-    `Timezone: ${timezone}`,
-    `Current date & time in ISO format: ${isoTimestamp}`,
-    `Today's date: ${datePart || "Unavailable"}`,
-    ``,
-    ...tabSection,
-  ].join("\n");
 
   return {
-    role: "system",
-    content,
+    url,
+    title,
+    description,
+    locale,
+    timezone,
+    isoTimestamp: isoTimestamp || "Unavailable",
+    todayDate: datePart || "Unavailable",
+    hasTabInfo,
   };
 }
 
@@ -129,9 +96,13 @@ export async function constructRealTimeInfoInjectionMessage(depsOverride) {
  * Constructs the relevant memories context message to be inejcted before the user message.
  *
  * @param {string} message                                                          User message to find relevant memories for
+ * @param {openAIEngine} engineInstance
  * @returns {Promise<null|{role: string, tool_call_id: string, content: string}>}   Relevant memories context message or null if no relevant memories
  */
-export async function constructRelevantMemoriesContextMessage(message) {
+export async function constructRelevantMemoriesContextMessage(
+  message,
+  engineInstance
+) {
   const relevantMemories =
     await lazy.MemoriesManager.getRelevantMemories(message);
 
@@ -141,15 +112,15 @@ export async function constructRelevantMemoriesContextMessage(message) {
       "- " +
       relevantMemories
         .map(memory => {
-          return memory.memory_summary;
+          return `${memory.id} - ${memory.memory_summary}`;
         })
         .join("\n- ");
-    const content = await lazy.renderPrompt(
-      lazy.relevantMemoriesContextPrompt,
-      {
-        relevantMemoriesList,
-      }
+    const relevantMemoriesContextPrompt = await engineInstance.loadPrompt(
+      lazy.MODEL_FEATURES.MEMORIES_RELEVANT_CONTEXT
     );
+    const content = lazy.renderPrompt(relevantMemoriesContextPrompt, {
+      relevantMemoriesList,
+    });
 
     return {
       role: "system",
@@ -230,4 +201,53 @@ export function detectTokens(content, regexPattern, key) {
     });
   }
   return matches;
+}
+
+/** Internal URL schemes that should not be cited. */
+const INTERNAL_SCHEMES = [
+  "chrome://",
+  "about:",
+  "resource://",
+  "moz-extension://",
+];
+
+/**
+ * Check if a URL uses an internal scheme.
+ *
+ * @param {string} url - URL to check
+ * @returns {boolean} True if URL is internal
+ */
+function isInternalUrl(url) {
+  return INTERNAL_SCHEMES.some(scheme => url.startsWith(scheme));
+}
+
+/**
+ * Extract valid external URLs from a list of sources.
+ * Filters out internal schemes and deduplicates.
+ *
+ * @param {Array<object>} sources - Array of source objects with url field
+ * @returns {Array<string>} Unique valid external URLs
+ */
+export function extractValidUrls(sources) {
+  if (!Array.isArray(sources)) {
+    return [];
+  }
+
+  const seen = new Set();
+  const urls = [];
+
+  for (const source of sources) {
+    if (!source.url || typeof source.url !== "string") {
+      continue;
+    }
+    if (isInternalUrl(source.url)) {
+      continue;
+    }
+    if (!seen.has(source.url)) {
+      seen.add(source.url);
+      urls.push(source.url);
+    }
+  }
+
+  return urls;
 }

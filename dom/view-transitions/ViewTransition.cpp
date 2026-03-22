@@ -573,7 +573,7 @@ static already_AddRefed<Element> MakePseudo(Document& aDoc,
                                             PseudoStyleType aType,
                                             nsAtom* aName) {
   RefPtr<Element> el = aDoc.CreateHTMLElement(nsGkAtoms::div);
-  if (aType == PseudoStyleType::mozSnapshotContainingBlock) {
+  if (aType == PseudoStyleType::MozSnapshotContainingBlock) {
     el->SetIsNativeAnonymousRoot();
   }
   el->SetPseudoElementType(aType);
@@ -582,7 +582,7 @@ static already_AddRefed<Element> MakePseudo(Document& aDoc,
   }
   // This is not needed, but useful for debugging.
   el->SetAttr(nsGkAtoms::type,
-              nsDependentAtomString(nsCSSPseudoElements::GetPseudoAtom(aType)),
+              nsDependentAtomString(PseudoStyle::GetAtom(aType)),
               IgnoreErrors());
   return el.forget();
 }
@@ -811,9 +811,9 @@ void ViewTransition::SetupTransitionPseudoElements() {
   // least).
   // Note: Use mSnapshotContainingBlock to wrap the pseudo-element tree.
   mSnapshotContainingBlock = MakePseudo(
-      *mDocument, PseudoStyleType::mozSnapshotContainingBlock, nullptr);
+      *mDocument, PseudoStyleType::MozSnapshotContainingBlock, nullptr);
   RefPtr<Element> root =
-      MakePseudo(*mDocument, PseudoStyleType::viewTransition, nullptr);
+      MakePseudo(*mDocument, PseudoStyleType::ViewTransition, nullptr);
   mSnapshotContainingBlock->AppendChildTo(root, kNotify, IgnoreErrors());
 #ifdef DEBUG
   // View transition pseudos don't care about frame tree ordering, so can be
@@ -830,13 +830,13 @@ void ViewTransition::SetupTransitionPseudoElements() {
     // Let group be a new ::view-transition-group(), with its view transition
     // name set to transitionName.
     RefPtr<Element> group = MakePseudo(
-        *mDocument, PseudoStyleType::viewTransitionGroup, transitionName);
+        *mDocument, PseudoStyleType::ViewTransitionGroup, transitionName);
     // Append group to transition’s transition root pseudo-element.
     root->AppendChildTo(group, kNotify, IgnoreErrors());
     // Let imagePair be a new ::view-transition-image-pair(), with its view
     // transition name set to transitionName.
     RefPtr<Element> imagePair = MakePseudo(
-        *mDocument, PseudoStyleType::viewTransitionImagePair, transitionName);
+        *mDocument, PseudoStyleType::ViewTransitionImagePair, transitionName);
     // Append imagePair to group.
     group->AppendChildTo(imagePair, kNotify, IgnoreErrors());
     // If capturedElement's old image is not null, then:
@@ -845,7 +845,7 @@ void ViewTransition::SetupTransitionPseudoElements() {
       // name set to transitionName, displaying capturedElement's old image as
       // its replaced content.
       RefPtr<Element> old = MakePseudo(
-          *mDocument, PseudoStyleType::viewTransitionOld, transitionName);
+          *mDocument, PseudoStyleType::ViewTransitionOld, transitionName);
       // Append old to imagePair.
       imagePair->AppendChildTo(old, kNotify, IgnoreErrors());
     } else {
@@ -862,7 +862,7 @@ void ViewTransition::SetupTransitionPseudoElements() {
       // Let new be a new ::view-transition-new(), with its view transition
       // name set to transitionName.
       RefPtr<Element> new_ = MakePseudo(
-          *mDocument, PseudoStyleType::viewTransitionNew, transitionName);
+          *mDocument, PseudoStyleType::ViewTransitionNew, transitionName);
       // Append new to imagePair.
       imagePair->AppendChildTo(new_, kNotify, IgnoreErrors());
     } else {
@@ -1000,7 +1000,7 @@ bool ViewTransition::UpdatePseudoElementStyles(bool aNeedsInvalidation) {
                 frame->StyleUI()->mColorScheme);
     if (groupStyleChanged && aNeedsInvalidation) {
       auto* pseudo = FindPseudo(PseudoStyleRequest(
-          PseudoStyleType::viewTransitionGroup, transitionName));
+          PseudoStyleType::ViewTransitionGroup, transitionName));
       MOZ_ASSERT(pseudo);
       // TODO(emilio): Maybe we need something more than recascade? But I don't
       // see how off-hand.
@@ -1134,9 +1134,9 @@ Element* ViewTransition::FindPseudo(const PseudoStyleRequest& aRequest) const {
   if (!root) {
     return nullptr;
   }
-  MOZ_ASSERT(root->GetPseudoElementType() == PseudoStyleType::viewTransition);
+  MOZ_ASSERT(root->GetPseudoElementType() == PseudoStyleType::ViewTransition);
 
-  if (aRequest.mType == PseudoStyleType::viewTransition) {
+  if (aRequest.mType == PseudoStyleType::ViewTransition) {
     return root;
   }
 
@@ -1158,13 +1158,13 @@ Element* ViewTransition::FindPseudo(const PseudoStyleRequest& aRequest) const {
     return nullptr;
   }
 
-  if (aRequest.mType == PseudoStyleType::viewTransitionGroup) {
+  if (aRequest.mType == PseudoStyleType::ViewTransitionGroup) {
     return group;
   }
 
   Element* imagePair = group->GetFirstElementChild();
   MOZ_ASSERT(imagePair, "::view-transition-image-pair() should exist always");
-  if (aRequest.mType == PseudoStyleType::viewTransitionImagePair) {
+  if (aRequest.mType == PseudoStyleType::ViewTransitionImagePair) {
     return imagePair;
   }
 
@@ -1182,12 +1182,12 @@ Element* ViewTransition::FindPseudo(const PseudoStyleRequest& aRequest) const {
 
   // Since the second child is either ::view-transition-new() or nullptr, so we
   // can reject viewTransitionOld request here.
-  if (aRequest.mType == PseudoStyleType::viewTransitionOld) {
+  if (aRequest.mType == PseudoStyleType::ViewTransitionOld) {
     return nullptr;
   }
 
   child = child->GetNextElementSibling();
-  MOZ_ASSERT(aRequest.mType == PseudoStyleType::viewTransitionNew);
+  MOZ_ASSERT(aRequest.mType == PseudoStyleType::ViewTransitionNew);
   MOZ_ASSERT(!child || !child->GetNextElementSibling(),
              "No more psuedo elements in this subtree");
   return child;
@@ -1205,13 +1205,13 @@ const StyleLockedDeclarationBlock* ViewTransition::GetDynamicRuleFor(
   }
 
   switch (aElement.GetPseudoElementType()) {
-    case PseudoStyleType::viewTransitionNew:
+    case PseudoStyleType::ViewTransitionNew:
       return capture->mNewRule.get();
-    case PseudoStyleType::viewTransitionOld:
+    case PseudoStyleType::ViewTransitionOld:
       return capture->mOldRule.get();
-    case PseudoStyleType::viewTransitionImagePair:
+    case PseudoStyleType::ViewTransitionImagePair:
       return capture->mImagePairRule.get();
-    case PseudoStyleType::viewTransitionGroup:
+    case PseudoStyleType::ViewTransitionGroup:
       return capture->mGroupRule.get();
     default:
       return nullptr;
@@ -1468,6 +1468,19 @@ void ViewTransition::Setup() {
                         &ViewTransition::MaybeScheduleUpdateCallback));
 }
 
+void ViewTransition::FinishDone() {
+  if (mPhase != Phase::PendingDone) {
+    return;
+  }
+  // https://drafts.csswg.org/css-view-transitions-1/#handle-transition-frame
+  // step 4.2: Clear view transition transition.
+  ClearActiveTransition(false);
+  // 4.3: Resolve transition's finished promise.
+  if (Promise* finished = GetFinished(IgnoreErrors())) {
+    finished->MaybeResolveWithUndefined();
+  }
+}
+
 // https://drafts.csswg.org/css-view-transitions-1/#handle-transition-frame
 void ViewTransition::HandleFrame() {
   // Steps 1-3: Steps 1-3: Compute active animations.
@@ -1478,13 +1491,11 @@ void ViewTransition::HandleFrame() {
     AUTO_PROFILER_TERMINATING_FLOW_MARKER("ViewTransition::HandleFrameFinish",
                                           LAYOUT, Flow::FromPointer(this));
     // 4.1: Set transition's phase to "done".
-    mPhase = Phase::Done;
-    // 4.2: Clear view transition transition.
-    ClearActiveTransition(false);
-    // 4.3: Resolve transition's finished promise.
-    if (Promise* finished = GetFinished(IgnoreErrors())) {
-      finished->MaybeResolveWithUndefined();
-    }
+    // NOTE: pending-done + async task per
+    // https://github.com/w3c/csswg-drafts/issues/12442
+    mPhase = Phase::PendingDone;
+    mDocument->Dispatch(NewRunnableMethod("ViewTransition::FinishDone", this,
+                                          &ViewTransition::FinishDone));
     return;
   }
 
@@ -1599,17 +1610,17 @@ bool ViewTransition::CheckForActiveAnimations() const {
   };
 
   bool hasActiveAnimations =
-      checkForEachPseudo(PseudoStyleRequest(PseudoStyleType::viewTransition));
+      checkForEachPseudo(PseudoStyleRequest(PseudoStyleType::ViewTransition));
   for (nsAtom* name : mNamedElements.Keys()) {
     if (hasActiveAnimations) {
       break;
     }
 
     hasActiveAnimations =
-        checkForEachPseudo({PseudoStyleType::viewTransitionGroup, name}) ||
-        checkForEachPseudo({PseudoStyleType::viewTransitionImagePair, name}) ||
-        checkForEachPseudo({PseudoStyleType::viewTransitionOld, name}) ||
-        checkForEachPseudo({PseudoStyleType::viewTransitionNew, name});
+        checkForEachPseudo({PseudoStyleType::ViewTransitionGroup, name}) ||
+        checkForEachPseudo({PseudoStyleType::ViewTransitionImagePair, name}) ||
+        checkForEachPseudo({PseudoStyleType::ViewTransitionOld, name}) ||
+        checkForEachPseudo({PseudoStyleType::ViewTransitionNew, name});
   }
   return hasActiveAnimations;
 }

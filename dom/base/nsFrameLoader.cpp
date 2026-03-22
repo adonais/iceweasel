@@ -2301,7 +2301,7 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
       doc->GetPolicyContainer();
   openWindowInfo->mCoepToInheritForAboutBlank = doc->GetEmbedderPolicy();
   openWindowInfo->mBaseUriToInheritForAboutBlank = mOwnerContent->GetBaseURI();
-  if (!docShell->Initialize(openWindowInfo, nullptr)) {
+  if (NS_FAILED(docShell->Initialize(openWindowInfo, nullptr))) {
     // Do not call Destroy() here. See bug 472312.
     NS_WARNING("Something wrong when creating the docshell for a frameloader!");
     return NS_ERROR_FAILURE;
@@ -2949,16 +2949,11 @@ class nsAsyncMessageToChild : public nsSameProcessAsyncMessageBase,
   RefPtr<nsFrameLoader> mFrameLoader;
 };
 
-nsresult nsFrameLoader::DoSendAsyncMessage(const nsAString& aMessage,
-                                           StructuredCloneData& aData) {
+nsresult nsFrameLoader::DoSendAsyncMessage(
+    const nsAString& aMessage, NotNull<StructuredCloneData*> aData) {
   auto* browserParent = GetBrowserParent();
   if (browserParent) {
-    ClonedMessageData data;
-    if (!BuildClonedMessageData(aData, data)) {
-      MOZ_CRASH();
-      return NS_ERROR_DOM_DATA_CLONE_ERR;
-    }
-    if (browserParent->SendAsyncMessage(aMessage, data)) {
+    if (browserParent->SendAsyncMessage(aMessage, aData)) {
       return NS_OK;
     } else {
       return NS_ERROR_UNEXPECTED;

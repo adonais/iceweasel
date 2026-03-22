@@ -78,6 +78,34 @@ namespace mozilla {
 namespace net {
 
 // C++ file contents
+
+namespace {
+
+class SpeculativeConnectCallbackWrapper final : public nsIInterfaceRequestor {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIINTERFACEREQUESTOR
+
+  explicit SpeculativeConnectCallbackWrapper(nsILoadContext* aLoadContext)
+      : mLoadContext(aLoadContext) {}
+
+ private:
+  virtual ~SpeculativeConnectCallbackWrapper() = default;
+
+  nsCOMPtr<nsILoadContext> mLoadContext;
+};
+NS_IMPL_ISUPPORTS(SpeculativeConnectCallbackWrapper, nsIInterfaceRequestor)
+
+NS_IMETHODIMP
+SpeculativeConnectCallbackWrapper::GetInterface(const nsIID& aIID,
+                                                void** result) {
+  if (mLoadContext && aIID.Equals(NS_GET_IID(nsILoadContext))) {
+    return mLoadContext->QueryInterface(aIID, result);
+  }
+  return NS_ERROR_NO_INTERFACE;
+}
+}  // anonymous namespace
+
 NeckoParent::NeckoParent() : mSocketProcessBridgeInited(false) {
   // Init HTTP protocol handler now since we need atomTable up and running very
   // early (IPDL argument handling for PHttpChannel constructor needs it) so
@@ -532,6 +560,7 @@ mozilla::ipc::IPCResult NeckoParent::RecvPDNSRequestConstructor(
 }
 
 mozilla::ipc::IPCResult NeckoParent::RecvSpeculativeConnect(
+    PBrowserParent* aBrowser, const SerializedLoadContext& aSerialized,
     nsIURI* aURI, nsIPrincipal* aPrincipal,
     Maybe<OriginAttributes>&& aOriginAttributes, const bool& aAnonymous) {
   nsCOMPtr<nsISpeculativeConnect> speculator(gIOService);
@@ -539,12 +568,20 @@ mozilla::ipc::IPCResult NeckoParent::RecvSpeculativeConnect(
   if (!aURI) {
     return IPC_FAIL(this, "aURI must not be null");
   }
-  if (aURI && speculator) {
+
+  nsCOMPtr<nsILoadContext> loadContext;
+  CreateChannelLoadContext(aBrowser, Manager(), aSerialized, principal,
+                           loadContext);
+
+  RefPtr<SpeculativeConnectCallbackWrapper> callback =
+      new SpeculativeConnectCallbackWrapper(loadContext);
+
+  if (speculator) {
     if (aOriginAttributes) {
       speculator->SpeculativeConnectWithOriginAttributesNative(
-          aURI, std::move(aOriginAttributes.ref()), nullptr, aAnonymous);
+          aURI, std::move(aOriginAttributes.ref()), callback, aAnonymous);
     } else {
-      speculator->SpeculativeConnect(aURI, principal, nullptr, aAnonymous);
+      speculator->SpeculativeConnect(aURI, principal, callback, aAnonymous);
     }
   }
   return IPC_OK();

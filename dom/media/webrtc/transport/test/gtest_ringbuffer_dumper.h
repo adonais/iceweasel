@@ -6,8 +6,8 @@
 
 // Original author: bcampen@mozilla.com
 
-#ifndef gtest_ringbuffer_dumper_h__
-#define gtest_ringbuffer_dumper_h__
+#ifndef gtest_ringbuffer_dumper_h_
+#define gtest_ringbuffer_dumper_h_
 
 #include "mozilla/SyncRunnable.h"
 
@@ -84,4 +84,4 @@ class RingbufferDumper : public ::testing::EmptyTestEventListener {
 
 }  // namespace test
 
-#endif  // gtest_ringbuffer_dumper_h__
+#endif  // gtest_ringbuffer_dumper_h_

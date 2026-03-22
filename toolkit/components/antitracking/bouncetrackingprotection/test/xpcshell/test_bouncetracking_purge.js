@@ -24,6 +24,10 @@ function maybeFixupIpv6(host) {
   if (!host.includes(":")) {
     return host;
   }
+  // Already bracketed.
+  if (host.startsWith("[") && host.endsWith("]")) {
+    return host;
+  }
   return `[${host}]`;
 }
 
@@ -183,7 +187,7 @@ add_task(async function test_purge() {
       message: "Should purge after grace period (2).",
       shouldPurge: true,
     },
-    "2606:4700:4700::1111": {
+    "[2606:4700:4700::1111]": {
       bounceTime: timestampOutsideGracePeriodThreeDays,
       userActivationTime: null,
       message: "Should purge after grace period (3).",

@@ -357,11 +357,11 @@ bool ParseElementBaseTimeValueSpec(const nsAString& aSpec,
 
     // element-name.begin
     if (token2.EqualsLiteral("begin")) {
-      result.mType = SMILTimeValueSpecParams::SYNCBASE;
+      result.mType = SMILTimeValueSpecParams::Type::Syncbase;
       result.mSyncBegin = true;
       // element-name.end
     } else if (token2.EqualsLiteral("end")) {
-      result.mType = SMILTimeValueSpecParams::SYNCBASE;
+      result.mType = SMILTimeValueSpecParams::Type::Syncbase;
       result.mSyncBegin = false;
       // element-name.repeat(digit+)
     } else if (StringBeginsWith(token2, REPEAT_PREFIX)) {
@@ -374,7 +374,7 @@ bool ParseElementBaseTimeValueSpec(const nsAString& aSpec,
       if (start == tokenEnd || *start != ')') {
         return false;
       }
-      result.mType = SMILTimeValueSpecParams::REPEAT;
+      result.mType = SMILTimeValueSpecParams::Type::Repeat;
       result.mRepeatIteration = repeatValue;
       // element-name.event-symbol
     } else {
@@ -382,12 +382,12 @@ bool ParseElementBaseTimeValueSpec(const nsAString& aSpec,
       if (atom == nullptr) {
         return false;
       }
-      result.mType = SMILTimeValueSpecParams::EVENT;
+      result.mType = SMILTimeValueSpecParams::Type::Event;
       result.mEventSymbol = atom;
     }
   } else {
     // event-symbol
-    result.mType = SMILTimeValueSpecParams::EVENT;
+    result.mType = SMILTimeValueSpecParams::Type::Event;
     result.mEventSymbol = atom;
   }
 
@@ -574,13 +574,13 @@ bool SMILParserUtils::ParseTimeValueSpecParams(
   const nsAString& spec = TrimWhitespace(aSpec);
 
   if (spec.EqualsLiteral("indefinite")) {
-    aResult.mType = SMILTimeValueSpecParams::INDEFINITE;
+    aResult.mType = SMILTimeValueSpecParams::Type::Indefinite;
     return true;
   }
 
   // offset type
   if (ParseOffsetValue(spec, &aResult.mOffset)) {
-    aResult.mType = SMILTimeValueSpecParams::OFFSET;
+    aResult.mType = SMILTimeValueSpecParams::Type::Offset;
     return true;
   }
 

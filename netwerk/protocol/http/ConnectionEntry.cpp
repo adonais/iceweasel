@@ -15,6 +15,7 @@
 #include "ConnectionEntry.h"
 #include "HttpConnectionUDP.h"
 #include "nsQueryObject.h"
+#include "nsHttpConnectionMgr.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "nsHttpHandler.h"
 #include "mozilla/net/neqo_glue_ffi_generated.h"
@@ -172,6 +173,10 @@ size_t ConnectionEntry::PendingQueueLength() const {
   return mPendingQ.PendingQueueLength();
 }
 
+bool ConnectionEntry::PendingQueueIsEmpty() const {
+  return mPendingQ.PendingQueueIsEmpty();
+}
+
 size_t ConnectionEntry::PendingQueueLengthForWindow(uint64_t windowId) const {
   return mPendingQ.PendingQueueLengthForWindow(windowId);
 }
@@ -299,6 +304,10 @@ uint32_t ConnectionEntry::TotalActiveConnections() const {
 
 size_t ConnectionEntry::UrgentStartQueueLength() {
   return mPendingQ.UrgentStartQueueLength();
+}
+
+bool ConnectionEntry::UrgentStartQueueIsEmpty() const {
+  return mPendingQ.UrgentStartQueueIsEmpty();
 }
 
 void ConnectionEntry::PrintPendingQ() { mPendingQ.PrintPendingQ(); }

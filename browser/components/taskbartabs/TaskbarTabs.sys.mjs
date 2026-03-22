@@ -63,15 +63,60 @@ export const TaskbarTabs = new (class {
     return this.#registry.getTaskbarTab(...args);
   }
 
-  async findOrCreateTaskbarTab(...args) {
+  /**
+   * Finds an existing Taskbar Tab that matches aUrl within aUserContextId. If
+   * one does not exist, it is created.
+   *
+   * Additionally, this will register the Taskbar Tab with the system and (on
+   * Windows) request to pin the shortcut.
+   *
+   * @param {nsIURL} aUrl - The URL to create a Taskbar Tab for.
+   * @param {number} aUserContextId - The container to create the Taskbar Tab
+   * in.
+   * @param {object} aDetails - Additional parameters for the Taskbar Tab. See
+   * TaskbarTabsRegistry.findOrCreateTaskbarTab for other members.
+   * @param {nsIURL} [aDetails.createdForUrl] - The page that the Taskbar Tab
+   * was created on. This allows getting the favicon of that page if there
+   * isn't a better option.
+   */
+  async findOrCreateTaskbarTab(aUrl, aUserContextId, aDetails = {}) {
+    // The result of #findOrCreateTaskbarTab sometimes contains additional
+    // properties for internal use, often for moveTabIntoTaskbarTab. Only a few
+    // values should actually be given to outside callers.
+    let result = await this.#findOrCreateTaskbarTab(
+      aUrl,
+      aUserContextId,
+      aDetails
+    );
+    return {
+      created: result.created,
+      taskbarTab: result.taskbarTab,
+      window: result.window,
+    };
+  }
+
+  // Used internally; can expose non-public members in its result.
+  async #findOrCreateTaskbarTab(aUrl, aUserContextId, aDetails = {}) {
     await this.#ready;
-    let result = this.#registry.findOrCreateTaskbarTab(...args);
+    let result = this.#registry.findOrCreateTaskbarTab(
+      aUrl,
+      aUserContextId,
+      aDetails
+    );
 
     if (result.created) {
       this.#updateMetrics();
 
+      let icon = await fetchIconForTaskbarTab(
+        result.taskbarTab,
+        aDetails.creatingForUrl
+      );
+      result.icon = icon;
+
       // Don't wait for the pinning to complete.
-      TaskbarTabsPin.pinTaskbarTab(result.taskbarTab, this.#registry);
+      TaskbarTabsPin.pinTaskbarTab(result.taskbarTab, this.#registry, icon);
+    } else {
+      result.icon = await loadSavedTaskbarTabIcon(result.taskbarTab.id);
     }
 
     return result;
@@ -105,14 +150,21 @@ export const TaskbarTabs = new (class {
       }),
     ]);
 
-    let { taskbarTab } = await this.findOrCreateTaskbarTab(
+    let { taskbarTab, icon } = await this.#findOrCreateTaskbarTab(
       url,
       userContextId,
-      // 'manifest' can be null if the site doesn't have a manifest.
-      manifest ? { manifest } : {}
+      {
+        // 'manifest' can be null if the site doesn't have a manifest.
+        ...(manifest ? { manifest } : {}),
+        creatingForUrl: url,
+      }
     );
 
-    let win = await this.replaceTabWithWindow(taskbarTab, aTab);
+    let win = await this.#windowManager.replaceTabWithWindow(
+      taskbarTab,
+      aTab,
+      icon
+    );
     return {
       window: win,
       taskbarTab,
@@ -134,14 +186,18 @@ export const TaskbarTabs = new (class {
     TaskbarTabsPin.unpinTaskbarTab(taskbarTab, this.#registry);
   }
 
-  async openWindow(...args) {
+  async openWindow(aTaskbarTab) {
     await this.#ready;
-    return this.#windowManager.openWindow(...args);
+
+    let icon = await loadSavedTaskbarTabIcon(aTaskbarTab.id);
+    return this.#windowManager.openWindow(aTaskbarTab, icon);
   }
 
-  async replaceTabWithWindow(...args) {
+  async replaceTabWithWindow(aTaskbarTab, aTab) {
     await this.#ready;
-    return this.#windowManager.replaceTabWithWindow(...args);
+
+    let icon = await loadSavedTaskbarTabIcon(aTaskbarTab.id);
+    return this.#windowManager.replaceTabWithWindow(aTaskbarTab, aTab, icon);
   }
 
   async ejectWindow(...args) {
@@ -197,4 +253,49 @@ function initWindowManager() {
   let wm = new TaskbarTabsWindowManager();
 
   return wm;
+}
+
+async function fetchIconForTaskbarTab(aTaskbarTab, aCreatedForUrl) {
+  let startUri = Services.io.newURI(aTaskbarTab.startUrl);
+  const choices = [
+    async () => await TaskbarTabsUtils.getFaviconUri(startUri),
+    async () => await TaskbarTabsUtils.getFaviconUri(aCreatedForUrl),
+  ];
+
+  for (const choice of choices) {
+    try {
+      let dataURI = await choice();
+      if (!dataURI) {
+        continue;
+      }
+      let candidate = await TaskbarTabsUtils._imageFromLocalURI(dataURI);
+      if (candidate) {
+        return candidate;
+      }
+    } catch (e) {
+      lazy.logConsole.warn("Could not load Taskbar Tab icon: ", e);
+    }
+  }
+
+  lazy.logConsole.warn("Falling back to default Taskbar Tab icon.");
+  return await TaskbarTabsUtils.getDefaultIcon();
+}
+
+/**
+ * Looks up the saved icon for a Taskbar Tab on disk.
+ *
+ * @param {string} aTaskbarTabId - The ID of the Taskbar Tab to look up.
+ * @returns {imgIContainer} The icon saved on disk.
+ */
+async function loadSavedTaskbarTabIcon(aTaskbarTabId) {
+  let iconPath = TaskbarTabsUtils.getTaskbarTabsFolder();
+  iconPath.append("icons");
+  iconPath.append(aTaskbarTabId + ".ico");
+  try {
+    return await TaskbarTabsUtils._imageFromLocalURI(
+      Services.io.newFileURI(iconPath)
+    );
+  } catch (e) {
+    return await TaskbarTabsUtils.getDefaultIcon();
+  }
 }

@@ -46,4 +46,4 @@ skip-if = [
 
 ["test_shared_prefs_lifecycles_methods.js"]
 
-["test_usageProgileGroupID.js"]
+["test_usageProfileGroupID.js"]

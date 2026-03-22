@@ -9,8 +9,8 @@
  * style change
  */
 
-#ifndef nsStyleChangeList_h___
-#define nsStyleChangeList_h___
+#ifndef nsStyleChangeList_h_
+#define nsStyleChangeList_h_
 
 #include "nsCOMPtr.h"
 #include "nsChangeHint.h"
@@ -50,4 +50,4 @@ class nsStyleChangeList : private AutoTArray<nsStyleChangeData, 10> {
   }
 };
 
-#endif /* nsStyleChangeList_h___ */
+#endif /* nsStyleChangeList_h_ */

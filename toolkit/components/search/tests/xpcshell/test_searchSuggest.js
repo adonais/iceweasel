@@ -90,7 +90,7 @@ add_setup(async function () {
       };
     })
   );
-  await Services.search.init();
+  await SearchService.init();
 
   let thirdPartyData = {
     baseURL: `${gHttpURL}/sjs/`,
@@ -101,12 +101,10 @@ add_setup(async function () {
     url: `${gHttpURL}/sjs/engineMaker.sjs?${JSON.stringify(thirdPartyData)}`,
   });
 
-  getEngine = Services.search.getEngineById("get-engine");
-  postEngine = Services.search.getEngineById("post-engine");
-  unresolvableEngine = Services.search.getEngineById("offline-engine");
-  alternateJSONEngine = Services.search.getEngineById(
-    "alternative-json-engine"
-  );
+  getEngine = SearchService.getEngineById("get-engine");
+  postEngine = SearchService.getEngineById("post-engine");
+  unresolvableEngine = SearchService.getEngineById("offline-engine");
+  alternateJSONEngine = SearchService.getEngineById("alternative-json-engine");
 
   registerCleanupFunction(async () => {
     // Remove added form history entries

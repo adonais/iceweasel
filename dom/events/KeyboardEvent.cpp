@@ -330,9 +330,6 @@ void KeyboardEvent::InitWithKeyboardEventInit(EventTarget* aOwner,
 
 // static
 bool KeyboardEvent::IsInitKeyEventAvailable(JSContext* aCx, JSObject*) {
-  if (StaticPrefs::dom_keyboardevent_init_key_event_enabled()) {
-    return true;
-  }
   if (!StaticPrefs::dom_keyboardevent_init_key_event_enabled_in_addons()) {
     return false;
   }

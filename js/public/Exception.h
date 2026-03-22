@@ -27,6 +27,37 @@ enum class ExceptionStackBehavior : bool {
   // retrieved by JS::GetPendingExceptionStack.
   Capture
 };
+
+// Represents a |JSErrorReport*| borrowed from an ErrorObject. The object root
+// ensures the error report won't be freed in the scope of this class.
+//
+// Typical usage:
+//
+//   BorrowedErrorReport report(cx);
+//   if (JS_ErrorFromException(cx, obj, report)) {
+//     // ... Use report->exnType, report.get(), etc.
+//   }
+class MOZ_RAII BorrowedErrorReport {
+  Rooted<JSObject*> owner_;
+  JSErrorReport* report_ = nullptr;
+
+ public:
+  explicit BorrowedErrorReport(JSContext* cx) : owner_(cx) {}
+
+  void init(JSObject* owner, JSErrorReport* report) {
+    MOZ_ASSERT(owner);
+    MOZ_ASSERT(report);
+    owner_ = owner;
+    report_ = report;
+  }
+
+  JSErrorReport* get() const {
+    MOZ_ASSERT(report_);
+    return report_;
+  }
+  const JSErrorReport* operator->() const { return get(); }
+};
+
 }  // namespace JS
 
 extern JS_PUBLIC_API bool JS_IsExceptionPending(JSContext* cx);
@@ -78,13 +109,13 @@ extern JS_PUBLIC_API void JS_ClearPendingException(JSContext* cx);
 
 /**
  * If the given object is an exception object, the exception will have (or be
- * able to lazily create) an error report struct, and this function will return
- * the address of that struct.  Otherwise, it returns nullptr. The lifetime
- * of the error report struct that might be returned is the same as the
- * lifetime of the exception object.
+ * able to lazily create) an error report struct, and this function will
+ * populate |errorReport| with it and return true. Otherwise, returns false.
+ *
+ * See |BorrowedErrorReport| for a usage example.
  */
-extern JS_PUBLIC_API JSErrorReport* JS_ErrorFromException(JSContext* cx,
-                                                          JS::HandleObject obj);
+extern JS_PUBLIC_API bool JS_ErrorFromException(
+    JSContext* cx, JS::HandleObject obj, JS::BorrowedErrorReport& errorReport);
 
 namespace JS {
 

@@ -5,12 +5,12 @@
 Support for running mach python-test tasks (via run-task)
 """
 
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
 
-python_test_schema = Schema({
+python_test_schema = LegacySchema({
     Required("using"): "python-test",
     # The subsuite to run
     Required("subsuite"): str,

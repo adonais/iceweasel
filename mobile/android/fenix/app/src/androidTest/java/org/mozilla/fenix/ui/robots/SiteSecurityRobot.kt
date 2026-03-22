@@ -23,6 +23,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
+import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -124,9 +125,9 @@ class SiteSecurityRobot {
         }
 
         fun toggleEnhancedTrackingProtectionFromSheet(interact: SiteSecurityRobot.() -> Unit): SiteSecurityRobot.Transition {
-            waitForAppWindowToBeUpdated()
+            itemWithResId("$packageName:id/trackingProtectionLayout").waitForExists(waitingTime)
             Log.i(TAG, "toggleEnhancedTrackingProtectionFromSheet: Trying to click ETP switch")
-            enhancedTrackingProtectionSwitch().click()
+            itemWithResId("$packageName:id/trackingProtectionSwitch").click()
             Log.i(TAG, "toggleEnhancedTrackingProtectionFromSheet: Clicked ETP switch")
 
             SiteSecurityRobot().interact()
@@ -242,7 +243,7 @@ private fun cancelClearSiteDataButton() = onView(withId(android.R.id.button2)).i
 private fun deleteSiteDataButton() = onView(withId(android.R.id.button1)).inRoot(RootMatchers.isDialog())
 
 private fun enhancedTrackingProtectionSwitch() =
-    onView(ViewMatchers.withResourceName("switch_widget"))
+    onView(withId(R.id.trackingProtectionSwitch))
 
 private fun openEnhancedTrackingProtectionDetails() =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/trackingProtectionDetails"))

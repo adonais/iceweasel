@@ -40,7 +40,7 @@ using SVGContentCreatorFunction = nsresult (*)(
       nsIContent** aResult,                                 \
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo, \
       mozilla::dom::FromParser aFromParser);
-#include "mozilla/SVGTagList.h"
+#include "mozilla/SVGTagList.inc"
 #undef SVG_TAG
 #undef SVG_FROM_PARSER_TAG
 

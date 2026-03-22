@@ -428,8 +428,8 @@ ComputeSegAnglesAndCorrectRadii(const Point& aSegStart, const Point& aSegEnd,
                                 const float aAngle, const bool aLargeArcFlag,
                                 const bool aSweepFlag, const float aRx,
                                 const float aRy) {
-  float rx = fabs(aRx);  // F.6.6.1
-  float ry = fabs(aRy);
+  float rx = std::abs(aRx);  // F.6.6.1
+  float ry = std::abs(aRy);
 
   // F.6.5.1:
   const float angle = static_cast<float>(aAngle * M_PI / 180.0);
@@ -698,7 +698,7 @@ void SVGPathData::GetMarkerPositioningData(Span<const StylePathCommand> aPath,
     // pretended earlier.
     aMarks->AppendElement(SVGMark(static_cast<float>(segEnd.x),
                                   static_cast<float>(segEnd.y), 0.0f,
-                                  SVGMark::eMid));
+                                  SVGMark::Type::Mid));
 
     if (cmd.IsClose() && !(prevSeg && prevSeg->IsClose())) {
       aMarks->LastElement().angle = aMarks->ElementAt(pathStartIndex).angle =
@@ -714,8 +714,8 @@ void SVGPathData::GetMarkerPositioningData(Span<const StylePathCommand> aPath,
     if (!(prevSeg && prevSeg->IsClose())) {
       aMarks->LastElement().angle = prevSegEndAngle;
     }
-    aMarks->LastElement().type = SVGMark::eEnd;
-    aMarks->ElementAt(0).type = SVGMark::eStart;
+    aMarks->LastElement().type = SVGMark::Type::End;
+    aMarks->ElementAt(0).type = SVGMark::Type::Start;
   }
 }
 

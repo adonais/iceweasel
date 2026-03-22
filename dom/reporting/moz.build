@@ -8,9 +8,8 @@ EXPORTS.mozilla.dom = [
     "CrashReport.h",
     "CSPViolationReportBody.h",
     "DeprecationReportBody.h",
-    "EndpointForReportChild.h",
-    "EndpointForReportParent.h",
     "FeaturePolicyViolationReportBody.h",
+    "IntegrityViolationReportBody.h",
     "Report.h",
     "ReportBody.h",
     "ReportDeliver.h",
@@ -26,9 +25,8 @@ UNIFIED_SOURCES += [
     "CrashReport.cpp",
     "CSPViolationReportBody.cpp",
     "DeprecationReportBody.cpp",
-    "EndpointForReportChild.cpp",
-    "EndpointForReportParent.cpp",
     "FeaturePolicyViolationReportBody.cpp",
+    "IntegrityViolationReportBody.cpp",
     "Report.cpp",
     "ReportBody.cpp",
     "ReportDeliver.cpp",
@@ -38,10 +36,6 @@ UNIFIED_SOURCES += [
     "TestingDeprecatedInterface.cpp",
     "TestReportBody.cpp",
     "TestReportGenerator.cpp",
-]
-
-IPDL_SOURCES += [
-    "PEndpointForReport.ipdl",
 ]
 
 include("/ipc/chromium/chromium-config.mozbuild")

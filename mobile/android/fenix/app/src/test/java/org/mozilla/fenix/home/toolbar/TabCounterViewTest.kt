@@ -77,7 +77,7 @@ class TabCounterViewTest {
 
         verify {
             navController.navigate(
-                NavGraphDirections.actionGlobalTabsTrayFragment(),
+                NavGraphDirections.actionGlobalTabManagementFragment(),
                 null,
             )
         }
@@ -192,7 +192,6 @@ class TabCounterViewTest {
             navController = navController,
             tabCounter = tabCounter,
             showLongPressMenu = showLongPressMenu,
-            settings = settings,
         )
     }
 }

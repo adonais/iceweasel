@@ -330,13 +330,8 @@ newtab-custom-recent-subtitle = Избрани страници и съдърж�
 newtab-custom-weather-toggle =
     .label = Времето
     .description = Времето днес накратко
-newtab-custom-trending-search-toggle =
-    .label = Популярни търсения
-    .description = Популярни и често търсени теми
 newtab-custom-widget-weather-toggle =
     .label = Времето
-newtab-custom-widget-trending-search-toggle =
-    .label = Популярни търсения
 newtab-custom-widget-lists-toggle =
     .label = Списъци
 newtab-custom-widget-timer-toggle =
@@ -480,10 +475,6 @@ newtab-topic-selection-button-pick-interests = Изберете вашите и�
 ## Strings for custom wallpaper highlight
 
 newtab-custom-wallpaper-cta = Опитайте
-
-## Strings for trending searches
-
-newtab-trending-searches-learn-more = Научете повече
 
 ## Strings for task / to-do list productivity widget
 

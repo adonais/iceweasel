@@ -13,14 +13,21 @@ const PERM_NAME = "ipp-vpn";
  * the intention of this class is to abstract methods for updating ipp-vpn as needed
  * from other non-permissions related UI.
  */
-class ExceptionsManager {
+class ExceptionsManager extends EventTarget {
   #inited = false;
+  #observer = null;
 
   init() {
     if (this.#inited) {
       return;
     }
 
+    // ES6 classes that extend EventTarget cannot be coerced into nsIObserver.
+    // Work around this by using a function as the observer.
+    this.#observer = (subject, topic, data) => {
+      this.observe(subject, topic, data);
+    };
+    Services.obs.addObserver(this.#observer, "perm-changed");
     this.#inited = true;
   }
 
@@ -29,7 +36,35 @@ class ExceptionsManager {
       return;
     }
 
+    Services.obs.removeObserver(this.#observer, "perm-changed");
+    this.#observer = null;
     this.#inited = false;
+  }
+
+  observe(subject, topic, data) {
+    if (topic !== "perm-changed") {
+      return;
+    }
+
+    let permission = subject.QueryInterface(Ci.nsIPermission);
+    if (permission.type !== PERM_NAME) {
+      return;
+    }
+
+    const isExclusion =
+      permission.capability === Ci.nsIPermissionManager.DENY_ACTION;
+    const added = data === "added" && isExclusion;
+    const removed = data === "deleted" && isExclusion;
+
+    if (added || removed) {
+      if (added) {
+        Glean.ipprotection.exclusionAdded.add(1);
+      }
+
+      this.dispatchEvent(
+        new CustomEvent("IPPExceptionsManager:ExclusionChanged")
+      );
+    }
   }
 
   /**
@@ -77,6 +112,15 @@ class ExceptionsManager {
   /**
    * Get the permission object for a site exception if it exists in ipp-vpn.
    *
+   * Use exactHost=true to only match the specific origin, not the base domain.
+   * This ensures that subdomains aren't implicitly excluded when entering
+   * a site in the about:preferences dialog. It also avoids an issue where we
+   * try to remove a subdomain as an exclusion when the site doesn't exist in ipp-vpn
+   * (see Bug 2016676).
+   *
+   * Eg. if we enter "example.com" in the dialog, "www.example.com" and
+   * "subdomain.example.com" won't be considered exclusions.
+   *
    * @param {nsIPrincipal} principal
    *  The principal that we want to check is saved in ipp-vpn.
    *
@@ -90,6 +134,55 @@ class ExceptionsManager {
       true /* exactHost */
     );
     return permissionObject;
+  }
+
+  /**
+   * Gets the total number of site exclusions added to ipp-vpn.
+   *
+   * @returns {number}
+   *  The count of site exclusions in ipp-vpn.
+   */
+  getExclusionCount() {
+    let count = 0;
+    for (let perm of Services.perms.getAllByTypes([PERM_NAME])) {
+      if (perm.capability === Ci.nsIPermissionManager.DENY_ACTION) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Sets the given principal as an exclusion or non exclusion.
+   *
+   * @param {nsIPrincipal} principal
+   *  The principal we want to update for the exclusion state.
+   * @param {boolean} shouldExclude
+   *  True to set the principal as an exclusion. Otherwise false.
+   *
+   * @example
+   * // Assuming the principal represents a site https://www.example.com,
+   * // this line sets https://www.example.com as an exclusion
+   * // in ipp-vpn.
+   * IPPExceptionsManager.setExclusion(nsIPrincipal, true);
+   */
+  setExclusion(principal, shouldExclude) {
+    if (!principal) {
+      return;
+    }
+
+    const isExclusion = this.hasExclusion(principal);
+
+    // Early return if already in desired state
+    if ((shouldExclude && isExclusion) || (!shouldExclude && !isExclusion)) {
+      return;
+    }
+
+    if (shouldExclude) {
+      this.addExclusion(principal);
+    } else {
+      this.removeExclusion(principal);
+    }
   }
 }
 

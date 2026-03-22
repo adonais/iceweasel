@@ -8,7 +8,6 @@ import android.os.Build
 import android.os.Bundle
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -24,7 +23,6 @@ import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.R
 import org.mozilla.fenix.debugsettings.data.DefaultDebugSettingsRepository
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.GleanMetrics.DebugDrawer as DebugDrawerMetrics
@@ -96,7 +94,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
                         }
                     }
                     requirePreference<SwitchPreference>(R.string.pref_key_should_show_custom_tab_extensions).apply {
-                        val shouldEnableCustomTabExtensions = newOption || context.settings().enableMenuRedesign
+                        val shouldEnableCustomTabExtensions = newOption
                         isEnabled = shouldEnableCustomTabExtensions
                         when (shouldEnableCustomTabExtensions) {
                             true -> {
@@ -172,8 +170,41 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
+        requirePreference<SwitchPreference>(R.string.pref_key_search_optimization_feature).apply {
+            isVisible = Config.channel.isDebug
+            isChecked = context.settings().isSearchOptimizationEnabled
+            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
+                (newValue as? Boolean)?.let { newOption ->
+                    context.settings().isSearchOptimizationEnabled = newOption
+                    requirePreference<SwitchPreference>(R.string.pref_key_search_optimization_stocks).apply {
+                        isEnabled = newOption
+                        summary = when (newOption) {
+                            true -> null
+                            false -> getString(R.string.preferences_debug_settings_search_optimization_stock_summary)
+                        }
+                        if (!newOption && isChecked) {
+                            isChecked = false
+                            context.settings().shouldShowSearchOptimizationStockCard = false
+                        }
+                    }
+                }
+                true
+            }
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_search_optimization_stocks).apply {
+            isVisible = Config.channel.isDebug
+            isEnabled = context.settings().isSearchOptimizationEnabled
+            isChecked = context.settings().shouldShowSearchOptimizationStockCard
+            summary = when (context.settings().isSearchOptimizationEnabled) {
+                true -> null
+                false -> getString(R.string.preferences_debug_settings_search_optimization_stock_summary)
+            }
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
         requirePreference<SwitchPreference>(R.string.pref_key_use_minimal_bottom_toolbar_while_entering_text).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = false // disabled temporarily based on https://bugzilla.mozilla.org/show_bug.cgi?id=1943053#c31
             isEnabled = context.settings().shouldUseComposableToolbar
             isChecked = context.settings().shouldUseMinimalBottomToolbarWhenEnteringText
             summary = when (context.settings().shouldUseComposableToolbar) {
@@ -195,41 +226,10 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_compose_logins).apply {
-            isChecked = context.settings().enableComposeLogins
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_menu_redesign).apply {
-            isVisible = Config.channel.isNightlyOrDebug
-            isChecked = context.settings().enableMenuRedesign
-            onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
-                (newValue as? Boolean)?.let { newOption ->
-                    context.settings().enableMenuRedesign = newOption
-                    requirePreference<SwitchPreference>(R.string.pref_key_should_show_custom_tab_extensions).apply {
-                        val shouldEnableCustomTabExtensions = newOption || context.settings().shouldUseComposableToolbar
-                        isEnabled = shouldEnableCustomTabExtensions
-                        when (shouldEnableCustomTabExtensions) {
-                            true -> {
-                                summary = null
-                            }
-
-                            false -> {
-                                isChecked = false
-                                summary = getString(R.string.preferences_debug_settings_custom_tab_extensions_summary)
-                                context.settings().shouldShowCustomTabExtensions = false
-                            }
-                        }
-                    }
-                }
-                true
-            }
-        }
-
         requirePreference<SwitchPreference>(R.string.pref_key_should_show_custom_tab_extensions).apply {
             isVisible = Config.channel.isDebug
             isChecked = context.settings().shouldShowCustomTabExtensions
-            val newOption = context.settings().enableMenuRedesign || context.settings().shouldUseComposableToolbar
+            val newOption = context.settings().shouldUseComposableToolbar
             isEnabled = newOption
             summary = when (newOption) {
                 true -> null
@@ -252,6 +252,16 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
 
         requirePreference<SwitchPreference>(R.string.pref_key_enable_firefox_labs).apply {
             isChecked = context.settings().enableFirefoxLabs
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_browser_mode_toggle).apply {
+            isChecked = context.settings().enableBrowserModeToggle
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_merino_client).apply {
+            isChecked = context.settings().enableMerinoClient
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -355,10 +365,10 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
 
         requirePreference<SwitchPreference>(R.string.pref_key_use_new_crash_reporter).apply {
             isVisible = true
-            isChecked = context.settings().useNewCrashReporterDialog
+            isChecked = context.settings().useNewCrashReporterFlow
             onPreferenceChangeListener =
                 Preference.OnPreferenceChangeListener { _, newValue ->
-                    context.settings().useNewCrashReporterDialog = newValue as Boolean
+                    context.settings().useNewCrashReporterFlow = newValue as Boolean
                     true
                 }
         }
@@ -366,10 +376,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         // for performance reasons, this is only available in Nightly or Debug builds
         requirePreference<EditTextPreference>(R.string.pref_key_custom_glean_server_url).apply {
             isVisible = Config.channel.isNightlyOrDebug && BuildConfig.GLEAN_CUSTOM_URL.isNullOrEmpty()
-        }
-
-        requirePreference<Preference>(R.string.pref_key_custom_sponsored_stories_parameters).apply {
-            isVisible = Config.channel.isNightlyOrDebug
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_remote_server_prod).apply {
@@ -415,6 +421,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_shake_to_summarize).apply {
+            isVisible = Config.channel.isDebug
+            isChecked = context.settings().shakeToSummarizeFeatureEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
         requirePreference<SwitchPreference>(R.string.pref_key_persistent_debug_menu).apply {
             isVisible = true
             isChecked = context.settings().isDebugMenuPersistentlyRevealed
@@ -424,12 +436,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         requirePreference<SwitchPreference>(R.string.pref_key_crash_pull_never_show_again).apply {
             isVisible = true
             isChecked = context.settings().crashPullNeverShowAgain
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
-        requirePreference<SwitchPreference>(R.string.pref_key_tab_manager_enhancements).apply {
-            isVisible = true
-            isChecked = context.settings().tabManagerEnhancementsEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -469,9 +475,9 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_enable_relay_email_masks).apply {
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_email_masks).apply {
             isVisible = Config.channel.isDebug
-            isChecked = context.settings().isRelayFeatureEnabled
+            isChecked = context.settings().isEmailMaskFeatureEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -485,17 +491,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             isChecked = context.settings().tabSearchEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
-    }
 
-    override fun onPreferenceTreeClick(preference: Preference): Boolean {
-        when (preference.key) {
-            getString(R.string.pref_key_custom_sponsored_stories_parameters) ->
-                findNavController().nav(
-                    R.id.secretSettingsPreference,
-                    SecretSettingsFragmentDirections.actionSecretSettingsFragmentToSponsoredStoriesSettings(),
-                )
+        requirePreference<SwitchPreference>(R.string.pref_key_native_share_sheet).apply {
+            isVisible = Config.channel.isNightlyOrDebug
+            isChecked = context.settings().nativeShareSheetEnabled
+            onPreferenceChangeListener = SharedPreferenceUpdater()
         }
-        return super.onPreferenceTreeClick(preference)
     }
 
     override fun onDisplayPreferenceDialog(preference: Preference) {

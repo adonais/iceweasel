@@ -50,7 +50,7 @@ add_task(async function test_all() {
     }
   );
 
-  const { initExperimentAPI, cleanup } = await setupTest({
+  const { cleanup } = await setupTest({
     init: false,
     storePath: await NimbusTestUtils.createStoreWith(async store => {
       await NimbusTestUtils.addEnrollmentForRecipe(preexisting, { store });
@@ -152,7 +152,7 @@ add_task(async function test_all() {
     migrationState: NimbusTestUtils.migrationState.LATEST,
   });
 
-  await initExperimentAPI();
+  await ExperimentAPI.init();
 
   const labs = await FirefoxLabs.create();
   const availableSlugs = Array.from(labs.all(), recipe => recipe.slug).sort();
@@ -202,14 +202,14 @@ add_task(async function test_enroll() {
     }
   );
 
-  const { sandbox, manager, initExperimentAPI, cleanup } = await setupTest({
+  const { sandbox, manager, cleanup } = await setupTest({
     experiments: [recipe],
     init: false,
   });
 
   const enrollSpy = sandbox.spy(manager, "enroll");
 
-  await initExperimentAPI();
+  await ExperimentAPI.init();
 
   const labs = await FirefoxLabs.create();
 

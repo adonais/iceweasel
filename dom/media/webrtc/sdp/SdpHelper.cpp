@@ -6,8 +6,6 @@
 
 #include "sdp/SdpHelper.h"
 
-#include <string.h>
-
 #include <set>
 
 #include "nsDebug.h"

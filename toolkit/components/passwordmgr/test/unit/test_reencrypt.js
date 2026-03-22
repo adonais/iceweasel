@@ -5,54 +5,14 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 
 const EXPECTED_LOGINS = LoginTestUtils.testData.loginList();
 
-let migrationCount = 0;
-
-function assertMigrationCount() {
-  const migrationValue = Glean.pwmgr.migration.testGetValue();
-  if (!migrationValue) {
-    return;
-  }
-  const migrationStartedEvents = migrationValue.filter(
-    ({ extra }) => extra.value === "started"
-  );
-  const migrationSuccessEvents = migrationValue.filter(
-    ({ extra }) => extra.value === "success"
-  );
-  const errorEvents = migrationValue.filter(
-    ({ extra }) =>
-      extra.value === "decryptionError" || extra.value === "encryptionError"
-  );
-  Assert.equal(
-    migrationCount,
-    migrationStartedEvents.length,
-    "Should have received the correct number of migrationStarted events"
-  );
-  Assert.equal(
-    migrationCount,
-    migrationSuccessEvents.length,
-    "Should have received the correct number of migrationFinished events"
-  );
-  Assert.deepEqual([], errorEvents, "Should have received no error events");
-}
-
-async function reencryptAllLogins() {
-  assertMigrationCount();
-  await Services.logins.reencryptAllLogins();
-  migrationCount += 1;
-  assertMigrationCount();
-}
-
 add_setup(async function () {
-  registerCleanupFunction(() => {
+  registerCleanupFunction(async () => {
     Services.prefs.clearUserPref("security.sdr.mechanism");
-    Services.logins.removeAllLogins();
+    await Services.logins.removeAllLoginsAsync();
   });
 
-  do_get_profile();
-  Services.fog.initializeFOG();
-
   Services.prefs.setIntPref("security.sdr.mechanism", 0);
-  Services.logins.removeAllLogins();
+  await Services.logins.removeAllLoginsAsync();
   await Services.logins.addLogins(EXPECTED_LOGINS);
 });
 
@@ -64,7 +24,7 @@ add_task(async function test_before_reencrypt() {
 });
 
 add_task(async function test_reencrypt_same_mechanism() {
-  await reencryptAllLogins();
+  await Services.logins.reencryptAllLogins();
 
   await LoginTestUtils.checkLogins(
     EXPECTED_LOGINS,
@@ -75,7 +35,7 @@ add_task(async function test_reencrypt_same_mechanism() {
 add_task(async function test_reencrypt_new_mechanism() {
   Services.prefs.setIntPref("security.sdr.mechanism", 1);
 
-  await reencryptAllLogins();
+  await Services.logins.reencryptAllLogins();
 
   await LoginTestUtils.checkLogins(
     EXPECTED_LOGINS,
@@ -96,7 +56,7 @@ add_task(async function test_reencrypt_mixed_mechanism() {
 
   // Reencrypt all logins, of which one now is encrypted with a different
   // mechanism
-  await reencryptAllLogins();
+  await Services.logins.reencryptAllLogins();
 
   await LoginTestUtils.checkLogins(
     EXPECTED_LOGINS,
@@ -105,12 +65,12 @@ add_task(async function test_reencrypt_mixed_mechanism() {
 });
 
 add_task(async function test_reencrypt_race() {
-  const reencryptionPromise = reencryptAllLogins();
+  const reencryptionPromise = Services.logins.reencryptAllLogins();
 
   const newLogins = EXPECTED_LOGINS.slice();
 
   newLogins.splice(0, 1);
-  Services.logins.removeLogin(EXPECTED_LOGINS[0]);
+  await Services.logins.removeLoginAsync(EXPECTED_LOGINS[0]);
 
   newLogins[0] = EXPECTED_LOGINS[1].clone();
   newLogins[0].password = "different password";
@@ -125,9 +85,9 @@ add_task(async function test_reencrypt_race() {
 });
 
 add_task(async function test_reencrypt_no_logins_present() {
-  Services.logins.removeAllLogins();
+  await Services.logins.removeAllLoginsAsync();
 
-  await reencryptAllLogins();
+  await Services.logins.reencryptAllLogins();
 
   await LoginTestUtils.checkLogins(
     [],

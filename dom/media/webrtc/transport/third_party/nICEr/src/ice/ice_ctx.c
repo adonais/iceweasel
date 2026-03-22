@@ -82,7 +82,7 @@ int nr_ice_fetch_stun_servers(int ct, nr_ice_stun_server **out)
     UINT2 port;
     in_addr_t addr_int;
 
-    if(!(servers=RCALLOC(sizeof(nr_ice_stun_server)*ct)))
+    if(!(servers=R_NEW_CNT(nr_ice_stun_server, ct)))
       ABORT(R_NO_MEMORY);
 
     for(i=0;i<ct;i++){
@@ -128,7 +128,7 @@ int nr_ice_ctx_set_stun_servers(nr_ice_ctx *ctx,nr_ice_stun_server *servers,int 
     }
 
     if (ct) {
-      if(!(ctx->stun_servers_cfg=RCALLOC(sizeof(nr_ice_stun_server)*ct)))
+      if(!(ctx->stun_servers_cfg=R_NEW_CNT(nr_ice_stun_server, ct)))
         ABORT(R_NO_MEMORY);
 
       memcpy(ctx->stun_servers_cfg,servers,sizeof(nr_ice_stun_server)*ct);
@@ -155,7 +155,7 @@ int nr_ice_ctx_set_turn_servers(nr_ice_ctx *ctx,nr_ice_turn_server *servers,int 
     }
 
     if(ct) {
-      if(!(ctx->turn_servers_cfg=RCALLOC(sizeof(nr_ice_turn_server)*ct)))
+      if(!(ctx->turn_servers_cfg=R_NEW_CNT(nr_ice_turn_server, ct)))
         ABORT(R_NO_MEMORY);
 
       memcpy(ctx->turn_servers_cfg,servers,sizeof(nr_ice_turn_server)*ct);
@@ -178,7 +178,7 @@ static int nr_ice_ctx_set_local_addrs(nr_ice_ctx *ctx,nr_local_addr *addrs,int c
     }
 
     if (ct) {
-      if(!(ctx->local_addrs=RCALLOC(sizeof(nr_local_addr)*ct)))
+      if(!(ctx->local_addrs=R_NEW_CNT(nr_local_addr, ct)))
         ABORT(R_NO_MEMORY);
 
       for (i=0;i<ct;++i) {
@@ -242,7 +242,7 @@ int nr_ice_fetch_turn_servers(int ct, nr_ice_turn_server **out)
     in_addr_t addr_int;
     Data data={0};
 
-    if(!(servers=RCALLOC(sizeof(nr_ice_turn_server)*ct)))
+    if(!(servers=R_NEW_CNT(nr_ice_turn_server, ct)))
       ABORT(R_NO_MEMORY);
 
     for(i=0;i<ct;i++){
@@ -276,7 +276,7 @@ int nr_ice_fetch_turn_servers(int ct, nr_ice_turn_server **out)
           ABORT(r);
       }
       else {
-        servers[i].password=RCALLOC(sizeof(*servers[i].password));
+        servers[i].password=R_NEW(Data);
         if(!servers[i].password)
           ABORT(R_NO_MEMORY);
         servers[i].password->data = data.data;
@@ -309,7 +309,7 @@ int nr_ice_fetch_turn_servers(int ct, nr_ice_turn_server **out)
     if(r=r_log_register("ice", &LOG_ICE))
       ABORT(r);
 
-    if(!(ctx=RCALLOC(sizeof(nr_ice_ctx))))
+    if(!(ctx=R_NEW(nr_ice_ctx)))
       ABORT(R_NO_MEMORY);
 
     ctx->flags=flags;
@@ -468,7 +468,7 @@ int nr_ice_fetch_turn_servers(int ct, nr_ice_turn_server **out)
 void nr_ice_gather_finished_cb(NR_SOCKET s, int h, void *cb_arg)
   {
     int r;
-    nr_ice_candidate *cand=cb_arg;
+    nr_ice_candidate *cand=(nr_ice_candidate*)cb_arg;
     nr_ice_ctx *ctx;
     nr_ice_media_stream *stream;
     int component_id;
@@ -824,7 +824,7 @@ int nr_ice_set_target_for_default_local_address_lookup(nr_ice_ctx *ctx, const ch
       ctx->target_for_default_local_address_lookup=0;
     }
 
-    if (!(ctx->target_for_default_local_address_lookup=RCALLOC(sizeof(nr_transport_addr))))
+    if (!(ctx->target_for_default_local_address_lookup=R_NEW(nr_transport_addr)))
       ABORT(R_NO_MEMORY);
 
     if ((r=nr_str_port_to_transport_addr(target_ip, target_port, IPPROTO_UDP, ctx->target_for_default_local_address_lookup))) {
@@ -975,7 +975,7 @@ int nr_ice_ctx_remember_id(nr_ice_ctx *ctx, nr_stun_message *msg)
     int _status;
     nr_ice_stun_id *xid;
 
-    xid = RCALLOC(sizeof(*xid));
+    xid = R_NEW(nr_ice_stun_id);
     if (!xid)
         ABORT(R_NO_MEMORY);
 

@@ -7,13 +7,17 @@ const { IPPExceptionsManager } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/IPPExceptionsManager.sys.mjs"
 );
 
+const EXCLUSION_CHANGED_EVENT = "IPPExceptionsManager:ExclusionChanged";
 const ONBOARDING_MESSAGE_MASK_PREF =
   "browser.ipProtection.onboardingMessageMask";
+const PERM_NAME = "ipp-vpn";
 
 /**
  * Tests the manager can modify exclusions in ipp-vpn permission.
  */
 add_task(async function test_IPPExceptionsManager_exclusions() {
+  Services.perms.removeByType(PERM_NAME);
+
   const site1 = "https://www.example.com";
   const site2 = "https://www.another.example.com";
 
@@ -81,4 +85,88 @@ add_task(async function test_IPPExceptionsManager_exclusions() {
 
   Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
   IPPExceptionsManager.uninit();
+
+  Services.perms.removeByType(PERM_NAME);
+});
+
+add_task(async function test_IPPExceptionsManager_setExclusion() {
+  Services.perms.removeByType(PERM_NAME);
+
+  IPPExceptionsManager.init();
+
+  const site = "https://www.example.com";
+  const contentPrincipal =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(site);
+
+  // Add exclusion with shouldExclude=true
+  let setTrueExChangePromise = waitForEvent(
+    IPPExceptionsManager,
+    EXCLUSION_CHANGED_EVENT
+  );
+
+  IPPExceptionsManager.setExclusion(contentPrincipal, true);
+
+  await setTrueExChangePromise;
+
+  Assert.ok(
+    true,
+    `${EXCLUSION_CHANGED_EVENT} event was dispatched after calling setExclusion with shouldExclude=true`
+  );
+  Assert.ok(
+    IPPExceptionsManager.hasExclusion(contentPrincipal),
+    "Site should exist in ipp-vpn with shouldExclude=true"
+  );
+
+  // Remove exclusion with shouldExclude=false
+  let setFalseExChangePromise = waitForEvent(
+    IPPExceptionsManager,
+    EXCLUSION_CHANGED_EVENT
+  );
+
+  IPPExceptionsManager.setExclusion(contentPrincipal, false);
+
+  await setFalseExChangePromise;
+
+  Assert.ok(
+    true,
+    `${EXCLUSION_CHANGED_EVENT} event was dispatched after calling setExclusion with shouldExclude=false`
+  );
+  Assert.ok(
+    !IPPExceptionsManager.hasExclusion(contentPrincipal),
+    "Site should not exist in ipp-vpn with shouldExclude=false"
+  );
+
+  // Test that example.com and www.example.com are treated as separate exclusions
+  const siteWithoutWWW = "https://example.com";
+  const contentPrincipalWithoutWWW =
+    Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+      siteWithoutWWW
+    );
+
+  // Add exclusion for example.com with shouldExclude=true
+  setTrueExChangePromise = waitForEvent(
+    IPPExceptionsManager,
+    EXCLUSION_CHANGED_EVENT
+  );
+
+  IPPExceptionsManager.setExclusion(contentPrincipalWithoutWWW, true);
+
+  await setTrueExChangePromise;
+
+  Assert.ok(
+    true,
+    `${EXCLUSION_CHANGED_EVENT} event was dispatched after calling setExclusion with shouldExclude=true on example.com`
+  );
+  Assert.ok(
+    IPPExceptionsManager.hasExclusion(contentPrincipalWithoutWWW),
+    "example.com should exist in ipp-vpn with shouldExclude=true"
+  );
+  Assert.ok(
+    !IPPExceptionsManager.hasExclusion(contentPrincipal),
+    "www.example.com should not be excluded when only example.com is added"
+  );
+
+  Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
+  IPPExceptionsManager.uninit();
+  Services.perms.removeByType(PERM_NAME);
 });

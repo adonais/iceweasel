@@ -97,7 +97,7 @@ int nr_transport_addr_listnode_create(const nr_transport_addr *addr, nr_transpor
   nr_transport_addr_listnode *listnode = 0;
   int r,_status;
 
-  if (!(listnode=RCALLOC(sizeof(nr_transport_addr_listnode)))) {
+  if (!(listnode=R_NEW(nr_transport_addr_listnode))) {
     ABORT(R_NO_MEMORY);
   }
 
@@ -129,11 +129,12 @@ static int nr_turn_stun_ctx_create(nr_turn_client_ctx *tctx, int mode,
   nr_turn_stun_ctx *sctx = 0;
   int r,_status;
   char label[256];
+  int flags = 0;
 
-  if (!(sctx=RCALLOC(sizeof(nr_turn_stun_ctx))))
+  if (!(sctx=R_NEW(nr_turn_stun_ctx)))
     ABORT(R_NO_MEMORY);
 
-  int flags = NR_STUN_TRANSPORT_ADDR_CHECK_WILDCARD;
+  flags = NR_STUN_TRANSPORT_ADDR_CHECK_WILDCARD;
   if (!(tctx->ctx->flags & NR_ICE_CTX_FLAGS_ALLOW_LOOPBACK)) {
     flags |= NR_STUN_TRANSPORT_ADDR_CHECK_LOOPBACK;
   }
@@ -553,7 +554,7 @@ int nr_turn_client_ctx_create(const char* label, nr_socket* sock,
   if ((r=r_log_register("turn", &NR_LOG_TURN)))
     ABORT(r);
 
-  if(!(ctx=RCALLOC(sizeof(nr_turn_client_ctx))))
+  if(!(ctx=R_NEW(nr_turn_client_ctx)))
     ABORT(R_NO_MEMORY);
 
   STAILQ_INIT(&ctx->stun_ctxs);
@@ -1202,7 +1203,7 @@ static int nr_turn_permission_create(nr_turn_client_ctx *ctx, const nr_transport
   r_log(NR_LOG_TURN, LOG_INFO, "TURN(%s): Creating permission for %s",
         ctx->label, addr->as_string);
 
-  if (!(perm = RCALLOC(sizeof(nr_turn_permission))))
+  if (!(perm = R_NEW(nr_turn_permission)))
     ABORT(R_NO_MEMORY);
 
   if ((r=nr_transport_addr_copy(&perm->addr, addr)))

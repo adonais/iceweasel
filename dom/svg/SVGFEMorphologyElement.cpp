@@ -23,7 +23,7 @@ JSObject* SVGFEMorphologyElement::WrapNode(JSContext* aCx,
 }
 
 SVGElement::NumberPairInfo SVGFEMorphologyElement::sNumberPairInfo[1] = {
-    {nsGkAtoms::radius, 0, 0}};
+    {nsGkAtoms::radius, 0}};
 
 SVGEnumMapping SVGFEMorphologyElement::sOperatorMap[] = {
     {nsGkAtoms::erode, SVG_OPERATOR_ERODE},
@@ -55,12 +55,12 @@ already_AddRefed<DOMSVGAnimatedEnumeration> SVGFEMorphologyElement::Operator() {
 
 already_AddRefed<DOMSVGAnimatedNumber> SVGFEMorphologyElement::RadiusX() {
   return mNumberPairAttributes[RADIUS].ToDOMAnimatedNumber(
-      SVGAnimatedNumberPair::eFirst, this);
+      SVGAnimatedNumberPairWhichOne::First, this);
 }
 
 already_AddRefed<DOMSVGAnimatedNumber> SVGFEMorphologyElement::RadiusY() {
   return mNumberPairAttributes[RADIUS].ToDOMAnimatedNumber(
-      SVGAnimatedNumberPair::eSecond, this);
+      SVGAnimatedNumberPairWhichOne::Second, this);
 }
 
 void SVGFEMorphologyElement::SetRadius(float rx, float ry) {
@@ -81,12 +81,12 @@ void SVGFEMorphologyElement::GetRXY(int32_t* aRX, int32_t* aRY,
   // probably meant to be the integer it's close to, modulo machine precision
   // issues.
   *aRX = NSToIntCeil(aInstance.GetPrimitiveNumber(
-                         SVGContentUtils::X, &mNumberPairAttributes[RADIUS],
-                         SVGAnimatedNumberPair::eFirst) -
+                         SVGLength::Axis::X, &mNumberPairAttributes[RADIUS],
+                         SVGAnimatedNumberPairWhichOne::First) -
                      MORPHOLOGY_EPSILON);
   *aRY = NSToIntCeil(aInstance.GetPrimitiveNumber(
-                         SVGContentUtils::Y, &mNumberPairAttributes[RADIUS],
-                         SVGAnimatedNumberPair::eSecond) -
+                         SVGLength::Axis::Y, &mNumberPairAttributes[RADIUS],
+                         SVGAnimatedNumberPairWhichOne::Second) -
                      MORPHOLOGY_EPSILON);
 }
 

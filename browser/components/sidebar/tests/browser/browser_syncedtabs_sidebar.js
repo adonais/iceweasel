@@ -355,3 +355,123 @@ add_task(async function test_connect_additional_devices() {
 
   sandbox.restore();
 });
+
+add_task(async function test_tabs_click_auxclick() {
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(lazy.SyncedTabsErrorHandler, "getErrorType").returns(null);
+  sandbox.stub(lazy.TabsSetupFlowManager, "uiStateIndex").value(4);
+  sandbox.stub(lazy.SyncedTabs, "getTabClients").resolves(tabClients);
+  sandbox
+    .stub(lazy.SyncedTabs, "createRecentTabsList")
+    .resolves(tabClients.flatMap(client => client.tabs));
+
+  await SidebarController.show("viewTabsSidebar");
+  const { contentDocument } = SidebarController.browser;
+  const component = contentDocument.querySelector("sidebar-syncedtabs");
+  Assert.ok(component, "Synced tabs panel is shown.");
+
+  const client = tabClients[0];
+
+  const card = component.cards[0];
+
+  const rows = await TestUtils.waitForCondition(() => {
+    const { rowEls } = card.querySelector("sidebar-tab-list");
+    return rowEls.length === client.tabs.length && rowEls;
+  }, "Device has the correct number of tabs.");
+
+  const row = rows[1];
+
+  const content = SidebarController.browser.contentWindow;
+  await content.promiseDocumentFlushed(() => {});
+
+  {
+    const tabPromise = BrowserTestUtils.waitForNewTab(
+      gBrowser,
+      "https://www.mozilla.org/",
+      true
+    );
+
+    // See the comment in test_history_hover_buttons in
+    // browser_history_sidebar.js
+    AccessibilityUtils.setEnv({ focusableRule: false });
+    await EventUtils.synthesizeMouseAtCenter(
+      row.mainEl,
+      {
+        button: 0,
+      },
+      content
+    );
+    AccessibilityUtils.resetEnv();
+
+    const tab = await tabPromise;
+
+    is(gBrowser.selectedTab, tab, "The opened tab should be selected");
+
+    BrowserTestUtils.removeTab(tab);
+  }
+
+  {
+    const tabPromise = BrowserTestUtils.waitForNewTab(
+      gBrowser,
+      "https://www.mozilla.org/",
+      true
+    );
+
+    AccessibilityUtils.setEnv({ focusableRule: false });
+    await EventUtils.synthesizeMouseAtCenter(
+      row.mainEl,
+      {
+        button: 1,
+        shiftKey: false,
+      },
+      content
+    );
+    AccessibilityUtils.resetEnv();
+
+    const tab = await tabPromise;
+
+    is(gBrowser.selectedTab, tab, "The opened tab should be selected");
+
+    BrowserTestUtils.removeTab(tab);
+  }
+
+  {
+    const selectedTabAtStart = gBrowser.selectedTab;
+
+    const tabPromise = BrowserTestUtils.waitForNewTab(
+      gBrowser,
+      "https://www.mozilla.org/",
+      true
+    );
+
+    AccessibilityUtils.setEnv({ focusableRule: false });
+    await EventUtils.synthesizeMouseAtCenter(
+      row.mainEl,
+      {
+        button: 1,
+        shiftKey: true,
+      },
+      content
+    );
+    AccessibilityUtils.resetEnv();
+
+    const tab = await tabPromise;
+
+    is(
+      gBrowser.selectedTab,
+      selectedTabAtStart,
+      "The opened tab should not be selected"
+    );
+
+    Assert.notEqual(
+      gBrowser.selectedTab,
+      tab,
+      "The opened tab should not be selected"
+    );
+
+    BrowserTestUtils.removeTab(tab);
+  }
+
+  SidebarController.hide();
+  sandbox.restore();
+});

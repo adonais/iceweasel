@@ -60,28 +60,16 @@ MockRegistrar.register(
   gClientAuthDialogService
 );
 
-function run_test() {
+add_task(async function run_test() {
   let libraryFile = Services.dirsvc.get("CurWorkD", Ci.nsIFile);
   libraryFile.append("pkcs11testmodule");
   libraryFile.append(ctypes.libraryName("pkcs11testmodule"));
-  loadPKCS11Module(libraryFile, "PKCS11 Test Module", true);
+  await loadPKCS11Module(libraryFile, "PKCS11 Test Module", false);
 
   Services.prefs.setCharPref(
     "network.dns.localDomains",
     "requireclientauth.example.com"
   );
-
-  add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
-  add_test(function set_up_rsa_client_certificate() {
-    gClientAuthDialogService.certificateNameToUse = "CN=client cert rsa";
-    run_next_test();
-  });
-  add_connection_test("requireclientauth.example.com", PRErrorCodeSuccess);
-  add_test(function set_up_ecdsa_client_certificate() {
-    gClientAuthDialogService.certificateNameToUse = "CN=client cert ecdsa";
-    run_next_test();
-  });
-  add_connection_test("requireclientauth.example.com", PRErrorCodeSuccess);
 
   // The test module currently has a slot that uses a protected authentication
   // path (i.e., when Firefox wants to authenticate to it, it opens a dialog
@@ -99,5 +87,9 @@ function run_test() {
   // the socket thread doesn't have to.
   gCertDB.getCerts();
 
-  run_next_test();
-}
+  await asyncStartTLSTestServer("BadCertAndPinningServer", "bad_certs");
+  gClientAuthDialogService.certificateNameToUse = "CN=client cert rsa";
+  await asyncConnectTo("requireclientauth.example.com", PRErrorCodeSuccess);
+  gClientAuthDialogService.certificateNameToUse = "CN=client cert ecdsa";
+  await asyncConnectTo("requireclientauth.example.com", PRErrorCodeSuccess);
+});

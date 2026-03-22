@@ -8,13 +8,13 @@ the condprof/kind.yml file
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.copy import deepcopy
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from voluptuous import Optional
 
 from gecko_taskgraph.transforms.job import job_description_schema
 from gecko_taskgraph.transforms.task import task_description_schema
 
-diff_description_schema = Schema({
+diff_description_schema = LegacySchema({
     # default is settled, but add 'full' to get both
     Optional("scenarios"): [str],
     Optional("description"): task_description_schema["description"],

@@ -84,7 +84,8 @@ public class ContentBlocking {
               "googpub-phish-proto",
               "goog-malware-proto",
               "goog-unwanted-proto",
-              "goog-harmful-proto")
+              "goog-harmful-proto",
+              "goog-globalcache-proto")
           .updateUrl(
               "https://safebrowsing.googleapis.com/v5/hashLists:batchGet?key=%GOOGLE_SAFEBROWSING_API_KEY%")
           .getHashUrl(
@@ -2044,7 +2045,7 @@ public class ContentBlocking {
   private static final String STP =
       "social-tracking-protection-facebook-digest256,social-tracking-protection-linkedin-digest256,social-tracking-protection-twitter-digest256";
   private static final String EMAIL = "base-email-track-digest256";
-  private static final String HARMFULADDON = "harmfuladdon-block-digest256";
+  private static final String HARMFULADDON = "harmful-addon-block-digest256";
 
   /* package */ static @CBSafeBrowsing int sbMalwareToSbCat(final boolean enabled) {
     return enabled

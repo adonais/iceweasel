@@ -13,6 +13,7 @@
 #include "gfxHarfBuzzShaper.h"
 #include <algorithm>
 #include <dlfcn.h>
+#include <limits>
 
 #include FT_TRUETYPE_TAGS_H
 #include FT_TRUETYPE_TABLES_H
@@ -47,8 +48,19 @@ FT_Face gfxFT2FontBase::LockFTFace() const
   if (!mFTFace->Lock(this)) {
     FT_Set_Transform(mFTFace->GetFace(), nullptr, nullptr);
 
-    FT_F26Dot6 charSize = NS_lround(mFTSize * 64.0);
-    FT_Set_Char_Size(mFTFace->GetFace(), charSize, charSize, 0, 0);
+    // This more closely matches the conversion to fixed-point happening in
+    // Cairo and Skia. Avoid overflow during the conversion. FT_Set_Char_Size
+    // may still decide the value is out of range and reject the scale as being
+    // too large or not matching a strike.
+    FT_F26Dot6 charSize =
+        (int32_t)std::min(std::max(mFTSize * 64.0 + 0.5, 0.0),
+                          (double)std::numeric_limits<int32_t>::max());
+    FT_Error error =
+        FT_Set_Char_Size(mFTFace->GetFace(), charSize, charSize, 0, 0);
+    if (error) {
+      // Even if this returns null, caller must ensure UnlockFTFace is called.
+      return nullptr;
+    }
   }
   return mFTFace->GetFace();
 }

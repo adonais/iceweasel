@@ -330,4 +330,12 @@ NS_IMETHODIMP Http3ConnectUDPStream::SetDontFragment(bool aDontFragment) {
   return NS_OK;
 }
 
+void Http3ConnectUDPStream::MarkAsTRRServiceChannel() {
+  mIsTRRServiceChannel = true;
+}
+
+bool Http3ConnectUDPStream::IsTRRServiceChannel() {
+  return mIsTRRServiceChannel;
+}
+
 }  // namespace mozilla::net

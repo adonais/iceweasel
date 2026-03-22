@@ -105,6 +105,10 @@ class XPCOMThreadWrapper final : public AbstractThread,
     return mThread->UnregisterShutdownTask(aTask);
   }
 
+  NS_IMETHOD_(FeatureFlags) GetFeatures() override {
+    return mThread->GetFeatures();
+  }
+
   bool IsCurrentThreadIn() const override {
     return mThread->IsOnCurrentThread();
   }

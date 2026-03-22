@@ -35,7 +35,7 @@ export var UnitTestObjs = {
 /**
  * registerEventSink
  * @param {string} target
- * @param {TracingLevel} level
+ * @param {TracingLevel[keyof TracingLevel]} level
  * @param {EventSink} sink
  */
 export function registerEventSink(
@@ -47,7 +47,7 @@ FfiConverterString.checkType(target);
 FfiConverterTypeTracingLevel.checkType(level);
 FfiConverterTypeEventSink.checkType(sink);
 const result = UniFFIScaffolding.callSync(
-    136, // uniffi_tracing_support_fn_func_register_event_sink
+    145, // uniffi_tracing_support_fn_func_register_event_sink
     FfiConverterString.lower(target),
     FfiConverterTypeTracingLevel.lower(level),
     FfiConverterTypeEventSink.lower(sink),
@@ -61,7 +61,7 @@ return handleRustResult(
 
 /**
  * registerMinLevelEventSink
- * @param {TracingLevel} level
+ * @param {TracingLevel[keyof TracingLevel]} level
  * @param {EventSink} sink
  */
 export function registerMinLevelEventSink(
@@ -71,7 +71,7 @@ export function registerMinLevelEventSink(
 FfiConverterTypeTracingLevel.checkType(level);
 FfiConverterTypeEventSink.checkType(sink);
 const result = UniFFIScaffolding.callSync(
-    137, // uniffi_tracing_support_fn_func_register_min_level_event_sink
+    146, // uniffi_tracing_support_fn_func_register_min_level_event_sink
     FfiConverterTypeTracingLevel.lower(level),
     FfiConverterTypeEventSink.lower(sink),
 )
@@ -91,7 +91,7 @@ export function unregisterEventSink(
    
 FfiConverterString.checkType(target);
 const result = UniFFIScaffolding.callSync(
-    138, // uniffi_tracing_support_fn_func_unregister_event_sink
+    147, // uniffi_tracing_support_fn_func_unregister_event_sink
     FfiConverterString.lower(target),
 )
 return handleRustResult(
@@ -107,7 +107,7 @@ return handleRustResult(
 export function unregisterMinLevelEventSink() {
    
 const result = UniFFIScaffolding.callSync(
-    139, // uniffi_tracing_support_fn_func_unregister_min_level_event_sink
+    148, // uniffi_tracing_support_fn_func_unregister_min_level_event_sink
 )
 return handleRustResult(
     result,
@@ -121,7 +121,7 @@ return handleRustResult(
 /**
  * TracingLevel
  */
-export const TracingLevel = {
+export const TracingLevel = Object.freeze({
     /**
      * ERROR
      */
@@ -142,8 +142,7 @@ export const TracingLevel = {
      * TRACE
      */
     TRACE: 4,
-};
-Object.freeze(TracingLevel);
+});
 
 // Export the FFIConverter object to make external types work.
 export class FfiConverterTypeTracingLevel extends FfiConverterArrayBuffer {
@@ -293,23 +292,23 @@ export class TracingEvent {
             throw e;
         }
         /**
-         * level
+         * @type {TracingLevel[keyof TracingLevel]}
          */
         this.level = level;
         /**
-         * target
+         * @type {string}
          */
         this.target = target;
         /**
-         * name
+         * @type {string}
          */
         this.name = name;
         /**
-         * message
+         * @type {string}
          */
         this.message = message;
         /**
-         * fields
+         * @type {TracingJsonValue}
          */
         this.fields = fields;
     }
@@ -427,7 +426,7 @@ export class FfiConverterTypeEventSink extends FfiConverter {
     }
 
     static lift(handleId) {
-        return uniffiCallbackHandlerTracingEventSink.getCallbackObj(handleId)
+        return uniffiCallbackHandlerTracingEventSink.takeCallbackObj(handleId)
     }
 
     static read(dataStream) {

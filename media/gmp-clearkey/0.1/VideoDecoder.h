@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef __VideoDecoder_h__
-#define __VideoDecoder_h__
+#ifndef VideoDecoder_h_
+#define VideoDecoder_h_
 
 // This include is required in order for content_decryption_module to work
 // on Unix systems.
@@ -68,4 +68,4 @@ class VideoDecoder : public RefCounted {
   bool mHasShutdown;
 };
 
-#endif  // __VideoDecoder_h__
+#endif  // VideoDecoder_h_

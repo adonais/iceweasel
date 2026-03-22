@@ -1078,7 +1078,13 @@ export class FormAutofillParent extends JSWindowActorParent {
   #FIELDS_FILLED_WHEN_SAME_ORIGIN = ["cc-number"];
 
   /**
-   * Determines if the field should be autofilled based on its origin.
+   * Determines whether a field is eligible for autofill based on its origin.
+   *
+   * The rules for autofill eligibility are as follows:
+   * 1. Autofill is permitted if the field resides in a frame that shares the same origin
+   *    as the field that triggered the autofill action.
+   * 2. Autofill is also allowed if the field is same-origin with the top-level frame
+   *    and is not designated as a credit card number field.
    *
    * @param {BorwsingContext} bc
    *        The browsing context the field is in.

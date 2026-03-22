@@ -489,11 +489,11 @@ jobs:
       when:
           - {weekday: 'Monday', hour: 3, minute: 0}
 
-    - name: test-info-xpcshell-timings-daily
+    - name: test-info-timings-periodic
       job:
           type: decision-task
-          treeherder-symbol: test-info(xpcshell-timings-daily)
-          target-tasks-method: test-info-xpcshell-timings-daily
+          treeherder-symbol: test-info(timings-periodic)
+          target-tasks-method: test-info-timings-periodic
       run-on-projects:
           - mozilla-central
       when:

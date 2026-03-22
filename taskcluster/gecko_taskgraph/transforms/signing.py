@@ -8,7 +8,7 @@ Transform the signing task into an actual task description.
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.keyed_by import evaluate_keyed_by
-from taskgraph.util.schema import Schema, taskref_or_string
+from taskgraph.util.schema import LegacySchema, taskref_or_string
 from voluptuous import Optional, Required
 
 from gecko_taskgraph.transforms.task import task_description_schema
@@ -20,7 +20,7 @@ from gecko_taskgraph.util.scriptworker import (
 
 transforms = TransformSequence()
 
-signing_description_schema = Schema({
+signing_description_schema = LegacySchema({
     # Artifacts from dep task to sign - Sync with taskgraph/transforms/task.py
     # because this is passed directly into the signingscript worker
     Required("upstream-artifacts"): [

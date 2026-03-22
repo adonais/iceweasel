@@ -36,6 +36,8 @@ skip-if = ["os == 'win'"]
 
 ["test_glean_parser.py"]
 
+["test_header_guards.py"]
+
 ["test_ignorefile.py"]
 
 ["test_includes.py"]

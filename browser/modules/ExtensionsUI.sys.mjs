@@ -242,7 +242,14 @@ export var ExtensionsUI = {
         );
       }
 
-      let strings = this._buildStrings(info);
+      let strings;
+      try {
+        strings = this._buildStrings(info);
+      } catch (err) {
+        console.error(err);
+        info.reject();
+        return;
+      }
 
       // If this is an update with no promptable permissions, just apply it
       if (
@@ -292,7 +299,15 @@ export var ExtensionsUI = {
     } else if (topic == "webextension-update-permission-prompt") {
       let info = subject.wrappedJSObject;
       info.type = "update";
-      let strings = this._buildStrings(info);
+
+      let strings;
+      try {
+        strings = this._buildStrings(info);
+      } catch (err) {
+        console.error(err);
+        info.reject();
+        return;
+      }
 
       // If we don't prompt for any new permissions, just apply it
       if (!strings.msgs.length && !strings.dataCollectionPermissions?.msg) {
@@ -391,6 +406,11 @@ export var ExtensionsUI = {
     const strings = lazy.ExtensionData.formatPermissionStrings(info, {
       fullDomainsList: true,
     });
+    if (!strings) {
+      throw new Error(
+        "ExtensionData.formatPermissionStrings failed to return localized strings"
+      );
+    }
     strings.addonName = info.addon.name;
     return strings;
   },
@@ -806,7 +826,7 @@ export var ExtensionsUI = {
     if (state.allDomains) {
       let allDomains = doc.createXULElement("menuitem");
       allDomains.setAttribute("type", "radio");
-      allDomains.setAttribute("checked", state.hasAccess);
+      allDomains.toggleAttribute("checked", state.hasAccess);
       doc.l10n.setAttributes(allDomains, "origin-controls-option-all-domains");
       items.push(allDomains);
     }
@@ -814,7 +834,7 @@ export var ExtensionsUI = {
     if (state.whenClicked) {
       let whenClicked = doc.createXULElement("menuitem");
       whenClicked.setAttribute("type", "radio");
-      whenClicked.setAttribute("checked", !state.hasAccess);
+      whenClicked.toggleAttribute("checked", !state.hasAccess);
       doc.l10n.setAttributes(
         whenClicked,
         "origin-controls-option-when-clicked"
@@ -829,7 +849,7 @@ export var ExtensionsUI = {
     if (state.alwaysOn) {
       let alwaysOn = doc.createXULElement("menuitem");
       alwaysOn.setAttribute("type", "radio");
-      alwaysOn.setAttribute("checked", state.hasAccess);
+      alwaysOn.toggleAttribute("checked", state.hasAccess);
       doc.l10n.setAttributes(alwaysOn, "origin-controls-option-always-on", {
         domain: uri.host,
       });

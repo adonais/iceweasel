@@ -26,7 +26,7 @@ ChromeUtils.defineESModuleGetters(this, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   FormAutofillPreferences:
     "resource://autofill/FormAutofillPreferences.sys.mjs",
-  getMozRemoteImageURL: "moz-src:///browser/modules/FaviconUtils.sys.mjs",
+  getMozRemoteImageURL: "moz-src:///toolkit/modules/FaviconUtils.sys.mjs",
 });
 
 // Constants & Enumeration Values
@@ -156,6 +156,8 @@ Preferences.addAll([
   // Languages
   { id: "intl.regional_prefs.use_os_locales", type: "bool" },
 
+  { id: "intl.accept_languages", type: "string" },
+  { id: "privacy.spoof_english", type: "int" },
   // General tab
 
   /* Accessibility
@@ -621,6 +623,23 @@ Preferences.addSetting({
   pref: "browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features",
 });
 Preferences.addSetting({
+  id: "browserLayoutRadioGroup",
+  pref: "sidebar.verticalTabs",
+  get: prefValue => (prefValue ? "true" : "false"),
+  set: value => value === "true",
+});
+Preferences.addSetting({
+  id: "browserLayoutShowSidebar",
+  pref: "sidebar.revamp",
+  onUserChange(checked) {
+    if (checked) {
+      window.browsingContext.topChromeWindow.SidebarController?.enabledViaSettings(
+        true
+      );
+    }
+  },
+});
+Preferences.addSetting({
   id: "web-appearance-override-warning",
   setup: emitChange => {
     FORCED_COLORS_QUERY.addEventListener("change", emitChange);
@@ -678,6 +697,211 @@ Preferences.addSetting({
 });
 
 Preferences.addSetting({
+  id: "acceptLanguages",
+  pref: "intl.accept_languages",
+  get(prefVal, _, setting) {
+    return setting.pref.defaultValue != prefVal
+      ? prefVal.toLowerCase()
+      : Services.locale.acceptLanguages.toLowerCase();
+  },
+});
+Preferences.addSetting({
+  id: "availableLanguages",
+  deps: ["acceptLanguages"],
+  get(_, { acceptLanguages }) {
+    let re = /\s*(?:,|$)\s*/;
+    let _acceptLanguages = acceptLanguages.value.split(re);
+    let availableLanguages = [];
+    let localeCodes = [];
+    let localeValues = [];
+    let bundle = Services.strings.createBundle(
+      "resource://gre/res/language.properties"
+    );
+
+    for (let currString of bundle.getSimpleEnumeration()) {
+      let property = currString.key.split(".");
+      if (property[1] == "accept") {
+        localeCodes.push(property[0]);
+        localeValues.push(currString.value);
+      }
+    }
+
+    let localeNames = Services.intl.getLocaleDisplayNames(
+      undefined,
+      localeCodes
+    );
+
+    for (let i in localeCodes) {
+      let isVisible =
+        localeValues[i] == "true" &&
+        (!_acceptLanguages.includes(localeCodes[i]) ||
+          !_acceptLanguages[localeCodes[i]]);
+      let locale = {
+        code: localeCodes[i],
+        displayName: localeNames[i],
+        isVisible,
+      };
+      availableLanguages.push(locale);
+    }
+
+    return availableLanguages;
+  },
+});
+
+Preferences.addSetting({
+  id: "websiteLanguageWrapper",
+  deps: ["acceptLanguages"],
+  onUserReorder(event, deps) {
+    const { draggedIndex, targetIndex } = event.detail;
+
+    let re = /\s*(?:,|$)\s*/;
+    let languages = deps.acceptLanguages.value.split(re).filter(lang => lang);
+
+    const [draggedLang] = languages.splice(draggedIndex, 1);
+
+    languages.splice(targetIndex, 0, draggedLang);
+
+    deps.acceptLanguages.value = languages.join(",");
+  },
+  getControlConfig(config, deps) {
+    let languagePref = deps.acceptLanguages.value;
+    let localeCodes = languagePref
+      .toLowerCase()
+      .split(/\s*,\s*/)
+      .filter(code => code.length);
+    let localeDisplayNames = Services.intl.getLocaleDisplayNames(
+      undefined,
+      localeCodes
+    );
+    /** @type {SettingOptionConfig[]} */
+    let availableLanguages = [];
+    for (let i = 0; i < localeCodes.length; i++) {
+      let displayName = localeDisplayNames[i];
+      let localeCode = localeCodes[i];
+      availableLanguages.push({
+        l10nId: "languages-code-format",
+        l10nArgs: {
+          locale: displayName,
+          code: localeCode,
+        },
+        control: "moz-box-item",
+        key: localeCode,
+        options: [
+          {
+            control: "moz-button",
+            slot: "actions-start",
+            iconSrc: "chrome://global/skin/icons/delete.svg",
+            l10nId: "website-remove-language-button",
+            l10nArgs: {
+              locale: displayName,
+              code: localeCode,
+            },
+            controlAttrs: {
+              locale: localeCode,
+              action: "remove",
+            },
+          },
+        ],
+      });
+    }
+    config.options = [config.options[0], ...availableLanguages];
+    return config;
+  },
+  onUserClick(e, deps) {
+    let code = e.target.getAttribute("locale");
+    let action = e.target.getAttribute("action");
+    if (code && action) {
+      if (action === "remove") {
+        let re = /\s*(?:,|$)\s*/;
+        let acceptedLanguages = deps.acceptLanguages.value.split(re);
+        let filteredLanguages = acceptedLanguages.filter(
+          acceptedCode => acceptedCode !== code
+        );
+        deps.acceptLanguages.value = filteredLanguages.join(",");
+        let closestBoxItem = e.target.closest("moz-box-item");
+        closestBoxItem.nextElementSibling
+          ? closestBoxItem.nextElementSibling.focus()
+          : closestBoxItem.previousElementSibling.focus();
+      }
+    }
+  },
+});
+
+Preferences.addSetting({
+  id: "websiteLanguageAddLanguage",
+  deps: ["websiteLanguagePicker", "acceptLanguages"],
+  onUserClick(e, deps) {
+    let selectedLanguage = deps.websiteLanguagePicker.value;
+    if (selectedLanguage == "-1") {
+      return;
+    }
+
+    let re = /\s*(?:,|$)\s*/;
+    let currentLanguages = deps.acceptLanguages.value.split(re);
+    let isAlreadyAccepted = currentLanguages.includes(selectedLanguage);
+
+    if (isAlreadyAccepted) {
+      return;
+    }
+
+    currentLanguages.unshift(selectedLanguage);
+    deps.acceptLanguages.value = currentLanguages.join(",");
+  },
+});
+
+Preferences.addSetting(
+  /** @type {{inputValue: string} & SettingConfig } */ ({
+    id: "websiteLanguagePicker",
+    deps: ["availableLanguages", "acceptLanguages"],
+    inputValue: "-1",
+    getControlConfig(config, deps) {
+      let re = /\s*(?:,|$)\s*/;
+      let availableLanguages =
+        /** @type {{ locale: string, code: string, displayName: string, isVisible: boolean }[]} */
+        deps.availableLanguages.value;
+
+      let acceptLanguages = new Set(
+        /** @type {string} */ (deps.acceptLanguages.value).split(re)
+      );
+
+      let sortedOptions = availableLanguages.map(locale => ({
+        l10nId: "languages-code-format",
+        l10nArgs: {
+          locale: locale.displayName,
+          code: locale.code,
+        },
+        hidden: locale.isVisible && acceptLanguages.has(locale.code),
+        value: locale.code,
+      }));
+      // Sort the list of languages by name
+      let comp = new Services.intl.Collator(undefined, {
+        usage: "sort",
+      });
+
+      sortedOptions.sort((a, b) => {
+        return comp.compare(a.l10nArgs.locale, b.l10nArgs.locale);
+      });
+
+      // Take the existing "Add Language" option and prepend it.
+      config.options = [config.options[0], ...sortedOptions];
+      return config;
+    },
+    get(_, deps) {
+      if (
+        !this.inputValue ||
+        deps.acceptLanguages.value.split(",").includes(this.inputValue)
+      ) {
+        this.inputValue = "-1";
+      }
+      return this.inputValue;
+    },
+    set(inputVal) {
+      this.inputValue = String(inputVal);
+    },
+  })
+);
+
+Preferences.addSetting({
   id: "containersPane",
   onUserClick(e) {
     e.preventDefault();
@@ -699,6 +923,21 @@ Preferences.addSetting({
   deps: ["aiControlDefault", "aiControlTranslations"],
   visible: ({ aiControlDefault, aiControlTranslations }) =>
     canShowAiFeature(aiControlTranslations, aiControlDefault),
+});
+
+Preferences.addSetting({
+  id: "checkSpelling",
+  pref: "layout.spellcheckDefault",
+  get: prefVal => prefVal != 0,
+  set: val => (val ? 1 : 0),
+});
+
+Preferences.addSetting({
+  id: "downloadDictionaries",
+});
+
+Preferences.addSetting({
+  id: "spellCheckPromo",
 });
 
 function createNeverTranslateSitesDescription() {
@@ -824,6 +1063,11 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "connectionSettings",
   onUserClick: () => gMainPane.showConnections(),
+  controllingExtensionInfo: {
+    storeId: PROXY_KEY,
+    l10nId: "extension-controlling-proxy-config",
+    allowControl: true,
+  },
 });
 
 Preferences.addSetting({
@@ -1277,7 +1521,9 @@ const DefaultBrowserHelper = {
 
     const pollForDefaultBrowser = () => {
       if (
-        (location.hash == "" || location.hash == "#general") &&
+        (location.hash == "" ||
+          location.hash == "#general" ||
+          location.hash == "#sync") &&
         document.visibilityState == "visible"
       ) {
         const { isBrowserDefault } = this;
@@ -2001,6 +2247,193 @@ Preferences.addSetting({
   deps: ["zoomText"],
   visible: ({ zoomText }) => Boolean(zoomText.value),
 });
+
+/**
+ * Helper object for managing font-related settings.
+ */
+const FontHelpers = {
+  _enumerator: null,
+  _allFonts: null,
+
+  get enumerator() {
+    if (!this._enumerator) {
+      this._enumerator = Cc["@mozilla.org/gfx/fontenumerator;1"].createInstance(
+        Ci.nsIFontEnumerator
+      );
+    }
+    return this._enumerator;
+  },
+
+  ensurePref(prefId, type) {
+    let pref = Preferences.get(prefId);
+    if (!pref) {
+      pref = Preferences.add({ id: prefId, type });
+    }
+    return pref;
+  },
+
+  get langGroup() {
+    return Services.locale.fontLanguageGroup;
+  },
+
+  getFontTypePrefId(langGroup) {
+    return `font.default.${langGroup}`;
+  },
+
+  getFontType(langGroup) {
+    const prefId = this.getFontTypePrefId(langGroup);
+    return Services.prefs.getCharPref(prefId, "serif");
+  },
+
+  getFontPrefId(langGroup) {
+    const fontType = this.getFontType(langGroup);
+    return `font.name.${fontType}.${langGroup}`;
+  },
+
+  getSizePrefId(langGroup) {
+    return `font.size.variable.${langGroup}`;
+  },
+
+  buildFontOptions(langGroup, fontType) {
+    let fonts = this.enumerator.EnumerateFonts(langGroup, fontType);
+    let defaultFont = null;
+    if (fonts.length) {
+      defaultFont = this.enumerator.getDefaultFont(langGroup, fontType);
+    } else {
+      fonts = this.enumerator.EnumerateFonts(langGroup, "");
+      if (fonts.length) {
+        defaultFont = this.enumerator.getDefaultFont(langGroup, "");
+      }
+    }
+
+    if (!this._allFonts) {
+      this._allFonts = this.enumerator.EnumerateAllFonts();
+    }
+
+    const options = [];
+
+    if (fonts.length) {
+      if (defaultFont) {
+        options.push({
+          value: "",
+          l10nId: "fonts-label-default",
+          l10nArgs: { name: defaultFont },
+        });
+      } else {
+        options.push({
+          value: "",
+          l10nId: "fonts-label-default-unnamed",
+        });
+      }
+
+      for (const font of fonts) {
+        options.push({
+          value: font,
+          controlAttrs: { label: font },
+        });
+      }
+    }
+
+    if (this._allFonts.length > fonts.length) {
+      const fontSet = new Set(fonts);
+      for (const font of this._allFonts) {
+        if (!fontSet.has(font)) {
+          options.push({
+            value: font,
+            controlAttrs: { label: font },
+          });
+        }
+      }
+    }
+
+    return options;
+  },
+
+  fontSizeOptions: [
+    9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36,
+    40, 44, 48, 56, 64, 72,
+  ].map(size => ({ value: size, controlAttrs: { label: String(size) } })),
+};
+
+Preferences.addSetting({
+  id: "fontLanguageGroup",
+  pref: "font.language.group",
+});
+
+Preferences.addSetting({
+  id: "fontType",
+  deps: ["fontLanguageGroup"],
+  setup(emitChange, deps, setting) {
+    const handleChange = () => {
+      setting.pref = FontHelpers.ensurePref(
+        FontHelpers.getFontTypePrefId(FontHelpers.langGroup),
+        "string"
+      );
+      emitChange();
+    };
+
+    handleChange();
+    deps.fontLanguageGroup.on("change", handleChange);
+    return () => deps.fontLanguageGroup.off("change", handleChange);
+  },
+});
+
+Preferences.addSetting({
+  id: "defaultFont",
+  deps: ["fontType"],
+  optionsConfig: null,
+  setup(emitChange, deps, setting) {
+    const handleChange = () => {
+      setting.pref = FontHelpers.ensurePref(
+        FontHelpers.getFontPrefId(FontHelpers.langGroup),
+        "fontname"
+      );
+      this.optionsConfig = null;
+      emitChange();
+    };
+    handleChange();
+    deps.fontType.on("change", handleChange);
+    return () => deps.fontType.off("change", handleChange);
+  },
+  getControlConfig(config) {
+    if (!this.optionsConfig) {
+      this.optionsConfig = {
+        ...config,
+        options: FontHelpers.buildFontOptions(
+          FontHelpers.langGroup,
+          FontHelpers.getFontType(FontHelpers.langGroup)
+        ),
+      };
+    }
+    return this.optionsConfig;
+  },
+});
+
+Preferences.addSetting({
+  id: "defaultFontSize",
+  deps: ["fontLanguageGroup"],
+  setup(emitChange, deps, setting) {
+    const handleLangChange = () => {
+      setting.pref = FontHelpers.ensurePref(
+        FontHelpers.getSizePrefId(FontHelpers.langGroup),
+        "int"
+      );
+      emitChange();
+    };
+    handleLangChange();
+    deps.fontLanguageGroup.on("change", handleLangChange);
+    return () => deps.fontLanguageGroup.off("change", handleLangChange);
+  },
+  getControlConfig(config) {
+    return { ...config, options: FontHelpers.fontSizeOptions };
+  },
+});
+
+Preferences.addSetting({
+  id: "advancedFonts",
+  onUserClick: () => gMainPane.configureFonts(),
+});
+
 Preferences.addSetting({
   id: "contrastControlSettings",
   pref: "browser.display.document_color_use",
@@ -2113,20 +2546,46 @@ Preferences.addSetting(
   }
 );
 
-SettingGroupManager.registerGroups({
-  containers: {
-    // This section is marked as in progress for testing purposes
-    inProgress: true,
-    items: [
+function createDefaultBrowserConfig({
+  includeIsDefaultPane = true,
+  inProgress = false,
+} = {}) {
+  const isDefaultPane = {
+    id: "isDefaultPane",
+    l10nId: "is-default-browser-2",
+    control: "moz-promo",
+  };
+
+  const isNotDefaultPane = {
+    id: "isNotDefaultPane",
+    l10nId: "is-not-default-browser-2",
+    control: "moz-promo",
+    options: [
       {
-        id: "containersPlaceholder",
-        control: "moz-message-bar",
+        control: "moz-button",
+        l10nId: "set-as-my-default-browser-2",
+        id: "setDefaultButton",
+        slot: "actions",
         controlAttrs: {
-          message: "Placeholder for updated containers",
+          type: "primary",
         },
       },
     ],
-  },
+  };
+
+  const items = includeIsDefaultPane
+    ? [isDefaultPane, isNotDefaultPane]
+    : [isNotDefaultPane];
+
+  return {
+    l10nId: "home-default-browser-title",
+    headingLevel: 2,
+    items,
+    ...(inProgress && { inProgress }),
+  };
+}
+
+SettingGroupManager.registerGroups({
   profilePane: {
     headingLevel: 2,
     id: "browserProfilesGroupPane",
@@ -2183,7 +2642,10 @@ SettingGroupManager.registerGroups({
       },
     ],
   },
+  defaultBrowser: createDefaultBrowserConfig(),
   startup: {
+    l10nId: "startup-group",
+    headingLevel: 2,
     items: [
       {
         id: "browserRestoreSession",
@@ -2223,27 +2685,6 @@ SettingGroupManager.registerGroups({
         id: "alwaysCheckDefault",
         l10nId: "always-check-default",
       },
-      {
-        id: "isDefaultPane",
-        l10nId: "is-default-browser",
-        control: "moz-promo",
-      },
-      {
-        id: "isNotDefaultPane",
-        l10nId: "is-not-default-browser",
-        control: "moz-promo",
-        options: [
-          {
-            control: "moz-button",
-            l10nId: "set-as-my-default-browser",
-            id: "setDefaultButton",
-            slot: "actions",
-            controlAttrs: {
-              type: "primary",
-            },
-          },
-        ],
-      },
     ],
   },
   importBrowserData: {
@@ -2260,6 +2701,7 @@ SettingGroupManager.registerGroups({
   homepage: {
     inProgress: true,
     headingLevel: 2,
+    iconSrc: "chrome://browser/skin/window-firefox.svg",
     l10nId: "home-homepage-title",
     items: [
       {
@@ -2295,8 +2737,24 @@ SettingGroupManager.registerGroups({
       {
         id: "homepageRestoreDefaults",
         control: "moz-button",
+        iconSrc: "chrome://global/skin/icons/arrow-counterclockwise-16.svg",
         l10nId: "home-restore-defaults",
         controlAttrs: { id: "restoreDefaultHomePageBtn" },
+      },
+    ],
+  },
+  customHomepage: {
+    inProgress: true,
+    headingLevel: 2,
+    l10nId: "home-custom-homepage-card-header",
+    iconSrc: "chrome://global/skin/icons/link.svg",
+    items: [
+      {
+        id: "customHomepageBoxGroup",
+        control: "moz-box-group",
+        controlAttrs: {
+          type: "list",
+        },
       },
     ],
   },
@@ -2304,8 +2762,7 @@ SettingGroupManager.registerGroups({
     inProgress: true,
     headingLevel: 2,
     l10nId: "home-prefs-content-header",
-    // Icons are not ready to be used yet.
-    // iconSrc: "chrome://browser/skin/home.svg",
+    iconSrc: "chrome://browser/skin/home.svg",
     items: [
       {
         id: "webSearch",
@@ -2420,9 +2877,6 @@ SettingGroupManager.registerGroups({
           {
             id: "recentActivityRows",
             control: "moz-select",
-            controlAttrs: {
-              class: "newtab-rows-select",
-            },
             options: [
               {
                 value: 1,
@@ -2494,6 +2948,31 @@ SettingGroupManager.registerGroups({
       },
     ],
   },
+  fonts: {
+    l10nId: "preferences-fonts-header2",
+    headingLevel: 2,
+    items: [
+      {
+        id: "defaultFont",
+        l10nId: "default-font-2",
+        control: "moz-select",
+      },
+      {
+        id: "defaultFontSize",
+        l10nId: "default-font-size-2",
+        control: "moz-select",
+      },
+      {
+        id: "advancedFonts",
+        l10nId: "advanced-fonts",
+        control: "moz-box-button",
+        controlAttrs: {
+          "search-l10n-ids":
+            "fonts-window.title,fonts-langgroup-header,fonts-proportional-size,fonts-proportional-header,fonts-serif,fonts-sans-serif,fonts-monospace,fonts-langgroup-arabic.label,fonts-langgroup-armenian.label,fonts-langgroup-bengali.label,fonts-langgroup-simpl-chinese.label,fonts-langgroup-trad-chinese-hk.label,fonts-langgroup-trad-chinese.label,fonts-langgroup-cyrillic.label,fonts-langgroup-devanagari.label,fonts-langgroup-ethiopic.label,fonts-langgroup-georgian.label,fonts-langgroup-el.label,fonts-langgroup-gujarati.label,fonts-langgroup-gurmukhi.label,fonts-langgroup-japanese.label,fonts-langgroup-hebrew.label,fonts-langgroup-kannada.label,fonts-langgroup-khmer.label,fonts-langgroup-korean.label,fonts-langgroup-latin.label,fonts-langgroup-malayalam.label,fonts-langgroup-math.label,fonts-langgroup-odia.label,fonts-langgroup-sinhala.label,fonts-langgroup-tamil.label,fonts-langgroup-telugu.label,fonts-langgroup-thai.label,fonts-langgroup-tibetan.label,fonts-langgroup-canadian.label,fonts-langgroup-other.label,fonts-minsize,fonts-minsize-none.label,fonts-default-serif.label,fonts-default-sans-serif.label,fonts-allow-own.label",
+        },
+      },
+    ],
+  },
   translations: {
     inProgress: true,
     l10nId: "settings-translations-header",
@@ -2512,8 +2991,76 @@ SettingGroupManager.registerGroups({
       },
     ],
   },
+  spellCheck: {
+    l10nId: "settings-spellcheck-header",
+    iconSrc: "chrome://global/skin/icons/check.svg",
+    headingLevel: 2,
+    items: [
+      {
+        id: "checkSpelling",
+        l10nId: "check-user-spelling",
+        supportPage: "how-do-i-use-firefox-spell-checker",
+      },
+      {
+        id: "downloadDictionaries",
+        l10nId: "spellcheck-download-dictionaries",
+        control: "moz-box-link",
+        controlAttrs: {
+          href: Services.urlFormatter.formatURLPref(
+            "browser.dictionaries.download.url"
+          ),
+        },
+      },
+      {
+        id: "spellCheckPromo",
+        l10nId: "spellcheck-promo",
+        control: "moz-promo",
+        controlAttrs: {
+          imagesrc:
+            "chrome://browser/content/preferences/spell-check-promo.svg",
+        },
+      },
+    ],
+  },
+  browserLayout: {
+    l10nId: "browser-layout-header2",
+    headingLevel: 2,
+    items: [
+      {
+        id: "browserLayoutRadioGroup",
+        control: "moz-visual-picker",
+        options: [
+          {
+            id: "browserLayoutHorizontalTabs",
+            value: "false",
+            l10nId: "browser-layout-horizontal-tabs2",
+            controlAttrs: {
+              class: "setting-chooser-item",
+              imagesrc:
+                "chrome://browser/content/preferences/browser-layout-horizontal.svg",
+            },
+          },
+          {
+            id: "browserLayoutVerticalTabs",
+            value: "true",
+            l10nId: "browser-layout-vertical-tabs2",
+            controlAttrs: {
+              class: "setting-chooser-item",
+              imagesrc:
+                "chrome://browser/content/preferences/browser-layout-vertical.svg",
+            },
+          },
+        ],
+      },
+      {
+        id: "browserLayoutShowSidebar",
+        l10nId: "browser-layout-show-sidebar2",
+      },
+    ],
+  },
   appearance: {
-    l10nId: "web-appearance-group",
+    l10nId: "appearance-group",
+    headingLevel: 2,
     items: [
       {
         id: "web-appearance-override-warning",
@@ -2529,7 +3076,7 @@ SettingGroupManager.registerGroups({
             l10nId: "preferences-web-appearance-choice-auto2",
             controlAttrs: {
               id: "preferences-web-appearance-choice-auto",
-              class: "appearance-chooser-item",
+              class: "setting-chooser-item",
               imagesrc:
                 "chrome://browser/content/preferences/web-appearance-light.svg",
             },
@@ -2539,7 +3086,7 @@ SettingGroupManager.registerGroups({
             l10nId: "preferences-web-appearance-choice-light2",
             controlAttrs: {
               id: "preferences-web-appearance-choice-light",
-              class: "appearance-chooser-item",
+              class: "setting-chooser-item",
               imagesrc:
                 "chrome://browser/content/preferences/web-appearance-light.svg",
             },
@@ -2549,7 +3096,7 @@ SettingGroupManager.registerGroups({
             l10nId: "preferences-web-appearance-choice-dark2",
             controlAttrs: {
               id: "preferences-web-appearance-choice-dark",
-              class: "appearance-chooser-item",
+              class: "setting-chooser-item",
               imagesrc:
                 "chrome://browser/content/preferences/web-appearance-dark.svg",
             },
@@ -2563,6 +3110,52 @@ SettingGroupManager.registerGroups({
         controlAttrs: {
           href: "about:addons",
         },
+      },
+    ],
+  },
+  websiteLanguage: {
+    inProgress: true,
+    l10nId: "website-language-heading",
+    headingLevel: 2,
+    items: [
+      {
+        id: "websiteLanguageWrapper",
+        control: "moz-box-group",
+        controlAttrs: {
+          type: "reorderable-list",
+        },
+        options: [
+          {
+            id: "websiteLanguagePickerWrapper",
+            l10nId: "website-preferred-language",
+            key: "addlanguage",
+            control: "moz-box-item",
+            slot: "header",
+            items: [
+              {
+                id: "websiteLanguagePicker",
+                slot: "actions",
+                control: "moz-select",
+                options: [
+                  {
+                    control: "moz-option",
+                    l10nId: "website-add-language",
+                    controlAttrs: {
+                      value: "-1",
+                    },
+                  },
+                ],
+              },
+              {
+                id: "websiteLanguageAddLanguage",
+                slot: "actions",
+                control: "moz-button",
+                iconSrc: "chrome://global/skin/icons/plus.svg",
+                l10nId: "website-add-language-button",
+              },
+            ],
+          },
+        ],
       },
     ],
   },
@@ -2589,6 +3182,8 @@ SettingGroupManager.registerGroups({
     ],
   },
   drm: {
+    l10nId: "drm-group",
+    headingLevel: 2,
     subcategory: "drm",
     items: [
       {
@@ -2638,7 +3233,8 @@ SettingGroupManager.registerGroups({
     ],
   },
   browsing: {
-    l10nId: "browsing-group-label",
+    l10nId: "browsing-group",
+    headingLevel: 1,
     items: [
       {
         id: "useAutoScroll",
@@ -2718,12 +3314,14 @@ SettingGroupManager.registerGroups({
     ],
   },
   httpsOnly: {
+    l10nId: "httpsonly-group",
+    supportPage: "https-only-prefs",
+    headingLevel: 2,
     items: [
       {
         id: "httpsOnlyRadioGroup",
         control: "moz-radio-group",
-        l10nId: "httpsonly-label",
-        supportPage: "https-only-prefs",
+        l10nId: "httpsonly-label2",
         options: [
           {
             id: "httpsOnlyRadioEnabled",
@@ -2755,7 +3353,7 @@ SettingGroupManager.registerGroups({
     ],
   },
   certificates: {
-    l10nId: "certs-description2",
+    l10nId: "certs-description3",
     supportPage: "secure-website-certificate",
     headingLevel: 2,
     items: [
@@ -2770,7 +3368,7 @@ SettingGroupManager.registerGroups({
         items: [
           {
             id: "viewCertificatesButton",
-            l10nId: "certs-view",
+            l10nId: "certs-view2",
             control: "moz-box-button",
             controlAttrs: {
               "search-l10n-ids":
@@ -2779,7 +3377,7 @@ SettingGroupManager.registerGroups({
           },
           {
             id: "viewSecurityDevicesButton",
-            l10nId: "certs-devices",
+            l10nId: "certs-devices2",
             control: "moz-box-button",
             controlAttrs: {
               "search-l10n-ids":
@@ -2791,6 +3389,8 @@ SettingGroupManager.registerGroups({
     ],
   },
   browsingProtection: {
+    l10nId: "browsing-protection-group2",
+    headingLevel: 2,
     items: [
       {
         id: "enableSafeBrowsing",
@@ -2808,10 +3408,20 @@ SettingGroupManager.registerGroups({
           },
         ],
       },
+      {
+        id: "safeBrowsingWarningMessageBox",
+        l10nId: "security-safe-browsing-warning",
+        control: "moz-message-bar",
+        controlAttrs: {
+          type: "warning",
+          dismissable: true,
+        },
+      },
     ],
   },
   nonTechnicalPrivacy: {
-    l10nId: "non-technical-privacy-label",
+    l10nId: "non-technical-privacy-group",
+    headingLevel: 2,
     items: [
       {
         id: "gpcEnabled",
@@ -2832,6 +3442,7 @@ SettingGroupManager.registerGroups({
   nonTechnicalPrivacy2: {
     inProgress: true,
     l10nId: "non-technical-privacy-heading",
+    iconSrc: "chrome://browser/skin/controlcenter/tracking-protection.svg",
     headingLevel: 2,
     items: [
       {
@@ -2919,6 +3530,8 @@ SettingGroupManager.registerGroups({
     ],
   },
   performance: {
+    l10nId: "performance-group",
+    headingLevel: 1,
     items: [
       {
         id: "useRecommendedPerformanceSettings",
@@ -2934,12 +3547,34 @@ SettingGroupManager.registerGroups({
   ipprotection: {
     l10nId: "ip-protection-description",
     headingLevel: 2,
-    // TODO: Replace support url with finalized link (Bug 1993266)
-    supportPage: "ip-protection",
+    supportPage: "built-in-vpn",
     items: [
       {
+        id: "ipProtectionNotOptedInSection",
+        l10nId: "ip-protection-not-opted-in-2",
+        l10nArgs: {
+          maxUsage: "50",
+        },
+        control: "moz-promo",
+        controlAttrs: {
+          imagesrc:
+            "chrome://browser/content/ipprotection/assets/vpn-settings-get-started.svg",
+          imagealignment: "end",
+        },
+        items: [
+          {
+            id: "getStartedButton",
+            l10nId: "ip-protection-not-opted-in-button",
+            control: "moz-button",
+            slot: "actions",
+            controlAttrs: {
+              type: "primary",
+            },
+          },
+        ],
+      },
+      {
         id: "ipProtectionExceptions",
-        l10nId: "ip-protection-site-exceptions",
         control: "moz-fieldset",
         controlAttrs: {
           ".headingLevel": 3,
@@ -2969,31 +3604,23 @@ SettingGroupManager.registerGroups({
         ],
       },
       {
-        id: "ipProtectionAdditionalLinks",
-        control: "moz-box-group",
-        options: [
-          {
-            id: "ipProtectionSupportLink",
-            l10nId: "ip-protection-contact-support-link",
-            control: "moz-box-link",
-            controlAttrs: {
-              href: "https://support.mozilla.org/questions/new/mozilla-vpn/form",
-            },
-          },
-          {
-            id: "ipProtectionUpgradeLink",
-            l10nId: "ip-protection-upgrade-link",
-            control: "moz-box-link",
-            controlAttrs: {
-              href: "https://www.mozilla.org/products/vpn/",
-            },
-          },
-        ],
+        id: "ipProtectionBandwidthSection",
+        control: "moz-box-item",
+        items: [{ id: "ipProtectionBandwidth", control: "bandwidth-usage" }],
+      },
+      {
+        id: "ipProtectionLinks",
+        control: "moz-box-link",
+        l10nId: "ip-protection-vpn-upgrade-link",
+        controlAttrs: {
+          href: "https://www.mozilla.org/products/vpn/",
+        },
       },
     ],
   },
   cookiesAndSiteData: {
-    l10nId: "sitedata-label",
+    l10nId: "cookies-site-data-group",
+    headingLevel: 2,
     subcategory: "sitedata",
     items: [
       {
@@ -3060,13 +3687,14 @@ SettingGroupManager.registerGroups({
       },
       {
         id: "deleteOnClose",
-        l10nId: "sitedata-delete-on-close",
+        l10nId: "sitedata-delete-on-close2",
       },
     ],
   },
   cookiesAndSiteData2: {
     inProgress: true,
     l10nId: "sitedata-heading",
+    iconSrc: "chrome://browser/skin/controlcenter/3rdpartycookies.svg",
     headingLevel: 2,
     items: [
       {
@@ -3128,24 +3756,25 @@ SettingGroupManager.registerGroups({
       },
       {
         id: "deleteOnClose",
-        l10nId: "sitedata-delete-on-close",
+        l10nId: "sitedata-delete-on-close2",
       },
     ],
   },
   networkProxy: {
+    l10nId: "network-proxy-group2",
+    iconSrc: "chrome://devtools/skin/images/globe.svg",
+    headingLevel: 1,
+    supportPage: "prefs-connection-settings",
+    subcategory: "netsettings",
     items: [
       {
         id: "connectionSettings",
-        l10nId: "network-proxy-connection-settings",
+        l10nId: "network-proxy-connection-settings2",
         control: "moz-box-button",
         controlAttrs: {
           "search-l10n-ids":
             "connection-window2.title,connection-proxy-option-no.label,connection-proxy-option-auto.label,connection-proxy-option-system.label,connection-proxy-option-wpad.label,connection-proxy-option-manual.label,connection-proxy-http,connection-proxy-https,connection-proxy-http-port,connection-proxy-socks,connection-proxy-socks4,connection-proxy-socks5,connection-proxy-noproxy,connection-proxy-noproxy-desc,connection-proxy-https-sharing.label,connection-proxy-autotype.label,connection-proxy-reload.label,connection-proxy-autologin-checkbox.label,connection-proxy-socks-remote-dns.label",
         },
-        // Bug 1990552: due to how this lays out in the legacy page, we do not include a
-        // controllingExtensionInfo attribute here. We will want one in the redesigned page,
-        // using storeId: "proxy.settings".
-        controllingExtensionInfo: undefined,
       },
     ],
   },
@@ -3258,6 +3887,8 @@ SettingGroupManager.registerGroups({
     ],
   },
   history: {
+    l10nId: "history-group",
+    headingLevel: 2,
     items: [
       {
         id: "historyMode",
@@ -3267,13 +3898,14 @@ SettingGroupManager.registerGroups({
             value: "remember",
             l10nId: "history-remember-option-all",
           },
-          { value: "dontremember", l10nId: "history-remember-option-never" },
-          { value: "custom", l10nId: "history-remember-option-custom" },
+          { value: "dontremember", l10nId: "history-remember-option-never2" },
+          { value: "custom", l10nId: "history-remember-option-custom2" },
         ],
         controlAttrs: {
           "search-l10n-ids": `
-            history-remember-description3,
-            history-dontremember-description3,
+            history-remember-description4,
+            history-dontremember-description4,
+            history-custom-description4,
             history-private-browsing-permanent.label,
             history-remember-browser-option.label,
             history-remember-search-option.label,
@@ -3327,10 +3959,11 @@ SettingGroupManager.registerGroups({
   history2: {
     inProgress: true,
     l10nId: "history-section-header",
+    iconSrc: "chrome://browser/skin/controlcenter/3rdpartycookies.svg",
     items: [
       {
         id: "deleteOnCloseInfo",
-        l10nId: "sitedata-delete-on-close-private-browsing3",
+        l10nId: "sitedata-delete-on-close-private-browsing4",
         control: "moz-message-bar",
       },
       {
@@ -3341,10 +3974,10 @@ SettingGroupManager.registerGroups({
             value: "remember",
             l10nId: "history-remember-option-all",
           },
-          { value: "dontremember", l10nId: "history-remember-option-never" },
+          { value: "dontremember", l10nId: "history-remember-option-never2" },
           {
             value: "custom",
-            l10nId: "history-remember-option-custom",
+            l10nId: "history-remember-option-custom2",
             items: [
               {
                 id: "customHistoryButton",
@@ -3413,7 +4046,7 @@ SettingGroupManager.registerGroups({
   },
   permissions: {
     id: "permissions",
-    l10nId: "permissions-header2",
+    l10nId: "permissions-header3",
     headingLevel: 2,
     items: [
       {
@@ -3539,7 +4172,7 @@ SettingGroupManager.registerGroups({
       },
       {
         id: "warnAddonInstall",
-        l10nId: "permissions-addon-install-warning2",
+        l10nId: "permissions-addon-install-warning3",
         items: [
           {
             id: "addonExceptions",
@@ -3559,6 +4192,8 @@ SettingGroupManager.registerGroups({
     ],
   },
   dnsOverHttps: {
+    l10nId: "dns-over-https-group2",
+    headingLevel: 1,
     inProgress: true,
     items: [
       {
@@ -3635,6 +4270,35 @@ SettingGroupManager.registerGroups({
             control: "moz-message-bar",
           },
         ],
+      },
+    ],
+  },
+  searchShortcuts: {
+    inProgress: true,
+    l10nId: "search-one-click-header-3",
+    headingLevel: 2,
+    items: [
+      {
+        id: "updateSearchEngineSuccess",
+        l10nId: "update-search-engine-success",
+        control: "moz-message-bar",
+        controlAttrs: {
+          type: "success",
+          dismissable: true,
+        },
+      },
+      {
+        id: "addEngineButton",
+        l10nId: "search-add-engine-2",
+        control: "moz-button",
+        iconSrc: "chrome://global/skin/icons/plus.svg",
+      },
+      {
+        id: "engineList",
+        control: "moz-box-group",
+        controlAttrs: {
+          type: "reorderable-list",
+        },
       },
     ],
   },
@@ -4089,6 +4753,10 @@ SettingGroupManager.registerGroups({
       },
     ],
   },
+  defaultBrowserSync: createDefaultBrowserConfig({
+    includeIsDefaultPane: false,
+    inProgress: true,
+  }),
   sync: {
     inProgress: true,
     l10nId: "sync-group-label",
@@ -4586,6 +5254,7 @@ function initSettingGroup(id) {
     }
     group.config = config;
     group.getSetting = Preferences.getSetting.bind(Preferences);
+    group.srdEnabled = srdSectionPrefs.all;
   }
 }
 
@@ -4663,8 +5332,6 @@ var gMainPane = {
     }
 
     this.displayUseSystemLocale();
-    this.updateProxySettingsUI();
-    initializeProxyUI(gMainPane);
 
     if (Services.prefs.getBoolPref("intl.multilingual.enabled")) {
       gMainPane.initPrimaryBrowserLanguageUI();
@@ -4673,15 +5340,20 @@ var gMainPane = {
     gMainPane.initTranslations();
 
     // Initialize settings groups from the config object.
+    initSettingGroup("browserLayout");
     initSettingGroup("appearance");
     initSettingGroup("downloads");
     initSettingGroup("drm");
     initSettingGroup("contrast");
+    initSettingGroup("websiteLanguage");
     initSettingGroup("browsing");
     initSettingGroup("zoom");
+    initSettingGroup("fonts");
     initSettingGroup("support");
     initSettingGroup("translations");
+    initSettingGroup("spellCheck");
     initSettingGroup("performance");
+    initSettingGroup("defaultBrowser");
     initSettingGroup("startup");
     initSettingGroup("importBrowserData");
     initSettingGroup("networkProxy");
@@ -4721,28 +5393,12 @@ var gMainPane = {
       "command",
       gMainPane.showTranslationExceptions
     );
-    Preferences.get("font.language.group").on(
-      "change",
-      gMainPane._rebuildFonts.bind(gMainPane)
-    );
-    setEventListener("advancedFonts", "command", gMainPane.configureFonts);
-
-    document
-      .getElementById("browserLayoutShowSidebar")
-      .addEventListener(
-        "command",
-        gMainPane.onShowSidebarCommand.bind(gMainPane),
-        { capture: true }
-      );
 
     document
       .getElementById("migrationWizardDialog")
       .addEventListener("MigrationWizard:Close", function (e) {
         e.currentTarget.close();
       });
-
-    // Initializes the fonts dropdowns displayed in this pane.
-    this._rebuildFonts();
 
     // Firefox Translations settings panel
     // TODO (Bug 1817084) Remove this code when we disable the extension
@@ -4904,19 +5560,6 @@ var gMainPane = {
 
     // Notify observers that the UI is now ready
     Services.obs.notifyObservers(window, "main-pane-loaded");
-
-    Preferences.addSyncFromPrefListener(
-      document.getElementById("defaultFont"),
-      element => FontBuilder.readFontSelection(element)
-    );
-    Preferences.addSyncFromPrefListener(
-      document.getElementById("checkSpelling"),
-      () => this.readCheckSpelling()
-    );
-    Preferences.addSyncToPrefListener(
-      document.getElementById("checkSpelling"),
-      () => this.writeCheckSpelling()
-    );
     this.setInitialized();
   },
 
@@ -4959,21 +5602,6 @@ var gMainPane = {
     }
 
     return false;
-  },
-
-  /**
-   * Handle toggling the "Show sidebar" checkbox to allow SidebarController to know the
-   * origin of this change.
-   */
-  onShowSidebarCommand(event) {
-    // Note: We useCapture so while the checkbox' checked property is already updated,
-    // the pref value has not yet been changed
-    const willEnable = event.target.checked;
-    if (willEnable) {
-      window.browsingContext.topChromeWindow.SidebarController?.enabledViaSettings(
-        true
-      );
-    }
   },
 
   // CONTAINERS
@@ -5667,12 +6295,16 @@ var gMainPane = {
   },
 
   /**
-   *  Shows a subdialog containing the profile selector page.
+   *  Shows a window dialog containing the profile selector page.
    */
   manageProfiles() {
-    SelectableProfileService.maybeSetupDataStore().then(() => {
-      gSubDialog.open("about:profilemanager");
-    });
+    const win = window.browsingContext.topChromeWindow;
+
+    win.toOpenWindowByType(
+      "about:profilemanager",
+      "about:profilemanager",
+      "chrome,extrachrome,menubar,resizable,scrollbars,status,toolbar,centerscreen"
+    );
   },
 
   /**
@@ -5860,132 +6492,8 @@ var gMainPane = {
    */
   showConnections() {
     gSubDialog.open(
-      "chrome://browser/content/preferences/dialogs/connection.xhtml",
-      { closingCallback: this.updateProxySettingsUI.bind(this) }
+      "chrome://browser/content/preferences/dialogs/connection.xhtml"
     );
-  },
-
-  // Update the UI to show the proper description depending on whether an
-  // extension is in control or not.
-  async updateProxySettingsUI() {
-    let controllingExtension = await getControllingExtension(
-      PREF_SETTING_TYPE,
-      PROXY_KEY
-    );
-    let description = document.getElementById("connectionSettingsDescription");
-
-    if (controllingExtension) {
-      setControllingExtensionDescription(
-        description,
-        controllingExtension,
-        "proxy.settings"
-      );
-    } else {
-      setControllingExtensionDescription(
-        description,
-        null,
-        "network-proxy-connection-description"
-      );
-    }
-  },
-
-  // FONTS
-
-  /**
-   * Populates the default font list in UI.
-   */
-  _rebuildFonts() {
-    var langGroup = Services.locale.fontLanguageGroup;
-    var isSerif = this._readDefaultFontTypeForLanguage(langGroup) == "serif";
-    this._selectDefaultLanguageGroup(langGroup, isSerif);
-  },
-
-  /**
-   * Returns the type of the current default font for the language denoted by
-   * aLanguageGroup.
-   */
-  _readDefaultFontTypeForLanguage(aLanguageGroup) {
-    const kDefaultFontType = "font.default.%LANG%";
-    var defaultFontTypePref = kDefaultFontType.replace(
-      /%LANG%/,
-      aLanguageGroup
-    );
-    var preference = Preferences.get(defaultFontTypePref);
-    if (!preference) {
-      preference = Preferences.add({ id: defaultFontTypePref, type: "string" });
-      preference.on("change", gMainPane._rebuildFonts.bind(gMainPane));
-    }
-    return preference.value;
-  },
-
-  _selectDefaultLanguageGroupPromise: Promise.resolve(),
-
-  _selectDefaultLanguageGroup(aLanguageGroup, aIsSerif) {
-    this._selectDefaultLanguageGroupPromise = (async () => {
-      // Avoid overlapping language group selections by awaiting the resolution
-      // of the previous one.  We do this because this function is re-entrant,
-      // as inserting <preference> elements into the DOM sometimes triggers a call
-      // back into this function.  And since this function is also asynchronous,
-      // that call can enter this function before the previous run has completed,
-      // which would corrupt the font menulists.  Awaiting the previous call's
-      // resolution avoids that fate.
-      await this._selectDefaultLanguageGroupPromise;
-
-      const kFontNameFmtSerif = "font.name.serif.%LANG%";
-      const kFontNameFmtSansSerif = "font.name.sans-serif.%LANG%";
-      const kFontNameListFmtSerif = "font.name-list.serif.%LANG%";
-      const kFontNameListFmtSansSerif = "font.name-list.sans-serif.%LANG%";
-      const kFontSizeFmtVariable = "font.size.variable.%LANG%";
-
-      var prefs = [
-        {
-          format: aIsSerif ? kFontNameFmtSerif : kFontNameFmtSansSerif,
-          type: "fontname",
-          element: "defaultFont",
-          fonttype: aIsSerif ? "serif" : "sans-serif",
-        },
-        {
-          format: aIsSerif ? kFontNameListFmtSerif : kFontNameListFmtSansSerif,
-          type: "unichar",
-          element: null,
-          fonttype: aIsSerif ? "serif" : "sans-serif",
-        },
-        {
-          format: kFontSizeFmtVariable,
-          type: "int",
-          element: "defaultFontSize",
-          fonttype: null,
-        },
-      ];
-      for (var i = 0; i < prefs.length; ++i) {
-        var preference = Preferences.get(
-          prefs[i].format.replace(/%LANG%/, aLanguageGroup)
-        );
-        if (!preference) {
-          var name = prefs[i].format.replace(/%LANG%/, aLanguageGroup);
-          preference = Preferences.add({ id: name, type: prefs[i].type });
-        }
-
-        if (!prefs[i].element) {
-          continue;
-        }
-
-        var element = document.getElementById(prefs[i].element);
-        if (element) {
-          element.setAttribute("preference", preference.id);
-
-          if (prefs[i].fonttype) {
-            await FontBuilder.buildFontList(
-              aLanguageGroup,
-              prefs[i].fonttype,
-              element
-            );
-          }
-
-          preference.setElementValue(element);
-        }
-      }
-    })().catch(console.error);
   },
 
   /**
@@ -6029,46 +6537,6 @@ var gMainPane = {
     );
 
     migrationWizardDialog.showModal();
-  },
-
-  /**
-   * Stores the original value of the spellchecking preference to enable proper
-   * restoration if unchanged (since we're mapping a tristate onto a checkbox).
-   */
-  _storedSpellCheck: 0,
-
-  /**
-   * Returns true if any spellchecking is enabled and false otherwise, caching
-   * the current value to enable proper pref restoration if the checkbox is
-   * never changed.
-   *
-   * layout.spellcheckDefault
-   * - an integer:
-   *     0  disables spellchecking
-   *     1  enables spellchecking, but only for multiline text fields
-   *     2  enables spellchecking for all text fields
-   */
-  readCheckSpelling() {
-    var pref = Preferences.get("layout.spellcheckDefault");
-    this._storedSpellCheck = pref.value;
-
-    return pref.value != 0;
-  },
-
-  /**
-   * Returns the value of the spellchecking preference represented by UI,
-   * preserving the preference's "hidden" value if the preference is
-   * unchanged and represents a value not strictly allowed in UI.
-   */
-  writeCheckSpelling() {
-    var checkbox = document.getElementById("checkSpelling");
-    if (checkbox.checked) {
-      if (this._storedSpellCheck == 2) {
-        return 2;
-      }
-      return 1;
-    }
-    return 0;
   },
 
   _minUpdatePrefDisableTime: 1000,
@@ -7118,7 +7586,7 @@ var gMainPane = {
     ) {
       // As the favicon originates from web content and is displayed in the parent process,
       // use the moz-remote-image: protocol to safely re-encode it.
-      return getMozRemoteImageURL(uri.prePath + "/favicon.ico", 16);
+      return getMozRemoteImageURL(uri.prePath + "/favicon.ico", { size: 16 });
     }
 
     return "";

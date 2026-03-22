@@ -262,6 +262,14 @@ DCLayerTree::DCLayerTree(gl::GLContext* aGL, EGLConfig aEGLConfig,
       mColorRBO(0),
       mPendingCommit(false) {
   LOG("DCLayerTree::DCLayerTree()");
+
+  if (gfx::gfxVars::UseWebRenderCompositor()) {
+    if (StaticPrefs::gfx_webrender_layer_compositor_AtStartup()) {
+      mCompositorKind = Some(WebRenderOsCompositorKind::LayerCompositor);
+    } else {
+      mCompositorKind = Some(WebRenderOsCompositorKind::NativeCompositor);
+    }
+  }
 }
 
 DCLayerTree::~DCLayerTree() {
@@ -559,20 +567,23 @@ void DCLayerTree::WaitForCommitCompletion() {
   mCompositionDevice->WaitForCommitCompletion();
 }
 
+bool DCLayerTree::UseCompositor() const { return mCompositorKind.isSome(); }
+
 bool DCLayerTree::UseNativeCompositor() const {
-  return mUseNativeCompositor && gfx::gfxVars::UseWebRenderCompositor();
+  return mCompositorKind.isSome() &&
+         mCompositorKind.ref() == WebRenderOsCompositorKind::NativeCompositor;
 }
 
 bool DCLayerTree::UseLayerCompositor() const {
-  return UseNativeCompositor() &&
-         StaticPrefs::gfx_webrender_layer_compositor_AtStartup();
+  return mCompositorKind.isSome() &&
+         mCompositorKind.ref() == WebRenderOsCompositorKind::LayerCompositor;
 }
 
 void DCLayerTree::DisableNativeCompositor() {
   MOZ_ASSERT(mCurrentSurface.isNothing());
   MOZ_ASSERT(mCurrentLayers.empty());
 
-  mUseNativeCompositor = false;
+  mCompositorKind = Nothing();
   ReleaseNativeCompositorResources();
   mPrevLayers.clear();
   mRootVisual->RemoveAllVisuals();
@@ -2221,7 +2232,7 @@ void DCSurfaceDCompositionTextureOverlay::Present() {
 
   mContentVisual->SetContent(dcompTexture);
   mPrevRenderTextureHost = mRenderTextureHost;
-  mDCLayerTree->SetPendingCommet();
+  mDCLayerTree->SetPendingCommit();
 }
 
 DCSurfaceVideo::DCSurfaceVideo(bool aIsOpaque, DCLayerTree* aDCLayerTree)

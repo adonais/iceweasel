@@ -19,11 +19,11 @@ class TestEnginesOnRestart(MarionetteTestCase):
 
         script = """\
         let [resolve] = arguments;
-        let searchService = Components.classes[
-                "@mozilla.org/browser/search-service;1"]
-            .getService(Components.interfaces.nsISearchService);
-        return searchService.init().then(function () {
-          resolve(searchService.defaultEngine.id);
+        let { SearchService } = ChromeUtils.importESModule(
+            "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+        );
+        return SearchService.init().then(function () {
+          resolve(SearchService.defaultEngine.id);
         });
         """
 

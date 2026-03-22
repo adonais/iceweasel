@@ -12,6 +12,7 @@
 #include "nsHttpTransaction.h"
 #include "nsIClassOfService.h"
 #include "nsISocketTransport.h"
+#include "nsISupportsPriority.h"
 #include "nsSocketTransportService2.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
@@ -53,6 +54,7 @@ void Http3Stream::Close(nsresult aResult) {
   mTransaction->Close(aResult);
   // Clear the mSession to break the cycle.
   mSession = nullptr;
+  mClosed = true;
 }
 
 bool Http3Stream::GetHeadersString(const char* buf, uint32_t avail,

@@ -25,6 +25,8 @@ def install_moz_phab(command_context, force=False):
     import subprocess
     import sys
 
+    from mozversioncontrol import get_repository_object
+
     moz_phab_executable = mozfile.which("moz-phab")
     if moz_phab_executable and not force:
         command_context.log(
@@ -34,6 +36,18 @@ def install_moz_phab(command_context, force=False):
             f"moz-phab is already installed in {moz_phab_executable}.",
         )
         sys.exit(0)
+
+    # moz-phab requires user.email to be configured, so check and run `./mach vcs-setup` if needed
+    repo = get_repository_object(command_context.topsrcdir)
+    if not repo.get_user_email():
+        command_context.log(
+            logging.INFO,
+            "vcs_setup_needed",
+            {},
+            'user.email is not configured. Running "./mach vcs-setup" first...',
+        )
+        mach = Path(command_context.topsrcdir) / "mach"
+        subprocess.check_call([sys.executable, str(mach), "vcs-setup"])
 
     command_context.log(logging.INFO, "run", {}, "Installing moz-phab using uv")
 

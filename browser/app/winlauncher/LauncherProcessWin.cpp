@@ -6,8 +6,6 @@
 
 #include "LauncherProcessWin.h"
 
-#include <string.h>
-
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/glue/Debug.h"
@@ -115,8 +113,14 @@ enum class VCRuntimeDLLDir : bool {
   Application,
   System,
 };
+
+/* Returns true and sets aOutVersion to Nothing() if msvcp140.dll does not
+ * exist in aDir. Returns true and sets aOutVersion to Some(version) if the
+ * file exists and we successfully extract the version info. Returns false on
+ * failure paths that prevent us from reaching any conclusion.
+ */
 static bool GetMSVCP140VersionInfo(VCRuntimeDLLDir aDir,
-                                   uint64_t& aOutVersion) {
+                                   mozilla::Maybe<uint64_t>& aOutVersion) {
   wchar_t dllPath[MAX_PATH];
   if (aDir == VCRuntimeDLLDir::Application) {
     DWORD size = ::GetModuleFileNameW(nullptr, dllPath, MAX_PATH);
@@ -139,11 +143,20 @@ static bool GetMSVCP140VersionInfo(VCRuntimeDLLDir aDir,
   HMODULE crt =
       ::LoadLibraryExW(dllPath, nullptr, LOAD_LIBRARY_AS_IMAGE_RESOURCE);
   if (!crt) {
-    return false;
+    if (::GetLastError() != ERROR_FILE_NOT_FOUND) {
+      return false;
+    }
+    aOutVersion.reset();
+    return true;
   }
 
   mozilla::nt::PEHeaders headers{crt};
-  bool result = headers.GetVersionInfo(aOutVersion);
+  uint64_t outVersion;
+  bool result = headers.GetVersionInfo(outVersion);
+  if (result) {
+    aOutVersion.emplace(outVersion);
+  }
+
   ::FreeLibrary(crt);
   return result;
 }
@@ -175,17 +188,28 @@ static void EnablePreferLoadFromSystem32IfCompatible() {
     return;
   }
 
-  // Only bail out if (1) there is a conflict because the two DLLs exist *and*
-  // (2) the version of the system DLL is problematic.
-  uint64_t systemDirVersion = 0, appDirVersion = 0;
-  if (GetMSVCP140VersionInfo(VCRuntimeDLLDir::System, systemDirVersion) &&
-      GetMSVCP140VersionInfo(VCRuntimeDLLDir::Application, appDirVersion) &&
-      systemDirVersion < appDirVersion) {
+  mozilla::Maybe<uint64_t> systemDirVersion;
+  if (!GetMSVCP140VersionInfo(VCRuntimeDLLDir::System, systemDirVersion)) {
     return;
   }
 
-  mozilla::DebugOnly<bool> setOk = mozilla::EnablePreferLoadFromSystem32();
-  MOZ_ASSERT(setOk);
+  bool isCompatible = false;
+  if (systemDirVersion.isNothing()) {
+    // No system-wide runtime DLLs: we won't run into a conflict
+    isCompatible = true;
+  } else {
+    mozilla::Maybe<uint64_t> appDirVersion;
+    if (GetMSVCP140VersionInfo(VCRuntimeDLLDir::Application, appDirVersion) &&
+        appDirVersion.isSome() && *systemDirVersion >= *appDirVersion) {
+      // The system-wide runtime DLLs are at least as recent as ours
+      isCompatible = true;
+    }
+  }
+
+  if (isCompatible) {
+    mozilla::DebugOnly<bool> setOk = mozilla::EnablePreferLoadFromSystem32();
+    MOZ_ASSERT(setOk);
+  }
 }
 
 /**

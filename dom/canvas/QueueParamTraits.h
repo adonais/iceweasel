@@ -5,8 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _QUEUEPARAMTRAITS_H_
-#define _QUEUEPARAMTRAITS_H_ 1
+#ifndef QUEUEPARAMTRAITS_H_
+#define QUEUEPARAMTRAITS_H_ 1
 
 #include "WebGLTypes.h"
 #include "ipc/EnumSerializer.h"
@@ -826,4 +826,4 @@ struct QueueParamTraits<std::unordered_map<K, V, H, E>> {
 
 }  // namespace mozilla::webgl
 
-#endif  // _QUEUEPARAMTRAITS_H_
+#endif  // QUEUEPARAMTRAITS_H_

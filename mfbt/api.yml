@@ -57,7 +57,6 @@ Assertions.h:
     - MOZ_DIAGNOSTIC_ASSERT
     - MOZ_ASSERT
     - MOZ_RELEASE_ASSERT
-    - MOZ_CRASH_UNSAFE_FMT
     - MOZ_CRASH_UNSAFE_PRINTF
     - MOZ_DIAGNOSTIC_CRASH
     - MOZ_CRASH
@@ -77,6 +76,7 @@ Atomics.h:
 Attributes.h:
   macros:
     - MOZ_ALWAYS_INLINE_EVEN_DEBUG
+    - MOZ_TRIVIAL_ABI
     - MOZ_NO_UNIQUE_ADDRESS
     - MOZ_ALWAYS_INLINE
     - MOZ_NEVER_INLINE
@@ -498,7 +498,6 @@ MacroForEach.h:
 
 MathAlgorithms.h:
   functions:
-    - DeprecatedAbs
     - Abs
     - CountLeadingZeroes32
     - CountTrailingZeroes32

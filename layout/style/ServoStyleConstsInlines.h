@@ -852,6 +852,11 @@ inline bool StyleSize::HasAnchorPositioningFunction() const {
 }
 
 template <>
+inline StyleSize StyleSize::FromAppUnits(nscoord aAppUnits) {
+  return StyleSize::LengthPercentage(LengthPercentage::FromAppUnits(aAppUnits));
+}
+
+template <>
 inline bool StyleMaxSize::HasAnchorPositioningFunction() const {
   return IsAnchorSizeFunction() || IsAnchorContainingCalcFunction();
 }
@@ -1460,6 +1465,17 @@ DEFINE_LENGTH_PERCENTAGE_CTOR(MaxSize)
 
 inline bool StylePositionArea::IsNone() const {
   return first == StylePositionAreaKeyword::None;
+}
+
+template <>
+inline bool StyleTreeScoped<StyleAnchorNameIdent>::IsEmpty() const {
+  return value.IsEmpty();
+}
+
+template <>
+inline Span<const mozilla::StyleAtom>
+StyleTreeScoped<StyleAnchorNameIdent>::AsSpan() const {
+  return value.AsSpan();
 }
 
 }  // namespace mozilla

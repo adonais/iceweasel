@@ -5,8 +5,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 // IWYU pragma: private, include "nsISupports.h"
 
-#ifndef nsISupportsImpl_h__
-#define nsISupportsImpl_h__
+#ifndef nsISupportsImpl_h_
+#define nsISupportsImpl_h_
 
 #include "nscore.h"
 #include "nsISupports.h"

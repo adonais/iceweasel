@@ -43,11 +43,16 @@ ffi::WGPURenderBundleEncoder* CreateRenderBundleEncoder(
     desc.depth_stencil_format = &depthStencilFormat;
   }
 
-  std::vector<ffi::WGPUTextureFormat> colorFormats = {};
+  std::vector<ffi::WGPUFfiOption_TextureFormat> colorFormats = {};
   for (const auto i : IntegerRange(aDesc.mColorFormats.Length())) {
-    ffi::WGPUTextureFormat format = {ffi::WGPUTextureFormat_Sentinel};
-    format = ConvertTextureFormat(aDesc.mColorFormats[i]);
-    colorFormats.push_back(format);
+    ffi::WGPUFfiOption_TextureFormat opt = {};
+    if (aDesc.mColorFormats[i].IsNull()) {
+      opt.tag = ffi::WGPUFfiOption_TextureFormat_None_TextureFormat;
+    } else {
+      opt.tag = ffi::WGPUFfiOption_TextureFormat_Some_TextureFormat;
+      opt.some = ConvertTextureFormat(aDesc.mColorFormats[i].Value());
+    }
+    colorFormats.push_back(opt);
   }
 
   desc.color_formats = {colorFormats.data(), colorFormats.size()};

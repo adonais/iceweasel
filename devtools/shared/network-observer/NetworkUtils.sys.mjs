@@ -86,6 +86,14 @@ const LOAD_CAUSE_STRINGS = {
   [Ci.nsIContentPolicy.TYPE_WEB_IDENTITY]: "webidentity",
 };
 
+const REDIRECT_CODES = [
+  301, // HTTP Moved Permanently
+  302, // HTTP Found
+  303, // HTTP See Other
+  307, // HTTP Temporary Redirect
+  308, // HTTP Moved Permanently
+];
+
 function causeTypeToString(causeType, loadFlags, internalContentPolicyType) {
   let prefix = "";
   if (
@@ -107,8 +115,8 @@ function stringToCauseType(value) {
 
 function isChannelFromSystemPrincipal(channel) {
   let principal;
-
-  if (channel.isDocument) {
+  const channelURI = channel.originalURI || channel.URI;
+  if (channelURI?.spec.startsWith("view-source:") || channel.isDocument) {
     // The loadingPrincipal is the principal where the request will be used.
     principal = channel.loadInfo.loadingPrincipal;
   } else {
@@ -904,6 +912,10 @@ async function decodeCompressedStream(stream, length, encodings) {
   return onDecodingComplete;
 }
 
+function isRedirect(responseStatus) {
+  return REDIRECT_CODES.includes(responseStatus);
+}
+
 /**
  * Remove any frames in a stack that are related to chrome resource files.
  *
@@ -946,6 +958,7 @@ export const NetworkUtils = {
   isFromCache,
   isNavigationRequest,
   isPreloadRequest,
+  isRedirect,
   isThirdPartyTrackingResource,
   matchRequest,
   NETWORK_EVENT_TYPES,

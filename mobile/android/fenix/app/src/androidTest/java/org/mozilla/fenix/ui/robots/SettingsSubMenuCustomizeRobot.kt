@@ -29,12 +29,18 @@ import androidx.test.espresso.matcher.ViewMatchers.isNotChecked
 import androidx.test.espresso.matcher.ViewMatchers.withClassName
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
+import androidx.test.uiautomator.UiScrollable
+import androidx.test.uiautomator.UiSelector
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.Matchers.endsWith
 import org.mozilla.fenix.R
+import org.mozilla.fenix.helpers.Constants.LISTS_MAXSWIPES
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
+import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
+import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
+import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.hasCousin
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -107,9 +113,12 @@ class SettingsSubMenuCustomizeRobot {
     }
 
     fun verifySwipeToolbarGesturePrefState(isEnabled: Boolean) {
-        Log.i(TAG, "verifySwipeToolbarGesturePrefState: Trying to verify that the \"Swipe toolbar sideways to switch tabs\" toggle is checked: $isEnabled")
-
         scrollToElementByText("Swipe toolbar sideways to switch tabs")
+        Log.i(TAG, "verifySwipeToolbarGesturePrefState: Trying to scroll to the end of the \"Customize\" sub menu")
+        customizeSettingsList().scrollToEnd(LISTS_MAXSWIPES)
+        Log.i(TAG, "verifySwipeToolbarGesturePrefState: Scrolled to the end of the \"Customize\" sub menu")
+        assertUIObjectExists(itemContainingText(getStringResource(R.string.preference_gestures_swipe_toolbar_switch_tabs_2)))
+        Log.i(TAG, "verifySwipeToolbarGesturePrefState: Trying to verify that the \"Swipe toolbar sideways to switch tabs\" toggle is checked: $isEnabled")
         swipeToolbarToggle()
             .check(
                 matches(
@@ -241,6 +250,30 @@ class SettingsSubMenuCustomizeRobot {
         Log.i(TAG, "clickTheChangeIconDialogButton: Clicked the \"Change icon\" dialog button")
     }
 
+    fun verifyToolbarLayout() {
+        Log.i(TAG, "verifyToolbarLayout: Trying to verify that the \"Simple\" toolbar layout option is visible")
+        simpleToolbarLayoutToggle()
+            .check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+        Log.i(TAG, "verifyToolbarLayout: Verified that the \"Simple\" toolbar layout option is visible")
+        Log.i(TAG, "verifyToolbarLayout: Trying to verify that the \"Expanded\" toolbar layout option is visible")
+        expandedToolbarLayoutToggle()
+            .check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+        Log.i(TAG, "verifyToolbarLayout: Verified that the \"Expanded\" toolbar layout option is visible")
+    }
+
+    fun selectExpandedToolbarLayout() {
+        Log.i(TAG, "selectExpandedToolbarLayout: Trying to click the \"Expanded\" toolbar layout option")
+        expandedToolbarLayoutToggle().click()
+        Log.i(TAG, "selectExpandedToolbarLayout: Clicked the \"Expanded\" toolbar layout option")
+    }
+
+    fun verifyToolbarLayoutPreference(selectedToolbarLayout: String) {
+        Log.i(TAG, "verifyToolbarLayoutPreference: Trying to verify that the $selectedToolbarLayout toolbar layout option is checked")
+        onView(withText(selectedToolbarLayout))
+            .check(matches(hasSibling(allOf(withId(R.id.radio_button), isChecked()))))
+        Log.i(TAG, "verifyToolbarLayoutPreference: Verified that the $selectedToolbarLayout toolbar layout option is checked")
+    }
+
     class Transition {
         fun goBack(interact: SettingsRobot.() -> Unit): SettingsRobot.Transition {
             Log.i(TAG, "goBack: Waiting for device to be idle")
@@ -278,3 +311,10 @@ private fun pullToRefreshToggle() =
 
 private fun goBackButton() =
     onView(allOf(ViewMatchers.withContentDescription("Navigate up")))
+
+private fun simpleToolbarLayoutToggle() = onView(withText("Simple"))
+
+private fun expandedToolbarLayoutToggle() = onView(withText("Expanded"))
+
+private fun customizeSettingsList() =
+    UiScrollable(UiSelector().resourceId("$packageName:id/recycler_view"))

@@ -5,8 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __MOZ_WAYLAND_SURFACE_H__
-#define __MOZ_WAYLAND_SURFACE_H__
+#ifndef MOZ_WAYLAND_SURFACE_H_
+#define MOZ_WAYLAND_SURFACE_H_
 
 #include "nsWaylandDisplay.h"
 #include "mozilla/Mutex.h"
@@ -483,4 +483,4 @@ class WaylandSurface final {
 
 }  // namespace mozilla::widget
 
-#endif /* __MOZ_WAYLAND_SURFACE_H__ */
+#endif /* MOZ_WAYLAND_SURFACE_H_ */

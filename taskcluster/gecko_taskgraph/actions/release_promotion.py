@@ -355,8 +355,6 @@ def release_promotion_action(parameters, graph_config, input, task_group_id, tas
     parameters["build_number"] = int(input["build_number"])
     parameters["next_version"] = next_version
     parameters["release_history"] = release_history
-    if promotion_config.get("is-rc"):
-        parameters["release_type"] += "-rc"
     parameters["release_eta"] = input.get("release_eta", "")
     parameters["release_product"] = product
     # When doing staging releases on try, we still want to re-use tasks from

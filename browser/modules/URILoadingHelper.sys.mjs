@@ -11,7 +11,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
-  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "ReferrerInfo", () =>
@@ -904,6 +903,8 @@ export const URILoadingHelper = {
    * @param aUserContextId
    *        If not null, will switch to the first found tab having the provided
    *        userContextId.
+   * @param aSplitView
+   *        If not null, will move the tab to the active split view instead of switching to tab
    * @return True if an existing tab was found, false otherwise
    */
   switchToTabHavingURI(
@@ -911,7 +912,8 @@ export const URILoadingHelper = {
     aURI,
     aOpenNew,
     aOpenParams = {},
-    aUserContextId = null
+    aUserContextId = null,
+    aSplitView = null
   ) {
     // Certain URLs can be switched to irrespective of the source or destination
     // window being in private browsing mode:
@@ -1018,7 +1020,18 @@ export const URILoadingHelper = {
           }
 
           if (!doAdopt) {
-            aWindow.gBrowser.tabContainer.selectedIndex = i;
+            if (aSplitView) {
+              let tabToReplace = aSplitView.tabs.find(tab => tab.selected);
+              let tabToMove = aWindow.gBrowser.tabs[i];
+              aSplitView.replaceTab(tabToReplace, tabToMove);
+              aSplitView.ownerGlobal.gBrowser.setIsSplitViewActive(
+                true,
+                aSplitView.tabs
+              );
+              aSplitView.ownerGlobal.focus();
+            } else {
+              aWindow.gBrowser.tabContainer.selectedIndex = i;
+            }
           }
 
           return true;
@@ -1050,10 +1063,7 @@ export const URILoadingHelper = {
 
     // No opened tab has that url.
     if (aOpenNew) {
-      if (
-        lazy.UrlbarPrefs.get("switchTabs.searchAllContainers") &&
-        aUserContextId != null
-      ) {
+      if (aUserContextId != null) {
         aOpenParams.userContextId = aUserContextId;
       }
       if (isBrowserWindow && window.gBrowser.selectedTab.isEmpty) {

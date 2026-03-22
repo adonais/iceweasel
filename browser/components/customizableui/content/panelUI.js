@@ -87,7 +87,7 @@ const PanelUI = {
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "isAIWindowEnabled",
-      "browser.aiwindow.enabled",
+      "browser.smartwindow.enabled",
       false,
       (_pref, _previousValue, _newValue) => {
         this._showAIMenuItem();

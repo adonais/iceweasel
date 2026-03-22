@@ -23,7 +23,6 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.databinding.FragmentHomeBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.home.HomeFragment
-import org.mozilla.fenix.home.HomeMenuView
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
@@ -50,7 +49,6 @@ class HomeToolbarViewTest {
                     mockk(relaxed = true),
                     homeFragment,
                     homeActivity,
-                    mockk(),
                 ),
             )
         every { toolbarView.buildHomeMenu() } returns mockk(relaxed = true)
@@ -98,16 +96,6 @@ class HomeToolbarViewTest {
 
         verify(exactly = 1) { toolbarView.updateButtonVisibility(any()) }
         verify(exactly = 1) { toolbarView.updateAddressBarVisibility(any()) }
-    }
-
-    @Test
-    fun `WHEN dismissMenu is called THEN dismissMenu is called on homeMenuView`() {
-        val homeMenuView: HomeMenuView = mockk(relaxed = true)
-        toolbarView.homeMenuView = homeMenuView
-
-        toolbarView.dismissMenu()
-
-        verify { homeMenuView.dismissMenu() }
     }
 
     @Test

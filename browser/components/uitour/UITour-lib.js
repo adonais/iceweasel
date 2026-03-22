@@ -631,6 +631,19 @@ if (typeof Mozilla == "undefined") {
   };
 
   /**
+   * Trigger the Firefox Accounts sign-in flow for the AI Window feature.
+   *
+   * This will prompt the user to sign in and then open the AI Window
+   * upon successful authentication.
+   *
+   * @example
+   * Mozilla.UITour.showFirefoxAccountsForAIWindow();
+   */
+  Mozilla.UITour.showFirefoxAccountsForAIWindow = function () {
+    _sendEvent("showFirefoxAccountsForAIWindow");
+  };
+
+  /**
    * Request the browser open the "Connect Another Device" Firefox Accounts page.
    *
    * @param {object} extraURLParams - An object containing additional
@@ -816,7 +829,6 @@ if (typeof Mozilla == "undefined") {
 })();
 
 // Make this library Require-able.
-/* eslint-env commonjs */
 if (typeof module !== "undefined" && module.exports) {
   module.exports = Mozilla.UITour;
 }

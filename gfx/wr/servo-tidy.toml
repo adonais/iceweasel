@@ -62,6 +62,9 @@ packages = [
     "miniz_oxide",
     "mio",
     "socket2",
+    # 0.9 required by glean/uniffi
+    # 0.5 by proc-macro-crate
+    "toml",
     "windows-link",
 ]
 

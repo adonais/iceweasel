@@ -118,8 +118,7 @@
     { R_RETRY,            "Retry may be possible" },\
     }
 
-char *nr_strerror(int errnum);
-int   nr_strerror_r(int errnum, char *strerrbuf, size_t buflen);
+const char *nr_strerror(int errnum);
 
 #endif
 

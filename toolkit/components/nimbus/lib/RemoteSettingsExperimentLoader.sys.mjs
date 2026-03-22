@@ -660,7 +660,8 @@ export class RemoteSettingsExperimentLoader {
     } catch (e) {
       throw new RemoteSettingsSyncError(
         client.collectionName,
-        lazy.NimbusTelemetry.RemoteSettingsSyncErrorReason.LAST_MODIFIED_EXCEPTION,
+        lazy.NimbusTelemetry.RemoteSettingsSyncErrorReason
+          .LAST_MODIFIED_EXCEPTION,
         { cause: e }
       );
     }

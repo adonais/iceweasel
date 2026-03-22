@@ -740,45 +740,51 @@ var gIdentityHandler = {
 
   /**
    * Attempt to provide proper IDN treatment for host names
+   *
+   * @param uri the URI to get the host from.
    */
-  getEffectiveHost() {
+  getEffectiveHost(uri = this._uri) {
     if (!this._IDNService) {
       this._IDNService = Cc["@mozilla.org/network/idn-service;1"].getService(
         Ci.nsIIDNService
       );
     }
     try {
-      return this._IDNService.convertToDisplayIDN(this._uri.host);
+      return this._IDNService.convertToDisplayIDN(uri.host);
     } catch (e) {
       // If something goes wrong (e.g. host is an IP address) just fail back
       // to the full domain.
-      return this._uri.host;
+      return uri.host;
     }
   },
 
-  getHostForDisplay() {
+  getHostForDisplay(uri = this._uri) {
+    if (!uri) {
+      return "";
+    }
+
     let host = "";
 
     try {
-      host = this.getEffectiveHost();
+      host = this.getEffectiveHost(uri);
     } catch (e) {
       // Some URIs might have no hosts.
     }
 
-    if (this._uri.schemeIs("about")) {
+    if (uri.schemeIs("about")) {
       // For example in about:certificate the original URL is
       // about:certificate?cert=<large base64 encoded data>&cert=<large base64 encoded data>&cert=...
       // So, instead of showing that large string in the identity panel header, we are just showing
       // about:certificate now. For the other about pages we are just showing about:<page>
-      host = "about:" + this._uri.filePath;
+      host = "about:" + uri.filePath;
     }
 
-    if (this._uri.schemeIs("chrome")) {
-      host = this._uri.spec;
+    if (uri.schemeIs("chrome")) {
+      host = uri.spec;
     }
 
     let readerStrippedURI = ReaderMode.getOriginalUrlObjectForDisplay(
-      this._uri.displaySpec
+      uri.displaySpec
     );
     if (readerStrippedURI) {
       host = readerStrippedURI.host;
@@ -790,7 +796,7 @@ var gIdentityHandler = {
 
     // Fallback for special protocols.
     if (!host) {
-      host = this._uri.specIgnoringRef;
+      host = uri.specIgnoringRef;
     }
 
     return host;

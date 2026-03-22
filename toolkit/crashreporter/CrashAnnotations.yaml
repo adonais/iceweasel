@@ -231,11 +231,9 @@ AppInitDLLs:
 
 ApplicationBuildID:
   description: >
-    Product application's build ID.
+    The Android application's build ID.
   type: string
   scope: ping
-  glean:
-    metric: crash.app_build
 
 ApplicationServicesVersion:
   description: The version of Application Services libraries.
@@ -365,6 +363,8 @@ BuildID:
     Application build ID, the format is YYYYMMDDHHMMSS.
   type: string
   scope: ping
+  glean:
+    metric: crash.app_build
 
 CrashType:
   description: The type of crash that occurred (Android-only).

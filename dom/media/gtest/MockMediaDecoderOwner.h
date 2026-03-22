@@ -35,6 +35,8 @@ class MockMediaDecoderOwner final : public MediaDecoderOwner {
   MOCK_METHOD(void, PlaybackEnded, (), (override));
   MOCK_METHOD(void, SeekStarted, (), (override));
   MOCK_METHOD(void, SeekCompleted, (), (override));
+  MOCK_METHOD(void, UpdatePlayedRangesBeforeSeek, (double aRangeEndTime),
+              (override));
   MOCK_METHOD(void, SeekAborted, (), (override));
   MOCK_METHOD(void, DownloadSuspended, (), (override));
   MOCK_METHOD(void, NotifySuspendedByCache, (bool aSuspendedByCache),

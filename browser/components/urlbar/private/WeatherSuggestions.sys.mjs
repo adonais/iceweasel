@@ -18,7 +18,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
 });
 
-const MERINO_PROVIDER = "accuweather";
 const MERINO_TIMEOUT_MS = 5000; // 5s
 
 // Cache period for Merino's weather response. This is intentionally a small
@@ -237,6 +236,7 @@ export class WeatherSuggestions extends SuggestProvider {
     return new lazy.UrlbarResult({
       type: lazy.UrlbarUtils.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      isBestMatch: true,
       suggestedIndex: 1,
       isRichSuggestion: true,
       richSuggestionIconVariation: String(
@@ -281,7 +281,6 @@ export class WeatherSuggestions extends SuggestProvider {
         forecast: suggestion.forecast.summary,
         high: suggestion.forecast.high[unit],
         low: suggestion.forecast.low[unit],
-        showRowLabel: true,
         helpUrl: lazy.QuickSuggest.HELP_URL,
       },
     });
@@ -400,7 +399,7 @@ export class WeatherSuggestions extends SuggestProvider {
       {
         name: RESULT_MENU_COMMAND.HELP,
         l10n: {
-          id: "urlbar-result-menu-learn-more-about-firefox-suggest",
+          id: "urlbar-result-menu-learn-more",
         },
       }
     );
@@ -495,61 +494,24 @@ export class WeatherSuggestions extends SuggestProvider {
 
     let merino = this.#merino;
     let fetchInstance = (this.#fetchInstance = {});
-
-    // Set up location params to pass to Merino. We need to null-check each
-    // suggestion property because `MerinoClient` will stringify null values.
-    let otherParams = { source: "urlbar" };
-    if (cityGeoname) {
-      if (cityGeoname.name) {
-        otherParams.city = cityGeoname.name;
-      }
-      if (cityGeoname.countryCode) {
-        otherParams.country = cityGeoname.countryCode;
-      }
-      // The admin codes are a `Map` from integer levels to codes. Convert it to
-      // a comma-separated string of codes sorted by level ascending.
-      let adminCodes = [...cityGeoname.adminDivisionCodes.entries()]
-        .sort(([level1, _admin1], [level2, _admin2]) => level1 - level2)
-        .map(([_, admin]) => admin)
-        .join(",");
-      if (adminCodes) {
-        otherParams.region = adminCodes;
-      }
-    } else {
-      let geolocation = await lazy.GeolocationUtils.geolocation();
-
-      if (
-        !geolocation ||
-        fetchInstance != this.#fetchInstance ||
-        merino != this.#merino
-      ) {
-        return null;
-      }
-
-      if (geolocation.country_code) {
-        otherParams.country = geolocation.country_code;
-      }
-      let region = geolocation.region_code || geolocation.region;
-      if (region) {
-        otherParams.region = region;
-      }
-      let city = geolocation.city || geolocation.region;
-      if (city) {
-        otherParams.city = city;
-      }
-    }
-
-    let merinoSuggestions = await merino.fetch({
-      query: "",
-      otherParams,
-      providers: [MERINO_PROVIDER],
+    let merinoSuggestion = await merino.fetchWeather({
+      source: "urlbar",
+      country: cityGeoname?.countryCode,
+      region: cityGeoname?.adminDivisionCodes
+        ? [...cityGeoname.adminDivisionCodes.entries()]
+            .sort(([level1, _admin1], [level2, _admin2]) => level1 - level2)
+            .map(([_, admin]) => admin)
+            .join(",")
+        : undefined,
+      city: cityGeoname?.name,
       timeoutMs: this.#timeoutMs,
     });
+
     if (fetchInstance != this.#fetchInstance || merino != this.#merino) {
       return null;
     }
 
-    return merinoSuggestions[0] ?? null;
+    return merinoSuggestion;
   }
 
   async #getTitleL10n(cityGeoname, merinoSuggestion) {

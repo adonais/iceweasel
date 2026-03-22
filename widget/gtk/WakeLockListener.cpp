@@ -164,25 +164,33 @@ class WakeLockTopic {
     CopyUTF16toUTF8(aTopic, mTopic);
     WAKE_LOCK_LOG("WakeLockTopic::WakeLockTopic() created %s on background %d",
                   mTopic.get(), mLockOnBackground);
-    if (mTopic.Equals("video-playing")) {
-      nsCString videoPlayingString = []() -> nsCString {
-        auto string = GetLocalizedWakeLockString("WakeLockVideoPlaying");
-        if (string.IsEmpty()) {
-          string = "Playing video";
-        }
-        return string;
-      }();
-      mNiceTopic = videoPlayingString;
-    } else if (mTopic.Equals("audio-playing")) {
-      nsCString audioPlayingString = []() -> nsCString {
-        auto string = GetLocalizedWakeLockString("WakeLockAudioPlaying");
-        if (string.IsEmpty()) {
-          string = "Playing audio";
-        }
-        return string;
-      }();
-      mNiceTopic = audioPlayingString;
+    struct WakeLockNiceTopic {
+      const char* aTopic;
+      const char* aTopicLocalised;
+      const char* aTopicFallback;
+    };
+
+    static constexpr WakeLockNiceTopic kNiceTopics[] = {
+        {"video-playing", "WakeLockVideoPlaying", "Playing video"},
+        {"audio-playing", "WakeLockAudioPlaying", "Playing audio"},
+        {"screen", "WakeLockScreenLock", "Screen lock"},
+        {"autoscroll", "WakeLockAutoscroll", "Autoscroll"},
+    };
+
+    for (auto& topic : kNiceTopics) {
+      if (mTopic.Equals(topic.aTopic)) {
+        nsCString niceTopic = [&]() -> nsCString {
+          auto string = GetLocalizedWakeLockString(topic.aTopicLocalised);
+          if (string.IsEmpty()) {
+            string = topic.aTopicFallback;
+          }
+          return string;
+        }();
+        mNiceTopic = niceTopic;
+        break;
+      }
     }
+
     if (GetWakeLockType() == Initial) {
       InitializeWakeLockType();
     }

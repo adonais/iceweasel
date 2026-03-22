@@ -251,58 +251,6 @@ TEST_F(TelemetryTestFixture, ScalarUnknownID) {
 #endif
 }
 
-TEST_F(TelemetryTestFixture, ScalarEventSummary) {
-  AutoJSContextWithGlobal cx(mCleanGlobal);
-
-  // Make sure we don't get scalars from other tests.
-  (void)mTelemetry->ClearScalars();
-
-  const char* kScalarName = "telemetry.event_counts";
-
-  const char* kLongestEvent =
-      "oohwowlookthiscategoryissolong#thismethodislongtooo#"
-      "thisobjectisnoslouch";
-  TelemetryScalar::SummarizeEvent(nsCString(kLongestEvent), ProcessID::Parent);
-
-  // Check the recorded value.
-  JS::Rooted<JS::Value> scalarsSnapshot(cx.GetJSContext());
-  GetScalarsSnapshot(true, cx.GetJSContext(), &scalarsSnapshot);
-
-  CheckKeyedUintScalar(kScalarName, kLongestEvent, cx.GetJSContext(),
-                       scalarsSnapshot, 1);
-
-// Don't run this part in debug builds as that intentionally asserts.
-#ifndef DEBUG
-  const char* kTooLongEvent =
-      "oohwowlookthiscategoryissolong#thismethodislongtooo#"
-      "thisobjectisnoslouch2";
-  TelemetryScalar::SummarizeEvent(nsCString(kTooLongEvent), ProcessID::Parent);
-
-  GetScalarsSnapshot(true, cx.GetJSContext(), &scalarsSnapshot);
-  CheckNumberOfProperties(kScalarName, cx.GetJSContext(), scalarsSnapshot, 1);
-#endif  // #ifndef DEBUG
-
-  // Test we can fill the next 499 keys up to our 500 maximum
-  for (int i = 1; i < 500; i++) {
-    std::ostringstream eventName;
-    eventName << "category#method#object" << i;
-    TelemetryScalar::SummarizeEvent(nsCString(eventName.str().c_str()),
-                                    ProcessID::Parent);
-  }
-
-  GetScalarsSnapshot(true, cx.GetJSContext(), &scalarsSnapshot);
-  CheckNumberOfProperties(kScalarName, cx.GetJSContext(), scalarsSnapshot, 500);
-
-// Don't run this part in debug builds as that intentionally asserts.
-#ifndef DEBUG
-  TelemetryScalar::SummarizeEvent(nsCString("whoops#too#many"),
-                                  ProcessID::Parent);
-
-  GetScalarsSnapshot(true, cx.GetJSContext(), &scalarsSnapshot);
-  CheckNumberOfProperties(kScalarName, cx.GetJSContext(), scalarsSnapshot, 500);
-#endif  // #ifndef DEBUG
-}
-
 TEST_F(TelemetryTestFixture, TestKeyedScalarAllowedKeys) {
   AutoJSContextWithGlobal cx(mCleanGlobal);
   // Make sure we don't get scalars from other tests.

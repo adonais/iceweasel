@@ -11,7 +11,7 @@
 // TODO: Expose to LayoutWorklet
 [Exposed=(Window, Worker, PaintWorklet), Pref="layout.css.typed-om.enabled"]
 interface CSSStyleValue {
-  stringifier;
+  stringifier UTF8String();
   [Exposed=Window, Throws] static CSSStyleValue parse(UTF8String property, UTF8String cssText);
   [Exposed=Window, Throws] static sequence<CSSStyleValue> parseAll(UTF8String property, UTF8String cssText);
 };

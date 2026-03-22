@@ -22,6 +22,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "MAC_NATIVE_SELECT_ENABLED",
+  "widget.macos.native-anchored-select",
+  false
+);
+
 // Minimum elements required to show select search
 const SEARCH_MINIMUM_ELEMENTS = 40;
 
@@ -399,7 +406,6 @@ export var SelectParentHelper = {
         break;
 
       case "popuphidden": {
-        this._actor.sendAsyncMessage("Forms:DismissedDropDown", {});
         let popup = event.target;
         this._unregisterListeners(popup);
         popup.parentNode.hidden = true;
@@ -410,7 +416,11 @@ export var SelectParentHelper = {
         this._currentMenulist = null;
         this._selectRect = null;
         this._currentZoom = 1;
-        this._actor = null;
+        try {
+          this._actor.sendAsyncMessage("Forms:DismissedDropDown", {});
+        } finally {
+          this._actor = null;
+        }
         break;
       }
     }
@@ -597,7 +607,7 @@ export var SelectParentHelper = {
         item.setAttribute("value", option.index);
 
         if (parentElement) {
-          item.classList.add("contentSelectDropdown-ingroup");
+          item.setAttribute("indented", true);
         }
       }
     }
@@ -712,10 +722,8 @@ export var SelectParentHelper = {
           allHidden = true;
         } else {
           if (
-            !currentItem.classList.contains("contentSelectDropdown-ingroup") &&
-            currentItem.previousElementSibling.classList.contains(
-              "contentSelectDropdown-ingroup"
-            )
+            !currentItem.hasAttribute("indented") &&
+            currentItem.previousElementSibling.hasAttribute("indented")
           ) {
             if (prevCaption != null) {
               prevCaption.hidden = allHidden;
@@ -782,6 +790,13 @@ export class SelectParent extends JSWindowActorParent {
     if (AppConstants.platform == "win") {
       popup.setAttribute("consumeoutsideclicks", "false");
       popup.setAttribute("ignorekeys", "shortcuts");
+    } else if (
+      AppConstants.platform == "macosx" &&
+      (lazy.CUSTOM_STYLING_ENABLED ||
+        lazy.DOM_FORMS_SELECTSEARCH ||
+        !lazy.MAC_NATIVE_SELECT_ENABLED)
+    ) {
+      popup.setAttribute("native", "false");
     }
 
     let container =

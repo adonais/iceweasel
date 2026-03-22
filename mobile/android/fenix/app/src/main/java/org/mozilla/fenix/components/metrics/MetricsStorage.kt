@@ -11,8 +11,8 @@ import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import mozilla.components.feature.downloads.DateTimeProvider
-import mozilla.components.feature.downloads.DefaultDateTimeProvider
+import mozilla.components.support.utils.DateTimeProvider
+import mozilla.components.support.utils.DefaultDateTimeProvider
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.android.DefaultActivityLifecycleCallbacks

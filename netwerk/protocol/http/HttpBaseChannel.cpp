@@ -1611,6 +1611,7 @@ nsresult HttpBaseChannel::DoApplyContentConversionsInternal(
     LOG(("Changing Content-Encoding from '%s' to ''", contentEncoding.get()));
     // Can't use SetHeader; we need to overwrite the current value
     rv = mResponseHead->SetHeaderOverride(nsHttp::Content_Encoding, ""_ns);
+    rv = mResponseHead->SetHeaderOverride(nsHttp::Content_Length, ""_ns);
   }
   *aNewNextListener = do_AddRef(nextListener).take();
   return NS_OK;
@@ -6947,3 +6948,4 @@ void HttpBaseChannel::SetFetchPriorityDOM(
 
 }  // namespace net
 }  // namespace mozilla
+#undef LOGORB

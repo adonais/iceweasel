@@ -160,9 +160,9 @@ add_task(async function bookmarks_toolbar_open_persisted() {
   let newTabMenuItem = document.querySelector(
     'menuitem[data-visibility-enum="newtab"]'
   );
-  is(alwaysMenuItem.getAttribute("checked"), "false", "Menuitem isn't checked");
-  is(neverMenuItem.getAttribute("checked"), "false", "Menuitem isn't checked");
-  is(newTabMenuItem.getAttribute("checked"), "true", "Menuitem is checked");
+  ok(!alwaysMenuItem.hasAttribute("checked"), "Menuitem isn't checked");
+  ok(!neverMenuItem.hasAttribute("checked"), "Menuitem isn't checked");
+  ok(newTabMenuItem.hasAttribute("checked"), "Menuitem is checked");
 
   subMenu.activateItem(alwaysMenuItem);
 
@@ -188,9 +188,9 @@ add_task(async function bookmarks_toolbar_open_persisted() {
   newTabMenuItem = document.querySelector(
     'menuitem[data-visibility-enum="newtab"]'
   );
-  is(alwaysMenuItem.getAttribute("checked"), "true", "Menuitem is checked");
-  is(neverMenuItem.getAttribute("checked"), "false", "Menuitem isn't checked");
-  is(newTabMenuItem.getAttribute("checked"), "false", "Menuitem isn't checked");
+  ok(alwaysMenuItem.hasAttribute("checked"), "Menuitem is checked");
+  ok(!neverMenuItem.hasAttribute("checked"), "Menuitem isn't checked");
+  ok(!newTabMenuItem.hasAttribute("checked"), "Menuitem isn't checked");
   contextMenu.hidePopup();
   ok(isBookmarksToolbarVisible(), "Toolbar is visible");
   ok(isToolbarPersistedOpen(), "Toolbar is persisted open");
@@ -220,9 +220,9 @@ add_task(async function bookmarks_toolbar_open_persisted() {
   newTabMenuItem = document.querySelector(
     'menuitem[data-visibility-enum="newtab"]'
   );
-  is(alwaysMenuItem.getAttribute("checked"), "true", "Menuitem is checked");
-  is(neverMenuItem.getAttribute("checked"), "false", "Menuitem isn't checked");
-  is(newTabMenuItem.getAttribute("checked"), "false", "Menuitem isn't checked");
+  ok(alwaysMenuItem.hasAttribute("checked"), "Menuitem is checked");
+  ok(!neverMenuItem.hasAttribute("checked"), "Menuitem isn't checked");
+  ok(!newTabMenuItem.hasAttribute("checked"), "Menuitem isn't checked");
   subMenu.activateItem(newTabMenuItem);
   await waitForBookmarksToolbarVisibility({
     visible: false,

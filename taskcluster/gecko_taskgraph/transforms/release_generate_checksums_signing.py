@@ -7,7 +7,7 @@ Transform the release-generate-checksums-signing task into task description.
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from taskgraph.util.taskcluster import get_artifact_path
 from voluptuous import Optional
 
@@ -15,7 +15,7 @@ from gecko_taskgraph.transforms.task import task_description_schema
 from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.scriptworker import get_signing_type
 
-release_generate_checksums_signing_schema = Schema({
+release_generate_checksums_signing_schema = LegacySchema({
     Optional("label"): str,
     Optional("dependencies"): task_description_schema["dependencies"],
     Optional("attributes"): task_description_schema["attributes"],

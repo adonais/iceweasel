@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef __CParserContext
-#define __CParserContext
+#ifndef CParserContext_h
+#define CParserContext_h
 
 #include "nsIParser.h"
 #include "nsIRequest.h"
@@ -67,4 +67,4 @@ class CParserContext {
   bool mCopyUnused;
 };
 
-#endif
+#endif  // CParserContext_h

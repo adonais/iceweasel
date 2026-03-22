@@ -15,8 +15,18 @@
 var div1 = document.getElementById("div1");
 
 function sendTouch(aType, aX, aY) {
-  var cwu = SpecialPowers.getDOMWindowUtils(window);
-  cwu.sendTouchEvent(aType, [0], [aX], [aY], [1], [1], [0], [1], [0], [0], [0], 0);
+  synthesizeTouchAtPoint(aX, aY, {
+    type: aType,
+    id: 0,
+    rx: 1,
+    ry: 1,
+    rotationAngle: 0,
+    force: 1,
+    tiltX: 0,
+    tiltY: 0,
+    twist: 0,
+    modifiers: 0,
+  });
 }
 
 function test()

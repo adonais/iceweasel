@@ -81,8 +81,6 @@ class BrowserToolbarView(
 
     val toolbarIntegration: ToolbarIntegration
 
-    val menuToolbar: ToolbarMenu
-
     init {
         container.addView(layout)
         val isCustomTabSession = customTabSession != null
@@ -146,14 +144,6 @@ class BrowserToolbarView(
                 display.hint = context.getString(R.string.search_hint)
             }
 
-            menuToolbar = ToolbarMenuBuilder(
-                context = this,
-                components = components,
-                settings = settings,
-                interactor = interactor,
-                lifecycleOwner = lifecycleOwner,
-                customTabSessionId = customTabSession?.id,
-            ).build()
             if (!isCustomTabSession) {
                 toolbar.display.setMenuDismissAction {
                     toolbar.invalidateActions()
@@ -170,7 +160,6 @@ class BrowserToolbarView(
                     context = this,
                     toolbar = toolbar,
                     scrollableToolbar = toolbar as ScrollableToolbar,
-                    toolbarMenu = menuToolbar,
                     interactor = interactor,
                     customTabId = customTabSession.id,
                     isPrivate = customTabSession.content.private,
@@ -181,7 +170,6 @@ class BrowserToolbarView(
                     context = this,
                     toolbar = toolbar,
                     scrollableToolbar = this@BrowserToolbarView,
-                    toolbarMenu = menuToolbar,
                     lifecycleOwner = lifecycleOwner,
                     isPrivate = components.core.store.state.selectedTab?.content?.private ?: false,
                     interactor = interactor,

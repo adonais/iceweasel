@@ -56,6 +56,8 @@ skip-if = [
 
 ["browser_screenshots_short_page_test.js"]
 
+["browser_screenshots_splitview.js"]
+
 ["browser_screenshots_telemetry_tests.js"]
 
 ["browser_screenshots_test_downloads.js"]

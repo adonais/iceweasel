@@ -527,13 +527,22 @@ add_task(async function testRecordingErrors() {
   // We triggered glean to record error metrics. Ensure that we don't double count.
   Services.fog.testResetFOG();
 
-  // In the real world this would be done via the nimbusTelemetry feature.
-  Services.fog.applyServerKnobsConfig(
-    JSON.stringify({
-      metrics_enabled: {
-        "nimbus_targeting_environment.targeting_context_value": true,
+  await manager.enroll(
+    NimbusTestUtils.factories.recipe.withFeatureConfig(
+      "enable-targeting-context-value",
+      {
+        featureId: "nimbusTelemetry",
+        value: {
+          gleanMetricConfiguration: {
+            metrics_enabled: {
+              "nimbus_targeting_environment.targeting_context_value": true,
+            },
+          },
+        },
       },
-    })
+      { isRollout: true }
+    ),
+    "test"
   );
 
   await GleanPings.nimbusTargetingContext.testSubmission(() => {
@@ -541,10 +550,15 @@ add_task(async function testRecordingErrors() {
 
     const stringifiedCtx =
       Glean.nimbusTargetingEnvironment.targetingContextValue.testGetValue();
+    Assert.notEqual(
+      stringifiedCtx,
+      null,
+      "The targetingContextValue metric is recorded"
+    );
     Assert.strictEqual(
       typeof stringifiedCtx,
       "string",
-      "The targetingContextValue metric is recorded"
+      "The targetingContextValue metric is a string"
     );
 
     const context = JSON.parse(stringifiedCtx);
@@ -586,6 +600,7 @@ add_task(async function testRecordingErrors() {
     );
   }, recordTargetingContextAndSubmit);
 
+  manager.unenroll("enable-targeting-context-value", { reason: "test" });
   await cleanup();
 
   // We applied server knobs config and triggered Glean recording errors.

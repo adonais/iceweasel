@@ -53,6 +53,17 @@ add_task(async function testToolbarVisibility() {
   await PrintHelper.withTestPage(async helper => {
     await helper.startPrint();
 
+    // On first dialog open, the pagination element is created before printPreview.css
+    // is fully applied, causing it to start with default opacity (1). When the CSS
+    // loads and sets opacity:0, this triggers a CSS transition with a 500ms delay
+    // (see printPreview.css: "transition: opacity 100ms 500ms"). After a previous
+    // test, the CSS is cached and applies immediately, so the element starts at
+    // opacity:0 with no transition. Wait for the transition to complete.
+    await TestUtils.waitForCondition(
+      () => getComputedStyle(helper.paginationElem).opacity === "0",
+      "Waiting for initial opacity transition to complete"
+    );
+
     let previewStack = document.querySelector(".previewStack");
 
     // The toolbar has 0 opacity until we hover or focus it

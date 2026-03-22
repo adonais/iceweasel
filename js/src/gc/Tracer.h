@@ -14,9 +14,13 @@
 #include "js/TracingAPI.h"
 
 namespace JS {
+
 using CompartmentSet =
     js::HashSet<Compartment*, js::DefaultHasher<Compartment*>,
                 js::SystemAllocPolicy>;
+
+class Zone;
+
 }  // namespace JS
 
 namespace js {
@@ -230,7 +234,7 @@ template <typename T>
 void TraceBufferRoot(JSTracer* trc, JS::Zone* zone, T** bufferp,
                      const char* name) {
   void** ptrp = reinterpret_cast<void**>(bufferp);
-  gc::TraceBufferEdgeInternal(trc, zone, ptrp, name);
+  gc::TraceBufferEdgeInternal(trc, zone, nullptr, ptrp, name);
 }
 
 template <typename T>
@@ -348,7 +352,15 @@ template <typename T>
 void TraceBufferEdge(JSTracer* trc, gc::Cell* owner, T** bufferp,
                      const char* name) {
   void** ptrp = reinterpret_cast<void**>(bufferp);
-  gc::TraceBufferEdgeInternal(trc, owner, ptrp, name);
+  gc::TraceBufferEdgeInternal(trc, owner->zoneFromAnyThread(), owner, ptrp,
+                              name);
+}
+template <typename T>
+void TraceBufferEdge(JSTracer* trc, gc::Cell* owner, GCStructPtr<T>* bufferp,
+                     const char* name) {
+  void** ptrp = reinterpret_cast<void**>(bufferp->unbarrieredAddress());
+  gc::TraceBufferEdgeInternal(trc, owner->zoneFromAnyThread(), owner, ptrp,
+                              name);
 }
 
 // As below but with manual barriers.
@@ -412,8 +424,8 @@ void TraceManuallyBarrieredGCCellPtr(JSTracer* trc, JS::GCCellPtr* thingp,
 
 namespace gc {
 
-// Trace through a shape or group iteratively during cycle collection to avoid
-// deep or infinite recursion.
+// Trace through a shape iteratively during cycle collection to avoid deep or
+// infinite recursion.
 void TraceCycleCollectorChildren(JS::CallbackTracer* trc, Shape* shape);
 
 /**

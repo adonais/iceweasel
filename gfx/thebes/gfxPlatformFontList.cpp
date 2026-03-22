@@ -10,9 +10,12 @@
 #include "mozilla/intl/OSPreferences.h"
 
 #include "gfxPlatformFontList.h"
+#include "gfxScriptItemizer.h"
 #include "gfxTextRun.h"
 #include "gfxUserFontSet.h"
 #include "SharedFontList-impl.h"
+
+#include "FontVisibilityProvider.h"
 
 #include "GeckoProfiler.h"
 #include "nsCRT.h"
@@ -56,6 +59,11 @@ using mozilla::intl::OSPreferences;
 
 #define LOG_FONTLIST(args) \
   MOZ_LOG(gfxPlatform::GetLog(eGfxLog_fontlist), LogLevel::Debug, args)
+
+#define LOG_FONTQUERY(args) \
+  MOZ_LOG(gfxPlatform::GetLog(eGfxLog_fontquery), LogLevel::Debug, args)
+#define LOG_FONTQUERYV(args) \
+  MOZ_LOG(gfxPlatform::GetLog(eGfxLog_fontquery), LogLevel::Verbose, args)
 #define LOG_FONTLIST_ENABLED() \
   MOZ_LOG_TEST(gfxPlatform::GetLog(eGfxLog_fontlist), LogLevel::Debug)
 #define LOG_FONTINIT(args) \
@@ -166,7 +174,7 @@ static const char kIconFontsPref[] =
 // xxx - this can probably be eliminated by reworking pref font handling code
 static const char* gPrefLangNames[] = {
 #define FONT_PREF_LANG(enum_id_, str_, atom_id_) str_
-#include "gfxFontPrefLangList.h"
+#include "gfxFontPrefLangList.inc"
 #undef FONT_PREF_LANG
 };
 
@@ -415,6 +423,111 @@ FontVisibility gfxPlatformFontList::GetFontVisibility(nsCString& aFont,
 
   aFound = false;
   return FontVisibility::Unknown;
+}
+
+namespace {
+
+// Minimal FontVisibilityProvider for ListFontsUsedForString that returns a
+// fixed visibility level without requiring a document or pres context.
+class ListFontsVisibilityProvider final : public FontVisibilityProvider {
+ public:
+  explicit ListFontsVisibilityProvider(FontVisibility aVisibility)
+      : mVisibility(aVisibility) {}
+
+  FontVisibility GetFontVisibility() const override { return mVisibility; }
+  bool ShouldResistFingerprinting(mozilla::RFPTarget) const override {
+    return false;
+  }
+  void ReportBlockedFontFamily(const nsCString&) const override {}
+  bool IsChrome() const override { return false; }
+  bool IsPrivateBrowsing() const override { return false; }
+  nsICookieJarSettings* GetCookieJarSettings() const override {
+    return nullptr;
+  }
+  mozilla::Maybe<FontVisibility> MaybeInheritFontVisibility() const override {
+    return mozilla::Nothing();
+  }
+  void UserFontSetUpdated(gfxUserFontEntry*) override {}
+  using FontVisibilityProvider::ReportBlockedFontFamily;
+
+ private:
+  FontVisibility mVisibility;
+};
+
+}  // namespace
+
+void gfxPlatformFontList::ListFontsUsedForString(
+    const nsAString& aText, const nsTArray<nsCString>& aFontList,
+    nsTArray<nsCString>& aFontsUsed, FontVisibility aMaxVisibility) {
+  if (aText.IsEmpty() || aFontList.IsEmpty()) {
+    return;
+  }
+
+  LOG_FONTQUERY(
+      ("(fontquery) ListFontsUsedForString: %zu fonts, %zu chars, "
+       "maxVisibility=%d",
+       aFontList.Length(), aText.Length(), static_cast<int>(aMaxVisibility)));
+
+  // Build a StyleFontFamilyList from the provided font names.
+  nsTArray<StyleSingleFontFamily> names;
+  for (const auto& fontName : aFontList) {
+    names.AppendElement(StyleSingleFontFamily::FamilyName(
+        StyleFamilyName{StyleAtom(NS_Atomize(fontName)),
+                        StyleFontFamilyNameSyntax::Identifiers}));
+  }
+  StyleFontFamilyList familyList =
+      StyleFontFamilyList::WithNames(std::move(names));
+
+  // Create a visibility provider and font group.
+  ListFontsVisibilityProvider visProvider(aMaxVisibility);
+  gfxFontStyle style;
+  RefPtr<gfxFontGroup> fontGroup = new gfxFontGroup(
+      &visProvider, familyList, &style, nsGkAtoms::x_western, false, nullptr,
+      nullptr, 1.0, StyleFontVariantEmoji::Normal);
+
+  // Use gfxScriptItemizer to break text into script runs, then
+  // gfxFontGroup::ComputeRanges to determine which fonts are used.
+  // This mirrors the browser's actual font matching, including variation
+  // selector handling, emoji presentation, and global fallback.
+  using TextRange = gfxFontGroup::TextRange;
+  using Script = mozilla::intl::Script;
+
+  gfxScriptItemizer scriptRuns;
+  const char16_t* textData = aText.BeginReading();
+  uint32_t textLen = aText.Length();
+  scriptRuns.SetText(textData, textLen);
+
+  nsTHashSet<nsCString> usedSet;
+
+  while (gfxScriptItemizer::Run run = scriptRuns.Next()) {
+    Script script = run.mScript;
+    // Resolve COMMON/INHERITED to LATIN for western language contexts,
+    // matching what InitTextRun does via ResolveScriptForLang.
+    if (script <= Script::INHERITED) {
+      script = Script::LATIN;
+    }
+
+    AutoTArray<TextRange, 3> ranges;
+    fontGroup->ComputeRanges(ranges, textData + run.mOffset, run.mLength,
+                             script,
+                             gfx::ShapedTextFlags::TEXT_ORIENT_HORIZONTAL);
+
+    for (const auto& range : ranges) {
+      if (range.font) {
+        const nsCString& familyName = range.font->GetFontEntry()->FamilyName();
+        if (usedSet.EnsureInserted(familyName)) {
+          aFontsUsed.AppendElement(familyName);
+          LOG_FONTQUERY(
+              ("(fontquery) ListFontsUsedForString: font '%s' used "
+               "(matchType=%d)",
+               familyName.get(), static_cast<int>(range.matchType.kind)));
+        }
+      }
+    }
+  }
+
+  LOG_FONTQUERY(("(fontquery) ListFontsUsedForString: result - %zu fonts used",
+                 aFontsUsed.Length()));
 }
 
 bool gfxPlatformFontList::GetMissingFonts(nsTArray<nsCString>& aMissingFonts) {
@@ -1703,7 +1816,7 @@ bool gfxPlatformFontList::FindAndAddFamiliesLocked(
   NS_ASSERTION(mFontFamilies.Count() != 0,
                "system font list was not initialized correctly");
 
-  auto isBlockedByVisibilityLevel = [=](gfxFontFamily* aFamily) -> bool {
+  auto isBlockedByVisibilityLevel = [=, this](gfxFontFamily* aFamily) -> bool {
     bool visible = IsVisibleToCSS(*aFamily, visibilityLevel);
     if (visible || (allowHidden && aFamily->IsHidden())) {
       return false;
@@ -1939,7 +2052,7 @@ gfxFontEntry* gfxPlatformFontList::GetOrCreateFontEntryLocked(
     fontlist::Face* aFace, const fontlist::Family* aFamily) {
   return mFontEntries
       .LookupOrInsertWith(aFace,
-                          [=] { return CreateFontEntry(aFace, aFamily); })
+                          [=, this] { return CreateFontEntry(aFace, aFamily); })
       .get();
 }
 
@@ -1953,7 +2066,8 @@ void gfxPlatformFontList::AddOtherFamilyNames(
 
     mOtherFamilyNames.LookupOrInsertWith(key, [&] {
       LOG_FONTLIST(
-          ("(fontlist-otherfamily) canonical family: %s, other family: %s\n",
+          ("(fontlist-otherfamily) canonical family: %s, other family: "
+           "%s\n",
            aFamilyEntry->Name().get(), name.get()));
       if (mBadUnderlineFamilyNames.ContainsSorted(key)) {
         aFamilyEntry->SetBadUnderlineFamily();
@@ -2284,7 +2398,7 @@ static nsAtom* PrefLangToLangGroups(uint32_t aIndex) {
   // static array here avoids static constructor
   static nsAtom* gPrefLangToLangGroups[] = {
 #define FONT_PREF_LANG(enum_id_, str_, atom_id_) nsGkAtoms::atom_id_
-#include "gfxFontPrefLangList.h"
+#include "gfxFontPrefLangList.inc"
 #undef FONT_PREF_LANG
   };
 

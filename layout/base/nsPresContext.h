@@ -6,8 +6,8 @@
 
 /* a presentation of a document, part 1 */
 
-#ifndef nsPresContext_h___
-#define nsPresContext_h___
+#ifndef nsPresContext_h_
+#define nsPresContext_h_
 
 #include "FontVisibilityProvider.h"
 #include "Units.h"
@@ -443,6 +443,14 @@ class nsPresContext : public nsISupports,
   nscoord GetBimodalDynamicToolbarHeightInAppUnits() const;
 
   /**
+   * Returns the maximum height of the dynamic toolbar if the toolbar state is
+   * `DynamicToolbarState::Collapsed`, otherwise returns zero.
+   * The maximum height is based on the fixed viewport scale for elements with
+   * position:fixed.
+   */
+  nscoord GetBimodalDynamicToolbarHeightForFixedPosInAppUnits() const;
+
+  /**
    * Returns the state of the dynamic toolbar.
    */
   mozilla::DynamicToolbarState GetDynamicToolbarState() const;
@@ -557,7 +565,7 @@ class nsPresContext : public nsISupports,
   void SetFullZoom(float aZoom);
   void SetOverrideDPPX(float);
   void SetInRDMPane(bool aInRDMPane);
-  void UpdateTopInnerSizeForRFP();
+  void UpdateInnerSizeSpoofedForRFP();
   void UpdateForcedColors(bool aNotify = true);
 
  public:
@@ -1119,6 +1127,8 @@ class nsPresContext : public nsISupports,
 
   void DoForceReflowForFontInfoUpdateFromStyle();
 
+  void UpdateAnimationsPlayBackRateMultiplier(double aMultiplier);
+
  public:
   // Used by the PresShell to force a reflow when some aspect of font info
   // has been updated, potentially affecting font selection and layout.
@@ -1153,6 +1163,10 @@ class nsPresContext : public nsISupports,
   float RubyPositioningFactor() const {
     MOZ_ASSERT(mRubyPositioningFactor > 0.0f);
     return mRubyPositioningFactor;
+  }
+
+  double AnimationsPlayBackRateMultiplier() const {
+    return mAnimationsPlayBackRateMultiplier;
   }
 
  protected:
@@ -1298,13 +1312,13 @@ class nsPresContext : public nsISupports,
   mozilla::TimeStamp mFirstMouseMoveTime;
   mozilla::TimeStamp mFirstScrollTime;
 
+  // last time we did a full style flush
+  mozilla::TimeStamp mLastStyleUpdateForAllAnimations;
+
   // incremented each time the root scroller scrolls, helpful to determine if
   // it has scrolled between the start and end of some deferred work (such as a
   // navigation intercept).
   uint32_t mLastScrollGeneration;
-
-  // last time we did a full style flush
-  mozilla::TimeStamp mLastStyleUpdateForAllAnimations;
 
   uint32_t mInterruptChecksToSkip;
 
@@ -1329,6 +1343,12 @@ class nsPresContext : public nsISupports,
   // been updated so far. This is necessary to avoid reentering on container
   // query style changes which cause us to do frame reconstruction.
   nsTHashSet<nsIContent*> mUpdatedContainerQueryContents;
+
+  // The cache of BrowsingContext.animationsPlayBackRateMultiplier.
+  // We need to cache it since the multiplier needs to be queried off the
+  // main-thread, unfortunately Document::GetBrowsingContext can not be used off
+  // the main-thread.
+  double mAnimationsPlayBackRateMultiplier = 1.0;
 
   ScrollStyles mViewportScrollStyles;
 
@@ -1495,4 +1515,4 @@ class nsRootPresContext final : public nsPresContext {
 #  define DO_GLOBAL_REFLOW_COUNT(_name)
 #endif  // MOZ_REFLOW_PERF
 
-#endif /* nsPresContext_h___ */
+#endif /* nsPresContext_h_ */

@@ -194,8 +194,8 @@ function updateMozLogs(mozLogs) {
 }
 
 /**
- * This function is called directly by devtools/startup/DevToolsStartup.jsm when
- * using the shortcut keys to capture a profile.
+ * This function is called directly by devtools/startup/DevToolsStartup.sys.mjs
+ * when using the shortcut keys to capture a profile.
  *
  * @type {() => void}
  */
@@ -225,8 +225,8 @@ export function cleanupMozLogs() {
 }
 
 /**
- * This function is called directly by devtools/startup/DevToolsStartup.jsm when
- * using the shortcut keys to start and stop the profiler.
+ * This function is called directly by devtools/startup/DevToolsStartup.sys.mjs
+ * when using the shortcut keys to start and stop the profiler.
  *
  * @param {PageContext} pageContext
  * @return {void}

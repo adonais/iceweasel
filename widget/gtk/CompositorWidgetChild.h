@@ -30,7 +30,6 @@ class CompositorWidgetChild final : public PCompositorWidgetChild,
   void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize) override;
   void NotifyFullscreenChanged(bool aIsFullscreen) override {};
   void CleanupResources() override;
-  void SetRenderingSurface(const uintptr_t aXWindow) override;
 
  private:
   ~CompositorWidgetChild() override;

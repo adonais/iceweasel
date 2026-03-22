@@ -22,23 +22,68 @@ const { PREF_GENERATE_MEMORIES } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs"
 );
 
-// insert N visits so the scheduler crosses its page threshold.
-async function addTestVisits(count) {
-  let seeded = [];
-  let base = Date.now();
-  for (let i = 0; i < count; i++) {
-    seeded.push({
-      url: `https://example${i}.com/`,
-      title: `Example ${i}`,
-      visits: [{ date: new Date(base - i * 1000) }],
-    });
-  }
-  await PlacesUtils.history.insertMany(seeded);
-}
-
 registerCleanupFunction(async () => {
   Services.prefs.clearUserPref(PREF_GENERATE_MEMORIES);
   await PlacesUtils.history.clear();
+});
+
+function sleep(ms) {
+  return new Promise(resolve => do_timeout(ms, resolve));
+}
+
+async function waitForCondition(
+  predicate,
+  msg,
+  intervalMs = 10,
+  maxTries = 200
+) {
+  for (let i = 0; i < maxTries; i++) {
+    if (predicate()) {
+      return;
+    }
+    await sleep(intervalMs);
+  }
+  Assert.ok(false, msg);
+}
+
+// First run => maybeInit triggers an immediate run via #init() (no manual tick).
+add_task(async function test_scheduler_immediately_runs_on_first_init() {
+  Services.prefs.setBoolPref(PREF_GENERATE_MEMORIES, true);
+
+  const generateStub = sinon
+    .stub(MemoriesManager, "generateMemoriesFromBrowsingHistory")
+    .resolves();
+
+  const lastTsStub = sinon
+    .stub(MemoriesManager, "getLastHistoryMemoryTimestamp")
+    .resolves(0); // first run
+
+  const countStub = sinon
+    .stub(MemoriesManager, "countRecentVisits")
+    .resolves(10);
+
+  const enableStub = sinon
+    .stub(MemoriesManager, "shouldEnableMemoriesSchedulers")
+    .returns(true);
+
+  let scheduler;
+  try {
+    scheduler = MemoriesHistoryScheduler.maybeInit();
+    Assert.ok(scheduler, "Scheduler should be initialized when pref is true");
+
+    await waitForCondition(
+      () => generateStub.called,
+      "Expected first-run init to trigger generateMemoriesFromBrowsingHistory"
+    );
+
+    sinon.assert.calledOnce(generateStub);
+  } finally {
+    scheduler?.destroy?.();
+    generateStub.restore();
+    lastTsStub.restore();
+    countStub.restore();
+    enableStub.restore();
+  }
 });
 
 // Drift triggers => memories run
@@ -62,6 +107,14 @@ add_task(async function test_scheduler_runs_when_drift_triggers() {
       },
     });
 
+  const enableStub = sinon
+    .stub(MemoriesManager, "shouldEnableMemoriesSchedulers")
+    .returns(true);
+
+  const countStub = sinon
+    .stub(MemoriesManager, "countRecentVisits")
+    .resolves(10);
+
   try {
     let scheduler = MemoriesHistoryScheduler.maybeInit();
 
@@ -75,6 +128,8 @@ add_task(async function test_scheduler_runs_when_drift_triggers() {
   } finally {
     generateStub.restore();
     driftStub.restore();
+    enableStub.restore();
+    countStub.restore();
   }
 });
 
@@ -99,14 +154,29 @@ add_task(async function test_scheduler_skips_when_drift_not_triggered() {
       },
     });
 
+  const lastTsStub = sinon
+    .stub(MemoriesManager, "getLastHistoryMemoryTimestamp")
+    .resolves(Date.now() - 7 * 60 * 60 * 1000);
+
+  const countStub = sinon
+    .stub(MemoriesManager, "countRecentVisits")
+    .resolves(10);
+
+  const enableStub = sinon
+    .stub(MemoriesManager, "shouldEnableMemoriesSchedulers")
+    .returns(true);
+
   try {
     let scheduler = MemoriesHistoryScheduler.maybeInit();
-    await addTestVisits(60);
+    scheduler.setPagesVisitedForTesting(100);
     await scheduler.runNowForTesting();
     sinon.assert.notCalled(generateStub);
   } finally {
     generateStub.restore();
     driftStub.restore();
+    lastTsStub.restore();
+    countStub.restore();
+    enableStub.restore();
   }
 });
 
@@ -135,6 +205,14 @@ add_task(async function test_scheduler_runs_on_first_run_with_small_history() {
     .stub(MemoriesManager, "getLastHistoryMemoryTimestamp")
     .resolves(0);
 
+  const countStub = sinon
+    .stub(MemoriesManager, "countRecentVisits")
+    .resolves(10);
+
+  const enableStub = sinon
+    .stub(MemoriesManager, "shouldEnableMemoriesSchedulers")
+    .returns(true);
+
   try {
     let scheduler = MemoriesHistoryScheduler.maybeInit();
     Assert.ok(scheduler, "Scheduler should be initialized when pref is true");
@@ -151,5 +229,7 @@ add_task(async function test_scheduler_runs_on_first_run_with_small_history() {
     generateStub.restore();
     driftStub.restore();
     lastTsStub.restore();
+    countStub.restore();
+    enableStub.restore();
   }
 });

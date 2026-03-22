@@ -795,8 +795,7 @@ class Replay {
           num_sloppy_objects++;
         }
 
-        if (used <=
-            (stats.subpage_max ? stats.subpage_max : stats.quantum_wide_max)) {
+        if (used <= stats.quantum_wide_max) {
           // We know that this is an inefficient linear search, but there's a
           // small number of bins and this is simple.
           for (unsigned i = 0; i < num_bins; i++) {
@@ -841,7 +840,6 @@ class Replay {
     FdPrintf(mStdErr, "bin-unused:       %9zu\n", stats.bin_unused);
     FdPrintf(mStdErr, "quantum-max:      %9zu\n", stats.quantum_max);
     FdPrintf(mStdErr, "quantum-wide-max: %9zu\n", stats.quantum_wide_max);
-    FdPrintf(mStdErr, "subpage-max:      %9zu\n", stats.subpage_max);
     FdPrintf(mStdErr, "large-max:        %9zu\n", stats.large_max);
     if (mCalculateSlop) {
       size_t slop = mTotalAllocatedSize - mTotalRequestedSize;

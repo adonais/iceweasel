@@ -91,30 +91,10 @@ impl<MetricT: MetricMetadataGetter + MetricNamer + 'static> gecko_profiler::Prof
         );
         schema.set_table_label("{marker.data.cat}.{marker.data.id} {marker.data.label}: {marker.data.duration}{marker.data.sample}{marker.data.samples}");
         schema.set_chart_label("{marker.data.cat}.{marker.data.id} {marker.data.label}");
-        schema.add_key_label_format_with_flags(
-            "cat",
-            "Category",
-            Format::UniqueString,
-            PayloadFlags::Searchable,
-        );
-        schema.add_key_label_format_with_flags(
-            "id",
-            "Metric",
-            Format::UniqueString,
-            PayloadFlags::Searchable,
-        );
-        schema.add_key_label_format_with_flags(
-            "label",
-            "Label",
-            Format::UniqueString,
-            PayloadFlags::Searchable,
-        );
-        schema.add_key_label_format_with_flags(
-            "timer_id",
-            "TimerId",
-            Format::Integer,
-            PayloadFlags::Searchable,
-        );
+        schema.add_key_label_format("cat", "Category", Format::UniqueString);
+        schema.add_key_label_format("id", "Metric", Format::UniqueString);
+        schema.add_key_label_format("label", "Label", Format::UniqueString);
+        schema.add_key_label_format("timer_id", "TimerId", Format::Integer);
         schema.add_key_label_format("duration", "Duration", Format::String);
         schema.add_key_label_format("sample", "Sample", Format::String);
         schema.add_key_label_format("samples", "Samples", Format::String);

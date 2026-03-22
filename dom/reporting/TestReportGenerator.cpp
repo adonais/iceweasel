@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/TestReportGenerator.h"
 
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/ReportingBinding.h"
 #include "mozilla/dom/ReportingUtils.h"
 #include "mozilla/dom/TestReportBody.h"

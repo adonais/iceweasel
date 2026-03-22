@@ -14,16 +14,15 @@ from common import BaseConfigureTest
 from mozbuild.util import ReadOnlyNamespace
 
 
-class IndexSearch:
-    def should_replace_task(self, task, *args):
-        return f"fake-task-id-for-{task['index'][0]}"
+def find_task_from_index(index_paths):
+    return f"fake-task-id-for-{index_paths[0]}"
 
 
 class TestBootstrap(BaseConfigureTest):
     @staticmethod
     def import_module(module):
-        if module == "taskgraph.optimize.strategies":
-            return ReadOnlyNamespace(IndexSearch=IndexSearch)
+        if module == "mozbuild.util":
+            return ReadOnlyNamespace(find_task_from_index=find_task_from_index)
 
     # This method asserts the expected result of bootstrapping for the given
     # argument (`arg`) to configure.

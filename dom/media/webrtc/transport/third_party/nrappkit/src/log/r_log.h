@@ -53,9 +53,9 @@ int r_log(int facility,int level,const char *fmt,...)
 ;
 
 int r_vlog(int facility,int level,const char *fmt,va_list ap);
-int r_dump(int facility,int level,char *name,char *data,int len);
+int r_dump(int facility,int level,const char *name,const char *data,int len);
 
-int r_log_register(char *tipename,int *facility);
+int r_log_register(const char *tipename,int *facility);
 int r_logging(int facility, int level);
 int r_log_init(void);
 

@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.4.551
- * pdfjsBuild = 29413be02
+ * pdfjsVersion = 5.5.70
+ * pdfjsBuild = 30ed527a8
  */
 
 ;// ./src/scripting_api/constants.js
@@ -2275,132 +2275,132 @@ class Console extends PDFObject {
 
 ;// ./src/scripting_api/print_params.js
 class PrintParams {
+  binaryOk = true;
+  bitmapDPI = 150;
+  booklet = {
+    binding: 0,
+    duplexMode: 0,
+    subsetFrom: 0,
+    subsetTo: -1
+  };
+  colorOverride = 0;
+  colorProfile = "";
+  constants = Object.freeze({
+    bookletBindings: Object.freeze({
+      Left: 0,
+      Right: 1,
+      LeftTall: 2,
+      RightTall: 3
+    }),
+    bookletDuplexMode: Object.freeze({
+      BothSides: 0,
+      FrontSideOnly: 1,
+      BasicSideOnly: 2
+    }),
+    colorOverrides: Object.freeze({
+      auto: 0,
+      gray: 1,
+      mono: 2
+    }),
+    fontPolicies: Object.freeze({
+      everyPage: 0,
+      jobStart: 1,
+      pageRange: 2
+    }),
+    handling: Object.freeze({
+      none: 0,
+      fit: 1,
+      shrink: 2,
+      tileAll: 3,
+      tileLarge: 4,
+      nUp: 5,
+      booklet: 6
+    }),
+    interactionLevel: Object.freeze({
+      automatic: 0,
+      full: 1,
+      silent: 2
+    }),
+    nUpPageOrders: Object.freeze({
+      Horizontal: 0,
+      HorizontalReversed: 1,
+      Vertical: 2
+    }),
+    printContents: Object.freeze({
+      doc: 0,
+      docAndComments: 1,
+      formFieldsOnly: 2
+    }),
+    flagValues: Object.freeze({
+      applyOverPrint: 1,
+      applySoftProofSettings: 1 << 1,
+      applyWorkingColorSpaces: 1 << 2,
+      emitHalftones: 1 << 3,
+      emitPostScriptXObjects: 1 << 4,
+      emitFormsAsPSForms: 1 << 5,
+      maxJP2KRes: 1 << 6,
+      setPageSize: 1 << 7,
+      suppressBG: 1 << 8,
+      suppressCenter: 1 << 9,
+      suppressCJKFontSubst: 1 << 10,
+      suppressCropClip: 1 << 1,
+      suppressRotate: 1 << 12,
+      suppressTransfer: 1 << 13,
+      suppressUCR: 1 << 14,
+      useTrapAnnots: 1 << 15,
+      usePrintersMarks: 1 << 16
+    }),
+    rasterFlagValues: Object.freeze({
+      textToOutline: 1,
+      strokesToOutline: 1 << 1,
+      allowComplexClip: 1 << 2,
+      preserveOverprint: 1 << 3
+    }),
+    subsets: Object.freeze({
+      all: 0,
+      even: 1,
+      odd: 2
+    }),
+    tileMarks: Object.freeze({
+      none: 0,
+      west: 1,
+      east: 2
+    }),
+    usages: Object.freeze({
+      auto: 0,
+      use: 1,
+      noUse: 2
+    })
+  });
+  downloadFarEastFonts = false;
+  fileName = "";
+  firstPage = 0;
+  flags = 0;
+  fontPolicy = 0;
+  gradientDPI = 150;
+  interactive = 1;
+  npUpAutoRotate = false;
+  npUpNumPagesH = 2;
+  npUpNumPagesV = 2;
+  npUpPageBorder = false;
+  npUpPageOrder = 0;
+  pageHandling = 0;
+  pageSubset = 0;
+  printAsImage = false;
+  printContent = 0;
+  printerName = "";
+  psLevel = 0;
+  rasterFlags = 0;
+  reversePages = false;
+  tileLabel = false;
+  tileMark = 0;
+  tileOverlap = 0;
+  tileScale = 1.0;
+  transparencyLevel = 75;
+  usePrinterCRD = 0;
+  useT1Conversion = 0;
   constructor(data) {
-    this.binaryOk = true;
-    this.bitmapDPI = 150;
-    this.booklet = {
-      binding: 0,
-      duplexMode: 0,
-      subsetFrom: 0,
-      subsetTo: -1
-    };
-    this.colorOverride = 0;
-    this.colorProfile = "";
-    this.constants = Object.freeze({
-      bookletBindings: Object.freeze({
-        Left: 0,
-        Right: 1,
-        LeftTall: 2,
-        RightTall: 3
-      }),
-      bookletDuplexMode: Object.freeze({
-        BothSides: 0,
-        FrontSideOnly: 1,
-        BasicSideOnly: 2
-      }),
-      colorOverrides: Object.freeze({
-        auto: 0,
-        gray: 1,
-        mono: 2
-      }),
-      fontPolicies: Object.freeze({
-        everyPage: 0,
-        jobStart: 1,
-        pageRange: 2
-      }),
-      handling: Object.freeze({
-        none: 0,
-        fit: 1,
-        shrink: 2,
-        tileAll: 3,
-        tileLarge: 4,
-        nUp: 5,
-        booklet: 6
-      }),
-      interactionLevel: Object.freeze({
-        automatic: 0,
-        full: 1,
-        silent: 2
-      }),
-      nUpPageOrders: Object.freeze({
-        Horizontal: 0,
-        HorizontalReversed: 1,
-        Vertical: 2
-      }),
-      printContents: Object.freeze({
-        doc: 0,
-        docAndComments: 1,
-        formFieldsOnly: 2
-      }),
-      flagValues: Object.freeze({
-        applyOverPrint: 1,
-        applySoftProofSettings: 1 << 1,
-        applyWorkingColorSpaces: 1 << 2,
-        emitHalftones: 1 << 3,
-        emitPostScriptXObjects: 1 << 4,
-        emitFormsAsPSForms: 1 << 5,
-        maxJP2KRes: 1 << 6,
-        setPageSize: 1 << 7,
-        suppressBG: 1 << 8,
-        suppressCenter: 1 << 9,
-        suppressCJKFontSubst: 1 << 10,
-        suppressCropClip: 1 << 1,
-        suppressRotate: 1 << 12,
-        suppressTransfer: 1 << 13,
-        suppressUCR: 1 << 14,
-        useTrapAnnots: 1 << 15,
-        usePrintersMarks: 1 << 16
-      }),
-      rasterFlagValues: Object.freeze({
-        textToOutline: 1,
-        strokesToOutline: 1 << 1,
-        allowComplexClip: 1 << 2,
-        preserveOverprint: 1 << 3
-      }),
-      subsets: Object.freeze({
-        all: 0,
-        even: 1,
-        odd: 2
-      }),
-      tileMarks: Object.freeze({
-        none: 0,
-        west: 1,
-        east: 2
-      }),
-      usages: Object.freeze({
-        auto: 0,
-        use: 1,
-        noUse: 2
-      })
-    });
-    this.downloadFarEastFonts = false;
-    this.fileName = "";
-    this.firstPage = 0;
-    this.flags = 0;
-    this.fontPolicy = 0;
-    this.gradientDPI = 150;
-    this.interactive = 1;
     this.lastPage = data.lastPage;
-    this.npUpAutoRotate = false;
-    this.npUpNumPagesH = 2;
-    this.npUpNumPagesV = 2;
-    this.npUpPageBorder = false;
-    this.npUpPageOrder = 0;
-    this.pageHandling = 0;
-    this.pageSubset = 0;
-    this.printAsImage = false;
-    this.printContent = 0;
-    this.printerName = "";
-    this.psLevel = 0;
-    this.rasterFlags = 0;
-    this.reversePages = false;
-    this.tileLabel = false;
-    this.tileMark = 0;
-    this.tileOverlap = 0;
-    this.tileScale = 1.0;
-    this.transparencyLevel = 75;
-    this.usePrinterCRD = 0;
-    this.useT1Conversion = 0;
   }
 }
 

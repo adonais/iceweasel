@@ -4,6 +4,10 @@
 
 import org.apache.tools.ant.filters.ReplaceTokens
 
+plugins {
+    alias(libs.plugins.dependency.analysis)
+}
+
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
@@ -45,6 +49,11 @@ tasks.register("syncWebcompatExtension", Sync) {
             '#include data/interventions.json': interventionsJson.text.trim(),
         ])
     }
+}
+
+// Make sure DAGP asset-source exploding happens after syncWebcompatExtension
+tasks.matching { it.name.startsWith("explodeAssetSource") }.configureEach { t ->
+    t.dependsOn(tasks.named("syncWebcompatExtension"))
 }
 
 dependencies {

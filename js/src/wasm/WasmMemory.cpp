@@ -87,8 +87,8 @@ bool wasm::ToAddressType(JSContext* cx, HandleValue value,
  *   f32.load offset=8
  *
  * The address is 128; the offset is 8. The memory base is not observable to
- * wasm. Note that the address comes from wasm value stack, but the offset is an
- * immediate.
+ * wasm. Note that the address comes from the wasm value stack, but the offset
+ * is an immediate.
  *
  * The "effective address" (EA) is the non-overflowed sum of the address and the
  * offset. (If the sum overflows, the program traps.) For the above, the

@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _LocalAccessible_H_
-#define _LocalAccessible_H_
+#ifndef LocalAccessible_H_
+#define LocalAccessible_H_
 
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/a11y/Accessible.h"
@@ -226,6 +226,12 @@ class LocalAccessible : public nsISupports, public Accessible {
    * Return true if native unavailable state present.
    */
   virtual bool NativelyUnavailable() const;
+
+  /**
+   * Return true if this accessible and all of its descendants have only
+   * plain-content roles (text, images, generic containers, etc.).
+   */
+  bool IsOnlyPlainContent() const;
 
   virtual already_AddRefed<AccAttributes> Attributes() override;
 
@@ -1037,6 +1043,10 @@ class LocalAccessible : public nsISupports, public Accessible {
   LocalAccessible* GetPopoverTargetDetailsRelation() const;
 
   LocalAccessible* GetAnchorPositionTargetDetailsRelation() const;
+
+  LocalAccessible* GetPopoverTargetDescribedByRelation() const;
+
+  LocalAccessible* GetCommandForDescribedByRelation() const;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

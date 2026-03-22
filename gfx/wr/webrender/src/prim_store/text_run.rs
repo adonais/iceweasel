@@ -523,7 +523,7 @@ fn test_struct_sizes() {
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<TextRun>(), 88, "TextRun size changed");
-    assert_eq!(mem::size_of::<TextRunTemplate>(), 88, "TextRunTemplate size changed");
+    assert_eq!(mem::size_of::<TextRunTemplate>(), 96, "TextRunTemplate size changed");
     assert_eq!(mem::size_of::<TextRunKey>(), 104, "TextRunKey size changed");
     assert_eq!(mem::size_of::<TextRunPrimitive>(), 80, "TextRunPrimitive size changed");
 }

@@ -27,8 +27,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "frontend/FrontendContext.h"
 #include "frontend/Parser.h"
 #include "frontend/ParserAtom.h"

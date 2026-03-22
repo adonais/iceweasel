@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = 個人化
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = 知道了！
+    .aria-label = 知道了！
 
 ## Search box component.
 
@@ -325,18 +328,18 @@ newtab-custom-recent-subtitle = 近期造訪過的網站與內容精選
 newtab-custom-weather-toggle =
     .label = 天氣
     .description = 快速了解本日天氣
-newtab-custom-trending-search-toggle =
-    .label = 熱門搜尋
-    .description = 熱門與常見搜尋主題
 newtab-custom-widget-weather-toggle =
     .label = 天氣
-newtab-custom-widget-trending-search-toggle =
-    .label = 熱門搜尋
 newtab-custom-widget-lists-toggle =
     .label = 清單
 newtab-custom-widget-timer-toggle =
     .label = 計時器
 newtab-custom-widget-section-title = 小工具
+newtab-custom-widget-section-toggle =
+    .label = 小工具
+newtab-widget-manage-title = 小工具
+newtab-widget-manage-widget-button =
+    .label = 管理小工具
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = 關閉
@@ -464,6 +467,8 @@ newtab-weather-change-location-search-input-placeholder =
     .placeholder = 搜尋位置
     .aria-label = 搜尋位置
 newtab-weather-menu-weather-display = 顯示天氣
+newtab-weather-todays-forecast = 本日天氣預報
+newtab-weather-see-full-forecast = 檢視完整天氣預報
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -476,6 +481,7 @@ newtab-weather-menu-temperature-option-fahrenheit = 華氏
 newtab-weather-menu-temperature-option-celsius = 攝氏
 newtab-weather-menu-change-temperature-units-fahrenheit = 切換為華氏溫度
 newtab-weather-menu-change-temperature-units-celsius = 切換為攝氏溫度
+newtab-weather-menu-hide-weather-v2 = 隱藏天氣資訊
 newtab-weather-menu-hide-weather = 隱藏新分頁的天氣資訊
 newtab-weather-menu-learn-more = 更多資訊
 newtab-weather-menu-detect-my-location = 偵測我的所在位置
@@ -488,6 +494,11 @@ newtab-weather-opt-in-yes =
     .label = 好的
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = 紐約市
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = 到 { $provider } 檢視天氣預報
+    .aria-description = { $provider } ∙ 贊助資訊
 
 ## Topic Labels
 
@@ -592,7 +603,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = 手指輕鬆一點就開啟最愛網站
 newtab-shortcuts-highlight-subtitle = 新增捷徑，輕鬆一點就能開啟您的最愛網站。
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = 為什麼您會如此回報？
@@ -610,21 +621,13 @@ newtab-report-content-inappropriate-offensive =
     .label = 不正當或者冒犯人
 newtab-report-content-spam-misleading =
     .label = 是垃圾內容或誤導性內容
+newtab-report-content-requires-payment-subscription =
+    .label = 必需付款或訂閱
+newtab-report-content-requires-payment-subscription-learn-more = 更多資訊
 newtab-report-cancel = 取消
 newtab-report-submit = 送出
 newtab-toast-thanks-for-reporting =
     .message = 感謝您回報此問題。
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = 顯示熱門搜尋主題
-newtab-trending-searches-hide-trending =
-    .title = 隱藏熱門搜尋主題
-newtab-trending-searches-learn-more = 更多資訊
-newtab-trending-searches-dismiss = 隱藏熱門搜尋主題
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = 熱門搜尋
 
 ## Strings for task / to-do list productivity widget
 
@@ -697,6 +700,12 @@ newtab-widget-timer-menu-notifications = 關閉通知
 newtab-widget-timer-menu-notifications-on = 開啟通知
 newtab-widget-timer-menu-hide = 隱藏計時器
 newtab-widget-timer-menu-learn-more = 更多資訊
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = 頭條新聞
+newtab-daily-briefing-card-menu-dismiss = 知道了！
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = { $minutes } 分鐘前更新
 newtab-widget-message-title = 使用清單與內建的計時器，讓您保持專注
 # to-dos stands for "things to do".
 newtab-widget-message-copy = 從快速提醒到每日待辦事項，或是在專注時間之後休息一下伸伸懶腰，讓您及時完成工作。
@@ -706,3 +715,25 @@ newtab-promo-card-cta = 更多資訊
 newtab-promo-card-dismiss-button =
     .title = 知道了！
     .aria-label = 知道了！
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-dismiss-button =
+    .title = 知道了！
+    .aria-label = 知道了！
+# "This space" refers to about:newtab. The call to action here ("make it your own")
+# is to customize newtab with a background image or colour, or by tweaking the
+# existing widgetry that appears on it.
+newtab-activation-window-message-customization-focus-header = 讓這塊空間有您的風格
+newtab-activation-window-message-customization-focus-message = 選擇全新的背景圖、加入您最愛網站的捷徑，並且隨時取得您有興趣的文章的最新資訊。
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = 開始自訂
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = 這個空間可以用您想要的方式安排
+newtab-activation-window-message-values-focus-message = { -brand-product-name } 讓您可以用自己想要的方式上網，用更個人化的方式開啟每一天。讓 { -brand-product-name } 有您獨特的風格。

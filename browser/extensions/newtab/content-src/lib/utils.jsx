@@ -3,12 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 import { useCallback, useEffect, useRef } from "react";
 
-const PREF_WEATHER_PLACEMENT = "weather.placement";
-const PREF_DAILY_BRIEF_SECTIONID = "discoverystream.dailyBrief.sectionId";
-const PREF_DAILY_BRIEF_ENABLED = "discoverystream.dailyBrief.enabled";
-const PREF_STORIES_ENABLED = "feeds.section.topstories";
-const PREF_SYSTEM_STORIES_ENABLED = "feeds.system.topstories";
-
 /**
  * A custom react hook that sets up an IntersectionObserver to observe a single
  * or list of elements and triggers a callback when the element comes into the viewport
@@ -268,61 +262,9 @@ function useConfetti(count = 80, spread = Math.PI / 3) {
   return [canvasRef, fireConfetti];
 }
 
-function selectWeatherPlacement(state) {
-  const prefs = state.Prefs.values || {};
-
-  // Intent: only placed in section if explicitly requested
-  const placementPref =
-    prefs.trainhopConfig?.dailyBriefing?.placement ||
-    prefs[PREF_WEATHER_PLACEMENT];
-
-  if (placementPref === "header" || !placementPref) {
-    return "header";
-  }
-
-  const sections =
-    state.DiscoveryStream.feeds.data[
-      "https://merino.services.mozilla.com/api/v1/curated-recommendations"
-    ]?.data.sections ?? [];
-  // check the following prefs to make sure weather is elligible to be placed in sections
-  // 1. The daily brieifng section must be availible and in the top position
-  // 2. That the daily briefing section has not been blocked
-  // 3. That reccomended stories are truned on
-  // Otherwise it should be placed in the header
-  const pocketEnabled =
-    prefs[PREF_STORIES_ENABLED] && prefs[PREF_SYSTEM_STORIES_ENABLED];
-  const sectionPersonalization =
-    state.DiscoveryStream?.sectionPersonalization || {};
-  const dailyBriefEnabled =
-    prefs.trainhopConfig?.dailyBriefing?.enabled ||
-    prefs[PREF_DAILY_BRIEF_ENABLED];
-  const sectionId =
-    prefs.trainhopConfig?.dailyBriefing?.sectionId ||
-    prefs[PREF_DAILY_BRIEF_SECTIONID];
-  const notBlocked = sectionId && !sectionPersonalization[sectionId]?.isBlocked;
-  let filteredSections = sections.filter(
-    section => !sectionPersonalization[section.sectionKey]?.isBlocked
-  );
-  const foundSection = filteredSections.find(
-    section => section.sectionKey === sectionId
-  );
-  const isTopSection =
-    foundSection?.receivedRank === 0 ||
-    filteredSections.indexOf(foundSection) === 0;
-
-  const eligible =
-    pocketEnabled &&
-    dailyBriefEnabled &&
-    sectionId &&
-    notBlocked &&
-    isTopSection;
-  return eligible ? "section" : "header";
-}
-
 export {
   useIntersectionObserver,
   getActiveCardSize,
   getActiveColumnLayout,
   useConfetti,
-  selectWeatherPlacement,
 };

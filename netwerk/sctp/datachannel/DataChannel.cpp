@@ -1417,7 +1417,8 @@ void DataChannel::AnnounceOpen() {
       NS_NewCancelableRunnableFunction(
           "DataChannel::AnnounceOpen",
           [this, self = RefPtr<DataChannel>(this)] {
-            if (GetDomDataChannel()) {
+            if (GetDomDataChannel() && !mAnnouncedOpen) {
+              mAnnouncedOpen = true;
               DC_INFO(("Calling AnnounceOpen on RTCDataChannel."));
               GetDomDataChannel()->AnnounceOpen();
             }
@@ -1645,6 +1646,10 @@ void DataChannel::OnMessageReceived(nsCString&& aMsg, bool aIsBinary) {
                                 [this, self = RefPtr<DataChannel>(this),
                                  msg = std::move(aMsg), aIsBinary]() {
                                   if (GetDomDataChannel()) {
+                                    if (!mAnnouncedOpen) {
+                                      mAnnouncedOpen = true;
+                                      GetDomDataChannel()->AnnounceOpen();
+                                    }
                                     GetDomDataChannel()->DoOnMessageAvailable(
                                         msg, aIsBinary);
                                   }

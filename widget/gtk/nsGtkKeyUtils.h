@@ -5,8 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __nsGdkKeyUtils_h__
-#define __nsGdkKeyUtils_h__
+#ifndef _nsGdkKeyUtils_h_
+#define _nsGdkKeyUtils_h_
 
 #include "mozilla/EventForwards.h"
 #include "nsIWidget.h"
@@ -153,6 +153,17 @@ class KeymapWrapper {
    */
   static void InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
                            GdkEventKey* aGdkKeyEvent, bool aIsProcessedByIME);
+
+  /**
+   * InitKeyEventFromCommitString() initializes aKeyEvent for a character
+   * committed via text-input protocol (e.g., Wayland) where there is no
+   * native GDK key event.
+   *
+   * @param aKeyEvent         The WidgetKeyboardEvent to initialize.
+   * @param aCommitString     The committed string (should be single char).
+   */
+  static void InitKeyEventFromCommitString(WidgetKeyboardEvent& aKeyEvent,
+                                           const nsAString& aCommitString);
 
   /**
    * DispatchKeyDownOrKeyUpEvent() dispatches eKeyDown or eKeyUp event.
@@ -532,4 +543,4 @@ class KeymapWrapper {
 }  // namespace widget
 }  // namespace mozilla
 
-#endif /* __nsGdkKeyUtils_h__ */
+#endif /* _nsGdkKeyUtils_h_ */

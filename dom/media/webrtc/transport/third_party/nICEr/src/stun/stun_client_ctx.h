@@ -190,7 +190,7 @@ struct nr_stun_client_ctx_ {
 #define NR_STUN_TRANSPORT_ADDR_CHECK_LOOPBACK 2
 #define NR_STUN_TRANSPORT_ADDR_CHECK_LINK_LOCAL 4
 
-int nr_stun_client_ctx_create(char* label, nr_socket* sock,
+int nr_stun_client_ctx_create(const char* label, nr_socket* sock,
                               nr_transport_addr* peer, UINT4 RTO, int flags,
                               nr_stun_client_ctx** ctxp);
 int nr_stun_client_start(nr_stun_client_ctx *ctx, int mode, NR_async_cb finished_cb, void *cb_arg);

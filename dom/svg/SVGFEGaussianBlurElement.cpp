@@ -23,7 +23,7 @@ JSObject* SVGFEGaussianBlurElement::WrapNode(
 }
 
 SVGElement::NumberPairInfo SVGFEGaussianBlurElement::sNumberPairInfo[1] = {
-    {nsGkAtoms::stdDeviation, 0, 0}};
+    {nsGkAtoms::stdDeviation, 0}};
 
 SVGElement::StringInfo SVGFEGaussianBlurElement::sStringInfo[2] = {
     {nsGkAtoms::result, kNameSpaceID_None, true},
@@ -43,13 +43,13 @@ already_AddRefed<DOMSVGAnimatedString> SVGFEGaussianBlurElement::In1() {
 already_AddRefed<DOMSVGAnimatedNumber>
 SVGFEGaussianBlurElement::StdDeviationX() {
   return mNumberPairAttributes[STD_DEV].ToDOMAnimatedNumber(
-      SVGAnimatedNumberPair::eFirst, this);
+      SVGAnimatedNumberPairWhichOne::First, this);
 }
 
 already_AddRefed<DOMSVGAnimatedNumber>
 SVGFEGaussianBlurElement::StdDeviationY() {
   return mNumberPairAttributes[STD_DEV].ToDOMAnimatedNumber(
-      SVGAnimatedNumberPair::eSecond, this);
+      SVGAnimatedNumberPairWhichOne::Second, this);
 }
 
 void SVGFEGaussianBlurElement::SetStdDeviation(float stdDeviationX,
@@ -62,12 +62,12 @@ FilterPrimitiveDescription SVGFEGaussianBlurElement::GetPrimitiveDescription(
     SVGFilterInstance* aInstance, const IntRect& aFilterSubregion,
     const nsTArray<bool>& aInputsAreTainted,
     nsTArray<RefPtr<SourceSurface>>& aInputImages) {
-  float stdX = aInstance->GetPrimitiveNumber(SVGContentUtils::X,
-                                             &mNumberPairAttributes[STD_DEV],
-                                             SVGAnimatedNumberPair::eFirst);
-  float stdY = aInstance->GetPrimitiveNumber(SVGContentUtils::Y,
-                                             &mNumberPairAttributes[STD_DEV],
-                                             SVGAnimatedNumberPair::eSecond);
+  float stdX = aInstance->GetPrimitiveNumber(
+      SVGLength::Axis::X, &mNumberPairAttributes[STD_DEV],
+      SVGAnimatedNumberPairWhichOne::First);
+  float stdY = aInstance->GetPrimitiveNumber(
+      SVGLength::Axis::Y, &mNumberPairAttributes[STD_DEV],
+      SVGAnimatedNumberPairWhichOne::Second);
   if (stdX < 0 || stdY < 0) {
     return FilterPrimitiveDescription();
   }

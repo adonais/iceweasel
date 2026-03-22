@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsObserverList_h___
-#define nsObserverList_h___
+#ifndef nsObserverList_h_
+#define nsObserverList_h_
 
 #include "nsISupports.h"
 #include "nsCOMArray.h"
@@ -63,4 +63,4 @@ class nsObserverEnumerator final : public nsSimpleEnumerator {
   nsCOMArray<nsIObserver> mObservers;
 };
 
-#endif /* nsObserverList_h___ */
+#endif /* nsObserverList_h_ */

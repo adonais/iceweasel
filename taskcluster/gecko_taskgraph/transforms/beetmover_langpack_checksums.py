@@ -7,7 +7,7 @@ Transform release-beetmover-langpack-checksums into an actual task description.
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from taskgraph.util.treeherder import inherit_treeherder_from_dep
 from voluptuous import Optional, Required
 
@@ -21,7 +21,7 @@ from gecko_taskgraph.util.scriptworker import (
     get_beetmover_bucket_scope,
 )
 
-beetmover_checksums_description_schema = Schema({
+beetmover_checksums_description_schema = LegacySchema({
     Required("attributes"): {str: object},
     Optional("label"): str,
     Optional("treeherder"): task_description_schema["treeherder"],

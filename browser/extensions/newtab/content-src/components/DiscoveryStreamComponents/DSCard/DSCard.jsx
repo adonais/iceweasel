@@ -20,7 +20,6 @@ const READING_WPM = 220;
 const PREF_OHTTP_MERINO = "discoverystream.merino-provider.ohttp.enabled";
 const PREF_OHTTP_UNIFIED_ADS = "unifiedAds.ohttp.enabled";
 const PREF_SECTIONS_ENABLED = "discoverystream.sections.enabled";
-const PREF_FAVICONS_ENABLED = "discoverystream.publisherFavicon.enabled";
 
 /**
  * READ TIME FROM WORD COUNT
@@ -43,10 +42,8 @@ export const DSSource = ({
   sponsor,
   sponsored_by_override,
   icon_src,
-  refinedCardsLayout,
 }) => {
-  // refinedCard styles will have a larger favicon size
-  const faviconSize = refinedCardsLayout ? 20 : 16;
+  const faviconSize = 20;
 
   // First try to display sponsored label or time to read here.
   if (newSponsoredLabel) {
@@ -102,30 +99,13 @@ export const DefaultMeta = ({
   dispatch,
   mayHaveSectionsCards,
   format,
-  topic,
-  isSectionsCard,
-  showTopics,
   icon_src,
-  refinedCardsLayout,
 }) => {
-  const shouldHaveFooterSection = isSectionsCard && showTopics;
+  const shouldShowFooter = format !== "rectangle" && format !== "spoc";
 
   return (
     <div className="meta">
       <div className="info-wrap">
-        {ctaButtonVariant !== "variant-b" &&
-          format !== "rectangle" &&
-          !refinedCardsLayout && (
-            <DSSource
-              source={source}
-              timeToRead={timeToRead}
-              newSponsoredLabel={newSponsoredLabel}
-              context={context}
-              sponsor={sponsor}
-              sponsored_by_override={sponsored_by_override}
-              icon_src={icon_src}
-            />
-          )}
         <h3 className="title clamp">
           {format === "rectangle" ? "Sponsored" : title}
         </h3>
@@ -137,26 +117,17 @@ export const DefaultMeta = ({
           excerpt && <p className="excerpt clamp">{excerpt}</p>
         )}
       </div>
-      {(shouldHaveFooterSection || refinedCardsLayout) && (
+      {shouldShowFooter && (
         <div className="sections-card-footer">
-          {refinedCardsLayout &&
-            format !== "rectangle" &&
-            format !== "spoc" && (
-              <DSSource
-                source={source}
-                timeToRead={timeToRead}
-                newSponsoredLabel={newSponsoredLabel}
-                context={context}
-                sponsor={sponsor}
-                sponsored_by_override={sponsored_by_override}
-                icon_src={icon_src}
-                refinedCardsLayout={refinedCardsLayout}
-              />
-            )}
-          {showTopics && (
-            <span
-              className="ds-card-topic"
-              data-l10n-id={`newtab-topic-label-${topic}`}
+          {format !== "rectangle" && format !== "spoc" && (
+            <DSSource
+              source={source}
+              timeToRead={timeToRead}
+              newSponsoredLabel={newSponsoredLabel}
+              context={context}
+              sponsor={sponsor}
+              sponsored_by_override={sponsored_by_override}
+              icon_src={icon_src}
             />
           )}
         </div>
@@ -192,8 +163,6 @@ export class _DSCard extends React.PureComponent {
       this.doesLinkTopicMatchSelectedTopic.bind(this);
     this.onMenuUpdate = this.onMenuUpdate.bind(this);
     this.onMenuShow = this.onMenuShow.bind(this);
-    const refinedCardsLayout =
-      this.props.Prefs.values["discoverystream.refinedCardsLayout.enabled"];
 
     this.setContextMenuButtonHostRef = element => {
       this.contextMenuButtonHostElement = element;
@@ -224,7 +193,7 @@ export class _DSCard extends React.PureComponent {
       {
         mediaMatcher: "default",
         width: 296,
-        height: refinedCardsLayout ? 160 : 148,
+        height: 160,
       },
     ];
 
@@ -248,7 +217,7 @@ export class _DSCard extends React.PureComponent {
       },
       medium: {
         width: 300,
-        height: refinedCardsLayout ? 160 : 150,
+        height: 160,
       },
       large: {
         width: 190,
@@ -479,13 +448,8 @@ export class _DSCard extends React.PureComponent {
 
   getFaviconSrc() {
     let faviconSrc = "";
-    const faviconEnabled = this.props.Prefs.values[PREF_FAVICONS_ENABLED];
     // There is no point in fetching favicons for startup cache.
-    if (
-      !this.props.App.isForStartupCache.App &&
-      faviconEnabled &&
-      this.props.icon_src
-    ) {
+    if (!this.props.App.isForStartupCache.App && this.props.icon_src) {
       faviconSrc = this.props.icon_src;
       if (this.secureImage) {
         faviconSrc = this.secureImageURL(this.props.icon_src);
@@ -565,10 +529,6 @@ export class _DSCard extends React.PureComponent {
       format,
     } = this.props;
 
-    const refinedCardsLayout =
-      Prefs.values["discoverystream.refinedCardsLayout.enabled"];
-    const refinedCardsClassName = refinedCardsLayout ? `refined-cards` : ``;
-
     if (this.props.placeholder || !this.state.isSeen) {
       // placeholder-seen is used to ensure the loading animation is only used if the card is visible.
       const placeholderClassName = this.state.isSeen ? `placeholder-seen` : ``;
@@ -581,18 +541,16 @@ export class _DSCard extends React.PureComponent {
         </>
       );
 
-      if (refinedCardsLayout) {
-        placeholderElements = (
-          <>
-            <div className="placeholder-image placeholder-fill" />
-            <div className="placeholder-description placeholder-fill" />
-            <div className="placeholder-header placeholder-fill" />
-          </>
-        );
-      }
+      placeholderElements = (
+        <>
+          <div className="placeholder-image placeholder-fill" />
+          <div className="placeholder-description placeholder-fill" />
+          <div className="placeholder-header placeholder-fill" />
+        </>
+      );
       return (
         <div
-          className={`ds-card placeholder ${placeholderClassName} ${refinedCardsClassName}`}
+          className={`ds-card placeholder ${placeholderClassName}`}
           ref={this.setPlaceholderRef}
         >
           {placeholderElements}
@@ -618,12 +576,9 @@ export class _DSCard extends React.PureComponent {
     } = DiscoveryStream;
 
     const sectionsEnabled = Prefs.values[PREF_SECTIONS_ENABLED];
-    // Refined cards have their own excerpt hiding logic.
-    // We can ignore hideDescriptions if we are in sections and refined cards.
+    // We can ignore hideDescriptions if we are in sections.
     const excerpt =
-      !hideDescriptions || (sectionsEnabled && refinedCardsLayout)
-        ? this.props.excerpt
-        : "";
+      !hideDescriptions || sectionsEnabled ? this.props.excerpt : "";
 
     let timeToRead;
     if (displayReadTime) {
@@ -664,7 +619,7 @@ export class _DSCard extends React.PureComponent {
 
     return (
       <article
-        className={`ds-card ${sectionsCardsClassName} ${compactImagesClassName} ${imageGradientClassName} ${titleLinesName} ${descLinesClassName} ${spocFormatClassName} ${ctaButtonClassName} ${ctaButtonVariantClassName} ${refinedCardsClassName}`}
+        className={`ds-card ${sectionsCardsClassName} ${compactImagesClassName} ${imageGradientClassName} ${titleLinesName} ${descLinesClassName} ${spocFormatClassName} ${ctaButtonClassName} ${ctaButtonVariantClassName}`}
         ref={this.setContextMenuButtonHostRef}
         data-position-one={this.props["data-position-one"]}
         data-position-two={this.props["data-position-one"]}
@@ -681,16 +636,15 @@ export class _DSCard extends React.PureComponent {
           tabIndex={this.props.tabIndex}
           onFocus={this.props.onFocus}
         >
-          {this.props.showTopics &&
-            !this.props.mayHaveSectionsCards &&
-            this.props.topic &&
-            !refinedCardsLayout && (
+          <div className="img-wrapper">
+            {images}
+            {this.props.isDailyBrief && this.props.topic && (
               <span
-                className="ds-card-topic"
+                className="ds-card-daily-brief-topic"
                 data-l10n-id={`newtab-topic-label-${this.props.topic}`}
               />
             )}
-          <div className="img-wrapper">{images}</div>
+          </div>
           <ImpressionStats
             flightId={this.props.flightId}
             rows={[
@@ -747,12 +701,8 @@ export class _DSCard extends React.PureComponent {
             dispatch={this.props.dispatch}
             mayHaveSectionsCards={this.props.mayHaveSectionsCards}
             state={this.state}
-            showTopics={!refinedCardsLayout && this.props.showTopics}
-            isSectionsCard={this.props.mayHaveSectionsCards && this.props.topic}
             format={format}
-            topic={this.props.topic}
             icon_src={faviconSrc}
-            refinedCardsLayout={refinedCardsLayout}
             tabIndex={this.props.tabIndex}
           />
         </SafeAnchor>

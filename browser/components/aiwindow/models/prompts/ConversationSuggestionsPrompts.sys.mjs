@@ -9,7 +9,7 @@ export const assistantLimitationstMetadata = {
 };
 export const assistantLimitations = `The following tools are available to the browser assistant:
 - get_open_tabs(): Access the user's browser and return a list of the most recently browsed data
-- get_page_content(url): Retrieve cleaned text content of the provided browser page URL
+- get_page_content(url_list): Retrieve cleaned text content of all the provided browser page URLs in the url_list
 - search_browsing_history(search_term, start_ts, end_ts): Retrieve pages from the user's past browsing history, optionally filtered by topic and/or time range
 
 Browser Assistant Capabilities & Limitations:

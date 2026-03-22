@@ -190,15 +190,15 @@ async function testStripOnShare({
     let testJson = {
       global: {
         queryParams: ["utm_ad"],
-        topLevelSites: ["*"],
+        isGlobal: true,
       },
       example: {
         queryParams: ["test_2", "test_1"],
-        topLevelSites: ["www.example.com"],
+        origins: ["www.example.com"],
       },
       exampleNet: {
         queryParams: ["test_3", "test_4"],
-        topLevelSites: ["www.example.net"],
+        origins: ["www.example.net"],
       },
     };
 

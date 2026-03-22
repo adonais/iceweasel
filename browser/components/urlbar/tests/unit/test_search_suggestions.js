@@ -64,13 +64,17 @@ async function cleanUpSuggestions() {
   }
 }
 
-function makeFormHistoryResults(context, count) {
+function makeFormHistoryResults(
+  context,
+  count,
+  engineName = SUGGESTIONS_ENGINE_NAME
+) {
   let results = [];
   for (let i = 0; i < count; i++) {
     results.push(
       makeFormHistoryResult(context, {
         suggestion: `${SEARCH_STRING} world Form History ${i}`,
-        engineName: SUGGESTIONS_ENGINE_NAME,
+        engineName,
       })
     );
   }
@@ -140,11 +144,11 @@ add_setup(async function () {
   });
 
   // Install the test engine.
-  let oldDefaultEngine = await Services.search.getDefault();
+  let oldDefaultEngine = await SearchService.getDefault();
   registerCleanupFunction(async () => {
-    Services.search.setDefault(
+    SearchService.setDefault(
       oldDefaultEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+      SearchService.CHANGE_REASON.UNKNOWN
     );
     Services.prefs.clearUserPref(PRIVATE_SEARCH_PREF);
     Services.prefs.clearUserPref(TRENDING_PREF);
@@ -152,7 +156,7 @@ add_setup(async function () {
     Services.prefs.clearUserPref(TAB_TO_SEARCH_PREF);
     sandbox.restore();
   });
-  Services.search.setDefault(engine, Ci.nsISearchService.CHANGE_REASON_UNKNOWN);
+  SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
   Services.prefs.setBoolPref(PRIVATE_SEARCH_PREF, false);
   Services.prefs.setBoolPref(TRENDING_PREF, false);
   Services.prefs.setBoolPref(QUICKACTIONS_PREF, false);
@@ -1903,7 +1907,7 @@ add_task(async function formHistory() {
   // "foobar" and "fooquux" form history should be included; the "food" SERP
   // should be included since it doesn't dupe either form history result; and
   // the "foobar" and "fooBAR " SERPs depend on the result groups, see below.
-  let engine = await Services.search.getDefault();
+  let engine = await SearchService.getDefault();
   let serpURLs = ["foobar", "fooBAR ", "food"].map(
     term => UrlbarUtils.getSearchQueryUrl(engine, term)[0]
   );
@@ -1980,6 +1984,45 @@ add_task(async function formHistory() {
   });
 
   await UrlbarTestUtils.formHistory.remove(formHistoryStrings);
+});
+
+add_task(async function formHistoryRestrictToEngine() {
+  let engineName = "engine123";
+  // The extension will be cleaned up automatically.
+  await SearchTestUtils.installSearchExtension({ name: engineName });
+
+  info("Shouldn't restrict form history to search mode engine on searchbar");
+  let context = createContext(SEARCH_STRING, {
+    isPrivate: false,
+    searchMode: { engineName },
+    sapName: "searchbar",
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName,
+        heuristic: true,
+      }),
+      ...makeFormHistoryResults(context, MAX_RESULTS - 1, engineName),
+    ],
+  });
+
+  info("Should restrict form history to search mode engine on urlbar");
+  context = createContext(SEARCH_STRING, {
+    isPrivate: false,
+    searchMode: { engineName },
+    sapName: "urlbar",
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName,
+        heuristic: true,
+      }),
+    ],
+  });
 
   await cleanUpSuggestions();
   await PlacesUtils.history.clear();
@@ -2100,7 +2143,7 @@ add_task(async function hideHeuristic_formHistory() {
   //   form history
   // * "foo foo" and "foo bar" remote suggestions should be included because
   //   they don't dupe anything
-  let engine = await Services.search.getDefault();
+  let engine = await SearchService.getDefault();
   let serpURLs = ["foo", "food"].map(
     term => UrlbarUtils.getSearchQueryUrl(engine, term)[0]
   );

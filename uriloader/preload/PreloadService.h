@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef PreloadService_h__
-#define PreloadService_h__
+#ifndef PreloadService_h_
+#define PreloadService_h_
 
 #include "nsIContentPolicy.h"
 #include "nsIURI.h"

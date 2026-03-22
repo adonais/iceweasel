@@ -7,7 +7,7 @@ import {
   SVG_DATA_URI_PREFIX,
   TRUSTED_FAVICON_SCHEMES,
   blobAsDataURL,
-} from "moz-src:///browser/modules/FaviconUtils.sys.mjs";
+} from "moz-src:///toolkit/modules/FaviconUtils.sys.mjs";
 
 const lazy = {};
 

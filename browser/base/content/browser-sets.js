@@ -65,6 +65,9 @@ document.addEventListener(
           case "cmd_closeWindow":
             BrowserCommands.tryToCloseWindow(event);
             break;
+          case "cmd_returnToOpener":
+            BrowserCommands.returnToOpenerFromPiP(event);
+            break;
           case "cmd_minimizeWindow":
             window.minimize();
             break;
@@ -228,11 +231,10 @@ document.addEventListener(
             OpenBrowserWindow({ aiWindow: false });
             break;
           case "Tools:AIWindow":
-            OpenBrowserWindow({ aiWindow: true });
+            AIWindow.launchWindow(gBrowser?.selectedBrowser, true);
             break;
           case "Tools:ChatsHistory":
-            // @todo Bug 2006543
-            // Implement opening the chat history view
+            FirefoxViewHandler.openTab("chats");
             break;
           case "Tools:Sanitize":
             Sanitizer.showUI(window);

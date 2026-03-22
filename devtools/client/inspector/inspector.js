@@ -1811,10 +1811,6 @@ class Inspector extends EventEmitter {
 
     this.#teardownToolbar();
 
-    this.prefObserver.on(
-      DEFAULT_COLOR_UNIT_PREF,
-      this.#handleDefaultColorUnitPrefChange
-    );
     this.prefObserver.destroy();
 
     this.breadcrumbs.destroy();
@@ -2110,20 +2106,22 @@ class Inspector extends EventEmitter {
   }
 
   /**
-   * Called by toolbox.js on `Esc` keydown.
+   * Called by toolbox.js on `Esc` keydown to check if the inspector panel
+   * should prevent the split console from being toggled.
    *
-   * @param {AbortController} abortController
+   * @returns {boolean} true if the split console toggle should be prevented.
    */
-  onToolboxChromeEventHandlerEscapeKeyDown(abortController) {
-    // If the event tooltip is displayed, hide it and prevent the Esc event listener
-    // of the toolbox to occur (e.g. don't toggle split console)
+  shouldPreventSplitConsoleToggle() {
+    // If the event tooltip is displayed, hide it and prevent the split console
+    // from being toggled.
     if (
       this.markup.hasEventDetailsTooltip() &&
       this.markup.eventDetailsTooltip.isVisible()
     ) {
       this.markup.eventDetailsTooltip.hide();
-      abortController.abort();
+      return true;
     }
+    return false;
   }
 }
 

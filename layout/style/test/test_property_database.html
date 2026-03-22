@@ -67,21 +67,6 @@ for (var idx in gShorthandProperties) {
        "'" + prop.name + "' listed with correct DOM property name");
   }
 }
-for (var idx in gShorthandPropertiesLikeLonghand) {
-  var prop = gShorthandPropertiesLikeLonghand[idx];
-  if (prop.pref && !IsCSSPropertyPrefEnabled(prop.pref)) {
-    continue;
-  }
-  var present = prop.name in gCSSProperties;
-  ok(present,
-     "'" + prop.name + "' listed in gCSSProperties");
-  if (present) {
-    ok(gCSSProperties[prop.name].type == CSS_TYPE_SHORTHAND_AND_LONGHAND,
-       "'" + prop.name + "' listed as CSS_TYPE_SHORTHAND_AND_LONGHAND");
-    ok(gCSSProperties[prop.name].domProp == prop.prop,
-       "'" + prop.name + "' listed with correct DOM property name");
-  }
-}
 
 /*
  * Test that all shorthand properties have a subproperty list and all

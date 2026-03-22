@@ -45,7 +45,7 @@ void FrameTransformer::Transform(
 void FrameTransformer::RegisterTransformedFrameCallback(
     webrtc::scoped_refptr<webrtc::TransformedFrameCallback> aCallback) {
   MutexAutoLock lock(mCallbacksMutex);
-  mCallback = aCallback;
+  mCallback = std::move(aCallback);
 }
 
 void FrameTransformer::UnregisterTransformedFrameCallback() {

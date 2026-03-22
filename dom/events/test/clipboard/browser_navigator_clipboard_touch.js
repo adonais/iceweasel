@@ -41,6 +41,13 @@ function promiseTouchTapContent(aBrowser, aContentElementId) {
 }
 
 add_task(async function test_paste_button_position_touch() {
+  if (
+    AppConstants.platform == "macosx" &&
+    Services.prefs.getBoolPref("widget.macos.native-anchored-menus", false)
+  ) {
+    ok(true, "Skipping test_paste_button_position_touch with native menus");
+    return;
+  }
   // Ensure there's text on the clipboard.
   await promiseWritingRandomTextToClipboard();
 

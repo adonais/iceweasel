@@ -214,6 +214,32 @@ export class FormAutofillSection {
    */
   static groupFields(fieldDetails) {
     let sections = [];
+
+    // If there is only one duplicate overall, don't split that one field into
+    // a separate section.
+    let foundSectionName = false;
+    let dontAddToNewSections = false;
+    let numDuplicates = 0;
+    let fieldTypes = new Set();
+    for (let i = 0; i < fieldDetails.length; i++) {
+      const cur = fieldDetails[i];
+      // If any field has a section name specified, we should always add to
+      // new sections.
+      if (cur.sectionName) {
+        foundSectionName = true;
+        break;
+      }
+
+      if (cur.isVisible && fieldTypes.has(cur.fieldName)) {
+        numDuplicates++;
+      }
+      fieldTypes.add(cur.fieldName);
+    }
+
+    if (!foundSectionName && numDuplicates <= 1) {
+      dontAddToNewSections = true;
+    }
+
     for (let i = 0; i < fieldDetails.length; i++) {
       const cur = fieldDetails[i];
       const [currentSection] = sections.slice(-1);
@@ -238,40 +264,43 @@ export class FormAutofillSection {
       }
 
       if (candidateSection) {
-        // The field will still be placed in a new section if it is a duplicate of
-        // an existing field, unless it is a duplicate of the previous field. This
-        // allows for fields that might commonly appear twice such as a verification
-        // email field, an invisible field that appears next to the user-visible field,
-        // and simple cases where a page error where a field name is reused twice.
-        let dupIndex = candidateSection.fieldDetails.findIndex(
-          f =>
-            f.fieldName == cur.fieldName &&
-            f.isVisible &&
-            cur.isVisible &&
-            !f.isLookup
-        );
-        let isDuplicate = dupIndex != -1;
+        let isDuplicate = false;
+        if (!dontAddToNewSections) {
+          // The field will still be placed in a new section if it is a duplicate of
+          // an existing field, unless it is a duplicate of the previous field. This
+          // allows for fields that might commonly appear twice such as a verification
+          // email field, an invisible field that appears next to the user-visible field,
+          // and simple cases where a page error where a field name is reused twice.
+          let dupIndex = candidateSection.fieldDetails.findIndex(
+            f =>
+              f.fieldName == cur.fieldName &&
+              f.isVisible &&
+              cur.isVisible &&
+              !f.isLookup
+          );
+          isDuplicate = dupIndex != -1;
 
-        if (isDuplicate) {
-          const [last] = candidateSection.fieldDetails.slice(-1);
-          if (last.fieldName == cur.fieldName) {
-            isDuplicate = false;
-          } else if (
-            lazy.FormAutofillUtils.getCategoryFromFieldName(cur.fieldName) ==
-            "name"
-          ) {
-            // If the duplicate field is in the "name" category (e.g., family-name, given-name),
-            // we check whether all fields starting from the first duplicate also belong to the
-            // name category. If they do, we don't consider the field a duplicate, since name
-            // fields often appear in groups like family-name + given-name.
-            isDuplicate = !candidateSection.fieldDetails
-              .slice(dupIndex)
-              .every(
-                f =>
-                  lazy.FormAutofillUtils.getCategoryFromFieldName(
-                    f.fieldName
-                  ) === "name"
-              );
+          if (isDuplicate) {
+            const [last] = candidateSection.fieldDetails.slice(-1);
+            if (last.fieldName == cur.fieldName) {
+              isDuplicate = false;
+            } else if (
+              lazy.FormAutofillUtils.getCategoryFromFieldName(cur.fieldName) ==
+              "name"
+            ) {
+              // If the duplicate field is in the "name" category (e.g., family-name, given-name),
+              // we check whether all fields starting from the first duplicate also belong to the
+              // name category. If they do, we don't consider the field a duplicate, since name
+              // fields often appear in groups like family-name + given-name.
+              isDuplicate = !candidateSection.fieldDetails
+                .slice(dupIndex)
+                .every(
+                  f =>
+                    lazy.FormAutofillUtils.getCategoryFromFieldName(
+                      f.fieldName
+                    ) === "name"
+                );
+            }
           }
         }
 

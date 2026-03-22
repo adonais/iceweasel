@@ -35,7 +35,8 @@ add_task(async function tipIsSecondResult() {
   ];
 
   let provider = new UrlbarTestUtils.TestProvider({ results, priority: 1 });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
@@ -135,7 +136,7 @@ add_task(async function tipIsSecondResult() {
   );
 
   await UrlbarTestUtils.promisePopupClose(window);
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 });
 
 add_task(async function tipIsOnlyResult() {
@@ -152,7 +153,8 @@ add_task(async function tipIsOnlyResult() {
   ];
 
   let provider = new UrlbarTestUtils.TestProvider({ results, priority: 1 });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
@@ -234,7 +236,7 @@ add_task(async function tipIsOnlyResult() {
   );
 
   await UrlbarTestUtils.promisePopupClose(window);
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 });
 
 add_task(async function tipHasNoResultMenuButton() {
@@ -262,7 +264,8 @@ add_task(async function tipHasNoResultMenuButton() {
   ];
 
   let provider = new UrlbarTestUtils.TestProvider({ results, priority: 1 });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
@@ -333,5 +336,5 @@ add_task(async function tipHasNoResultMenuButton() {
   );
 
   await UrlbarTestUtils.promisePopupClose(window);
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 });

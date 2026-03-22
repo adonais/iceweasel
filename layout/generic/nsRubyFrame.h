@@ -6,8 +6,8 @@
 
 /* rendering object for CSS "display: ruby" */
 
-#ifndef nsRubyFrame_h___
-#define nsRubyFrame_h___
+#ifndef nsRubyFrame_h_
+#define nsRubyFrame_h_
 
 #include "RubyUtils.h"
 #include "nsInlineFrame.h"
@@ -71,4 +71,4 @@ class nsRubyFrame final : public nsInlineFrame {
   mozilla::RubyMetrics mRubyMetrics;
 };
 
-#endif /* nsRubyFrame_h___ */
+#endif /* nsRubyFrame_h_ */

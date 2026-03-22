@@ -362,34 +362,39 @@ add_task(async function test_fetch_weather_with_geolocation() {
       geolocation: {
         country_code: "TestCountry",
       },
-      // Missing region and city - request should be blocked
-      expected: false,
+      expected: {
+        country: "TestCountry",
+      },
     },
     {
       geolocation: {
         region_code: "TestRegionCode",
       },
-      // Missing country and city - request should be blocked
-      expected: false,
+      expected: {
+        region: "TestRegionCode",
+      },
     },
     {
       geolocation: {
         region: "TestRegion",
       },
-      // Missing country - request should be blocked
-      expected: false,
+      expected: {
+        region: "TestRegion",
+        city: "TestRegion",
+      },
     },
     {
       geolocation: {
         city: "TestCity",
       },
-      // Missing country and region - request should be blocked
-      expected: false,
+      expected: {
+        region: "TestCity",
+        city: "TestCity",
+      },
     },
     {
       geolocation: {},
-      // Empty geolocation - request should be blocked
-      expected: false,
+      expected: {},
     },
     {
       geolocation: null,
@@ -414,7 +419,7 @@ add_task(async function test_fetch_weather_with_geolocation() {
         return { Prefs: { values: {} } };
       },
     };
-    feed.merino = { fetch: () => {} };
+    feed.merino = feed.MerinoClient();
 
     // Stub merino client
     let stub = sandbox.stub(feed.merino, "fetch").resolves(["result"]);
@@ -553,10 +558,10 @@ function setupFetchHelperHarness(
     if (outcome === "reject") {
       fetchStub.onCall(index).rejects(new Error(`fail${index}`));
     } else if (outcome === "resolve") {
-      fetchStub.onCall(index).resolves([{ city_name: "RetryCity" }]);
+      fetchStub.onCall(index).resolves({ city_name: "RetryCity" });
     }
   });
-  feed.merino = { fetch: fetchStub };
+  feed.merino = { fetchWeather: fetchStub };
 
   return {
     feed,
@@ -579,7 +584,7 @@ add_task(async function test_fetchHelper_retry_resolve() {
   // Let the first attempt run and schedule the retry.
   await Promise.resolve();
 
-  Assert.equal(feed.merino.fetch.callCount, 1);
+  Assert.equal(feed.merino.fetchWeather.callCount, 1);
   Assert.equal(setTimeoutStub.callCount, 1);
   Assert.ok(
     setTimeoutStub.calledWith(sinon.match.func, 60 * 1000),
@@ -590,7 +595,7 @@ add_task(async function test_fetchHelper_retry_resolve() {
   triggerRetry();
   const results = await promise;
 
-  Assert.equal(feed.merino.fetch.callCount, 2, "retried exactly once");
+  Assert.equal(feed.merino.fetchWeather.callCount, 2, "retried exactly once");
   Assert.deepEqual(
     results,
     [{ city_name: "RetryCity" }],
@@ -614,7 +619,7 @@ add_task(async function test_fetchHelper_retry_reject() {
   // Let the first attempt run and schedule the retry.
   await Promise.resolve();
 
-  Assert.equal(feed.merino.fetch.callCount, 1);
+  Assert.equal(feed.merino.fetchWeather.callCount, 1);
   Assert.equal(setTimeoutStub.callCount, 1);
   Assert.ok(
     setTimeoutStub.calledWith(sinon.match.func, 60 * 1000),
@@ -626,7 +631,7 @@ add_task(async function test_fetchHelper_retry_reject() {
   const results = await promise;
 
   Assert.equal(
-    feed.merino.fetch.callCount,
+    feed.merino.fetchWeather.callCount,
     2,
     "retried exactly once then gave up"
   );

@@ -55,17 +55,6 @@ data class AcornLayout(
     }
 
     /**
-     * A palette of tokens defining the elevation of visual elements styled by the Acorn Design System.
-     */
-    object AcornElevation {
-        val xSmall: Dp = 1.dp
-        val small: Dp = 2.dp
-        val medium: Dp = 4.dp
-        val large: Dp = 6.dp
-        val xLarge: Dp = 8.dp
-    }
-
-    /**
      * [AcornLayout] helper object
      */
     companion object {

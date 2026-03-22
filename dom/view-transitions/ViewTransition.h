@@ -74,6 +74,7 @@ enum class ViewTransitionPhase : uint8_t {
   PendingCapture = 0,
   UpdateCallbackCalled,
   Animating,
+  PendingDone,
   Done,
 };
 
@@ -96,6 +97,8 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
 
   void SkipTransition(SkipTransitionReason = SkipTransitionReason::JS);
   MOZ_CAN_RUN_SCRIPT void PerformPendingOperations();
+
+  void FinishDone();
 
   // Get the snapshot containing block, which is the top-layer for rendering the
   // view transition tree.

@@ -9,8 +9,6 @@
  * parameterize via URL, we also ensure that we skipWaiting.
  */
 
-/* eslint-env serviceworker */
-
 // We are parameterized by "mode".
 const params = new URLSearchParams(location.search);
 const fetchMode = params.get("fetchMode");

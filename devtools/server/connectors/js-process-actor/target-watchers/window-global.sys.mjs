@@ -4,6 +4,9 @@
 
 import { ContentProcessWatcherRegistry } from "resource://devtools/server/connectors/js-process-actor/ContentProcessWatcherRegistry.sys.mjs";
 
+// Do not import Targets/index.js to prevent having to load DevTools module loader.
+const FRAME = "frame";
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(
   lazy,
@@ -240,14 +243,6 @@ function onWindowGlobalCreated(
       "frame"
     )) {
       const { sessionContext } = watcherDataObject;
-      /*
-      try {
-        windowGlobal.browsingContext.watchedByDevTools = true;
-      } catch (e) {}
-      try {
-        windowGlobal.browsingContext.top.watchedByDevTools = true;
-      } catch (e) {}
-      */
       if (
         lazy.isWindowGlobalPartOfContext(windowGlobal, sessionContext, {
           forceAcceptTopLevelTarget,
@@ -369,7 +364,8 @@ function onWindowGlobalDestroyed(innerWindowId) {
     // be created and managed by the watcher universe, like all the others.
     const isTopLevelActorRegisteredOutsideOfWatcherActor =
       !watcherDataObject.actors.find(
-        actor => actor.innerWindowId == innerWindowId
+        actor =>
+          actor.innerWindowId == innerWindowId && actor.targetType == FRAME
       );
     const targetActorForm = isTopLevelActorRegisteredOutsideOfWatcherActor
       ? existingTarget.form()
@@ -622,8 +618,10 @@ function findTargetActor({
   //
   // And start by checking if there is a perfect match first by doing a WindowGlobal / innerWindowId lookup,
   // before falling back to a BrowsingContext / browsingContextID lookup.
+  // Check the actorType to avoid considering ContentScript targets which might
+  // have the same innerWindowId.
   let targetActor = watcherDataObject.actors.find(
-    actor => actor.innerWindowId == innerWindowId
+    actor => actor.innerWindowId == innerWindowId && actor.targetType == FRAME
   );
   if (!targetActor && browsingContextID) {
     targetActor = watcherDataObject.actors.find(
@@ -646,7 +644,9 @@ function findTargetActor({
     connectionPrefix
   );
 
-  return targetActors.find(actor => actor.innerWindowId == innerWindowId);
+  return targetActors.find(
+    actor => actor.innerWindowId == innerWindowId && actor.targetType == FRAME
+  );
 }
 
 export const WindowGlobalTargetWatcher = {

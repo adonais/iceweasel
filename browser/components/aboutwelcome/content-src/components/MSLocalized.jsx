@@ -4,6 +4,7 @@
 
 import React, { useEffect } from "react";
 export const CONFIGURABLE_STYLES = [
+  "background",
   "color",
   "display",
   "fontSize",
@@ -23,6 +24,7 @@ export const CONFIGURABLE_STYLES = [
   "textAlign",
   "whiteSpace",
   "width",
+  "height",
   "borderBlockStart",
   "borderBlockEnd",
   "top",

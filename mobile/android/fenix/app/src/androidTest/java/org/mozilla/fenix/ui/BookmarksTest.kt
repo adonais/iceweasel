@@ -20,6 +20,7 @@ import org.mozilla.fenix.helpers.TestAssetHelper.htmlControlsFormAsset
 import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.verifySnackBarText
+import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
@@ -130,6 +131,7 @@ class BookmarksTest : TestSetup() {
         homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickBookmarksButton {
+            verifyBookmarkTitle(defaultWebPage.title)
         }.openThreeDotMenu(defaultWebPage.title) {
         }.clickShare {
             verifyShareTabLayout()
@@ -143,7 +145,6 @@ class BookmarksTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833702
     @SmokeTest
-    @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     fun openMultipleSelectedBookmarksInANewTabTest() {
         val webPages = listOf(
@@ -168,7 +169,7 @@ class BookmarksTest : TestSetup() {
             verifyTabTrayIsOpen()
             verifyNormalBrowsingButtonIsSelected()
             verifyNormalTabsList()
-            verifyExistingOpenTabs(webPages[0].title, webPages[1].title)
+            verifyExistingOpenTabs(webPages[0].url.toString(), webPages[1].url.toString())
         }
     }
 
@@ -406,6 +407,7 @@ class BookmarksTest : TestSetup() {
         homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickBookmarksButton {
+            verifyBookmarkTitle(defaultWebPage.title)
         }.openThreeDotMenu(defaultWebPage.title) {
         }.clickDelete {
             clickSnackbarButton(composeTestRule, "UNDO")

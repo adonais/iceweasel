@@ -13,6 +13,7 @@
 #include "mozilla/dom/CSSKeywordValue.h"
 #include "mozilla/dom/CSSMathSum.h"
 #include "mozilla/dom/CSSStyleValue.h"
+#include "mozilla/dom/CSSTransformValue.h"
 #include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/StylePropertyMapBinding.h"
 #include "nsCOMPtr.h"
@@ -81,29 +82,29 @@ void StylePropertyMap::Set(
 
   nsAutoCString cssText;
 
-  switch (styleValue.GetValueType()) {
-    case CSSStyleValue::ValueType::MathSum: {
-      CSSMathSum& mathSum = styleValue.GetAsCSSMathSum();
+  switch (styleValue.GetStyleValueType()) {
+    case CSSStyleValue::StyleValueType::TransformValue: {
+      CSSTransformValue& transformValue = styleValue.GetAsCSSTransformValue();
 
-      mathSum.ToCssTextWithProperty(propertyId, cssText);
+      transformValue.ToCssTextWithProperty(propertyId, cssText);
       break;
     }
 
-    case CSSStyleValue::ValueType::UnitValue: {
-      CSSUnitValue& unitValue = styleValue.GetAsCSSUnitValue();
+    case CSSStyleValue::StyleValueType::NumericValue: {
+      CSSNumericValue& numericValue = styleValue.GetAsCSSNumericValue();
 
-      unitValue.ToCssTextWithProperty(propertyId, cssText);
+      numericValue.ToCssTextWithProperty(propertyId, cssText);
       break;
     }
 
-    case CSSStyleValue::ValueType::KeywordValue: {
+    case CSSStyleValue::StyleValueType::KeywordValue: {
       CSSKeywordValue& keywordValue = styleValue.GetAsCSSKeywordValue();
 
       keywordValue.ToCssTextWithProperty(propertyId, cssText);
       break;
     }
 
-    case CSSStyleValue::ValueType::UnsupportedValue: {
+    case CSSStyleValue::StyleValueType::UnsupportedValue: {
       CSSUnsupportedValue& unsupportedValue =
           styleValue.GetAsCSSUnsupportedValue();
 
@@ -111,7 +112,7 @@ void StylePropertyMap::Set(
       break;
     }
 
-    case CSSStyleValue::ValueType::Uninitialized:
+    case CSSStyleValue::StyleValueType::Uninitialized:
       break;
   }
 

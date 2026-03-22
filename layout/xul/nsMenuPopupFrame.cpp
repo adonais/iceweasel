@@ -822,14 +822,10 @@ static FlipType FlipFromAttribute(nsMenuPopupFrame* aFrame) {
   return FlipType::Default;
 }
 
-void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
-                                       nsIContent* aTriggerContent,
-                                       const nsAString& aPosition,
-                                       int32_t aXPos, int32_t aYPos,
-                                       MenuPopupAnchorType aAnchorType,
-                                       bool aAttributesOverride) {
-  PrepareWidget();
-
+void nsMenuPopupFrame::InitializePopupProperties(
+    nsIContent* aAnchorContent, nsIContent* aTriggerContent,
+    const nsAString& aPosition, int32_t aXPos, int32_t aYPos,
+    MenuPopupAnchorType aAnchorType, bool aAttributesOverride) {
   mPopupState = ePopupShowing;
   mAnchorContent = aAnchorContent;
   mAnchorType = aAnchorType;
@@ -955,6 +951,18 @@ void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
   }
 }
 
+void nsMenuPopupFrame::InitializePopup(nsIContent* aAnchorContent,
+                                       nsIContent* aTriggerContent,
+                                       const nsAString& aPosition,
+                                       int32_t aXPos, int32_t aYPos,
+                                       MenuPopupAnchorType aAnchorType,
+                                       bool aAttributesOverride) {
+  PrepareWidget();
+
+  InitializePopupProperties(aAnchorContent, aTriggerContent, aPosition, aXPos,
+                            aYPos, aAnchorType, aAttributesOverride);
+}
+
 void nsMenuPopupFrame::InitializePopupAtScreen(nsIContent* aTriggerContent,
                                                int32_t aXPos, int32_t aYPos,
                                                bool aIsContextMenu) {
@@ -997,6 +1005,26 @@ void nsMenuPopupFrame::InitializePopupAsNativeContextMenu(
   mPositionedOffset = 0;
   mPositionedByMoveToRect = false;
   // Native context menus don't call PrepareWidget(), so if we have a widget
+  // already (which generally should only be possible on tests, since
+  // otherwise we shouldn't ever mix native / non-native for the same popup) we
+  // should destroy it now.
+  if (mExpirationState.IsTracked()) {
+    PopupExpirationTracker::Get()->RemoveObject(this);
+  }
+  DestroyWidget();
+}
+
+void nsMenuPopupFrame::InitializePopupAsNativeAnchoredMenu(
+    nsIContent* aAnchorContent, nsIContent* aTriggerContent,
+    const nsAString& aPosition, const CSSIntRect& aRect, bool aIsContextMenu) {
+  InitializePopupProperties(aAnchorContent, aTriggerContent, aPosition, 0, 0,
+                            MenuPopupAnchorType::Rect, false);
+  mIsContextMenu = aIsContextMenu;
+  mIsTopLevelContextMenu = aIsContextMenu;
+  mIsNativeMenu = true;
+  mScreenRect = ToAppUnits(aRect, AppUnitsPerCSSPixel());
+
+  // Native menus don't call PrepareWidget(), so if we have a widget
   // already (which generally should only be possible on tests, since
   // otherwise we shouldn't ever mix native / non-native for the same popup) we
   // should destroy it now.
@@ -1089,7 +1117,7 @@ void nsMenuPopupFrame::HidePopup(bool aDeselectMenu, nsPopupState aNewState,
     // it if the popup is just being made invisible as a popuphiding or command
     // event may want to retrieve it.
     ClearTriggerContentIncludingDocument();
-    mAnchorContent = nullptr;
+    ClearAnchorContent();
   }
 
   // when invisible and about to be closed, HidePopup has already been called,

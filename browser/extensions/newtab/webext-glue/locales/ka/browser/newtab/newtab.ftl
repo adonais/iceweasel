@@ -32,14 +32,14 @@ newtab-search-box-search-button =
     .aria-label = ძიება
 # Variables:
 #   $engine (string) - The name of the user's default search engine
-newtab-search-box-handoff-text = მოძებნეთ { $engine } საძიებოთი ან შეიყვანეთ მისამართი
+newtab-search-box-handoff-text = საძიებოდ გამოიყენეთ { $engine } ან შეიყვანეთ მისამართი
 newtab-search-box-handoff-text-no-engine = მოძებნეთ ან შეიყვანეთ მისამართი
 # Variables:
 #   $engine (string) - The name of the user's default search engine
 newtab-search-box-handoff-input =
-    .placeholder = მოძებნეთ { $engine } საძიებოთი ან შეიყვანეთ მისამართი
-    .title = მოძებნეთ { $engine } საძიებოთი ან შეიყვანეთ მისამართი
-    .aria-label = მოძებნეთ { $engine } საძიებოთი ან შეიყვანეთ მისამართი
+    .placeholder = საძიებოდ გამოიყენეთ { $engine } ან შეიყვანეთ მისამართი
+    .title = საძიებოდ გამოიყენეთ { $engine } ან შეიყვანეთ მისამართი
+    .aria-label = საძიებოდ გამოიყენეთ { $engine } ან შეიყვანეთ მისამართი
 newtab-search-box-handoff-input-no-engine =
     .placeholder = მოძებნეთ ან შეიყვანეთ მისამართი
     .title = მოძებნეთ ან შეიყვანეთ მისამართი
@@ -328,18 +328,16 @@ newtab-custom-recent-subtitle = ბოლოს ნანახი საიტ�
 newtab-custom-weather-toggle =
     .label = ამინდი
     .description = დღევანდელი ამინდისთვის თვალის შევლება
-newtab-custom-trending-search-toggle =
-    .label = ხშირად მოძიებული
-    .description = საყოველთაოდ მოდებული და ფართოდ გავრცელებული
 newtab-custom-widget-weather-toggle =
     .label = ამინდი
-newtab-custom-widget-trending-search-toggle =
-    .label = ხშირად მოძიებული
 newtab-custom-widget-lists-toggle =
     .label = სიები
 newtab-custom-widget-timer-toggle =
     .label = წამმზომი
 newtab-custom-widget-section-title = ჩანამატები
+newtab-custom-widget-section-toggle =
+    .label = ჩანამატები
+newtab-widget-manage-title = ჩანამატები
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = დახურვა
@@ -491,6 +489,11 @@ newtab-weather-opt-in-yes =
     .label = დიახ
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = ნიუ-იორკი
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = ამინდს გთავაზობთ { $provider }
+    .aria-description = { $provider } ∙ დაკვეთილი
 
 ## Topic Labels
 
@@ -595,7 +598,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = ხელთ იქონიეთ რჩეული მასალები
 newtab-shortcuts-highlight-subtitle = დაამატეთ მალსახმობი, რომ რჩეულ საიტებთან წვდომა ერთი წკაპით შეგეძლოთ.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = რა არის მოხსენების მიზეზი?
@@ -617,17 +620,6 @@ newtab-report-cancel = გაუქმება
 newtab-report-submit = გაგზავნა
 newtab-toast-thanks-for-reporting =
     .message = გმადლობთ, რომ მოგვახსენეთ.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = ხშირად მოძიებულის ჩვენება
-newtab-trending-searches-hide-trending =
-    .title = ხშირად მოძიებულის დამალვა
-newtab-trending-searches-learn-more = ვრცლად
-newtab-trending-searches-dismiss = ხშირად მოძიებულის დამალვა
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = ხშირად მოძიებული
 
 ## Strings for task / to-do list productivity widget
 

@@ -10,7 +10,7 @@ features: [Temporal]
 ---*/
 
 const instance = Temporal.PlainDate.from({ year: 2000, month: 5, day: 2 });
-const result = instance.subtract("P3D");
-TemporalHelpers.assertPlainDate(result, 2000, 4, "M04", 29);
+TemporalHelpers.assertPlainDate(instance.subtract("P3D"), 2000, 4, "M04", 29);
+TemporalHelpers.assertPlainDate(instance.subtract("-P3D"), 2000, 5, "M05", 5);
 
 reportCompare(0, 0);

@@ -126,11 +126,6 @@ nsresult RasterImage::Init(const char* aMimeType, uint32_t aFlags) {
     SurfaceCache::LockImage(ImageKey(this));
   }
 
-  // Set the default flags according to the decoder type to allow preferences to
-  // be stored if necessary.
-  mDefaultDecoderFlags =
-      DecoderFactory::GetDefaultDecoderFlagsForType(mDecoderType);
-
   // Mark us as initialized
   mInitialized = true;
 
@@ -1185,7 +1180,7 @@ void RasterImage::Decode(const OrientedIntSize& aSize, uint32_t aFlags,
   SurfaceCache::UnlockEntries(ImageKey(this));
 
   // Determine which flags we need to decode this image with.
-  DecoderFlags decoderFlags = mDefaultDecoderFlags;
+  DecoderFlags decoderFlags = DefaultDecoderFlags();
   if (aFlags & FLAG_ASYNC_NOTIFY) {
     decoderFlags |= DecoderFlags::ASYNC_NOTIFY;
   }
@@ -1269,7 +1264,7 @@ RasterImage::DecodeMetadata(uint32_t aFlags) {
 
   // Create a decoder.
   RefPtr<IDecodingTask> task = DecoderFactory::CreateMetadataDecoder(
-      mDecoderType, WrapNotNull(this), mDefaultDecoderFlags, mSourceBuffer);
+      mDecoderType, WrapNotNull(this), DefaultDecoderFlags(), mSourceBuffer);
 
   // Make sure DecoderFactory was able to create a decoder successfully.
   if (!task) {

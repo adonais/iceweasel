@@ -228,7 +228,7 @@ export const tokensTable = {
           default: "light-dark(var(--color-gray-20), var(--color-gray-80))",
         },
         platform: {
-          default: "color-mix(in srgb, currentColor 20%, transparent)",
+          default: "color-mix(in srgb, currentColor 6%, transparent)",
         },
       },
       name: "--background-color-box-info",
@@ -297,6 +297,19 @@ export const tokensTable = {
         prefersContrast: "SelectedItem",
       },
       name: "--background-color-list-item-hover",
+    },
+    {
+      value: { default: "transparent", forcedColors: "Canvas" },
+      name: "--badge-background-color",
+    },
+    {
+      value: {
+        light: "var(--color-green-70)",
+        dark: "var(--color-green-40)",
+        forcedColors: "AccentColor",
+        default: "light-dark(var(--color-green-70), var(--color-green-40))",
+      },
+      name: "--badge-background-color-filled",
     },
     {
       value: {
@@ -423,6 +436,28 @@ export const tokensTable = {
       name: "--button-background-color-ghost-selected",
     },
     {
+      value: "var(--button-background-color-ghost)",
+      name: "--button-background-color-menu",
+    },
+    {
+      value: {
+        default: "var(--button-background-color-ghost-active)",
+        forcedColors: "var(--button-background-color-primary)",
+      },
+      name: "--button-background-color-menu-active",
+    },
+    {
+      value: "var(--button-background-color-ghost-disabled)",
+      name: "--button-background-color-menu-disabled",
+    },
+    {
+      value: {
+        default: "var(--button-background-color-ghost-hover)",
+        forcedColors: "var(--button-background-color-primary)",
+      },
+      name: "--button-background-color-menu-hover",
+    },
+    {
       value: "var(--button-background-color-active)",
       name: "--button-background-color-selected",
     },
@@ -451,7 +486,283 @@ export const tokensTable = {
       name: "--table-row-background-color-alternate",
     },
   ],
+  "text-color": [
+    {
+      value: { default: "var(--text-color)", forcedColors: "CanvasText" },
+      name: "--badge-text-color",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-gray-100)",
+        forcedColors: "AccentColorText",
+        default: "light-dark(var(--color-white), var(--color-gray-100))",
+      },
+      name: "--badge-text-color-filled",
+    },
+    {
+      value: {
+        forcedColors: "ButtonText",
+        brand: {
+          light: "var(--color-gray-100)",
+          dark: "var(--color-gray-05)",
+          default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
+        },
+        platform: { default: "currentColor" },
+      },
+      name: "--button-text-color",
+    },
+    {
+      value: {
+        default: "var(--button-text-color)",
+        forcedColors: "SelectedItem",
+      },
+      name: "--button-text-color-active",
+    },
+    {
+      value: {
+        light: "var(--color-white)",
+        dark: "var(--color-gray-100)",
+        forcedColors: "var(--button-text-color-primary)",
+        default: "light-dark(var(--color-white), var(--color-gray-100))",
+      },
+      name: "--button-text-color-destructive",
+    },
+    {
+      value: {
+        default: "var(--button-text-color-destructive)",
+        forcedColors: "var(--button-text-color-primary-active)",
+      },
+      name: "--button-text-color-destructive-active",
+    },
+    {
+      value: {
+        default: "var(--button-text-color-destructive)",
+        forcedColors: "var(--button-text-color-primary-disabled)",
+      },
+      name: "--button-text-color-destructive-disabled",
+    },
+    {
+      value: {
+        default: "var(--button-text-color-destructive)",
+        forcedColors: "var(--button-text-color-primary-hover)",
+      },
+      name: "--button-text-color-destructive-hover",
+    },
+    {
+      value: "var(--button-text-color-destructive-active)",
+      name: "--button-text-color-destructive-selected",
+    },
+    {
+      value: { default: "var(--button-text-color)", forcedColors: "GrayText" },
+      name: "--button-text-color-disabled",
+    },
+    {
+      value: {
+        default: "inherit",
+        brand: {
+          prefersContrast: "var(--button-text-color)",
+          forcedColors: "var(--button-text-color)",
+        },
+      },
+      name: "--button-text-color-ghost",
+    },
+    {
+      value: {
+        default: "inherit",
+        prefersContrast: "var(--button-text-color-active)",
+        forcedColors: "var(--button-text-color-active)",
+      },
+      name: "--button-text-color-ghost-active",
+    },
+    {
+      value: {
+        default: "inherit",
+        brand: {
+          prefersContrast: "var(--button-text-color-disabled)",
+          forcedColors: "var(--button-text-color-disabled)",
+        },
+      },
+      name: "--button-text-color-ghost-disabled",
+    },
+    {
+      value: {
+        default: "inherit",
+        prefersContrast: "var(--button-text-color-hover)",
+        forcedColors: "var(--button-text-color-hover)",
+      },
+      name: "--button-text-color-ghost-hover",
+    },
+    {
+      value: "var(--button-text-color-ghost-active)",
+      name: "--button-text-color-ghost-selected",
+    },
+    {
+      value: {
+        default: "var(--button-text-color)",
+        forcedColors: "SelectedItem",
+      },
+      name: "--button-text-color-hover",
+    },
+    {
+      value: "var(--button-text-color-ghost)",
+      name: "--button-text-color-menu",
+    },
+    {
+      value: {
+        default: "var(--button-text-color-ghost-active)",
+        forcedColors: "var(--button-text-color-primary)",
+      },
+      name: "--button-text-color-menu-active",
+    },
+    {
+      value: "var(--button-text-color-ghost-disabled)",
+      name: "--button-text-color-menu-disabled",
+    },
+    {
+      value: {
+        default: "var(--button-text-color-ghost-hover)",
+        forcedColors: "var(--button-text-color-primary)",
+      },
+      name: "--button-text-color-menu-hover",
+    },
+    {
+      value: {
+        forcedColors: "ButtonFace",
+        brand: {
+          light: "var(--color-white)",
+          dark: "var(--color-gray-100)",
+          default: "light-dark(var(--color-white), var(--color-gray-100))",
+        },
+        platform: { default: "AccentColorText" },
+      },
+      name: "--button-text-color-primary",
+    },
+    {
+      value: "var(--button-text-color-primary-hover)",
+      name: "--button-text-color-primary-active",
+    },
+    {
+      value: "var(--button-text-color-primary)",
+      name: "--button-text-color-primary-disabled",
+    },
+    {
+      value: {
+        default: "var(--button-text-color-primary)",
+        forcedColors: "SelectedItemText",
+      },
+      name: "--button-text-color-primary-hover",
+    },
+    {
+      value: "var(--button-text-color-primary-active)",
+      name: "--button-text-color-primary-selected",
+    },
+    {
+      value: "var(--button-text-color-active)",
+      name: "--button-text-color-selected",
+    },
+    {
+      value: {
+        forcedColors: "LinkText",
+        brand: { default: "var(--color-accent-primary)" },
+        platform: { default: "LinkText" },
+      },
+      name: "--link-color",
+    },
+    {
+      value: {
+        forcedColors: "LinkText",
+        brand: { default: "var(--color-accent-primary-hover)" },
+        platform: {
+          default: "color-mix(in srgb, black 10%, var(--link-color))",
+        },
+      },
+      name: "--link-color-hover",
+    },
+    {
+      value: {
+        forcedColors: "ActiveText",
+        brand: { default: "var(--color-accent-primary-active)" },
+        platform: {
+          default: "color-mix(in srgb, black 20%, var(--link-color))",
+        },
+      },
+      name: "--link-color-active",
+    },
+    {
+      value: {
+        forcedColors: "var(--link-color)",
+        brand: { default: "var(--link-color)" },
+        platform: { default: "var(--link-color)" },
+      },
+      name: "--link-color-visited",
+    },
+    {
+      value: {
+        prefersContrast: "CanvasText",
+        brand: {
+          light: "var(--color-gray-100)",
+          dark: "var(--color-gray-05)",
+          default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
+        },
+        platform: { default: "currentColor" },
+      },
+      name: "--text-color",
+    },
+    {
+      value: {
+        default: "color-mix(in srgb, currentColor 69%, transparent)",
+        prefersContrast: "inherit",
+      },
+      name: "--text-color-deemphasized",
+    },
+    {
+      value: {
+        default: "color-mix(in srgb, currentColor 40%, transparent)",
+        forcedColors: "GrayText",
+      },
+      name: "--text-color-disabled",
+    },
+    {
+      value: {
+        light: "var(--color-red-70)",
+        dark: "var(--color-red-20)",
+        prefersContrast: "inherit",
+        default: "light-dark(var(--color-red-70), var(--color-red-20))",
+      },
+      name: "--text-color-error",
+    },
+    {
+      value: {
+        forcedColors: "SelectedItemText",
+        brand: {
+          light: "var(--color-white)",
+          dark: "var(--color-gray-100)",
+          default: "light-dark(var(--color-white), var(--color-gray-100))",
+        },
+        platform: { default: "SelectedItemText" },
+      },
+      name: "--text-color-accent-primary-selected",
+    },
+    {
+      value: {
+        default: "var(--text-color)",
+        prefersContrast: "SelectedItemText",
+      },
+      name: "--text-color-list-item-hover",
+    },
+  ],
   "border-color": [
+    { value: "var(--border-color)", name: "--badge-border-color" },
+    {
+      value: {
+        light: "rgba(251, 251, 254, 0.4)",
+        dark: "rgba(21, 20, 26, 0.4)",
+        forcedColors: "CanvasText",
+        default: "light-dark(rgba(251, 251, 254, 0.4), rgba(21, 20, 26, 0.4))",
+      },
+      name: "--badge-border-color-filled",
+    },
     {
       value: {
         brand: {
@@ -790,11 +1101,24 @@ export const tokensTable = {
       value: { brand: { default: "664px" } },
       name: "--page-main-content-width",
     },
-    { value: "12px", name: "--size-item-xsmall" },
-    { value: "16px", name: "--size-item-small" },
-    { value: "24px", name: "--size-item-medium" },
-    { value: "32px", name: "--size-item-large" },
-    { value: "48px", name: "--size-item-xlarge" },
+    { value: "var(--dimension-40)", name: "--size-image-xsmall" },
+    { value: "var(--dimension-48)", name: "--size-image-small" },
+    { value: "var(--dimension-56)", name: "--size-image-medium" },
+    { value: "var(--dimension-64)", name: "--size-image-large" },
+    { value: "var(--dimension-80)", name: "--size-image-xlarge" },
+    { value: "var(--dimension-96)", name: "--size-image-xxlarge" },
+    { value: "var(--dimension-12)", name: "--size-item-xsmall" },
+    { value: "var(--dimension-16)", name: "--size-item-small" },
+    { value: "var(--dimension-24)", name: "--size-item-medium" },
+    { value: "var(--dimension-32)", name: "--size-item-large" },
+    { value: "var(--dimension-48)", name: "--size-item-xlarge" },
+    { value: "var(--dimension-100)", name: "--size-layout-xsmall" },
+    { value: "var(--dimension-200)", name: "--size-layout-small" },
+    { value: "var(--dimension-300)", name: "--size-layout-medium" },
+    { value: "var(--dimension-400)", name: "--size-layout-large" },
+    { value: "var(--dimension-500)", name: "--size-layout-xlarge" },
+    { value: "280px", name: "--size-sidebar" },
+    { value: "118px", name: "--size-sidebar-narrow" },
   ],
   opacity: [
     {
@@ -809,244 +1133,13 @@ export const tokensTable = {
     },
     { value: 0, name: "--button-padding-icon" },
     { value: "var(--space-small)", name: "--checkbox-margin-inline" },
-    { value: "calc(0.5 * var(--space-xsmall))", name: "--space-xxsmall" },
-    { value: "0.267rem", name: "--space-xsmall" },
-    { value: "calc(2 * var(--space-xsmall))", name: "--space-small" },
-    { value: "calc(3 * var(--space-xsmall))", name: "--space-medium" },
-    { value: "calc(4 * var(--space-xsmall))", name: "--space-large" },
-    { value: "calc(6 * var(--space-xsmall))", name: "--space-xlarge" },
-    { value: "calc(8 * var(--space-xsmall))", name: "--space-xxlarge" },
-  ],
-  "text-color": [
-    {
-      value: {
-        forcedColors: "ButtonText",
-        brand: {
-          light: "var(--color-gray-100)",
-          dark: "var(--color-gray-05)",
-          default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
-        },
-        platform: { default: "currentColor" },
-      },
-      name: "--button-text-color",
-    },
-    {
-      value: {
-        default: "var(--button-text-color)",
-        forcedColors: "SelectedItem",
-      },
-      name: "--button-text-color-active",
-    },
-    {
-      value: {
-        light: "var(--color-white)",
-        dark: "var(--color-gray-100)",
-        forcedColors: "var(--button-text-color-primary)",
-        default: "light-dark(var(--color-white), var(--color-gray-100))",
-      },
-      name: "--button-text-color-destructive",
-    },
-    {
-      value: {
-        default: "var(--button-text-color-destructive)",
-        forcedColors: "var(--button-text-color-primary-active)",
-      },
-      name: "--button-text-color-destructive-active",
-    },
-    {
-      value: {
-        default: "var(--button-text-color-destructive)",
-        forcedColors: "var(--button-text-color-primary-disabled)",
-      },
-      name: "--button-text-color-destructive-disabled",
-    },
-    {
-      value: {
-        default: "var(--button-text-color-destructive)",
-        forcedColors: "var(--button-text-color-primary-hover)",
-      },
-      name: "--button-text-color-destructive-hover",
-    },
-    {
-      value: "var(--button-text-color-destructive-active)",
-      name: "--button-text-color-destructive-selected",
-    },
-    {
-      value: { default: "var(--button-text-color)", forcedColors: "GrayText" },
-      name: "--button-text-color-disabled",
-    },
-    {
-      value: {
-        default: "inherit",
-        brand: {
-          prefersContrast: "var(--button-text-color)",
-          forcedColors: "var(--button-text-color)",
-        },
-      },
-      name: "--button-text-color-ghost",
-    },
-    {
-      value: {
-        default: "inherit",
-        prefersContrast: "var(--button-text-color-active)",
-        forcedColors: "var(--button-text-color-active)",
-      },
-      name: "--button-text-color-ghost-active",
-    },
-    {
-      value: {
-        default: "inherit",
-        brand: {
-          prefersContrast: "var(--button-text-color-disabled)",
-          forcedColors: "var(--button-text-color-disabled)",
-        },
-      },
-      name: "--button-text-color-ghost-disabled",
-    },
-    {
-      value: {
-        default: "inherit",
-        prefersContrast: "var(--button-text-color-hover)",
-        forcedColors: "var(--button-text-color-hover)",
-      },
-      name: "--button-text-color-ghost-hover",
-    },
-    {
-      value: "var(--button-text-color-ghost-active)",
-      name: "--button-text-color-ghost-selected",
-    },
-    {
-      value: {
-        default: "var(--button-text-color)",
-        forcedColors: "SelectedItem",
-      },
-      name: "--button-text-color-hover",
-    },
-    {
-      value: {
-        forcedColors: "ButtonFace",
-        brand: {
-          light: "var(--color-white)",
-          dark: "var(--color-gray-100)",
-          default: "light-dark(var(--color-white), var(--color-gray-100))",
-        },
-        platform: { default: "AccentColorText" },
-      },
-      name: "--button-text-color-primary",
-    },
-    {
-      value: "var(--button-text-color-primary-hover)",
-      name: "--button-text-color-primary-active",
-    },
-    {
-      value: "var(--button-text-color-primary)",
-      name: "--button-text-color-primary-disabled",
-    },
-    {
-      value: {
-        default: "var(--button-text-color-primary)",
-        forcedColors: "SelectedItemText",
-      },
-      name: "--button-text-color-primary-hover",
-    },
-    {
-      value: "var(--button-text-color-primary-active)",
-      name: "--button-text-color-primary-selected",
-    },
-    {
-      value: "var(--button-text-color-active)",
-      name: "--button-text-color-selected",
-    },
-    {
-      value: {
-        forcedColors: "LinkText",
-        brand: { default: "var(--color-accent-primary)" },
-        platform: { default: "LinkText" },
-      },
-      name: "--link-color",
-    },
-    {
-      value: {
-        forcedColors: "LinkText",
-        brand: { default: "var(--color-accent-primary-hover)" },
-        platform: {
-          default: "color-mix(in srgb, black 10%, var(--link-color))",
-        },
-      },
-      name: "--link-color-hover",
-    },
-    {
-      value: {
-        forcedColors: "ActiveText",
-        brand: { default: "var(--color-accent-primary-active)" },
-        platform: {
-          default: "color-mix(in srgb, black 20%, var(--link-color))",
-        },
-      },
-      name: "--link-color-active",
-    },
-    {
-      value: {
-        forcedColors: "var(--link-color)",
-        brand: { default: "var(--link-color)" },
-        platform: { default: "var(--link-color)" },
-      },
-      name: "--link-color-visited",
-    },
-    {
-      value: {
-        prefersContrast: "CanvasText",
-        brand: {
-          light: "var(--color-gray-100)",
-          dark: "var(--color-gray-05)",
-          default: "light-dark(var(--color-gray-100), var(--color-gray-05))",
-        },
-        platform: { default: "currentColor" },
-      },
-      name: "--text-color",
-    },
-    {
-      value: {
-        default: "color-mix(in srgb, currentColor 69%, transparent)",
-        prefersContrast: "inherit",
-      },
-      name: "--text-color-deemphasized",
-    },
-    {
-      value: {
-        default: "color-mix(in srgb, currentColor 40%, transparent)",
-        forcedColors: "GrayText",
-      },
-      name: "--text-color-disabled",
-    },
-    {
-      value: {
-        light: "var(--color-red-70)",
-        dark: "var(--color-red-20)",
-        prefersContrast: "inherit",
-        default: "light-dark(var(--color-red-70), var(--color-red-20))",
-      },
-      name: "--text-color-error",
-    },
-    {
-      value: {
-        forcedColors: "SelectedItemText",
-        brand: {
-          light: "var(--color-white)",
-          dark: "var(--color-gray-100)",
-          default: "light-dark(var(--color-white), var(--color-gray-100))",
-        },
-        platform: { default: "SelectedItemText" },
-      },
-      name: "--text-color-accent-primary-selected",
-    },
-    {
-      value: {
-        default: "var(--text-color)",
-        prefersContrast: "SelectedItemText",
-      },
-      name: "--text-color-list-item-hover",
-    },
+    { value: "var(--dimension-relative-0125)", name: "--space-xxsmall" },
+    { value: "var(--dimension-relative-025)", name: "--space-xsmall" },
+    { value: "var(--dimension-relative-050)", name: "--space-small" },
+    { value: "var(--dimension-relative-075)", name: "--space-medium" },
+    { value: "var(--dimension-relative-100)", name: "--space-large" },
+    { value: "var(--dimension-relative-150)", name: "--space-xlarge" },
+    { value: "var(--dimension-relative-200)", name: "--space-xxlarge" },
   ],
   outline: [
     {
@@ -1079,11 +1172,46 @@ export const tokensTable = {
   ],
   "icon-size": [
     { value: "var(--icon-size-small)", name: "--icon-size" },
-    { value: "var(--size-item-xsmall)", name: "--icon-size-xsmall" },
-    { value: "var(--size-item-small)", name: "--icon-size-small" },
-    { value: "20px", name: "--icon-size-medium" },
-    { value: "var(--size-item-medium)", name: "--icon-size-large" },
-    { value: "var(--size-item-large)", name: "--icon-size-xlarge" },
+    { value: "var(--dimension-12)", name: "--icon-size-xsmall" },
+    { value: "var(--dimension-16)", name: "--icon-size-small" },
+    { value: "var(--dimension-20)", name: "--icon-size-medium" },
+    { value: "var(--dimension-24)", name: "--icon-size-large" },
+    { value: "var(--dimension-32)", name: "--icon-size-xlarge" },
+  ],
+  dimension: [
+    { value: "2px", name: "--dimension-2" },
+    { value: "4px", name: "--dimension-4" },
+    { value: "8px", name: "--dimension-8" },
+    { value: "12px", name: "--dimension-12" },
+    { value: "16px", name: "--dimension-16" },
+    { value: "20px", name: "--dimension-20" },
+    { value: "24px", name: "--dimension-24" },
+    { value: "32px", name: "--dimension-32" },
+    { value: "40px", name: "--dimension-40" },
+    { value: "48px", name: "--dimension-48" },
+    { value: "56px", name: "--dimension-56" },
+    { value: "64px", name: "--dimension-64" },
+    { value: "80px", name: "--dimension-80" },
+    { value: "96px", name: "--dimension-96" },
+    { value: "100px", name: "--dimension-100" },
+    { value: "200px", name: "--dimension-200" },
+    { value: "300px", name: "--dimension-300" },
+    { value: "400px", name: "--dimension-400" },
+    { value: "500px", name: "--dimension-500" },
+    { value: "1rem", name: "--dimension-relative-100" },
+    { value: "1.25rem", name: "--dimension-relative-125" },
+    { value: "1.5rem", name: "--dimension-relative-150" },
+    { value: "2rem", name: "--dimension-relative-200" },
+    { value: "2.5rem", name: "--dimension-relative-250" },
+    { value: "3rem", name: "--dimension-relative-300" },
+    { value: "3.5rem", name: "--dimension-relative-350" },
+    { value: "4rem", name: "--dimension-relative-400" },
+    { value: "5rem", name: "--dimension-relative-500" },
+    { value: "6rem", name: "--dimension-relative-600" },
+    { value: "0.125rem", name: "--dimension-relative-0125" },
+    { value: "0.25rem", name: "--dimension-relative-025" },
+    { value: "0.5rem", name: "--dimension-relative-050" },
+    { value: "0.75rem", name: "--dimension-relative-075" },
   ],
   "box-shadow": [
     {
@@ -1143,6 +1271,47 @@ export const tokensTable = {
       name: "--box-shadow-color-lighter-layer-2",
     },
   ],
+  "table-background": [
+    {
+      value: {
+        light: "#f8f8fa",
+        dark: "rgb(35, 34, 43)",
+        forcedColors: "Canvas",
+        default: "light-dark(#f8f8fa, rgb(35, 34, 43))",
+      },
+      name: "--table-background-color",
+    },
+  ],
+  "table-border": [
+    {
+      value: {
+        default: "color-mix(in srgb, currentColor 41%, transparent)",
+        forcedColors: "CanvasText",
+      },
+      name: "--table-border-color",
+    },
+  ],
+  "table-header": [
+    {
+      value: {
+        default: "var(--color-accent-primary)",
+        forcedColors: "AccentColor",
+      },
+      name: "--table-header-background-color",
+    },
+    {
+      value: {
+        forcedColors: "AccentColorText",
+        brand: {
+          light: "var(--color-white)",
+          dark: "var(--color-gray-100)",
+          default: "light-dark(var(--color-white), var(--color-gray-100))",
+        },
+        platform: { default: "AccentColorText" },
+      },
+      name: "--table-header-text-color",
+    },
+  ],
 };
 
 export const variableLookupTable = {
@@ -1168,7 +1337,7 @@ export const variableLookupTable = {
       dark: "var(--color-gray-80)",
       default: "light-dark(var(--color-gray-20), var(--color-gray-80))",
     },
-    platform: { default: "color-mix(in srgb, currentColor 20%, transparent)" },
+    platform: { default: "color-mix(in srgb, currentColor 6%, transparent)" },
   },
   "background-color-canvas": {
     prefersContrast: "Canvas",
@@ -1211,6 +1380,30 @@ export const variableLookupTable = {
     },
     platform: { default: "color-mix(in srgb, currentColor 20%, transparent)" },
     prefersContrast: "SelectedItem",
+  },
+  "badge-text-color": {
+    default: "var(--text-color)",
+    forcedColors: "CanvasText",
+  },
+  "badge-text-color-filled": {
+    light: "var(--color-white)",
+    dark: "var(--color-gray-100)",
+    forcedColors: "AccentColorText",
+    default: "light-dark(var(--color-white), var(--color-gray-100))",
+  },
+  "badge-background-color": { default: "transparent", forcedColors: "Canvas" },
+  "badge-background-color-filled": {
+    light: "var(--color-green-70)",
+    dark: "var(--color-green-40)",
+    forcedColors: "AccentColor",
+    default: "light-dark(var(--color-green-70), var(--color-green-40))",
+  },
+  "badge-border-color": "var(--border-color)",
+  "badge-border-color-filled": {
+    light: "rgba(251, 251, 254, 0.4)",
+    dark: "rgba(21, 20, 26, 0.4)",
+    forcedColors: "CanvasText",
+    default: "light-dark(rgba(251, 251, 254, 0.4), rgba(21, 20, 26, 0.4))",
   },
   "border-color": {
     brand: {
@@ -1340,6 +1533,17 @@ export const variableLookupTable = {
   "button-background-color-ghost-hover": "var(--button-background-color-hover)",
   "button-background-color-ghost-selected":
     "var(--button-background-color-ghost-active)",
+  "button-background-color-menu": "var(--button-background-color-ghost)",
+  "button-background-color-menu-active": {
+    default: "var(--button-background-color-ghost-active)",
+    forcedColors: "var(--button-background-color-primary)",
+  },
+  "button-background-color-menu-disabled":
+    "var(--button-background-color-ghost-disabled)",
+  "button-background-color-menu-hover": {
+    default: "var(--button-background-color-ghost-hover)",
+    forcedColors: "var(--button-background-color-primary)",
+  },
   "button-background-color-selected": "var(--button-background-color-active)",
   "button-border": "var(--border-width) solid var(--button-border-color)",
   "button-border-color": {
@@ -1483,6 +1687,16 @@ export const variableLookupTable = {
   "button-text-color-hover": {
     default: "var(--button-text-color)",
     forcedColors: "SelectedItem",
+  },
+  "button-text-color-menu": "var(--button-text-color-ghost)",
+  "button-text-color-menu-active": {
+    default: "var(--button-text-color-ghost-active)",
+    forcedColors: "var(--button-text-color-primary)",
+  },
+  "button-text-color-menu-disabled": "var(--button-text-color-ghost-disabled)",
+  "button-text-color-menu-hover": {
+    default: "var(--button-text-color-ghost-hover)",
+    forcedColors: "var(--button-text-color-primary)",
   },
   "button-text-color-primary": {
     forcedColors: "ButtonFace",
@@ -1760,11 +1974,11 @@ export const variableLookupTable = {
     default: "light-dark(var(--color-red-60), var(--color-red-20))",
   },
   "icon-size": "var(--icon-size-small)",
-  "icon-size-xsmall": "var(--size-item-xsmall)",
-  "icon-size-small": "var(--size-item-small)",
-  "icon-size-medium": "20px",
-  "icon-size-large": "var(--size-item-medium)",
-  "icon-size-xlarge": "var(--size-item-large)",
+  "icon-size-xsmall": "var(--dimension-12)",
+  "icon-size-small": "var(--dimension-16)",
+  "icon-size-medium": "var(--dimension-20)",
+  "icon-size-large": "var(--dimension-24)",
+  "icon-size-xlarge": "var(--dimension-32)",
   "input-text-min-height": "var(--button-min-height)",
   "link-color": {
     forcedColors: "LinkText",
@@ -1795,18 +2009,64 @@ export const variableLookupTable = {
   },
   "page-main-content-width": { brand: { default: "664px" } },
   "promo-background-color": "var(--background-color-box-info)",
-  "size-item-xsmall": "12px",
-  "size-item-small": "16px",
-  "size-item-medium": "24px",
-  "size-item-large": "32px",
-  "size-item-xlarge": "48px",
-  "space-xxsmall": "calc(0.5 * var(--space-xsmall))",
-  "space-xsmall": "0.267rem",
-  "space-small": "calc(2 * var(--space-xsmall))",
-  "space-medium": "calc(3 * var(--space-xsmall))",
-  "space-large": "calc(4 * var(--space-xsmall))",
-  "space-xlarge": "calc(6 * var(--space-xsmall))",
-  "space-xxlarge": "calc(8 * var(--space-xsmall))",
+  "dimension-2": "2px",
+  "dimension-4": "4px",
+  "dimension-8": "8px",
+  "dimension-12": "12px",
+  "dimension-16": "16px",
+  "dimension-20": "20px",
+  "dimension-24": "24px",
+  "dimension-32": "32px",
+  "dimension-40": "40px",
+  "dimension-48": "48px",
+  "dimension-56": "56px",
+  "dimension-64": "64px",
+  "dimension-80": "80px",
+  "dimension-96": "96px",
+  "dimension-100": "100px",
+  "dimension-200": "200px",
+  "dimension-300": "300px",
+  "dimension-400": "400px",
+  "dimension-500": "500px",
+  "dimension-relative-100": "1rem",
+  "dimension-relative-125": "1.25rem",
+  "dimension-relative-150": "1.5rem",
+  "dimension-relative-200": "2rem",
+  "dimension-relative-250": "2.5rem",
+  "dimension-relative-300": "3rem",
+  "dimension-relative-350": "3.5rem",
+  "dimension-relative-400": "4rem",
+  "dimension-relative-500": "5rem",
+  "dimension-relative-600": "6rem",
+  "dimension-relative-0125": "0.125rem",
+  "dimension-relative-025": "0.25rem",
+  "dimension-relative-050": "0.5rem",
+  "dimension-relative-075": "0.75rem",
+  "size-image-xsmall": "var(--dimension-40)",
+  "size-image-small": "var(--dimension-48)",
+  "size-image-medium": "var(--dimension-56)",
+  "size-image-large": "var(--dimension-64)",
+  "size-image-xlarge": "var(--dimension-80)",
+  "size-image-xxlarge": "var(--dimension-96)",
+  "size-item-xsmall": "var(--dimension-12)",
+  "size-item-small": "var(--dimension-16)",
+  "size-item-medium": "var(--dimension-24)",
+  "size-item-large": "var(--dimension-32)",
+  "size-item-xlarge": "var(--dimension-48)",
+  "size-layout-xsmall": "var(--dimension-100)",
+  "size-layout-small": "var(--dimension-200)",
+  "size-layout-medium": "var(--dimension-300)",
+  "size-layout-large": "var(--dimension-400)",
+  "size-layout-xlarge": "var(--dimension-500)",
+  "size-sidebar": "280px",
+  "size-sidebar-narrow": "118px",
+  "space-xxsmall": "var(--dimension-relative-0125)",
+  "space-xsmall": "var(--dimension-relative-025)",
+  "space-small": "var(--dimension-relative-050)",
+  "space-medium": "var(--dimension-relative-075)",
+  "space-large": "var(--dimension-relative-100)",
+  "space-xlarge": "var(--dimension-relative-150)",
+  "space-xxlarge": "var(--dimension-relative-200)",
   "box-shadow-level-1":
     "0 0 1px var(--box-shadow-color-darker-layer-1), 0 1px 2px var(--box-shadow-color-darker-layer-2)",
   "box-shadow-level-2":
@@ -1838,6 +2098,29 @@ export const variableLookupTable = {
     light: "rgba(0, 0, 0, 0.1)",
     dark: "rgba(0, 0, 0, 0.4)",
     default: "light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4))",
+  },
+  "table-background-color": {
+    light: "#f8f8fa",
+    dark: "rgb(35, 34, 43)",
+    forcedColors: "Canvas",
+    default: "light-dark(#f8f8fa, rgb(35, 34, 43))",
+  },
+  "table-border-color": {
+    default: "color-mix(in srgb, currentColor 41%, transparent)",
+    forcedColors: "CanvasText",
+  },
+  "table-header-background-color": {
+    default: "var(--color-accent-primary)",
+    forcedColors: "AccentColor",
+  },
+  "table-header-text-color": {
+    forcedColors: "AccentColorText",
+    brand: {
+      light: "var(--color-white)",
+      dark: "var(--color-gray-100)",
+      default: "light-dark(var(--color-white), var(--color-gray-100))",
+    },
+    platform: { default: "AccentColorText" },
   },
   "table-row-background-color": { default: "var(--background-color-canvas)" },
   "table-row-background-color-alternate": {

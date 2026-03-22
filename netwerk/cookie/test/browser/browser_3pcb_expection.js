@@ -57,7 +57,7 @@ const strArrayMatches = (arr1, arr2) =>
 /**
  * Wait until the 3pcb allow-list matches the expected state.
  *
- * @param {string[]} allowedSiteHosts - (Unordered) host list to match.
+ * @param {string[]} expected - (Unordered) host list to match.
  */
 async function waitForAllowListState(expected) {
   // Ensure the site host exception list has been imported correctly.
@@ -120,7 +120,7 @@ async function createNestedIframes(browser, firstPartyURL, thirdPartyURL) {
  *
  * @param {Browser} browser The browser where the testing is performed.
  * @param {CanonicalBrowsingContext} iframeBC The iframe browsing context.
- * @param {CanonicalBrowsingContext} ABAABC The ABA browsing context.
+ * @param {CanonicalBrowsingContext} ABABC The ABA browsing context.
  */
 async function setThirdPartyCookie(browser, iframeBC, ABABC) {
   const THIRD_PARTY_FETCH_COOKIE_URL = `${THIRD_PARTY_SITE}/${TEST_PATH}/setFetchCookie.sjs`;

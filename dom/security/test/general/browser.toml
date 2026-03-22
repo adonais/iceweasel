@@ -24,6 +24,8 @@ support-files = [
 ["browser_same_site_cookies_bug1748693.js"]
 support-files = ["file_same_site_cookies_bug1748693.sjs"]
 
+["browser_test_allow_setHTML.js"]
+
 ["browser_test_assert_systemprincipal_documents.js"]
 skip-if = [
   "!nightly_build",

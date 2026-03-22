@@ -37,7 +37,9 @@ support-files = [
   "file_webaudio_startstop.html",
   "!/image/test/mochitest/shaver.png",
 ]
-
+prefs = [
+  "dom.script_loader.experimental.navigation_cache.check_memory_pressure=false",
+]
 
 ["browser_aboutnewtab_process_selection.js"]
 skip-if = [
@@ -204,6 +206,12 @@ support-files = [
   "file_js_cache_dyn_imported3.mjs",
 ]
 
+["browser_script_loader_js_cache_memory_pressure.js"]
+support-files = [
+  "empty.html",
+  "file_js_cache_large.js",
+]
+
 ["browser_script_loader_js_cache_module.js"]
 support-files = [
   "empty.html",
@@ -250,6 +258,12 @@ support-files = [
 support-files = [
   "empty.html",
   "file_js_cache_large.js",
+]
+
+["browser_script_loader_js_cache_too_large.js"]
+support-files = [
+  "empty.html",
+  "file_js_cache_too_large.js",
 ]
 
 ["browser_set_focus_after_reuse_bcg.js"]

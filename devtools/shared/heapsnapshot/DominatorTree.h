@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_devtools_DominatorTree__
-#define mozilla_devtools_DominatorTree__
+#ifndef mozilla_devtools_DominatorTree_
+#define mozilla_devtools_DominatorTree_
 
 #include "mozilla/devtools/HeapSnapshot.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -62,4 +62,4 @@ class DominatorTree final : public nsISupports, public nsWrapperCache {
 }  // namespace devtools
 }  // namespace mozilla
 
-#endif  // mozilla_devtools_DominatorTree__
+#endif  // mozilla_devtools_DominatorTree_

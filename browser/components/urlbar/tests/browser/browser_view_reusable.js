@@ -30,10 +30,11 @@ const SIMPLE_GET_VIEW_UPDATE = result => {
 };
 
 add_setup(async function setup() {
-  let originals = UrlbarProvidersManager.providers;
-  UrlbarProvidersManager.providers = [];
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  let originals = providersManager.providers;
+  providersManager.providers = [];
   registerCleanupFunction(async function () {
-    UrlbarProvidersManager.providers = originals;
+    providersManager.providers = originals;
   });
 });
 
@@ -707,7 +708,8 @@ async function doTest({
   expectedButtons = null,
 }) {
   info("Show the results of first provider");
-  UrlbarProvidersManager.registerProvider(firstProvider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(firstProvider);
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "any",
@@ -722,7 +724,7 @@ async function doTest({
   let firstShownButtonsElement = firstShownRow._elements.get("buttons");
   let firstShownButtonsFirstElement =
     firstShownButtonsElement?.firstElementChild;
-  UrlbarProvidersManager.unregisterProvider(firstProvider);
+  providersManager.unregisterProvider(firstProvider);
   if (expectedButtons) {
     info("Sanity check for buttons");
     assertButtons(
@@ -733,7 +735,7 @@ async function doTest({
   }
 
   info("Show the results of second provider");
-  UrlbarProvidersManager.registerProvider(secondProvider);
+  providersManager.registerProvider(secondProvider);
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "any",
@@ -782,7 +784,7 @@ async function doTest({
     );
   }
 
-  UrlbarProvidersManager.unregisterProvider(secondProvider);
+  providersManager.unregisterProvider(secondProvider);
   await UrlbarTestUtils.promiseSearchComplete(window);
 }
 

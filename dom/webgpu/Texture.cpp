@@ -79,6 +79,7 @@ already_AddRefed<TextureView> Texture::CreateView(
   desc.base_array_layer = aDesc.mBaseArrayLayer;
   desc.array_layer_count =
       aDesc.mArrayLayerCount.WasPassed() ? &layerCount : nullptr;
+  desc.usage = aDesc.mUsage;
 
   RawId id = ffi::wgpu_client_create_texture_view(GetClient(), mParent->GetId(),
                                                   GetId(), &desc);

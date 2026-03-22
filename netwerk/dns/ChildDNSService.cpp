@@ -510,5 +510,10 @@ NS_IMETHODIMP ChildDNSService::GetLastConfirmationSkipReason(
   return NS_OK;
 }
 
+NS_IMETHODIMP ChildDNSService::SetHttp3FirstForServer(const nsACString& aServer,
+                                                      bool aEnabled) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
 }  // namespace net
 }  // namespace mozilla

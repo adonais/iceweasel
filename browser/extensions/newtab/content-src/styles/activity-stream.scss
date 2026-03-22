@@ -134,6 +134,10 @@ input {
   }
 }
 
+panel-item::part(button) {
+  padding-inline-start: var(--space-medium);
+}
+
 // These styles are needed for -webkit-line-clamp to work correctly, so reuse
 // this class name while separately setting a clamp value via CSS or JS.
 .clamp {
@@ -145,6 +149,7 @@ input {
 
 // Components
 // stylelint-disable no-invalid-position-at-import-rule
+@import '../components/ActivationWindowMessage/ActivationWindowMessage';
 @import '../components/A11yLinkButton/A11yLinkButton';
 @import '../components/Base/Base';
 @import '../components/ErrorBoundary/ErrorBoundary';
@@ -184,7 +189,6 @@ input {
 @import '../components/DiscoveryStreamComponents/DSCard/DSCard';
 @import '../components/DiscoveryStreamComponents/DSContextFooter/DSContextFooter';
 @import '../components/DiscoveryStreamComponents/DSImage/DSImage';
-@import '../components/DiscoveryStreamComponents/DSMessage/DSMessage';
 @import '../components/DiscoveryStreamImpressionStats/ImpressionStats';
 @import '../components/DiscoveryStreamComponents/DSEmptyState/DSEmptyState';
 @import '../components/DiscoveryStreamComponents/PrivacyLink/PrivacyLink';
@@ -198,6 +202,7 @@ input {
 @import '../components/DiscoveryStreamComponents/AdBanner/AdBanner';
 @import '../components/DiscoveryStreamComponents/AdBannerContextMenu/AdBannerContextMenu';
 @import '../components/DiscoveryStreamComponents/PromoCard/PromoCard';
+@import '../components/DiscoveryStreamComponents/BriefingCard/BriefingCard';
 @import '../components/DiscoveryStreamComponents/SectionContextMenu/SectionContextMenu';
 @import '../components/DiscoveryStreamComponents/InterestPicker/InterestPicker';
 @import '../components/DiscoveryStreamComponents/ReportContent/ReportContent';

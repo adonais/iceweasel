@@ -137,7 +137,7 @@ already_AddRefed<dom::Promise> Queue::OnSubmittedWorkDone(ErrorResult& aRv) {
 
   ffi::wgpu_client_on_submitted_work_done(GetClient(), GetId());
 
-  GetChild()->mPendingOnSubmittedWorkDonePromises[GetId()].push_back(promise);
+  GetChild()->EnqueueOnSubmittedWorkDonePromise(GetId(), promise);
 
   return promise.forget();
 }

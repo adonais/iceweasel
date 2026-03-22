@@ -5,7 +5,9 @@
 /* all localizable skin settings shall live here */
 
 @import url("chrome://global/skin/design-system/tokens-platform.css");
+@import url("chrome://global/skin/design-system/panel.css");
 @import url("chrome://global/skin/design-system/text-and-typography.css");
+@import url("chrome://global/skin/design-system/toolbar.css");
 
 @import url("chrome://global/locale/intl.css");
 @import url("chrome://global/content/widgets.css");
@@ -21,21 +23,6 @@
 
   --animation-easing-function: cubic-bezier(0.07, 0.95, 0, 1);
 
-  --arrowpanel-background: Field;
-  --arrowpanel-color: FieldText;
-  --arrowpanel-border-color: ThreeDShadow;
-  --arrowpanel-border-radius: 8px;
-  --arrowpanel-padding: 16px;
-  --arrowpanel-shadow-margin: 4px;
-
-  --arrowpanel-menuitem-border-radius: 4px;
-  --arrowpanel-menuitem-margin-block: 0px;
-  --arrowpanel-menuitem-margin-inline: 8px;
-  --arrowpanel-menuitem-margin: var(--arrowpanel-menuitem-margin-block) var(--arrowpanel-menuitem-margin-inline);
-  --arrowpanel-menuitem-padding-block: 8px;
-  --arrowpanel-menuitem-padding-inline: 8px;
-  --arrowpanel-menuitem-padding: var(--arrowpanel-menuitem-padding-block) var(--arrowpanel-menuitem-padding-inline);
-
   --search-engine-name-max-width: 15em;
 
   @media (-moz-platform: macos) {
@@ -43,59 +30,13 @@
     --arrowpanel-shadow-margin: 0px;
   }
 
-  --arrowpanel-dimmed: color-mix(in srgb, currentColor 17%, transparent);
-  --arrowpanel-dimmed-further: color-mix(in srgb, currentColor 30%, transparent);
-
   --panel-separator-color: color-mix(in srgb, currentColor 25%, transparent);
 
   --popup-notification-body-width: calc(31em - calc(2 * var(--arrowpanel-padding)));
 
   --input-border-color: color-mix(in srgb, currentColor 46%, transparent);
 
-  --toolbarbutton-icon-fill: currentColor;
-  --toolbarbutton-icon-fill-attention: AccentColor;
-  --toolbarbutton-icon-fill-attention-text: AccentColorText;
-  --toolbarbutton-disabled-opacity: 0.4;
-
-  --toolbar-field-background-color: Field;
-  --toolbar-field-color: FieldText;
-  --toolbar-field-border-color: var(--input-border-color);
-  --toolbar-field-focus-background-color: Field;
-  --toolbar-field-focus-color: FieldText;
-  --toolbar-field-focus-border-color: color-mix(in srgb, var(--focus-outline-color) 50%, transparent);
-
-  --toolbar-bgcolor: color-mix(in srgb, -moz-dialog 85%, white);
-  --toolbar-color: -moz-dialogtext;
-
-  /* Override some toolbar colors when not under prefers-contrast. Note that
-   * for the browser window these might be overridden by
-   * browser-colors.css.
-   *
-   * For the light theme we use .05 alpha, to increase the contrast of the
-   * text. For the dark theme, we use a darker background, which works because
-   * the toolbar background applies some white unconditionally.
-   */
-  @media not (prefers-contrast) {
-    --toolbar-field-border-color: transparent;
-    --toolbar-field-background-color: light-dark(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.3));
-    --toolbar-field-color: inherit;
-
-    @media (prefers-color-scheme: light) {
-      --toolbar-bgcolor: white;
-    }
-  }
-
   &[lwtheme] {
-    --toolbar-bgcolor: rgba(255, 255, 255, 0.4);
-    --toolbar-color: var(--lwt-text-color, inherit);
-
-    --toolbarbutton-icon-fill-attention: light-dark(rgb(0, 97, 224), rgb(0, 221, 255));
-    --toolbarbutton-icon-fill-attention-text-light: rgb(240, 240, 244);
-    --toolbarbutton-icon-fill-attention-text-dark: rgb(28, 27, 34);
-    --toolbarbutton-icon-fill-attention-text: light-dark(
-      var(--toolbarbutton-icon-fill-attention-text-light),
-      var(--toolbarbutton-icon-fill-attention-text-dark)
-    );
     &[lwt-icon-fill-attention="dark"] {
       --toolbarbutton-icon-fill-attention-text: var(--toolbarbutton-icon-fill-attention-text-light);
     }
@@ -116,13 +57,7 @@
   }
 
   @media (prefers-contrast) {
-    /* Reduce the opacity of disabled toolbar buttons in order to increase
-       contrast with the enabled state. */
-    --toolbarbutton-disabled-opacity: 0.3;
-
     --panel-separator-color: currentColor;
-    --toolbar-field-focus-border-color: var(--focus-outline-color);
-
     --input-border-color: currentColor;
   }
 
@@ -295,7 +230,7 @@ xul|description {
   margin-bottom: 4px;
 }
 
-xul|label[disabled="true"] {
+xul|label[disabled] {
   color: GrayText;
 }
 
@@ -485,6 +420,6 @@ button.text-link .button-text {
 }
 
 /* Indent options in optgroups */
-.contentSelectDropdown-ingroup .menu-text {
+#ContentSelectDropdown menuitem[indented] > .menu-text {
   padding-inline-start: 2em;
 }

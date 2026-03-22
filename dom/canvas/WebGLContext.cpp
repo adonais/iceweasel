@@ -1586,6 +1586,12 @@ Maybe<uvec2> WebGLContext::SnapshotInto(GLuint srcFb, const gfx::IntSize& size,
                        << " > dstByteCount:" << dstByteCount;
     return {};
   }
+
+  // Ensure pending GL commands are submitted before readback. Some drivers
+  // (NVIDIA proprietary on X11/GLX) may not properly synchronize in-flight
+  // rendering when reading from a recently-written framebuffer. (Bug 2014363)
+  gl->fFlush();
+
   uint8_t* dstPtr = dest.begin().get();
   gl->fReadPixels(0, 0, size.width, size.height, LOCAL_GL_RGBA,
                   LOCAL_GL_UNSIGNED_BYTE, dstPtr);

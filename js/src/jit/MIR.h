@@ -743,28 +743,33 @@ class MDefinition : public MNode {
   static_assert(static_cast<size_t>(MIRType::Last) <
                 sizeof(MIRTypeEnumSet::serializedType) * CHAR_BIT);
 
-  // Get the wasm reference type stored on the node. Do NOT use in congruentTo,
-  // as this value can change throughout the optimization process. See
-  // ReplaceAllUsesWith in ValueNumbering.cpp.
+  // Get the wasm reference type stored on the node.
+  //
+  // Do NOT use in congruentTo, as this value can change throughout the
+  // optimization process. See ReplaceAllUsesWith in ValueNumbering.cpp. If two
+  // nodes must be kept apart in congruentTo because they produce values in
+  // different hierarchies, then store the hierarchy itself on the node and use
+  // that in congruentTo instead, as hierarchy can never change.
   wasm::MaybeRefType wasmRefType() const { return wasmRefType_; }
 
-  // Sets the wasm reference type stored on the node. Does not check if there
-  // was already a type on the node, which may lead to bugs; consider using
-  // `initWasmRefType` instead if it applies.
-  void setWasmRefType(wasm::MaybeRefType refType) { wasmRefType_ = refType; }
-
-  // Sets the wasm reference type stored on the node. To be used for nodes that
-  // have a fixed ref type that is set up front, which is a common case. Must be
-  // called only during the node constructor and never again afterward.
-  void initWasmRefType(wasm::MaybeRefType refType) {
-    MOZ_ASSERT(!wasmRefType_);
-    setWasmRefType(refType);
+  // Sets the wasm reference type stored on the node. Types must only narrow, as
+  // we make decisions based on the best available type info and must not
+  // invalidate them later.
+  void setWasmRefType(wasm::MaybeRefType refType) {
+    // Ensure that we do not regress from Some to Nothing.
+    MOZ_ASSERT(!(wasmRefType_.isSome() && refType.isNothing()));
+    // Ensure that the new ref type is a subtype of the previous one (i.e. we
+    // only narrow ref types).
+    MOZ_ASSERT_IF(
+        wasmRefType_.isSome(),
+        wasm::RefType::isSubTypeOf(refType.value(), wasmRefType_.value()));
+    wasmRefType_ = refType;
   }
 
   // Compute the wasm reference type for this node. This method is called by
   // updateWasmRefType. By default it returns the ref type stored on the node,
   // which means it will return either Nothing or a value set by
-  // initWasmRefType.
+  // setWasmRefType.
   virtual wasm::MaybeRefType computeWasmRefType() const { return wasmRefType_; }
 
   // Return true if the result type is a member of the given types.

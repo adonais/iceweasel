@@ -63,7 +63,8 @@ add_task(async function selected_result_tip() {
         deferred.resolve();
       },
     });
-    UrlbarProvidersManager.registerProvider(provider);
+    let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+    providersManager.registerProvider(provider);
 
     await doTest(async () => {
       await openPopup("example");
@@ -86,21 +87,15 @@ add_task(async function selected_result_tip() {
       await BrowserTestUtils.removeTab(newTab);
     });
 
-    UrlbarProvidersManager.unregisterProvider(provider);
+    providersManager.unregisterProvider(provider);
   }
 });
 
 add_task(async function selected_result_intervention_clear() {
-  let useOldClearHistoryDialog = Services.prefs.getBoolPref(
-    "privacy.sanitize.useOldClearHistoryDialog"
-  );
-  let dialogURL = useOldClearHistoryDialog
-    ? "chrome://browser/content/sanitize.xhtml"
-    : "chrome://browser/content/sanitize_v2.xhtml";
   await doInterventionTest(
     SEARCH_STRINGS.CLEAR,
     "intervention_clear",
-    dialogURL,
+    "chrome://browser/content/sanitize_v2.xhtml",
     [
       {
         selected_result: "intervention_clear",
@@ -179,7 +174,8 @@ add_task(async function learn_more_link() {
     ],
     priority: 1,
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await doTest(async () => {
     await openPopup("any");
@@ -204,7 +200,7 @@ add_task(async function learn_more_link() {
     await BrowserTestUtils.removeTab(newTab);
   });
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 });
 
 async function doInterventionTest(keyword, type, dialog, expectedTelemetry) {

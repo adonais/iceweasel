@@ -92,7 +92,8 @@ add_task(async function heuristicDeduplication() {
     [SUGGESTION_URL_WWW, false],
     ["http://exampledomain.com/", true],
   ];
-  let quickSuggestProviderInstance = UrlbarProvidersManager.getProvider(
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  let quickSuggestProviderInstance = providersManager.getProvider(
     UrlbarProviderQuickSuggest.name
   );
 

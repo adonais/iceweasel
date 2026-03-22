@@ -42,7 +42,7 @@ In this document, we try to list these all tools.
    * - cpp virtual final
      -
      -
-     - :ref:`cpp virtual final`
+     - :ref:`cpp virtual final <cpp virtual final>`
      -
    * - clang-format
      - Yes

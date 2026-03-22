@@ -422,13 +422,13 @@ class TestBuildReader(unittest.TestCase):
         reader = self.reader("files-info")
 
         v = reader.files_info([
-            "bug_component/different-matchers/foo.jsm",
+            "bug_component/different-matchers/foo.sys.mjs",
             "bug_component/different-matchers/bar.cpp",
             "bug_component/different-matchers/baz.misc",
         ])
         self.assertEqual(len(v), 3)
 
-        js_flags = v["bug_component/different-matchers/foo.jsm"]
+        js_flags = v["bug_component/different-matchers/foo.sys.mjs"]
         cpp_flags = v["bug_component/different-matchers/bar.cpp"]
         misc_flags = v["bug_component/different-matchers/baz.misc"]
 

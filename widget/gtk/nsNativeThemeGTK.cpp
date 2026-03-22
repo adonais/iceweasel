@@ -301,15 +301,6 @@ LayoutDeviceIntSize nsNativeThemeGTK::GetMinimumWidgetSize(
   return {};
 }
 
-bool nsNativeThemeGTK::WidgetAttributeChangeRequiresRepaint(
-    StyleAppearance aAppearance, nsAtom* aAttribute) {
-  // Some widget types just never change state.
-  if (aAppearance == StyleAppearance::MozWindowDecorations) {
-    return false;
-  }
-  return Theme::WidgetAttributeChangeRequiresRepaint(aAppearance, aAttribute);
-}
-
 bool nsNativeThemeGTK::ThemeSupportsWidget(nsPresContext* aPresContext,
                                            nsIFrame* aFrame,
                                            StyleAppearance aAppearance) {

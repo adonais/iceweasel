@@ -41,7 +41,14 @@ async function setup() {
 add_task(
   async function test_reload_does_not_show_after_baseline_checkbox_dialog_cancel() {
     await SpecialPowers.pushPrefEnv({
-      set: [[CB_CATEGORY_PREF, "strict"]],
+      set: [
+        [CB_CATEGORY_PREF, "strict"],
+        // Prevent migration from running and changing baseline to false
+        [
+          "privacy.trackingprotection.allow_list.hasMigratedCategoryPrefs",
+          true,
+        ],
+      ],
     });
     Assert.ok(
       Services.prefs.getBoolPref(BASELINE_PREF),

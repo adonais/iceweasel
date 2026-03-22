@@ -666,7 +666,7 @@
 
     CFR for Cookie Banner (Banner Info Message). %1$s will be replaced by the app name, %2$s will be an active link using the string cfr_cookie_banner_link as text.
   -->
-  <string name="cfr_cookie_banner">%1$s Tatojtob\'ej ye\'axutuj ri kik\'utuxik taq kuki richin ye\'ajech\'ej ri itzel taq kitzijol kuki.\n\nKenuk\'samajïx ri kajowaxik kitzijol taq kuki pa %2$s.</string>
+  <string name="cfr_cookie_banner">%1$s Tatojtob\'ej ye\'axutuj ri kik\'utuxik taq kuki richin ye\'ajech\'ej ri itzel taq kitzijol kuki. Kenuk\'samajïx ri kajowaxik kitzijol taq kuki pa %2$s.</string>
   <!-- CFR for Cookie Banner (Banner Info Message). This string is used as text for a link in cfr_cookie_banner and takes the user to the app settings. -->
   <string name="cfr_cookie_banner_link">taq nuk\'ulem</string>
   <!-- Preference for autoplay -->
@@ -876,7 +876,7 @@
     The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"),
     %2$s is a URL to a support article. Contains a button that will redirect the user to Privacy & Security Screen.
   -->
-  <string name="errorpage_httpsonly_message2" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[%1$s Tatojtob\'ej nawokisaj jun HTTPS okem toq k\'atzinel richin jun nïm jikib\'anem. <a href=\"%2$s\">Tetamäx ch\'aqa\' chik</a> <br/><br/> Ütz nijal pa Runuk\'ulem > Ichinanem chuqa\' jikib\'anem > Jikib\'anem.]]></string>
+  <string name="errorpage_httpsonly_message2" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[%1$s Tatojtob\'ej nawokisaj jun HTTPS okem toq k\'atzinel richin jun nïm jikib\'anem. <a href=\"%2$s\">Tetamäx ch\'aqa\' chik</a> <br/><br/>\nÜtz nijal pa Runuk\'ulem > Ichinanem chuqa\' jikib\'anem > Jikib\'anem.]]></string>
   <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_title">Man ütz ta okem</string>
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->

@@ -123,6 +123,18 @@ class Frame extends Component {
   componentDidMount() {
     if (this.props.sourceMapURLService) {
       const location = savedFrameToDebuggerLocation(this.props.frame);
+
+      // If the location has a line=0 and column=0 or 1, we assume this is a
+      // default location which means there is no real line and column
+      // information related to this location. Since the sourcemap service is
+      // unable to resolve locations with line=0 anyway, bail out here.
+      if (
+        location.line === 0 &&
+        (location.column === 0 || location.column === 1)
+      ) {
+        return;
+      }
+
       // Many things that make use of this component either:
       // a) Pass in no sourceId because they have no way to know.
       // b) Pass in no sourceId because the actor wasn't created when the

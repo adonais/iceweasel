@@ -8,8 +8,8 @@
  * nsConsoleService class declaration.
  */
 
-#ifndef __nsconsoleservice_h__
-#define __nsconsoleservice_h__
+#ifndef _nsconsoleservice_h_
+#define _nsconsoleservice_h_
 
 #include <cstdint>
 
@@ -109,4 +109,4 @@ class nsConsoleService final : public nsIConsoleService, public nsIObserver {
   mozilla::Mutex mLock;
 };
 
-#endif /* __nsconsoleservice_h__ */
+#endif /* _nsconsoleservice_h_ */

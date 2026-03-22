@@ -18,6 +18,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.settings.PhoneFeature
+import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_ALLOW_ALL
 import org.mozilla.fenix.settings.trustpanel.store.AutoplayValue
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelAction
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelState
@@ -91,7 +92,7 @@ class TrustPanelStoreTest {
                 assertEquals(
                     websitePermission,
                     WebsitePermission.Autoplay(
-                        autoplayValue = AutoplayValue.AUTOPLAY_BLOCK_AUDIBLE,
+                        autoplayValue = AutoplayValue.AUTOPLAY_BLOCK_ALL,
                         isVisible = true,
                         deviceFeature = phoneFeature,
                     ),
@@ -203,6 +204,34 @@ class TrustPanelStoreTest {
     }
 
     @Test
+    fun `GIVEN site permissions are null WHEN create website permission state method is called THEN autoplay defaults to settings autoplay state`() {
+        val settings: Settings = mock()
+        val permissionHighlights: PermissionHighlightsState = mock()
+
+        whenever(permissionHighlights.isAutoPlayBlocking).thenReturn(true)
+        whenever(settings.getSitePermissionsPhoneFeatureAction(any(), any())).thenReturn(ASK_TO_ALLOW)
+        whenever(settings.getAutoplayUserSetting()).thenReturn(AUTOPLAY_ALLOW_ALL)
+
+        val state = TrustPanelStore.createWebsitePermissionState(
+            settings = settings,
+            sitePermissions = null,
+            permissionHighlights = permissionHighlights,
+            isPermissionBlockedByAndroid = { phoneFeature: PhoneFeature ->
+                phoneFeature == PhoneFeature.CAMERA // Only the camera permission is blocked
+            },
+        )
+
+        assertEquals(
+            state[PhoneFeature.AUTOPLAY],
+            WebsitePermission.Autoplay(
+                autoplayValue = AutoplayValue.AUTOPLAY_ALLOW_ALL,
+                isVisible = true,
+                deviceFeature = PhoneFeature.AUTOPLAY,
+            ),
+        )
+    }
+
+    @Test
     fun `GIVEN site permissions are null and autoplay is not blocking WHEN create website permission state method is called THEN autoplay isn't visible`() {
         val settings: Settings = mock()
         val permissionHighlights: PermissionHighlightsState = mock()
@@ -222,7 +251,7 @@ class TrustPanelStoreTest {
         assertEquals(
             state[PhoneFeature.AUTOPLAY],
             WebsitePermission.Autoplay(
-                autoplayValue = AutoplayValue.AUTOPLAY_BLOCK_AUDIBLE,
+                autoplayValue = AutoplayValue.AUTOPLAY_BLOCK_ALL,
                 isVisible = false,
                 deviceFeature = PhoneFeature.AUTOPLAY,
             ),

@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsFrameSelection_h___
-#define nsFrameSelection_h___
+#ifndef nsFrameSelection_h_
+#define nsFrameSelection_h_
 
 #include <stdint.h>
 
@@ -1400,4 +1400,4 @@ struct LimitersAndCaretData {
 
 }  // namespace mozilla
 
-#endif /* nsFrameSelection_h___ */
+#endif /* nsFrameSelection_h_ */

@@ -144,7 +144,6 @@ class HistoryTest : TestSetup() {
 
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstWebPage.url) {
-            mDevice.waitForIdle()
         }.openThreeDotMenu {
         }.clickHistoryButton {
             verifyHistoryListExists()

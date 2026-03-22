@@ -41,13 +41,13 @@ JSObject* SVGUseElement::WrapNode(JSContext* aCx,
 
 SVGElement::LengthInfo SVGUseElement::sLengthInfo[4] = {
     {nsGkAtoms::x, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
-     SVGContentUtils::X},
+     SVGLength::Axis::X},
     {nsGkAtoms::y, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
-     SVGContentUtils::Y},
+     SVGLength::Axis::Y},
     {nsGkAtoms::width, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
-     SVGContentUtils::X},
+     SVGLength::Axis::X},
     {nsGkAtoms::height, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
-     SVGContentUtils::Y},
+     SVGLength::Axis::Y},
 };
 
 SVGElement::StringInfo SVGUseElement::sStringInfo[2] = {
@@ -456,7 +456,7 @@ void SVGUseElement::UpdateShadowTree() {
     const bool isCrossDocument = targetElement->OwnerDoc() != OwnerDoc();
 
     nsNodeInfoManager* nodeInfoManager =
-        isCrossDocument ? OwnerDoc()->NodeInfoManager() : nullptr;
+        isCrossDocument ? NodeInfoManager() : nullptr;
 
     nsCOMPtr<nsINode> newNode =
         targetElement->Clone(true, nodeInfoManager, IgnoreErrors());
@@ -547,7 +547,7 @@ void SVGUseElement::SyncWidthOrHeight(nsAtom* aName) {
   // Our width/height attribute is now no longer explicitly set, so we
   // need to set the value to 100%
   SVGAnimatedLength length;
-  length.Init(SVGContentUtils::XY, 0xff, 100,
+  length.Init(SVGLength::Axis::XY, 0xff, 100,
               SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE);
   target->SetLength(aName, length);
 }

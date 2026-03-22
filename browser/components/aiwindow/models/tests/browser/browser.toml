@@ -4,10 +4,14 @@ support-files = [
   "ai-window-prompts-remote-settings-snapshot.json",
 ]
 prefs = [
-  "browser.aiwindow.enabled=true",
+  "browser.smartwindow.enabled=true",
 ]
+
+["browser_conversation_starters.js"]
+["browser_conversation_stream.js"]
 
 ["browser_getCurrentTabMetadata.js"]
 ["browser_get_page_content.js"]
-window_attributes = "ai-window"
+["browser_title_generation.js"]
+["browser_utils_fxAccount.js"]
 ["browser_utils_loadConfig.js"]

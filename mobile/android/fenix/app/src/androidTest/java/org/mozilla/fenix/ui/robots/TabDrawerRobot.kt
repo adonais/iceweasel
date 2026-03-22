@@ -458,13 +458,13 @@ class TabDrawerRobot(private val composeTestRule: ComposeTestRule) {
             return Transition(composeTestRule)
         }
 
-        fun clickSignInToSyncButton(interact: SyncSignInRobot.() -> Unit): SyncSignInRobot.Transition {
+        fun clickSignInToSyncButton(interact: SettingsSignInToSyncRobot.() -> Unit): SettingsSignInToSyncRobot.Transition {
             Log.i(TAG, "clickSignInToSyncButton: Trying to click the sign in to sync button and wait for $waitingTimeShort ms for a new window")
             itemWithText(getStringResource(R.string.tab_manager_empty_synced_tabs_page_sign_in_cta))
                 .clickAndWaitForNewWindow(waitingTimeShort)
             Log.i(TAG, "clickSignInToSyncButton: Clicked the sign in to sync button and waited for $waitingTimeShort ms for a new window")
-            SyncSignInRobot().interact()
-            return SyncSignInRobot.Transition(composeTestRule)
+            SettingsSignInToSyncRobot().interact()
+            return SettingsSignInToSyncRobot.Transition(composeTestRule)
         }
 
         fun openThreeDotMenu(interact: TabDrawerRobot.() -> Unit): Transition {
@@ -538,15 +538,9 @@ class TabDrawerRobot(private val composeTestRule: ComposeTestRule) {
         }
 
         fun closeTabDrawer(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            if (DefaultTabManagementFeatureHelper.enhancementsEnabled) {
-                Log.i(TAG, "closeTabDrawer: Trying to close the tabs tray by pressing the back button")
-                mDevice.pressBack()
-                Log.i(TAG, "closeTabDrawer: Closed the tabs tray by pressing the back button")
-            } else {
-                Log.i(TAG, "closeTabDrawer: Trying to close the tabs tray by clicking the handle")
-                composeTestRule.bannerHandle().performSemanticsAction(SemanticsActions.OnClick)
-                Log.i(TAG, "closeTabDrawer: Closed the tabs tray by clicking the handle")
-            }
+            Log.i(TAG, "closeTabDrawer: Trying to close the tabs tray by pressing the back button")
+            mDevice.pressBack()
+            Log.i(TAG, "closeTabDrawer: Closed the tabs tray by pressing the back button")
 
             BrowserRobot(composeTestRule).interact()
             return BrowserRobot.Transition(composeTestRule)

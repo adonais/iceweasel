@@ -332,6 +332,7 @@ class Toolbox extends EventEmitter {
     this.enableAccentedPseudoLocale = () => this.changePseudoLocale("accented");
     this.enableBidiPseudoLocale = () => this.changePseudoLocale("bidi");
     this._updateFrames = this._updateFrames.bind(this);
+    this._onKeydown = this._onKeydown.bind(this);
     this._splitConsoleOnKeypress = this._splitConsoleOnKeypress.bind(this);
     this.closeToolbox = this.closeToolbox.bind(this);
     this.destroy = this.destroy.bind(this);
@@ -1164,15 +1165,7 @@ class Toolbox extends EventEmitter {
         // If React managed to load, try to display the exception to the user via AppErrorBoundary component.
         // But ignore the exception if the React component itself thrown while rendering (errorInfo is defined)
         if (this._appBoundary && !this._appBoundary.state.errorInfo) {
-          this._appBoundary.setState({
-            errorMsg: error.toString(),
-            errorStack: error.stack,
-            errorInfo: {
-              clientPacket: error.clientPacket,
-              serverPacket: error.serverPacket,
-            },
-            toolbox: this,
-          });
+          this._appBoundary.toolboxDidCatch(error, this);
         }
       } catch (e) {
         // Ignore any further error related to AppErrorBoundary as it would prevent closing the toolbox.
@@ -1218,6 +1211,13 @@ class Toolbox extends EventEmitter {
     this._addShortcuts();
     this._addWindowHostShortcuts();
 
+    // We want to have both keydown and keypress: the split console should be toggled
+    // after an Escape keypress, but we might want to prevent the event to be fired
+    // if the current panel's `shouldPreventSplitConsoleToggle` needs to handle
+    // the Escape key before that. For example, if we have opened popover in a panel,
+    // the keypress event happens too late and the popover is already dismissed,
+    // so we can't check if we should toggle the split console or not.
+    this._chromeEventHandler.addEventListener("keydown", this._onKeydown);
     this._chromeEventHandler.addEventListener(
       "keypress",
       this._splitConsoleOnKeypress
@@ -1245,6 +1245,7 @@ class Toolbox extends EventEmitter {
       "keypress",
       this._splitConsoleOnKeypress
     );
+    this._chromeEventHandler.removeEventListener("keydown", this._onKeydown);
     this._chromeEventHandler.removeEventListener("focus", this._onFocus, true);
     this._chromeEventHandler.removeEventListener("focus", this._onBlur, true);
     this._chromeEventHandler.removeEventListener(
@@ -1447,11 +1448,9 @@ class Toolbox extends EventEmitter {
     // Also support for custom input elements using .devtools-input class
     // (e.g. CodeMirror instances).
     const isInInput =
-      e.originalTarget.closest("input[type=text]") ||
-      e.originalTarget.closest("input[type=search]") ||
-      e.originalTarget.closest("input:not([type])") ||
-      e.originalTarget.closest(".devtools-input") ||
-      e.originalTarget.closest("textarea");
+      e.composedTarget.matches(
+        "input:is([type=text], [type=search], :not([type])), textarea"
+      ) || e.composedTarget.closest(".devtools-input");
 
     const doc = e.originalTarget.ownerDocument;
     const isHTMLPanel = doc.documentElement.namespaceURI === HTML_NS;
@@ -1768,21 +1767,24 @@ class Toolbox extends EventEmitter {
     return button;
   }
 
-  _splitConsoleOnKeypress(e) {
-    if (e.keyCode !== KeyCodes.DOM_VK_ESCAPE || !this.isSplitConsoleEnabled()) {
+  _onKeydown(e) {
+    if (e.keyCode !== KeyCodes.DOM_VK_ESCAPE) {
       return;
     }
 
     const currentPanel = this.getCurrentPanel();
-    if (
-      typeof currentPanel.onToolboxChromeEventHandlerEscapeKeyDown ===
-      "function"
-    ) {
-      const ac = new this.win.AbortController();
-      currentPanel.onToolboxChromeEventHandlerEscapeKeyDown(ac);
-      if (ac.signal.aborted) {
-        return;
+    // Allow the current panel to prevent the split console from being toggled.
+    if (typeof currentPanel.shouldPreventSplitConsoleToggle === "function") {
+      if (currentPanel.shouldPreventSplitConsoleToggle()) {
+        // this prevents the `keypress` event to be dispatched.
+        e.preventDefault();
       }
+    }
+  }
+
+  _splitConsoleOnKeypress(e) {
+    if (e.keyCode !== KeyCodes.DOM_VK_ESCAPE || !this.isSplitConsoleEnabled()) {
+      return;
     }
 
     this.toggleSplitConsole();

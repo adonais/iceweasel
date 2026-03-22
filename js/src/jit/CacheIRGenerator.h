@@ -604,9 +604,9 @@ class MOZ_RAII CallIRGenerator : public IRGenerator {
 
   friend class InlinableNativeIRGenerator;
 
-  ScriptedThisResult getThisShapeForScripted(HandleFunction calleeFunc,
-                                             Handle<JSObject*> newTarget,
-                                             MutableHandle<Shape*> result);
+  ScriptedThisResult getThisShapeForScripted(
+      HandleFunction calleeFunc, Handle<JSObject*> newTarget,
+      MutableHandle<SharedShape*> result);
 
   ObjOperandId emitFunCallOrApplyGuard(Int32OperandId argcId);
   ObjOperandId emitFunCallGuard(Int32OperandId argcId);
@@ -616,7 +616,9 @@ class MOZ_RAII CallIRGenerator : public IRGenerator {
 
   void emitCallScriptedGuards(ObjOperandId calleeObjId, JSFunction* calleeFunc,
                               Int32OperandId argcId, CallFlags flags,
-                              Shape* thisShape, bool isBoundFunction);
+                              SharedShape* thisShape,
+                              gc::AllocSite* maybeAllocSite,
+                              bool isBoundFunction);
 
   AttachDecision tryAttachFunCall(HandleFunction calleeFunc);
   AttachDecision tryAttachFunApply(HandleFunction calleeFunc);
@@ -1138,7 +1140,7 @@ inline bool BytecodeGetOpCanHaveInlinableNative(JSOp op) {
 inline bool BytecodeOpCanHaveAllocSite(JSOp op) {
   return BytecodeCallOpCanHaveInlinableNative(op) || op == JSOp::NewArray ||
          op == JSOp::NewObject || op == JSOp::NewInit || op == JSOp::CallIter ||
-         op == JSOp::CallContentIter || op == JSOp::Lambda;
+         op == JSOp::CallContentIter || op == JSOp::Lambda || IsConstructOp(op);
 }
 
 class MOZ_RAII CloseIterIRGenerator : public IRGenerator {

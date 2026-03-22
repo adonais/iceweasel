@@ -135,6 +135,9 @@ class JSTerm extends Component {
     };
   }
 
+  // AbortController to cancel all event listener on destroy.
+  #abortController = null;
+
   constructor(props) {
     super(props);
 
@@ -572,7 +575,7 @@ class JSTerm extends Component {
       this.resizeObserver.observe(this.node);
 
       // Update the character width needed for the popup offset calculations.
-      this._inputCharWidth = this._getInputCharWidth();
+      this._inputCharWidth = this.editor?.getInputCharWidth() || null;
       this.lastInputValue && this._setValue(this.lastInputValue);
     }
   }
@@ -588,9 +591,6 @@ class JSTerm extends Component {
       this.props.editorMode !== nextProps.editorMode
     );
   }
-
-  // AbortController to cancel all event listener on destroy.
-  #abortController = null;
 
   /**
    * Do all the imperative work needed after a Redux store update.
@@ -815,7 +815,7 @@ class JSTerm extends Component {
   }
 
   getSelectionStart() {
-    return this.getInputValueBeforeCursor().length;
+    return this.editor.getTextBeforeCursor().length;
   }
 
   getSelectedText() {
@@ -1093,7 +1093,7 @@ class JSTerm extends Component {
       return;
     }
 
-    const inputUntilCursor = this.getInputValueBeforeCursor();
+    const inputUntilCursor = this.editor.getTextBeforeCursor();
 
     const items = matches.map(label => {
       let preLabel = label.substring(0, matchProp.length);
@@ -1192,7 +1192,7 @@ class JSTerm extends Component {
       // If the user is performing an element access, we need to check if we should add
       // starting and ending quotes, as well as a closing bracket.
       if (isElementAccess) {
-        const inputBeforeCursor = this.getInputValueBeforeCursor();
+        const inputBeforeCursor = this.editor.getTextBeforeCursor();
         if (inputBeforeCursor.trim().endsWith("[")) {
           suffix = label;
         }
@@ -1304,7 +1304,7 @@ class JSTerm extends Component {
    *                     quote and/or bracket.
    */
   getInputValueWithCompletionText() {
-    const inputBeforeCursor = this.getInputValueBeforeCursor();
+    const inputBeforeCursor = this.editor.getTextBeforeCursor();
     const inputAfterCursor = this._getValue().substring(
       inputBeforeCursor.length
     );
@@ -1379,14 +1379,6 @@ class JSTerm extends Component {
       numberOfCharsToMoveTheCursorForward,
       numberOfCharsToReplaceCharsBeforeCursor,
     };
-  }
-
-  getInputValueBeforeCursor() {
-    return this.editor
-      ? this.editor
-          .getDoc()
-          .getRange({ line: 0, ch: 0 }, this.editor.getCursor())
-      : null;
   }
 
   /**
@@ -1469,16 +1461,6 @@ class JSTerm extends Component {
     const lineContent = this.editor.getLine(line);
     const textAfterCursor = lineContent.substring(ch);
     return textAfterCursor === "";
-  }
-
-  /**
-   * Calculates and returns the width of a single character of the input box.
-   * This will be used in opening the popup at the correct offset.
-   *
-   * @returns {number | null}: Width off the "x" char, or null if the input does not exist.
-   */
-  _getInputCharWidth() {
-    return this.editor ? this.editor.defaultCharWidth() : null;
   }
 
   onContextMenu(e) {

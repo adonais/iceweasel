@@ -142,7 +142,6 @@ class TRRService : public TRRServiceBase,
   void AddEtcHosts(const nsTArray<nsCString>&);
 
   bool mInitialized{false};
-  Mutex mLock;
 
   nsCString mPrivateCred;  // main thread only
   nsCString mConfirmationNS MOZ_GUARDED_BY(mLock){"example.com"_ns};

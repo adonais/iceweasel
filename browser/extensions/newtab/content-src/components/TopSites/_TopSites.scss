@@ -456,14 +456,9 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
   }
 
   .modal {
-    box-shadow: $shadow-secondary;
-    inset-inline-start: 0;
-    margin: 0 auto;
-    max-height: calc(100% - 40px);
-    position: fixed;
-    inset-inline-end: 0;
+    border: 0;
+    min-height: fit-content;
     inset-block-start: var(--space-xxlarge);
-    width: $wrapper-default-width;
 
     @media (min-width: $break-point-medium) {
       width: $wrapper-max-width-medium;
@@ -654,11 +649,7 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
   .actions {
     justify-content: flex-end;
-
-    button {
-      margin-inline-start: var(--space-small);
-      margin-inline-end: 0;
-    }
+    padding: var(--space-large) var(--space-xlarge);
   }
 
   @media (max-width: $break-point-medium) {

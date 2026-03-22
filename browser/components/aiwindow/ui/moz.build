@@ -11,9 +11,12 @@ XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]
 MOZ_SRC_FILES += [
     "actors/AIChatContentChild.sys.mjs",
     "actors/AIChatContentParent.sys.mjs",
+    "actors/AISmartBarChild.sys.mjs",
+    "actors/AISmartBarParent.sys.mjs",
     "modules/AIWindow.sys.mjs",
     "modules/AIWindowAccountAuth.sys.mjs",
     "modules/AIWindowMenu.sys.mjs",
+    "modules/AIWindowTabStatesManager.sys.mjs",
     "modules/AIWindowUI.sys.mjs",
     "modules/ChatConstants.sys.mjs",
     "modules/ChatConversation.sys.mjs",

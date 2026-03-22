@@ -44,9 +44,9 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
   });
-  let originalOrder = (await Services.search.getEngines()).map(e => e.id);
+  let originalOrder = (await SearchService.getEngines()).map(e => e.id);
   await SearchTestUtils.updateRemoteSettingsConfig(CONFIG);
-  appDefaultEngine = await Services.search.getDefault();
+  appDefaultEngine = await SearchService.getDefault();
   [noEngineString, expectedString, keywordDisabledString] = (
     await document.l10n.formatMessages([
       { id: "urlbar-placeholder" },
@@ -67,13 +67,13 @@ add_setup(async function () {
     search_url: "https://mochi.test:8888/",
     suggest_url: `${rootUrl}/searchSuggestionEngine.sjs`,
   });
-  extraEngine = Services.search.getEngineByName("extraEngine");
+  extraEngine = SearchService.getEngineByName("extraEngine");
   await SearchTestUtils.installSearchExtension({
     name: "extraPrivateEngine",
     search_url: "https://mochi.test:8888/",
     suggest_url: `${rootUrl}/searchSuggestionEngine.sjs`,
   });
-  extraPrivateEngine = Services.search.getEngineByName("extraPrivateEngine");
+  extraPrivateEngine = SearchService.getEngineByName("extraPrivateEngine");
 
   // Force display of a tab with a URL bar, to clear out any possible placeholder
   // initialization listeners that happen on startup.
@@ -99,8 +99,8 @@ add_setup(async function () {
     // At this point, the app provided engines have already been
     // restored by SearchTestUtils's cleanup but their order has not.
     for (let [index, id] of originalOrder.entries()) {
-      let engine = Services.search.getEngineById(id);
-      Services.search.moveEngine(engine, index);
+      let engine = SearchService.getEngineById(id);
+      SearchService.moveEngine(engine, index);
     }
   });
 });
@@ -108,9 +108,9 @@ add_setup(async function () {
 add_task(async function test_change_default_engine_updates_placeholder() {
   tabs.push(await BrowserTestUtils.openNewForegroundTab(gBrowser));
 
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     extraEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   await TestUtils.waitForCondition(
@@ -119,9 +119,9 @@ add_task(async function test_change_default_engine_updates_placeholder() {
   );
   Assert.equal(gURLBar.placeholder, noEngineString);
 
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     appDefaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   await TestUtils.waitForCondition(
@@ -138,16 +138,16 @@ add_task(async function test_delayed_update_placeholder() {
 
 async function doDelayedUpdatePlaceholderTest({ defaultEngine }) {
   info("Set default search engine");
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     defaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   info("Clear placeholder cache");
   Services.prefs.clearUserPref("browser.urlbar.placeholderName");
 
   info("Pretend we're on startup and the search service hasn't started yet.");
-  let stub = sinon.stub(Services.search.wrappedJSObject, "isInitialized");
+  let stub = sinon.stub(SearchService, "isInitialized");
   stub.get(() => false);
 
   info("Open a new window");
@@ -192,9 +192,9 @@ async function doDelayedUpdatePlaceholderTest({ defaultEngine }) {
 add_task(async function test_private_window_no_separate_engine() {
   const win = await BrowserTestUtils.openNewBrowserWindow({ private: true });
 
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     extraEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   await TestUtils.waitForCondition(
@@ -203,9 +203,9 @@ add_task(async function test_private_window_no_separate_engine() {
   );
   Assert.equal(win.gURLBar.placeholder, noEngineString);
 
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     appDefaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   await TestUtils.waitForCondition(
@@ -225,13 +225,13 @@ add_task(async function test_private_window_separate_engine() {
 
   // Keep the normal default as a different string to the private, so that we
   // can be sure we're testing the right thing.
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     appDefaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
-  await Services.search.setDefaultPrivate(
+  await SearchService.setDefaultPrivate(
     extraPrivateEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   await TestUtils.waitForCondition(
@@ -240,13 +240,13 @@ add_task(async function test_private_window_separate_engine() {
   );
   Assert.equal(win.gURLBar.placeholder, noEngineString);
 
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     extraEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
-  await Services.search.setDefaultPrivate(
+  await SearchService.setDefaultPrivate(
     appDefaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   await TestUtils.waitForCondition(
@@ -259,13 +259,13 @@ add_task(async function test_private_window_separate_engine() {
 
   // Verify that the placeholder for private windows is updated even when no
   // private window is visible (https://bugzilla.mozilla.org/1792816).
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     appDefaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
-  await Services.search.setDefaultPrivate(
+  await SearchService.setDefaultPrivate(
     extraPrivateEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
   const win2 = await BrowserTestUtils.openNewBrowserWindow({ private: true });
   Assert.equal(win2.gURLBar.placeholder, noEngineString);
@@ -277,9 +277,9 @@ add_task(async function test_private_window_separate_engine() {
 });
 
 add_task(async function test_search_mode_engine_web() {
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     appDefaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   await doSearchModeTest(
@@ -329,9 +329,9 @@ add_task(async function test_change_default_engine_updates_placeholder() {
   tabs.push(await BrowserTestUtils.openNewForegroundTab(gBrowser));
 
   info(`Set engine to ${extraEngine.name}`);
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     extraEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
   await TestUtils.waitForCondition(
     () => gURLBar.placeholder == noEngineString,
@@ -340,9 +340,9 @@ add_task(async function test_change_default_engine_updates_placeholder() {
   Assert.equal(gURLBar.placeholder, noEngineString);
 
   info(`Set engine to ${appDefaultEngine.name}`);
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     appDefaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
   await TestUtils.waitForCondition(
     () => gURLBar.placeholder == expectedString,

@@ -301,7 +301,11 @@ this.windows = class extends ExtensionAPIPersistent {
               );
             }
 
-            args.appendElement(tab);
+            // If the tab is part of a split view, move the whole split view
+            // instead of just that single tab.
+            const tabToAdopt = tab.splitview ?? tab;
+            // For tab adoption logic, see getTabToAdopt() in browser-init.js.
+            args.appendElement(tabToAdopt);
           } else if (createData.url !== null) {
             if (Array.isArray(createData.url)) {
               let array = Cc["@mozilla.org/array;1"].createInstance(

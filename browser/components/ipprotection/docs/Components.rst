@@ -41,7 +41,6 @@ A diagram of all the main components is the following:
      %% Proxy stack
      subgraph Proxy
        IPPChannelFilter
-       IPProtectionUsage
        IPPNetworkErrorObserver
        GuardianClient
      end
@@ -56,7 +55,6 @@ A diagram of all the main components is the following:
 
      %% Proxy wiring
      IPPProxyManager --> IPPChannelFilter
-     IPPProxyManager --> IPProtectionUsage
      IPPProxyManager --> IPPNetworkErrorObserver
      IPPNetworkErrorObserver -- "error events (401)" --> IPPProxyManager
 

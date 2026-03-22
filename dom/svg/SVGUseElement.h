@@ -159,17 +159,17 @@ class SVGUseElement final : public SVGUseElementBase,
   void TriggerReclone();
   void UnlinkSource();
 
-  enum { ATTR_X, ATTR_Y, ATTR_WIDTH, ATTR_HEIGHT };
-  SVGAnimatedLength mLengthAttributes[4];
-  static LengthInfo sLengthInfo[4];
+  RefPtr<SVGUseElement> mOriginal;  // if we've been cloned, our "real" copy
+  ElementTracker mReferencedElementTracker;
+  RefPtr<URLExtraData> mContentURLData;  // URL data for its anonymous content
 
   enum { HREF, XLINK_HREF };
   SVGAnimatedString mStringAttributes[2];
   static StringInfo sStringInfo[2];
 
-  RefPtr<SVGUseElement> mOriginal;  // if we've been cloned, our "real" copy
-  ElementTracker mReferencedElementTracker;
-  RefPtr<URLExtraData> mContentURLData;  // URL data for its anonymous content
+  enum { ATTR_X, ATTR_Y, ATTR_WIDTH, ATTR_HEIGHT };
+  SVGAnimatedLength mLengthAttributes[4];
+  static LengthInfo sLengthInfo[4];
 };
 
 }  // namespace dom

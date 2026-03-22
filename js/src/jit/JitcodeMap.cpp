@@ -15,6 +15,8 @@
 #include "jit/InlineScriptTree.h"
 #include "jit/JitRuntime.h"
 #include "jit/JitSpewer.h"
+#include "js/JitCodeAPI.h"
+#include "js/ProfilingFrameIterator.h"
 #include "js/Vector.h"
 #include "vm/BytecodeLocation.h"  // for BytecodeLocation
 #include "vm/GeckoProfiler.h"
@@ -26,6 +28,35 @@ using mozilla::Maybe;
 
 namespace js {
 namespace jit {
+
+static void GetLineInfoFromJitCodeRecord(uint64_t addr, uint32_t* line,
+                                         uint32_t* column) {
+  JS::JitCodeRecord* record = JS::LookupJitCodeRecord(addr);
+  if (!record || record->sourceInfo.empty()) {
+    *line = 0;
+    *column = 0;
+    return;
+  }
+
+  // Calculate offset from the base address
+  uint32_t codeOffset = addr - record->code_addr;
+
+  // Binary search for the largest offset <= codeOffset
+  // We know for sure that sourceInfo is sorted by offset.
+  auto* it = std::upper_bound(
+      record->sourceInfo.begin(), record->sourceInfo.end(), codeOffset,
+      [](uint32_t offset, const JS::JitCodeSourceInfo& info) {
+        return offset < info.offset;
+      });
+
+  // Upper_bound returns first element > codeOffset, so go back one.
+  if (it != record->sourceInfo.begin()) {
+    --it;
+  }
+
+  *line = it->lineno;
+  *column = it->colno.oneOriginValue();
+}
 
 static inline JitcodeRegionEntry RegionAtAddr(const IonEntry& entry, void* ptr,
                                               uint32_t* ptrOffset) {
@@ -63,6 +94,29 @@ uint32_t IonEntry::callStackAtAddr(void* ptr, CallStackFrameInfo* results,
 
     results[count].label = getStr(scriptIdx);
     results[count].sourceId = getScriptSource(scriptIdx).scriptSource->id();
+
+    // Calculate line numbers during sampling
+    // For the first entry (innermost frame), use precise PC offset from
+    // delta-run
+    if (count == 0) {
+      pcOffset = region.findPcOffset(ptrOffset, pcOffset);
+    }
+
+    const IonScriptData& scriptData = getScriptData(scriptIdx);
+    ImmutableScriptData* isd = scriptData.sharedData->get();
+    jsbytecode* code = isd->code();
+    jsbytecode* pc = code + pcOffset;
+    MOZ_ASSERT(pcOffset < isd->codeLength());
+
+    SrcNote* notes = isd->notes();
+    SrcNote* notesEnd = notes + isd->noteLength();
+
+    JS::LimitedColumnNumberOneOrigin col;
+    uint32_t line = PCToLineNumber(scriptData.lineno, scriptData.column, notes,
+                                   notesEnd, code, pc, &col);
+    results[count].line = line;
+    results[count].column = col.oneOriginValue();
+
     count++;
     if (count >= maxResults) {
       break;
@@ -119,6 +173,10 @@ uint32_t BaselineEntry::callStackAtAddr(void* ptr, CallStackFrameInfo* results,
 
   results[0].label = str();
   results[0].sourceId = scriptSource().scriptSource->id();
+  uint64_t addr = reinterpret_cast<uint64_t>(ptr);
+
+  GetLineInfoFromJitCodeRecord(addr, &results[0].line, &results[0].column);
+
   return 1;
 }
 
@@ -156,6 +214,8 @@ uint32_t RealmIndependentSharedEntry::callStackAtAddr(
 
   results[0].label = str();
   results[0].sourceId = 0;
+  results[0].line = 0;
+  results[0].column = 0;
   return 1;
 }
 
@@ -690,7 +750,8 @@ bool JitcodeRegionEntry::WriteRun(CompactBufferWriter& writer,
       // NB: scriptList is guaranteed to contain curTree->script()
       uint32_t scriptIdx = 0;
       for (; scriptIdx < scriptList.length(); scriptIdx++) {
-        if (scriptList[scriptIdx].sourceAndExtent.matches(curTree->script())) {
+        if (scriptList[scriptIdx].scriptData.sourceAndExtent.matches(
+                curTree->script())) {
           break;
         }
       }
@@ -870,18 +931,18 @@ bool JitcodeIonTable::WriteIonTable(CompactBufferWriter& writer,
 
   JitSpew(JitSpew_Profiling,
           "Writing native to bytecode map for %s (offset %u-%u) (%zu entries)",
-          scriptList[0].sourceAndExtent.scriptSource->filename(),
-          scriptList[0].sourceAndExtent.toStringStart,
-          scriptList[0].sourceAndExtent.toStringEnd,
+          scriptList[0].scriptData.sourceAndExtent.scriptSource->filename(),
+          scriptList[0].scriptData.sourceAndExtent.toStringStart,
+          scriptList[0].scriptData.sourceAndExtent.toStringEnd,
           mozilla::PointerRangeSize(start, end));
 
   JitSpew(JitSpew_Profiling, "  ScriptList of size %u",
           unsigned(scriptList.length()));
   for (uint32_t i = 0; i < scriptList.length(); i++) {
     JitSpew(JitSpew_Profiling, "  Script %u - %s (offset %u-%u)", i,
-            scriptList[i].sourceAndExtent.scriptSource->filename(),
-            scriptList[i].sourceAndExtent.toStringStart,
-            scriptList[i].sourceAndExtent.toStringEnd);
+            scriptList[i].scriptData.sourceAndExtent.scriptSource->filename(),
+            scriptList[i].scriptData.sourceAndExtent.toStringStart,
+            scriptList[i].scriptData.sourceAndExtent.toStringEnd);
   }
 
   // Write out runs first.  Keep a vector tracking the positive offsets from
@@ -956,16 +1017,14 @@ bool JitcodeIonTable::WriteIonTable(CompactBufferWriter& writer,
 }  // namespace jit
 }  // namespace js
 
-JS::ProfiledFrameHandle::ProfiledFrameHandle(JSRuntime* rt,
-                                             js::jit::JitcodeGlobalEntry& entry,
-                                             void* addr, const char* label,
-                                             uint32_t sourceId, uint32_t depth)
+JS::ProfiledFrameHandle::ProfiledFrameHandle(
+    JSRuntime* rt, js::jit::JitcodeGlobalEntry& entry, void* addr,
+    const js::jit::CallStackFrameInfo& frameInfo, uint32_t depth)
     : rt_(rt),
       entry_(entry),
       addr_(addr),
       canonicalAddr_(nullptr),
-      label_(label),
-      sourceId_(sourceId),
+      frameInfo_(frameInfo),
       depth_(depth) {
   if (!canonicalAddr_) {
     canonicalAddr_ = entry_.canonicalNativeAddrFor(rt_, addr_);
@@ -988,10 +1047,6 @@ JS::ProfiledFrameHandle::frameKind() const {
 
 JS_PUBLIC_API uint64_t JS::ProfiledFrameHandle::realmID() const {
   return entry_.realmID(rt_);
-}
-
-JS_PUBLIC_API uint32_t JS::ProfiledFrameHandle::sourceId() const {
-  return sourceId_;
 }
 
 JS_PUBLIC_API JS::ProfiledFrameRange JS::GetProfiledFrames(JSContext* cx,
@@ -1022,6 +1077,5 @@ JS::ProfiledFrameHandle JS::ProfiledFrameRange::Iter::operator*() const {
   // and the depth we need to pass to ProfiledFrameHandle goes down.
   uint32_t depth = range_.depth_ - 1 - index_;
   return ProfiledFrameHandle(range_.rt_, *range_.entry_, range_.addr_,
-                             range_.frames_[depth].label,
-                             range_.frames_[depth].sourceId, depth);
+                             range_.frames_[depth], depth);
 }

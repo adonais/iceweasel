@@ -34,20 +34,20 @@ export const MESSAGE_ROLE = Object.freeze({
 });
 
 /**
- * @typedef {0 | 1 | 2} InsightsFlagSource
+ * @typedef {0 | 1 | 2} MemoriesFlagSource
  */
 
 /**
- * @type {InsightsFlagSource}
+ * @type {MemoriesFlagSource}
  */
-export const INSIGHTS_FLAG_SOURCE = Object.freeze({
+export const MEMORIES_FLAG_SOURCE = Object.freeze({
   GLOBAL: 0,
   CONVERSATION: 1,
   MESSAGE_ONCE: 2,
 });
 
 /**
- * @typedef { "text" | "injected_insights" | "injected_real_time_info" } SystemPromptType
+ * @typedef { "text" | "injected_memories" | "injected_real_time_info" } SystemPromptType
  */
 
 /**
@@ -55,6 +55,6 @@ export const INSIGHTS_FLAG_SOURCE = Object.freeze({
  */
 export const SYSTEM_PROMPT_TYPE = Object.freeze({
   TEXT: "text",
-  INSIGHTS: "injected_insights",
+  MEMORIES: "injected_memories",
   REAL_TIME: "injected_real_time_info",
 });

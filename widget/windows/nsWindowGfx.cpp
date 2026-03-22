@@ -467,8 +467,9 @@ nsresult nsWindowGfx::CreateIcon(imgIContainer* aContainer,
 
     mozilla::image::ImgDrawResult res = aContainer->Draw(
         &context, iconSize, image::ImageRegion::Create(iconSize),
-        imgIContainer::FRAME_CURRENT, SamplingFilter::POINT, svgContext,
-        imgIContainer::FLAG_SYNC_DECODE, 1.0);
+        imgIContainer::FRAME_CURRENT, SamplingFilter::LINEAR, svgContext,
+        imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY,
+        1.0);
 
     if (res != mozilla::image::ImgDrawResult::SUCCESS) {
       return NS_ERROR_FAILURE;

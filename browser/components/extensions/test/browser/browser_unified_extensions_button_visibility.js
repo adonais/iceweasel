@@ -300,7 +300,7 @@ add_task(async function test_customization_button_and_menu_item_visibility() {
       "toolbar-context-always-show-extensions-button"
     );
     is(item.hidden, false, "Menu item should be visible");
-    is(item.getAttribute("checked"), "true", "Should be checked by default");
+    ok(item.hasAttribute("checked"), "Should be checked by default");
     await closeChromeContextMenu(contextMenu.id, item, win);
 
     info("The button should still be visible while customizing");
@@ -341,7 +341,7 @@ add_task(async function test_customization_button_and_menu_item_visibility() {
       "toolbar-context-always-show-extensions-button"
     );
     is(item.hidden, false, "Menu item should be visible");
-    ok(!item.getAttribute("checked"), "Should be unchecked by earlier action");
+    ok(!item.hasAttribute("checked"), "Should be unchecked by earlier action");
     await closeChromeContextMenu(contextMenu.id, null, win);
   }
 

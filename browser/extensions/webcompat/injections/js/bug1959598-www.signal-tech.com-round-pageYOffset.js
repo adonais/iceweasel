@@ -10,12 +10,16 @@
  * The page's logic seems to rely on integer values being returned by window.pageYOffset.
  */
 
-/* globals exportFunction */
+if (!window.__firefoxWebCompatFixBug1959598) {
+  Object.defineProperty(window, "__firefoxWebCompatFixBug1959598", {
+    configurable: false,
+    value: true,
+  });
 
-const win = window.wrappedJSObject;
-const pyo = Object.getOwnPropertyDescriptor(win, "pageYOffset");
-const pyoGet = pyo.get;
-pyo.get = exportFunction(function () {
-  return Math.round(pyoGet.call(this));
-}, window);
-Object.defineProperty(win, "pageYOffset", pyo);
+  const pyo = Object.getOwnPropertyDescriptor(window, "pageYOffset");
+  const pyoGet = pyo.get;
+  pyo.get = function () {
+    return Math.round(pyoGet.call(this));
+  };
+  Object.defineProperty(window, "pageYOffset", pyo);
+}

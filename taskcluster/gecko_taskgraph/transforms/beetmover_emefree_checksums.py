@@ -7,14 +7,14 @@ Transform release-beetmover-source-checksums into an actual task description.
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from voluptuous import Optional
 
 from gecko_taskgraph.transforms.beetmover import craft_release_properties
 from gecko_taskgraph.transforms.task import task_description_schema
 from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 
-beetmover_checksums_description_schema = Schema({
+beetmover_checksums_description_schema = LegacySchema({
     Optional("label"): str,
     Optional("extra"): object,
     Optional("shipping-phase"): task_description_schema["shipping-phase"],

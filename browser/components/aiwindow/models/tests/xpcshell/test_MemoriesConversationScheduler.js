@@ -81,7 +81,7 @@ add_task(async function test_scheduler_doesnt_run_with_insufficient_messages() {
 
   try {
     const findMessagesStub = sb
-      .stub(ChatStore.prototype, "findMessagesByDate")
+      .stub(ChatStore, "findMessagesByDate")
       .callsFake(async () => {
         return messages;
       });
@@ -93,6 +93,8 @@ add_task(async function test_scheduler_doesnt_run_with_insufficient_messages() {
     const generateStub = sb
       .stub(MemoriesManager, "generateMemoriesFromConversationHistory")
       .resolves();
+
+    sb.stub(MemoriesManager, "shouldEnableMemoriesSchedulers").returns(true);
 
     let scheduler = MemoriesConversationScheduler.maybeInit();
     Assert.ok(scheduler, "Scheduler should be initialized when pref is true");
@@ -122,8 +124,10 @@ add_task(async function test_scheduler_runs_with_small_history() {
   const sb = sinon.createSandbox();
 
   try {
+    sb.stub(MemoriesManager, "shouldEnableMemoriesSchedulers").returns(true);
+
     const findMessagesStub = sb
-      .stub(ChatStore.prototype, "findMessagesByDate")
+      .stub(ChatStore, "findMessagesByDate")
       .callsFake(async () => {
         return messages;
       });

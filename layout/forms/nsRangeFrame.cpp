@@ -102,14 +102,14 @@ nsresult nsRangeFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
   Document* doc = mContent->OwnerDoc();
   // Create the ::-moz-range-track pseudo-element (a div):
-  mTrackDiv = MakeAnonymousDiv(*doc, PseudoStyleType::mozRangeTrack,
-                               PseudoStyleType::sliderTrack, aElements);
+  mTrackDiv = MakeAnonymousDiv(*doc, PseudoStyleType::MozRangeTrack,
+                               PseudoStyleType::SliderTrack, aElements);
   // Create the ::-moz-range-progress pseudo-element (a div):
-  mProgressDiv = MakeAnonymousDiv(*doc, PseudoStyleType::mozRangeProgress,
-                                  PseudoStyleType::sliderFill, aElements);
+  mProgressDiv = MakeAnonymousDiv(*doc, PseudoStyleType::MozRangeProgress,
+                                  PseudoStyleType::SliderFill, aElements);
   // Create the ::-moz-range-thumb pseudo-element (a div):
-  mThumbDiv = MakeAnonymousDiv(*doc, PseudoStyleType::mozRangeThumb,
-                               PseudoStyleType::sliderThumb, aElements);
+  mThumbDiv = MakeAnonymousDiv(*doc, PseudoStyleType::MozRangeThumb,
+                               PseudoStyleType::SliderThumb, aElements);
   return NS_OK;
 }
 
@@ -169,27 +169,23 @@ void nsRangeFrame::Reflow(nsPresContext* aPresContext,
       contentBoxSize + aReflowInput.ComputedLogicalBorderPadding(wm).Size(wm));
   aDesiredSize.SetOverflowAreasToDesiredBounds();
 
-  ReflowAnonymousContent(aPresContext, aDesiredSize, contentBoxSize,
-                         aReflowInput);
+  ReflowChildFrames(aPresContext, aDesiredSize, contentBoxSize, aReflowInput);
   FinishAndStoreOverflow(&aDesiredSize);
 
   MOZ_ASSERT(aStatus.IsEmpty(), "This type of frame can't be split.");
 }
 
-void nsRangeFrame::ReflowAnonymousContent(nsPresContext* aPresContext,
-                                          ReflowOutput& aDesiredSize,
-                                          const LogicalSize& aContentBoxSize,
-                                          const ReflowInput& aReflowInput) {
+void nsRangeFrame::ReflowChildFrames(nsPresContext* aPresContext,
+                                     ReflowOutput& aDesiredSize,
+                                     const LogicalSize& aContentBoxSize,
+                                     const ReflowInput& aReflowInput) {
   const auto parentWM = aReflowInput.GetWritingMode();
   // The width/height of our content box, which is the available width/height
   // for our anonymous content.
   const nsSize rangeFrameContentBoxSize =
       aContentBoxSize.GetPhysicalSize(parentWM);
-  for (auto* div : {mTrackDiv.get(), mThumbDiv.get(), mProgressDiv.get()}) {
-    nsIFrame* child = div->GetPrimaryFrame();
-    if (!child) {
-      continue;
-    }
+  for (auto* child : mFrames) {
+    auto* content = child->GetContent();
     const WritingMode wm = child->GetWritingMode();
     const LogicalSize parentSizeInChildWM =
         aContentBoxSize.ConvertTo(wm, parentWM);
@@ -199,7 +195,7 @@ void nsRangeFrame::ReflowAnonymousContent(nsPresContext* aPresContext,
                                  Some(parentSizeInChildWM));
 
     const nsPoint pos = [&] {
-      if (div != mTrackDiv) {
+      if (content != mTrackDiv) {
         // Where we position the thumb and range-progress depends on its size,
         // so we first reflow them at {0,0} to obtain the size, then position
         // them afterwards.
@@ -237,9 +233,9 @@ void nsRangeFrame::ReflowAnonymousContent(nsPresContext* aPresContext,
         "We gave our child unconstrained height, so it should be complete");
     FinishReflowChild(child, aPresContext, childDesiredSize, &childReflowInput,
                       pos.x, pos.y, ReflowChildFlags::Default);
-    if (div == mThumbDiv) {
+    if (content == mThumbDiv) {
       DoUpdateThumbPosition(child, rangeFrameContentBoxSize);
-    } else if (div == mProgressDiv) {
+    } else if (content == mProgressDiv) {
       DoUpdateRangeProgressFrame(child, rangeFrameContentBoxSize);
     }
     ConsiderChildOverflow(aDesiredSize.mOverflowAreas, child);
@@ -409,7 +405,7 @@ void nsRangeFrame::UpdateForValueChange() {
 nsTArray<Decimal> nsRangeFrame::TickMarks() {
   nsTArray<Decimal> tickMarks;
   auto& input = InputElement();
-  auto* list = input.GetList();
+  auto* list = input.GetListInternal();
   if (!list) {
     return tickMarks;
   }

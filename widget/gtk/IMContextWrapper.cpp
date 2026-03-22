@@ -1943,9 +1943,7 @@ void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
 
     // If committing string is exactly same as a character which is
     // produced by the key, eKeyDown and eKeyPress event should be
-    // dispatched by the caller of OnKeyEvent() normally.  Note that
-    // mMaybeInDeadKeySequence will be set to false by OnKeyEvent()
-    // since we set mFallbackToKeyEvent to true here.
+    // dispatched by the caller of OnKeyEvent() normally.
     if (!strcmp(commitString, keyval_utf8)) {
       MOZ_LOG(gIMELog, LogLevel::Info,
               ("0x%p   OnCommitCompositionNative(), "
@@ -1957,63 +1955,39 @@ void IMContextWrapper::OnCommitCompositionNative(GtkIMContext* aContext,
 
     // If we're in a dead key sequence, commit string is a character in
     // the BMP and mProcessingKeyEvent produces some characters but it's
-    // not same as committing string, we should dispatch an eKeyPress
-    // event from here.
-    WidgetKeyboardEvent keyDownEvent(true, eKeyDown, mLastFocusedWindow);
-    KeymapWrapper::InitKeyEvent(keyDownEvent, mProcessingKeyEvent, false);
-    if (mMaybeInDeadKeySequence && utf16CommitString.Length() == 1 &&
-        keyDownEvent.mKeyNameIndex == KEY_NAME_INDEX_USE_STRING) {
-      mKeyboardEventWasDispatched = true;
-      // Anyway, we're not in dead key sequence anymore.
-      mMaybeInDeadKeySequence = false;
+    // not same as committing string, we should dispatch key events.
+    if (mMaybeInDeadKeySequence && utf16CommitString.Length() == 1) {
+      WidgetKeyboardEvent keyEvent(true, eKeyDown, mLastFocusedWindow);
+      KeymapWrapper::InitKeyEvent(keyEvent, mProcessingKeyEvent, false);
+      if (keyEvent.mKeyNameIndex == KEY_NAME_INDEX_USE_STRING) {
+        mMaybeInDeadKeySequence = false;
+        keyEvent.mKeyValue = utf16CommitString;
+        if (DispatchKeyEventsForCommittedCharacter(keyEvent, false)) {
+          return;
+        }
+      }
+    }
+  }
 
-      RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher();
-      nsresult rv = dispatcher->BeginNativeInputTransaction();
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        MOZ_LOG(gIMELog, LogLevel::Error,
-                ("0x%p   OnCommitCompositionNative(), FAILED, "
-                 "due to BeginNativeInputTransaction() failure",
-                 this));
-        return;
-      }
-
-      // First, dispatch eKeyDown event.
-      keyDownEvent.mKeyValue = utf16CommitString;
-      nsEventStatus status = nsEventStatus_eIgnore;
-      bool dispatched = dispatcher->DispatchKeyboardEvent(
-          eKeyDown, keyDownEvent, status, mProcessingKeyEvent);
-      if (!dispatched || status == nsEventStatus_eConsumeNoDefault) {
-        mKeyboardEventWasConsumed = true;
-        MOZ_LOG(gIMELog, LogLevel::Info,
-                ("0x%p   OnCommitCompositionNative(), "
-                 "doesn't dispatch eKeyPress event because the preceding "
-                 "eKeyDown event was not dispatched or was consumed",
-                 this));
-        return;
-      }
-      if (mLastFocusedWindow != keyDownEvent.mWidget ||
-          mLastFocusedWindow->Destroyed()) {
-        MOZ_LOG(gIMELog, LogLevel::Warning,
-                ("0x%p   OnCommitCompositionNative(), Warning, "
-                 "stop dispatching eKeyPress event because the preceding "
-                 "eKeyDown event caused changing focused widget or "
-                 "destroyed",
-                 this));
-        return;
-      }
+  // Wayland text-input protocol without GDK key event (bug 2010538).
+  // When we receive a simple character commit without a key event, dispatch
+  // synthesized keydown/keypress/keyup events.
+  if (!IsComposingOn(aContext) && mIsKeySnooped && !mProcessingKeyEvent &&
+      utf16CommitString.Length() == 1 && aContext == GetCurrentContext()) {
+    WidgetKeyboardEvent keyEvent(true, eKeyDown, mLastFocusedWindow);
+    KeymapWrapper::InitKeyEventFromCommitString(keyEvent, utf16CommitString);
+    if (keyEvent.mKeyCode) {
       MOZ_LOG(gIMELog, LogLevel::Info,
               ("0x%p   OnCommitCompositionNative(), "
-               "dispatched eKeyDown event for the committed character",
-               this));
+               "dispatching synthesized key events for Wayland text-input "
+               "character='%c' (keyCode=0x%02X)",
+               this, static_cast<char>(utf16CommitString.CharAt(0)),
+               keyEvent.mKeyCode));
 
-      // Next, dispatch eKeyPress event.
-      dispatcher->MaybeDispatchKeypressEvents(keyDownEvent, status,
-                                              mProcessingKeyEvent);
-      MOZ_LOG(gIMELog, LogLevel::Info,
-              ("0x%p   OnCommitCompositionNative(), "
-               "dispatched eKeyPress event for the committed character",
-               this));
-      return;
+      // Dispatch keydown/keypress/keyup (keyup needed since no GDK event)
+      if (DispatchKeyEventsForCommittedCharacter(keyEvent, true)) {
+        return;
+      }
     }
   }
 
@@ -2042,6 +2016,51 @@ void IMContextWrapper::GetCompositionString(GtkIMContext* aContext,
 
   pango_attr_list_unref(feedback_list);
   g_free(preedit_string);
+}
+
+bool IMContextWrapper::DispatchKeyEventsForCommittedCharacter(
+    WidgetKeyboardEvent& aKeyEvent, bool aDispatchKeyUp) {
+  MOZ_ASSERT(aKeyEvent.mMessage == eKeyDown);
+
+  mKeyboardEventWasDispatched = true;
+
+  // Dispatch eKeyDown event
+  bool isCancelled = false;
+  if (!KeymapWrapper::DispatchKeyDownOrKeyUpEvent(mLastFocusedWindow, aKeyEvent,
+                                                  &isCancelled) ||
+      isCancelled) {
+    mKeyboardEventWasConsumed = isCancelled;
+    return true;
+  }
+  // Check if focus changed or window was destroyed during keydown dispatch
+  if (mLastFocusedWindow != aKeyEvent.mWidget ||
+      mLastFocusedWindow->IsDestroyed()) {
+    return true;
+  }
+
+  // Dispatch eKeyPress event
+  RefPtr<TextEventDispatcher> dispatcher = GetTextEventDispatcher();
+  nsresult rv = dispatcher->BeginNativeInputTransaction();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return true;
+  }
+  nsEventStatus status = nsEventStatus_eIgnore;
+  dispatcher->MaybeDispatchKeypressEvents(aKeyEvent, status, nullptr);
+  // Check if focus changed or window was destroyed during keypress dispatch
+  if (mLastFocusedWindow != aKeyEvent.mWidget ||
+      mLastFocusedWindow->IsDestroyed()) {
+    return true;
+  }
+
+  // Dispatch eKeyUp event if requested (needed for Wayland text-input
+  // since there's no GDK key release event)
+  if (aDispatchKeyUp) {
+    aKeyEvent.mMessage = eKeyUp;
+    KeymapWrapper::DispatchKeyDownOrKeyUpEvent(mLastFocusedWindow, aKeyEvent,
+                                               &isCancelled);
+  }
+
+  return true;
 }
 
 bool IMContextWrapper::MaybeDispatchKeyEventAsProcessedByIME(
@@ -2994,7 +3013,7 @@ void IMContextWrapper::SetCursorPosition(GtkIMContext* aContext) {
   }
 
   nsWindow* rootWindow =
-      static_cast<nsWindow*>(mLastFocusedWindow->GetTopLevelWidget());
+      nsWindow::FromWidget(mLastFocusedWindow->GetTopLevelWidget());
 
   // Get the position of the rootWindow in screen.
   LayoutDeviceIntPoint root = rootWindow->WidgetToScreenOffset();

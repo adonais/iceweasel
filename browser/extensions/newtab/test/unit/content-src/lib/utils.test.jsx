@@ -5,7 +5,6 @@ import {
   getActiveCardSize,
   getActiveColumnLayout,
   useConfetti,
-  selectWeatherPlacement,
 } from "content-src/lib/utils.jsx";
 
 // Test component to use the useIntersectionObserver
@@ -249,107 +248,5 @@ describe("useConfetti hook", () => {
     assert.ok(fakeContext.clearRect.notCalled);
     assert.ok(fakeContext.fillRect.notCalled);
     assert.ok(rafStub.notCalled);
-  });
-});
-
-describe("selectWeatherPlacement", () => {
-  // literal URL used inside the selector
-  const FEED_URL =
-    "https://merino.services.mozilla.com/api/v1/curated-recommendations";
-
-  function mockState({
-    placement,
-    pocketEnabled = true,
-    systemEnabled = true,
-    dailyBriefEnabled = true,
-    sectionId = "daily_brief",
-    blocked = false,
-    sections = [
-      { sectionKey: "daily_brief", receivedRank: 0 },
-      { sectionKey: "other", receivedRank: 1 },
-    ],
-  } = {}) {
-    return {
-      Prefs: {
-        values: {
-          // intent pref
-          "weather.placement": placement,
-          // story feed prefs used by selector in this file
-          "feeds.section.topstories": pocketEnabled,
-          "feeds.system.topstories": systemEnabled,
-          // daily brief prefs; selector uses trainhopConfig first, falls back to these
-          "discoverystream.dailyBrief.enabled": dailyBriefEnabled,
-          "discoverystream.dailyBrief.sectionId": sectionId,
-          // include trainhopConfig for parity with production (optional)
-          trainhopConfig: {
-            dailyBriefing: {
-              enabled: dailyBriefEnabled,
-              sectionId,
-            },
-          },
-        },
-      },
-      DiscoveryStream: {
-        sectionPersonalization: {
-          [sectionId]: { isBlocked: blocked },
-        },
-        feeds: {
-          data: {
-            [FEED_URL]: {
-              data: { sections },
-            },
-          },
-        },
-      },
-    };
-  }
-
-  it("returns 'header' when placement pref is missing or 'header'", () => {
-    const invalidPlacement = mockState({ placement: undefined });
-
-    console.log(
-      "TESTSTATE: ",
-      invalidPlacement.Prefs.values["weather.placement"]
-    );
-    const headerPLacement = mockState({ placement: "header" });
-    assert.equal(selectWeatherPlacement(invalidPlacement), "header");
-    assert.equal(selectWeatherPlacement(headerPLacement), "header");
-  });
-
-  it("returns 'section' when placement is 'section' and daily brief is enabled, unblocked, and at top", () => {
-    const state = mockState({ placement: "section" });
-    assert.equal(selectWeatherPlacement(state), "section");
-  });
-
-  it("returns 'header' when DB section is not at the top (receivedRank !== 0 || index !== 0)", () => {
-    const state = mockState({
-      placement: "section",
-      sections: [
-        { sectionKey: "other", receivedRank: 0 },
-        { sectionKey: "daily_brief", receivedRank: 1 },
-      ],
-    });
-    assert.equal(selectWeatherPlacement(state), "header");
-  });
-
-  it("returns 'header' when DB section is blocked", () => {
-    const state = mockState({ blocked: true, placement: "section" });
-    assert.equal(selectWeatherPlacement(state), "header");
-  });
-
-  it("returns 'header' when Pocket/topstories is disabled", () => {
-    const state = mockState({
-      placement: "section",
-      pocketEnabled: false,
-    });
-    assert.equal(selectWeatherPlacement(state), "header");
-  });
-
-  it("returns 'header' when sections have not loaded yet", () => {
-    const state = mockState({
-      placement: "section",
-      sections: [], // simulate no feed yet
-    });
-    assert.equal(selectWeatherPlacement(state), "header");
   });
 });

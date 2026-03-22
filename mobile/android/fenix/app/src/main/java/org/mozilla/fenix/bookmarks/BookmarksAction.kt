@@ -41,6 +41,7 @@ internal sealed class BookmarksListMenuAction : BookmarksAction {
     internal data object SelectAll : BookmarksListMenuAction()
 
     internal sealed class Bookmark : BookmarksListMenuAction() {
+        data class SelectClicked(val bookmark: BookmarkItem.Bookmark) : Bookmark()
         data class EditClicked(val bookmark: BookmarkItem.Bookmark) : Bookmark()
         data class CopyClicked(val bookmark: BookmarkItem.Bookmark) : Bookmark()
         data class ShareClicked(val bookmark: BookmarkItem.Bookmark) : Bookmark()
@@ -49,6 +50,7 @@ internal sealed class BookmarksListMenuAction : BookmarksAction {
         data class DeleteClicked(val bookmark: BookmarkItem.Bookmark) : Bookmark()
     }
     internal sealed class Folder : BookmarksListMenuAction() {
+        data class SelectClicked(val folder: BookmarkItem.Folder) : Folder()
         data class EditClicked(val folder: BookmarkItem.Folder) : Folder()
         data class OpenAllInNormalTabClicked(val folder: BookmarkItem.Folder) : Folder()
         data class OpenAllInPrivateTabClicked(val folder: BookmarkItem.Folder) : Folder()

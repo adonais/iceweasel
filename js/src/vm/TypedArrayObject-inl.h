@@ -17,8 +17,7 @@
 #include <algorithm>
 #include <type_traits>
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "gc/Zone.h"
 #include "jit/AtomicOperations.h"
 #include "js/Conversions.h"

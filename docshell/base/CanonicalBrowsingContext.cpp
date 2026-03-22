@@ -159,8 +159,6 @@ CanonicalBrowsingContext::~CanonicalBrowsingContext() {
   if (mSessionHistory) {
     mSessionHistory->SetBrowsingContext(nullptr);
   }
-
-  mActiveEntryList = nullptr;
 }
 
 /* static */
@@ -271,7 +269,7 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetHasRestoreData(GetHasRestoreData());
   txn.SetShouldDelayMediaFromStart(GetShouldDelayMediaFromStart());
   txn.SetForceOffline(GetForceOffline());
-  txn.SetTopInnerSizeForRFP(GetTopInnerSizeForRFP());
+  txn.SetInnerSizeSpoofedForRFP(GetInnerSizeSpoofedForRFP());
   txn.SetIPAddressSpace(GetIPAddressSpace());
   txn.SetParentalControlsEnabled(GetParentalControlsEnabled());
 
@@ -360,10 +358,6 @@ void CanonicalBrowsingContext::ReplacedBy(
   mLoadingEntries.SwapElements(aNewContext->mLoadingEntries);
   MOZ_ASSERT(!aNewContext->mActiveEntry);
   mActiveEntry.swap(aNewContext->mActiveEntry);
-  if (Navigation::IsAPIEnabled()) {
-    MOZ_ASSERT(!aNewContext->mActiveEntryList);
-    aNewContext->mActiveEntryList = std::move(mActiveEntryList);
-  }
 
   aNewContext->mPermanentKey = mPermanentKey;
   mPermanentKey.setNull();
@@ -488,16 +482,6 @@ SessionHistoryEntry* CanonicalBrowsingContext::GetActiveSessionHistoryEntry() {
 void CanonicalBrowsingContext::SetActiveSessionHistoryEntryFromBFCache(
     SessionHistoryEntry* aEntry) {
   mActiveEntry = aEntry;
-  auto* activeEntries = GetActiveEntries();
-  if (Navigation::IsAPIEnabled() && activeEntries) {
-    if (StaticPrefs::dom_navigation_api_strict_enabled()) {
-      MOZ_DIAGNOSTIC_ASSERT(!aEntry || activeEntries->contains(aEntry));
-      MOZ_DIAGNOSTIC_ASSERT(aEntry || activeEntries->isEmpty());
-    } else {
-      MOZ_ASSERT(!aEntry || activeEntries->contains(aEntry));
-      MOZ_ASSERT(aEntry || activeEntries->isEmpty());
-    }
-  }
 }
 
 bool CanonicalBrowsingContext::HasHistoryEntry(nsISHEntry* aEntry) {
@@ -513,37 +497,14 @@ void CanonicalBrowsingContext::SwapHistoryEntries(nsISHEntry* aOldEntry,
   }
 
   nsCOMPtr<SessionHistoryEntry> newEntry = do_QueryInterface(aNewEntry);
-  auto* activeEntries = GetActiveEntries();
   MOZ_LOG(gSHLog, LogLevel::Verbose,
-          ("Swapping History Entries: mActiveEntry=%p, aNewEntry=%p. "
-           "Is in list? mActiveEntry %s, aNewEntry %s. "
-           "Is aNewEntry in current mActiveEntryList? %s.",
-           mActiveEntry.get(), aNewEntry,
-           mActiveEntry && mActiveEntry->isInList() ? "yes" : "no",
-           newEntry && newEntry->isInList() ? "yes" : "no",
-           activeEntries->contains(newEntry) ? "yes" : "no"));
+          ("Swapping History Entries: mActiveEntry=%p, aNewEntry=%p. ",
+           mActiveEntry.get(), aNewEntry));
   if (!newEntry) {
-    activeEntries->clear();
     mActiveEntry = nullptr;
     return;
   }
-  if (Navigation::IsAPIEnabled() && mActiveEntry->isInList()) {
-    RefPtr beforeOldEntry = mActiveEntry->removeAndGetPrevious();
-    if (beforeOldEntry != newEntry) {
-      if (newEntry->isInList()) {
-        newEntry->setNext(mActiveEntry);
-        newEntry->remove();
-      }
 
-      if (beforeOldEntry) {
-        beforeOldEntry->setNext(newEntry);
-      } else {
-        activeEntries->insertFront(newEntry);
-      }
-    } else {
-      newEntry->setPrevious(mActiveEntry);
-    }
-  }
   mActiveEntry = newEntry.forget();
 }
 
@@ -654,14 +615,6 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
     bool sessionHistoryLoad =
         existingLoadingInfo && existingLoadingInfo->mLoadIsFromSessionHistory;
 
-    if (sessionHistoryLoad && !mActiveEntry) {
-      auto* activeEntries = GetActiveEntries();
-      if (activeEntries && activeEntries->isEmpty()) {
-        nsSHistory* shistory = static_cast<nsSHistory*>(GetSessionHistory());
-        shistory->ReconstructContiguousEntryListFrom(entry);
-      }
-    }
-
     MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
                 "Determining navigation type from loadType={}",
                 aLoadState->LoadType());
@@ -767,15 +720,18 @@ CanonicalBrowsingContext::ReplaceLoadingSessionHistoryEntryForLoad(
       }
 
       auto result = MakeUnique<LoadingSessionHistoryInfo>(loadingEntry, aInfo);
-      MOZ_LOG_FMT(
-          gNavigationAPILog, LogLevel::Debug,
-          "CanonicalBrowsingContext::ReplaceLoadingSessionHistoryEntryForLoad: "
-          "Recreating the contiguous entries list after redirected navigation "
-          "to {}.",
-          ToMaybeRef(result->mInfo.GetURI())
-              .map(std::mem_fn(&nsIURI::GetSpecOrDefault))
-              .valueOr("(null URI)."_ns));
-      GetContiguousEntriesForLoad(*result, loadingEntry);
+      if (Navigation::IsAPIEnabled()) {
+        MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
+                    "CanonicalBrowsingContext::"
+                    "ReplaceLoadingSessionHistoryEntryForLoad: "
+                    "Recreating the contiguous entries list after redirected "
+                    "navigation "
+                    "to {}.",
+                    ToMaybeRef(result->mInfo.GetURI())
+                        .map(std::mem_fn(&nsIURI::GetSpecOrDefault))
+                        .valueOr("(null URI)."_ns));
+        GetContiguousEntriesForLoad(*result, loadingEntry);
+      }
       return result;
     }
   }
@@ -785,38 +741,55 @@ CanonicalBrowsingContext::ReplaceLoadingSessionHistoryEntryForLoad(
 void CanonicalBrowsingContext::GetContiguousEntriesForLoad(
     LoadingSessionHistoryInfo& aLoadingInfo,
     const RefPtr<SessionHistoryEntry>& aEntry) {
+  MOZ_DIAGNOSTIC_ASSERT(Navigation::IsAPIEnabled());
   nsCOMPtr<nsIURI> uri =
       mActiveEntry ? mActiveEntry->GetURIOrInheritedForAboutBlank() : nullptr;
   nsCOMPtr<nsIURI> targetURI = aEntry->GetURIOrInheritedForAboutBlank();
   bool sameOrigin =
       NS_SUCCEEDED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
           targetURI, uri, false, false));
-  if (aEntry->isInList() ||
-      (mActiveEntry && mActiveEntry->isInList() && sameOrigin)) {
-    MOZ_DIAGNOSTIC_ASSERT(aLoadingInfo.mTriggeringNavigationType);
-    NavigationType navigationType =
-        aLoadingInfo.mTriggeringNavigationType.valueOr(NavigationType::Push);
-    nsSHistory::WalkContiguousEntriesInOrder(
-        aEntry->isInList() ? aEntry : mActiveEntry,
-        [activeEntry = mActiveEntry, entries = &aLoadingInfo.mContiguousEntries,
-         navigationType](auto* aEntry) {
-          nsCOMPtr<SessionHistoryEntry> entry = do_QueryObject(aEntry);
-          MOZ_ASSERT(entry);
-          if (navigationType == NavigationType::Replace &&
-              entry == activeEntry) {
-            // In the case of a replace navigation, we end up dropping the
-            // active entry and all following entries.
-            return false;
-          }
-          entries->AppendElement(entry->Info());
-          // In the case of a push navigation, we end up keeping the
-          // current active entry but drop all following entries.
-          return !(navigationType == NavigationType::Push &&
-                   entry == activeEntry);
-        });
+
+  MOZ_DIAGNOSTIC_ASSERT(aLoadingInfo.mTriggeringNavigationType);
+  NavigationType navigationType =
+      aLoadingInfo.mTriggeringNavigationType.valueOr(NavigationType::Push);
+  bool found = false;
+  if (sameOrigin || !aEntry->ForInitialLoad()) {
+    RefPtr<SessionHistoryEntry> entry =
+        !aEntry->ForInitialLoad() ? aEntry : mActiveEntry;
+
+    while (!found) {
+      nsSHistory::WalkContiguousEntriesInOrder(
+          entry, [activeEntry = entry, targetEntry = aEntry,
+                  entries = &aLoadingInfo.mContiguousEntries, navigationType,
+                  &found](auto* aEntry) {
+            nsCOMPtr<SessionHistoryEntry> entry = do_QueryObject(aEntry);
+            found = found || targetEntry->GetID() == entry->GetID();
+            MOZ_ASSERT(entry);
+            if (navigationType == NavigationType::Replace &&
+                entry->GetID() == activeEntry->GetID()) {
+              // In the case of a replace navigation, we end up dropping the
+              // active entry and all following entries.
+              return false;
+            }
+
+            entries->AppendElement(entry->Info());
+
+            // In the case of a push navigation, we end up keeping the
+            // current active entry but drop all following entries.
+            return !(navigationType == NavigationType::Push &&
+                     entry->GetID() == activeEntry->GetID());
+          });
+
+      if (found || !mActiveEntry || entry->GetID() == mActiveEntry->GetID() ||
+          !sameOrigin) {
+        break;
+      }
+
+      entry = mActiveEntry;
+    }
   }
 
-  if (!aLoadingInfo.mLoadIsFromSessionHistory || !sameOrigin) {
+  if (aEntry->ForInitialLoad() || !found) {
     aLoadingInfo.mContiguousEntries.AppendElement(aEntry->Info());
   }
 }
@@ -1221,13 +1194,10 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
             [](nsISHEntry* aEntry) { aEntry->SetName(EmptyString()); });
       }
 
-      auto* activeEntries = GetActiveEntries();
       MOZ_LOG(gSHLog, LogLevel::Verbose,
               ("SessionHistoryCommit called with mActiveEntry=%p, "
-               "newActiveEntry=%p, "
-               "active entry list does%s contain the active entry.",
-               mActiveEntry.get(), newActiveEntry.get(),
-               activeEntries->contains(mActiveEntry) ? "" : "n't"));
+               "newActiveEntry=%p, ",
+               mActiveEntry.get(), newActiveEntry.get()));
 
       bool addEntry = ShouldUpdateSessionHistory(aLoadType);
       if (IsTop()) {
@@ -1254,14 +1224,6 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
 
           if (!addEntry) {
             shistory->ReplaceEntry(index, newActiveEntry);
-            if (Navigation::IsAPIEnabled() && mActiveEntry &&
-                mActiveEntry->isInList() && !newActiveEntry->isInList()) {
-              mActiveEntry->setNext(newActiveEntry);
-              mActiveEntry->remove();
-            }
-          }
-          if (Navigation::IsAPIEnabled() && !newActiveEntry->isInList()) {
-            activeEntries->insertBack(newActiveEntry);
           }
           mActiveEntry = newActiveEntry;
         } else if (LOAD_TYPE_HAS_FLAGS(
@@ -1273,32 +1235,15 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
           mActiveEntry->ReplaceWith(*newActiveEntry);
         } else if (!loadFromSessionHistory && mActiveEntry) {
           MOZ_LOG_FMT(gSHLog, LogLevel::Verbose, "IsTop: Adding new entry");
-
-          if (Navigation::IsAPIEnabled() && mActiveEntry->isInList()) {
-            RefPtr entry = mActiveEntry->getNext();
-            while (entry) {
-              entry = entry->removeAndGetNext();
-            }
-            // TODO(avandolder): Can this check ever actually be false?
-            if (!newActiveEntry->isInList()) {
-              activeEntries->insertBack(newActiveEntry);
-            }
-          }
           mActiveEntry = newActiveEntry;
         } else if (!mActiveEntry) {
           MOZ_LOG_FMT(gSHLog, LogLevel::Verbose,
                       "IsTop: No active entry, adding new entry");
-          if (Navigation::IsAPIEnabled() && !newActiveEntry->isInList()) {
-            activeEntries->insertBack(newActiveEntry);
-          }
           mActiveEntry = newActiveEntry;
         } else {
           MOZ_LOG_FMT(gSHLog, LogLevel::Verbose,
                       "IsTop: Loading from session history");
           mActiveEntry = newActiveEntry;
-          if (Navigation::IsAPIEnabled() && !mActiveEntry->isInList()) {
-            activeEntries->insertBack(mActiveEntry);
-          }
         }
 
         if (loadFromSessionHistory) {
@@ -1328,9 +1273,6 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
           MOZ_LOG_FMT(gSHLog, LogLevel::Verbose,
                       "NotTop: Loading from session history");
           mActiveEntry = newActiveEntry;
-          if (Navigation::IsAPIEnabled() && !mActiveEntry->isInList()) {
-            shistory->ReconstructContiguousEntryListFrom(mActiveEntry);
-          }
           shistory->InternalSetRequestedIndex(indexOfHistoryLoad);
           // FIXME UpdateIndex() here may update index too early (but even the
           //       old implementation seems to have similar issues).
@@ -1354,12 +1296,6 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
                           "NotTop: Adding entry with an active entry");
               shistory->AddNestedSHEntry(mActiveEntry, newActiveEntry, Top(),
                                          aCloneEntryChildren);
-              if (Navigation::IsAPIEnabled()) {
-                if (!mActiveEntry->isInList()) {
-                  activeEntries->insertBack(mActiveEntry);
-                }
-                mActiveEntry->setNext(newActiveEntry);
-              }
               mActiveEntry = newActiveEntry;
             }
           } else {
@@ -1370,9 +1306,6 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
               MOZ_LOG_FMT(gSHLog, LogLevel::Verbose,
                           "NotTop: Adding entry without an active entry");
               mActiveEntry = newActiveEntry;
-              if (Navigation::IsAPIEnabled() && !mActiveEntry->isInList()) {
-                activeEntries->insertBack(mActiveEntry);
-              }
               // FIXME Using IsInProcess for aUseRemoteSubframes isn't quite
               //       right, but aUseRemoteSubframes should be going away.
               parentEntry->AddChild(
@@ -1497,23 +1430,10 @@ void CanonicalBrowsingContext::SetActiveSessionHistoryEntry(
     }
   }
 
-  auto* activeEntries = GetActiveEntries();
-  MOZ_LOG(
-      gSHLog, LogLevel::Verbose,
-      ("SetActiveSessionHistoryEntry called with oldActiveEntry=%p, "
-       "mActiveEntry=%p, active entry list does%s contain the active entry. ",
-       oldActiveEntry.get(), mActiveEntry.get(),
-       activeEntries->contains(mActiveEntry) ? "" : "n't"));
-
-  if (Navigation::IsAPIEnabled() &&
-      (!oldActiveEntry || oldActiveEntry->isInList())) {
-    RefPtr toRemove =
-        oldActiveEntry ? oldActiveEntry->getNext() : activeEntries->getFirst();
-    while (toRemove) {
-      toRemove = toRemove->removeAndGetNext();
-    }
-    activeEntries->insertBack(mActiveEntry);
-  }
+  MOZ_LOG(gSHLog, LogLevel::Verbose,
+          ("SetActiveSessionHistoryEntry called with oldActiveEntry=%p, "
+           "mActiveEntry=%p. ",
+           oldActiveEntry.get(), mActiveEntry.get()));
 
   ResetSHEntryHasUserInteractionCache();
 
@@ -1551,13 +1471,6 @@ void CanonicalBrowsingContext::ReplaceActiveSessionHistoryEntry(
 
   MOZ_LOG(gSHLog, LogLevel::Verbose,
           ("Replacing active session history entry"));
-  if (Navigation::IsAPIEnabled() && mActiveEntry->isInList()) {
-    RefPtr toRemove = mActiveEntry->getNext();
-    while (toRemove) {
-      toRemove = toRemove->removeAndGetNext();
-    }
-  }
-
   // FIXME Need to do the equivalent of EvictDocumentViewersOrReplaceEntry.
 }
 
@@ -1700,11 +1613,10 @@ void CanonicalBrowsingContext::NavigationTraverse(
   if (!shistory) {
     return aResolver(NS_ERROR_DOM_INVALID_STATE_ERR);
   }
-
   RefPtr<SessionHistoryEntry> targetEntry;
   // 12.1 Let navigableSHEs be the result of getting session history entries
   //      given navigable.
-  nsSHistory::WalkContiguousEntriesInOrder(
+  nsSHistory::WalkClosestContiguousEntriesFrom(
       mActiveEntry, [&targetEntry, aKey](auto* aEntry) {
         auto* entry = static_cast<SessionHistoryEntry*>(aEntry);
         if (entry->Info().NavigationKey() == aKey) {
@@ -1720,7 +1632,8 @@ void CanonicalBrowsingContext::NavigationTraverse(
   }
 
   // Step 12.3
-  if (targetEntry == mActiveEntry) {
+  if (targetEntry->Info().NavigationKey() ==
+      mActiveEntry->Info().NavigationKey()) {
     return aResolver(NS_OK);
   }
 
@@ -1729,6 +1642,7 @@ void CanonicalBrowsingContext::NavigationTraverse(
   if (!targetRoot || !activeRoot) {
     return aResolver(NS_ERROR_DOM_INVALID_STATE_ERR);
   }
+
   int32_t targetIndex = shistory->GetIndexOfEntry(targetRoot);
   int32_t activeIndex = shistory->GetIndexOfEntry(activeRoot);
   if (targetIndex == -1 || activeIndex == -1) {
@@ -1762,7 +1676,7 @@ void CanonicalBrowsingContext::DispatchWheelZoomChange(bool aIncrease) {
     return;
   }
 
-  auto event = aIncrease ? u"DoZoomEnlargeBy10"_ns : u"DoZoomReduceBy10"_ns;
+  auto event = aIncrease ? u"DoZoomEnlarge"_ns : u"DoZoomReduce"_ns;
   auto dispatcher = MakeRefPtr<AsyncEventDispatcher>(
       element, event, CanBubble::eYes, ChromeOnlyDispatch::eYes);
   dispatcher->PostDOMEvent();
@@ -2860,7 +2774,7 @@ void CanonicalBrowsingContext::HistoryCommitIndexAndLength(
     return;
   }
 
-  nsISHistory* shistory = GetSessionHistory();
+  nsCOMPtr<nsISHistory> shistory = GetSessionHistory();
   if (!shistory) {
     return;
   }
@@ -2876,6 +2790,8 @@ void CanonicalBrowsingContext::HistoryCommitIndexAndLength(
     (void)aParent->SendHistoryCommitIndexAndLength(this, index, length,
                                                    aChangeID);
   });
+
+  shistory->NotifyOnHistoryCommit();
 }
 
 void CanonicalBrowsingContext::SynchronizeLayoutHistoryState() {
@@ -3740,18 +3656,6 @@ bool CanonicalBrowsingContext::ShouldEnforceParentalControls() {
   return false;
 }
 
-void CanonicalBrowsingContext::MaybeReconstructActiveEntryList() {
-  MOZ_ASSERT(IsTop());
-  if (!Navigation::IsAPIEnabled()) {
-    return;
-  }
-
-  auto* shistory = static_cast<nsSHistory*>(GetSessionHistory());
-  if (mActiveEntry && !shistory->ContainsEntry(mActiveEntry)) {
-    shistory->ReconstructContiguousEntryList();
-  }
-}
-
 // https://html.spec.whatwg.org/#concept-internal-location-ancestor-origin-objects-list
 // Creates the internal ancestor origins list (we store it on a canonical
 // browsing context). `aThisDocumentPrincipal` represents the origin for the
@@ -3846,16 +3750,6 @@ void CanonicalBrowsingContext::SetPossiblyRedactedAncestorOriginsList(
   mPossiblyRedactedAncestorOriginsList = std::move(aAncestorOriginsList);
 }
 
-EntryList* CanonicalBrowsingContext::GetActiveEntries() {
-  if (!mActiveEntryList) {
-    auto* shistory = static_cast<nsSHistory*>(GetSessionHistory());
-    if (shistory) {
-      mActiveEntryList = shistory->EntryListFor(GetHistoryID());
-    }
-  }
-  return mActiveEntryList;
-}
-
 void CanonicalBrowsingContext::SetEmbedderFrameReferrerPolicy(
     ReferrerPolicy aPolicy) {
   mEmbedderFrameReferrerPolicy = aPolicy;
@@ -3870,7 +3764,6 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(CanonicalBrowsingContext)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(CanonicalBrowsingContext,
                                                 BrowsingContext)
-  tmp->mActiveEntryList = nullptr;
   tmp->mPermanentKey.setNull();
   if (tmp->mSessionHistory) {
     tmp->mSessionHistory->SetBrowsingContext(nullptr);

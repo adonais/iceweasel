@@ -188,7 +188,7 @@ export var WebNavigationManager = {
 
   /**
    * Keep track of a recent user interaction and cache it in a
-   * map associated to the current selected tab.
+   * map associated to a tab.
    *
    * @param {object} tabTransitionData
    * @param {boolean} [tabTransitionData.auto_bookmark]
@@ -197,19 +197,25 @@ export var WebNavigationManager = {
    * @param {boolean} [tabTransitionData.keyword]
    * @param {boolean} [tabTransitionData.link]
    * @param {boolean} [tabTransitionData.typed]
+   * @param {MozBrowser} [browser]
+   *        The browser to associate the transition data with. Defaults to the current tab.
    */
-  setRecentTabTransitionData(tabTransitionData) {
-    let window = lazy.BrowserWindowTracker.getTopWindow({
-      allowFromInactiveWorkspace: true,
-    });
-    if (
-      window &&
-      window.gBrowser &&
-      window.gBrowser.selectedTab &&
-      window.gBrowser.selectedTab.linkedBrowser
-    ) {
-      let browser = window.gBrowser.selectedTab.linkedBrowser;
+  setRecentTabTransitionData(tabTransitionData, browser = null) {
+    if (!browser) {
+      let window = lazy.BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      });
+      if (
+        window &&
+        window.gBrowser &&
+        window.gBrowser.selectedTab &&
+        window.gBrowser.selectedTab.linkedBrowser
+      ) {
+        browser = window.gBrowser.selectedTab.linkedBrowser;
+      }
+    }
 
+    if (browser) {
       // Get recent tab transition data to update if any.
       let prevData = this.getAndForgetRecentTabTransitionData(browser);
 

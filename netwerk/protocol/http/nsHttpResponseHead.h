@@ -3,12 +3,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsHttpResponseHead_h__
-#define nsHttpResponseHead_h__
+#ifndef nsHttpResponseHead_h_
+#define nsHttpResponseHead_h_
 
 #include "nsHttpHeaderArray.h"
 #include "nsHttp.h"
 #include "nsString.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/RecursiveMutex.h"
 
 #ifdef Status
@@ -149,6 +150,17 @@ class nsHttpResponseHead {
   bool HasContentCharset();
   bool GetContentTypeOptionsHeader(nsACString& aOutput);
 
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
+  }
+
+  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
+    RecursiveMutexAutoLock monitor(mRecursiveMutex);
+    return mStatusText.SizeOfExcludingThisIfUnshared(aMallocSizeOf) +
+           mContentType.SizeOfExcludingThisIfUnshared(aMallocSizeOf) +
+           mContentCharset.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+  }
+
  private:
   [[nodiscard]] nsresult SetHeader_locked(const nsHttpAtom& atom,
                                           const nsACString& h,
@@ -161,6 +173,9 @@ class nsHttpResponseHead {
   // Parses a content-length header-value as described in
   // https://fetch.spec.whatwg.org/#content-length-header
   nsresult ParseResponseContentLength(const nsACString& aHeaderStr)
+      MOZ_REQUIRES(mRecursiveMutex);
+  void ParseContentTypeValue(const nsHttpAtom& aAtom,
+                             const nsACString& aContentTypeValue)
       MOZ_REQUIRES(mRecursiveMutex);
 
   nsresult ParseStatusLine_locked(const nsACString& line)
@@ -219,6 +234,7 @@ class nsHttpResponseHead {
   uint16_t mStatus MOZ_GUARDED_BY(mRecursiveMutex){200};
   nsCString mStatusText MOZ_GUARDED_BY(mRecursiveMutex);
   int64_t mContentLength MOZ_GUARDED_BY(mRecursiveMutex){-1};
+  nsCString mContentTypeBuffer MOZ_GUARDED_BY(mRecursiveMutex);
   nsCString mContentType MOZ_GUARDED_BY(mRecursiveMutex);
   nsCString mContentCharset MOZ_GUARDED_BY(mRecursiveMutex);
   bool mHasCacheControl MOZ_GUARDED_BY(mRecursiveMutex){false};
@@ -246,4 +262,4 @@ class nsHttpResponseHead {
 }  // namespace net
 }  // namespace mozilla
 
-#endif  // nsHttpResponseHead_h__
+#endif  // nsHttpResponseHead_h_

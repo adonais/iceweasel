@@ -187,7 +187,6 @@ MSG_DEF(JSMSG_TOO_MANY_ARGUMENTS,      0, JSEXN_RANGEERR, "too many arguments pr
 MSG_DEF(JSMSG_CSP_BLOCKED_EVAL,        0, JSEXN_EVALERR, "call to eval() blocked by CSP")
 MSG_DEF(JSMSG_CSP_BLOCKED_FUNCTION,    0, JSEXN_EVALERR, "call to Function() blocked by CSP")
 MSG_DEF(JSMSG_CSP_BLOCKED_WASM,        1, JSEXN_WASMCOMPILEERROR, "call to {0}() blocked by CSP")
-MSG_DEF(JSMSG_CSP_BLOCKED_SHADOWREALM,    0, JSEXN_EVALERR, "call to ShadowRealm.prototype.evaluate blocked by CSP")
 
 // Wrappers
 MSG_DEF(JSMSG_ACCESSOR_DEF_DENIED,     1, JSEXN_ERR, "Permission denied to define accessor property {0}")
@@ -281,6 +280,7 @@ MSG_DEF(JSMSG_CURLY_BEFORE_TRY,        0, JSEXN_SYNTAXERR, "missing { before try
 MSG_DEF(JSMSG_CURLY_IN_COMPOUND,       0, JSEXN_SYNTAXERR, "missing } in compound statement")
 MSG_DEF(JSMSG_DECLARATION_AFTER_EXPORT,0, JSEXN_SYNTAXERR, "missing declaration after 'export' keyword")
 MSG_DEF(JSMSG_DECLARATION_AFTER_IMPORT,0, JSEXN_SYNTAXERR, "missing declaration after 'import' keyword")
+MSG_DEF(JSMSG_DECLARATION_AFTER_IMPORT_SOURCE,0, JSEXN_SYNTAXERR, "missing declaration after 'import source'")
 MSG_DEF(JSMSG_DEPRECATED_DELETE_OPERAND, 0, JSEXN_SYNTAXERR, "applying the 'delete' operator to an unqualified name is deprecated")
 MSG_DEF(JSMSG_DEPRECATED_OCTAL_LITERAL,0, JSEXN_SYNTAXERR, "\"0\"-prefixed octal literals are deprecated; use the \"0o\" prefix instead")
 MSG_DEF(JSMSG_DEPRECATED_OCTAL_ESCAPE ,0, JSEXN_SYNTAXERR, "octal escape sequences can't be used in untagged template literals or in strict mode code")
@@ -515,13 +515,9 @@ MSG_DEF(JSMSG_WASM_LEGACY_EXCEPTIONS_DEPRECATED, 0, JSEXN_WARN, "The WebAssembly
 MSG_DEF(JSMSG_USE_ASM_DEPRECATED,                0, JSEXN_WARN, "asm.js is deprecated and should no longer be used. Please recompile using WebAssembly to get the best performance.")
 
 // JSPI
-MSG_DEF(JSMSG_JSPI_ARG_POSITION,       0, JSEXN_TYPEERR, "Invalid argument position value")
-MSG_DEF(JSMSG_JSPI_INVALID_SUSPENDER,  0, IF_WASM_JSPI(JSEXN_WASMSUSPENDERROR, JSEXN_WASMRUNTIMEERROR), "Invalid suspender")
 MSG_DEF(JSMSG_JSPI_INVALID_STATE,      0, IF_WASM_JSPI(JSEXN_WASMSUSPENDERROR, JSEXN_WASMRUNTIMEERROR), "Invalid state")
-MSG_DEF(JSMSG_JSPI_EXPECTED_SUSPENDER, 0, JSEXN_TYPEERR, "Expected externref for suspender")
-MSG_DEF(JSMSG_JSPI_EXPECTED_PROMISE,   0, JSEXN_TYPEERR, "Expected externref for returned promise")
-MSG_DEF(JSMSG_JSPI_SIGNATURE_MISMATCH, 0, JSEXN_TYPEERR, "Signature mismatch")
 MSG_DEF(JSMSG_JSPI_SUSPENDER_LIMIT,    0, IF_WASM_JSPI(JSEXN_WASMSUSPENDERROR, JSEXN_WASMRUNTIMEERROR), "Too many suspenders")
+MSG_DEF(JSMSG_JSPI_ARG_TYPE,           0, JSEXN_TYPEERR, "Unsupported JSPI function argument type")
 
 // Proxy
 MSG_DEF(JSMSG_BAD_GETPROTOTYPEOF_TRAP_RETURN,0,JSEXN_TYPEERR,"proxy getPrototypeOf handler returned a non-object, non-null value")
@@ -851,20 +847,6 @@ MSG_DEF(JSMSG_ITERATOR_ZIP_STRICT_OPEN_ITERATOR,         0, JSEXN_TYPEERR, "too 
 // Set
 MSG_DEF(JSMSG_SET_NEGATIVE_SIZE,                         0, JSEXN_RANGEERR, "Set size must be non-negative")
 
-// Shadow Realms
-MSG_DEF(JSMSG_NOT_SHADOW_REALM,                    0, JSEXN_TYPEERR, "Object is not a ShadowRealm")
-MSG_DEF(JSMSG_SHADOW_REALM_EVALUATE_NOT_STRING,    0, JSEXN_TYPEERR, "a ShadowRealm can only evaluate a string")
-MSG_DEF(JSMSG_SHADOW_REALM_INVALID_RETURN,    0, JSEXN_TYPEERR, "return value not primitive or callable")
-MSG_DEF(JSMSG_SHADOW_REALM_WRAP_FAILURE,    0, JSEXN_TYPEERR, "unable to wrap callable return object")
-MSG_DEF(JSMSG_SHADOW_REALM_EVALUATE_FAILURE,    0, JSEXN_TYPEERR, "evaluate failed.")
-MSG_DEF(JSMSG_SHADOW_REALM_EVALUATE_FAILURE_DETAIL,    1, JSEXN_TYPEERR, "evaluate failed, error was {0}")
-MSG_DEF(JSMSG_SHADOW_REALM_WRAPPED_EXECUTION_FAILURE,    0, JSEXN_TYPEERR, "wrapped function threw.")
-MSG_DEF(JSMSG_SHADOW_REALM_WRAPPED_EXECUTION_FAILURE_DETAIL,    1, JSEXN_TYPEERR, "wrapped function threw, error was {0}")
-
-MSG_DEF(JSMSG_SHADOW_REALM_EXPORT_NOT_STRING,    0, JSEXN_TYPEERR, "exportName must be a string")
-MSG_DEF(JSMSG_SHADOW_REALM_IMPORTVALUE_FAILED,    0, JSEXN_TYPEERR, "import value failed")
-MSG_DEF(JSMSG_SHADOW_REALM_VALUE_NOT_EXPORTED,    0, JSEXN_TYPEERR, "value not exported")
-
 // Decorators
 MSG_DEF(JSMSG_DECORATOR_INVALID_RETURN_TYPE, 0, JSEXN_TYPEERR, "Invalid value returned from decorator")
 
@@ -908,6 +890,7 @@ MSG_DEF(JSMSG_TEMPORAL_PLAIN_TIME_INVALID_VALUE,    4, JSEXN_RANGEERR, "time val
 MSG_DEF(JSMSG_TEMPORAL_PLAIN_TIME_MISSING_UNIT,     0, JSEXN_TYPEERR, "Time-like objects must have at least one time unit")
 MSG_DEF(JSMSG_TEMPORAL_PLAIN_MONTH_DAY_INVALID,     0, JSEXN_RANGEERR, "month-day must be valid ISO date values")
 MSG_DEF(JSMSG_TEMPORAL_PLAIN_YEAR_MONTH_INVALID,    0, JSEXN_RANGEERR, "year-month must be valid ISO date values")
+MSG_DEF(JSMSG_TEMPORAL_PLAIN_YEAR_MONTH_BAD_DURATION, 1, JSEXN_RANGEERR, "duration \"{0}\" property must be zero")
 MSG_DEF(JSMSG_TEMPORAL_ZONED_DATE_TIME_NO_TIME_FOUND, 0, JSEXN_RANGEERR, "date-time can't be represented in the given time zone")
 MSG_DEF(JSMSG_TEMPORAL_ZONED_DATE_TIME_INCONSISTENT_INSTANT, 0, JSEXN_RANGEERR, "time zone computed inconsistent instant values")
 MSG_DEF(JSMSG_TEMPORAL_PARSER_NEGATIVE_ZERO_YEAR,       1, JSEXN_RANGEERR, "can't parse {0}: year 0 must not start with \"-\"")

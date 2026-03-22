@@ -17,6 +17,7 @@ BROWSER_CHROME_MANIFESTS += [
 MOZ_SRC_FILES += [
     "Chat.sys.mjs",
     "ChatUtils.sys.mjs",
+    "CitationParser.sys.mjs",
     "ConversationSuggestions.sys.mjs",
     "IntentClassifier.sys.mjs",
     "SearchBrowsingHistory.sys.mjs",

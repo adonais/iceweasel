@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_AppWindow_h__
-#define mozilla_AppWindow_h__
+#ifndef mozilla_AppWindow_h_
+#define mozilla_AppWindow_h_
 
 // Local Includes
 #include "nsChromeTreeOwner.h"
@@ -384,4 +384,4 @@ class AppWindow final : public nsIBaseWindow,
 
 }  // namespace mozilla
 
-#endif /* mozilla_AppWindow_h__ */
+#endif /* mozilla_AppWindow_h_ */

@@ -5,9 +5,9 @@
 package org.mozilla.fenix.utils
 
 import android.app.Activity
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.Context
 import org.mozilla.fenix.onboarding.WidgetPinnedReceiver
 import org.mozilla.gecko.search.SearchWidgetProvider
 
@@ -34,15 +34,13 @@ fun maybeShowAddSearchWidgetPrompt(activity: Activity) {
  * and if the `AppWidgetManager` supports pinning app widgets. If both conditions are met,
  * it requests to pin the search widget.
  *
- * @param packageName The package name of the application.
- * @param appWidgetManager An instance of [AppWidgetManager] to interact with app widgets.
- * @param successCallback A [PendingIntent] that will be sent when the widget is successfully pinned.
+ * @param context [Context] used for the Android framework interactions.
  */
-fun showAddSearchWidgetPromptIfSupported(
-    packageName: String,
-    appWidgetManager: AppWidgetManager,
-    successCallback: PendingIntent,
-) {
+fun showAddSearchWidgetPromptIfSupported(context: Context) {
+    val packageName = context.packageName
+    val appWidgetManager = AppWidgetManager.getInstance(context)
+    val successCallback = WidgetPinnedReceiver.getPendingIntent(context)
+
     if (canShowAddSearchWidgetPrompt(appWidgetManager)) {
         val searchWidgetProvider = ComponentName(
             packageName,

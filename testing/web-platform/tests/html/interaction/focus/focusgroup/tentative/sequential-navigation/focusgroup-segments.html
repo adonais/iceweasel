@@ -15,13 +15,13 @@
 <div id=before tabindex=0>Before toolbar</div>
 
 <div id=toolbar focusgroup="toolbar wrap" aria-label="Text formatting">
-  <button id=bold type="button" focusgroup-entry-priority>Bold (priority)</button>
+  <button id=bold type="button" focusgroupstart>Bold (priority)</button>
   <button id=italic type="button">Italic</button>
   <span id=help-group focusgroup="none" aria-label="Help group">
     <button id=help type="button">Help</button>
     <button id=shortcuts type="button">Shortcuts</button>
   </span>
-  <button id=underline type="button" focusgroup-entry-priority>Underline (priority)</button>
+  <button id=underline type="button" focusgroupstart>Underline (priority)</button>
 </div>
 
 <div id=after tabindex=0>After toolbar</div>
@@ -30,7 +30,7 @@
 <div id=before2 tabindex=0>Before complex</div>
 
 <div id=complex-focusgroup focusgroup="toolbar no-memory">
-  <button id=item1 focusgroup-entry-priority>Item 1 (priority)</button>
+  <button id=item1 focusgroupstart>Item 1 (priority)</button>
   <div id=nested-opt-out focusgroup="none">
     <button id=opted-out-1>Opted out 1</button>
     <div id=deeply-nested focusgroup="none">
@@ -38,7 +38,7 @@
     </div>
     <button id=opted-out-2>Opted out 2</button>
   </div>
-  <button id=item2 focusgroup-entry-priority>Item 2 (priority)</button>
+  <button id=item2 focusgroupstart>Item 2 (priority)</button>
   <button id=item3>Item 3</button>
 </div>
 
@@ -53,7 +53,7 @@
     var underline = document.getElementById("underline");
     var after = document.getElementById("after");
 
-    before.focus();
+    await focusAndWait(before);
     await navigateFocusForward();
     assert_equals(document.activeElement, bold, "Tab from before should focus Bold (first focusgroup item)");
 
@@ -78,7 +78,7 @@
     var underline = document.getElementById("underline");
     var after = document.getElementById("after");
 
-    help.focus();
+    await focusAndWait(help);
     await navigateFocusBackward();
     assert_equals(document.activeElement, bold, "Shift+Tab from Help should focus Bold");
 
@@ -91,7 +91,7 @@
     var italic = document.getElementById("italic");
     var underline = document.getElementById("underline");
 
-    bold.focus();
+    await focusAndWait(bold);
 
     await focusAndKeyPress(bold, kArrowRight);
     assert_equals(document.activeElement, italic, "Arrow right should move from Bold to Italic");
@@ -112,7 +112,7 @@
     var item2 = document.getElementById("item2");
     var after2 = document.getElementById("after2");
 
-    before2.focus();
+    await focusAndWait(before2);
     await navigateFocusForward();
     assert_equals(document.activeElement, item1, "Tab should enter at Item 1");
 
@@ -136,7 +136,7 @@
     var help = document.getElementById("help");
     var shortcuts = document.getElementById("shortcuts");
 
-    help.focus();
+    await focusAndWait(help);
 
     await focusAndKeyPress(help, kArrowRight);
     assert_equals(document.activeElement, help, "Arrow keys should not work within opted-out section");

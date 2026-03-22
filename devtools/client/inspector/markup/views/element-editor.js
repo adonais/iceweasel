@@ -360,7 +360,8 @@ class ElementEditor {
   _createEventBadge() {
     this._eventBadge = this.doc.createElement("button");
     this._eventBadge.className = "inspector-badge interactive";
-    this._eventBadge.dataset.event = "true";
+    this._eventBadge.setAttribute("data-event", "true");
+    this._eventBadge.setAttribute("data-skip-markupview-search", "");
     this._eventBadge.textContent = "event";
     this._eventBadge.title = INSPECTOR_L10N.getStr(
       "markupView.event.tooltiptext2"
@@ -394,7 +395,8 @@ class ElementEditor {
       isInteractive ? "button" : "div"
     );
     this._scrollableBadge.className = `inspector-badge scrollable-badge ${isInteractive ? "interactive" : ""}`;
-    this._scrollableBadge.dataset.scrollable = "true";
+    this._scrollableBadge.setAttribute("data-scrollable", "true");
+    this._scrollableBadge.setAttribute("data-skip-markupview-search", "");
     this._scrollableBadge.textContent = INSPECTOR_L10N.getStr(
       "markupView.scrollableBadge.label"
     );
@@ -436,6 +438,7 @@ class ElementEditor {
   _createDisplayBadge() {
     this._displayBadge = this.doc.createElement("button");
     this._displayBadge.className = "inspector-badge";
+    this._displayBadge.setAttribute("data-skip-markupview-search", "");
     this._displayBadge.addEventListener("click", this.onDisplayBadgeClick);
     // Badges order is [event][display][custom], insert display badge before custom.
     this.elt.insertBefore(this._displayBadge, this._customBadge);
@@ -488,6 +491,7 @@ class ElementEditor {
   _createOverflowBadge() {
     this._overflowBadge = this.doc.createElement("div");
     this._overflowBadge.className = "inspector-badge overflow-badge";
+    this._overflowBadge.setAttribute("data-skip-markupview-search", "");
     this._overflowBadge.textContent = INSPECTOR_L10N.getStr(
       "markupView.overflowBadge.label"
     );
@@ -513,7 +517,8 @@ class ElementEditor {
   _createCustomBadge() {
     this._customBadge = this.doc.createElement("button");
     this._customBadge.className = "inspector-badge interactive";
-    this._customBadge.dataset.custom = "true";
+    this._customBadge.setAttribute("data-custom", "true");
+    this._customBadge.setAttribute("data-skip-markupview-search", "");
     this._customBadge.textContent = "custom…";
     this._customBadge.title = INSPECTOR_L10N.getStr(
       "markupView.custom.tooltiptext"
@@ -539,7 +544,8 @@ class ElementEditor {
   _createContainerBadge() {
     this._containerBadge = this.doc.createElement("div");
     this._containerBadge.classList.add("inspector-badge");
-    this._containerBadge.dataset.container = "true";
+    this._containerBadge.setAttribute("data-container", "true");
+    this._containerBadge.setAttribute("data-skip-markupview-search", "");
     this._containerBadge.title = `container-type: ${this.node.containerType}`;
 
     this._containerBadge.append(this.doc.createTextNode("container"));
@@ -567,7 +573,8 @@ class ElementEditor {
   _createAnchorBadge() {
     this._anchorBadge = this.doc.createElement("div");
     this._anchorBadge.classList.add("inspector-badge");
-    this._anchorBadge.dataset.anchor = "true";
+    this._anchorBadge.setAttribute("data-anchor", "true");
+    this._anchorBadge.setAttribute("data-skip-markupview-search", "");
 
     this._anchorBadge.append(this.doc.createTextNode("anchor"));
     this.elt.insertBefore(this._anchorBadge, this._containerBadge);
@@ -670,6 +677,10 @@ class ElementEditor {
       this.childrenUnavailableElt.title = INSPECTOR_L10N.getStr(
         "markupView.unavailableChildren.title"
       );
+      this.childrenUnavailableElt.setAttribute(
+        "data-skip-markupview-search",
+        ""
+      );
       this.elt.insertBefore(
         this.childrenUnavailableElt,
         this.elt.querySelector(".close")
@@ -746,13 +757,13 @@ class ElementEditor {
     name.textContent = attribute.name;
     inner.appendChild(name);
 
-    inner.appendChild(this.doc.createTextNode('="'));
-
     const val = this.doc.createElement("span");
     val.classList.add("attr-value", "force-color-on-flash");
-    inner.appendChild(val);
 
-    inner.appendChild(this.doc.createTextNode('"'));
+    if (attribute.value) {
+      // Only display `="value"` if the value isn't empty/null
+      inner.append('="', val, '"');
+    }
 
     this._setupAttributeEditor(attribute, attr, inner, name, val);
 

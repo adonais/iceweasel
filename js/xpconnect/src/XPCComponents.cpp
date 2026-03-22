@@ -1406,8 +1406,8 @@ nsXPCComponents_Utils::ReportError(HandleValue error, HandleValue stack,
     scripterr = CreateScriptError(win, exception, nullptr, nullptr);
   }
 
-  JSErrorReport* err = errorObj ? JS_ErrorFromException(cx, errorObj) : nullptr;
-  if (err) {
+  JS::BorrowedErrorReport err(cx);
+  if (errorObj && JS_ErrorFromException(cx, errorObj, err)) {
     // It's a proper JS Error
     uint32_t flags = err->isWarning() ? nsIScriptError::warningFlag
                                       : nsIScriptError::errorFlag;

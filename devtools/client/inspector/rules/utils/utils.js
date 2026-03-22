@@ -5,6 +5,7 @@
 "use strict";
 
 const {
+  VIEW_NODE_ATTR_TYPE,
   VIEW_NODE_CSS_QUERY_CONTAINER,
   VIEW_NODE_CSS_SELECTOR_WARNINGS,
   VIEW_NODE_FONT_TYPE,
@@ -147,6 +148,11 @@ function getNodeInfo(node, elementStyle) {
   } else if (node.classList.contains("ruleview-selector-warnings")) {
     type = VIEW_NODE_CSS_SELECTOR_WARNINGS;
     value = node.getAttribute("data-selector-warning-kind").split(",");
+  } else if (node.classList.contains("inspector-attribute")) {
+    type = VIEW_NODE_ATTR_TYPE;
+    value = {
+      attribute: node.getAttribute("data-attribute"),
+    };
   } else if (declaration && classList.contains("inspector-shapeswatch")) {
     type = VIEW_NODE_SHAPE_SWATCH;
     value = {

@@ -117,8 +117,8 @@ const tests = {
   chinese: [
     // Date ranges in 1900..2100 where ICU4C and ICU4X compute different results.
     {
-      start: {iso: "1906-04-23", relatedYear: 1906, monthCode: "M04", day: 1},
-      end:   {iso: "1906-05-22", relatedYear: 1906, monthCode: "M04", day: 30},
+      start: {iso: "1906-04-23", relatedYear: 1906, monthCode: "M03", day: 30},
+      end:   {iso: "1906-05-22", relatedYear: 1906, monthCode: "M04", day: 29},
     },
     {
       start: {iso: "1917-03-23", relatedYear: 1917, monthCode: "M02L", day: 1},
@@ -172,24 +172,24 @@ const tests = {
   dangi: [
     // Date ranges in 1900..2100 where ICU4C and ICU4X compute different results.
     {
-      start: {iso: "1904-01-17", relatedYear: 1903, monthCode: "M11", day: 30},
-      end:   {iso: "1904-02-15", relatedYear: 1903, monthCode: "M12", day: 29},
+      start: {iso: "1904-01-17", relatedYear: 1903, monthCode: "M12", day: 1},
+      end:   {iso: "1904-02-15", relatedYear: 1903, monthCode: "M12", day: 30},
     },
     {
-      start: {iso: "1904-11-07", relatedYear: 1904, monthCode: "M09", day: 30},
-      end:   {iso: "1904-12-06", relatedYear: 1904, monthCode: "M10", day: 29},
+      start: {iso: "1904-11-07", relatedYear: 1904, monthCode: "M10", day: 1},
+      end:   {iso: "1904-12-06", relatedYear: 1904, monthCode: "M10", day: 30},
     },
     {
-      start: {iso: "1905-05-04", relatedYear: 1905, monthCode: "M03", day: 30},
-      end:   {iso: "1905-06-02", relatedYear: 1905, monthCode: "M04", day: 29},
+      start: {iso: "1905-05-04", relatedYear: 1905, monthCode: "M04", day: 1},
+      end:   {iso: "1905-06-02", relatedYear: 1905, monthCode: "M04", day: 30},
     },
     {
-      start: {iso: "1908-04-30", relatedYear: 1908, monthCode: "M03", day: 30},
-      end:   {iso: "1908-05-29", relatedYear: 1908, monthCode: "M04", day: 29},
+      start: {iso: "1908-04-30", relatedYear: 1908, monthCode: "M04", day: 1},
+      end:   {iso: "1908-05-29", relatedYear: 1908, monthCode: "M04", day: 30},
     },
     {
-      start: {iso: "1911-12-20", relatedYear: 1911, monthCode: "M10", day: 30},
-      end:   {iso: "1912-01-18", relatedYear: 1911, monthCode: "M11", day: 29},
+      start: {iso: "1911-12-20", relatedYear: 1911, monthCode: "M11", day: 1},
+      end:   {iso: "1912-01-18", relatedYear: 1911, monthCode: "M11", day: 30},
     },
     {
       start: {iso: "2017-02-26", relatedYear: 2017, monthCode: "M02", day: 1},

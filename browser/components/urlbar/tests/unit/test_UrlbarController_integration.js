@@ -91,7 +91,8 @@ add_task(async function test_cancel_search() {
     type: UrlbarUtils.PROVIDER_TYPE.PROFILE,
   });
 
-  UrlbarProvidersManager.registerProvider(delayedProvider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(delayedProvider);
 
   controller.startQuery(context);
 
@@ -102,5 +103,5 @@ add_task(async function test_cancel_search() {
   await providerCanceledDeferred.promise;
 
   params = await cancelPromise;
-  UrlbarProvidersManager.unregisterProvider(delayedProvider);
+  providersManager.unregisterProvider(delayedProvider);
 });

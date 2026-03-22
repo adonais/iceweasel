@@ -6496,6 +6496,8 @@ void SharedContextWebgl::CachePrefs() {
 
 // For use within CanvasRenderingContext2D, called on BorrowDrawTarget.
 void DrawTargetWebgl::BeginFrame(bool aInvalidContents) {
+  // Force resetting of target bindings in case state is somehow inconsistent.
+  mSharedContext->ClearTarget();
   // If still rendering into the Skia target, switch back to the WebGL
   // context.
   if (!mWebglValid) {
@@ -6552,8 +6554,12 @@ bool DrawTargetWebgl::CopyToSwapChain(
       StaticPrefs::gfx_canvas_accelerated_async_present();
   options.remoteTextureId = aId;
   options.remoteTextureOwnerId = aOwnerId;
-  return mSharedContext->mWebgl->CopyToSwapChain(mFramebuffer, aTextureType,
-                                                 options, aOwnerClient);
+  bool success = mSharedContext->mWebgl->CopyToSwapChain(
+      mFramebuffer, aTextureType, options, aOwnerClient);
+  // Force framebuffer binding reset in case WebGLContext::CopyToSwapChain
+  // unpredictably modifies it.
+  mSharedContext->RestoreCurrentTarget();
+  return success;
 }
 
 std::shared_ptr<gl::SharedSurface> SharedContextWebgl::ExportSharedSurface(

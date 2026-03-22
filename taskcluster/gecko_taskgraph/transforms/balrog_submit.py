@@ -7,14 +7,14 @@ Transform the per-locale balrog task into an actual task description.
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.treeherder import replace_group
 from voluptuous import Optional, Required
 
 from gecko_taskgraph.transforms.task import task_description_schema
 from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 
-balrog_description_schema = Schema({
+balrog_description_schema = LegacySchema({
     # unique label to describe this balrog task, defaults to balrog-{dep.label}
     Required("label"): str,
     Optional(
@@ -120,7 +120,7 @@ def make_task_description(config, jobs):
 
         dependencies = {"beetmover": dep_job.label}
         # don't block on startup-test for release/esr, they block on manual testing anyway
-        if config.params["release_type"] in ("nightly", "beta", "release-rc"):
+        if config.params["release_type"] in ("nightly", "beta"):
             for kind_dep in config.kind_dependencies_tasks.values():
                 if (
                     kind_dep.kind == "startup-test"

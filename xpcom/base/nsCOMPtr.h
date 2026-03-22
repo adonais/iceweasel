@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsCOMPtr_h___
-#define nsCOMPtr_h___
+#ifndef nsCOMPtr_h_
+#define nsCOMPtr_h_
 
 /*
  * Having problems?
@@ -1170,4 +1170,4 @@ struct outparam_as_pointer<nsGetterAddRefs<T>> {
 };
 }  // namespace mozilla::detail
 
-#endif  // !defined(nsCOMPtr_h___)
+#endif  // !defined(nsCOMPtr_h_)

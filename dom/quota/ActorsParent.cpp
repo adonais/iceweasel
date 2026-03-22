@@ -7769,6 +7769,29 @@ Result<PrincipalInfo, nsresult> QuotaManager::ParseOrigin(
 // static
 void QuotaManager::InvalidateQuotaCache() { gInvalidateQuotaCache = true; }
 
+OriginMetadataArray QuotaManager::GetTemporaryOrigins(
+    PersistenceType aPersistenceType) const {
+  AssertIsOnIOThread();
+
+  auto ioThreadData = mIOThreadAccessible.Access();
+
+  OriginMetadataArray originMetadataArray;
+
+  for (auto iter = ioThreadData->mAllTemporaryOrigins.ConstIter(); !iter.Done();
+       iter.Next()) {
+    const auto& array = iter.Data();
+    MOZ_ASSERT(!array.IsEmpty());
+
+    for (const auto& fullOriginMetadata : array) {
+      if (fullOriginMetadata.mPersistenceType == aPersistenceType) {
+        originMetadataArray.AppendElement(fullOriginMetadata);
+      }
+    }
+  }
+
+  return originMetadataArray;
+}
+
 uint64_t QuotaManager::LockedCollectOriginsForEviction(
     uint64_t aMinSizeToBeFreed, nsTArray<RefPtr<OriginDirectoryLock>>& aLocks)
     MOZ_REQUIRES(mQuotaMutex) {

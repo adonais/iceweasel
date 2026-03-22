@@ -47,8 +47,6 @@ import mozilla.components.feature.autofill.AutofillConfiguration
 import mozilla.components.feature.contextmenu.ContextMenuUseCases
 import mozilla.components.feature.customtabs.CustomTabIntentProcessor
 import mozilla.components.feature.customtabs.store.CustomTabsServiceStore
-import mozilla.components.feature.downloads.DateTimeProvider
-import mozilla.components.feature.downloads.DefaultDateTimeProvider
 import mozilla.components.feature.downloads.DefaultFileSizeFormatter
 import mozilla.components.feature.downloads.DownloadEstimator
 import mozilla.components.feature.downloads.DownloadMiddleware
@@ -88,6 +86,8 @@ import mozilla.components.service.location.LocationService
 import mozilla.components.service.sync.logins.SyncableLoginsStorage
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.worker.Frequency
+import mozilla.components.support.utils.DateTimeProvider
+import mozilla.components.support.utils.DefaultDateTimeProvider
 import org.mozilla.samples.browser.addons.AddonsActivity
 import org.mozilla.samples.browser.autofill.AutofillConfirmActivity
 import org.mozilla.samples.browser.autofill.AutofillSearchActivity
@@ -411,6 +411,20 @@ open class DefaultComponents(private val applicationContext: Context) {
                 preferences.edit { putBoolean(PREF_GLOBAL_PRIVACY_CONTROL, checked) }
                 engine.settings.globalPrivacyControlEnabled = checked
                 sessionUseCases.reload()
+            },
+        )
+
+        items.add(
+            BrowserMenuCheckbox(
+                "Toggle Relay",
+                { engine.settings.firefoxRelay != null },
+            ) { checked ->
+                val mode = if (checked) {
+                    Engine.FirefoxRelayMode.ENABLED
+                } else {
+                    Engine.FirefoxRelayMode.DISABLED
+                }
+                engine.settings.firefoxRelay = mode
             },
         )
 

@@ -239,9 +239,9 @@ Directionality ContainedTextAutoDirectionality(nsINode* aRoot,
     // then return the directionality of that shadow root's host.
     if (auto* slot = HTMLSlotElement::FromNode(child)) {
       if (const ShadowRoot* sr = slot->GetContainingShadow()) {
-        Element* host = sr->GetHost();
-        MOZ_ASSERT(host);
-        return host->GetDirectionality();
+        if (Element* host = sr->GetHost()) {
+          return host->GetDirectionality();
+        }
       }
     }
 
@@ -317,8 +317,7 @@ static Directionality ComputeAutoDirectionality(Element* aElement,
   // element's assigned nodes are not empty:
   if (auto* slot = HTMLSlotElement::FromNode(aElement)) {
     const Span assignedNodes = slot->AssignedNodes();
-    if (!assignedNodes.IsEmpty()) {
-      MOZ_ASSERT(slot->IsInShadowTree());
+    if (!assignedNodes.IsEmpty() && slot->IsInShadowTree()) {
       return ComputeAutoDirectionFromAssignedNodes(slot, assignedNodes,
                                                    aNotify);
     }
@@ -491,7 +490,9 @@ static void WalkAncestorsResetAutoDirection(Element* aElement, bool aNotify) {
 }
 
 void SlotStateChanged(HTMLSlotElement* aSlot) {
-  if (aSlot->HasDirAuto()) {
+  MOZ_ASSERT_IF(!aSlot->IsInShadowTree() && !aSlot->AssignedNodes().IsEmpty(),
+                !aSlot->IsInComposedDoc());
+  if (aSlot->HasDirAuto() && aSlot->IsInShadowTree()) {
     ResetAutoDirection(aSlot, true);
   }
 }

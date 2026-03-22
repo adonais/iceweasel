@@ -215,6 +215,9 @@ export class IPProtectionServerlistBase {
     }
 
     const city = usa.cities.find(c => c.servers.length);
+    if (!city) {
+      return null;
+    }
     return {
       city,
       country: usa,

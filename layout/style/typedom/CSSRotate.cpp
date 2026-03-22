@@ -12,11 +12,13 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSRotateBinding.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 
 CSSRotate::CSSRotate(nsCOMPtr<nsISupports> aParent)
-    : CSSTransformComponent(std::move(aParent)) {}
+    : CSSTransformComponent(std::move(aParent),
+                            TransformComponentType::Rotate) {}
 
 JSObject* CSSRotate::WrapObject(JSContext* aCx,
                                 JS::Handle<JSObject*> aGivenProto) {
@@ -73,5 +75,26 @@ void CSSRotate::SetAngle(CSSNumericValue& aArg, ErrorResult& aRv) {
 }
 
 // end of CSSRotate Web IDL implementation
+
+void CSSRotate::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                      nsACString& aDest) const {
+  // XXX: This is not yet fully implemented.
+
+  aDest.Append("rotate3d()"_ns);
+}
+
+const CSSRotate& CSSTransformComponent::GetAsCSSRotate() const {
+  MOZ_DIAGNOSTIC_ASSERT(mTransformComponentType ==
+                        TransformComponentType::Rotate);
+
+  return *static_cast<const CSSRotate*>(this);
+}
+
+CSSRotate& CSSTransformComponent::GetAsCSSRotate() {
+  MOZ_DIAGNOSTIC_ASSERT(mTransformComponentType ==
+                        TransformComponentType::Rotate);
+
+  return *static_cast<CSSRotate*>(this);
+}
 
 }  // namespace mozilla::dom

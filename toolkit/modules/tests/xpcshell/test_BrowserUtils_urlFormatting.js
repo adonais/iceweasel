@@ -162,6 +162,10 @@ const TESTS = [
     input: "data:text/html,42",
     output: DATA_URL_EXPECTED_STRING,
   },
+  {
+    input: "data://google.com/text/html,Hello World",
+    output: DATA_URL_EXPECTED_STRING,
+  },
 
   {
     input: `moz-icon:${Services.io.newFileURI(tempFile).spec}`,

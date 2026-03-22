@@ -25,7 +25,7 @@ import org.mockito.Mockito.verify
 class SessionSuggestionProviderTest {
     @Test
     fun `Provider returns empty list when text is empty`() = runTest {
-        val provider = SessionSuggestionProvider(mock(), mock(), switchToTabDescription = "Switch to tab")
+        val provider = SessionSuggestionProvider(BrowserStore(), mock(), switchToTabDescription = "Switch to tab")
 
         val suggestions = provider.onInputChanged("")
         assertTrue(suggestions.isEmpty())

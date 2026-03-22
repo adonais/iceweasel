@@ -18,9 +18,9 @@
 #include <cmath>
 
 #include "jsfriendapi.h"
-#include "jsnum.h"
 #include "jstypes.h"
 
+#include "builtin/Number.h"
 #include "builtin/SelfHostingDefines.h"
 #include "ds/Sort.h"
 #include "jit/InlinableNatives.h"
@@ -48,6 +48,7 @@
 #include "vm/ToSource.h"  // js::ValueToSource
 #include "vm/TypedArrayObject.h"
 #include "vm/WrapperObject.h"
+
 #include "builtin/Sorting-inl.h"
 #include "vm/ArgumentsObject-inl.h"
 #include "vm/ArrayObject-inl.h"
@@ -1615,7 +1616,7 @@ static DenseElementResult ArrayReverseDenseKernel(JSContext* cx,
   }
 
   if (!obj->denseElementsMaybeInIteration() &&
-      !cx->zone()->needsIncrementalBarrier()) {
+      !cx->zone()->needsMarkingBarrier()) {
     obj->reverseDenseElementsNoPreBarrier(length);
     return DenseElementResult::Success;
   }
@@ -4466,7 +4467,7 @@ static bool SearchElementDense(JSContext* cx, HandleValue val, Iter iterator,
 
 // ES2026 draft rev a562082b031d89d00ee667181ce8a6158656bd4b
 // 23.1.3.17 Array.prototype.indexOf ( searchElement [ , fromIndex ] )
-bool js::array_indexOf(JSContext* cx, unsigned argc, Value* vp) {
+static bool array_indexOf(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Array.prototype", "indexOf");
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -4582,7 +4583,7 @@ bool js::array_indexOf(JSContext* cx, unsigned argc, Value* vp) {
 
 // ES2020 draft rev dc1e21c454bd316810be1c0e7af0131a2d7f38e9
 // 22.1.3.17 Array.prototype.lastIndexOf ( searchElement [ , fromIndex ] )
-bool js::array_lastIndexOf(JSContext* cx, unsigned argc, Value* vp) {
+static bool array_lastIndexOf(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Array.prototype", "lastIndexOf");
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -4696,7 +4697,7 @@ bool js::array_lastIndexOf(JSContext* cx, unsigned argc, Value* vp) {
 
 // ES2026 draft rev a562082b031d89d00ee667181ce8a6158656bd4b
 // 23.1.3.16 Array.prototype.includes ( searchElement [ , fromIndex ] )
-bool js::array_includes(JSContext* cx, unsigned argc, Value* vp) {
+static bool array_includes(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Array.prototype", "includes");
   CallArgs args = CallArgsFromVp(argc, vp);
 

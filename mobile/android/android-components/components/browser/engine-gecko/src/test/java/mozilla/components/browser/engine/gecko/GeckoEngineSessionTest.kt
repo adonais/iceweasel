@@ -16,6 +16,8 @@ import mozilla.components.browser.engine.gecko.ext.geckoTrackingProtectionPermis
 import mozilla.components.browser.engine.gecko.ext.isExcludedForTrackingProtection
 import mozilla.components.browser.engine.gecko.permission.geckoContentPermission
 import mozilla.components.browser.engine.gecko.translate.GeckoTranslationUtils.intoTranslationError
+import mozilla.components.browser.engine.gecko.util.EngineDownloadDelegate
+import mozilla.components.browser.engine.gecko.util.FakeEngineDownloadDelegate
 import mozilla.components.browser.errorpages.ErrorType
 import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.EngineSession
@@ -51,6 +53,7 @@ import mozilla.components.support.test.expectException
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.whenever
 import mozilla.components.support.utils.DownloadUtils.RESPONSE_CODE_SUCCESS
+import mozilla.components.support.utils.FakeDownloadFileUtils
 import mozilla.components.support.utils.ThreadUtils
 import mozilla.components.test.ReflectionUtils
 import org.json.JSONObject
@@ -337,6 +340,11 @@ class GeckoEngineSessionTest {
             mock(),
             geckoSessionProvider = geckoSessionProvider,
             privateMode = true,
+            defaultSettings = DefaultSettings(
+                downloadDelegate = FakeEngineDownloadDelegate(
+                    guessFileName = { _, _, _ -> "image name.png" },
+                ),
+            ),
         )
 
         val observer: EngineSession.Observer = mock()
@@ -376,6 +384,11 @@ class GeckoEngineSessionTest {
             mock(),
             geckoSessionProvider = geckoSessionProvider,
             privateMode = true,
+            defaultSettings = DefaultSettings(
+                downloadDelegate = FakeEngineDownloadDelegate(
+                    guessFileName = { _, _, _ -> "image image.png" },
+                ),
+            ),
         )
 
         val observer: EngineSession.Observer = mock()
@@ -416,6 +429,11 @@ class GeckoEngineSessionTest {
             mock(),
             geckoSessionProvider = geckoSessionProvider,
             privateMode = true,
+            defaultSettings = DefaultSettings(
+                downloadDelegate = FakeEngineDownloadDelegate(
+                    guessFileName = { _, _, _ -> "image.png" },
+                ),
+            ),
         )
 
         val observer: EngineSession.Observer = mock()
@@ -453,6 +471,11 @@ class GeckoEngineSessionTest {
             mock(),
             geckoSessionProvider = geckoSessionProvider,
             privateMode = true,
+            defaultSettings = DefaultSettings(
+                downloadDelegate = FakeEngineDownloadDelegate(
+                    guessFileName = { _, _, _ -> "image.png" },
+                ),
+            ),
         )
 
         val observer: EngineSession.Observer = mock()
@@ -4420,7 +4443,7 @@ class GeckoEngineSessionTest {
 
         captureDelegates()
 
-        val unparsedIssuerName = "Verified By: CN=Digicert SHA2 Extended Validation Server CA,OU=www.digicert.com,O=DigiCert Inc,C=US"
+        val unparsedIssuerName = "CN=Digicert SHA2 Extended Validation Server CA,OU=www.digicert.com,O=DigiCert Inc,C=US"
         val parsedIssuerName = "DigiCert Inc"
         val certificate: X509Certificate = mock()
         val principal: Principal = mock()
@@ -4435,7 +4458,10 @@ class GeckoEngineSessionTest {
 
     @Test
     fun `certificate issuer is parsed and provided onSecurityChange with null arg`() {
-        val engineSession = GeckoEngineSession(mock(), geckoSessionProvider = geckoSessionProvider)
+        val engineSession = GeckoEngineSession(
+            mock(),
+            geckoSessionProvider = geckoSessionProvider,
+            )
 
         var observedIssuer: String? = null
         var observedCertificate: X509Certificate? = null
@@ -4452,36 +4478,6 @@ class GeckoEngineSessionTest {
 
         val unparsedIssuerName = null
         val parsedIssuerName = null
-        val certificate: X509Certificate = mock()
-        val principal: Principal = mock()
-        whenever(principal.name).thenReturn(unparsedIssuerName)
-        whenever(certificate.issuerDN).thenReturn(principal)
-
-        val securityInformation = MockSecurityInformation(certificate = certificate)
-        progressDelegate.value.onSecurityChange(mock(), securityInformation)
-        assertEquals(parsedIssuerName, observedIssuer)
-        assertEquals(certificate, observedCertificate)
-    }
-
-    @Test
-    fun `pattern-breaking certificate issuer isnt parsed and returns original name `() {
-        val engineSession = GeckoEngineSession(mock(), geckoSessionProvider = geckoSessionProvider)
-
-        var observedIssuer: String? = null
-        var observedCertificate: X509Certificate? = null
-        engineSession.register(
-            object : EngineSession.Observer {
-                override fun onSecurityChange(secure: Boolean, host: String?, issuer: String?, certificate: X509Certificate?) {
-                    observedIssuer = issuer
-                    observedCertificate = certificate
-                }
-            },
-        )
-
-        captureDelegates()
-
-        val unparsedIssuerName = "pattern breaking cert"
-        val parsedIssuerName = "pattern breaking cert"
         val certificate: X509Certificate = mock()
         val principal: Principal = mock()
         whenever(principal.name).thenReturn(unparsedIssuerName)
@@ -4649,6 +4645,11 @@ class GeckoEngineSessionTest {
         val engineSession = GeckoEngineSession(
             runtime = mock(),
             geckoSessionProvider = geckoSessionProvider,
+            defaultSettings = DefaultSettings(
+                downloadDelegate = FakeEngineDownloadDelegate(
+                    guessFileName = { _, _, _ -> "Mozilla.pdf" },
+                ),
+            ),
         ).apply {
             currentUrl = "https://mozilla.org"
             currentTitle = "Mozilla"
@@ -4787,6 +4788,27 @@ class GeckoEngineSessionTest {
         })
         engineSession.requestPrintContent()
         shadowOf(getMainLooper()).idle()
+    }
+
+    @Test
+    fun `processBackPressed`() {
+        val engineSession = GeckoEngineSession(
+            mock(),
+            geckoSessionProvider = geckoSessionProvider,
+        )
+
+        val ruleResult = GeckoResult<Boolean>()
+        whenever(geckoSession.processBackPressed()).thenReturn(ruleResult)
+
+        var onResultCalled = false
+        engineSession.processBackPressed(
+            onResult = { onResultCalled = true },
+        )
+
+        ruleResult.complete(true)
+        shadowOf(getMainLooper()).idle()
+
+        assertTrue(onResultCalled)
     }
 
     private fun mockGeckoSession(): GeckoSession {

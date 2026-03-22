@@ -66,17 +66,33 @@ add_task(async function test_show_private_browsing_message() {
 
   let tab = privateWin.gBrowser.selectedBrowser;
   //Test the message content
-  await test_private_message_content(
+  await SpecialPowers.spawn(
     tab,
-    "renders the private browsing message",
-    //Expected selectors
     [
-      "div.promo.below-search.promo-visible", // message wrapper
-      "div.promo-image-large", // main image
-      "h1#promo-header", // main title
-      "p#private-browsing-promo-text", // message body
-      "button.vpn-promo.primary", // primary button
-    ]
+      "renders the private browsing message",
+      [
+        "div.promo.below-search.promo-visible", // message wrapper
+        "div.promo-image-large", // main image
+        "h1#promo-header", // main title
+        "p#private-browsing-promo-text", // message body
+        "button.vpn-promo.primary", // primary button
+      ],
+    ],
+    async function (experiment, selectors) {
+      // Wait for main content to render
+      await ContentTaskUtils.waitForCondition(() =>
+        content.document.documentElement.hasAttribute(
+          "PrivateBrowsingRenderComplete"
+        )
+      );
+
+      for (let selector of selectors) {
+        await ContentTaskUtils.waitForCondition(() =>
+          content.document.documentElement.querySelector(selector)
+        );
+        Assert.ok(true, `Element present with selector ${selector}`);
+      }
+    }
   );
   //Remember to clean up the extra window first
   await BrowserTestUtils.closeWindow(privateWin);

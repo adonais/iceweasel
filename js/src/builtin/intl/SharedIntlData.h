@@ -12,6 +12,7 @@
 #include "mozilla/UniquePtr.h"
 
 #include <stddef.h>
+#include <string_view>
 
 #include "js/AllocPolicy.h"
 #include "js/GCAPI.h"
@@ -78,14 +79,14 @@ class SharedIntlData {
       }
     }
 
-    LinearStringLookup(const char* chars, size_t length)
-        : isLatin1(true), length(length) {
-      latin1Chars = reinterpret_cast<const JS::Latin1Char*>(chars);
+    explicit LinearStringLookup(std::string_view string)
+        : isLatin1(true), length(string.length()) {
+      latin1Chars = reinterpret_cast<const JS::Latin1Char*>(string.data());
     }
 
-    LinearStringLookup(const char16_t* chars, size_t length)
-        : isLatin1(false), length(length) {
-      twoByteChars = chars;
+    explicit LinearStringLookup(std::u16string_view string)
+        : isLatin1(false), length(string.length()) {
+      twoByteChars = string.data();
     }
   };
 
@@ -120,8 +121,8 @@ class SharedIntlData {
   struct AvailableTimeZoneHasher {
     struct Lookup : LinearStringLookup {
       explicit Lookup(const JSLinearString* timeZone);
-      Lookup(const char* chars, size_t length);
-      Lookup(const char16_t* chars, size_t length);
+      explicit Lookup(std::string_view timeZone);
+      explicit Lookup(std::u16string_view timeZone);
     };
 
     static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }
@@ -262,7 +263,7 @@ class SharedIntlData {
   struct LocaleHasher {
     struct Lookup : LinearStringLookup {
       explicit Lookup(const JSLinearString* locale);
-      Lookup(const char* chars, size_t length);
+      explicit Lookup(std::string_view locale);
     };
 
     static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }

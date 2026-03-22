@@ -350,12 +350,12 @@
   <!-- Header for the list of installed search engines -->
   <string name="preference_choose_search_engine">Chacha\' ch\'ich\' rech tzukub\'al</string>
   <!-- Action for restoring the default list of search engines -->
-  <string name="preference_search_restore">Utzalijisaxik taq ch\'ich\' rech tzukunem ya\'om chi uloq\u0020</string>
+  <string name="preference_search_restore">Uriqik chi jumul taq ch\'ich\' rech tzukunem ya\'om chi uloq</string>
   <!--
     Action for adding an additional search engine to the list.
     The "+" is used to emphasize that this is an "add" action
   -->
-  <string name="preference_search_add2">+ Chaya\' jun chi ch\'ich\' rech tzukub\'al</string>
+  <string name="preference_search_add2">+ Chacha\' jun chi ch\'ich\' rech tzukub\'al</string>
   <string name="preference_search_remove_title">Chawelesaj taq ch\'ich\' rech tzukub\'al</string>
   <string name="preference_search_remove">Relesaxik</string>
   <!-- Action for dding an additional search engine to the list -->

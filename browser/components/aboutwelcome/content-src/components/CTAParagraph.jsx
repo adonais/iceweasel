@@ -23,11 +23,20 @@ export const CTAParagraph = props => {
 
   return (
     <h2
-      className="cta-paragraph"
+      className={`cta-paragraph ${content?.info_tile ? "info-tile" : ""}`}
       style={{
         ...AboutWelcomeUtils.getValidStyle(content?.style, CONFIGURABLE_STYLES),
       }}
     >
+      <div className="cta-paragraph-icon-wrapper">
+        <div
+          className="cta-paragraph-icon"
+          style={AboutWelcomeUtils.getValidStyle(
+            content?.icon,
+            CONFIGURABLE_STYLES
+          )}
+        ></div>
+      </div>
       <Localized text={content.text}>
         {content.text.string_name && typeof handleAction === "function" ? (
           <span

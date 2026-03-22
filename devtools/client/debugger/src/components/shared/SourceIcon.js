@@ -15,6 +15,7 @@ import { isSourceBlackBoxed } from "../../selectors/index";
 class SourceIcon extends PureComponent {
   static get propTypes() {
     return {
+      className: PropTypes.string,
       modifier: PropTypes.func,
       location: PropTypes.object.isRequired,
       iconName: PropTypes.string,
@@ -22,7 +23,7 @@ class SourceIcon extends PureComponent {
   }
 
   render() {
-    const { modifier } = this.props;
+    const { className, modifier } = this.props;
     let { iconName } = this.props;
 
     if (modifier) {
@@ -32,9 +33,11 @@ class SourceIcon extends PureComponent {
       }
       iconName = modified;
     }
+
     return React.createElement(DebuggerImage, {
       name: iconName,
-      className: "source-icon",
+      // Append the optional className to the default "source-icon" class.
+      className: `source-icon${className ? ` ${className}` : ""}`,
     });
   }
 }

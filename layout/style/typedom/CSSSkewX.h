@@ -44,6 +44,9 @@ class CSSSkewX final : public CSSTransformComponent {
 
   // end of CSSSkewX Web IDL declarations
 
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
+
  protected:
   virtual ~CSSSkewX() = default;
 };

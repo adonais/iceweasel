@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _RSDPARSA_SDP_H_
-#define _RSDPARSA_SDP_H_
+#ifndef RSDPARSASDP_H_
+#define RSDPARSASDP_H_
 
 #include "mozilla/UniquePtr.h"
 #include "sdp/RsdparsaSdpAttributeList.h"

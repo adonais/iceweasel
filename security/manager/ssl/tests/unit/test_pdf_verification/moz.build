@@ -31,6 +31,8 @@ def PDFVerificationCertGen(name, specification):
 # PDFVerificationCertGen('one_correct_one_incorrect_hash.p7s', 'one_correct_one_incorrect_hash.pkcs7spec')
 # PDFVerificationCertGen('one_correct_one_incorrect_signature.p7s', 'one_correct_one_incorrect_signature.pkcs7spec')
 # PDFVerificationCertGen('certificate_two_data_inputs.p7s', 'certificate_two_data_inputs.pkcs7spec')
+# PDFVerificationCertGen('ca_expired.p7s', 'ca_expired.pkcs7spec')
+# PDFVerificationCertGen('correct_with_ca.p7s', 'correct_with_ca.pkcs7spec')
 
 # To generate a new entry, add PDFVerificationCertGen, run mach build and copy from
 # objdir/_tests/xpcshell/security/manager/ssl/tests/unit/test_pdf_verification/

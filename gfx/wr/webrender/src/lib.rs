@@ -131,6 +131,7 @@ mod spatial_node;
 mod surface;
 mod texture_pack;
 mod texture_cache;
+mod transform;
 mod tile_cache;
 mod util;
 mod visibility;

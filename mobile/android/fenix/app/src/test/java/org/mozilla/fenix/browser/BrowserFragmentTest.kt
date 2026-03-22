@@ -38,6 +38,8 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.FenixApplication
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.toolbar.BrowserToolbarView
 import org.mozilla.fenix.components.toolbar.ToolbarIntegration
 import org.mozilla.fenix.ext.application
@@ -63,6 +65,7 @@ class BrowserFragmentTest {
     private lateinit var navController: NavController
     private lateinit var onboarding: FenixOnboarding
     private lateinit var settings: Settings
+    private lateinit var appStore: AppStore
 
     @get:Rule
     val coroutinesTestRule = MainCoroutineRule()
@@ -84,6 +87,7 @@ class BrowserFragmentTest {
         navController = mockk(relaxed = true)
         onboarding = mockk(relaxed = true)
         settings = mockk(relaxed = true)
+        appStore = AppStore(initialState = AppState())
 
         browserFragment = spyk(BrowserFragment())
         every { browserFragment.view } returns view
@@ -96,6 +100,7 @@ class BrowserFragmentTest {
         every { context.components.fenixOnboarding } returns onboarding
         every { context.components.settings } returns settings
 
+        every { context.components.appStore } returns appStore
         every { browserFragment.requireContext() } returns context
         every { browserFragment.initializeUI(any(), any()) } returns mockk()
         every { browserFragment.fullScreenChanged(any()) } returns Unit
@@ -166,6 +171,9 @@ class BrowserFragmentTest {
 
     @Test
     fun `GIVEN tabs are restored WHEN there are no tabs THEN navigate to home`() {
+        store = BrowserStore(initialState = BrowserState(tabs = listOf(testTab)))
+        every { context.components.core.store } returns store
+
         browserFragment.observeRestoreComplete(store, navController)
         store.dispatch(RestoreCompleteAction)
 
@@ -183,7 +191,9 @@ class BrowserFragmentTest {
 
     @Test
     fun `GIVEN tabs are restored WHEN there is no selected tab THEN navigate to home`() {
-        val store = BrowserStore(initialState = BrowserState(tabs = listOf(testTab)))
+        store = BrowserStore(initialState = BrowserState(tabs = listOf(testTab)))
+        every { context.components.core.store } returns store
+
         browserFragment.observeRestoreComplete(store, navController)
         store.dispatch(RestoreCompleteAction)
 

@@ -84,20 +84,16 @@ class ServoCSSParser {
                            css::Loader* aLoader = nullptr);
 
   /**
-   * Computes a StyleAbsoluteColor from the given CSS <color> value, following
-   * the HTML spec:
-   * https://html.spec.whatwg.org/#update-a-color-well-control-color
+   * Computes a StyleAbsoluteColor from the given CSS <color> value.
    *
    * @param aStyleData The style data to compute system colors and other special
    *   color values.
    * @param aValue The CSS <color> value.
-   * @param aToColorSpace The color space to convert the color into.
    * @return The resulting computed color value. For invalid color value,
    *   Nothing() will be returned.
    */
-  static Maybe<StyleAbsoluteColor> ComputeColorWellControlColor(
-      const StylePerDocumentStyleData* aStyleData, const nsACString& aValue,
-      StyleColorSpace aToColorSpace);
+  static Maybe<StyleAbsoluteColor> ComputeAbsoluteColor(
+      const StylePerDocumentStyleData* aStyleData, const nsACString& aValue);
 
   /**
   * Takes a CSS <color> and convert it to another color space.

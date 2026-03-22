@@ -11,11 +11,11 @@ dictionary CkEditorVersion {
   required DOMString version;
 };
 
-callback GwtPotentialElementShim = undefined();
+dictionary ZE_Init {};
 
 [GenerateInit]
 dictionary CkEditorProperty {
   CkEditorVersion CKEDITOR;
   CkEditorVersion JEDITOR;
-  GwtPotentialElementShim GwtPotentialElementShim;
+  ZE_Init ZE_Init;
 };

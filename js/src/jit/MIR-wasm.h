@@ -45,7 +45,7 @@ class MWasmNullConstant : public MNullaryInstruction {
     setResultType(MIRType::WasmAnyRef);
     setMovable();
     if (type.isSome()) {
-      initWasmRefType(wasm::MaybeRefType(type.value().bottomType()));
+      setWasmRefType(wasm::MaybeRefType(type.value().bottomType()));
     }
   }
 
@@ -190,7 +190,7 @@ class MWasmNewI31Ref : public MUnaryInstruction, public NoTypePolicy::Data {
     MOZ_ASSERT(input->type() == MIRType::Int32);
     setResultType(MIRType::WasmAnyRef);
     setMovable();
-    initWasmRefType(wasm::MaybeRefType(wasm::RefType::i31().asNonNullable()));
+    setWasmRefType(wasm::MaybeRefType(wasm::RefType::i31().asNonNullable()));
   }
 
  public:
@@ -1290,7 +1290,7 @@ class MWasmLoadInstanceDataField : public MUnaryInstruction,
                type == MIRType::Pointer || type == MIRType::WasmAnyRef);
     setResultType(type);
     setMovable();
-    initWasmRefType(maybeRefType);
+    setWasmRefType(maybeRefType);
   }
 
  public:
@@ -1331,7 +1331,7 @@ class MWasmLoadGlobalCell : public MUnaryInstruction,
       : MUnaryInstruction(classOpcode, cellPtr) {
     setResultType(type);
     setMovable();
-    initWasmRefType(globalType.toMaybeRefType());
+    setWasmRefType(globalType.toMaybeRefType());
   }
 
  public:
@@ -1358,8 +1358,7 @@ class MWasmLoadTableElement : public MBinaryInstruction,
                         wasm::RefType refType)
       : MBinaryInstruction(classOpcode, elements, index) {
     setResultType(MIRType::WasmAnyRef);
-    setMovable();
-    initWasmRefType(wasm::MaybeRefType(refType));
+    setWasmRefType(wasm::MaybeRefType(refType));
   }
 
  public:
@@ -1629,7 +1628,7 @@ class MWasmParameter : public MNullaryInstruction {
                  wasm::MaybeRefType refType = wasm::MaybeRefType())
       : MNullaryInstruction(classOpcode), abi_(abi) {
     setResultType(mirType);
-    initWasmRefType(refType);
+    setWasmRefType(refType);
   }
 
  public:
@@ -1711,7 +1710,7 @@ class MWasmRegisterResult : public MWasmResultBase<Register> {
   MWasmRegisterResult(MIRType type, Register reg,
                       wasm::MaybeRefType maybeRefType = wasm::MaybeRefType())
       : MWasmResultBase(classOpcode, type, reg) {
-    initWasmRefType(maybeRefType);
+    setWasmRefType(maybeRefType);
   }
 
  public:
@@ -2536,7 +2535,7 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
   MWideningOp wideningOp_;
   AliasSet aliases_;
   wasm::MaybeTrapSiteDesc maybeTrap_;
-  mozilla::Maybe<wasm::RefTypeHierarchy> hierarchy_;
+  wasm::MaybeRefType maybeRefType_;
 
   MWasmLoadField(MDefinition* base, MDefinition* keepAlive, size_t offset,
                  mozilla::Maybe<uint32_t> structFieldIndex, MIRType type,
@@ -2549,7 +2548,7 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
         wideningOp_(wideningOp),
         aliases_(aliases),
         maybeTrap_(std::move(maybeTrap)),
-        hierarchy_(maybeRefType.hierarchy()) {
+        maybeRefType_(maybeRefType) {
     MOZ_ASSERT(offset <= INT32_MAX);
     // "if you want to widen the value when it is loaded, the destination type
     // must be Int32".
@@ -2584,7 +2583,7 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
     } else {
       setMovable();
     }
-    initWasmRefType(maybeRefType);
+    setWasmRefType(maybeRefType);
   }
 
  public:
@@ -2599,9 +2598,7 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
   MWideningOp wideningOp() const { return wideningOp_; }
   AliasSet getAliasSet() const override { return aliases_; }
   wasm::MaybeTrapSiteDesc maybeTrap() const { return maybeTrap_; }
-  mozilla::Maybe<wasm::RefTypeHierarchy> hierarchy() const {
-    return hierarchy_;
-  }
+  wasm::MaybeRefType maybeRefType() const { return maybeRefType_; }
 
   bool congruentTo(const MDefinition* ins) const override {
     if (!ins->isWasmLoadField()) {
@@ -2612,7 +2609,7 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
            structFieldIndex() == other->structFieldIndex() &&
            wideningOp() == other->wideningOp() &&
            getAliasSet().flags() == other->getAliasSet().flags() &&
-           hierarchy() == other->hierarchy();
+           maybeRefType() == other->maybeRefType();
   }
 
   virtual AliasType mightAlias(const MDefinition* ins) const override;
@@ -2664,7 +2661,7 @@ class MWasmLoadElement : public MTernaryInstruction, public NoTypePolicy::Data {
     if (maybeTrap_) {
       setGuard();
     }
-    initWasmRefType(maybeRefType);
+    setWasmRefType(maybeRefType);
   }
 
  public:
@@ -3080,7 +3077,7 @@ class MWasmRefCastAbstract : public MUnaryInstruction,
     setResultType(MIRType::WasmAnyRef);
     // This may trap, which requires this to be a guard.
     setGuard();
-    initWasmRefType(wasm::MaybeRefType(destType));
+    setWasmRefType(wasm::MaybeRefType(destType));
   }
 
  public:
@@ -3115,7 +3112,7 @@ class MWasmRefCastConcrete : public MBinaryInstruction,
     setResultType(MIRType::WasmAnyRef);
     // This may trap, which requires this to be a guard.
     setGuard();
-    initWasmRefType(wasm::MaybeRefType(destType));
+    setWasmRefType(wasm::MaybeRefType(destType));
   }
 
  public:
@@ -3214,7 +3211,7 @@ class MWasmNewStructObject : public MBinaryInstruction,
         trapSiteDesc_(trapSiteDesc) {
     MOZ_ASSERT(typeDef->isStructType());
     setResultType(MIRType::WasmAnyRef);
-    initWasmRefType(
+    setWasmRefType(
         wasm::MaybeRefType(wasm::RefType::fromTypeDef(typeDef_, false)));
   }
 
@@ -3254,7 +3251,7 @@ class MWasmNewArrayObject : public MTernaryInstruction,
         trapSiteDesc_(trapSiteDesc) {
     MOZ_ASSERT(typeDef->isArrayType());
     setResultType(MIRType::WasmAnyRef);
-    initWasmRefType(
+    setWasmRefType(
         wasm::MaybeRefType(wasm::RefType::fromTypeDef(typeDef_, false)));
   }
 

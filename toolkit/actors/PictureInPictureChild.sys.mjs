@@ -1450,6 +1450,10 @@ export class PictureInPictureToggleChild extends JSWindowActorChild {
    * Called once it has been determined that the mouse is no longer overlapping
    * a video that we'd previously called onMouseOverVideo with.
    *
+   * It is possible that the <video> at this point is no longer connected to
+   * the DOM (e.g. if it is being reparented by a framework). Thus, care should
+   * be taken when accessing its shadow root.
+   *
    * @param {Element} video The video that the mouse left.
    */
   onMouseLeaveVideo(video) {
@@ -1459,8 +1463,8 @@ export class PictureInPictureToggleChild extends JSWindowActorChild {
     if (shadowRoot) {
       let controlsOverlay = shadowRoot.querySelector(".controlsOverlay");
       let toggle = this.getToggleElement(shadowRoot);
-      controlsOverlay.classList.remove("hovering");
-      toggle.classList.remove("hovering");
+      controlsOverlay?.classList.remove("hovering");
+      toggle?.classList.remove("hovering");
     }
 
     state.weakOverVideo = null;
@@ -1946,9 +1950,14 @@ export class PictureInPictureChild extends JSWindowActorChild {
   handleEvent(event) {
     switch (event.type) {
       case "MozStopPictureInPicture": {
-        if (event.isTrusted && event.target === this.getWeakVideo()) {
+        const video = this.getWeakVideo();
+        if (event.isTrusted && event.target === video) {
           const reason = event.detail?.reason || "VideoElRemove";
-          this.closePictureInPicture({ reason });
+          if (reason === "VideoElRemove") {
+            this.closePictureInPictureIfDisconnected({ reason, video });
+          } else {
+            this.closePictureInPicture({ reason });
+          }
         }
         break;
       }
@@ -2110,6 +2119,35 @@ export class PictureInPictureChild extends JSWindowActorChild {
       // of it from this angle.
       this.weakPlayerContent = null;
     }
+  }
+
+  /**
+   * Closes the Picture-in-Picture window when the source video is removed from
+   * the DOM.
+   *
+   * This function yields execution briefly to detect if the video element was
+   * merely being moved (re-parented) rather than destroyed. If the video
+   * is found to be re-connected, the visual stream is re-cloned and the
+   * window remains open.
+   *
+   * @param {object} options
+   * @param {string} options.reason The reason code for the potential closure.
+   * @param {Element} options.video The source video element to check.
+   */
+  closePictureInPictureIfDisconnected({ reason, video }) {
+    this.contentWindow.requestAnimationFrame(() =>
+      Services.tm.dispatchToMainThread(() => {
+        if (video?.isConnected) {
+          const playerVideo = this.document.getElementById("playervideo");
+          if (playerVideo) {
+            video.cloneElementVisually(playerVideo);
+            this.stylePlayerVideo(video, playerVideo);
+            return;
+          }
+        }
+        this.closePictureInPicture({ reason });
+      })
+    );
   }
 
   receiveMessage(message) {
@@ -2447,12 +2485,7 @@ export class PictureInPictureChild extends JSWindowActorChild {
     this.setTextTrackFontSize();
 
     originatingVideo.cloneElementVisually(playerVideo);
-
-    let shadowRoot = originatingVideo.openOrClosedShadowRoot;
-    if (originatingVideo.getTransformToViewport().a == -1) {
-      shadowRoot.firstChild.setAttribute("flipped", true);
-      playerVideo.style.transform = "scaleX(-1)";
-    }
+    this.stylePlayerVideo(originatingVideo, playerVideo);
 
     this.onCueChange = this.onCueChange.bind(this);
     this.trackOriginatingVideo(originatingVideo);
@@ -2476,6 +2509,23 @@ export class PictureInPictureChild extends JSWindowActorChild {
       },
       { once: true }
     );
+  }
+
+  /**
+   * Styles the player video in the Picture-in-Picture window based on the
+   * styles of the originating video (i.e. mirroring).
+   *
+   * @param {Element} originatingVideo
+   *   The source video element.
+   * @param {Element} playerVideo
+   *   The <video> element inside the PiP window.
+   */
+  stylePlayerVideo(originatingVideo, playerVideo) {
+    const shadowRoot = originatingVideo.openOrClosedShadowRoot;
+    if (originatingVideo.getTransformToViewport().a == -1) {
+      shadowRoot.firstChild.setAttribute("flipped", true);
+      playerVideo.style.transform = "scaleX(-1)";
+    }
   }
 
   play() {

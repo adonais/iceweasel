@@ -88,8 +88,14 @@ class GridInspector {
     this.listenForGridHighlighterEvents =
       this.listenForGridHighlighterEvents.bind(this);
 
+    const { promise, resolve } = Promise.withResolvers();
+    this.initialized = promise;
+    this.#initializedPromiseResolve = resolve;
+
     this.init();
   }
+
+  #initializedPromiseResolve;
 
   get highlighters() {
     if (!this._highlighters) {
@@ -171,6 +177,7 @@ class GridInspector {
     this.document = null;
     this.inspector = null;
     this.store = null;
+    this.initialized = null;
   }
 
   getComponentProps() {
@@ -306,6 +313,7 @@ class GridInspector {
         "Inspector destroyed while executing updateGridPanel"
       );
     }
+    this.#initializedPromiseResolve();
   }
 
   async _updateGridPanel() {
@@ -314,7 +322,6 @@ class GridInspector {
     if (!gridFronts.length) {
       try {
         this.store.dispatch(updateGrids([]));
-        this.inspector.emit("grid-panel-updated");
         return;
       } catch (e) {
         // This call might fail if called asynchrously after the toolbox is finished
@@ -423,7 +430,6 @@ class GridInspector {
     }
 
     this.store.dispatch(updateGrids(grids));
-    this.inspector.emit("grid-panel-updated");
   }
 
   /**

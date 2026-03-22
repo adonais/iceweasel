@@ -421,11 +421,7 @@
   <string name="customize_addon_collection_hint">Miano kolekcyje</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">Posiedziciel kolekcyje (ID ôd używocza)</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Idź nazod</string>
   <!--
     Title for the customize home screen section with recently visited. Recently visited is
@@ -815,7 +811,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Edytuj</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Kopiuj</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Kopiuj</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Udostympnij</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -853,7 +849,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Skasowane: %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">COFNIJ AKCYJO</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">COFNIJ AKCYJO</string>
   <!--
     Site Permissions
 
@@ -1056,7 +1052,7 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Nastow Firefox za bazowo przeglōndarka</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Sprōbuj prywatnego przeglōndanio</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Sprōbuj prywatnego przeglōndanio</string>
   <!--
     Snackbar
 

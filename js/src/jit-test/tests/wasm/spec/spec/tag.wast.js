@@ -75,7 +75,7 @@ assert_unlinkable(
     )
     (tag (import "M" "tag") (type \$t2))
   )`),
-  `incompatible import`,
+  `incompatible import type`,
 );
 
 // ./test/core/exceptions/tag.wast:59
@@ -84,5 +84,5 @@ assert_unlinkable(
     (type \$t (func))
     (tag (import "M" "tag") (type \$t))
   )`),
-  `incompatible import`,
+  `incompatible import type`,
 );

@@ -432,6 +432,92 @@
         );
       });
 
+      // Test that Settings with dynamically changing prefs respond to external changes
+      add_task(async function testDynamicPrefChangeListener() {
+        const PREF_A = "test.dynamic.pref.a";
+        const PREF_B = "test.dynamic.pref.b";
+        const SETTING_ID = "testDynamicPrefSetting";
+
+        await SpecialPowers.pushPrefEnv({
+          set: [
+            [PREF_A, "initial-a"],
+            [PREF_B, "initial-b"],
+          ],
+        });
+
+        Preferences.add({ id: PREF_A, type: "string" });
+        Preferences.add({ id: PREF_B, type: "string" });
+
+        let currentPrefId = PREF_A;
+        let switchToPrefB;
+
+        Preferences.addSetting({
+          id: SETTING_ID,
+          setup(emitChange, _deps, setting) {
+            setting.pref = Preferences.get(currentPrefId);
+
+            switchToPrefB = () => {
+              currentPrefId = PREF_B;
+              setting.pref = Preferences.get(PREF_B);
+              emitChange();
+            };
+          },
+        });
+
+        let setting = Preferences.getSetting(SETTING_ID);
+        ok(setting, "Got setting instance");
+        is(setting.value, "initial-a", "Setting initially reads from PREF_A");
+
+        // Test 1: External change to PREF_A should trigger setting change
+        let settingChanged = waitForSettingChange(setting);
+        Services.prefs.setStringPref(PREF_A, "external-change-a");
+        await settingChanged;
+        is(
+          setting.value,
+          "external-change-a",
+          "Setting updated from external PREF_A change"
+        );
+
+        // Test 2: Switch to PREF_B dynamically
+        settingChanged = waitForSettingChange(setting);
+        switchToPrefB();
+        await settingChanged;
+        is(setting.value, "initial-b", "Setting now reads from PREF_B");
+
+        // Test 3: External change to PREF_B should trigger setting change
+        settingChanged = waitForSettingChange(setting);
+        Services.prefs.setStringPref(PREF_B, "external-change-b");
+        await settingChanged;
+        is(
+          setting.value,
+          "external-change-b",
+          "Setting updated from external PREF_B change"
+        );
+
+        // Test 4: External change to PREF_A should NOT trigger setting change anymore
+        let changeTriggered = false;
+        let handler = () => {
+          changeTriggered = true;
+        };
+        setting.on("change", handler);
+
+        Services.prefs.setStringPref(PREF_A, "should-not-trigger");
+
+        // Give some time for any async handlers
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        setting.off("change", handler);
+        ok(
+          !changeTriggered,
+          "Setting no longer listens to old PREF_A after switching to PREF_B"
+        );
+        is(
+          setting.value,
+          "external-change-b",
+          "Setting value unchanged (still PREF_B value)"
+        );
+      });
+
       // Verify that a PreferenceNotAddedError is thrown if adding a
       // Setting with a preference that has not been registered
       // through Preferences.add/addAll.

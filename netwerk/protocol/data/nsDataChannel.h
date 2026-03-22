@@ -5,8 +5,8 @@
 
 // data implementation header
 
-#ifndef nsDataChannel_h___
-#define nsDataChannel_h___
+#ifndef nsDataChannel_h_
+#define nsDataChannel_h_
 
 #include "nsBaseChannel.h"
 #include "nsIChildChannel.h"
@@ -40,4 +40,4 @@ class nsDataChannel : public nsBaseChannel,
   nsresult MaybeSendDataChannelOpenNotification();
 };
 
-#endif /* nsDataChannel_h___ */
+#endif /* nsDataChannel_h_ */

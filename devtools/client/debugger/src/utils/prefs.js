@@ -143,6 +143,7 @@ export const features = new PrefsHelper("devtools.debugger.features", {
   inlinePreview: ["Bool", "inline-preview"],
   windowlessServiceWorkers: ["Bool", "windowless-service-workers"],
   javascriptTracing: ["Bool", "javascript-tracing"],
+  stylesheetsInDebugger: ["Bool", "stylesheets-in-debugger"],
 });
 
 // Import the asyncStore already spawned by the TargetMixin class

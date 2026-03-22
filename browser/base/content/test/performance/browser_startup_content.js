@@ -121,7 +121,6 @@ add_task(async function () {
   mm.loadFrameScript(
     "data:text/javascript,(" +
       function () {
-        /* eslint-env mozilla/frame-script */
         const Cm = Components.manager;
         Cm.QueryInterface(Ci.nsIServiceManager);
         const { AppConstants } = ChromeUtils.importESModule(

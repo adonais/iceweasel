@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _MOZILLA_WIDGET_GTK_WAYLAND_BUFFER_H
-#define _MOZILLA_WIDGET_GTK_WAYLAND_BUFFER_H
+#ifndef MOZILLA_WIDGET_GTK_WAYLAND_BUFFER_H
+#define MOZILLA_WIDGET_GTK_WAYLAND_BUFFER_H
 
 #include "DMABufSurface.h"
 #include "GLContext.h"
@@ -62,10 +62,10 @@ class WaylandBuffer {
     return aSize == mSize;
   }
 
-  bool IsAttached() const;
-
+  bool IsAttached(const WaylandSurfaceLock& aSurfaceLock) const;
   BufferTransaction* GetTransaction(const WaylandSurfaceLock& aSurfaceLock);
-  void RemoveTransaction(RefPtr<BufferTransaction> aTransaction);
+  void RemoveTransaction(const WaylandSurfaceLock& aSurfaceLock,
+                         RefPtr<BufferTransaction> aTransaction);
 
 #ifdef MOZ_LOGGING
   virtual void DumpToFile(const char* aHint) = 0;
@@ -236,4 +236,4 @@ class BufferTransaction {
 
 }  // namespace mozilla::widget
 
-#endif  // _MOZILLA_WIDGET_GTK_WAYLAND_BUFFER_H
+#endif  // MOZILLA_WIDGET_GTK_WAYLAND_BUFFER_H

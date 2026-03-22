@@ -11,7 +11,7 @@
 
 [package]
 edition = "2021"
-rust-version = "1.82.0"
+rust-version = "1.90.0"
 name = "wgpu-core"
 version = "28.0.0"
 authors = ["gfx-rs developers"]
@@ -28,9 +28,6 @@ keywords = ["graphics"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/gfx-rs/wgpu"
 
-[package.metadata.cargo-machete]
-ignored = ["cfg_aliases"]
-
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = [
@@ -43,6 +40,9 @@ targets = [
     "x86_64-pc-windows-msvc",
     "wasm32-unknown-unknown",
 ]
+
+[package.metadata.cargo-machete]
+ignored = ["cfg_aliases"]
 
 [features]
 angle = ["wgpu-core-deps-apple/angle"]

@@ -682,7 +682,7 @@ static bool DifferenceZonedDateTime(JSContext* cx, const EpochNanoseconds& ns1,
   }
 
   // Step 4.
-  if (CompareISODate(startDateTime.date, endDateTime.date) == 0) {
+  if (startDateTime.date == endDateTime.date) {
     // Step 4.a.
     auto timeDuration = TimeDurationFromEpochNanosecondsDifference(ns2, ns1);
 
@@ -2784,8 +2784,7 @@ static bool ZonedDateTime_toLocaleString(JSContext* cx, const CallArgs& args) {
       cx, ZonedDateTime{&args.thisv().toObject().as<ZonedDateTimeObject>()});
 
   // Steps 3-6.
-  Rooted<Value> timeZone(cx,
-                         StringValue(zonedDateTime.timeZone().identifier()));
+  Rooted<JSLinearString*> timeZone(cx, zonedDateTime.timeZone().identifier());
   return intl::TemporalObjectToLocaleString(
       cx, args, intl::DateTimeFormatKind::All, timeZone);
 }

@@ -25,12 +25,15 @@ const {
 class AccessibilityProxy {
   #panel;
   #initialized;
+  #accessibilityWalkerFronts;
+  #currentAccessibleWalkerFront;
+
   constructor(commands, panel) {
     this.commands = commands;
     this.#panel = panel;
 
     this.#initialized = false;
-    this._accessibilityWalkerFronts = new Set();
+    this.#accessibilityWalkerFronts = new Set();
     this.lifecycleEvents = new Map();
     this.accessibilityEvents = new Map();
 
@@ -229,12 +232,12 @@ class AccessibilityProxy {
     return async accessible => {
       if (accessible) {
         const accessibleWalkerFront = accessible.getParent();
-        if (this._currentAccessibleWalkerFront !== accessibleWalkerFront) {
-          if (this._currentAccessibleWalkerFront) {
-            await this._currentAccessibleWalkerFront.unhighlight();
+        if (this.#currentAccessibleWalkerFront !== accessibleWalkerFront) {
+          if (this.#currentAccessibleWalkerFront) {
+            await this.#currentAccessibleWalkerFront.unhighlight();
           }
 
-          this._currentAccessibleWalkerFront = accessibleWalkerFront;
+          this.#currentAccessibleWalkerFront = accessibleWalkerFront;
         }
       }
 
@@ -277,7 +280,7 @@ class AccessibilityProxy {
    * Stop picking and remove all walker listeners.
    */
   async cancelPick() {
-    this._currentAccessibleWalkerFront = null;
+    this.#currentAccessibleWalkerFront = null;
     return this.withAllAccessibilityWalkerFronts(
       async accessibleWalkerFront => {
         await accessibleWalkerFront.cancelPick();
@@ -321,7 +324,7 @@ class AccessibilityProxy {
   }
 
   startListeningForAccessibilityEvents(events) {
-    for (const accessibleWalkerFront of this._accessibilityWalkerFronts.values()) {
+    for (const accessibleWalkerFront of this.#accessibilityWalkerFronts.values()) {
       this.startListening(accessibleWalkerFront, {
         events,
         // Only register listeners once (for top level), no need to register
@@ -332,7 +335,7 @@ class AccessibilityProxy {
   }
 
   stopListeningForAccessibilityEvents(events) {
-    for (const accessibleWalkerFront of this._accessibilityWalkerFronts.values()) {
+    for (const accessibleWalkerFront of this.#accessibilityWalkerFronts.values()) {
       this.stopListening(accessibleWalkerFront, {
         events,
         // Only unregister listeners once (for top level), no need to unregister
@@ -449,14 +452,14 @@ class AccessibilityProxy {
     this.commands = null;
   }
 
-  _getEvents(front) {
+  #getEvents(front) {
     return front.typeName === "accessiblewalker"
       ? this.accessibilityEvents
       : this.lifecycleEvents;
   }
 
   registerEvent(front, type, listener) {
-    const events = this._getEvents(front);
+    const events = this.#getEvents(front);
     if (events.has(type)) {
       events.get(type).add(listener);
     } else {
@@ -465,7 +468,7 @@ class AccessibilityProxy {
   }
 
   unregisterEvent(front, type, listener) {
-    const events = this._getEvents(front);
+    const events = this.#getEvents(front);
     if (!events.has(type)) {
       return;
     }
@@ -502,7 +505,7 @@ class AccessibilityProxy {
   }
 
   onAccessibleWalkerFrontAvailable(accessibleWalkerFront) {
-    this._accessibilityWalkerFronts.add(accessibleWalkerFront);
+    this.#accessibilityWalkerFronts.add(accessibleWalkerFront);
     // Apply all existing accessible walker front event listeners to the new
     // front.
     for (const [type, listeners] of this.accessibilityEvents.entries()) {
@@ -513,7 +516,7 @@ class AccessibilityProxy {
   }
 
   onAccessibleWalkerFrontDestroyed(accessibleWalkerFront) {
-    this._accessibilityWalkerFronts.delete(accessibleWalkerFront);
+    this.#accessibilityWalkerFronts.delete(accessibleWalkerFront);
     // Remove all existing accessible walker front event listeners from the
     // destroyed front.
     for (const [type, listeners] of this.accessibilityEvents.entries()) {
@@ -535,7 +538,7 @@ class AccessibilityProxy {
     }
 
     // Clear all the fronts collected by `watchFronts` on the previous set of targets/documents.
-    this._accessibilityWalkerFronts.clear();
+    this.#accessibilityWalkerFronts.clear();
   }
 
   async onTargetDestroyed({ targetFront }) {

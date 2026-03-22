@@ -16,9 +16,11 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://services-settings/RemoteSettingsClient.sys.mjs",
   SearchEngineClassification:
     "moz-src:///toolkit/components/uniffi-bindgen-gecko-js/components/generated/RustSearch.sys.mjs",
+  SearchEngineInstallError:
+    "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   SearchEngineSelector:
     "moz-src:///toolkit/components/search/SearchEngineSelector.sys.mjs",
-  SearchService: "resource://gre/modules/SearchService.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchSettings: "moz-src:///toolkit/components/search/SearchSettings.sys.mjs",
   SearchTestUtils: "resource://testing-common/SearchTestUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
@@ -474,14 +476,14 @@ async function assertGleanDefaultEngine(expected) {
  *   The enterprise policy to use.
  */
 async function setupPolicyEngineWithJson(policy) {
-  Services.search.wrappedJSObject.reset();
+  SearchService.reset();
 
   await this.EnterprisePolicyTesting.setupPolicyEngineWithJson(policy);
 
   let settingsWritten = SearchTestUtils.promiseSearchNotification(
     "write-settings-to-disk-complete"
   );
-  await Services.search.init();
+  await SearchService.init();
   await settingsWritten;
 }
 
@@ -551,8 +553,8 @@ class SearchObserver {
       "Should be expecting a notification"
     );
 
-    let maybeEngine = subject.QueryInterface(Ci.nsISearchEngine);
-    let engineName = maybeEngine?.name ?? null;
+    let engine = subject.wrappedJSObject;
+    let engineName = engine.name;
     this.receivedNotifications.push({ type: data, engineName });
 
     let matchIndex = this.expectedNotifications.findIndex(
@@ -592,7 +594,7 @@ let updatePromise = SearchTestUtils.promiseSearchNotification(
 );
 
 registerCleanupFunction(async () => {
-  if (Services.search.isInitialized) {
+  if (SearchService.isInitialized) {
     await updatePromise;
   }
 });

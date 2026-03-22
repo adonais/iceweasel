@@ -10,8 +10,8 @@
  *  This file defines a dirt-simple token bucket class.
  */
 
-#ifndef simpletokenbucket_h__
-#define simpletokenbucket_h__
+#ifndef simpletokenbucket_h_
+#define simpletokenbucket_h_
 
 #include <stdint.h>
 
@@ -50,4 +50,4 @@ class SimpleTokenBucket {
 
 }  // namespace mozilla
 
-#endif  // simpletokenbucket_h__
+#endif  // simpletokenbucket_h_

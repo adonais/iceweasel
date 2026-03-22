@@ -413,7 +413,7 @@ class Bootstrapper:
         repo = get_repository_object(checkout_root)
         self.instance.srcdir = checkout_root
         self.instance.validate_environment()
-        self._validate_python_environment(checkout_root)
+        self._populate_optional_packages(checkout_root)
 
         if sys.platform.startswith("win"):
             self._check_for_dev_drive(checkout_root)
@@ -687,23 +687,7 @@ class Bootstrapper:
             # No mozconfig file exists yet
             self._write_default_mozconfig(raw_mozconfig)
 
-    def _validate_python_environment(self, topsrcdir):
-        valid = True
-        pip3 = to_optional_path(which("pip3"))
-        if not pip3:
-            print("ERROR: Could not find pip3.", file=sys.stderr)
-            self.instance.suggest_install_pip3()
-            valid = False
-        if not valid:
-            print(
-                "ERROR: Your Python installation will not be able to run "
-                "`mach bootstrap`. `mach bootstrap` cannot maintain your "
-                "Python environment for you; fix the errors shown here, and "
-                "then re-run `mach bootstrap`.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-
+    def _populate_optional_packages(self, topsrcdir):
         mach_site = MachSiteManager.from_environment(
             topsrcdir,
             lambda: os.path.normpath(get_state_dir(True, topsrcdir=topsrcdir)),

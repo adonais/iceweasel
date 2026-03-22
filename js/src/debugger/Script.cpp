@@ -13,10 +13,10 @@
 #include <stddef.h>  // for ptrdiff_t
 #include <stdint.h>  // for uint32_t, UINT32_MAX, SIZE_MAX, int32_t
 
-#include "jsnum.h"             // for ToNumber
 #include "NamespaceImports.h"  // for CallArgs, RootedValue
 
 #include "builtin/Array.h"         // for NewDenseEmptyArray
+#include "builtin/Number.h"        // for ToNumber
 #include "debugger/Debugger.h"     // for DebuggerScriptReferent, Debugger
 #include "debugger/DebugScript.h"  // for DebugScript
 #include "debugger/Source.h"       // for DebuggerSource
@@ -1490,6 +1490,9 @@ static bool BytecodeIsEffectful(JSScript* script, size_t offset) {
     case JSOp::SetFunName:
     case JSOp::MutateProto:
     case JSOp::DynamicImport:
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    case JSOp::DynamicImportSource:
+#endif
     case JSOp::InitialYield:
     case JSOp::Yield:
     case JSOp::Await:

@@ -84,7 +84,7 @@ async function addEngine(browser, selector, name, alias) {
   Assert.ok(true, "Went into search mode");
 
   await UrlbarTestUtils.exitSearchMode(window);
-  return Services.search.getEngineByName(name);
+  return SearchService.getEngineByName(name);
 }
 
 async function createForm({ action, method, fields }) {
@@ -189,11 +189,11 @@ add_task(async function testAddingEngines() {
     Assert.ok(!!engine, "Engine was installed");
     Assert.equal(
       engine.id,
-      (await Services.search.getEngineByAlias("alias"))?.id,
+      (await SearchService.getEngineByAlias("alias"))?.id,
       "Engine has correct alias"
     );
 
-    Assert.equal(engine.wrappedJSObject.queryCharset, args.charset);
+    Assert.equal(engine.queryCharset, args.charset);
     let submission = engine.getSubmission(args.submission);
     Assert.equal(
       submission.uri.spec,
@@ -206,7 +206,7 @@ add_task(async function testAddingEngines() {
       "Submission post data is correct"
     );
 
-    await Services.search.removeEngine(engine);
+    await SearchService.removeEngine(engine);
   }
 
   // Let the dialog fully close. Otherwise, the tab cannot be closed properly.

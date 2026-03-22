@@ -27,6 +27,7 @@ use crate::{
 use crate::span::{AddSpan as _, WithSpan};
 pub use analyzer::{ExpressionInfo, FunctionInfo, GlobalUse, Uniformity, UniformityRequirements};
 pub use compose::ComposeError;
+pub use expression::builtin::ZeroValueError;
 pub use expression::{check_literal_value, LiteralError};
 pub use expression::{ConstExpressionError, ExpressionError};
 pub use function::{CallError, FunctionError, LocalVariableError, SubgroupError};
@@ -202,6 +203,8 @@ bitflags::bitflags! {
         const STORAGE_BUFFER_BINDING_ARRAY_NON_UNIFORM_INDEXING = 1 << 35;
         /// Support for cooperative matrix types and operations
         const COOPERATIVE_MATRIX = 1 << 36;
+        /// Support for per-vertex fragment input.
+        const PER_VERTEX = 1 << 37;
     }
 }
 
@@ -221,6 +224,7 @@ impl Capabilities {
             Self::MESH_SHADER => Some(Ext::WgpuMeshShader),
             Self::RAY_QUERY => Some(Ext::WgpuRayQuery),
             Self::RAY_HIT_VERTEX_POSITION => Some(Ext::WgpuRayQueryVertexReturn),
+            Self::COOPERATIVE_MATRIX => Some(Ext::WgpuCooperativeMatrix),
             _ => None,
         }
     }
@@ -345,7 +349,6 @@ pub struct Validator {
     location_mask: BitSet,
     blend_src_mask: BitSet,
     ep_resource_bindings: FastHashSet<crate::ResourceBinding>,
-    #[allow(dead_code)]
     switch_values: FastHashSet<crate::SwitchValue>,
     valid_expression_list: Vec<Handle<crate::Expression>>,
     valid_expression_set: HandleSet<crate::Expression>,
@@ -577,13 +580,13 @@ impl Validator {
     }
 
     // TODO(https://github.com/gfx-rs/wgpu/issues/8207): Consider removing this
-    pub fn subgroup_stages(&mut self, stages: ShaderStages) -> &mut Self {
+    pub const fn subgroup_stages(&mut self, stages: ShaderStages) -> &mut Self {
         self.subgroup_stages = stages;
         self
     }
 
     // TODO(https://github.com/gfx-rs/wgpu/issues/8207): Consider removing this
-    pub fn subgroup_operations(&mut self, operations: SubgroupOperationSet) -> &mut Self {
+    pub const fn subgroup_operations(&mut self, operations: SubgroupOperationSet) -> &mut Self {
         self.subgroup_operations = operations;
         self
     }

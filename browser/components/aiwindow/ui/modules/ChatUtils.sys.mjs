@@ -68,9 +68,9 @@ export function parseMessageRows(rows) {
       convId: row.getResultByName("conv_id"),
       pageUrl: URL.parse(row.getResultByName("page_url")),
       turnIndex: row.getResultByName("turn_index"),
-      insightsEnabled: row.getResultByName("insights_enabled"),
-      insightsFlagSource: row.getResultByName("insights_flag_source"),
-      insightsApplied: parseJSONOrNull(row.getResultByName("insights_applied")),
+      memoriesEnabled: row.getResultByName("memories_enabled"),
+      memoriesFlagSource: row.getResultByName("memories_flag_source"),
+      memoriesApplied: parseJSONOrNull(row.getResultByName("memories_applied")),
       webSearchQueries: parseJSONOrNull(
         row.getResultByName("web_search_queries")
       ),
@@ -87,15 +87,20 @@ export function parseMessageRows(rows) {
  */
 export function parseChatHistoryViewRows(rows) {
   return rows.map(row => {
+    const urlsString = row.getResultByName("urls");
+    const urls = urlsString
+      ? urlsString
+          .split(",")
+          .filter(url => url && url.trim())
+          .map(url => new URL(url.trim()))
+      : [];
+
     return new ChatHistoryResult({
       convId: row.getResultByName("conv_id"),
       title: row.getResultByName("title"),
       createdDate: row.getResultByName("created_date"),
       updatedDate: row.getResultByName("updated_date"),
-      urls: row
-        .getResultByName("urls")
-        .split(",")
-        .map(url => new URL(url)),
+      urls,
     });
   });
 }

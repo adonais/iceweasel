@@ -14,15 +14,6 @@ gmp:
   update_xml_fetch_result:
     type: labeled_counter
     labels:
-      - cert_pin_success
-      - cert_pin_net_request_error
-      - cert_pin_net_timeout
-      - cert_pin_abort
-      - cert_pin_missing_data
-      - cert_pin_failed
-      - cert_pin_invalid
-      - cert_pin_xml_parse_error
-      - cert_pin_unknown_error
       - content_sig_success
       - content_sig_net_request_error
       - content_sig_net_timeout
@@ -34,9 +25,8 @@ gmp:
       - content_sig_unknown_error
     description: >
       The result of Gecko fetching an update.xml from Balrog.
-      This captures 3 different data points: success or failure of the request,
-      if cert pinning or content signatures were used to verify the result, and
-      the reason for failure, if the request failed.
+      This captures 2 different data points: success or failure of the request,
+      and the reason for failure, if the request failed.
     metadata:
       tags:
         - 'Core :: Audio/Video: GMP'
@@ -330,12 +320,12 @@ media:
       This metric does not determine whether the MKV file is valid; it is simply
       a count based on the sniffed MIME type.
     bugs:
-      - https://bugzil.la/1985336
+      - https://bugzil.la/2016198
     data_reviews:
-      - https://bugzil.la/1985336
+      - https://bugzil.la/2016198
     notification_emails:
       - media-alerts@mozilla.com
-    expires: 150
+    expires: 156
 
   mkv_codec_type:
     type: labeled_counter
@@ -355,12 +345,12 @@ media:
       - AudioPcm
       - NoCodecSpecified
     bugs:
-      - https://bugzil.la/1986058
+      - https://bugzil.la/2016198
     data_reviews:
-      - https://bugzil.la/1986058
+      - https://bugzil.la/2016198
     notification_emails:
       - media-alerts@mozilla.com
-    expires: 150
+    expires: 156
 
   video_hardware_decoding_support:
     type: labeled_boolean
@@ -826,3 +816,23 @@ media:
       - media-alerts@mozilla.com
     expires: never
     telemetry_mirror: h#MSE_SOURCE_BUFFER_TYPE
+
+  capture_stream_usage:
+    type: labeled_counter
+    description: >
+      Count the usage of MediaStream captured from HTMLMediaElement by different
+      capture methods.
+    labels:
+      - CaptureStream
+      - MozCaptureStream
+      - MozCaptureStreamUntilEnded
+      - MozAudioCaptured
+      - AudioSourceNodeCaptured
+      - WindowAudioCaptured
+    bugs:
+      - https://bugzil.la/2007596
+    data_reviews:
+      - https://bugzil.la/2007596
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: 159

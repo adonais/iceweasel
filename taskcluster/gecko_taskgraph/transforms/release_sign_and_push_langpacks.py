@@ -7,7 +7,7 @@ Transform the release-sign-and-push task into an actual task description.
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.treeherder import inherit_treeherder_from_dep
 from voluptuous import Any, Optional, Required
 
@@ -19,7 +19,7 @@ from gecko_taskgraph.util.attributes import (
 
 transforms = TransformSequence()
 
-langpack_sign_push_description_schema = Schema({
+langpack_sign_push_description_schema = LegacySchema({
     Required("label"): str,
     Required("description"): str,
     Required("worker-type"): optionally_keyed_by("release-level", str),

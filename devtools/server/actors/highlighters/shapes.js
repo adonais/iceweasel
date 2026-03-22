@@ -34,7 +34,6 @@ const {
   changeMatrixBase,
   getBasis,
 } = require("resource://devtools/shared/layout/dom-matrix-2d.js");
-const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 const {
   getMatchingCSSRules,
 } = require("resource://devtools/shared/inspector/css-logic.js");
@@ -86,7 +85,6 @@ const _dragging = Symbol("shapes/dragging");
 class ShapesHighlighter extends AutoRefreshHighlighter {
   constructor(highlighterEnv) {
     super(highlighterEnv);
-    EventEmitter.decorate(this);
 
     this.referenceBox = "border";
     this.useStrokeBox = false;

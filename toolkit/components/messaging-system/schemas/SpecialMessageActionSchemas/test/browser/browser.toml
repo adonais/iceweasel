@@ -51,6 +51,8 @@ support-files = [
 
 ["browser_sma_open_spotlight_dialog.js"]
 
+["browser_sma_open_tab_in_splitview.js"]
+
 ["browser_sma_open_url.js"]
 
 ["browser_sma_pin_current_tab.js"]

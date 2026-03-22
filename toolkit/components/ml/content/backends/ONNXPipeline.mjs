@@ -86,6 +86,8 @@ export async function importTransformers(backend) {
     return transformers;
   }
 
+  let importStart = ChromeUtils.now();
+
   lazy.console.debug(`Using backend ${backend}`);
 
   if (backend === NATIVE_BACKEND) {
@@ -105,13 +107,18 @@ export async function importTransformers(backend) {
   }
   if (AppConstants.NIGHTLY_BUILD) {
     lazy.console.debug("Nightly detected. Using transformers-dev.js");
-    transformers = await import(
-      "chrome://global/content/ml/transformers-dev.js"
-    );
+    transformers =
+      await import("chrome://global/content/ml/transformers-dev.js");
   } else {
     lazy.console.debug("Beta or Release detected, using transformers.js");
     transformers = await import("chrome://global/content/ml/transformers.js");
   }
+
+  ChromeUtils.addProfilerMarker(
+    "MLEngine:ONNX",
+    { startTime: importStart },
+    `Load transformers.js for ${backend}`
+  );
 
   return transformers;
 }
@@ -319,7 +326,13 @@ async function textToGoal(
       max_length: 64,
       return_attention_mask: true,
     });
-    metrics.preprocessingTime += ChromeUtils.now() - startToken;
+    const tokenizeTime = ChromeUtils.now() - startToken;
+    metrics.preprocessingTime += tokenizeTime;
+    ChromeUtils.addProfilerMarker(
+      "MLEngine:ONNX",
+      { startTime: startToken },
+      `Tokenize text: ${encoded.input_ids.data.length} tokens`
+    );
     const input_ids = encoded.input_ids.ort_tensor;
     const attention_mask = encoded.attention_mask.ort_tensor;
     const domain_vocab = modelConfig["transformers.js_config"].domain_vocab;
@@ -350,7 +363,13 @@ async function textToGoal(
     const startInfer = ChromeUtils.now();
     const session = model.sessions.model;
     const output = await session.run(inputs);
-    metrics.inferenceTime += ChromeUtils.now() - startInfer;
+    const inferenceTime = ChromeUtils.now() - startInfer;
+    metrics.inferenceTime += inferenceTime;
+    ChromeUtils.addProfilerMarker(
+      "MLEngine:ONNX",
+      { startTime: startInfer },
+      `textToGoal`
+    );
     metrics.inputTokens += encoded.input_ids.ort_tensor.dims[1];
 
     result.output.push({
@@ -668,8 +687,9 @@ export class ONNXPipeline {
    * @returns {Promise<Pipeline>} The initialized pipeline instance.
    */
   static async initialize(mlEngineWorker, runtime, options, errorFactory) {
+    let initStart = ChromeUtils.now();
     let snapShot = {
-      when: ChromeUtils.now(),
+      when: initStart,
     };
 
     if (options.logLevel) {
@@ -703,13 +723,28 @@ export class ONNXPipeline {
     if (lazy.console.logLevel != config.logLevel) {
       lazy.console.logLevel = config.logLevel;
     }
+
+    let pipelineReadyStart = ChromeUtils.now();
     const pipeline = new ONNXPipeline(mlEngineWorker, config, errorFactory);
     await pipeline.ensurePipelineIsReady();
+
+    ChromeUtils.addProfilerMarker(
+      "MLEngine:ONNX",
+      { startTime: pipelineReadyStart },
+      `Pipeline ready`
+    );
+
     await pipeline.#metricsSnapShot({
       name: "initializationStart",
       snapshot: snapShot,
     });
     await pipeline.#metricsSnapShot({ name: "initializationEnd" });
+
+    ChromeUtils.addProfilerMarker(
+      "MLEngine:ONNX",
+      { startTime: initStart },
+      `Initialized: task=${taskName}, backend=${config.backend}`
+    );
 
     return pipeline;
   }
@@ -842,7 +877,7 @@ export class ONNXPipeline {
     };
 
     const streamerOptions = {
-      perTokens: true,
+      perTokens: false,
       skipPrompt: true,
       returnTokens: false,
       ...request.streamerOptions,
@@ -850,16 +885,36 @@ export class ONNXPipeline {
 
     let streamer;
     let chunkTokens = [];
-    // Removed unused chunkText declaration here
+    let chunkText = "";
+    let nextTokensArePrompt = !streamerOptions.skipPrompt;
+    let restoreTokenizer = false;
 
     let firstTokenTimestamp = null;
-    if (tokenizer) {
+    if (tokenizer && inferenceProgressCallback) {
+      const flushPrompts = _tokens => {
+        streamer.token_cache = _tokens;
+        streamer.end();
+        streamer.tokenizer = {
+          decode: () => {
+            streamer.token_cache = [];
+            return "";
+          },
+        };
+        restoreTokenizer = true;
+        streamer.next_tokens_are_prompt = false;
+      };
+
       streamer = new transformers.TextStreamer(tokenizer, {
         skip_prompt: streamerOptions.skipPrompt,
         decode_kwargs: {
           skip_special_tokens: true,
         },
         token_callback_function: tokens => {
+          if (restoreTokenizer) {
+            streamer.tokenizer = tokenizer;
+            restoreTokenizer = false;
+          }
+
           // Record Time To First Token on the very first callback
           const now = ChromeUtils.now();
           if (metrics.timeToFirstToken === null) {
@@ -869,35 +924,37 @@ export class ONNXPipeline {
 
           metrics.outputTokens += tokens.length;
 
-          // Only proceed with buffering if we have a callback to call
-          if (!inferenceProgressCallback) {
-            return;
-          }
+          if (streamerOptions.perTokens) {
+            if (nextTokensArePrompt) {
+              flushPrompts(tokens);
+            }
 
-          if (streamerOptions.perTokens) {
-            // Logic handled in callback_function
-          } else {
-            // Append newly received tokens.
-            chunkTokens.push(tokens);
-          }
-        },
-        // Per-word (or per-token if perTokens=true) callback function
-        callback_function: text => {
-          if (!inferenceProgressCallback) {
-            return;
-          }
-          if (streamerOptions.perTokens) {
             inferenceProgressCallback({
               ...progressInfo,
               metadata: {
-                text,
-                tokens: streamerOptions.returnTokens ? chunkTokens : null,
+                text: chunkText,
+                tokens: streamerOptions.returnTokens ? tokens : null,
+                isPrompt: nextTokensArePrompt,
                 requestId,
-                isPrompt: false, // skipping prompt, so assumed false
               },
               type: lazy.Progress.ProgressType.INFERENCE,
               statusText: lazy.Progress.ProgressStatusText.IN_PROGRESS,
             });
+
+            chunkText = "";
+          } else {
+            chunkTokens.push(tokens);
+
+            if (nextTokensArePrompt) {
+              flushPrompts(tokens);
+            }
+          }
+          nextTokensArePrompt = false;
+        },
+        // Per-word callback function
+        callback_function: text => {
+          if (streamerOptions.perTokens) {
+            chunkText = text;
           } else {
             inferenceProgressCallback({
               ...progressInfo,
@@ -905,7 +962,7 @@ export class ONNXPipeline {
                 text,
                 tokens: streamerOptions.returnTokens ? chunkTokens : null,
                 requestId,
-                isPrompt: false,
+                isPrompt: nextTokensArePrompt,
               },
               type: lazy.Progress.ProgressType.INFERENCE,
               statusText: lazy.Progress.ProgressStatusText.IN_PROGRESS,
@@ -917,11 +974,13 @@ export class ONNXPipeline {
       });
     }
 
-    // Inject streamer into request options
-    const requestWithCallback = {
-      ...request,
-      options: { ...request.options, streamer },
-    };
+    // Override streamer in options
+    const requestWithCallback = inferenceProgressCallback
+      ? {
+          ...request,
+          options: { ...request.options, streamer },
+        }
+      : request;
 
     let result;
 
@@ -939,7 +998,13 @@ export class ONNXPipeline {
           ...requestWithCallback.args,
           requestWithCallback.options || {}
         );
-        metrics.inferenceTime = ChromeUtils.now() - start;
+        const inferenceTime = ChromeUtils.now() - start;
+        metrics.inferenceTime = inferenceTime;
+        ChromeUtils.addProfilerMarker(
+          "MLEngine:ONNX",
+          { startTime: start },
+          `Inference`
+        );
         if (output instanceof transformers.Tensor) {
           output = output.tolist();
         }

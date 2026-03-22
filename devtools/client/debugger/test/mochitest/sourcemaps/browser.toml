@@ -27,8 +27,8 @@ skip-if = [
 ]
 
 ["browser_dbg-sourcemapped-stepping.js"]
-run-if = [
-  "false", # original stepping is currently disabled
+skip-if = [
+  "true", # original stepping is currently disabled
 ]
 
 ["browser_dbg-sourcemapped-toggle.js"]

@@ -1504,7 +1504,7 @@ HitTestingTreeNode* APZCTreeManager::PrepareNodeForLayer(
 
 template <typename PanGestureOrScrollWheelInput>
 static bool WillHandleInput(const PanGestureOrScrollWheelInput& aPanInput) {
-  if (!XRE_IsParentProcess() || !NS_IsMainThread()) {
+  if (!NS_IsMainThread()) {
     return true;
   }
 

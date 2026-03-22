@@ -359,7 +359,7 @@ nsLiteralCString Tensor::ONNXTypeToString(
 nsCString Tensor::ToString() const {
   nsCString rv;
   size_t count = mData.Length() / DataTypeSize(Type());
-  rv.AppendFmt(FMT_STRING("{} {} elements, {} bytes, {} dims"), mType, count,
+  rv.AppendFmt("{} {} elements, {} bytes, {} dims", mType, count,
                mData.Length(), mDims.Length());
 
   if (MOZ_LOG_TEST(gONNXLog, LogLevel::Verbose)) {

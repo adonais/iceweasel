@@ -79,8 +79,5 @@ h3 {
 .status-image {
   margin-inline-start: var(--space-xsmall);
   max-width: 100px;
-}
-
-.status-image:dir(rtl) {
-  transform: scaleX(-1);
+  object-fit: contain;
 }

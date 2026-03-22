@@ -110,8 +110,9 @@ using mozilla::EventMessage from "mozilla/EventForwards.h";
 using mozilla::LayoutDeviceIntPoint from "Units.h";
 using mozilla::ImagePoint from "Units.h";
 using mozilla::widget::ThemeChangeKind from "mozilla/widget/WidgetMessageUtils.h";
+using mozilla::ColorScheme from "mozilla/ColorScheme.h";
 using class mozilla::dom::MessagePort from "mozilla/dom/MessagePort.h";
-using class mozilla::dom::ipc::StructuredCloneData from "mozilla/dom/ipc/StructuredCloneData.h";
+[RefCounted] using class mozilla::dom::ipc::StructuredCloneData from "mozilla/dom/ipc/StructuredCloneData.h";
 using mozilla::OriginAttributes from "mozilla/ipc/BackgroundUtils.h";
 using mozilla::OriginAttributesPattern from "mozilla/dom/quota/SerializationHelpers.h";
 using struct mozilla::layers::TextureFactoryIdentifier from "mozilla/layers/CompositorTypes.h";
@@ -585,7 +586,7 @@ both:
                                      MaybeDiscardedBrowsingContext aContext);
 
     async RawMessage(JSActorMessageMeta aMetadata, JSIPCValue aData,
-                     UniquePtr<ClonedMessageData> aStack);
+                     nullable StructuredCloneData aStack);
 
 child:
     async InitGMPService(Endpoint<PGMPServiceChild> service);
@@ -629,7 +630,7 @@ child:
                               FileDescriptor? DMDFile)
         returns (uint32_t aGeneration);
 
-    async DecodeImage(nsIURI aURI, ImageIntSize aSize) returns (nsresult rv, IPCImage? image);
+    async DecodeImage(nsIURI aURI, ImageIntSize aSize, ColorScheme aColorScheme) returns (nsresult rv, IPCImage? image);
 
 #if defined(XP_WIN)
     /**
@@ -766,7 +767,9 @@ child:
     async AddPermission(Permission permission);
     async RemoveAllPermissions();
 
-    async FlushMemory(nsString reason);
+    // memory-pressure and memory-pressure-stop notifications.
+    async MemoryPressure(nsString reason);
+    async MemoryPressureStop();
 
     async ApplicationBackground();
     async ApplicationForeground();
@@ -826,7 +829,7 @@ child:
     async UnregisterJSProcessActor(nsCString name);
 
     async SetXPCOMProcessAttributes(XPCOMInitData xpcomInit,
-                                    UniquePtr<StructuredCloneData> initialData,
+                                    StructuredCloneData initialData,
                                     FullLookAndFeel lookAndFeeldata,
                                     /* used on MacOSX/Linux/Android only: */
                                     SystemFontList systemFontList,
@@ -1111,7 +1114,7 @@ parent:
         returns (LoadingSessionHistoryInfo? aLoadingInfo);
 
     async SynchronizeNavigationAPIState(MaybeDiscardedBrowsingContext aContext,
-        ClonedMessageData aState);
+        nsStructuredCloneContainer aState);
 
     async RemoveFromBFCache(MaybeDiscardedBrowsingContext aContext);
 
@@ -1174,8 +1177,8 @@ parent:
                           bool newWindowTarget);
     async ExtProtocolChannelConnectParent(uint64_t registrarId);
 
-    sync SyncMessage(nsString aMessage, ClonedMessageData aData)
-      returns (UniquePtr<StructuredCloneData>[] retval);
+    sync SyncMessage(nsString aMessage, StructuredCloneData aData)
+      returns (StructuredCloneData[] retval);
 
     async AddSecurityState(MaybeDiscardedWindowContext aContext, uint32_t aStateFlags);
 
@@ -1217,7 +1220,7 @@ parent:
     async ScriptErrorWithStack(nsString message, nsCString sourceName,
                                uint32_t lineNumber, uint32_t colNumber, uint32_t flags,
                                nsCString category, bool isFromPrivateWindow,
-                               bool isFromChromeContext, ClonedMessageData stack);
+                               bool isFromChromeContext, StructuredCloneData stack);
 
     // Places the items within dataTransfer on the clipboard.
     async SetClipboard(IPCTransferable aTransferable,
@@ -1648,24 +1651,10 @@ parent:
                                  StorageAccessPermissionGrantedReason aReason)
           returns (StorageAccessPromptChoices? choice);
 
-    async SetAllowStorageAccessRequestFlag(
-                                 nullable nsIPrincipal aEmbeddingPrincipal,
-                                 nullable nsIURI aEmbeddedOrigin)
-          returns (bool success);
-
-    async TestAllowStorageAccessRequestFlag(
-                                 nullable nsIPrincipal aEmbeddedPrincipal,
-                                 nullable nsIURI aEmbeddingOrigin)
-          returns (bool success);
-
     async StoreUserInteractionAsPermission(nullable nsIPrincipal aPrincipal);
 
     async TestCookiePermissionDecided(MaybeDiscardedBrowsingContext aContext,
                          nullable nsIPrincipal aPrincipal)
-          returns (bool? allowed);
-
-    async TestStorageAccessPermission(nullable nsIPrincipal aEmbeddingPrincipal,
-                         nsCString aEmbeddedOrigin)
           returns (bool? allowed);
 
    /**
@@ -1851,7 +1840,7 @@ both:
                                            BrowsingContextTransaction aTransaction,
                                            uint64_t aEpoch);
 
-    async AsyncMessage(nsString aMessage, ClonedMessageData aData);
+    async AsyncMessage(nsString aMessage, StructuredCloneData aData);
 
     /**
      * Notify `push-subscription-modified` observers in the parent and child.
@@ -1939,7 +1928,7 @@ child:
 both:
     async MaybeExitFullscreen(MaybeDiscardedBrowsingContext aContext);
     async WindowPostMessage(MaybeDiscardedBrowsingContext aContext,
-                            ClonedOrErrorMessageData aMessage,
+                            nullable StructuredCloneData aMessage,
                             PostMessageData aData);
 
     async CommitWindowContextTransaction(MaybeDiscardedWindowContext aContext,

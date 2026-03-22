@@ -75,7 +75,7 @@ export let StartupTelemetry = {
       () => this.startupConditions(),
       () => this.httpsOnlyState(),
       () => this.globalPrivacyControl(),
-      () => this.isGlobalAiControlBlocking(),
+      () => this.aiControlBlocking(),
     ];
     if (this._willUseExpensiveTelemetry) {
       tasks.push(() => lazy.PlacesDBUtils.telemetry());
@@ -359,17 +359,40 @@ export let StartupTelemetry = {
     _checkGPCPref();
   },
 
-  isGlobalAiControlBlocking() {
+  aiControlBlocking() {
     const GLOBAL_AI_PREF = "browser.ai.control.default";
-    const _checkGlobalAiPref = async () => {
-      const isBlocked =
+    const AI_CONTROL_FEATURES = {
+      "browser.ai.control.translations": "translations",
+      "browser.ai.control.pdfjsAltText": "pdfjsAltText",
+      "browser.ai.control.smartTabGroups": "smartTabGroups",
+      "browser.ai.control.linkPreviewKeyPoints": "linkPreviewKeyPoints",
+      "browser.ai.control.sidebarChatbot": "sidebarChatbot",
+    };
+    const _checkAiControlPrefs = async () => {
+      const globalIsBlocked =
         Services.prefs.getStringPref(GLOBAL_AI_PREF, null) === "blocked";
+      Glean.browser.globalAiControlIsBlocking.set(globalIsBlocked);
 
-      Glean.browser.globalAiControlIsBlocking.set(isBlocked);
+      for (let [pref, key] of Object.entries(AI_CONTROL_FEATURES)) {
+        let controlState = Services.prefs.getStringPref(pref, "");
+        let isBlocked =
+          controlState === "blocked" ||
+          (controlState == "default" && globalIsBlocked);
+        Glean.browser.aiControlIsBlocking[key].set(isBlocked);
+      }
     };
 
-    Services.prefs.addObserver(GLOBAL_AI_PREF, _checkGlobalAiPref);
-    _checkGlobalAiPref();
+    Services.prefs.addObserver(GLOBAL_AI_PREF, _checkAiControlPrefs);
+    for (let pref in AI_CONTROL_FEATURES) {
+      Services.prefs.addObserver(pref, _checkAiControlPrefs);
+    }
+    _checkAiControlPrefs();
+    return () => {
+      Services.prefs.removeObserver(GLOBAL_AI_PREF, _checkAiControlPrefs);
+      for (let pref in AI_CONTROL_FEATURES) {
+        Services.prefs.removeObserver(pref, _checkAiControlPrefs);
+      }
+    };
   },
 
   // check if the launcher was used to open firefox

@@ -26,6 +26,10 @@ namespace JS::loader {
 
 MOZ_DEFINE_MALLOC_SIZE_OF(LoadedScriptMallocSizeOf)
 
+// LoadedScript itself doesn't have to be cycle-collected,
+// but ModuleScript subclass needs cycle-collection.
+//
+// Provide a base class that does nothing.
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(LoadedScript)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
@@ -40,9 +44,10 @@ NS_INTERFACE_MAP_END
 // Fields that can be modified by other threads shouldn't be touched by
 // the cycle collection.
 //
-// NOTE: nsIURI doesn't have to be touched here because it cannot be a part
-//       of cycle.
-NS_IMPL_CYCLE_COLLECTION(LoadedScript, mFetchOptions, mCacheEntry)
+// Currently there's no field that can form a cycle at this point.
+// If you're adding any field here, please make sure the field is not modified
+// by other threads.
+NS_IMPL_CYCLE_COLLECTION(LoadedScript)
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(LoadedScript)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(LoadedScript)
@@ -128,6 +133,10 @@ LoadedScript::CollectReports(nsIHandleReportCallback* aHandleReport,
 size_t LoadedScript::SizeOfIncludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) const {
   size_t bytes = aMallocSizeOf(this);
+
+  if (mFetchOptions) {
+    bytes += mFetchOptions->SizeOfIncludingThis(aMallocSizeOf);
+  }
 
   if (IsTextSource()) {
     if (IsUTF16Text()) {

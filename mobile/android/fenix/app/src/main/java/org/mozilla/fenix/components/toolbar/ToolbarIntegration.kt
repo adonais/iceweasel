@@ -46,7 +46,6 @@ abstract class ToolbarIntegration(
     private val context: Context,
     private val toolbar: BrowserToolbar,
     scrollableToolbar: ScrollableToolbar,
-    toolbarMenu: ToolbarMenu,
     private val interactor: BrowserToolbarInteractor,
     private val customTabId: String?,
     isPrivate: Boolean,
@@ -82,13 +81,9 @@ abstract class ToolbarIntegration(
     private val toolbarController = ToolbarBehaviorController(scrollableToolbar, store, customTabId)
 
     init {
-        if (!context.settings().enableMenuRedesign) {
-            toolbar.display.menuBuilder = toolbarMenu.menuBuilder
-        }
-
         toolbar.private = isPrivate
 
-        if (context.settings().enableMenuRedesign && customTabId == null) {
+        if (customTabId == null) {
             addMenuBrowserAction()
         }
     }
@@ -116,9 +111,6 @@ abstract class ToolbarIntegration(
                 iconsR.drawable.mozac_ic_ellipsis_vertical_24,
             )!!,
             contentDescription = context.getString(R.string.content_description_menu),
-            visible = {
-                context.settings().enableMenuRedesign
-            },
             weight = { Int.MAX_VALUE },
             iconTintColorResource = ThemeManager.resolveAttribute(R.attr.textPrimary, context),
             listener = {
@@ -141,7 +133,6 @@ class DefaultToolbarIntegration(
     private val context: Context,
     private val toolbar: BrowserToolbar,
     scrollableToolbar: ScrollableToolbar,
-    toolbarMenu: ToolbarMenu,
     private val lifecycleOwner: LifecycleOwner,
     customTabId: String? = null,
     private val isPrivate: Boolean,
@@ -150,7 +141,6 @@ class DefaultToolbarIntegration(
     context = context,
     toolbar = toolbar,
     scrollableToolbar = scrollableToolbar,
-    toolbarMenu = toolbarMenu,
     interactor = interactor,
     customTabId = customTabId,
     isPrivate = isPrivate,

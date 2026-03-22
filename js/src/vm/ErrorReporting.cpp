@@ -11,7 +11,6 @@
 #include <stdarg.h>
 #include <utility>
 
-#include "jsexn.h"
 #include "jsfriendapi.h"
 
 #include "frontend/FrontendContext.h"  // AutoReportFrontendContext
@@ -21,6 +20,7 @@
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/Printf.h"                // JS_vsmprintf
 #include "js/Warnings.h"              // JS::WarningReporter
+#include "vm/ErrorObject.h"
 #include "vm/FrameIter.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"

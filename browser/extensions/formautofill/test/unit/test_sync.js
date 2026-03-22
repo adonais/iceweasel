@@ -655,7 +655,7 @@ add_task(async function test_dedupe_identical_unsynced_singlelineaddress() {
   try {
     let profile = structuredClone(TEST_PROFILE_1);
     // Change the street address so that it will parse correctly.
-    profile["street-address"] = "36 Main Street";
+    profile["street-address"] = "36B Main Street";
 
     // create a record locally.
     let localGuid = await profileStorage.addresses.add(profile);

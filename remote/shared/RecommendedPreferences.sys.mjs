@@ -201,6 +201,8 @@ const COMMON_PREFERENCES = new Map([
   // Turn off Merino suggestions in the location bar so as not to trigger
   // network connections.
   ["browser.urlbar.merino.endpointURL", ""],
+  ["browser.urlbar.merino.ohttpConfigURL", ""],
+  ["browser.urlbar.merino.ohttpRelayURL", ""],
 
   // Turn off search suggestions in the location bar so as not to trigger
   // network connections.
@@ -333,6 +335,9 @@ const COMMON_PREFERENCES = new Map([
 
   // Disable Firefox accounts ping
   ["identity.fxaccounts.auth.uri", "https://{server}/dummy/fxa"],
+
+  // Allow scroll amount larger than one page on a single mouse wheel event.
+  ["mousewheel.allow_scrolling_more_than_one_page", true],
 
   // Disable connectivity service pings
   ["network.connectivity-service.enabled", false],

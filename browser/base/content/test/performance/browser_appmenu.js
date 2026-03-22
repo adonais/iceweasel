@@ -27,19 +27,7 @@ add_task(async function () {
   await ensureNoPreloadedBrowser();
   await ensureAnimationsFinished();
   await disableFxaBadge();
-
-  // Ensure updating Unified Search Button icon by user interaction before
-  // appmenu test.
-  if (
-    Services.prefs.getBoolPref("browser.urlbar.scotchBonnet.enableOverride")
-  ) {
-    let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
-    BrowserTestUtils.removeTab(tab);
-    await BrowserTestUtils.waitForCondition(
-      () =>
-        gURLBar.querySelector(".searchmode-switcher-icon").style.listStyleImage
-    );
-  }
+  await ensureSearchIconVisible();
 
   let textBoxRect = gURLBar
     .querySelector("moz-input-box")

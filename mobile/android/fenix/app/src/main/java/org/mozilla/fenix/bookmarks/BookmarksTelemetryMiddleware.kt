@@ -169,6 +169,7 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
 
             is BookmarksListMenuAction.Bookmark.DeleteClicked,
             is BookmarksListMenuAction.Bookmark.EditClicked,
+            is BookmarksListMenuAction.Bookmark.SelectClicked,
                 -> Unit
         }
     }
@@ -193,6 +194,7 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
 
             is BookmarksListMenuAction.Folder.EditClicked,
             is BookmarksListMenuAction.Folder.DeleteClicked,
+            is BookmarksListMenuAction.Folder.SelectClicked,
                 -> Unit
         }
     }

@@ -860,6 +860,7 @@ class CommandSiteManager:
         """Generate the prioritized import scope to encode in the venv's pthfile
 
         The import priority looks like this:
+
         1. Mach's vendored/first-party modules
         2. Mach's site-package source (the Mach virtualenv, the system Python, or neither)
         3. The command's vendored/first-party modules
@@ -877,6 +878,7 @@ class CommandSiteManager:
 
         Mach doesn't know the command being run when it's preparing its import scope,
         so it has to be defensive. Therefore:
+
         1. If Mach needs a system package: system packages are higher priority.
         2. If Mach doesn't need a system package, but the current command does: system
            packages are still be in the list, albeit at a lower priority.

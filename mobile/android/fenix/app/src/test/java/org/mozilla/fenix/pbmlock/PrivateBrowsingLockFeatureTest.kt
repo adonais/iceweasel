@@ -14,14 +14,13 @@ import io.mockk.mockk
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.support.test.rule.MainCoroutineRule
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
@@ -32,8 +31,7 @@ import org.mozilla.fenix.components.appstate.AppState
 @RunWith(AndroidJUnit4::class)
 class PrivateBrowsingLockFeatureTest {
 
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
+    private val testDispatcher = StandardTestDispatcher()
 
     // zero tabs cases
     @Test
@@ -56,6 +54,7 @@ class PrivateBrowsingLockFeatureTest {
         assertTrue(appStore.state.isPrivateScreenLocked)
 
         browserStore.dispatch(TabListAction.RemoveAllPrivateTabsAction)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(appStore.state.isPrivateScreenLocked)
     }
@@ -529,6 +528,7 @@ class PrivateBrowsingLockFeatureTest {
         val feature = createFeature(browserStore = browserStore, appStore = appStore, storage = createStorage(isFeatureEnabled = isFeatureEnabled))
 
         appStore.dispatch(AppAction.OpenInFirefoxStarted)
+        testDispatcher.scheduler.advanceUntilIdle()
 
         val activity = mockk<AppCompatActivity>(relaxed = true)
 
@@ -717,6 +717,7 @@ class PrivateBrowsingLockFeatureTest {
         appStore = appStore,
         browserStore = browserStore,
         storage = storage,
+        mainDispatcher = testDispatcher,
     )
 
     private fun createStorage(isFeatureEnabled: Boolean = true) = MockedPrivateBrowsingLockStorage(isFeatureEnabled)

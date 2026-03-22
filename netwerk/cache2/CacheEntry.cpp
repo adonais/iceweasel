@@ -81,12 +81,13 @@ CacheEntryHandle::~CacheEntryHandle() {
 
 CacheEntry::Callback::Callback(CacheEntry* aEntry,
                                nsICacheEntryOpenCallback* aCallback,
-                               bool aReadOnly, bool aCheckOnAnyThread,
-                               bool aSecret)
+                               bool aReadOnly, bool aReadAlways,
+                               bool aCheckOnAnyThread, bool aSecret)
     : mEntry(aEntry),
       mCallback(aCallback),
       mTarget(GetCurrentSerialEventTarget()),
       mReadOnly(aReadOnly),
+      mReadAlways(aReadAlways),
       mRevalidating(false),
       mCheckOnAnyThread(aCheckOnAnyThread),
       mRecheckAfterWrite(false),
@@ -106,6 +107,7 @@ CacheEntry::Callback::Callback(CacheEntry* aEntry,
                                bool aDoomWhenFoundInPinStatus)
     : mEntry(aEntry),
       mReadOnly(false),
+      mReadAlways(false),
       mRevalidating(false),
       mCheckOnAnyThread(true),
       mRecheckAfterWrite(false),
@@ -123,6 +125,7 @@ CacheEntry::Callback::Callback(CacheEntry::Callback const& aThat)
       mCallback(aThat.mCallback),
       mTarget(aThat.mTarget),
       mReadOnly(aThat.mReadOnly),
+      mReadAlways(aThat.mReadAlways),
       mRevalidating(aThat.mRevalidating),
       mCheckOnAnyThread(aThat.mCheckOnAnyThread),
       mRecheckAfterWrite(aThat.mRecheckAfterWrite),
@@ -304,6 +307,7 @@ nsresult CacheEntry::SetDictionary(DictionaryCacheEntry* aDict) {
 void CacheEntry::AsyncOpen(nsICacheEntryOpenCallback* aCallback,
                            uint32_t aFlags) {
   bool readonly = aFlags & nsICacheStorage::OPEN_READONLY;
+  bool readalways = aFlags & nsICacheStorage::OPEN_ALWAYS;
   bool bypassIfBusy = aFlags & nsICacheStorage::OPEN_BYPASS_IF_BUSY;
   bool truncate = aFlags & nsICacheStorage::OPEN_TRUNCATE;
   bool priority = aFlags & nsICacheStorage::OPEN_PRIORITY;
@@ -325,7 +329,7 @@ void CacheEntry::AsyncOpen(nsICacheEntryOpenCallback* aCallback,
   }
 #endif
 
-  Callback callback(this, aCallback, readonly, multithread, secret);
+  Callback callback(this, aCallback, readonly, readalways, multithread, secret);
 
   if (!Open(callback, truncate, priority, bypassIfBusy)) {
     // We get here when the callback wants to bypass cache when it's busy.
@@ -643,7 +647,11 @@ bool CacheEntry::InvokeCallbacks(bool aReadOnly) MOZ_REQUIRES(mLock) {
       return false;
     }
 
-    if (!mIsDoomed && (mState == WRITING || mState == REVALIDATING)) {
+    if (mCallbacks[i].mReadAlways && mState == REVALIDATING) {
+      LOG(("Loading revalidating cache entry for %s", mURI.get()));
+    }
+    if (!mIsDoomed && (mState == WRITING || (!mCallbacks[i].mReadAlways &&
+                                             mState == REVALIDATING))) {
       if (!mBypassWriterLock) {
         LOG(("  entry is being written/revalidated"));
         return false;
@@ -719,7 +727,11 @@ bool CacheEntry::InvokeCallback(Callback& aCallback) MOZ_REQUIRES(mLock) {
     // When we are here, the entry must be loaded from disk
     MOZ_ASSERT(mState > LOADING);
 
-    if (mState == WRITING || mState == REVALIDATING) {
+    if (aCallback.mReadAlways && mState == REVALIDATING) {
+      LOG(("Loading revalidating cache entry for %s", mURI.get()));
+    }
+    if (mState == WRITING ||
+        (!aCallback.mReadAlways && mState == REVALIDATING)) {
       if (!mBypassWriterLock) {
         // Prevent invoking other callbacks since one of them is now writing
         // or revalidating this entry.  No consumers should get this entry
@@ -876,7 +888,7 @@ void CacheEntry::InvokeAvailableCallback(Callback const& aCallback) {
     return;
   }
 
-  if (state == READY) {
+  if (state == READY || (state == REVALIDATING && aCallback.mReadAlways)) {
     LOG(("  ready/has-meta, notifying OCEA with entry and NS_OK"));
 
     if (!aCallback.mSecret) {

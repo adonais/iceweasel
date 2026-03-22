@@ -203,9 +203,15 @@ export class LoginManagerStorage_json {
   }
 
   // Returns false if the login has marked as deleted or doesn't exist.
-  loginIsDeleted(guid) {
+  #loginIsDeleted(guid) {
     let login = this._store.data.logins.find(l => l.guid == guid);
     return !!login?.deleted;
+  }
+
+  async loginIsDeletedAsync(guid) {
+    let result = this.#loginIsDeleted(guid);
+    // Emulate being async:
+    return Promise.resolve(result);
   }
 
   // Synchronuously stores encrypted login, returns login clone with upserted
@@ -364,6 +370,12 @@ export class LoginManagerStorage_json {
     lazy.LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
   }
 
+  async removeLoginAsync(login, fromSync) {
+    let result = this.removeLogin(login, fromSync);
+    // Emulate being async:
+    return Promise.resolve(result);
+  }
+
   modifyLogin(oldLogin, newLoginData, fromSync) {
     this._store.ensureDataReady();
 
@@ -482,6 +494,12 @@ export class LoginManagerStorage_json {
     propBag.setProperty("timeLastUsed", Date.now());
     propBag.setProperty("timesUsedIncrement", 1);
     this.modifyLogin(login, propBag);
+  }
+
+  async recordPasswordUseAsync(login) {
+    let result = this.recordPasswordUse(login);
+    // Emulate being async:
+    return Promise.resolve(result);
   }
 
   async recordBreachAlertDismissal(loginGUID) {
@@ -653,6 +671,10 @@ export class LoginManagerStorage_json {
     this.#removeLogins(false, true);
   }
 
+  async removeAllLoginsAsync() {
+    this.removeAllLogins();
+  }
+
   /**
    * Removes all user facing logins from storage. e.g. all logins except the FxA Sync key
    *
@@ -662,6 +684,10 @@ export class LoginManagerStorage_json {
    */
   removeAllUserFacingLogins(fullyRemove) {
     this.#removeLogins(fullyRemove, false);
+  }
+
+  async removeAllUserFacingLoginsAsync(fullyRemove) {
+    this.removeAllUserFacingLogins(fullyRemove);
   }
 
   /**
@@ -1015,7 +1041,7 @@ export class LoginManagerStorage_json {
       .map((login, i) => {
         // Deleted logins don't have any info to decrypt.
         const decryptedLogin = login.clone();
-        if (this.loginIsDeleted(login.guid)) {
+        if (this.#loginIsDeleted(login.guid)) {
           return decryptedLogin;
         }
 
@@ -1090,7 +1116,7 @@ export class LoginManagerStorage_json {
     let result = [];
 
     for (let login of logins) {
-      if (this.loginIsDeleted(login.guid)) {
+      if (this.#loginIsDeleted(login.guid)) {
         result.push(login);
         continue;
       }
@@ -1128,10 +1154,9 @@ export class LoginManagerStorage_json {
     }
     this.reencryptionInProgress = true;
     this._store.ensureDataReady();
-    Glean.pwmgr.migration.record({ value: "started" });
 
     const encryptedLogins = structuredClone(
-      this._store.data.logins.filter(login => !this.loginIsDeleted(login.guid))
+      this._store.data.logins.filter(login => !this.#loginIsDeleted(login.guid))
     );
     let encrypted = encryptedLogins.flatMap(
       ({ encryptedUsername, encryptedPassword, encryptedUnknownFields }) => [
@@ -1147,18 +1172,10 @@ export class LoginManagerStorage_json {
       const decrypted = await this._crypto
         .decryptMany(encrypted)
         .catch(error => {
-          Glean.pwmgr.migration.record({
-            value: "decryptionError",
-            error: error.name,
-          });
           this.reencryptionInProgress = false;
           throw error;
         });
       encrypted = await this._crypto.encryptMany(decrypted).catch(error => {
-        Glean.pwmgr.migration.record({
-          value: "encryptionError",
-          error: error.name,
-        });
         this.reencryptionInProgress = false;
         throw error;
       });
@@ -1206,7 +1223,6 @@ export class LoginManagerStorage_json {
     if (this.addedLoginObserver) {
       Services.obs.removeObserver(this, "passwordmgr-crypto-login");
     }
-    Glean.pwmgr.migration.record({ value: "success" });
   }
 
   /**

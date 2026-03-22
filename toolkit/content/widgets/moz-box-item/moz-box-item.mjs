@@ -28,7 +28,7 @@ const NAVIGATION_DIRECTIONS = {
  * @property {string} label - Label for the button.
  * @property {string} description - Descriptive text for the button.
  * @property {string} iconSrc - The src for an optional icon shown next to the label.
- * @property {string} layout - Layout style for the box content, either "default" or "large-icon".
+ * @property {"default"|"medium-icon"|"large-icon"} layout - Layout style for the box content.
  * @slot default - Slot for the box item's content, which overrides label and description.
  * @slot actions - Slot for the actions positioned at the end of the component container.
  * @slot actions-start - Slot for the actions positioned at the start of the component container.
@@ -105,10 +105,12 @@ export default class MozBoxItem extends MozBoxBase {
   }
 
   get isDraggable() {
+    const reorderableParent = this.closest("moz-box-group");
     return (
-      this.parentElement?.type == GROUP_TYPES.reorderable &&
+      reorderableParent?.type == GROUP_TYPES.reorderable &&
       this.slot != "header" &&
-      this.slot != "footer"
+      this.slot != "footer" &&
+      !this.slot.includes("static")
     );
   }
 

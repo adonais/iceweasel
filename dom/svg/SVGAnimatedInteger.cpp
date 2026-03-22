@@ -122,8 +122,9 @@ SVGAnimatedInteger::DOMAnimatedInteger::~DOMAnimatedInteger() {
   sSVGAnimatedIntegerTearoffTable.RemoveTearoff(mVal);
 }
 
-UniquePtr<SMILAttr> SVGAnimatedInteger::ToSMILAttr(SVGElement* aSVGElement) {
-  return MakeUnique<SMILInteger>(this, aSVGElement);
+std::unique_ptr<SMILAttr> SVGAnimatedInteger::ToSMILAttr(
+    SVGElement* aSVGElement) {
+  return std::make_unique<SMILInteger>(this, aSVGElement);
 }
 
 nsresult SVGAnimatedInteger::SMILInteger::ValueFromString(

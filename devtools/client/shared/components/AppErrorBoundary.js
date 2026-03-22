@@ -12,6 +12,12 @@ const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-t
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 const { div, h1, h2, h3, p, a, button } = dom;
 
+loader.lazyRequireGetter(
+  this,
+  "Telemetry",
+  "resource://devtools/client/shared/telemetry.js"
+);
+
 // Localized strings for (devtools/client/locales/en-US/components.properties)
 loader.lazyGetter(this, "L10N", function () {
   const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
@@ -47,6 +53,10 @@ class AppErrorBoundary extends Component {
     };
   }
 
+  // Keep a flag to avoid submitting extra pings in case several components
+  // fail in cascade.
+  #pingSubmitted = false;
+
   constructor(props) {
     super(props);
 
@@ -54,6 +64,8 @@ class AppErrorBoundary extends Component {
       errorMsg: "No error",
       errorStack: null,
       errorInfo: null,
+      // Will be used to provide a button to close the toolbox.
+      toolbox: null,
     };
   }
 
@@ -160,11 +172,74 @@ class AppErrorBoundary extends Component {
   // Called when a child component throws an error.
   componentDidCatch(error, info) {
     const validInfo = this.getValidInfo(info);
+    const errorMessage = error.toString();
+
     this.setState({
-      errorMsg: error.toString(),
+      errorMsg: errorMessage,
       errorStack: error.stack,
       errorInfo: validInfo,
     });
+
+    if (this.#pingSubmitted) {
+      // If the component already sent the telemetry ping for this session, skip
+      // recording a new event.
+      return;
+    }
+
+    const extras = Telemetry.sanitizeEventExtras(
+      {
+        component_stack: validInfo.componentStack || "",
+        error_name: error.name,
+        stack: error.stack || "",
+      },
+      "devtoolsMain.toolboxComponentError",
+      // Allow up to 500 characters for each extra value (maximum value
+      // supported by Glean events).
+      { limit: 500 }
+    );
+    Glean.devtoolsMain.toolboxComponentError.record(extras);
+    this.#pingSubmitted = true;
+  }
+
+  // This is explicitly called by the toolbox when a server issue is captured.
+  toolboxDidCatch(error, toolbox) {
+    const errorMessage = error.toString();
+    const clientPacket = error.clientPacket || {};
+    const serverPacket = error.serverPacket || {};
+
+    this.setState({
+      errorMsg: errorMessage,
+      errorStack: error.stack,
+      errorInfo: {
+        clientPacket,
+        serverPacket,
+      },
+      // Toolbox state will be used to provide a button to close the toolbox.
+      toolbox,
+    });
+
+    if (this.#pingSubmitted) {
+      // If the component already sent the telemetry ping for this session, skip
+      // recording a new event.
+      return;
+    }
+
+    const extras = Telemetry.sanitizeEventExtras(
+      {
+        error_name: error.name,
+        packet_error: serverPacket.error,
+        packet_target: serverPacket.from,
+        packet_type: clientPacket.type,
+        server_stack: serverPacket.stack || "",
+        stack: error.stack || "",
+      },
+      "devtoolsMain.toolboxServerError",
+      // Allow up to 500 characters for each extra value (maximum value
+      // supported by Glean events).
+      { limit: 500 }
+    );
+    Glean.devtoolsMain.toolboxServerError.record(extras);
+    this.#pingSubmitted = true;
   }
 
   getBugLink() {

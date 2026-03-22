@@ -1783,6 +1783,10 @@ bool ScriptExecutorRunnable::WorkerRun(JSContext* aCx,
       mScriptLoader->mSyncLoopTarget == mSyncLoopTarget,
       "Unexpected SyncLoopTarget. Check if the sync loop was closed early");
 
+  if (mLoadedRequests.begin()->get()->GetContext()->IsTopLevel()) {
+    aWorkerPrivate->InitializeGlobalReportingEndpoints();
+  }
+
   if (mLoadedRequests.begin()->get()->GetRequest()->IsModuleRequest()) {
     return ProcessModuleScript(aCx, aWorkerPrivate);
   }

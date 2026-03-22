@@ -58,7 +58,7 @@ async function checkLoginInvalid(aLoginInfo, aExpectedError) {
 
   // Verify that no data was stored by the previous calls.
   await LoginTestUtils.checkLogins([testLogin]);
-  Services.logins.removeLogin(testLogin);
+  await Services.logins.removeLoginAsync(testLogin);
 }
 
 /**
@@ -104,7 +104,7 @@ add_task(async function test_addLogin_removeLogin() {
 
   // Removing each login should succeed.
   for (let loginInfo of TestData.loginList()) {
-    Services.logins.removeLogin(loginInfo);
+    await Services.logins.removeLoginAsync(loginInfo);
   }
 
   await LoginTestUtils.checkLogins([]);
@@ -122,7 +122,7 @@ add_task(async function duplicated_logins_are_not_added() {
   await Services.logins.addLogins([login]);
   const result = await Services.logins.addLogins([login]);
   Assert.equal(result, 0, "no logins added");
-  Services.logins.removeAllUserFacingLogins();
+  await Services.logins.removeAllUserFacingLoginsAsync();
 });
 
 add_task(async function logins_containing_nul_in_username_are_not_added() {
@@ -145,7 +145,7 @@ add_task(
     const [result] = await Services.logins.addLogins([login]);
     Assert.equal(result.username, login.username, "plaintext username is set");
     Assert.equal(result.password, login.password, "plaintext password is set");
-    Services.logins.removeAllUserFacingLogins();
+    await Services.logins.removeAllUserFacingLoginsAsync();
   }
 );
 
@@ -174,7 +174,7 @@ add_task(async function event_data_includes_plaintext_username_and_password() {
   Services.obs.addObserver(TestObserver, "passwordmgr-storage-changed");
   await Services.logins.addLogins([login]);
   Services.obs.removeObserver(TestObserver, "passwordmgr-storage-changed");
-  Services.logins.removeAllUserFacingLogins();
+  await Services.logins.removeAllUserFacingLoginsAsync();
 });
 
 /**
@@ -271,9 +271,9 @@ add_task(async function test_invalid_characters() {
 /**
  * Tests removing a login that does not exists.
  */
-add_task(function test_removeLogin_nonexisting() {
-  Assert.throws(
-    () => Services.logins.removeLogin(TestData.formLogin()),
+add_task(async function test_removeLogin_nonexisting() {
+  await Assert.rejects(
+    Services.logins.removeLoginAsync(TestData.formLogin()),
     /No matching logins/
   );
 });
@@ -284,11 +284,11 @@ add_task(function test_removeLogin_nonexisting() {
 add_task(async function test_removeAllUserFacingLogins() {
   await Services.logins.addLogins(TestData.loginList());
 
-  Services.logins.removeAllUserFacingLogins();
+  await Services.logins.removeAllUserFacingLoginsAsync();
   await LoginTestUtils.checkLogins([]);
 
   // The function should also work when there are no logins to delete.
-  Services.logins.removeAllUserFacingLogins();
+  await Services.logins.removeAllUserFacingLoginsAsync();
 });
 
 /**
@@ -533,7 +533,7 @@ add_task(async function test_addLogin_badDates() {
     !!(await Services.logins.addLoginAsync(defaultsLogin)),
     "Sanity check adding defaults formLogin"
   );
-  Services.logins.removeAllUserFacingLogins();
+  await Services.logins.removeAllUserFacingLoginsAsync();
 
   // 0 is a valid date in this context - new nsLoginInfo timestamps init to 0
   for (let pname of ["timeCreated", "timeLastUsed", "timePasswordChanged"]) {
@@ -546,7 +546,7 @@ add_task(async function test_addLogin_badDates() {
       !!(await Services.logins.addLoginAsync(loginInfo)),
       "Check 0 value for " + pname
     );
-    Services.logins.removeAllUserFacingLogins();
+    await Services.logins.removeAllUserFacingLoginsAsync();
   }
 
   // negative dates get clamped to 0 and are ok
@@ -560,7 +560,7 @@ add_task(async function test_addLogin_badDates() {
       !!(await Services.logins.addLoginAsync(loginInfo)),
       "Check -1 value for " + pname
     );
-    Services.logins.removeAllUserFacingLogins();
+    await Services.logins.removeAllUserFacingLoginsAsync();
   }
 
   // out-of-range dates will throw
@@ -619,5 +619,5 @@ add_task(async function test_addLogins_badDates() {
     /Can\'t add a login with invalid date properties./
   );
 
-  Services.logins.removeAllUserFacingLogins();
+  await Services.logins.removeAllUserFacingLoginsAsync();
 });

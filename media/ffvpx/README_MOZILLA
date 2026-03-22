@@ -145,10 +145,10 @@ Finally, apply the patches:
   stdio.h function, that causes bug 1879740 issue on Windows.
 - opusenc-dtx.patch to allow enabling DTX in the opus encoder.
 - libaomenc-svc.patch to allow configuring SVC in the libaom encoder.
-- mediacodec_h264.patch to remove the H264 extradata parsing that brings in
-  encumbered code on Android.
 - mediacodec_eos.patch to add a method to check definitely if a decoder has
   reached the end of stream on Android.
 - mediacodec_drm.patch to add support for encrypted packets on Android.
 - mediacodec_force_key_frames.patch to add support for forcing key frames when
   encoding via the frame pict_type on Android.
+- mediacodec_h264.patch to remove the H264 extradata parsing that brings in
+  encumbered code on Android.

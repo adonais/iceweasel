@@ -9,14 +9,14 @@ import os
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from voluptuous import Optional
 
 from gecko_taskgraph.transforms.task import task_description_schema
 from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.scriptworker import get_signing_type_per_platform
 
-repackage_signing_description_schema = Schema({
+repackage_signing_description_schema = LegacySchema({
     Optional("label"): str,
     Optional("attributes"): task_description_schema["attributes"],
     Optional("dependencies"): task_description_schema["dependencies"],

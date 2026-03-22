@@ -16,6 +16,7 @@ task-defaults:
             - target.tar.xz
         toolchain:
             - linux64-node
+            - puppeteer-build
     treeherder:
         kind: test
         tier: 1
@@ -44,5 +45,6 @@ puppeteer-{this_chunk}:
         using: run-task
         command: >
             cd $GECKO_PATH/ &&
+            cp -r $MOZ_FETCHES_DIR/puppeteer remote/test/ &&
             $MOZ_FETCHES_DIR/firefox/firefox --screenshot http://example.org &&
-            ./mach puppeteer-test --ci -vv --binary $MOZ_FETCHES_DIR/firefox/firefox --headless --log-tbpl - --log-errorsummary /builds/worker/pup_errorsummary.json --this-chunk={this_chunk} --total-chunks={total_chunks}
+            ./mach puppeteer-test --ci --no-install -vv --binary $MOZ_FETCHES_DIR/firefox/firefox --headless --log-tbpl - --log-errorsummary /builds/worker/pup_errorsummary.json --this-chunk={this_chunk} --total-chunks={total_chunks}

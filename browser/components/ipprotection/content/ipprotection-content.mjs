@@ -5,6 +5,7 @@
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { html, ifDefined } from "chrome://global/content/vendor/lit.all.mjs";
 import {
+  BANDWIDTH,
   LINKS,
   ERRORS,
 } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
@@ -12,9 +13,11 @@ import {
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/ipprotection/ipprotection-message-bar.mjs";
 // eslint-disable-next-line import/no-unassigned-import
-import "chrome://browser/content/ipprotection/ipprotection-signedout.mjs";
+import "chrome://browser/content/ipprotection/ipprotection-unauthenticated.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/ipprotection/ipprotection-status-card.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/ipprotection/ipprotection-status-box.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-toggle.mjs";
 
@@ -23,12 +26,16 @@ import "chrome://global/content/elements/moz-toggle.mjs";
  */
 export default class IPProtectionContentElement extends MozLitElement {
   static queries = {
-    signedOutEl: "ipprotection-signedout",
+    unauthenticatedEl: "ipprotection-unauthenticated",
     messagebarEl: "ipprotection-message-bar",
     statusCardEl: "ipprotection-status-card",
     upgradeEl: "#upgrade-vpn-content",
     activeSubscriptionEl: "#active-subscription-vpn-content",
     supportLinkEl: "#vpn-support-link",
+    statusBoxEl: "ipprotection-status-box",
+    siteExclusionControlEl: "#site-exclusion-control",
+    siteExclusionToggleEl: "#site-exclusion-toggle",
+    settingsButtonEl: "#vpn-settings-button",
   };
 
   static properties = {
@@ -62,10 +69,6 @@ export default class IPProtectionContentElement extends MozLitElement {
       this.#statusCardListener
     );
     this.addEventListener(
-      "ipprotection-site-settings-control:click",
-      this.#statusCardListener
-    );
-    this.addEventListener(
       "ipprotection-message-bar:user-dismissed",
       this.#messageBarListener
     );
@@ -84,10 +87,6 @@ export default class IPProtectionContentElement extends MozLitElement {
       this.#statusCardListener
     );
     this.removeEventListener(
-      "ipprotection-site-settings-control:click",
-      this.#statusCardListener
-    );
-    this.removeEventListener(
       "ipprotection-message-bar:user-dismissed",
       this.#messageBarListener
     );
@@ -97,8 +96,12 @@ export default class IPProtectionContentElement extends MozLitElement {
     return this.state && this.state.isProtectionEnabled && !this.state.error;
   }
 
+  get hasSiteExclusion() {
+    return this.state?.siteData?.isExclusion ?? false;
+  }
+
   get #hasErrors() {
-    return !this.state || this.state.error !== "";
+    return !this.state || !!this.state.error;
   }
 
   handleClickSupportLink(event) {
@@ -125,8 +128,8 @@ export default class IPProtectionContentElement extends MozLitElement {
   }
 
   focus() {
-    if (this.state.isSignedOut) {
-      this.signedOutEl?.focus();
+    if (this.state.unauthenticated) {
+      this.unauthenticatedEl?.focus();
     } else {
       this.statusCardEl?.focus();
     }
@@ -167,10 +170,6 @@ export default class IPProtectionContentElement extends MozLitElement {
       this.dispatchEvent(
         new CustomEvent("IPProtection:UserDisable", { bubbles: true })
       );
-    } else if (event.type === "ipprotection-site-settings-control:click") {
-      this.dispatchEvent(
-        new CustomEvent("IPProtection:UserShowSiteSettings", { bubbles: true })
-      );
     }
   }
 
@@ -179,8 +178,49 @@ export default class IPProtectionContentElement extends MozLitElement {
       this._showMessageBar = false;
       this._messageDismissed = true;
       this.state.error = "";
-      this.state.bandwidthWarning = false;
+
+      if (this.state.bandwidthWarning) {
+        const threshold = Services.prefs.getIntPref(
+          "browser.ipProtection.bandwidthThreshold",
+          0
+        );
+        this.dispatchEvent(
+          new CustomEvent("IPProtection:DismissBandwidthWarning", {
+            bubbles: true,
+            composed: true,
+            detail: { threshold },
+          })
+        );
+      }
     }
+  }
+
+  handleToggleUseVPN(event) {
+    let isEnabled = event.target.pressed;
+
+    if (isEnabled) {
+      this.dispatchEvent(
+        new CustomEvent("IPProtection:UserEnableVPNForSite", {
+          bubbles: true,
+        })
+      );
+    } else {
+      this.dispatchEvent(
+        new CustomEvent("IPProtection:UserDisableVPNForSite", {
+          bubbles: true,
+          composed: true,
+        })
+      );
+    }
+  }
+
+  handleClickSettingsButton(event) {
+    event.preventDefault();
+    const win = event.target.ownerGlobal;
+    win.openPreferences("privacy-vpn");
+    this.dispatchEvent(
+      new CustomEvent("IPProtection:Close", { bubbles: true, composed: true })
+    );
   }
 
   updated(changedProperties) {
@@ -196,14 +236,30 @@ export default class IPProtectionContentElement extends MozLitElement {
     let messageId;
     let messageLink;
     let messageLinkl10nId;
+    let messageLinkL10nArgs;
     let messageType = "info";
-    // If there are errors, the error message should take precedence
-    if (this.#hasErrors) {
-      messageId = "ipprotection-message-generic-error";
-      messageType = ERRORS.GENERIC;
-    } else if (this.state.bandwidthWarning) {
+
+    if (this.state.bandwidthWarning) {
       messageId = "ipprotection-message-bandwidth-warning";
       messageType = "warning";
+      const bandwidthRemaining =
+        this.state.bandwidthUsage.remaining / BANDWIDTH.BYTES_IN_GB;
+      const maxUsage = this.state.bandwidthUsage.max / BANDWIDTH.BYTES_IN_GB;
+      const pctUsed = (100 * (maxUsage - bandwidthRemaining)) / maxUsage;
+      let usageLeft = Math.round(bandwidthRemaining);
+
+      if (pctUsed >= 75 && pctUsed < 90) {
+        usageLeft = bandwidthRemaining.toFixed(1);
+      } else if (bandwidthRemaining < 1) {
+        messageId = "ipprotection-message-bandwidth-warning-mb";
+        usageLeft = Math.floor(
+          this.state.bandwidthUsage.remaining / BANDWIDTH.BYTES_IN_MB
+        );
+      }
+      messageLinkL10nArgs = JSON.stringify({
+        usageLeft,
+        maxUsage,
+      });
     } else if (this.state.onboardingMessage) {
       messageId = this.state.onboardingMessage;
       messageType = "info";
@@ -229,73 +285,189 @@ export default class IPProtectionContentElement extends MozLitElement {
         .messageId=${ifDefined(messageId)}
         .messageLink=${ifDefined(messageLink)}
         .messageLinkl10nId=${ifDefined(messageLinkl10nId)}
+        .messageLinkL10nArgs=${ifDefined(messageLinkL10nArgs)}
+        .bandwidthUsage=${ifDefined(this.state.bandwidthUsage)}
       ></ipprotection-message-bar>
     `;
   }
 
   statusCardTemplate() {
-    // TODO: Pass site information to status-card to conditionally
-    // render the site settings control. (Bug 1997412)
+    let hasExclusion = this.hasSiteExclusion;
+
     return html`
       <ipprotection-status-card
         .protectionEnabled=${this.canEnableConnection}
         .location=${this.state.location}
-        .siteData=${ifDefined(this.state.siteData)}
+        .bandwidthUsage=${ifDefined(this.state.bandwidthUsage)}
+        .hasExclusion=${hasExclusion}
+        .isActivating=${this.state.isActivating}
       ></ipprotection-status-card>
+    `;
+  }
+
+  upgradeTemplate() {
+    if (this.state.hasUpgraded) {
+      return null;
+    }
+
+    return html` <div slot="content">
+      <link
+        rel="stylesheet"
+        href="chrome://browser/content/ipprotection/ipprotection-content.css"
+      />
+      <div id="upgrade-vpn-content">
+        <h2
+          id="upgrade-vpn-title"
+          data-l10n-id="upgrade-vpn-title"
+          class="vpn-title"
+        ></h2>
+        <span
+          id="upgrade-vpn-description"
+          data-l10n-id="upgrade-vpn-description"
+          class="vpn-description"
+        ></span>
+        <moz-button
+          id="upgrade-vpn-button"
+          class="vpn-button"
+          type="primary"
+          data-l10n-id="upgrade-vpn-button"
+          @click=${this.handleUpgrade}
+        ></moz-button>
+      </div>
+    </div>`;
+  }
+
+  errorTemplate() {
+    const isNetworkError = this.state.error === ERRORS.NETWORK;
+
+    const headerL10nId = isNetworkError
+      ? "ipprotection-connection-status-network-error-title"
+      : "ipprotection-connection-status-generic-error-title";
+
+    const descriptionL10nId = isNetworkError
+      ? "ipprotection-connection-status-network-error-description"
+      : "ipprotection-connection-status-generic-error-description";
+
+    const errorType = isNetworkError ? ERRORS.NETWORK : ERRORS.GENERIC;
+
+    return html`
+      <ipprotection-status-box
+        .headerL10nId=${headerL10nId}
+        .descriptionL10nId=${descriptionL10nId}
+        .type=${errorType}
+      >
+        ${isNetworkError
+          ? html`
+              <img
+                slot="icon"
+                role="presentation"
+                class="icon"
+                src="chrome://browser/content/ipprotection/assets/states/ipprotection-error.svg"
+              />
+            `
+          : null}
+      </ipprotection-status-box>
     `;
   }
 
   pausedTemplate() {
     return html`
-      <div id="upgrade-vpn-content" class="vpn-bottom-content">
-        <h2
-          id="upgrade-vpn-title"
-          data-l10n-id="upgrade-vpn-title"
-          class="vpn-subtitle"
-        ></h2>
-        <p
-          id="upgrade-vpn-paragraph"
-          data-l10n-id="upgrade-vpn-paragraph"
-          @click=${this.handleClickSupportLink}
-        >
-          <a
-            id="vpn-support-link"
-            href=${LINKS.PRODUCT_URL}
-            data-l10n-name="learn-more-vpn"
-          ></a>
-        </p>
+      <ipprotection-status-box
+        headerL10nId="ipprotection-connection-status-paused-title"
+        descriptionL10nId="ipprotection-connection-status-paused-description"
+        .descriptionL10nArgs=${JSON.stringify({
+          maxUsage: this.state.bandwidthUsage.max / BANDWIDTH.BYTES_IN_GB,
+        })}
+        type="disconnected"
+      >
+        ${this.upgradeTemplate()}
+      </ipprotection-status-box>
+    `;
+  }
+
+  exclusionToggleTemplate() {
+    if (
+      !this.state.isSiteExceptionsEnabled ||
+      !this.state.siteData ||
+      !this.state.isProtectionEnabled ||
+      this.#hasErrors
+    ) {
+      return null;
+    }
+
+    const hasExclusion = this.hasSiteExclusion;
+    const siteExclusionToggleStateL10nId = hasExclusion
+      ? "site-exclusion-toggle-disabled"
+      : "site-exclusion-toggle-enabled";
+    return html` <div id="site-exclusion-control">
+      <span id="site-exclusion-label-container">
+        <img
+          id="site-exclusion-icon"
+          src="chrome://browser/content/ipprotection/assets/shield-vpn-exceptions.svg"
+        />
+        <label
+          data-l10n-id="site-exclusion-toggle-label"
+          id="site-exclusion-label"
+          for="site-exclusion-toggle"
+        ></label>
+      </span>
+      <moz-toggle
+        data-l10n-id=${siteExclusionToggleStateL10nId}
+        data-l10n-attrs="label"
+        id="site-exclusion-toggle"
+        ?pressed=${!hasExclusion}
+        @toggle=${this.handleToggleUseVPN}
+      >
+      </moz-toggle>
+    </div>`;
+  }
+
+  footerTemplate() {
+    return html`
+      <div class="vpn-bottom-content">
         <moz-button
-          id="upgrade-vpn-button"
-          class="vpn-button"
-          @click=${this.handleUpgrade}
-          type="secondary"
-          data-l10n-id="upgrade-vpn-button"
-        ></moz-button>
+          type="ghost"
+          data-l10n-id="ipprotection-settings-link"
+          iconsrc="chrome://global/skin/icons/settings.svg"
+          id="vpn-settings-button"
+          @click=${this.handleClickSettingsButton}
+        >
+          ></moz-button
+        >
       </div>
     `;
   }
 
   mainContentTemplate() {
-    // TODO: Update support-page with new SUMO link for Mozilla VPN - Bug 1975474
-    if (this.state.isSignedOut) {
-      return html` <ipprotection-signedout></ipprotection-signedout> `;
+    if (this.state.unauthenticated) {
+      return html`
+        <ipprotection-unauthenticated></ipprotection-unauthenticated>
+      `;
+    }
+
+    if (this.#hasErrors) {
+      return html` ${this.errorTemplate()}${this.footerTemplate()}`;
     }
 
     if (this.state.paused) {
-      return html` ${this.pausedTemplate()} `;
+      return html` ${this.pausedTemplate()} ${this.footerTemplate()}`;
     }
 
-    return html` ${this.statusCardTemplate()} `;
+    return html`
+      ${this.statusCardTemplate()} ${this.exclusionToggleTemplate()}
+      ${this.footerTemplate()}
+    `;
   }
 
   render() {
     if (
-      (this.#hasErrors ||
-        this.state.onboardingMessage ||
-        this.state.bandwidthWarning) &&
+      (this.state.onboardingMessage || this.state.bandwidthWarning) &&
       !this._messageDismissed
     ) {
       this._showMessageBar = true;
+    } else if (!this.state.onboardingMessage && !this.state.bandwidthWarning) {
+      // Remove the message bar if we can no longer render messages before they were dismissed
+      this._showMessageBar = false;
     }
 
     const messageBar = this._showMessageBar ? this.messageBarTemplate() : null;

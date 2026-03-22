@@ -55,7 +55,6 @@ class PointerEvent : public MouseEvent {
       nsAString& aPointerType,
       mozilla::dom::CallerType aCallerType = CallerType::System) const;
   int32_t PersistentDeviceId(CallerType aCallerType = CallerType::System);
-  static bool EnableGetCoalescedEvents(JSContext* aCx, JSObject* aGlobal);
   void GetCoalescedEvents(nsTArray<RefPtr<PointerEvent>>& aPointerEvents);
   void GetPredictedEvents(nsTArray<RefPtr<PointerEvent>>& aPointerEvents);
 

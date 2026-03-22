@@ -58,7 +58,7 @@ def lint_strings(name, paths, lintconfig, **lintargs):
         if fp.isfile:
             all_files.append(p)
     # Filter out files explicitly excluded in the l10n.yml configuration.
-    # `browser/locales/en-US/firefox-l10n.js` is a good example.
+    # `toolkit/locales/en-US/chrome/global/intl.css` is a good example.
     all_files, _ = pathutils.filterpaths(
         lintargs["root"],
         all_files,

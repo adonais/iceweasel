@@ -96,6 +96,7 @@ class nsDisplayListBuilder;
 class OverflowChangedTracker;
 class PresShellWidgetListener;
 class ProfileChunkedBuffer;
+class ScopedNameRef;
 class ScrollContainerFrame;
 class StyleSheet;
 
@@ -763,7 +764,7 @@ class PresShell final : public nsStubDocumentObserver,
   nsIFrame* GetAbsoluteContainingBlock(nsIFrame* aFrame);
 
   // https://drafts.csswg.org/css-anchor-position-1/#target
-  nsIFrame* GetAnchorPosAnchor(const nsAtom* aName,
+  nsIFrame* GetAnchorPosAnchor(const ScopedNameRef& aName,
                                const nsIFrame* aPositionedFrame) const;
   void AddAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
   void RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame);
@@ -773,7 +774,6 @@ class PresShell final : public nsStubDocumentObserver,
     NeedReflow,
   };
   AnchorPosUpdateResult UpdateAnchorPosLayout();
-  void UpdateAnchorPosForScroll(const ScrollContainerFrame* aScrollContainer);
 
   inline void AddAnchorPosPositioned(nsIFrame* aFrame) {
     if (!mAnchorPosPositioned.Contains(aFrame)) {
@@ -1336,6 +1336,15 @@ class PresShell final : public nsStubDocumentObserver,
       ControllerScrollFlags aFlags) override;
   using nsISelectionController::ScrollSelectionIntoView;
   NS_IMETHOD RepaintSelection(RawSelectionType aRawSelectionType) override;
+
+  /**
+   * Repaint highlight pseudo-element selections (::selection, ::target-text,
+   * ::highlight). These pseudos have their styles resolved lazily during
+   * painting, so style changes don't automatically generate repaint hints for
+   * them.
+   */
+  void RepaintPseudoElementStyledSelections();
+
   void SelectionWillTakeFocus() override;
   void SelectionWillLoseFocus() override;
 
@@ -1601,6 +1610,10 @@ class PresShell final : public nsStubDocumentObserver,
   // Returns the visual viewport size during the dynamic toolbar is being
   // shown/hidden.
   nsSize GetVisualViewportSizeUpdatedByDynamicToolbar() const;
+
+  // Returns the fixed viewport size accounted for
+  // a fully shown or fully hidden dynamic toolbar
+  nsSize GetFixedViewportSize() const;
 
   // Trigger refreshing the MobileViewportManager's size metrics.
   void RefreshViewportSize();

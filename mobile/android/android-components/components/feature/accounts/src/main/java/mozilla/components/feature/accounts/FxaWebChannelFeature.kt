@@ -5,6 +5,7 @@
 package mozilla.components.feature.accounts
 
 import androidx.annotation.VisibleForTesting
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -71,6 +72,7 @@ class FxaWebChannelFeature(
     private val accountManager: FxaAccountManager,
     private val serverConfig: ServerConfig,
     private val fxaCapabilities: Set<FxaCapability> = emptySet(),
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
     private val onCommandExecuted: (WebChannelCommand) -> Unit = {},
 ) : LifecycleAwareFeature {
 
@@ -90,7 +92,7 @@ class FxaWebChannelFeature(
 
         extensionController.install(runtime)
 
-        scope = store.flowScoped { flow ->
+        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
             flow.mapNotNull { state -> state.findCustomTabOrSelectedTab(customTabSessionId) }
                 .distinctUntilChangedBy { it.engineState.engineSession }
                 .collect {

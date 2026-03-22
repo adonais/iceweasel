@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Web Compatibility Interventions",
   "description": "Urgent post-release fixes for web compatibility.",
-  "version": "148.7.0",
+  "version": "149.10.0",
   "browser_specific_settings": {
     "gecko": {
       "id": "webcompat@mozilla.org",
@@ -13,21 +13,16 @@
   "experiment_apis": {
     "aboutConfigPrefs": {
       "schema": "experiment-apis/aboutConfigPrefs.json",
-      "parent": {
-        "scopes": ["addon_parent"],
-        "script": "experiment-apis/aboutConfigPrefs.js",
-        "paths": [["aboutConfigPrefs"]]
-      },
       "child": {
         "scopes": ["addon_child"],
-        "script": "experiment-apis/aboutConfigPrefsChild.js",
+        "script": "experiment-apis/aboutConfigPrefs.js",
         "paths": [["aboutConfigPrefs"]]
       }
     },
     "appConstants": {
       "schema": "experiment-apis/appConstants.json",
-      "parent": {
-        "scopes": ["addon_parent"],
+      "child": {
+        "scopes": ["addon_child"],
         "script": "experiment-apis/appConstants.js",
         "paths": [["appConstants"]]
       }
@@ -71,6 +66,14 @@
         "script": "experiment-apis/trackingProtection.js",
         "paths": [["trackingProtection"]]
       }
+    },
+    "urlHelpers": {
+      "schema": "experiment-apis/urlHelpers.json",
+      "child": {
+        "scopes": ["addon_child"],
+        "script": "experiment-apis/urlHelpers.js",
+        "paths": [["appConstants"]]
+      }
     }
   },
 
@@ -89,6 +92,7 @@
 
   "background": {
     "scripts": [
+      "lib/logging.js",
       "lib/remote_settings_update_check.js",
       "lib/messaging_helper.js",
       "lib/ua_helpers.js",
@@ -131,7 +135,6 @@
     "shims/facebook.svg",
     "shims/fastclick.js",
     "shims/figshare.js",
-    "shims/firebase.js",
     "shims/google-ads.js",
     "shims/google-analytics-and-tag-manager.js",
     "shims/google-analytics-ecommerce-plugin.js",

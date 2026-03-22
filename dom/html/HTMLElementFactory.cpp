@@ -31,7 +31,7 @@ nsGenericHTMLElement* NS_NewHTMLNOTUSEDElement(
 #define HTML_OTHER(_tag) NS_NewHTMLNOTUSEDElement,
 static const HTMLContentCreatorFunction sHTMLContentCreatorFunctions[] = {
     NS_NewHTMLUnknownElement,
-#include "nsHTMLTagList.h"
+#include "nsHTMLTagList.inc"
 #undef HTML_TAG
 #undef HTML_OTHER
     NS_NewHTMLUnknownElement};

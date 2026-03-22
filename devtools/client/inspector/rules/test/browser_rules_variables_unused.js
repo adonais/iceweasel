@@ -66,7 +66,7 @@ add_task(async function testHiddenUnusedVariables() {
   await selectNode("h1", inspector);
 
   info("Check that elementStyle.usedVariables has the expected data");
-  Assert.deepEqual(Array.from(view._elementStyle.usedVariables), [
+  Assert.deepEqual(Array.from(view.elementStyle.usedVariables), [
     // in `h1 -> width`
     "--foobar",
     // in `h1 -> width`

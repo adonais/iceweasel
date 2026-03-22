@@ -2,6 +2,7 @@
 subsuite = "a11y"
 support-files = [
   "head.js",
+  "doc_xul.xhtml",
   "!/accessible/tests/browser/shared-head.js",
   "!/accessible/tests/mochitest/*.js",
   "!/accessible/tests/mochitest/moz.png",
@@ -35,6 +36,8 @@ skip-if = [
 ["browser_link.js"]
 
 ["browser_media.js"]
+
+["browser_no_remote_xul.js"]
 
 ["browser_root_element.js"]
 

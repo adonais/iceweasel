@@ -23,9 +23,9 @@
 #include <type_traits>
 #include <utility>
 
-#include "jsnum.h"
 #include "NamespaceImports.h"
 
+#include "builtin/Number.h"
 #include "builtin/temporal/Calendar.h"
 #include "builtin/temporal/Duration.h"
 #include "builtin/temporal/PlainDate.h"
@@ -444,7 +444,7 @@ static_assert(mozilla::Result<ZonedDateTimeString, ParserError>::Strategy !=
  */
 class LikelyError final {
   size_t index_ = 0;
-  ParserError error_{};
+  ParserError error_;
 
  public:
   template <typename V>
@@ -995,11 +995,11 @@ mozilla::Result<T, ParserError> TemporalParser<CharT>::parse(
 template <typename CharT>
 template <typename T>
 mozilla::Result<T, ParserError> TemporalParser<CharT>::complete(
-    const T& result) const {
+    const T& value) const {
   if (!reader_.atEnd()) {
     return mozilla::Err(JSMSG_TEMPORAL_PARSER_UNEXPECTED_CHARACTERS_AT_END);
   }
-  return result;
+  return value;
 }
 
 template <typename CharT>

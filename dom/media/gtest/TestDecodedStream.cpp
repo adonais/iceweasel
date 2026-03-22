@@ -102,7 +102,9 @@ class TestDecodedStream : public Test {
             AbstractThread::GetCurrent(), mDummyTrack, mOutputTracks,
             &mCanonicalOutputPrincipal, /* aVolume = */ 1.0,
             /* aPlaybackRate = */ 1.0,
-            /* aPreservesPitch = */ true, mAudioQueue, mVideoQueue)) {
+            /* aPreservesPitch = */ true,
+            /* aShouldConfigAudioOutput = */ false,
+            /* aDevice = */ nullptr, mAudioQueue, mVideoQueue)) {
     MOZ_ASSERT(NS_IsMainThread());
   };
 

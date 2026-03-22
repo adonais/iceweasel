@@ -185,8 +185,8 @@ bool nsMathMLmpaddedFrame::ParseAttribute(nsString& aString,
 
     // see if the unit is a named-space
     if (dom::MathMLElement::ParseNamedSpaceValue(
-            unit, aAttribute.mValue, dom::MathMLElement::PARSE_ALLOW_NEGATIVE,
-            *mContent->OwnerDoc())) {
+            unit, aAttribute.mValue, *mContent->OwnerDoc(),
+            dom::MathMLElement::ParseFlag::AllowNegative)) {
       // re-scale properly, and we know that the unit of the named-space is 'em'
       floatValue *= aAttribute.mValue.GetFloatValue();
       aAttribute.mValue.SetFloatValue(floatValue, eCSSUnit_EM);
@@ -200,8 +200,8 @@ bool nsMathMLmpaddedFrame::ParseAttribute(nsString& aString,
     // value here.
     number.Append(unit);  // leave the sign out if it was there
     if (dom::MathMLElement::ParseNumericValue(
-            number, aAttribute.mValue,
-            dom::MathMLElement::PARSE_SUPPRESS_WARNINGS, nullptr)) {
+            number, aAttribute.mValue, nullptr,
+            dom::MathMLElement::ParseFlag::SuppressWarnings)) {
       aAttribute.mState = Attribute::ParsingState::Valid;
       return true;
     }

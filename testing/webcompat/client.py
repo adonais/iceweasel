@@ -528,7 +528,7 @@ class Client:
             wait="interactive",
         )
         await self.session.bidi_session.script.evaluate(
-            expression=f"window.browser.extension.getBackgroundPage().{waitFor}.ready()",
+            expression=f"window.browser.extension.getBackgroundPage().{waitFor}.allSettled()",
             target=ContextTarget(context["context"]),
             await_promise=True,
         )

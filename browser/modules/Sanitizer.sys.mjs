@@ -3,7 +3,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const lazy = {};
@@ -15,13 +14,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrincipalsCollector: "resource://gre/modules/PrincipalsCollector.sys.mjs",
 });
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "useOldClearHistoryDialog",
-  "privacy.sanitize.useOldClearHistoryDialog",
-  false
-);
 
 var logConsole;
 function log(...msgs) {
@@ -58,15 +50,7 @@ export var Sanitizer = {
    * Pref branches to fetch sanitization options from.
    */
   PREF_CPD_BRANCH: "privacy.cpd.",
-  /*
-   * We need to choose between two branches for shutdown since there are separate prefs for the new
-   * clear history dialog
-   */
-  get PREF_SHUTDOWN_BRANCH() {
-    return lazy.useOldClearHistoryDialog
-      ? "privacy.clearOnShutdown."
-      : "privacy.clearOnShutdown_v2.";
-  },
+  PREF_SHUTDOWN_BRANCH: "privacy.clearOnShutdown_v2.",
 
   /**
    * The fallback timestamp used when no argument is given to
@@ -142,9 +126,7 @@ export var Sanitizer = {
       parentWindow = null;
     }
 
-    let dialogFile = lazy.useOldClearHistoryDialog
-      ? "sanitize.xhtml"
-      : "sanitize_v2.xhtml";
+    let dialogFile = "sanitize_v2.xhtml";
 
     if (parentWindow?.gDialogBox) {
       parentWindow.gDialogBox.open(`chrome://browser/content/${dialogFile}`, {
@@ -1020,66 +1002,31 @@ async function sanitizeInternal(items, aItemsToClear, options) {
 
 async function sanitizeOnShutdown(progress) {
   log("Sanitizing on shutdown");
-  if (lazy.useOldClearHistoryDialog) {
-    progress.sanitizationPrefs = {
-      privacy_sanitize_sanitizeOnShutdown: Services.prefs.getBoolPref(
-        "privacy.sanitize.sanitizeOnShutdown"
-      ),
-      privacy_clearOnShutdown_cookies: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown.cookies"
-      ),
-      privacy_clearOnShutdown_history: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown.history"
-      ),
-      privacy_clearOnShutdown_formdata: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown.formdata"
-      ),
-      privacy_clearOnShutdown_downloads: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown.downloads"
-      ),
-      privacy_clearOnShutdown_cache: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown.cache"
-      ),
-      privacy_clearOnShutdown_sessions: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown.sessions"
-      ),
-      privacy_clearOnShutdown_offlineApps: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown.offlineApps"
-      ),
-      privacy_clearOnShutdown_siteSettings: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown.siteSettings"
-      ),
-      privacy_clearOnShutdown_openWindows: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown.openWindows"
-      ),
-    };
-  } else {
-    // Perform a migration if this is the first time sanitizeOnShutdown is
-    // running for the user with the new dialog
-    Sanitizer.maybeMigratePrefs("clearOnShutdown");
+  // Perform a migration if this is the first time sanitizeOnShutdown is
+  // running for the user with the new dialog
+  Sanitizer.maybeMigratePrefs("clearOnShutdown");
 
-    progress.sanitizationPrefs = {
-      privacy_sanitize_sanitizeOnShutdown: Services.prefs.getBoolPref(
-        "privacy.sanitize.sanitizeOnShutdown"
+  progress.sanitizationPrefs = {
+    privacy_sanitize_sanitizeOnShutdown: Services.prefs.getBoolPref(
+      "privacy.sanitize.sanitizeOnShutdown"
+    ),
+    privacy_clearOnShutdown_v2_cookiesAndStorage: Services.prefs.getBoolPref(
+      "privacy.clearOnShutdown_v2.cookiesAndStorage"
+    ),
+    privacy_clearOnShutdown_v2_browsingHistoryAndDownloads:
+      Services.prefs.getBoolPref(
+        "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads"
       ),
-      privacy_clearOnShutdown_v2_cookiesAndStorage: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown_v2.cookiesAndStorage"
-      ),
-      privacy_clearOnShutdown_v2_browsingHistoryAndDownloads:
-        Services.prefs.getBoolPref(
-          "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads"
-        ),
-      privacy_clearOnShutdown_v2_cache: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown_v2.cache"
-      ),
-      privacy_clearOnShutdown_v2_formdata: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown_v2.formdata"
-      ),
-      privacy_clearOnShutdown_v2_siteSettings: Services.prefs.getBoolPref(
-        "privacy.clearOnShutdown_v2.siteSettings"
-      ),
-    };
-  }
+    privacy_clearOnShutdown_v2_cache: Services.prefs.getBoolPref(
+      "privacy.clearOnShutdown_v2.cache"
+    ),
+    privacy_clearOnShutdown_v2_formdata: Services.prefs.getBoolPref(
+      "privacy.clearOnShutdown_v2.formdata"
+    ),
+    privacy_clearOnShutdown_v2_siteSettings: Services.prefs.getBoolPref(
+      "privacy.clearOnShutdown_v2.siteSettings"
+    ),
+  };
 
   let needsSyncSavePrefs = false;
   if (Sanitizer.shouldSanitizeOnShutdown) {

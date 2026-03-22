@@ -32,6 +32,7 @@ stage-package: multilocale.txt locale-manifest.in $(MOZ_PKG_MANIFEST) $(MOZ_PKG_
 		$(if $(MOZ_PACKAGER_MINIFY_JS),--minify-js \
 		  $(addprefix --js-binary ,$(JS_BINARY)) \
 		) \
+		$(if $(MOZ_PACKAGER_MINIFY_PDFJS),--minify-pdfjs) \
 		$(addprefix --jarlog ,$(wildcard $(JARLOG_FILE_AB_CD))) \
 		$(addprefix --compress ,$(JAR_COMPRESSION)) \
 		$(MOZ_PKG_MANIFEST) '$(DIST)' '$(DIST)'/$(MOZ_PKG_DIR)$(if $(MOZ_PKG_MANIFEST),,$(_BINPATH:%=/%)) \
@@ -85,14 +86,14 @@ ifdef ENABLE_MOZSEARCH_PLUGIN
 	cd $(topobjdir)/ && cp _build_manifests/install/dist_include '$(ABS_DIST)/$(PKG_PATH)$(MOZSEARCH_INCLUDEMAP_BASENAME).map'
 	@echo 'Generating mozsearch scip index...'
 	$(RM) $(MOZSEARCH_SCIP_INDEX_BASENAME).zip
-	cp $(topsrcdir)/.cargo/config.toml.in $(topsrcdir)/.cargo/config.toml
 	cd $(topsrcdir)/ && \
+          $(PYTHON3) $(topsrcdir)/mach rust-analyzer-config -o rust-analyzer.json && \
           CARGO=$(MOZ_FETCHES_DIR)/rustc/bin/cargo \
           RUSTC=$(MOZ_FETCHES_DIR)/rustc/bin/rustc \
-          $(MOZ_FETCHES_DIR)/rustc/bin/rust-analyzer scip . && \
+          $(MOZ_FETCHES_DIR)/rustc/bin/rust-analyzer scip . --config-path rust-analyzer.json && \
           zip -r5D '$(ABS_DIST)/$(PKG_PATH)$(MOZSEARCH_SCIP_INDEX_BASENAME).zip' \
           index.scip
-	rm $(topsrcdir)/.cargo/config.toml
+	rm $(topsrcdir)/rust-analyzer.json
 ifeq ($(MOZ_BUILD_APP),mobile/android)
 	@echo 'Generating mozsearch java/kotlin semanticdb tarball...'
 	$(RM) $(MOZSEARCH_JAVA_INDEX_BASENAME).zip

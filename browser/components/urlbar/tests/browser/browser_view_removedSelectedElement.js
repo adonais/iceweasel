@@ -51,9 +51,10 @@ add_task(async function () {
     results: [result],
     type: UrlbarUtils.PROVIDER_TYPE.HEURISTIC,
   });
-  UrlbarProvidersManager.registerProvider(delayedHeuristicProvider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(delayedHeuristicProvider);
   registerCleanupFunction(async function () {
-    UrlbarProvidersManager.unregisterProvider(delayedHeuristicProvider);
+    providersManager.unregisterProvider(delayedHeuristicProvider);
     await UrlbarTestUtils.promisePopupClose(window);
     gURLBar.handleRevert();
   });

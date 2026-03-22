@@ -6,8 +6,9 @@
 
 #include "SMILKeySpline.h"
 
-#include <math.h>
 #include <stdint.h>
+
+#include <cmath>
 
 namespace mozilla {
 
@@ -15,9 +16,6 @@ namespace mozilla {
 #define NEWTON_MIN_SLOPE 0.02
 #define SUBDIVISION_PRECISION 0.0000001
 #define SUBDIVISION_MAX_ITERATIONS 10
-
-const double SMILKeySpline::kSampleStepSize =
-    1.0 / double(kSplineTableSize - 1);
 
 void SMILKeySpline::Init(double aX1, double aY1, double aX2, double aY2) {
   mX1 = aX1;
@@ -119,7 +117,7 @@ double SMILKeySpline::BinarySubdivide(double aX, double aA, double aB) const {
     } else {
       aA = currentT;
     }
-  } while (fabs(currentX) > SUBDIVISION_PRECISION &&
+  } while (std::abs(currentX) > SUBDIVISION_PRECISION &&
            ++i < SUBDIVISION_MAX_ITERATIONS);
 
   return currentT;

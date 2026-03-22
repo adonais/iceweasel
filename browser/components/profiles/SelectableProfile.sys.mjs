@@ -154,10 +154,18 @@ export class SelectableProfile {
    * @param {string} aName The new name of the profile
    */
   set name(aName) {
+    this.setNameAsync(aName);
+  }
+
+  /**
+   * Async setter for the name field. Update the user-editable name for the profile,
+   * then trigger saving the profile, which will notify() other running instances.
+   *
+   * @param {string} aName The new name of the profile
+   */
+  async setNameAsync(aName) {
     this.#name = aName;
-
-    this.saveUpdatesToDB();
-
+    await SelectableProfileService.updateProfile(this);
     Services.prefs.setBoolPref("browser.profiles.profile-name.updated", true);
   }
 
@@ -423,11 +431,24 @@ export class SelectableProfile {
    * @param {string} param0.themeBg Background color of theme as CSS style string, like "rgb(0,0,0)".
    */
   set theme({ themeId, themeFg, themeBg }) {
+    this.setThemeAsync({ themeId, themeFg, themeBg });
+  }
+
+  /**
+   * Async setter for the theme fields. Update the theme (all three properties are required),
+   * then trigger saving the profile, which will notify() other running instances.
+   *
+   * @param {object} param0 The theme object
+   * @param {string} param0.themeId L10n id of the theme
+   * @param {string} param0.themeFg Foreground color of theme as CSS style string, like "rgb(1,1,1)",
+   * @param {string} param0.themeBg Background color of theme as CSS style string, like "rgb(0,0,0)".
+   */
+  async setThemeAsync({ themeId, themeFg, themeBg }) {
     this.#themeId = themeId;
     this.#themeFg = themeFg;
     this.#themeBg = themeBg;
 
-    this.saveUpdatesToDB();
+    await SelectableProfileService.updateProfile(this);
   }
 
   saveUpdatesToDB() {

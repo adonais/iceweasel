@@ -101,6 +101,7 @@
 // #include "nsWidgetsCID.h"
 #include "HTMLCanvasElement.h"
 #include "HTMLImageElement.h"
+#include "PseudoStyleType.h"  // for PseudoStyleType
 #include "mozilla/CSSPropertyId.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DisplayPortUtils.h"
@@ -125,7 +126,6 @@
 #include "mozilla/layers/IAPZCTreeManager.h"  // for layers::ZoomToRectBehavior
 #include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
-#include "nsCSSPseudoElements.h"  // for PseudoStyleType
 #include "nsContentPermissionHelper.h"
 #include "nsDisplayList.h"
 #include "nsIBaseWindow.h"
@@ -826,124 +826,6 @@ nsDOMWindowUtils::SendWheelEvent(float aX, float aY, double aDeltaX,
   return (!failedX && !failedY) ? NS_OK : NS_ERROR_FAILURE;
 }
 
-NS_IMETHODIMP
-nsDOMWindowUtils::SendTouchEvent(
-    const nsAString& aType, const nsTArray<uint32_t>& aIdentifiers,
-    const nsTArray<int32_t>& aXs, const nsTArray<int32_t>& aYs,
-    const nsTArray<uint32_t>& aRxs, const nsTArray<uint32_t>& aRys,
-    const nsTArray<float>& aRotationAngles, const nsTArray<float>& aForces,
-    const nsTArray<int32_t>& aTiltXs, const nsTArray<int32_t>& aTiltYs,
-    const nsTArray<int32_t>& aTwists, int32_t aModifiers,
-    AsyncEnabledOption aAsyncEnabled, bool* aPreventDefault) {
-  return SendTouchEventCommon(
-      aType, aIdentifiers, aXs, aYs, aRxs, aRys, aRotationAngles, aForces,
-      aTiltXs, aTiltYs, aTwists, aModifiers, /* aIsPen */ false,
-      /* aToWindow */ false, aAsyncEnabled, aPreventDefault);
-}
-
-NS_IMETHODIMP
-nsDOMWindowUtils::SendTouchEventAsPen(
-    const nsAString& aType, uint32_t aIdentifier, int32_t aX, int32_t aY,
-    uint32_t aRx, uint32_t aRy, float aRotationAngle, float aForce,
-    int32_t aTiltX, int32_t aTiltY, int32_t aTwist, int32_t aModifier,
-    AsyncEnabledOption aAsyncEnabled, bool* aPreventDefault) {
-  return SendTouchEventCommon(
-      aType, nsTArray{aIdentifier}, nsTArray{aX}, nsTArray{aY}, nsTArray{aRx},
-      nsTArray{aRy}, nsTArray{aRotationAngle}, nsTArray{aForce},
-      nsTArray{aTiltX}, nsTArray{aTiltY}, nsTArray{aTwist}, aModifier,
-      /* aIsPen */ true, /* aToWindow */ false, aAsyncEnabled, aPreventDefault);
-}
-
-NS_IMETHODIMP
-nsDOMWindowUtils::SendTouchEventToWindow(
-    const nsAString& aType, const nsTArray<uint32_t>& aIdentifiers,
-    const nsTArray<int32_t>& aXs, const nsTArray<int32_t>& aYs,
-    const nsTArray<uint32_t>& aRxs, const nsTArray<uint32_t>& aRys,
-    const nsTArray<float>& aRotationAngles, const nsTArray<float>& aForces,
-    const nsTArray<int32_t>& aTiltXs, const nsTArray<int32_t>& aTiltYs,
-    const nsTArray<int32_t>& aTwists, int32_t aModifiers,
-    bool* aPreventDefault) {
-  return SendTouchEventCommon(
-      aType, aIdentifiers, aXs, aYs, aRxs, aRys, aRotationAngles, aForces,
-      aTiltXs, aTiltYs, aTwists, aModifiers, /* aIsPen */ false,
-      /* aToWindow */ true, AsyncEnabledOption::ASYNC_DISABLED,
-      aPreventDefault);
-}
-
-nsresult nsDOMWindowUtils::SendTouchEventCommon(
-    const nsAString& aType, const nsTArray<uint32_t>& aIdentifiers,
-    const nsTArray<int32_t>& aXs, const nsTArray<int32_t>& aYs,
-    const nsTArray<uint32_t>& aRxs, const nsTArray<uint32_t>& aRys,
-    const nsTArray<float>& aRotationAngles, const nsTArray<float>& aForces,
-    const nsTArray<int32_t>& aTiltXs, const nsTArray<int32_t>& aTiltYs,
-    const nsTArray<int32_t>& aTwists, int32_t aModifiers, bool aIsPen,
-    bool aToWindow, AsyncEnabledOption aAsyncEnabled, bool* aPreventDefault) {
-  // get the widget to send the event to
-  nsPoint offset;
-  nsCOMPtr<nsIWidget> widget = GetWidget(&offset);
-  if (!widget) {
-    return NS_ERROR_NULL_POINTER;
-  }
-  EventMessage msg;
-  if (aType.EqualsLiteral("touchstart")) {
-    msg = eTouchStart;
-  } else if (aType.EqualsLiteral("touchmove")) {
-    msg = eTouchMove;
-  } else if (aType.EqualsLiteral("touchend")) {
-    msg = eTouchEnd;
-  } else if (aType.EqualsLiteral("touchcancel")) {
-    msg = eTouchCancel;
-  } else {
-    return NS_ERROR_UNEXPECTED;
-  }
-  WidgetTouchEvent event(true, msg, widget);
-  event.mFlags.mIsSynthesizedForTests = true;
-  event.mModifiers = nsContentUtils::GetWidgetModifiers(aModifiers);
-  if (aIsPen) {
-    event.mInputSource = MouseEvent_Binding::MOZ_SOURCE_PEN;
-  }
-
-  nsPresContext* presContext = GetPresContext();
-  if (!presContext) {
-    return NS_ERROR_FAILURE;
-  }
-  uint32_t count = aIdentifiers.Length();
-  if (aXs.Length() != count || aYs.Length() != count ||
-      aRxs.Length() != count || aRys.Length() != count ||
-      aRotationAngles.Length() != count || aForces.Length() != count) {
-    return NS_ERROR_INVALID_ARG;
-  }
-  event.mTouches.SetCapacity(count);
-  for (uint32_t i = 0; i < count; ++i) {
-    LayoutDeviceIntPoint pt = nsContentUtils::ToWidgetPoint(
-        CSSPoint(aXs[i], aYs[i]), offset, presContext);
-    LayoutDeviceIntPoint radius = LayoutDeviceIntPoint::FromAppUnitsRounded(
-        CSSPoint::ToAppUnits(CSSPoint(aRxs[i], aRys[i])),
-        presContext->AppUnitsPerDevPixel());
-
-    RefPtr<Touch> t = new Touch(aIdentifiers[i], pt, radius, aRotationAngles[i],
-                                aForces[i], aTiltXs[i], aTiltYs[i], aTwists[i]);
-
-    event.mTouches.AppendElement(t);
-  }
-
-  nsEventStatus status = nsEventStatus_eIgnore;
-  if (aToWindow) {
-    RefPtr<PresShell> presShell = presContext->PresShell();
-    MOZ_TRY(presShell->HandleEvent(presShell->GetRootFrame(), &event, false,
-                                   &status));
-  } else if (aAsyncEnabled == AsyncEnabledOption::ASYNC_ENABLED ||
-             StaticPrefs::test_events_async_enabled()) {
-    status = widget->DispatchInputEvent(&event).mContentStatus;
-  } else {
-    status = widget->DispatchEvent(&event);
-  }
-  if (aPreventDefault) {
-    *aPreventDefault = (status == nsEventStatus_eConsumeNoDefault);
-  }
-  return NS_OK;
-}
-
 static_assert(
     static_cast<uint32_t>(nsIWidget::Modifiers::CAPS_LOCK) ==
         static_cast<uint32_t>(nsIDOMWindowUtils::NATIVE_MODIFIER_CAPS_LOCK),
@@ -1508,74 +1390,6 @@ nsDOMWindowUtils::NodesFromRect(float aX, float aY, float aTopSize,
   }
 
   list.forget(aReturn);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDOMWindowUtils::GetTranslationNodes(nsINode* aRoot,
-                                      nsITranslationNodeList** aRetVal) {
-  NS_ENSURE_ARG_POINTER(aRetVal);
-  nsCOMPtr<nsIContent> root = do_QueryInterface(aRoot);
-  NS_ENSURE_STATE(root);
-  nsCOMPtr<Document> doc = GetDocument();
-  NS_ENSURE_STATE(doc);
-
-  if (root->OwnerDoc() != doc) {
-    return NS_ERROR_DOM_WRONG_DOCUMENT_ERR;
-  }
-
-  nsTHashSet<nsIContent*> translationNodesHash(500);
-  RefPtr<nsTranslationNodeList> list = new nsTranslationNodeList;
-
-  uint32_t limit = 15000;
-
-  // We begin iteration with content->GetNextNode because we want to explicitly
-  // skip the root tag from being a translation node.
-  nsIContent* content = root;
-  while ((limit > 0) && (content = content->GetNextNode(root))) {
-    if (!content->IsHTMLElement()) {
-      continue;
-    }
-
-    // Skip elements that usually contain non-translatable text content.
-    if (content->IsAnyOfHTMLElements(nsGkAtoms::script, nsGkAtoms::iframe,
-                                     nsGkAtoms::frameset, nsGkAtoms::frame,
-                                     nsGkAtoms::code, nsGkAtoms::noscript,
-                                     nsGkAtoms::style)) {
-      continue;
-    }
-
-    // An element is a translation node if it contains
-    // at least one text node that has meaningful data
-    // for translation
-    for (nsIContent* child = content->GetFirstChild(); child;
-         child = child->GetNextSibling()) {
-      if (child->IsText() && child->GetAsText()->HasTextForTranslation()) {
-        translationNodesHash.Insert(content);
-
-        nsIFrame* frame = content->GetPrimaryFrame();
-        bool isTranslationRoot = frame && frame->IsBlockFrameOrSubclass();
-        if (!isTranslationRoot) {
-          // If an element is not a block element, it still
-          // can be considered a translation root if the parent
-          // of this element didn't make into the list of nodes
-          // to be translated.
-          bool parentInList = false;
-          nsIContent* parent = content->GetParent();
-          if (parent) {
-            parentInList = translationNodesHash.Contains(parent);
-          }
-          isTranslationRoot = !parentInList;
-        }
-
-        list->AppendElement(content, isTranslationRoot);
-        --limit;
-        break;
-      }
-    }
-  }
-
-  *aRetVal = list.forget().take();
   return NS_OK;
 }
 
@@ -3312,8 +3126,7 @@ nsDOMWindowUtils::GetUnanimatedComputedStyle(Element* aElement,
     return NS_ERROR_FAILURE;
   }
 
-  Maybe<PseudoStyleRequest> pseudo =
-      nsCSSPseudoElements::ParsePseudoElement(aPseudoElement);
+  Maybe<PseudoStyleRequest> pseudo = PseudoStyleRequest::Parse(aPseudoElement);
   if (!pseudo) {
     return NS_ERROR_FAILURE;
   }
@@ -3417,6 +3230,24 @@ nsDOMWindowUtils::CheckAndClearDisplayListState(Element* aElement,
     frame = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(frame);
   }
   *aResult = true;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsDOMWindowUtils::CheckAndClearWRDidRasterize(bool* aResult) {
+  *aResult = false;
+
+  nsIWidget* widget = GetWidget();
+  if (!widget) {
+    return NS_OK;
+  }
+
+  CompositorBridgeChild* cbc = GetCompositorBridge();
+  if (!cbc) {
+    return NS_OK;
+  }
+
+  cbc->SendCheckAndClearWRDidRasterize(widget->GetLayersId(), aResult);
   return NS_OK;
 }
 
@@ -4438,41 +4269,6 @@ nsDOMWindowUtils::EnsureDirtyRootFrame() {
 
   presShell->FrameNeedsReflow(
       frame, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
-  return NS_OK;
-}
-
-NS_INTERFACE_MAP_BEGIN(nsTranslationNodeList)
-  NS_INTERFACE_MAP_ENTRY(nsISupports)
-  NS_INTERFACE_MAP_ENTRY(nsITranslationNodeList)
-NS_INTERFACE_MAP_END
-
-NS_IMPL_ADDREF(nsTranslationNodeList)
-NS_IMPL_RELEASE(nsTranslationNodeList)
-
-NS_IMETHODIMP
-nsTranslationNodeList::Item(uint32_t aIndex, nsINode** aRetVal) {
-  NS_ENSURE_ARG_POINTER(aRetVal);
-  NS_IF_ADDREF(*aRetVal = mNodes.SafeElementAt(aIndex));
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsTranslationNodeList::IsTranslationRootAtIndex(uint32_t aIndex,
-                                                bool* aRetVal) {
-  NS_ENSURE_ARG_POINTER(aRetVal);
-  if (aIndex >= mLength) {
-    *aRetVal = false;
-    return NS_OK;
-  }
-
-  *aRetVal = mNodeIsRoot.ElementAt(aIndex);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsTranslationNodeList::GetLength(uint32_t* aRetVal) {
-  NS_ENSURE_ARG_POINTER(aRetVal);
-  *aRetVal = mLength;
   return NS_OK;
 }
 

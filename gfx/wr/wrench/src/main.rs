@@ -836,7 +836,10 @@ pub fn main() {
             rx.unwrap(),
         );
 
-        harness.run();
+        let num_failures = harness.run();
+        if num_failures > 0 {
+            process::exit(num_failures as _);
+        }
     } else if let Some(subargs) = args.subcommand_matches("compare_perf") {
         let first_filename = subargs.value_of("first_filename").unwrap();
         let second_filename = subargs.value_of("second_filename").unwrap();

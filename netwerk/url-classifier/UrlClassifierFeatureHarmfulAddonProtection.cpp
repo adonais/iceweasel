@@ -8,6 +8,7 @@
 
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
+#include "mozilla/glean/GleanPings.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "ChannelClassifierService.h"
@@ -17,6 +18,7 @@
 #include "nsIChannel.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsIHttpChannelInternal.h"
+#include "nsIObserverService.h"
 #include "nsIWebProgressListener.h"
 #include "nsIWritablePropertyBag2.h"
 
@@ -81,13 +83,15 @@ extensions::WebExtensionPolicy* GetAddonPolicy(nsIChannel* aChannel) {
   return policy;
 }
 
-bool GetAddonId(nsIChannel* aChannel, nsACString& aAddonID) {
+bool GetAddonIdAndVersion(nsIChannel* aChannel, nsACString& aAddonID,
+                          nsACString& aAddonVersion) {
   extensions::WebExtensionPolicy* policy = GetAddonPolicy(aChannel);
   if (!policy) {
     return false;
   }
 
   CopyUTF16toUTF8(nsDependentAtomString(policy->Id()), aAddonID);
+  CopyUTF16toUTF8(policy->Version(), aAddonVersion);
   return true;
 }
 
@@ -130,17 +134,60 @@ void RecordGleanAddonBlocked(nsIChannel* aChannel,
   }
 
   nsAutoCString addonId;
-  if (!GetAddonId(aChannel, addonId)) {
+  nsAutoCString addonVersion;
+  if (!GetAddonIdAndVersion(aChannel, addonId, addonVersion)) {
     return;
   }
 
-  glean::network::urlclassifier_addon_block.Record(
-      Some(glean::network::UrlclassifierAddonBlockExtra{
-          mozilla::Some(addonId), mozilla::Some(etld),
-          mozilla::Some(nsCString(aTableStr))}));
+  glean::network::urlclassifier_harmful_addon_block.Record(
+      Some(glean::network::UrlclassifierHarmfulAddonBlockExtra{
+          mozilla::Some(addonId), mozilla::Some(addonVersion),
+          mozilla::Some(etld), mozilla::Some(nsCString(aTableStr))}));
 }
 
 }  // namespace
+
+class UrlClassifierFeatureHarmfulAddonProtection::PingSender final
+    : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+  PingSender() = default;
+
+  void Register() {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    nsCOMPtr<nsIObserverService> obsService =
+        mozilla::services::GetObserverService();
+    if (obsService) {
+      obsService->AddObserver(this, "idle-daily", false);
+    }
+  }
+
+  void Unregister() {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    nsCOMPtr<nsIObserverService> obsService =
+        mozilla::services::GetObserverService();
+    if (obsService) {
+      obsService->RemoveObserver(this, "idle-daily");
+    }
+  }
+
+ private:
+  ~PingSender() = default;
+};
+
+NS_IMPL_ISUPPORTS(UrlClassifierFeatureHarmfulAddonProtection::PingSender,
+                  nsIObserver)
+
+NS_IMETHODIMP
+UrlClassifierFeatureHarmfulAddonProtection::PingSender::Observe(
+    nsISupports* aSubject, const char* aTopic, const char16_t*) {
+  glean_pings::UrlClassifierHarmfulAddon.Submit();
+  return NS_OK;
+}
 
 UrlClassifierFeatureHarmfulAddonProtection::
     UrlClassifierFeatureHarmfulAddonProtection()
@@ -152,10 +199,21 @@ UrlClassifierFeatureHarmfulAddonProtection::
           nsLiteralCString(URLCLASSIFIER_HARMFULADDON_ENTITYLIST_TEST_ENTRIES),
           nsLiteralCString(TABLE_HARMFULADDON_BLOCKLIST_PREF),
           nsLiteralCString(TABLE_HARMFULADDON_ENTITYLIST_PREF),
-          nsLiteralCString(URLCLASSIFIER_HARMFULADDON_EXCEPTION_URLS)) {}
+          nsLiteralCString(URLCLASSIFIER_HARMFULADDON_EXCEPTION_URLS)) {
+  mPingSender = new UrlClassifierFeatureHarmfulAddonProtection::PingSender();
+  mPingSender->Register();
+}
 
 /* static */ const char* UrlClassifierFeatureHarmfulAddonProtection::Name() {
   return HARMFULADDON_FEATURE_NAME;
+}
+
+UrlClassifierFeatureHarmfulAddonProtection::
+    ~UrlClassifierFeatureHarmfulAddonProtection() {
+  if (mPingSender) {
+    mPingSender->Unregister();
+    mPingSender = nullptr;
+  }
 }
 
 /* static */

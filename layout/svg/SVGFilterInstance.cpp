@@ -110,17 +110,17 @@ bool SVGFilterInstance::ComputeBounds() {
 }
 
 float SVGFilterInstance::GetPrimitiveUserSpaceUnitValue(
-    uint8_t aCtxType) const {
+    SVGLength::Axis aAxis) const {
   SVGAnimatedLength val;
-  val.Init(aCtxType, 0xff, 1.0f, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER);
+  val.Init(aAxis, 0xff, 1.0f, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER);
 
-  return UserSpaceToFilterSpace(aCtxType, SVGUtils::UserSpace(mMetrics, &val));
+  return UserSpaceToFilterSpace(aAxis, SVGUtils::UserSpace(mMetrics, &val));
 }
 
-float SVGFilterInstance::GetPrimitiveNumber(uint8_t aCtxType,
+float SVGFilterInstance::GetPrimitiveNumber(SVGLength::Axis aAxis,
                                             float aValue) const {
   SVGAnimatedLength val;
-  val.Init(aCtxType, 0xff, aValue, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER);
+  val.Init(aAxis, 0xff, aValue, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER);
 
   float value;
   if (mPrimitiveUnits == SVG_UNIT_TYPE_OBJECTBOUNDINGBOX) {
@@ -132,40 +132,31 @@ float SVGFilterInstance::GetPrimitiveNumber(uint8_t aCtxType,
     value = SVGUtils::UserSpace(mMetrics, &val);
   }
 
-  return UserSpaceToFilterSpace(aCtxType, value);
+  return UserSpaceToFilterSpace(aAxis, value);
 }
 
 Point3D SVGFilterInstance::ConvertLocation(const Point3D& aPoint) const {
   SVGAnimatedLength val[4];
-  val[0].Init(SVGContentUtils::X, 0xff, aPoint.x,
+  val[0].Init(SVGLength::Axis::X, 0xff, aPoint.x,
               SVGLength_Binding::SVG_LENGTHTYPE_NUMBER);
-  val[1].Init(SVGContentUtils::Y, 0xff, aPoint.y,
+  val[1].Init(SVGLength::Axis::Y, 0xff, aPoint.y,
               SVGLength_Binding::SVG_LENGTHTYPE_NUMBER);
   // Dummy width/height values
-  val[2].Init(SVGContentUtils::X, 0xff, 0,
+  val[2].Init(SVGLength::Axis::X, 0xff, 0,
               SVGLength_Binding::SVG_LENGTHTYPE_NUMBER);
-  val[3].Init(SVGContentUtils::Y, 0xff, 0,
+  val[3].Init(SVGLength::Axis::Y, 0xff, 0,
               SVGLength_Binding::SVG_LENGTHTYPE_NUMBER);
 
   gfxRect feArea = SVGUtils::GetRelativeRect(mPrimitiveUnits, val, mTargetBBox,
                                              nullptr, mMetrics);
   gfxRect r = UserSpaceToFilterSpace(feArea);
-  return Point3D(r.x, r.y, GetPrimitiveNumber(SVGContentUtils::XY, aPoint.z));
+  return Point3D(r.x, r.y, GetPrimitiveNumber(SVGLength::Axis::XY, aPoint.z));
 }
 
-float SVGFilterInstance::UserSpaceToFilterSpace(uint8_t aCtxType,
+float SVGFilterInstance::UserSpaceToFilterSpace(SVGLength::Axis aAxis,
                                                 float aValue) const {
-  switch (aCtxType) {
-    case SVGContentUtils::X:
-      return aValue * static_cast<float>(mUserSpaceToFilterSpaceScale.xScale);
-    case SVGContentUtils::Y:
-      return aValue * static_cast<float>(mUserSpaceToFilterSpaceScale.yScale);
-    case SVGContentUtils::XY:
-    default:
-      return aValue * SVGContentUtils::ComputeNormalizedHypotenuse(
-                          mUserSpaceToFilterSpaceScale.xScale,
-                          mUserSpaceToFilterSpaceScale.yScale);
-  }
+  return aValue * float(SVGContentUtils::AxisLength(
+                      mUserSpaceToFilterSpaceScale.ToSize(), aAxis));
 }
 
 gfxRect SVGFilterInstance::UserSpaceToFilterSpace(

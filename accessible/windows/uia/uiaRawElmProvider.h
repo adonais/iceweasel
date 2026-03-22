@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_a11y_uiaRawElmProvider_h__
-#define mozilla_a11y_uiaRawElmProvider_h__
+#ifndef mozilla_a11y_uiaRawElmProvider_h_
+#define mozilla_a11y_uiaRawElmProvider_h_
 
 #include <objbase.h>
 #include <stdint.h>
@@ -55,6 +55,9 @@ class uiaRawElmProvider : public IAccessibleEx,
                                          uint32_t aGeckoEvent);
   static void RaiseUiaEventForStateChange(Accessible* aAcc, uint64_t aState,
                                           bool aEnabled);
+  static void RaiseUiaNotificationEvent(Accessible* aAcc,
+                                        const nsAString& aAnnouncement,
+                                        uint16_t aPriority);
 
   // IUnknown
   STDMETHODIMP QueryInterface(REFIID aIid, void** aInterface);

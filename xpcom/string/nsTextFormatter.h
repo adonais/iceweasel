@@ -10,8 +10,8 @@
  *                           -- Prasad <prasad@medhas.org>
  */
 
-#ifndef nsTextFormatter_h___
-#define nsTextFormatter_h___
+#ifndef nsTextFormatter_h_
+#define nsTextFormatter_h_
 
 /*
  ** API for PR printf like routines. Supports the following formats
@@ -168,4 +168,4 @@ class nsTextFormatter {
                         mozilla::Span<BoxedValue> aValues);
 };
 
-#endif /* nsTextFormatter_h___ */
+#endif /* nsTextFormatter_h_ */

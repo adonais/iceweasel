@@ -13,6 +13,7 @@
 #include "mozilla/BaseProfiler.h"
 #include "mozilla/Components.h"
 #include "mozilla/FilePreferences.h"
+#include "mozilla/FOG.h"
 #include "mozilla/ChaosMode.h"
 #include "mozilla/HelperMacros.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
@@ -371,7 +372,7 @@ void XRE_LibFuzzerSetDriver(LibFuzzerDriver aDriver) {
 #undef None
 
 namespace mozilla {
-int (*RunGTest)(int*, char**) = 0;
+int (*RunGTest)(int*, char**) = nullptr;
 
 bool RunningGTest() { return RunGTest; }
 }  // namespace mozilla
@@ -4215,6 +4216,14 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
     mAppData->flags |= NS_XRE_ENABLE_CRASH_REPORTER;
   }
 
+#ifdef MOZ_THUNDERBIRD
+  // Set an explicit application name for Thunderbird.
+  // We do NOT set one for `firefox`.
+  // FOG uses a default one,
+  // background tasks overwrite it using `initializeFOG`.
+  FOG::SetApplicationID("thunderbird.desktop"_ns);
+#endif  // MOZ_THUNDERBIRD
+
   nsCOMPtr<nsIFile> xreBinDirectory;
   xreBinDirectory = mDirProvider.GetGREBinDir();
 
@@ -4766,7 +4775,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
     if (const char* currentDesktop = PR_GetEnv("XDG_CURRENT_DESKTOP")) {
       useXI2 |= (nsDependentCString(currentDesktop) == "gamescope"_ns);
     }
-#    ifdef NIGHTLY_BUILD
+#    ifdef EARLY_BETA_OR_EARLIER
     // We tried 3.24.0+ but had problems, let's retry with newer versions. See
     // bug 1660212.
     useXI2 |= !gtk_check_version(3, 24, 49);
@@ -5472,8 +5481,8 @@ nsresult XREMain::XRE_mainRun() {
     CrashReporter::SetIncludeContextHeap(includeContextHeap);
 
 #if defined(XP_LINUX) && !defined(ANDROID)
-    PR_CreateThread(PR_USER_THREAD, AnnotateLSBRelease, 0, PR_PRIORITY_LOW,
-                    PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
+    PR_CreateThread(PR_USER_THREAD, AnnotateLSBRelease, nullptr,
+                    PR_PRIORITY_LOW, PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
 #endif
 
     if (mStartOffline) {
@@ -6402,7 +6411,7 @@ void SetupErrorHandling(const char* progname) {
   InstallSignalHandlers(progname);
 
   // Unbuffer stdout, needed for tinderbox tests.
-  setbuf(stdout, 0);
+  setbuf(stdout, nullptr);
 }
 
 static bool gRunSelfAsContentProc = false;
@@ -6422,6 +6431,12 @@ mozilla::BinPathType XRE_GetChildProcBinPathType(
   }
 
 #ifdef XP_WIN
+  // Removing this pref and always using the parent binary, along with other
+  // related clean up work, is tracked in Bug 2014843.
+  if (StaticPrefs::dom_ipc_alwaysUseParentBinary()) {
+    return BinPathType::Self;
+  }
+
   // On Windows, plugin-container may or may not be used depending on
   // the process type (e.g., actual plugins vs. content processes)
   switch (aProcessType) {

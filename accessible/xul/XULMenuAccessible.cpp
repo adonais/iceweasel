@@ -63,9 +63,7 @@ uint64_t XULMenuitemAccessible::NativeState() const {
     state |= states::CHECKABLE;
 
     // Checked?
-    if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                           nsGkAtoms::checked, nsGkAtoms::_true,
-                                           eCaseMatters)) {
+    if (mContent->AsElement()->GetBoolAttr(nsGkAtoms::checked)) {
       state |= states::CHECKED;
     }
   }

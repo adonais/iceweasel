@@ -11,8 +11,9 @@
 
 #include "mozilla/MathAlgorithms.h"
 
-#include "ds/SlimLinkedList.h"
+#include "NamespaceImports.h"
 
+#include "ds/SlimLinkedList.h"
 #include "gc/BufferAllocator.h"
 #include "gc/IteratorUtils.h"
 
@@ -235,6 +236,7 @@ struct AllocSpace {
 
   void setAllocated(void* alloc, size_t bytes, bool allocated);
   void updateEndOffset(void* alloc, size_t oldBytes, size_t newBytes);
+  void setDeallocated(void* alloc, size_t bytes);
 
   bool isAllocated(const void* alloc) const {
     size_t bit = ptrToIndex(alloc);
@@ -344,7 +346,7 @@ struct BufferChunk
 #endif
 
   MainThreadOrGCTaskData<bool> allocatedDuringCollection;
-  MainThreadData<bool> hasNurseryOwnedAllocs;
+  MainThreadOrGCTaskData<bool> hasNurseryOwnedAllocs;
   MainThreadOrGCTaskData<bool> hasNurseryOwnedAllocsAfterSweep;
 
   static constexpr size_t MaxAllocsPerChunk = MaxAllocCount;  // todo remove
@@ -390,6 +392,8 @@ struct BufferChunk
   size_t sizeClassForAvailableLists() const;
 
   bool isPointerWithinAllocation(void* ptr) const;
+
+  void getStats(BufferAllocator::Stats& stats);
 };
 
 constexpr size_t FirstMediumAllocOffset = BufferChunk::firstAllocOffset();

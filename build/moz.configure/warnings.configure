@@ -115,13 +115,6 @@ check_and_add_warning(
     cxx_compiler,
     min_clang_version="10.0.0",
 )
-# Suppress C++20 warnings about implicit capture of `this` until they are fixed
-# in bug 1775161. gcc doesn't have a -Wdeprecated-this-capture flag like clang,
-# so temporarily downgrade all gcc -Wdeprecated errors to warnings.
-check_and_add_warning(
-    "-Wno-deprecated-this-capture", cxx_compiler, min_clang_version="6.0.0"
-)
-check_and_add_warning("-Wno-error=deprecated", when=building_with_gcc)
 
 # Enable some C++23 compat warnings. We can remove these flags after we compile
 # as C++23 (bug 1880762) because they will be enabled by default:

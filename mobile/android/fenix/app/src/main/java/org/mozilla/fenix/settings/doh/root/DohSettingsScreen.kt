@@ -55,8 +55,8 @@ import org.mozilla.fenix.settings.doh.DohSettingsState
 import org.mozilla.fenix.settings.doh.ProtectionLevel
 import org.mozilla.fenix.settings.doh.Provider
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -533,7 +533,7 @@ private fun ExceptionsRow(onExceptionsClicked: () -> Unit) {
 @FlexibleWindowPreview
 @Composable
 private fun DohScreenDefaultProviderPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         val provider = Provider.BuiltIn(
@@ -564,7 +564,7 @@ private fun DohScreenDefaultProviderPreview(
 @FlexibleWindowPreview
 @Composable
 private fun DohScreenCustomProviderPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         val provider = Provider.Custom(url = "")
@@ -591,7 +591,7 @@ private fun DohScreenCustomProviderPreview(
 @Preview
 @Composable
 private fun AlertDialogAddCustomProviderPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         AlertDialogAddCustomProvider(
@@ -606,7 +606,7 @@ private fun AlertDialogAddCustomProviderPreview(
 @Preview
 @Composable
 private fun AlertDialogAddCustomProviderErrorPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         AlertDialogAddCustomProvider(

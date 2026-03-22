@@ -14,13 +14,12 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   Interactions: "moz-src:///browser/components/places/Interactions.sys.mjs",
-  SearchbarProvidersManager:
+  ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderSemanticHistorySearch:
     "moz-src:///browser/components/urlbar/UrlbarProviderSemanticHistorySearch.sys.mjs",
-  UrlbarProvidersManager:
-    "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
 });
@@ -83,6 +82,9 @@ export class UrlbarController {
     if (!("isPrivate" in options.input)) {
       throw new Error("input.isPrivate must be set.");
     }
+    if (!options.input.sapName) {
+      throw new Error("input needs a non-empty 'sapName' property.");
+    }
 
     this.input = options.input;
     this.browserWindow = options.input.window;
@@ -92,9 +94,7 @@ export class UrlbarController {
      */
     this.manager =
       options.manager ||
-      (this.input.sapName == "searchbar"
-        ? lazy.SearchbarProvidersManager
-        : lazy.UrlbarProvidersManager);
+      lazy.ProvidersManager.getInstanceForSap(options.input.sapName);
 
     this._listeners = new Set();
     this._userSelectionBehavior = "none";
@@ -570,7 +570,7 @@ export class UrlbarController {
                 context.sapName == "searchbar") &&
               lazy.UrlbarPrefs.get("browser.search.suggest.enabled")
             ) {
-              let engine = Services.search.getEngineByName(
+              let engine = lazy.SearchService.getEngineByName(
                 result.payload.engine
               );
               lazy.UrlbarUtils.setupSpeculativeConnection(
@@ -1102,10 +1102,17 @@ class TelemetryEvent {
   ) {
     const browserWindow = this._controller.browserWindow;
     let sap = "urlbar";
-    if (searchSource === "urlbar-handoff") {
+    if (searchSource === "urlbar_handoff") {
       sap = "handoff";
     } else if (searchSource === "searchbar") {
       sap = "searchbar";
+    } else if (browserWindow.closed) {
+      // If the browser window has already started closing, then we bail-out.
+      // We would rather return no telemetry than have telemetry with an
+      // incorrect SAP. Generally, this should only happen in tests, since
+      // the timing would need to be very close for the code not to have got
+      // here before the user started closing the window.
+      return;
     } else if (
       browserWindow.isBlankPageURL(browserWindow.gBrowser.currentURI.spec)
     ) {
@@ -1140,7 +1147,8 @@ class TelemetryEvent {
       .filter(v => v)
       .join(",");
     let available_semantic_sources = this.#getAvailableSemanticSources().join();
-    const search_engine_default_id = Services.search.defaultEngine.telemetryId;
+    const search_engine_default_id =
+      lazy.SearchService.defaultEngine.telemetryId;
 
     switch (method) {
       case "engagement": {
@@ -1177,7 +1185,13 @@ class TelemetryEvent {
           selected_result,
           provider,
           engagement_type:
-            selType === "help" || selType === "dismiss" ? selType : action,
+            selType === "help" ||
+            selType === "dismiss" ||
+            selType === "ask_button" ||
+            selType === "navigate_button" ||
+            selType === "search_button"
+              ? selType
+              : action,
           search_engine_default_id,
           groups,
           results,
@@ -1452,7 +1466,7 @@ class TelemetryEvent {
       interaction = "refined";
     }
 
-    if (searchSource === "urlbar-persisted") {
+    if (searchSource === "urlbar_persisted") {
       switch (interaction) {
         case "returned": {
           interaction = "persisted_search_terms";
@@ -1514,6 +1528,8 @@ class TelemetryEvent {
       return "dismiss";
     }
     if (MouseEvent.isInstance(event)) {
+      // TODO (Bug 2018250): Don’t rely on `event` and use `selType` or
+      // `details.element` if possible.
       return /** @type {HTMLElement} */ (event.target).classList.contains(
         "urlbar-go-button"
       )

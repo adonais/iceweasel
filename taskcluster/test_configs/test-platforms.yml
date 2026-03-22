@@ -23,14 +23,12 @@
 linux1804-64-qr/opt:
     build-platform: linux64/opt
     test-sets:
-        - awsy
         - talos
         - browsertime
 
 linux1804-64-shippable-qr/opt:
     build-platform: linux64-shippable/opt
     test-sets:
-        - awsy
         - talos
         - talos-profiling
         - browsertime
@@ -50,12 +48,12 @@ linux2404-64-tsan/opt:
 linux1804-64-clang-trunk-qr/opt:
     build-platform: linux64-plain-clang-trunk/opt
     test-sets:
-        - awsy
         - browsertime-clang
 
 linux2404-64/opt:
     build-platform: linux64/opt
     test-sets:
+        - awsy
         - desktop-screenshot-capture
         - linux-tests
         - web-platform-tests
@@ -64,6 +62,7 @@ linux2404-64/opt:
 linux2404-64-shippable/opt:
     build-platform: linux64-shippable/opt
     test-sets:
+        - awsy
         - desktop-screenshot-capture
         - linux-tests
         - web-platform-tests
@@ -117,6 +116,11 @@ linux2204-64-wayland-shippable/opt:
         - linux2204-wayland-tests
         - web-platform-tests
         - webgpu
+
+linux2404-64-clang-trunk/opt:
+    build-platform: linux64-plain-clang-trunk/opt
+    test-sets:
+        - awsy
 
 ##
 # Windows platforms (matching /windows.*/) 24h2 (no -qr)

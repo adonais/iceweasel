@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_ipc_backgroundparentimpl_h__
-#define mozilla_ipc_backgroundparentimpl_h__
+#ifndef mozilla_ipc_backgroundparentimpl_h_
+#define mozilla_ipc_backgroundparentimpl_h_
 
 #include "mozilla/ipc/PBackgroundParent.h"
 
@@ -330,14 +330,6 @@ class BackgroundParentImpl : public PBackgroundParent {
       const IPCServiceWorkerRegistrationDescriptor& aDescriptor,
       const IPCClientInfo& aForClient) override;
 
-  PEndpointForReportParent* AllocPEndpointForReportParent(
-      const nsAString& aGroupName,
-      const PrincipalInfo& aPrincipalInfo) override;
-
-  mozilla::ipc::IPCResult RecvPEndpointForReportConstructor(
-      PEndpointForReportParent* actor, const nsAString& aGroupName,
-      const PrincipalInfo& aPrincipalInfo) override;
-
   mozilla::ipc::IPCResult RecvEnsureRDDProcessAndCreateBridge(
       EnsureRDDProcessAndCreateBridgeResolver&& aResolver) override;
 
@@ -348,13 +340,6 @@ class BackgroundParentImpl : public PBackgroundParent {
   mozilla::ipc::IPCResult RecvRequestCameraAccess(
       const bool& aAllowPermissionRequest,
       RequestCameraAccessResolver&& aResolver) override;
-
-  bool DeallocPEndpointForReportParent(
-      PEndpointForReportParent* aActor) override;
-
-  mozilla::ipc::IPCResult RecvRemoveEndpoint(
-      const nsAString& aGroupName, const nsACString& aEndpointURL,
-      const PrincipalInfo& aPrincipalInfo) override;
 
   mozilla::ipc::IPCResult RecvPLockManagerConstructor(
       PLockManagerParent* actor, mozilla::NotNull<nsIPrincipal*> aPrincipalInfo,
@@ -368,4 +353,4 @@ class BackgroundParentImpl : public PBackgroundParent {
 
 }  // namespace mozilla::ipc
 
-#endif  // mozilla_ipc_backgroundparentimpl_h__
+#endif  // mozilla_ipc_backgroundparentimpl_h_

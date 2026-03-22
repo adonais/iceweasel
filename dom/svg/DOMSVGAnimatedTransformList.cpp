@@ -108,12 +108,12 @@ bool DOMSVGAnimatedTransformList::IsAnimating() const {
 }
 
 SVGAnimatedTransformList& DOMSVGAnimatedTransformList::InternalAList() {
-  return *mElement->GetAnimatedTransformList();
+  return *mElement->GetExistingAnimatedTransformList();
 }
 
 const SVGAnimatedTransformList& DOMSVGAnimatedTransformList::InternalAList()
     const {
-  return *mElement->GetAnimatedTransformList();
+  return *mElement->GetExistingAnimatedTransformList();
 }
 
 }  // namespace mozilla::dom

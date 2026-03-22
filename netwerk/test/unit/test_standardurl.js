@@ -1229,3 +1229,33 @@ add_task(async function test_bug1914141() {
 
   equal(Services.io.isValidHostname("::1.2.3.4"), true);
 });
+
+add_task(async function test_bug1998992() {
+  const maxLength = Services.prefs.getIntPref(
+    "network.standard-url.max-length"
+  );
+
+  let uri = stringToURL("http://example.com/");
+
+  const baseLength = uri.spec.length;
+  const targetEncodedLength = maxLength - baseLength + 100;
+
+  const numSpaces = Math.ceil(targetEncodedLength / 3);
+  const longRef = " ".repeat(numSpaces);
+
+  Assert.throws(
+    () => {
+      uri.mutate().setRef(longRef).finalize();
+    },
+    /NS_ERROR_MALFORMED_URI/,
+    "SetRef should reject refs that exceed max length after encoding"
+  );
+
+  Assert.throws(
+    () => {
+      uri.mutate().setQuery(longRef).finalize();
+    },
+    /NS_ERROR_MALFORMED_URI/,
+    "SetQuery should reject queries that exceed max length after encoding"
+  );
+});

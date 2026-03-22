@@ -53,7 +53,7 @@ support-files = [
 
 ["browser_select_popup_position_in_out_of_process_iframe.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && socketprocess_networking && fission && opt", # high frequency intermittent
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && fission && socketprocess_networking", # high frequency intermittent
 ]
 support-files = [
   "!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js",

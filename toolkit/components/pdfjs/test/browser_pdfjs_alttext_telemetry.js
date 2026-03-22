@@ -145,12 +145,12 @@ add_task(async function test_telemetry_new_alt_text_settings() {
       ]);
 
       telemetryPromise = getPromise("model_deleted");
-      await clickOn(browser, "#deleteModelButton");
+      await clickOn(browser, "#createModelButton");
       await telemetryPromise;
       await testTelemetryEventExtra(Glean.pdfjsImageAltText.modelDeleted, [{}]);
 
       telemetryPromise = getPromise("model_download_complete");
-      await clickOn(browser, "#downloadModelButton");
+      await clickOn(browser, "#createModelButton");
       await telemetryPromise;
       await testTelemetryEventExtra(
         Glean.pdfjsImageAltText.modelDownloadStart,

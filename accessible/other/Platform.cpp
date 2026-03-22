@@ -33,3 +33,7 @@ void a11y::PlatformTextChangeEvent(Accessible*, const nsAString&, int32_t,
 void a11y::PlatformShowHideEvent(Accessible*, Accessible*, bool, bool) {}
 
 void a11y::PlatformSelectionEvent(Accessible*, Accessible*, uint32_t) {}
+
+void a11y::PlatformAnnouncementEvent(Accessible* aTarget,
+                                     const nsAString& aAnnouncement,
+                                     uint16_t aPriority) {}

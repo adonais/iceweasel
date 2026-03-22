@@ -304,6 +304,252 @@ describe("<Widgets>", () => {
         );
       }
     });
+
+    it("should dispatch WIDGETS_CONTAINER_ACTION telemetry when hide button is clicked", () => {
+      const hideButton = wrapper.find("#hide-all-widgets-button");
+      hideButton.prop("onClick")({ preventDefault: () => {} });
+
+      const dispatchedActions = store.dispatch
+        .getCalls()
+        .map(call => call.args[0]);
+
+      const containerAction = dispatchedActions.find(
+        action => action.type === at.WIDGETS_CONTAINER_ACTION
+      );
+
+      assert.ok(
+        containerAction,
+        "should dispatch WIDGETS_CONTAINER_ACTION event"
+      );
+      assert.equal(containerAction.data.action_type, "hide_all");
+      assert.equal(
+        containerAction.data.widget_size,
+        "medium",
+        "widget_size should be medium when widgets.system.maximized is false"
+      );
+      assert.equal(
+        containerAction.data.action_value,
+        undefined,
+        "hide_all should not have action_value"
+      );
+    });
+
+    it("should dispatch WIDGETS_CONTAINER_ACTION with medium size when widgets are maximized", () => {
+      const maximizedState = {
+        ...state,
+        Prefs: {
+          ...state.Prefs,
+          values: {
+            ...state.Prefs.values,
+            "widgets.maximized": true,
+            "widgets.system.maximized": true,
+          },
+        },
+      };
+      const maximizedStore = createStore(
+        combineReducers(reducers),
+        maximizedState
+      );
+      sinon.spy(maximizedStore, "dispatch");
+      const maximizedWrapper = mount(
+        <Provider store={maximizedStore}>
+          <Widgets />
+        </Provider>
+      );
+
+      const hideButton = maximizedWrapper.find("#hide-all-widgets-button");
+      hideButton.prop("onClick")({ preventDefault: () => {} });
+
+      const dispatchedActions = maximizedStore.dispatch
+        .getCalls()
+        .map(call => call.args[0]);
+
+      const containerAction = dispatchedActions.find(
+        action => action.type === at.WIDGETS_CONTAINER_ACTION
+      );
+
+      assert.ok(containerAction, "should dispatch WIDGETS_CONTAINER_ACTION");
+      assert.equal(
+        containerAction.data.widget_size,
+        "medium",
+        "should report medium size when maximized"
+      );
+      maximizedStore.dispatch.restore();
+    });
+
+    it("should dispatch WIDGETS_ENABLED for each enabled widget when hide button is clicked", () => {
+      const hideButton = wrapper.find("#hide-all-widgets-button");
+      hideButton.prop("onClick")({ preventDefault: () => {} });
+
+      const dispatchedActions = store.dispatch
+        .getCalls()
+        .map(call => call.args[0]);
+
+      const widgetsEnabledActions = dispatchedActions.filter(
+        action => action.type === at.WIDGETS_ENABLED
+      );
+
+      assert.equal(
+        widgetsEnabledActions.length,
+        2,
+        "should dispatch WIDGETS_ENABLED for both lists and timer"
+      );
+
+      const listsEnabledAction = widgetsEnabledActions.find(
+        action => action.data.widget_name === "lists"
+      );
+      const timerEnabledAction = widgetsEnabledActions.find(
+        action => action.data.widget_name === "focus_timer"
+      );
+
+      assert.ok(
+        listsEnabledAction,
+        "should dispatch WIDGETS_ENABLED for lists"
+      );
+      assert.equal(listsEnabledAction.data.widget_source, "widget");
+      assert.equal(listsEnabledAction.data.enabled, false);
+      assert.equal(listsEnabledAction.data.widget_size, "medium");
+
+      assert.ok(
+        timerEnabledAction,
+        "should dispatch WIDGETS_ENABLED for timer"
+      );
+      assert.equal(timerEnabledAction.data.widget_source, "widget");
+      assert.equal(timerEnabledAction.data.enabled, false);
+      assert.equal(timerEnabledAction.data.widget_size, "medium");
+    });
+
+    it("should dispatch WIDGETS_ENABLED only for enabled widgets", () => {
+      const partialState = {
+        ...state,
+        Prefs: {
+          ...state.Prefs,
+          values: {
+            ...state.Prefs.values,
+            [PREF_WIDGETS_LISTS_ENABLED]: true,
+            [PREF_WIDGETS_SYSTEM_LISTS_ENABLED]: true,
+            [PREF_WIDGETS_TIMER_ENABLED]: false,
+            [PREF_WIDGETS_SYSTEM_TIMER_ENABLED]: true,
+          },
+        },
+      };
+      const partialStore = createStore(combineReducers(reducers), partialState);
+      sinon.spy(partialStore, "dispatch");
+      const partialWrapper = mount(
+        <Provider store={partialStore}>
+          <Widgets />
+        </Provider>
+      );
+
+      const hideButton = partialWrapper.find("#hide-all-widgets-button");
+      hideButton.prop("onClick")({ preventDefault: () => {} });
+
+      const widgetsEnabledActions = partialStore.dispatch
+        .getCalls()
+        .map(call => call.args[0])
+        .filter(action => action.type === at.WIDGETS_ENABLED);
+
+      assert.equal(
+        widgetsEnabledActions.length,
+        1,
+        "should only dispatch WIDGETS_ENABLED for lists (timer is already disabled)"
+      );
+
+      const listsEnabledAction = widgetsEnabledActions.find(
+        action => action.data.widget_name === "lists"
+      );
+
+      assert.ok(
+        listsEnabledAction,
+        "should dispatch WIDGETS_ENABLED for lists"
+      );
+      assert.equal(listsEnabledAction.data.enabled, false);
+
+      partialStore.dispatch.restore();
+    });
+
+    it("should dispatch WIDGETS_ENABLED with correct widget_size when maximized", () => {
+      const maximizedState = {
+        ...state,
+        Prefs: {
+          ...state.Prefs,
+          values: {
+            ...state.Prefs.values,
+            "widgets.maximized": true,
+            "widgets.system.maximized": true,
+          },
+        },
+      };
+      const maximizedStore = createStore(
+        combineReducers(reducers),
+        maximizedState
+      );
+      sinon.spy(maximizedStore, "dispatch");
+      const maximizedWrapper = mount(
+        <Provider store={maximizedStore}>
+          <Widgets />
+        </Provider>
+      );
+
+      const hideButton = maximizedWrapper.find("#hide-all-widgets-button");
+      hideButton.prop("onClick")({ preventDefault: () => {} });
+
+      const widgetsEnabledActions = maximizedStore.dispatch
+        .getCalls()
+        .map(call => call.args[0])
+        .filter(action => action.type === at.WIDGETS_ENABLED);
+
+      assert.equal(widgetsEnabledActions.length, 2);
+
+      widgetsEnabledActions.forEach(action => {
+        assert.equal(
+          action.data.widget_size,
+          "medium",
+          "widget_size should be medium when maximized"
+        );
+      });
+
+      maximizedStore.dispatch.restore();
+    });
+
+    it("should dispatch WIDGETS_ENABLED for each enabled widget when Enter key is pressed", () => {
+      const hideButton = wrapper.find("#hide-all-widgets-button");
+      hideButton.prop("onKeyDown")({ key: "Enter", preventDefault: () => {} });
+
+      const widgetsEnabledActions = store.dispatch
+        .getCalls()
+        .map(call => call.args[0])
+        .filter(action => action.type === at.WIDGETS_ENABLED);
+
+      assert.equal(
+        widgetsEnabledActions.length,
+        2,
+        "should dispatch WIDGETS_ENABLED for both lists and timer"
+      );
+
+      const listsEnabledAction = widgetsEnabledActions.find(
+        action => action.data.widget_name === "lists"
+      );
+      const timerEnabledAction = widgetsEnabledActions.find(
+        action => action.data.widget_name === "focus_timer"
+      );
+
+      assert.ok(
+        listsEnabledAction,
+        "should dispatch WIDGETS_ENABLED for lists"
+      );
+      assert.equal(listsEnabledAction.data.widget_source, "widget");
+      assert.equal(listsEnabledAction.data.enabled, false);
+      assert.equal(listsEnabledAction.data.widget_size, "medium");
+
+      assert.ok(
+        timerEnabledAction,
+        "should dispatch WIDGETS_ENABLED for timer"
+      );
+      assert.equal(timerEnabledAction.data.widget_source, "widget");
+      assert.equal(timerEnabledAction.data.enabled, false);
+      assert.equal(timerEnabledAction.data.widget_size, "medium");
+    });
   });
 
   describe("handleToggleMaximize", () => {
@@ -493,6 +739,79 @@ describe("<Widgets>", () => {
         maximizedPrefCall.args[0].data.value,
         false,
         "should toggle maximized pref to false"
+      );
+
+      maximizedStore.dispatch.restore();
+    });
+
+    it("should dispatch WIDGETS_CONTAINER_ACTION telemetry when toggle button is clicked", () => {
+      const toggleButton = wrapper.find("#toggle-widgets-size-button");
+      toggleButton.prop("onClick")({ preventDefault: () => {} });
+
+      const dispatchedActions = store.dispatch
+        .getCalls()
+        .map(call => call.args[0]);
+
+      const containerAction = dispatchedActions.find(
+        action => action.type === at.WIDGETS_CONTAINER_ACTION
+      );
+
+      assert.ok(
+        containerAction,
+        "should dispatch WIDGETS_CONTAINER_ACTION event"
+      );
+      assert.equal(containerAction.data.action_type, "change_size_all");
+      assert.equal(containerAction.data.action_value, "maximize_widgets");
+      assert.equal(containerAction.data.widget_size, "medium");
+    });
+
+    it("should dispatch WIDGETS_CONTAINER_ACTION with correct values when toggling from maximized", () => {
+      const maximizedState = {
+        ...INITIAL_STATE,
+        Prefs: {
+          ...INITIAL_STATE.Prefs,
+          values: {
+            ...INITIAL_STATE.Prefs.values,
+            [PREF_WIDGETS_LISTS_ENABLED]: true,
+            [PREF_WIDGETS_SYSTEM_LISTS_ENABLED]: true,
+            "widgets.maximized": true,
+            "widgets.system.maximized": true,
+          },
+        },
+      };
+      const maximizedStore = createStore(
+        combineReducers(reducers),
+        maximizedState
+      );
+      sinon.spy(maximizedStore, "dispatch");
+      const maximizedWrapper = mount(
+        <Provider store={maximizedStore}>
+          <Widgets />
+        </Provider>
+      );
+
+      const toggleButton = maximizedWrapper.find("#toggle-widgets-size-button");
+      toggleButton.prop("onClick")({ preventDefault: () => {} });
+
+      const dispatchedActions = maximizedStore.dispatch
+        .getCalls()
+        .map(call => call.args[0]);
+
+      const containerAction = dispatchedActions.find(
+        action => action.type === at.WIDGETS_CONTAINER_ACTION
+      );
+
+      assert.ok(containerAction, "should dispatch WIDGETS_CONTAINER_ACTION");
+      assert.equal(containerAction.data.action_type, "change_size_all");
+      assert.equal(
+        containerAction.data.action_value,
+        "minimize_widgets",
+        "action_value should indicate minimize widgets"
+      );
+      assert.equal(
+        containerAction.data.widget_size,
+        "small",
+        "should report new size (small) after minimizing"
       );
 
       maximizedStore.dispatch.restore();

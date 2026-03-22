@@ -374,7 +374,7 @@ impl SpecNewSessionParameters {
 
         for (key, value) in obj {
             match &**key {
-                _x @ "script" if value.is_null() => {}
+                "script" | "pageLoad" | "implicit" if value.is_null() => {}
 
                 x @ "script" | x @ "pageLoad" | x @ "implicit" => {
                     let timeout = try_opt!(
@@ -757,7 +757,14 @@ mod tests {
         assert!(validate_prompt_behavior(json!("foo")).is_err());
 
         // capability as object
-        let types = ["alert", "beforeUnload", "confirm", "default", "file", "prompt"];
+        let types = [
+            "alert",
+            "beforeUnload",
+            "confirm",
+            "default",
+            "file",
+            "prompt",
+        ];
         let handlers = [
             "accept",
             "accept and notify",

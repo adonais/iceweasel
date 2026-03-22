@@ -89,8 +89,7 @@ class Scriptability {
   static Scriptability& Get(JSObject* aScope);
 
   // Returns true if scripting is allowed, false otherwise (if no Scriptability
-  // exists, like for example inside a ShadowRealm global, then script execution
-  // is assumed to be allowed)
+  // exists, then script execution is assumed to be allowed)
   static bool AllowedIfExists(JSObject* aScope);
 
  private:

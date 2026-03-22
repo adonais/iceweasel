@@ -14,8 +14,7 @@
 #include <string.h>
 #include <type_traits>
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "jit/AtomicOperations.h"
 #include "jit/InlinableNatives.h"
 #include "js/Conversions.h"

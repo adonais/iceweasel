@@ -226,12 +226,12 @@ class VendorRust(MozbuildObject):
             version = self.cargo_version(cargo)
         except RuntimeError:
             return False
-        # Cargo 1.85.0 changed vendoring in a way that creates a lot of noise
+        # Cargo 1.90.0 changed vendoring in a way that creates a lot of noise
         # if we go back and forth between vendoring with an older version and
         # a newer version. Only allow the newer versions.
         minimum_rust_version = MINIMUM_RUST_VERSION
-        if LooseVersion("1.85.0") >= MINIMUM_RUST_VERSION:
-            minimum_rust_version = "1.85.0"
+        if LooseVersion("1.90.0") >= MINIMUM_RUST_VERSION:
+            minimum_rust_version = "1.90.0"
         if version < minimum_rust_version:
             self.log(
                 logging.ERROR,
@@ -335,6 +335,10 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
             "qlog",
         ],
         "BSD-3-Clause": [
+            "jxl",
+            "jxl_macros",
+            "jxl_simd",
+            "jxl_transforms",
             "subtle",
             "uritemplate-next",
         ],
@@ -895,100 +899,6 @@ license file's hash.
                 return new_obj
             return obj
 
-        # cargo 1.89 started adding things that older versions didn't add, but
-        # it's a tough sell to bump the vendoring requirement to 1.89 when we're
-        # still using 1.86 on CI.
-        cargo_version = self.cargo_version(cargo)
-        if cargo_version >= "1.89":
-            for package in cargo_lock["package"]:
-                source = package.get("source")
-                if not source:
-                    continue
-                unlinked = []
-                modified = {}
-                package_dir = Path(vendor_dir) / package["name"]
-                with (package_dir / "Cargo.toml").open(encoding="utf-8") as fh:
-                    toml_data = tomlkit.parse(fh.read())
-                # Crates vendored from crates.io are affected by changes from cargo 1.89,
-                # but not those vendored from git. However, crates vendored from git are
-                # affected by other changes happening starting with cargo 1.90: the
-                # metadata ends up not ordered in the same manner as it used to be.
-                if not source.startswith("registry+"):
-                    metadata = toml_data.get("package", {}).get("metadata", {})
-                    if metadata and cargo_version >= "1.90":
-                        with (package_dir / "Cargo.toml").open("wb") as fh:
-                            toml_data["package"]["metadata"] = recursive_sort(metadata)
-                            raw_data = tomlkit.dumps(toml_data).encode("utf-8")
-                            modified["Cargo.toml"] = hashlib.sha256(
-                                raw_data
-                            ).hexdigest()
-                            fh.write(raw_data)
-                else:
-                    # Cargo.toml.orig was not included before but now is.
-                    unlinked += ["Cargo.toml.orig"]
-                    cargo_package = toml_data.get("package", {})
-                    # A readme explicitly listed in package.readme is now included
-                    # even when it's not in package.include.
-                    if readme := cargo_package.get("readme"):
-                        if includes := cargo_package.get("include"):
-                            if not any(
-                                mozpath.match(readme, include.removeprefix("/"))
-                                for include in includes
-                            ):
-                                try:
-                                    (package_dir / readme).unlink()
-                                    unlinked.append(readme)
-                                except FileNotFoundError:
-                                    pass
-
-                    # dotfiles weren't included before, but now are.
-                    for path in package_dir.glob("**/.*"):
-                        # The checksum file is handled separately because it needs to
-                        # be updated.
-                        if path.name == ".cargo-checksum.json":
-                            continue
-                        if path.is_dir():
-                            for root_path, dirs, files in os.walk(path, topdown=False):
-                                root = Path(root_path)
-                                for name in files:
-                                    to_unlink = root / name
-                                    try:
-                                        to_unlink.unlink()
-                                        unlinked.append(
-                                            mozpath.normsep(
-                                                str(to_unlink.relative_to(package_dir))
-                                            )
-                                        )
-                                    except FileNotFoundError:
-                                        pass
-                                for name in dirs:
-                                    try:
-                                        (root / name).rmdir()
-                                    except OSError:
-                                        pass
-                        else:
-                            try:
-                                path.unlink()
-                                unlinked.append(
-                                    mozpath.normsep(str(path.relative_to(package_dir)))
-                                )
-                            except FileNotFoundError:
-                                pass
-
-                # Update the checksums with the changes we made.
-                checksum_json = package_dir / ".cargo-checksum.json"
-                with checksum_json.open(encoding="utf-8") as fh:
-                    checksum_data = json.load(fh)
-                for path in unlinked:
-                    try:
-                        del checksum_data["files"][path]
-                    except KeyError:
-                        pass
-                for path, sha256 in modified.items():
-                    checksum_data["files"][path] = sha256
-                with checksum_json.open(mode="w", encoding="utf-8") as fh:
-                    json.dump(checksum_data, fh, separators=(",", ":"))
-
         if not self._check_licenses(vendor_dir) and not force:
             self.log(
                 logging.ERROR,
@@ -1002,6 +912,13 @@ license file's hash.
             return False
 
         self.repository.add_remove_files(vendor_dir)
+        # explicitly add the content of the Cargo.toml.orig files as they are
+        # covered by the hgignore pattern "*.orig".
+        vendor_path = Path(vendor_dir)
+        extra_files = list(vendor_path.glob("**/Cargo.toml.orig"))
+        extra_files += list(vendor_path.glob("**/.*"))
+        if extra_files:
+            self.repository.add_remove_files(*extra_files, force=True)
 
         # 100k is a reasonable upper bound on source file size.
         FILESIZE_LIMIT = 100 * 1024

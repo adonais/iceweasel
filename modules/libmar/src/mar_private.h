@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef MAR_PRIVATE_H__
-#define MAR_PRIVATE_H__
+#ifndef MAR_PRIVATE_H_
+#define MAR_PRIVATE_H_
 
 #include <assert.h>  // for C11 static_assert
 #include "limits.h"
@@ -76,4 +76,4 @@ static_assert(sizeof(BLOCKSIZE) < (SIGNATURE_BLOCK_OFFSET + sizeof(uint32_t)),
       (((((uint64_t)x) >> 48) & 0xFF) << 8) | (((uint64_t)x) >> 56)
 #define NETWORK_TO_HOST64 HOST_TO_NETWORK64
 
-#endif /* MAR_PRIVATE_H__ */
+#endif /* MAR_PRIVATE_H_ */

@@ -246,7 +246,7 @@ def main(argv=sys.argv[1:]):
     if os.getenv("PERF_FLAGS"):
         extra_args = []
         for extra_arg in os.getenv("PERF_FLAGS").split():
-            extra_args.append(f"--{extra_arg}")
+            extra_args.append(f"--{os.path.expandvars(extra_arg)}")
         argv.extend(extra_args)
 
     mozconfig = SRC_ROOT / "browser" / "config" / "mozconfig"

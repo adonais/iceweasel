@@ -31,6 +31,13 @@ class AudioNodeExternalInputTrack final : public AudioNodeTrack {
  public:
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
 
+  AudioNodeExternalInputTrack* AsAudioNodeExternalInputTrack() override {
+    return this;
+  }
+
+  // Main thread only.
+  void SetVolume(float aVolume);
+
  private:
   /**
    * Determines if this is enabled or not.  Disabled nodes produce silence.
@@ -38,6 +45,10 @@ class AudioNodeExternalInputTrack final : public AudioNodeTrack {
    * DOMMediaStream principal.
    */
   bool IsEnabled();
+
+  // Beside the creation, this volume will only be accessed and modified on the
+  // graph thread.
+  float mVolume = 1.0;
 };
 
 }  // namespace mozilla

@@ -106,14 +106,14 @@ void PlatformShowHideEvent(Accessible* aTarget, Accessible* aParent,
 void PlatformSelectionEvent(Accessible* aTarget, Accessible* aWidget,
                             uint32_t aType);
 
+void PlatformAnnouncementEvent(Accessible* aTarget,
+                               const nsAString& aAnnouncement,
+                               uint16_t aPriority);
+
 #if defined(ANDROID)
 void PlatformScrollingEvent(Accessible* aTarget, uint32_t aEventType,
                             uint32_t aScrollX, uint32_t aScrollY,
                             uint32_t aMaxScrollX, uint32_t aMaxScrollY);
-
-void PlatformAnnouncementEvent(Accessible* aTarget,
-                               const nsAString& aAnnouncement,
-                               uint16_t aPriority);
 
 bool LocalizeString(const nsAString& aToken, nsAString& aLocalized);
 #endif

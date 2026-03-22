@@ -2,10 +2,11 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>ForbiddenSuppress:AppReducer.kt$@Suppress("CyclomaticComplexMethod", "ReturnCount")</ID>
-    <ID>ForbiddenSuppress:IntentProcessor.kt$IntentProcessor$@Suppress("ReturnCount", "CognitiveComplexMethod")</ID>
-    <ID>ForbiddenSuppress:MainActivityNavigation.kt$MainActivityNavigation$@Suppress("CyclomaticComplexMethod")</ID>
     <ID>ForbiddenSuppress:UrlInputFragment.kt$UrlInputFragment$@Suppress("CognitiveComplexMethod")</ID>
+    <ID>NoSystemCurrentTimeMillis:AppReviewUtils.kt$AppReviewUtils$System.currentTimeMillis()</ID>
+    <ID>NoSystemCurrentTimeMillis:GleanUsageReportingLifecycleObserver.kt$GleanUsageReportingLifecycleObserver$System.currentTimeMillis()</ID>
+    <ID>NoSystemCurrentTimeMillis:MainActivity.kt$MainActivity$System.currentTimeMillis()</ID>
+    <ID>NoSystemCurrentTimeMillis:MainActivity.kt$MainActivity.&lt;no name provided&gt;$System.currentTimeMillis()</ID>
     <ID>UndocumentedPublicClass:AdvancedSettingsFragment.kt$AdvancedSettingsFragment : BaseSettingsFragmentOnSharedPreferenceChangeListener</ID>
     <ID>UndocumentedPublicClass:AppAction.kt$AppAction$NavigateUp : AppAction</ID>
     <ID>UndocumentedPublicClass:AppAction.kt$AppAction$OpenSettings : AppAction</ID>
@@ -19,7 +20,6 @@
     <ID>UndocumentedPublicClass:AppState.kt$Screen$SitePermissionOptionsScreen : Screen</ID>
     <ID>UndocumentedPublicClass:AppState.kt$Screen.Settings$Page</ID>
     <ID>UndocumentedPublicClass:AutocompleteDomainFormatter.kt$AutocompleteDomainFormatter</ID>
-    <ID>UndocumentedPublicClass:AutocompleteRemoveFragment.kt$AutocompleteRemoveFragment : AutocompleteListFragmentCoroutineScope</ID>
     <ID>UndocumentedPublicClass:BaseFragment.kt$BaseFragment : Fragment</ID>
     <ID>UndocumentedPublicClass:BaseSettingsFragment.kt$BaseSettingsFragment : PreferenceFragmentCompatMenuProvider</ID>
     <ID>UndocumentedPublicClass:BrowserToolbarIntegration.kt$BrowserToolbarIntegration : LifecycleAwareFeature</ID>
@@ -34,7 +34,6 @@
     <ID>UndocumentedPublicClass:CookieBannerRejectAllPreference.kt$CookieBannerRejectAllPreference : LearnMoreSwitchPreference</ID>
     <ID>UndocumentedPublicClass:CrashReporterFragment.kt$CrashReporterFragment : Fragment</ID>
     <ID>UndocumentedPublicClass:CustomTabsService.kt$CustomTabsService : AbstractCustomTabsService</ID>
-    <ID>UndocumentedPublicClass:DebugFocusApplication.kt$DebugFocusApplication : FocusApplication</ID>
     <ID>UndocumentedPublicClass:DefaultBrowserPreference.kt$DefaultBrowserPreference : Preference</ID>
     <ID>UndocumentedPublicClass:DefaultSitePermissionOptionsScreenInteractor.kt$DefaultSitePermissionOptionsScreenInteractor</ID>
     <ID>UndocumentedPublicClass:DownloadService.kt$DownloadService : AbstractFetchDownloadService</ID>
@@ -64,7 +63,6 @@
     <ID>UndocumentedPublicClass:LocaleDescriptor.kt$LocaleDescriptor : Comparable</ID>
     <ID>UndocumentedPublicClass:MainActivity.kt$MainActivity : EdgeToEdgeActivity</ID>
     <ID>UndocumentedPublicClass:ManualAddSearchEnginePreference.kt$ManualAddSearchEnginePreference : Preference</ID>
-    <ID>UndocumentedPublicClass:ManualAddSearchEngineSettingsFragment.kt$ManualAddSearchEngineSettingsFragment : BaseSettingsFragment</ID>
     <ID>UndocumentedPublicClass:MozillaPreference.kt$MozillaPreference : Preference</ID>
     <ID>UndocumentedPublicClass:MozillaSettingsFragment.kt$MozillaSettingsFragment : BaseSettingsFragment</ID>
     <ID>UndocumentedPublicClass:MultiselectSearchEngineListPreference.kt$MultiselectSearchEngineListPreference : SearchEngineListPreference</ID>
@@ -84,9 +82,7 @@
     <ID>UndocumentedPublicClass:RadioButtonPreference.kt$RadioButtonPreference : PreferenceGroupableRadioButton</ID>
     <ID>UndocumentedPublicClass:RadioSearchEngineListPreference.kt$RadioSearchEngineListPreference : SearchEngineListPreferenceOnCheckedChangeListener</ID>
     <ID>UndocumentedPublicClass:RemoveSearchEnginesSettingsFragment.kt$RemoveSearchEnginesSettingsFragment : BaseSettingsFragment</ID>
-    <ID>UndocumentedPublicClass:SearchEngineListPreference.kt$SearchEngineListPreference : PreferenceCoroutineScope</ID>
     <ID>UndocumentedPublicClass:SearchSettingsFragment.kt$SearchSettingsFragment : BaseSettingsFragmentOnSharedPreferenceChangeListener</ID>
-    <ID>UndocumentedPublicClass:SearchSuggestionsFragment.kt$SearchSuggestionsFragment : FragmentCoroutineScope</ID>
     <ID>UndocumentedPublicClass:SearchSuggestionsPreferences.kt$SearchSuggestionsPreferences</ID>
     <ID>UndocumentedPublicClass:SearchSuggestionsViewModel.kt$SearchSuggestionsViewModel : AndroidViewModel</ID>
     <ID>UndocumentedPublicClass:SearchSuggestionsViewModel.kt$State</ID>
@@ -130,16 +126,11 @@
     <ID>UndocumentedPublicClass:SupportUtils.kt$SupportUtils</ID>
     <ID>UndocumentedPublicClass:SupportUtils.kt$SupportUtils$SumoTopic</ID>
     <ID>UndocumentedPublicClass:SwitchWithDescription.kt$SwitchWithDescription : ConstraintLayout</ID>
-    <ID>UndocumentedPublicClass:TabViewHolder.kt$TabViewHolder : ViewHolder</ID>
-    <ID>UndocumentedPublicClass:TabsPopup.kt$TabsPopup : PopupWindow</ID>
     <ID>UndocumentedPublicClass:TelemetryMiddleware.kt$TelemetryMiddleware : Middleware</ID>
     <ID>UndocumentedPublicClass:TrackingProtectionPanel.kt$TrackingProtectionPanel : BottomSheetDialog</ID>
     <ID>UndocumentedPublicClass:ViewUtils.kt$ViewUtils</ID>
     <ID>UndocumentedPublicClass:VoiceSearchActivity.kt$VoiceSearchActivity : BaseVoiceSearchActivity</ID>
     <ID>UndocumentedPublicFunction:AutocompleteDomainFormatter.kt$AutocompleteDomainFormatter$fun format(url: String): String</ID>
-    <ID>UndocumentedPublicFunction:AutocompleteListFragment.kt$AutocompleteListFragment.DomainListAdapter$fun move(from: Int, to: Int)</ID>
-    <ID>UndocumentedPublicFunction:AutocompleteListFragment.kt$AutocompleteListFragment.DomainListAdapter$fun refresh(context: Context, body: (() -&gt; Unit)? = null)</ID>
-    <ID>UndocumentedPublicFunction:AutocompleteListFragment.kt$AutocompleteListFragment.DomainListAdapter$fun selection(): List&lt;String&gt;</ID>
     <ID>UndocumentedPublicFunction:BaseFragment.kt$BaseFragment$fun cancelAnimation()</ID>
     <ID>UndocumentedPublicFunction:BrowsersCache.kt$BrowsersCache$@Synchronized fun all(context: Context): Browsers</ID>
     <ID>UndocumentedPublicFunction:ClientWrapper.kt$ClientWrapper$@Deprecated("Non-private Client usage should be prevented") fun unwrap(): Client</ID>
@@ -206,7 +197,6 @@
     <ID>UndocumentedPublicFunction:StartupActivityLog.kt$StartupActivityLog$fun registerInAppOnCreate( application: Application, processLifecycleOwner: LifecycleOwner = ProcessLifecycleOwner.get(), )</ID>
     <ID>UndocumentedPublicFunction:StartupPathProvider.kt$StartupPathProvider$@VisibleForTesting(otherwise = NONE) fun getTestCallbacks()</ID>
     <ID>UndocumentedPublicFunction:StartupPathProvider.kt$StartupPathProvider$fun attachOnActivityOnCreate(lifecycle: Lifecycle, intent: Intent?)</ID>
-    <ID>UndocumentedPublicFunction:StoreLink.kt$StoreLink$fun start()</ID>
     <ID>UndocumentedPublicFunction:SupportUtils.kt$SupportUtils$fun getGenericSumoURLForTopic(topic: SumoTopic): String</ID>
     <ID>UndocumentedPublicFunction:SupportUtils.kt$SupportUtils$fun getSafeBrowsingURL(): String</ID>
     <ID>UndocumentedPublicFunction:SupportUtils.kt$SupportUtils$fun openDefaultBrowserSumoPage(context: Context)</ID>

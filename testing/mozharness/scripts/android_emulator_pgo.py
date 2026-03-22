@@ -152,7 +152,6 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
         from mozdevice import ADBDeviceFactory, ADBTimeoutError
         from mozhttpd import MozHttpd
         from mozprofile import Preferences
-        from six import string_types
 
         app = self.query_package_name()
 
@@ -192,7 +191,7 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
 
         interpolation = {"server": "%s:%d" % httpd.httpd.server_address, "OOP": "false"}
         for k, v in prefs.items():
-            if isinstance(v, string_types):
+            if isinstance(v, str):
                 v = v.format(**interpolation)
             prefs[k] = Preferences.cast(v)
 

@@ -380,8 +380,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">לא ניתן היה להתקין את %1$s מכיוון שהיא ניתנת להתקנה רק על־ידי ארגון המשתמש במדיניות ארגונית, שאינה נתמכת בפלטפורמה זו.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">התוספת %1$s מפרה את המדיניות של Mozilla ולכן לא ניתן להתקין אותה ב־%2$s.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">התוספת %1$s מוגבלת ולא ניתן להתקין אותה ב־%2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">הפעלת התוספת %1$s נכשלה</string>
@@ -428,11 +426,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">הרחבה זו חסומה עקב הפרת המדיניות של Mozilla, ולכן הושבתה.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">הרחבה זו מוגבלת עקב הפרת המדיניות של Mozilla, ולכן הושבתה. באפשרותך להפעיל אותה, אבל ייתכן שזה יהיה כרוך בסיכון.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">הרחבה זו מוגבלת ולכן הושבתה. באפשרותך להפעיל אותה, אבל ייתכן שזה יהיה כרוך בסיכון.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">הרחבה זו מפרה את המדיניות של Mozilla. השימוש בה עשוי להיות כרוך בסיכון.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">הרחבה זו מוגבלת. השימוש בה עלול להיות כרוך בסיכון.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->

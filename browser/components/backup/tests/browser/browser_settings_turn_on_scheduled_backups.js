@@ -108,6 +108,9 @@ add_task(async function test_turn_on_custom_location_filepicker() {
   Services.fog.testResetFOG();
 
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    let sandbox = sinon.createSandbox();
+    sandbox.stub(BackupService.prototype, "createBackup").resolves(true);
+
     const mockCustomParentDir = await IOUtils.createUniqueDirectory(
       PathUtils.tempDir,
       "settings-custom-dir-test"
@@ -235,6 +238,7 @@ add_task(async function test_turn_on_custom_location_filepicker() {
 
     // Reset scheduled backups again for subsequent tests.
     Services.prefs.clearUserPref(SCHEDULED_BACKUPS_ENABLED_PREF);
+    sandbox.restore();
   });
 });
 
@@ -601,10 +605,6 @@ add_task(async function test_embedded_component_persistent_data_filepicker() {
 
     // First verify the default input value and dir path button
     let filePathButton = turnOnScheduledBackups.filePathButtonEl;
-    let stateUpdatePromise = BrowserTestUtils.waitForEvent(
-      window,
-      "BackupUI:StateWasUpdated"
-    );
     Assert.ok(
       filePathButton,
       "Button for choosing a file path should be found"
@@ -612,8 +612,15 @@ add_task(async function test_embedded_component_persistent_data_filepicker() {
     filePathButton.click();
 
     await filePickerShownPromise;
-    await stateUpdatePromise;
     await turnOnScheduledBackups.updateComplete;
+
+    await BrowserTestUtils.waitForCondition(
+      () =>
+        settings.backupServiceState.embeddedComponentPersistentData?.path !==
+        undefined,
+      "Waiting for persistent path to be set"
+    );
+
     Assert.equal(
       settings.backupServiceState.embeddedComponentPersistentData.path,
       mockCustomParentDir,
@@ -649,6 +656,71 @@ add_task(async function test_embedded_component_persistent_data_filepicker() {
   await SpecialPowers.popPrefEnv();
 });
 
+add_task(async function test_create_backup_on_enable() {
+  await SpecialPowers.pushPrefEnv({
+    set: [[SCHEDULED_BACKUPS_ENABLED_PREF, false]],
+  });
+
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    await waitInitialRequestStateSettled();
+    let sandbox = sinon.createSandbox();
+    let createBackupStub = sandbox.stub(
+      BackupService.prototype,
+      "createBackup"
+    );
+
+    let { promise: backupCreatedPromise, resolve } = Promise.withResolvers();
+
+    createBackupStub.callsFake(async args => {
+      if (args?.reason === "first") {
+        resolve();
+      }
+      return true;
+    });
+
+    let settings = browser.contentDocument.querySelector("backup-settings");
+    let turnOnButton = settings.scheduledBackupsButtonEl;
+
+    Assert.ok(
+      turnOnButton,
+      "Button to turn on scheduled backups should be found"
+    );
+
+    turnOnButton.click();
+
+    await settings.updateComplete;
+
+    let turnOnScheduledBackups = settings.turnOnScheduledBackupsEl;
+
+    Assert.ok(
+      turnOnScheduledBackups,
+      "turn-on-scheduled-backups should be found"
+    );
+
+    let confirmButton = turnOnScheduledBackups.confirmButtonEl;
+    let enableScheduledPromise = BrowserTestUtils.waitForEvent(
+      window,
+      "BackupUI:EnableScheduledBackups"
+    );
+
+    Assert.ok(confirmButton, "Confirm button should be found");
+
+    confirmButton.click();
+
+    await enableScheduledPromise;
+    await backupCreatedPromise;
+    await settings.updateComplete;
+    Assert.ok(
+      true,
+      "createBackup was triggered immediately with reason 'first'"
+    );
+
+    sandbox.restore();
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
 /**
  * Tests that the persistent data for embedded components is flushed if the dialog is cancelled
  */
@@ -662,6 +734,11 @@ add_task(
       "about:preferences#sync",
       async browser => {
         await waitInitialRequestStateSettled();
+        // Since we also a trigger a createBackup, there might be a bunch of state updates that we don't
+        // want to wait for, let's just stub the createBackup calls to avoid unexpected testing behavior
+        let sandbox = sinon.createSandbox();
+        sandbox.stub(BackupService.prototype, "createBackup").resolves(true);
+
         const mockCustomParentDir = await IOUtils.createUniqueDirectory(
           PathUtils.tempDir,
           "our-dummy-folder"
@@ -687,10 +764,6 @@ add_task(
 
         // First verify the default input value and dir path button
         let filePathButton = turnOnScheduledBackups.filePathButtonEl;
-        const waitForStateUpdate = () =>
-          BrowserTestUtils.waitForEvent(window, "BackupUI:StateWasUpdated");
-
-        let stateUpdatePromise = waitForStateUpdate();
 
         Assert.ok(
           filePathButton,
@@ -699,8 +772,14 @@ add_task(
         filePathButton.click();
 
         await filePickerShownPromise;
-        await stateUpdatePromise;
         await turnOnScheduledBackups.updateComplete;
+
+        await BrowserTestUtils.waitForCondition(
+          () =>
+            settings.backupServiceState.embeddedComponentPersistentData
+              ?.path !== undefined,
+          "Waiting for persistent path to be set"
+        );
 
         Assert.equal(
           settings.backupServiceState.embeddedComponentPersistentData.path,
@@ -708,19 +787,26 @@ add_task(
           "Our persistent path should be set correctly"
         );
 
-        stateUpdatePromise = waitForStateUpdate();
-
         let dialog = settings.turnOnScheduledBackupsDialogEl;
         let closedPromise = BrowserTestUtils.waitForEvent(dialog, "close");
         dialog.close();
         await closedPromise;
-        await stateUpdatePromise;
+
+        await BrowserTestUtils.waitForCondition(
+          () =>
+            Object.keys(
+              settings.backupServiceState.embeddedComponentPersistentData
+            ).length === 0,
+          "Waiting for persistent data to be flushed"
+        );
 
         Assert.deepEqual(
           settings.backupServiceState.embeddedComponentPersistentData,
           {},
           "Our persistent path should be flushed"
         );
+
+        sandbox.restore();
       }
     );
 

@@ -25,13 +25,23 @@ run-if = [
 
 ["browser_aiFeatures.js"]
 
+["browser_aiFeatures_block_dialog.js"]
+
+["browser_aiFeatures_chatbot.js"]
+
+["browser_aiFeatures_memories.js"]
+
+["browser_aiFeatures_model_settings.js"]
+
+["browser_aiFeatures_telemetry.js"]
+
+["browser_aiFeatures_visibility.js"]
+
 ["browser_application_xml_handle_internally.js"]
 
 ["browser_applications_selection.js"]
 
 ["browser_backup_visibility.js"]
-
-["browser_basic_rebuild_fonts_test.js"]
 
 ["browser_browser_languages_subdialog.js"]
 skip-if = [
@@ -54,6 +64,8 @@ support-files = ["browser_bug1184989_prevent_scrolling_when_preferences_flipped.
 ["browser_bug1547020_lockedDownloadDir.js"]
 
 ["browser_bug1579418.js"]
+
+["browser_build_font_options_test.js"]
 
 ["browser_capability_filter.js"]
 
@@ -149,6 +161,34 @@ skip-if = [
 
 ["browser_homepage_default.js"]
 
+["browser_homepage_firefox_home.js"]
+
+["browser_homepage_firefox_home_recent_activity.js"]
+
+["browser_homepage_firefox_home_shortcuts.js"]
+
+["browser_homepage_firefox_home_sponsored_shortcuts.js"]
+
+["browser_homepage_firefox_home_sponsored_stories.js"]
+
+["browser_homepage_firefox_home_stories.js"]
+
+["browser_homepage_firefox_home_stories_personalization.js"]
+
+["browser_homepage_firefox_home_support_firefox.js"]
+
+["browser_homepage_firefox_home_widgets.js"]
+
+["browser_homepage_firefox_home_widgets_2.js"]
+
+["browser_homepage_homepage.js"]
+
+["browser_homepage_homepage_custom_homepage_button.js"]
+
+["browser_homepage_homepage_restore_defaults.js"]
+
+["browser_homepage_homepage_restore_defaults_2.js"]
+
 ["browser_homepages_filter_aboutpreferences.js"]
 
 ["browser_homepages_use_bookmark.js"]
@@ -180,6 +220,12 @@ fail-if = [
 
 ["browser_moreFromMozilla_locales.js"]
 
+["browser_moreFromMozilla_monitor.js"]
+
+["browser_moreFromMozilla_relay.js"]
+
+["browser_moreFromMozilla_vpn.js"]
+
 ["browser_newtab_menu.js"]
 
 ["browser_no_id_collision_between_categories_and_mainPane.js"]
@@ -203,6 +249,8 @@ support-files = ["empty_pdf_file.pdf"]
 skip-if = [
   "true",
 ]
+
+["browser_permissions_about_hidden.js"]
 
 ["browser_permissions_checkPermissionsWereAdded.js"]
 
@@ -230,6 +278,9 @@ skip-if = [
 ["browser_privacy_cookieBannerHandling.js"]
 
 ["browser_privacy_dnsoverhttps.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 2009120
+]
 
 ["browser_privacy_gpc.js"]
 
@@ -243,30 +294,28 @@ skip-if = [
 
 ["browser_privacy_status_card.js"]
 
-["browser_privacy_syncDataClearing.js"]
-
 ["browser_privacy_syncDataClearing_v2.js"]
 
 ["browser_privacy_uploadEnabled.js"]
 
 ["browser_privacypane_2.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && a11y_checks && opt",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks",
 ]
 
 ["browser_privacypane_2_srd.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && a11y_checks && opt",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks",
 ]
 
 ["browser_privacypane_3.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && a11y_checks && opt",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks",
 ]
 
 ["browser_privacypane_3_srd.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && a11y_checks && opt",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks",
 ]
 
 ["browser_proxy_backup.js"]
@@ -328,7 +377,7 @@ skip-if = [
 
 ["browser_search_within_preferences_1.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && ccov",
+  "os == 'win'", # Bug 1787026
 ]
 
 ["browser_search_within_preferences_2.js"]
@@ -378,6 +427,8 @@ support-files = [
 ["browser_trendingsuggestions.js"]
 
 ["browser_usage_telemetry.js"]
+
+["browser_usage_telemetry_support_link.js"]
 
 ["browser_warning_permanent_private_browsing.js"]
 

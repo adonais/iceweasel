@@ -1365,7 +1365,7 @@ void nsHtml5TreeOpExecutor::SetSpeculationBase(const nsAString& aURL) {
     }
   }
 
-  mSpeculationBaseURI = newBaseURI;
+  mSpeculationBaseURI = std::move(newBaseURI);
   mDocument->Preloads().SetSpeculationBase(mSpeculationBaseURI);
 }
 

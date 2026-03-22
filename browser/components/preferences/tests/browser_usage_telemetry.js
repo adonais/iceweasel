@@ -96,7 +96,7 @@ add_task(async function testSettingGroupTelemetry() {
                 l10nId: "preferences-web-appearance-choice-light2",
                 controlAttrs: {
                   id: "test-picker-light",
-                  class: "appearance-chooser-item",
+                  class: "setting-chooser-item",
                   imagesrc:
                     "chrome://browser/content/preferences/web-appearance-light.svg",
                 },
@@ -106,7 +106,7 @@ add_task(async function testSettingGroupTelemetry() {
                 l10nId: "preferences-web-appearance-choice-dark2",
                 controlAttrs: {
                   id: "test-picker-dark",
-                  class: "appearance-chooser-item",
+                  class: "setting-chooser-item",
                   imagesrc:
                     "chrome://browser/content/preferences/web-appearance-dark.svg",
                 },

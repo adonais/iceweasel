@@ -27,8 +27,9 @@ add_task(async function testScopeNodes() {
 
   await stepOver(dbg);
   is(getScopeNodeLabel(dbg, 4), "foo()");
-  is(getScopeNodeLabel(dbg, 5), "Window");
-  is(getScopeNodeValue(dbg, 5), "Global");
+  is(getScopeNodeLabel(dbg, 5), "Block");
+  is(getScopeNodeLabel(dbg, 6), "Window");
+  is(getScopeNodeValue(dbg, 6), "Global");
 
   info("Resuming the thread");
   await resume(dbg);

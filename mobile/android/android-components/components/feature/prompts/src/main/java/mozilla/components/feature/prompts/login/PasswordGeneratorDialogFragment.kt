@@ -19,6 +19,7 @@ import androidx.fragment.compose.content
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import mozilla.components.concept.storage.Login
+import mozilla.components.concept.storage.LoginHint
 import mozilla.components.feature.prompts.R
 import mozilla.components.feature.prompts.dialog.KEY_PROMPT_UID
 import mozilla.components.feature.prompts.dialog.KEY_SESSION_ID
@@ -95,6 +96,7 @@ internal class PasswordGeneratorDialogFragment : PromptDialogFragment() {
             httpRealm = currentUrl,
             username = "",
             password = generatedPassword,
+            hint = LoginHint.GENERATED,
         )
         feature?.onConfirm(sessionId, promptRequestUID, login)
         emitGeneratedPasswordFilledFact()

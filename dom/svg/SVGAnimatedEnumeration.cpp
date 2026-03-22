@@ -146,9 +146,9 @@ SVGAnimatedEnumeration::DOMAnimatedEnum::~DOMAnimatedEnum() {
   sSVGAnimatedEnumTearoffTable.RemoveTearoff(mVal);
 }
 
-UniquePtr<SMILAttr> SVGAnimatedEnumeration::ToSMILAttr(
+std::unique_ptr<SMILAttr> SVGAnimatedEnumeration::ToSMILAttr(
     SVGElement* aSVGElement) {
-  return MakeUnique<SMILEnum>(this, aSVGElement);
+  return std::make_unique<SMILEnum>(this, aSVGElement);
 }
 
 nsresult SVGAnimatedEnumeration::SMILEnum::ValueFromString(

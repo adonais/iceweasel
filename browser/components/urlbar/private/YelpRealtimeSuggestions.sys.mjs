@@ -22,16 +22,6 @@ export class YelpRealtimeSuggestions extends RealtimeSuggestProvider {
     return "yelp";
   }
 
-  makeMerinoResult(queryContext, suggestion, searchString) {
-    return super.makeMerinoResult(queryContext, suggestion, searchString, {
-      // Group label settings.
-      hideRowLabel: false,
-      rowLabel: {
-        id: "urlbar-result-yelp-realtime-group-label",
-      },
-    });
-  }
-
   getViewTemplateForDescriptionTop(_item, index) {
     return [
       {

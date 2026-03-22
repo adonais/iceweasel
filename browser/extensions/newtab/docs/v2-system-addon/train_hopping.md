@@ -80,7 +80,83 @@ The answer lies in a special type of feature definition that has been made avail
 
 This feature has two variables: `type (string)` and `payload (JSON)`. Notably, this feature also has `allowCoenrollment` set to `true`.
 
-What this means is that this feature may actually have an *array* of matching features for the client to implement. It is up to the New Tab code to check that array for feature `type`s that it cares about, and to interpret the `payload` appropriately. It also means that we only need to monitor this one `newtabTrainhop` feature for changes to determine if we need to recompute what features are enabled and with which settings.
+The `newtabTrainhop` feature supports two payload formats:
+
+**Single Payload Format:**
+A single feature configuration with a `type` and `payload`:
+```json
+{
+  "type": "stockWidget",
+  "payload": {
+    "enabled": true
+  }
+}
+```
+
+**Multi-Payload Format:**
+Multiple feature configurations bundled together using `type: "multi-payload"`:
+```json
+{
+  "type": "multi-payload",
+  "payload": [
+    {
+      "type": "stockWidget",
+      "payload": {
+        "enabled": true
+      }
+    },
+    {
+      "type": "otherWidget",
+      "payload": {
+        "enabled": false
+      }
+    }
+  ]
+}
+```
+
+What this means is that this feature may actually have an *array* of matching features for the client to implement. Additionally, the multi-payload format allows a single enrollment to specify multiple feature configurations. It is up to the New Tab code to process all enrollments and extract the feature `type`s that it cares about, interpreting each `payload` appropriately. This means we only need to monitor this one `newtabTrainhop` feature for changes to determine if we need to recompute what features are enabled and with which settings.
+
+In practice, this is done for you via the `PrefsFeed`, which converts the payload into something that can be consulted at runtime. For example, the single payload example could have its value checked with:
+
+```js
+ // This presumes we're executing in the context of a feed, although the
+ // `values` property can also be retrieved off of the Prefs property
+ // in content.
+
+ const prefs = this.store.getState().Prefs.values;
+ const {
+   enabled = false,
+ } = prefs?.trainhopConfig?.stockWidget ?? {};
+
+ if (enabled) {
+   // ...
+ }
+
+```
+
+and the multi-payload example could be similarly checked with:
+
+```js
+ const prefs = this.store.getState().Prefs.values;
+ const {
+   enabled = false, // Default value if undefined
+ } = prefs?.trainhopConfig?.stockWidget ?? {};
+
+ if (enabled) {
+   // ...
+ }
+
+ // ... Elsewhere
+
+ const {
+   enabled = false, // Default value if undefined
+ } = prefs?.trainhopConfig?.otherWidget ?? {};
+
+ if (clickOnly) {
+   // ...
+ }
+```
 
 This monitoring and parsing of `newtabTrainhop` has already landed in the New Tab source code as of [this bug](https://bugzilla.mozilla.org/show_bug.cgi?id=1982731).
 

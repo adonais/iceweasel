@@ -314,6 +314,8 @@ class InspectorUtils {
                                          BrowsingContext* aContext,
                                          mozilla::CSSCoord aHeight);
   static uint16_t GetGridContainerType(GlobalObject&, Element&);
+  static void GetAnchorFor(GlobalObject&, Element&, const nsAString& aName,
+                           Nullable<InspectorAnchorElement>&);
 };
 
 }  // namespace mozilla::dom

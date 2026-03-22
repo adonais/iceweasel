@@ -178,6 +178,15 @@ export class SidebarHistory extends SidebarPage {
     this.controller.deleteFromHistory().catch(console.error);
   }
 
+  onMiddleClickAction(e) {
+    if (this.isMultipleRowsSelected) {
+      // Avoid opening multiple links at once.
+      return;
+    }
+    navigateToLink(e, e.originalTarget.url, { forceNewTab: true });
+    this.treeView.clearSelection();
+  }
+
   /**
    * The template to use for cards-container.
    */
@@ -349,6 +358,7 @@ export class SidebarHistory extends SidebarPage {
       .tabItems=${tabItems}
       @fxview-tab-list-primary-action=${this.onPrimaryAction}
       @fxview-tab-list-secondary-action=${this.onSecondaryAction}
+      @fxview-tab-list-middleclick-action=${this.onMiddleClickAction}
     >
     </sidebar-tab-list>`;
   }
@@ -374,19 +384,19 @@ export class SidebarHistory extends SidebarPage {
   }
 
   willUpdate() {
-    this._menuSortByDate.setAttribute(
+    this._menuSortByDate.toggleAttribute(
       "checked",
       this.controller.sortOption == "date"
     );
-    this._menuSortBySite.setAttribute(
+    this._menuSortBySite.toggleAttribute(
       "checked",
       this.controller.sortOption == "site"
     );
-    this._menuSortByDateSite.setAttribute(
+    this._menuSortByDateSite.toggleAttribute(
       "checked",
       this.controller.sortOption == "datesite"
     );
-    this._menuSortByLastVisited.setAttribute(
+    this._menuSortByLastVisited.toggleAttribute(
       "checked",
       this.controller.sortOption == "lastvisited"
     );

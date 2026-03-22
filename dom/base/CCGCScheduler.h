@@ -545,4 +545,4 @@ class CCGCScheduler {
 
 }  // namespace mozilla
 
-#endif
+#endif  // mozilla_dom_CCGCScheduler_h

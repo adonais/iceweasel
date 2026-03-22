@@ -1157,8 +1157,8 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
       surf = mDesc.sourceSurf->GetDataSurface();
     }
     if (!surf) {
-      gfxCriticalError() << "TexUnpackSurface failed to create wrapping "
-                            "DataSourceSurface for Shmem.";
+      gfxCriticalNote << "TexUnpackSurface failed to create wrapping "
+                         "DataSourceSurface.";
       return false;
     }
   } else if (mDesc.sourceSurf) {
@@ -1173,10 +1173,6 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
   ////
 
   const auto surfSize = surf->GetSize();
-  if (uint32_t(surfSize.width) < size.x || uint32_t(surfSize.height) < size.y) {
-    gfxCriticalError() << "Source surface size too small for upload.";
-    return false;
-  }
 
   WebGLTexelFormat srcFormat;
   uint8_t srcBPP;
@@ -1227,6 +1223,12 @@ bool TexUnpackSurface::TexOrSubImage(bool isSubImage, bool needsRespec,
   }
   const auto& dstUnpacking = dstUnpackingRes.inspect();
   MOZ_ASSERT(dstUnpacking.metrics.bytesPerRowStride == dstStride);
+
+  if (uint32_t(surfSize.width) < dstUnpacking.metrics.usedPixelsPerRow ||
+      uint32_t(surfSize.height) < dstUnpacking.metrics.totalRows) {
+    gfxCriticalError() << "Source surface size too small for upload.";
+    return false;
+  }
 
   // -
 

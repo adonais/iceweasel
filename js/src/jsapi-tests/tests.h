@@ -561,7 +561,8 @@ class TestJSPrincipals : public JSPrincipals {
     return false;
   }
 
-  bool isSystemOrAddonPrincipal() override { return true; }
+  bool isSystemPrincipal() override { return true; }
+  bool isAddonPrincipal() override { return true; }
 };
 
 // A class that simulates externally memory-managed data, for testing with

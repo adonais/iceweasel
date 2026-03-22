@@ -5,6 +5,7 @@ import * as _aiChatMessage from "chrome://browser/content/aiwindow/components/ai
   await customElements.whenDefined("ai-chat-message");
 
   const el = document.createElement("ai-chat-message");
-  el.message = { role: "assistant", content: "testing..." };
+  el.role = "user";
+  el.message = "testing...";
   document.body.appendChild(el);
 })();

@@ -89,50 +89,6 @@ export class TogglePrefCheckbox extends React.PureComponent {
   }
 }
 
-export class Personalization extends React.PureComponent {
-  constructor(props) {
-    super(props);
-    this.togglePersonalization = this.togglePersonalization.bind(this);
-  }
-
-  togglePersonalization() {
-    this.props.dispatch(
-      ac.OnlyToMain({
-        type: at.DISCOVERY_STREAM_PERSONALIZATION_TOGGLE,
-      })
-    );
-  }
-
-  render() {
-    const { lastUpdated, initialized } = this.props.state.Personalization;
-    return (
-      <React.Fragment>
-        <table>
-          <tbody>
-            <Row>
-              <td colSpan="2">
-                <TogglePrefCheckbox
-                  checked={this.props.personalized}
-                  pref="personalized"
-                  onChange={this.togglePersonalization}
-                />
-              </td>
-            </Row>
-            <Row>
-              <td className="min">Personalization Last Updated</td>
-              <td>{relativeTime(lastUpdated) || "(no data)"}</td>
-            </Row>
-            <Row>
-              <td className="min">Personalization Initialized</td>
-              <td>{initialized ? "true" : "false"}</td>
-            </Row>
-          </tbody>
-        </table>
-      </React.Fragment>
-    );
-  }
-}
-
 export class DiscoveryStreamAdminUI extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -690,8 +646,6 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
   render() {
     const prefToggles = "enabled collapsible".split(" ");
     const { config, layout } = this.props.state.DiscoveryStream;
-    const personalized =
-      this.props.otherPrefs["discoverystream.personalization.enabled"];
     const sectionsEnabled = this.props.otherPrefs[PREF_SECTIONS_ENABLED];
 
     // Prefs for IAB Banners
@@ -807,14 +761,6 @@ export class DiscoveryStreamAdminUI extends React.PureComponent {
             ))}
           </div>
         ))}
-        <h3>Personalization</h3>
-        <Personalization
-          personalized={personalized}
-          dispatch={this.props.dispatch}
-          state={{
-            Personalization: this.props.state.Personalization,
-          }}
-        />
         <h3>Spocs</h3>
         {this.renderSpocs()}
         <h3>Feeds Data</h3>
@@ -864,7 +810,6 @@ export class DiscoveryStreamAdminInner extends React.PureComponent {
             <DiscoveryStreamAdminUI
               state={{
                 DiscoveryStream: this.props.DiscoveryStream,
-                Personalization: this.props.Personalization,
                 Weather: this.props.Weather,
                 InferredPersonalization: this.props.InferredPersonalization,
               }}
@@ -920,7 +865,6 @@ const _DiscoveryStreamAdmin = props => <CollapseToggle {...props} />;
 export const DiscoveryStreamAdmin = connect(state => ({
   Sections: state.Sections,
   DiscoveryStream: state.DiscoveryStream,
-  Personalization: state.Personalization,
   InferredPersonalization: state.InferredPersonalization,
   Prefs: state.Prefs,
   Weather: state.Weather,

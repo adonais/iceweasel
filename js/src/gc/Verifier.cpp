@@ -270,8 +270,8 @@ void gc::GCRuntime::startVerifyPreBarriers() {
   marker().start();
 
   for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
-    zone->changeGCState(Zone::NoGC, Zone::VerifyPreBarriers);
-    zone->setNeedsIncrementalBarrier(true);
+    zone->changeGCState(this, Zone::NoGC, Zone::VerifyPreBarriers);
+    zone->setNeedsMarkingBarrier(this, true);
     zone->arenas.clearFreeLists();
   }
 
@@ -358,13 +358,13 @@ void gc::GCRuntime::endVerifyPreBarriers() {
   /* We need to disable barriers before tracing, which may invoke barriers. */
   for (ZonesIter zone(this, WithAtoms); !zone.done(); zone.next()) {
     if (zone->isVerifyingPreBarriers()) {
-      zone->changeGCState(Zone::VerifyPreBarriers, Zone::NoGC);
+      zone->changeGCState(this, Zone::VerifyPreBarriers, Zone::NoGC);
     } else {
       compartmentCreated = true;
     }
 
     MOZ_ASSERT(!zone->wasGCStarted());
-    MOZ_ASSERT(!zone->needsIncrementalBarrier());
+    MOZ_ASSERT(!zone->needsMarkingBarrier());
   }
 
   verifyPreData = nullptr;
@@ -632,7 +632,8 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 
     /* Update zone state for gray marking. */
     for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
-      zone->changeGCState(zone->initialMarkingState(), Zone::MarkBlackAndGray);
+      zone->changeGCState(gc, zone->initialMarkingState(),
+                          Zone::MarkBlackAndGray);
     }
 
     /*
@@ -646,7 +647,8 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 
     /* Restore zone state. */
     for (GCZonesIter zone(gc); !zone.done(); zone.next()) {
-      zone->changeGCState(Zone::MarkBlackAndGray, zone->initialMarkingState());
+      zone->changeGCState(gc, Zone::MarkBlackAndGray,
+                          zone->initialMarkingState());
     }
     MOZ_ASSERT(gc->marker().isDrained());
   }

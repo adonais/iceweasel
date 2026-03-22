@@ -140,6 +140,7 @@ ExtensionManager = {
         id: extension.id,
         mozExtensionHostname: extension.uuid,
         name: extension.name,
+        version: extension.version,
         type: extension.type,
         baseURL: extension.resourceURL,
 

@@ -17,10 +17,10 @@ class WeakCollectionObject : public NativeObject {
  public:
   enum { DataSlot, SlotCount };
 
-  using Map = WeakMap<Value, Value, ZoneAllocPolicy>;
+  using Map = WeakMap<Value, Value, BufferAllocPolicy>;
   Map* getMap() { return maybePtrFromReservedSlot<Map>(DataSlot); }
 
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
   size_t nondeterministicGetSize();
   [[nodiscard]] static bool nondeterministicGetKeys(

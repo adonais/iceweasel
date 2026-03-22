@@ -14,7 +14,7 @@ import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
  * Custom element that renders the “Memories applied” pill and popover for
  * a single assistant message. The popover shows a list of applied
  * memories and allows the user to:
- *   - Remove an individual applied insight.
+ *   - Remove an individual applied memory.
  *   - Retry the message without any applied memories.
  *
  * @property {string|null} messageId
@@ -33,7 +33,7 @@ import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
  *   - "toggle-applied-memories"
  *       detail: { messageId, open }
  *   - "remove-applied-memory"
- *       detail: { messageId, index, insight }
+ *       detail: { memoryId }
  *   - "retry-without-memories"
  *       detail: { messageId }
  */
@@ -116,28 +116,16 @@ export class AppliedMemoriesButton extends MozLitElement {
     );
   }
 
-  _onRemoveInsight(event, index) {
+  _onRemoveMemory(event, memory) {
     event.stopPropagation();
-
-    if (!Array.isArray(this.appliedMemories)) {
-      return;
-    }
-
-    const insight = this.appliedMemories[index];
-
-    // Remove insight visually, but update will be done by parent
-    this.appliedMemories = this.appliedMemories.filter((_, i) => {
-      return i !== index;
-    });
 
     this.dispatchEvent(
       new CustomEvent("remove-applied-memory", {
         bubbles: true,
         composed: true,
         detail: {
+          memory,
           messageId: this.messageId,
-          index,
-          insight,
         },
       })
     );
@@ -157,14 +145,6 @@ export class AppliedMemoriesButton extends MozLitElement {
     );
   }
 
-  // TODO: Update formatting function once shape of memories passed is confirmed
-  _formatInsightLabel(insight) {
-    if (typeof insight === "string") {
-      return insight;
-    }
-    return "";
-  }
-
   renderPopover() {
     if (!this._hasMemories) {
       return nothing;
@@ -181,21 +161,21 @@ export class AppliedMemoriesButton extends MozLitElement {
         @click=${event => this._onPopoverClick(event)}
       >
         <ul class="memories-list">
-          ${visibleMemories.map((insight, index) => {
-            const label = this._formatInsightLabel(insight);
-            if (!label) {
-              return nothing;
-            }
+          ${visibleMemories.map(memory => {
+            // @todo Bug 2010069
+            // Localize aria-label
             return html`
               <li class="memories-list-item">
-                <span class="memories-list-label">${label}</span>
+                <span class="memories-list-label"
+                  >${memory.memory_summary}</span
+                >
                 <moz-button
                   class="memories-remove-button"
                   type="ghost"
                   size="small"
                   iconsrc="chrome://global/skin/icons/close.svg"
-                  aria-label="Remove this insight"
-                  @click=${event => this._onRemoveInsight(event, index)}
+                  aria-label="Remove this memory"
+                  @click=${event => this._onRemoveMemory(event, memory)}
                 ></moz-button>
               </li>
             `;
@@ -211,6 +191,7 @@ export class AppliedMemoriesButton extends MozLitElement {
             class="retry-row-button"
             data-l10n-id="aiwindow-retry-without-memories"
             data-l10n-attrs="label"
+            @click=${event => this._onRetryWithoutMemories(event)}
           ></moz-button>
         </div>
       </div>
@@ -232,7 +213,7 @@ export class AppliedMemoriesButton extends MozLitElement {
         type="ghost"
         size="small"
         iconposition="start"
-        iconsrc="chrome://global/skin/icons/highlights.svg"
+        iconsrc="chrome://browser/content/aiwindow/assets/memories-on.svg"
         aria-haspopup="dialog"
         aria-expanded=${this.open && this._hasMemories}
         data-l10n-id="aiwindow-memories-used"

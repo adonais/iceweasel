@@ -215,6 +215,20 @@ NS_IMETHODIMP FetchCompleteRunnable::RunOnWorkletThread() {
   ModuleLoadRequest* request = moduleLoader->GetRequest(mURI);
   MOZ_ASSERT(request);
 
+#ifdef NIGHTLY_BUILD
+  // https://html.spec.whatwg.org/multipage/webappapis.html#fetch-a-single-module-script
+  // Extract the content-type. If its essence is wasm, we'll attempt to
+  // compile this module as a wasm module. (Steps 13.2, 13.6)
+  if (mHasWasmMimeTypeEssence) {
+    request->SetHasWasmMimeTypeEssence();
+    request->SetWasmBytes();
+    request->SetBaseURL(mURI);
+    request->OnFetchComplete(mResult);
+    moduleLoader->RemoveRequest(mURI);
+    return NS_OK;
+  }
+#endif
+
   // Set the Source type to "text" for decoding.
   request->SetTextSource(request->mLoadContext.get());
 
@@ -226,15 +240,6 @@ NS_IMETHODIMP FetchCompleteRunnable::RunOnWorkletThread() {
                                 true);
     NS_ENSURE_SUCCESS(rv, rv);
   }
-
-#ifdef NIGHTLY_BUILD
-  // https://html.spec.whatwg.org/multipage/webappapis.html#fetch-a-single-module-script
-  // Extract the content-type. If its essence is wasm, we'll attempt to
-  // compile this module as a wasm module. (Steps 13.2, 13.6)
-  if (mHasWasmMimeTypeEssence) {
-    request->SetHasWasmMimeTypeEssence();
-  }
-#endif
 
   request->SetBaseURL(mURI);
   request->OnFetchComplete(mResult);

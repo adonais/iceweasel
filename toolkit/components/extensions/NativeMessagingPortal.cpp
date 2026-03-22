@@ -19,8 +19,6 @@
 
 #include "prlink.h"
 
-#include <string.h>
-
 static mozilla::LazyLogModule gNativeMessagingPortalLog(
     "NativeMessagingPortal");
 

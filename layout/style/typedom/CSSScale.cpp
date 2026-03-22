@@ -12,11 +12,13 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSScaleBinding.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 
 CSSScale::CSSScale(nsCOMPtr<nsISupports> aParent)
-    : CSSTransformComponent(std::move(aParent)) {}
+    : CSSTransformComponent(std::move(aParent), TransformComponentType::Scale) {
+}
 
 JSObject* CSSScale::WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) {
@@ -57,5 +59,26 @@ void CSSScale::SetZ(const CSSNumberish& aArg, ErrorResult& aRv) {
 }
 
 // end of CSSScale Web IDL implementation
+
+void CSSScale::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                     nsACString& aDest) const {
+  // XXX: This is not yet fully implemented.
+
+  aDest.Append("scale3d()"_ns);
+}
+
+const CSSScale& CSSTransformComponent::GetAsCSSScale() const {
+  MOZ_DIAGNOSTIC_ASSERT(mTransformComponentType ==
+                        TransformComponentType::Scale);
+
+  return *static_cast<const CSSScale*>(this);
+}
+
+CSSScale& CSSTransformComponent::GetAsCSSScale() {
+  MOZ_DIAGNOSTIC_ASSERT(mTransformComponentType ==
+                        TransformComponentType::Scale);
+
+  return *static_cast<CSSScale*>(this);
+}
 
 }  // namespace mozilla::dom

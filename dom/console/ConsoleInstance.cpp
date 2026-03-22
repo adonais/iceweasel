@@ -265,7 +265,8 @@ void ConsoleInstance::Clear(JSContext* aCx) {
 
 bool ConsoleInstance::ShouldLog(ConsoleLogLevel aLevel) {
   return mConsole->mCurrentLogLevel <=
-         mConsole->WebIDLLogLevelToInteger(aLevel);
+             mConsole->WebIDLLogLevelToInteger(aLevel) ||
+         mConsole->ShouldLogToMozLog(aLevel);
 }
 
 void ConsoleInstance::ReportForServiceWorkerScope(const nsAString& aScope,

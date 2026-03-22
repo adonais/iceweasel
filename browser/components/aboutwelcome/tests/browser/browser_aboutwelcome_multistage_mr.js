@@ -59,7 +59,6 @@ add_task(function () {
  */
 add_task(async function test_aboutwelcome_mr_template_telemetry() {
   const sandbox = sinon.createSandbox();
-
   let { browser, cleanup } = await openMRAboutWelcome();
   let aboutWelcomeActor = await getAboutWelcomeParent(browser);
   // Stub AboutWelcomeParent's Content Message Handler
@@ -902,7 +901,7 @@ add_task(async function test_aboutwelcome_backup_found() {
     .stub(AWScreenUtils, "evaluateScreenTargeting")
     .resolves(false)
     .withArgs(
-      "backupRestoreEnabled && (backupsInfo.found || backupsInfo.multipleBackupsFound)"
+      "backupRestoreEnabled && !hasSelectableProfiles && (backupsInfo.found && !backupsInfo.multipleBackupsFound)"
     )
     .resolves(true)
     .withArgs("isDeviceMigration")
@@ -919,7 +918,44 @@ add_task(async function test_aboutwelcome_backup_found() {
       "[data-l10n-id='restore-from-backup-subtitle']",
     ],
     // Unexpected selectors
-    ["main.AW_BACKUP_RESTORE_EMBEDDED_NO_BACKUP_FOUND"]
+    [
+      "main.AW_BACKUP_RESTORE_EMBEDDED_MULTIPLE_BACKUPS_FOUND",
+      "main.AW_BACKUP_RESTORE_EMBEDDED_NO_BACKUP_FOUND",
+    ]
+  );
+
+  await cleanup();
+  sandbox.restore();
+});
+
+add_task(async function test_aboutwelcome_multiple_backups_found() {
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .resolves(false)
+    .withArgs(
+      "backupRestoreEnabled && !hasSelectableProfiles && backupsInfo.multipleBackupsFound"
+    )
+    .resolves(true)
+    .withArgs("isDeviceMigration")
+    .resolves(false);
+
+  let { browser, cleanup } = await openMRAboutWelcome();
+
+  await test_screen_content(
+    browser,
+    "Should render multiple backups found screen as first screen when backupRestoreEnabled is true and multiple backups are found",
+    [
+      "main.AW_BACKUP_RESTORE_EMBEDDED_MULTIPLE_BACKUPS_FOUND",
+      "[data-l10n-id='restore-from-backup-title']",
+      "[data-l10n-id='restore-from-backup-subtitle']",
+      "[data-l10n-id='multiple-backups-info-tile']",
+    ],
+    // Unexpected selectors
+    [
+      "main.AW_BACKUP_RESTORE_EMBEDDED_BACKUP_FOUND",
+      "main.AW_BACKUP_RESTORE_EMBEDDED_NO_BACKUP_FOUND",
+    ]
   );
 
   await cleanup();

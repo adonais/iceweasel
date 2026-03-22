@@ -334,8 +334,6 @@ impl BuiltScene {
                 max_shared_surface_size: 2048,
                 enable_dithering: false,
                 precise_linear_gradients: false,
-                precise_radial_gradients: false,
-                precise_conic_gradients: false,
             },
         }
     }

@@ -1,12 +1,17 @@
 add_task(async function test_openPreferences_spotlight() {
   for (let [arg, expectedPane, expectedHash, expectedSubcategory] of [
     ["privacy-reports", "panePrivacy", "#privacy", "reports"],
-    ["privacy-address-autofill", "panePrivacy", "#privacy", "address-autofill"],
+    [
+      "privacy-address-autofill",
+      "panePrivacy",
+      "#privacy",
+      "addresses-autofill address-autofill",
+    ],
     [
       "privacy-payment-methods-autofill",
       "panePrivacy",
       "#privacy",
-      "payment-methods-autofill",
+      "payment-methods-autofill credit-card-autofill",
     ],
     ["privacy-logins", "panePrivacy", "#privacy", "logins"],
     [

@@ -841,7 +841,8 @@ add_task(async function clear_dynamicType_attribute() {
     Assert.equal(row.getAttribute("dynamicType"), "test");
 
     // Unregister the provider to show normal result.
-    UrlbarProvidersManager.unregisterProvider(provider);
+    let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+    providersManager.unregisterProvider(provider);
     // Do a search again.
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
       window,
@@ -1026,12 +1027,13 @@ async function withDynamicTypeProvider(
   }
 
   // Add a provider of the dynamic type.
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await callback(provider);
 
   // Clean up.
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
   if (!provider.getViewTemplate) {
     UrlbarView.removeDynamicViewTemplate(DYNAMIC_TYPE_NAME);
   }

@@ -878,7 +878,7 @@ add_task(async function view_all_synced_tabs_recent_browsing() {
     is(gBrowser.tabs.length, openTabsCount, "No new tabs were opened");
     Assert.ok(
       FirefoxViewHandler.tab.selected,
-      "Firefox View tab is still selected selected"
+      "Firefox View tab is still selected"
     );
     Assert.equal(
       pagesDeck.selectedViewName,

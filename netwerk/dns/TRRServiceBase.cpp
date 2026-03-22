@@ -180,7 +180,7 @@ void TRRServiceBase::OnTRRURIChange() {
   CheckURIPrefs();
 }
 
-static already_AddRefed<nsHttpConnectionInfo> CreateConnInfoHelper(
+already_AddRefed<nsHttpConnectionInfo> TRRServiceBase::CreateConnInfoHelper(
     nsIURI* aURI, nsIProxyInfo* aProxyInfo) {
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -226,7 +226,10 @@ static already_AddRefed<nsHttpConnectionInfo> CreateConnInfoHelper(
       (scheme.EqualsLiteral("http") || scheme.EqualsLiteral("https")) &&
       (mapping = gHttpHandler->GetAltServiceMapping(
            scheme, host, port, false, OriginAttributes(), http2Allowed,
-           http3Allowed))) {
+           http3Allowed,
+           StaticPrefs::network_trr_force_http3_first() ||
+               (StaticPrefs::network_trr_allow_default_http3_first() &&
+                GetHttp3FirstForServer(host))))) {
     mapping->GetConnectionInfo(getter_AddRefs(connInfo), proxyInfo,
                                OriginAttributes());
   }
@@ -293,7 +296,7 @@ void TRRServiceBase::AsyncCreateTRRConnectionInfoInternal(
         }
 
         RefPtr<nsHttpConnectionInfo> connInfo =
-            CreateConnInfoHelper(uri, aProxyInfo);
+            self->CreateConnInfoHelper(uri, aProxyInfo);
         self->SetDefaultTRRConnectionInfo(connInfo);
         if (!self->mTRRConnectionInfoInited) {
           self->mTRRConnectionInfoInited = true;
@@ -356,43 +359,18 @@ void TRRServiceBase::UnregisterProxyChangeListener() {
   pps->RemoveProxyConfigCallback(this);
 }
 
-void TRRServiceBase::DoReadEtcHostsFile(ParsingCallback aCallback) {
-  MOZ_ASSERT(XRE_IsParentProcess());
+void TRRServiceBase::SetHttp3FirstForServer(const nsACString& aServer,
+                                            bool aEnabled) {
+  MutexAutoLock lock(mLock);
+  LOG(("SetHttp3FirstForServer %s %d", nsCString(aServer).get(), aEnabled));
+  mHttp3FirstServers.InsertOrUpdate(aServer, aEnabled);
+}
 
-  if (!StaticPrefs::network_trr_exclude_etc_hosts()) {
-    return;
-  }
-
-  auto readHostsTask = [aCallback]() {
-    MOZ_ASSERT(!NS_IsMainThread(), "Must not run on the main thread");
-#if defined(XP_WIN)
-    // Inspired by libevent/evdns.c
-    // Windows is a little coy about where it puts its configuration
-    // files.  Sure, they're _usually_ in C:\windows\system32, but
-    // there's no reason in principle they couldn't be in
-    // W:\hoboken chicken emergency
-
-    nsCString path;
-    path.SetLength(MAX_PATH + 1);
-    if (!SHGetSpecialFolderPathA(NULL, path.BeginWriting(), CSIDL_SYSTEM,
-                                 false)) {
-      LOG(("Calling SHGetSpecialFolderPathA failed"));
-      return;
-    }
-
-    path.SetLength(strlen(path.get()));
-    path.Append("\\drivers\\etc\\hosts");
-#else
-    nsAutoCString path("/etc/hosts"_ns);
-#endif
-
-    LOG(("Reading hosts file at %s", path.get()));
-    rust_parse_etc_hosts(&path, aCallback);
-  };
-
-  (void)NS_DispatchBackgroundTask(
-      NS_NewRunnableFunction("Read /etc/hosts file", readHostsTask),
-      NS_DISPATCH_EVENT_MAY_BLOCK);
+bool TRRServiceBase::GetHttp3FirstForServer(const nsACString& aServer) {
+  MutexAutoLock lock(mLock);
+  bool res = mHttp3FirstServers.MaybeGet(aServer).valueOr(false);
+  LOG(("GetHttp3FirstForServer %s %d", nsCString(aServer).get(), res));
+  return res;
 }
 
 }  // namespace net

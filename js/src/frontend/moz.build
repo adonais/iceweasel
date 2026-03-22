@@ -20,6 +20,8 @@ if CONFIG["ENABLE_DECORATORS"]:
     flags.append("--enable-decorators")
 if CONFIG["ENABLE_EXPLICIT_RESOURCE_MANAGEMENT"]:
     flags.append("--enable-explicit-resource-management")
+if CONFIG["ENABLE_SOURCE_PHASE_IMPORTS"]:
+    flags.append("--enable-source-phase-imports")
 if flags:
     GeneratedFile(
         "ReservedWordsGenerated.h",

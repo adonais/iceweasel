@@ -28,6 +28,7 @@
 #include "nsLayoutUtils.h"
 #include "nsRangeFrame.h"
 #include "PathHelpers.h"
+#include "nsComboboxControlFrame.h"
 #include "ScrollbarDrawingAndroid.h"
 #include "ScrollbarDrawingCocoa.h"
 #include "ScrollbarDrawingGTK.h"
@@ -564,13 +565,14 @@ void Theme::PaintCircleShadow(WebRenderBackendData& aWrData,
   shadowRect.MoveBy(shadowOffset);
   shadowRect.Inflate(inflation.width, inflation.height);
   const auto boxRect = wr::ToLayoutRect(aBoxRect);
+  const auto borderRadius =
+      wr::ToBorderRadius(gfx::RectCornerRadii(aBoxRect.Size().width));
   aWrData.mBuilder.PushBoxShadow(
       wr::ToLayoutRect(shadowRect), wr::ToLayoutRect(aClipRect),
       kBackfaceIsVisible, boxRect,
       wr::ToLayoutVector2D(aShadowOffset * aDpiRatio),
       wr::ToColorF(DeviceColor(0.0f, 0.0f, 0.0f, aShadowAlpha)), stdDev,
-      /* aSpread = */ 0.0f,
-      wr::ToBorderRadius(gfx::RectCornerRadii(aBoxRect.Size().width)),
+      /* aSpread = */ 0.0f, borderRadius, borderRadius,
       wr::BoxShadowClipMode::Outset);
 }
 
@@ -1520,6 +1522,10 @@ LayoutDeviceIntSize Theme::GetMinimumWidgetSize(nsPresContext* aPresContext,
   LayoutDeviceIntSize result;
   switch (aAppearance) {
     case StyleAppearance::MozMenulistArrowButton:
+      if (nsComboboxControlFrame* cf = do_QueryFrame(aFrame->GetParent());
+          cf && !cf->HasDropDownButton()) {
+        break;
+      }
       result.width = (kMinimumDropdownArrowButtonWidth * dpiRatio).Rounded();
       break;
     case StyleAppearance::SpinnerUpbutton:
@@ -1548,18 +1554,8 @@ nsITheme::Transparency Theme::GetWidgetTransparency(
 
 bool Theme::WidgetAttributeChangeRequiresRepaint(StyleAppearance aAppearance,
                                                  nsAtom* aAttribute) {
-  // Check the attribute to see if it's relevant.
-  // TODO(emilio): The non-native theme doesn't use these attributes. Other
-  // themes do, but not all of them (and not all of the ones they check are
-  // here).
-  return aAttribute == nsGkAtoms::disabled ||
-         aAttribute == nsGkAtoms::checked ||
-         aAttribute == nsGkAtoms::selected ||
-         aAttribute == nsGkAtoms::visuallyselected ||
-         aAttribute == nsGkAtoms::menuactive ||
-         aAttribute == nsGkAtoms::sortDirection ||
-         aAttribute == nsGkAtoms::focused ||
-         aAttribute == nsGkAtoms::_default || aAttribute == nsGkAtoms::open;
+  return aAttribute == nsGkAtoms::_default ||  // Used in IsDefaultButton()
+         aAttribute == nsGkAtoms::open;        // Used in GetContentState()
 }
 
 bool Theme::WidgetAppearanceDependsOnWindowFocus(StyleAppearance aAppearance) {

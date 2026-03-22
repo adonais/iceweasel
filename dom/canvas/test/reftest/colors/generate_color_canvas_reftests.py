@@ -7,13 +7,14 @@
 # `./generate_color_canvas_reftests.py [--write]`
 
 import functools
-import json
 import math
 import pathlib
 import re
 import sys
 from collections.abc import Iterable
 from typing import NamedTuple, TypeVar
+
+from mozfile import json
 
 ARGS = sys.argv[1:]
 DEST = pathlib.Path(__file__).parent / "_generated_reftest.list"
@@ -130,9 +131,7 @@ C2D_OPTIONS_COMBOS = cross_combine(
     keyed_alternatives("willReadFrequently", ["true", "false"]),  # E.g. D2D vs Skia
     # keyed_alternatives('alpha', ['true','false'])
 )
-C2D_OPTIONS = [
-    json.dumps(config, separators=(",", ":")) for config in C2D_OPTIONS_COMBOS
-]
+C2D_OPTIONS = [json.dumps(config) for config in C2D_OPTIONS_COMBOS]
 
 C2D = cross_combine(
     [{"e_context": "2d"}],

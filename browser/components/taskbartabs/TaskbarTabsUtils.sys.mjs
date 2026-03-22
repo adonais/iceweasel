@@ -9,14 +9,6 @@ let lazy = {};
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
   Favicons: ["@mozilla.org/browser/favicon-service;1", Ci.nsIFaviconService],
-  imgTools: ["@mozilla.org/image/tools;1", Ci.imgITools],
-});
-
-ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
-  return console.createInstance({
-    prefix: "TaskbarTabs",
-    maxLogLevel: "Warn",
-  });
 });
 
 export const TaskbarTabsUtils = {
@@ -63,114 +55,63 @@ export const TaskbarTabsUtils = {
   },
 
   /**
-   * Retrieves a favicon image container for the provided URL.
+   * Retrieves an image container for the provided URL. May throw if an error
+   * occurs while decoding.
    *
-   * @param {nsIURI} aUri - The URI to retrieve a favicon for.
-   * @returns {imgIContainer} A container of the favicon retrieved, or the
+   * Raster images will be scaled to 256x256 pixels.
+   *
+   * @param {nsIURI} aUri - The URI to parse the image from. Must be a local
+   * URI, like data:, chrome:, or file:.
+   * @returns {imgIContainer} A container of the icon retrieved, or the
    * default favicon.
+   * @throws {TypeError} aUri is not an nsIURI.
+   * @throws {Error} aUri is not a local URI.
+   * @throws {Components.Exception} The image could not be decoded.
    */
-  async getFavicon(aUri) {
-    let favicon = await lazy.Favicons.getFaviconForPage(aUri);
-
-    let imgContainer;
-    if (favicon) {
-      try {
-        if (favicon.mimeType !== "image/svg+xml") {
-          // Image containers retrieved via `getImageFromUri` error when
-          // attempting to scale via `scaleImage`. Since we have the raw image
-          // data from the favicon service and the image container decoded from
-          // it scales without error, use it instead.
-          let img = lazy.imgTools.decodeImageFromArrayBuffer(
-            new Uint8Array(favicon.rawData).buffer,
-            favicon.mimeType
-          );
-          imgContainer = scaleImage(img);
-        } else {
-          // `imgITools::decodeImage*` APIs don't work with SVG images.
-          imgContainer = getImageFromUri(favicon.dataURI);
-        }
-      } catch (e) {
-        lazy.logConsole.error(
-          `${e.message}, falling through to default favicon.`
-        );
-      }
-    }
-
-    if (!imgContainer) {
-      lazy.logConsole.debug(
-        `Unable to retrieve icon for ${aUri.spec}, using default favicon at ${lazy.Favicons.defaultFavicon.spec}.`
+  async _imageFromLocalURI(aUri) {
+    if (!(aUri instanceof Ci.nsIURI)) {
+      throw new TypeError(
+        "Invalid argument, `aUri` should be instance of `nsIURI`"
       );
-      imgContainer = await getImageFromUri(lazy.Favicons.defaultFavicon);
     }
 
-    return imgContainer;
+    const protocolFlags = Services.io.getProtocolFlags(aUri.scheme);
+    if (!(protocolFlags & Ci.nsIProtocolHandler.URI_IS_LOCAL_RESOURCE)) {
+      throw new Error("Attempting to create an image from a non-local URI");
+    }
+
+    const channel = Services.io.newChannelFromURI(
+      aUri,
+      null,
+      Services.scriptSecurityManager.getSystemPrincipal(),
+      null,
+      Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+      Ci.nsIContentPolicy.TYPE_IMAGE
+    );
+
+    return ChromeUtils.fetchDecodedImage(aUri, channel);
+  },
+
+  /**
+   * Gets the favicon for aUri as a data URI.
+   *
+   * @param {nsIURI} aUri - The URI to look up the favicon for.
+   * @returns {nsIURI} The data URI of the favicon.
+   */
+  async getFaviconUri(aUri) {
+    let favicon = await lazy.Favicons.getFaviconForPage(aUri);
+    return favicon?.dataURI;
+  },
+
+  /**
+   * Gets the default favicon as an imgIContainer. This icon is used if no
+   * other icons are available.
+   *
+   * @returns {imgIContainer} The default favicon.
+   */
+  async getDefaultIcon() {
+    return await TaskbarTabsUtils._imageFromLocalURI(
+      lazy.Favicons.defaultFavicon
+    );
   },
 };
-
-/**
- * Attempts to scale the provided image container to a 256x256 image.
- *
- * @param {imgIContainer} aImgContainer - The image container to scale from.
- * @returns {imgIContainer} The scaled image container on success, or the
- * provided image container on failure.
- */
-function scaleImage(aImgContainer) {
-  try {
-    const istream = lazy.imgTools.encodeScaledImage(
-      aImgContainer,
-      "image/png",
-      256,
-      256
-    );
-    const size = istream.available();
-
-    // Use a binary input stream to grab the bytes.
-    const bis = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
-      Ci.nsIBinaryInputStream
-    );
-    bis.setInputStream(istream);
-
-    const bytes = bis.readBytes(size);
-    if (size != bytes.length) {
-      throw new Error("Didn't read expected number of bytes");
-    }
-    aImgContainer = lazy.imgTools.decodeImageFromBuffer(
-      bytes,
-      bytes.length,
-      "image/png"
-    );
-  } catch (e) {
-    lazy.logConsole.error(
-      "Failed to scale the favicon image, continuing with the unscaled image container."
-    );
-  }
-
-  return aImgContainer;
-}
-
-/**
- * Retrieves an image given a URI.
- *
- * @param {nsIURI} aUri - The URI to retrieve an image from.
- * @returns {Promise<imgIContainer>} Resolves to an image container.
- */
-async function getImageFromUri(aUri) {
-  // Creating the Taskbar Tabs icon should not result in a network request.
-  const protocolFlags = Services.io.getProtocolFlags(aUri.scheme);
-  if (!(protocolFlags & Ci.nsIProtocolHandler.URI_IS_LOCAL_RESOURCE)) {
-    throw new Error(
-      `Scheme "${aUri.scheme}" is not supported for creating a Taskbar Tab icon, URI should be local`
-    );
-  }
-
-  const channel = Services.io.newChannelFromURI(
-    aUri,
-    null,
-    Services.scriptSecurityManager.getSystemPrincipal(),
-    null,
-    Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-    Ci.nsIContentPolicy.TYPE_IMAGE
-  );
-
-  return ChromeUtils.fetchDecodedImage(aUri, channel);
-}

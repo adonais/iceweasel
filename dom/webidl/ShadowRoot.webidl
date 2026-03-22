@@ -32,7 +32,7 @@ interface ShadowRoot : DocumentFragment
   attribute EventHandler onslotchange;
 
   [Pref="dom.shadowdom.referenceTarget.enabled"]
-  attribute DOMString referenceTarget;
+  attribute DOMString? referenceTarget;
 
   Element? getElementById(DOMString elementId);
 

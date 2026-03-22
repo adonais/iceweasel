@@ -98,8 +98,8 @@ add_task(async function test_history() {
 
 add_task(async function test_remove_search_history() {
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
-  let engine = Services.search.getEngineByName("Example");
-  await Services.search.moveEngine(engine, 0);
+  let engine = SearchService.getEngineByName("Example");
+  await SearchService.moveEngine(engine, 0);
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.suggest.searches", true],
@@ -193,7 +193,7 @@ add_task(async function firefoxSuggest() {
           isBlockable: true,
           helpUrl,
           helpL10n: {
-            id: "urlbar-result-menu-learn-more-about-firefox-suggest",
+            id: "urlbar-result-menu-learn-more",
           },
         },
       }),
@@ -207,7 +207,8 @@ add_task(async function firefoxSuggest() {
     controller.removeResult(details.result);
   };
 
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   async function openResults() {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -255,5 +256,5 @@ add_task(async function firefoxSuggest() {
   );
 
   await UrlbarTestUtils.promisePopupClose(window);
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 });

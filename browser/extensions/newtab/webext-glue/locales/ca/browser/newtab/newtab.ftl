@@ -329,18 +329,16 @@ newtab-custom-recent-subtitle = Una selecció de llocs i continguts recents
 newtab-custom-weather-toggle =
     .label = Informació meteorològica
     .description = La previsió d’avui d’un cop d’ull
-newtab-custom-trending-search-toggle =
-    .label = Cerques que són tendència
-    .description = Temes populars i cercats freqüentment
 newtab-custom-widget-weather-toggle =
     .label = Informació meteorològica
-newtab-custom-widget-trending-search-toggle =
-    .label = Cerques que són tendència
 newtab-custom-widget-lists-toggle =
     .label = Llistes
 newtab-custom-widget-timer-toggle =
     .label = Temporitzador
 newtab-custom-widget-section-title = Ginys
+newtab-custom-widget-section-toggle =
+    .label = Ginys
+newtab-widget-manage-title = Ginys
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Tanca
@@ -492,6 +490,11 @@ newtab-weather-opt-in-yes =
     .label = Sí
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = Nova York
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Mostra la previsió meteorològica de { $provider }
+    .aria-description = { $provider } ∙ Patrocinat
 
 ## Topic Labels
 
@@ -596,7 +599,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Els vostres favorits a l'abast de la mà
 newtab-shortcuts-highlight-subtitle = Afegiu una drecera per a tenir els vostres llocs favorits a un sol clic.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Per què ho denuncieu?
@@ -614,21 +617,13 @@ newtab-report-content-inappropriate-offensive =
     .label = Inadequat o ofensiu
 newtab-report-content-spam-misleading =
     .label = Correu brossa o enganyós
+newtab-report-content-requires-payment-subscription =
+    .label = El pagament o la subscripció són obligatoris
+newtab-report-content-requires-payment-subscription-learn-more = Més informació
 newtab-report-cancel = Cancel·la
 newtab-report-submit = Envia
 newtab-toast-thanks-for-reporting =
     .message = Gràcies per denunciar-ho.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Mostra les cerques que són tendència
-newtab-trending-searches-hide-trending =
-    .title = Amaga les cerques que són tendència
-newtab-trending-searches-learn-more = Més informació
-newtab-trending-searches-dismiss = Amaga les cerques que són tendència
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Cerques que són tendència
 
 ## Strings for task / to-do list productivity widget
 
@@ -668,6 +663,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Llista nova
+newtab-widget-section-title = Ginys
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Amaga els ginys
+    .aria-label = Amaga tots els ginys
+newtab-widget-section-maximize =
+    .title = Amplia els ginys
+    .aria-label = Amplia tots els ginys al màxim
+newtab-widget-section-minimize =
+    .title = Minimitza els widgets
+    .aria-label = Minimitza tots els widgets a mida compacta
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
@@ -680,3 +686,19 @@ newtab-widget-timer-mode-focus =
     .label = Concentració
 newtab-widget-timer-mode-break =
     .label = Pausa
+newtab-widget-timer-label-play =
+    .label = Reprodueix
+newtab-widget-timer-reset =
+    .title = Reinicia
+newtab-widget-timer-menu-notifications = Desactiva les notificacions
+newtab-widget-timer-menu-notifications-on = Activa les notificacions
+newtab-widget-timer-menu-hide = Amaga el temporitzador
+newtab-widget-timer-menu-learn-more = Més informació
+newtab-widget-message-title = Mantingueu la concentració amb les llistes i amb un temporitzador integrat
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Des de recordatoris ràpids fins a tasques diàries pendents, sessions de concentració o pauses d'estirament: manteniu la productivitat i la puntualitat.
+newtab-promo-card-body = Els nostres patrocinadors donen suport a la nostra missió de crear un web millor
+newtab-promo-card-cta = Més informació
+newtab-promo-card-dismiss-button =
+    .title = Ignora
+    .aria-label = Ignora

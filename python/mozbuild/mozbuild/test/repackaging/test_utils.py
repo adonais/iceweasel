@@ -361,11 +361,15 @@ def test_inject_distribution_folder(monkeypatch):
         assert destination == "/source_dir/firefox/distribution"
         assert exist_ok
 
+    def mock_remove(path):
+        assert path == "/source_dir/firefox/distribution/distribution.ini"
+
     def mock_move(source, destination):
         assert source == "/source_dir/debian/distribution.ini"
-        assert destination == "/source_dir/firefox/distribution"
+        assert destination == "/source_dir/firefox/distribution/distribution.ini"
 
     monkeypatch.setattr(utils.os.path, "exists", lambda _: True)
+    monkeypatch.setattr(utils.os, "remove", mock_remove)
     monkeypatch.setattr(utils.shutil, "move", mock_move)
     monkeypatch.setattr(utils.os, "makedirs", mock_makedirs)
 

@@ -84,7 +84,6 @@ aboutprivatebrowsing:
     expires: 160
     no_lint:
       - COMMON_PREFIX
-    telemetry_mirror: Aboutprivatebrowsing_Click_InfoLink
 
   click_promo_link:
     type: event
@@ -99,7 +98,6 @@ aboutprivatebrowsing:
     expires: 160
     no_lint:
       - COMMON_PREFIX
-    telemetry_mirror: Aboutprivatebrowsing_Click_PromoLink
 
   click_dismiss_button:
     type: event
@@ -114,4 +112,3 @@ aboutprivatebrowsing:
     expires: 160
     no_lint:
       - COMMON_PREFIX
-    telemetry_mirror: Aboutprivatebrowsing_Click_DismissButton

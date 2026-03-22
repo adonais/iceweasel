@@ -156,8 +156,7 @@ class KeyframeEffect : public AnimationEffect {
       SetDOMStringToNull(aRetVal);
       return;
     }
-    aRetVal =
-        nsCSSPseudoElements::PseudoRequestAsString(mTarget.mPseudoRequest);
+    mTarget.mPseudoRequest.ToString(aRetVal);
   }
 
   // These two setters call GetTargetComputedStyle which is not safe to use when
@@ -370,6 +369,8 @@ class KeyframeEffect : public AnimationEffect {
       uint64_t aCurrentIterationOnLastCompose);
 
   bool HasOpacityChange() const { return mCumulativeChanges.mOpacity; }
+
+  double AnimationsPlayBackRateMultiplier() const;
 
  protected:
   ~KeyframeEffect() override = default;

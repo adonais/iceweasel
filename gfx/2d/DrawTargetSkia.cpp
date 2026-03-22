@@ -30,6 +30,7 @@
 #include "skia/src/core/SkWriteBuffer.h"
 #include "skia/src/shaders/SkEmptyShader.h"
 #include "Blur.h"
+#include "DataSurfaceHelpers.h"
 #include "Logging.h"
 #include "Tools.h"
 #include "PathHelpers.h"
@@ -1201,7 +1202,7 @@ CGContextRef DrawTargetSkia::BorrowCGContext(const DrawOptions& aOptions) {
       mCanvas->restore();
     }
     ReleaseBits(mCanvasData);
-    NS_WARNING("Could not create bitmap around skia data\n");
+    NS_WARNING("Could not create bitmap around skia data");
     return nullptr;
   }
 
@@ -1660,9 +1661,9 @@ already_AddRefed<DrawTarget> DrawTargetSkia::CreateSimilarDrawTarget(
 
 bool DrawTargetSkia::CanCreateSimilarDrawTarget(const IntSize& aSize,
                                                 SurfaceFormat aFormat) const {
-  auto minmaxPair = std::minmax(aSize.width, aSize.height);
-  return minmaxPair.first > 0 &&
-         size_t(minmaxPair.second) < GetMaxSurfaceSize();
+  return aSize.width > 0 && aSize.height > 0 &&
+         size_t(std::max(aSize.width, aSize.height)) <= GetMaxSurfaceSize() &&
+         size_t(aSize.width) * size_t(aSize.height) <= GetMaxSurfaceArea();
 }
 
 RefPtr<DrawTarget> DrawTargetSkia::CreateClippedDrawTarget(
@@ -1806,7 +1807,9 @@ template <typename T>
 }
 
 bool DrawTargetSkia::Init(const IntSize& aSize, SurfaceFormat aFormat) {
-  if (size_t(std::max(aSize.width, aSize.height)) > GetMaxSurfaceSize()) {
+  if (aSize.width <= 0 || aSize.height <= 0 ||
+      size_t(std::max(aSize.width, aSize.height)) > GetMaxSurfaceSize() ||
+      size_t(aSize.width) * size_t(aSize.height) > GetMaxSurfaceArea()) {
     return false;
   }
 

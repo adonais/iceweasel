@@ -57,7 +57,7 @@ add_setup(async function () {
 });
 
 /**
- * Tests that UrlbarProvidersManager._heuristicProviderTimer is cancelled when
+ * Tests that ProvidersManager._heuristicProviderTimer is cancelled when
  * a query is cancelled.
  */
 add_task(async function timerIsCancelled() {
@@ -74,7 +74,8 @@ add_task(async function timerIsCancelled() {
       }),
     ],
   });
-  UrlbarProvidersManager.registerProvider(slowProvider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(slowProvider);
 
   // fastProvider is a stand-in for a fast Autofill returning a heuristic
   // result.
@@ -87,7 +88,7 @@ add_task(async function timerIsCancelled() {
       }),
     ],
   });
-  UrlbarProvidersManager.registerProvider(fastProvider);
+  providersManager.registerProvider(fastProvider);
   let firstContext = createContext("m", {
     providers: [slowProvider.name, fastProvider.name],
   });
@@ -180,7 +181,7 @@ add_task(async function autofillIsCleared() {
     secondContext,
     matches: [
       makeSearchResult(secondContext, {
-        engineName: (await Services.search.getDefault()).name,
+        engineName: (await SearchService.getDefault()).name,
         providerName: "UrlbarProviderHeuristicFallback",
         heuristic: true,
       }),
@@ -214,8 +215,9 @@ add_task(async function autofillIsCleared() {
         "The first query should be cancelled."
       );
       Assert.ok(
-        !UrlbarProvidersManager.getProvider("UrlbarProviderAutofill")
-          ._autofillData,
+        !ProvidersManager.getInstanceForSap("urlbar").getProvider(
+          "UrlbarProviderAutofill"
+        )._autofillData,
         "The first result should not have populated autofill data."
       );
       Assert.ok(!queryCancelled, "No more than one query should be cancelled.");

@@ -240,7 +240,6 @@ tasks:
             symbol: WR(wrench)
         when:
             files-changed:
-                - 'build/win64/mozconfig.vs2022'
                 - 'gfx/wr/**'
                 - 'taskcluster/scripts/misc/wrench-windows-tests.sh'
 

@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsThreadPool_h__
-#define nsThreadPool_h__
+#ifndef nsThreadPool_h_
+#define nsThreadPool_h_
 
 #include "nsITargetShutdownTask.h"
 #include "nsIThread.h"
@@ -78,4 +78,4 @@ class nsThreadPool final : public mozilla::Runnable, public nsIThreadPool {
    0x4ec4,                                    \
    {0x88, 0x8e, 0x6e, 0x42, 0x64, 0xfe, 0x90, 0xeb}}
 
-#endif  // nsThreadPool_h__
+#endif  // nsThreadPool_h_

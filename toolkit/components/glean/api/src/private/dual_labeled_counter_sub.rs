@@ -53,7 +53,7 @@ impl Counter for DualLabeledCounterSubMetric {
             DualLabeledCounterSubMetric::Child { id, dual_labels } => {
                 /* bug 1973287 glean::DualLabeledCounterMetric doesn't impl glean::MetricType
                 #[cfg(feature = "with_gecko")]
-                if gecko_profiler::can_accept_markers() {
+                if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                     gecko_profiler::add_marker(
                         "LabeledCounter::add",
                         super::profiler_utils::TelemetryProfilerCategory,

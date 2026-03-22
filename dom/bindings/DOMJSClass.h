@@ -110,9 +110,8 @@ static const uint32_t ServiceWorkerGlobalScope = 1u << 3;
 static const uint32_t WorkerDebuggerGlobalScope = 1u << 4;
 static const uint32_t AudioWorkletGlobalScope = 1u << 5;
 static const uint32_t PaintWorkletGlobalScope = 1u << 6;
-static const uint32_t ShadowRealmGlobalScope = 1u << 7;
 
-static constexpr uint32_t kCount = 8;
+static constexpr uint32_t kCount = 7;
 }  // namespace GlobalNames
 
 struct PrefableDisablers {

@@ -6,8 +6,8 @@
 
 // Original author: ekr@rtfm.com
 
-#ifndef transportflow_h__
-#define transportflow_h__
+#ifndef transportflow_h_
+#define transportflow_h_
 
 #include <deque>
 #include <string>

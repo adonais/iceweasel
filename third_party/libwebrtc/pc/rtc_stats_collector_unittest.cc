@@ -97,7 +97,6 @@
 #include "test/wait_until.h"
 
 using ::testing::_;
-using ::testing::Invoke;
 using ::testing::Return;
 
 namespace webrtc {
@@ -341,15 +340,15 @@ scoped_refptr<MockRtpSenderInternal> CreateMockSender(
   EXPECT_CALL(*sender, track()).WillRepeatedly(Return(track));
   EXPECT_CALL(*sender, ssrc()).WillRepeatedly(Return(ssrc));
   EXPECT_CALL(*sender, media_type()).WillRepeatedly(Return(media_type));
-  EXPECT_CALL(*sender, GetParameters())
-      .WillRepeatedly(
-          Invoke([s = sender.get()]() { return s->GetParametersInternal(); }));
-  EXPECT_CALL(*sender, GetParametersInternal()).WillRepeatedly(Invoke([ssrc]() {
+  EXPECT_CALL(*sender, GetParameters()).WillRepeatedly([s = sender.get()]() {
+    return s->GetParametersInternal();
+  });
+  EXPECT_CALL(*sender, GetParametersInternal()).WillRepeatedly([ssrc]() {
     RtpParameters params;
     params.encodings.push_back(RtpEncodingParameters());
     params.encodings[0].ssrc = ssrc;
     return params;
-  }));
+  });
   EXPECT_CALL(*sender, AttachmentId()).WillRepeatedly(Return(attachment_id));
   EXPECT_CALL(*sender, stream_ids()).WillRepeatedly(Return(local_stream_ids));
   EXPECT_CALL(*sender, SetTransceiverAsStopped());
@@ -362,9 +361,7 @@ scoped_refptr<MockRtpReceiverInternal> CreateMockReceiver(
     int attachment_id) {
   auto receiver = make_ref_counted<MockRtpReceiverInternal>();
   EXPECT_CALL(*receiver, track()).WillRepeatedly(Return(track));
-  EXPECT_CALL(*receiver, ssrc()).WillRepeatedly(Invoke([ssrc]() {
-    return ssrc;
-  }));
+  EXPECT_CALL(*receiver, ssrc()).WillRepeatedly([ssrc]() { return ssrc; });
   EXPECT_CALL(*receiver, streams())
       .WillRepeatedly(
           Return(std::vector<scoped_refptr<MediaStreamInterface>>({})));
@@ -374,12 +371,12 @@ scoped_refptr<MockRtpReceiverInternal> CreateMockReceiver(
           Return(track->kind() == MediaStreamTrackInterface::kAudioKind
                      ? MediaType::AUDIO
                      : MediaType::VIDEO));
-  EXPECT_CALL(*receiver, GetParameters()).WillRepeatedly(Invoke([ssrc]() {
+  EXPECT_CALL(*receiver, GetParameters()).WillRepeatedly([ssrc]() {
     RtpParameters params;
     params.encodings.push_back(RtpEncodingParameters());
     params.encodings[0].ssrc = ssrc;
     return params;
-  }));
+  });
   EXPECT_CALL(*receiver, AttachmentId()).WillRepeatedly(Return(attachment_id));
   EXPECT_CALL(*receiver, Stop()).WillRepeatedly(Return());
   return receiver;
@@ -2196,6 +2193,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRtpStreamStats_Audio) {
   voice_media_info.receive_codecs.insert(
       std::make_pair(codec_parameters.payload_type, codec_parameters));
 
+  Call::Stats call_stats;
+  call_stats.sent_ccfb_stats_per_ssrc[1] = {
+      .num_packets_reported_lost = 222, .num_packets_reported_recovered = 200};
+  pc_->SetCallStats(call_stats);
+
   auto voice_media_channels =
       pc_->AddVoiceChannel("AudioMid", "TransportName", voice_media_info);
   stats_->SetupRemoteTrackAndReceiver(MediaType::AUDIO, "RemoteAudioTrackID",
@@ -2219,6 +2221,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRtpStreamStats_Audio) {
   expected_audio.packets_received = 2;
   expected_audio.packets_received_with_ect1 = 7;
   expected_audio.packets_received_with_ce = 5;
+  expected_audio.packets_reported_as_lost = 222;
+  expected_audio.packets_reported_as_lost_but_recovered = 200;
   expected_audio.nack_count = 5;
   expected_audio.fec_packets_discarded = 5566;
   expected_audio.fec_packets_received = 6677;
@@ -2376,6 +2380,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRtpStreamStats_Video) {
   video_media_info.receive_codecs.insert(
       std::make_pair(codec_parameters.payload_type, codec_parameters));
 
+  Call::Stats call_stats;
+  call_stats.sent_ccfb_stats_per_ssrc[1] = {
+      .num_packets_reported_lost = 222, .num_packets_reported_recovered = 200};
+  pc_->SetCallStats(call_stats);
+
   auto video_media_channels =
       pc_->AddVideoChannel("VideoMid", "TransportName", video_media_info);
   stats_->SetupRemoteTrackAndReceiver(MediaType::VIDEO, "RemoteVideoTrackID",
@@ -2397,6 +2406,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRtpStreamStats_Video) {
   expected_video.packets_received = 2;
   expected_video.packets_received_with_ect1 = 7;
   expected_video.packets_received_with_ce = 5;
+  expected_video.packets_reported_as_lost = 222;
+  expected_video.packets_reported_as_lost_but_recovered = 200;
   expected_video.bytes_received = 3;
   expected_video.header_bytes_received = 12;
   expected_video.packets_lost = 42;

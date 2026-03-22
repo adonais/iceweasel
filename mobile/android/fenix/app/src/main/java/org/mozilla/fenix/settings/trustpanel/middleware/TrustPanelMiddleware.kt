@@ -84,7 +84,7 @@ class TrustPanelMiddleware(
 
     private fun toggleTrackingProtection(
         currentState: TrustPanelState,
-    ) = scope.launch(Dispatchers.Main) {
+    ) = scope.launch {
         currentState.sessionState?.let { session ->
             if (currentState.isTrackingProtectionEnabled) {
                 trackingProtectionUseCases.addException(session.id)

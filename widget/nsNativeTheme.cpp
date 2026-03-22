@@ -73,49 +73,13 @@ NS_IMPL_ISUPPORTS(nsNativeTheme, nsITimerCallback, nsINamed)
     return flags;
   }
 
-  if (CheckBooleanAttr(aFrame, nsGkAtoms::disabled)) {
-    flags |= ElementState::DISABLED;
-  }
-
   switch (aAppearance) {
-    case StyleAppearance::Radio: {
-      if (CheckBooleanAttr(aFrame, nsGkAtoms::focused)) {
-        flags |= ElementState::FOCUS;
-        nsPIDOMWindowOuter* window =
-            aFrame->GetContent()->OwnerDoc()->GetWindow();
-        if (window && window->ShouldShowFocusRing()) {
-          flags |= ElementState::FOCUSRING;
-        }
-      }
-      if (CheckBooleanAttr(aFrame, nsGkAtoms::selected) ||
-          CheckBooleanAttr(aFrame, nsGkAtoms::checked)) {
-        flags |= ElementState::CHECKED;
-      }
-      break;
-    }
-    case StyleAppearance::Checkbox: {
-      if (CheckBooleanAttr(aFrame, nsGkAtoms::checked)) {
-        flags |= ElementState::CHECKED;
-      } else if (CheckBooleanAttr(aFrame, nsGkAtoms::indeterminate)) {
-        flags |= ElementState::INDETERMINATE;
-      }
-      break;
-    }
     case StyleAppearance::Toolbarbutton:
       if (CheckBooleanAttr(aFrame, nsGkAtoms::open)) {
+        // TODO: Consider using :open instead of faking :hover:active?
         flags |= ElementState::HOVER | ElementState::ACTIVE;
       }
       break;
-    case StyleAppearance::Menulist:
-    case StyleAppearance::NumberInput:
-    case StyleAppearance::Textfield:
-    case StyleAppearance::PasswordInput:
-    case StyleAppearance::Textarea: {
-      if (CheckBooleanAttr(aFrame, nsGkAtoms::focused)) {
-        flags |= ElementState::FOCUS | ElementState::FOCUSRING;
-      }
-      break;
-    }
     default:
       break;
   }

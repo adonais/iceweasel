@@ -249,6 +249,28 @@ class RuntimeSettingsTest : BaseSessionTest() {
     }
 
     @Test
+    fun firefoxRelay() {
+        val geckoRuntimeSettings = sessionRule.runtime.settings
+
+        geckoRuntimeSettings.setFirefoxRelay(GeckoRuntimeSettings.FIREFOX_RELAY_ENABLED)
+
+        assertThat(
+            "Firefox Relay was set to enabled.",
+            geckoRuntimeSettings.firefoxRelay,
+            equalTo(GeckoRuntimeSettings.FIREFOX_RELAY_ENABLED),
+        )
+
+        val geckoPreference =
+            (sessionRule.getPrefs("signon.firefoxRelay.feature").get(0)) as String
+
+        assertThat(
+            "Firefox Relay pref value should be enabled.",
+            geckoPreference,
+            equalTo(GeckoRuntimeSettings.FIREFOX_RELAY_ENABLED),
+        )
+    }
+
+    @Test
     fun largeKeepaliveFactor() {
         val defaultLargeKeepaliveFactor = 10
         val settings = sessionRule.runtime.settings

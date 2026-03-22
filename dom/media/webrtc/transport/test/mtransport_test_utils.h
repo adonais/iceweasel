@@ -6,8 +6,8 @@
 
 // Original author: ekr@rtfm.com
 
-#ifndef mtransport_test_utils_h__
-#define mtransport_test_utils_h__
+#ifndef mtransport_test_utils_h_
+#define mtransport_test_utils_h_
 
 #include "nsCOMPtr.h"
 #include "nsISerialEventTarget.h"

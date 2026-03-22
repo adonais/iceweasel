@@ -10,8 +10,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/TaggedAnonymousMemory.h"
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "gc/GCContext.h"
 #include "gc/Memory.h"
 #include "jit/AtomicOperations.h"

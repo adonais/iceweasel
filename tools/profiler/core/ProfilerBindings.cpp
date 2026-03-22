@@ -19,6 +19,18 @@ void gecko_profiler_register_thread(const char* aName) {
 
 void gecko_profiler_unregister_thread() { PROFILER_UNREGISTER_THREAD(); }
 
+bool gecko_profiler_current_thread_is_registered(
+    ThreadProfilingFeatures aThreadProfilingFeatures) {
+  return mozilla::profiler::ThreadRegistration::WithOnThreadRefOr(
+      [aThreadProfilingFeatures](
+          mozilla::profiler::ThreadRegistration::OnThreadRef aTR) {
+        return DoFeaturesIntersect(
+            aTR.UnlockedConstReaderAndAtomicRWCRef().ProfilingFeatures(),
+            aThreadProfilingFeatures);
+      },
+      false);
+}
+
 void gecko_profiler_construct_label(mozilla::AutoProfilerLabel* aAutoLabel,
                                     JS::ProfilingCategoryPair aCategoryPair) {
 #ifdef MOZ_GECKO_PROFILER

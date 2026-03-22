@@ -29,14 +29,13 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.shopping.ui.ext.headingResource
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemedValue
+import org.mozilla.fenix.theme.ThemedValueProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -215,10 +214,9 @@ data class InfoCardButtonText(
     val onClick: () -> Unit,
 )
 
-private class PreviewModelParameterProvider : PreviewParameterProvider<InfoType> {
-
-    override val values = enumValues<InfoType>().asSequence()
-}
+private class PreviewModelParameterProvider : ThemedValueProvider<InfoType>(
+    enumValues<InfoType>().asSequence(),
+)
 
 @Composable
 private fun InfoCardPreviewContent(type: InfoType) {
@@ -243,22 +241,12 @@ private fun InfoCardPreviewContent(type: InfoType) {
     }
 }
 
-@PreviewLightDark
-@Composable
-private fun InfoCardPreview(
-    @PreviewParameter(PreviewModelParameterProvider::class) type: InfoType,
-) {
-    FirefoxTheme {
-        InfoCardPreviewContent(type = type)
-    }
-}
-
 @Preview
 @Composable
-private fun InfoCardPrivatePreview(
-    @PreviewParameter(PreviewModelParameterProvider::class) type: InfoType,
+private fun InfoCardPreview(
+    @PreviewParameter(PreviewModelParameterProvider::class) state: ThemedValue<InfoType>,
 ) {
-    FirefoxTheme(theme = Theme.Private) {
-        InfoCardPreviewContent(type = type)
+    FirefoxTheme(state.theme) {
+        InfoCardPreviewContent(type = state.value)
     }
 }

@@ -4,6 +4,9 @@ skip-if = [
   "os == 'android'",
 ]
 
+["test_appgroup_profile.js"]
+run-if = ["os == 'mac'"]
+
 ["test_async_flush.js"]
 
 ["test_async_flush_current_profile.js"]

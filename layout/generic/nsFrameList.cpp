@@ -461,8 +461,6 @@ const char* ChildListName(FrameChildListID aListID) {
       return "AbsoluteList";
     case FrameChildListID::PushedAbsolute:
       return "PushedAbsoluteList";
-    case FrameChildListID::Fixed:
-      return "FixedList";
     case FrameChildListID::Overflow:
       return "OverflowList";
     case FrameChildListID::OverflowContainers:

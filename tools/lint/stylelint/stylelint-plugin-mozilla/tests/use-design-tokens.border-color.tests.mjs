@@ -134,6 +134,82 @@ testRule({
         .a { border: var(--custom-token); }
       `,
     },
+    {
+      code: ".a { border-color: oklch(from var(--border-color) l c h / 30%); }",
+      description: "Using oklch() with valid colors is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: var(--color-red-70); }
+        .a { border-color: var(--custom-token); }
+      `,
+      description:
+        "Using a local custom property that resolves to base color token is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: var(--color-green-100); }
+        .a { border: 1px solid var(--custom-token); }
+      `,
+      description:
+        "Using a local custom property that resolves to base color token is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: oklch(from var(--color-red-70) l c h / 20%); }
+        .a { border-color: var(--custom-token); }
+      `,
+      description:
+        "Using a local custom property that resolves to an oklch function using a base color token is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: light-dark(var(--color-green-20), var(--color-green-100)); }
+        .a { border: 1px solid var(--custom-token); }
+      `,
+      description:
+        "Using a local custom property that resolves to a light-dark function using base color tokens is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: color-mix(in oklch, var(--color-red-70) 40%, transparent); }
+        .a { border-color: var(--custom-token); }
+      `,
+      description:
+        "Using a local custom property that resolves to a color-mix function using a base color token is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: var(--text-color); }
+        .bg { border-color: var(--custom-token); }
+      `,
+      description:
+        "Using a custom token that resolves to a text-color token is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: var(--button-background-color); }
+        .bg { border-color: var(--custom-token); }
+      `,
+      description:
+        "Using a custom token that resolves to a background-color token is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: ButtonBorder; }
+        .bg { border-color: var(--custom-token); }
+      `,
+      description:
+        "Using a custom token that resolves to a system color is valid.",
+    },
+    {
+      code: `
+        :root { --custom-token: ButtonText; }
+        .bg { border-color: var(--custom-token); }
+      `,
+      description:
+        "Using a custom token that resolves to a system color, even if non-semantic, is valid.",
+    },
   ],
 
   reject: [
@@ -181,6 +257,12 @@ testRule({
       ]),
       description:
         "rgba(42 42 42 / 0.15) should use a border-color design token.",
+    },
+    {
+      code: ".a { border-color: ButtonBorder; }",
+      message: messages.warning("ButtonBorder", "var(--button-border-color)"),
+      description:
+        "ButtonBorder should use var(--button-border-color) instead.",
     },
     {
       code: ".a { border: 3px dashed rgba(42 42 42 / 0.15); }",
@@ -302,6 +384,15 @@ testRule({
         "1px solid var(--random-token, #666) should use a border-color design token.",
     },
     {
+      code: ".a { border: 1px solid var(--random-token, var(--color-gray-50)); }",
+      message: messages.rejected(
+        "1px solid var(--random-token, var(--color-gray-50))",
+        ["border-color", "border", "outline", "border-width"]
+      ),
+      description:
+        "1px solid var(--random-token, var(--color-gray-50)) should use a border-color design token.",
+    },
+    {
       code: `
         :root { --custom-token: #666; }
         .a { border-color: var(--custom-token); }
@@ -316,6 +407,30 @@ testRule({
     },
     {
       code: `
+        :root { --custom-token: #666; }
+        .a { border-color: var(--random-token, var(--custom-token)); }
+      `,
+      message: messages.rejected("var(--random-token, var(--custom-token))", [
+        "border-color",
+        "border",
+        "outline",
+      ]),
+      description:
+        "var(--random-token, var(--custom-token)) should use a border-color design token.",
+    },
+    {
+      code: ".a { border: 1px solid var(--color-gray-20); }",
+      message: messages.rejected("1px solid var(--color-gray-20)", [
+        "border-color",
+        "border",
+        "outline",
+        "border-width",
+      ]),
+      description:
+        "1px solid var(--color-gray-20) should use a border-color design token.",
+    },
+    {
+      code: `
         :root { --custom-token: oklch(69% 0.19 15); }
         .a { border: 1px solid var(--custom-token); }
       `,
@@ -327,6 +442,48 @@ testRule({
       ]),
       description:
         "1px solid var(--custom-token) should use a border-color design token.",
+    },
+    {
+      code: ".a { border-color: FieldText; }",
+      message: messages.rejected("FieldText", [
+        "border-color",
+        "border",
+        "outline",
+      ]),
+      description: "FieldText should use a border-color design token.",
+    },
+    {
+      code: ".a { border-color: ButtonBorder; }",
+      message: messages.warning("ButtonBorder", "var(--button-border-color)"),
+      description:
+        "ButtonBorder should use var(--button-border-color) instead.",
+    },
+    {
+      code: ".a { border: 1px solid color-mix(in oklch, var(--color-gray-20) 20%, transparent); }",
+      message: messages.rejected(
+        "1px solid color-mix(in oklch, var(--color-gray-20) 20%, transparent)",
+        ["border-color", "border", "outline", "border-width"]
+      ),
+      description:
+        "1px solid color-mix(in oklch, var(--color-gray-20) 20%, transparent) should use a border-color design token.",
+    },
+    {
+      code: ".a { border-color: light-dark(var(--color-gray-20), var(--color-gray-80)); }",
+      message: messages.rejected(
+        "light-dark(var(--color-gray-20), var(--color-gray-80))",
+        ["border-color", "border", "outline"]
+      ),
+      description:
+        "light-dark(var(--color-gray-20), var(--color-gray-80)) should use a border-color design token.",
+    },
+    {
+      code: ".a { border: 1px solid oklch(from var(--color-gray-20) l c h / 20%); }",
+      message: messages.rejected(
+        "1px solid oklch(from var(--color-gray-20) l c h / 20%)",
+        ["border-color", "border", "outline", "border-width"]
+      ),
+      description:
+        "1px solid oklch(from var(--color-gray-20) l c h / 20%) should use a border-color design token.",
     },
   ],
 });

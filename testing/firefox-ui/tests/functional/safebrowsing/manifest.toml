@@ -4,7 +4,7 @@
 skip-if = [
   "asan",
   "debug", # The GAPI key isn't available in debug or sanitizer builds
-  "os == 'win' && cc_type == 'clang'", # Bug 1565818
+  "cc_type == 'clang' && os == 'win'", # Bug 1565818
   "os == 'win' && ccov", # Bug 1805893
   "tsan",
 ]

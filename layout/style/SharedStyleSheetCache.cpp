@@ -22,7 +22,7 @@ extern mozilla::LazyLogModule sCssLoaderLog;
 
 namespace mozilla {
 
-NS_IMPL_ISUPPORTS(SharedStyleSheetCache, nsIMemoryReporter)
+NS_IMPL_ISUPPORTS(SharedStyleSheetCache, nsIMemoryReporter, nsIObserver)
 
 MOZ_DEFINE_MALLOC_SIZE_OF(SharedStyleSheetCacheMallocSizeOf)
 
@@ -241,8 +241,8 @@ void SharedStyleSheetCache::ClearInProcess(
 
   for (auto iter = mInlineSheets.Iter(); !iter.Done(); iter.Next()) {
     if (SharedSubResourceCacheUtils::ShouldClearEntry(
-            nullptr, iter.Key(), iter.Key(), aChrome, aPrincipal,
-            aSchemelessSite, aPattern, aURL)) {
+            nullptr, iter.Key(), aChrome, aPrincipal, aSchemelessSite, aPattern,
+            aURL)) {
       iter.Remove();
     }
   }

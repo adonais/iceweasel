@@ -9,19 +9,20 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 add_task(async function test_providers() {
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
   Assert.throws(
-    () => UrlbarProvidersManager.registerProvider(),
+    () => providersManager.registerProvider(),
     /invalid provider/,
     "Should throw with no arguments"
   );
   Assert.throws(
-    () => UrlbarProvidersManager.registerProvider({}),
+    () => providersManager.registerProvider({}),
     /invalid provider/,
     "Should throw with empty object"
   );
   Assert.throws(
     () =>
-      UrlbarProvidersManager.registerProvider({
+      providersManager.registerProvider({
         name: "",
       }),
     /invalid provider/,
@@ -29,7 +30,7 @@ add_task(async function test_providers() {
   );
   Assert.throws(
     () =>
-      UrlbarProvidersManager.registerProvider({
+      providersManager.registerProvider({
         name: "test",
         startQuery: "no",
       }),
@@ -38,7 +39,7 @@ add_task(async function test_providers() {
   );
   Assert.throws(
     () =>
-      UrlbarProvidersManager.registerProvider({
+      providersManager.registerProvider({
         name: "test",
         startQuery: () => {},
         cancelQuery: "no",
@@ -61,10 +62,10 @@ add_task(async function test_providers() {
     "onQueryResults"
   );
 
-  await UrlbarProvidersManager.startQuery(context, controller);
+  await providersManager.startQuery(context, controller);
   // Sanity check that this doesn't throw. It should be a no-op since we await
   // for startQuery.
-  UrlbarProvidersManager.cancelQuery(context);
+  providersManager.cancelQuery(context);
 
   let params = await resultsPromise;
   Assert.deepEqual(params[0].results, [match]);

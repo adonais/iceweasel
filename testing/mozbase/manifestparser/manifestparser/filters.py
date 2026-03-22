@@ -518,7 +518,7 @@ class pathprefix(InstanceFilter):
                 if "disabled" in test and os.path.normpath(test["relpath"]) == tp:
                     del test["disabled"]
 
-                seen.add(tp)
+                seen.add(testpath)
                 yield test
                 break
 

@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include <type_traits>
 
-#include "jsexn.h"
 #include "jsfriendapi.h"
 #include "jspubtd.h"
 #include "jstypes.h"
@@ -33,6 +32,7 @@
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 #include "vm/ArrayObject.h"
+#include "vm/ErrorObject.h"
 #include "vm/JSAtomState.h"
 #include "vm/JSContext.h"
 #include "vm/JSFunction.h"
@@ -220,7 +220,6 @@ class GlobalObjectData {
   GCPtr<SetObject*> setObjectTemplate;
 
   GCPtr<PlainObject*> iterResultTemplate;
-  GCPtr<PlainObject*> iterResultWithoutPrototypeTemplate;
 
   // Lazily initialized script source object to use for scripts cloned from the
   // self-hosting stencil.
@@ -1012,13 +1011,9 @@ class GlobalObject : public NativeObject {
   static const size_t IterResultObjectValueSlot = 0;
   static const size_t IterResultObjectDoneSlot = 1;
   static js::PlainObject* getOrCreateIterResultTemplateObject(JSContext* cx);
-  static js::PlainObject* getOrCreateIterResultWithoutPrototypeTemplateObject(
-      JSContext* cx);
 
  private:
-  enum class WithObjectPrototype { No, Yes };
-  static js::PlainObject* createIterResultTemplateObject(
-      JSContext* cx, WithObjectPrototype withProto);
+  static js::PlainObject* createIterResultTemplateObject(JSContext* cx);
 
  public:
   static ScriptSourceObject* getOrCreateSelfHostingScriptSourceObject(

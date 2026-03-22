@@ -40,4 +40,4 @@ class nsMacDockSupport : public nsIMacDockSupport, public nsITaskbarProgress {
   nsresult UpdateDockTile();
 };
 
-#endif
+#endif  // mozilla_widget_nsMacDockSupport_h

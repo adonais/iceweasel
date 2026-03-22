@@ -1352,7 +1352,7 @@ interface TestIndexedAndNamedGetterAndSetterInterface : TestIndexedSetterInterfa
   getter DOMString namedItem(DOMString name);
   setter undefined (unsigned long index, long item);
   setter undefined (DOMString name, DOMString item);
-  stringifier DOMString ();
+  stringifier;
   readonly attribute unsigned long length;
 };
 

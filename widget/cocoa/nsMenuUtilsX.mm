@@ -18,6 +18,7 @@
 #include "nsObjCExceptions.h"
 #include "nsCocoaUtils.h"
 #include "nsCocoaWindow.h"
+#include "nsComputedDOMStyle.h"
 #include "nsGkAtoms.h"
 #include "nsGlobalWindowInner.h"
 #include "nsPIDOMWindow.h"
@@ -243,6 +244,33 @@ NSMenuItem* nsMenuUtilsX::NativeMenuItemWithLocation(NSMenu* aRootMenu,
   }
 
   return nil;
+}
+
+NSAttributedString* nsMenuUtilsX::AttributedStringForContent(
+    nsIContent* aContent, NSString* aLabel) {
+  // Get the computed font size for the menu item and apply it to
+  // NSAttributedString.
+
+  RefPtr<const ComputedStyle> style =
+      nsComputedDOMStyle::GetComputedStyleNoFlush(aContent->AsElement());
+
+  if (!style) {
+    return nil;
+  }
+
+  float fontSize = style->StyleFont()->mSize.ToCSSPixels();
+
+  if (fontSize == 0.f) {
+    // Cocoa uses the default font size when 0 is passed, so let's approximate
+    // to remain consistent with non-native menus.
+    fontSize = 0.01f;
+  }
+
+  NSFont* font = [NSFont menuFontOfSize:fontSize];
+  NSDictionary* attrs = @{NSFontAttributeName : font};
+
+  return [[[NSAttributedString alloc] initWithString:aLabel
+                                          attributes:attrs] autorelease];
 }
 
 static void CheckNativeMenuConsistencyImpl(

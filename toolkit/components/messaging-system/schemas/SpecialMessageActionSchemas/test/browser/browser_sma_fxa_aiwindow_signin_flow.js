@@ -3,12 +3,8 @@
 
 "use strict";
 
-const { AIWindowAccountAuth } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/ui/modules/AIWindowAccountAuth.sys.mjs"
-);
-
 add_task(async function test_FXA_AIWINDOW_SIGNIN_FLOW() {
-  let launchAIWindowStub = sinon.stub(AIWindowAccountAuth, "launchAIWindow");
+  let launchAIWindowStub = sinon.stub(AIWindow, "launchWindow");
   launchAIWindowStub.resolves(true);
 
   await SMATestUtils.executeAndValidateAction({
@@ -18,7 +14,7 @@ add_task(async function test_FXA_AIWINDOW_SIGNIN_FLOW() {
   Assert.equal(
     launchAIWindowStub.callCount,
     1,
-    "Should call launchAIWindow once"
+    "Should call launchWindow once"
   );
 
   Assert.ok(

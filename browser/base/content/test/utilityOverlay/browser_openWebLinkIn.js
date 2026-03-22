@@ -165,7 +165,7 @@ add_task(async function test_open_non_private_tab_from_only_private_window() {
 
 add_task(async function test_open_ai_window_tab_in_ai_window() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.aiwindow.enabled", true]],
+    set: [["browser.smartwindow.enabled", true]],
   });
   let win = await BrowserTestUtils.openNewBrowserWindow({ aiWindow: true });
 

@@ -46,6 +46,10 @@ ExecuteIfOnMainThreadEventTarget::UnregisterShutdownTask(
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+nsIEventTarget::FeatureFlags ExecuteIfOnMainThreadEventTarget::GetFeatures() {
+  return SUPPORTS_BASE;
+}
+
 NS_IMETHODIMP
 ExecuteIfOnMainThreadEventTarget::IsOnCurrentThread(bool* aIsOnCurrentThread) {
   *aIsOnCurrentThread = NS_IsMainThread();

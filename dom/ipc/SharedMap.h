@@ -9,7 +9,6 @@
 
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/Variant.h"
 #include "mozilla/dom/MozSharedMapBinding.h"
 #include "mozilla/dom/ipc/StructuredCloneData.h"
@@ -61,7 +60,7 @@ class SharedMap : public DOMEventTargetHelper {
   SharedMap();
 
   SharedMap(nsIGlobalObject* aGlobal, SharedMemoryHandle&&,
-            nsTArray<RefPtr<BlobImpl>>&& aBlobs);
+            nsTArray<NotNull<RefPtr<BlobImpl>>>&& aBlobs);
 
   // Returns true if the map contains the given (UTF-8) key.
   bool Has(const nsACString& name);
@@ -104,7 +103,7 @@ class SharedMap : public DOMEventTargetHelper {
    * changed (UTF-8-encoded) keys.
    */
   void Update(SharedMemoryHandle&& aMapHandle,
-              nsTArray<RefPtr<BlobImpl>>&& aBlobs,
+              nsTArray<NotNull<RefPtr<BlobImpl>>>&& aBlobs,
               nsTArray<nsCString>&& aChangedKeys);
 
   JSObject* WrapObject(JSContext* aCx,
@@ -149,11 +148,10 @@ class SharedMap : public DOMEventTargetHelper {
     }
 
     /**
-     * Updates the value of this entry to the given structured clone data, of
-     * which it takes ownership. The passed StructuredCloneData object must not
-     * be used after this call.
+     * Updates the value of this entry to the given structured clone data.
+     * The data should not support transferring.
      */
-    void TakeData(UniquePtr<StructuredCloneData> aHolder);
+    void SetData(StructuredCloneData* aHolder);
 
     /**
      * This is called while building a new snapshot of the SharedMap. aDestPtr
@@ -201,9 +199,9 @@ class SharedMap : public DOMEventTargetHelper {
     uint16_t BlobOffset() const { return mBlobOffset; }
     uint16_t BlobCount() const { return mBlobCount; }
 
-    Span<const RefPtr<BlobImpl>> Blobs() {
-      if (mData.is<UniquePtr<StructuredCloneData>>()) {
-        return mData.as<UniquePtr<StructuredCloneData>>()->BlobImpls();
+    Span<const NotNull<RefPtr<BlobImpl>>> Blobs() {
+      if (mData.is<RefPtr<StructuredCloneData>>()) {
+        return mData.as<RefPtr<StructuredCloneData>>()->BlobImpls();
       }
       return {&mMap.mBlobImpls[mBlobOffset], BlobCount()};
     }
@@ -212,8 +210,8 @@ class SharedMap : public DOMEventTargetHelper {
     // Returns the temporary StructuredCloneData object containing the entry's
     // value. This is *only* valid when mData contains a StructuredCloneData
     // object.
-    const StructuredCloneData& Holder() const {
-      return *mData.as<UniquePtr<StructuredCloneData>>();
+    StructuredCloneData* Holder() const {
+      return mData.as<RefPtr<StructuredCloneData>>();
     }
 
     SharedMap& mMap;
@@ -234,7 +232,7 @@ class SharedMap : public DOMEventTargetHelper {
      *   data. This will be discarded the next time the map is serialized, and
      *   replaced with a buffer offset, as described above.
      */
-    Variant<uint32_t, UniquePtr<StructuredCloneData>> mData;
+    Variant<uint32_t, RefPtr<StructuredCloneData>> mData;
 
     // The size, in bytes, of the entry's structured clone data.
     uint32_t mSize = 0;
@@ -245,7 +243,7 @@ class SharedMap : public DOMEventTargetHelper {
 
   const nsTArray<Entry*>& EntryArray() const;
 
-  nsTArray<RefPtr<BlobImpl>> mBlobImpls;
+  nsTArray<NotNull<RefPtr<BlobImpl>>> mBlobImpls;
 
   // Rebuilds the entry hashtable mEntries from the values serialized in the
   // current snapshot, if necessary. The hashtable is rebuilt lazily after

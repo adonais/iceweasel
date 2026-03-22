@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_GlobalStyleSheetCache_h__
-#define mozilla_GlobalStyleSheetCache_h__
+#ifndef mozilla_GlobalStyleSheetCache_h_
+#define mozilla_GlobalStyleSheetCache_h_
 
 #include "mozilla/BuiltInStyleSheets.h"
 #include "mozilla/MemoryReporting.h"
@@ -46,7 +46,7 @@ class GlobalStyleSheetCache final : public nsIObserver,
   NotNull<StyleSheet*> identifier_##Sheet() {            \
     return BuiltInSheet(BuiltInStyleSheet::identifier_); \
   }
-#include "mozilla/BuiltInStyleSheetList.h"
+#include "mozilla/BuiltInStyleSheetList.inc"
 #undef STYLE_SHEET
 
   NotNull<StyleSheet*> BuiltInSheet(BuiltInStyleSheet);

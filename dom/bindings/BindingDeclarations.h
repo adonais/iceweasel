@@ -10,8 +10,8 @@
  * include anywhere without running into include hell like we do with
  * BindingUtils.h
  */
-#ifndef mozilla_dom_BindingDeclarations_h__
-#define mozilla_dom_BindingDeclarations_h__
+#ifndef mozilla_dom_BindingDeclarations_h_
+#define mozilla_dom_BindingDeclarations_h_
 
 #include <type_traits>
 
@@ -569,4 +569,4 @@ class ReflectedHTMLAttributeSlots;
 }  // namespace dom
 }  // namespace mozilla
 
-#endif  // mozilla_dom_BindingDeclarations_h__
+#endif  // mozilla_dom_BindingDeclarations_h_

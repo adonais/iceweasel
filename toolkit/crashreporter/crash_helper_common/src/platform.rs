@@ -14,11 +14,14 @@ pub use linux::{PlatformError, ProcessHandle};
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub(crate) mod linux;
 
-#[cfg(target_os = "macos")]
-pub use macos::{PlatformError, ProcessHandle};
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+pub use mach::{
+    mach_msg_recv, mach_msg_send, AsRawPort, MachMessageWrapper, OwnedRight, PlatformError,
+    ProcessHandle, ReceiveRight, SendRight,
+};
 
-#[cfg(target_os = "macos")]
-pub(crate) mod macos;
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+pub(crate) mod mach;
 
 #[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
 #[macro_export]

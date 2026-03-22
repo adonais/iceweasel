@@ -335,7 +335,7 @@ IPCResult StreamFilterParent::RecvSuspend() {
     RunOnMainThread(FUNC, [=] {
       self->mChannel->Suspend();
 
-      RunOnActorThread(FUNC, [=] {
+      self->RunOnActorThread(FUNC, [=] {
         if (self->IPCActive()) {
           self->mState = State::Suspended;
           self->CheckResult(self->SendSuspended());
@@ -358,7 +358,7 @@ IPCResult StreamFilterParent::RecvResume() {
     RunOnMainThread(FUNC, [=] {
       self->mChannel->Resume();
 
-      RunOnActorThread(FUNC, [=] {
+      self->RunOnActorThread(FUNC, [=] {
         if (self->IPCActive()) {
           self->CheckResult(self->SendResumed());
         }
@@ -417,13 +417,13 @@ void StreamFilterParent::FinishDisconnect() {
     // This is not always the last flush. See below for the final flush.
     self->FlushBufferedData();
 
-    RunOnActorThread(FUNC, [=] {
+    self->RunOnActorThread(FUNC, [=] {
       if (self->mState != State::Closed) {
         self->mState = State::Disconnected;
       }
       // Despite having flushed buffers before, the buffer may be non-empty
       // if OnDataAvailable is called before entering state Disconnected.
-      RunOnIOThread(FUNC, [=] {
+      self->RunOnIOThread(FUNC, [=] {
         // If OnDataAvailable is called after entering state Disconnected,
         // it calls FlushBufferedData() if needed. But if that did not
         // happen, we need to flush the data here, now.
@@ -431,7 +431,7 @@ void StreamFilterParent::FinishDisconnect() {
           self->FlushBufferedData();
         }
       });
-      RunOnMainThread(FUNC, [=] {
+      self->RunOnMainThread(FUNC, [=] {
         if (self->mReceivedStop && !self->mSentStop) {
           nsresult rv = self->EmitStopRequest(NS_OK);
           (void)NS_WARN_IF(NS_FAILED(rv));
@@ -612,7 +612,7 @@ StreamFilterParent::OnStartRequest(nsIRequest* aRequest) {
       RunOnActorThread(FUNC, [=] {
         if (self->IPCActive()) {
           self->mState = State::Disconnected;
-          CheckResult(self->SendError("Channel redirected"_ns));
+          self->CheckResult(self->SendError("Channel redirected"_ns));
         }
       });
     }
@@ -630,7 +630,7 @@ StreamFilterParent::OnStartRequest(nsIRequest* aRequest) {
       RunOnActorThread(FUNC, [=] {
         if (self->IPCActive()) {
           self->mState = State::Disconnected;
-          CheckResult(
+          self->CheckResult(
               self->SendError("Channel is delivering cached alt-data"_ns));
         }
       });
@@ -696,7 +696,7 @@ StreamFilterParent::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
       // request at the end of that process. Otherwise we need to
       // manually emit one here, since we won't be getting a response
       // from the child.
-      RunOnMainThread(FUNC, [=] {
+      self->RunOnMainThread(FUNC, [=] {
         if (!self->mSentStop) {
           self->EmitStopRequest(aStatusCode);
         }

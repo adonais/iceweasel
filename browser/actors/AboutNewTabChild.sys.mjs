@@ -79,22 +79,29 @@ export class AboutNewTabChild extends RemotePageChild {
         // destroyed
       }
     } else if (event.type == "pageshow" || event.type == "visibilitychange") {
-      // Don't show the notification in non-permanent private windows
-      // since it is expected to have very little opt-in here.
-      let contentWindowPrivate = PrivateBrowsingUtils.isContentWindowPrivate(
-        this.contentWindow
-      );
-      if (
-        this.document.visibilityState == "visible" &&
-        (!contentWindowPrivate ||
-          (contentWindowPrivate &&
-            PrivateBrowsingUtils.permanentPrivateBrowsing))
-      ) {
-        this.sendAsyncMessage("AboutNewTabVisible");
+      if (this.document.visibilityState != "visible") {
+        this.contentWindow.windowUtils.imageAnimationMode =
+          Ci.imgIContainer.kDontAnimMode;
+      } else {
+        this.contentWindow.windowUtils.imageAnimationMode =
+          Ci.imgIContainer.kNormalAnimMode;
 
-        // Note: newtab feature info is currently being loaded in PrefsFeed.sys.mjs,
-        // But we're recording exposure events here.
-        lazy.NimbusFeatures.newtab.recordExposureEvent({ once: true });
+        // Don't show the notification in non-permanent private windows
+        // since it is expected to have very little opt-in here.
+        let contentWindowPrivate = PrivateBrowsingUtils.isContentWindowPrivate(
+          this.contentWindow
+        );
+        if (
+          !contentWindowPrivate ||
+          (contentWindowPrivate &&
+            PrivateBrowsingUtils.permanentPrivateBrowsing)
+        ) {
+          this.sendAsyncMessage("AboutNewTabVisible");
+
+          // Note: newtab feature info is currently being loaded in PrefsFeed.sys.mjs,
+          // But we're recording exposure events here.
+          lazy.NimbusFeatures.newtab.recordExposureEvent({ once: true });
+        }
       }
     }
   }

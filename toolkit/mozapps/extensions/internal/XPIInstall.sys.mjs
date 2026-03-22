@@ -1123,12 +1123,10 @@ function writeStringToFile(file, string) {
  */
 function SafeInstallOperation() {
   this._installedFiles = [];
-  this._createdDirs = [];
 }
 
 SafeInstallOperation.prototype = {
   _installedFiles: null,
-  _createdDirs: null,
 
   _installFile(aFile, aTargetDirectory, aCopy) {
     let oldFile = aCopy ? null : aFile.clone();
@@ -1240,10 +1238,6 @@ SafeInstallOperation.prototype = {
       } else {
         move.newFile.moveTo(move.oldFile.parent, null);
       }
-    }
-
-    while (this._createdDirs.length) {
-      recursiveRemove(this._createdDirs.pop());
     }
   },
 };
@@ -1926,15 +1920,15 @@ class AddonInstall {
       false
     );
 
-    let stagedAddon = this.location.installer.getStagingDir();
+    const stagingDir = this.location.installer.getStagingDir();
+    const stagedAddon = stagingDir.clone();
+    stagedAddon.append(`${this.addon.id}.xpi`);
 
     try {
       await this.location.installer.requestStagingDir();
 
       // remove any previously staged files
-      await this.unstageInstall(stagedAddon);
-
-      stagedAddon.append(`${this.addon.id}.xpi`);
+      await this.unstageInstall(stagingDir);
 
       await this.stageInstall(false, stagedAddon, isSameLocation);
 
@@ -2117,6 +2111,10 @@ class AddonInstall {
   async unstageInstall(stagingDir) {
     this.location.unstageAddon(this.addon.id);
 
+    // We do not create this directory, but we used to. This is only kept
+    // around to make sure that the directory is eventually cleaned up of stale
+    // entries. See https://bugzilla.mozilla.org/show_bug.cgi?id=2006512#c4
+    // TODO bug 2010271: Remove this in favor of an infrequent cleanup task.
     await removeAsync(getFile(this.addon.id, stagingDir));
 
     await removeAsync(getFile(`${this.addon.id}.xpi`, stagingDir));
@@ -2141,6 +2139,8 @@ class AddonInstall {
       // Rename file. This will be restored when the install completes. If for
       // some reason the application crashes or quits before we get there, this
       // file will be left behind.
+      //
+      // TODO bug 2010271: Periodically remove stale addonid~bak.xpi files.
       //
       // "~" as separator because it is never a part of an addon ID.
       stagedAddon.moveTo(null, `${this.addon.id}~bak.xpi`);
@@ -3574,6 +3574,8 @@ class DirectoryInstaller {
     let transaction = new SafeInstallOperation();
 
     let moveOldAddon = aId => {
+      // We do not create unpacked directories any more since bug 1457072. This
+      // `aId` removal logic could be removed or replaced (bug 2010271).
       let file = getFile(aId, this.dir);
       if (file.exists()) {
         transaction.moveUnder(file, trashDir);
@@ -3641,6 +3643,11 @@ class DirectoryInstaller {
   uninstallAddon(aId) {
     let file = getFile(aId, this.dir);
     if (!file.exists()) {
+      // TODO: We should unconditionally look at `${aId}.xpi` without first
+      // checking the directory without suffix, because support for unpacked
+      // installs was removd a long time ago (bug 1457072). If there is any
+      // concern about directories left behind, the removal could be added
+      // elsewhere (bug 2010271).
       file.leafName += ".xpi";
     }
 
@@ -5037,23 +5044,6 @@ export var XPIInstall = {
     let wasPending = aAddon.pendingUninstall;
 
     if (aForcePending) {
-      // We create an empty directory in the staging directory to indicate
-      // that an uninstall is necessary on next startup. Temporary add-ons are
-      // automatically uninstalled on shutdown anyway so there is no need to
-      // do this for them.
-      if (!aAddon.location.isTemporary && aAddon.location.installer) {
-        let stage = getFile(
-          aAddon.id,
-          aAddon.location.installer.getStagingDir()
-        );
-        if (!stage.exists()) {
-          stage.create(
-            Ci.nsIFile.DIRECTORY_TYPE,
-            lazy.FileUtils.PERMS_DIRECTORY
-          );
-        }
-      }
-
       XPIExports.XPIDatabase.setAddonProperties(aAddon, {
         pendingUninstall: true,
       });
@@ -5160,10 +5150,6 @@ export var XPIInstall = {
     }
     if (!aAddon.pendingUninstall) {
       throw new Error("Add-on is not marked to be uninstalled");
-    }
-
-    if (!aAddon.location.isTemporary && aAddon.location.installer) {
-      aAddon.location.installer.cleanStagingDir([aAddon.id]);
     }
 
     XPIExports.XPIDatabase.setAddonProperties(aAddon, {

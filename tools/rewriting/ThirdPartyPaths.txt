@@ -145,6 +145,7 @@ modules/freetype2/
 modules/woff2/
 modules/xz-embedded/
 modules/zlib/
+mozglue/baseprofiler/core/vtune/
 mozglue/misc/decimal/
 mozglue/static/lz4/
 mozglue/tests/glibc_printf_tests/
@@ -195,8 +196,6 @@ toolkit/components/translations/bergamot-translator/thirdparty
 toolkit/components/translations/bergamot-translator/bergamot-translator.js
 toolkit/components/url-classifier/chromium/
 toolkit/components/utils/mozjexl.sys.mjs
-toolkit/components/viaduct/fetch_msg_types.pb.cc
-toolkit/components/viaduct/fetch_msg_types.pb.h
 toolkit/content/vendor/react/
 toolkit/content/widgets/vendor/
 toolkit/crashreporter/breakpad-client/

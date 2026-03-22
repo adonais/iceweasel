@@ -16,8 +16,8 @@ import mozilla.components.feature.downloads.DefaultFileSizeFormatter
 import mozilla.components.feature.downloads.FileSizeFormatter
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import java.util.Locale
 
 /**
@@ -100,7 +100,7 @@ fun DeleteLanguageFileDialog(
 @Preview
 @Composable
 private fun DeleteLanguageFileDialogPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         DeleteLanguageFileDialog(
@@ -117,7 +117,7 @@ private fun DeleteLanguageFileDialogPreview(
 @Preview
 @Composable
 private fun DeleteAllLanguagesFileDialogPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         DeleteLanguageFileDialog(

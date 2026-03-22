@@ -159,7 +159,7 @@ bool BigIntObject::toLocaleString_impl(JSContext* cx, const CallArgs& args) {
   HandleValue options = args.get(1);
 
   // Step 2.
-  Rooted<NumberFormatObject*> numberFormat(
+  Rooted<intl::NumberFormatObject*> numberFormat(
       cx, intl::GetOrCreateNumberFormat(cx, locales, options));
   if (!numberFormat) {
     return false;

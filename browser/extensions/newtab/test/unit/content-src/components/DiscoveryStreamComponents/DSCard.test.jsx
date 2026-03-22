@@ -610,7 +610,7 @@ describe("<DSCard>", () => {
       const standardImageSize = {
         mediaMatcher: "default",
         width: 296,
-        height: 148,
+        height: 160,
       };
       const image = wrapper.find(DSImage);
       assert.deepEqual(image.props().sizes[0], standardImageSize);
@@ -779,7 +779,7 @@ describe("<DSCard>", () => {
         },
         medium: {
           width: 300,
-          height: 150,
+          height: 160,
         },
         large: {
           width: 190,
@@ -841,6 +841,26 @@ describe("<DSCard>", () => {
       assert.equal(image.at(3).props().sizes[0].height, cardSizes.large.height);
       assert.equal(image.at(3).props().sizes[0].width, cardSizes.large.width);
     });
+  });
+
+  it("should render topic label when isDailyBrief is true", () => {
+    const store = createStore(combineReducers(reducers), INITIAL_STATE);
+    wrapper = mount(
+      <Provider store={store}>
+        <DSCard {...DEFAULT_PROPS} isDailyBrief={true} topic="technology" />
+      </Provider>
+    );
+
+    const dsCardInstance = wrapper.find(DSCard).instance();
+    dsCardInstance.setState({ isSeen: true });
+    wrapper.update();
+
+    const topicLabel = wrapper.find(".ds-card-daily-brief-topic");
+    assert.lengthOf(topicLabel, 1);
+    assert.equal(
+      topicLabel.prop("data-l10n-id"),
+      "newtab-topic-label-technology"
+    );
   });
 });
 

@@ -3,11 +3,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#include "Intervals.h"
 #if !defined(OggCodecState_h_)
 #  define OggCodecState_h_
-
 #  include <ogg/ogg.h>
+
+#  include "Intervals.h"
 // For MOZ_SAMPLE_TYPE_*
 #  include <nsClassHashtable.h>
 #  include <nsDeque.h>
@@ -583,4 +583,4 @@ class FlacState : public OggCodecState {
 
 }  // namespace mozilla
 
-#endif
+#endif  // OggCodecState_h_

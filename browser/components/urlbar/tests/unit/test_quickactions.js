@@ -105,12 +105,13 @@ add_task(async function minimum_search_string() {
 });
 
 add_task(async function interventions_disabled() {
-  let interventionsProvider = UrlbarProvidersManager.getProvider(
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  let interventionsProvider = providersManager.getProvider(
     "UrlbarProviderInterventions"
   );
   // Mock the relevent method of Query so we don't have to start a real one.
   interventionsProvider.queryInstance = {
-    getProvider: name => UrlbarProvidersManager.getProvider(name),
+    getProvider: name => providersManager.getProvider(name),
   };
   let context = createContext("test", { isPrivate: false });
 

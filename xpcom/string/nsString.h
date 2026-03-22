@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsString_h___
-#define nsString_h___
+#ifndef nsString_h_
+#define nsString_h_
 
 #include <ostream>
 
@@ -185,4 +185,4 @@ inline std::ostream& operator<<(std::ostream& aOut, const nsAString& aString) {
 #include "nsLiteralString.h"
 #include "nsPromiseFlatString.h"
 
-#endif  // !defined(nsString_h___)
+#endif  // !defined(nsString_h_)

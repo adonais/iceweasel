@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = Personalizěrowaś
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = Zachyśiś
+    .aria-label = Zachyśiś
 
 ## Search box component.
 
@@ -55,10 +58,10 @@ newtab-topsites-add-search-engine-header = Pytnicu pśidaś
 newtab-topsites-add-shortcut-header = Nowe zwězanje
 newtab-topsites-edit-topsites-header = Nejcesćej woglědane sedło wobźěłaś
 newtab-topsites-edit-shortcut-header = Zwězanje wobźěłaś
-newtab-topsites-add-shortcut-label = Skrotconku pśidaś
+newtab-topsites-add-shortcut-label = Zwězanje pśidaś
 newtab-topsites-add-shortcut-title =
-    .title = Skrotconku pśidaś
-    .aria-label = Skrotconku pśidaś
+    .title = Zwězanje pśidaś
+    .aria-label = Zwězanje pśidaś
 newtab-topsites-title-label = Titel
 newtab-topsites-title-input =
     .placeholder = Titel zapódaś
@@ -331,18 +334,18 @@ newtab-custom-recent-subtitle = Wuběrk nejnowšych sedłow a nejnowšego wopśi
 newtab-custom-weather-toggle =
     .label = Wjedro
     .description = Źinsajšna wjedrowa pśedpowěsć
-newtab-custom-trending-search-toggle =
-    .label = Woblubowane pytanja
-    .description = Popularne a cesto pytane temy
 newtab-custom-widget-weather-toggle =
     .label = Wjedro
-newtab-custom-widget-trending-search-toggle =
-    .label = Woblubowane pytanja
 newtab-custom-widget-lists-toggle =
     .label = Lisćiny
 newtab-custom-widget-timer-toggle =
     .label = Měritko casa
 newtab-custom-widget-section-title = Asistenty
+newtab-custom-widget-section-toggle =
+    .label = Asistenty
+newtab-widget-manage-title = Asistenty
+newtab-widget-manage-widget-button =
+    .label = Asistenty zastojaś
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Zacyniś
@@ -470,6 +473,8 @@ newtab-weather-change-location-search-input-placeholder =
     .placeholder = Městno pytaś
     .aria-label = Městno pytaś
 newtab-weather-menu-weather-display = Wjedrowe pokazanje
+newtab-weather-todays-forecast = Źinsajšna pśedpowěsć
+newtab-weather-see-full-forecast = Dopołnu pśedpowěsć se woglědaś
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -482,6 +487,7 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Fahrenheit wužywaś
 newtab-weather-menu-change-temperature-units-celsius = Celsius wužywaś
+newtab-weather-menu-hide-weather-v2 = Wjedro schowaś
 newtab-weather-menu-hide-weather = Wjedro na nowem rejtariku schowaś
 newtab-weather-menu-learn-more = Dalšne informacije
 newtab-weather-menu-detect-my-location = Mójo stojnišćo namakaś
@@ -494,6 +500,11 @@ newtab-weather-opt-in-yes =
     .label = Jo
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Wjedrowu pśedpowěsć w { $provider } pokazaś
+    .aria-description = { $provider } ∙ sponserowany
 
 ## Topic Labels
 
@@ -598,7 +609,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Waše fawority k ruce
 newtab-shortcuts-highlight-subtitle = Pśidajśo zwězanje, aby swóje nejlubše sedła jadno kliknjenje pšec źaržał.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Cogodla dawaśo to k wěsći?
@@ -616,21 +627,13 @@ newtab-report-content-inappropriate-offensive =
     .label = Njepśistojny abo kśiwźecy
 newtab-report-content-spam-misleading =
     .label = Spam abo torjecy
+newtab-report-content-requires-payment-subscription =
+    .label = Pomina se płaśenje abo abonement
+newtab-report-content-requires-payment-subscription-learn-more = Dalšne informacije
 newtab-report-cancel = Pśetergnuś
 newtab-report-submit = Wótpósłaś
 newtab-toast-thanks-for-reporting =
     .message = Wjeliki źěk, až sćo dał to k wěsći.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Woblubowane pytanja pokazaś
-newtab-trending-searches-hide-trending =
-    .title = Woblubowane pytanja schowaś
-newtab-trending-searches-learn-more = Dalšne informacije
-newtab-trending-searches-dismiss = Woblubowane pytanja schowaś
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Woblubowane pytanja
 
 ## Strings for task / to-do list productivity widget
 
@@ -703,6 +706,12 @@ newtab-widget-timer-menu-notifications = Zdźělenja znjemóžniś
 newtab-widget-timer-menu-notifications-on = Zdźělenja zmóžniś
 newtab-widget-timer-menu-hide = Měritko casa schowaś
 newtab-widget-timer-menu-learn-more = Dalšne informacije
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = Wažne głowne nadpisma
+newtab-daily-briefing-card-menu-dismiss = Zachyśiś
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = Pśed { $minutes } m zaktualizěrowany
 newtab-widget-message-title = Wóstańśo koncentrěrowany z lisćinami a zatwarjonym casowym měritkom
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Wót malsnych dopomnjeśow do wšednych nadawkowych lisćinow, koncentrěrujśo se na posejźenja, aby pśestawki pódlejšył – njepópušćajśo a buźćo zdypkom.
@@ -712,3 +721,25 @@ newtab-promo-card-cta = Dalšne informacije
 newtab-promo-card-dismiss-button =
     .title = Zachyśiś
     .aria-label = Zachyśiś
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-dismiss-button =
+    .title = Zachyśiś
+    .aria-label = Zachyśiś
+# "This space" refers to about:newtab. The call to action here ("make it your own")
+# is to customize newtab with a background image or colour, or by tweaking the
+# existing widgetry that appears on it.
+newtab-activation-window-message-customization-focus-header = Pśiswójśo se toś ten rum
+newtab-activation-window-message-customization-focus-message = Wubjeŕśo nowy slězynowy wobraz, pśidajśo swójim nejlubšym sedłam zwězanja a wóstańśo na běžnem wó tšojeńkach, kótarež was zajmuju.
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = Zachopśo pśiměrowaś
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = Toś to městno pó wašych pšawidłach grajo
+newtab-activation-window-message-values-focus-message = { -brand-product-name } wam zmóžnja, na wašnju pśeglědowaś, kótarež wam se spódoba, z wěcej wósobinskej móžnosću, źeń online zachopiś. Pśiswójśo se { -brand-product-name }.

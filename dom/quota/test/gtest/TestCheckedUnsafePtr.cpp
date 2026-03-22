@@ -12,10 +12,7 @@ using namespace mozilla;
 class NoCheckTestType
     : public SupportsCheckedUnsafePtr<DoNotCheckCheckedUnsafePtrs> {};
 
-#if __cplusplus < 202002L
-static_assert(std::is_literal_type_v<CheckedUnsafePtr<NoCheckTestType>>);
-#endif
-
+static_assert(__is_literal_type(CheckedUnsafePtr<NoCheckTestType>));
 static_assert(
     std::is_trivially_copy_constructible_v<CheckedUnsafePtr<NoCheckTestType>>);
 static_assert(

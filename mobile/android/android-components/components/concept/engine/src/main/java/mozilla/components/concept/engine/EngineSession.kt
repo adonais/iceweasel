@@ -1152,4 +1152,16 @@ abstract class EngineSession(
      * @param enabled True if the activity is in picture-in-picture mode.
      */
     open fun onPipModeChanged(enabled: Boolean) = Unit
+
+    /**
+     * Gets the page text content of this session
+     */
+    open fun getPageContent(onResult: (String) -> Unit, onException: (Throwable) -> Unit) = Unit
+
+    /**
+     * Allow the Engine to handle back navigation events to dismiss some HTML elements such as &lt;dialog&gt;.
+     *
+     * @param onResult callback invoked if the engine API returned a valid response.
+     */
+    abstract fun processBackPressed(onResult: (Boolean) -> Unit)
 }

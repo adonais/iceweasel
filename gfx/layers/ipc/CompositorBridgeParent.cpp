@@ -1085,52 +1085,35 @@ PWebRenderBridgeParent* CompositorBridgeParent::AllocPWebRenderBridgeParent(
     mOMTASampler->SetWebRenderWindowId(windowId);
   }
 
-  nsCString error("FEATURE_FAILURE_WEBRENDER_INITIALIZE_UNSPECIFIED");
-  RefPtr<wr::WebRenderAPI> api = wr::WebRenderAPI::Create(
-      this, std::move(widget), windowId, aSize, aWindowKind, error);
-  if (!api) {
-    mWrBridge =
-        WebRenderBridgeParent::CreateDestroyed(aPipelineId, std::move(error));
-    mWrBridge.get()->AddRef();  // IPDL reference
-    return mWrBridge;
-  }
+  const RefPtr<nsIThread> renderThread = wr::RenderThread::GetRenderThread();
+  wr::WebRenderAPI::Create(this, std::move(widget), windowId, aSize,
+                           aWindowKind)
+      ->Then(
+          renderThread, __func__,
+          [self = RefPtr{this}](
+              wr::WebRenderAPI::CreatePromise::ResolveOrRejectValue&& aResult) {
+            // Still on the Renderer thread, store the result of WebRenderAPI
+            // creation in mWrApiResult, and notify anybody waiting that the
+            // result is available.
+            MonitorAutoLock lock(self->mWrApiResultMonitor);
+            if (aResult.IsResolve()) {
+              MOZ_RELEASE_ASSERT(aResult.ResolveValue());
+              self->mWrApiResult.emplace(aResult.ResolveValue());
+            } else {
+              self->mWrApiResult.emplace(Err(aResult.RejectValue()));
+            }
+            lock.NotifyAll();
+            return MozPromise<Ok, Ok, true>::CreateAndResolve(Ok{}, __func__);
+          })
+      ->Then(GetCurrentSerialEventTarget(), __func__, [self = RefPtr{this}]() {
+        // Then finally complete WebRenderBridgeParent initialization back on
+        // the Compositor thread.
+        self->EnsureWebRenderBridgeParentInitialized();
+      });
 
-#ifdef MOZ_WIDGET_ANDROID
-  // On Android, WebRenderAPI::Resume() call is triggered from Java side. But
-  // Java side does not know about fallback to RenderCompositorOGLSWGL. In this
-  // fallback case, RenderCompositor::Resume() needs to be called from gfx code.
-  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
-  if (!mPaused && mWidget->GetCompositorOptions().UseSoftwareWebRender() &&
-      mWidget->GetCompositorOptions().AllowSoftwareWebRenderOGL()) {
-    api->Resume();
-  }
-#endif
-
-  wr::TransactionBuilder txn(api);
-  txn.SetRootPipeline(aPipelineId);
-  api->SendTransaction(txn);
-
-  bool useCompositorWnd = false;
-#ifdef XP_WIN
-  // Headless mode uses HeadlessWidget.
-  if (mWidget->AsWindows()) {
-    useCompositorWnd = !!mWidget->AsWindows()->GetCompositorHwnd();
-  }
-#endif
-  mAsyncImageManager =
-      new AsyncImagePipelineManager(api->Clone(), useCompositorWnd);
-  RefPtr<AsyncImagePipelineManager> asyncMgr = mAsyncImageManager;
-  mWrBridge = new WebRenderBridgeParent(this, aPipelineId, mWidget, nullptr,
-                                        std::move(api), std::move(asyncMgr),
-                                        mVsyncRate);
+  mWrBridge = new WebRenderBridgeParent(this, aPipelineId, mWidget, mVsyncRate);
   mWrBridge.get()->AddRef();  // IPDL reference
-
-  mAsyncImageManager->SetTextureFactoryIdentifier(
-      mWrBridge->GetTextureFactoryIdentifier());
-
-  mCompositorScheduler = mWrBridge->CompositorScheduler();
-  MOZ_ASSERT(mCompositorScheduler);
-  {  // scope lock
+  {                           // scope lock
     StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
     MOZ_ASSERT(sIndirectLayerTrees[mRootLayerTreeID].mWrBridge == nullptr);
     sIndirectLayerTrees[mRootLayerTreeID].mWrBridge = mWrBridge;
@@ -1150,6 +1133,71 @@ bool CompositorBridgeParent::DeallocPWebRenderBridgeParent(
   }
   parent->Release();  // IPDL reference
   return true;
+}
+
+void CompositorBridgeParent::EnsureWebRenderBridgeParentInitialized() {
+  MOZ_ASSERT(NS_IsInCompositorThread());
+
+  if (mWrBridgeInitialized) {
+    return;
+  }
+  mWrBridgeInitialized = true;
+
+  // Wait for WebRenderAPI creation to complete on the Renderer thread.
+  mozilla::Result<RefPtr<wr::WebRenderAPI>, nsCString> result = [this]() {
+    MonitorAutoLock lock(mWrApiResultMonitor);
+    while (!mWrApiResult) {
+      lock.Wait();
+    }
+    return mWrApiResult.extract();
+  }();
+
+  // If the bridge has already been destroyed there is nothing to do. Note that
+  // we early return *after* extracting the Api from mWrApiResult to ensure the
+  // API will be destroyed.
+  if (!mWrBridge) {
+    return;
+  }
+
+  if (result.isErr()) {
+    mWrBridge->FinishInitializationError(result.unwrapErr());
+    return;
+  }
+
+  RefPtr<wr::WebRenderAPI> api = result.unwrap();
+#ifdef MOZ_WIDGET_ANDROID
+  // On Android, WebRenderAPI::Resume() call is triggered from Java side. But
+  // Java side does not know about fallback to RenderCompositorOGLSWGL. In this
+  // fallback case, RenderCompositor::Resume() needs to be called from gfx code.
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  if (!mPaused && mWidget->GetCompositorOptions().UseSoftwareWebRender() &&
+      mWidget->GetCompositorOptions().AllowSoftwareWebRenderOGL()) {
+    api->Resume();
+  }
+#endif
+
+  wr::TransactionBuilder txn(api);
+  txn.SetRootPipeline(mWrBridge->PipelineId());
+  api->SendTransaction(txn);
+
+  bool useCompositorWnd = false;
+#ifdef XP_WIN
+  // Headless mode uses HeadlessWidget.
+  if (mWidget->AsWindows()) {
+    useCompositorWnd = !!mWidget->AsWindows()->GetCompositorHwnd();
+  }
+#endif
+  mAsyncImageManager =
+      new AsyncImagePipelineManager(api->Clone(), useCompositorWnd);
+  RefPtr<AsyncImagePipelineManager> asyncMgr = mAsyncImageManager;
+
+  mWrBridge->FinishInitialization(std::move(api), std::move(asyncMgr));
+
+  mAsyncImageManager->SetTextureFactoryIdentifier(
+      mWrBridge->GetTextureFactoryIdentifier());
+
+  mCompositorScheduler = mWrBridge->CompositorScheduler();
+  MOZ_ASSERT(mCompositorScheduler);
 }
 
 void CompositorBridgeParent::NotifyMemoryPressure() {
@@ -1904,6 +1952,19 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvEndRecording(
   }
 
   mHaveCompositionRecorder = false;
+
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult CompositorBridgeParent::RecvCheckAndClearWRDidRasterize(
+    const LayersId& aId, bool* aDidRasterize) {
+  *aDidRasterize = false;
+
+  if (mWrBridge) {
+    if (RefPtr<wr::WebRenderAPI> api = mWrBridge->GetWebRenderAPI()) {
+      *aDidRasterize = api->CheckAndClearDidRasterize();
+    }
+  }
 
   return IPC_OK();
 }

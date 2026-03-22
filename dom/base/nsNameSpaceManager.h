@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsNameSpaceManager_h___
-#define nsNameSpaceManager_h___
+#ifndef nsNameSpaceManager_h_
+#define nsNameSpaceManager_h_
 
 #include "mozilla/StaticPtr.h"
 #include "nsStringFwd.h"
@@ -77,4 +77,4 @@ class nsNameSpaceManager final {
   static mozilla::StaticRefPtr<nsNameSpaceManager> sInstance;
 };
 
-#endif  // nsNameSpaceManager_h___
+#endif  // nsNameSpaceManager_h_

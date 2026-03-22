@@ -272,7 +272,7 @@ class nsFrameLoader final : public nsStubMutationObserver,
                                           bool aRunInGlobalScope) override;
   virtual nsresult DoSendAsyncMessage(
       const nsAString& aMessage,
-      mozilla::dom::ipc::StructuredCloneData& aData) override;
+      mozilla::NotNull<mozilla::dom::ipc::StructuredCloneData*> aData) override;
 
   /**
    * Called from the layout frame associated with this frame loader;

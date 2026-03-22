@@ -20,8 +20,11 @@ namespace mozilla::dom {
 
 class ClientInfo;
 class PostMessageSource;
-class ServiceWorkerCloneData;
 class ServiceWorkerPrivate;
+
+namespace ipc {
+class StructuredCloneData;
+}
 
 /*
  * Wherever the spec treats a worker instance and a description of said worker
@@ -78,7 +81,7 @@ class ServiceWorkerInfo final : public nsIServiceWorkerInfo {
   NS_DECL_ISUPPORTS
   NS_DECL_NSISERVICEWORKERINFO
 
-  void PostMessage(RefPtr<ServiceWorkerCloneData>&& aData,
+  void PostMessage(ipc::StructuredCloneData* aData,
                    const PostMessageSource& aSource);
 
   class ServiceWorkerPrivate* WorkerPrivate() const {

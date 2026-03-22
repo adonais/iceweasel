@@ -367,7 +367,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">संपादित करा</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">प्रत बनवा</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">प्रत बनवा</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">शेअर करा</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -401,7 +401,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s हटविले</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">पूर्ववत् करा</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">पूर्ववत् करा</string>
   <!--
     Site Permissions
 

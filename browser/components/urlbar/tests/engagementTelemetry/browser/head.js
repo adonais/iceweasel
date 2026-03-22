@@ -9,6 +9,8 @@ Services.scriptloader.loadSubScript(
 );
 
 ChromeUtils.defineESModuleGetters(this, {
+  CustomizableUITestUtils:
+    "resource://testing-common/CustomizableUITestUtils.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
@@ -157,7 +159,12 @@ async function ensureQuickSuggestInit({ ...args } = {}) {
             data: {
               result: {
                 payload: {
-                  dates: ["2025-03-05", "2026-02-18"],
+                  dates: [
+                    // These dates are always in the future, so that we will
+                    // always get a match in the test when we expect one.
+                    Temporal.Now.plainDateISO().add({ months: 1 }).toString(),
+                    Temporal.Now.plainDateISO().add({ years: 1 }).toString(),
+                  ],
                   name: "Event 1",
                 },
               },
@@ -170,9 +177,9 @@ async function ensureQuickSuggestInit({ ...args } = {}) {
   });
 }
 
-async function doBlur() {
-  await UrlbarTestUtils.promisePopupClose(window, () => {
-    gURLBar.blur();
+async function doBlur(testUtils = UrlbarTestUtils) {
+  await testUtils.promisePopupClose(window, () => {
+    testUtils.getUrlbar(window).blur();
   });
 }
 
@@ -402,11 +409,11 @@ async function loadRemoteTab(url) {
   };
 }
 
-async function openPopup(input) {
-  await UrlbarTestUtils.promisePopupOpen(window, async () => {
-    await UrlbarTestUtils.inputIntoURLBar(window, input);
+async function openPopup(input, testUtils = UrlbarTestUtils) {
+  await testUtils.promisePopupOpen(window, async () => {
+    await testUtils.inputIntoURLBar(window, input);
   });
-  await UrlbarTestUtils.promiseSearchComplete(window);
+  await testUtils.promiseSearchComplete(window);
 }
 
 async function selectRowByURL(url) {
@@ -452,12 +459,9 @@ async function setup() {
   const engine = await SearchTestUtils.installOpenSearchEngine({
     url: "chrome://mochitests/content/browser/browser/components/urlbar/tests/browser/searchSuggestionEngine.xml",
   });
-  const originalDefaultEngine = await Services.search.getDefault();
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
-  await Services.search.moveEngine(engine, 0);
+  const originalDefaultEngine = await SearchService.getDefault();
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
+  await SearchService.moveEngine(engine, 0);
 
   registerCleanupFunction(async function () {
     // Tests verify that no prefs have been changed so clear any
@@ -473,9 +477,9 @@ async function setup() {
     ];
     prefs.forEach(pref => Services.prefs.clearUserPref(pref));
     await SpecialPowers.popPrefEnv();
-    await Services.search.setDefault(
+    await SearchService.setDefault(
       originalDefaultEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+      SearchService.CHANGE_REASON.UNKNOWN
     );
   });
 }

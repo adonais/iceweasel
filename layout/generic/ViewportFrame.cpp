@@ -522,23 +522,9 @@ nsSize ViewportFrame::AdjustViewportSizeForFixedPosition(
   nsSize result = aViewportRect.Size();
 
   mozilla::PresShell* presShell = PresShell();
-  // Layout fixed position elements to the visual viewport size if and only if
-  // it has been set and it is larger than the computed size, otherwise use the
-  // computed size.
-  if (presShell->IsVisualViewportSizeSet()) {
-    if (presShell->GetDynamicToolbarState() == DynamicToolbarState::Collapsed &&
-        result < presShell->GetVisualViewportSizeUpdatedByDynamicToolbar()) {
-      // We need to use the viewport size updated by the dynamic toolbar in the
-      // case where the dynamic toolbar is completely hidden.
-      result = presShell->GetVisualViewportSizeUpdatedByDynamicToolbar();
-    } else if (result < presShell->GetVisualViewportSize()) {
-      result = presShell->GetVisualViewportSize();
-    }
-  }
-  // Expand the size to the layout viewport size if necessary.
-  const nsSize layoutViewportSize = presShell->GetLayoutViewportSize();
-  if (result < layoutViewportSize) {
-    result = layoutViewportSize;
+  const nsSize fixedViewportSize = presShell->GetFixedViewportSize();
+  if (result < fixedViewportSize) {
+    result = fixedViewportSize;
   }
 
   return result;

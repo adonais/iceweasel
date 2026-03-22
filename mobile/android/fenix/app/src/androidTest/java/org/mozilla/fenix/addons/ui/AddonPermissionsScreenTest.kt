@@ -39,6 +39,7 @@ class AddonPermissionsScreenTest {
                     onAddAllSitesPermissions = {},
                     onRemoveAllSitesPermissions = {},
                     onLearnMoreClick = {},
+                    learnMoreUrl = "",
                 )
             }
         }
@@ -68,6 +69,7 @@ class AddonPermissionsScreenTest {
                     onAddAllSitesPermissions = {},
                     onRemoveAllSitesPermissions = {},
                     onLearnMoreClick = {},
+                    learnMoreUrl = "",
                 )
             }
         }
@@ -106,6 +108,7 @@ class AddonPermissionsScreenTest {
                     onAddAllSitesPermissions = {},
                     onRemoveAllSitesPermissions = {},
                     onLearnMoreClick = {},
+                    learnMoreUrl = "",
                 )
             }
         }
@@ -148,6 +151,7 @@ class AddonPermissionsScreenTest {
                     onAddAllSitesPermissions = {},
                     onRemoveAllSitesPermissions = {},
                     onLearnMoreClick = {},
+                    learnMoreUrl = "",
                 )
             }
         }
@@ -179,6 +183,7 @@ class AddonPermissionsScreenTest {
                     onAddAllSitesPermissions = {},
                     onRemoveAllSitesPermissions = {},
                     onLearnMoreClick = {},
+                    learnMoreUrl = "",
                 )
             }
         }
@@ -211,6 +216,7 @@ class AddonPermissionsScreenTest {
                     onAddAllSitesPermissions = {},
                     onRemoveAllSitesPermissions = {},
                     onLearnMoreClick = {},
+                    learnMoreUrl = "",
                 )
             }
         }
@@ -250,6 +256,7 @@ class AddonPermissionsScreenTest {
                     onAddAllSitesPermissions = {},
                     onRemoveAllSitesPermissions = {},
                     onLearnMoreClick = {},
+                    learnMoreUrl = "",
                 )
             }
         }
@@ -302,6 +309,7 @@ class AddonPermissionsScreenTest {
                     onAddAllSitesPermissions = {},
                     onRemoveAllSitesPermissions = {},
                     onLearnMoreClick = {},
+                    learnMoreUrl = "",
                 )
             }
         }

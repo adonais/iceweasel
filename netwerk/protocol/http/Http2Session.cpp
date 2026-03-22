@@ -34,6 +34,7 @@
 #include "nsHttp.h"
 #include "nsHttpConnection.h"
 #include "nsHttpHandler.h"
+#include "nsHttpConnectionMgr.h"
 #include "nsIRequestContext.h"
 #include "nsISupportsPriority.h"
 #include "nsITLSSocketControl.h"
@@ -2163,7 +2164,11 @@ nsresult Http2Session::RecvWindowUpdate(Http2Session* self) {
 
 nsresult Http2Session::RecvContinuation(Http2Session* self) {
   MOZ_ASSERT(self->mInputFrameType == FRAME_TYPE_CONTINUATION);
-  MOZ_ASSERT(self->mInputFrameID);
+  if (!self->mInputFrameID) {  // must be checked before the other assertions
+    LOG3(("Http2Session::RecvContinuation %p stream ID of 0 - PROTOCOL_ERROR\n",
+          self));
+    return self->SessionError(PROTOCOL_ERROR);
+  }
   MOZ_ASSERT(self->mExpectedPushPromiseID || self->mExpectedHeaderID);
   MOZ_ASSERT(!(self->mExpectedPushPromiseID && self->mExpectedHeaderID));
 

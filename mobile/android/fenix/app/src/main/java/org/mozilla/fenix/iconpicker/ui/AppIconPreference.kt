@@ -35,8 +35,8 @@ import org.mozilla.fenix.iconpicker.DefaultAppIconRepository
 import org.mozilla.fenix.iconpicker.DefaultPackageManagerWrapper
 import org.mozilla.fenix.settings.CustomizationFragmentDirections
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 private val IconSize = 40.dp
 
@@ -122,7 +122,7 @@ private fun SelectAppIcon(
 @FlexibleWindowPreview
 @Composable
 private fun SelectAppIconPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         SelectAppIcon(AppIcon.AppDefault) {}

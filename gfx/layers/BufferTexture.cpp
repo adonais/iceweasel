@@ -160,7 +160,8 @@ BufferTextureData* BufferTextureData::CreateForYCbCr(
     gfx::ColorRange aColorRange, gfx::ChromaSubsampling aSubsampling,
     TextureFlags aTextureFlags) {
   uint32_t bufSize = ImageDataSerializer::ComputeYCbCrBufferSize(
-      aYSize, aYStride, aCbCrSize, aCbCrStride);
+      aDisplay, aYSize, aYStride, aCbCrSize, aCbCrStride, aColorDepth,
+      aSubsampling);
   if (bufSize == 0) {
     return nullptr;
   }
@@ -279,11 +280,15 @@ bool BufferTextureData::BorrowMappedData(MappedTextureData& aData) {
 
   gfx::IntSize size = GetSize();
 
+  auto stride = ImageDataSerializer::ComputeRGBStride(GetFormat(), size.width);
+  if (stride == 0) {
+    return false;
+  }
+
   aData.data = GetBuffer();
   aData.size = size;
   aData.format = GetFormat();
-  aData.stride =
-      ImageDataSerializer::ComputeRGBStride(aData.format, size.width);
+  aData.stride = stride;
   mIsClear = false;
 
   return true;

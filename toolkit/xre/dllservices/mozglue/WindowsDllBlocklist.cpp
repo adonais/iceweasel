@@ -23,7 +23,6 @@
 #include "mozilla/WinHeaderOnlyUtils.h"
 #include "nsWindowsHelpers.h"
 #include "WindowsDllBlocklist.h"
-#include "mozilla/AutoProfilerLabel.h"
 #include "mozilla/glue/Debug.h"
 #include "mozilla/glue/WindowsDllServices.h"
 #include "mozilla/glue/WinUtils.h"

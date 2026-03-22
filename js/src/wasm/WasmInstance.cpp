@@ -24,8 +24,7 @@
 #include <algorithm>
 #include <utility>
 
-#include "jsmath.h"
-
+#include "builtin/Math.h"
 #include "builtin/String.h"
 #include "gc/Barrier.h"
 #include "gc/Marking.h"
@@ -34,7 +33,6 @@
 #include "jit/JitCommon.h"
 #include "jit/JitRuntime.h"
 #include "jit/Registers.h"
-#include "js/ForOfIterator.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/Stack.h"                 // JS::NativeStackLimitMin
 #include "util/StringBuilder.h"
@@ -179,8 +177,8 @@ static bool UnpackResults(JSContext* cx, const ValTypeVector& resultTypes,
   }
 
   MOZ_ASSERT(stackResultsArea.isSome());
-  Rooted<ArrayObject*> array(cx);
-  if (!IterableToArray(cx, rval, &array)) {
+  Rooted<ArrayObject*> array(cx, IterableToArray(cx, rval));
+  if (!array) {
     return false;
   }
 
@@ -1619,18 +1617,9 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
     return false;
   }
 
-  auto copyElements = [&](auto* dst) {
-    for (uint32_t i = 0; i < numElements; i++) {
-      dst[arrayIndex + i] = seg[segOffset + i];
-    }
-  };
-
-  if (arrayObj->isTenured()) {
-    copyElements(reinterpret_cast<GCPtr<AnyRef>*>(arrayObj->data_));
-  } else {
-    copyElements(reinterpret_cast<PreBarriered<AnyRef>*>(arrayObj->data_));
-  }
-
+  AnyRef* dst = reinterpret_cast<AnyRef*>(arrayObj->data_) + arrayIndex;
+  AnyRef* src = seg.begin()->unbarrieredAddress() + segOffset;
+  BarrieredCopyRange(arrayObj, dst, src, numElements);
   return true;
 }
 
@@ -1914,20 +1903,7 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   }
 
   AnyRef* src = (AnyRef*)srcBase;
-  // Using std::copy will call set() on the barrier wrapper under the hood.
-  auto copyElements = [&](auto* dst) {
-    if (uintptr_t(dst) < uintptr_t(src)) {
-      std::copy(src, src + numElements, dst);
-    } else {
-      std::copy_backward(src, src + numElements, dst + numElements);
-    }
-  };
-
-  if (dstArrayObj->isTenured()) {
-    copyElements((GCPtr<AnyRef>*)dstBase);
-  } else {
-    copyElements((PreBarriered<AnyRef>*)dstBase);
-  }
+  BarrieredMoveRange(dstArrayObj, dstBase, src, numElements);
 
   return 0;
 }
@@ -2445,8 +2421,8 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
   jumpTable_ = code_->tieringJumpTable();
   debugFilter_ = nullptr;
   callRefMetrics_ = nullptr;
-  addressOfNeedsIncrementalBarrier_ =
-      cx->compartment()->zone()->addressOfNeedsIncrementalBarrier();
+  addressOfNeedsMarkingBarrier_ =
+      cx->compartment()->zone()->addressOfNeedsMarkingBarrier();
   addressOfNurseryPosition_ = cx->nursery().addressOfPosition();
 #ifdef JS_GC_ZEAL
   addressOfGCZealModeBits_ = cx->runtime()->gc.addressOfZealModeBits();
@@ -2622,6 +2598,11 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
   }
 #endif
 
+  // We use writeToTenuredHeapLocation below as WasmInstanceObject is always
+  // tenured.
+  Rooted<WasmInstanceObject*> instanceObj(cx, object());
+  MOZ_ASSERT(instanceObj->isTenured());
+
   // Initialize globals in the instance data.
   //
   // This must be performed after we have initialized runtime types as a global
@@ -2649,14 +2630,13 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
           *(void**)globalAddr =
               (void*)&globalObjs[imported]->val().get().cell();
         } else {
-          globalImportValues[imported].writeToHeapLocation(globalAddr);
+          globalImportValues[imported].writeToTenuredHeapLocation(globalAddr);
         }
         break;
       }
       case GlobalKind::Variable: {
         RootedVal val(cx);
         const InitExpr& init = global.initExpr();
-        Rooted<WasmInstanceObject*> instanceObj(cx, object());
         if (!init.evaluate(cx, instanceObj, &val)) {
           return false;
         }
@@ -2668,7 +2648,7 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
           // Link to the cell
           *(void**)globalAddr = globalObjs[i]->addressOfCell();
         } else {
-          val.get().writeToHeapLocation(globalAddr);
+          val.get().writeToTenuredHeapLocation(globalAddr);
         }
         break;
       }
@@ -2743,7 +2723,7 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
   // All (linked) tables with non-nullable types must be initialized.
   for (size_t i = 0; i < tables_.length(); i++) {
     const TableDesc& td = codeMeta().tables[i];
-    if (!td.elemType.isNullable()) {
+    if (!td.elemType().isNullable()) {
       tables_[i]->assertRangeNotNull(0, tables_[i]->length());
     }
   }
@@ -3301,6 +3281,11 @@ void Instance::updateFrameForMovingGC(const wasm::WasmFrameIter& wfi,
 
     switch (kind) {
       case StackMap::Kind::ArrayDataPointer: {
+        // The following makes more sense if you look at the pictures in the
+        // SMDOC at the definition of WasmArrayData, and also read-along in
+        // WasmArrayObject::obj_moved, which sets up the forwarding information
+        // which we now will consult.
+
         // Make oldDataPointer point at the storage array in the old object.
         uint8_t* oldDataPointer = (uint8_t*)stackWords[i];
         if (WasmArrayObject::isDataInline(oldDataPointer)) {
@@ -3313,18 +3298,29 @@ void Instance::updateFrameForMovingGC(const wasm::WasmFrameIter& wfi,
               (WasmArrayObject*)gc::MaybeForwarded(oldArray);
           if (newArray != oldArray) {
             stackWords[i] =
-                uintptr_t(WasmArrayObject::addressOfInlineData(newArray));
+                uintptr_t(WasmArrayObject::addressOfInlineArrayData(newArray));
             MOZ_ASSERT(WasmArrayObject::isDataInline((uint8_t*)stackWords[i]));
           }
         } else {
-          WasmArrayObject::DataHeader* oldHeader =
-              WasmArrayObject::dataHeaderFromDataPointer(oldDataPointer);
-          WasmArrayObject::DataHeader* newHeader = oldHeader;
-          nursery.forwardBufferPointer((uintptr_t*)&newHeader);
-          if (newHeader != oldHeader) {
-            stackWords[i] =
-                uintptr_t(WasmArrayObject::dataHeaderToDataPointer(newHeader));
-            MOZ_ASSERT(!WasmArrayObject::isDataInline((uint8_t*)stackWords[i]));
+          // It's a pointer managed by BufferAllocator.  The forwarded location
+          // is stored in the OOLHeader::word field of the old block, with its
+          // bit zero set to 1.
+          WasmArrayObject::OOLDataHeader* oldHeader =
+              WasmArrayObject::oolDataHeaderFromDataPointer(oldDataPointer);
+          if (nursery.isInside((const void*)oldHeader)) {
+            // If the old header word is OOLDataHeader_Magic it means there's
+            // no forwarding pointer stored there, so don't update the stack
+            // slot.
+            if (oldHeader->word != WasmArrayObject::OOLDataHeader_Magic) {
+              MOZ_ASSERT(oldHeader->word & 1);
+              WasmArrayObject::OOLDataHeader* newHeader =
+                  (WasmArrayObject::OOLDataHeader*)(oldHeader->word &
+                                                    ~uintptr_t(1));
+              MOZ_ASSERT(newHeader != oldHeader);
+              stackWords[i] = uintptr_t(
+                  WasmArrayObject::oolDataHeaderToDataPointer(newHeader));
+              newHeader->word = WasmArrayObject::OOLDataHeader_Magic;
+            }
           }
         }
         break;

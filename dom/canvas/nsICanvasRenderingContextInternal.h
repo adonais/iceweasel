@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsICanvasRenderingContextInternal_h___
-#define nsICanvasRenderingContextInternal_h___
+#ifndef nsICanvasRenderingContextInternal_h_
+#define nsICanvasRenderingContextInternal_h_
 
 #include "gfxRect.h"
 #include "mozilla/EventForwards.h"
@@ -240,4 +240,4 @@ class nsICanvasRenderingContextInternal : public nsISupports,
   RefPtr<nsRefreshDriver> mRefreshDriver;
 };
 
-#endif /* nsICanvasRenderingContextInternal_h___ */
+#endif /* nsICanvasRenderingContextInternal_h_ */

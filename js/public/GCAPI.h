@@ -396,7 +396,7 @@ typedef enum JSGCParamKey {
   JSGC_HELPER_THREAD_COUNT = 41,
 
   /**
-   * A number that is incremented on every major GC slice.
+   * A number that is incremented at the start of every major GC.
    */
   JSGC_MAJOR_GC_NUMBER = 44,
 
@@ -524,6 +524,15 @@ typedef enum JSGCParamKey {
    */
   JSGC_STORE_BUFFER_ENTRIES = 58,
   JSGC_STORE_BUFFER_SCALING = 59,
+
+  /**
+   * Whether experimental concurrent marking support is enabled. This also
+   * requires that the code has been built with --enable-gc-concurrent-marking
+   * configuration flag.
+   *
+   * Default: false
+   */
+  JSGC_CONCURRENT_MARKING_ENABLED = 60,
 } JSGCParamKey;
 
 /*

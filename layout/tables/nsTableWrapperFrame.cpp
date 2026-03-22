@@ -289,7 +289,7 @@ StyleSize nsTableWrapperFrame::ReduceStyleSizeBy(
     const StyleSize& aStyleSize, const nscoord aAmountToReduce) const {
   MOZ_ASSERT(aStyleSize.ConvertsToLength(), "Only handles 'Length' StyleSize!");
   const nscoord size = std::max(0, aStyleSize.ToLength() - aAmountToReduce);
-  return StyleSize::LengthPercentage(LengthPercentage::FromAppUnits(size));
+  return StyleSize::FromAppUnits(size);
 }
 
 StyleSizeOverrides nsTableWrapperFrame::ComputeSizeOverridesForInnerTable(
@@ -305,7 +305,7 @@ StyleSizeOverrides nsTableWrapperFrame::ComputeSizeOverridesForInnerTable(
 
   const auto wm = aTableFrame->GetWritingMode();
   LogicalSize areaOccupied(wm, 0, aBSizeOccupiedByCaption);
-  if (aTableFrame->StylePosition()->mBoxSizing == StyleBoxSizing::Content) {
+  if (aTableFrame->StylePosition()->mBoxSizing == StyleBoxSizing::ContentBox) {
     // If the inner table frame has 'box-sizing: content', enlarge the occupied
     // area by adding border & padding because they should also be subtracted
     // from the size overrides.

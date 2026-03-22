@@ -32,8 +32,6 @@ class ICU4XChineseBasedCalendar : public ICU4XCalendar {
  protected:
   bool hasLeapMonths() const override;
   bool hasMonthCode(MonthCode monthCode) const override;
-  bool requiresFallbackForExtendedYear(int32_t year) const override;
-  bool requiresFallbackForGregorianYear(int32_t year) const override;
 
  public:
   bool inTemporalLeapYear(UErrorCode& status) const override;

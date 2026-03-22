@@ -18,7 +18,7 @@
 }
 
 moz-button.footer-icon-button {
-  --button-icon-fill: var(--color-gray-70);
+  --button-icon-fill: light-dark(var(--color-gray-70), var(--color-white));
   --button-padding: var(--chat-assistant-footer-button-padding);
   --button-background-color-ghost-hover: var(--chat-assistant-footer-button-bg-hover);
   --button-border-color-ghost-hover: var(--chat-assistant-footer-button-border-hover);

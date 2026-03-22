@@ -22,14 +22,18 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "HttpConnectionUDP.h"
+#include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
+#include "nsHttpTransaction.h"
 #include "Http3Session.h"
 #include "nsComponentManagerUtils.h"
+#include "nsIDNSRecord.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsISocketProvider.h"
 #include "nsNetAddr.h"
 #include "nsINetAddr.h"
 #include "nsStringStream.h"
+#include "nsThreadUtils.h"
 
 namespace mozilla {
 namespace net {
@@ -281,6 +285,10 @@ nsresult HttpConnectionUDP::InitCommon(nsIUDPSocket* aSocket,
                                        uint32_t caps, bool isInTunnel) {
   mSocket = aSocket;
 
+  if (mConnInfo && mConnInfo->GetIsTrrServiceChannel()) {
+    mSocket->MarkAsTRRServiceChannel();
+  }
+
   NetAddr local;
   local.raw.family = aPeerAddr.raw.family;
   nsresult rv = mSocket->InitWithAddress(&local, nullptr, false, 1);
@@ -447,20 +455,28 @@ nsresult HttpConnectionUDP::Activate(nsAHttpTransaction* trans, uint32_t caps,
       mQueuedHttpConnectTransaction.AppendElement(hTrans);
       (void)ResumeSend();
     } else {
-      // Don’t call ResetTransaction() directly here.
+      // Don't call ResetTransaction() directly here.
       // HttpConnectionUDP::Activate() may be invoked from
       // nsHttpConnectionMgr::DispatchSpdyPendingQ(), which could run while
       // enumerating all connection entries. ResetTransaction() can insert a new
-      // “wild” entry, and modifying the connection-entry table during iteration
+      // "wild" entry, and modifying the connection-entry table during iteration
       // is not allowed.
       RefPtr<HttpConnectionUDP> self(this);
       RefPtr<nsHttpTransaction> httpTransaction(hTrans);
-      NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+      nsCOMPtr<nsIRunnable> event = NS_NewRunnableFunction(
           "HttpConnectionUDP::ResetTransaction",
           [self{std::move(self)},
            httpTransaction{std::move(httpTransaction)}]() {
             self->ResetTransaction(httpTransaction);
-          }));
+          });
+
+      if (StaticPrefs::network_trr_high_priority_events() && mConnInfo &&
+          mConnInfo->GetIsTrrServiceChannel()) {
+        event = new PrioritizableRunnable(
+            event.forget(), nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
+      }
+
+      NS_DispatchToCurrentThread(event);
     }
     return NS_OK;
   }
@@ -836,8 +852,11 @@ nsresult HttpConnectionUDP::PushBack(const char* data, uint32_t length) {
   return NS_ERROR_UNEXPECTED;
 }
 
-class HttpConnectionUDPForceIO : public Runnable {
+class HttpConnectionUDPForceIO : public Runnable, public nsIRunnablePriority {
  public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIRUNNABLEPRIORITY
+
   HttpConnectionUDPForceIO(HttpConnectionUDP* aConn, bool doRecv)
       : Runnable("net::HttpConnectionUDPForceIO"),
         mConn(aConn),
@@ -857,17 +876,41 @@ class HttpConnectionUDPForceIO : public Runnable {
   }
 
  private:
+  ~HttpConnectionUDPForceIO() = default;
+
   RefPtr<HttpConnectionUDP> mConn;
   bool mDoRecv;
 };
+
+NS_IMPL_ISUPPORTS_INHERITED(HttpConnectionUDPForceIO, Runnable,
+                            nsIRunnablePriority)
+
+NS_IMETHODIMP
+HttpConnectionUDPForceIO::GetPriority(uint32_t* aPriority) {
+  if (StaticPrefs::network_trr_high_priority_events() && mConn->mConnInfo &&
+      mConn->mConnInfo->GetIsTrrServiceChannel()) {
+    *aPriority = nsIRunnablePriority::PRIORITY_MEDIUMHIGH;
+  } else {
+    *aPriority = nsIRunnablePriority::PRIORITY_NORMAL;
+  }
+  return NS_OK;
+}
 
 nsresult HttpConnectionUDP::ResumeSend() {
   LOG(("HttpConnectionUDP::ResumeSend [this=%p]\n", this));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   RefPtr<HttpConnectionUDP> self(this);
-  NS_DispatchToCurrentThread(
+  nsCOMPtr<nsIRunnable> event =
       NS_NewRunnableFunction("HttpConnectionUDP::CallSendData",
-                             [self{std::move(self)}]() { self->SendData(); }));
+                             [self{std::move(self)}]() { self->SendData(); });
+
+  if (StaticPrefs::network_trr_high_priority_events() && mConnInfo &&
+      mConnInfo->GetIsTrrServiceChannel()) {
+    event = new PrioritizableRunnable(event.forget(),
+                                      nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
+  }
+
+  NS_DispatchToCurrentThread(event);
   return NS_OK;
 }
 

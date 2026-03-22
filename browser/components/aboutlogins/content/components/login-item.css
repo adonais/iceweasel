@@ -293,8 +293,8 @@ login-command-button {
 }
 
 .error-message {
-  color: #fff;
-  background-color: var(--red-60);
+  color: var(--text-color);
+  background-color: var(--background-color-critical);
   border: 1px solid transparent;
   padding-block: 6px;
   display: inline-block;

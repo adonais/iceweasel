@@ -11,7 +11,7 @@ from taskgraph.util import json
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.dependencies import get_dependencies, get_primary_dependency
 from taskgraph.util.schema import (
-    Schema,
+    LegacySchema,
     optionally_keyed_by,
     resolve_keyed_by,
     taskref_or_string,
@@ -33,7 +33,7 @@ def _by_platform(arg):
     return optionally_keyed_by("build-platform", arg)
 
 
-l10n_description_schema = Schema({
+l10n_description_schema = LegacySchema({
     # Name for this job, inferred from the dependent job before validation
     Required("name"): str,
     # build-platform, inferred from dependent job before validation

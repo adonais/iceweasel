@@ -42,6 +42,13 @@ skip-if = [
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1945222
 ]
 
+["browser_smartblockembeds_link_preservation.js"]
+skip-if = [
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1945222
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1945222
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1945222
+]
+
 ["browser_smartblockembeds_mutation.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug",
@@ -56,7 +63,7 @@ skip-if = [
 
 ["browser_smartblockembeds_trustpanel.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64'", # Bug 2001223, Bug 2003484
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 2001223, Bug 2003484
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1945222
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1945222
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1945222, Bug 2003484

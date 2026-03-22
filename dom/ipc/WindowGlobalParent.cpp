@@ -34,6 +34,8 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/DOMExceptionBinding.h"
+#include "mozilla/dom/DigitalCredential.h"
+#include "mozilla/dom/DigitalCredentialParent.h"
 #include "mozilla/dom/IdentityCredential.h"
 #include "mozilla/dom/InProcessParent.h"
 #include "mozilla/dom/JSActorService.h"
@@ -417,7 +419,7 @@ IPCResult WindowGlobalParent::RecvUpdateDocumentURI(NotNull<nsIURI*> aURI) {
                     "principal URI");
   }
 
-  mDocumentURI = aURI;
+  mDocumentURI = std::move(aURI);
   return IPC_OK();
 }
 
@@ -553,15 +555,10 @@ IPCResult WindowGlobalParent::RecvDestroy() {
   return IPC_OK();
 }
 
-IPCResult WindowGlobalParent::RecvRawMessage(
-    const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
-    const UniquePtr<ClonedMessageData>& aStack) {
-  UniquePtr<StructuredCloneData> stack;
-  if (aStack) {
-    stack = MakeUnique<StructuredCloneData>();
-    stack->BorrowFromClonedMessageData(*aStack);
-  }
-  ReceiveRawMessage(aMeta, std::move(aData), std::move(stack));
+IPCResult WindowGlobalParent::RecvRawMessage(const JSActorMessageMeta& aMeta,
+                                             JSIPCValue&& aData,
+                                             StructuredCloneData* aStack) {
+  ReceiveRawMessage(aMeta, std::move(aData), aStack);
   return IPC_OK();
 }
 
@@ -1841,6 +1838,11 @@ WindowGlobalParent::AllocPWebAuthnTransactionParent() {
 already_AddRefed<PWebIdentityParent>
 WindowGlobalParent::AllocPWebIdentityParent() {
   return MakeAndAddRef<WebIdentityParent>();
+}
+
+already_AddRefed<PDigitalCredentialParent>
+WindowGlobalParent::AllocPDigitalCredentialParent() {
+  return MakeAndAddRef<DigitalCredentialParent>();
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(WindowGlobalParent)

@@ -147,7 +147,7 @@ async function checkTelemetryClickEvents(useFelt) {
             }
             const el = netErrorCard[mapFelt[objectId]];
             el.scrollIntoView(true);
-            EventUtils.synthesizeMouseAtCenter(el, {}, content);
+            EventUtils.synthesizeMouse(el, 2, 2, {}, content);
           } else {
             await ContentTaskUtils.waitForCondition(
               () => doc.body.classList.contains("certerror"),

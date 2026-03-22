@@ -12,17 +12,11 @@ buildscript {
         apply from: file('./gradle/mozconfig.gradle')
     } else {
         gradle.ext.mozconfig = gradle.root.mozconfig
+        gradle.ext.configureMavenRepositories = gradle.root.ext.configureMavenRepositories
     }
 
     repositories {
-        gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
-            maven {
-                url = repository
-                if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
-                    allowInsecureProtocol = true
-                }
-            }
-        }
+        gradle.configureMavenRepositories(delegate)
     }
 
     dependencies {
@@ -34,6 +28,7 @@ if (!gradle.root.hasProperty("mozconfig")){
     apply from: file('./gradle/mozconfig.gradle')
 } else {
     gradle.ext.mozconfig = gradle.root.mozconfig
+    gradle.ext.configureMavenRepositories = gradle.root.ext.configureMavenRepositories
 }
 
 // Synchronized library configuration for all modules
@@ -72,22 +67,6 @@ class Config {
     }
 }
 
-def setupProject(name, path, description) {
-    settings.include(":$name")
-
-    project(":$name").projectDir = new File(gradle.mozconfig.topsrcdir, "mobile/android/android-components/${path}")
-
-    // project(...) gives us a skeleton project that we can't set ext.* on
-    gradle.beforeProject { project ->
-        // However, the "afterProject" listener iterates over every project and gives us the actual project
-        // So, once we filter for the project we care about, we can set whatever we want
-        if (project.path == ":$name") {
-            project.ext.description = description
-        }
-    }
-}
-
-
 // Mimic Python: open(os.path.join(buildconfig.topobjdir, 'buildid.h')).readline().split()[2]
 def getBuildId() {
     if (System.env.MOZ_BUILD_DATE) {
@@ -119,26 +98,11 @@ def getManifestVersionString(componentsVersion) {
     return "${parts[0]}.${parts[1]}.${dateAndTime}";
 }
 
-def yaml = new Yaml()
-def buildConfigFile = new File(gradle.mozconfig.topsrcdir, "mobile/android/android-components/.buildconfig.yml")
-def buildconfig = yaml.load(buildConfigFile.newInputStream())
-
-// Setup the parent ":components" project
-settings.include(":components")
-project(":components").projectDir = new File(gradle.mozconfig.topsrcdir, "mobile/android/android-components/components")
-
-buildconfig.projects.each { project ->
-    // If we're building A-C, set up all projects, otherwise exclude samples e.g., if we're building Fenix or Focus.
-    // The samples are not relevant for the Fenix and Focus builds.
-    if (rootDir.toString().contains("android-components") || !project.key.startsWith("samples")) {
-        setupProject(project.key, project.value.path, project.value.description)
-    }
-}
-
 gradle.projectsLoaded { ->
     def versionFile = new File(gradle.mozconfig.topsrcdir, "mobile/android/version.txt")
     String version = versionFile.text.stripTrailing()
 
+    def yaml = new Yaml()
     def configDataFile = new File(gradle.mozconfig.topsrcdir, "mobile/android/android-components/.config.yml")
     def configData = yaml.load(configDataFile.newInputStream())
 
@@ -166,8 +130,6 @@ gradle.projectsLoaded { ->
             configData.targetSdkVersion,
             ndkVersion
     )
-
-    gradle.rootProject.ext.buildConfig = buildconfig
 
     // Define a reusable task for updating the version in manifest.json for modules that package
     // a web extension. We automate this to make sure we never forget to update the version, either
@@ -206,6 +168,18 @@ gradle.projectsLoaded { ->
             // configurations but less consistent with the result of the
             // non-gradle build system.
             project.layout.buildDirectory.set(topObjPath.resolve("gradle/build").resolve(relativePath).toFile())
+        }
+    }
+
+    // This explicitly disables stripping of native libraries in our projects to match the existing
+    // implicit behaviour. Our projects do not specify the `ndkVersion` for our main Android builds
+    // and so stripping would otherwise fail with a warning. Note that gecko builds themselves will
+    // already strip the *.so files when compiled as release targets.
+    gradle.rootProject.allprojects { project ->
+        project.afterEvaluate {
+            if (it.hasProperty('android')) {
+                android.packagingOptions.jniLibs.keepDebugSymbols += "**/*.so"
+            }
         }
     }
 }

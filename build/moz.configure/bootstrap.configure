@@ -94,11 +94,11 @@ def bootstrap_toolchain_tasks(host):
 
     def task_data(t):
         result = {
-            "index": t.optimization["index-search"],
-            "artifact": t.attributes[f"{t.kind}-artifact"],
-            "extract": t.attributes.get(f"{t.kind}-extract", True),
+            "index": t.get("optimization", {})["index-search"],
+            "artifact": t["attributes"][f"{t['kind']}-artifact"],
+            "extract": t["attributes"].get(f"{t['kind']}-extract", True),
         }
-        command = t.attributes.get("toolchain-command")
+        command = t["attributes"].get("toolchain-command")
         if command:
             result["command"] = command
         return result
@@ -108,9 +108,9 @@ def bootstrap_toolchain_tasks(host):
     tasks = {
         k: task_data(t)
         for k, t in tasks.items()
-        if t.attributes.get(f"local-{t.kind}")
-        and t.optimization
-        and "index-search" in t.optimization
+        if t["attributes"].get(f"local-{t['kind']}")
+        and t.get("optimization")
+        and "index-search" in t.get("optimization", {})
     }
 
     return namespace(prefix=prefix, tasks=tasks)
@@ -211,15 +211,13 @@ def bootstrap_path(path, **kwargs):
             task_id = None
             if not command:
                 try:
-                    IndexSearch = import_module(
-                        "taskgraph.optimize.strategies"
-                    ).IndexSearch
+                    find_task_from_index = import_module(
+                        "mozbuild.util"
+                    ).find_task_from_index
                 except Exception:
-                    log.debug("Cannot bootstrap %s: missing taskgraph module", label)
+                    log.debug("Cannot bootstrap %s: missing mozbuild module", label)
                     return False
-                task_id = IndexSearch().should_replace_task(
-                    task, {}, None, task["index"]
-                )
+                task_id = find_task_from_index(task["index"])
             if task_id:
                 # If we found the task in the index, use the `mach artifact toolchain`
                 # fast path.

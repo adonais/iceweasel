@@ -26,6 +26,9 @@ import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.feature.top.sites.TopSitesStorage
 import mozilla.components.feature.top.sites.TopSitesUseCases
+import mozilla.components.lib.crash.CrashReporter
+import mozilla.components.service.mars.MozAdsClientProvider
+import mozilla.components.service.mars.MozAdsUseCases
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.locale.LocaleUseCases
 import org.mozilla.fenix.R
@@ -44,6 +47,7 @@ import org.mozilla.fenix.wallpapers.WallpapersUseCases
 @Suppress("LongParameterList")
 class UseCases(
     private val context: Context,
+    private val crashReporter: Lazy<CrashReporter>,
     private val engine: Lazy<Engine>,
     private val store: Lazy<BrowserStore>,
     private val shortcutManager: Lazy<WebAppShortcutManager>,
@@ -51,6 +55,7 @@ class UseCases(
     private val bookmarksStorage: Lazy<BookmarksStorage>,
     private val historyStorage: Lazy<HistoryStorage>,
     private val syncedTabsCommands: Lazy<SyncedTabsCommands>,
+    adsClientProvider: Lazy<MozAdsClientProvider>,
     appStore: Lazy<AppStore>,
     client: Lazy<Client>,
     strictMode: Lazy<StrictModeManager>,
@@ -130,10 +135,17 @@ class UseCases(
 
     val marsUseCases by lazyMonitored { MARSUseCases(client.value) }
 
+    val mozAdsUseCases by lazyMonitored {
+        MozAdsUseCases(
+            adsClientProvider = adsClientProvider,
+            crashReporter = crashReporter.value,
+        )
+    }
+
     val fenixBrowserUseCases by lazyMonitored {
         FenixBrowserUseCases(
             appStore = appStore.value,
-            addNewTabUseCase = tabsUseCases.addTab,
+            tabsUseCases = tabsUseCases,
             loadUrlUseCase = sessionUseCases.loadUrl,
             searchUseCases = searchUseCases,
             homepageTitle = context.getString(R.string.tab_tray_homepage_tab),

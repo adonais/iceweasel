@@ -156,6 +156,8 @@ support-files = [
   "file_report_for_import_server.sjs",
   "file_service_worker.html",
   "file_service_worker.js",
+  "file_bug2021482_sw.js",
+  "file_bug2021482_check.js",
   "file_child-src_iframe.html",
   "file_child-src_inner_frame.html",
   "file_child-src_worker.html",
@@ -251,7 +253,6 @@ support-files = [
 ]
 prefs = [
   "security.mixed_content.upgrade_display_content=false",
-  "javascript.options.experimental.shadow_realms=true",
 ]
 
 ["test_301_redirect.html"]
@@ -343,9 +344,9 @@ skip-if = [
 
 ["test_bug663567.html"]
 skip-if = [
-  "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && fission && xorigin && debug", # Bug 1716406 - New fission platform triage
-  "os == 'win' && os_version == '11.26100' && arch == 'x86' && fission && xorigin && debug", # Bug 1716406 - New fission platform triage
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && fission && xorigin && debug", # Bug 1716406 - New fission platform triage
+  "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && debug && fission && xorigin", # Bug 1716406 - New fission platform triage
+  "os == 'win' && os_version == '11.26100' && arch == 'x86' && debug && fission && xorigin", # Bug 1716406 - New fission platform triage
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && fission && xorigin", # Bug 1716406 - New fission platform triage
 ]
 
 ["test_bug802872.html"]
@@ -417,6 +418,8 @@ support-files = ["file_bug1777572.html"]
 skip-if = [
   "os == 'android'", # This unusual window.close/open test times out on Android.
 ]
+
+["test_bug2021482.html"]
 
 ["test_child-src_iframe.html"]
 skip-if = [
@@ -524,7 +527,7 @@ skip-if = [
 
 ["test_hash_source.html"]
 skip-if = [
-  "fission && xorigin && debug", # Bug 1716406 - New fission platform triage
+  "debug && fission && xorigin", # Bug 1716406 - New fission platform triage
 ]
 
 ["test_iframe_sandbox.html"]

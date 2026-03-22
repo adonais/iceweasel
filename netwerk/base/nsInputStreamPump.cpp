@@ -6,6 +6,7 @@
 
 #include "nsIOService.h"
 #include "nsInputStreamPump.h"
+#include "nsIInputStreamPriority.h"
 #include "nsIStreamTransportService.h"
 #include "nsIThreadRetargetableStreamListener.h"
 #include "nsThreadUtils.h"
@@ -378,6 +379,13 @@ nsInputStreamPump::AsyncRead(nsIStreamListener* listener) {
     mTargetThread = mozilla::GetCurrentSerialEventTarget();
   }
   NS_ENSURE_STATE(mTargetThread);
+
+  if (mHighPriorityStream) {
+    if (nsCOMPtr<nsIInputStreamPriority> pri =
+            do_QueryInterface(mAsyncStream)) {
+      pri->SetPriority(nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
+    }
+  }
 
   rv = EnsureWaiting();
   if (NS_FAILED(rv)) return rv;

@@ -1496,7 +1496,7 @@ class DebugEnvironments {
   LiveEnvironmentMap liveEnvs;
 
  public:
-  DebugEnvironments(JSContext* cx, Zone* zone);
+  explicit DebugEnvironments(JSContext* cx);
   ~DebugEnvironments();
 
   Zone* zone() const { return zone_; }

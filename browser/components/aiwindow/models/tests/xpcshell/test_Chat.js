@@ -12,18 +12,24 @@ const { SYSTEM_PROMPT_TYPE, MESSAGE_ROLE } = ChromeUtils.importESModule(
 const { Chat } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs"
 );
-const { MODEL_FEATURES, openAIEngine } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
-);
+const { MODEL_FEATURES, openAIEngine, FEATURE_MAJOR_VERSIONS } =
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+  );
+
+function getVersionForFeature(feature) {
+  const major = FEATURE_MAJOR_VERSIONS[feature] || 1;
+  return `${major}.0`;
+}
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
 // Prefs for aiwindow
-const PREF_API_KEY = "browser.aiwindow.apiKey";
-const PREF_ENDPOINT = "browser.aiwindow.endpoint";
-const PREF_MODEL = "browser.aiwindow.model";
+const PREF_API_KEY = "browser.smartwindow.apiKey";
+const PREF_ENDPOINT = "browser.smartwindow.endpoint";
+const PREF_MODEL = "browser.smartwindow.model";
 
 // Clean prefs after all tests
 registerCleanupFunction(() => {
@@ -49,6 +55,11 @@ add_task(async function test_Chat_real_tools_are_registered() {
     typeof Chat.toolMap.get_page_content,
     "function",
     "get_page_content should be registered in toolMap"
+  );
+  Assert.strictEqual(
+    typeof Chat.toolMap.get_user_memories,
+    "function",
+    "get_user_memories should be registered in the toolMap"
   );
 });
 
@@ -91,8 +102,8 @@ add_task(
       );
       Assert.equal(
         opts.modelId,
-        "qwen3-235b-a22b-instruct-2507-maas",
-        "modelId should fallback to default"
+        "nonexistent-model",
+        "modelId should use custom model with custom endpoint"
       );
     } finally {
       sb.restore();
@@ -141,9 +152,14 @@ add_task(async function test_Chat_fetchWithHistory_streams_and_forwards_args() {
     );
     conversation.addUserMessage("Hi there", "https://www.firefox.com", 0);
 
+    // Build engine
+    const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
     // Collect streamed output
     let acc = "";
-    for await (const chunk of Chat.fetchWithHistory(conversation)) {
+    for await (const chunk of Chat.fetchWithHistory(
+      conversation,
+      engineInstance
+    )) {
       if (typeof chunk === "string") {
         acc += chunk;
       }
@@ -221,8 +237,13 @@ add_task(async function test_Chat_fetchWithHistory_handles_tool_calls() {
       0
     );
 
+    // Build engine
+    const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
     let textOutput = "";
-    for await (const chunk of Chat.fetchWithHistory(conversation)) {
+    for await (const chunk of Chat.fetchWithHistory(
+      conversation,
+      engineInstance
+    )) {
       if (typeof chunk === "string") {
         textOutput += chunk;
       }
@@ -268,7 +289,16 @@ add_task(
     const sb = sinon.createSandbox();
     try {
       const err = new Error("engine build failed");
-      sb.stub(openAIEngine, "build").rejects(err);
+      const fakeEngine = {
+        getConfig() {
+          return {};
+        },
+        runWithGenerator() {
+          throw err; // throwing error in generation
+        },
+      };
+
+      sb.stub(openAIEngine, "build").resolves(fakeEngine);
       // sb.stub(Chat, "_getFxAccountToken").resolves("mock_token");
 
       const conversation = new ChatConversation({
@@ -279,8 +309,13 @@ add_task(
       });
       conversation.addUserMessage("Hi", "https://www.firefox.com", 0);
 
+      // Build engine
+      const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
       const consume = async () => {
-        for await (const _chunk of Chat.fetchWithHistory(conversation)) {
+        for await (const _chunk of Chat.fetchWithHistory(
+          conversation,
+          engineInstance
+        )) {
           void _chunk;
         }
       };
@@ -348,8 +383,12 @@ add_task(
         0
       );
 
+      const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
       let textOutput = "";
-      for await (const chunk of Chat.fetchWithHistory(conversation)) {
+      for await (const chunk of Chat.fetchWithHistory(
+        conversation,
+        engineInstance
+      )) {
         if (typeof chunk === "string") {
           textOutput += chunk;
         }
@@ -370,3 +409,185 @@ add_task(
     }
   }
 );
+
+add_task(
+  async function test_Chat_fetchWithHistory_handles_tool_call_with_empty_arguments() {
+    const sb = sinon.createSandbox();
+    try {
+      let callCount = 0;
+      const fakeEngine = {
+        runWithGenerator(_options) {
+          callCount++;
+          async function* gen() {
+            if (callCount === 1) {
+              // First call: yield tool call with empty string arguments
+              yield { text: "Calling tool with no args: " };
+              yield {
+                toolCalls: [
+                  {
+                    id: "call_empty_args",
+                    function: {
+                      name: "get_open_tabs",
+                      arguments: "", // Empty string instead of "{}"
+                    },
+                  },
+                ],
+              };
+            } else {
+              // Second call: after tool execution
+              yield { text: "Tool completed." };
+            }
+          }
+          return gen();
+        },
+        getConfig() {
+          return {};
+        },
+      };
+
+      sb.stub(Chat.toolMap, "get_open_tabs").resolves([]);
+      sb.stub(openAIEngine, "build").resolves(fakeEngine);
+
+      const conversation = new ChatConversation({
+        title: "chat title",
+        description: "chat desc",
+        pageUrl: new URL("https://www.firefox.com"),
+        pageMeta: {},
+      });
+      conversation.addUserMessage(
+        "Get my open tabs",
+        "https://www.firefox.com",
+        0
+      );
+
+      const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+      let textOutput = "";
+      for await (const chunk of Chat.fetchWithHistory(
+        conversation,
+        engineInstance
+      )) {
+        if (typeof chunk === "string") {
+          textOutput += chunk;
+        }
+      }
+
+      // Find the assistant message with tool_calls
+      const assistantToolCallMessage = conversation.messages.find(
+        message =>
+          message.role === MESSAGE_ROLE.ASSISTANT &&
+          message?.content?.type === "function" &&
+          message?.content?.body?.tool_calls
+      );
+
+      Assert.ok(
+        assistantToolCallMessage,
+        "Should have assistant message with tool_calls"
+      );
+      Assert.equal(
+        assistantToolCallMessage.content.body.tool_calls[0].function.arguments,
+        "{}",
+        "Empty arguments string should be converted to '{}'"
+      );
+      Assert.ok(
+        Chat.toolMap.get_open_tabs.calledOnce,
+        "Tool should be called once even with empty args"
+      );
+      Assert.equal(
+        textOutput,
+        "Calling tool with no args: Tool completed.",
+        "Should yield text from both calls"
+      );
+    } finally {
+      sb.restore();
+    }
+  }
+);
+
+add_task(async function test_Chat_modelId_reads_from_pref() {
+  const defaultModelId = "";
+  const customModelId = "custom-model-id";
+
+  Services.prefs.clearUserPref(PREF_MODEL);
+
+  Assert.equal(
+    Chat.modelId,
+    defaultModelId,
+    "Should be '' when pref is not set"
+  );
+
+  Services.prefs.setStringPref(PREF_MODEL, customModelId);
+
+  Assert.equal(
+    Chat.modelId,
+    customModelId,
+    "Should read modelId from pref after it is set"
+  );
+
+  Services.prefs.clearUserPref(PREF_MODEL);
+
+  Assert.equal(
+    Chat.modelId,
+    defaultModelId,
+    "Should revert to default modelId after pref is cleared"
+  );
+});
+
+add_task(async function test_Chat_fetchWithHistory_uses_modelId_from_pref() {
+  const sb = sinon.createSandbox();
+  try {
+    const customModelId = "test-custom-model-123";
+    Services.prefs.setStringPref(PREF_MODEL, customModelId);
+
+    const fakeRecords = [
+      {
+        feature: MODEL_FEATURES.CHAT,
+        version: getVersionForFeature(MODEL_FEATURES.CHAT),
+        model: customModelId,
+        is_default: true,
+      },
+    ];
+
+    const fakeClient = {
+      get: sb.stub().resolves(fakeRecords),
+    };
+    sb.stub(openAIEngine, "getRemoteClient").returns(fakeClient);
+
+    const fakeEngineInstance = {
+      runWithGenerator(_options) {
+        async function* gen() {
+          yield { text: "Test response" };
+        }
+        return gen();
+      },
+    };
+
+    const createEngineStub = sb
+      .stub(openAIEngine, "_createEngine")
+      .resolves(fakeEngineInstance);
+
+    const conversation = new ChatConversation({
+      title: "chat title",
+      description: "chat desc",
+      pageUrl: new URL("https://www.firefox.com"),
+      pageMeta: {},
+    });
+
+    const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+    const generator = Chat.fetchWithHistory(conversation, engineInstance);
+    await generator.next();
+
+    Assert.ok(
+      createEngineStub.calledOnce,
+      "_createEngine should be called once"
+    );
+    const createEngineArgs = createEngineStub.firstCall.args[0];
+    Assert.equal(
+      createEngineArgs.modelId,
+      customModelId,
+      "Engine should be created with the custom model from pref"
+    );
+  } finally {
+    sb.restore();
+    Services.prefs.clearUserPref(PREF_MODEL);
+  }
+});

@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef plugin_h__
-#define plugin_h__
+#ifndef plugin_h_
+#define plugin_h_
 
 #include "clang/AST/ASTConsumer.h"
 #include "clang/AST/ASTContext.h"
@@ -53,4 +53,4 @@ typedef clang::tidy::ClangTidyContext ContextType;
 #include "BaseCheck.h"
 #endif
 
-#endif // plugin_h__
+#endif // plugin_h_

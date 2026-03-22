@@ -8,8 +8,6 @@ import subprocess
 import tempfile
 from argparse import ArgumentParser
 
-from .task_config import all_task_configs
-
 COMMON_ARGUMENT_GROUPS = {
     "push": [
         [
@@ -129,6 +127,9 @@ class BaseTryParser(ArgumentParser):
     task_configs = []
 
     def __init__(self, *args, **kwargs):
+
+        from .task_config import all_task_configs
+
         ArgumentParser.__init__(self, *args, **kwargs)
 
         group = self.add_argument_group(f"{self.name} arguments")
@@ -153,6 +154,7 @@ class BaseTryParser(ArgumentParser):
                     group_no_push.add_argument(*cli, **push_kwargs)
 
         group = self.add_argument_group("task configuration arguments")
+
         self.task_configs = {c: all_task_configs[c]() for c in self.task_configs}
         for cfg in self.task_configs.values():
             cfg.add_arguments(group)

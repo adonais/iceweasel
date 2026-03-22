@@ -459,8 +459,14 @@ public class GeckoThread extends Thread {
     final List<String> env = getEnvFromExtras(mInitInfo.extras);
 
     // In Gecko, the native crash reporter is enabled by default in opt builds, and
-    // disabled by default in debug builds.
-    if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) == 0 && !BuildConfig.DEBUG_BUILD) {
+    // disabled by default in debug builds. This may be inconsistent with whether a GeckoView
+    // handler is set, so default Gecko to follow GeckoView unless overridden (such as by a test
+    // harness).
+    if (env.contains("MOZ_CRASHREPORTER=1") || env.contains("MOZ_CRASHREPORTER_DISABLE=1")) {
+      // If explicitly set, pass settings to Gecko regardless of whether a GeckoView handler exists.
+      // Native crashes can still write out minidumps even if GeckoView doesn't process them.
+    } else if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) == 0
+        && !BuildConfig.DEBUG_BUILD) {
       env.add(0, "MOZ_CRASHREPORTER_DISABLE=1");
     } else if ((mInitInfo.flags & FLAG_ENABLE_NATIVE_CRASHREPORTER) != 0
         && BuildConfig.DEBUG_BUILD) {

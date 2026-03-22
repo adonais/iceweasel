@@ -9,12 +9,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionTestUtils:
     "resource://testing-common/ExtensionXPCShellUtils.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
 /**
  * @import {AppProvidedConfigEngine} from "ConfigSearchEngine.sys.mjs"
+ * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  */
 
 /**
@@ -68,7 +70,7 @@ class _SearchTestUtils {
         if (this.#stubs.size) {
           this.#stubs = new Map();
 
-          Services.search.wrappedJSObject._settings._testResetSettings();
+          lazy.SearchService._settings._testResetSettings();
           let settingsWritten = SearchTestUtils.promiseSearchNotification(
             "write-settings-to-disk-complete"
           );
@@ -117,36 +119,36 @@ class _SearchTestUtils {
   }) {
     // OpenSearch engines can only be added via http protocols.
     url = url.replace("chrome://mochitests/content", "https://example.com");
-    let engine = await Services.search.addOpenSearchEngine(url, faviconURL);
-    let previousEngine = Services.search.defaultEngine;
-    let previousPrivateEngine = Services.search.defaultPrivateEngine;
+    let engine = await lazy.SearchService.addOpenSearchEngine(url, faviconURL);
+    let previousEngine = lazy.SearchService.defaultEngine;
+    let previousPrivateEngine = lazy.SearchService.defaultPrivateEngine;
     if (setAsDefault) {
-      await Services.search.setDefault(
+      await lazy.SearchService.setDefault(
         engine,
-        Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+        lazy.SearchService.CHANGE_REASON.UNKNOWN
       );
     }
     if (setAsDefaultPrivate) {
-      await Services.search.setDefaultPrivate(
+      await lazy.SearchService.setDefaultPrivate(
         engine,
-        Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+        lazy.SearchService.CHANGE_REASON.UNKNOWN
       );
     }
     this.#testScope.registerCleanupFunction(async () => {
       if (setAsDefault && !skipReset) {
-        await Services.search.setDefault(
+        await lazy.SearchService.setDefault(
           previousEngine,
-          Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+          lazy.SearchService.CHANGE_REASON.UNKNOWN
         );
       }
       if (setAsDefaultPrivate && !skipReset) {
-        await Services.search.setDefaultPrivate(
+        await lazy.SearchService.setDefaultPrivate(
           previousPrivateEngine,
-          Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+          lazy.SearchService.CHANGE_REASON.UNKNOWN
         );
       }
       try {
-        await Services.search.removeEngine(engine);
+        await lazy.SearchService.removeEngine(engine);
       } catch (ex) {
         // Don't throw if the test has already removed it.
       }
@@ -185,7 +187,9 @@ class _SearchTestUtils {
           if (i == times) {
             Services.obs.removeObserver(observer, topic);
             // Let the stack unwind.
-            Services.tm.dispatchToMainThread(() => resolve(aSubject));
+            Services.tm.dispatchToMainThread(() =>
+              resolve(aSubject?.wrappedJSObject ?? aSubject)
+            );
           }
         }
       }, topic);
@@ -479,7 +483,7 @@ class _SearchTestUtils {
       await this.initXPCShellAddonManager();
     }
 
-    await Services.search.init();
+    await lazy.SearchService.init();
 
     let extensionInfo = {
       useAddonManager: "permanent",
@@ -489,21 +493,21 @@ class _SearchTestUtils {
 
     let extension;
 
-    let previousEngine = Services.search.defaultEngine;
-    let previousPrivateEngine = Services.search.defaultPrivateEngine;
+    let previousEngine = lazy.SearchService.defaultEngine;
+    let previousPrivateEngine = lazy.SearchService.defaultPrivateEngine;
 
     let cleanup = async () => {
       if (setAsDefault) {
-        await Services.search.setDefault(
+        await lazy.SearchService.setDefault(
           previousEngine,
-          Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+          lazy.SearchService.CHANGE_REASON.UNKNOWN
         );
         this.clearDefaultSearchEngineCachedPrefs();
       }
       if (setAsDefaultPrivate) {
-        await Services.search.setDefaultPrivate(
+        await lazy.SearchService.setDefaultPrivate(
           previousPrivateEngine,
-          Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+          lazy.SearchService.CHANGE_REASON.UNKNOWN
         );
       }
       await extension.unload();
@@ -518,18 +522,18 @@ class _SearchTestUtils {
     extension = this.#testScope.ExtensionTestUtils.loadExtension(extensionInfo);
     await extension.startup();
     await lazy.AddonTestUtils.waitForSearchProviderStartup(extension);
-    let engine = Services.search.getEngineByName(manifest.name);
+    let engine = lazy.SearchService.getEngineByName(manifest.name);
 
     if (setAsDefault) {
-      await Services.search.setDefault(
+      await lazy.SearchService.setDefault(
         engine,
-        Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+        lazy.SearchService.CHANGE_REASON.UNKNOWN
       );
     }
     if (setAsDefaultPrivate) {
-      await Services.search.setDefaultPrivate(
+      await lazy.SearchService.setDefaultPrivate(
         engine,
-        Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+        lazy.SearchService.CHANGE_REASON.UNKNOWN
       );
     }
 
@@ -772,10 +776,10 @@ class _SearchTestUtils {
   }
 
   /**
-   * Extracts post data string from an nsISearchSubmission.
+   * Extracts post data string from the data returned by getSubmission.
    * If there is no post data, returns null.
    *
-   * @param {?nsISearchSubmission} submission
+   * @param {?{postData: nsIMIMEInputStream}} submission
    * @returns {?string}
    */
   getPostDataString(submission) {
@@ -798,13 +802,13 @@ class _SearchTestUtils {
    *   Name of the engine to wait for.
    * @param {string} expectedData
    *   Data to wait for.
-   * @returns {Promise<nsISearchEngine>}
+   * @returns {Promise<SearchEngine>}
    *   Resolves to the search engine with the expected name.
    */
   promiseEngine(expectedEngineName, expectedData = "engine-added") {
     let { promise, resolve } = Promise.withResolvers();
     Services.obs.addObserver(function obs(subject, _topic, data) {
-      let engine = subject.QueryInterface(Ci.nsISearchEngine);
+      let engine = subject.wrappedJSObject;
 
       if (data == expectedData && engine.name == expectedEngineName) {
         Services.obs.removeObserver(obs, "browser-search-engine-modified");

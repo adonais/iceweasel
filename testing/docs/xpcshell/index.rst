@@ -421,7 +421,7 @@ well, and they will be made available by their filename.
    ├──test_example.js
    └──xpcshell.toml
 
-.. code:: toml
+.. code:: text
 
    # xpcshell.toml
    [DEFAULT]

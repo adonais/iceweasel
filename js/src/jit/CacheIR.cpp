@@ -11,13 +11,13 @@
 #include "mozilla/FloatingPoint.h"
 
 #include "jsapi.h"
-#include "jsdate.h"
-#include "jsmath.h"
-#include "jsnum.h"
 
 #include "builtin/DataViewObject.h"
+#include "builtin/Date.h"
 #include "builtin/MapObject.h"
+#include "builtin/Math.h"
 #include "builtin/ModuleObject.h"
+#include "builtin/Number.h"
 #include "builtin/Object.h"
 #include "builtin/WeakMapObject.h"
 #include "builtin/WeakSetObject.h"
@@ -1335,12 +1335,6 @@ static bool IsWindowProxyForScriptGlobal(JSScript* script, JSObject* obj) {
              script->runtimeFromMainThread()->maybeWindowProxyClass());
 
   JSObject* window = ToWindowIfWindowProxy(obj);
-
-  // Ion relies on the WindowProxy's group changing (and the group getting
-  // marked as having unknown properties) on navigation. If we ever stop
-  // transplanting same-compartment WindowProxies, this assert will fail and we
-  // need to fix that code.
-  MOZ_ASSERT(window == &obj->nonCCWGlobal());
 
   // This must be a WindowProxy for a global in this compartment. Else it would
   // be a cross-compartment wrapper and IsWindowProxy returns false for
@@ -5497,6 +5491,15 @@ bool SetPropIRGenerator::canAttachAddSlotStub(HandleObject obj, HandleId id) {
     return false;
   }
 
+  // We don't support addProperty hooks because they're uncommon. Ignore the
+  // Array addProperty hook, because it doesn't do anything for non-index
+  // properties.
+  DebugOnly<uint32_t> index;
+  MOZ_ASSERT_IF(nobj->is<ArrayObject>(), !IdIsIndex(id, &index));
+  if (nobj->getClass()->getAddProperty() && !nobj->is<ArrayObject>()) {
+    return false;
+  }
+
   // Object must be extensible, or we must be initializing a private
   // elem.
   bool canAddNewProperty = nobj->isExtensible() || id.isPrivateName();
@@ -5658,21 +5661,11 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
     ShapeGuardProtoChain(writer, nobj, objId);
   }
 
-  // If the JSClass has an addProperty hook, we need to call a VM function to
-  // invoke this hook. Ignore the Array addProperty hook, because it doesn't do
-  // anything for non-index properties.
-  DebugOnly<uint32_t> index;
-  MOZ_ASSERT_IF(obj->is<ArrayObject>(), !IdIsIndex(id, &index));
-  bool mustCallAddPropertyHook =
-      !obj->is<ArrayObject>() && obj->getClass()->getAddProperty();
   bool preserveWrapper =
       obj->getClass()->preservesWrapper() &&
       !oldShape->hasObjectFlag(ObjectFlag::HasPreservedWrapper);
 
-  if (mustCallAddPropertyHook) {
-    writer.addSlotAndCallAddPropHook(objId, rhsValId, newShape);
-    trackAttached("SetProp.AddSlotWithAddPropertyHook");
-  } else if (holder->isFixedSlot(propInfo.slot())) {
+  if (holder->isFixedSlot(propInfo.slot())) {
     size_t offset = NativeObject::getFixedSlotOffset(propInfo.slot());
     writer.addAndStoreFixedSlot(objId, offset, rhsValId, newShape,
                                 preserveWrapper);
@@ -6062,11 +6055,14 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArray() {
   }
 
   // The value must be a packed array.
-  if (!val_.isObject()) {
+  if (!OptimizeGetIterator(val_, cx_)) {
     return AttachDecision::NoAction;
   }
-  Rooted<JSObject*> obj(cx_, &val_.toObject());
-  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(obj, cx_)) {
+  ArrayObject* arr = &val_.toObject().as<ArrayObject>();
+
+  // Don't optimize array objects from a different realm because GuardFuse only
+  // checks the current realm's fuse.
+  if (cx_->realm() != arr->realm()) {
     return AttachDecision::NoAction;
   }
 
@@ -6074,13 +6070,11 @@ AttachDecision OptimizeSpreadCallIRGenerator::tryAttachArray() {
   ObjOperandId objId = writer.guardToObject(valId);
 
   // Guard the object is a packed array with Array.prototype as proto.
-  MOZ_ASSERT(obj->is<ArrayObject>());
-  writer.guardShape(objId, obj->shape());
+  writer.guardShape(objId, arr->shape());
   writer.guardArrayIsPacked(objId);
 
-  // Ensure Array.prototype[@@iterator] and %ArrayIteratorPrototype%.next
-  // haven't been mutated.
-  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorFuse);
+  // Guard on the other conditions listed in OptimizeGetIteratorForArray.
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorBytecodeFuse);
 
   writer.loadObjectResult(objId);
   writer.returnFromIC();
@@ -11249,6 +11243,9 @@ AttachDecision CallIRGenerator::tryAttachFunCall(HandleFunction callee) {
   if (callee->native() != fun_call) {
     return AttachDecision::NoAction;
   }
+  if (args_.length() > JIT_ARGS_LENGTH_MAX) {
+    return AttachDecision::NoAction;
+  }
 
   if (!thisval_.isObject() || !thisval_.toObject().is<JSFunction>()) {
     return AttachDecision::NoAction;
@@ -13183,15 +13180,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachFunctionBind();
 
     // Intl natives.
-    case InlinableNative::IntlGuardToCollator:
-    case InlinableNative::IntlGuardToDateTimeFormat:
-    case InlinableNative::IntlGuardToDisplayNames:
-    case InlinableNative::IntlGuardToDurationFormat:
-    case InlinableNative::IntlGuardToListFormat:
-    case InlinableNative::IntlGuardToNumberFormat:
-    case InlinableNative::IntlGuardToPluralRules:
-    case InlinableNative::IntlGuardToRelativeTimeFormat:
-    case InlinableNative::IntlGuardToSegmenter:
     case InlinableNative::IntlGuardToSegments:
     case InlinableNative::IntlGuardToSegmentIterator:
       return tryAttachGuardToClass(native);
@@ -13620,7 +13608,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
 // constructor, for later use during Ion compilation.
 ScriptedThisResult CallIRGenerator::getThisShapeForScripted(
     HandleFunction calleeFunc, Handle<JSObject*> newTarget,
-    MutableHandle<Shape*> result) {
+    MutableHandle<SharedShape*> result) {
   // Some constructors allocate their own |this| object.
   if (calleeFunc->constructorNeedsUninitializedThis()) {
     return ScriptedThisResult::UninitializedThis;
@@ -13634,7 +13622,7 @@ ScriptedThisResult CallIRGenerator::getThisShapeForScripted(
   }
 
   AutoRealm ar(cx_, calleeFunc);
-  Shape* thisShape = ThisShapeForFunction(cx_, calleeFunc, newTarget);
+  SharedShape* thisShape = ThisShapeForFunction(cx_, calleeFunc, newTarget);
   if (!thisShape) {
     cx_->clearPendingException();
     return ScriptedThisResult::NoAction;
@@ -13663,11 +13651,10 @@ static bool CanOptimizeScriptedCall(JSFunction* callee, bool isConstructing) {
   return true;
 }
 
-void CallIRGenerator::emitCallScriptedGuards(ObjOperandId calleeObjId,
-                                             JSFunction* calleeFunc,
-                                             Int32OperandId argcId,
-                                             CallFlags flags, Shape* thisShape,
-                                             bool isBoundFunction) {
+void CallIRGenerator::emitCallScriptedGuards(
+    ObjOperandId calleeObjId, JSFunction* calleeFunc, Int32OperandId argcId,
+    CallFlags flags, SharedShape* thisShape, gc::AllocSite* maybeAllocSite,
+    bool isBoundFunction) {
   bool isConstructing = flags.isConstructing();
 
   if (mode_ == ICState::Mode::Specialized) {
@@ -13712,9 +13699,14 @@ void CallIRGenerator::emitCallScriptedGuards(ObjOperandId calleeObjId,
                                            slot - newTarget->numFixedSlots());
       }
 
-      // Call metaScriptedThisShape before emitting the call, so that Warp can
-      // use the shape to create the |this| object before transpiling the call.
-      writer.metaScriptedThisShape(thisShape);
+      // Call metaCreateThis before emitting the call, so that Warp can use the
+      // shape/site to create the |this| object before transpiling the call.
+      MOZ_ASSERT(maybeAllocSite);
+      uint32_t numFixedSlots = thisShape->numFixedSlots();
+      uint32_t numDynamicSlots = NativeObject::calculateDynamicSlots(thisShape);
+      gc::AllocKind allocKind = gc::GetGCObjectKind(numFixedSlots);
+      writer.metaCreateThis(numFixedSlots, numDynamicSlots, allocKind,
+                            thisShape, maybeAllocSite);
     }
   } else {
     // Guard that object is a scripted function
@@ -13750,16 +13742,21 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
     return AttachDecision::NoAction;
   }
 
-  // Verify that spread calls have a reasonable number of arguments.
-  if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
+  // Verify that calls have a reasonable number of arguments.
+  if (args_.length() > JIT_ARGS_LENGTH_MAX) {
     return AttachDecision::NoAction;
   }
 
-  Rooted<Shape*> thisShape(cx_);
+  Rooted<SharedShape*> thisShape(cx_);
+  gc::AllocSite* maybeAllocSite = nullptr;
   if (isConstructing && isSpecialized) {
     Rooted<JSObject*> newTarget(cx_, &newTarget_.toObject());
     switch (getThisShapeForScripted(calleeFunc, newTarget, &thisShape)) {
       case ScriptedThisResult::PlainObjectShape:
+        maybeAllocSite = maybeCreateAllocSite();
+        if (!maybeAllocSite) {
+          return AttachDecision::NoAction;
+        }
         break;
       case ScriptedThisResult::UninitializedThis:
         flags.setNeedsUninitializedThis();
@@ -13778,7 +13775,7 @@ AttachDecision CallIRGenerator::tryAttachCallScripted(
   ObjOperandId calleeObjId = writer.guardToObject(calleeValId);
 
   emitCallScriptedGuards(calleeObjId, calleeFunc, argcId, flags, thisShape,
-                         /* isBoundFunction = */ false);
+                         maybeAllocSite, /* isBoundFunction = */ false);
 
   writer.callScriptedFunction(calleeObjId, argcId, flags,
                               ClampFixedArgc(argc_));
@@ -13987,7 +13984,8 @@ AttachDecision CallIRGenerator::tryAttachBoundFunction(
     }
   }
 
-  Rooted<Shape*> thisShape(cx_);
+  Rooted<SharedShape*> thisShape(cx_);
+  gc::AllocSite* maybeAllocSite = nullptr;
   if (isConstructing) {
     // Only optimize if newTarget == callee. This is the common case and ensures
     // we can always pass the bound function's target as newTarget.
@@ -13999,6 +13997,10 @@ AttachDecision CallIRGenerator::tryAttachBoundFunction(
       Handle<JSFunction*> newTarget = target;
       switch (getThisShapeForScripted(target, newTarget, &thisShape)) {
         case ScriptedThisResult::PlainObjectShape:
+          maybeAllocSite = maybeCreateAllocSite();
+          if (!maybeAllocSite) {
+            return AttachDecision::NoAction;
+          }
           break;
         case ScriptedThisResult::UninitializedThis:
           flags.setNeedsUninitializedThis();
@@ -14034,7 +14036,7 @@ AttachDecision CallIRGenerator::tryAttachBoundFunction(
   ObjOperandId targetId = writer.loadBoundFunctionTarget(calleeObjId);
 
   emitCallScriptedGuards(targetId, target, argcId, flags, thisShape,
-                         /* isBoundFunction = */ true);
+                         maybeAllocSite, /* isBoundFunction = */ true);
 
   writer.callBoundScriptedFunction(calleeObjId, targetId, argcId, flags,
                                    numBoundArgs);
@@ -16954,11 +16956,14 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
   }
 
   // The value must be a packed array.
-  if (!val_.isObject()) {
+  if (!OptimizeGetIterator(val_, cx_)) {
     return AttachDecision::NoAction;
   }
-  Rooted<JSObject*> obj(cx_, &val_.toObject());
-  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(obj, cx_)) {
+  ArrayObject* arr = &val_.toObject().as<ArrayObject>();
+
+  // Don't optimize array objects from a different realm because GuardFuse only
+  // checks the current realm's fuse.
+  if (cx_->realm() != arr->realm()) {
     return AttachDecision::NoAction;
   }
 
@@ -16966,14 +16971,11 @@ AttachDecision OptimizeGetIteratorIRGenerator::tryAttachArray() {
   ObjOperandId objId = writer.guardToObject(valId);
 
   // Guard the object is a packed array with Array.prototype as proto.
-  MOZ_ASSERT(obj->is<ArrayObject>());
-  writer.guardShape(objId, obj->shape());
+  writer.guardShape(objId, arr->shape());
   writer.guardArrayIsPacked(objId);
 
-  // Guard on Array.prototype[@@iterator] and %ArrayIteratorPrototype%.next.
-  // This fuse also ensures the prototype chain for Array Iterator is
-  // maintained and that no return method is added.
-  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorFuse);
+  // Guard on the other conditions listed in OptimizeGetIteratorForArray.
+  writer.guardFuse(RealmFuses::FuseIndex::OptimizeGetIteratorBytecodeFuse);
 
   writer.loadBooleanResult(true);
   writer.returnFromIC();

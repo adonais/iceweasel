@@ -197,6 +197,13 @@ class UntypedManagedEndpoint {
  public:
   bool IsValid() const { return mInner.isSome(); }
 
+  bool IsValidForManager(IRefCountedProtocol* aManager) const;
+  bool IsValidForManager(const UntypedManagedEndpoint& aManager) const;
+
+  bool IsForProtocol(ProtocolId aProtocolId) const {
+    return !IsValid() || mInner->mType == aProtocolId;
+  }
+
   UntypedManagedEndpoint(const UntypedManagedEndpoint&) = delete;
   UntypedManagedEndpoint& operator=(const UntypedManagedEndpoint&) = delete;
 

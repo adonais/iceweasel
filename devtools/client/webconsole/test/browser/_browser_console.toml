@@ -1,6 +1,9 @@
 [DEFAULT]
 tags = "devtools"
 subsuite = "devtools"
+skip-if = [
+  "asan", # Bug 1910261, frequent leaks on asan.
+]
 support-files = [
   "head.js",
   "shared-head.js",

@@ -281,10 +281,8 @@ export class FormAutofillChild extends JSWindowActorChild {
         handler.getFieldDetailByElement(element)?.fieldName ?? "";
       this.showPopupIfEmpty(element, fieldName);
     } else {
-      const includeIframe = this.browsingContext == this.browsingContext.top;
       let detectedFields = lazy.FormAutofillHandler.collectFormFieldDetails(
-        handler.form,
-        includeIframe
+        handler.form
       );
 
       // If none of the detected fields are credit card or address fields,
@@ -338,10 +336,7 @@ export class FormAutofillChild extends JSWindowActorChild {
     } else {
       // Ignore form as long as the frame is not the top-level, which means
       // we can just pick any of the eligible elements to identify.
-      element = lazy.FormAutofillUtils.queryEligibleElements(
-        this.document,
-        true
-      )[0];
+      element = lazy.FormAutofillUtils.queryEligibleElements(this.document)[0];
     }
 
     if (!element) {
@@ -353,10 +348,8 @@ export class FormAutofillChild extends JSWindowActorChild {
     // We don't have to call 'updateFormIfNeeded' like we do in
     // 'identifyFieldsWhenFocused' because 'collectFormFieldDetails' doesn't use cached
     // result.
-    const includeIframe = isTop;
     const detectedFields = lazy.FormAutofillHandler.collectFormFieldDetails(
-      handler.form,
-      includeIframe
+      handler.form
     );
 
     if (detectedFields.length) {
@@ -364,6 +357,7 @@ export class FormAutofillChild extends JSWindowActorChild {
       // `idenitfyFields` is called
       this.#handlerWaitingForDetectedComplete.set(handler, null);
     }
+
     return detectedFields;
   }
 
@@ -1003,10 +997,8 @@ export class FormAutofillChild extends JSWindowActorChild {
    * This function is only used by the autofill developer tool extension.
    */
   inspectFields() {
-    const isTop = this.browsingContext == this.browsingContext.top;
     const elements = lazy.FormAutofillUtils.queryEligibleElements(
-      this.document,
-      isTop
+      this.document
     );
 
     // Unlike the case when users click on a field and we only run our heuristic
@@ -1023,10 +1015,8 @@ export class FormAutofillChild extends JSWindowActorChild {
       const handler = new lazy.FormAutofillHandler(formLike);
 
       // Fields that cannot be recognized will still be reported with this API.
-      const includeIframe = isTop;
       const fields = lazy.FormAutofillHandler.collectFormFieldDetails(
         handler.form,
-        includeIframe,
         false
       );
       fieldDetails.push(...fields);
@@ -1116,7 +1106,8 @@ export class FormAutofillChild extends JSWindowActorChild {
     // temporarily excluding "address-housenumber" until it is added to the savedFieldNames set properly
     if (
       !lazy.FormAutofillContent.savedFieldNames.has(fieldName) &&
-      fieldName != "address-housenumber"
+      fieldName != "address-housenumber" &&
+      fieldName != "address-extra-housesuffix"
     ) {
       return false;
     }
@@ -1148,32 +1139,17 @@ export class FormAutofillChild extends JSWindowActorChild {
     const isInputAutofilled =
       input.autofillState == lazy.FormAutofillUtils.FIELD_STATES.AUTO_FILLED;
 
-    let AutocompleteResult;
-
-    // TODO: This should be calculated in the parent
-    // The field categories will be filled if the corresponding profile is
-    // used for autofill. We don't display this information for credit
-    // cards, so this is only calculated for address fields.
-    let fillCategories;
-    if (lazy.FormAutofillUtils.isAddressField(fieldDetail.fieldName)) {
-      AutocompleteResult = lazy.AddressResult;
-      fillCategories = adaptedRecords.map(profile => {
-        const fields = Object.keys(profile).filter(fieldName => {
-          const detail = handler.getFieldDetailByName(fieldName);
-          return detail ? handler.isFieldAutofillable(detail, profile) : false;
-        });
-        return lazy.FormAutofillUtils.getCategoriesFromFieldNames(fields);
-      });
-    } else {
-      AutocompleteResult = lazy.CreditCardResult;
-    }
+    const AutocompleteResult = lazy.FormAutofillUtils.isAddressField(
+      fieldDetail.fieldName
+    )
+      ? lazy.AddressResult
+      : lazy.CreditCardResult;
 
     const acResult = new AutocompleteResult(
       searchString,
       fieldDetail,
       records.allFieldNames,
       adaptedRecords,
-      fillCategories,
       { isSecure, isInputAutofilled }
     );
 

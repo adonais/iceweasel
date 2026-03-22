@@ -71,6 +71,32 @@ add_task(async function () {
       inline text`;
   await assertMarkupViewAsTree(tree, "#root", inspector);
 
+  // numChildren returns 5 here because it includes whitespace text nodes.
+  // If a shadow DOM is not attached, NodeActor.numChildren uses rawNode.childNodes.length,
+  // which counts all nodes including whitespace. When a shadow DOM is attached,
+  // it uses walker.countChildren() which filters out zero-size whitespace text nodes.
+  info("Verify test-component has 5 children before attaching shadow DOM");
+  const testComponentNodeFront = await getNodeFront(
+    "test-component",
+    inspector
+  );
+  is(
+    testComponentNodeFront.numChildren,
+    5,
+    "test-component has 5 children before shadow DOM is attached"
+  );
+
+  info("Verify inline-component has 1 child before attaching shadow DOM");
+  const inlineComponentNodeFront = await getNodeFront(
+    "inline-component",
+    inspector
+  );
+  is(
+    inlineComponentNodeFront.numChildren,
+    1,
+    "inline-component has 1 child before shadow DOM is attached"
+  );
+
   info("Attach a shadow root to test-component");
   let mutated = waitForMutation(inspector, "shadowRootAttached");
   SpecialPowers.spawn(gBrowser.selectedBrowser, [], function () {
@@ -92,6 +118,15 @@ add_task(async function () {
         slot1-2
       inline text`;
   await assertMarkupViewAsTree(treeAfterTestAttach, "#root", inspector);
+
+  info(
+    "Check that test-component's numChildren is updated after shadowRootAttached mutation"
+  );
+  is(
+    testComponentNodeFront.numChildren,
+    3,
+    "test-component has 3 children after shadowRootAttached mutation"
+  );
 
   info("Attach a shadow root to other-component, nested in test-component");
   mutated = waitForMutation(inspector, "shadowRootAttached");
@@ -152,4 +187,13 @@ add_task(async function () {
             some-inline-content
         inline text`;
   await assertMarkupViewAsTree(treeAfterInlineAttach, "#root", inspector);
+
+  info(
+    "Check that inline-component's numChildren is updated after shadowRootAttached mutation"
+  );
+  is(
+    inlineComponentNodeFront.numChildren,
+    2,
+    "inline-component has 2 children after shadowRootAttached mutation"
+  );
 });

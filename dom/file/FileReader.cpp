@@ -224,8 +224,8 @@ void FileReader::OnLoadEndArrayBuffer() {
   JS_ClearPendingException(jsapi.cx());
 
   JS::Rooted<JSObject*> exceptionObject(cx, &exceptionValue.toObject());
-  JSErrorReport* er = JS_ErrorFromException(cx, exceptionObject);
-  if (!er || er->message()) {
+  JS::BorrowedErrorReport er(cx);
+  if (!JS_ErrorFromException(cx, exceptionObject, er) || er->message()) {
     FreeDataAndDispatchError(NS_ERROR_OUT_OF_MEMORY);
     return;
   }

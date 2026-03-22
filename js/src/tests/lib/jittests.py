@@ -454,7 +454,7 @@ def find_tests(substring=None):
             if filename in ("shell.js", "browser.js"):
                 continue
             test = os.path.join(dirpath, filename)
-            if substring is None or substring in os.path.relpath(test, TEST_DIR):
+            if substring is None or substring in os.path.relpath(test, TOP_SRC_DIR):
                 ans.append(test)
     return ans
 

@@ -310,7 +310,8 @@ rtc_library("rate_tracker") {
   ]
   deps = [
     ":checks",
-    ":timeutils",
+    "../api/units:time_delta",
+    "../api/units:timestamp",
   ]
 }
 
@@ -1070,6 +1071,7 @@ rtc_library("async_socket") {
     "async_socket.h",
   ]
   deps = [
+    ":callback_list",
     ":checks",
     ":socket",
     ":socket_address",
@@ -1088,14 +1090,28 @@ rtc_library("socket") {
     ":checks",
     ":ip_address",
     ":net_helpers",
+    ":sigslot_trampoline",
     ":socket_address",
     "../api/transport:ecn_marking",
     "../api/units:timestamp",
     "system:rtc_export",
     "third_party/sigslot",
+    "//third_party/abseil-cpp/absl/functional:any_invocable",
   ]
   if (is_win) {
     deps += [ ":win32" ]
+  }
+}
+
+if (rtc_include_tests) {
+  rtc_library("mock_socket") {
+    sources = [ "mock_socket.h" ]
+    testonly = true
+    deps = [
+      ":socket",
+      ":socket_address",
+      "../test:test_support",
+    ]
   }
 }
 
@@ -1288,7 +1304,7 @@ if (!build_with_mozilla) {
   ]
   deps = [
     "system:rtc_export",
-    "//third_party/abseil-cpp/absl/strings:string_view",
+    "//third_party/abseil-cpp/absl/strings",
   ]
 }
 }
@@ -1311,6 +1327,7 @@ if (!build_with_mozilla) {
     ":stringutils",
     ":zero_memory",
     "../api:array_view",
+    "//third_party/abseil-cpp/absl/functional:any_invocable",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
@@ -1433,9 +1450,14 @@ if (rtc_include_tests) {
       ":async_packet_socket",
       ":async_udp_socket",
       ":gunit_helpers",
+      ":mock_socket",
       ":rtc_base_tests_utils",
       ":socket",
       ":socket_address",
+      "../api/environment",
+      "../api/units:time_delta",
+      "../api/units:timestamp",
+      "../system_wrappers",
       "../test:create_test_environment",
       "../test:test_support",
       "network:received_packet",
@@ -1739,6 +1761,7 @@ if (!build_with_mozilla) {
     "//third_party/abseil-cpp/absl/functional:any_invocable",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
+    "//third_party/abseil-cpp/absl/strings:str_format",
   ]
 
   # If we are building the SSL library ourselves, we know it's BoringSSL.
@@ -1783,6 +1806,7 @@ rtc_library("testclient") {
     ":socket_address",
     ":threading",
     ":timeutils",
+    "../api/transport:ecn_marking",
     "../api/units:time_delta",
     "../api/units:timestamp",
     "../test:wait_until",
@@ -1872,6 +1896,7 @@ rtc_library("rtc_base_tests_utils") {
     "../api/environment",
     "../api/task_queue",
     "../api/task_queue:pending_task_safety_flag",
+    "../api/transport:ecn_marking",
     "../api/units:time_delta",
     "../api/units:timestamp",
     "memory:always_valid_pointer",
@@ -1882,6 +1907,7 @@ rtc_library("rtc_base_tests_utils") {
     "third_party/sigslot",
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/base:core_headers",
+    "//third_party/abseil-cpp/absl/functional:any_invocable",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/strings:string_view",
@@ -2079,6 +2105,7 @@ if (rtc_include_tests) {
         "../system_wrappers",
         "../test:create_test_environment",
         "../test:fileutils",
+        "../test:near_matcher",
         "../test:test_main",
         "../test:test_support",
         "../test:wait_until",
@@ -2198,6 +2225,7 @@ if (rtc_include_tests) {
         "../api:scoped_refptr",
         "../api/environment",
         "../api/numerics",
+        "../api/transport:ecn_marking",
         "../api/units:data_rate",
         "../api/units:data_size",
         "../api/units:frequency",

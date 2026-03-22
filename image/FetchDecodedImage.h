@@ -21,7 +21,7 @@ using FetchDecodedImagePromise =
     mozilla::MozPromise<already_AddRefed<imgIContainer>, nsresult, true>;
 
 /*
- * This method fetches and image URI and starts decoding the image soon as
+ * This method fetches an image URI and starts decoding the image soon as
  * possible. Either resolves the promise with the decoded imgIContainer or
  * rejects with an nsresult, for e.g. network failures or decoding errors.
  *

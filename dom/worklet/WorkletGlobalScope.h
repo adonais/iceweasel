@@ -73,6 +73,8 @@ class WorkletGlobalScope : public nsIGlobalObject, public nsWrapperCache {
     return duration.ToMilliseconds();
   }
 
+  TimeStamp CreationTimeStamp() const { return mCreationTimeStamp; }
+
   void InitModuleLoader(loader::WorkletModuleLoader* aModuleLoader);
 
   JS::loader::ModuleLoaderBase* GetModuleLoader(

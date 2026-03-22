@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  SearchService: "resource://gre/modules/SearchService.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   TestUtils: "resource://testing-common/TestUtils.sys.mjs",
   TOP_SITES_DEFAULT_ROWS: "resource:///modules/topsites/constants.mjs",
   TOP_SITES_MAX_SITES_PER_ROW: "resource:///modules/topsites/constants.mjs",
@@ -100,7 +100,7 @@ add_setup(async () => {
   do_get_profile();
 
   let sandbox = sinon.createSandbox();
-  sandbox.stub(SearchService.prototype, "defaultEngine").get(() => {
+  sandbox.stub(SearchService, "defaultEngine").get(() => {
     return { identifier: "ddg", searchUrlDomain: "duckduckgo.com" };
   });
 
@@ -108,9 +108,7 @@ add_setup(async () => {
     .stub(NewTabUtils.activityStreamLinks, "getTopSites")
     .resolves(FAKE_LINKS);
 
-  gSearchServiceInitStub = sandbox
-    .stub(SearchService.prototype, "init")
-    .resolves();
+  gSearchServiceInitStub = sandbox.stub(SearchService, "init").resolves();
 
   sandbox.stub(NewTabUtils.activityStreamProvider, "_faviconBytesToDataURI");
 
@@ -1849,7 +1847,7 @@ add_task(async function test_integration() {
 add_task(async function test_improvesearch_noDefaultSearchTile_experiment() {
   let sandbox = sinon.createSandbox();
 
-  sandbox.stub(SearchService.prototype, "getDefault").resolves({
+  sandbox.stub(SearchService, "getDefault").resolves({
     identifier: "google",
   });
 
@@ -1991,7 +1989,7 @@ add_task(
   async function test_improvesearch_noDefaultSearchTile_experiment_part_2() {
     let sandbox = sinon.createSandbox();
 
-    sandbox.stub(SearchService.prototype, "getDefault").resolves({
+    sandbox.stub(SearchService, "getDefault").resolves({
       identifier: "google",
     });
 
@@ -2068,9 +2066,7 @@ add_task(
 add_task(async function test_improvesearch_topSitesSearchShortcuts() {
   let sandbox = sinon.createSandbox();
   let searchEngines = [{ aliases: ["@google"] }, { aliases: ["@amazon"] }];
-  sandbox
-    .stub(SearchService.prototype, "getAppProvidedEngines")
-    .resolves(searchEngines);
+  sandbox.stub(SearchService, "getAppProvidedEngines").resolves(searchEngines);
   sandbox.stub(NewTabUtils.pinnedLinks, "pin").callsFake((site, index) => {
     NewTabUtils.pinnedLinks.links[index] = site;
   });

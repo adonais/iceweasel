@@ -79,7 +79,7 @@ class WeakMapBase;
 namespace gc {
 
 class AutoGCSession;
-struct Cell;
+class Cell;
 class GCSchedulingTunables;
 struct LargeBuffer;
 class StoreBuffer;
@@ -322,8 +322,8 @@ class Nursery {
     return weakMapsWithNurseryEntries_.append(wm);
   }
 
-  void joinSweepTask();
-  void joinDecommitTask();
+  bool joinSweepTask();
+  bool joinDecommitTask();
 
 #ifdef DEBUG
   bool sweepTaskIsIdle();

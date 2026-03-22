@@ -7,7 +7,7 @@
 #ifndef mozilla_dom_AnimationUtils_h
 #define mozilla_dom_AnimationUtils_h
 
-#include "mozilla/PseudoStyleType.h"
+#include "mozilla/PseudoStyleRequest.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/Nullable.h"
 #include "nsRFPService.h"
@@ -86,10 +86,10 @@ class AnimationUtils {
                                         PseudoStyleRequest::NotPseudo());
 
   static bool StoresAnimationsInParent(PseudoStyleType aType) {
-    return aType == PseudoStyleType::before ||
-           aType == PseudoStyleType::after ||
-           aType == PseudoStyleType::marker ||
-           aType == PseudoStyleType::backdrop;
+    return aType == PseudoStyleType::Before ||
+           aType == PseudoStyleType::After ||
+           aType == PseudoStyleType::Marker ||
+           aType == PseudoStyleType::Backdrop;
   }
 
   /**

@@ -4,6 +4,11 @@
 
 import { WEATHER_OPTIN_REGIONS } from "./ActivityStream.sys.mjs";
 
+// eslint-disable-next-line mozilla/use-static-import
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -119,7 +124,14 @@ export class WeatherFeed {
       this.merino = await this.MerinoClient(MERINO_CLIENT_KEY);
     }
 
-    this.suggestions = await this._fetchHelper();
+    // @backward-compat { version 149 }
+    // MerinoClient.fetchWeather() was introduced in 149 Nightly.
+    // The fetchHelperUntil_149() does not use the function.
+    if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") >= 0) {
+      this.suggestions = await this._fetchHelper();
+    } else {
+      this.suggestions = await this._fetchHelperUntil_149();
+    }
 
     if (this.suggestions.length) {
       const hasLocationData =
@@ -195,16 +207,29 @@ export class WeatherFeed {
     }
 
     const query = this.store.getState().Weather.locationSearchString;
-    let response = await this.merino.fetch({
-      query: query || "",
-      providers: MERINO_PROVIDER,
-      timeoutMs: 7000,
-      otherParams: {
-        request_type: "location",
+    let data;
+
+    // @backward-compat { version 149 }
+    // MerinoClient.autoCompleteWeatherLocation() was introduced in 149 Nightly.
+    if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "149.0a1") >= 0) {
+      data = await this.merino.autoCompleteWeatherLocation({
+        query,
         source: "newtab",
-      },
-    });
-    const data = response?.[0];
+        timeoutMs: 7000,
+      });
+    } else {
+      let response = await this.merino.fetch({
+        query: query || "",
+        providers: MERINO_PROVIDER,
+        timeoutMs: 7000,
+        otherParams: {
+          request_type: "location",
+          source: "newtab",
+        },
+      });
+      data = response?.[0];
+    }
+
     if (data?.locations.length) {
       this.store.dispatch(
         ac.BroadcastToContent({
@@ -319,6 +344,52 @@ export class WeatherFeed {
    * automated tests that simulate responses.
    */
   async _fetchHelper(maxRetries = 1, queryOverride = null) {
+    this.restartFetchTimer();
+
+    const weatherQuery = this.store.getState().Prefs.values[PREF_WEATHER_QUERY];
+    const locationName = queryOverride ?? weatherQuery;
+    const attempt = async (retry = 0) => {
+      try {
+        // Because this can happen after a timeout,
+        // we want to ensure if it was called later after a teardown,
+        // we don't throw. If we throw, we end up in another retry.
+        if (!this.merino) {
+          return [];
+        }
+        const result = await this.merino.fetchWeather({
+          source: "newtab",
+          locationName,
+          timeoutMs: 7000,
+        });
+        return result ? [result] : [];
+      } catch (e) {
+        // If we get an error, we try again in 1 minute,
+        // and give up if we try more than maxRetries number of times.
+        if (retry >= maxRetries) {
+          return [];
+        }
+        await new Promise(res => {
+          // store the timeout so it can be cancelled elsewhere
+          this.retryTimer = this.setTimeout(() => {
+            this.retryTimer = null; // cleanup once it fires
+            res();
+          }, RETRY_DELAY_MS);
+        });
+        return attempt(retry + 1);
+      }
+    };
+
+    // results from the API or empty array
+    return await attempt();
+  }
+
+  /**
+   * @backward-compat { version 149 }
+   *
+   * MerinoClient.fetchWeather() was introduced in 149 Nightly.
+   * This function does not use it.
+   */
+  async _fetchHelperUntil_149(maxRetries = 1, queryOverride = null) {
     this.restartFetchTimer();
 
     const weatherQuery = this.store.getState().Prefs.values[PREF_WEATHER_QUERY];

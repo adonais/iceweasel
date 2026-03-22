@@ -57,10 +57,18 @@ export class UrlbarProviderGlobalActions extends UrlbarProvider {
     return UrlbarUtils.PROVIDER_TYPE.PROFILE;
   }
 
-  async isActive(_queryContext) {
+  /**
+   * Whether this provider should be invoked for the given context.
+   * If this method returns false, the providers manager won't start a query
+   * with this provider, to save on resources.
+   *
+   * @param {UrlbarQueryContext} queryContext The query context object
+   */
+  async isActive(queryContext) {
     return (
       (lazy.UrlbarPrefs.get(SCOTCH_BONNET_PREF) ||
-        lazy.UrlbarPrefs.get(ACTIONS_PREF)) &&
+        lazy.UrlbarPrefs.get(ACTIONS_PREF) ||
+        queryContext.sapName == "searchbar") &&
       lazy.UrlbarPrefs.get(QUICK_ACTIONS_PREF)
     );
   }

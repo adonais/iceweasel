@@ -36,8 +36,8 @@ import mozilla.components.feature.downloads.DefaultFileSizeFormatter
 import mozilla.components.feature.downloads.FileSizeFormatter
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Download Languages File Dialog.
@@ -200,7 +200,7 @@ sealed class DownloadLanguageFileDialogType {
 @Preview
 @Composable
 private fun PrefDownloadLanguageFileDialogPreviewAllLanguages(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         DownloadLanguageFileDialog(
@@ -218,7 +218,7 @@ private fun PrefDownloadLanguageFileDialogPreviewAllLanguages(
 @Preview
 @Composable
 private fun PrefDownloadLanguageFileDialogPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         DownloadLanguageFileDialog(

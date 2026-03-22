@@ -152,7 +152,8 @@ nsresult gfxSVGGlyphsDocument::SetupPresentation() {
   mDocument->FlushPendingNotifications(FlushType::Layout);
 
   if (mDocument->HasAnimationController()) {
-    mDocument->GetAnimationController()->Resume(SMILTimeContainer::PAUSE_IMAGE);
+    mDocument->GetAnimationController()->Resume(
+        SMILTimeContainer::PauseType::Image);
   }
   mDocument->SetImageAnimationState(true);
 

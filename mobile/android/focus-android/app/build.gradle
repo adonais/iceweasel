@@ -1,4 +1,5 @@
 plugins {
+    alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.python.envs.plugin)
@@ -20,6 +21,11 @@ if (findProject(":geckoview") != null) {
     versionCodeGradle = "$project.rootDir/mobile/android/focus-android/tools/gradle/versionCode.gradle"
 }
 apply from: versionCodeGradle
+
+// Generated sources location for LocalesList.kt
+def generatedLocaleListBaseDir = project.layout.buildDirectory.dir("generated/source/locales").get().asFile
+def generatedLocaleListDir = new File(generatedLocaleListBaseDir, "org/mozilla/focus/generated")
+def generatedLocaleListFilename = "LocalesList.kt"
 
 import com.android.build.api.variant.FilterConfiguration
 import com.google.android.gms.oss.licenses.plugin.DependencyTask
@@ -92,7 +98,8 @@ android {
 
             // If building locally, just use debug signing. In official automation builds, the
             // files are signed using a separate service and not within gradle.
-            if (!gradle.mozconfig.substs.MOZ_AUTOMATION) {
+            // Also skip during buildconfig linting.
+            if (!gradle.mozconfig.substs.MOZ_AUTOMATION && System.getenv("MOZ_BUILD_CONFIG_LINT") != "1") {
                 signingConfig = signingConfigs.debug
             }
 
@@ -176,6 +183,10 @@ android {
                 // and do not need to rely on Robolectric.
                 srcDir "${projectDir}/src/main/assets/"
             }
+        }
+
+        main {
+            java.srcDir generatedLocaleListBaseDir
         }
 
         // Release
@@ -311,6 +322,7 @@ dependencies {
     implementation libs.androidx.core.ktx
     implementation libs.androidx.core.splashscreen
     implementation libs.androidx.datastore.preferences
+    implementation libs.androidx.emoji2
     implementation libs.androidx.fragment
     implementation libs.androidx.lifecycle.process
     implementation libs.androidx.lifecycle.viewmodel
@@ -546,9 +558,6 @@ android.applicationVariants.configureEach { variant ->
     }
 }
 
-def generatedLocaleListDir = file('src/main/java/org/mozilla/focus/generated')
-def generatedLocaleListFilename = 'LocalesList.kt'
-
 def enabledLocales = project.provider { getEnabledLocales() }
 
 tasks.register('generateLocaleList') {
@@ -588,13 +597,14 @@ tasks.register('generateLocaleList') {
 }
 
 tasks.configureEach { task ->
-    if (name.contains("compile")) {
-        task.dependsOn generateLocaleList
+    if (task.name.contains("compile")) {
+        task.dependsOn(tasks.named("generateLocaleList"))
     }
 }
 
-clean.doLast {
-    generatedLocaleListDir.deleteDir()
+// Make sure DAGP code-source exploding happens after we generate LocalesList.kt
+tasks.matching { it.name.startsWith("explodeCodeSource") }.configureEach { t ->
+    t.dependsOn(tasks.named("generateLocaleList"))
 }
 
 if (project.hasProperty("coverage")) {
@@ -649,6 +659,7 @@ tasks.register('printVariants') {
             build_type: variant.buildType.name,
             name: variant.name,
     ]}}
+    def outputFile = new File(projectDir, "build/printVariants.json")
     doLast {
         // AndroidTest is a special case not included above
         variants.get().add([
@@ -659,7 +670,10 @@ tasks.register('printVariants') {
             build_type: 'androidTest',
             name: 'androidTest',
         ])
-        println 'variants: ' + JsonOutput.toJson(variants.get())
+        def json = JsonOutput.toJson(variants.get())
+        outputFile.parentFile.mkdirs()
+        outputFile.text = json
+        logger.debug("Wrote variant info to $outputFile")
     }
 }
 
@@ -714,4 +728,25 @@ afterEvaluate {
             it.logger.lifecycle("")
         }
     }
+}
+
+tasks.register("ktlint", Exec) {
+    group = "verification"
+    description = "Check Kotlin code style."
+    workingDir file("${gradle.mozconfig.topsrcdir}")
+    commandLine "./mach", "gradle", "-p", "mobile/android/focus-android", ":ktlint"
+}
+
+tasks.register("ktlintFormat", Exec) {
+    group = "formatting"
+    description = "Fix Kotlin code style deviations."
+    workingDir file("${gradle.mozconfig.topsrcdir}")
+    commandLine "./mach", "gradle", "-p", "mobile/android/focus-android", ":ktlintFormat"
+}
+
+tasks.register("detekt", Exec) {
+    group = "verification"
+    description = "Run detekt static analysis."
+    workingDir file("${gradle.mozconfig.topsrcdir}")
+    commandLine "./mach", "gradle", "-p", "mobile/android/focus-android", ":detekt"
 }

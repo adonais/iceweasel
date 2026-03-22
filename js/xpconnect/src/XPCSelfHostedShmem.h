@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef xpcselfhostedshmem_h___
-#define xpcselfhostedshmem_h___
+#ifndef xpcselfhostedshmem_h_
+#define xpcselfhostedshmem_h_
 
 #include "mozilla/Span.h"
 #include "mozilla/StaticPtr.h"
@@ -87,4 +87,4 @@ class SelfHostedShmem final : public nsIMemoryReporter {
 
 }  // namespace xpc
 
-#endif  // !xpcselfhostedshmem_h___
+#endif  // !xpcselfhostedshmem_h_

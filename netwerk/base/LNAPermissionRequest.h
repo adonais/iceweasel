@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef LNAPermissionRequest_h__
-#define LNAPermissionRequest_h__
+#ifndef LNAPermissionRequest_h_
+#define LNAPermissionRequest_h_
 #include "nsContentPermissionHelper.h"
 #include "nsISupports.h"
 #include "nsPIDOMWindow.h"

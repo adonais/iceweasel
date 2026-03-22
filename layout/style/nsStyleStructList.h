@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsStyleStructList_h__
-#define nsStyleStructList_h__
+#ifndef nsStyleStructList_h_
+#define nsStyleStructList_h_
 
 /*
  * list of structs that contain the data provided by ComputedStyle, the
@@ -52,4 +52,4 @@
   RESET_MACRO(Effects) \
   RESET_MACRO(Page)
 
-#endif // nsStyleStructList_h__
+#endif // nsStyleStructList_h_

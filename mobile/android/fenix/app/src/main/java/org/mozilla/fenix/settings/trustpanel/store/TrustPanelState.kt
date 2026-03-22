@@ -57,9 +57,7 @@ data class WebsiteInfoState(
     val websiteUrl: String = "",
     val websiteTitle: String = "",
     val certificate: X509Certificate? = null,
-) {
-  val certificateName: String = certificate?.issuerDN?.name?.substringAfterLast("O=")?.substringBeforeLast(",C=") ?: ""
-}
+)
 
 /**
  * Wrapper over a website permission encompassing all its needed state to be rendered on the screen.

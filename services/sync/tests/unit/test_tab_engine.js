@@ -96,7 +96,8 @@ add_task(async function setup() {
   await engine.initialize();
 
   // Since these are xpcshell tests, we'll need to mock this
-  TabProvider.shouldSkipWindow = mockShouldSkipWindow;
+  TabProvider.getOrderedNonPrivateWindows =
+    mockGetOrderedNonPrivateWindows.bind(this, []);
 });
 
 add_task(async function test_tab_engine_skips_incoming_local_record() {

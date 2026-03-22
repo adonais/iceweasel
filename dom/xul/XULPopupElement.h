@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef XULPopupElement_h__
-#define XULPopupElement_h__
+#ifndef XULPopupElement_h_
+#define XULPopupElement_h_
 
 #include "XULMenuParentElement.h"
 #include "mozilla/Attributes.h"

@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsWebBrowserPersist_h__
-#define nsWebBrowserPersist_h__
+#ifndef nsWebBrowserPersist_h_
+#define nsWebBrowserPersist_h_
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"

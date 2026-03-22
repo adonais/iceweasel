@@ -156,14 +156,14 @@ class LoginAutocompleteItem extends AutocompleteItem {
     this.image = `page-icon:${login.origin}`;
   }
 
-  removeFromStorage() {
+  async removeFromStorage() {
     if (this.#actor) {
       let vanilla = lazy.LoginHelper.loginToVanillaObject(this.login);
       this.#actor.sendAsyncMessage("PasswordManager:removeLogin", {
         login: vanilla,
       });
     } else {
-      Services.logins.removeLogin(this.login);
+      await Services.logins.removeLoginAsync(this.login);
     }
   }
 }

@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef DefaultURI_h__
-#define DefaultURI_h__
+#ifndef DefaultURI_h_
+#define DefaultURI_h_
 
 #include "nsIURI.h"
 #include "nsISerializable.h"
@@ -52,4 +52,4 @@ class DefaultURI : public nsIURI, public nsISerializable {
 }  // namespace net
 }  // namespace mozilla
 
-#endif  // DefaultURI_h__
+#endif  // DefaultURI_h_

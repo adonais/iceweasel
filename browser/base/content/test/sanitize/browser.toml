@@ -37,8 +37,6 @@ skip-if = [
 
 ["browser_sanitize-timespans.js"]
 
-["browser_sanitizeDialog.js"]
-
 ["browser_sanitizeDialog_v2.js"]
 
 ["browser_sanitizeDialog_v2_dataSizes.js"]

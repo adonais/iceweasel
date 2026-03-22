@@ -420,7 +420,7 @@ var SessionHistoryInternal = {
    *        Hash for ensuring unique frame IDs
    * @param docIdentMap
    *        Hash to ensure reuse of BFCache entries
-   * @returns nsISHEntry
+   * @returns {nsISHEntry}
    */
   deserializeEntry(entry, idMap, docIdentMap, shistory) {
     var shEntry = shistory.createEntry();

@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __GFXMESSAGEUTILS_H__
-#define __GFXMESSAGEUTILS_H__
+#ifndef GFXMESSAGEUTILS_H_
+#define GFXMESSAGEUTILS_H_
 
 #include "FilterSupport.h"
 #include "ImageTypes.h"
@@ -1341,4 +1341,4 @@ struct ParamTraits<mozilla::gfx::FileHandleWrapper*> {
 
 }  // namespace IPC
 
-#endif /* __GFXMESSAGEUTILS_H__ */
+#endif /* GFXMESSAGEUTILS_H_ */

@@ -130,10 +130,6 @@ export const INITIAL_STATE = {
     // For can be a queue in the future, but for now is one item
     toastQueue: [],
   },
-  Personalization: {
-    lastUpdated: null,
-    initialized: false,
-  },
   InferredPersonalization: {
     initialized: false,
     lastUpdated: null,
@@ -600,7 +596,7 @@ function Messages(prevState = INITIAL_STATE.Messages, action) {
         portID: action.data.portID || "",
       };
     case at.MESSAGE_TOGGLE_VISIBILITY:
-      return { ...prevState, isVisible: action.data };
+      return { ...prevState, isVisible: action.data.isVisible };
     default:
       return prevState;
   }
@@ -620,25 +616,6 @@ function Pocket(prevState = INITIAL_STATE.Pocket, action) {
           useCta: action.data.use_cta,
         },
       };
-    default:
-      return prevState;
-  }
-}
-
-function Personalization(prevState = INITIAL_STATE.Personalization, action) {
-  switch (action.type) {
-    case at.DISCOVERY_STREAM_PERSONALIZATION_LAST_UPDATED:
-      return {
-        ...prevState,
-        lastUpdated: action.data.lastUpdated,
-      };
-    case at.DISCOVERY_STREAM_PERSONALIZATION_INIT:
-      return {
-        ...prevState,
-        initialized: true,
-      };
-    case at.DISCOVERY_STREAM_PERSONALIZATION_RESET:
-      return { ...INITIAL_STATE.Personalization };
     default:
       return prevState;
   }
@@ -1204,7 +1181,6 @@ export const reducers = {
   Messages,
   Notifications,
   Pocket,
-  Personalization,
   InferredPersonalization,
   DiscoveryStream,
   Search,

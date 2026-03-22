@@ -39,9 +39,8 @@
 #include <memory>
 #include <utility>
 
-#include "jsdate.h"
-
 #include "builtin/DataViewObject.h"
+#include "builtin/Date.h"
 #include "builtin/MapObject.h"
 #include "gc/GC.h"           // AutoSelectGCHeap
 #include "js/Array.h"        // JS::GetArrayLength, JS::IsArrayObject
@@ -1588,12 +1587,16 @@ bool JSStructuredCloneWriter::writeSharedWasmMemory(HandleObject obj) {
 
   Rooted<WasmMemoryObject*> memoryObj(context(),
                                       &obj->unwrapAs<WasmMemoryObject>());
-  Rooted<SharedArrayBufferObject*> sab(
-      context(), &memoryObj->buffer().as<SharedArrayBufferObject>());
 
-  return out.writePair(SCTAG_SHARED_WASM_MEMORY_OBJECT, 0) &&
-         out.writePair(SCTAG_BOOLEAN, memoryObj->isHuge()) &&
-         writeSharedArrayBuffer(sab);
+  if (!out.writePair(SCTAG_SHARED_WASM_MEMORY_OBJECT, 0) ||
+      !out.writePair(SCTAG_BOOLEAN, memoryObj->isHuge())) {
+    return false;
+  }
+
+  // Use startWrite to register in memory map for back-reference support.
+  MOZ_RELEASE_ASSERT(memoryObj->buffer().is<SharedArrayBufferObject>());
+  RootedValue bufferVal(context(), ObjectValue(memoryObj->buffer()));
+  return startWrite(bufferVal);
 }
 
 bool JSStructuredCloneWriter::startObject(HandleObject obj, bool* backref) {
@@ -2003,8 +2006,13 @@ bool JSStructuredCloneWriter::traverseError(HandleObject obj) {
     return false;
   }
 
-  Rooted<ErrorObject*> unwrapped(cx, obj->maybeUnwrapAs<ErrorObject>());
-  MOZ_ASSERT(unwrapped);
+  // ToString can call arbitrary JS so we have to check for nuked CCWs.
+  if (!obj->canUnwrapAs<ErrorObject>()) {
+    MOZ_ASSERT(JS_IsDeadWrapper(CheckedUnwrapStatic(obj)));
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
+    return false;
+  }
+  Rooted<ErrorObject*> unwrapped(cx, &obj->unwrapAs<ErrorObject>());
 
   // Non-standard: Serialize |stack|.
   // The Error stack property is saved as SavedFrames.
@@ -2974,6 +2982,12 @@ bool JSStructuredCloneReader::readSharedArrayBuffer(StructuredDataType type,
     return false;
   }
 
+  // Add the SharedArrayBuffer to allObjs so that later references can use
+  // back-references.
+  if (!allObjs.append(ObjectValue(*obj))) {
+    return false;
+  }
+
   vp.setObject(*obj);
   return true;
 }
@@ -2994,6 +3008,11 @@ bool JSStructuredCloneReader::readSharedWasmMemory(uint32_t nbytes,
                      ? JS_SCERR_NOT_CLONABLE_WITH_COOP_COEP
                      : JS_SCERR_NOT_CLONABLE;
     ReportDataCloneError(cx, callbacks, error, closure, "WebAssembly.Memory");
+    return false;
+  }
+
+  uint32_t placeholderIndex = allObjs.length();
+  if (!allObjs.append(UndefinedValue())) {
     return false;
   }
 
@@ -3034,6 +3053,7 @@ bool JSStructuredCloneReader::readSharedWasmMemory(uint32_t nbytes,
   }
 
   vp.setObject(*memory);
+  allObjs[placeholderIndex].set(vp);
   return true;
 }
 
@@ -3281,12 +3301,14 @@ bool JSStructuredCloneReader::startRead(MutableHandleValue vp,
       if (!readSharedArrayBuffer(StructuredDataType(tag), vp)) {
         return false;
       }
+      alreadAppended = true;
       break;
 
     case SCTAG_SHARED_WASM_MEMORY_OBJECT:
       if (!readSharedWasmMemory(data, vp)) {
         return false;
       }
+      alreadAppended = true;
       break;
 
     case SCTAG_TYPED_ARRAY_OBJECT_V2: {
@@ -3434,25 +3456,30 @@ bool JSStructuredCloneReader::readHeader() {
     storedScope = JS::StructuredCloneScope::DifferentProcessForIndexedDB;
   }
 
-  // Backward compatibility with old structured clone buffers. Value '0' was
-  // used for SameProcessSameThread scope.
-  if ((int)storedScope == 0) {
-    storedScope = JS::StructuredCloneScope::SameProcess;
+  if (allowedScope == JS::StructuredCloneScope::DifferentProcessForIndexedDB) {
+    // Bug 1434308 and bug 1458320 - the scopes stored in old IndexedDB clones
+    // are incorrect. IndexedDB callers will pass in the special
+    // DifferentProcessForIndexedDB allowedScope, which means: act like
+    // allowedScope=DifferentProcess and if an old stored scope of 0 is
+    // detected, pretend like it was DifferentProcess instead. Value '0' was
+    // SameProcessSameThread scope and incorrectly used back when the old clones
+    // were written.
+    allowedScope = JS::StructuredCloneScope::DifferentProcess;
+    if (int(storedScope) == 0) {
+      storedScope = JS::StructuredCloneScope::DifferentProcess;
+    }
   }
 
+  // Note that various tests have the scope stored in them as
+  // DifferentProcessForIndexedDB, which shouldn't ever have made it to disk.
+  // Given the number of test failures if I forbid it, I'm not confident it
+  // didn't make it into users' data, so will allow it without erroring.
   if (storedScope < JS::StructuredCloneScope::SameProcess ||
       storedScope > JS::StructuredCloneScope::DifferentProcessForIndexedDB) {
     JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
                               JSMSG_SC_BAD_SERIALIZED_DATA,
                               "invalid structured clone scope");
     return false;
-  }
-
-  if (allowedScope == JS::StructuredCloneScope::DifferentProcessForIndexedDB) {
-    // Bug 1434308 and bug 1458320 - the scopes stored in old IndexedDB
-    // clones are incorrect. Treat them as if they were DifferentProcess.
-    allowedScope = JS::StructuredCloneScope::DifferentProcess;
-    return true;
   }
 
   if (storedScope < allowedScope) {
@@ -4285,14 +4312,11 @@ bool JSAutoStructuredCloneBuffer::write(
     const JS::CloneDataPolicy& cloneDataPolicy,
     const JSStructuredCloneCallbacks* optionalCallbacks, void* closure) {
   clear();
-  bool ok = JS_WriteStructuredClone(
+  version_ = JS_STRUCTURED_CLONE_VERSION;
+  return JS_WriteStructuredClone(
       cx, value, &data_, data_.scopeForInternalWriting(), cloneDataPolicy,
       optionalCallbacks ? optionalCallbacks : data_.callbacks_,
       optionalCallbacks ? closure : data_.closure_, transferable);
-  if (!ok) {
-    version_ = JS_STRUCTURED_CLONE_VERSION;
-  }
-  return ok;
 }
 
 JS_PUBLIC_API bool JS_ReadUint32Pair(JSStructuredCloneReader* r, uint32_t* p1,

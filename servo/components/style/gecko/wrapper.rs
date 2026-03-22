@@ -307,6 +307,11 @@ impl<'ln> GeckoNode<'ln> {
     }
 
     #[inline]
+    fn may_have_element_children(&self) -> bool {
+        self.flags() & structs::NODE_MAY_HAVE_ELEMENT_CHILDREN != 0
+    }
+
+    #[inline]
     fn selector_flags_atomic(&self) -> &AtomicU32 {
         Self::flags_atomic_for(&self.0.mSelectorFlags)
     }
@@ -416,6 +421,9 @@ impl<'ln> GeckoNode<'ln> {
     /// Returns the previous sibling of this node that is an element.
     #[inline]
     pub fn prev_sibling_element(&self) -> Option<GeckoElement<'ln>> {
+        if !self.parent_node()?.may_have_element_children() {
+            return None;
+        }
         let mut prev = self.prev_sibling();
         while let Some(p) = prev {
             if let Some(e) = p.as_element() {
@@ -429,6 +437,9 @@ impl<'ln> GeckoNode<'ln> {
     /// Returns the next sibling of this node that is an element.
     #[inline]
     pub fn next_sibling_element(&self) -> Option<GeckoElement<'ln>> {
+        if !self.parent_node()?.may_have_element_children() {
+            return None;
+        }
         let mut next = self.next_sibling();
         while let Some(n) = next {
             if let Some(e) = n.as_element() {
@@ -911,26 +922,20 @@ impl<'le> GeckoElement<'le> {
             return false;
         }
 
-        let from =
-            AnimationValue::from_computed_values(property_declaration_id, before_change_style);
-        let to = AnimationValue::from_computed_values(property_declaration_id, after_change_style);
-        debug_assert!(
-            to.is_some() == from.is_some() ||
-                // If the declaration contains a custom property and getComputedValue was previously
-                // called before that custom property was defined, `from` will be `None` here.
-                matches!(from, Some(AnimationValue::Custom(..))) ||
-                // Similarly, if the declaration contains a custom property, getComputedValue was
-                // previously called, and the custom property registration is removed, `to` will be
-                // `None`.
-                matches!(to, Some(AnimationValue::Custom(..)))
-        );
-
-        from != to
+        AnimationValue::is_different_for(property_declaration_id, before_change_style, after_change_style)
     }
 
     /// Get slow selector flags required for nth-of invalidation.
     pub fn slow_selector_flags(&self) -> ElementSelectorFlags {
         slow_selector_flags_from_node_selector_flags(self.as_node().selector_flags())
+    }
+
+    /// Returns whether this element is an HTML <video> or <audio> element.
+    #[inline]
+    pub fn is_html_media_element(&self) -> bool {
+        self.is_html_element()
+            && (self.local_name().as_ptr() == local_name!("video").as_ptr()
+                || self.local_name().as_ptr() == local_name!("audio").as_ptr())
     }
 }
 
@@ -1165,17 +1170,17 @@ impl<'le> TElement for GeckoElement<'le> {
         unsafe { slots.mShadowRoot.mRawPtr.as_ref().map(GeckoShadowRoot) }
     }
 
+    fn note_highlight_pseudo_style_invalidated(&self) {
+        let doc = self.as_node().owner_doc().0;
+        unsafe {
+            bindings::Gecko_NoteHighlightPseudoStyleInvalidated(doc);
+        }
+    }
+
     #[inline]
     fn containing_shadow(&self) -> Option<GeckoShadowRoot<'le>> {
         let slots = self.extended_slots()?;
-        unsafe {
-            slots
-                ._base
-                .mContainingShadow
-                .mRawPtr
-                .as_ref()
-                .map(GeckoShadowRoot)
-        }
+        unsafe { slots._base.mContainingShadow.as_ref().map(GeckoShadowRoot) }
     }
 
     fn each_anonymous_content_child<F>(&self, mut f: F)
@@ -1793,7 +1798,9 @@ impl<'le> TElement for GeckoElement<'le> {
             ))
         }
         // MathML's default lang has precedence over both `lang` and `xml:lang`
-        if ns == structs::kNameSpaceID_MathML as i32 {
+        if !static_prefs::pref!("mathml.font_family_math.enabled")
+            && ns == structs::kNameSpaceID_MathML as i32
+        {
             if self.local_name().as_ptr() == atom!("math").as_ptr() {
                 hints.push(MATHML_LANG_RULE.clone());
             }
@@ -2075,9 +2082,16 @@ impl<'le> ::selectors::Element for GeckoElement<'le> {
             | NonTSPseudoClass::MozRevealed
             | NonTSPseudoClass::ActiveViewTransition
             | NonTSPseudoClass::MozValueEmpty
-            | NonTSPseudoClass::MozSuppressForPrintSelection => {
+            | NonTSPseudoClass::MozSuppressForPrintSelection
+            | NonTSPseudoClass::Seeking
+            | NonTSPseudoClass::Buffering
+            | NonTSPseudoClass::Stalled
+            | NonTSPseudoClass::Muted => {
                 self.state().intersects(pseudo_class.state_flag())
             },
+            NonTSPseudoClass::Paused => self.is_html_media_element() && self.state().intersects(ElementState::PAUSED),
+            NonTSPseudoClass::Playing => self.is_html_media_element() && !self.state().intersects(ElementState::PAUSED),
+            NonTSPseudoClass::VolumeLocked => false, // Bug 2013371
             NonTSPseudoClass::Dir(ref dir) => self.state().intersects(dir.element_state()),
             NonTSPseudoClass::ActiveViewTransitionType(ref types) => {
                 self.state().intersects(pseudo_class.state_flag())

@@ -205,13 +205,13 @@ void SVGGeometryFrame::PaintSVG(gfxContext& aContext,
 
 nsIFrame* SVGGeometryFrame::GetFrameForPoint(const gfxPoint& aPoint) {
   FillRule fillRule;
-  uint16_t hitTestFlags;
+  SVGHitTestFlags hitTestFlags;
   if (HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD)) {
-    hitTestFlags = SVG_HIT_TEST_FILL;
+    hitTestFlags = SVGHitTestFlag::Fill;
     fillRule = SVGUtils::ToFillRule(StyleSVG()->mClipRule);
   } else {
     hitTestFlags = SVGUtils::GetGeometryHitTestFlags(this);
-    if (!hitTestFlags) {
+    if (hitTestFlags.isEmpty()) {
       return nullptr;
     }
     fillRule = SVGUtils::ToFillRule(StyleSVG()->mFillRule);
@@ -231,10 +231,10 @@ nsIFrame* SVGGeometryFrame::GetFrameForPoint(const gfxPoint& aPoint) {
     return nullptr;  // no path, so we don't paint anything that can be hit
   }
 
-  if (hitTestFlags & SVG_HIT_TEST_FILL) {
+  if (hitTestFlags.contains(SVGHitTestFlag::Fill)) {
     isHit = path->ContainsPoint(ToPoint(aPoint), {});
   }
-  if (!isHit && (hitTestFlags & SVG_HIT_TEST_STROKE)) {
+  if (!isHit && hitTestFlags.contains(SVGHitTestFlag::Stroke)) {
     Point point = ToPoint(aPoint);
     SVGContentUtils::AutoStrokeOptions stroke;
     SVGContentUtils::GetStrokeOptions(&stroke, content, Style(), nullptr);
@@ -277,11 +277,11 @@ void SVGGeometryFrame::ReflowSVG() {
   // stroke don't actually render (e.g. when stroke="none" or
   // stroke-opacity="0"). GetGeometryHitTestFlags() accounts for
   // 'pointer-events'.
-  uint16_t hitTestFlags = SVGUtils::GetGeometryHitTestFlags(this);
-  if (hitTestFlags & SVG_HIT_TEST_FILL) {
+  SVGHitTestFlags hitTestFlags = SVGUtils::GetGeometryHitTestFlags(this);
+  if (hitTestFlags.contains(SVGHitTestFlag::Fill)) {
     flags |= SVGUtils::eBBoxIncludeFillGeometry;
   }
-  if (hitTestFlags & SVG_HIT_TEST_STROKE) {
+  if (hitTestFlags.contains(SVGHitTestFlag::Stroke)) {
     flags |= SVGUtils::eBBoxIncludeStrokeGeometry;
   }
 
@@ -372,9 +372,7 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   SVGGeometryElement* element = static_cast<SVGGeometryElement*>(GetContent());
 
-  const bool getFill = (aFlags & SVGUtils::eBBoxIncludeFillGeometry) ||
-                       ((aFlags & SVGUtils::eBBoxIncludeFill) &&
-                        !StyleSVG()->mFill.kind.IsNone());
+  const bool getFill = (aFlags & SVGUtils::eBBoxIncludeFillGeometry);
 
   const bool getStroke =
       ((aFlags & SVGUtils::eBBoxIncludeStrokeGeometry) ||
@@ -517,7 +515,7 @@ SVGBBox SVGGeometryFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   // Account for markers:
   if ((aFlags & SVGUtils::eBBoxIncludeMarkers) && element->IsMarkable()) {
-    SVGMarkerFrame* markerFrames[SVGMark::eTypeCount];
+    SVGMarkerFrames markerFrames;
     if (SVGObserverUtils::GetAndObserveMarkers(this, &markerFrames)) {
       nsTArray<SVGMark> marks;
       element->GetMarkPoints(&marks);
@@ -796,7 +794,7 @@ void SVGGeometryFrame::PaintMarkers(gfxContext& aContext,
   if (!element->IsMarkable()) {
     return;
   }
-  SVGMarkerFrame* markerFrames[SVGMark::eTypeCount];
+  SVGMarkerFrames markerFrames;
   if (!SVGObserverUtils::GetAndObserveMarkers(this, &markerFrames)) {
     return;
   }

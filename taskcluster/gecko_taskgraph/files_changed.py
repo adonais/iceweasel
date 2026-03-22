@@ -93,7 +93,7 @@ class PreloadedGetLocallyChangedFiles:
     - it's already done through an external command
 
     So we do that in a background thread as soon as possible, so that at the
-    point when we need the result, it's already `prefetched'.
+    point when we need the result, it's already "prefetched".
     """
 
     def __init__(self):

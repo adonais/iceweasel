@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __nsFormFillController__
-#define __nsFormFillController__
+#ifndef _nsFormFillController_
+#define _nsFormFillController_
 
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/Promise.h"
@@ -170,4 +170,4 @@ class nsFormFillController final : public nsIFormFillController,
   void EnablePreview(mozilla::dom::Element* aInput);
 };
 
-#endif  // __nsFormFillController__
+#endif  // _nsFormFillController_

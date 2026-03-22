@@ -164,12 +164,6 @@ async function openPrefsFromMenuPanel(expectedPanelId, entryPoint) {
   }
 }
 
-function hideOverflow() {
-  let panelHidePromise = promiseOverflowHidden(window);
-  PanelUI.overflowPanel.hidePopup();
-  return panelHidePromise;
-}
-
 async function asyncCleanup() {
   // reset the panel UI to the default state
   await resetCustomization();
@@ -259,10 +253,6 @@ add_task(async function () {
 
 // Test the "Sync Now" button
 add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.remoteSVGIconDecoding", true]],
-  });
-
   gSync.updateAllUI({
     status: UIState.STATUS_SIGNED_IN,
     syncEnabled: true,
@@ -403,11 +393,10 @@ add_task(async function () {
   childNode = node.firstElementChild;
   is(childNode.getAttribute("itemtype"), "tab", "node is a tab");
   is(childNode.getAttribute("label"), "http://example.com/6");
-  // Check the favicon image.
-  let image = new URL(childNode.getAttribute("image"));
-  is(image.protocol, "moz-remote-image:", "image protocol is correct");
+  // In the browser the URL will have been re-written to a "moz-remote-image:" URL - however, the way we
+  // mock the remote tabs bypasses that. Tests for that functionality are in sync's test_syncedtabs.js test.
   is(
-    image.searchParams.get("url"),
+    childNode.getAttribute("image"),
     "http://example.com/favicon.ico",
     "image url is correct"
   );

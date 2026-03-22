@@ -315,6 +315,11 @@ nsStreamTransportService::UnregisterShutdownTask(nsITargetShutdownTask*) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+nsIEventTarget::FeatureFlags nsStreamTransportService::GetFeatures() {
+  // TODO: We should forward this to the pool once we do bug 1986614.
+  return SUPPORTS_BASE;
+}
+
 NS_IMETHODIMP_(bool)
 nsStreamTransportService::IsOnCurrentThreadInfallible() {
   nsCOMPtr<nsIThreadPool> pool;

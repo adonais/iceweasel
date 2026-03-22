@@ -1,13 +1,15 @@
-# XPCShell JSON Data Format Documentation
+# Test Harness JSON Data Format Documentation
 
-This document describes the JSON file formats created by `fetch-xpcshell-data.js`.
+This document describes the JSON file formats created by `fetch-test-data.js`.
 
 ## Overview
 
 The script generates two types of JSON files for each date or try commit:
 
-1. **Test timing data**: `xpcshell-{date}.json` or `xpcshell-try-{revision}.json`
-2. **Resource usage data**: `xpcshell-{date}-resources.json` or `xpcshell-try-{revision}-resources.json`
+1. **Test timing data**: `{harness}-{date}.json` or `{harness}-{project}-{revision}.json`
+2. **Resource usage data**: `{harness}-{date}-resources.json` or `{harness}-{project}-{revision}-resources.json`
+
+Where `{harness}` is the test harness name (e.g., `xpcshell`, `mochitest`).
 
 Both formats use string tables and index-based lookups to minimize file size.
 
@@ -392,6 +394,58 @@ Dates are sorted in descending order (newest first).
 
 ---
 
+## Statistics File Format
+
+The `{harness}-stats.json` file provides aggregate statistics for each date:
+
+```json
+{
+  "metadata": {
+    "generatedAt": "2025-10-15T14:24:33.451Z",
+    "harness": "xpcshell"
+  },
+  "dates": [
+    "2025-10-13",
+    "2025-10-14",
+    "2025-10-15",
+    ...
+  ],
+  "totalTestRuns": [44987, 45102, 45231, ...],
+  "failedTestRuns": [267, 189, 234, ...],
+  "skippedTestRuns": [1234, 1198, 1245, ...],
+  "processedJobCount": [3472, 3465, 3481, ...],
+  "failedJobs": [178, 142, 156, ...],
+  "invalidJobs": [25, 18, 23, ...],
+  "ignoredJobs": [43, 47, 45, ...]
+}
+```
+
+All arrays are parallel - the value at index `i` corresponds to the date at `dates[i]`.
+
+### Field Definitions
+
+- **totalTestRuns**: Total number of test runs across processed jobs
+- **failedTestRuns**: Number of test runs with FAIL, CRASH, or TIMEOUT status
+- **skippedTestRuns**: Number of test runs with SKIP status (excluding run-if conditional skips)
+- **processedJobCount**: Number of jobs successfully processed (test data extracted)
+- **failedJobs**: Number of jobs with state='failed' (from the Firefox-CI ETL database query)
+- **invalidJobs**: Number of jobs that didn't upload a valid resource usage profile
+- **ignoredJobs**: Number of jobs filtered out by the ignore list (annotated jobs - failures that sheriffs marked as due to patches that were later reverted or fixed)
+
+### Job Counts Relationship
+
+The total number of jobs for a date equals:
+```
+Total Jobs = processedJobCount + invalidJobs + ignoredJobs
+```
+
+### Notes
+
+- Statistics are cumulative from previous runs - new dates update the file
+- The file is generated after the index file and before aggregated failures
+
+---
+
 ## Notes
 
 - All timestamps in test timing data are in **seconds**
@@ -412,7 +466,7 @@ Dates are sorted in descending order (newest first).
 
 When running with `--days N` where N > 1, two aggregated files are generated:
 
-1. **`xpcshell-issues-with-taskids.json`** (~30MB for 21 days): Includes task IDs for all non-passing runs, allowing drill-down to specific CI tasks. Passing runs and non-passing runs are both aggregated by hour.
+1. **`xpcshell-issues-with-taskids.json`** (~30MB for 21 days): Includes task IDs for all non-passing runs, allowing drill-down to specific CI tasks. Passing runs and non-passing runs are both aggregated by day.
 
 2. **`xpcshell-issues.json`** (~15MB for 21 days): No task IDs or minidumps - all runs are aggregated to counts only. Optimized for fast dashboard initial load.
 
@@ -454,29 +508,29 @@ Additional fields:
 }
 ```
 
-**Aggregated file** stores only counts per hour for passing statuses (status starts with "PASS"):
+**Aggregated file** stores only counts per day for passing statuses (status starts with "PASS"):
 ```json
 {
   "counts": [150, 200, 180, 145, ...],
-  "hours": [0, 5, 1, 2, 8, ...]
+  "days": [0, 1, 1, 1, ...]
 }
 ```
 
 Where:
-- `counts[i]` = total number of passing runs in that hour
-- `hours[i]` = differential compressed hour offset (hours since previous bucket)
+- `counts[i]` = total number of passing runs in that day
+- `days[i]` = differential compressed day offset (days since previous bucket)
 - No `taskIdIds` or `durations` arrays
-- Typically sparse - only hours with passing runs are included
+- Typically sparse - only days with passing runs are included
 
-**Decompressing hours:**
+**Decompressing days:**
 ```javascript
-let currentHour = 0;
-const absoluteHours = [];
-for (const delta of hours) {
-  currentHour += delta;
-  absoluteHours.push(currentHour);
+let currentDay = 0;
+const absoluteDays = [];
+for (const delta of days) {
+  currentDay += delta;
+  absoluteDays.push(currentDay);
 }
-// absoluteHours[i] is now the hour number (0 = startTime, 1 = startTime + 1 hour, etc.)
+// absoluteDays[i] is now the day number (0 = startTime, 1 = startTime + 1 day, etc.)
 ```
 
 **Example: Calculate pass rate for a test on day 5:**
@@ -488,34 +542,28 @@ const day = 5; // 5 days after startDate
 const passStatusId = data.tables.statuses.findIndex(s => s.startsWith("PASS"));
 const passGroup = data.testRuns[testId]?.[passStatusId];
 
-// Count passes in day 5 (hours 120-143)
-const dayStartHour = day * 24;
-const dayEndHour = (day + 1) * 24;
+// Count passes on day 5
 let passCount = 0;
-let currentHour = 0;
+let currentDay = 0;
 if (passGroup) {
-  for (let i = 0; i < passGroup.hours.length; i++) {
-    currentHour += passGroup.hours[i];
-    if (currentHour >= dayStartHour && currentHour < dayEndHour) {
+  for (let i = 0; i < passGroup.days.length; i++) {
+    currentDay += passGroup.days[i];
+    if (currentDay === day) {
       passCount += passGroup.counts[i];
     }
   }
 }
-
-// For fail count, need to count timestamps in that day's range
-const dayStartSeconds = day * 86400;
-const dayEndSeconds = (day + 1) * 86400;
 ```
 
-#### 3. All Test Runs Aggregated by Hour
+#### 3. All Test Runs Aggregated by Day
 
-Both passing and non-passing test runs are aggregated by hour. The difference is in what data is preserved:
+Both passing and non-passing test runs are aggregated by day. The difference is in what data is preserved:
 
 **Passing tests** (status starts with "PASS"):
 ```json
 {
   "counts": [150, 200, 180],
-  "hours": [0, 5, 1]
+  "days": [0, 1, 1]
 }
 ```
 
@@ -523,27 +571,27 @@ Both passing and non-passing test runs are aggregated by hour. The difference is
 ```json
 {
   "taskIdIds": [
-    [45, 67],      // Task IDs that failed in hour 0 with message 23
-    [89, 12, 56],  // Task IDs that failed in hour 5 with message 23
-    [34]           // Task IDs that failed in hour 6 with message 24
+    [45, 67],      // Task IDs that failed on day 0 with message 23
+    [89, 12, 56],  // Task IDs that failed on day 1 with message 23
+    [34]           // Task IDs that failed on day 2 with message 24
   ],
-  "hours": [0, 5, 1],
+  "days": [0, 1, 1],
   "messageIds": [23, 23, 24],
   "crashSignatureIds": [5, 5, 6],
   "minidumps": [
-    ["abc123", "def456"],    // Minidumps for crashes in hour 0
-    ["ghi789", null, "jkl"],  // Minidumps for crashes in hour 5
-    [null]                    // Minidumps for crashes in hour 6
+    ["abc123", "def456"],    // Minidumps for crashes on day 0
+    ["ghi789", null, "jkl"],  // Minidumps for crashes on day 1
+    [null]                    // Minidumps for crashes on day 2
   ]
 }
 ```
 
-Key differences from daily files:
-- `taskIdIds` is an **array of arrays** - one array per (hour, message, crashSignature) bucket
+Key differences from per-date files:
+- `taskIdIds` is an **array of arrays** - one array per (day, message, crashSignature) bucket
 - `minidumps` is an **array of arrays** - parallel to `taskIdIds`, preserving minidump for each task
-- `hours` provides differentially compressed hour offsets
+- `days` provides differentially compressed day offsets
 - Durations are **removed**
-- Individual timestamps are **removed** - only the hour bucket is preserved
+- Individual timestamps are **removed** - only the day bucket is preserved
 - Failures with different messages or crash signatures are in separate buckets
 
 #### 4. String Tables Are Merged
@@ -561,8 +609,8 @@ SKIP tests with messages starting with "run-if" are filtered out during aggregat
 ### Use Cases
 
 **Show pass/fail trends over time:**
-- Passing runs: Use `counts` and `hours` arrays
-- Failing runs: Count taskIds in buckets within day ranges using `hours`
+- Passing runs: Use `counts` and `days` arrays
+- Failing runs: Count taskIds in buckets within day ranges using `days`
 
 **Investigate specific failures:**
 - Task IDs preserved for all non-passing runs
@@ -621,7 +669,7 @@ All status groups use counts instead of task ID arrays:
 ```json
 {
   "counts": [5, 12, 8, 3],
-  "hours": [0, 5, 1, 2],
+  "days": [0, 1, 1, 1],
   "messageIds": [23, 23, 24, 24],           // For failures with different messages
   "crashSignatureIds": [5, 6, 5, 6]         // For crashes with different signatures
   // Note: taskIdIds and minidumps are NOT included in this file
@@ -632,11 +680,11 @@ Failures with different messages or crash signatures are bucketed separately, pr
 
 Task IDs and minidumps are omitted to reduce size. They are available in the detailed file.
 
-**Example:** A test that fails 5 times in hour 10 with message A and 3 times with message B will have two entries:
+**Example:** A test that fails 5 times on day 3 with message A and 3 times with message B will have two entries:
 ```json
 {
   "counts": [5, 3],
-  "hours": [10, 0],  // Both in same hour, so second delta is 0
+  "days": [3, 0],  // Both on same day, so second delta is 0
   "messageIds": [23, 24]
 }
 ```

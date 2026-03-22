@@ -1357,3 +1357,115 @@ add_task(async function test_bug1997096_autoUncollapseOnRightClick() {
   BrowserTestUtils.removeTab(newTab);
   BrowserTestUtils.removeTab(groupedTab);
 });
+
+add_task(async function test_bug2007061_hideSplitViewWhenDraggingGroup() {
+  let tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let splitview = gBrowser.addTabSplitView([tab1, tab2]);
+  let group = gBrowser.addTabGroup([splitview]);
+
+  gBrowser.selectedTab = tab1;
+  Assert.ok(tab1.selected, "tab1 in split view is selected");
+
+  Assert.ok(splitview.hasActiveTab, "split view has active tab attribute");
+
+  group.collapsed = true;
+  Assert.ok(group.collapsed, "group is collapsed");
+
+  group.isBeingDragged = true;
+  Assert.ok(
+    group.hasAttribute("movingtabgroup"),
+    "group has movingtabgroup attribute when being dragged"
+  );
+
+  Assert.ok(
+    BrowserTestUtils.isHidden(splitview),
+    "split view wrapper is hidden while dragging collapsed group"
+  );
+
+  group.isBeingDragged = false;
+
+  await removeTabGroup(group);
+});
+
+add_task(
+  async function test_bug2014632_splitViewInCollapsedGroupVisibleDuringDrag() {
+    let group1Tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+    let group1 = gBrowser.addTabGroup([group1Tab], {
+      label: "A very long group name for testing",
+    });
+    group1.collapsed = true;
+
+    let standaloneTab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+
+    let tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+    let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+    let splitview = gBrowser.addTabSplitView([tab1, tab2]);
+    let group2 = gBrowser.addTabGroup([splitview]);
+    group2.collapsed = true;
+
+    let standaloneTab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+
+    gBrowser.selectedTab = tab1;
+    Assert.ok(tab1.selected, "tab1 in split view is selected");
+    Assert.ok(splitview.hasActiveTab, "split view has active tab attribute");
+    Assert.ok(group2.collapsed, "group2 is collapsed");
+
+    Assert.ok(
+      splitview.visible,
+      "split view should be visible when in collapsed group with active tab"
+    );
+
+    let dragAndDropElements = gBrowser.tabContainer.dragAndDropElements;
+    Assert.ok(
+      dragAndDropElements.includes(splitview),
+      "split view should be included in dragAndDropElements"
+    );
+
+    let splitviewIndex = dragAndDropElements.indexOf(splitview);
+    Assert.greater(
+      splitviewIndex,
+      0,
+      "split view should have a valid index in dragAndDropElements"
+    );
+
+    group1.isBeingDragged = true;
+    Assert.ok(
+      splitview.visible,
+      "split view should remain visible while dragging another group"
+    );
+
+    Assert.ok(
+      gBrowser.tabContainer.dragAndDropElements.includes(splitview),
+      "split view should remain in dragAndDropElements while dragging another group"
+    );
+    group1.isBeingDragged = false;
+
+    await removeTabGroup(group1);
+    await removeTabGroup(group2);
+    BrowserTestUtils.removeTab(standaloneTab1);
+    BrowserTestUtils.removeTab(standaloneTab2);
+  }
+);
+
+/**
+ * bug 2017651 - ensure tab-group elements can be garbage collected after removal.
+ */
+add_task(async function test_tabGroupGarbageCollection() {
+  let tabGroup = document.createXULElement("tab-group");
+  let weakRef = Cu.getWeakReference(tabGroup);
+
+  document.body.appendChild(tabGroup);
+  tabGroup.remove();
+  tabGroup = null;
+
+  // Perform multiple GC's to avoid intermittent delayed collection.
+  await new Promise(resolve => SpecialPowers.exactGC(resolve));
+  await new Promise(resolve => SpecialPowers.exactGC(resolve));
+  await new Promise(resolve => SpecialPowers.exactGC(resolve));
+
+  Assert.ok(
+    !weakRef.get(),
+    "tab-group element should be garbage collected after removal from DOM"
+  );
+});

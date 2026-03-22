@@ -16,6 +16,7 @@ DIRS += [
     "network-monitor",
     "object",
     "resources",
+    "stylesheets",
     "targets",
     "tracer",
     "utils",

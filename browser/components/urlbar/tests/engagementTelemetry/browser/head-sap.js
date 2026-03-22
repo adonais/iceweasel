@@ -25,6 +25,25 @@ async function doUrlbarTest({ trigger, assert }) {
   });
 }
 
+async function doSearchbarTest({ trigger, assert }) {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.search.widget.new", true]],
+  });
+  let cuiTestUtils = new CustomizableUITestUtils(window);
+  await cuiTestUtils.addSearchBar();
+
+  await doTest(async () => {
+    await openPopup("x", SearchbarTestUtils);
+    await doEnter();
+    await openPopup("y", SearchbarTestUtils);
+
+    await trigger();
+    await assert();
+  });
+  await cuiTestUtils.removeSearchBar();
+  await SpecialPowers.popPrefEnv();
+}
+
 async function doHandoffTest({ trigger, assert }) {
   await doTest(async browser => {
     BrowserTestUtils.startLoadingURIString(browser, "about:newtab");

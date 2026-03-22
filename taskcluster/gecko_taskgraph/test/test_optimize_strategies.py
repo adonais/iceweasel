@@ -20,6 +20,7 @@ from gecko_taskgraph.optimize.bugbug import (
     DisperseGroups,
     SkipUnlessDebug,
 )
+from gecko_taskgraph.optimize.docs import SkipUnlessSphinxJs
 from gecko_taskgraph.optimize.mozlint import SkipUnlessMozlint
 from gecko_taskgraph.optimize.strategies import SkipUnlessMissing, SkipUnlessSchedules
 from gecko_taskgraph.util.backstop import BACKSTOP_PUSH_INTERVAL
@@ -672,6 +673,62 @@ def test_skip_unless_missing(monkeypatch, responses, params):
         status=200,
     )
     opt.should_remove_task(task, params, index)
+
+
+@pytest.mark.parametrize(
+    "files_changed,js_source_paths,expected",
+    [
+        pytest.param(
+            [],
+            ["browser/components/urlbar"],
+            True,
+            id="no_files_changed",
+        ),
+        pytest.param(
+            ["browser/components/urlbar/UrlbarView.sys.mjs"],
+            ["browser/components/urlbar"],
+            False,
+            id="matching_file",
+        ),
+        pytest.param(
+            ["browser/components/urlbar/content/quickactions.js"],
+            ["browser/components/urlbar", "browser/components/urlbar/content"],
+            False,
+            id="matching_nested_file",
+        ),
+        pytest.param(
+            ["browser/components/migration/MigrationUtils.sys.mjs"],
+            ["browser/components/urlbar"],
+            True,
+            id="non_matching_file",
+        ),
+        pytest.param(
+            ["README.md", "browser/components/urlbar/UrlbarInput.sys.mjs"],
+            ["browser/components/urlbar"],
+            False,
+            id="one_matching_one_not",
+        ),
+        pytest.param(
+            ["toolkit/actors/AutoScrollChild.sys.mjs"],
+            ["toolkit/actors", "browser/components/urlbar"],
+            False,
+            id="matches_first_path",
+        ),
+    ],
+)
+def test_skip_unless_sphinx_js(
+    monkeypatch, params, files_changed, js_source_paths, expected
+):
+    opt = SkipUnlessSphinxJs()
+
+    def mock_get_js_source_paths():
+        return js_source_paths
+
+    monkeypatch.setattr(opt, "_get_js_source_paths", mock_get_js_source_paths)
+    params["files_changed"] = files_changed
+
+    result = opt.should_remove_task(default_tasks[0], params, None)
+    assert result == expected
 
 
 if __name__ == "__main__":

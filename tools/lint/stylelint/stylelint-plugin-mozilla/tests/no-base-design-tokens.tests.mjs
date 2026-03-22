@@ -4,8 +4,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-/* eslint-env node */
-
 // Bug 1948378: remove this exception when the eslint import plugin fully
 // supports exports in package.json files
 // eslint-disable-next-line import/no-unresolved

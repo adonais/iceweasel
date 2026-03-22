@@ -8,6 +8,7 @@
 
 #include "mozilla/Assertions.h"             // MOZ_RELEASE_ASSERT
 #include "mozilla/CheckedInt.h"             // mozilla::CheckedInt
+#include "mozilla/glean/JsSrcMetrics.h"     // javascript_self_hosted_cache
 #include "mozilla/Maybe.h"                  // mozilla::Maybe
 #include "mozilla/OperatorNewExtensions.h"  // mozilla::KnownNotNull
 #include "mozilla/PodOperations.h"          // mozilla::PodCopy
@@ -78,6 +79,62 @@
 
 using namespace js;
 using namespace js::frontend;
+
+mozilla::Result<ScopeStencilRef, ScopeStencilRef::EnclosingFailure>
+ScopeStencilRef::enclosing() const {
+  auto& scope = this->scope();
+  if (scope.hasEnclosing()) {
+#ifdef DEBUG
+    // Assert that checking for the same stencil is equivalent to checking for
+    // being encoded in the initial stencil.
+    if (scriptIndex_ != 0) {
+      auto enclosingScript = script().enclosingScript();
+      bool same = context() == enclosingScript.context();
+      MOZ_ASSERT(same == script().isEagerlyCompiledInInitial());
+    }
+#endif
+
+    // By default we are walking the scope within the same function.
+    ScriptIndex scriptIndex = scriptIndex_;
+
+    // `scope.enclosing()` and `scope` would have the same scriptIndex unless
+    // `scope` is the first scope of the script. In which case, the returned
+    // enclosing scope index should be returned with the enclosing script index.
+    //
+    // This can only happen in the initial stencil, as only the initial stencil
+    // can have multiple scripts compiled in the same stencil.
+    if (script().isEagerlyCompiledInInitial()) {
+      auto gcThingsFromContext = script().gcThingsFromInitial();
+      if (gcThingsFromContext[0].toScope() == scopeIndex_) {
+        scriptIndex = script().enclosingScript().scriptIndex_;
+      }
+    }
+
+    return ScopeStencilRef{stencils_, scriptIndex, scope.enclosing()};
+  }
+
+  // By default the previous condition (scope.hasEnclosing()) should trigger,
+  // except when we are at the top-level of a delazification, in which case we
+  // have to find the enclosing script in the stencil of the enclosing script,
+  // to find the lazyFunctionEnclosingScopeIndex which is valid in the stencil
+  // of the enclosing script.
+  //
+  // Note, at one point the enclosing script would be the initial stencil.
+  if (!script().isEagerlyCompiledInInitial()) {
+    auto enclosing = script().enclosingScript();
+    auto& scriptData = script().scriptDataFromEnclosing();
+    MOZ_ASSERT(scriptData.hasLazyFunctionEnclosingScopeIndex());
+    return ScopeStencilRef{stencils_, enclosing.scriptIndex_,
+                           scriptData.lazyFunctionEnclosingScopeIndex()};
+  }
+
+  // The global scope is not known by the Stencil, while parsing inner functions
+  // from Stencils where they are known at the execution using the GlobalScope.
+  if (scope.kind() == ScopeKind::Module) {
+    return mozilla::Err(EnclosingFailure::ModuleScope);
+  }
+  return mozilla::Err(EnclosingFailure::GlobalScope);
+}
 
 // These 2 functions are used to write the same code with lambda using auto
 // arguments. The auto argument type is set by the Variant.match function of the
@@ -3086,6 +3143,8 @@ bool CompilationStencil::delazifySelfHostedFunction(
       JS_LOG(selfHosted, Debug,
              "self_hosted_cache: reusing JIT code for script '%s'",
              nameStr.get());
+      mozilla::glean::javascript_self_hosted_cache::hits.AddToNumerator();
+      mozilla::glean::javascript_self_hosted_cache::total.Add();
 
       if (!cx->zone()->ensureJitZoneExists(cx)) {
         return false;
@@ -3115,6 +3174,7 @@ bool CompilationStencil::delazifySelfHostedFunction(
       JS_LOG(selfHosted, Debug,
              "self_hosted_cache: new JIT code entry for script '%s'",
              nameStr.get());
+      mozilla::glean::javascript_self_hosted_cache::total.Add();
 
       if (!cx->zone()->ensureJitZoneExists(cx)) {
         return false;

@@ -10,19 +10,17 @@
 #include "mozilla/MacroArgs.h"  // MOZ_CONCAT
 #include "mozilla/SIMD.h"       // mozilla::SIMD::memchr{,2x}{8,16}
 
-#include "jslibmath.h"  // js::NumberMod
-#include "jsmath.h"     // js::ecmaPow, js::ecmaHypot, js::hypot3, js::hypot4,
-                        // js::ecmaAtan2, js::UnaryMathFunctionType, js::powi
-#include "jsnum.h"      // js::StringToNumberPure, js::Int32ToStringPure,
-                        // js::NumberToStringPure
-
-#include "builtin/Array.h"             // js::ArrayShiftMoveElements
-#include "builtin/MapObject.h"         // js::MapIteratorObject::next,
-                                       // js::SetIteratorObject::next
-#include "builtin/Object.h"            // js::ObjectClassToString
-#include "builtin/RegExp.h"            // js::RegExpPrototypeOptimizableRaw,
-                                       // js::RegExpInstanceOptimizableRaw
-#include "builtin/Sorting.h"           // js::ArraySortData
+#include "builtin/Array.h"      // js::ArrayShiftMoveElements
+#include "builtin/MapObject.h"  // js::MapIteratorObject::next,
+                                // js::SetIteratorObject::next
+#include "builtin/Math.h"  // js::ecmaPow, js::ecmaHypot, js::hypot3, js::hypot4,
+                           // js::ecmaAtan2, js::UnaryMathFunctionType, js::powi
+#include "builtin/Number.h"   // js::StringToNumberPure, js::Int32ToStringPure,
+                              // js::NumberToStringPure
+#include "builtin/Object.h"   // js::ObjectClassToString
+#include "builtin/RegExp.h"   // js::RegExpPrototypeOptimizableRaw,
+                              // js::RegExpInstanceOptimizableRaw
+#include "builtin/Sorting.h"  // js::ArraySortData
 #include "builtin/TestingFunctions.h"  // js::FuzzilliHash*
 #include "builtin/WeakMapObject.h"     // js::WeakMapObject::{get,has}Object
 #include "builtin/WeakSetObject.h"     // js::WeakSetObject::hasObject
@@ -45,8 +43,8 @@
 // JSJitGetterOp, JSJitSetterOp, JSJitMethodOp
 #include "js/experimental/JitInfo.h"
 
-#include "proxy/Proxy.h"  // js::ProxyGetProperty
-
+#include "proxy/Proxy.h"          // js::ProxyGetProperty
+#include "util/PortableMath.h"    // js::NumberMod
 #include "vm/ArgumentsObject.h"   // js::ArgumentsObject::finishForIonPure
 #include "vm/Interpreter.h"       // js::TypeOfObject
 #include "vm/NativeObject.h"      // js::NativeObject

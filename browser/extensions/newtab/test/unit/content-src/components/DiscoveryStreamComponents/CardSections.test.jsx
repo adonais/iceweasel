@@ -6,6 +6,7 @@ import { CardSections } from "content-src/components/DiscoveryStreamComponents/C
 import { combineReducers, createStore } from "redux";
 import { DSCard } from "../../../../../content-src/components/DiscoveryStreamComponents/DSCard/DSCard";
 import { FollowSectionButtonHighlight } from "../../../../../content-src/components/DiscoveryStreamComponents/FeatureHighlight/FollowSectionButtonHighlight";
+import { BriefingCard } from "../../../../../content-src/components/DiscoveryStreamComponents/BriefingCard/BriefingCard";
 
 const PREF_SECTIONS_PERSONALIZATION_ENABLED =
   "discoverystream.sections.personalization.enabled";
@@ -193,8 +194,8 @@ describe("<CardSections />", () => {
   it("should apply correct class names for cards with and without excerpts", () => {
     wrapper.find(DSCard).forEach(card => {
       const props = card.props();
-      // Small cards don't show excerpts according to the data in DEFAULT_PROPS for this test suite
-      if (props.sectionsClassNames.includes("small")) {
+      const classNames = props.sectionsClassNames;
+      if (classNames.includes("small") || classNames.includes("medium")) {
         assert.include(props.sectionsClassNames, "hide-excerpt");
         assert.notInclude(props.sectionsClassNames, "show-excerpt");
       }
@@ -539,6 +540,135 @@ describe("<CardSections />", () => {
         );
         assert.calledOnce(mockLink.focus);
       });
+    });
+  });
+
+  describe("Daily Briefing v2 BriefingCard", () => {
+    let state;
+
+    const MOCK_HEADLINES = [
+      {
+        id: "h1",
+        section: "daily_brief_section",
+        isHeadline: true,
+        url: "https://example.com/1",
+        title: "Headline 1",
+        publisher: "Publisher 1",
+      },
+      {
+        id: "h2",
+        section: "daily_brief_section",
+        isHeadline: true,
+        url: "https://example.com/2",
+        title: "Headline 2",
+        publisher: "Publisher 2",
+      },
+      {
+        id: "h3",
+        section: "daily_brief_section",
+        isHeadline: true,
+        url: "https://example.com/3",
+        title: "Headline 3",
+        publisher: "Publisher 3",
+      },
+    ];
+
+    const createBriefingSectionProps = ({
+      sectionKey = "daily_brief_section",
+      allowsWidget = true,
+    } = {}) => ({
+      ...DEFAULT_PROPS,
+      data: {
+        sections: [
+          {
+            ...DEFAULT_PROPS.data.sections[0],
+            sectionKey,
+            layout: {
+              responsiveLayouts: [
+                {
+                  columnCount: 1,
+                  tiles: [{ position: 0, size: "medium", allowsWidget }],
+                },
+              ],
+            },
+          },
+        ],
+      },
+    });
+
+    beforeEach(() => {
+      state = {
+        ...INITIAL_STATE,
+        DiscoveryStream: {
+          ...INITIAL_STATE.DiscoveryStream,
+          feeds: {
+            data: {
+              "https://merino.services.mozilla.com/api/v1/curated-recommendations":
+                {
+                  data: {
+                    recommendations: [
+                      ...MOCK_HEADLINES,
+                      { id: "r1", isHeadline: false },
+                    ],
+                  },
+                  lastUpdated: Date.now(),
+                },
+            },
+          },
+        },
+        Prefs: {
+          ...INITIAL_STATE.Prefs,
+          values: {
+            ...INITIAL_STATE.Prefs.values,
+            "discoverystream.dailyBrief.enabled": true,
+            "discoverystream.dailyBrief.sectionId": "daily_brief_section",
+          },
+        },
+      };
+    });
+
+    it("should render BriefingCard when all conditions met", () => {
+      const props = createBriefingSectionProps();
+
+      wrapper = mount(
+        <WrapWithProvider state={state}>
+          <CardSections dispatch={dispatch} {...props} />
+        </WrapWithProvider>
+      );
+
+      const briefingCard = wrapper.find(BriefingCard);
+      assert.lengthOf(briefingCard, 1);
+      assert.lengthOf(briefingCard.prop("headlines"), 3);
+      assert.isNumber(briefingCard.prop("lastUpdated"));
+    });
+
+    it("should not render BriefingCard when fewer than 3 headlines available", () => {
+      state.DiscoveryStream.feeds.data[
+        "https://merino.services.mozilla.com/api/v1/curated-recommendations"
+      ].data.recommendations = MOCK_HEADLINES.slice(0, 2);
+
+      const props = createBriefingSectionProps();
+
+      wrapper = mount(
+        <WrapWithProvider state={state}>
+          <CardSections dispatch={dispatch} {...props} />
+        </WrapWithProvider>
+      );
+
+      assert.lengthOf(wrapper.find(BriefingCard), 0);
+      assert.isAtLeast(wrapper.find(DSCard).length, 1);
+    });
+
+    it("should not render BriefingCard when section key doesn't match", () => {
+      const props = createBriefingSectionProps({ sectionKey: "other-section" });
+
+      wrapper = mount(
+        <WrapWithProvider state={state}>
+          <CardSections dispatch={dispatch} {...props} />
+        </WrapWithProvider>
+      );
+
+      assert.lengthOf(wrapper.find(BriefingCard), 0);
     });
   });
 });

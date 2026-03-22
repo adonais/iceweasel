@@ -25,6 +25,7 @@ EXPORTS.mozilla.ipc += [
     "CrossProcessMutex.h",
     "CrossProcessSemaphore.h",
     "DataPipe.h",
+    "EagerIPCStream.h",
     "Endpoint.h",
     "EnvironmentMap.h",
     "FileDescriptor.h",
@@ -294,6 +295,13 @@ elif CONFIG["TARGET_OS"] == "iOS":
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
     OS_LIBS += ["android"]
 
+extra_vars = ()
+if CONFIG["NIGHTLY_BUILD"] and not CONFIG["MOZ_NO_SMART_CARDS"]:
+    extra_vars = (
+        "MOZ_PKCS11_PROCESS_NAME_BRANDED",
+        "MOZ_PKCS11_PROCESS_BUNDLENAME",
+    )
+
 for var in (
     "MOZ_CHILD_PROCESS_NAME",
     "MOZ_CHILD_PROCESS_BUNDLENAME",
@@ -301,7 +309,7 @@ for var in (
     "MOZ_EME_PROCESS_BUNDLENAME",
     "MOZ_GPU_PROCESS_NAME_BRANDED",
     "MOZ_GPU_PROCESS_BUNDLENAME",
-):
+) + extra_vars:
     DEFINES[var] = '"%s"' % CONFIG[var]
 
 if CONFIG["MOZ_SANDBOX"] and CONFIG["OS_ARCH"] == "WINNT":

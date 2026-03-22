@@ -58,6 +58,7 @@ add_task(async function checkRevokedCertificateAdvancedCopy() {
       netErrorCard.hideExceptionButton = netErrorCard.shouldHideExceptionButton(
         info.errorCodeString
       );
+      netErrorCard.errorConfig = netErrorCard.getErrorConfig();
       netErrorCard.requestUpdate();
       await netErrorCard.getUpdateComplete();
 

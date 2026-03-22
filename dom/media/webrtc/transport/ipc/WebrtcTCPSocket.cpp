@@ -20,6 +20,7 @@
 #include "nsIIOService.h"
 #include "nsILoadInfo.h"
 #include "nsIProtocolProxyService.h"
+#include "nsISocketTransport.h"
 #include "nsISocketTransportService.h"
 #include "nsIURIMutator.h"
 #include "nsProxyRelease.h"

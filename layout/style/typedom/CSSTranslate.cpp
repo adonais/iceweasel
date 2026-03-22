@@ -11,11 +11,13 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSTranslateBinding.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 
 CSSTranslate::CSSTranslate(nsCOMPtr<nsISupports> aParent)
-    : CSSTransformComponent(std::move(aParent)) {}
+    : CSSTransformComponent(std::move(aParent),
+                            TransformComponentType::Translate) {}
 
 JSObject* CSSTranslate::WrapObject(JSContext* aCx,
                                    JS::Handle<JSObject*> aGivenProto) {
@@ -59,5 +61,26 @@ void CSSTranslate::SetZ(CSSNumericValue& aArg, ErrorResult& aRv) {
 }
 
 // end of CSSTranslate Web IDL implementation
+
+void CSSTranslate::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                         nsACString& aDest) const {
+  // XXX: This is not yet fully implemented.
+
+  aDest.Append("translate3d()"_ns);
+}
+
+const CSSTranslate& CSSTransformComponent::GetAsCSSTranslate() const {
+  MOZ_DIAGNOSTIC_ASSERT(mTransformComponentType ==
+                        TransformComponentType::Translate);
+
+  return *static_cast<const CSSTranslate*>(this);
+}
+
+CSSTranslate& CSSTransformComponent::GetAsCSSTranslate() {
+  MOZ_DIAGNOSTIC_ASSERT(mTransformComponentType ==
+                        TransformComponentType::Translate);
+
+  return *static_cast<CSSTranslate*>(this);
+}
 
 }  // namespace mozilla::dom

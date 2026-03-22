@@ -9,14 +9,14 @@
 
 #include <cstdlib>
 
-#include "jsmath.h"
-
 #include "gc/Allocator.h"
 #include "gc/BufferAllocatorInternals.h"
 #include "gc/Memory.h"
 #include "gc/Nursery.h"
 #include "gc/Zone.h"
+#include "js/GCVector.h"
 #include "jsapi-tests/tests.h"
+#include "util/RandomSeed.h"
 #include "vm/PlainObject.h"
 
 #include "gc/BufferAllocator-inl.h"
@@ -932,3 +932,318 @@ static void traceAllocs(JSTracer* trc, void* data) {
   }
 }
 END_TEST(testBufferAllocator_stress)
+
+// Test using the buffer allocator for container with BufferAllocPolicy.
+
+// A JS object that holds a buffer-allocated vector.
+class VectorObject : public NativeObject {
+ public:
+  using VectorT = GCVector<HeapPtr<JSObject*>, 0, BufferAllocPolicy>;
+
+  enum { VectorSlot, SlotCount };
+
+  static VectorObject* create(JSContext* cx, bool nurseryOwned) {
+    NewObjectKind kind = nurseryOwned ? GenericObject : TenuredObject;
+    auto* obj = NewObjectWithClassProtoAndKind<VectorObject>(cx, nullptr, kind);
+    if (!obj) {
+      return nullptr;
+    }
+
+    VectorT* vector = NewBuffer<VectorT>(obj, BufferAllocPolicy(obj));
+    if (!vector) {
+      return nullptr;
+    }
+
+    InitBufferSlot(obj, VectorSlot, vector);
+    return obj;
+  }
+
+  VectorT* getVector() {
+    return static_cast<VectorT*>(getFixedSlot(VectorSlot).toPrivate());
+  }
+
+  void check(bool expectNurseryOwned) {
+    MOZ_RELEASE_ASSERT(IsInsideNursery(this) == expectNurseryOwned);
+
+    VectorT* vector = getVector();
+    MOZ_RELEASE_ASSERT(IsBufferAlloc(vector));
+    MOZ_RELEASE_ASSERT(IsNurseryOwned(zone(), vector) == expectNurseryOwned);
+
+    if (!vector->empty()) {
+      void* ptr = vector->begin();
+      MOZ_RELEASE_ASSERT(IsBufferAlloc(ptr));
+      MOZ_RELEASE_ASSERT(IsNurseryOwned(zone(), ptr) == expectNurseryOwned);
+    }
+  }
+
+  static void trace(JSTracer* trc, JSObject* obj) {
+    auto* self = &obj->as<VectorObject>();
+    TraceBufferSlot(trc, self, VectorSlot, "VectorObject vector");
+    if (VectorT* vector = self->getVector()) {
+      vector->trace(trc, self);
+    }
+  }
+
+  static constexpr JSClassOps classOps_ = {
+      nullptr,  // addProperty
+      nullptr,  // delProperty
+      nullptr,  // enumerate
+      nullptr,  // newEnumerate
+      nullptr,  // resolve
+      nullptr,  // mayResolve
+      nullptr,  // finalize
+      nullptr,  // call
+      nullptr,  // construct
+      trace,    // trace
+  };
+
+  static constexpr JSClass class_ = {
+      "VectorObject", JSCLASS_HAS_RESERVED_SLOTS(SlotCount), &classOps_};
+};
+
+BEGIN_TEST(testBufferAllocPolicy_vector) {
+  // Exercise using BufferAllocPolicy for a vector of GC things.
+
+  AutoLeaveZeal leaveZeal(cx);
+
+  CHECK(testVector(/* allocInNursery = */ true, /* dieInNursery = */ true));
+  CHECK(testVector(/* allocInNursery = */ true, /* dieInNursery = */ false));
+  CHECK(testVector(/* allocInNursery = */ false, /* dieInNursery = */ false));
+  return true;
+}
+
+bool testVector(bool allocInNursery, bool dieInNursery) {
+  MOZ_ASSERT_IF(!allocInNursery, !dieInNursery);
+
+  const size_t ElementCount = 1000;
+
+  JS_GC(cx);
+
+  Zone* zone = cx->zone();
+  size_t initialMallocHeapSize = zone->mallocHeapSize.bytes();
+
+  bool nurseryOwned = allocInNursery;
+  Rooted<VectorObject*> obj(cx, VectorObject::create(cx, nurseryOwned));
+  CHECK(obj);
+  obj->check(nurseryOwned);
+
+  mozilla::MallocSizeOf mallocSizeOf = nullptr;  // Unused.
+  CHECK(obj->getVector()->sizeOfOwnedAllocs(mallocSizeOf) == 0);
+
+  for (size_t i = 0; i < ElementCount; i++) {
+    Rooted<PlainObject*> element(cx, NewPlainObject(cx));
+    CHECK(element);
+
+    RootedValue value(cx, Int32Value(i));
+    CHECK(JS_DefineProperty(cx, element, "i", value, 0));
+    CHECK(obj->getVector()->append(element));
+
+    obj->check(nurseryOwned);
+  }
+
+  CHECK(obj->getVector()->sizeOfOwnedAllocs(mallocSizeOf) != 0);
+  CHECK(zone->mallocHeapSize.bytes() > initialMallocHeapSize);
+
+  if (!dieInNursery) {
+    cx->minorGC(JS::GCReason::API);
+    nurseryOwned = false;
+    obj->check(nurseryOwned);
+  }
+
+  auto& vector = *obj->getVector();
+  vector.shrinkTo(ElementCount / 2);
+  vector.shrinkStorageToFit();
+  CHECK(vector.length() == ElementCount / 2);
+
+  for (size_t i = 0; i < vector.length(); i++) {
+    Rooted<PlainObject*> element(cx, &vector[i]->as<PlainObject>());
+    RootedValue value(cx);
+    CHECK(JS_GetProperty(cx, element, "i", &value));
+    CHECK(value.toInt32() == int32_t(i));
+  }
+
+  obj->check(nurseryOwned);
+
+  // Note internal pointers so we can check whether they get freed.
+  void* oldVector = obj->getVector();
+  void* oldBuffer = obj->getVector()->begin();
+  CHECK(zone->bufferAllocator.isPointerWithinBuffer(oldVector));
+  CHECK(zone->bufferAllocator.isPointerWithinBuffer(oldBuffer));
+
+  obj = nullptr;
+  if (nurseryOwned) {
+    cx->minorGC(JS::GCReason::API);
+  } else {
+    JS_GC(cx);
+  }
+
+  gc::WaitForBackgroundTasks(cx);
+  CHECK(!zone->bufferAllocator.isPointerWithinBuffer(oldVector));
+  CHECK(!zone->bufferAllocator.isPointerWithinBuffer(oldBuffer));
+
+  if (nurseryOwned) {
+    JS_GC(cx);
+  }
+  MOZ_ASSERT(zone->mallocHeapSize.bytes() == initialMallocHeapSize);
+  CHECK(zone->mallocHeapSize.bytes() == initialMallocHeapSize);
+
+  return true;
+}
+END_TEST(testBufferAllocPolicy_vector)
+
+// A JS object that holds a buffer-allocated hash set.
+class HashSetObject : public NativeObject {
+ public:
+  using HashSetT =
+      GCHashSet<HeapPtr<JSObject*>, StableCellHasher<HeapPtr<JSObject*>>,
+                BufferAllocPolicy>;
+
+  enum { HashSetSlot, SlotCount };
+
+  static HashSetObject* create(JSContext* cx, bool nurseryOwned) {
+    NewObjectKind kind = nurseryOwned ? GenericObject : TenuredObject;
+    auto* obj =
+        NewObjectWithClassProtoAndKind<HashSetObject>(cx, nullptr, kind);
+    if (!obj) {
+      return nullptr;
+    }
+
+    HashSetT* set = NewBuffer<HashSetT>(obj, BufferAllocPolicy(obj));
+    if (!set) {
+      return nullptr;
+    }
+
+    InitBufferSlot(obj, HashSetSlot, set);
+    return obj;
+  }
+
+  HashSetT* getSet() {
+    return static_cast<HashSetT*>(getFixedSlot(HashSetSlot).toPrivate());
+  }
+
+  void check(bool expectNurseryOwned) {
+    MOZ_RELEASE_ASSERT(IsInsideNursery(this) == expectNurseryOwned);
+
+    HashSetT* set = getSet();
+    MOZ_RELEASE_ASSERT(IsBufferAlloc(set));
+    MOZ_RELEASE_ASSERT(IsNurseryOwned(zone(), set) == expectNurseryOwned);
+  }
+
+  static void trace(JSTracer* trc, JSObject* obj) {
+    auto* self = &obj->as<HashSetObject>();
+    TraceBufferSlot(trc, self, HashSetSlot, "HashSetObject set");
+    if (HashSetT* set = self->getSet()) {
+      set->trace(trc, self);
+    }
+  }
+
+  static constexpr JSClassOps classOps_ = {
+      nullptr,  // addProperty
+      nullptr,  // delProperty
+      nullptr,  // enumerate
+      nullptr,  // newEnumerate
+      nullptr,  // resolve
+      nullptr,  // mayResolve
+      nullptr,  // finalize
+      nullptr,  // call
+      nullptr,  // construct
+      trace,    // trace
+  };
+
+  static constexpr JSClass class_ = {
+      "HashSetObject", JSCLASS_HAS_RESERVED_SLOTS(SlotCount), &classOps_};
+};
+
+BEGIN_TEST(testBufferAllocPolicy_hashSet) {
+  // Exercise using BufferAllocPolicy for a hash set of objects.
+
+  AutoLeaveZeal leaveZeal(cx);
+
+  CHECK(testSet(/* allocInNursery = */ true, /* dieInNursery = */ true));
+  CHECK(testSet(/* allocInNursery = */ true, /* dieInNursery = */ false));
+  CHECK(testSet(/* allocInNursery = */ false, /* dieInNursery = */ false));
+  return true;
+}
+
+bool testSet(bool allocInNursery, bool dieInNursery) {
+  MOZ_ASSERT_IF(!allocInNursery, !dieInNursery);
+
+  const size_t ElementCount = 1000;
+
+  JS_GC(cx);
+
+  Zone* zone = cx->zone();
+  size_t initialMallocHeapSize = zone->mallocHeapSize.bytes();
+
+  bool nurseryOwned = allocInNursery;
+  Rooted<HashSetObject*> obj(cx, HashSetObject::create(cx, nurseryOwned));
+  CHECK(obj);
+  obj->check(nurseryOwned);
+
+  mozilla::MallocSizeOf mallocSizeOf = nullptr;  // Unused.
+  CHECK(obj->getSet()->sizeOfOwnedAllocs(mallocSizeOf) == 0);
+
+  for (size_t i = 0; i < ElementCount; i++) {
+    Rooted<PlainObject*> element(cx, NewPlainObject(cx));
+    CHECK(element);
+
+    RootedValue value(cx, Int32Value(i));
+    CHECK(JS_DefineProperty(cx, element, "i", value, 0));
+    CHECK(obj->getSet()->put(element));
+
+    obj->check(nurseryOwned);
+  }
+
+  CHECK(obj->getSet()->sizeOfOwnedAllocs(mallocSizeOf) != 0);
+  CHECK(zone->mallocHeapSize.bytes() > initialMallocHeapSize);
+
+  if (!dieInNursery) {
+    cx->minorGC(JS::GCReason::API);
+    nurseryOwned = false;
+    obj->check(nurseryOwned);
+  }
+
+  auto& set = *obj->getSet();
+  size_t i = 0;
+  for (auto iter = set.modIter(); !iter.done(); iter.next()) {
+    i++;
+    if (i % 2 == 0) {
+      iter.remove();
+    }
+  }
+  set.compact();
+  CHECK(set.count() == ElementCount / 2);
+
+  for (auto iter = set.iter(); !iter.done(); iter.next()) {
+    Rooted<PlainObject*> element(cx, &iter.get()->as<PlainObject>());
+    RootedValue value(cx);
+    CHECK(JS_GetProperty(cx, element, "i", &value));
+    CHECK(value.toInt32() >= 0);
+    CHECK(value.toInt32() < int32_t(ElementCount));
+  }
+
+  obj->check(nurseryOwned);
+
+  // Note set pointer so we can check whether it gets freed.
+  void* oldSet = obj->getSet();
+  CHECK(zone->bufferAllocator.isPointerWithinBuffer(oldSet));
+
+  obj = nullptr;
+  if (nurseryOwned) {
+    cx->minorGC(JS::GCReason::API);
+  } else {
+    JS_GC(cx);
+  }
+
+  gc::WaitForBackgroundTasks(cx);
+  CHECK(!zone->bufferAllocator.isPointerWithinBuffer(oldSet));
+
+  if (nurseryOwned) {
+    JS_GC(cx);
+  }
+  MOZ_ASSERT(zone->mallocHeapSize.bytes() == initialMallocHeapSize);
+  CHECK(zone->mallocHeapSize.bytes() == initialMallocHeapSize);
+
+  return true;
+}
+END_TEST(testBufferAllocPolicy_hashSet)

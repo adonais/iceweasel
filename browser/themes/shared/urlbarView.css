@@ -6,6 +6,7 @@
 
 @namespace html url("http://www.w3.org/1999/xhtml");
 
+:host,
 :root {
   --urlbarView-hover-background: var(--arrowpanel-dimmed);
   --urlbarView-separator-color: color-mix(in srgb, currentColor 14%, transparent);
@@ -910,12 +911,6 @@
     flex-basis: 32px;
   }
 
-  &[icon-size="38"] {
-    width: 38px;
-    height: 38px;
-    flex-basis: 38px;
-  }
-
   &[icon-size="52"] {
     width: 52px;
     height: 52px;
@@ -1075,15 +1070,7 @@
   }
 }
 
-/* Sponsored Firefox Suggest rows */
-
-.urlbarView-row[type$="_adm_sponsored"][icon-size="16"] > .urlbarView-row-inner {
-  /* Keep the status quo before these rows were rich suggestions, where the row
-     height is roughly the same as usual rows. */
-  padding-block: 0;
-}
-
-/* Other Firefox Suggest rows */
+/* Firefox Suggest rows */
 
 .urlbarView-row[type$="_amo"][icon-size="24"] > .urlbarView-row-inner > .urlbarView-favicon {
   padding: calc((var(--urlbarView-top-pick-large-icon-box-size) - 24px) / 2);
@@ -1814,6 +1801,56 @@
 #urlbar-engine-one-off-item-bookmarks[selected] {
   fill: currentColor;
   fill-opacity: var(--urlbar-icon-fill-opacity);
+}
+
+/* Nova style */
+.urlbarView-row[nova] {
+  .urlbarView-title {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .urlbarView-subtitle-separator::before {
+    content: "·";
+    margin: 0 0.4em;
+    color: var(--text-color-deemphasized);
+  }
+
+  .urlbarView-row-body-bottom {
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: row;
+    align-items: baseline;
+    min-width: 0;
+  }
+
+  .urlbarView-bottom-label {
+    text-wrap: nowrap;
+  }
+
+  .urlbarView-bottom-separator {
+    &::before {
+      content: "·";
+      margin: 0 0.4em;
+      color: var(--text-color-deemphasized);
+    }
+
+    .urlbarView-row[sponsored] &,
+    .urlbarView-row:not([selected], :hover) & {
+      display: none;
+    }
+  }
+
+  .urlbarView-url {
+    color: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    text-wrap: nowrap;
+
+    .urlbarView-row[sponsored] &,
+    .urlbarView-row:not([selected], :hover) & {
+      display: none;
+    }
+  }
 }
 
 /* search bar popup */

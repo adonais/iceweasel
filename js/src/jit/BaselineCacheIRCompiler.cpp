@@ -2456,11 +2456,9 @@ bool BaselineCacheIRCompiler::updateArgc(CallFlags flags, Register argcReg,
   return true;
 }
 
-void BaselineCacheIRCompiler::pushArguments(Register argcReg,
-                                            Register calleeReg,
-                                            Register scratch, Register scratch2,
-                                            CallFlags flags, uint32_t argcFixed,
-                                            bool isJitCall) {
+void BaselineCacheIRCompiler::pushArguments(
+    Register argcReg, Register calleeReg, Register scratch, Register scratch2,
+    Register scratch3, CallFlags flags, uint32_t argcFixed, bool isJitCall) {
   bool isConstructing = flags.isConstructing();
   MOZ_ASSERT_IF(isConstructing, flags.getArgFormat() == CallFlags::Standard ||
                                     flags.getArgFormat() == CallFlags::Spread);
@@ -2514,7 +2512,7 @@ void BaselineCacheIRCompiler::pushArguments(Register argcReg,
 
   if (isJitCall) {
     if (isConstructing) {
-      createThis(argcReg, calleeReg, scratch, scratch2, flags);
+      createThis(argcReg, calleeReg, scratch, scratch2, scratch3, flags);
     }
 
     // Note that we use Push, not push, so that callJit will align the stack
@@ -2948,8 +2946,8 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
     masm.switchToObjectRealm(calleeReg, scratch);
   }
 
-  pushArguments(argcReg, calleeReg, scratch, scratch2, flags, argcFixed,
-                /*isJitCall =*/false);
+  pushArguments(argcReg, calleeReg, scratch, scratch2, InvalidReg, flags,
+                argcFixed, /*isJitCall =*/false);
 
   // Native functions have the signature:
   //
@@ -3124,6 +3122,18 @@ bool BaselineCacheIRCompiler::emitCallClassHook(ObjOperandId calleeId,
                               targetOffset_);
 }
 
+// This op generates no code. It caches metadata for eventual use in createThis.
+bool BaselineCacheIRCompiler::emitMetaCreateThis(uint32_t numFixedSlots,
+                                                 uint32_t numDynamicSlots,
+                                                 gc::AllocKind allocKind,
+                                                 uint32_t thisShapeOffset,
+                                                 uint32_t siteOffset) {
+  MOZ_ASSERT(createThisData_.isNothing());
+  createThisData_.emplace(numFixedSlots, numDynamicSlots, allocKind,
+                          thisShapeOffset, siteOffset);
+  return true;
+}
+
 // Helper function for loading call arguments from the stack.  Loads
 // and unboxes an object from a specific slot.
 void BaselineCacheIRCompiler::loadStackObject(ArgumentKind kind,
@@ -3158,7 +3168,7 @@ void BaselineCacheIRCompiler::loadStackObject(ArgumentKind kind,
  */
 void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
                                          Register scratch, Register scratch2,
-                                         CallFlags flags,
+                                         Register scratch3, CallFlags flags,
                                          Maybe<uint32_t> numBoundArgs) {
   MOZ_ASSERT(flags.isConstructing());
   bool isBoundFunction = numBoundArgs.isSome();
@@ -3168,6 +3178,37 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   if (flags.needsUninitializedThis()) {
     masm.Push(MagicValue(JS_UNINITIALIZED_LEXICAL));
     return;
+  }
+
+  Label done;
+  bool hasCreateThisData = createThisData_.isSome();
+  if (hasCreateThisData) {
+    Label fail;
+    Register result = scratch;
+
+    Register shape = scratch2;
+    masm.loadPtr(stubAddress(createThisData_->thisShapeOffset), shape);
+
+    Register site = scratch3;
+    masm.loadPtr(stubAddress(createThisData_->allocSiteOffset), site);
+
+    // On x86-32, all of our registers are already spoken for, but we need one
+    // more. We spill calleeReg and reload it in the success and failure paths.
+    Register temp = calleeReg;
+
+    // Try to allocate inline.
+    masm.push(calleeReg);
+    masm.createPlainGCObject(
+        result, shape, temp, shape, createThisData_->numFixedSlots,
+        createThisData_->numDynamicSlots, createThisData_->allocKind,
+        gc::Heap::Default, &fail, AllocSiteInput(site));
+    masm.pop(calleeReg);
+    masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(result)));
+
+    masm.jump(&done);
+
+    masm.bind(&fail);
+    masm.pop(calleeReg);
   }
 
   // Save a reference to the start of the arguments, so that we can root
@@ -3180,11 +3221,17 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   liveNonGCRegs.add(argcReg);
   masm.PushRegsInMask(liveNonGCRegs);
 
-  // CreateThis takes two arguments: callee, and newTarget.
+  // CreateThis takes two arguments: callee, and newTarget. We may also pass
+  // an alloc site.
 
   // Push argv/argc for rooting in CreateThisFromIC
   masm.push(argcReg);
   masm.push(argvReg);
+
+  if (hasCreateThisData) {
+    masm.loadPtr(stubAddress(createThisData_->allocSiteOffset), scratch);
+    masm.push(scratch);
+  }
 
   if (isBoundFunction) {
     // Push the bound function's target as callee and newTarget.
@@ -3199,11 +3246,16 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
     masm.push(calleeReg);
   }
 
-  // Call CreateThisFromIC.
-  using Fn =
-      bool (*)(JSContext*, HandleObject, HandleObject, Value*, uint32_t,
-               MutableHandleValue);
-  callVM<Fn, CreateThisFromIC>(masm);
+  if (hasCreateThisData) {
+    using Fn = bool (*)(JSContext*, HandleObject, HandleObject, gc::AllocSite*,
+                        Value*, uint32_t, MutableHandleValue);
+    callVM<Fn, CreateThisFromICWithAllocSite>(masm);
+  } else {
+    // Call CreateThisFromIC.
+    using Fn = bool (*)(JSContext*, HandleObject, HandleObject, Value*,
+                        uint32_t, MutableHandleValue);
+    callVM<Fn, CreateThisFromIC>(masm);
+  }
 
 #ifdef DEBUG
   Label createdThisOK;
@@ -3245,6 +3297,7 @@ void BaselineCacheIRCompiler::createThis(Register argcReg, Register calleeReg,
   } else {
     loadStackObject(ArgumentKind::Callee, flags, argcReg, calleeReg);
   }
+  masm.bind(&done);
 }
 
 void BaselineCacheIRCompiler::updateReturnValue() {
@@ -3279,8 +3332,9 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunctionShared(
     ObjOperandId calleeId, Int32OperandId argcId, CallFlags flags,
     uint32_t argcFixed, Maybe<uint32_t> icScriptOffset) {
   AutoOutputRegister output(*this);
-  AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
-  AutoScratchRegister scratch2(allocator, masm);
+  AutoScratchRegister scratch(allocator, masm);
+  AutoScratchRegisterMaybeOutput scratch2(allocator, masm, output);
+  AutoScratchRegisterMaybeOutputType scratch3(allocator, masm, output);
 
   Register calleeReg = allocator.useRegister(masm, calleeId);
   Register argcReg = allocator.useRegister(masm, argcId);
@@ -3307,8 +3361,8 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunctionShared(
     stubFrame.pushInlinedICScript(masm, stubAddress(*icScriptOffset));
   }
 
-  pushArguments(argcReg, calleeReg, scratch, scratch2, flags, argcFixed,
-                /*isJitCall =*/true);
+  pushArguments(argcReg, calleeReg, scratch, scratch2, scratch3, flags,
+                argcFixed, /*isJitCall =*/true);
 
   masm.PushFrameDescriptorForJitCall(FrameType::BaselineStub, argcReg, scratch,
                                      isInlined);
@@ -3332,7 +3386,7 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunctionShared(
   stubFrame.leave(masm);
 
   if (!isSameRealm) {
-    masm.switchToBaselineFrameRealm(scratch2);
+    masm.switchToBaselineFrameRealm(scratch);
   }
 
   return true;
@@ -3489,8 +3543,9 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
 
   AutoOutputRegister output(*this);
-  AutoScratchRegisterMaybeOutput scratch(allocator, masm, output);
-  AutoScratchRegister scratch2(allocator, masm);
+  AutoScratchRegister scratch(allocator, masm);
+  AutoScratchRegisterMaybeOutput scratch2(allocator, masm, output);
+  AutoScratchRegisterMaybeOutputType scratch3(allocator, masm, output);
 
   Register calleeReg = allocator.useRegister(masm, calleeId);
   Register argcReg = allocator.useRegister(masm, argcId);
@@ -3520,7 +3575,7 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
   masm.add32(Imm32(numBoundArgs), argcReg);
 
   if (isConstructing) {
-    createThis(argcReg, calleeReg, scratch, scratch2, flags,
+    createThis(argcReg, calleeReg, scratch, scratch2, scratch3, flags,
                mozilla::Some(numBoundArgs));
   }
 
@@ -3542,7 +3597,7 @@ bool BaselineCacheIRCompiler::emitCallBoundScriptedFunction(
   stubFrame.leave(masm);
 
   if (!isSameRealm) {
-    masm.switchToBaselineFrameRealm(scratch2);
+    masm.switchToBaselineFrameRealm(scratch);
   }
 
   return true;

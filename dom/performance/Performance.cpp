@@ -303,8 +303,12 @@ struct UserTimingMarker : public BaseMarkerType<UserTimingMarker> {
 
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
-      {"name", MS::InputType::String, "User Marker Name", MS::Format::String,
-       MS::PayloadFlags::Searchable},
+      {
+          "name",
+          MS::InputType::String,
+          "User Marker Name",
+          MS::Format::String,
+      },
       {"entryType", MS::InputType::Boolean, "Entry Type"},
       {"startMark", MS::InputType::String, "Start Mark"},
       {"endMark", MS::InputType::String, "End Mark"}};

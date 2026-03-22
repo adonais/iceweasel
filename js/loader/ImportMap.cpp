@@ -408,7 +408,8 @@ UniquePtr<ImportMap> ImportMap::ParseString(
     }
     MOZ_ASSERT(exn.isObject());
     Rooted<JSObject*> obj(aCx, &exn.toObject());
-    JSErrorReport* err = JS_ErrorFromException(aCx, obj);
+    JS::BorrowedErrorReport err(aCx);
+    MOZ_ALWAYS_TRUE(JS_ErrorFromException(aCx, obj, err));
     if (err->exnType == JSEXN_SYNTAXERR) {
       JS_ClearPendingException(aCx);
       JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,

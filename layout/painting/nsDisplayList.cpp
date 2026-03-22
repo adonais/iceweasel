@@ -74,6 +74,7 @@
 #include "mozilla/dom/TouchEvent.h"
 #include "mozilla/dom/ViewTransition.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/layers/AnimationHelper.h"
@@ -95,6 +96,7 @@
 #include "nsDOMTokenList.h"
 #include "nsEscape.h"
 #include "nsFocusManager.h"
+#include "nsFrameSelection.h"
 #include "nsIFrameInlines.h"
 #include "nsImageFrame.h"
 #include "nsLayoutUtils.h"
@@ -184,7 +186,7 @@ already_AddRefed<ActiveScrolledRoot> ActiveScrolledRoot::GetOrCreateASRForFrame(
     MOZ_ASSERT(asr->mParent == aParent);
     MOZ_ASSERT(asr->mFrame == aScrollContainerFrame);
     MOZ_ASSERT(asr->mKind == ASRKind::Scroll);
-    MOZ_ASSERT(asr->mDepth == (aParent ? aParent->mDepth + 1 : 1));
+    asr->AssertDepthInvariant();
   }
 #endif
 
@@ -222,7 +224,7 @@ ActiveScrolledRoot::GetOrCreateASRForStickyFrame(
     MOZ_ASSERT(asr->mParent == aParent);
     MOZ_ASSERT(asr->mFrame == aStickyFrame);
     MOZ_ASSERT(asr->mKind == ASRKind::Sticky);
-    MOZ_ASSERT(asr->mDepth == (aParent ? aParent->mDepth + 1 : 1));
+    asr->AssertDepthInvariant();
   }
 #endif
 
@@ -268,6 +270,37 @@ bool ActiveScrolledRoot::IsProperAncestor(
     const ActiveScrolledRoot* aAncestor,
     const ActiveScrolledRoot* aDescendant) {
   return aAncestor != aDescendant && IsAncestor(aAncestor, aDescendant);
+}
+
+/* static */
+const ActiveScrolledRoot* ActiveScrolledRoot::LowestCommonAncestor(
+    const ActiveScrolledRoot* aOne, const ActiveScrolledRoot* aTwo) {
+  uint32_t depth1 = Depth(aOne);
+  uint32_t depth2 = Depth(aTwo);
+  if (depth1 > depth2) {
+    for (uint32_t i = 0; i < (depth1 - depth2); ++i) {
+      MOZ_ASSERT(aOne);
+      aOne = aOne->mParent;
+    }
+  } else if (depth1 < depth2) {
+    for (uint32_t i = 0; i < (depth2 - depth1); ++i) {
+      MOZ_ASSERT(aTwo);
+      aTwo = aTwo->mParent;
+    }
+  }
+  while (aOne != aTwo) {
+    MOZ_DIAGNOSTIC_ASSERT(aOne);
+    MOZ_DIAGNOSTIC_ASSERT(aTwo);
+    if (MOZ_UNLIKELY(!aOne || !aTwo)) {
+      gfxCriticalNoteOnce << "ActiveScrolledRoot::mDepth was incorrect";
+      return nullptr;
+    }
+    aOne->AssertDepthInvariant();
+    aTwo->AssertDepthInvariant();
+    aOne = aOne->mParent;
+    aTwo = aTwo->mParent;
+  }
+  return aOne;
 }
 
 ScrollContainerFrame* ActiveScrolledRoot::ScrollFrameOrNull() const {
@@ -344,6 +377,10 @@ ActiveScrolledRoot::~ActiveScrolledRoot() {
                                ? StickyActiveScrolledRootCache()
                                : ActiveScrolledRootCache());
   }
+}
+
+void ActiveScrolledRoot::AssertDepthInvariant() const {
+  MOZ_DIAGNOSTIC_ASSERT(mDepth == (mParent ? mParent->mDepth + 1 : 1));
 }
 
 static uint64_t AddAnimationsForWebRender(
@@ -590,6 +627,12 @@ void nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter::
       }
     }
   }
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  for (size_t i = mDescendantsStartIndex; i < descendantsEndIndex; i++) {
+    mBuilder->mActiveScrolledRoots[i]->AssertDepthInvariant();
+  }
+#endif
 
   mUsed = true;
 }
@@ -4552,24 +4595,27 @@ bool nsDisplayBoxShadowOuter::CreateWebRenderCommands(
     wr::LayoutRect deviceBoxRect = wr::ToLayoutRect(deviceBox);
     wr::LayoutRect deviceClipRect = wr::ToLayoutRect(clipRect);
 
-    LayoutDeviceSize zeroSize;
-    wr::BorderRadius borderRadius =
-        wr::ToBorderRadius(zeroSize, zeroSize, zeroSize, zeroSize);
-    if (hasBorderRadius) {
-      borderRadius = wr::ToBorderRadius(
-          LayoutDeviceSize::FromUnknownSize(borderRadii.TopLeft()),
-          LayoutDeviceSize::FromUnknownSize(borderRadii.TopRight()),
-          LayoutDeviceSize::FromUnknownSize(borderRadii.BottomLeft()),
-          LayoutDeviceSize::FromUnknownSize(borderRadii.BottomRight()));
-    }
+    nscoord spread = shadow.spread.ToAppUnits();
+    float spreadRadius = float(spread) / float(appUnitsPerDevPixel);
 
-    float spreadRadius =
-        float(shadow.spread.ToAppUnits()) / float(appUnitsPerDevPixel);
+    wr::BorderRadius borderRadius{};
+    wr::BorderRadius shadowRadius{};
+    if (hasBorderRadius) {
+      borderRadius = wr::ToBorderRadius(borderRadii);
+      if (spreadRadius) {
+        auto shadowRadii = borderRadii;
+        shadowRadii.AdjustOutwards(
+            Margin(spreadRadius, spreadRadius, spreadRadius, spreadRadius));
+        shadowRadius = wr::ToBorderRadius(shadowRadii);
+      } else {
+        shadowRadius = borderRadius;
+      }
+    }
 
     aBuilder.PushBoxShadow(deviceBoxRect, deviceClipRect, !BackfaceIsHidden(),
                            deviceBoxRect, wr::ToLayoutVector2D(shadowOffset),
                            wr::ToColorF(ToDeviceColor(shadowColor)), blurRadius,
-                           spreadRadius, borderRadius,
+                           spreadRadius, borderRadius, shadowRadius,
                            wr::BoxShadowClipMode::Outset);
   }
 
@@ -4652,7 +4698,8 @@ void nsDisplayBoxShadowInner::CreateInsetBoxShadowWebRenderCommands(
     nsRect shadowRect =
         nsCSSRendering::GetBoxShadowInnerPaddingRect(aFrame, aBorderRect);
     RectCornerRadii innerRadii;
-    nsCSSRendering::GetShadowInnerRadii(aFrame, aBorderRect, innerRadii);
+    bool hasBorderRadius =
+        nsCSSRendering::GetShadowInnerRadii(aFrame, aBorderRect, innerRadii);
 
     // Now translate everything to device pixels.
     LayoutDeviceRect deviceBoxRect =
@@ -4669,21 +4716,29 @@ void nsDisplayBoxShadowInner::CreateInsetBoxShadowWebRenderCommands(
     float blurRadius =
         float(shadow.base.blur.ToAppUnits()) / float(appUnitsPerDevPixel);
 
-    wr::BorderRadius borderRadius = wr::ToBorderRadius(
-        LayoutDeviceSize::FromUnknownSize(innerRadii.TopLeft()),
-        LayoutDeviceSize::FromUnknownSize(innerRadii.TopRight()),
-        LayoutDeviceSize::FromUnknownSize(innerRadii.BottomLeft()),
-        LayoutDeviceSize::FromUnknownSize(innerRadii.BottomRight()));
-    // NOTE: Any spread radius > 0 will render nothing. WR Bug.
-    float spreadRadius =
-        float(shadow.spread.ToAppUnits()) / float(appUnitsPerDevPixel);
+    nscoord spread = shadow.spread.ToAppUnits();
+    float spreadRadius = spread / float(appUnitsPerDevPixel);
+
+    wr::BorderRadius borderRadius{};
+    wr::BorderRadius shadowRadius{};
+    if (hasBorderRadius) {
+      borderRadius = wr::ToBorderRadius(innerRadii);
+      if (spreadRadius) {
+        RectCornerRadii shadowRadii = innerRadii;
+        shadowRadii.AdjustInwards(
+            Margin(spreadRadius, spreadRadius, spreadRadius, spreadRadius));
+        shadowRadius = wr::ToBorderRadius(shadowRadii);
+      } else {
+        shadowRadius = borderRadius;
+      }
+    }
 
     aBuilder.PushBoxShadow(
         wr::ToLayoutRect(deviceBoxRect), deviceClipRect,
         !aFrame->BackfaceIsHidden(), wr::ToLayoutRect(deviceBoxRect),
         wr::ToLayoutVector2D(shadowOffset),
         wr::ToColorF(ToDeviceColor(shadowColor)), blurRadius, spreadRadius,
-        borderRadius, wr::BoxShadowClipMode::Inset);
+        borderRadius, shadowRadius, wr::BoxShadowClipMode::Inset);
   }
 }
 
@@ -7789,12 +7844,16 @@ bool nsDisplayText::CreateWebRenderCommands(
   // cast a shadow within the visible area.
   addShadowSourceToVisible(f->StyleText()->mTextShadow.AsSpan());
 
-  // Similarly for shadows that may be cast by ::selection.
+  // Similarly for shadows that may be cast by selection pseudo-elements
+  // (::selection, ::target-text) and custom highlights (::highlight()).
   if (f->IsSelected()) {
     nsTextPaintStyle textPaint(f);
-    Span<const StyleSimpleShadow> shadows;
-    f->GetSelectionTextShadow(SelectionType::eNormal, textPaint, &shadows);
-    addShadowSourceToVisible(shadows);
+    UniquePtr<SelectionDetails> details = f->GetSelectionDetails();
+    for (const auto* sd = details.get(); sd; sd = sd->mNext.get()) {
+      Span<const StyleSimpleShadow> shadows = f->GetSelectionTextShadow(
+          sd->mSelectionType, textPaint, sd->mHighlightData.mHighlightName);
+      addShadowSourceToVisible(shadows);
+    }
   }
 
   // Inflate a little extra to allow for potential antialiasing "blur".
@@ -8735,7 +8794,7 @@ void nsDisplayFilters::PrintEffects(nsACString& aTo) {
   // filters.  If we have invalid references to SVG filters then we paint
   // nothing, but otherwise we will apply one or more filters.
   if (SVGObserverUtils::GetAndObserveFilters(firstFrame, nullptr) !=
-      SVGObserverUtils::eHasRefsSomeInvalid) {
+      SVGObserverUtils::ReferenceState::HasRefsSomeInvalid) {
     if (!first) {
       aTo += ", ";
     }

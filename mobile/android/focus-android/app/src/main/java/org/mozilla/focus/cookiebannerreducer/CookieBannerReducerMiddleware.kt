@@ -7,9 +7,7 @@ package org.mozilla.focus.cookiebannerreducer
 import android.content.Context
 import androidx.core.net.toUri
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.cookiehandling.CookieBannersStorage
@@ -26,7 +24,7 @@ import org.mozilla.focus.ext.settings
  * Middleware for cookie banner reduction.
  */
 class CookieBannerReducerMiddleware(
-    private val ioScope: CoroutineScope,
+    private val scope: CoroutineScope,
     private val cookieBannersStorage: CookieBannersStorage,
     private val appContext: Context,
     private val currentTab: SessionState,
@@ -62,7 +60,7 @@ class CookieBannerReducerMiddleware(
         action: CookieBannerReducerAction.ToggleCookieBannerException,
         store: Store<CookieBannerReducerState, CookieBannerReducerAction>,
     ) {
-        ioScope.launch {
+        scope.launch {
             if (action.isCookieBannerHandlingExceptionEnabled) {
                 cookieBannersStorage.removeException(currentTab.content.url, true)
                 CookieBanner.exceptionRemoved.record(NoExtras())
@@ -101,7 +99,7 @@ class CookieBannerReducerMiddleware(
                 CookieBannerReducerStatus.CookieBannerUnsupportedSiteRequestWasSubmitted,
             ),
         )
-        ioScope.launch { cookieBannersStorage.saveSiteDomain(action.siteToReport) }
+        scope.launch { cookieBannersStorage.saveSiteDomain(action.siteToReport) }
     }
 
     private fun initCookieBannerReducer(
@@ -115,26 +113,25 @@ class CookieBannerReducerMiddleware(
         )
 
         if (shouldShowCookieBannerItem) {
-            ioScope.launch {
+            scope.launch {
                 if (isSiteDomainReported(store)) {
                     return@launch
                 }
                 val hasException =
                     cookieBannersStorage.hasException(currentTab.content.url, true)
-                withContext(Dispatchers.Main) {
-                    if (hasException == null) {
-                        // An error occurred while querying the exception, let's hide the item.
-                        store.dispatch(
-                            CookieBannerReducerAction.UpdateCookieBannerReducerStatus(
-                                null,
-                            ),
-                        )
-                        return@withContext
-                    } else if (hasException) {
-                        showExceptionStatus(store, true)
-                    } else {
-                        showUnsupportedSiteIfNeeded(store)
-                    }
+
+                if (hasException == null) {
+                    // An error occurred while querying the exception, let's hide the item.
+                    store.dispatch(
+                        CookieBannerReducerAction.UpdateCookieBannerReducerStatus(
+                            null,
+                        ),
+                    )
+                    return@launch
+                } else if (hasException) {
+                    showExceptionStatus(store, true)
+                } else {
+                    showUnsupportedSiteIfNeeded(store)
                 }
             }
         }
@@ -214,14 +211,12 @@ class CookieBannerReducerMiddleware(
     private suspend fun clearSiteData() {
         val host = currentTab.content.url.toUri().host.orEmpty()
         val domain = appContext.components.publicSuffixList.getPublicSuffixPlusOne(host).await()
-        withContext(Dispatchers.Main) {
-            appContext.components.engine.clearData(
-                host = domain,
-                data = Engine.BrowsingData.select(
-                    Engine.BrowsingData.AUTH_SESSIONS,
-                    Engine.BrowsingData.ALL_SITE_DATA,
-                ),
-            )
-        }
+        appContext.components.engine.clearData(
+            host = domain,
+            data = Engine.BrowsingData.select(
+                Engine.BrowsingData.AUTH_SESSIONS,
+                Engine.BrowsingData.ALL_SITE_DATA,
+            ),
+        )
     }
 }

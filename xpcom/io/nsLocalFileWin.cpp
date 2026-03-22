@@ -2385,7 +2385,6 @@ nsLocalFile::Remove(bool aRecursive, uint32_t* aRemoveCount) {
   // pointing to a directory, only the mWorkingPath value is used and so
   // only the shortcut file will be deleted.
 
-  // Check we are correctly initialized.
   CHECK_mWorkingPath();
 
   nsresult rv = NS_OK;
@@ -2419,8 +2418,6 @@ nsLocalFile::Remove(bool aRecursive, uint32_t* aRemoveCount) {
         return rv;
       }
 
-      // XXX: We are ignoring the result of the removal here while
-      // nsLocalFileUnix does not. We should align the behavior. (bug 1779696)
       nsCOMPtr<nsIFile> file;
       while (NS_SUCCEEDED(dirEnum->GetNextFile(getter_AddRefs(file))) && file) {
         file->Remove(aRecursive, aRemoveCount);

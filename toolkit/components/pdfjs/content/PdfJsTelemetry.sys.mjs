@@ -61,6 +61,9 @@ export class PdfJsTelemetry {
       case "commentSidebar":
         this.onCommentSidebar(aData.data);
         break;
+      case "taggedPDF":
+        Glean.pdfjs.tagged.add(1);
+        break;
     }
   }
 

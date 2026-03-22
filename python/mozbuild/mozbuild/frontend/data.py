@@ -566,13 +566,14 @@ class BaseRustProgram(Linkable):
     __slots__ = (
         "name",
         "cargo_file",
+        "features",
         "location",
         "SUFFIX_VAR",
         "KIND",
         "TARGET_SUBST_VAR",
     )
 
-    def __init__(self, context, name, cargo_file):
+    def __init__(self, context, name, cargo_file, features):
         Linkable.__init__(self, context)
         self.name = name
         self.cargo_file = cargo_file
@@ -586,18 +587,21 @@ class BaseRustProgram(Linkable):
         cargo_dir = cargo_output_directory(context, self.TARGET_SUBST_VAR)
         exe_file = "%s%s" % (name, context.config.substs.get(self.SUFFIX_VAR, ""))
         self.location = mozpath.join(cargo_dir, exe_file)
+        self.features = features
 
 
 class RustProgram(BaseRustProgram):
     SUFFIX_VAR = "BIN_SUFFIX"
     KIND = "target"
     TARGET_SUBST_VAR = "RUST_TARGET"
+    FEATURES_VAR = "RUST_PROGRAM_FEATURES"
 
 
 class HostRustProgram(BaseRustProgram):
     SUFFIX_VAR = "HOST_BIN_SUFFIX"
     KIND = "host"
     TARGET_SUBST_VAR = "RUST_HOST_TARGET"
+    FEATURES_VAR = "HOST_RUST_PROGRAM_FEATURES"
 
 
 class RustTests(ContextDerived):

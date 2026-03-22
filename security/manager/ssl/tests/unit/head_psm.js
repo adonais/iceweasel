@@ -539,7 +539,9 @@ function run_test() {
 
 function add_tls_server_setup(serverBinName, certsPath, addDefaultRoot = true) {
   add_test(function () {
-    _setupTLSServerTest(serverBinName, certsPath, addDefaultRoot);
+    asyncStartTLSTestServer(serverBinName, certsPath, addDefaultRoot).then(
+      run_next_test
+    );
   });
 }
 
@@ -737,17 +739,10 @@ function _getBinaryUtil(binaryUtilName) {
   return utilBin;
 }
 
-// Do not call this directly; use add_tls_server_setup
-function _setupTLSServerTest(serverBinName, certsPath, addDefaultRoot) {
-  asyncStartTLSTestServer(serverBinName, certsPath, addDefaultRoot).then(
-    run_next_test
-  );
-}
-
 async function asyncStartTLSTestServer(
   serverBinName,
   certsPath,
-  addDefaultRoot
+  addDefaultRoot = true
 ) {
   let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
@@ -1117,15 +1112,19 @@ function asyncTestCertificateUsages(certdb, cert, expectedUsages) {
  *                  otherwise, so failure to automatically unload the test
  *                  module gets reported.
  */
-function loadPKCS11Module(libraryFile, moduleName, expectModuleUnloadToFail) {
+async function loadPKCS11Module(
+  libraryFile,
+  moduleName,
+  expectModuleUnloadToFail
+) {
   ok(libraryFile.exists(), "The PKCS11 module file should exist");
 
   let pkcs11ModuleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
     Ci.nsIPKCS11ModuleDB
   );
-  registerCleanupFunction(() => {
+  registerCleanupFunction(async () => {
     try {
-      pkcs11ModuleDB.deleteModule(moduleName);
+      await pkcs11ModuleDB.deleteModule(moduleName);
     } catch (e) {
       Assert.ok(
         expectModuleUnloadToFail,
@@ -1133,7 +1132,7 @@ function loadPKCS11Module(libraryFile, moduleName, expectModuleUnloadToFail) {
       );
     }
   });
-  pkcs11ModuleDB.addModule(moduleName, libraryFile.path, 0, 0);
+  await pkcs11ModuleDB.addModule(moduleName, libraryFile.path, 0, 0);
 }
 
 /**
@@ -1171,13 +1170,17 @@ function writeLinesAndClose(lines, outputStream) {
  *        A unique substring of name of the dynamic library file of the module
  *        that should not be loaded.
  */
-function checkPKCS11ModuleNotPresent(moduleName, libraryName = "undefined") {
+async function checkPKCS11ModuleNotPresent(
+  moduleName,
+  libraryName = "undefined"
+) {
   let moduleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
     Ci.nsIPKCS11ModuleDB
   );
-  let modules = moduleDB.listModules();
-  ok(
-    modules.hasMoreElements(),
+  let modules = await moduleDB.listModules();
+  Assert.greater(
+    modules.length,
+    1,
     "One or more modules should be present with test module not present"
   );
   for (let module of modules) {
@@ -1207,13 +1210,14 @@ function checkPKCS11ModuleNotPresent(moduleName, libraryName = "undefined") {
  * @returns {nsIPKCS11Module}
  *          The test module.
  */
-function checkPKCS11ModuleExists(moduleName, libraryName = "undefined") {
+async function checkPKCS11ModuleExists(moduleName, libraryName = "undefined") {
   let moduleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
     Ci.nsIPKCS11ModuleDB
   );
-  let modules = moduleDB.listModules();
-  ok(
-    modules.hasMoreElements(),
+  let modules = await moduleDB.listModules();
+  Assert.greater(
+    modules.length,
+    1,
     "One or more modules should be present with test module present"
   );
   let testModule = null;

@@ -33,6 +33,9 @@ static FeatureMap sSupportedFeatures[] = {
     {"camera", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"geolocation", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"microphone", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+    {"digital-credentials-create",
+     FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+    {"digital-credentials-get", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"display-capture", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"fullscreen", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"web-share", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
@@ -44,6 +47,7 @@ static FeatureMap sSupportedFeatures[] = {
     {"speaker-selection", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"storage-access", FeaturePolicyUtils::FeaturePolicyValue::eAll},
     {"screen-wake-lock", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
+    {"aria-notify", FeaturePolicyUtils::FeaturePolicyValue::eAll},
 };
 
 /*

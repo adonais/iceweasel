@@ -96,10 +96,7 @@ add_task(async function test_adaptive_with_search_term_and_switch_tab() {
 add_task(
   async function test_adaptive_nonadaptive_container_dedupe_switch_tab() {
     await SpecialPowers.pushPrefEnv({
-      set: [
-        ["privacy.userContext.enabled", true],
-        ["browser.urlbar.switchTabs.searchAllContainers", true],
-      ],
+      set: [["privacy.userContext.enabled", true]],
     });
     // Add a url both to history and input history, ensure that the Muxer will
     // properly dedupe the 2 entries, also with containers involved.

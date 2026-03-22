@@ -371,7 +371,7 @@ add_task(async function test_password_removed() {
   await Services.logins.addLoginAsync(login);
 
   await expectRegeneration(async () => {
-    Services.logins.removeLogin(login);
+    await Services.logins.removeLoginAsync(login);
   }, "Saw regeneration on password removed.");
 });
 
@@ -402,7 +402,7 @@ add_task(async function test_all_passwords_removed() {
   await Services.logins.addLoginAsync(login2);
 
   await expectRegeneration(async () => {
-    Services.logins.removeAllLogins();
+    await Services.logins.removeAllLoginsAsync();
   }, "Saw regeneration on all passwords removed.");
 });
 

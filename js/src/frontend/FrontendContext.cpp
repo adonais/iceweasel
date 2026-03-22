@@ -34,9 +34,7 @@ void FrontendErrors::clearErrors() {
 
 void FrontendErrors::clearWarnings() { warnings.clear(); }
 
-void FrontendAllocator::reportAllocationOverflow() {
-  fc_->onAllocationOverflow();
-}
+void FrontendAllocator::reportAllocOverflow() { fc_->onAllocationOverflow(); }
 
 void* FrontendAllocator::onOutOfMemory(AllocFunction allocFunc,
                                        arena_id_t arena, size_t nbytes,

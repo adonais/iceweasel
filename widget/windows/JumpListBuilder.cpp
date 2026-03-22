@@ -428,6 +428,31 @@ JumpListBuilder::PopulateJumpList(JS::Handle<JS::Value> aTaskDescriptions,
 }
 
 NS_IMETHODIMP
+JumpListBuilder::ClearRecentsList() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mIOThread);
+  return mIOThread->Dispatch(
+      NS_NewRunnableFunction(
+          "ClearRecentsList",
+          [appUserModelId = mAppUserModelId]() {
+            RefPtr<IApplicationDestinations> destinations;
+            if (SUCCEEDED(CoCreateInstance(CLSID_ApplicationDestinations,
+                                           nullptr, CLSCTX_INPROC_SERVER,
+                                           IID_IApplicationDestinations,
+                                           getter_AddRefs(destinations)))) {
+              if (FAILED(destinations->SetAppID(appUserModelId.get())) ||
+                  FAILED(destinations->RemoveAllDestinations())) {
+                NS_WARNING(
+                    "Failed to clear recents with IApplicationDestinations");
+              }
+            } else {
+              NS_WARNING("Failed to get IApplicationDestinations service");
+            }
+          }),
+      NS_DISPATCH_NORMAL);
+}
+
+NS_IMETHODIMP
 JumpListBuilder::ClearJumpList(JSContext* aCx, Promise** aPromise) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aPromise);

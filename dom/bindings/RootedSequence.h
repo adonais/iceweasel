@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_RootedSequence_h__
-#define mozilla_dom_RootedSequence_h__
+#ifndef mozilla_dom_RootedSequence_h_
+#define mozilla_dom_RootedSequence_h_
 
 #include "js/RootingAPI.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -26,4 +26,4 @@ class MOZ_RAII RootedAutoSequence final : public AutoSequence<T>,
 
 }  // namespace mozilla::dom::binding_detail
 
-#endif /* mozilla_dom_RootedSequence_h__ */
+#endif /* mozilla_dom_RootedSequence_h_ */

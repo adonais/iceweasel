@@ -485,10 +485,7 @@
         "platforms": ["linux", "android"],
         "content_scripts": {
           "all_frames": true,
-          "js": [
-            "lib/ua_helpers.js",
-            "bug1724868-news.yahoo.co.jp-ua-override.js"
-          ]
+          "js": ["bug1724868-news.yahoo.co.jp-ua-override.js"]
         }
       }
     ]
@@ -1098,6 +1095,7 @@
         "matches": [
           "*://cdk.fairgocasinowins.com/*",
           "*://cdk.fairgo-pokies.com/*",
+          "*://cdk.fgwinners.com/*",
           "*://cdk.play-fg.com/*"
         ]
       },
@@ -1817,7 +1815,7 @@
     "interventions": [
       {
         "platforms": ["desktop"],
-        "only_channels": ["nightly"],
+        "only_channels": ["nightly", "beta"],
         "ua_string": ["Chrome"]
       }
     ]
@@ -2158,10 +2156,7 @@
       {
         "platforms": ["all"],
         "content_scripts": {
-          "js": [
-            "lib/ua_helpers.js",
-            "bug1898929-app.sessionlinkpro.com-spoof-user-agent.js"
-          ]
+          "js": ["bug1898929-app.sessionlinkpro.com-spoof-user-agent.js"]
         }
       }
     ]
@@ -2657,23 +2652,6 @@
       }
     ]
   },
-  "1901780": {
-    "label": "vanbreda-health.be",
-    "bugs": {
-      "1901780": {
-        "issue": "frozen-tab",
-        "matches": ["*://www.vanbreda-health.be/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "content_scripts": {
-          "js": ["bug1901780-disable-legacy-mutation-events.js"]
-        }
-      }
-    ]
-  },
   "1902367": {
     "label": "seller.kuajingmaihuo.com",
     "bugs": {
@@ -2701,10 +2679,7 @@
       {
         "platforms": ["all"],
         "content_scripts": {
-          "js": [
-            "lib/ua_helpers.js",
-            "bug1902379-adl.edu.tw-hide-unsupported-popup.js"
-          ]
+          "js": ["bug1902379-adl.edu.tw-hide-unsupported-popup.js"]
         }
       }
     ]
@@ -2868,6 +2843,7 @@
       {
         "platforms": ["all"],
         "content_scripts": {
+          "isolated": true,
           "js": ["bug1902399-recochoku.jp-hide-unsupported-browser-warning.js"]
         }
       }
@@ -2964,10 +2940,7 @@
       {
         "platforms": ["all"],
         "content_scripts": {
-          "js": [
-            "lib/ua_helpers.js",
-            "bug1902407-www.sigadoc.mt.gov.br-user-agent-spoof.js"
-          ]
+          "js": ["bug1902407-www.sigadoc.mt.gov.br-user-agent-spoof.js"]
         }
       }
     ]
@@ -3355,7 +3328,6 @@
         "platforms": ["android"],
         "content_scripts": {
           "js": [
-            "lib/ua_helpers.js",
             "bug1904952-idserver.servizicie.interno.gov.it-spoof-as-chrome.js"
           ]
         }
@@ -3513,7 +3485,11 @@
     "bugs": {
       "1913720": {
         "issue": "firefox-blocked-completely",
-        "matches": ["https://h2breeze.com/*", "https://is-sets.com/*"]
+        "matches": [
+          "https://cotota.app/*",
+          "https://h2breeze.com/*",
+          "https://is-sets.com/*"
+        ]
       }
     },
     "interventions": [
@@ -3564,7 +3540,7 @@
     "interventions": [
       {
         "platforms": ["all"],
-        "ua_string": ["Chrome_with_FxQuantum"]
+        "ua_string": ["Chrome"]
       }
     ]
   },
@@ -3686,7 +3662,7 @@
     "bugs": {
       "1923656": {
         "issue": "page-fails-to-load",
-        "matches": ["*://*.ipmph.com/#/bookPreview*"]
+        "matches": ["*://*.ipmph.com/*"]
       }
     },
     "interventions": [
@@ -4111,23 +4087,6 @@
         "platforms": ["android"],
         "content_scripts": {
           "css": ["bug1943987-andisearch.com-fix-offscreen-elements.css"]
-        }
-      }
-    ]
-  },
-  "1943920": {
-    "label": "add.org",
-    "bugs": {
-      "1943920": {
-        "issue": "broken-layout",
-        "matches": ["*://add.org/adhd-facts*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["android"],
-        "content_scripts": {
-          "css": ["bug1943920-add.org-fix-overlapping-menu.css"]
         }
       }
     ]
@@ -4935,21 +4894,6 @@
       }
     ]
   },
-  "1967694": {
-    "label": "onlyfaucet.com",
-    "bugs": {
-      "1967694": {
-        "issue": "firefox-blocked-completely",
-        "matches": ["*://*.onlyfaucet.com/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
-      }
-    ]
-  },
   "1968187": {
     "label": "authface.liquid-auth.com",
     "bugs": {
@@ -5000,29 +4944,6 @@
       }
     ]
   },
-  "1969245": {
-    "label": "www.wills-vegan-store.com",
-    "bugs": {
-      "1969245": {
-        "issue": "broken-images",
-        "matches": ["*://www.wills-vegan-store.com/*"]
-      },
-      "1998101": {
-        "issue": "broken-images",
-        "matches": ["*://*.wills-vegan-shop.de/*", "*://*.vegan-store.eu/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["all"],
-        "content_scripts": {
-          "css": [
-            "bug1969245-www.wills-vegan-store.com-unhide-product-images.css"
-          ]
-        }
-      }
-    ]
-  },
   "1970810": {
     "label": "camper-van-week-end.fr",
     "bugs": {
@@ -5069,10 +4990,7 @@
       {
         "platforms": ["android"],
         "content_scripts": {
-          "js": [
-            "lib/ua_helpers.js",
-            "bug1975651-comic.k-manga.jp-ua-override.js"
-          ]
+          "js": ["bug1975651-comic.k-manga.jp-ua-override.js"]
         }
       }
     ]
@@ -5186,10 +5104,7 @@
         "platforms": ["android"],
         "content_scripts": {
           "all_frames": true,
-          "js": [
-            "lib/ua_helpers.js",
-            "bug1934908-www.cbsnews.com-ua-override.js"
-          ]
+          "js": ["bug1934908-www.cbsnews.com-ua-override.js"]
         }
       }
     ]
@@ -5458,6 +5373,25 @@
       }
     ]
   },
+  "1974686": {
+    "label": "hermes.admin.ch",
+    "bugs": {
+      "1974686": {
+        "issue": "broken-layout",
+        "matches": [
+          "*://www.hermes.admin.ch/de/projektmanagement/szenarien/it-entwicklung/szenariouebersicht.html*"
+        ]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "css": ["bug1974686-hermes_admin_ch.css"]
+        }
+      }
+    ]
+  },
   "1980129": {
     "label": "app.simplenote.com",
     "bugs": {
@@ -5630,8 +5564,24 @@
       {
         "platforms": ["desktop"],
         "content_scripts": {
+          "isolated": true,
           "js": ["1986438-gamma.app-hide-unsupported.js"]
         }
+      }
+    ]
+  },
+  "1988133": {
+    "label": "labs-aws.popcap.com/facebook/bj2",
+    "bugs": {
+      "1988133": {
+        "issue": "page-fails-to-load",
+        "matches": ["*://labs-aws.popcap.com/facebook/bj2/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["desktop"],
+        "ua_string": ["add_Chrome"]
       }
     ]
   },
@@ -5757,23 +5707,6 @@
         "platforms": ["desktop"],
         "content_scripts": {
           "css": ["1993454-www.wrangler.in-fix-product-image-hovering.css"]
-        }
-      }
-    ]
-  },
-  "1993517": {
-    "label": "onlinebank.resursbank.se",
-    "bugs": {
-      "1993517": {
-        "issue": "page-fails-to-load",
-        "matches": ["*://onlinebank.resursbank.se/*"]
-      }
-    },
-    "interventions": [
-      {
-        "platforms": ["desktop"],
-        "content_scripts": {
-          "js": ["bug1993517-onlinebank.resursbank.se-autoclose-bankid-tabs.js"]
         }
       }
     ]
@@ -6182,6 +6115,76 @@
         "platforms": ["all"],
         "content_scripts": {
           "css": ["bug2005520-portal.adtpulse.com-hide-unsupported.css"]
+        }
+      }
+    ]
+  },
+  "2006036": {
+    "label": "fbo.fubon.com",
+    "bugs": {
+      "2006036": {
+        "issue": "firefox-blocked-completely",
+        "matches": ["*://fbo.fubon.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "all_frames": true,
+          "js": ["bug2006036-fbo.fubon.com-unblock-firefox.js"]
+        },
+        "ua_string": ["Chrome_with_FxQuantum"]
+      }
+    ]
+  },
+  "2007641": {
+    "label": "papajohns.com",
+    "bugs": {
+      "2007641": {
+        "issue": "page-fails-to-load",
+        "matches": ["*://www.papajohns.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "js": ["bug2007641-www.papajohns.com-DateTimeFormat-CST-fix.js"]
+        }
+      }
+    ]
+  },
+  "2010794": {
+    "label": "ipn2.paymentus.com",
+    "bugs": {
+      "2005520": {
+        "issue": "page-fails-to-load",
+        "blocks": [
+          { "url": "*://ipn2.paymentus.com/rotp/vatx", "types": ["image"] }
+        ]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"]
+      }
+    ]
+  },
+  "2011862": {
+    "label": "copilot.zenwork.com",
+    "bugs": {
+      "2007641": {
+        "issue": "broken-interactive-elements",
+        "matches": ["*://copilot.zenwork.com/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "content_scripts": {
+          "all_frames": true,
+          "js": ["bug2011862-copilot.zenwork.com-fix-chatbot.js"]
         }
       }
     ]

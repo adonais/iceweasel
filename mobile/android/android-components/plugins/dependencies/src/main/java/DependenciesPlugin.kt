@@ -36,7 +36,7 @@ import javax.inject.Inject
 // FORCE REBUILD 2024-05-02
 
 interface BuildMetricsServiceParameters : BuildServiceParameters {
-    val topobjdir: Property<String>
+    val outputDir: Property<String>
     val fileSuffix: Property<String>
 }
 
@@ -99,12 +99,9 @@ abstract class BuildMetricsService @Inject constructor(
             "tasks" to taskRecords
         )
 
-        val topobjdir = parameters.topobjdir.get()
-        val outputDir = File(topobjdir, "gradle/build/metrics").apply { mkdirs() }
+        val outputDir = File(parameters.outputDir.get()).apply { mkdirs() }
         val fileSuffix = parameters.fileSuffix.get()
-
-        File(outputDir, "build-metrics-$fileSuffix.json")
-            .writeText(JsonBuilder(content).toPrettyString())
+        File(outputDir, "build-metrics-$fileSuffix.json").writeText(JsonBuilder(content).toPrettyString())
     }
 }
 
@@ -216,18 +213,12 @@ abstract class DependenciesPlugin : Plugin<Settings> {
             "buildMetricsService",
             BuildMetricsService::class.java
         ) {
-            @Suppress("UNCHECKED_CAST")
-            val mozconfig = rootGradle.extensions.extraProperties["mozconfig"] as Map<String, Any>
-            val topobjdir = mozconfig["topobjdir"] as String
-            // If the buildMetricsFileSuffix property is set, it overrides
-            // the buildInvocationScopeId as the file suffix
-            val fileSuffix = rootGradle.rootProject
-                .findProperty("buildMetricsFileSuffix")
-                ?.toString()
+            val outputDir = rootGradle.startParameter.projectProperties["buildMetricsOutputDir"]
+                ?: throw IllegalStateException("buildMetricsOutputDir property is required when buildMetrics is enabled")
+            val fileSuffix = rootGradle.startParameter.projectProperties["buildMetricsFileSuffix"]
                 ?: buildInvocationScopeId.id.toString()
 
-
-            parameters.topobjdir.set(topobjdir)
+            parameters.outputDir.set(outputDir)
             parameters.fileSuffix.set(fileSuffix)
         }
 
@@ -238,6 +229,7 @@ abstract class DependenciesPlugin : Plugin<Settings> {
 // Synchronized dependencies used by (some) modules
 @Suppress("Unused", "MaxLineLength")
 object ComponentsDependencies {
+    val mozilla_appservices_ads_client = "${ApplicationServicesConfig.groupId}:ads-client:${ApplicationServicesConfig.version}"
     val mozilla_appservices_fxaclient = "${ApplicationServicesConfig.groupId}:fxaclient:${ApplicationServicesConfig.version}"
     val mozilla_appservices_nimbus = "${ApplicationServicesConfig.groupId}:nimbus:${ApplicationServicesConfig.version}"
     val mozilla_appservices_autofill = "${ApplicationServicesConfig.groupId}:autofill:${ApplicationServicesConfig.version}"

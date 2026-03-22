@@ -67,4 +67,5 @@ internal sealed class DetailLoginAction : LoginsAction {
     data class GoToSiteClicked(val url: String) : DetailLoginAction()
     data class CopyUsernameClicked(val username: String) : DetailLoginAction()
     data class CopyPasswordClicked(val password: String) : DetailLoginAction()
+    data class PasswordVisibilityChanged(val isPasswordVisible: Boolean) : DetailLoginAction()
 }

@@ -14,7 +14,7 @@ namespace mozilla::dom {
 CSSUnsupportedValue::CSSUnsupportedValue(nsCOMPtr<nsISupports> aParent,
                                          const CSSPropertyId& aPropertyId,
                                          RefPtr<DeclarationBlock> aDeclarations)
-    : CSSStyleValue(std::move(aParent), ValueType::UnsupportedValue),
+    : CSSStyleValue(std::move(aParent), StyleValueType::UnsupportedValue),
       mPropertyId(aPropertyId),
       mDeclarations(std::move(aDeclarations)) {}
 
@@ -33,13 +33,29 @@ void CSSUnsupportedValue::ToCssTextWithProperty(
   aDest.Append(value);
 }
 
+const CSSUnsupportedValue& CSSStyleValue::GetAsCSSUnsupportedValue() const {
+  MOZ_DIAGNOSTIC_ASSERT(mStyleValueType == StyleValueType::UnsupportedValue);
+
+  return *static_cast<const CSSUnsupportedValue*>(this);
+}
+
 CSSUnsupportedValue& CSSStyleValue::GetAsCSSUnsupportedValue() {
-  MOZ_DIAGNOSTIC_ASSERT(mValueType == ValueType::UnsupportedValue);
+  MOZ_DIAGNOSTIC_ASSERT(mStyleValueType == StyleValueType::UnsupportedValue);
 
   return *static_cast<CSSUnsupportedValue*>(this);
 }
 
-const CSSPropertyId* CSSStyleValue::GetPropertyId() {
+const CSSPropertyId* CSSStyleValue::GetPropertyId() const {
+  if (!IsCSSUnsupportedValue()) {
+    return nullptr;
+  }
+
+  const CSSUnsupportedValue& unsupportedValue = GetAsCSSUnsupportedValue();
+
+  return &unsupportedValue.GetPropertyId();
+}
+
+CSSPropertyId* CSSStyleValue::GetPropertyId() {
   if (!IsCSSUnsupportedValue()) {
     return nullptr;
   }

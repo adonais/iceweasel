@@ -13,6 +13,10 @@ ChromeUtils.defineLazyGetter(lazy, "console", () => {
   });
 });
 
+ChromeUtils.defineLazyGetter(lazy, "mlUtils", () => {
+  return Cc["@mozilla.org/ml-utils;1"].getService(Ci.nsIMLUtils);
+});
+
 ChromeUtils.defineESModuleGetters(lazy, {
   isAddonEngineId: "chrome://global/content/ml/Utils.sys.mjs",
 });
@@ -348,41 +352,72 @@ export class MLTelemetry {
   /**
    * Records an engine run event.
    *
+   * See firefox.ai.runtime.engine_run in toolkit/components/ml/metrics.yaml for
+   * documentation on each of the parameters here.
+   *
    * @param {object} options - Engine run options.
-   * @param {string} [options.flow_id] - The flow ID. Uses instance flowId if not provided.
-   * @param {number | null} options.cpuMilliseconds - The combined milliseconds of every cpu core that was running.
-   * @param {number} options.wallMilliseconds - The amount of wall time the run request took.
-   * @param {number} options.cores - The number of cores on the machine.
-   * @param {number | null} options.cpuUtilization - The percentage of the user's CPU used (0-100).
-   * @param {number | null} options.memoryBytes - The number of RSS bytes for the inference process.
-   * @param {string} [options.feature_id] - The feature identifier. Uses instance featureId if not provided.
-   * @param {string} options.engineId - The engine identifier.
-   * @param {string | null} options.modelId - The model identifier.
-   * @param {string | null} options.backend - The backend that is being used.
+   * @param {string} options.engineId
+   * @param {string | null} options.modelId
+   * @param {string | null} options.backend
+   * @param {number} options.beforeRun
+   * @param {{cpuTime: number | null, memory: number | null}} [options.resourcesBefore]
+   * @param {{cpuTime: number | null, memory: number | null}} [options.resourcesAfter]
+   * @param {number | null} [options.tokenCount]
+   * @param {number | null} [options.characterCount]
+   * @param {string} [options.flow_id]
+   * @param {string} [options.feature_id]
    */
   recordEngineRun({
-    cpuMilliseconds,
-    wallMilliseconds,
-    cores,
-    cpuUtilization,
-    memoryBytes,
     engineId,
     modelId,
     backend,
+    beforeRun,
+    resourcesBefore,
+    resourcesAfter,
+    tokenCount,
+    characterCount,
     flow_id = this.#flowId,
     feature_id = this.#featureId,
   }) {
+    let cpuMilliseconds = null;
+    let cpuUtilization = null;
+    const wallMilliseconds = ChromeUtils.now() - beforeRun;
+    const cores = lazy.mlUtils.getOptimalCPUConcurrency();
+    const memoryBytes = resourcesAfter?.memory ?? null;
+
+    if (resourcesAfter?.cpuTime != null && resourcesBefore?.cpuTime != null) {
+      cpuMilliseconds = resourcesAfter.cpuTime - resourcesBefore.cpuTime;
+      cpuUtilization = (cpuMilliseconds / wallMilliseconds / cores) * 100;
+    }
+
+    /**
+     * Round a potentially null number, preserving null for telemetry results.
+     *
+     * @param {number | null} number
+     */
+    function round(number) {
+      if (number == null) {
+        return null;
+      }
+      return Math.round(number);
+    }
+
     const payload = {
       flow_id,
-      cpu_milliseconds: Math.round(cpuMilliseconds),
-      wall_milliseconds: Math.round(wallMilliseconds),
-      cores: Math.round(cores),
-      cpu_utilization: Math.round(cpuUtilization),
-      memory_bytes: Math.round(memoryBytes),
+      cpu_milliseconds: round(cpuMilliseconds),
+      wall_milliseconds: round(wallMilliseconds),
+      cores: round(cores),
+      cpu_utilization: round(cpuUtilization),
+      memory_bytes: round(memoryBytes),
       feature_id,
       engine_id: engineId,
       model_id: modelId,
       backend,
+      // Specifically use the "||" operator since Glean expects "null" rather than
+      // "undefined". When the counts are 0, this can mean nothing was generated for
+      // the counts. We should count these as null.
+      token_count: tokenCount || null,
+      character_count: characterCount || null,
     };
 
     Glean.firefoxAiRuntime.engineRun.record(payload);

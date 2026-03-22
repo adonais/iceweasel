@@ -12,11 +12,13 @@
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSPerspectiveBinding.h"
 #include "nsReadableUtils.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 
 CSSPerspective::CSSPerspective(nsCOMPtr<nsISupports> aParent)
-    : CSSTransformComponent(std::move(aParent)) {}
+    : CSSTransformComponent(std::move(aParent),
+                            TransformComponentType::Perspective) {}
 
 JSObject* CSSPerspective::WrapObject(JSContext* aCx,
                                      JS::Handle<JSObject*> aGivenProto) {
@@ -42,5 +44,26 @@ void CSSPerspective::SetLength(const CSSPerspectiveValue& aArg,
 }
 
 // end of CSSPerspective Web IDL implementation
+
+void CSSPerspective::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                           nsACString& aDest) const {
+  // XXX: This is not yet fully implemented.
+
+  aDest.Append("perspective()"_ns);
+}
+
+const CSSPerspective& CSSTransformComponent::GetAsCSSPerspective() const {
+  MOZ_DIAGNOSTIC_ASSERT(mTransformComponentType ==
+                        TransformComponentType::Perspective);
+
+  return *static_cast<const CSSPerspective*>(this);
+}
+
+CSSPerspective& CSSTransformComponent::GetAsCSSPerspective() {
+  MOZ_DIAGNOSTIC_ASSERT(mTransformComponentType ==
+                        TransformComponentType::Perspective);
+
+  return *static_cast<CSSPerspective*>(this);
+}
 
 }  // namespace mozilla::dom

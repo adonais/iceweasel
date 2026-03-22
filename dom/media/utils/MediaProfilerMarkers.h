@@ -2,6 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#ifndef DOM_MEDIA_UTILS_MEDIAPROFILERMARKERS_H_
+#define DOM_MEDIA_UTILS_MEDIAPROFILERMARKERS_H_
+
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
 #include "mozilla/Flow.h"
 #include "mozilla/ProfilerMarkers.h"
@@ -23,8 +26,12 @@ struct TimeUpdateMarker : public BaseMarkerType<TimeUpdateMarker> {
        MS::Format::Milliseconds},
       {"paintedFrames", MS::InputType::Uint32, "Painted Frames",
        MS::Format::Integer},  // optional, zero for audio
-      {"element", MS::InputType::Uint64, "Element", MS::Format::Flow,
-       MS::PayloadFlags::Searchable},
+      {
+          "element",
+          MS::InputType::Uint64,
+          "Element",
+          MS::Format::Flow,
+      },
   };
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
@@ -54,8 +61,12 @@ struct BufferedUpdateMarker : public BaseMarkerType<BufferedUpdateMarker> {
        MS::Format::Milliseconds},
       {"mediaDurationMs", MS::InputType::Uint64, "Media Duration (Ms)",
        MS::Format::Milliseconds},
-      {"element", MS::InputType::Uint64, "Element", MS::Format::Flow,
-       MS::PayloadFlags::Searchable},
+      {
+          "element",
+          MS::InputType::Uint64,
+          "Element",
+          MS::Format::Flow,
+      },
   };
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
@@ -80,8 +91,12 @@ struct VideoResizeMarker : public BaseMarkerType<VideoResizeMarker> {
   static constexpr MS::PayloadField PayloadFields[] = {
       {"width", MS::InputType::Uint64, "Width", MS::Format::Integer},
       {"height", MS::InputType::Uint64, "Height", MS::Format::Integer},
-      {"element", MS::InputType::Uint64, "Element", MS::Format::Flow,
-       MS::PayloadFlags::Searchable},
+      {
+          "element",
+          MS::InputType::Uint64,
+          "Element",
+          MS::Format::Flow,
+      },
   };
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
@@ -108,8 +123,12 @@ struct MetadataMarker : public BaseMarkerType<MetadataMarker> {
        MS::Format::String},
       {"videoMimeType", MS::InputType::CString, "Video Mimetype",
        MS::Format::String},
-      {"element", MS::InputType::Uint64, "Element", MS::Format::Flow,
-       MS::PayloadFlags::Searchable},
+      {
+          "element",
+          MS::InputType::Uint64,
+          "Element",
+          MS::Format::Flow,
+      },
   };
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
@@ -135,8 +154,12 @@ struct CDMResolvedMarker : public BaseMarkerType<CDMResolvedMarker> {
       {"keySystem", MS::InputType::String, "Key System", MS::Format::String},
       {"configuration", MS::InputType::CString, "Configuration",
        MS::Format::String},
-      {"element", MS::InputType::Uint64, "Element", MS::Format::Flow,
-       MS::PayloadFlags::Searchable},
+      {
+          "element",
+          MS::InputType::Uint64,
+          "Element",
+          MS::Format::Flow,
+      },
   };
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
@@ -159,8 +182,12 @@ struct LoadErrorMarker : public BaseMarkerType<LoadErrorMarker> {
   static constexpr MS::PayloadField PayloadFields[] = {
       {"errorMessage", MS::InputType::CString, "Error Message",
        MS::Format::String},
-      {"element", MS::InputType::Uint64, "Element", MS::Format::Flow,
-       MS::PayloadFlags::Searchable},
+      {
+          "element",
+          MS::InputType::Uint64,
+          "Element",
+          MS::Format::Flow,
+      },
   };
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
@@ -181,8 +208,12 @@ struct ErrorMarker : public BaseMarkerType<ErrorMarker> {
   static constexpr MS::PayloadField PayloadFields[] = {
       {"errorMessage", MS::InputType::String, "Error Message",
        MS::Format::String},
-      {"element", MS::InputType::Uint64, "Element", MS::Format::Flow,
-       MS::PayloadFlags::Searchable},
+      {
+          "element",
+          MS::InputType::Uint64,
+          "Element",
+          MS::Format::Flow,
+      },
   };
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
@@ -206,8 +237,12 @@ struct LoadSourceMarker : public BaseMarkerType<LoadSourceMarker> {
       {"contentType", MS::InputType::String, "Content Type",
        MS::Format::String},
       {"media", MS::InputType::String, "Media", MS::Format::String},
-      {"element", MS::InputType::Uint64, "Element", MS::Format::Flow,
-       MS::PayloadFlags::Searchable},
+      {
+          "element",
+          MS::InputType::Uint64,
+          "Element",
+          MS::Format::Flow,
+      },
   };
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
@@ -232,8 +267,12 @@ struct RenderVideoMarker : public BaseMarkerType<RenderVideoMarker> {
   static constexpr MS::PayloadField PayloadFields[] = {
       {"paintedFrames", MS::InputType::Uint64, "Painted Frames",
        MS::Format::Integer},
-      {"element", MS::InputType::Uint64, "Element", MS::Format::Flow,
-       MS::PayloadFlags::Searchable},
+      {
+          "element",
+          MS::InputType::Uint64,
+          "Element",
+          MS::Format::Flow,
+      },
   };
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
@@ -246,3 +285,5 @@ struct RenderVideoMarker : public BaseMarkerType<RenderVideoMarker> {
 };
 
 }  // namespace mozilla
+
+#endif  // DOM_MEDIA_UTILS_MEDIAPROFILERMARKERS_H_

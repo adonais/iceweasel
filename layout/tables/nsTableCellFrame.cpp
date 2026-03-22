@@ -487,20 +487,24 @@ bool nsTableCellFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
 // Per CSS 2.1, we map 'sub', 'super', 'text-top', 'text-bottom',
 // length, percentage, and calc() values to 'baseline'.
 TableCellAlignment nsTableCellFrame::GetTableCellAlignment() const {
-  const StyleVerticalAlign& verticalAlign = StyleDisplay()->mVerticalAlign;
-  if (verticalAlign.IsKeyword()) {
-    auto value = verticalAlign.AsKeyword();
+  const auto& baselineShift = StyleDisplay()->mBaselineShift;
+  if (baselineShift.IsKeyword()) {
+    auto value = baselineShift.AsKeyword();
     switch (value) {
-      case StyleVerticalAlignKeyword::Top:
+      case StyleBaselineShiftKeyword::Top:
         return TableCellAlignment::Top;
-      case StyleVerticalAlignKeyword::Middle:
-        return TableCellAlignment::Middle;
-      case StyleVerticalAlignKeyword::Bottom:
+      case StyleBaselineShiftKeyword::Bottom:
         return TableCellAlignment::Bottom;
       default:
         break;
     }
   }
+
+  const auto& alignmentBaseline = StyleDisplay()->mAlignmentBaseline;
+  if (alignmentBaseline == StyleAlignmentBaseline::Middle) {
+    return TableCellAlignment::Middle;
+  }
+
   return TableCellAlignment::Baseline;
 }
 

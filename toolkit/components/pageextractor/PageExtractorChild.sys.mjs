@@ -5,7 +5,7 @@
 // @ts-check
 
 /**
- * @import { GetTextOptions } from './PageExtractor.d.ts'
+ * @import { GetTextOptions, GetDOMOptions, CanvasSnapshot, ExtractionResult } from './PageExtractor.d.ts'
  * @import { PageExtractorParent } from './PageExtractorParent.sys.mjs'
  */
 
@@ -32,6 +32,9 @@ const lazy = XPCOMUtils.declareLazy({
   isProbablyReaderable: "resource://gre/modules/Readerable.sys.mjs",
 });
 
+/** @type {ExtractionResult} */
+const EMPTY_EXTRACTION_RESULT = { text: "", links: [], canvasSnapshots: [] };
+
 /**
  * Extract a variety of content from pages for use in a smart window.
  */
@@ -49,12 +52,18 @@ export class PageExtractorChild extends JSWindowActorChild {
     switch (name) {
       case "PageExtractorParent:GetReaderModeContent":
         if (this.isAboutReader()) {
-          return this.getAboutReaderContent();
+          const text = this.getAboutReaderContent();
+          return { text: text ?? "", links: [], canvasSnapshots: [] };
         }
         return this.getReaderModeContent(data);
       case "PageExtractorParent:GetText":
         if (this.isAboutReader()) {
-          return this.getAboutReaderContent();
+          const text = this.getAboutReaderContent();
+          return {
+            text: text ?? "",
+            links: [],
+            canvasSnapshots: [],
+          };
         }
         return this.getText(data);
       case "PageExtractorParent:WaitForPageReady":
@@ -89,23 +98,23 @@ export class PageExtractorChild extends JSWindowActorChild {
    * @see PageExtractorParent#getReaderModeContent for docs
    *
    * @param {boolean} force
-   * @returns {Promise<string | null>} text from the page
+   * @returns {Promise<ExtractionResult>}
    */
   async getReaderModeContent(force) {
     const window = this.browsingContext?.window;
     const document = window?.document;
 
     if (!force && (!document || !lazy.isProbablyReaderable(document))) {
-      return null;
+      return EMPTY_EXTRACTION_RESULT;
     }
 
     if (!document) {
-      return "";
+      return EMPTY_EXTRACTION_RESULT;
     }
 
     const article = await lazy.ReaderMode.parseDocument(document);
     if (!article) {
-      return "";
+      return EMPTY_EXTRACTION_RESULT;
     }
 
     let text = (article?.textContent || "")
@@ -119,29 +128,37 @@ export class PageExtractorChild extends JSWindowActorChild {
     lazy.console.log("GetReaderModeContent", { force });
     lazy.console.debug(text);
 
-    return text;
+    return { text, links: [], canvasSnapshots: [] };
   }
 
   /**
    * @see PageExtractorParent#getText for docs
    *
    * @param {GetTextOptions} options
-   * @returns {string}
+   * @returns {Promise<ExtractionResult>}
    */
-  getText(options) {
+  async getText(options = {}) {
     const window = this.browsingContext?.window;
     const document = window?.document;
 
     if (!document) {
-      return "";
+      return EMPTY_EXTRACTION_RESULT;
     }
 
-    const text = lazy.extractTextFromDOM(document, options);
+    const { text, links, canvases } = lazy.extractTextFromDOM(
+      document,
+      options
+    );
+
+    let canvasSnapshots = [];
+    if (options.includeCanvasSnapshots && canvases.length) {
+      canvasSnapshots = await this.#captureCanvases(canvases, options);
+    }
 
     lazy.console.log("GetText", options);
-    lazy.console.debug(text);
+    lazy.console.debug({ text, links, canvasSnapshots });
 
-    return text;
+    return { text, links, canvasSnapshots };
   }
 
   /**
@@ -186,5 +203,100 @@ export class PageExtractorChild extends JSWindowActorChild {
     // `window.location.href` and should be a cheaper check here.
     let url = this.manager.contentWindow.document.documentURIObject;
     return url.schemeIs("about") && url.pathQueryRef.startsWith("reader?");
+  }
+
+  /**
+   * Capture canvas elements as WebP blobs. WebP is chosen for its superior
+   * compression-to-quality ratio compared to PNG/JPEG, reducing the data sent
+   * to language models while preserving visual fidelity.
+   *
+   * @param {HTMLCanvasElement[]} canvases
+   * @param {GetTextOptions} options
+   * @returns {Promise<CanvasSnapshot[]>}
+   */
+  async #captureCanvases(canvases, options) {
+    const maxDimension = options.maxCanvasDimension ?? 1024;
+    const quality = options.canvasQuality ?? 0.8;
+    const window = this.browsingContext?.window;
+
+    if (!window) {
+      return [];
+    }
+
+    const results = await Promise.all(
+      canvases.map(c => this.#captureCanvas(c, maxDimension, quality, window))
+    );
+    return results.filter(Boolean);
+  }
+
+  /**
+   * Capture a canvas element as a WebP blob. Uses OffscreenCanvas to avoid
+   * blocking the main thread during scaling and blob conversion. ImageBitmap
+   * is used as the source to efficiently transfer pixel data from the
+   * original canvas.
+   *
+   * @param {HTMLCanvasElement} canvas
+   * @param {number} maxDimension
+   * @param {number} quality
+   * @param {Window} window
+   * @returns {Promise<CanvasSnapshot | null>}
+   */
+  async #captureCanvas(canvas, maxDimension, quality, window) {
+    const { width: originalWidth, height: originalHeight } = canvas;
+
+    try {
+      const bitmap = await window.createImageBitmap(canvas);
+
+      const scale = Math.min(
+        1,
+        maxDimension / Math.max(originalWidth, originalHeight)
+      );
+      const targetWidth = Math.floor(originalWidth * scale);
+      const targetHeight = Math.floor(originalHeight * scale);
+
+      const offscreen = new window.OffscreenCanvas(targetWidth, targetHeight);
+      // Alpha is enabled to preserve transparency in canvases that use it.
+      // willReadFrequently is false because we only draw and convert to blob,
+      // never reading pixels back, so hardware acceleration is preferred.
+      const ctx = offscreen.getContext("2d", {
+        alpha: true,
+        willReadFrequently: false,
+      });
+
+      ctx.drawImage(bitmap, 0, 0, targetWidth, targetHeight);
+      bitmap.close();
+
+      let blob;
+      try {
+        blob = await offscreen.convertToBlob({
+          type: "image/webp",
+          quality,
+        });
+      } catch (securityError) {
+        // Tainted canvas fall back to original canvas toBlob which works
+        blob = await new Promise((resolve, reject) => {
+          canvas.toBlob(
+            b => (b ? resolve(b) : reject(new Error("toBlob failed"))),
+            "image/webp",
+            quality
+          );
+        });
+
+        return {
+          blob,
+          width: originalWidth,
+          height: originalHeight,
+        };
+      }
+
+      return {
+        blob,
+        width: targetWidth,
+        height: targetHeight,
+      };
+    } catch (error) {
+      lazy.console.debug?.("Canvas capture failed:", error);
+      return null;
+    }
   }
 }

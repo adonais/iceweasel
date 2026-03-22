@@ -9,7 +9,7 @@ import logging
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from taskgraph.util.taskcluster import get_artifact_prefix
 from voluptuous import Optional, Required
 
@@ -27,7 +27,7 @@ from gecko_taskgraph.util.scriptworker import (
 logger = logging.getLogger(__name__)
 
 
-beetmover_description_schema = Schema({
+beetmover_description_schema = LegacySchema({
     # unique label to describe this beetmover task, defaults to {dep.label}-beetmover
     Optional("label"): str,
     Required("partner-path"): str,

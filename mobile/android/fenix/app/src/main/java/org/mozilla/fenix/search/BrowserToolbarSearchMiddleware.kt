@@ -569,6 +569,7 @@ class BrowserToolbarSearchMiddleware(
                                 isQueryPrefilled = true,
                             ),
                         )
+                        store.dispatch(CommitUrl(voiceInputResult))
                         appStore.dispatch(VoiceInputRequestCleared)
                     }
                 }

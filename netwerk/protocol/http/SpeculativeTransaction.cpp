@@ -9,6 +9,7 @@
 #include "SpeculativeTransaction.h"
 #include "HTTPSRecordResolver.h"
 #include "nsICachingChannel.h"
+#include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
 
 namespace mozilla {

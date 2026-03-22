@@ -20,7 +20,7 @@ BroadcastChannelChild::BroadcastChannelChild()
 BroadcastChannelChild::~BroadcastChannelChild() { MOZ_ASSERT(!mBC); }
 
 mozilla::ipc::IPCResult BroadcastChannelChild::RecvNotify(
-    const MessageData& aData) {
+    NotNull<SharedMessageBody*> aData) {
   if (!mBC) {
     // The object is going to be deleted soon. No notify is required.
     return IPC_OK();

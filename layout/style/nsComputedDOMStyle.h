@@ -6,8 +6,8 @@
 
 /* DOM object returned from element.getComputedStyle() */
 
-#ifndef nsComputedDOMStyle_h__
-#define nsComputedDOMStyle_h__
+#ifndef nsComputedDOMStyle_h_
+#define nsComputedDOMStyle_h_
 
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/PseudoStyleType.h"
@@ -406,4 +406,4 @@ inline AnchorPosResolutionParams AnchorPosResolutionParams::From(
           aComputedDOMStyle->StyleDisplay()->mPosition, nullptr, overrides};
 }
 
-#endif /* nsComputedDOMStyle_h__ */
+#endif /* nsComputedDOMStyle_h_ */

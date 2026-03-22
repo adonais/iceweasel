@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Ne hagyjon nyomot ezen az eszközön</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">A %1$s törli a sütiket, előzményeket és oldaladatokat, amikor bezárja az összes privát lapot. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -325,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Oldal fordítása</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Oldal összegzése</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Új</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Hibás oldal bejelentése…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -377,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Az oldal lefordítva %1$s nyelvről %2$s nyelvre.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Rázza meg az eszközét, hogy másodpercek alatt összefoglalja ezt az oldalt. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -927,8 +924,6 @@
   <string name="preferences_search_browsing_history">Böngészési előzmények keresése</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Könyvjelzők keresése</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Indítóikonok megjelenítése</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Szinkronizált lapok keresése</string>
   <!-- Preference for account settings -->
@@ -949,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Javaslatok a következőtől: %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Kapjon a kereséséhez kapcsolódó javaslatokat a webről</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Javaslatok lekérése a Mozillától gépelés közben</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Megosztási hivatkozás</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -975,7 +972,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">Nincs jogosultsága a mappa használatára. Próbáljon meg egy másikat választani.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Nincs jogosultsága a mappa használatára. Próbáljon meg egy másikat választani.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Letöltések kezelése másik alkalmazással</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1039,8 +1036,10 @@
   <!--
     Customize Home
 
-    Header text for jumping back into the recent tab in customize the home screen
+    Title for the customize home screen section with privacy report.
   -->
+  <string name="customize_toggle_privacy_report">Adatvédelmi jelentés</string>
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Ugrás vissza</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Könyvjelzők</string>
@@ -1599,6 +1598,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Megosztás</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Hozzáadás gyűjteményhez</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Hozzáadás csoporthoz</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Kijelölt lapok megosztása</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1639,6 +1640,27 @@
   <string name="pwa_site_controls_title_private">%1$s (privát mód)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Lapkeresés megnyitása</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Lapcsoport létrehozása</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Csoport szerkesztése</string>
+  <string name="create_tab_group_save_button">Mentés</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Lapcsoport szerkesztésének bezárása</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Csoport</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">%d csoport</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Név</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Név</string>
   <!--
     History
 
@@ -1754,11 +1776,26 @@
   <string name="download_rename_dialog_label">Név</string>
   <string name="download_rename_dialog_confirm_button">Mentés</string>
   <string name="download_rename_dialog_cancel_button">Mégse</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Már létezik „%s” nevű fájl ezen a helyen</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">A fájlnevekben nem lehet „/”</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Nem nevezhető át a fájl</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Ez a fájl rendszer- vagy tárhelykorlátozások miatt nem nevezhető át.</string>
   <string name="download_rename_error_dismiss_button">Rendben</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Erre módosítja a fájl típusát: %s?</string>
+  <string name="change_file_extension_description">Ez egy másik alkalmazásban nyithatja meg a fájlt, és kockázatos lehet az eszközére.</string>
+  <string name="change_file_extension_cancel_button">Mégse</string>
+  <string name="change_file_extension_confirm_button">Igen, módosítás</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Folyamatban</string>
   <!--
@@ -1958,7 +1995,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Szerkesztés</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Másolás</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Másolás</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Megosztás</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2014,11 +2051,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s törölve</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">VISSZAVONÁS</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">VISSZAVONÁS</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">A(z) „%s” törölve</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">A(z) „%s” törölve</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">Elemek törölve: %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Elemek törölve: %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Navigálás visszafelé</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2288,23 +2325,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">A Firefox alapértelmezett böngészővé tétele</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Próbálja ki a privát böngészést</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Próbálja ki a privát böngészést</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Böngésszen mentett sütik vagy előzmények nélkül a %1$sban</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Böngésszen mentett sütik vagy előzmények nélkül a %1$sban</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Böngésszen nyom nélkül</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Böngésszen nyom nélkül</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">A %1$s privát böngészése nem menti el az adatait.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">A %1$s privát böngészése nem menti el az adatait.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Kezdje el az első keresést</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Kezdje el az első keresést</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Keressen valamit a közelben. Vagy fedezzen fel valami szórakoztatót.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Keressen valamit a közelben. Vagy fedezzen fel valami szórakoztatót.</string>
   <!--
     Survey
 
@@ -2480,6 +2517,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">A %s megvédi a leggyakoribb nyomkövetőktől, amelyek követik az online tevékenységét.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">További tudnivalók</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d követő blokkolva</item>
+    <item quantity="other">%d követő blokkolva</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Védve van</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Normál (alapértelmezett)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2876,6 +2924,10 @@
   <string name="preferences_email_masks_suggest_learn_more">További tudnivalók</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">E-mail-maszkok kezelése</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Felhasználta az 5 ingyenes e-mail-maszkját, ezért kiválasztottunk egyet, amelyet újra felhasználhat.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Az e-mail-maszkok jelenleg nem érhetőek el. Próbálja újra néhány perc múlva.</string>
   <!--
     Autofill
 
@@ -3646,6 +3698,13 @@
   -->
   <string name="connection_security_panel_verified_by">Ellenőrizte: %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Tulajdonos: %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Az (EU) 2024/1183 rendeleteben meghatározottak szerint.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3695,6 +3754,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Hozzáadás a privát lapokhoz</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -3733,6 +3794,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Nem használok keresőt a Firefoxban</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Nem használom a szinkronizálást</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Lassú vagy hibás</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">A funkciók nehezen találhatók vagy hiányoznak</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Zavaros vagy nehezen használható</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Rendben van, de nem jobb, mint a többi böngésző</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Továbbra is a Firefoxot tervezem használni</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Segítsen jobbá tenni a nyomtatást a Firefoxban. Egy pillanat az egész.</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3747,6 +3818,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Mennyire elégedett a keresési élményével a Firefoxban?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Mennyire elégedett a szinkronizálási élményével a Firefoxban?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Segítsen a Firefox fejlesztésében. Melyik jellemzi legjobban az eddigi tapasztalatait?</string>
   <!--
     Accessibility
 
@@ -4045,8 +4118,6 @@
   <string name="content_description_settings_search_navigate_back">Navigálás visszafelé</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Nincsenek legutóbbi keresések</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Hiba történt</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Összes törlése</string>
   <!-- Section header for recent search results -->

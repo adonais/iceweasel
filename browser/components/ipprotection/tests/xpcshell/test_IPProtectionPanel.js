@@ -20,9 +20,18 @@ class FakeIPProtectionPanelElement {
       isProtectionEnabled: false,
     };
     this.isConnected = false;
+    this.ownerDocument = {
+      removeEventListener() {
+        /* NOOP */
+      },
+    };
   }
 
   requestUpdate() {
+    /* NOOP */
+  }
+
+  remove() {
     /* NOOP */
   }
 
@@ -137,11 +146,7 @@ add_task(async function test_IPProtectionPanel_signedIn() {
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: null,
-    entitlement: {
-      subscribed: true,
-      uid: 42,
-      created_at: "2023-01-01T12:00:00.000Z",
-    },
+    entitlement: createTestEntitlement({ subscribed: true }),
   });
 
   let ipProtectionPanel = new IPProtectionPanel();
@@ -174,7 +179,7 @@ add_task(async function test_IPProtectionPanel_signedIn() {
 });
 
 /**
- * Tests that IPProtectionService unavailable state event updates the state.
+ * Tests that IPProtectionService unauthenticated state event updates the state.
  */
 add_task(async function test_IPProtectionPanel_signedOut() {
   let sandbox = sinon.createSandbox();
@@ -189,7 +194,7 @@ add_task(async function test_IPProtectionPanel_signedOut() {
   let signedOutEventPromise = waitForEvent(
     IPProtectionService,
     "IPProtectionService:StateChanged",
-    () => IPProtectionService.state === IPProtectionStates.UNAVAILABLE
+    () => IPProtectionService.state === IPProtectionStates.UNAUTHENTICATED
   );
   IPProtectionService.updateState();
 
@@ -230,19 +235,27 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
   sandbox.stub(IPProtectionService.guardian, "fetchUserInfo").resolves({
     status: 200,
     error: null,
-    entitlement: {
-      subscribed: true,
-      uid: 42,
-      created_at: "2023-01-01T12:00:00.000Z",
-    },
+    entitlement: createTestEntitlement({ subscribed: true }),
   });
   sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").resolves({
     status: 200,
     error: undefined,
     pass: new ProxyPass(createProxyPassToken()),
+    usage: new ProxyUsage(
+      "5368709120",
+      "4294967296",
+      "2026-02-01T00:00:00.000Z"
+    ),
   });
+  sandbox.stub(IPProtectionService.guardian, "enroll").resolves({ ok: true });
 
   IPProtectionService.updateState();
+
+  Assert.equal(
+    IPProtectionService.state,
+    IPProtectionStates.READY,
+    "IP Protection service should be in READY state before starting"
+  );
 
   let startedEventPromise = waitForEvent(
     IPPProxyManager,
@@ -350,4 +363,215 @@ add_task(async function test_IPProtectionPanel_isAlpha_false() {
   );
 
   sandbox.restore();
+});
+
+/**
+ * Tests that egress location preference changes update the state.
+ */
+add_task(async function test_IPProtectionPanel_egressLocation_pref() {
+  let ipProtectionPanel = new IPProtectionPanel();
+  let fakeElement = new FakeIPProtectionPanelElement();
+  ipProtectionPanel.panel = fakeElement;
+  fakeElement.isConnected = true;
+
+  const expectedLocation = {
+    name: "United States",
+    code: "us",
+  };
+
+  Services.prefs.setBoolPref(
+    "browser.ipProtection.egressLocationEnabled",
+    true
+  );
+
+  Assert.deepEqual(
+    ipProtectionPanel.state.location,
+    expectedLocation,
+    "location should be set when preference is true"
+  );
+
+  Assert.deepEqual(
+    fakeElement.state.location,
+    expectedLocation,
+    "location should be set on the fake element when preference is true"
+  );
+
+  Services.prefs.setBoolPref(
+    "browser.ipProtection.egressLocationEnabled",
+    false
+  );
+
+  Assert.ok(
+    !ipProtectionPanel.state.location,
+    "location should be null when preference is false"
+  );
+
+  Assert.ok(
+    !fakeElement.state.location,
+    "location should be null on the fake element when preference is false"
+  );
+
+  ipProtectionPanel.uninit();
+
+  Services.prefs.clearUserPref("browser.ipProtection.egressLocationEnabled");
+});
+
+/**
+ * Tests that UsageChanged events with BigInt(0) remaining bandwidth
+ * are processed correctly (not treated as falsy and skipped).
+ *
+ * Regression test: BigInt(0) is falsy in JavaScript, so a guard like
+ * `!usage.remaining` would incorrectly bail out when remaining is exactly 0.
+ */
+add_task(async function test_IPProtectionPanel_usage_zero_remaining() {
+  let sandbox = sinon.createSandbox();
+  setupStubs(sandbox);
+
+  let ipProtectionPanel = new IPProtectionPanel();
+  let fakeElement = new FakeIPProtectionPanelElement();
+  ipProtectionPanel.panel = fakeElement;
+  fakeElement.isConnected = true;
+
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+
+  // Create a usage object with remaining = 0 (BigInt)
+  const usage = new ProxyUsage("5368709120", "0", "3026-02-01T00:00:00.000Z");
+  Assert.equal(usage.remaining, BigInt(0), "remaining should be BigInt(0)");
+
+  // Dispatch a UsageChanged event with zero remaining bandwidth
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: { usage },
+    })
+  );
+
+  // With 0 bytes remaining out of 5GB, remainingPercent = 0.
+  // This is <= THIRD_THRESHOLD (0.1), so threshold should be set to 90.
+  const threshold = Services.prefs.getIntPref(
+    "browser.ipProtection.bandwidthThreshold",
+    0
+  );
+  Assert.equal(
+    threshold,
+    100,
+    "bandwidthThreshold pref should be 100 when remaining bandwidth is zero"
+  );
+
+  ipProtectionPanel.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  sandbox.restore();
+});
+
+function dispatchUsageEvent(max, remaining) {
+  IPPProxyManager.dispatchEvent(
+    new CustomEvent("IPPProxyManager:UsageChanged", {
+      bubbles: true,
+      composed: true,
+      detail: {
+        usage: new ProxyUsage(
+          String(max),
+          String(remaining),
+          "3026-03-01T00:00:00.000Z"
+        ),
+      },
+    })
+  );
+}
+
+/**
+ * Tests that bandwidth threshold telemetry events fire at 50%, 75%, and 90%.
+ */
+add_task(async function test_bandwidth_used_threshold_events() {
+  Services.fog.initializeFOG();
+  Services.fog.testResetFOG();
+
+  let ipProtectionPanel = new IPProtectionPanel();
+
+  // 40% used (60% remaining) - no thresholds crossed
+  dispatchUsageEvent(1000000, 600000);
+  Assert.equal(
+    Glean.ipprotection.bandwidthUsedThreshold.testGetValue(),
+    null,
+    "No threshold event should fire at 40% used"
+  );
+
+  // 55% used (45% remaining) - crosses 50%
+  dispatchUsageEvent(1000000, 450000);
+  let events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(events.length, 1, "One threshold event should fire at 55% used");
+  Assert.equal(events[0].extra.percentage, "50", "Should report 50% threshold");
+
+  // 80% used (20% remaining) - crosses 75%
+  dispatchUsageEvent(1000000, 200000);
+  events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(events.length, 2, "Two threshold events total at 80% used");
+  Assert.equal(events[1].extra.percentage, "75", "Should report 75% threshold");
+
+  // 95% used (5% remaining) - crosses 90%
+  dispatchUsageEvent(1000000, 50000);
+  events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(events.length, 3, "Three threshold events total at 95% used");
+  Assert.equal(events[2].extra.percentage, "90", "Should report 90% threshold");
+
+  ipProtectionPanel.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  Services.fog.testResetFOG();
+});
+
+/**
+ * Tests that threshold events are not re-fired within the same usage period.
+ */
+add_task(async function test_bandwidth_thresholds_not_repeated_same_period() {
+  Services.fog.testResetFOG();
+
+  let ipProtectionPanel = new IPProtectionPanel();
+
+  // Cross 50% threshold
+  dispatchUsageEvent(1000000, 400000);
+  let events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(events.length, 1, "One event after first call at 60% used");
+
+  // Same usage dispatched again - should not re-fire
+  dispatchUsageEvent(1000000, 400000);
+  events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(
+    events.length,
+    1,
+    "No additional event when threshold already reported"
+  );
+
+  ipProtectionPanel.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  Services.fog.testResetFOG();
+});
+
+/**
+ * Tests that thresholds reset when a new usage period begins.
+ */
+add_task(async function test_bandwidth_thresholds_reset_on_new_period() {
+  Services.fog.testResetFOG();
+
+  let ipProtectionPanel = new IPProtectionPanel();
+
+  // Cross 50% in the current period
+  dispatchUsageEvent(1000000, 400000);
+  let events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(events.length, 1, "One event in current period");
+  Assert.equal(events[0].extra.percentage, "50");
+
+  // Simulate a period reset by returning to full bandwidth (threshold drops to 0)
+  dispatchUsageEvent(1000000, 1000000);
+  Services.fog.testResetFOG();
+
+  // 50% should fire again since the threshold pref was reset to 0
+  dispatchUsageEvent(1000000, 400000);
+  events = Glean.ipprotection.bandwidthUsedThreshold.testGetValue();
+  Assert.equal(events.length, 1, "50% fires again after period reset");
+  Assert.equal(events[0].extra.percentage, "50");
+
+  ipProtectionPanel.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
+  Services.fog.testResetFOG();
 });

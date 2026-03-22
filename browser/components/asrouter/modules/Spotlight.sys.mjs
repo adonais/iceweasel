@@ -20,6 +20,7 @@ export const Spotlight = {
     const ping = {
       message_id: message.content.id,
       event,
+      event_context: { writeInMicrosurvey: message.content.writeInMicrosurvey },
     };
     dispatch({
       type: "SPOTLIGHT_TELEMETRY",

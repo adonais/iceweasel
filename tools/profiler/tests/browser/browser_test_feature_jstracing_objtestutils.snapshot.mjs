@@ -1223,6 +1223,36 @@ export default [
     "frozen": false
   },
 
+  // const el = document.createElement("h1");
+  // el.setAttribute("class", "test-class-a test-class-b");
+  // el.setAttribute("id", "my-element");
+  // el.setAttribute("aria-collapsed", "false");
+  // el.setAttribute("hidden", "");
+  // el;
+  //     
+  {
+    "type": "object",
+    "class": "HTMLHeadingElement",
+    "ownPropertyLength": 0,
+    "isError": false,
+    "extensible": false,
+    "sealed": false,
+    "frozen": false,
+    "preview": {
+      "kind": "DOMNode",
+      "nodeType": 1,
+      "nodeName": "h1",
+      "isConnected": 0,
+      "attributes": {
+        "class": "test-class-a test-class-b",
+        "id": "my-element",
+        "aria-collapsed": "false",
+        "hidden": ""
+      },
+      "attributesLength": 4
+    }
+  },
+
   // new Error("foo")
   {
     "type": "object",

@@ -26,19 +26,10 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
-const { CATEGORIES, INTENTS } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs"
-);
-
 const {
-  formatListForPrompt,
-  getFormattedMemoryAttributeList,
   renderRecentHistoryForPrompt,
   renderRecentConversationForPrompt,
   mapFilteredMemoriesToInitialList,
-  buildInitialMemoriesGenerationPrompt,
-  buildMemoriesDeduplicationPrompt,
-  buildMemoriesSensitivityFilterPrompt,
   generateInitialMemoriesList,
   deduplicateMemories,
   filterSensitiveMemories,
@@ -49,9 +40,9 @@ const {
 /**
  * Constants for preference keys and test values
  */
-const PREF_API_KEY = "browser.aiwindow.apiKey";
-const PREF_ENDPOINT = "browser.aiwindow.endpoint";
-const PREF_MODEL = "browser.aiwindow.model";
+const PREF_API_KEY = "browser.smartwindow.apiKey";
+const PREF_ENDPOINT = "browser.smartwindow.endpoint";
+const PREF_MODEL = "browser.smartwindow.model";
 
 const API_KEY = "fake-key";
 const ENDPOINT = "https://api.fake-endpoint.com/v1";
@@ -84,33 +75,6 @@ add_setup(async function () {
     }
   });
 });
-
-/**
- * Builds fake browsing history data for testing
- */
-async function buildFakeBrowserHistory() {
-  const now = Date.now();
-
-  const seeded = [
-    {
-      url: "https://www.google.com/search?q=firefox+history",
-      title: "Google Search: firefox history",
-      visits: [{ date: new Date(now - 5 * 60 * 1000) }],
-    },
-    {
-      url: "https://news.ycombinator.com/",
-      title: "Hacker News",
-      visits: [{ date: new Date(now - 15 * 60 * 1000) }],
-    },
-    {
-      url: "https://mozilla.org/en-US/",
-      title: "Internet for people, not profit — Mozilla",
-      visits: [{ date: new Date(now - 25 * 60 * 1000) }],
-    },
-  ];
-  await PlacesUtils.history.clear();
-  await PlacesUtils.history.insertMany(seeded);
-}
 
 /**
  * Shortcut for full browser history aggregation pipeline
@@ -163,62 +127,6 @@ async function buildFakeChatHistory() {
 }
 
 /**
- * Tests building the prompt for initial memories generation
- */
-add_task(async function test_buildInitialMemoriesGenerationPrompt() {
-  // Check that history is rendered correctly into CSV tables
-  await buildFakeBrowserHistory();
-  const [domainItems, titleItems, searchItems] =
-    await getBrowserHistoryAggregates();
-  const renderedBrowserHistory = await renderRecentHistoryForPrompt(
-    domainItems,
-    titleItems,
-    searchItems
-  );
-  Assert.equal(
-    renderedBrowserHistory,
-    `# Domains
-Domain,Importance Score
-www.google.com,100
-news.ycombinator.com,100
-mozilla.org,100
-
-# Titles
-Title,Importance Score
-Google Search: firefox history,100
-Hacker News,100
-Internet for people, not profit — Mozilla,100
-
-# Searches
-Search,Importance Score
-Google Search: firefox history,1`.trim()
-  );
-
-  // Check that the full prompt is built correctly with injected categories, intents, and browsing history
-  const sources = { history: [domainItems, titleItems, searchItems] };
-  const initialMemoriesPrompt =
-    await buildInitialMemoriesGenerationPrompt(sources);
-  Assert.ok(
-    initialMemoriesPrompt.includes(
-      "You are an expert at extracting memories from user browser data."
-    ),
-    "Initial memories generation prompt should pull from the correct base"
-  );
-  Assert.ok(
-    initialMemoriesPrompt.includes(getFormattedMemoryAttributeList(CATEGORIES)),
-    "Prompt should include formatted categories list"
-  );
-  Assert.ok(
-    initialMemoriesPrompt.includes(getFormattedMemoryAttributeList(INTENTS)),
-    "Prompt should include formatted intents list"
-  );
-  Assert.ok(
-    initialMemoriesPrompt.includes(renderedBrowserHistory),
-    "Prompt should include rendered browsing history"
-  );
-});
-
-/**
  * Tests rendering history as CSV when only search data is present
  */
 add_task(async function test_buildRecentHistoryCSV_only_search() {
@@ -242,17 +150,13 @@ add_task(async function test_buildRecentHistoryCSV_only_search() {
   );
   Assert.equal(
     renderedBrowserHistory,
-    `# Domains
-Domain,Importance Score
-www.google.com,100
+    `# Website Titles
+Website Title,Importance Score
+Google Search: firefox history | www.google.com,100
 
-# Titles
-Title,Importance Score
-Google Search: firefox history,100
-
-# Searches
-Search,Importance Score
-Google Search: firefox history,1`.trim()
+# Web Searches
+Search Query,Importance Score
+Google Search: firefox history | www.google.com,1`.trim()
   );
 });
 
@@ -285,22 +189,17 @@ add_task(async function test_buildRecentHistoryCSV_only_browsing_history() {
   );
   Assert.equal(
     renderedBrowserHistory,
-    `# Domains
-Domain,Importance Score
-news.ycombinator.com,100
-mozilla.org,100
-
-# Titles
-Title,Importance Score
-Hacker News,100
-Internet for people, not profit — Mozilla,100`.trim()
+    `# Website Titles
+Website Title,Importance Score
+Hacker News | news.ycombinator.com,100
+Internet for people, not profit — Mozilla | mozilla.org,100`.trim()
   );
 });
 
 /**
- * Tests building the prompt for initial memories generation with only chat data
+ * Tests generating initial memories from conversation/chat data
  */
-add_task(async function test_buildInitialMemoriesGenerationPrompt_only_chat() {
+add_task(async function test_generateInitialMemoriesList_only_chat() {
   const messages = await buildFakeChatHistory();
   const sb = sinon.createSandbox();
   const maxResults = 3;
@@ -309,8 +208,8 @@ add_task(async function test_buildInitialMemoriesGenerationPrompt_only_chat() {
 
   try {
     // Stub the method
-    const stub = sb
-      .stub(ChatStore.prototype, "findMessagesByDate")
+    const chatStub = sb
+      .stub(ChatStore, "findMessagesByDate")
       .callsFake(async () => {
         return messages;
       });
@@ -322,7 +221,11 @@ add_task(async function test_buildInitialMemoriesGenerationPrompt_only_chat() {
     );
 
     // Assert stub was actually called
-    Assert.equal(stub.callCount, 1, "findMessagesByDate should be called once");
+    Assert.equal(
+      chatStub.callCount,
+      1,
+      "findMessagesByDate should be called once"
+    );
 
     // Double check we get only the 3 expected messages back
     Assert.equal(recentMessages.length, 3, "Should return 3 chat messages");
@@ -340,19 +243,55 @@ Tell me a joke about my favorite animals.`.trim(),
       "Rendered conversation history should match expected CSV format"
     );
 
-    // Build the actual prompt and check its contents
-    const sources = { conversation: recentMessages };
-    const initialMemoriesPrompt =
-      await buildInitialMemoriesGenerationPrompt(sources);
-    Assert.ok(
-      initialMemoriesPrompt.includes(
-        "You are an expert at extracting memories from user browser data."
-      ),
-      "Initial memories generation prompt should pull from the correct base"
+    // Test generateInitialMemoriesList with conversation sources
+    const fakeEngine = {
+      loadPrompt() {
+        return "fake prompt";
+      },
+      run() {
+        return {
+          finalOutput: `[
+  {
+    "reasoning": "User likes dogs and cats.",
+    "category": "Pets & Animals",
+    "intent": "Entertain / Relax",
+    "memory_summary": "Likes both dogs and cats",
+    "score": 4,
+    "evidence": []
+  }
+]`,
+        };
+      },
+    };
+
+    const engineStub = sb
+      .stub(openAIEngine, "_createEngine")
+      .returns(fakeEngine);
+    const engine = await openAIEngine.build(
+      MODEL_FEATURES.MEMORIES,
+      DEFAULT_ENGINE_ID,
+      SERVICE_TYPES.MEMORIES
     );
+    Assert.ok(engineStub.calledOnce, "_createEngine should be called once");
+
+    const sources = { conversation: recentMessages };
+    const memoriesList = await generateInitialMemoriesList(engine, sources);
+
+    // Verify memories were generated from conversation data
     Assert.ok(
-      initialMemoriesPrompt.includes(renderedConversationHistory),
-      "Prompt should include rendered conversation history"
+      Array.isArray(memoriesList),
+      "Should return an array of memories"
+    );
+    Assert.equal(memoriesList.length, 1, "Should generate 1 memory from chat");
+    Assert.equal(
+      memoriesList[0].memory_summary,
+      "Likes both dogs and cats",
+      "Memory should be generated from chat content"
+    );
+    Assert.equal(
+      memoriesList[0].category,
+      "Pets & Animals",
+      "Memory should have correct category"
     );
   } finally {
     sb.restore();
@@ -360,52 +299,7 @@ Tell me a joke about my favorite animals.`.trim(),
 });
 
 /**
- * Tests building the prompt for memories deduplication
- */
-add_task(async function test_buildMemoriesDeduplicationPrompt() {
-  const memoriesDeduplicationPrompt = await buildMemoriesDeduplicationPrompt(
-    EXISTING_MEMORIES,
-    NEW_MEMORIES
-  );
-  Assert.ok(
-    memoriesDeduplicationPrompt.includes(
-      "You are an expert at identifying duplicate statements."
-    ),
-    "Memories deduplication prompt should pull from the correct base"
-  );
-  Assert.ok(
-    memoriesDeduplicationPrompt.includes(
-      formatListForPrompt(EXISTING_MEMORIES)
-    ),
-    "Deduplication prompt should include existing memories list"
-  );
-  Assert.ok(
-    memoriesDeduplicationPrompt.includes(formatListForPrompt(NEW_MEMORIES)),
-    "Deduplication prompt should include new memories list"
-  );
-});
-
-/**
- * Tests building the prompt for memories sensitivity filtering
- */
-add_task(async function test_buildMemoriesSensitivityFilterPrompt() {
-  /** Memories sensitivity filter prompt */
-  const memoriesSensitivityFilterPrompt =
-    await buildMemoriesSensitivityFilterPrompt(NEW_MEMORIES);
-  Assert.ok(
-    memoriesSensitivityFilterPrompt.includes(
-      "You are an expert at identifying sensitive statements and content."
-    ),
-    "Memories sensitivity filter prompt should pull from the correct base"
-  );
-  Assert.ok(
-    memoriesSensitivityFilterPrompt.includes(formatListForPrompt(NEW_MEMORIES)),
-    "Sensitivity filter prompt should include memories list"
-  );
-});
-
-/**
- * Tests successful initial memories generation
+ * Test successful initial memories generation
  */
 add_task(async function test_generateInitialMemoriesList_happy_path() {
   const sb = sinon.createSandbox();
@@ -415,11 +309,14 @@ add_task(async function test_generateInitialMemoriesList_happy_path() {
      * The main `generateInitialMemoriesList` function should modify this heavily, cutting it back to only the required fields.
      */
     const fakeEngine = {
+      loadPrompt() {
+        return "fake prompt";
+      },
       run() {
         return {
           finalOutput: `[
   {
-    "why": "User has recently searched for Firefox history and visited mozilla.org.",
+    "reasoning": "User has recently searched for Firefox history and visited mozilla.org.",
     "category": "Internet & Telecom",
     "intent": "Research / Learn",
     "memory_summary": "Searches for Firefox information",
@@ -436,7 +333,7 @@ add_task(async function test_generateInitialMemoriesList_happy_path() {
     ]
   },
   {
-    "why": "User buys dog food online regularly from multiple sources.",
+    "reasoning": "User buys dog food online regularly from multiple sources.",
     "category": "Pets & Animals",
     "intent": "Buy / Acquire",
     "memory_summary": "Purchases dog food online",
@@ -483,8 +380,8 @@ add_task(async function test_generateInitialMemoriesList_happy_path() {
     );
     Assert.equal(
       Object.keys(firstMemory).length,
-      4,
-      "First memory should have 4 keys"
+      5,
+      "First memory should have 5 keys"
     );
     Assert.equal(
       firstMemory.category,
@@ -528,6 +425,9 @@ add_task(
     try {
       // LLM returns an empty memories list
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `[]`,
@@ -566,6 +466,9 @@ add_task(
     try {
       // LLM doesn't return an array
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `testing`,
@@ -604,6 +507,9 @@ add_task(
     try {
       // LLM doesn't return an array of maps
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `["testing1", "testing2", ["testing3"]]`,
@@ -642,11 +548,14 @@ add_task(
     try {
       // LLM returns an memories list where 1 is fully correct and 1 is missing required keys (category in this case)
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `[
   {
-    "why": "User has recently searched for Firefox history and visited mozilla.org.",
+    "reasoning": "User has recently searched for Firefox history and visited mozilla.org.",
     "intent": "Research / Learn",
     "memory_summary": "Searches for Firefox information",
     "score": 7,
@@ -662,7 +571,7 @@ add_task(
     ]
   },
   {
-    "why": "User buys dog food online regularly from multiple sources.",
+    "reasoning": "User buys dog food online regularly from multiple sources.",
     "category": "Pets & Animals",
     "intent": "Buy / Acquire",
     "memory_summary": "Purchases dog food online",
@@ -721,6 +630,9 @@ add_task(async function test_deduplicateMemoriesList_happy_path() {
      * The `deduplicateMemories` function should return an array containing only the `main_memory` values.
      */
     const fakeEngine = {
+      loadPrompt() {
+        return "fake prompt";
+      },
       run() {
         return {
           finalOutput: `{
@@ -805,6 +717,9 @@ add_task(async function test_deduplicateMemoriesList_sad_path_empty_output() {
   try {
     // LLM returns the correct schema but with an empty unique_memories array
     const fakeEngine = {
+      loadPrompt() {
+        return "fake prompt";
+      },
       run() {
         return {
           finalOutput: `{
@@ -845,6 +760,9 @@ add_task(
     try {
       // LLM returns an incorrect data type
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `testing`,
@@ -888,6 +806,9 @@ add_task(
     try {
       // LLM returns a map with the right top-level key, but the inner structure is wrong
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `{
@@ -933,6 +854,9 @@ add_task(
     try {
       // LLM returns a map of nested arrays, but the array structure is wrong
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `{
@@ -978,6 +902,9 @@ add_task(
     try {
       // LLm returns correct output except that the top-level key is wrong
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `{
@@ -1044,6 +971,9 @@ add_task(
     try {
       // LLm returns correct output except that 1 of the inner maps is wrong and 1 main_memory is the wrong data type
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `{
@@ -1109,6 +1039,9 @@ add_task(async function test_filterSensitiveMemories_happy_path() {
      * The `filterSensitiveMemories` function should return the inner array from `non_sensitive_memories`.
      */
     const fakeEngine = {
+      loadPrompt() {
+        return "fake prompt";
+      },
       run() {
         return {
           finalOutput: `{
@@ -1167,6 +1100,9 @@ add_task(async function test_filterSensitiveMemories_sad_path_empty_output() {
   try {
     // LLM returns an empty non_sensitive_memories array
     const fakeEngine = {
+      loadPrompt() {
+        return "fake prompt";
+      },
       run() {
         return {
           finalOutput: `{
@@ -1213,6 +1149,9 @@ add_task(
     try {
       // LLM returns the wrong outer data type
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `testing`,
@@ -1258,6 +1197,9 @@ add_task(
     try {
       // LLM returns a map with the non_sensitive_memories key, but its value's data type is wrong
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `{
@@ -1305,6 +1247,9 @@ add_task(
     try {
       // LLM returns a map but with the wrong top-level key
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `{
@@ -1354,6 +1299,9 @@ add_task(
     try {
       // LLM returns a map with the non_sensitive_memories key, but the inner schema has a mix of correct and incorrect data types
       const fakeEngine = {
+        loadPrompt() {
+          return "fake prompt";
+        },
         run() {
           return {
             finalOutput: `{

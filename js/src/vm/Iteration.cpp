@@ -1378,35 +1378,15 @@ PlainObject* GlobalObject::getOrCreateIterResultTemplateObject(JSContext* cx) {
     return obj;
   }
 
-  PlainObject* templateObj =
-      createIterResultTemplateObject(cx, WithObjectPrototype::Yes);
+  PlainObject* templateObj = createIterResultTemplateObject(cx);
   obj.init(templateObj);
   return obj;
 }
 
 /* static */
-PlainObject* GlobalObject::getOrCreateIterResultWithoutPrototypeTemplateObject(
-    JSContext* cx) {
-  GCPtr<PlainObject*>& obj =
-      cx->global()->data().iterResultWithoutPrototypeTemplate;
-  if (obj) {
-    return obj;
-  }
-
-  PlainObject* templateObj =
-      createIterResultTemplateObject(cx, WithObjectPrototype::No);
-  obj.init(templateObj);
-  return obj;
-}
-
-/* static */
-PlainObject* GlobalObject::createIterResultTemplateObject(
-    JSContext* cx, WithObjectPrototype withProto) {
+PlainObject* GlobalObject::createIterResultTemplateObject(JSContext* cx) {
   // Create template plain object
-  Rooted<PlainObject*> templateObject(
-      cx, withProto == WithObjectPrototype::Yes
-              ? NewPlainObject(cx, TenuredObject)
-              : NewPlainObjectWithProto(cx, nullptr));
+  Rooted<PlainObject*> templateObject(cx, NewPlainObject(cx, TenuredObject));
   if (!templateObject) {
     return nullptr;
   }
@@ -2318,33 +2298,32 @@ IteratorHelperObject* js::NewIteratorHelper(JSContext* cx) {
   return NewObjectWithGivenProto<IteratorHelperObject>(cx, proto);
 }
 
-bool js::IterableToArray(JSContext* cx, HandleValue iterable,
-                         MutableHandle<ArrayObject*> array) {
+ArrayObject* js::IterableToArray(JSContext* cx, HandleValue iterable) {
   JS::ForOfIterator iterator(cx);
   if (!iterator.init(iterable, JS::ForOfIterator::ThrowOnNonIterable)) {
-    return false;
+    return nullptr;
   }
 
-  array.set(NewDenseEmptyArray(cx));
+  Rooted<ArrayObject*> array(cx, NewDenseEmptyArray(cx));
   if (!array) {
-    return false;
+    return nullptr;
   }
 
   RootedValue nextValue(cx);
   while (true) {
     bool done;
     if (!iterator.next(&nextValue, &done)) {
-      return false;
+      return nullptr;
     }
     if (done) {
       break;
     }
 
     if (!NewbornArrayPush(cx, array, nextValue)) {
-      return false;
+      return nullptr;
     }
   }
-  return true;
+  return array;
 }
 
 bool js::HasOptimizableArrayIteratorPrototype(JSContext* cx) {

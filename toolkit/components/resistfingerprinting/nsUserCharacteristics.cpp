@@ -11,6 +11,7 @@
 #include "nsIGfxInfo.h"
 #include "nsIUUIDGenerator.h"
 #include "nsIUserCharacteristicsPageService.h"
+#include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
 
 #include "mozilla/Logging.h"
@@ -84,6 +85,38 @@ using namespace mozilla;
 static LazyLogModule gUserCharacteristicsLog("UserCharacteristics");
 
 // ==================================================================
+// MathML prefs collection - extracted for testability
+static void CollectMathMLPrefs() {
+  // MathML prefs - only collect those modified from defaults
+  // Format: "shortname=val,..." (e.g. "dis=1,fnt=0")
+  nsAutoCString mathmlPrefs;
+  static const struct {
+    const char* pref;
+    const char* shortName;
+  } kMathMLPrefs[] = {
+      {"mathml.disabled", "dis"},
+      {"mathml.scale_stretchy_operators.enabled", "str"},
+      {"mathml.mathspace_names.disabled", "spc"},
+      {"mathml.rtl_operator_mirroring.enabled", "rtl"},
+      {"mathml.mathvariant_styling_fallback.disabled", "var"},
+      {"mathml.math_shift.enabled", "shf"},
+      {"mathml.operator_dictionary_accent.disabled", "acc"},
+      {"mathml.legacy_mathvariant_attribute.disabled", "leg"},
+      {"mathml.font_family_math.enabled", "fnt"},
+  };
+  for (const auto& p : kMathMLPrefs) {
+    if (Preferences::HasUserValue(p.pref)) {
+      if (!mathmlPrefs.IsEmpty()) {
+        mathmlPrefs.Append(',');
+      }
+      mathmlPrefs.Append(p.shortName);
+      mathmlPrefs.Append('=');
+      mathmlPrefs.Append(Preferences::GetBool(p.pref) ? '1' : '0');
+    }
+  }
+  glean::characteristics::mathml_diag_prefs_modified.Set(mathmlPrefs);
+}
+
 namespace testing {
 extern "C" {
 
@@ -96,6 +129,8 @@ int MaxTouchPoints() {
   return 0;
 #endif
 }
+
+void PopulateMathMLPrefs() { CollectMathMLPrefs(); }
 
 }  // extern "C"
 };  // namespace testing
@@ -292,6 +327,15 @@ void PopulateMissingFonts() {
   glean::characteristics::missing_fonts.Set(aMissingFonts);
 }
 
+static void DigestToHex(const nsACString& aDigest, nsCString& aOutHex) {
+  const char HEX[] = "0123456789abcdef";
+  for (size_t i = 0; i < 32; ++i) {
+    uint8_t b = aDigest[i];
+    aOutHex.Append(HEX[(b >> 4) & 0xF]);
+    aOutHex.Append(HEX[b & 0xF]);
+  }
+}
+
 nsresult ProcessFingerprintedFonts(const char* aFonts[],
                                    nsCString& aOutAllowlistedHex,
                                    nsCString& aOutNonAllowlistedHex) {
@@ -336,17 +380,29 @@ nsresult ProcessFingerprintedFonts(const char* aFonts[],
   allowlisted->Finish(false, allowlistedDigest);
   nonallowlisted->Finish(false, nonallowlistedDigest);
 
-  // Convert to hex
-  const char HEX[] = "0123456789abcdef";
-  for (size_t i = 0; i < 32; ++i) {
-    uint8_t b = allowlistedDigest[i];
-    aOutAllowlistedHex.Append(HEX[(b >> 4) & 0xF]);
-    aOutAllowlistedHex.Append(HEX[b & 0xF]);
+  DigestToHex(allowlistedDigest, aOutAllowlistedHex);
+  DigestToHex(nonallowlistedDigest, aOutNonAllowlistedHex);
 
-    b = nonallowlistedDigest[i];
-    aOutNonAllowlistedHex.Append(HEX[(b >> 4) & 0xF]);
-    aOutNonAllowlistedHex.Append(HEX[b & 0xF]);
+  return NS_OK;
+}
+
+nsresult HashFontList(const nsTArray<nsCString>& aFonts, nsCString& aOutHex) {
+  nsresult rv;
+  nsCOMPtr<nsICryptoHash> hash =
+      do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = hash->Init(nsICryptoHash::SHA256);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  for (const auto& font : aFonts) {
+    hash->Update(reinterpret_cast<const uint8_t*>(font.get()), font.Length());
   }
+
+  nsAutoCString digest;
+  hash->Finish(false, digest);
+
+  DigestToHex(digest, aOutHex);
 
   return NS_OK;
 }
@@ -365,8 +421,10 @@ already_AddRefed<PopulatePromise> PopulateFingerprintedFonts() {
   }
   std::pair<const char**,
             std::pair<glean::impl::StringMetric, glean::impl::StringMetric>>
-      fontLists[] = {FONT_PAIR(fpjs, fpjs), FONT_PAIR(variantA, variant_a),
-                     FONT_PAIR(variantB, variant_b)};
+      fontLists[] = {
+          FONT_PAIR(fpjs, fpjs),          FONT_PAIR(variantA, variant_a),
+          FONT_PAIR(variantB, variant_b), FONT_PAIR(variantC, variant_c),
+          FONT_PAIR(variantD, variant_d), FONT_PAIR(variantE, variant_e)};
 
 #undef FONT_PAIR
 
@@ -382,6 +440,143 @@ already_AddRefed<PopulatePromise> PopulateFingerprintedFonts() {
 
     metrics.first.Set(allowlistedHex);
     metrics.second.Set(nonallowlistedHex);
+  }
+
+  // Variant F/G font fallback metrics (uses variantF font list)
+  {
+    gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
+    if (!pfl) {
+      REJECT_AND_FORGET(populatePromise, __func__, NS_ERROR_FAILURE,
+                        "No platform font list"_ns.AsString());
+    }
+
+    nsTArray<nsCString> variantFontList;
+    for (size_t i = 0; variantF_FontList[i] != nullptr; ++i) {
+      variantFontList.AppendElement(nsCString(variantF_FontList[i]));
+    }
+
+    // Variant F: Test string "A"
+    // Call twice with different visibility levels
+    nsTArray<nsCString> fontsAllowlisted;
+    pfl->ListFontsUsedForString(u"A"_ns, variantFontList, fontsAllowlisted,
+                                FontVisibility::LangPack);
+    nsTArray<nsCString> fontsNonAllowlisted;
+    pfl->ListFontsUsedForString(u"A"_ns, variantFontList, fontsNonAllowlisted,
+                                FontVisibility::User);
+
+    MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug,
+            ("Variant F Allowlisted fonts:"));
+    for (const auto& font : fontsAllowlisted) {
+      MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug, ("  - %s", font.get()));
+    }
+    MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug,
+            ("Variant F NonAllowlisted fonts:"));
+    for (const auto& font : fontsNonAllowlisted) {
+      MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug, ("  - %s", font.get()));
+    }
+
+    nsCString aAllowlisted, aNonAllowlisted;
+    if (NS_SUCCEEDED(HashFontList(fontsAllowlisted, aAllowlisted))) {
+      glean::characteristics::fonts_variant_f_allowlisted.Set(aAllowlisted);
+    }
+    if (NS_SUCCEEDED(HashFontList(fontsNonAllowlisted, aNonAllowlisted))) {
+      glean::characteristics::fonts_variant_f_nonallowlisted.Set(
+          aNonAllowlisted);
+    }
+
+    // Variant G: Test emoji U+1F47E (Space Invader)
+    nsTArray<nsCString> emojiFontsAllowlisted;
+    pfl->ListFontsUsedForString(u"\U0001F47E"_ns, variantFontList,
+                                emojiFontsAllowlisted,
+                                FontVisibility::LangPack);
+    nsTArray<nsCString> emojiFontsNonAllowlisted;
+    pfl->ListFontsUsedForString(u"\U0001F47E"_ns, variantFontList,
+                                emojiFontsNonAllowlisted, FontVisibility::User);
+
+    MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug,
+            ("Variant G Allowlisted fonts:"));
+    for (const auto& font : emojiFontsAllowlisted) {
+      MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug, ("  - %s", font.get()));
+    }
+    MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug,
+            ("Variant G NonAllowlisted fonts:"));
+    for (const auto& font : emojiFontsNonAllowlisted) {
+      MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug, ("  - %s", font.get()));
+    }
+
+    nsCString emojiAllowlisted, emojiNonAllowlisted;
+    if (NS_SUCCEEDED(HashFontList(emojiFontsAllowlisted, emojiAllowlisted))) {
+      glean::characteristics::fonts_variant_g_allowlisted.Set(emojiAllowlisted);
+    }
+    if (NS_SUCCEEDED(
+            HashFontList(emojiFontsNonAllowlisted, emojiNonAllowlisted))) {
+      glean::characteristics::fonts_variant_g_nonallowlisted.Set(
+          emojiNonAllowlisted);
+    }
+
+    // Variant H: Test multiple emojis
+    nsAutoString textEmojis;
+    for (auto emoji : variantHEmojis) {
+      AppendUCS4ToUTF16(emoji, textEmojis);
+    }
+
+    nsTArray<nsCString> emojisFontsAllowlisted;
+    pfl->ListFontsUsedForString(textEmojis, variantFontList,
+                                emojisFontsAllowlisted,
+                                FontVisibility::LangPack);
+    nsTArray<nsCString> emojisFontsNonAllowlisted;
+    pfl->ListFontsUsedForString(textEmojis, variantFontList,
+                                emojisFontsNonAllowlisted,
+                                FontVisibility::User);
+
+    MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug,
+            ("Variant H Allowlisted fonts:"));
+    for (const auto& font : emojisFontsAllowlisted) {
+      MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug, ("  - %s", font.get()));
+    }
+    MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug,
+            ("Variant H NonAllowlisted fonts:"));
+    for (const auto& font : emojisFontsNonAllowlisted) {
+      MOZ_LOG(gUserCharacteristicsLog, LogLevel::Debug, ("  - %s", font.get()));
+    }
+
+    nsCString emojisAllowlisted, emojisNonAllowlisted;
+    if (NS_SUCCEEDED(HashFontList(emojisFontsAllowlisted, emojisAllowlisted))) {
+      glean::characteristics::fonts_variant_h_allowlisted.Set(
+          emojisAllowlisted);
+    }
+    if (NS_SUCCEEDED(
+            HashFontList(emojisFontsNonAllowlisted, emojisNonAllowlisted))) {
+      glean::characteristics::fonts_variant_h_nonallowlisted.Set(
+          emojisNonAllowlisted);
+    }
+
+    // Variant I: SVG emojis with emoji-specific font list
+    nsAutoString textVariantIEmojis;
+    for (auto emoji : variantIEmojis) {
+      AppendUCS4ToUTF16(emoji, textVariantIEmojis);
+    }
+
+    nsTArray<nsCString> variantIFontList;
+    for (size_t i = 0; variantI_FontList[i] != nullptr; ++i) {
+      variantIFontList.AppendElement(nsCString(variantI_FontList[i]));
+    }
+
+    nsTArray<nsCString> variantIAllowlisted;
+    pfl->ListFontsUsedForString(textVariantIEmojis, variantIFontList,
+                                variantIAllowlisted, FontVisibility::LangPack);
+    nsTArray<nsCString> variantINonAllowlisted;
+    pfl->ListFontsUsedForString(textVariantIEmojis, variantIFontList,
+                                variantINonAllowlisted, FontVisibility::User);
+
+    nsCString iAllowlisted, iNonAllowlisted;
+    if (NS_SUCCEEDED(HashFontList(variantIAllowlisted, iAllowlisted))) {
+      glean::characteristics::fonts_variant_i_allowlisted.Set(iAllowlisted);
+    }
+    if (NS_SUCCEEDED(HashFontList(variantINonAllowlisted, iNonAllowlisted))) {
+      glean::characteristics::fonts_variant_i_nonallowlisted.Set(
+          iNonAllowlisted);
+    }
   }
 
   populatePromise->Resolve(void_t(), __func__);
@@ -419,6 +614,8 @@ void PopulatePrefs() {
 
   glean::characteristics::prefs_network_cookie_cookiebehavior.Set(
       StaticPrefs::network_cookie_cookieBehavior());
+
+  CollectMathMLPrefs();
 }
 
 void PopulateKeyboardLayout() {
@@ -926,7 +1123,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 // metric is set, this variable should be incremented. It'll be a lot. It's
 // okay. We're going to need it to know (including during development) what is
 // the source of the data we are looking at.
-const int kSubmissionSchema = 30;
+const int kSubmissionSchema = 37;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
@@ -1048,9 +1245,6 @@ bool nsUserCharacteristics::ShouldSubmit() {
 
   int32_t currentVersion = GetCurrentVersion();
   int32_t lastSubmissionVersion = Preferences::GetInt(kLastVersionPref, 0);
-  MOZ_ASSERT(lastSubmissionVersion <= currentVersion,
-             "lastSubmissionVersion is somehow greater than currentVersion "
-             "- did you edit prefs improperly?");
 
   if (currentVersion == 0) {
     // Do nothing. We do not want any pings.

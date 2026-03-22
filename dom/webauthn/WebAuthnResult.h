@@ -86,6 +86,30 @@ class WebAuthnRegisterResult final : public nsIWebAuthnRegisterResult {
       mCredPropsRk = Some(java::sdk::Boolean::Ref::From(aResponse->CredProps())
                               ->BooleanValue());
     }
+    if (aResponse->PrfEnabled()) {
+      mPrfSupported =
+          Some(java::sdk::Boolean::Ref::From(aResponse->PrfEnabled())
+                   ->BooleanValue());
+    }
+    if (aResponse->PrfFirst() && aResponse->PrfFirst()->Length() > 0) {
+      mPrfFirst.emplace();
+      mPrfFirst->AppendElements(
+          reinterpret_cast<uint8_t*>(
+              aResponse->PrfFirst()->GetElements().Elements()),
+          aResponse->PrfFirst()->Length());
+    }
+    if (aResponse->PrfSecond() && aResponse->PrfSecond()->Length() > 0) {
+      mPrfSecond.emplace();
+      mPrfSecond->AppendElements(
+          reinterpret_cast<uint8_t*>(
+              aResponse->PrfSecond()->GetElements().Elements()),
+          aResponse->PrfSecond()->Length());
+    }
+    if (aResponse->LargeBlobSupported()) {
+      mLargeBlobSupported =
+          Some(java::sdk::Boolean::Ref::From(aResponse->LargeBlobSupported())
+                   ->BooleanValue());
+    }
   }
 #endif
 
@@ -275,6 +299,33 @@ class WebAuthnSignResult final : public nsIWebAuthnSignResult {
         aResponse->UserHandle()->Length());
     mAuthenticatorAttachment =
         Some(aResponse->AuthenticatorAttachment()->ToString());
+    if (aResponse->PrfFirst() && aResponse->PrfFirst()->Length() > 0) {
+      mPrfFirst.emplace();
+      mPrfFirst->AppendElements(
+          reinterpret_cast<uint8_t*>(
+              aResponse->PrfFirst()->GetElements().Elements()),
+          aResponse->PrfFirst()->Length());
+    }
+    if (aResponse->PrfSecond() && aResponse->PrfSecond()->Length() > 0) {
+      mPrfSecond.emplace();
+      mPrfSecond->AppendElements(
+          reinterpret_cast<uint8_t*>(
+              aResponse->PrfSecond()->GetElements().Elements()),
+          aResponse->PrfSecond()->Length());
+    }
+    if (aResponse->LargeBlobBlob() &&
+        aResponse->LargeBlobBlob()->Length() > 0) {
+      mLargeBlobValue.emplace();
+      mLargeBlobValue->AppendElements(
+          reinterpret_cast<uint8_t*>(
+              aResponse->LargeBlobBlob()->GetElements().Elements()),
+          aResponse->LargeBlobBlob()->Length());
+    }
+    if (aResponse->LargeBlobWritten()) {
+      mLargeBlobWritten =
+          Some(java::sdk::Boolean::Ref::From(aResponse->LargeBlobWritten())
+                   ->BooleanValue());
+    }
   }
 #endif
 

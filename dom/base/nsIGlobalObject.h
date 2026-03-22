@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsIGlobalObject_h__
-#define nsIGlobalObject_h__
+#ifndef nsIGlobalObject_h_
+#define nsIGlobalObject_h_
 
 #include "js/TypeDecls.h"
 #include "mozilla/LinkedList.h"
@@ -422,4 +422,4 @@ class nsIGlobalObject : public nsISupports {
   RefPtr<mozilla::dom::Function> mByteLengthQueuingStrategySizeFunction;
 };
 
-#endif  // nsIGlobalObject_h__
+#endif  // nsIGlobalObject_h_

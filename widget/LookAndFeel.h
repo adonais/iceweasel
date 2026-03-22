@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __LookAndFeel
-#define __LookAndFeel
+#ifndef LookAndFeel_h_
+#define LookAndFeel_h_
 
 #ifndef MOZILLA_INTERNAL_API
 #  error "This header is only usable from within libxul (MOZILLA_INTERNAL_API)."
@@ -624,4 +624,4 @@ constexpr nscolor NS_40PERCENT_FOREGROUND_COLOR =
 #define NS_ALERT_LEFT 2
 #define NS_ALERT_TOP 4
 
-#endif /* __LookAndFeel */
+#endif /* LookAndFeel_h_ */

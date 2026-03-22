@@ -6,7 +6,7 @@
 /* import-globals-from head.js */
 
 ChromeUtils.defineESModuleGetters(this, {
-  UrlbarProvidersManager:
+  ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
 });
 
@@ -38,7 +38,7 @@ async function doAdaptiveHistoryTest({ trigger, assert }) {
 }
 
 async function doAdaptiveHistorySerpHistoryTest({ trigger, assert }) {
-  let defaultEngine = await Services.search.getDefault();
+  let defaultEngine = await SearchService.getDefault();
   let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
 
   await doTest(async () => {
@@ -75,7 +75,7 @@ async function doAdaptiveHistoryBookmarkTest({ trigger, assert }) {
 
 async function doAdaptiveHistoryBookmarkSerpHistoryTest({ trigger, assert }) {
   await doTest(async () => {
-    let defaultEngine = await Services.search.getDefault();
+    let defaultEngine = await SearchService.getDefault();
     let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
 
     await PlacesUtils.bookmarks.insert({
@@ -123,7 +123,7 @@ async function doRecentSearchTest({ trigger, assert }) {
 
   await doTest(async () => {
     await UrlbarTestUtils.formHistory.add([
-      { value: "foofoo", source: Services.search.defaultEngine.name },
+      { value: "foofoo", source: SearchService.defaultEngine.name },
     ]);
 
     await openPopup("");
@@ -223,9 +223,10 @@ async function doClipboardTest({ trigger, assert }) {
     await assert();
   });
   SpecialPowers.clipboardCopyString("");
-  UrlbarProvidersManager.getProvider(
-    "UrlbarProviderClipboard"
-  ).setPreviousClipboardValue("");
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager
+    .getProvider("UrlbarProviderClipboard")
+    .setPreviousClipboardValue("");
   await SpecialPowers.popPrefEnv();
 }
 
@@ -394,7 +395,7 @@ async function doSemanticHistoryTest({ trigger, assert }) {
 }
 
 async function doSerpHistoryTest({ trigger, assert }) {
-  let defaultEngine = await Services.search.getDefault();
+  let defaultEngine = await SearchService.getDefault();
   const searchUrl = defaultEngine.getSubmission("serp history", null).uri.spec;
 
   await doTest(async () => {
@@ -410,7 +411,7 @@ async function doSerpHistoryTest({ trigger, assert }) {
 
 async function doBookmarkSerpHistoryTest({ trigger, assert }) {
   await doTest(async () => {
-    let defaultEngine = await Services.search.getDefault();
+    let defaultEngine = await SearchService.getDefault();
     let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
 
     await PlacesUtils.bookmarks.insert({
@@ -449,7 +450,7 @@ async function doTabAdaptiveTest({ trigger, assert }) {
 }
 
 async function doTabAdaptiveSerpHistoryTest({ trigger, assert }) {
-  let defaultEngine = await Services.search.getDefault();
+  let defaultEngine = await SearchService.getDefault();
   const searchUrl = defaultEngine.getSubmission("serp history", null).uri.spec;
   let visited = PlacesTestUtils.waitForNotification("page-visited", visits =>
     visits.some(({ url }) => url == searchUrl)
@@ -472,7 +473,7 @@ async function doTabAdaptiveSerpHistoryTest({ trigger, assert }) {
 }
 
 async function doTabSerpHistoryTest({ trigger, assert }) {
-  let defaultEngine = await Services.search.getDefault();
+  let defaultEngine = await SearchService.getDefault();
   const searchUrl = defaultEngine.getSubmission("serp history", null).uri.spec;
   let visited = PlacesTestUtils.waitForNotification("page-visited", visits =>
     visits.some(({ url }) => url == searchUrl)
@@ -533,17 +534,14 @@ async function _useTailSuggestionsEngine() {
     suggest_url_get_params: "?q={searchTerms}",
   });
 
-  const tailEngine = Services.search.getEngineByName(engineName);
-  const originalEngine = await Services.search.getDefault();
-  Services.search.setDefault(
-    tailEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  const tailEngine = SearchService.getEngineByName(engineName);
+  const originalEngine = await SearchService.getDefault();
+  SearchService.setDefault(tailEngine, SearchService.CHANGE_REASON.UNKNOWN);
 
   return async () => {
-    Services.search.setDefault(
+    SearchService.setDefault(
       originalEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+      SearchService.CHANGE_REASON.UNKNOWN
     );
     httpServer.stop(() => {});
     await SpecialPowers.popPrefEnv();

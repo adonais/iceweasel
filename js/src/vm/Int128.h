@@ -60,143 +60,6 @@ class alignas(16) Uint128 final {
     return u1 * v1 + w2 + (w1 >> 32);
   }
 
-  /**
-   * Based on "Unsigned doubleword division from long division" from
-   * Hacker's Delight, 2nd edition, figure 9-5.
-   */
-  static constexpr std::pair<Uint128, Uint128> udivdi(const Uint128& u,
-                                                      const Uint128& v) {
-    MOZ_ASSERT(v != Uint128{});
-
-    // If v < 2**64
-    if (v.high == 0) {
-      // If u < 2**64
-      if (u.high == 0) {
-        // Prefer built-in division if possible.
-        return {Uint128{u.low / v.low, 0}, Uint128{u.low % v.low, 0}};
-      }
-
-      // If u/v cannot overflow, just do one division.
-      if (Uint128{u.high, 0} < v) {
-        auto [q, r] = divlu(u.high, u.low, v.low);
-        return {Uint128{q, 0}, Uint128{r, 0}};
-      }
-
-      // If u/v would overflow: Break u up into two halves.
-
-      // First quotient digit and first remainder, < v.
-      auto [q1, r1] = divlu(0, u.high, v.low);
-
-      // Second quotient digit.
-      auto [q0, r0] = divlu(r1, u.low, v.low);
-
-      // Return quotient and remainder.
-      return {Uint128{q0, q1}, Uint128{r0, 0}};
-    }
-
-    // Here v >= 2**64.
-
-    // 0 <= n <= 63
-    auto n = mozilla::CountLeadingZeroes64(v.high);
-
-    // Normalize the divisor so its MSB is 1.
-    auto v1 = (v << n).high;
-
-    // To ensure no overflow.
-    auto u1 = u >> 1;
-
-    // Get quotient from divide unsigned instruction.
-    auto [q1, r1] = divlu(u1.high, u1.low, v1);
-
-    // Undo normalization and division of u by 2.
-    auto q0 = (Uint128{q1, 0} << n) >> 63;
-
-    // Make q0 correct or too small by 1.
-    if (q0 != Uint128{0}) {
-      q0 -= Uint128{1};
-    }
-
-    // Now q0 is correct.
-    auto r0 = u - q0 * v;
-    if (r0 >= v) {
-      q0 += Uint128{1};
-      r0 -= v;
-    }
-
-    // Return quotient and remainder.
-    return {q0, r0};
-  }
-
-  /**
-   * Based on "Divide long unsigned, using fullword division instructions" from
-   * Hacker's Delight, 2nd edition, figure 9-3.
-   */
-  static constexpr std::pair<uint64_t, uint64_t> divlu(uint64_t u1, uint64_t u0,
-                                                       uint64_t v) {
-    // Number base (32 bits).
-    constexpr uint64_t base = 4294967296;
-
-    // If overflow, set the remainder to an impossible value and return the
-    // largest possible quotient.
-    if (u1 >= v) {
-      return {UINT64_MAX, UINT64_MAX};
-    }
-
-    // Shift amount for normalization. (0 <= s <= 63)
-    int64_t s = mozilla::CountLeadingZeroes64(v);
-
-    // Normalize the divisor.
-    v = v << s;
-
-    // Normalized divisor digits.
-    //
-    // Break divisor up into two 32-bit digits.
-    uint64_t vn1 = v >> 32;
-    uint64_t vn0 = uint32_t(v);
-
-    // Dividend digit pairs.
-    //
-    // Shift dividend left.
-    uint64_t un32 = (u1 << s) | ((u0 >> ((64 - s) & 63)) & (-s >> 63));
-    uint64_t un10 = u0 << s;
-
-    // Normalized dividend least significant digits.
-    //
-    // Break right half of dividend into two digits.
-    uint64_t un1 = un10 >> 32;
-    uint64_t un0 = uint32_t(un10);
-
-    // Compute the first quotient digit and its remainder.
-    uint64_t q1 = un32 / vn1;
-    uint64_t rhat = un32 - q1 * vn1;
-    while (q1 >= base || q1 * vn0 > base * rhat + un1) {
-      q1 -= 1;
-      rhat += vn1;
-      if (rhat >= base) {
-        break;
-      }
-    }
-
-    // Multiply and subtract.
-    uint64_t un21 = un32 * base + un1 - q1 * v;
-
-    // Compute the second quotient digit and its remainder.
-    uint64_t q0 = un21 / vn1;
-    rhat = un21 - q0 * vn1;
-    while (q0 >= base || q0 * vn0 > base * rhat + un0) {
-      q0 -= 1;
-      rhat += vn1;
-      if (rhat >= base) {
-        break;
-      }
-    }
-
-    // Return the quotient and remainder.
-    uint64_t q = q1 * base + q0;
-    uint64_t r = (un21 * base + un0 - q0 * v) >> s;
-    return {q, r};
-  }
-
   static double toDouble(const Uint128& x, bool negative);
 
  public:
@@ -217,28 +80,14 @@ class alignas(16) Uint128 final {
   explicit constexpr Uint128(unsigned long long value)
       : Uint128(uint64_t(value), uint64_t(0)) {}
 
-  constexpr bool operator==(const Uint128& other) const {
-    return low == other.low && high == other.high;
-  }
-
-  constexpr bool operator<(const Uint128& other) const {
+  constexpr auto operator<=>(const Uint128& other) const {
     if (high == other.high) {
-      return low < other.low;
+      return low <=> other.low;
     }
-    return high < other.high;
+    return high <=> other.high;
   }
 
-  // Other operators are implemented in terms of operator== and operator<.
-  constexpr bool operator!=(const Uint128& other) const {
-    return !(*this == other);
-  }
-  constexpr bool operator>(const Uint128& other) const { return other < *this; }
-  constexpr bool operator<=(const Uint128& other) const {
-    return !(other < *this);
-  }
-  constexpr bool operator>=(const Uint128& other) const {
-    return !(*this < other);
-  }
+  constexpr bool operator==(const Uint128&) const = default;
 
   explicit constexpr operator bool() const { return !(*this == Uint128{}); }
 
@@ -429,6 +278,144 @@ class alignas(16) Uint128 final {
     *this = *this >> shift;
     return *this;
   }
+
+ private:
+  /**
+   * Based on "Divide long unsigned, using fullword division instructions" from
+   * Hacker's Delight, 2nd edition, figure 9-3.
+   */
+  static constexpr std::pair<uint64_t, uint64_t> divlu(uint64_t u1, uint64_t u0,
+                                                       uint64_t v) {
+    // Number base (32 bits).
+    constexpr uint64_t base = 4294967296;
+
+    // If overflow, set the remainder to an impossible value and return the
+    // largest possible quotient.
+    if (u1 >= v) {
+      return {UINT64_MAX, UINT64_MAX};
+    }
+
+    // Shift amount for normalization. (0 <= s <= 63)
+    int64_t s = mozilla::CountLeadingZeroes64(v);
+
+    // Normalize the divisor.
+    v = v << s;
+
+    // Normalized divisor digits.
+    //
+    // Break divisor up into two 32-bit digits.
+    uint64_t vn1 = v >> 32;
+    uint64_t vn0 = uint32_t(v);
+
+    // Dividend digit pairs.
+    //
+    // Shift dividend left.
+    uint64_t un32 = (u1 << s) | ((u0 >> ((64 - s) & 63)) & (-s >> 63));
+    uint64_t un10 = u0 << s;
+
+    // Normalized dividend least significant digits.
+    //
+    // Break right half of dividend into two digits.
+    uint64_t un1 = un10 >> 32;
+    uint64_t un0 = uint32_t(un10);
+
+    // Compute the first quotient digit and its remainder.
+    uint64_t q1 = un32 / vn1;
+    uint64_t rhat = un32 - q1 * vn1;
+    while (q1 >= base || q1 * vn0 > base * rhat + un1) {
+      q1 -= 1;
+      rhat += vn1;
+      if (rhat >= base) {
+        break;
+      }
+    }
+
+    // Multiply and subtract.
+    uint64_t un21 = un32 * base + un1 - q1 * v;
+
+    // Compute the second quotient digit and its remainder.
+    uint64_t q0 = un21 / vn1;
+    rhat = un21 - q0 * vn1;
+    while (q0 >= base || q0 * vn0 > base * rhat + un0) {
+      q0 -= 1;
+      rhat += vn1;
+      if (rhat >= base) {
+        break;
+      }
+    }
+
+    // Return the quotient and remainder.
+    uint64_t q = q1 * base + q0;
+    uint64_t r = (un21 * base + un0 - q0 * v) >> s;
+    return {q, r};
+  }
+
+  /**
+   * Based on "Unsigned doubleword division from long division" from
+   * Hacker's Delight, 2nd edition, figure 9-5.
+   */
+  static constexpr std::pair<Uint128, Uint128> udivdi(const Uint128& u,
+                                                      const Uint128& v) {
+    MOZ_ASSERT(v != Uint128{});
+
+    // If v < 2**64
+    if (v.high == 0) {
+      // If u < 2**64
+      if (u.high == 0) {
+        // Prefer built-in division if possible.
+        return {Uint128{u.low / v.low, 0}, Uint128{u.low % v.low, 0}};
+      }
+
+      // If u/v cannot overflow, just do one division.
+      if (Uint128{u.high, 0} < v) {
+        auto [q, r] = divlu(u.high, u.low, v.low);
+        return {Uint128{q, 0}, Uint128{r, 0}};
+      }
+
+      // If u/v would overflow: Break u up into two halves.
+
+      // First quotient digit and first remainder, < v.
+      auto [q1, r1] = divlu(0, u.high, v.low);
+
+      // Second quotient digit.
+      auto [q0, r0] = divlu(r1, u.low, v.low);
+
+      // Return quotient and remainder.
+      return {Uint128{q0, q1}, Uint128{r0, 0}};
+    }
+
+    // Here v >= 2**64.
+
+    // 0 <= n <= 63
+    auto n = mozilla::CountLeadingZeroes64(v.high);
+
+    // Normalize the divisor so its MSB is 1.
+    auto v1 = (v << n).high;
+
+    // To ensure no overflow.
+    auto u1 = u >> 1;
+
+    // Get quotient from divide unsigned instruction.
+    auto [q1, r1] = divlu(u1.high, u1.low, v1);
+
+    // Undo normalization and division of u by 2.
+    auto q0 = (Uint128{q1, 0} << n) >> 63;
+
+    // Make q0 correct or too small by 1.
+    if (q0 != Uint128{0}) {
+      q0 -= Uint128{1};
+    }
+
+    // Now q0 is correct.
+    auto r0 = u - q0 * v;
+    if (r0 >= v) {
+      q0 += Uint128{1};
+      r0 -= v;
+    }
+
+    // Return quotient and remainder.
+    return {q0, r0};
+  }
 };
 
 /**
@@ -482,46 +469,14 @@ class alignas(16) Int128 final {
   explicit constexpr Int128(unsigned long long value)
       : Int128(uint64_t(value), uint64_t(0)) {}
 
-  /**
-   * Return the quotient and remainder of the division.
-   */
-  constexpr std::pair<Int128, Int128> divrem(const Int128& divisor) const {
-    return divdi(*this, divisor);
-  }
-
-  /**
-   * Return the absolute value of this integer.
-   */
-  constexpr Uint128 abs() const {
-    if (*this >= Int128{}) {
-      return Uint128{low, high};
-    }
-    auto neg = -*this;
-    return Uint128{neg.low, neg.high};
-  }
-
-  constexpr bool operator==(const Int128& other) const {
-    return low == other.low && high == other.high;
-  }
-
-  constexpr bool operator<(const Int128& other) const {
+  constexpr auto operator<=>(const Int128& other) const {
     if (high == other.high) {
-      return low < other.low;
+      return low <=> other.low;
     }
-    return int64_t(high) < int64_t(other.high);
+    return int64_t(high) <=> int64_t(other.high);
   }
 
-  // Other operators are implemented in terms of operator== and operator<.
-  constexpr bool operator!=(const Int128& other) const {
-    return !(*this == other);
-  }
-  constexpr bool operator>(const Int128& other) const { return other < *this; }
-  constexpr bool operator<=(const Int128& other) const {
-    return !(other < *this);
-  }
-  constexpr bool operator>=(const Int128& other) const {
-    return !(*this < other);
-  }
+  constexpr bool operator==(const Int128&) const = default;
 
   explicit constexpr operator bool() const { return !(*this == Int128{}); }
 
@@ -539,6 +494,24 @@ class alignas(16) Int128 final {
 
   explicit operator double() const {
     return Uint128::toDouble(abs(), *this < Int128{0});
+  }
+
+  /**
+   * Return the quotient and remainder of the division.
+   */
+  constexpr std::pair<Int128, Int128> divrem(const Int128& divisor) const {
+    return divdi(*this, divisor);
+  }
+
+  /**
+   * Return the absolute value of this integer.
+   */
+  constexpr Uint128 abs() const {
+    if (*this >= Int128{}) {
+      return Uint128{low, high};
+    }
+    auto neg = -*this;
+    return Uint128{neg.low, neg.high};
   }
 
   constexpr Int128 operator+(const Int128& other) const {

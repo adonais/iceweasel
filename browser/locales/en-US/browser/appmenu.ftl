@@ -317,7 +317,7 @@ appmenuitem-relay-title = { -relay-brand-short-name }
 appmenuitem-relay-description = Mask your real email and phone
 appmenuitem-services-relay-description = Launch email masks dashboard
 appmenuitem-vpn-title = { -mozilla-vpn-brand-name }
-appmenuitem-vpn-description = Protect your online activity
+appmenuitem-vpn-description-2 = Get whole-device protection
 
 appmenu-services-header = My services
 # "Mozilla" is intentionally hardcoded to prevent forks from replacing it

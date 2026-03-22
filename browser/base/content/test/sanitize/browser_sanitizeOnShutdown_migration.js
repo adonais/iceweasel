@@ -4,12 +4,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["privacy.sanitize.useOldClearHistoryDialog", false]],
-  });
-});
-
 // Test checking "clear cookies and site data when firefox shuts down" does a migration
 // before making any pref changes (Bug 1894933)
 add_task(async function testMigrationForDeleteOnClose() {

@@ -19,8 +19,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/ScopeExit.h"
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "builtin/Promise.h"
 #include "jit/AtomicOperations.h"
 #include "jit/InlinableNatives.h"

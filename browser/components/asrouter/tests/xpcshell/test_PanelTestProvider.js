@@ -23,12 +23,12 @@ add_task(async function test_PanelTestProvider() {
     milestone_message: 0,
     update_action: 1,
     spotlight: 8,
-    feature_callout: 11,
+    feature_callout: 12,
     pb_newtab: 2,
-    toast_notification: 3,
+    toast_notification: 4,
     bookmarks_bar_button: 1,
     menu_message: 1,
-    newtab_message: 2,
+    newtab_message: 4,
     infobar: 1,
   };
 

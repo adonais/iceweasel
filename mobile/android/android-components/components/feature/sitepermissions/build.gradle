@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -51,6 +52,7 @@ dependencies {
     implementation libs.androidx.compose.ui.tooling.preview
     implementation libs.androidx.compose.ui
     implementation libs.androidx.compose.material3
+    testImplementation project(':components:support-test-libstate')
     debugImplementation libs.androidx.compose.ui.tooling
 
     implementation libs.androidx.constraintlayout

@@ -2,8 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
 from urllib.request import urlretrieve
+
+from mozfile import json
 
 REVISION = "f0b66021355352cf1e38d08e3659d0a90757d7fd"
 

@@ -8,12 +8,12 @@
 #include <algorithm>
 
 #include "gc/GCInternals.h"
-#include "gc/WeakMap.h"
 #include "gc/Zone.h"
 #include "js/PropertyAndElement.h"  // JS_DefineProperty, JS_DefinePropertyById
 #include "js/Proxy.h"
-#include "js/WeakMap.h"
 #include "jsapi-tests/tests.h"
+
+#include "gc/WeakMap-inl.h"
 
 using namespace js;
 using namespace js::gc;
@@ -459,7 +459,7 @@ bool CreateInternalWeakMapObjects(UniquePtr<GCManagedObjectWeakMap>* weakMapOut,
   RootedObject value(cx, AllocPlainObject());
   CHECK(value);
 
-  auto weakMap = cx->make_unique<GCManagedObjectWeakMap>(cx);
+  auto weakMap = cx->make_unique<GCManagedObjectWeakMap>(cx->zone());
   CHECK(weakMap);
 
   CHECK(weakMap->put(key, value));

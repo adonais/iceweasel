@@ -18,7 +18,6 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsBlockFrame.h"
-#include "nsCSSAnonBoxes.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSRendering.h"
 #include "nsDisplayList.h"
@@ -83,7 +82,8 @@ nsRect nsFieldSetFrame::VisualBorderRectRelativeToSelf() const {
 
 nsContainerFrame* nsFieldSetFrame::GetInner() const {
   for (nsIFrame* child : mFrames) {
-    if (child->Style()->GetPseudoType() == PseudoStyleType::fieldsetContent) {
+    if (child->Style()->GetPseudoType() ==
+        PseudoStyleType::MozFieldsetContent) {
       return static_cast<nsContainerFrame*>(child);
     }
   }
@@ -92,7 +92,8 @@ nsContainerFrame* nsFieldSetFrame::GetInner() const {
 
 nsIFrame* nsFieldSetFrame::GetLegend() const {
   for (nsIFrame* child : mFrames) {
-    if (child->Style()->GetPseudoType() != PseudoStyleType::fieldsetContent) {
+    if (child->Style()->GetPseudoType() !=
+        PseudoStyleType::MozFieldsetContent) {
       return child;
     }
   }
@@ -231,7 +232,6 @@ void nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
-    DisplayPushedAbsoluteFrames(aBuilder, aLists);
   }
 
   nsDisplayListCollection contentDisplayItems(aBuilder);
@@ -250,6 +250,11 @@ void nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     nsDisplayListSet set(aLists, aLists.BlockBorderBackgrounds());
     BuildDisplayListForChild(aBuilder, legend, set);
   }
+
+  if (GetPrevInFlow()) {
+    DisplayPushedAbsoluteFrames(aBuilder, aLists);
+  }
+
   // Put the inner frame's display items on the master list. Note that this
   // moves its border/background display items to our BorderBackground() list,
   // which isn't really correct, but it's OK because the inner frame is

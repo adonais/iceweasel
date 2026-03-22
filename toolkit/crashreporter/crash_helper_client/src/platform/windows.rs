@@ -73,9 +73,9 @@ impl CrashHelperClient {
         cmd_line.push(" ");
         cmd_line.push(escape_cmd_line_arg(&minidump_path));
         cmd_line.push(" ");
-        cmd_line.push(escape_cmd_line_arg(&endpoint.serialize()));
+        cmd_line.push(escape_cmd_line_arg(&endpoint.serialize()?));
         cmd_line.push(" ");
-        cmd_line.push(escape_cmd_line_arg(&listener.serialize()));
+        cmd_line.push(escape_cmd_line_arg(&listener.serialize()?));
         cmd_line.push("\0");
         let mut cmd_line: Vec<u16> = cmd_line.encode_wide().collect();
 

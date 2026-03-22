@@ -7,7 +7,7 @@ Transform the beetmover task into an actual task description.
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from taskgraph.util.taskcluster import get_artifact_prefix
 from voluptuous import Optional, Required
 
@@ -24,7 +24,7 @@ from gecko_taskgraph.util.scriptworker import (
     get_beetmover_bucket_scope,
 )
 
-beetmover_description_schema = Schema({
+beetmover_description_schema = LegacySchema({
     # from the loader:
     Optional("task-from"): str,
     Optional("name"): str,

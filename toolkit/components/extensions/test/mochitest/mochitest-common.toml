@@ -92,6 +92,11 @@ prefs = [
 
 ["test_ext_action.html"]
 
+["test_ext_action_openPopup_multiple.html"]
+skip-if = [
+  "os == 'android'", # bug 2016283
+]
+
 ["test_ext_activityLog.html"]
 skip-if = [
   "http2",
@@ -136,7 +141,7 @@ skip-if = [
 
 ["test_ext_browserAction_openPopup_windowId.html"]
 skip-if = [
-  "os == 'android'", # only the current window is supported - bug 1795956
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1855364, https://bugzilla.mozilla.org/show_bug.cgi?id=1855364#c42
 ]
 
 ["test_ext_browserAction_openPopup_without_pref.html"]
@@ -216,7 +221,7 @@ skip-if = [
 
 ["test_ext_contentscript_data_url.html"]
 skip-if = [
-  "os == 'android' && os_version == '14' && processor == 'x86_64'", # Bug 1897040
+  "os == 'android' && os_version == '14' && arch == 'x86_64'", # Bug 1897040
 ]
 
 ["test_ext_contentscript_devtools_metadata.html"]
@@ -298,6 +303,8 @@ skip-if = [
   "http2",
   "http3",
 ]
+
+["test_ext_executeScript_mozextension.html"]
 
 ["test_ext_extension_getViews.html"]
 
@@ -513,6 +520,8 @@ skip-if = [
   "http2",
   "http3",
 ]
+
+["test_ext_tabs_splitViewId.html"]
 
 ["test_ext_test.html"]
 skip-if = [

@@ -149,6 +149,7 @@ class DOMIntersectionObserver final : public nsISupports,
   void GetThresholds(nsTArray<double>& aRetVal);
   void Observe(Element& aTarget);
   void Unobserve(Element& aTarget);
+  [[nodiscard]] bool Observes(Element& aTarget) const;
 
   void UnlinkTarget(Element& aTarget);
   void Disconnect();

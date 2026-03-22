@@ -9,15 +9,12 @@
 
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/DocumentPictureInPictureBinding.h"
-#include "nsIDOMEventListener.h"
 
 namespace mozilla::dom {
 
 class DocumentPictureInPicture final : public DOMEventTargetHelper,
-                                       public nsIObserver,
-                                       public nsIDOMEventListener {
+                                       public nsIObserver {
  public:
-  NS_DECL_NSIDOMEVENTLISTENER
   NS_DECL_NSIOBSERVER
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -39,11 +36,11 @@ class DocumentPictureInPicture final : public DOMEventTargetHelper,
 
   static Maybe<CSSIntRect> GetScreenRect(nsPIDOMWindowOuter* aWindow);
 
-  static CSSIntSize CalcMaxDimensions(const CSSIntRect& screen);
+  static CSSIntSize CalcMaxDimensions(const CSSIntRect& aScreen);
 
   CSSIntRect DetermineExtent(bool aPreferInitialWindowPlacement,
-                             int aRequestedWidth, int aRequestedHeight,
-                             const CSSIntRect& screen);
+                             const CSSIntSize& aRequestedSize,
+                             const CSSIntRect& aScreen);
 
  private:
   ~DocumentPictureInPicture();

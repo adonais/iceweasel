@@ -9,6 +9,7 @@ export const HeuristicsRegExp = {
     email: undefined,
     "tel-country-code" : undefined,
     tel: undefined,
+    "address-extra-housesuffix": undefined,
     "address-housenumber": undefined,
     "street-address": undefined,
     "address-line1": undefined,
@@ -57,18 +58,22 @@ export const HeuristicsRegExp = {
         "|(?<neg>nome.*)|endereço", // es
       "address-line2":
         "addrline2|address_2|addl2" +
-        "|landmark", // common in IN
-      "address-line3": "addrline3|address_3|addl3",
-      "address-level2": 
+		"|landmark" + // common in IN
+		"|complement|interior|interno|dpto", // es-MX
+      "address-line3": "addrline3|address_3|addl3" +
+		"|complement|interior|interno|dpto", // es-MX
+      "address-level2":
         "città" + // it-IT
         "|miasto|miejscowosc|miejscowość" + //pl-PL
         "|\\bstad|woonplaats|plaats" + // nl
 		"|ciudad", // es-MX
       "address-housenumber":
         "(house|building|street1?)[\\s\\-_]*number|hausnummer|haus|house[a-z\-]*n(r|o)" +
-        "|n[úu]mero" +
+		"|n[úu]mero(?!\\s*int)|exterior" +
         "|domu" + // pl-PL
         "|huisnummer", // nl
+      "address-extra-housesuffix":
+        "toevoeging|toev.?", // nl
       "address-level3":
         "(^address-?level-?3$)" +
         "|neighbou*rhood|barrio|bairro|colonia|suburb", // en/es/pt/mx/au/nz

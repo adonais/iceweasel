@@ -159,30 +159,76 @@ bool GMPVideoi420FrameImpl::CheckFrameData(
   // if so. Note: Size() greater than expected is also an error, but with no
   // negative consequences
   int32_t half_width = (aFrameData.mWidth() + 1) / 2;
-  if ((aFrameData.mYPlane().mStride() <= 0) ||
-      (aFrameData.mYPlane().mSize() <= 0) ||
-      (aFrameData.mYPlane().mOffset() < 0) ||
-      (aFrameData.mUPlane().mStride() <= 0) ||
-      (aFrameData.mUPlane().mSize() <= 0) ||
-      (aFrameData.mUPlane().mOffset() <
-       aFrameData.mYPlane().mOffset() + aFrameData.mYPlane().mSize()) ||
-      (aFrameData.mVPlane().mStride() <= 0) ||
-      (aFrameData.mVPlane().mSize() <= 0) ||
-      (aFrameData.mVPlane().mOffset() <
-       aFrameData.mUPlane().mOffset() + aFrameData.mUPlane().mSize()) ||
-      (aBufferSize < static_cast<size_t>(aFrameData.mVPlane().mOffset()) +
-                         static_cast<size_t>(aFrameData.mVPlane().mSize())) ||
-      (aFrameData.mYPlane().mStride() < aFrameData.mWidth()) ||
-      (aFrameData.mUPlane().mStride() < half_width) ||
-      (aFrameData.mVPlane().mStride() < half_width) ||
-      (aFrameData.mYPlane().mSize() <
-       aFrameData.mYPlane().mStride() * aFrameData.mHeight()) ||
-      (aFrameData.mUPlane().mSize() <
-       aFrameData.mUPlane().mStride() * ((aFrameData.mHeight() + 1) / 2)) ||
-      (aFrameData.mVPlane().mSize() <
-       aFrameData.mVPlane().mStride() * ((aFrameData.mHeight() + 1) / 2))) {
+  int32_t half_height = (aFrameData.mHeight() + 1) / 2;
+
+  // Check for negative offsets
+  if ((aFrameData.mYPlane().mOffset() < 0) ||
+      (aFrameData.mUPlane().mOffset() < 0) ||
+      (aFrameData.mVPlane().mOffset() < 0)) {
     return false;
   }
+
+  // Check for non-positive strides and sizes
+  if ((aFrameData.mYPlane().mStride() <= 0) ||
+      (aFrameData.mYPlane().mSize() <= 0) ||
+      (aFrameData.mUPlane().mStride() <= 0) ||
+      (aFrameData.mUPlane().mSize() <= 0) ||
+      (aFrameData.mVPlane().mStride() <= 0) ||
+      (aFrameData.mVPlane().mSize() <= 0)) {
+    return false;
+  }
+
+  // Check stride requirements (must be at least as wide as the data)
+  if ((aFrameData.mYPlane().mStride() < aFrameData.mWidth()) ||
+      (aFrameData.mUPlane().mStride() < half_width) ||
+      (aFrameData.mVPlane().mStride() < half_width)) {
+    return false;
+  }
+
+  // Validate plane end calculations
+  auto y_plane_end = CheckedInt<int32_t>(aFrameData.mYPlane().mOffset()) +
+                     aFrameData.mYPlane().mSize();
+  auto u_plane_end = CheckedInt<int32_t>(aFrameData.mUPlane().mOffset()) +
+                     aFrameData.mUPlane().mSize();
+  auto v_plane_end = CheckedInt<int32_t>(aFrameData.mVPlane().mOffset()) +
+                     aFrameData.mVPlane().mSize();
+
+  if (!y_plane_end.isValid() || !u_plane_end.isValid() ||
+      !v_plane_end.isValid()) {
+    return false;
+  }
+
+  // Check that planes don't overlap
+  if ((aFrameData.mUPlane().mOffset() < y_plane_end.value()) ||
+      (aFrameData.mVPlane().mOffset() < u_plane_end.value())) {
+    return false;
+  }
+
+  // Check buffer size
+  if (aBufferSize < static_cast<size_t>(v_plane_end.value())) {
+    return false;
+  }
+
+  // Validate size calculations
+  auto y_expected_size = CheckedInt<int32_t>(aFrameData.mYPlane().mStride()) *
+                         aFrameData.mHeight();
+  auto u_expected_size =
+      CheckedInt<int32_t>(aFrameData.mUPlane().mStride()) * half_height;
+  auto v_expected_size =
+      CheckedInt<int32_t>(aFrameData.mVPlane().mStride()) * half_height;
+
+  if (!y_expected_size.isValid() || !u_expected_size.isValid() ||
+      !v_expected_size.isValid()) {
+    return false;
+  }
+
+  // Check that allocated sizes are sufficient
+  if ((aFrameData.mYPlane().mSize() < y_expected_size.value()) ||
+      (aFrameData.mUPlane().mSize() < u_expected_size.value()) ||
+      (aFrameData.mVPlane().mSize() < v_expected_size.value())) {
+    return false;
+  }
+
   return true;
 }
 

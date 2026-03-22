@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = Personaliziraj
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = Odbaci
+    .aria-label = Odbaci
 
 ## Search box component.
 
@@ -82,7 +85,7 @@ newtab-topsites-add-button = Dodaj
 
 newtab-confirm-delete-history-p1 = Stvarno želiš izbrisati sve primjere ove stranice iz povijesti?
 # "This action" refers to deleting a page from history.
-newtab-confirm-delete-history-p2 = Ova se radnja ne može poništiti.
+newtab-confirm-delete-history-p2 = Ovo je nepovratna radnja.
 
 ## Top Sites - Sponsored label
 
@@ -221,7 +224,7 @@ newtab-section-menu-add-topsite = Dodaj najbolju stranicu
 newtab-section-menu-add-search-engine = Dodaj tražilicu
 newtab-section-menu-move-up = Pomakni gore
 newtab-section-menu-move-down = Pomakni dolje
-newtab-section-menu-privacy-notice = Napomena o privatnosti
+newtab-section-menu-privacy-notice = Napomene o privatnosti
 
 ## Section aria-labels
 
@@ -243,7 +246,7 @@ newtab-section-header-todays-picks = Današnji preporučeni članci za tebe
 
 ## Empty Section States: These show when there are no more items in a section. Ex. When there are no more Pocket story recommendations, in the space where there would have been stories, this is shown instead.
 
-newtab-empty-section-highlights = Započni pregledavanje i pokazat ćemo ti neke od izvrsnih članaka, videa i drugih web stranica prema tvojim nedavno posjećenim stranicama ili zabilješkama.
+newtab-empty-section-highlights = Započni pregledavanje i pokazat ćemo ti neke izvrsne članke, videa i druge stranice koje si nedavno posjetio/la ili zabilježio/la.
 # Ex. When there are no more Pocket story recommendations, in the space where there would have been stories, this is shown instead.
 # Variables:
 #   $provider (string) - Name of the content provider for this section, e.g "Pocket".
@@ -330,18 +333,18 @@ newtab-custom-recent-subtitle = Izbor nedavno posjećenih stranica i sadržaja
 newtab-custom-weather-toggle =
     .label = Vrijeme
     .description = Današnja prognoza
-newtab-custom-trending-search-toggle =
-    .label = Popularne pretrage
-    .description = Popularne i često tražene teme
 newtab-custom-widget-weather-toggle =
     .label = Vrijeme
-newtab-custom-widget-trending-search-toggle =
-    .label = Popularne pretrage
 newtab-custom-widget-lists-toggle =
     .label = Popisi
 newtab-custom-widget-timer-toggle =
     .label = Odbrojavanje
 newtab-custom-widget-section-title = Widgeti
+newtab-custom-widget-section-toggle =
+    .label = Widgeti
+newtab-widget-manage-title = Widgeti
+newtab-widget-manage-widget-button =
+    .label = Upravljaj widgetima
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Zatvori
@@ -469,6 +472,8 @@ newtab-weather-change-location-search-input-placeholder =
     .placeholder = Traži lokaciju
     .aria-label = Traži lokaciju
 newtab-weather-menu-weather-display = Prikaz vremena
+newtab-weather-todays-forecast = Današnja vremenska prognoza
+newtab-weather-see-full-forecast = Pogledaj cijelu vremensku prognozu
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -481,6 +486,7 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celzija
 newtab-weather-menu-change-temperature-units-fahrenheit = Prebaci na Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Prebaci na Celzijeve stupnjeve
+newtab-weather-menu-hide-weather-v2 = Sakrij vrijeme
 newtab-weather-menu-hide-weather = Sakrij vremensku prognozu na novoj kartici
 newtab-weather-menu-learn-more = Saznaj više
 newtab-weather-menu-detect-my-location = Otkrij moju lokaciju
@@ -493,6 +499,11 @@ newtab-weather-opt-in-yes =
     .label = Da
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Pogledajte prognozu u { $provider }
+    .aria-description = { $provider } ∙ Sponzorirano
 
 ## Topic Labels
 
@@ -578,7 +589,7 @@ newtab-custom-wallpaper-cta = Isprobaj
 
 ## Strings for new user activation custom wallpaper highlight
 
-newtab-new-user-custom-wallpaper-title = Odaberite pozadinu kako biste { -brand-product-name } prilagodili sebi
+newtab-new-user-custom-wallpaper-title = Odaberi pozadinu te prilagodi { -brand-product-name } sebi
 newtab-new-user-custom-wallpaper-subtitle = Neka svaka nova kartice pruža osjećaj doma uz prilagođene pozadine i boje.
 newtab-new-user-custom-wallpaper-cta = Isprobajte sada
 
@@ -597,7 +608,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Vaši favoriti na dohvat ruke
 newtab-shortcuts-highlight-subtitle = Dodajte prečac kako biste svoje omiljene stranice imali nadohvat ruke.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Zašto ovo prijavljuješ?
@@ -615,21 +626,13 @@ newtab-report-content-inappropriate-offensive =
     .label = Neprikladno ili uvredljivo
 newtab-report-content-spam-misleading =
     .label = Nametljivo ili obmanjujuće
+newtab-report-content-requires-payment-subscription =
+    .label = Zahtijeva plaćanje ili pretplatu
+newtab-report-content-requires-payment-subscription-learn-more = Saznaj više
 newtab-report-cancel = Odustani
 newtab-report-submit = Pošalji
 newtab-toast-thanks-for-reporting =
     .message = Hvala na prijavi!
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Prikaži popularne pretrage
-newtab-trending-searches-hide-trending =
-    .title = Sakrij popularne pretrage
-newtab-trending-searches-learn-more = Saznaj više
-newtab-trending-searches-dismiss = Sakrij popularne pretrage
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Popularne pretrage
 
 ## Strings for task / to-do list productivity widget
 
@@ -702,6 +705,12 @@ newtab-widget-timer-menu-notifications = Isključi obavijesti
 newtab-widget-timer-menu-notifications-on = Uključi obavijesti
 newtab-widget-timer-menu-hide = Sakrij odbrojavanje
 newtab-widget-timer-menu-learn-more = Saznaj više
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = Najnovije vijesti
+newtab-daily-briefing-card-menu-dismiss = Odbaci
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = Aktualizirano prije { $minutes } min
 newtab-widget-message-title = Ostanite fokusirani uz popise i ugrađeno odbrojavanje
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Od brzih podsjetnika do dnevnih obaveza, sesija za fokusiranje do pauza za istezanje — ostanite usredotočeni na zadatak i na vrijeme.
@@ -711,3 +720,25 @@ newtab-promo-card-cta = Saznajte više
 newtab-promo-card-dismiss-button =
     .title = Odbaci
     .aria-label = Odbaci
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-dismiss-button =
+    .title = Odbaci
+    .aria-label = Odbaci
+# "This space" refers to about:newtab. The call to action here ("make it your own")
+# is to customize newtab with a background image or colour, or by tweaking the
+# existing widgetry that appears on it.
+newtab-activation-window-message-customization-focus-header = Prilagodi ovaj prostor sebi
+newtab-activation-window-message-customization-focus-message = Odaberi novu pozadinu, dodaj prečace do svojih omiljenih web-stranica i budi u tijeku s pričama koje te zanimaju.
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = Započni prilagođavanje
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = Ovaj se prostor prilagođava tvojim pravilima
+newtab-activation-window-message-values-focus-message = { -brand-product-name } omogućuje pregledavanje na način koji ti se sviđa, s osobnijim načinom za početak dana na internetu. Prilagodi { -brand-product-name } svom ukusu.

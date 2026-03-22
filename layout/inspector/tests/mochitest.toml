@@ -4,7 +4,6 @@ prefs = [
   "layout.css.basic-shape-shape.enabled=true",
   "layout.css.properties-and-values.enabled=true",
   "layout.css.starting-style-at-rules.enabled=true",
-  "dom.customHighlightAPI.enabled=true",
   "dom.viewTransitions.enabled=true",
 ]
 support-files = [
@@ -41,6 +40,8 @@ support-files = [
 ["test_containing_block_of.html"]
 
 ["test_css_property_is_shorthand.html"]
+
+["test_getAnchorFor.html"]
 
 ["test_getCSSPseudoElementNames.html"]
 

@@ -15,12 +15,14 @@ use crate::values::generics::calc::{
 };
 use crate::values::generics::length::GenericAnchorSizeFunction;
 use crate::values::generics::position::{
-    AnchorSideKeyword, GenericAnchorFunction, GenericAnchorSide,
+    AnchorSideKeyword, GenericAnchorFunction, GenericAnchorSide, TreeScoped,
 };
 use crate::values::specified::length::{AbsoluteLength, FontRelativeLength, NoCalcLength};
 use crate::values::specified::length::{ContainerRelativeLength, ViewportPercentageLength};
 use crate::values::specified::{self, Angle, Resolution, Time};
-use crate::values::{serialize_number, serialize_percentage, CSSFloat, DashedIdent};
+use crate::values::{
+    reify_percentage, serialize_number, serialize_percentage, CSSFloat, DashedIdent,
+};
 use cssparser::{match_ignore_ascii_case, CowRcStr, Parser, Token};
 use debug_unreachable::debug_unreachable;
 use smallvec::SmallVec;
@@ -126,9 +128,10 @@ impl ToCss for Leaf {
 
 impl ToTyped for Leaf {
     fn to_typed(&self) -> Option<TypedValue> {
-        // XXX Only supporting Length for now
+        // XXX Only supporting Length and Percentage for now
         match *self {
             Self::Length(ref l) => l.to_typed(),
+            Self::Percentage(p) => Some(TypedValue::Numeric(reify_percentage(p))),
             _ => None,
         }
     }
@@ -558,7 +561,9 @@ impl GenericAnchorFunction<Box<CalcNode>, Box<CalcNode>> {
                 })
                 .ok();
             Ok(Self {
-                target_element: target_element.unwrap_or_else(DashedIdent::empty),
+                target_element: TreeScoped::with_default_level(
+                    target_element.unwrap_or_else(DashedIdent::empty),
+                ),
                 side,
                 fallback: fallback.into(),
             })
@@ -614,7 +619,8 @@ impl CalcNode {
                 value, ref unit, ..
             } => {
                 if allowed.includes(CalcUnits::LENGTH) {
-                    if let Ok(l) = NoCalcLength::parse_dimension(context, value, unit) {
+                    if let Ok(l) = NoCalcLength::parse_dimension_with_context(context, value, unit)
+                    {
                         return Ok(CalcNode::Leaf(Leaf::Length(l)));
                     }
                 }
@@ -711,15 +717,45 @@ impl CalcNode {
             match function {
                 MathFunction::Calc => Self::parse_argument(context, input, allowed),
                 MathFunction::Clamp => {
-                    let min = Self::parse_argument(context, input, allowed)?;
+                    let min_val = if input
+                        .try_parse(|min| min.expect_ident_matching("none"))
+                        .ok()
+                        .is_none()
+                    {
+                        Some(Self::parse_argument(context, input, allowed)?)
+                    } else {
+                        None
+                    };
+
                     input.expect_comma()?;
                     let center = Self::parse_argument(context, input, allowed)?;
                     input.expect_comma()?;
-                    let max = Self::parse_argument(context, input, allowed)?;
-                    Ok(Self::Clamp {
-                        min: Box::new(min),
-                        center: Box::new(center),
-                        max: Box::new(max),
+
+                    let max_val = if input
+                        .try_parse(|max| max.expect_ident_matching("none"))
+                        .ok()
+                        .is_none()
+                    {
+                        Some(Self::parse_argument(context, input, allowed)?)
+                    } else {
+                        None
+                    };
+
+                    // Specification does not state how serialization should occur for clamp
+                    // https://github.com/w3c/csswg-drafts/issues/13535
+                    // tentatively partially serialize to min/max
+                    // clamp(MIN, VAL, none) is equivalent to max(MIN, VAL)
+                    // clamp(none, VAL, MAX) is equivalent to min(VAL, MAX)
+                    // clamp(none, VAL, none) is equivalent to just calc(VAL)
+                    Ok(match (min_val, max_val) {
+                        (None, None) => center,
+                        (None, Some(max)) => Self::MinMax(vec![center, max].into(), MinMaxOp::Min),
+                        (Some(min), None) => Self::MinMax(vec![min, center].into(), MinMaxOp::Max),
+                        (Some(min), Some(max)) => Self::Clamp {
+                            min: Box::new(min),
+                            center: Box::new(center),
+                            max: Box::new(max),
+                        },
                     })
                 },
                 MathFunction::Round => {

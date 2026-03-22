@@ -57,7 +57,7 @@ extern "C" MOZ_EXPORT __attribute__((weak)) int dl_iterate_phdr(
 // libc functions, and is thus safer to use in a crashed environment.
 class MemoryRange {
  public:
-  MemoryRange() : data_(NULL), length_(0) {}
+  MemoryRange() : data_(nullptr), length_(0) {}
 
   MemoryRange(const void* data, size_t length) { Set(data, length); }
 
@@ -69,7 +69,7 @@ class MemoryRange {
 
   // Resets to an empty range.
   void Reset() {
-    data_ = NULL;
+    data_ = nullptr;
     length_ = 0;
   }
 
@@ -95,7 +95,7 @@ class MemoryRange {
   // |sub_offset| bytes of this memory range, or NULL if the subrange
   // is out of bounds.
   const void* GetData(size_t sub_offset, size_t sub_length) const {
-    return Covers(sub_offset, sub_length) ? (data_ + sub_offset) : NULL;
+    return Covers(sub_offset, sub_length) ? (data_ + sub_offset) : nullptr;
   }
 
   // Same as the two-argument version of GetData() but uses sizeof(DataType)
@@ -203,7 +203,7 @@ class MemoryMappedFile {
       return true;
     }
 
-    void* data = mmap(NULL, file_len, PROT_READ, MAP_PRIVATE, fd, offset);
+    void* data = mmap(nullptr, file_len, PROT_READ, MAP_PRIVATE, fd, offset);
     close(fd);
     if (data == MAP_FAILED) {
       return false;
@@ -218,7 +218,7 @@ class MemoryMappedFile {
   void Unmap() {
     if (content_.data()) {
       munmap(const_cast<uint8_t*>(content_.data()), content_.length());
-      content_.Set(NULL, 0);
+      content_.Set(nullptr, 0);
     }
   }
 
@@ -321,11 +321,11 @@ class FileID {
       const typename ElfClass::Shdr* sections, const char* section_names,
       const char* names_end, int nsection) {
     if (!name || !sections || nsection == 0) {
-      return NULL;
+      return nullptr;
     }
 
     int name_len = strlen(name);
-    if (name_len == 0) return NULL;
+    if (name_len == 0) return nullptr;
 
     for (int i = 0; i < nsection; ++i) {
       const char* section_name = section_names + sections[i].sh_name;
@@ -335,7 +335,7 @@ class FileID {
         return sections + i;
       }
     }
-    return NULL;
+    return nullptr;
   }
 
   struct ElfSegment {
@@ -425,7 +425,7 @@ class FileID {
         FindElfSectionByName<ElfClass>(section_name, section_type, sections,
                                        names, names_end, elf_header->e_shnum);
 
-    if (section != NULL && section->sh_size > 0) {
+    if (section != nullptr && section->sh_size > 0) {
       *section_start = elf_base + section->sh_offset;
       *section_size = section->sh_size;
     }
@@ -487,7 +487,7 @@ class FileID {
       return false;
     }
 
-    *section_start = NULL;
+    *section_start = nullptr;
     *section_size = 0;
 
     if (!IsValidElf(elf_mapped_base)) return false;
@@ -499,12 +499,12 @@ class FileID {
       return FindElfClassSection<ElfClass32>(elf_base, section_name,
                                              section_type, section_start,
                                              section_size) &&
-             *section_start != NULL;
+             *section_start != nullptr;
     } else if (cls == ELFCLASS64) {
       return FindElfClassSection<ElfClass64>(elf_base, section_name,
                                              section_type, section_start,
                                              section_size) &&
-             *section_start != NULL;
+             *section_start != nullptr;
     }
 
     return false;

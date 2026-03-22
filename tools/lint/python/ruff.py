@@ -159,7 +159,7 @@ def format(paths, config, log, **lintargs):
         exclude_patterns.extend(config["exclude"])
 
     for exclude in exclude_patterns:
-        args.extend(["--exclude", exclude])
+        args.append(f"--exclude={exclude}")
 
     if lintargs.get("fix"):
         # Do a first pass to fix, as JSON output doesn't include fix counts

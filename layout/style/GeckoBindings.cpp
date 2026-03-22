@@ -11,6 +11,7 @@
 #include "AnchorPositioningUtils.h"
 #include "ChildIterator.h"
 #include "ErrorReporter.h"
+#include "PseudoStyleType.h"
 #include "gfxFontFeatures.h"
 #include "gfxMathTable.h"
 #include "gfxTextRun.h"
@@ -59,7 +60,6 @@
 #include "nsAttrValueInlines.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSProps.h"
-#include "nsCSSPseudoElements.h"
 #include "nsContentUtils.h"
 #include "nsDOMTokenList.h"
 #include "nsDeviceContext.h"
@@ -282,6 +282,12 @@ bool Gecko_IsRootElement(const Element* aElement) {
   return aElement->OwnerDoc()->GetRootElement() == aElement;
 }
 
+void Gecko_GetCachedLazyPseudoStyles(const ComputedStyle* aStyle,
+                                     nsTArray<const ComputedStyle*>* aArray) {
+  MOZ_ASSERT(aStyle);
+  aStyle->GetCachedLazyPseudoStyles(*aArray);
+}
+
 void Gecko_NoteDirtyElement(const Element* aElement) {
   MOZ_ASSERT(NS_IsMainThread());
   const_cast<Element*>(aElement)->NoteDirtyForServo();
@@ -310,6 +316,12 @@ void Gecko_InvalidatePositionTry(const Element* aElement) {
   }
   f->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
   f->PresShell()->MarkPositionedFrameForReflow(f);
+}
+
+void Gecko_NoteHighlightPseudoStyleInvalidated(const Document* aDoc) {
+  if (auto* presContext = aDoc->GetPresContext()) {
+    presContext->RestyleManager()->NoteHighlightPseudoStyleInvalidated();
+  }
 }
 
 float Gecko_GetScrollbarInlineSize(const nsPresContext* aPc) {
@@ -1905,6 +1917,7 @@ static bool AnchorSideUsesCBWM(
 
 bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
                               const nsAtom* aAnchorName,
+                              const StyleCascadeLevel* aTreeScope,
                               StylePhysicalSide aPropSide,
                               StyleAnchorSideKeyword aAnchorSideKeyword,
                               float aPercentage, Length* aOut) {
@@ -1915,7 +1928,8 @@ bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
   const auto* containingBlock = positioned->GetParent();
   auto* cache = aParams->mBaseParams.mCache;
   const auto info = AnchorPositioningUtils::ResolveAnchorPosRect(
-      positioned, containingBlock, aAnchorName, !aParams->mCBSize, cache);
+      positioned, containingBlock, {aAnchorName, *aTreeScope},
+      !aParams->mCBSize, cache);
   if (!info) {
     return false;
   }
@@ -2036,6 +2050,7 @@ bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
 
 bool Gecko_GetAnchorPosSize(const AnchorPosResolutionParams* aParams,
                             const nsAtom* aAnchorName,
+                            const mozilla::StyleCascadeLevel* aTreeScope,
                             StylePhysicalAxis aPropAxis,
                             StyleAnchorSizeKeyword aAnchorSizeKeyword,
                             Length* aOut) {
@@ -2044,7 +2059,7 @@ bool Gecko_GetAnchorPosSize(const AnchorPosResolutionParams* aParams,
   }
   const auto* positioned = aParams->mFrame;
   const auto size = AnchorPositioningUtils::ResolveAnchorPosSize(
-      positioned, aAnchorName, aParams->mCache);
+      positioned, {aAnchorName, *aTreeScope}, aParams->mCache);
   if (!size) {
     return false;
   }

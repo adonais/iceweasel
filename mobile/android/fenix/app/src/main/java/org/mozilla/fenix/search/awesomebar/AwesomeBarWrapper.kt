@@ -13,6 +13,7 @@ import mozilla.components.browser.state.action.AwesomeBarAction
 import mozilla.components.compose.browser.awesomebar.AwesomeBar
 import mozilla.components.compose.browser.awesomebar.AwesomeBarOrientation
 import mozilla.components.concept.awesomebar.AwesomeBar
+import mozilla.components.concept.awesomebar.AwesomeBar.GroupedSuggestion
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.BookmarksManagement
@@ -33,8 +34,10 @@ class AwesomeBarWrapper @JvmOverloads constructor(
 ) : AbstractComposeView(context, attrs, defStyleAttr), AwesomeBar {
     private val providers = mutableStateOf(emptyList<AwesomeBar.SuggestionProvider>())
     private val text = mutableStateOf("")
+    private val hiddenSuggestions = mutableStateOf<Set<GroupedSuggestion>>(emptySet())
     private var onEditSuggestionListener: ((String) -> Unit)? = null
     private var onStopListener: (() -> Unit)? = null
+    private var onRemoveSuggestionButtonClicked: ((GroupedSuggestion) -> Unit)? = null
 
     @Composable
     override fun Content() {
@@ -52,6 +55,7 @@ class AwesomeBarWrapper @JvmOverloads constructor(
             AwesomeBar(
                 text = text.value,
                 providers = providers.value,
+                hiddenSuggestions = hiddenSuggestions.value,
                 orientation = orientation,
                 onSuggestionClicked = { suggestion ->
                     context.components.core.store.dispatch(AwesomeBarAction.SuggestionClicked(suggestion))
@@ -68,6 +72,9 @@ class AwesomeBarWrapper @JvmOverloads constructor(
                 },
                 onAutoComplete = { suggestion ->
                     onEditSuggestionListener?.invoke(suggestion.editSuggestion!!)
+                },
+                onRemoveClicked = {
+                    onRemoveSuggestionButtonClicked?.invoke(it)
                 },
                 onVisibilityStateUpdated = {
                     context.components.core.store.dispatch(AwesomeBarAction.VisibilityStateUpdated(it))
@@ -108,5 +115,13 @@ class AwesomeBarWrapper @JvmOverloads constructor(
 
     override fun setOnStopListener(listener: () -> Unit) {
         onStopListener = listener
+    }
+
+    override fun updateHiddenSuggestions(hiddenSuggestions: Set<GroupedSuggestion>) {
+        this.hiddenSuggestions.value = hiddenSuggestions
+    }
+
+    override fun setOnRemoveSuggestionButtonClicked(listener: (GroupedSuggestion) -> Unit) {
+        onRemoveSuggestionButtonClicked = listener
     }
 }

@@ -8,8 +8,8 @@
 // nsSplitterFrame
 //
 
-#ifndef nsSplitterFrame_h__
-#define nsSplitterFrame_h__
+#ifndef nsSplitterFrame_h_
+#define nsSplitterFrame_h_
 
 #include "SimpleXULLeafFrame.h"
 #include "mozilla/Attributes.h"

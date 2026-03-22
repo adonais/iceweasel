@@ -20,10 +20,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  11 files changed, 27 insertions(+), 27 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 14d1caaa01..7bce8fab51 100644
+index 8312d006c9..8cc7d04523 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -444,12 +444,12 @@ config("common_config") {
+@@ -445,12 +445,12 @@ config("common_config") {
      }
    }
  
@@ -38,7 +38,7 @@ index 14d1caaa01..7bce8fab51 100644
      defines += [ "WEBRTC_ARCH_ARM" ]
      if (arm_version >= 7) {
        defines += [ "WEBRTC_ARCH_ARM_V7" ]
-@@ -459,7 +459,7 @@ config("common_config") {
+@@ -460,7 +460,7 @@ config("common_config") {
      }
    }
  
@@ -172,7 +172,7 @@ index ac862c65a8..e66ed2796e 100644
    } else {
      sources += [ "spl_sqrt_floor.c" ]
 diff --git a/modules/audio_processing/aec3/BUILD.gn b/modules/audio_processing/aec3/BUILD.gn
-index 633bae0cfa..830528d5e5 100644
+index e64cf48c0b..6ee6ade6dc 100644
 --- a/modules/audio_processing/aec3/BUILD.gn
 +++ b/modules/audio_processing/aec3/BUILD.gn
 @@ -126,7 +126,7 @@ rtc_library("aec3") {

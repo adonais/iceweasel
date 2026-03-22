@@ -4,8 +4,11 @@
 
 package mozilla.components.support.utils
 
+import android.content.ContentResolver
+import android.content.ContentUris
 import android.net.Uri
 import android.os.Environment
+import android.provider.MediaStore
 import android.webkit.MimeTypeMap
 import mozilla.components.support.utils.DownloadUtils.CONTENT_DISPOSITION_TYPE
 import mozilla.components.support.utils.DownloadUtils.fileNameAsteriskContentDispositionPattern
@@ -134,16 +137,6 @@ object DownloadUtils {
     private val encodedSymbolPattern = Pattern.compile("%[0-9a-f]{2}|[0-9a-z!#$&+-.^_`|~]", Pattern.CASE_INSENSITIVE)
 
     /**
-     * Keep aligned with desktop generic content types:
-     * https://searchfox.org/mozilla-central/source/browser/components/downloads/DownloadsCommon.jsm#208
-     */
-    private val GENERIC_CONTENT_TYPES = arrayOf(
-        "application/octet-stream",
-        "binary/octet-stream",
-        "application/unknown",
-    )
-
-    /**
      * Maximum number of characters for the title length.
      *
      * Android OS is Linux-based and therefore would have the limitations of the linux filesystem
@@ -174,42 +167,12 @@ object DownloadUtils {
      */
     private const val MIN_FILE_NAME_LENGTH = 5
 
+    private const val SCHEME_CONTENT = "content://"
+
     /**
      * The HTTP response code for a successful request.
      */
     const val RESPONSE_CODE_SUCCESS = 200
-
-    /**
-     * Guess the name of the file that should be downloaded.
-     *
-     * This method is largely identical to [android.webkit.URLUtil.guessFileName]
-     * which unfortunately does not implement RFC 5987.
-     */
-
-    @JvmStatic
-    fun guessFileName(
-        contentDisposition: String?,
-        destinationDirectory: String = Environment.DIRECTORY_DOWNLOADS,
-        url: String?,
-        mimeType: String?,
-    ): String {
-        // Split fileName between base and extension
-        // Add an extension if filename does not have one
-        val extractedFileName = extractFileNameFromUrl(contentDisposition, url)
-        val sanitizedMimeType = sanitizeMimeType(mimeType)
-
-        val fileName = if (extractedFileName.contains('.')) {
-            if (GENERIC_CONTENT_TYPES.contains(sanitizedMimeType)) {
-                extractedFileName
-            } else {
-                changeExtension(extractedFileName, sanitizedMimeType)
-            }
-        } else {
-            extractedFileName + createExtension(sanitizedMimeType)
-        }
-
-        return uniqueFileName(Environment.getExternalStoragePublicDirectory(destinationDirectory), fileName)
-    }
 
     // Some site add extra information after the mimetype, for example 'application/pdf; qs=0.001'
     // we just want to extract the mimeType and ignore the rest.
@@ -225,26 +188,6 @@ object DownloadUtils {
                 null
             }
             )?.trim()
-    }
-
-    /**
-     * Checks if the file exists so as not to overwrite one already in the destination directory
-     */
-    fun uniqueFileName(directory: File, fileName: String): String {
-        val file = File(fileName)
-        val (baseFileName, fileExtension) = truncateFileName(
-            baseFileName = file.nameWithoutExtension,
-            fileExtension = file.extension,
-            path = directory.absolutePath,
-        )
-
-        var potentialFileName = File(directory, createFileName(fileName = baseFileName, fileExtension = fileExtension))
-        var copyVersionNumber = 1
-        while (potentialFileName.exists()) {
-            potentialFileName = File(directory, createFileName(baseFileName, copyVersionNumber++, fileExtension))
-        }
-
-        return potentialFileName.name
     }
 
     /**
@@ -314,7 +257,14 @@ object DownloadUtils {
             }
     }
 
-    private fun extractFileNameFromUrl(contentDisposition: String?, url: String?): String {
+    /**
+     * Extracts a file name from either the Content-Disposition header or the URL.
+     *
+     * @param contentDisposition The 'Content-Disposition' HTTP header value, if available.
+     * @param url The URL from which the file is being downloaded.
+     * @return The extracted file name or a default fallback name.
+     */
+    fun extractFileNameFromUrl(contentDisposition: String?, url: String?): String {
         var filename: String? = null
 
         // Extract file name from content disposition header field
@@ -344,10 +294,10 @@ object DownloadUtils {
             val fileName = parseContentDispositionWithFileName(contentDisposition)
                 ?: parseContentDispositionWithFileNameAsterisk(contentDisposition)
             Uri.decode(fileName)
-        } catch (ex: IllegalStateException) {
+        } catch (_: IllegalStateException) {
             // This function is defined as returning null when it can't parse the header
             null
-        } catch (ex: UnsupportedEncodingException) {
+        } catch (_: UnsupportedEncodingException) {
             // Do nothing
             null
         }
@@ -362,7 +312,7 @@ object DownloadUtils {
             val unencodedFileName = contentDisposition.substring(startIndex)
             val indexOfNextSemicolon = unencodedFileName.indexOf(';')
             if (indexOfNextSemicolon != -1) {
-                return unencodedFileName.substring(0, indexOfNextSemicolon)
+                return unencodedFileName.take(indexOfNextSemicolon)
             }
             return unencodedFileName
         }
@@ -440,7 +390,7 @@ object DownloadUtils {
     /**
      * Compare the filename extension with the mime type and change it if necessary.
      */
-    private fun changeExtension(filename: String, providedMimeType: String?): String {
+    fun changeExtension(filename: String, providedMimeType: String?): String {
         val file = File(filename)
         val mimeTypeMap = MimeTypeMap.getSingleton()
         val extensionFromMimeType = getExtensionFromMimeType(providedMimeType)
@@ -485,7 +435,7 @@ object DownloadUtils {
     /**
      * Guess the extension for a file using the mime type.
      */
-    private fun createExtension(mimeType: String?): String {
+    fun createExtension(mimeType: String?): String {
         var extension: String? = null
 
         if (mimeType != null) {
@@ -506,5 +456,42 @@ object DownloadUtils {
         }
 
         return extension
+    }
+
+    /**
+     * Checks if a file path corresponds to the default public "Downloads" directory.
+     *
+     * @return `true` if the path is the default downloads directory, `false` otherwise.
+     * It also returns `false` if the path is null, empty, or a "content://" URI.
+     */
+    fun String?.isDefaultDownloadDirectory(): Boolean {
+        if (this.isNullOrEmpty() || this.startsWith(SCHEME_CONTENT)) {
+            return false
+        }
+        val defaultDownloadsDir =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        return File(this).absolutePath == defaultDownloadsDir.absolutePath
+    }
+
+    /**
+     * Queries MediaStore to find a file by its display name within a given collection.
+     *
+     * @param collection The MediaStore collection to search in (e.g., MediaStore.Downloads.getContentUri(...)).
+     * @param fileName The display name of the file to find.
+     * @return The content [Uri] of the file if found, otherwise null.
+     */
+    fun ContentResolver.findFileInMediaStore(collection: Uri, fileName: String): Uri? {
+        val projection = arrayOf(MediaStore.Downloads._ID)
+        val selection = "${MediaStore.Downloads.DISPLAY_NAME} = ?"
+        val selectionArgs = arrayOf(fileName)
+
+        query(collection, projection, selection, selectionArgs, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Downloads._ID)
+                val id = cursor.getLong(idColumn)
+                return ContentUris.withAppendedId(collection, id)
+            }
+        }
+        return null
     }
 }

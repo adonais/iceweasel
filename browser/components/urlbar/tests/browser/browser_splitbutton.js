@@ -90,9 +90,10 @@ add_setup(async function () {
     results: TEST_RESULTS,
     priority: 1,
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
   registerCleanupFunction(() => {
-    UrlbarProvidersManager.unregisterProvider(provider);
+    providersManager.unregisterProvider(provider);
     sinon.restore();
   });
 });

@@ -1988,9 +1988,7 @@ void AppWindow::MaybeSavePersistentMiscAttributes(
       (void)SetPersistentValue(nsGkAtoms::sizemode, sizeString);
     }
   }
-  aRootElement.SetAttribute(u"gtktiledwindow"_ns,
-                            mWindow->IsTiled() ? u"true"_ns : u"false"_ns,
-                            IgnoreErrors());
+  aRootElement.SetBoolAttr(nsGkAtoms::gtktiledwindow, mWindow->IsTiled());
 }
 
 void AppWindow::SavePersistentAttributes(
@@ -2339,18 +2337,6 @@ void AppWindow::ApplyChromeFlags() {
   // so no need to compare to the old value.
   IgnoredErrorResult rv;
   root->SetAttribute(u"chromehidden"_ns, newvalue, rv);
-
-  // Also set the IsDocumentPiP on the chrome browsing context
-  if ((mChromeFlags &
-       nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE) ==
-      nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE) {
-    nsCOMPtr<mozIDOMWindowProxy> windowProxy;
-    GetWindowDOMWindow(getter_AddRefs(windowProxy));
-    if (nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryInterface(windowProxy)) {
-      nsresult rv = window->GetBrowsingContext()->SetIsDocumentPiP(true);
-      NS_ENSURE_SUCCESS_VOID(rv);
-    }
-  }
 }
 
 NS_IMETHODIMP

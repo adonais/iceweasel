@@ -403,6 +403,7 @@ UNIFIED_SOURCES += [
     "ipc/ContentCompositorBridgeParent.cpp",
     "ipc/ImageBridgeChild.cpp",
     "ipc/ImageBridgeParent.cpp",
+    "ipc/IOSurfacePort.cpp",
     "ipc/ISurfaceAllocator.cpp",
     "ipc/KnowsCompositor.cpp",
     "ipc/LayerTreeOwnerTracker.cpp",

@@ -36,7 +36,7 @@ export const PersonalizedCard = ({
           type="icon ghost"
           iconSrc="chrome://global/skin/icons/close.svg"
           onClick={onDismiss}
-          data-l10n-id="newtab-toast-dismiss-button"
+          data-l10n-id="newtab-card-dismiss-button"
         ></moz-button>
       </div>
       <div className="personalized-card-inner">

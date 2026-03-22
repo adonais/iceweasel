@@ -267,7 +267,7 @@ def test_output_assertion(flavor, runFailures, runtests, test_name):
     # assertion failure prints error, but still emits test-ok
     test_end = filter_action("test_end", lines)
     assert len(test_end) == results["lines"]
-    assert test_end[0]["status"] == "OK"
+    assert test_end[0]["status"] == "FAIL"
 
     assertions = filter_action("assertion_count", lines)
     assert len(assertions) == results["assertions"]

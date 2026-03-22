@@ -313,6 +313,41 @@ bool MediaSectionsHaveSameCount(const SessionDescription& desc1,
                                 const SessionDescription& desc2) {
   return desc1.contents().size() == desc2.contents().size();
 }
+
+// Checks that the remote answer follows the rules from
+// https://datatracker.ietf.org/doc/html/rfc3264#section-6.1
+RTCError VerifyDirectionsInAnswer(const SessionDescription* local_offer,
+                                  const SessionDescription* remote_answer) {
+  RTC_DCHECK(local_offer);
+  RTC_DCHECK(remote_answer);
+
+  const ContentInfos& local_contents = local_offer->contents();
+  const ContentInfos& remote_contents = remote_answer->contents();
+  RTC_DCHECK(local_contents.size() == remote_contents.size());
+
+  for (size_t i = 0; i < local_contents.size(); i++) {
+    if (remote_contents[i].rejected) {
+      continue;
+    }
+    RtpTransceiverDirection local_direction =
+        local_contents[i].media_description()->direction();
+    RtpTransceiverDirection remote_direction =
+        remote_contents[i].media_description()->direction();
+
+    if (!RtpTransceiverDirectionHasRecv(local_direction) &&
+        RtpTransceiverDirectionHasSend(remote_direction)) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                           "Incompatible receive direction");
+    }
+    if (!RtpTransceiverDirectionHasSend(local_direction) &&
+        RtpTransceiverDirectionHasRecv(remote_direction)) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                           "Incompatible send direction");
+    }
+  }
+  return RTCError::OK();
+}
+
 // Checks that each non-rejected content has a DTLS
 // fingerprint, unless it's in a BUNDLE group, in which case only the
 // BUNDLE-tag section (first media section/description in the BUNDLE group)
@@ -1503,7 +1538,7 @@ void SdpOfferAnswerHandler::Initialize(
             RTC_DCHECK_RUN_ON(signaling_thread());
             transport_controller_s()->SetLocalCertificate(certificate);
           },
-          codec_lookup_helper, pc_->trials());
+          codec_lookup_helper, pc_->env());
 
   if (pc_->options()->disable_encryption) {
     RTC_LOG(LS_INFO)
@@ -3885,6 +3920,17 @@ RTCError SdpOfferAnswerHandler::ValidateSessionDescription(
     if (!error.ok()) {
       return error;
     }
+
+    if (source == CS_REMOTE &&
+        (type == SdpType::kPrAnswer || type == SdpType::kAnswer)) {
+      RTC_DCHECK(local_description());
+      error = VerifyDirectionsInAnswer(local_description()->description(),
+                                       sdesc->description());
+      if (!error.ok() && !env_.field_trials().IsDisabled(
+                             "WebRTC-EnforceTransceiverDirection")) {
+        return error;
+      }
+    }
   }
 
   return RTCError::OK();
@@ -4530,6 +4576,13 @@ void SdpOfferAnswerHandler::GetOptionsForUnifiedPlanOffer(
     }
   }
 
+  // Add a datachannel m-line first if explicitly asked even when no data
+  // channels exist.
+  if (pc_->configuration()->always_negotiate_data_channels &&
+      !pc_->sctp_mid()) {
+    MaybeNegotiateSctp(session_options);
+  }
+
   // Next, look for transceivers that are newly added (that is, are not stopped
   // and not associated). Reuse media sections marked as recyclable first,
   // otherwise append to the end of the offer. New media sections should be
@@ -4560,28 +4613,30 @@ void SdpOfferAnswerHandler::GetOptionsForUnifiedPlanOffer(
   }
   // Lastly, add a m-section if we have requested local data channels and an
   // m section does not already exist.
-  if (!pc_->sctp_mid() && data_channel_controller()->HasDataChannels()) {
-    // Attempt to recycle a stopped m-line.
-    // TODO(crbug.com/1442604): sctp_mid() should return the mid if one was
-    // ever created but rejected.
-    bool recycled = false;
-    for (size_t i = 0; i < session_options->media_description_options.size();
-         i++) {
-      auto media_description = session_options->media_description_options[i];
-      if (media_description.type == MediaType::DATA &&
-          media_description.stopped) {
-        session_options->media_description_options[i] =
-            GetMediaDescriptionOptionsForActiveData(media_description.mid);
-        recycled = true;
-        break;
-      }
-    }
-    if (!recycled) {
-      session_options->media_description_options.push_back(
-          GetMediaDescriptionOptionsForActiveData(
-              mid_generator_.GenerateString()));
+  if (!pc_->configuration()->always_negotiate_data_channels &&
+      !pc_->sctp_mid() && data_channel_controller()->HasDataChannels()) {
+    MaybeNegotiateSctp(session_options);
+  }
+}
+
+void SdpOfferAnswerHandler::MaybeNegotiateSctp(
+    MediaSessionOptions* session_options) {
+  // Attempt to recycle a stopped m-line.
+  // TODO(crbug.com/1442604): sctp_mid() should return the mid if one was
+  // ever created but rejected.
+  for (size_t i = 0; i < session_options->media_description_options.size();
+       i++) {
+    auto media_description = session_options->media_description_options[i];
+    if (media_description.type == MediaType::DATA &&
+        media_description.stopped) {
+      session_options->media_description_options[i] =
+          GetMediaDescriptionOptionsForActiveData(media_description.mid);
+      return;
     }
   }
+  // Generate a new m-line.
+  session_options->media_description_options.push_back(
+      GetMediaDescriptionOptionsForActiveData(mid_generator_.GenerateString()));
 }
 
 void SdpOfferAnswerHandler::GetOptionsForAnswer(
@@ -5099,8 +5154,8 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     // If local and remote are both set, we assume that it's safe to trigger
     // CCFB.
     if (pc_->trials().IsEnabled("WebRTC-RFC8888CongestionControlFeedback")) {
-      if (type == SdpType::kAnswer && local_description() &&
-          remote_description()) {
+      if ((type == SdpType::kAnswer || type == SdpType::kPrAnswer) &&
+          local_description() && remote_description()) {
         std::optional<RtcpFeedbackType> remote_preferred_rtcp_cc_ack_type;
         // Verify that the remote agrees on congestion control feedback format.
         for (const auto& content :
@@ -5159,9 +5214,15 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
             std::min(local_sctp_description->max_message_size(),
                      remote_sctp_description->max_message_size());
       }
-      pc_->StartSctpTransport({.local_port = local_sctp_description->port(),
-                               .remote_port = remote_sctp_description->port(),
-                               .max_message_size = max_message_size});
+      RTCError error = pc_->StartSctpTransport(
+          {.local_port = local_sctp_description->port(),
+           .remote_port = remote_sctp_description->port(),
+           .max_message_size = max_message_size,
+           .local_init = local_sctp_description->sctp_init(),
+           .remote_init = remote_sctp_description->sctp_init()});
+      if (!error.ok()) {
+        return error;
+      }
     }
   }
 
@@ -5771,7 +5832,7 @@ bool SdpOfferAnswerHandler::UpdatePayloadTypeDemuxingState(
 }
 
 bool SdpOfferAnswerHandler::ConfiguredForMedia() const {
-  return context_->media_engine();
+  return context_->is_configured_for_media();
 }
 
 }  // namespace webrtc

@@ -719,7 +719,7 @@ void wasm::DumpTableDesc(const TableDesc& tableDesc,
   if (tableDesc.maximumLength().isSome()) {
     out.printf("%" PRIu64 " ", tableDesc.maximumLength().value());
   }
-  DumpRefType(tableDesc.elemType, out, codeMeta.types);
+  DumpRefType(tableDesc.elemType(), out, codeMeta.types);
   if (includeInitExpr && tableDesc.initExpr) {
     StructuredPrinter::Scope _(out);
     DumpInitExpr(tableDesc.initExpr.ref(), codeMeta, out);

@@ -636,6 +636,7 @@
       this.label = document.createXULElement
         ? document.createXULElement("label")
         : document.createElement("span");
+      this.label.setAttribute("part", "label");
 
       this.button.appendChild(this.label);
 

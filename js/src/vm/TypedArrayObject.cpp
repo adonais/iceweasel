@@ -30,11 +30,11 @@
 #endif
 #include <type_traits>
 
-#include "jsnum.h"
 #include "jstypes.h"
 
 #include "builtin/Array.h"
 #include "builtin/DataViewObject.h"
+#include "builtin/Number.h"
 #include "gc/Barrier.h"
 #include "gc/MaybeRooted.h"
 #include "jit/InlinableNatives.h"
@@ -69,6 +69,7 @@
 #include "vm/Compartment-inl.h"
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/NativeObject-inl.h"
+#include "vm/StringType-inl.h"
 
 using namespace js;
 
@@ -5514,13 +5515,25 @@ static bool uint8array_setFromHex(JSContext* cx, unsigned argc, Value* vp) {
 
 template <typename Ops>
 static void ToBase64(TypedArrayObject* tarray, size_t length, Alphabet alphabet,
-                     OmitPadding omitPadding, JSStringBuilder& sb) {
+                     OmitPadding omitPadding, mozilla::Range<Latin1Char> out) {
   const auto& base64Chars = alphabet == Alphabet::Base64
                                 ? Base64::Encode::Base64
                                 : Base64::Encode::Base64Url;
 
   auto encode = [&base64Chars](uint32_t value) {
     return base64Chars[value & 0x3f];
+  };
+
+  auto outPtr = out.begin();
+
+  auto append = [&](char ch) { *outPtr++ = ch; };
+
+  auto appendN = [&]<size_t N>(const char (&s)[N]) {
+    auto* dest = outPtr.get();
+
+    // Increment before writing to assert we're still in range.
+    outPtr += N;
+    std::memcpy(dest, s, N);
   };
 
   // Our implementation directly converts the bytes to their string
@@ -5547,7 +5560,7 @@ static void ToBase64(TypedArrayObject* tarray, size_t length, Alphabet alphabet,
             encode(u24 >> 6),
             encode(u24 >> 0),
         };
-        sb.infallibleAppend(chars, sizeof(chars));
+        appendN(chars);
 
         MOZ_ASSERT(toRead >= 3);
         toRead -= 3;
@@ -5576,7 +5589,7 @@ static void ToBase64(TypedArrayObject* tarray, size_t length, Alphabet alphabet,
           encode(u24_1 >> 18), encode(u24_1 >> 12),
           encode(u24_1 >> 6),  encode(u24_1 >> 0),
       };
-      sb.infallibleAppend(chars1, sizeof(chars1));
+      appendN(chars1);
 
       char chars2[] = {
           encode(u24_2 >> 18), encode(u24_2 >> 12),
@@ -5585,7 +5598,7 @@ static void ToBase64(TypedArrayObject* tarray, size_t length, Alphabet alphabet,
           encode(u24_3 >> 18), encode(u24_3 >> 12),
           encode(u24_3 >> 6),  encode(u24_3 >> 0),
       };
-      sb.infallibleAppend(chars2, sizeof(chars2));
+      appendN(chars2);
     }
     data = data32.template cast<uint8_t*>();
   }
@@ -5604,7 +5617,7 @@ static void ToBase64(TypedArrayObject* tarray, size_t length, Alphabet alphabet,
         encode(u24 >> 6),
         encode(u24 >> 0),
     };
-    sb.infallibleAppend(chars, sizeof(chars));
+    appendN(chars);
   }
 
   // Trailing two and one element bytes are optionally padded with '='.
@@ -5615,11 +5628,11 @@ static void ToBase64(TypedArrayObject* tarray, size_t length, Alphabet alphabet,
     auto u24 = (uint32_t(byte0) << 16) | (uint32_t(byte1) << 8);
 
     // Encode the uint24 value as base64, optionally including padding.
-    sb.infallibleAppend(encode(u24 >> 18));
-    sb.infallibleAppend(encode(u24 >> 12));
-    sb.infallibleAppend(encode(u24 >> 6));
+    append(encode(u24 >> 18));
+    append(encode(u24 >> 12));
+    append(encode(u24 >> 6));
     if (omitPadding == OmitPadding::No) {
-      sb.infallibleAppend('=');
+      append('=');
     }
   } else if (toRead == 1) {
     // Combine one input byte into a single uint24 value.
@@ -5627,15 +5640,17 @@ static void ToBase64(TypedArrayObject* tarray, size_t length, Alphabet alphabet,
     auto u24 = uint32_t(byte0) << 16;
 
     // Encode the uint24 value as base64, optionally including padding.
-    sb.infallibleAppend(encode(u24 >> 18));
-    sb.infallibleAppend(encode(u24 >> 12));
+    append(encode(u24 >> 18));
+    append(encode(u24 >> 12));
     if (omitPadding == OmitPadding::No) {
-      sb.infallibleAppend('=');
-      sb.infallibleAppend('=');
+      append('=');
+      append('=');
     }
   } else {
     MOZ_ASSERT(toRead == 0);
   }
+
+  MOZ_ASSERT(outPtr == out.end(), "all characters were written");
 }
 
 /**
@@ -5692,22 +5707,25 @@ static bool uint8array_toBase64(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-  JSStringBuilder sb(cx);
-  if (!sb.reserve(outLength.value())) {
+  StringChars<Latin1Char> chars(cx);
+  if (!chars.maybeAlloc(cx, outLength.value())) {
     return false;
   }
 
   // Steps 9-10.
-  if (tarray->isSharedMemory()) {
-    ToBase64<SharedOps>(tarray, *length, alphabet, omitPadding, sb);
-  } else {
-    ToBase64<UnsharedOps>(tarray, *length, alphabet, omitPadding, sb);
+  {
+    JS::AutoCheckCannotGC nogc;
+    mozilla::Range<Latin1Char> r(chars.data(nogc), outLength.value());
+
+    if (tarray->isSharedMemory()) {
+      ToBase64<SharedOps>(tarray, *length, alphabet, omitPadding, r);
+    } else {
+      ToBase64<UnsharedOps>(tarray, *length, alphabet, omitPadding, r);
+    }
   }
 
-  MOZ_ASSERT(sb.length() == outLength.value(), "all characters were written");
-
   // Step 11.
-  auto* str = sb.finishString();
+  auto* str = chars.toStringDontDeflate<CanGC>(cx, outLength.value());
   if (!str) {
     return false;
   }
@@ -5731,10 +5749,20 @@ static bool uint8array_toBase64(JSContext* cx, unsigned argc, Value* vp) {
 
 template <typename Ops>
 static void ToHex(TypedArrayObject* tarray, size_t length,
-                  JSStringBuilder& sb) {
+                  mozilla::Range<Latin1Char> out) {
   // NB: Lower case hex digits.
   static constexpr char HexDigits[] = "0123456789abcdef";
   static_assert(std::char_traits<char>::length(HexDigits) == 16);
+
+  auto outPtr = out.begin();
+
+  auto appendN = [&]<size_t N>(const char (&s)[N]) {
+    auto* dest = outPtr.get();
+
+    // Increment before writing to assert we're still in range.
+    outPtr += N;
+    std::memcpy(dest, s, N);
+  };
 
   // Process multiple bytes per loop to reduce number of calls to
   // infallibleAppend. Choose four bytes because tested compilers can optimize
@@ -5757,7 +5785,7 @@ static void ToHex(TypedArrayObject* tarray, size_t length,
       chars[i * 2 + 1] = HexDigits[byte & 0xf];
     }
 
-    sb.infallibleAppend(chars, sizeof(chars));
+    appendN(chars);
   }
 
   // Write the remaining characters.
@@ -5768,8 +5796,10 @@ static void ToHex(TypedArrayObject* tarray, size_t length,
     chars[0] = HexDigits[byte >> 4];
     chars[1] = HexDigits[byte & 0xf];
 
-    sb.infallibleAppend(chars, sizeof(chars));
+    appendN(chars);
   }
+
+  MOZ_ASSERT(outPtr == out.end(), "all characters were written");
 }
 
 /**
@@ -5803,22 +5833,25 @@ static bool uint8array_toHex(JSContext* cx, const CallArgs& args) {
   }
 
   // Step 4.
-  JSStringBuilder sb(cx);
-  if (!sb.reserve(outLength)) {
+  StringChars<Latin1Char> chars(cx);
+  if (!chars.maybeAlloc(cx, outLength)) {
     return false;
   }
 
   // Steps 3 and 5.
-  if (tarray->isSharedMemory()) {
-    ToHex<SharedOps>(tarray, *length, sb);
-  } else {
-    ToHex<UnsharedOps>(tarray, *length, sb);
+  {
+    JS::AutoCheckCannotGC nogc;
+    mozilla::Range<Latin1Char> r(chars.data(nogc), outLength);
+
+    if (tarray->isSharedMemory()) {
+      ToHex<SharedOps>(tarray, *length, r);
+    } else {
+      ToHex<UnsharedOps>(tarray, *length, r);
+    }
   }
 
-  MOZ_ASSERT(sb.length() == outLength, "all characters were written");
-
   // Step 6.
-  auto* str = sb.finishString();
+  auto* str = chars.toStringDontDeflate<CanGC>(cx, outLength);
   if (!str) {
     return false;
   }

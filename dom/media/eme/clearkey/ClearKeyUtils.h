@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef __ClearKeyUtils_h__
-#define __ClearKeyUtils_h__
+#ifndef ClearKeyUtils_h_
+#define ClearKeyUtils_h_
 
 #include <assert.h>
 // stdef.h is required for content_decryption_module to work on Unix systems.
@@ -103,4 +103,4 @@ inline void Assign(std::vector<T>& aVec, const T* aData, size_t aLength) {
   aVec.assign(aData, aData + aLength);
 }
 
-#endif  // __ClearKeyUtils_h__
+#endif  // ClearKeyUtils_h_

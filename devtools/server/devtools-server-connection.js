@@ -27,7 +27,7 @@ loader.lazyRequireGetter(
  * Manages a set of actors and actor pools, allocates actor ids, and
  * handles incoming requests.
  */
-class DevToolsServerConnection {
+class DevToolsServerConnection extends EventEmitter {
   /**
    * @param {string} prefix
    *        All actor IDs created by this connection should be prefixed
@@ -39,6 +39,7 @@ class DevToolsServerConnection {
    *        If this is null, the transport is not that was accepted by SocketListener.
    */
   constructor(prefix, transport, socketListener) {
+    super();
     this._prefix = prefix;
     this._transport = transport;
     this._transport.hooks = this;
@@ -64,8 +65,6 @@ class DevToolsServerConnection {
      * packets to the server whose actors' names all begin with P + "/".
      */
     this._forwardingPrefixes = new Map();
-
-    EventEmitter.decorate(this);
   }
 
   _prefix = null;

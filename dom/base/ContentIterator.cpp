@@ -474,7 +474,7 @@ ContentIteratorBase<NodeType>::Initializer::DetermineLastNode() const {
         if (result && result != mIterator.mFirst &&
             NS_WARN_IF(!NodeIsInTraversalRange(
                 result, mIterator.mOrder == Order::Pre,
-                RawRangeBoundary(mIterator.mFirst, 0u), mEnd))) {
+                RawRangeBoundary::StartOfParent(*mIterator.mFirst), mEnd))) {
           return nullptr;
         }
 
@@ -1065,12 +1065,7 @@ nsIContent* ContentSubtreeIterator::DetermineCandidateForFirstContent() const {
     const auto& startRef = IterAllowCrossShadowBoundary()
                                ? mRange->MayCrossShadowBoundaryStartRef()
                                : mRange->StartRef();
-    const uint32_t startOffset = ShadowDOMSelectionHelpers::StartOffset(
-        mRange, mAllowCrossShadowBoundary);
-    MOZ_ASSERT(child ==
-               (startRef.GetTreeKind() == TreeKind::Flat
-                    ? startContainer->GetChildAtInFlatTree(startOffset)
-                    : startContainer->GetChildAt_Deprecated(startOffset)));
+    MOZ_ASSERT(startRef.IsSetAndValid());
 #endif
     if (!child) {
       // offset after last child
@@ -1144,10 +1139,7 @@ nsIContent* ContentSubtreeIterator::DetermineCandidateForLastContent() const {
     const auto& endRef = IterAllowCrossShadowBoundary()
                              ? mRange->MayCrossShadowBoundaryEndRef()
                              : mRange->EndRef();
-    MOZ_ASSERT(lastCandidate ==
-               (endRef.GetTreeKind() == TreeKind::Flat
-                    ? endContainer->GetChildAtInFlatTree(offset - 1)
-                    : endContainer->GetChildAt_Deprecated(offset - 1)));
+    MOZ_ASSERT(endRef.IsSetAndValid());
 #endif
     NS_ASSERTION(lastCandidate,
                  "tree traversal trouble in ContentSubtreeIterator::Init");
@@ -1175,24 +1167,21 @@ nsresult ContentSubtreeIterator::InitWithRange() {
   mClosestCommonInclusiveAncestor =
       mRange->GetClosestCommonInclusiveAncestor(mAllowCrossShadowBoundary);
 
-  nsINode* startContainer = ShadowDOMSelectionHelpers::GetStartContainer(
-      mRange, mAllowCrossShadowBoundary);
-  const int32_t startOffset =
-      ShadowDOMSelectionHelpers::StartOffset(mRange, mAllowCrossShadowBoundary);
-  nsINode* endContainer = ShadowDOMSelectionHelpers::GetEndContainer(
-      mRange, mAllowCrossShadowBoundary);
-  const int32_t endOffset =
-      ShadowDOMSelectionHelpers::EndOffset(mRange, mAllowCrossShadowBoundary);
-  MOZ_ASSERT(mClosestCommonInclusiveAncestor && startContainer && endContainer);
+  const RawRangeBoundary startRef =
+      ShadowDOMSelectionHelpers::StartRef(mRange, mAllowCrossShadowBoundary);
+  const RawRangeBoundary endRef =
+      ShadowDOMSelectionHelpers::EndRef(mRange, mAllowCrossShadowBoundary);
+  MOZ_ASSERT(mClosestCommonInclusiveAncestor && startRef.IsSet() &&
+             endRef.IsSet());
   // Bug 767169
-  MOZ_ASSERT(uint32_t(startOffset) <= startContainer->Length() &&
-             uint32_t(endOffset) <= endContainer->Length());
+  MOZ_ASSERT(startRef.IsSetAndValid());
+  MOZ_ASSERT(endRef.IsSetAndValid());
 
   // short circuit when start node == end node
-  if (startContainer == endContainer) {
-    nsINode* child = startContainer->GetFirstChild();
+  if (startRef.GetContainer() == endRef.GetContainer()) {
+    nsINode* child = startRef.GetContainer()->GetFirstChild();
 
-    if (!child || startOffset == endOffset) {
+    if (!child || startRef == endRef) {
       // Text node, empty container, or collapsed
       SetEmpty();
       return NS_OK;

@@ -5,6 +5,7 @@
 package org.mozilla.samples.toolbar.compose
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
 import mozilla.components.compose.browser.toolbar.BrowserDisplayToolbar
@@ -13,7 +14,6 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity
 import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.lib.state.ext.observeAsComposableState
-import mozilla.components.lib.state.ext.observeAsState
 
 /**
  * A customizable toolbar for browsers.
@@ -33,7 +33,7 @@ fun BrowserToolbar(
     onTextCommit: (String) -> Unit,
     url: String = "",
 ) {
-    val uiState by store.observeAsState(initialValue = store.state) { it }
+    val uiState by store.stateFlow.collectAsState()
     val progressBarConfig = store.observeAsComposableState { it.displayState.progressBarConfig }.value
 
     val input = when (val editText = uiState.editState.query.current) {

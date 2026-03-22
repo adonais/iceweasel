@@ -9,8 +9,8 @@
  * rules, such as @media rules
  */
 
-#ifndef mozilla_css_GroupRule_h__
-#define mozilla_css_GroupRule_h__
+#ifndef mozilla_css_GroupRule_h_
+#define mozilla_css_GroupRule_h_
 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ServoCSSRuleList.h"
@@ -92,4 +92,4 @@ class ConditionRule : public GroupRule {
 }  // namespace css
 }  // namespace mozilla
 
-#endif /* mozilla_css_GroupRule_h__ */
+#endif /* mozilla_css_GroupRule_h_ */

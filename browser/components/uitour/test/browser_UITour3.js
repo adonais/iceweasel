@@ -268,7 +268,7 @@ add_UITour_task(async function test_info_target_callback() {
 });
 
 add_UITour_task(async function test_getConfiguration_selectedSearchEngine() {
-  let engine = await Services.search.getDefault();
+  let engine = await SearchService.getDefault();
   let data = await getConfigurationPromise("selectedSearchEngine");
   is(data.searchEngineIdentifier, engine.id, "Correct engine identifier");
 });

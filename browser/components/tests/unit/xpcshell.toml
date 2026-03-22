@@ -31,6 +31,10 @@ skip-if = [
 
 ["test_distribution_cachedexistence.js"]
 
+["test_profileDataUpgrade_smartwindow.js"]
+
+["test_startupTelemetry_aiControlBlocking.js"]
+
 ["test_startupTelemetry_launchMethod.js"]
 run-if = [
   "os == 'win'",

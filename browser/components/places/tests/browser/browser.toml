@@ -76,6 +76,8 @@ tags = "os_integration"
 
 ["browser_bookmark_current_tabs.js"]
 
+["browser_bookmark_drag_splitview.js"]
+
 ["browser_bookmark_folder_moveability.js"]
 
 ["browser_bookmark_menu_ctrl_click.js"]
@@ -250,6 +252,8 @@ https_first_disabled = true
 ["browser_stayopenmenu.js"]
 
 ["browser_toolbar_drop_bookmarklet.js"]
+
+["browser_toolbar_drop_indicator_empty.js"]
 
 ["browser_toolbar_drop_multiple_flavors.js"]
 

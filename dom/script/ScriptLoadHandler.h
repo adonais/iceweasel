@@ -86,14 +86,14 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
    * Discover the charset by looking at the stream data, the script tag, and
    * other indicators.  Returns true if charset has been discovered.
    */
-  bool EnsureDecoder(nsIIncrementalStreamLoader* aLoader, const uint8_t* aData,
+  bool EnsureDecoder(nsIChannel* aChannel, const uint8_t* aData,
                      uint32_t aDataLength, bool aEndOfStream) {
     // Check if the decoder has already been created.
     if (mDecoder) {
       return true;
     }
 
-    return TrySetDecoder(aLoader, aData, aDataLength, aEndOfStream);
+    return TrySetDecoder(aChannel, aData, aDataLength, aEndOfStream);
   }
 
   /*
@@ -103,7 +103,7 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
    * isn't enough information yet to make the determination, or true if a
    * determination was made.
    */
-  bool TrySetDecoder(nsIIncrementalStreamLoader* aLoader, const uint8_t* aData,
+  bool TrySetDecoder(nsIChannel* aChannel, const uint8_t* aData,
                      uint32_t aDataLength, bool aEndOfStream);
 
   /*
@@ -115,7 +115,7 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
   nsresult MaybeDecodeSRI(uint32_t* sriLength);
 
   // Query the channel to find the data type associated with the input stream.
-  nsresult EnsureKnownDataType(nsIIncrementalStreamLoader* aLoader);
+  nsresult EnsureKnownDataType(nsIChannel* aChannel);
 
   // ScriptLoader which will handle the parsed script.
   RefPtr<ScriptLoader> mScriptLoader;

@@ -23,7 +23,7 @@ const openSearchEngineFiles = [
 
 async function verifyTelemetry(probeNameFragment, engineCount, type) {
   Services.fog.testResetFOG();
-  await Services.search.runBackgroundChecks();
+  await SearchService.runBackgroundChecks();
 
   Assert.equal(
     Glean.browserSearchinit[probeNameFragment].testGetValue(),
@@ -35,7 +35,7 @@ async function verifyTelemetry(probeNameFragment, engineCount, type) {
 add_setup(async function () {
   useHttpServer();
 
-  await Services.search.init();
+  await SearchService.init();
 
   for (let file of openSearchEngineFiles) {
     await SearchTestUtils.installOpenSearchEngine({

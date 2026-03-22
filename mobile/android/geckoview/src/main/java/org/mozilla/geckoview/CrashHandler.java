@@ -282,29 +282,30 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
     final Bundle extras = new Bundle();
     final String pkgName = getAppPackageName();
 
-    extras.putLong("CrashTime", getCrashTime());
-    extras.putLong("StartupTime", getStartupTime());
-    extras.putString("Android_ProcessName", getProcessName());
-    extras.putString("Android_PackageName", pkgName);
+    extras.putLong(CrashReport.Annotation.CrashTime.toString(), getCrashTime());
+    extras.putLong(CrashReport.Annotation.StartupTime.toString(), getStartupTime());
+    extras.putString(CrashReport.Annotation.Android_ProcessName.toString(), getProcessName());
+    extras.putString(CrashReport.Annotation.Android_PackageName.toString(), pkgName);
 
     final String notes = GeckoAppShell.getAppNotes();
     if (notes != null) {
-      extras.putString("Notes", notes);
+      extras.putString(CrashReport.Annotation.Notes.toString(), notes);
     }
 
     if (context != null) {
       final PackageManager pkgMgr = context.getPackageManager();
       try {
         final PackageInfo pkgInfo = pkgMgr.getPackageInfo(pkgName, 0);
-        extras.putString("Version", pkgInfo.versionName);
-        extras.putInt("BuildID", pkgInfo.versionCode);
-        extras.putLong("InstallTime", pkgInfo.lastUpdateTime / 1000);
+        extras.putString(CrashReport.Annotation.Version.toString(), pkgInfo.versionName);
+        extras.putInt(CrashReport.Annotation.BuildID.toString(), pkgInfo.versionCode);
+        extras.putLong(
+            CrashReport.Annotation.InstallTime.toString(), pkgInfo.lastUpdateTime / 1000);
       } catch (final PackageManager.NameNotFoundException e) {
         Log.i(LOGTAG, "Error getting package info", e);
       }
     }
 
-    extras.putString("JavaStackTrace", getExceptionStackTrace(exc));
+    extras.putString(CrashReport.Annotation.JavaStackTrace.toString(), getExceptionStackTrace(exc));
     return extras;
   }
 
@@ -341,9 +342,9 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
   public String getServerUrl(@NonNull final Bundle extras) {
     return String.format(
         DEFAULT_SERVER_URL,
-        normalizeUrlString(extras.getString("ProductID")),
-        normalizeUrlString(extras.getString("Version")),
-        normalizeUrlString(extras.getString("BuildID")));
+        normalizeUrlString(extras.getString(CrashReport.Annotation.ProductID.toString())),
+        normalizeUrlString(extras.getString(CrashReport.Annotation.Version.toString())),
+        normalizeUrlString(extras.getString(CrashReport.Annotation.BuildID.toString())));
   }
 
   /**
@@ -511,7 +512,7 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
       final Bundle extras = getCrashExtras(thread, exc);
       final String url = getServerUrl(extras);
-      extras.putString("ServerURL", url);
+      extras.putString(CrashReport.Annotation.ServerURL.toString(), url);
 
       final JSONObject json = new JSONObject();
       for (final String key : extras.keySet()) {
@@ -589,12 +590,14 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
       public Bundle getCrashExtras(final Thread thread, final Throwable exc) {
         final Bundle extras = super.getCrashExtras(thread, exc);
 
-        extras.putString("ProductName", BuildConfig.MOZ_APP_BASENAME);
-        extras.putString("ProductID", BuildConfig.MOZ_APP_ID);
-        extras.putString("Version", BuildConfig.MOZ_APP_VERSION);
-        extras.putString("BuildID", BuildConfig.MOZ_APP_BUILDID);
-        extras.putString("Vendor", BuildConfig.MOZ_APP_VENDOR);
-        extras.putString("ReleaseChannel", BuildConfig.MOZ_UPDATE_CHANNEL);
+        extras.putString(
+            CrashReport.Annotation.ProductName.toString(), BuildConfig.MOZ_APP_BASENAME);
+        extras.putString(CrashReport.Annotation.ProductID.toString(), BuildConfig.MOZ_APP_ID);
+        extras.putString(CrashReport.Annotation.Version.toString(), BuildConfig.MOZ_APP_VERSION);
+        extras.putString(CrashReport.Annotation.BuildID.toString(), BuildConfig.MOZ_APP_BUILDID);
+        extras.putString(CrashReport.Annotation.Vendor.toString(), BuildConfig.MOZ_APP_VENDOR);
+        extras.putString(
+            CrashReport.Annotation.ReleaseChannel.toString(), BuildConfig.MOZ_UPDATE_CHANNEL);
         return extras;
       }
 

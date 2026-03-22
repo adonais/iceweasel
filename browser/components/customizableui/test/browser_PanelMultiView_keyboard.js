@@ -95,6 +95,7 @@ add_setup(async function () {
   gMainView.id = "testMainView";
   gPanelMultiView.appendChild(gMainView);
   gMainContext = document.createXULElement("menupopup");
+  gMainContext.setAttribute("native", "false");
   gMainContext.id = "gMainContext";
   gMainView.appendChild(gMainContext);
   gMainContext.appendChild(document.createXULElement("menuitem"));
@@ -108,6 +109,7 @@ add_setup(async function () {
   gMainMenulist.id = "gMainMenulist";
   gMainView.appendChild(gMainMenulist);
   let menuPopup = document.createXULElement("menupopup");
+  menuPopup.setAttribute("native", "false");
   gMainMenulist.appendChild(menuPopup);
   let item = document.createXULElement("menuitem");
   item.setAttribute("value", "1");

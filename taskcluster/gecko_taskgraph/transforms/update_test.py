@@ -6,12 +6,14 @@ Transform the update-test suite to parametrize by locale, source version, machin
 """
 
 from enum import Enum
+from pathlib import Path
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.schema import resolve_keyed_by
 from typing_extensions import final
 
+from gecko_taskgraph import GECKO
 from gecko_taskgraph.util.attributes import is_try, task_name
 
 
@@ -32,6 +34,8 @@ APPLICATIONS = ["fx"]
 PLATFORM_TO_DOCKER = {
     "linux2404-64-shippable": "ubuntu2404-test",
 }
+
+SHIPPED_LOCALES_FILE_PATH = Path(GECKO) / "browser/locales/shipped-locales"
 
 TOP_LOCALES = [
     "en-US",
@@ -161,11 +165,15 @@ def set_task_configuration(config, tasks):
 
 @transforms.add
 def parametrize_by_locale(config, tasks):
+    with open(SHIPPED_LOCALES_FILE_PATH) as f:
+        shipped_locales = f.read().split()
     for task in tasks:
         if "locale" not in task.get("name"):
             yield task
             continue
         for locale in TOP_LOCALES:
+            if locale not in shipped_locales:
+                continue
             this_task = deepcopy(task)
             this_task["run"]["command"] = (
                 this_task["run"]["command"] + f" --source-locale {locale}"

@@ -107,7 +107,7 @@ class LoginsTest : TestSetup() {
             // Necessary to scroll a little bit for all screen sizes
             scrollToElementByText("Passwords")
         }.openLoginsAndPasswordSubMenu {
-        }.openSyncLogins {
+        }.openSyncLogins(composeTestRule) {
             verifyReadyToScanOption()
             verifyUseEmailOption()
         }

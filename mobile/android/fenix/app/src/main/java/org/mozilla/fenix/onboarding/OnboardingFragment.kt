@@ -7,7 +7,6 @@ package org.mozilla.fenix.onboarding
 import android.annotation.SuppressLint
 import android.appwidget.AppWidgetManager
 import android.content.Context
-import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Build
@@ -21,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
@@ -35,9 +33,13 @@ import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
+import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
 import org.mozilla.fenix.components.initializeGlean
+import org.mozilla.fenix.components.metrics.installSourcePackage
 import org.mozilla.fenix.components.startMetricsIfEnabled
 import org.mozilla.fenix.compose.LinkTextState
+import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.isDefaultBrowserPromptSupported
@@ -78,6 +80,7 @@ class OnboardingFragment : Fragment() {
             openLink = this::launchSandboxCustomTab,
             showManagePrivacyPreferencesDialog = this::showPrivacyPreferencesDialog,
             settings = requireContext().settings(),
+            startGlean = ::startGlean,
         )
     }
 
@@ -90,7 +93,19 @@ class OnboardingFragment : Fragment() {
             ).toMutableList()
         }
     }
-    private val telemetryRecorder by lazy { OnboardingTelemetryRecorder() }
+    private val telemetryRecorder by lazy {
+        OnboardingTelemetryRecorder(
+            onboardingReason = if (requireComponents.settings.enablePersistentOnboarding) {
+                OnboardingReason.EXISTING_USER
+            } else {
+                OnboardingReason.NEW_USER
+            },
+            installSource = installSourcePackage(
+                packageManager = requireContext().application.packageManager,
+                packageName = requireContext().application.packageName,
+            ),
+        )
+    }
 
     private val onboardingStore by fragmentStore(OnboardingState()) {
         OnboardingStore(
@@ -106,7 +121,6 @@ class OnboardingFragment : Fragment() {
         )
     }
 
-    private val pinAppWidgetReceiver = WidgetPinnedReceiver()
     private val defaultBrowserPromptStorage by lazy { DefaultDefaultBrowserPromptStorage(requireContext()) }
     private val defaultBrowserPromptManager by lazy {
         DefaultBrowserPromptManager(
@@ -131,9 +145,6 @@ class OnboardingFragment : Fragment() {
         if (!isLargeScreenSize()) {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
-        val filter = IntentFilter(WidgetPinnedReceiver.ACTION)
-        LocalBroadcastManager.getInstance(context)
-            .registerReceiver(pinAppWidgetReceiver, filter)
 
         // We want the prompt to be displayed once per onboarding opening.
         // In case the host got recreated, we don't reset the flag.
@@ -208,7 +219,6 @@ class OnboardingFragment : Fragment() {
         if (!isLargeScreenSize()) {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
-        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(pinAppWidgetReceiver)
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -320,6 +330,9 @@ class OnboardingFragment : Fragment() {
             },
             currentIndex = { index ->
                 removeMarketingFeature.withFeature { it.currentPageIndex = index }
+            },
+            onNavigateToNextPage = {
+                telemetryRecorder.onNavigatedToNextPage()
             },
         )
     }
@@ -443,6 +456,35 @@ class OnboardingFragment : Fragment() {
                     pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.THEME_SELECTION),
                 )
             },
+            onNavigateToNextPage = {
+                telemetryRecorder.onNavigatedToNextPage()
+            },
+        )
+    }
+
+    private fun startGlean() {
+        val settings = requireContext().settings()
+        viewLifecycleOwner.lifecycleScope.launch {
+            initializeGlean(
+                requireContext().applicationContext,
+                logger,
+                settings.isTelemetryEnabled,
+                requireComponents.core.client,
+            )
+        }
+
+        if (!settings.isTelemetryEnabled) {
+            Pings.onboardingOptOut.setEnabled(true)
+            Pings.onboardingOptOut.submit()
+        }
+
+        // The marketing telemetry may be enabled after finishing onboarding.
+        startMetricsIfEnabled(
+            logger = logger,
+            analytics = requireComponents.analytics,
+            isTelemetryEnabled = settings.isTelemetryEnabled,
+            isMarketingTelemetryEnabled = false,
+            isDailyUsagePingEnabled = settings.isDailyUsagePingEnabled,
         )
     }
 
@@ -461,32 +503,22 @@ class OnboardingFragment : Fragment() {
         requireComponents.fenixOnboarding.finish()
 
         val settings = requireContext().settings()
-        viewLifecycleOwner.lifecycleScope.launch {
-            initializeGlean(
-                requireContext().applicationContext,
-                logger,
-                settings.isTelemetryEnabled,
-                requireComponents.core.client,
-            )
-        }
 
-        if (!settings.isTelemetryEnabled) {
-            Pings.onboardingOptOut.setEnabled(true)
-            Pings.onboardingOptOut.submit()
-        }
-
+        // Telemetry and daily usage ping get enabled after ToU acceptance.
         startMetricsIfEnabled(
             logger = logger,
             analytics = requireComponents.analytics,
-            isTelemetryEnabled = settings.isTelemetryEnabled,
+            isTelemetryEnabled = false,
             isMarketingTelemetryEnabled = settings.isMarketingTelemetryEnabled,
-            isDailyUsagePingEnabled = settings.isDailyUsagePingEnabled,
+            isDailyUsagePingEnabled = false,
         )
 
         findNavController().nav(
             id = R.id.onboardingFragment,
             directions = OnboardingFragmentDirections.actionHome(),
         )
+
+        maybeAddMenuNotification()
     }
 
     private fun enableSearchBarCFRForNewUser() {
@@ -552,4 +584,19 @@ class OnboardingFragment : Fragment() {
         ManagePrivacyPreferencesDialogFragment()
             .show(parentFragmentManager, ManagePrivacyPreferencesDialogFragment.TAG)
     }
+
+    private fun maybeAddMenuNotification() {
+        with(requireContext()) {
+            if (shouldAddMenuNotification()) {
+                requireComponents.appStore.dispatch(
+                    AppAction.MenuNotification.AddMenuNotification(
+                        SupportedMenuNotifications.NotDefaultBrowser,
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun shouldAddMenuNotification() =
+        with(requireContext()) { !settings().isDefaultBrowser && settings().shouldShowMenuBanner }
 }

@@ -79,7 +79,7 @@ add_task(async function test_n_autocomplete_cancel() {
   let provider = new UrlbarTestUtils.TestProvider({
     results: [],
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  ProvidersManager.getInstanceForSap("urlbar").registerProvider(provider);
   const context = createContext(TEST_URL, { providers: [provider.name] });
 
   Assert.ok(
@@ -133,7 +133,7 @@ add_task(async function test_n_autocomplete_results() {
   sixthHistogram.clear();
 
   let provider = new DelayedProvider();
-  UrlbarProvidersManager.registerProvider(provider);
+  ProvidersManager.getInstanceForSap("urlbar").registerProvider(provider);
   const context = createContext(TEST_URL, { providers: [provider.name] });
 
   let resultsPromise = promiseControllerNotification(

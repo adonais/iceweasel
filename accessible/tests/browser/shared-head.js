@@ -35,7 +35,7 @@ const MOCHITESTS_DIR =
  * A base URL for test files used in content.
  */
 // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-const CURRENT_CONTENT_DIR = `http://example.com${CURRENT_FILE_DIR}`;
+const CURRENT_CONTENT_DIR = `https://example.com${CURRENT_FILE_DIR}`;
 
 const LOADED_CONTENT_SCRIPTS = new Map();
 
@@ -511,6 +511,16 @@ function accessibleTask(doc, task, options = {}) {
       url = `${CURRENT_CONTENT_DIR}${doc}${urlSuffix}`;
     } else {
       url = snippetToURL(doc, options);
+    }
+
+    if (doc.endsWith("xhtml")) {
+      await SpecialPowers.pushPermissions([
+        {
+          type: "allowXULXBL",
+          allow: true,
+          context: CURRENT_CONTENT_DIR,
+        },
+      ]);
     }
 
     registerCleanupFunction(() => {

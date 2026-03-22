@@ -176,6 +176,13 @@ void DocumentTimeline::TriggerAllPendingAnimationsNow() {
   }
 }
 
+void DocumentTimeline::PostUpdateForAllAnimations() {
+  for (Animation* animation :
+       ToTArray<AutoTArray<RefPtr<Animation>, 32>>(mAnimationOrder)) {
+    animation->PostUpdate();
+  }
+}
+
 void DocumentTimeline::WillRefresh() {
   if (!mDocument->GetPresShell()) {
     // If we're not displayed, don't tick animations.

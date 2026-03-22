@@ -56,6 +56,9 @@ class CSSTranslate final : public CSSTransformComponent {
 
   // end of CSSTranslate Web IDL declarations
 
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
+
  protected:
   virtual ~CSSTranslate() = default;
 };

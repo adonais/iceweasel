@@ -45,7 +45,7 @@
 
 .attention > #fxview-tab-row-favicon::after {
   background-image: radial-gradient(circle, var(--attention-dot-color), var(--attention-dot-color) 2px, transparent 2px);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-size-tokens */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   height: 4px;
   width: 100%;
   inset-block-start: var(--icon-size-medium);
@@ -62,12 +62,11 @@
   width: var(--size-item-xsmall);
   -moz-context-properties: fill, stroke;
   fill: currentColor;
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
   stroke: var(--background-color-box);
 
   .fxview-tab-row-main.attention > & {
     background-image: radial-gradient(circle, var(--attention-dot-color), var(--attention-dot-color) 2px, transparent 2px);
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-size-tokens */
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     height: 4px;
     width: 100%;
     inset-block-start: var(--icon-size-medium);
@@ -77,11 +76,11 @@
 .fxview-tab-row-main:is(.muted, .soundplaying, .activemedia-blocked):not(.attention) .fxview-tab-row-favicon::after {
   /* inset-inline-start set to half of the favicon
   width to place it horizontally centered */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-size-tokens */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   inset-inline-start: 8px;
   /* inset-block-start set to display 6px above
   the top of the favicon */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-size-tokens */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   inset-block-start: -6px;
   background-color: var(--background-color-box);
   padding: 1px;
@@ -104,7 +103,6 @@
   height: var(--size-item-small);
   width: var(--size-item-small);
   background-image: var(--identity-icon);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-size-tokens */
   background-size: cover;
   -moz-context-properties: fill;
   fill: var(--identity-icon-color);

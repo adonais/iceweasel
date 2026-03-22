@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsGlobalWindowOuter_h___
-#define nsGlobalWindowOuter_h___
+#ifndef nsGlobalWindowOuter_h_
+#define nsGlobalWindowOuter_h_
 
 #include "nsHashKeys.h"
 #include "nsInterfaceHashtable.h"
@@ -496,7 +496,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   }
 #define WINDOW_ONLY_EVENT EVENT
 #define TOUCH_EVENT EVENT
-#include "mozilla/EventNameList.h"
+#include "mozilla/EventNameList.inc"
 #undef TOUCH_EVENT
 #undef WINDOW_ONLY_EVENT
 #undef BEFOREUNLOAD_EVENT
@@ -597,6 +597,9 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   void ResizeByOuter(int32_t aWidthDif, int32_t aHeightDif,
                      mozilla::dom::CallerType aCallerType,
                      mozilla::ErrorResult& aError);
+  void MoveResizeOuter(int32_t aX, int32_t aY, int32_t aWidth, int32_t aHeight,
+                       mozilla::dom::CallerType aCallerType,
+                       mozilla::ErrorResult& aError);
   double GetScrollXOuter();
   double GetScrollYOuter();
 
@@ -1133,4 +1136,4 @@ inline void nsGlobalWindowOuter::MaybeClearInnerWindow(
   }
 }
 
-#endif /* nsGlobalWindowOuter_h___ */
+#endif /* nsGlobalWindowOuter_h_ */

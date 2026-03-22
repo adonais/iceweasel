@@ -138,7 +138,7 @@ open class MainActivity : EdgeToEdgeActivity() {
         }
 
         if (savedInstanceState == null && intent.hasExtra(HomeScreen.ADD_TO_HOMESCREEN_TAG)) {
-            intentProcessor.handleNewIntent(this, safeIntent)
+            intentProcessor.handleNewIntent(safeIntent)
         }
 
         if (safeIntent.isLauncherIntent) {
@@ -269,7 +269,7 @@ open class MainActivity : EdgeToEdgeActivity() {
         val action = intent.action
 
         if (intent.hasExtra(HomeScreen.ADD_TO_HOMESCREEN_TAG)) {
-            intentProcessor.handleNewIntent(this, intent)
+            intentProcessor.handleNewIntent(intent)
         }
 
         if (ACTION_OPEN == action) {

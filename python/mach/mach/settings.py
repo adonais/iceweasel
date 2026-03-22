@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from textwrap import dedent
+
 from mach.decorators import SettingsProvider
 
 
@@ -57,11 +59,11 @@ class MachSettings:
                 (
                     "runprefs.*",
                     "string",
-                    """
+                    dedent("""
         Pass a pref into Firefox when using `mach run`, of the form `foo.bar=value`.
         Prefs will automatically be cast into the appropriate type. Integers can be
         single quoted to force them to be strings.
-        """.strip(),
+        """),
                 ),
             ]
 
@@ -93,6 +95,12 @@ class MachSettings:
                     "try.nobrowser",
                     "boolean",
                     "Do not automatically open a browser during authentication.",
+                    False,
+                ),
+                (
+                    "try.noartifact",
+                    "boolean",
+                    "Do not autodetect artifact mode base on mozconfig. The '--artifact' flag must be used explicitly if artifact try pushes are desired.",
                     False,
                 ),
             ]

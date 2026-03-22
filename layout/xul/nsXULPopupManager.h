@@ -8,8 +8,8 @@
  * The XUL Popup Manager keeps track of all open popups.
  */
 
-#ifndef nsXULPopupManager_h__
-#define nsXULPopupManager_h__
+#ifndef nsXULPopupManager_h_
+#define nsXULPopupManager_h_
 
 #include "Units.h"
 #include "mozilla/Attributes.h"
@@ -406,7 +406,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   // NativeMenu::Observer
   void OnNativeMenuOpened() override;
-  void OnNativeMenuClosed() override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void OnNativeMenuClosed() override;
   void OnNativeSubMenuWillOpen(mozilla::dom::Element* aPopupElement) override;
   void OnNativeSubMenuDidOpen(mozilla::dom::Element* aPopupElement) override;
   void OnNativeSubMenuClosed(mozilla::dom::Element* aPopupElement) override;
@@ -459,6 +459,18 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   void ShowMenu(nsIContent* aMenu, bool aSelectFirstItem);
 
   /**
+   * Open the given menu as a native menu, anchored to its content node.
+   *
+   * This fires the popupshowing event synchronously.
+   *
+   * Returns whether native menus are supported for aMenu on this platform.
+   * TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
+   */
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowMenuAsNativeMenu(
+      nsIContent* aMenu, nsMenuPopupFrame* popupFrame,
+      const nsAString& aPosition, bool parentIsContextMenu);
+
+  /**
    * Open a popup, either anchored or unanchored. If aSelectFirstItem is
    * true, then the first item in the menu is selected. The arguments are
    * similar to those for XULPopupElement::OpenPopup.
@@ -507,6 +519,20 @@ class nsXULPopupManager final : public nsIDOMEventListener,
    */
   MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowPopupAsNativeMenu(
       Element* aPopup, int32_t aXPos, int32_t aYPos, bool aIsContextMenu,
+      bool aIsScreenPoint, mozilla::dom::Event* aTriggerEvent);
+
+  /**
+   * Open a popup as a native menu, anchored to a specific screen rect specified
+   * by aRect, measured in CSS pixels, aligned as specified by aPosition.
+   *
+   * This fires the popupshowing event synchronously.
+   *
+   * Returns whether native menus are supported for aPopup on this platform.
+   * TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
+   */
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowPopupAsNativeAnchoredMenu(
+      nsIContent* aAnchorContent, Element* aPopup, const nsAString& aPosition,
+      const mozilla::CSSIntRect& aRect, bool aIsContextMenu,
       mozilla::dom::Event* aTriggerEvent);
 
   /**
@@ -818,6 +844,13 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   MOZ_CAN_RUN_SCRIPT bool HandleKeyboardNavigationInPopup(
       nsMenuChainItem* aItem, nsMenuPopupFrame* aFrame,
       nsNavigationDirection aDir);
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY bool ShowNativeMenuInternal(
+      Element* aPopup, PendingPopup& aPendingPopup,
+      mozilla::FunctionRef<void(nsMenuPopupFrame*)> aInitFn,
+      mozilla::FunctionRef<void(mozilla::widget::NativeMenu*,
+                                nsMenuPopupFrame*)>
+          aShowFn);
 
  protected:
   already_AddRefed<nsINode> GetLastTriggerNode(

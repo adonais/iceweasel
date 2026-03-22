@@ -112,6 +112,18 @@
         {
           "type": "object",
           "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["OPEN_TAB_IN_SPLITVIEW"]
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Opens the selected tab in a splitview with about:opentabs"
+        },
+        {
+          "type": "object",
+          "properties": {
             "data": {
               "type": "object",
               "properties": {

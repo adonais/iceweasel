@@ -47,7 +47,7 @@
   }
 }
 
-:host([native][disabled="true"]) {
+:host([native][disabled]) {
   color: GrayText;
 }
 

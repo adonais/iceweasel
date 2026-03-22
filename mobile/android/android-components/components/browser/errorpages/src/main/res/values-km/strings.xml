@@ -52,7 +52,7 @@
   <!-- The error message shown when a website could not be reached. -->
   <string name="mozac_browser_errorpages_connection_failure_message"><![CDATA[<ul>\n<li>គេហទំព័រនេះអាចមិនមានសេវាកម្មជាបណ្តោះអាសន្ន ឬកំពុងមានការច្រើនពេក។ សូមព្យាយាមម្តងទៀតក្រោយពីរបីនាទី។</li>\n<li>បើលោកអ្នកមិនអាចផ្ទុកទំព័រណាមួយបានទេ សូមពិនិត្យមើលទិន្នន័យ ឬការតភ្ជាប់ Wi-Fi នៃឧបករណ៍របស់លោកអ្នក។</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when a website responds in an unexpected way and the browser cannot continue. -->
-  <string name="mozac_browser_errorpages_unknown_socket_type_title">ចម្លើយតប​ពី​ម៉ាស៊ីន​បម្រើ​ដែល​មិន​បាន​រំពឹងទុក</string>
+  <string name="mozac_browser_errorpages_unknown_socket_type_title">ការឆ្លើយតបដែលមិននឹកស្មានដល់មកពីសេវូបករណ៍</string>
   <!-- The error message shown when a website responds in an unexpected way and the browser cannot continue. -->
   <string name="mozac_browser_errorpages_unknown_socket_type_message"><![CDATA[<p>តំបន់​បណ្ដាញ​ដែល​ឆ្លើយ​តប​ទៅ​សំណើ​បណ្ដាញ​ក្នុង​វិធី​ដែល​មិន​បាន​រំពឹង​ទុក ហើយ​កម្មវិធី​រុករក​មិន​អាច​បន្ត​បាន​ឡើយ\u00a0។</p>]]></string>
   <!-- The document title and heading of the error page shown when the browser gets stuck in an infinite loop when loading a website. -->
@@ -60,7 +60,7 @@
   <!-- The error message shown when the browser gets stuck in an infinite loop when loading a website. -->
   <string name="mozac_browser_errorpages_redirect_loop_message"><![CDATA[<p>កម្មវិធីរុករកបានឈប់ព្យាយាមទាញយកធាតុដែលបានស្នើសុំ។ គេហទំព័រកំពុងបញ្ជូនបន្តសំណើតាមរបៀបមួយដែលនឹងមិនដែលបញ្ចប់ឡើយ។</p>\n<ul>\n<li>តើអ្នកបានបិទ ឬរារាំងខូគីដែលតម្រូវដោយគេហទំព័រនេះដែរឬទេ?</li>\n<li>ប្រសិនបើការទទួលយកខូគីរបស់គេហទំព័រមិនអាចដោះស្រាយបញ្ហាបានទេ វាទំនងជាបញ្ហាការកំណត់រចនាសម្ព័ន្ធម៉ាស៊ីនមេ មិនមែនឧបករណ៍របស់អ្នកទេ។</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when a website cannot be loaded because the browser is in offline mode. -->
-  <string name="mozac_browser_errorpages_offline_title">ម៉ូត​ក្រៅ​បណ្ដាញ</string>
+  <string name="mozac_browser_errorpages_offline_title">ម៉ូតអហ្វឡាញ</string>
   <!-- The error message shown when a website cannot be loaded because the browser is in offline mode. -->
   <string name="mozac_browser_errorpages_offline_message"><![CDATA[<p>កម្មវិធីរុករកកំពុងដំណើរការក្នុងរបៀបក្រៅបណ្តាញរបស់វា ហើយមិនអាចភ្ជាប់ទៅធាតុដែលបានស្នើសុំបានទេ។</p>\n<ul>\n<li>តើឧបករណ៍ត្រូវបានភ្ជាប់ទៅបណ្តាញសកម្មដែរឬទេ?</li>\n<li>ចុច “សាកល្បងម្តងទៀត” ដើម្បីប្តូរទៅរបៀបអនឡាញ ហើយផ្ទុកទំព័រឡើងវិញ។</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when the browser prevents loading a website on a restricted port. -->
@@ -120,7 +120,7 @@
   <string name="mozac_browser_errorpages_unknown_proxy_host_title">រក​មិន​ឃើញ​សេវូបករណ៍ប្រូកស៊ី</string>
   <string name="mozac_browser_errorpages_unknown_proxy_host_message"><![CDATA[<p>កម្មវិធីរុករកត្រូវបានកំណត់រចនាសម្ព័ន្ធដើម្បីប្រើម៉ាស៊ីនមេប្រូកស៊ី ប៉ុន្តែរកមិនឃើញប្រូកស៊ីទេ។</p>\n<ul>\n<li>តើការកំណត់រចនាសម្ព័ន្ធប្រូកស៊ីរបស់កម្មវិធីរុករកត្រឹមត្រូវទេ? សូមពិនិត្យមើលការកំណត់ ហើយព្យាយាមម្តងទៀត។</li>\n<li>តើឧបករណ៍ត្រូវបានភ្ជាប់ទៅបណ្តាញសកម្មទេ?</li>\n<li>នៅតែមានបញ្ហា? សូមពិគ្រោះជាមួយអ្នកគ្រប់គ្រងបណ្តាញ ឬអ្នកផ្តល់សេវាអ៊ីនធឺណិតរបស់អ្នកសម្រាប់ជំនួយ។</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
-  <string name="mozac_browser_errorpages_safe_browsing_malware_uri_title">បញ្ហាគេហទំព័រមេរោគ</string>
+  <string name="mozac_browser_errorpages_safe_browsing_malware_uri_title">បញ្ហាគេហទំព័រម៉ាល់វែរ</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_browsing_malware_uri_message"><![CDATA[<p>គេហទំព័រនៅ %1$s ត្រូវបានរាយការណ៍ថាជាគេហទំព័រវាយប្រហារ ហើយត្រូវបានរារាំងដោយផ្អែកលើចំណូលចិត្តសុវត្ថិភាពរបស់អ្នក។</p>]]></string>
   <!-- The document title and heading of an error page. -->

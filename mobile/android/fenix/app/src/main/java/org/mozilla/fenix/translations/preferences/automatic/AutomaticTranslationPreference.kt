@@ -26,8 +26,8 @@ import org.mozilla.fenix.compose.InfoCard
 import org.mozilla.fenix.compose.InfoType
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import java.util.Locale
 
 /**
@@ -141,7 +141,7 @@ internal fun getAutomaticTranslationListPreferences(): List<AutomaticTranslation
 @Preview
 @Composable
 private fun AutomaticTranslationPreferencePreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         AutomaticTranslationPreference(
@@ -154,7 +154,7 @@ private fun AutomaticTranslationPreferencePreview(
 @Preview
 @Composable
 private fun AutomaticTranslationPreferenceErrorPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         AutomaticTranslationPreference(

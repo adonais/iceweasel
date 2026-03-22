@@ -519,7 +519,7 @@ const mouseOutOnTargetNode = function (animationInspector, panel, index) {
 const selectAnimationInspector = async function (inspector) {
   await inspector.toolbox.selectTool("inspector");
   const onDispatched = waitForDispatch(inspector.store, "UPDATE_ANIMATIONS");
-  inspector.sidebar.select("animationinspector");
+  await inspector.sidebar.select("animationinspector");
   await onDispatched;
 };
 

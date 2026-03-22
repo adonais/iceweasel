@@ -43,7 +43,7 @@ const AboutWelcomeUtils = {
   handleUserAction(action) {
     return window.AWSendToParent("SPECIAL_ACTION", action);
   },
-  sendImpressionTelemetry(messageId, context) {
+  sendImpressionTelemetry(messageId, context = {}) {
     window.AWSendEventTelemetry?.({
       event: "IMPRESSION",
       event_context: {
@@ -53,22 +53,28 @@ const AboutWelcomeUtils = {
       message_id: messageId,
     });
   },
-  sendActionTelemetry(messageId, elementId, eventName = "CLICK_BUTTON") {
+  sendActionTelemetry(
+    messageId,
+    elementId,
+    eventName = "CLICK_BUTTON",
+    context = {}
+  ) {
     const ping = {
       event: eventName,
       event_context: {
         source: elementId,
         page,
+        ...context,
       },
       message_id: messageId,
     };
     window.AWSendEventTelemetry?.(ping);
   },
-  sendDismissTelemetry(messageId, elementId) {
+  sendDismissTelemetry(messageId, elementId, context = {}) {
     // Don't send DISMISS telemetry in spotlight modals since they already send
     // their own equivalent telemetry.
     if (page !== "spotlight") {
-      this.sendActionTelemetry(messageId, elementId, "DISMISS");
+      this.sendActionTelemetry(messageId, elementId, "DISMISS", context);
     }
   },
   async fetchFlowParams(metricsFlowUri) {
@@ -99,10 +105,15 @@ const AboutWelcomeUtils = {
   getLoadingStrategyFor(url) {
     return url?.startsWith("http") ? "lazy" : "eager";
   },
-  handleCampaignAction(action, messageId) {
+  handleCampaignAction(action, messageId, context) {
     window.AWSendToParent("HANDLE_CAMPAIGN_ACTION", action).then(handled => {
       if (handled) {
-        this.sendActionTelemetry(messageId, "CAMPAIGN_ACTION");
+        this.sendActionTelemetry(
+          messageId,
+          "CAMPAIGN_ACTION",
+          "CLICK_BUTTON",
+          context
+        );
       }
     });
   },
@@ -151,7 +162,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
 /* harmony import */ var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7);
 /* harmony import */ var _SubmenuButton__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(12);
-/* harmony import */ var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(28);
+/* harmony import */ var _lib_addUtmParams_mjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(29);
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
@@ -211,7 +222,9 @@ const MultiStageAboutWelcome = props => {
       // blocking the thread.
       window.AWGetUnhandledCampaignAction?.().then(action => {
         if (typeof action === "string") {
-          _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.handleCampaignAction(action, props.message_id);
+          _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.handleCampaignAction(action, props.message_id, {
+            writeInMicrosurvey: props.writeInMicrosurvey
+          });
         }
       }).catch(error => {
         console.error("Failed to get unhandled campaign action:", error);
@@ -228,7 +241,8 @@ const MultiStageAboutWelcome = props => {
             screen_family: props.message_id,
             screen_index: order,
             screen_id: screen.id,
-            screen_initials: screenInitials
+            screen_initials: screenInitials,
+            writeInMicrosurvey: props.writeInMicrosurvey
           });
           window.AWAddScreenImpression?.(screen);
         }
@@ -342,6 +356,10 @@ const MultiStageAboutWelcome = props => {
   // screens, and allows us to have multiple single selects on a screen.
   const [activeSingleSelectSelections, setActiveSingleSelectSelections] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({});
 
+  // Save textarea inputs for each screen as an object keyed by screen id. It's
+  // structured like this: { screenId: { textareaId: { value, isValid } } }
+  const [textInputs, setTextInputs] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)({});
+
   // Get the active theme so the rendering code can make it selected
   // by default.
   const [activeTheme, setActiveTheme] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
@@ -420,6 +438,18 @@ const MultiStageAboutWelcome = props => {
         };
       });
     };
+    const setTextInput = (value, inputId) => {
+      setTextInputs(prevState => {
+        const currentScreenInputs = prevState[currentScreen.id] || {};
+        return {
+          ...prevState,
+          [currentScreen.id]: {
+            ...currentScreenInputs,
+            [inputId]: value
+          }
+        };
+      });
+    };
     return index === order ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(WelcomeScreen, {
       key: currentScreen.id + order,
       id: currentScreen.id,
@@ -431,7 +461,9 @@ const MultiStageAboutWelcome = props => {
       previousOrder: previousOrder,
       content: currentScreen.content,
       navigate: handleTransition,
+      autoAdvance: currentScreen.auto_advance,
       messageId: `${props.message_id}_${order}_${currentScreen.id}`,
+      writeInMicrosurvey: props.writeInMicrosurvey,
       UTMTerm: props.utm_term,
       flowParams: flowParams,
       activeTheme: activeTheme,
@@ -442,9 +474,10 @@ const MultiStageAboutWelcome = props => {
       setScreenMultiSelects: setScreenMultiSelects,
       activeMultiSelect: activeMultiSelects[currentScreen.id],
       setActiveMultiSelect: setActiveMultiSelect,
-      autoAdvance: currentScreen.auto_advance,
       activeSingleSelectSelections: activeSingleSelectSelections[currentScreen.id],
       setActiveSingleSelectSelection: setActiveSingleSelectSelection,
+      textInputs: textInputs[currentScreen.id],
+      setTextInput: setTextInput,
       negotiatedLanguage: negotiatedLanguage,
       langPackInstallPhase: langPackInstallPhase,
       forceHideStepsIndicator: currentScreen.force_hide_steps_indicator,
@@ -469,6 +502,7 @@ const renderSingleSecondaryCTAButton = ({
   position,
   handleAction,
   activeMultiSelect,
+  textInputs,
   isArrayItem,
   index = null
 }) => {
@@ -494,6 +528,14 @@ const renderSingleSecondaryCTAButton = ({
         }
       }
       return true;
+    }
+    if (disabledValue === "hasTextInput") {
+      // For text input, we check if the user has entered any text in the
+      // textarea(s) present on the screen.
+      if (!textInputs) {
+        return true;
+      }
+      return Object.values(textInputs).every(input => !input.isValid || input.value.trim().length === 0);
     }
     return disabledValue;
   };
@@ -578,6 +620,7 @@ const SecondaryCTA = props => {
       position,
       handleAction: props.handleAction,
       activeMultiSelect: props.activeMultiSelect,
+      textInputs: props.textInputs,
       isArrayItem: true,
       index
     })));
@@ -589,6 +632,7 @@ const SecondaryCTA = props => {
     position,
     handleAction: props.handleAction,
     activeMultiSelect: props.activeMultiSelect,
+    textInputs: props.textInputs,
     isArrayItem: false
   });
 };
@@ -675,20 +719,26 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     source,
     props
   }) {
-    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, source, event.name);
+    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, source, event.name, {
+      writeInMicrosurvey: props.writeInMicrosurvey
+    });
 
     // Send additional telemetry if a messaging surface like feature callout is
     // dismissed via the dismiss button. Other causes of dismissal will be
     // handled separately by the messaging surface's own code.
     if (value === "dismiss_button" && !event.name) {
-      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendDismissTelemetry(props.messageId, source);
+      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendDismissTelemetry(props.messageId, source, {
+        writeInMicrosurvey: props.writeInMicrosurvey
+      });
     }
   }
   async handleMigrationIfNeeded(action, props) {
     const hasMigrate = a => a.type === "SHOW_MIGRATION_WIZARD" || a.type === "MULTI_ACTION" && a.data?.actions?.some(hasMigrate);
     if (hasMigrate(action)) {
       await window.AWWaitForMigrationClose();
-      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, "migrate_close");
+      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, "migrate_close", "CLICK_BUTTON", {
+        writeInMicrosurvey: props.writeInMicrosurvey
+      });
     }
   }
   applyThemeIfNeeded(action, event) {
@@ -758,6 +808,9 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     if (action.collectSelect) {
       this.setMultiSelectActions(action);
     }
+    if (action.collectTextInput && Object.values(props.textInputs).length) {
+      this.setTextInputActions(action);
+    }
     let actionResult;
     if (["OPEN_URL", "SHOW_FIREFOX_ACCOUNTS"].includes(action.type)) {
       this.handleOpenURL(action, props.flowParams, props.UTMTerm);
@@ -767,7 +820,9 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
         actionResult = await actionPromise;
       }
       if (action.type === "FXA_SIGNIN_FLOW") {
-        _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, actionResult ? "sign_in" : "sign_in_cancel", "FXA_SIGNIN_FLOW");
+        _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, actionResult ? "sign_in" : "sign_in_cancel", "FXA_SIGNIN_FLOW", {
+          writeInMicrosurvey: props.writeInMicrosurvey
+        });
       }
       if (action.type === "INSTALL_ADDON_FROM_URL") {
         const url = props.addonURL;
@@ -887,8 +942,68 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     action.data.actions.unshift(...multiSelectActions);
     for (const value of Object.values(props.activeMultiSelect)) {
       // Send telemetry with selected checkbox ids
-      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, value.flat(), "SELECT_CHECKBOX");
+      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, value.flat(), "SELECT_CHECKBOX", {
+        writeInMicrosurvey: props.writeInMicrosurvey
+      });
     }
+  }
+  setTextInputActions(action) {
+    let {
+      props
+    } = this;
+    if (action.type !== "MULTI_ACTION") {
+      console.error("collectTextInput is only supported for MULTI_ACTION type actions");
+      action.type = "MULTI_ACTION";
+    }
+    if (!Array.isArray(action.data?.actions)) {
+      console.error("collectTextInput is only supported for MULTI_ACTION type actions with an array of actions");
+      action.data = {
+        actions: []
+      };
+    }
+    const collectedActions = [];
+
+    // If there is no character_limit, we still need to limit the size of the
+    // input to avoid sending huge payloads. We'll go with 8KB.
+    const truncateToByteSize = (str, maxBytes) => {
+      const encoder = new TextEncoder();
+      const encoded = encoder.encode(str);
+      if (encoded.length <= maxBytes) {
+        return str;
+      }
+      let end = maxBytes;
+      // Step back until we find a valid UTF-8 start byte
+      while (end > 0 && (encoded[end] & 0b11000000) === 0b10000000) {
+        end--; // this is a continuation byte
+      }
+      return new TextDecoder().decode(encoded.subarray(0, end));
+    };
+    const processTile = (tile, tileIndex) => {
+      if (tile?.type !== "textarea" || !tile.data) {
+        return;
+      }
+      const inputId = tile.data.id || `tile-${tileIndex}`;
+      const inputData = props.textInputs[inputId];
+      if (inputData?.isValid && inputData.value.trim().length) {
+        if (tile.data.action) {
+          collectedActions.push(tile.data.action);
+        }
+        _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, inputId, "TEXT_INPUT", {
+          value: truncateToByteSize(inputData.value, 8192),
+          writeInMicrosurvey: props.writeInMicrosurvey
+        });
+      }
+    };
+    if (props.content?.tiles) {
+      if (Array.isArray(props.content.tiles)) {
+        for (const [index, tile] of props.content.tiles.entries()) {
+          processTile(tile, index);
+        }
+      } else {
+        processTile(props.content.tiles, 0);
+      }
+    }
+    action.data.actions.unshift(...collectedActions);
   }
   render() {
     return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__.MultiStageProtonScreen, {
@@ -904,12 +1019,15 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       setActiveMultiSelect: this.props.setActiveMultiSelect,
       activeSingleSelectSelections: this.props.activeSingleSelectSelections,
       setActiveSingleSelectSelection: this.props.setActiveSingleSelectSelection,
+      textInputs: this.props.textInputs,
+      setTextInput: this.props.setTextInput,
       totalNumberOfScreens: this.props.totalNumberOfScreens,
       appAndSystemLocaleInfo: this.props.appAndSystemLocaleInfo,
       negotiatedLanguage: this.props.negotiatedLanguage,
       langPackInstallPhase: this.props.langPackInstallPhase,
       handleAction: this.handleAction,
       messageId: this.props.messageId,
+      writeInMicrosurvey: this.props.writeInMicrosurvey,
       isFirstScreen: this.props.isFirstScreen,
       isLastScreen: this.props.isLastScreen,
       isSingleScreen: this.props.isSingleScreen,
@@ -945,7 +1063,7 @@ __webpack_require__.r(__webpack_exports__);
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 
-const CONFIGURABLE_STYLES = ["color", "display", "fontSize", "fontWeight", "letterSpacing", "lineHeight", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "textAlign", "whiteSpace", "width", "borderBlockStart", "borderBlockEnd", "top", "bottom", "left", "right", "inset", "insetBlock", "insetInline", "minHeight", "minWidth"];
+const CONFIGURABLE_STYLES = ["background", "color", "display", "fontSize", "fontWeight", "letterSpacing", "lineHeight", "marginBlock", "marginBlockStart", "marginBlockEnd", "marginInline", "paddingBlock", "paddingBlockStart", "paddingBlockEnd", "paddingInline", "paddingInlineStart", "paddingInlineEnd", "textAlign", "whiteSpace", "width", "height", "borderBlockStart", "borderBlockEnd", "top", "bottom", "left", "right", "inset", "insetBlock", "insetInline", "minHeight", "minWidth"];
 const ZAP_SIZE_THRESHOLD = 160;
 
 /**
@@ -1136,6 +1254,8 @@ const MultiStageProtonScreen = props => {
     setActiveMultiSelect: props.setActiveMultiSelect,
     activeSingleSelectSelections: props.activeSingleSelectSelections,
     setActiveSingleSelectSelection: props.setActiveSingleSelectSelection,
+    textInputs: props.textInputs,
+    setTextInput: props.setTextInput,
     totalNumberOfScreens: props.totalNumberOfScreens,
     handleAction: props.handleAction,
     isFirstScreen: props.isFirstScreen,
@@ -1151,6 +1271,7 @@ const MultiStageProtonScreen = props => {
     addonIconURL: props.addonIconURL,
     themeScreenshots: props.themeScreenshots,
     messageId: props.messageId,
+    writeInMicrosurvey: props.writeInMicrosurvey,
     negotiatedLanguage: props.negotiatedLanguage,
     langPackInstallPhase: props.langPackInstallPhase,
     forceHideStepsIndicator: props.forceHideStepsIndicator,
@@ -1167,6 +1288,7 @@ const ProtonScreenActionButtons = props => {
     addonType,
     addonName,
     activeMultiSelect,
+    textInputs,
     installedAddons
   } = props;
   const defaultValue = content.checkbox?.defaultValue;
@@ -1187,8 +1309,8 @@ const ProtonScreenActionButtons = props => {
 
   // If we have a multi-select screen, we want to disable the primary button
   // until the user has selected at least one item.
-  const isPrimaryDisabled = primaryDisabledValue => {
-    if (primaryDisabledValue === "hasActiveMultiSelect") {
+  const isPrimaryDisabled = disabledValue => {
+    if (disabledValue === "hasActiveMultiSelect") {
       if (!activeMultiSelect) {
         return true;
       }
@@ -1201,7 +1323,15 @@ const ProtonScreenActionButtons = props => {
       }
       return true;
     }
-    return primaryDisabledValue;
+    if (disabledValue === "hasTextInput") {
+      // For text input, we check if the user has entered any text in the
+      // textarea(s) present on the screen.
+      if (!textInputs) {
+        return true;
+      }
+      return Object.values(textInputs).every(input => !input.isValid || input.value.trim().length === 0);
+    }
+    return disabledValue;
   };
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: `action-buttons ${content.additional_button ? "additional-cta-container" : ""}`,
@@ -1235,7 +1365,9 @@ const ProtonScreenActionButtons = props => {
     }) : ""
   })), content.additional_button ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_AdditionalCTA__WEBPACK_IMPORTED_MODULE_8__.AdditionalCTA, {
     content: content,
-    handleAction: props.handleAction
+    handleAction: props.handleAction,
+    activeMultiSelect: activeMultiSelect,
+    textInputs: textInputs
   }) : null, content.checkbox ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "checkbox-container"
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("input", {
@@ -1252,7 +1384,8 @@ const ProtonScreenActionButtons = props => {
   }))) : null, content.secondary_button ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__.SecondaryCTA, {
     content: content,
     handleAction: props.handleAction,
-    activeMultiSelect: activeMultiSelect
+    activeMultiSelect: activeMultiSelect,
+    textInputs: textInputs
   }) : null);
 };
 class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureComponent) {
@@ -1372,7 +1505,8 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       handleAction: this.props.handleAction,
       negotiatedLanguage: this.props.negotiatedLanguage,
       langPackInstallPhase: this.props.langPackInstallPhase,
-      messageId: this.props.messageId
+      messageId: this.props.messageId,
+      writeInMicrosurvey: this.props.writeInMicrosurvey
     }) : null;
   }
   renderDismissButton() {
@@ -1451,10 +1585,10 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
 
     // Check if hero_text is a string or an object with string_id property
     // essentially checking if we're using old or new design
-    const isSimpleText = typeof hero_text === "string" || typeof hero_text === "object" && hero_text !== null && "string_id" in hero_text;
+    const isSimpleText = typeof hero_text === "string" || typeof hero_text === "object" && hero_text !== null && ("string_id" in hero_text || "raw" in hero_text);
     const HeroTextWrapper = ({
       children,
-      className = ""
+      className
     }) => /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement((react__WEBPACK_IMPORTED_MODULE_0___default().Fragment), null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: `message-text ${className}`
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
@@ -1463,7 +1597,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       className: "spacer-bottom"
     })));
     if (isSimpleText) {
-      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(HeroTextWrapper, null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(HeroTextWrapper, {
+        className: "simple"
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
         text: hero_text
       }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", null)));
     }
@@ -1540,7 +1676,8 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       addonName: this.props.addonName,
       addonType: this.props.addonType,
       handleAction: this.props.handleAction,
-      activeMultiSelect: this.props.activeMultiSelect
+      activeMultiSelect: this.props.activeMultiSelect,
+      textInputs: this.props.textInputs
     }) : null;
   }
 
@@ -1773,7 +1910,8 @@ function LanguageSwitcher(props) {
     handleAction,
     negotiatedLanguage,
     langPackInstallPhase,
-    messageId
+    messageId,
+    writeInMicrosurvey
   } = props;
   const [isAwaitingLangpack, setIsAwaitingLangpack] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
 
@@ -1869,7 +2007,9 @@ function LanguageSwitcher(props) {
     className: "primary",
     value: "primary_button",
     onClick: () => {
-      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(messageId, "download_langpack");
+      _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(messageId, "download_langpack", "CLICK_BUTTON", {
+        writeInMicrosurvey
+      });
       setIsAwaitingLangpack(true);
     }
   }, content.languageSwitcher.switch ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
@@ -1923,11 +2063,16 @@ const CTAParagraph = props => {
     event.preventDefault();
   }, [handleAction]);
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h2", {
-    className: "cta-paragraph",
+    className: `cta-paragraph ${content?.info_tile ? "info-tile" : ""}`,
     style: {
       ..._lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.getValidStyle(content?.style, _MSLocalized__WEBPACK_IMPORTED_MODULE_1__.CONFIGURABLE_STYLES)
     }
-  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "cta-paragraph-icon-wrapper"
+  }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "cta-paragraph-icon",
+    style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.getValidStyle(content?.icon, _MSLocalized__WEBPACK_IMPORTED_MODULE_1__.CONFIGURABLE_STYLES)
+  })), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
     text: content.text
   }, content.text.string_name && typeof handleAction === "function" ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
     "data-l10n-id": content.text.string_id,
@@ -2040,7 +2185,9 @@ __webpack_require__.r(__webpack_exports__);
 
 const AdditionalCTA = ({
   content,
-  handleAction
+  handleAction,
+  activeMultiSelect,
+  textInputs
 }) => {
   let buttonStyle = "";
   const isSplitButton = content.submenu_button?.attached_to === "additional_button";
@@ -2053,6 +2200,28 @@ const AdditionalCTA = ({
   } else {
     buttonStyle = content.additional_button?.style === "link" ? "cta-link" : content.additional_button?.style;
   }
+  const computeDisabled = react__WEBPACK_IMPORTED_MODULE_0___default().useCallback(disabledValue => {
+    if (disabledValue === "hasActiveMultiSelect") {
+      if (!activeMultiSelect) {
+        return true;
+      }
+      for (const key in activeMultiSelect) {
+        if (activeMultiSelect[key]?.length > 0) {
+          return false;
+        }
+      }
+      return true;
+    }
+    if (disabledValue === "hasTextInput") {
+      // For text input, we check if the user has entered any text in the
+      // textarea(s) present on the screen.
+      if (!textInputs) {
+        return true;
+      }
+      return Object.values(textInputs).every(input => !input.isValid || input.value.trim().length === 0);
+    }
+    return disabledValue;
+  }, [activeMultiSelect, textInputs]);
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: className
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
@@ -2062,7 +2231,7 @@ const AdditionalCTA = ({
     className: `${buttonStyle} additional-cta`,
     onClick: handleAction,
     value: "additional_button",
-    disabled: content.additional_button?.disabled === true
+    disabled: computeDisabled(content.additional_button?.disabled)
   })), isSplitButton ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_SubmenuButton__WEBPACK_IMPORTED_MODULE_2__.SubmenuButton, {
     content: content,
     handleAction: handleAction
@@ -2306,16 +2475,19 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _SingleSelect__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(17);
 /* harmony import */ var _MobileDownloads__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(20);
 /* harmony import */ var _MultiSelect__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(21);
-/* harmony import */ var _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(22);
-/* harmony import */ var _EmbeddedFxBackupOptIn__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(23);
-/* harmony import */ var _ActionChecklist__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(24);
-/* harmony import */ var _EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(25);
-/* harmony import */ var _ConfirmationChecklist__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(26);
-/* harmony import */ var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(3);
-/* harmony import */ var _EmbeddedBackupRestore__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(27);
+/* harmony import */ var _TextAreaTile__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(22);
+/* harmony import */ var _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(23);
+/* harmony import */ var _EmbeddedFxBackupOptIn__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(24);
+/* harmony import */ var _ActionChecklist__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(25);
+/* harmony import */ var _EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(26);
+/* harmony import */ var _ConfirmationChecklist__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(27);
+/* harmony import */ var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(3);
+/* harmony import */ var _EmbeddedBackupRestore__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(28);
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 
 
 
@@ -2404,9 +2576,13 @@ const ContentTiles = props => {
     let lastTilesEl = null;
     let lastTabAt = 0;
     let restoring = false;
+    let tabFromTiles = false;
     function onKeyDown(e) {
       if (e.key === "Tab") {
         lastTabAt = performance.now();
+        if (tilesEl.contains(document.activeElement)) {
+          tabFromTiles = true;
+        }
       }
     }
     function onFocusIn(event) {
@@ -2417,12 +2593,22 @@ const ContentTiles = props => {
       // Track true DOM focus inside tiles.
       if (tilesEl.contains(target)) {
         lastTilesEl = target;
+        // Reset when focus enters tiles
+        tabFromTiles = false;
         return;
       }
 
       // If focus left tiles without a recent tab, treat as a programmatic snap.
       const tabRecently = performance.now() - lastTabAt < TAB_GRACE_WINDOW_MS;
       if (tabRecently || !lastTilesEl || !document.contains(lastTilesEl) || restoring) {
+        tabFromTiles = false;
+        return;
+      }
+
+      // If tab was pressed while in tiles and focus moved to action buttons, don't restore focus for the intended keyboard navigation
+      const actionButtons = dialog.querySelector(".action-buttons");
+      if (actionButtons?.contains(target) && tabFromTiles) {
+        tabFromTiles = false;
         return;
       }
 
@@ -2447,12 +2633,24 @@ const ContentTiles = props => {
   }, []);
   const toggleTile = (index, tile) => {
     const tileId = `${tile.type}${tile.id ? "_" : ""}${tile.id ?? ""}_header`;
-    setExpandedTileIndex(prevIndex => prevIndex === index ? null : index);
-    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_11__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, tileId);
+    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_12__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, tileId, "CLICK_BUTTON", {
+      writeInMicrosurvey: props.writeInMicrosurvey
+    });
+    if (tile.type === "link" && tile.action) {
+      props.handleAction({
+        currentTarget: {
+          value: tileId
+        }
+      }, tile.action);
+    } else {
+      setExpandedTileIndex(prevIndex => prevIndex === index ? null : index);
+    }
   };
   const toggleTiles = () => {
     setTilesHeaderExpanded(prev => !prev);
-    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_11__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, "content_tiles_header");
+    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_12__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, "content_tiles_header", "CLICK_BUTTON", {
+      writeInMicrosurvey: props.writeInMicrosurvey
+    });
   };
   function getTileMultiSelects(screenMultiSelects, index) {
     return screenMultiSelects?.[`tile-${index}`];
@@ -2467,17 +2665,22 @@ const ContentTiles = props => {
       title,
       subtitle
     } = tile;
+    const tileHeaderProps = tile.type === "link" ? {
+      role: "link"
+    } : {
+      "aria-expanded": isExpanded,
+      "aria-controls": `tile-content-${index}`
+    };
     return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       key: index,
       className: `content-tile ${header ? "has-header" : ""}`,
-      style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_11__.AboutWelcomeUtils.getTileStyle(tile, TILE_STYLES)
-    }, header?.title && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
+      style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_12__.AboutWelcomeUtils.getTileStyle(tile, TILE_STYLES)
+    }, header?.title && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", _extends({
       className: "tile-header secondary",
-      onClick: () => toggleTile(index, tile),
-      "aria-expanded": isExpanded,
-      "aria-controls": `tile-content-${index}`,
-      style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_11__.AboutWelcomeUtils.getValidStyle(header.style, HEADER_STYLES)
-    }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+      onClick: () => toggleTile(index, tile)
+    }, tileHeaderProps, {
+      style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_12__.AboutWelcomeUtils.getValidStyle(header.style, HEADER_STYLES)
+    }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "header-text-container"
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: header.title
@@ -2488,7 +2691,7 @@ const ContentTiles = props => {
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
       className: "header-subtitle"
     }))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "arrow-icon"
+      className: tile.type === "link" ? "external-link-icon" : "arrow-icon"
     })), (title || subtitle) && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "tile-title-container",
       id: `tile-title-container-${index}`
@@ -2501,7 +2704,7 @@ const ContentTiles = props => {
       text: subtitle
     }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("p", {
       className: "tile-subtitle"
-    }))), isExpanded || !header ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    }))), tile.type !== "link" && (isExpanded || !header) ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "tile-content",
       id: `tile-content-${index}`
     }, tile.type === "addons-picker" && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_AddonsPicker__WEBPACK_IMPORTED_MODULE_2__.AddonsPicker, {
@@ -2511,7 +2714,8 @@ const ContentTiles = props => {
       installedAddons: props.installedAddons,
       message_id: props.messageId,
       handleAction: props.handleAction,
-      layout: content.position
+      layout: content.position,
+      writeInMicrosurvey: props.writeInMicrosurvey
     }), ["theme", "single-select"].includes(tile.type) && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_SingleSelect__WEBPACK_IMPORTED_MODULE_3__.SingleSelect, {
       content: {
         tiles: tile
@@ -2533,32 +2737,40 @@ const ContentTiles = props => {
       activeMultiSelect: getTileActiveMultiSelect(props.activeMultiSelect, index),
       setActiveMultiSelect: props.setActiveMultiSelect,
       multiSelectId: `tile-${index}`
-    }), tile.type === "migration-wizard" && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_6__.EmbeddedMigrationWizard, {
+    }), tile.type === "textarea" && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_TextAreaTile__WEBPACK_IMPORTED_MODULE_6__.TextAreaTile, {
+      content: {
+        tiles: tile
+      },
+      textInputs: props.textInputs,
+      setTextInput: props.setTextInput,
+      tileIndex: index
+    }), tile.type === "migration-wizard" && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_7__.EmbeddedMigrationWizard, {
       handleAction: props.handleAction,
       content: {
         tiles: tile
       }
-    }), tile.type === "action_checklist" && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ActionChecklist__WEBPACK_IMPORTED_MODULE_8__.ActionChecklist, {
+    }), tile.type === "action_checklist" && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ActionChecklist__WEBPACK_IMPORTED_MODULE_9__.ActionChecklist, {
       content: content,
-      message_id: props.messageId
-    }), tile.type === "embedded_browser" && tile.data?.url && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_9__.EmbeddedBrowser, {
+      message_id: props.messageId,
+      writeInMicrosurvey: props.writeInMicrosurvey
+    }), tile.type === "embedded_browser" && tile.data?.url && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedBrowser__WEBPACK_IMPORTED_MODULE_10__.EmbeddedBrowser, {
       url: tile.data.url,
       style: tile.data.style
-    }), tile.type === "backup_restore" && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedBackupRestore__WEBPACK_IMPORTED_MODULE_12__.EmbeddedBackupRestore, {
+    }), tile.type === "backup_restore" && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedBackupRestore__WEBPACK_IMPORTED_MODULE_13__.EmbeddedBackupRestore, {
       handleAction: props.handleAction,
       content: {
         tiles: tile
       },
       skipButton: props.content.skip_button
-    }), tile.type === "fx_backup_file_path" && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedFxBackupOptIn__WEBPACK_IMPORTED_MODULE_7__.EmbeddedFxBackupOptIn, {
+    }), tile.type === "fx_backup_file_path" && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedFxBackupOptIn__WEBPACK_IMPORTED_MODULE_8__.EmbeddedFxBackupOptIn, {
       handleAction: props.handleAction,
       isEncryptedBackup: content.isEncryptedBackup,
       options: tile.options
-    }), tile.type === "fx_backup_password" && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedFxBackupOptIn__WEBPACK_IMPORTED_MODULE_7__.EmbeddedFxBackupOptIn, {
+    }), tile.type === "fx_backup_password" && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_EmbeddedFxBackupOptIn__WEBPACK_IMPORTED_MODULE_8__.EmbeddedFxBackupOptIn, {
       handleAction: props.handleAction,
       isEncryptedBackup: content.isEncryptedBackup,
       options: tile.options
-    }), tile.type === "confirmation-checklist" && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ConfirmationChecklist__WEBPACK_IMPORTED_MODULE_10__.ConfirmationChecklist, {
+    }), tile.type === "confirmation-checklist" && tile.data && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_ConfirmationChecklist__WEBPACK_IMPORTED_MODULE_11__.ConfirmationChecklist, {
       content: tile.data,
       handleAction: props.handleAction
     })) : null);
@@ -2568,7 +2780,7 @@ const ContentTiles = props => {
       const containerStyle = content?.tiles_container?.style;
       return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
         id: "content-tiles-container",
-        style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_11__.AboutWelcomeUtils.getValidStyle(containerStyle, CONTAINER_STYLES)
+        style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_12__.AboutWelcomeUtils.getValidStyle(containerStyle, CONTAINER_STYLES)
       }, tiles.map((tile, index) => renderContentTile(tile, index)));
     }
     // If tiles is not an array render the tile alone without a container
@@ -2623,7 +2835,8 @@ const AddonsPicker = props => {
   }
   function handleAction(event) {
     const {
-      message_id
+      message_id,
+      writeInMicrosurvey
     } = props;
     let {
       action,
@@ -2642,7 +2855,9 @@ const AddonsPicker = props => {
       type,
       data
     });
-    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.AboutWelcomeUtils.sendActionTelemetry(message_id, source_id);
+    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.AboutWelcomeUtils.sendActionTelemetry(message_id, source_id, "CLICK_BUTTON", {
+      writeInMicrosurvey
+    });
   }
   function handleAuthorClick(event, authorId) {
     event.stopPropagation();
@@ -3335,6 +3550,81 @@ const MultiSelect = ({
 
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TextAreaTile: () => (/* binding */ TextAreaTile)
+/* harmony export */ });
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+/* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+const CONFIGURABLE_STYLES = ["color", "display", "fontSize", "fontWeight", "letterSpacing", "lineHeight", "marginBlock", "marginInline", "paddingBlock", "paddingInline", "textAlign", "whiteSpace", "width", "border", "borderRadius", "minHeight", "minWidth"];
+const TextAreaTile = ({
+  content,
+  textInputs,
+  setTextInput,
+  tileIndex
+}) => {
+  const {
+    data
+  } = content.tiles;
+  const id = data.id || `tile-${tileIndex}`;
+  const [isValid, setIsValid] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(true);
+  const [charCounter, setCharCounter] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(data.character_limit || 0);
+  const textInput = (0,react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(() => {
+    if (textInputs) {
+      return textInputs?.[id];
+    }
+    return null;
+  }, [textInputs, id]);
+  const handleChange = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(event => {
+    let valid = isValid;
+    if (data.character_limit) {
+      setCharCounter(data.character_limit - event.target.value.length);
+      valid = event.target.value.length <= data.character_limit;
+    }
+    setIsValid(valid);
+    setTextInput({
+      value: event.target.value,
+      isValid: valid
+    }, id);
+  }, [isValid, data.character_limit, id, setTextInput]);
+  (0,react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
+    if (!textInput) {
+      setTextInput({
+        value: "",
+        isValid: true
+      }, id);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "textarea-container",
+    style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.AboutWelcomeUtils.getValidStyle(data.container_style, CONFIGURABLE_STYLES, true)
+  }, data.character_limit && /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: `textarea-char-counter ${isValid ? "" : "invalid"}`,
+    style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.AboutWelcomeUtils.getValidStyle(data.char_counter_style, CONFIGURABLE_STYLES, true)
+  }, charCounter), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("textarea", {
+    name: id,
+    className: `textarea-input ${isValid ? "" : "invalid"}`,
+    rows: data.rows,
+    cols: data.cols,
+    onChange: handleChange,
+    value: textInput?.value || "",
+    placeholder: data.placeholder,
+    style: _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_1__.AboutWelcomeUtils.getValidStyle(data.textarea_style, CONFIGURABLE_STYLES, true)
+  }));
+};
+
+/***/ }),
+/* 23 */
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   EmbeddedMigrationWizard: () => (/* binding */ EmbeddedMigrationWizard)
 /* harmony export */ });
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
@@ -3429,7 +3719,7 @@ const EmbeddedMigrationWizard = ({
 };
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -3530,7 +3820,7 @@ const EmbeddedFxBackupOptIn = ({
 };
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -3620,7 +3910,8 @@ const ActionChecklistProgressBar = ({
 };
 const ActionChecklist = ({
   content,
-  message_id
+  message_id,
+  writeInMicrosurvey
 }) => {
   const tiles = content.tiles.data;
   const [progressValue, setProgressValue] = (0,react__WEBPACK_IMPORTED_MODULE_0__.useState)(0);
@@ -3664,7 +3955,9 @@ const ActionChecklist = ({
       type,
       data
     });
-    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(message_id, source_id);
+    _lib_aboutwelcome_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(message_id, source_id, "CLICK_BUTTON", {
+      writeInMicrosurvey
+    });
   }
   return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "action-checklist"
@@ -3688,7 +3981,7 @@ const ActionChecklist = ({
 };
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -3756,7 +4049,7 @@ const EmbeddedBrowserInner = ({
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (EmbeddedBrowser);
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -3818,7 +4111,7 @@ const ConfirmationChecklist = props => {
 };
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -3898,7 +4191,7 @@ const EmbeddedBackupRestore = ({
 };
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
 __webpack_require__.r(__webpack_exports__);
@@ -4059,7 +4352,8 @@ class AboutWelcome extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
           domInteractive,
           mountStart: performance.getEntriesByName("mount").pop().startTime,
           domState,
-          source: this.props.UTMTerm
+          source: this.props.UTMTerm,
+          writeInMicrosurvey: this.props.write_in_microsurvey
         });
       };
       if (document.readyState === "complete") {
@@ -4090,6 +4384,7 @@ class AboutWelcome extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       addonIconURL: props.iconURL,
       themeScreenshots: props.screenshots,
       message_id: props.messageId,
+      writeInMicrosurvey: props.write_in_microsurvey,
       defaultScreens: props.screens,
       updateHistory: !props.disableHistoryUpdates,
       metricsFlowUri: this.state.metricsFlowUri,

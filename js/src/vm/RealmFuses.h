@@ -48,10 +48,23 @@ class InvalidatingRealmFuse : public InvalidatingFuse {
 // Popped when one of the following fuses is popped:
 // - ArrayPrototypeIteratorFuse (for `Array.prototype[@@iterator]`)
 // - OptimizeArrayIteratorPrototypeFuse (for `%ArrayIteratorPrototype%`)
-struct OptimizeGetIteratorFuse final : public InvalidatingRealmFuse {
+struct OptimizeGetIteratorFuse final : public RealmFuse {
   virtual const char* name() override { return "OptimizeGetIteratorFuse"; }
   virtual bool checkInvariant(JSContext* cx) override;
   virtual void popFuse(JSContext* cx, RealmFuses& realmFuses) override;
+};
+
+// This fuse is similar to OptimizeGetIteratorFuse, but additionally guards
+// there are no DebugScripts in this realm.
+//
+// This ensures JSOp::OptimizeSpreadCall and JSOp::OptimizeGetIterator only
+// optimize packed arrays when no debugger hooks can run before later bytecode
+// ops that rely on the array still being packed.
+struct OptimizeGetIteratorBytecodeFuse final : public InvalidatingRealmFuse {
+  virtual const char* name() override {
+    return "OptimizeGetIteratorBytecodeFuse";
+  }
+  virtual bool checkInvariant(JSContext* cx) override;
 };
 
 struct PopsOptimizedGetIteratorFuse : public RealmFuse {
@@ -313,6 +326,7 @@ struct OptimizeWeakSetPrototypeAddFuse final : public RealmFuse {
 
 #define FOR_EACH_REALM_FUSE(FUSE)                                              \
   FUSE(OptimizeGetIteratorFuse, optimizeGetIteratorFuse)                       \
+  FUSE(OptimizeGetIteratorBytecodeFuse, optimizeGetIteratorBytecodeFuse)       \
   FUSE(OptimizeArrayIteratorPrototypeFuse, optimizeArrayIteratorPrototypeFuse) \
   FUSE(ArrayPrototypeIteratorFuse, arrayPrototypeIteratorFuse)                 \
   FUSE(ArrayPrototypeIteratorNextFuse, arrayPrototypeIteratorNextFuse)         \

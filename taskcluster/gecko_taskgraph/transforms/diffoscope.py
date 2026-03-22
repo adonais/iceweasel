@@ -7,7 +7,7 @@ defined in kind.yml
 """
 
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from taskgraph.util.taskcluster import get_artifact_path
 from voluptuous import Any, Optional, Required
 
@@ -18,7 +18,7 @@ index_or_string = Any(
     {Required("index-search"): str},
 )
 
-diff_description_schema = Schema({
+diff_description_schema = LegacySchema({
     # Name of the diff task.
     Required("name"): str,
     # Treeherder tier.

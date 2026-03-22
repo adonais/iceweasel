@@ -12,7 +12,7 @@ const SUGGEST_ENABLED = "browser.search.suggest.enabled";
 const URLBAR_SUGGEST = "browser.urlbar.suggest.searches";
 
 add_setup(async function () {
-  await Services.search.init();
+  await SearchService.init();
 });
 
 add_task(async function test_allowRemoteSuggestions() {

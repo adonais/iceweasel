@@ -97,6 +97,10 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
           mRequestHandle->GetRequest()
               ->AsModuleRequest()
               ->SetHasWasmMimeTypeEssence();
+          loadContext->mRequest->SetWasmBytes();
+          if (!loadContext->mRequest->WasmBytes().append(aString, aStringLen)) {
+            return NS_ERROR_OUT_OF_MEMORY;
+          }
         }
       }
     }
@@ -191,19 +195,22 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   // May be null.
   Document* parentDoc = mWorkerRef->Private()->GetDocument();
 
-  // Set the Source type to "text" for decoding.
-  loadContext->mRequest->SetTextSource(loadContext);
+  // We only decode source text, not wasm bytecode.
+  if (!loadContext->mRequest->IsWasmBytes()) {
+    // Set the Source type to "text" for decoding.
+    loadContext->mRequest->SetTextSource(loadContext);
 
-  // Use the regular ScriptDecoder Decoder for this grunt work! Should be just
-  // fine because we're running on the main thread.
-  rv = mDecoder->DecodeRawData(loadContext->mRequest, aString, aStringLen,
-                               /* aEndOfStream = */ true);
-  NS_ENSURE_SUCCESS(rv, rv);
+    // Use the regular ScriptDecoder Decoder for this grunt work! Should be just
+    // fine because we're running on the main thread.
+    rv = mDecoder->DecodeRawData(loadContext->mRequest, aString, aStringLen,
+                                 /* aEndOfStream = */ true);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-  if (!loadContext->mRequest->ScriptTextLength()) {
-    nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "DOM"_ns,
-                                    parentDoc, nsContentUtils::eDOM_PROPERTIES,
-                                    "EmptyWorkerSourceWarning");
+    if (!loadContext->mRequest->ScriptTextLength()) {
+      nsContentUtils::ReportToConsole(
+          nsIScriptError::warningFlag, "DOM"_ns, parentDoc,
+          nsContentUtils::eDOM_PROPERTIES, "EmptyWorkerSourceWarning");
+    }
   }
 
   // For modules, we need to store the base URI on the module request object,
@@ -244,6 +251,14 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
   if (loadContext->IsTopLevel() && !isDynamic) {
     // Take care of the base URI first.
     mWorkerRef->Private()->SetBaseURI(finalURI);
+
+    if (httpChannel) {
+      nsCString reportingEndpoints;
+      if (NS_SUCCEEDED(httpChannel->GetResponseHeader("Reporting-Endpoints"_ns,
+                                                      reportingEndpoints))) {
+        mWorkerRef->Private()->SetReportingEndpointsHeader(reportingEndpoints);
+      }
+    }
 
     // Store the channel info if needed.
     mWorkerRef->Private()->InitChannelInfo(channel);

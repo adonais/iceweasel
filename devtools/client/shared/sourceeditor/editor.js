@@ -1577,14 +1577,16 @@ class Editor extends EventEmitter {
   }
 
   /**
-   * Set event listeners for the line gutter
+   * This enables the gutter and sets up all the
+   * event listeners for the various panels in the gutter.
+   * Currently the panels are the line numbers & code fold gutter.
    *
    * @param {object} domEventHandlers
    *
    * example usage:
    *  const domEventHandlers = { click(event) { console.log(event);} }
    */
-  setGutterEventListeners(domEventHandlers) {
+  enableGutter(domEventHandlers = {}) {
     const cm = editors.get(this);
     const {
       codemirrorView: { lineNumbers },
@@ -1619,6 +1621,19 @@ class Editor extends EventEmitter {
             domEventHandlers: this.#gutterDOMEventHandlers,
           })
         ),
+      ],
+    });
+  }
+
+  /**
+   * This removes the gutter and the panels wthin it
+   */
+  disableGutter() {
+    const cm = editors.get(this);
+    cm.dispatch({
+      effects: [
+        this.#compartments.lineNumberCompartment.reconfigure([]),
+        this.#compartments.foldGutterCompartment.reconfigure([]),
       ],
     });
   }
@@ -1977,6 +1992,20 @@ class Editor extends EventEmitter {
   }
 
   /**
+   * Calculates and returns the width of a single character of the input box.
+   * This will be used in opening the popup at the correct offset.
+   *
+   * @returns {number | null}: Width off the "x" char, or null if the input does not exist.
+   */
+  getInputCharWidth() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      return cm.defaultCharacterWidth;
+    }
+    return cm.defaultCharWidth();
+  }
+
+  /**
    * Check that text is selected
    *
    * @returns {boolean}
@@ -2091,6 +2120,18 @@ class Editor extends EventEmitter {
 
     const info = this.lineInfo(line);
     return info ? info.text : "";
+  }
+
+  /**
+   * Gets the text from the start postion to just before the cursor position
+   */
+  getTextBeforeCursor() {
+    const cm = editors.get(this);
+    if (this.config.cm6) {
+      const pos = cm.state.selection.main.head;
+      return cm.state.sliceDoc(0, pos);
+    }
+    return cm.getDoc().getRange({ line: 0, ch: 0 }, cm.getCursor());
   }
 
   getDoc() {
@@ -3830,13 +3871,6 @@ class Editor extends EventEmitter {
     this.clearSources();
 
     if (this.#prefObserver) {
-      this.#prefObserver.off(KEYMAP_PREF, this.setKeyMap);
-      this.#prefObserver.off(TAB_SIZE, this.reloadPreferences);
-      this.#prefObserver.off(EXPAND_TAB, this.reloadPreferences);
-      this.#prefObserver.off(AUTO_CLOSE, this.reloadPreferences);
-      this.#prefObserver.off(AUTOCOMPLETE, this.reloadPreferences);
-      this.#prefObserver.off(DETECT_INDENT, this.reloadPreferences);
-      this.#prefObserver.off(ENABLE_CODE_FOLDING, this.reloadPreferences);
       this.#prefObserver.destroy();
     }
 

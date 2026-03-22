@@ -3218,3 +3218,86 @@ addUiaTask(textChildSnippet, async function testTextChildTextRange() {
     "textboxP text correct"
   );
 });
+
+/**
+ * Test the Text2 pattern's GetCaretRange method.
+ */
+addUiaTask(
+  `<textarea id="textarea">abc</textarea>`,
+  async function testText2GetCaretRange(browser, docAcc) {
+    await runPython(`
+      doc = getDocUia()
+      textarea = findUiaByDomId(doc, "textarea")
+      global text
+      text = getUiaPattern(textarea, "TextPattern2")
+    `);
+    ok(!(await runPython(`text.GetCaretRange()[0]`)), "Caret is not active");
+    ok(
+      !(await runPython(`bool(text.GetCaretRange()[1])`)),
+      "No caret range before focus"
+    );
+
+    info("Focusing textarea");
+    const textarea = findAccessibleChildByID(docAcc, "textarea");
+    let moved = waitForEvent(EVENT_TEXT_CARET_MOVED, textarea);
+    textarea.takeFocus();
+    await moved;
+    await definePyVar("range", `text.GetCaretRange()[1]`);
+    ok(await runPython(`bool(range)`), "Got caret range after focus");
+    is(await runPython(`range.GetText(-1)`), "", "Caret range has no text");
+    // The IA2 -> UIA proxy doesn't support isActive.
+    if (gIsUiaEnabled) {
+      ok(await runPython(`text.GetCaretRange()[0]`), "Caret is active");
+    }
+    info("Expanding to character");
+    await runPython(`range.ExpandToEnclosingUnit(TextUnit_Character)`);
+    is(await runPython(`range.GetText(-1)`), "a", "Caret range text correct");
+
+    info("Pressing ArrowRight");
+    moved = waitForEvent(EVENT_TEXT_CARET_MOVED, textarea);
+    EventUtils.synthesizeKey("KEY_ArrowRight");
+    await moved;
+    await definePyVar("range", `text.GetCaretRange()[1]`);
+    ok(await runPython(`bool(range)`), "Got caret range after ArrowRight");
+    is(await runPython(`range.GetText(-1)`), "", "Caret range has no text");
+    info("Expanding to character");
+    await runPython(`range.ExpandToEnclosingUnit(TextUnit_Character)`);
+    is(await runPython(`range.GetText(-1)`), "b", "Caret range text correct");
+
+    info("Pressing Shift+ArrowRight to select forward");
+    moved = waitForEvent(EVENT_TEXT_CARET_MOVED, textarea);
+    EventUtils.synthesizeKey("KEY_ArrowRight", { shiftKey: true });
+    await moved;
+    await definePyVar("range", `text.GetCaretRange()[1]`);
+    ok(
+      await runPython(`bool(range)`),
+      "Got caret range after Shift+ArrowRight"
+    );
+    is(await runPython(`range.GetText(-1)`), "", "Caret range has no text");
+    info("Expanding to character");
+    await runPython(`range.ExpandToEnclosingUnit(TextUnit_Character)`);
+    is(await runPython(`range.GetText(-1)`), "c", "Caret range text correct");
+
+    info("Pressing Shift+ArrowLeft to collapse selection");
+    moved = waitForEvent(EVENT_TEXT_CARET_MOVED, textarea);
+    EventUtils.synthesizeKey("KEY_ArrowLeft", { shiftKey: true });
+    await moved;
+    await definePyVar("range", `text.GetCaretRange()[1]`);
+    ok(await runPython(`bool(range)`), "Got caret range after collapse");
+    is(await runPython(`range.GetText(-1)`), "", "Caret range has no text");
+    info("Expanding to character");
+    await runPython(`range.ExpandToEnclosingUnit(TextUnit_Character)`);
+    is(await runPython(`range.GetText(-1)`), "b", "Caret range text correct");
+
+    info("Pressing Shift+ArrowLeft to select backward");
+    moved = waitForEvent(EVENT_TEXT_CARET_MOVED, textarea);
+    EventUtils.synthesizeKey("KEY_ArrowLeft", { shiftKey: true });
+    await moved;
+    await definePyVar("range", `text.GetCaretRange()[1]`);
+    ok(await runPython(`bool(range)`), "Got caret range after Shift+ArrowLeft");
+    is(await runPython(`range.GetText(-1)`), "", "Caret range has no text");
+    info("Expanding to character");
+    await runPython(`range.ExpandToEnclosingUnit(TextUnit_Character)`);
+    is(await runPython(`range.GetText(-1)`), "a", "Caret range text correct");
+  }
+);

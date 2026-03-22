@@ -87,12 +87,9 @@ SVGSVGElement::SVGSVGElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
     FromParser aFromParser)
     : SVGSVGElementBase(std::move(aNodeInfo)),
-      mCurrentTranslate(0.0f, 0.0f),
-      mCurrentScale(1.0f),
       mStartAnimationOnBindToTree(aFromParser == NOT_FROM_PARSER ||
                                   aFromParser == FROM_PARSER_FRAGMENT ||
-                                  aFromParser == FROM_PARSER_XSLT),
-      mImageNeedsTransformInvalidation(false) {}
+                                  aFromParser == FROM_PARSER_XSLT) {}
 
 //----------------------------------------------------------------------
 // nsINode methods
@@ -119,7 +116,14 @@ already_AddRefed<DOMSVGAnimatedLength> SVGSVGElement::Height() {
 }
 
 bool SVGSVGElement::UseCurrentView() const {
-  return mSVGView || mCurrentViewID;
+  return mSVGView || !mCurrentViewID.IsVoid();
+}
+
+SVGAnimatedTransformList* SVGSVGElement::GetViewTransformList() const {
+  if (mSVGView && mSVGView->mTransforms) {
+    return mSVGView->mTransforms.get();
+  }
+  return nullptr;
 }
 
 float SVGSVGElement::CurrentScale() const { return mCurrentScale; }
@@ -166,7 +170,7 @@ void SVGSVGElement::ForceRedraw() {
 
 void SVGSVGElement::PauseAnimations() {
   if (mTimedDocumentRoot) {
-    mTimedDocumentRoot->Pause(SMILTimeContainer::PAUSE_SCRIPT);
+    mTimedDocumentRoot->Pause(SMILTimeContainer::PauseType::Script);
   }
   // else we're not the outermost <svg> or not bound to a tree, so silently fail
 }
@@ -187,14 +191,14 @@ void SVGSVGElement::PauseAnimationsAt(float aSeconds) {
 
 void SVGSVGElement::UnpauseAnimations() {
   if (mTimedDocumentRoot) {
-    mTimedDocumentRoot->Resume(SMILTimeContainer::PAUSE_SCRIPT);
+    mTimedDocumentRoot->Resume(SMILTimeContainer::PauseType::Script);
   }
   // else we're not the outermost <svg> or not bound to a tree, so silently fail
 }
 
 bool SVGSVGElement::AnimationsPaused() {
   SMILTimeContainer* root = GetTimedDocumentRoot();
-  return root && root->IsPausedByType(SMILTimeContainer::PAUSE_SCRIPT);
+  return root && root->IsPausedByType(SMILTimeContainer::PauseType::Script);
 }
 
 float SVGSVGElement::GetCurrentTimeAsFloat() {
@@ -328,7 +332,7 @@ nsresult SVGSVGElement::BindToTree(BindContext& aContext, nsINode& aParent) {
       if (WillBeOutermostSVG(aParent)) {
         // We'll be the outermost <svg> element.  We'll need a time container.
         if (!mTimedDocumentRoot) {
-          mTimedDocumentRoot = MakeUnique<SMILTimeContainer>();
+          mTimedDocumentRoot = std::make_unique<SMILTimeContainer>();
         }
       } else {
         // We're a child of some other <svg> element, so we don't need our own
@@ -360,14 +364,6 @@ void SVGSVGElement::UnbindFromTree(UnbindContext& aContext) {
   }
 
   SVGGraphicsElement::UnbindFromTree(aContext);
-}
-
-SVGAnimatedTransformList* SVGSVGElement::GetAnimatedTransformList(
-    uint32_t aFlags) {
-  if (!(aFlags & DO_ALLOCATE) && mSVGView && mSVGView->mTransforms) {
-    return mSVGView->mTransforms.get();
-  }
-  return SVGGraphicsElement::GetAnimatedTransformList(aFlags);
 }
 
 void SVGSVGElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
@@ -604,11 +600,11 @@ SVGPreserveAspectRatio SVGSVGElement::GetPreserveAspectRatioWithOverride()
 }
 
 SVGViewElement* SVGSVGElement::GetCurrentViewElement() const {
-  if (mCurrentViewID) {
+  if (!mCurrentViewID.IsVoid()) {
     // XXXsmaug It is unclear how this should work in case we're in Shadow DOM.
     Document* doc = GetUncomposedDoc();
     if (doc) {
-      Element* element = doc->GetElementById(*mCurrentViewID);
+      Element* element = doc->GetElementById(mCurrentViewID);
       return SVGViewElement::FromNodeOrNull(element);
     }
   }

@@ -12,8 +12,6 @@ import mozilla.components.concept.storage.BookmarkInfo
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -21,20 +19,17 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class PlacesBookmarksStorageTest {
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
 
     private lateinit var bookmarks: PlacesBookmarksStorage
 
     @Before
-    fun setup() = runTestOnMain {
+    fun setup() = runTest {
         bookmarks = PlacesBookmarksStorage(testContext)
         // There's a database on disk which needs to be cleaned up between tests.
         bookmarks.writer.deleteEverything()
@@ -42,12 +37,12 @@ class PlacesBookmarksStorageTest {
 
     @After
     @Suppress("DEPRECATION")
-    fun cleanup() = runTestOnMain {
+    fun cleanup() = runTest {
         bookmarks.cleanup()
     }
 
     @Test
-    fun `get bookmarks tree by root, recursive or not`() = runTestOnMain {
+    fun `get bookmarks tree by root, recursive or not`() = runTest {
         val tree = bookmarks.getTree(BookmarkRoot.Root.id).getOrNull()
         assertEquals(BookmarkRoot.Root.id, tree!!.guid)
         assertNotNull(tree.children)
@@ -87,7 +82,7 @@ class PlacesBookmarksStorageTest {
     }
 
     @Test
-    fun `bookmarks APIs smoke testing - basic operations`() = runTestOnMain {
+    fun `bookmarks APIs smoke testing - basic operations`() = runTest {
         val url = "http://www.mozilla.org"
 
         assertEquals(emptyList<BookmarkNode>(), bookmarks.getBookmarksWithUrl(url).getOrNull())

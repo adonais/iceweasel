@@ -7,6 +7,7 @@
 #include "ChromeWorkerScope.h"
 #include "WorkerPrivate.h"
 #include "jsapi.h"
+#include "mozilla/dom/ChromeUtilsBinding.h"
 #include "mozilla/dom/DebuggerNotificationObserverBinding.h"
 #include "mozilla/dom/RegisterWorkerBindings.h"
 #include "mozilla/dom/RegisterWorkerDebuggerBindings.h"

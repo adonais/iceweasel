@@ -10,8 +10,8 @@
  * loading functionality (eg <img>, <object>, etc).
  */
 
-#ifndef nsImageLoadingContent_h__
-#define nsImageLoadingContent_h__
+#ifndef nsImageLoadingContent_h_
+#define nsImageLoadingContent_h_
 
 #include "Units.h"
 #include "imgINotificationObserver.h"
@@ -588,4 +588,4 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   uint8_t mPendingRequestFlags = 0;
 };
 
-#endif  // nsImageLoadingContent_h__
+#endif  // nsImageLoadingContent_h_

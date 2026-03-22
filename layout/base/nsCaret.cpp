@@ -393,7 +393,7 @@ void nsCaret::UpdateCaretPositionFromSelectionIfNeeded() {
   if (newPos == mCaretPosition) {
     return;
   }
-  mCaretPosition = newPos;
+  mCaretPosition = std::move(newPos);
   SchedulePaint();
 }
 

@@ -122,18 +122,19 @@ add_task(async function () {
             inRange(r.x1, 11, 13), // very close to the left of the screen
         },
         {
-          // Note that the length and x values here are a bit weird because on
-          // some fonts, we appear to detect the two words separately.
-          name: "Initial bookmark text ('Getting Started' or 'Get Involved') appearing after startup",
+          // Note that the ranges for width and x values are a bit wide because
+          // for larger fonts (Linux) we detect words as separate rects and for
+          // smaller fonts we have one rect for the entire line of text.
+          name: "Initial bookmark toolbar text appearing after startup",
           condition: r =>
-            inRange(r.w, 25, 120) && // length of text
-            inRange(r.h, 9, 15) && // height of text
+            inRange(r.w, 8, 510) && // length of text segments or full text
+            inRange(r.h, 8, 16) && // height of text
             inRange(
               r.y1,
               bookmarksToolbarRect.top,
               bookmarksToolbarRect.top + bookmarksToolbarRect.height / 2
             ) && // in the toolbar
-            inRange(r.x1, 30, 90), // close to the left of the screen
+            inRange(r.x1, 10, 500), // left portion of the toolbar
         },
         {
           name: "Shadow around active tab should not flicker on macOS (bug 1960967)",

@@ -11,8 +11,13 @@ import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import junit.framework.TestCase.fail
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.gecko.util.ThreadUtils
 import org.mozilla.geckoview.ExperimentalGeckoViewApi
 import org.mozilla.geckoview.GeckoPreferenceController
 import org.mozilla.geckoview.GeckoPreferenceController.GeckoPreference
@@ -964,5 +969,27 @@ class PreferencesTest : BaseSessionTest() {
         assertEquals("String pref actually set, as expected.", stringSet, actuals[1] as String)
         assertEquals("Float pref actually set as, expected.", floatSet, actuals[2] as String)
         assertEquals("Bool pref actually set as, expected.", boolSet, actuals[3] as Boolean)
+    }
+
+    /**
+     * These APIs must be ran on a thread with a handler. Test checks it fails as expected.
+     */
+    @Test
+    fun getGeckoPreferenceOnNonHandlerThread() {
+        // Arbitrary preferences selected from StaticPrefList.yaml
+        val intPref = "dom.user_activation.transient.timeout"
+
+        var didThrow = false
+        runBlocking {
+            launch(Dispatchers.IO) {
+                try {
+                    sessionRule.waitForResult(GeckoPreferenceController.getGeckoPref(intPref))
+                    Assert.fail("Should have thrown.")
+                } catch (_: IllegalThreadStateException) {
+                    didThrow = true
+                }
+            }
+        }
+        assertTrue("Did correctly throw.", didThrow)
     }
 }

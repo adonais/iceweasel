@@ -141,12 +141,12 @@ void WaylandSurface::FrameCallbackHandler(struct wl_callback* aCallback,
   {
     WaylandSurfaceLock lock(this);
 
-    // Don't run emulated callbacks on hidden surfaces
-    if ((emulatedCallback || aRoutedFromChildSurface) && !mIsVisible) {
+    // Don't run emulated callbacks on unmapped surfaces
+    if ((emulatedCallback || aRoutedFromChildSurface) && !mIsMapped) {
       LOGVERBOSE(
           "WaylandSurface::FrameCallbackHandler() quit, emulatedCallback %d "
-          "aRoutedFromChildSurface %d mIsVisible %d",
-          emulatedCallback, aRoutedFromChildSurface, !mIsVisible);
+          "aRoutedFromChildSurface %d mIsMapped %d",
+          emulatedCallback, aRoutedFromChildSurface, !!mIsMapped);
       return;
     }
 
@@ -581,7 +581,7 @@ void WaylandSurface::UnmapLocked(WaylandSurfaceLock& aSurfaceLock) {
       [](void* aData, struct wl_callback* callback, uint32_t time) {
         RefPtr surface = dont_AddRef(static_cast<WaylandSurface*>(aData));
         LOGS_VERBOSE("WaylandSurface::UnmapLocked() finished callback [%p] ",
-                     aData);
+                     surface->mLoggingWidget);
       }};
   wl_callback_add_listener(wl_display_sync(WaylandDisplayGetWLDisplay()),
                            &listener, this);
@@ -1070,8 +1070,8 @@ void WaylandSurface::RemoveTransactionLocked(
   if (mBufferTransactions.IsEmpty()) {
     return;
   }
-  LOGVERBOSE("WaylandSurface::RemoveTransactionLocked() [%p]",
-             (void*)aTransaction);
+  LOGVERBOSE("WaylandSurface::RemoveTransactionLocked() [%p] num %d",
+             (void*)aTransaction, (int)mBufferTransactions.Length());
   MOZ_DIAGNOSTIC_ASSERT(aTransaction->IsDeleted());
   [[maybe_unused]] bool removed =
       mBufferTransactions.RemoveElement(aTransaction);
@@ -1134,9 +1134,9 @@ bool WaylandSurface::AttachLocked(const WaylandSurfaceLock& aSurfaceLock,
       "WaylandSurface::AttachLocked() transactions [%d] WaylandBuffer [%p] "
       "attached [%d] buffer size [%d x %d] surface (scaled) size [%d x %d] "
       "fractional scale %f matches %d",
-      (int)mBufferTransactions.Length(), aBuffer.get(), aBuffer->IsAttached(),
-      bufferSize.width, bufferSize.height, surfaceSize.width,
-      surfaceSize.height, scale, sizeMatches);
+      (int)mBufferTransactions.Length(), aBuffer.get(),
+      aBuffer->IsAttached(aSurfaceLock), bufferSize.width, bufferSize.height,
+      surfaceSize.width, surfaceSize.height, scale, sizeMatches);
 
   if (mViewportFollowsSizeChanges) {
     DesktopIntSize viewportSize;

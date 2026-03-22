@@ -67,8 +67,6 @@
 #  include "common/linux/breakpad_getcontext.h"
 #endif
 
-#include <string.h>
-
 using namespace mozilla;
 
 static void PopulateRegsFromContext(Registers& aRegs, ucontext_t* aContext) {

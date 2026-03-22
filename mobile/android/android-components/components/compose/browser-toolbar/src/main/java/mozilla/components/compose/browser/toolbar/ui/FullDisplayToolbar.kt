@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -62,6 +63,8 @@ internal fun FullDisplayToolbar(
     browserActionsEnd: List<Action>,
     onInteraction: (BrowserToolbarEvent) -> Unit,
     modifier: Modifier = Modifier,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
+    outlineColor: Color = DividerDefaults.color,
     browserActionsStartModifier: Modifier = Modifier,
     pageActionsStartModifier: Modifier = Modifier,
     originModifier: Modifier = Modifier,
@@ -73,7 +76,7 @@ internal fun FullDisplayToolbar(
         windowSizeClass.minWidthDp < WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
     }
 
-    Surface {
+    Surface(color = backgroundColor) {
         Box(
             modifier = modifier
                 .semantics { testTagsAsResourceId = true },
@@ -181,6 +184,7 @@ internal fun FullDisplayToolbar(
                         Bottom -> Alignment.TopCenter
                     },
                 ),
+                color = outlineColor,
             )
 
             if (progressBarConfig != null) {

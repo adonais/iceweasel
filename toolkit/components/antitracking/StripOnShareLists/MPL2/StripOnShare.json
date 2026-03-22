@@ -1,5 +1,6 @@
 {
   "global": {
+    "isGlobal": true,
     "queryParams": [
       "_gl",
       "li_fat_id",
@@ -51,17 +52,17 @@
       "hsa_la",
       "hsa_ol",
       "hsa_net",
-      "hsa_mt"
-    ],
-    "topLevelSites": ["*"]
+      "hsa_mt",
+      "wt_mc"
+    ]
   },
   "twitter": {
     "queryParams": ["ref_src", "ref_url"],
-    "topLevelSites": ["www.twitter.com", "twitter.com", "x.com"]
+    "origins": ["www.twitter.com", "twitter.com", "x.com"]
   },
   "instagram": {
     "queryParams": ["igshid", "ig_rid"],
-    "topLevelSites": ["www.instagram.com"]
+    "origins": ["www.instagram.com"]
   },
   "amazon": {
     "queryParams": [
@@ -100,7 +101,7 @@
       "sr",
       "store_ref"
     ],
-    "topLevelSites": [
+    "origins": [
       "www.amazon.com",
       "www.amazon.de",
       "www.amazon.nl",
@@ -132,11 +133,11 @@
   },
   "handelsblatt": {
     "queryParams": ["share"],
-    "topLevelSites": ["www.handelsblatt.com"]
+    "origins": ["www.handelsblatt.com"]
   },
   "shopee": {
     "queryParams": ["sp_atk", "xptdk"],
-    "topLevelSites": [
+    "origins": [
       "shopee.co.id",
       "shopee.tw",
       "shopee.vn",
@@ -152,23 +153,23 @@
   },
   "tokopedia": {
     "queryParams": ["extParam"],
-    "topLevelSites": ["www.tokopedia.com"]
+    "origins": ["www.tokopedia.com"]
   },
   "spotify": {
     "queryParams": ["si"],
-    "topLevelSites": ["open.spotify.com"]
+    "origins": ["open.spotify.com"]
   },
   "meetup": {
     "queryParams": ["eventOrigin", "recId", "recSource", "searchId"],
-    "topLevelSites": ["www.meetup.com"]
+    "origins": ["www.meetup.com"]
   },
   "facebook": {
     "queryParams": ["__cft__[0]", "__cft__%5B0%5D", "__tn__"],
-    "topLevelSites": ["www.facebook.com"]
+    "origins": ["www.facebook.com"]
   },
   "wikimedia": {
     "queryParams": ["wprov"],
-    "topLevelSites": [
+    "origins": [
       "en.wikipedia.org",
       "ja.wikipedia.org",
       "de.wikipedia.org",
@@ -195,14 +196,10 @@
       "is_room_feed",
       "live_from"
     ],
-    "topLevelSites": [
-      "www.bilibili.com",
-      "space.bilibili.com",
-      "live.bilibili.com"
-    ]
+    "origins": ["www.bilibili.com", "space.bilibili.com", "live.bilibili.com"]
   },
   "humblebundle": {
     "queryParams": ["hmb_source", "hmb_medium", "hmb_campaign"],
-    "topLevelSites": ["www.humblebundle.com"]
+    "origins": ["www.humblebundle.com"]
   }
 }

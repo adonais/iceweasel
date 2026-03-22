@@ -2,7 +2,6 @@ import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
   DiscoveryStreamAdminInner,
   DiscoveryStreamAdminUI,
-  Personalization,
   ToggleStoryButton,
 } from "content-src/components/DiscoveryStreamAdmin/DiscoveryStreamAdmin";
 import React from "react";
@@ -190,64 +189,6 @@ describe("DiscoveryStreamAdmin", () => {
         ac.OnlyToMain({
           type: at.DISCOVERY_STREAM_CONFIG_SET_VALUE,
           data: { name: configName, value: configValue },
-        })
-      );
-    });
-  });
-
-  describe("#Personalization", () => {
-    let dispatch;
-    beforeEach(() => {
-      dispatch = sandbox.stub();
-      wrapper = shallow(
-        <Personalization
-          dispatch={dispatch}
-          state={{
-            Personalization: {
-              lastUpdated: 1000,
-              initialized: true,
-            },
-          }}
-        />
-      );
-    });
-    it("should render with pref checkbox, lastUpdated, and initialized", () => {
-      assert.lengthOf(wrapper.find("TogglePrefCheckbox"), 1);
-      assert.equal(
-        wrapper.find("td").at(1).text(),
-        "Personalization Last Updated"
-      );
-      assert.equal(
-        wrapper.find("td").at(2).text(),
-        new Date(1000).toLocaleString()
-      );
-      assert.equal(
-        wrapper.find("td").at(3).text(),
-        "Personalization Initialized"
-      );
-      assert.equal(wrapper.find("td").at(4).text(), "true");
-    });
-    it("should render with no data with no last updated", () => {
-      wrapper = shallow(
-        <Personalization
-          dispatch={dispatch}
-          state={{
-            Personalization: {
-              version: 2,
-              lastUpdated: 0,
-              initialized: true,
-            },
-          }}
-        />
-      );
-      assert.equal(wrapper.find("td").at(2).text(), "(no data)");
-    });
-    it("should dispatch DISCOVERY_STREAM_PERSONALIZATION_TOGGLE", () => {
-      wrapper.instance().togglePersonalization();
-      assert.calledWith(
-        dispatch,
-        ac.OnlyToMain({
-          type: at.DISCOVERY_STREAM_PERSONALIZATION_TOGGLE,
         })
       );
     });

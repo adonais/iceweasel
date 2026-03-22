@@ -315,7 +315,10 @@ mod private {
             let submetric = map.entry(submetric_id).or_insert_with(|| {
                 let submetric = if need_ipc() {
                     // TODO: Instrument this error.
-                    LabeledQuantityMetric::Child(crate::private::quantity::QuantityMetricIpc)
+                    LabeledQuantityMetric::Child(ChildMetricMeta::from_metric_identifier(
+                        (*submetric_id).into(),
+                        metric.get(label).as_ref(),
+                    ))
                 } else {
                     LabeledQuantityMetric::Parent {
                         id: submetric_id.into(),

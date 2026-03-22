@@ -58,7 +58,7 @@ firefox-ci:
             - '.taskcluster.yml'
             - 'taskcluster/kinds/**'
             - 'taskcluster/**/*.py'
-            - 'third_party/python/taskcluster_taskgraph/**/*.py'
+            - 'taskcluster/requirements.txt'
             - 'tools/tryselect/selectors/auto.py'
 
 fog:
@@ -354,7 +354,7 @@ taskgraph-tests:
         files-changed:
             - 'python/mach/**/*.py'
             - 'taskcluster/**/*.py'
-            - 'third_party/python/taskcluster_taskgraph/**/*.py'
+            - 'taskcluster/requirements.txt'
 
 tryselect:
     description: tools/tryselect unit tests
@@ -371,7 +371,7 @@ tryselect:
             - 'taskcluster/config.yml'
             - 'taskcluster/kinds/test/**'
             - 'taskcluster/gecko_taskgraph/transforms/**'
-            - 'third_party/python/taskcluster_taskgraph/**/*.py'
+            - 'taskcluster/requirements.txt'
             - 'tools/tryselect/**'
 
 mozbuild:
@@ -393,11 +393,14 @@ mozbuild:
             by-platform:
                 linux2404-64/opt:
                     - linux64-node
+                    - terser
                 macosx1470-64/opt:
                     - macosx64-node
+                    - terser
                 windows11-64/opt:
                     - win64-node
                     - win64-mozmake
+                    - terser
     when:
         files-changed:
             - '**/moz.configure'
@@ -438,8 +441,12 @@ mozperftest:
                     - browsertime
     when:
         files-changed:
-            - 'testing/**'
-            - 'python/**'
+            - 'testing/raptor/**'
+            - 'testing/talos/**'
+            - 'testing/awsy/**'
+            - 'testing/mochitest/**'
+            - 'testing/xpcshell/**'
+            - 'python/mozperftest/**'
 
 nimbus:
     description: >
@@ -565,45 +572,6 @@ talos:
         files-changed:
             - 'testing/talos/**'
 
-telemetry-integration-tests:
-    description: pytest-based integration tests for Telemetry
-    always-target: false
-    platform:
-        - linux2404-64/opt
-    worker:
-        by-platform:
-            linux2404-64.*:
-                docker-image: {in-tree: "ubuntu2404-test"}
-                max-run-time: 3600
-    require-build:
-        by-project:
-            try:
-                linux2404-64/opt: build-linux64/opt
-            default:
-                linux2404-64/opt: build-linux64-shippable/opt
-    treeherder:
-        symbol: tt(i)
-        tier: 3
-    run-on-projects: []
-    run:
-        using: run-task
-        cwd: '{checkout}'
-        command: >
-            source /builds/worker/scripts/xvfb.sh &&
-            start_xvfb '1600x1200x24' 0 &&
-            export GECKO_BINARY_PATH=$MOZ_FETCHES_DIR/firefox/firefox &&
-            ./mach python-test --subsuite telemetry-integration-tests
-    fetches:
-        build:
-            - target.tar.bz2
-            - artifact: target.common.tests.tar.zst
-              dest: tests
-            - artifact: target.reftest.tests.tar.zst
-              dest: tests
-    when:
-        files-changed:
-            - 'toolkit/components/telemetry/**'
-
 telemetry-python:
     description: Python unit tests for Telemetry
     platform:
@@ -642,8 +610,6 @@ verify-decision:
             - .cron.yml
             - .taskcluster.yml
             - 'taskcluster/**'
-            - 'third_party/python/taskcluster/**'
-            - 'third_party/python/taskcluster_taskgraph/**'
 
 webext:
     description: WebExtensions python utilities unit tests

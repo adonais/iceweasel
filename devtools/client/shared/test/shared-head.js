@@ -427,7 +427,6 @@ async function safeCloseBrowserConsole({ clearOutput = false } = {}) {
  * we listen to this message to cleanup the observer.
  */
 function highlighterTestActorBootstrap() {
-  /* eslint-env mozilla/process-script */
   const HIGHLIGHTER_TEST_ACTOR_URL =
     "chrome://mochitests/content/browser/devtools/client/shared/test/highlighter-test-actor.js";
 
@@ -2556,8 +2555,8 @@ async function toggleJsTracer(toolbox) {
  *        The id of the context menu item
  */
 function getNetmonitorContextMenuItem(monitor, id) {
-  const Menu = require("resource://devtools/client/framework/menu.js");
-  return Menu.getMenuElementById(id, monitor.panelWin.document);
+  const menuDoc = DevToolsUtils.getTopWindow(monitor.panelWin).document;
+  return menuDoc.getElementById(id);
 }
 
 /**

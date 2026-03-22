@@ -147,7 +147,8 @@ function endEngagement({ controller, context = null, state = "engagement" }) {
     isPrivate: false,
   });
   let details = { selIndex: -1, result: { payload: {} } };
-  let quickSuggestProviderInstance = UrlbarProvidersManager.getProvider(
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  let quickSuggestProviderInstance = providersManager.getProvider(
     UrlbarProviderQuickSuggest.name
   );
 

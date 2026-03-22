@@ -71,6 +71,7 @@ export let ON_ACCOUNT_DESTROYED_NOTIFICATION = "fxaccounts:account_destroyed";
 export let ON_COLLECTION_CHANGED_NOTIFICATION = "sync:collection_changed";
 export let ON_VERIFY_LOGIN_NOTIFICATION = "fxaccounts:verify_login";
 export let ON_COMMAND_RECEIVED_NOTIFICATION = "fxaccounts:command_received";
+export let ON_SERVICE_ENABLED_NOTIFICATION = "fxaccounts:service_enabled";
 
 export let FXA_PUSH_SCOPE_ACCOUNT_UPDATE = "chrome://fxa-device-update";
 
@@ -98,6 +99,9 @@ export let OAUTH_CLIENT_ID = CLIENT_IS_THUNDERBIRD
   : FX_OAUTH_CLIENT_ID;
 export let SCOPE_PROFILE = "profile";
 export let SCOPE_PROFILE_WRITE = "profile:write";
+export let SCOPE_PROFILE_UID = "profile:uid";
+export let SCOPE_SMART_WINDOW = "https://identity.mozilla.com/apps/smartwindow";
+
 // Sync scope in Firefox.
 export let SCOPE_OLD_SYNC = "https://identity.mozilla.com/apps/oldsync";
 // Sync scope in Thunderbird.
@@ -139,6 +143,8 @@ export let COMMAND_PROFILE_CHANGE = "profile:change";
 export let COMMAND_CAN_LINK_ACCOUNT = "fxaccounts:can_link_account";
 export let COMMAND_LOGIN = "fxaccounts:login";
 export let COMMAND_OAUTH = "fxaccounts:oauth_login";
+export let COMMAND_OAUTH_FLOW_IS_ACTIVE = "fxaccounts:oauth_flow_is_active";
+export let COMMAND_OAUTH_FLOW_BEGIN = "fxaccounts:oauth_flow_begin";
 export let COMMAND_LOGOUT = "fxaccounts:logout";
 export let COMMAND_DELETE = "fxaccounts:delete";
 export let COMMAND_SYNC_PREFERENCES = "fxaccounts:sync_preferences";

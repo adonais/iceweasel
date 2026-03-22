@@ -26,6 +26,13 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsIBackgroundTasks
 );
 
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "imgTools",
+  "@mozilla.org/image/tools;1",
+  Ci.imgITools
+);
+
 ChromeUtils.defineLazyGetter(lazy, "log", () => {
   let { ConsoleAPI } = ChromeUtils.importESModule(
     "resource://gre/modules/Console.sys.mjs"
@@ -78,9 +85,8 @@ let ShellServiceInternal = {
   async getOSUserProfileAgeInDays() {
     let currentDate = new Date();
     let homeFolderCreationDate = new Date(
-      (
-        await IOUtils.stat(Services.dirsvc.get("Home", Ci.nsIFile).path)
-      ).creationTime
+      (await IOUtils.stat(Services.dirsvc.get("Home", Ci.nsIFile).path))
+        .creationTime
     );
     // Round and return the age (=difference between today and creation) to a
     // resolution of days.
@@ -592,6 +598,37 @@ let ShellServiceInternal = {
 
       throw new WDBAError(exitCode, telemetryResult);
     }
+  },
+
+  /**
+   * This function can be used to convert compatible image formats into icons
+   * compatible with the createShortcut function.
+   *
+   * @param {nsIFile} file - The file to write to.
+   * @param {imgIContainer} imgContainer - The container holding the image.
+   */
+  async createWindowsIcon(file, imgContainer) {
+    if (AppConstants.platform !== "win") {
+      throw new Error(
+        "createWindowsIcon is not supported on non-Windows platforms"
+      );
+    }
+
+    let stream = lazy.imgTools.encodeScaledImage(
+      imgContainer,
+      "image/vnd.microsoft.icon",
+      256,
+      256
+    );
+    let streamSize = stream.available();
+
+    let bis = Cc["@mozilla.org/binaryinputstream;1"].createInstance(
+      Ci.nsIBinaryInputStream
+    );
+    bis.setInputStream(stream);
+    let newByteArray = new Uint8Array(streamSize);
+    bis.readArrayBuffer(streamSize, newByteArray.buffer);
+    await IOUtils.write(file.path, newByteArray);
   },
 };
 

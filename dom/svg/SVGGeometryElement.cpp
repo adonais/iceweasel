@@ -246,8 +246,10 @@ gfx::Matrix SVGGeometryElement::LocalTransform() const {
   return gfx::Matrix(SVGUtils::GetTransformMatrixInUserSpace(f));
 }
 
-float SVGGeometryElement::GetPathLengthScale(PathLengthScaleForType aFor) {
-  MOZ_ASSERT(aFor == eForTextPath || aFor == eForStroking, "Unknown enum");
+float SVGGeometryElement::GetPathLengthScale(PathLengthScaleUsageType aFor) {
+  MOZ_ASSERT(aFor == PathLengthScaleUsageType::TextPath ||
+                 aFor == PathLengthScaleUsageType::Stroking,
+             "Unknown enum");
   if (mPathLength.IsExplicitlySet()) {
     float zoom = UserSpaceMetrics::GetZoom(this);
     float authorsPathLengthEstimate = mPathLength.GetAnimValue() * zoom;
@@ -259,7 +261,7 @@ float SVGGeometryElement::GetPathLengthScale(PathLengthScaleForType aFor) {
         // we know that 0 / authorsPathLengthEstimate = 0.
         return 0.0;
       }
-      if (aFor == eForTextPath) {
+      if (aFor == PathLengthScaleUsageType::TextPath) {
         // For textPath, a transform on the referenced path affects the
         // textPath layout, so when calculating the actual path length
         // we need to take that into account.

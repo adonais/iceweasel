@@ -32,8 +32,8 @@ import mozilla.components.compose.base.button.IconButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.debugsettings.navigation.DebugDrawerDestination
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -115,7 +115,7 @@ fun DebugDrawer(
 @Preview
 @Composable
 private fun DebugDrawerPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     val navController = rememberNavController()
     val destinations = remember {

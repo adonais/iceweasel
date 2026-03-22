@@ -55,7 +55,6 @@ NS_IMPL_ISUPPORTS(ThirdPartyUtil, mozIThirdPartyUtil)
 // MOZ_LOG=thirdPartyUtil:5
 //
 static mozilla::LazyLogModule gThirdPartyLog("thirdPartyUtil");
-#undef LOG
 #define LOG(args) MOZ_LOG(gThirdPartyLog, mozilla::LogLevel::Debug, args)
 
 static mozilla::StaticRefPtr<ThirdPartyUtil> gService;
@@ -455,7 +454,9 @@ ThirdPartyUtil::GetBaseDomain(nsIURI* aHostURI, nsACString& aBaseDomain) {
     if (aHostURI->SchemeIs("view-source")) {
       rv = NS_GetInnermostURIHost(aHostURI, aBaseDomain);
     } else {
-      rv = aHostURI->GetAsciiHost(aBaseDomain);
+      // Apply IPV6 fixup to work around Bug 1603199.
+      rv =
+          nsContentUtils::GetAsciiHostOrIPv6WithBrackets(aHostURI, aBaseDomain);
     }
   }
 
@@ -537,3 +538,4 @@ ThirdPartyUtil::AnalyzeChannel(nsIChannel* aChannel, bool aNotify, nsIURI* aURI,
 
   return result;
 }
+#undef LOG

@@ -7,7 +7,6 @@
 #ifndef MOZILLA_DOM_DOMMATRIX_H_
 #define MOZILLA_DOM_DOMMATRIX_H_
 
-#include <cstring>
 #include <utility>
 
 #include "js/RootingAPI.h"

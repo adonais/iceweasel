@@ -90,7 +90,7 @@ using nsCursor from "nsIWidget.h";
 using struct LookAndFeelInt from "mozilla/widget/WidgetMessageUtils.h";
 using struct mozilla::DimensionRequest from "mozilla/widget/WidgetMessageUtils.h";
 using class mozilla::dom::MessagePort from "mozilla/dom/MessagePort.h";
-using mozilla::dom::ipc::StructuredCloneData from "mozilla/dom/ipc/StructuredCloneData.h";
+[RefCounted] using class mozilla::dom::ipc::StructuredCloneData from "mozilla/dom/ipc/StructuredCloneData.h";
 using mozilla::dom::MaybeDiscardedWindowContext from "mozilla/dom/WindowContext.h";
 using mozilla::EventMessage from "mozilla/EventForwards.h";
 using nsEventStatus from "mozilla/EventForwards.h";
@@ -206,7 +206,7 @@ struct PrintPreviewResultInfo
     manages PVsync;
 
 both:
-    async AsyncMessage(nsString aMessage, ClonedMessageData aData);
+    async AsyncMessage(nsString aMessage, StructuredCloneData aData);
 
 parent:
 #ifdef ACCESSIBILITY
@@ -250,8 +250,8 @@ parent:
      */
     async DropLinks(nsString[] aLinks);
 
-    sync SyncMessage(nsString aMessage, ClonedMessageData aData)
-      returns (UniquePtr<StructuredCloneData>[] retval);
+    sync SyncMessage(nsString aMessage, StructuredCloneData aData)
+      returns (StructuredCloneData[] retval);
 
     /**
      * Notifies chrome that there is a focus change involving an editable
@@ -630,8 +630,9 @@ parent:
     // the compositor of the widget that will render those layers. Note that
     // this is sync so we can ensure that messages to the window compositor
     // arrive before the BrowserChild attempts to use its cross-process compositor
-    // bridge.
-    sync EnsureLayersConnected() returns (CompositorOptions compositorOptions);
+    // bridge. Returns Nothing if layers were unable to be connected, for example
+    // during shutdown.
+    sync EnsureLayersConnected() returns (CompositorOptions? compositorOptions);
 
     /**
      * This function is used to notify the parent that it should display a

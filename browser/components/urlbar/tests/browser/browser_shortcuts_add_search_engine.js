@@ -155,7 +155,7 @@ async function do_test_shortcuts(activateTask) {
 
     info("Remove the added engine");
     rebuildPromise = BrowserTestUtils.waitForEvent(shortcutButtons, "rebuild");
-    await Services.search.removeEngine(engine);
+    await SearchService.removeEngine(engine);
     await rebuildPromise;
     Assert.equal(
       Array.from(shortcutButtons.buttons.children).filter(b =>
@@ -217,11 +217,11 @@ add_task(async function shortcuts_without_other_engines() {
   info("Checks the shortcuts without other engines.");
 
   info("Remove search engines except default");
-  const defaultEngine = Services.search.defaultEngine;
-  const engines = await Services.search.getVisibleEngines();
+  const defaultEngine = SearchService.defaultEngine;
+  const engines = await SearchService.getVisibleEngines();
   for (const engine of engines) {
     if (defaultEngine.name !== engine.name) {
-      await Services.search.removeEngine(engine);
+      await SearchService.removeEngine(engine);
     }
   }
 
@@ -243,5 +243,5 @@ add_task(async function shortcuts_without_other_engines() {
     Assert.ok(shortcutButtons.container.hidden, "It should be hidden");
   });
 
-  Services.search.restoreDefaultEngines();
+  SearchService.restoreDefaultEngines();
 });

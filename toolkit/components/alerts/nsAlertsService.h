@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsAlertsService_h__
-#define nsAlertsService_h__
+#ifndef nsAlertsService_h_
+#define nsAlertsService_h_
 
 #include "nsIAlertsService.h"
 #include "nsCOMPtr.h"
@@ -30,4 +30,4 @@ class nsAlertsService : public nsIAlertsService,
   nsCOMPtr<nsIAlertsService> mBackend;
 };
 
-#endif /* nsAlertsService_h__ */
+#endif /* nsAlertsService_h_ */

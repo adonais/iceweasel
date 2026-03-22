@@ -193,13 +193,6 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
       ) {
         continue;
       }
-      // Respect the switchTabs.searchAllContainers pref.
-      if (
-        !lazy.UrlbarPrefs.get("switchTabs.searchAllContainers") &&
-        tabUserContextId != userContextId
-      ) {
-        continue;
-      }
       let result = new lazy.UrlbarResult({
         type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
         source: UrlbarUtils.RESULT_SOURCE.TABS,

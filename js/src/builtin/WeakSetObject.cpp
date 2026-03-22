@@ -152,7 +152,7 @@ const ClassSpec WeakSetObject::classSpec_ = {
 const JSClass WeakSetObject::class_ = {
     "WeakSet",
     JSCLASS_HAS_RESERVED_SLOTS(SlotCount) |
-        JSCLASS_HAS_CACHED_PROTO(JSProto_WeakSet) | JSCLASS_BACKGROUND_FINALIZE,
+        JSCLASS_HAS_CACHED_PROTO(JSProto_WeakSet),
     &WeakCollectionObject::classOps_,
     &WeakSetObject::classSpec_,
 };
@@ -178,7 +178,8 @@ const JSFunctionSpec WeakSetObject::methods[] = {
 
 WeakSetObject* WeakSetObject::create(JSContext* cx,
                                      HandleObject proto /* = nullptr */) {
-  return NewObjectWithClassProto<WeakSetObject>(cx, proto);
+  return NewObjectWithClassProtoAndKind<WeakSetObject>(cx, proto,
+                                                       TenuredObject);
 }
 
 // static

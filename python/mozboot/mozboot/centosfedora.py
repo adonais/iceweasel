@@ -21,8 +21,11 @@ class CentOSFedoraBootstrapper(LinuxBootstrapper, BaseBootstrapper):
     def install_packages(self, packages):
         if self.version >= 33 and "perl" in packages:
             packages.append("perl-FindBin")
-        # watchman is not available on centos/rocky
-        if self.distro in ("centos", "rocky", "oracle"):
+        # watchman is not available on centos/rocky, nor
+        # on fedora starting with f42.
+        if self.distro in ("centos", "rocky", "oracle") or (
+            self.distro == "fedora" and self.version >= 42
+        ):
             packages = [p for p in packages if p != "watchman"]
         self.dnf_install(*packages)
 

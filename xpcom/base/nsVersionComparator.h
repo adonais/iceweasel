@@ -7,8 +7,8 @@
 // NB: This code may be used from non-XPCOM code, in particular, the
 // standalone updater executable.
 
-#ifndef nsVersionComparator_h__
-#define nsVersionComparator_h__
+#ifndef nsVersionComparator_h_
+#define nsVersionComparator_h_
 
 #include <stdlib.h>
 #include <string.h>
@@ -108,4 +108,4 @@ struct Version {
 
 }  // namespace mozilla
 
-#endif  // nsVersionComparator_h__
+#endif  // nsVersionComparator_h_

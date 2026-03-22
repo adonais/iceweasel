@@ -180,8 +180,8 @@
   border-radius: 3px;
 }
 .asrouter-admin .sourceLabel:not(:empty).isDisabled {
-  background: rgba(215, 0, 34, 0.3);
-  color: var(--dialog-warning-text-color);
+  background: var(--background-color-critical);
+  color: var(--text-color);
 }
 .asrouter-admin .messages-list {
   display: flex;

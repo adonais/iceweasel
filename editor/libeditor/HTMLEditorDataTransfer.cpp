@@ -97,7 +97,7 @@ namespace mozilla {
 
 using namespace dom;
 using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
-using LeafNodeType = HTMLEditUtils::LeafNodeType;
+using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
 
 #define kInsertCookie "_moz_Insert Here_moz_"
 
@@ -497,57 +497,94 @@ HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator final {
 EditorDOMPoint
 HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
     const EditorDOMPoint& aLastInsertedPoint) const {
-  EditorDOMPoint pointToPutCaret;
+  MOZ_ASSERT(aLastInsertedPoint.IsInContentNode());
+  MOZ_ASSERT(
+      HTMLEditUtils::IsSimplyEditableNode(*aLastInsertedPoint.GetContainer()));
+  MOZ_ASSERT(aLastInsertedPoint.GetChild());
+  // The last inserted node may be non-editable. Then, we want to put caret
+  // after it.
+  nsIContent* const lastInsertedContent = aLastInsertedPoint.GetChild();
+  const EditorRawDOMPoint firstEditablePoint = [&]() MOZ_NEVER_INLINE_DEBUG {
+    if (HTMLEditUtils::IsSimplyEditableNode(*lastInsertedContent)) {
+      return aLastInsertedPoint.To<EditorRawDOMPoint>();
+    }
+    MOZ_ASSERT(HTMLEditUtils::IsSimplyEditableNode(
+        *aLastInsertedPoint.GetContainer()));
+    return aLastInsertedPoint.NextPoint<EditorRawDOMPoint>();
+  }();
+  if (NS_WARN_IF(!firstEditablePoint.IsSet())) {
+    return EditorDOMPoint();  // No editable node, why?
+  }
 
-  // but don't cross tables
-  nsIContent* containerContent = nullptr;
-  // FIXME: GetChild() might be nullptr, but it's referred as non-null in the
-  // block!
-  if (!aLastInsertedPoint.GetChild() ||
-      !aLastInsertedPoint.GetChild()->IsHTMLElement(nsGkAtoms::table)) {
-    containerContent = HTMLEditUtils::GetLastLeafContent(
-        *aLastInsertedPoint.GetChild(), {LeafNodeType::OnlyEditableLeafNode},
-        BlockInlineCheck::Unused,
-        aLastInsertedPoint.GetChild()->GetAsElementOrParentElement());
-    if (containerContent) {
-      Element* mostDistantInclusiveAncestorTableElement = nullptr;
-      for (Element* maybeTableElement =
-               containerContent->GetAsElementOrParentElement();
+  const EditorRawDOMPoint adjustedEditablePoint = [&]() MOZ_NEVER_INLINE_DEBUG {
+    if (firstEditablePoint != aLastInsertedPoint) {
+      return firstEditablePoint;
+    }
+    if (lastInsertedContent->IsText()) {
+      // End of the last inserted Text.
+      return EditorRawDOMPoint::AtEndOf(*lastInsertedContent);
+    }
+    if (lastInsertedContent->IsHTMLElement(nsGkAtoms::table)) {
+      // After the <table>.
+      return aLastInsertedPoint.NextPoint<EditorRawDOMPoint>();
+    }
+    if (!HTMLEditUtils::IsContainerNode(*lastInsertedContent) ||
+        HTMLEditUtils::IsReplacedElement(*lastInsertedContent)) {
+      // After the atomic content node like <br> or <img>.
+      return aLastInsertedPoint.NextPoint<EditorRawDOMPoint>();
+    }
+    // We want to put caret to the last leaf content in the inserted content.
+    nsIContent* const lastLeaf = HTMLEditUtils::GetLastLeafContent(
+        *lastInsertedContent,
+        {
+            LeafNodeOption::TreatNonEditableNodeAsLeafNode,
+            LeafNodeOption::IgnoreInvisibleText,
+            // FIXME: We cannot visually put caret into empty inline containers
+            // like <span></span> so that let's ignore them.
+        });
+    if (!lastLeaf) {
+      // No meaning content in lastInsertedContent, let's put caret to end of
+      // it.
+      return EditorRawDOMPoint::AtEndOf(*lastInsertedContent);
+    }
+    Element* const mostDistantInclusiveAncestorTableElement =
+        [&]() -> Element* {
+      Element* tableElement = nullptr;
+      for (Element* maybeTableElement = lastLeaf->GetAsElementOrParentElement();
            maybeTableElement &&
            maybeTableElement != aLastInsertedPoint.GetChild();
            maybeTableElement = maybeTableElement->GetParentElement()) {
         if (maybeTableElement->IsHTMLElement(nsGkAtoms::table)) {
-          mostDistantInclusiveAncestorTableElement = maybeTableElement;
+          tableElement = maybeTableElement;
         }
       }
-      // If we're in table elements, we should put caret into the most ancestor
-      // table element.
-      if (mostDistantInclusiveAncestorTableElement) {
-        containerContent = mostDistantInclusiveAncestorTableElement;
-      }
+      return tableElement;
+    }();
+    // If we're in table elements, we should put caret after the most ancestor
+    // table element in the container of aLastInsertedPoint.
+    if (mostDistantInclusiveAncestorTableElement) {
+      MOZ_ASSERT(HTMLEditUtils::IsSimplyEditableNode(
+          *mostDistantInclusiveAncestorTableElement));
+      MOZ_ASSERT(mostDistantInclusiveAncestorTableElement->GetParentNode());
+      MOZ_ASSERT(HTMLEditUtils::IsSimplyEditableNode(
+          *mostDistantInclusiveAncestorTableElement->GetParentNode()));
+      return EditorRawDOMPoint::After(
+          *mostDistantInclusiveAncestorTableElement);
     }
-  }
-  // If we are not in table elements, we should put caret in the last inserted
-  // node.
-  if (!containerContent) {
-    containerContent = aLastInsertedPoint.GetChild();
-  }
-
-  // If the container is a text node or a container element except `<table>`
-  // element, put caret a end of it.
-  if (containerContent->IsText() ||
-      (HTMLEditUtils::IsContainerNode(*containerContent) &&
-       !containerContent->IsHTMLElement(nsGkAtoms::table))) {
-    pointToPutCaret.SetToEndOf(containerContent);
-  }
-  // Otherwise, i.e., it's an atomic element, `<table>` element or data node,
-  // put caret after it.
-  else {
-    pointToPutCaret.SetAfter(containerContent);
-  }
+    MOZ_ASSERT(!lastLeaf->IsHTMLElement(nsGkAtoms::table));
+    if (lastLeaf->IsText()) {
+      // End of the last Text in the last inserted content.
+      return EditorRawDOMPoint::AtEndOf(*lastLeaf);
+    }
+    return !HTMLEditUtils::IsContainerNode(*lastLeaf) ||
+                   HTMLEditUtils::IsReplacedElement(*lastLeaf)
+               ? EditorRawDOMPoint::After(*lastLeaf)
+               : EditorRawDOMPoint::AtEndOf(*lastLeaf);
+  }();
 
   // Make sure we don't end up with selection collapsed after an invisible
   // `<br>` element.
+  EditorDOMPoint pointToPutCaret = adjustedEditablePoint.To<EditorDOMPoint>();
   const WSScanResult prevVisibleThing =
       WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
           // We want to put caret to an editable point so that we need to scan
@@ -559,9 +596,12 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
             {WSRunScanner::Option::OnlyEditableNodes},
             EditorRawDOMPoint(prevVisibleThing.BRElementPtr()));
     if (prevVisibleThingOfBRElement.InVisibleOrCollapsibleCharacters()) {
+      // XXX Why not end of the text node?
       pointToPutCaret = prevVisibleThingOfBRElement
                             .PointAfterReachedContent<EditorDOMPoint>();
-    } else if (prevVisibleThingOfBRElement.ReachedSpecialContent()) {
+    } else if (prevVisibleThingOfBRElement.ReachedSpecialContent() ||
+               prevVisibleThingOfBRElement
+                   .ReachedEmptyInlineContainerElement()) {
       pointToPutCaret = prevVisibleThingOfBRElement
                             .PointAfterReachedContentNode<EditorDOMPoint>();
     }

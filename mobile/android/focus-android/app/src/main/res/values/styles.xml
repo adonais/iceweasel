@@ -20,6 +20,7 @@
         <item name="switchStyle">@style/App.Widget.Switch</item>
         <item name="checkboxStyle">@style/App.Widget.CompoundButton.CheckBox</item>
         <item name="radioButtonStyle">@style/App.Widget.CompoundButton.RadioButton</item>
+        <item name="textInputStyle">@style/Widget.App.TextInputLayout</item>
 
         <!-- Use the same colors for both themes until light theme it will be implemented -->
         <item name="primaryText">@color/primaryText</item>
@@ -36,6 +37,9 @@
         <item name="android:itemBackground">@color/menuBackground</item>
         <item name="android:itemTextAppearance">@style/ItemTextAppearance</item>
         <item name="tabCounterTintColor">?primaryText</item>
+
+        <item name="materialTimePickerTheme">@style/MaterialTimePicker</item>
+        <item name="materialCalendarTheme">@style/MaterialCalendar</item>
     </style>
 
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
@@ -345,6 +349,38 @@
         <item name="fontFamily">@font/metropolis</item>
         <item name="android:letterSpacing">0.04</item>
         <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Widget.App.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <!-- This controls the floating hint color when the field is focused -->
+        <item name="hintTextColor">@color/accentBright</item>
+        <item name="boxStrokeColor">@color/accentBright</item>
+        <item name="cursorColor">@color/accentBright</item>
+
+        <!-- This controls the hint color when the field is NOT focused (resting) -->
+        <item name="android:textColorHint">@color/secondaryText</item>
+
+        <item name="boxStrokeWidthFocused">1dp</item>
+    </style>
+
+    <style name="MaterialTimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
+        <item name="colorPrimary">@color/accentBright</item>
+        <item name="colorAccent">@color/accentBright</item>
+    </style>
+
+    <style name="MaterialCalendar" parent="ThemeOverlay.Material3.MaterialCalendar">
+        <item name="buttonBarPositiveButtonStyle">@style/DialogButtonStyle</item>
+        <item name="buttonBarNegativeButtonStyle">@style/DialogButtonStyle</item>
+        <item name="materialCalendarStyle">@style/CustomMaterialCalendarWidget</item>
+    </style>
+
+    <style name="CustomMaterialCalendarWidget" parent="Widget.Material3.MaterialCalendar">
+        <item name="daySelectedStyle">@style/DaySelectedStyle</item>
+    </style>
+
+    <style name="DaySelectedStyle" parent="Widget.Material3.MaterialCalendar.Day.Selected">
+        <item name="itemFillColor">@color/accentBright</item>
+        <item name="itemTextColor">@color/primaryText</item>
     </style>
 
     <style name="MetropolisButton">

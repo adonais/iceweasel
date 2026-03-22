@@ -2,8 +2,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#ifndef nsURIHashKey_h__
-#define nsURIHashKey_h__
+#ifndef nsURIHashKey_h_
+#define nsURIHashKey_h_
 
 #include <utility>
 
@@ -67,4 +67,4 @@ class nsURIHashKey : public PLDHashEntryHdr {
   nsCOMPtr<nsIURI> mKey;
 };
 
-#endif  // nsURIHashKey_h__
+#endif  // nsURIHashKey_h_

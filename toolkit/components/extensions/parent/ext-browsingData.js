@@ -260,7 +260,8 @@ const clearPasswords = async function (options) {
   for (let login of await LoginHelper.getAllUserFacingLogins()) {
     login.QueryInterface(Ci.nsILoginMetaInfo);
     if (!options.since || login.timePasswordChanged >= options.since) {
-      Services.logins.removeLogin(login);
+      await Services.logins.removeLoginAsync(login);
+      // TODO Bug 2014169: cleanup clearPassword workaround introduced to prevent Services.logins.removeLogin from blocking the main thread for too long
       if (++yieldCounter % YIELD_PERIOD == 0) {
         await new Promise(resolve => setTimeout(resolve, 0)); // Don't block the main thread too long.
       }

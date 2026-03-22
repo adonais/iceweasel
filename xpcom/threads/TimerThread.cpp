@@ -464,6 +464,7 @@ struct TimerMarker {
     schema.AddKeyLabelFormat("delay", "Delay", MS::Format::Milliseconds);
     schema.AddKeyLabelFormat("ttype", "Timer Type", MS::Format::String);
     schema.AddKeyLabelFormat("canceled", "Canceled", MS::Format::String);
+    schema.AddKeyFormat("prefix", MS::Format::String, MS::PayloadFlags::Hidden);
     schema.SetChartLabel("{marker.data.prefix} {marker.data.delay}");
     schema.SetTableLabel("{marker.data.prefix} {marker.data.delay}");
     return schema;
@@ -492,8 +493,7 @@ struct AddRemoveTimerMarker {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("name", "Name", MS::Format::String,
-                             MS::PayloadFlags::Searchable);
+    schema.AddKeyLabelFormat("name", "Name", MS::Format::String);
     schema.AddKeyLabelFormat("delay", "Delay", MS::Format::Milliseconds);
     schema.SetTableLabel("{marker.data.name} - {marker.data.delay}");
     return schema;

@@ -9,7 +9,7 @@ function testInDocument(doc, documentID) {
     allNodes.push(doc.createElementNS("http://www.w3.org/1999/xhtml", name));
   }
 
-  /* List copy/pasted from nsHTMLTagList.h */
+  /* List copy/pasted from nsHTMLTagList.inc */
   HTML_TAG("a", "Anchor");
   HTML_TAG("abbr", "Span");
   HTML_TAG("acronym", "Span");

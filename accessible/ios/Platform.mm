@@ -51,6 +51,10 @@ void PlatformShowHideEvent(Accessible*, Accessible*, bool, bool) {}
 
 void PlatformSelectionEvent(Accessible*, Accessible*, uint32_t) {}
 
+void PlatformAnnouncementEvent(Accessible* aTarget,
+                               const nsAString& aAnnouncement,
+                               uint16_t aPriority) {}
+
 uint64_t GetCacheDomainsForKnownClients(uint64_t aCacheDomains) {
   return aCacheDomains;
 }

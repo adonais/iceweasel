@@ -27,11 +27,11 @@ import mozilla.components.concept.engine.translate.TranslationError
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.InfoCard
 import org.mozilla.fenix.compose.InfoType
-import org.mozilla.fenix.compose.SwitchWithLabel
+import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Translation Settings Fragment.
@@ -62,11 +62,13 @@ fun TranslationSettings(
     Surface {
         LazyColumn {
             items(translationSwitchList) { item: TranslationSwitchItem ->
-                SwitchWithLabel(
+                SwitchListItem(
                     label = item.textLabel,
                     checked = item.isChecked,
                     modifier = Modifier
                         .padding(start = 72.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
+                    maxLabelLines = Int.MAX_VALUE,
+                    showSwitchAfter = true,
                 ) { checked ->
                     item.onStateChange.invoke(
                         item.type,
@@ -200,7 +202,7 @@ internal fun getTranslationSettingsSwitchList(): List<TranslationSwitchItem> {
 @Preview
 @Composable
 private fun TranslationSettingsPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         TranslationSettings(

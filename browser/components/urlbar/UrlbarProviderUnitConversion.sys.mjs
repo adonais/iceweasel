@@ -8,9 +8,9 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-import { UnitConverterSimple } from "resource:///modules/UnitConverterSimple.sys.mjs";
-import { UnitConverterTemperature } from "resource:///modules/UnitConverterTemperature.sys.mjs";
-import { UnitConverterTimezone } from "resource:///modules/UnitConverterTimezone.sys.mjs";
+import { UnitConverterSimple } from "moz-src:///browser/components/urlbar/unitconverters/UnitConverterSimple.sys.mjs";
+import { UnitConverterTemperature } from "moz-src:///browser/components/urlbar/unitconverters/UnitConverterTemperature.sys.mjs";
+import { UnitConverterTimezone } from "moz-src:///browser/components/urlbar/unitconverters/UnitConverterTimezone.sys.mjs";
 import {
   UrlbarProvider,
   UrlbarUtils,

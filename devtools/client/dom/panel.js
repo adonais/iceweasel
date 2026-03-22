@@ -15,8 +15,10 @@ loader.lazyRequireGetter(
  * This object represents DOM panel. It's responsibility is to
  * render Document Object Model of the current debugger target.
  */
-class DomPanel {
+class DomPanel extends EventEmitter {
   constructor(iframeWindow, toolbox, commands) {
+    super();
+
     this.panelWin = iframeWindow;
     this._toolbox = toolbox;
     this._commands = commands;
@@ -25,8 +27,6 @@ class DomPanel {
     this.onPanelVisibilityChange = this.onPanelVisibilityChange.bind(this);
 
     this.pendingRequests = new Map();
-
-    EventEmitter.decorate(this);
   }
   /**
    * Open is effectively an asynchronous constructor.

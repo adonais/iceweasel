@@ -14,6 +14,7 @@ use crate::context::UpdateAnimationsTasks;
 use crate::data::ElementData;
 use crate::media_queries::Device;
 use crate::properties::{AnimationDeclarations, ComputedValues, PropertyDeclarationBlock};
+use crate::selector_map::PrecomputedHashSet;
 use crate::selector_parser::{AttrValue, Lang, PseudoElement, RestyleDamage, SelectorImpl};
 use crate::shared_lock::{Locked, SharedRwLock};
 use crate::stylesheets::scope_rule::ImplicitScopeRoot;
@@ -800,6 +801,11 @@ pub trait TElement:
         return data.hint.has_animation_hint();
     }
 
+    /// Called when a highlight pseudo-element (::selection, ::highlight,
+    /// ::target-text) style is invalidated. These pseudos need explicit repaint
+    /// triggering since their styles are resolved lazily during painting.
+    fn note_highlight_pseudo_style_invalidated(&self) {}
+
     /// The shadow root this element is a host of.
     fn shadow_root(&self) -> Option<<Self::ConcreteNode as TNode>::ConcreteShadowRoot>;
 
@@ -987,9 +993,49 @@ pub trait AttributeProvider {
     fn get_attr(&self, attr: &LocalName) -> Option<String>;
 }
 
+/// A set of the attributes used to compute a style that uses `attr()`
+pub type AttributeReferences = Option<Box<PrecomputedHashSet<LocalName>>>;
+
+/// A data structure to keep track of the names queried from a provider.
+pub struct AttributeTracker<'a> {
+    /// The element that queries for attributes.
+    pub provider: &'a dyn AttributeProvider,
+    /// The set of attributes we have queried.
+    pub references: AttributeReferences,
+}
+
+impl<'a> AttributeTracker<'a> {
+    /// Construct a new attribute tracker trivially.
+    pub fn new(provider: &'a dyn AttributeProvider) -> Self {
+        Self {
+            provider,
+            references: None,
+        }
+    }
+
+    /// Consstruct a new dummy attribute tracker
+    pub fn new_dummy() -> Self {
+        Self {
+            provider: &DummyAttributeProvider {},
+            references: None,
+        }
+    }
+
+    /// Extract the queried references and consume self
+    pub fn finalize(self) -> AttributeReferences {
+        self.references
+    }
+
+    /// Query the value and save the name of the attribtue.
+    pub fn query(&mut self, name: &LocalName) -> Option<String> {
+        self.references.get_or_insert_default().insert(name.clone());
+        self.provider.get_attr(name)
+    }
+}
+
 /// A dummy AttributeProvider that returns none to any attribute query.
 #[derive(Clone, Debug, PartialEq)]
-pub struct DummyAttributeProvider;
+struct DummyAttributeProvider;
 
 impl AttributeProvider for DummyAttributeProvider {
     fn get_attr(&self, _attr: &LocalName) -> Option<String> {

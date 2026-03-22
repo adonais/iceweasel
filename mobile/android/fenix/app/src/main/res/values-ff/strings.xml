@@ -258,11 +258,7 @@
   <string name="notifications_allowed_summary">Yamiraama</string>
   <!-- Summary for notification preference indicating notifications are not allowed -->
   <string name="notifications_not_allowed_summary">Yamiraaka</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Artu ɗo ngonno-ɗaa</string>
   <!--
     Title for the customize home screen section with recently visited. Recently visited is
@@ -575,7 +571,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Taƴto</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Natto</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Natto</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Lollin</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -611,7 +607,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Momtaama %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">FIRTU</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">FIRTU</string>
   <!--
     Site Permissions
 

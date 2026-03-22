@@ -316,7 +316,7 @@ void ExtensionListenerCallWorkerRunnable::DeserializeCallArguments(
     JSContext* aCx, dom::Sequence<JS::Value>& aArgs, ErrorResult& aRv) {
   JS::Rooted<JS::Value> jsvalue(aCx);
 
-  mArgsHolder->Read(xpc::CurrentNativeGlobal(aCx), aCx, &jsvalue, aRv);
+  mArgsHolder->Read(aCx, &jsvalue, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -641,7 +641,7 @@ void ExtensionListenerCallPromiseResultHandler::WorkerRunCallback(
     JS::Rooted<JS::Value> jsvalue(cx);
     IgnoredErrorResult rv;
 
-    resHolder->Read(global, cx, &jsvalue, rv);
+    resHolder->Read(cx, &jsvalue, rv);
 
     if (NS_WARN_IF(rv.Failed())) {
       promiseResult->MaybeReject(rv.StealNSResult());

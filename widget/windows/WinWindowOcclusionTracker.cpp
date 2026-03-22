@@ -430,13 +430,19 @@ void WinWindowOcclusionTracker::Destroy() {
 
 /* static */
 MessageLoop* WinWindowOcclusionTracker::OcclusionCalculatorLoop() {
-  return sTracker ? sTracker->mThread->message_loop() : nullptr;
+  // sTracker is not secured by a monitor and is freed on the main thread, so
+  // take a local strong reference.
+  RefPtr<WinWindowOcclusionTracker> tracker = sTracker;
+  return tracker ? tracker->mThread->message_loop() : nullptr;
 }
 
 /* static */
 bool WinWindowOcclusionTracker::IsInWinWindowOcclusionThread() {
-  return sTracker &&
-         sTracker->mThread->thread_id() == PlatformThread::CurrentId();
+  // sTracker is not secured by a monitor and is freed on the main thread, so
+  // take a local strong reference.
+  RefPtr<WinWindowOcclusionTracker> tracker = sTracker;
+  return tracker &&
+         tracker->mThread->thread_id() == PlatformThread::CurrentId();
 }
 
 void WinWindowOcclusionTracker::Enable(nsIWidget* aWindow, HWND aHwnd) {

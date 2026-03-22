@@ -674,7 +674,8 @@ bool WarpBuilder::buildBody() {
       return false;
     }
 #endif
-    bool wantPreciseLineNumbers = js::jit::PerfEnabled();
+    bool wantPreciseLineNumbers =
+        js::jit::PerfEnabled() || mirGen().isProfilerInstrumentationEnabled();
     if (wantPreciseLineNumbers && !hasTerminatedBlock()) {
       current->updateTrackedSite(newBytecodeSite(loc));
     }
@@ -1581,6 +1582,16 @@ bool WarpBuilder::build_DynamicImport(BytecodeLocation loc) {
   current->push(ins);
   return resumeAfter(ins, loc);
 }
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+bool WarpBuilder::build_DynamicImportSource(BytecodeLocation loc) {
+  MDefinition* specifier = current->pop();
+  MDynamicImportSource* ins = MDynamicImportSource::New(alloc(), specifier);
+  current->add(ins);
+  current->push(ins);
+  return resumeAfter(ins, loc);
+}
+#endif
 
 bool WarpBuilder::build_Not(BytecodeLocation loc) {
   if (auto* cacheIRSnapshot = getOpSnapshot<WarpCacheIR>(loc)) {

@@ -23,7 +23,7 @@ namespace js {
 namespace gc {
 
 class GCRuntime;
-struct Cell;
+class Cell;
 
 namespace gcprobes {
 

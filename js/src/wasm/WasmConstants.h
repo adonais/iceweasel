@@ -218,6 +218,12 @@ enum class DefinitionKind {
   Tag = 0x04,
 };
 
+// The values here must not intersect with the values of DefinitionKind.
+enum class CompactImportKind {
+  ModuleName = 0x7F,
+  ModuleNameAndExternType = 0x7E,
+};
+
 enum class GlobalTypeImmediate { IsMutable = 0x1, AllowedMask = 0x1 };
 
 enum class LimitsFlags {
@@ -1083,9 +1089,13 @@ struct OpBytes {
   OpBytes(uint16_t b0, uint16_t b1) : b0(b0), b1(b1) {}
   OpBytes() = default;
 
-  uint32_t toPacked() const {
+  bool canBePacked() const {
     // In practice all of our secondary bytecodes are actually 16-bit right now.
-    MOZ_RELEASE_ASSERT(b1 <= UINT16_MAX);
+    return b1 <= UINT16_MAX;
+  }
+
+  uint32_t toPacked() const {
+    MOZ_RELEASE_ASSERT(canBePacked());
     return b0 | (b1 << 16);
   }
 

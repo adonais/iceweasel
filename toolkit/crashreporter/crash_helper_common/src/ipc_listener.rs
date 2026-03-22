@@ -18,12 +18,12 @@ pub enum IPCListenerError {
     ConnectorError(#[from] IPCError),
     #[error("Could not create listener: {0}")]
     CreationError(PlatformError),
+    #[error("Could not deserialize a listener: {0}")]
+    Deserialize(PlatformError),
     #[error("Could not listen for incoming connections: {0}")]
     ListenError(PlatformError),
-    #[error("Could not parse handle: {0}")]
-    ParseError(String),
-    #[error("Could not create a new pipe: {0}")]
-    PipeCreationFailure(PlatformError),
+    #[error("Could not serialize listener for use in another process: {0}")]
+    Serialize(PlatformError),
 }
 
 /*****************************************************************************

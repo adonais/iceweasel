@@ -42,7 +42,7 @@ export class ColorPickerPanel extends InputPickerPanelCommon {
       this.handleMessage({
         data: {
           name: "PickerPopupChanged",
-          detail: { rgb: [0.1, 0.2, 0.3] },
+          detail: { rgb: [0.1, 0.2, 0.3, 1] },
         },
       });
       this.handleMessage({ data: { name: "ClosePopup" } });

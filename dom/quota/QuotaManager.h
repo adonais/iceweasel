@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_quota_quotamanager_h__
-#define mozilla_dom_quota_quotamanager_h__
+#ifndef mozilla_dom_quota_quotamanager_h_
+#define mozilla_dom_quota_quotamanager_h_
 
 #include <cstdint>
 #include <utility>
@@ -754,6 +754,9 @@ class QuotaManager final : public BackgroundThreadObject {
 
   static void InvalidateQuotaCache();
 
+  OriginMetadataArray GetTemporaryOrigins(
+      PersistenceType aPersistenceType) const;
+
  private:
   virtual ~QuotaManager();
 
@@ -1216,4 +1219,4 @@ class QuotaManager final : public BackgroundThreadObject {
 
 }  // namespace mozilla::dom::quota
 
-#endif /* mozilla_dom_quota_quotamanager_h__ */
+#endif /* mozilla_dom_quota_quotamanager_h_ */

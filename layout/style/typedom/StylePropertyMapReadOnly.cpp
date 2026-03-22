@@ -14,11 +14,9 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/CSSKeywordValue.h"
-#include "mozilla/dom/CSSMathSum.h"
-#include "mozilla/dom/CSSNumericArray.h"
+#include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSStyleRule.h"
 #include "mozilla/dom/CSSStyleValue.h"
-#include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/StylePropertyMapReadOnlyBinding.h"
 #include "nsCSSProps.h"
@@ -196,37 +194,7 @@ void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
         case StyleTypedValue::Tag::Numeric: {
           auto numericValue = typedValue.AsNumeric();
 
-          switch (numericValue.tag) {
-            case StyleNumericValue::Tag::Unit: {
-              auto unitValue = numericValue.AsUnit();
-
-              styleValue = MakeRefPtr<CSSUnitValue>(mParent, unitValue.value,
-                                                    unitValue.unit);
-              break;
-            }
-
-            case StyleNumericValue::Tag::Sum: {
-              auto mathSum = numericValue.AsSum();
-
-              nsTArray<RefPtr<CSSNumericValue>> values;
-
-              for (const auto& value : mathSum.values) {
-                // XXX Only supporting units for now
-                if (value.IsUnit()) {
-                  auto unitValue = value.AsUnit();
-
-                  values.AppendElement(MakeRefPtr<CSSUnitValue>(
-                      mParent, unitValue.value, unitValue.unit));
-                }
-              }
-
-              auto array =
-                  MakeRefPtr<CSSNumericArray>(mParent, std::move(values));
-
-              styleValue = MakeAndAddRef<CSSMathSum>(mParent, std::move(array));
-              break;
-            }
-          }
+          styleValue = CSSNumericValue::Create(mParent, numericValue);
 
           break;
         }

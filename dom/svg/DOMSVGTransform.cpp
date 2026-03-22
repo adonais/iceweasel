@@ -261,13 +261,14 @@ void DOMSVGTransform::RemovingFromList() {
   MOZ_ASSERT(!mTransform,
              "Item in list also has another non-list value associated with it");
 
-  mTransform = MakeUnique<SVGTransform>(InternalItem());
+  mTransform = std::make_unique<SVGTransform>(InternalItem());
   mList = nullptr;
   mIsAnimValItem = false;
 }
 
 SVGTransform& DOMSVGTransform::InternalItem() {
-  SVGAnimatedTransformList* alist = Element()->GetAnimatedTransformList();
+  SVGAnimatedTransformList* alist =
+      Element()->GetExistingAnimatedTransformList();
   return mIsAnimValItem && alist->mAnimVal ? (*alist->mAnimVal)[mListIndex]
                                            : alist->mBaseVal[mListIndex];
 }
@@ -278,7 +279,8 @@ const SVGTransform& DOMSVGTransform::InternalItem() const {
 
 #ifdef DEBUG
 bool DOMSVGTransform::IndexIsValid() {
-  SVGAnimatedTransformList* alist = Element()->GetAnimatedTransformList();
+  SVGAnimatedTransformList* alist =
+      Element()->GetExistingAnimatedTransformList();
   return (mIsAnimValItem && mListIndex < alist->GetAnimValue().Length()) ||
          (!mIsAnimValItem && mListIndex < alist->GetBaseValue().Length());
 }

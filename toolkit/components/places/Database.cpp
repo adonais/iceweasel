@@ -2446,11 +2446,12 @@ void Database::Shutdown() {
 
   mClosed = true;
 
-  // Execute PRAGMA optimized as last step, this will ensure proper database
-  // performance across restarts.
+  // Execute PRAGMA optimize as last step, this will ensure proper database
+  // performance across restarts. The 0x12 flags mean: run ANALYZE on tables
+  // that might benefit (0x02), with a row limit to keep runtime bounded (0x10).
   nsCOMPtr<mozIStoragePendingStatement> ps;
   MOZ_ALWAYS_SUCCEEDS(mMainConn->ExecuteSimpleSQLAsync(
-      "PRAGMA optimize(0x02)"_ns, nullptr, getter_AddRefs(ps)));
+      "PRAGMA optimize(0x12)"_ns, nullptr, getter_AddRefs(ps)));
 
   if (NS_FAILED(mMainConn->AsyncClose(connectionShutdown))) {
     (void)connectionShutdown->Complete(NS_ERROR_UNEXPECTED, nullptr);

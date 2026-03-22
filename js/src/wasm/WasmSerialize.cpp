@@ -914,13 +914,20 @@ CoderResult CodeNameSection(Coder<mode>& coder,
 }
 
 template <CoderMode mode>
+CoderResult CodeTableType(Coder<mode>& coder, CoderArg<mode, TableType> type) {
+  WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::TableType, 48);
+  MOZ_TRY(CodeRefType(coder, &type->elemType));
+  MOZ_TRY(CodePod(coder, &type->limits));
+  return Ok();
+}
+
+template <CoderMode mode>
 CoderResult CodeTableDesc(Coder<mode>& coder, CoderArg<mode, TableDesc> item) {
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::TableDesc, 144);
-  MOZ_TRY(CodeRefType(coder, &item->elemType));
+  MOZ_TRY(CodeTableType(coder, &item->type));
   MOZ_TRY(CodePod(coder, &item->isImported));
   MOZ_TRY(CodePod(coder, &item->isExported));
   MOZ_TRY(CodePod(coder, &item->isAsmJS));
-  MOZ_TRY(CodePod(coder, &item->limits));
   MOZ_TRY(
       (CodeMaybe<mode, InitExpr, &CodeInitExpr<mode>>(coder, &item->initExpr)));
   return Ok();

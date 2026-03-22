@@ -274,7 +274,7 @@ static nscoord GetBaselinePosition(nsTextFrame* aFrame,
   switch (aDominantBaseline) {
     case StyleDominantBaseline::Hanging:
       return convertIfVerticalRL(ascent * 0.2);
-    case StyleDominantBaseline::TextBeforeEdge:
+    case StyleDominantBaseline::TextTop:
       return convertIfVerticalRL(0);
 
     case StyleDominantBaseline::Alphabetic:
@@ -291,7 +291,7 @@ static nscoord GetBaselinePosition(nsTextFrame* aFrame,
                                      AppUnitsPerCSSPixel() *
                                      aFontSizeScaleFactor);
 
-    case StyleDominantBaseline::TextAfterEdge:
+    case StyleDominantBaseline::TextBottom:
     case StyleDominantBaseline::Ideographic:
       return writingMode.IsVerticalLR() ? 0 : ascent + descent;
 
@@ -547,24 +547,24 @@ struct TextRenderedRun {
    * Flag values used for the aFlags arguments of GetRunUserSpaceRect,
    * GetFrameUserSpaceRect and GetUserSpaceRect.
    */
-  enum {
+  enum class GeometryFlag {
     // Includes the fill geometry of the text in the returned rectangle.
-    eIncludeFill = 1,
+    IncludeFill,
     // Includes the stroke geometry of the text in the returned rectangle.
-    eIncludeStroke = 2,
+    IncludeStroke,
     // Don't include any horizontal glyph overflow in the returned rectangle.
-    eNoHorizontalOverflow = 4
+    NoHorizontalOverflow
   };
+  using GeometryFlags = EnumSet<GeometryFlag>;
 
   /**
    * Returns a rectangle that bounds the fill and/or stroke of the rendered run
    * in run user space.
    *
-   * @param aFlags A combination of the flags above (eIncludeFill and
-   *   eIncludeStroke) indicating what parts of the text to include in
+   * @param aFlags Flags indicating what parts of the text to include in
    *   the rectangle.
    */
-  SVGBBox GetRunUserSpaceRect(uint32_t aFlags) const;
+  SVGBBox GetRunUserSpaceRect(GeometryFlags aFlags) const;
 
   /**
    * Returns a rectangle that covers the fill and/or stroke of the rendered run
@@ -597,25 +597,25 @@ struct TextRenderedRun {
    * advance("a") horizontally in to the text frame.
    *
    * @param aContext The context to use for unit conversions.
-   * @param aFlags A combination of the flags above (eIncludeFill and
-   *   eIncludeStroke) indicating what parts of the text to include in
+   * @param aFlags Flags indicating what parts of the text to include in
    *   the rectangle.
    */
-  SVGBBox GetFrameUserSpaceRect(nsPresContext* aContext, uint32_t aFlags) const;
+  SVGBBox GetFrameUserSpaceRect(nsPresContext* aContext,
+                                GeometryFlags aFlags) const;
 
   /**
    * Returns a rectangle that covers the fill and/or stroke of the rendered run
    * in the <text> element's user space.
    *
    * @param aContext The context to use for unit conversions.
-   * @param aFlags A combination of the flags above indicating what parts of
+   * @param aFlags A combination of flags indicating what parts of
    *   the text to include in the rectangle.
    * @param aAdditionalTransform An additional transform to apply to the
    *   frame user space rectangle before its bounds are transformed into
    *   user space.
    */
   SVGBBox GetUserSpaceRect(
-      nsPresContext* aContext, uint32_t aFlags,
+      nsPresContext* aContext, GeometryFlags aFlags,
       const gfxMatrix* aAdditionalTransform = nullptr) const;
 
   /**
@@ -803,7 +803,7 @@ gfxMatrix TextRenderedRun::GetTransformFromRunUserSpaceToFrameUserSpace(
   return m.PreTranslate(t);
 }
 
-SVGBBox TextRenderedRun::GetRunUserSpaceRect(uint32_t aFlags) const {
+SVGBBox TextRenderedRun::GetRunUserSpaceRect(GeometryFlags aFlags) const {
   SVGBBox r;
   if (!mFrame) {
     return r;
@@ -847,7 +847,7 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(uint32_t aFlags) const {
   nscoord baseline =
       NSToCoordRoundWithClamp(metrics.mBoundingBox.y + metrics.mAscent);
   gfxFloat x, width;
-  if (aFlags & eNoHorizontalOverflow) {
+  if (aFlags.contains(GeometryFlag::NoHorizontalOverflow)) {
     x = 0.0;
     width = textRun->GetAdvanceWidth(range, &provider);
     if (width < 0.0) {
@@ -875,12 +875,12 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(uint32_t aFlags) const {
   fill.Scale(1.0 / mFontSizeScaleFactor);
 
   // Include the fill if requested.
-  if (aFlags & eIncludeFill) {
+  if (aFlags.contains(GeometryFlag::IncludeFill)) {
     r = fill;
   }
 
   // Include the stroke if requested.
-  if ((aFlags & eIncludeStroke) && !fill.IsEmpty() &&
+  if (aFlags.contains(GeometryFlag::IncludeStroke) && !fill.IsEmpty() &&
       SVGUtils::GetStrokeWidth(mFrame) > 0) {
     r.UnionEdges(
         SVGUtils::PathExtentsToMaxStrokeExtents(fill, mFrame, gfxMatrix()));
@@ -890,7 +890,7 @@ SVGBBox TextRenderedRun::GetRunUserSpaceRect(uint32_t aFlags) const {
 }
 
 SVGBBox TextRenderedRun::GetFrameUserSpaceRect(nsPresContext* aContext,
-                                               uint32_t aFlags) const {
+                                               GeometryFlags aFlags) const {
   SVGBBox r = GetRunUserSpaceRect(aFlags);
   if (r.IsEmpty()) {
     return r;
@@ -900,7 +900,7 @@ SVGBBox TextRenderedRun::GetFrameUserSpaceRect(nsPresContext* aContext,
 }
 
 SVGBBox TextRenderedRun::GetUserSpaceRect(
-    nsPresContext* aContext, uint32_t aFlags,
+    nsPresContext* aContext, GeometryFlags aFlags,
     const gfxMatrix* aAdditionalTransform) const {
   SVGBBox r = GetRunUserSpaceRect(aFlags);
   if (r.IsEmpty()) {
@@ -1101,7 +1101,7 @@ int32_t TextRenderedRun::GetCharNumAtPosition(nsPresContext* aContext,
 // ----------------------------------------------------------------------------
 // TextNodeIterator
 
-enum SubtreePosition { eBeforeSubtree, eWithinSubtree, eAfterSubtree };
+enum class SubtreePosition { Before, Within, After };
 
 /**
  * An iterator class for Text that are descendants of a given node, the
@@ -1119,7 +1119,8 @@ class TextNodeIterator {
       : mRoot(aRoot),
         mSubtree(aSubtree == aRoot ? nullptr : aSubtree),
         mCurrent(aRoot),
-        mSubtreePosition(mSubtree ? eBeforeSubtree : eWithinSubtree) {
+        mSubtreePosition(mSubtree ? SubtreePosition::Before
+                                  : SubtreePosition::Within) {
     NS_ASSERTION(aRoot, "expected non-null root");
     if (!aRoot->IsText()) {
       GetNext();
@@ -1142,13 +1143,17 @@ class TextNodeIterator {
    * at mSubtree.  Returns true if we are not tracking a subtree (we consider
    * that we're always within the subtree).
    */
-  bool IsWithinSubtree() const { return mSubtreePosition == eWithinSubtree; }
+  bool IsWithinSubtree() const {
+    return mSubtreePosition == SubtreePosition::Within;
+  }
 
   /**
    * Returns whether the iterator is past the subtree rooted at mSubtree.
    * Returns false if we are not tracking a subtree.
    */
-  bool IsAfterSubtree() const { return mSubtreePosition == eAfterSubtree; }
+  bool IsAfterSubtree() const {
+    return mSubtreePosition == SubtreePosition::After;
+  }
 
  private:
   /**
@@ -1183,7 +1188,7 @@ Text* TextNodeIterator::GetNext() {
       if (next) {
         mCurrent = next;
         if (mCurrent == mSubtree) {
-          mSubtreePosition = eWithinSubtree;
+          mSubtreePosition = SubtreePosition::Within;
         }
       } else {
         for (;;) {
@@ -1192,18 +1197,18 @@ Text* TextNodeIterator::GetNext() {
             break;
           }
           if (mCurrent == mSubtree) {
-            mSubtreePosition = eAfterSubtree;
+            mSubtreePosition = SubtreePosition::After;
           }
           next = mCurrent->GetNextSibling();
           if (next) {
             mCurrent = next;
             if (mCurrent == mSubtree) {
-              mSubtreePosition = eWithinSubtree;
+              mSubtreePosition = SubtreePosition::Within;
             }
             break;
           }
           if (mCurrent == mSubtree) {
-            mSubtreePosition = eAfterSubtree;
+            mSubtreePosition = SubtreePosition::After;
           }
           mCurrent = mCurrent->GetParent();
         }
@@ -1471,7 +1476,8 @@ class MOZ_STACK_CLASS TextFrameIterator {
       : mRootFrame(aRoot),
         mSubtree(aSubtree),
         mCurrentFrame(aRoot),
-        mSubtreePosition(mSubtree ? eBeforeSubtree : eWithinSubtree) {
+        mSubtreePosition(mSubtree ? SubtreePosition::Before
+                                  : SubtreePosition::Within) {
     Init();
   }
 
@@ -1485,7 +1491,8 @@ class MOZ_STACK_CLASS TextFrameIterator {
                      ? aSubtree->GetPrimaryFrame()
                      : nullptr),
         mCurrentFrame(aRoot),
-        mSubtreePosition(mSubtree ? eBeforeSubtree : eWithinSubtree) {
+        mSubtreePosition(mSubtree ? SubtreePosition::Before
+                                  : SubtreePosition::Within) {
     Init();
   }
 
@@ -1521,12 +1528,16 @@ class MOZ_STACK_CLASS TextFrameIterator {
   /**
    * Returns whether the iterator is within the subtree.
    */
-  bool IsWithinSubtree() const { return mSubtreePosition == eWithinSubtree; }
+  bool IsWithinSubtree() const {
+    return mSubtreePosition == SubtreePosition::Within;
+  }
 
   /**
    * Returns whether the iterator is past the subtree.
    */
-  bool IsAfterSubtree() const { return mSubtreePosition == eAfterSubtree; }
+  bool IsAfterSubtree() const {
+    return mSubtreePosition == SubtreePosition::After;
+  }
 
   /**
    * Returns the frame corresponding to the <textPath> element, if we
@@ -1557,7 +1568,7 @@ class MOZ_STACK_CLASS TextFrameIterator {
       return;
     }
 
-    mBaselines.AppendElement(mRootFrame->StyleSVG()->mDominantBaseline);
+    mBaselines.AppendElement(mRootFrame->StyleVisibility()->mDominantBaseline);
     GetNext();
   }
 
@@ -1645,7 +1656,7 @@ nsTextFrame* TextFrameIterator::GetNext() {
         mCurrentFrame = next;
         if (mCurrentFrame == mSubtree) {
           // If the current frame is mSubtree, we have now moved into it.
-          mSubtreePosition = eWithinSubtree;
+          mSubtreePosition = SubtreePosition::Within;
         }
       } else {
         for (;;) {
@@ -1665,7 +1676,7 @@ nsTextFrame* TextFrameIterator::GetNext() {
           PopBaseline();
           if (mCurrentFrame == mSubtree) {
             // If this was mSubtree, we have now moved past it.
-            mSubtreePosition = eAfterSubtree;
+            mSubtreePosition = SubtreePosition::After;
           }
           next = mCurrentFrame->GetNextSibling();
           if (next) {
@@ -1680,14 +1691,14 @@ nsTextFrame* TextFrameIterator::GetNext() {
             mCurrentFrame = next;
             if (mCurrentFrame == mSubtree) {
               // If the current frame is mSubtree, we have now moved into it.
-              mSubtreePosition = eWithinSubtree;
+              mSubtreePosition = SubtreePosition::Within;
             }
             break;
           }
           if (mCurrentFrame == mSubtree) {
             // If there is no next sibling frame, and the current frame is
             // mSubtree, we have now moved past it.
-            mSubtreePosition = eAfterSubtree;
+            mSubtreePosition = SubtreePosition::After;
           }
           // Ascend out of this frame.
           mCurrentFrame = mCurrentFrame->GetParent();
@@ -1700,7 +1711,8 @@ nsTextFrame* TextFrameIterator::GetNext() {
 }
 
 void TextFrameIterator::PushBaseline(nsIFrame* aNextFrame) {
-  StyleDominantBaseline baseline = aNextFrame->StyleSVG()->mDominantBaseline;
+  StyleDominantBaseline baseline =
+      aNextFrame->StyleVisibility()->mDominantBaseline;
   mBaselines.AppendElement(baseline);
 }
 
@@ -1721,12 +1733,12 @@ class TextRenderedRunIterator {
    * Values for the aFilter argument of the constructor, to indicate which
    * frames we should be limited to iterating TextRenderedRun objects for.
    */
-  enum RenderedRunFilter {
+  enum class RenderedRunFilter {
     // Iterate TextRenderedRuns for all nsTextFrames.
-    eAllFrames,
+    AllFrames,
     // Iterate only TextRenderedRuns for nsTextFrames that are
     // visibility:visible.
-    eVisibleFrames
+    VisibleFrames
   };
 
   /**
@@ -1740,9 +1752,10 @@ class TextRenderedRunIterator {
    * @param aSubtree An optional frame subtree to restrict iterated rendered
    *   runs to.
    */
-  explicit TextRenderedRunIterator(SVGTextFrame* aSVGTextFrame,
-                                   RenderedRunFilter aFilter = eAllFrames,
-                                   const nsIFrame* aSubtree = nullptr)
+  explicit TextRenderedRunIterator(
+      SVGTextFrame* aSVGTextFrame,
+      RenderedRunFilter aFilter = RenderedRunFilter::AllFrames,
+      const nsIFrame* aSubtree = nullptr)
       : mFrameIterator(FrameIfAnonymousChildReflowed(aSVGTextFrame), aSubtree),
         mFilter(aFilter),
         mTextElementCharIndex(0),
@@ -1913,7 +1926,7 @@ TextRenderedRun TextRenderedRunIterator::Next() {
     // Determine if we should skip this rendered run.
     bool skip = !mFrameIterator.IsWithinSubtree() ||
                 GetRoot()->mPositions[mTextElementCharIndex].mHidden;
-    if (mFilter == eVisibleFrames) {
+    if (mFilter == RenderedRunFilter::VisibleFrames) {
       skip = skip || !frame->StyleVisibility()->IsVisible();
     }
 
@@ -1983,16 +1996,16 @@ class MOZ_STACK_CLASS CharIterator {
    * Values for the aFilter argument of the constructor, to indicate which
    * characters we should be iterating over.
    */
-  enum CharacterFilter {
+  enum class CharacterFilter {
     // Iterate over all original characters from the DOM that are within valid
     // text content elements.
-    eOriginal,
+    Original,
     // Iterate only over characters that are not skipped characters.
-    eUnskipped,
+    Unskipped,
     // Iterate only over characters that are addressable by the positioning
     // attributes x="", y="", etc.  This includes all characters after
     // collapsing white space as required by the value of 'white-space'.
-    eAddressable,
+    Addressable,
   };
 
   /**
@@ -2428,11 +2441,11 @@ bool CharIterator::NextCharacter() {
 
 bool CharIterator::MatchesFilter() const {
   switch (mFilter) {
-    case eOriginal:
+    case CharacterFilter::Original:
       return true;
-    case eUnskipped:
+    case CharacterFilter::Unskipped:
       return !IsOriginalCharSkipped();
-    case eAddressable:
+    case CharacterFilter::Addressable:
       return !IsOriginalCharSkipped() && !IsOriginalCharUnaddressable();
   }
   MOZ_ASSERT_UNREACHABLE("Invalid mFilter value");
@@ -3029,9 +3042,10 @@ void SVGTextFrame::FindCloserFrameForSelection(
   // Find the frame that has the closest rendered run rect to aPoint.
   TextRenderedRunIterator it(this);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
-    uint32_t flags = TextRenderedRun::eIncludeFill |
-                     TextRenderedRun::eIncludeStroke |
-                     TextRenderedRun::eNoHorizontalOverflow;
+    TextRenderedRun::GeometryFlags flags(
+        TextRenderedRun::GeometryFlag::IncludeFill,
+        TextRenderedRun::GeometryFlag::IncludeStroke,
+        TextRenderedRun::GeometryFlag::NoHorizontalOverflow);
     SVGBBox userRect = run.GetUserSpaceRect(presContext, flags);
     float devPxPerCSSPx = presContext->CSSPixelsToDevPixels(1.f);
     userRect.Scale(devPxPerCSSPx);
@@ -3167,7 +3181,7 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
   }
 
   const float epsilon = 0.0001;
-  if (abs(mLengthAdjustScaleFactor) < epsilon) {
+  if (std::abs(mLengthAdjustScaleFactor) < epsilon) {
     // A zero scale factor can be caused by having forced the text length to
     // zero. In this situation there is nothing to show.
     return;
@@ -3201,7 +3215,8 @@ void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
   nsIFrame* caretFrame = caret->GetPaintGeometry();
 
   gfxContextAutoSaveRestore ctxSR;
-  TextRenderedRunIterator it(this, TextRenderedRunIterator::eVisibleFrames);
+  TextRenderedRunIterator it(
+      this, TextRenderedRunIterator::RenderedRunFilter::VisibleFrames);
   TextRenderedRun run = it.Current();
 
   SVGContextPaint* outerContextPaint =
@@ -3309,8 +3324,7 @@ nsIFrame* SVGTextFrame::GetFrameForPoint(const gfxPoint& aPoint) {
   TextRenderedRunIterator it(this);
   nsIFrame* hit = nullptr;
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
-    uint16_t hitTestFlags = SVGUtils::GetGeometryHitTestFlags(run.mFrame);
-    if (!hitTestFlags) {
+    if (SVGUtils::GetGeometryHitTestFlags(run.mFrame).isEmpty()) {
       continue;
     }
 
@@ -3320,9 +3334,10 @@ nsIFrame* SVGTextFrame::GetFrameForPoint(const gfxPoint& aPoint) {
     }
 
     gfxPoint pointInRunUserSpace = m.TransformPoint(aPoint);
-    gfxRect frameRect = run.GetRunUserSpaceRect(TextRenderedRun::eIncludeFill |
-                                                TextRenderedRun::eIncludeStroke)
-                            .ToThebesRect();
+    gfxRect frameRect =
+        run.GetRunUserSpaceRect({TextRenderedRun::GeometryFlag::IncludeFill,
+                                 TextRenderedRun::GeometryFlag::IncludeStroke})
+            .ToThebesRect();
 
     if (frameRect.Contains(pointInRunUserSpace)) {
       hit = run.mFrame;
@@ -3351,14 +3366,15 @@ void SVGTextFrame::ReflowSVG() {
   nsPresContext* presContext = PresContext();
 
   SVGBBox r;
-  TextRenderedRunIterator it(this, TextRenderedRunIterator::eAllFrames);
+  TextRenderedRunIterator it(
+      this, TextRenderedRunIterator::RenderedRunFilter::AllFrames);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
-    uint32_t runFlags = 0;
+    TextRenderedRun::GeometryFlags runFlags;
     if (!run.mFrame->StyleSVG()->mFill.kind.IsNone()) {
-      runFlags |= TextRenderedRun::eIncludeFill;
+      runFlags += TextRenderedRun::GeometryFlag::IncludeFill;
     }
     if (SVGUtils::HasStroke(run.mFrame)) {
-      runFlags |= TextRenderedRun::eIncludeStroke;
+      runFlags += TextRenderedRun::GeometryFlag::IncludeStroke;
     }
     // Our "visual" overflow rect needs to be valid for building display lists
     // for hit testing, which means that for certain values of 'pointer-events'
@@ -3366,15 +3382,16 @@ void SVGTextFrame::ReflowSVG() {
     // fill/ stroke don't actually render (e.g. when stroke="none" or
     // stroke-opacity="0"). GetGeometryHitTestFlags accounts for
     // 'pointer-events'. The text-shadow is not part of the hit-test area.
-    uint16_t hitTestFlags = SVGUtils::GetGeometryHitTestFlags(run.mFrame);
-    if (hitTestFlags & SVG_HIT_TEST_FILL) {
-      runFlags |= TextRenderedRun::eIncludeFill;
+    SVGHitTestFlags hitTestFlags =
+        SVGUtils::GetGeometryHitTestFlags(run.mFrame);
+    if (hitTestFlags.contains(SVGHitTestFlag::Fill)) {
+      runFlags += TextRenderedRun::GeometryFlag::IncludeFill;
     }
-    if (hitTestFlags & SVG_HIT_TEST_STROKE) {
-      runFlags |= TextRenderedRun::eIncludeStroke;
+    if (hitTestFlags.contains(SVGHitTestFlag::Stroke)) {
+      runFlags += TextRenderedRun::GeometryFlag::IncludeStroke;
     }
 
-    if (runFlags) {
+    if (!runFlags.isEmpty()) {
       r.UnionEdges(run.GetUserSpaceRect(presContext, runFlags));
     }
   }
@@ -3416,18 +3433,16 @@ void SVGTextFrame::ReflowSVG() {
  * Converts SVGUtils::eBBox* flags into TextRenderedRun flags appropriate
  * for the specified rendered run.
  */
-static uint32_t TextRenderedRunFlagsForBBoxContribution(
+static TextRenderedRun::GeometryFlags TextRenderedRunFlagsForBBoxContribution(
     const TextRenderedRun& aRun, uint32_t aBBoxFlags) {
-  uint32_t flags = 0;
-  if ((aBBoxFlags & SVGUtils::eBBoxIncludeFillGeometry) ||
-      ((aBBoxFlags & SVGUtils::eBBoxIncludeFill) &&
-       !aRun.mFrame->StyleSVG()->mFill.kind.IsNone())) {
-    flags |= TextRenderedRun::eIncludeFill;
+  TextRenderedRun::GeometryFlags flags;
+  if (aBBoxFlags & SVGUtils::eBBoxIncludeFillGeometry) {
+    flags += TextRenderedRun::GeometryFlag::IncludeFill;
   }
   if ((aBBoxFlags & SVGUtils::eBBoxIncludeStrokeGeometry) ||
       ((aBBoxFlags & SVGUtils::eBBoxIncludeStroke) &&
        SVGUtils::HasStroke(aRun.mFrame))) {
-    flags |= TextRenderedRun::eIncludeStroke;
+    flags += TextRenderedRun::GeometryFlag::IncludeStroke;
   }
   return flags;
 }
@@ -3464,7 +3479,8 @@ SVGBBox SVGTextFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 
   TextRenderedRunIterator it(this);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
-    uint32_t flags = TextRenderedRunFlagsForBBoxContribution(run, aFlags);
+    TextRenderedRun::GeometryFlags flags =
+        TextRenderedRunFlagsForBBoxContribution(run, aFlags);
     gfxMatrix m = ThebesMatrix(aToBBoxUserspace);
     SVGBBox bboxForRun = run.GetUserSpaceRect(presContext, flags, &m);
     bbox.UnionEdges(bboxForRun);
@@ -3508,7 +3524,7 @@ static uint32_t GetTextContentLength(nsIContent* aContent) {
 
 int32_t SVGTextFrame::ConvertTextElementCharIndexToAddressableIndex(
     int32_t aIndex, nsIContent* aContent) {
-  CharIterator it(this, CharIterator::eOriginal, aContent);
+  CharIterator it(this, CharIterator::CharacterFilter::Original, aContent);
   if (!it.AdvanceToSubtree()) {
     return -1;
   }
@@ -3545,7 +3561,7 @@ uint32_t SVGTextFrame::GetNumberOfChars(nsIContent* aContent) {
   UpdateGlyphPositioning();
 
   uint32_t n = 0;
-  CharIterator it(this, CharIterator::eAddressable, aContent);
+  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
   if (it.AdvanceToSubtree()) {
     while (!it.AtEnd() && it.IsWithinSubtree()) {
       n++;
@@ -3576,8 +3592,8 @@ float SVGTextFrame::GetComputedTextLength(nsIContent* aContent) {
       PresContext()->AppUnitsPerDevPixel());
 
   nscoord length = 0;
-  TextRenderedRunIterator it(this, TextRenderedRunIterator::eAllFrames,
-                             aContent);
+  TextRenderedRunIterator it(
+      this, TextRenderedRunIterator::RenderedRunFilter::AllFrames, aContent);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
     length += run.GetAdvanceWidth();
   }
@@ -3609,7 +3625,8 @@ void SVGTextFrame::SelectSubString(nsIContent* aContent, uint32_t charnum,
   {
     // Convert charnum/nchars from addressable characters relative to
     // aContent to global character indices.
-    CharIterator chit(this, CharIterator::eAddressable, aContent);
+    CharIterator chit(this, CharIterator::CharacterFilter::Addressable,
+                      aContent);
     if (!chit.AdvanceToSubtree() || !chit.Next(charnum) ||
         chit.IsAfterSubtree()) {
       aRv.ThrowIndexSizeError("Character index out of range");
@@ -3673,7 +3690,7 @@ float SVGTextFrame::GetSubStringLengthFastPath(nsIContent* aContent,
 
   // Convert charnum/nchars from addressable characters relative to
   // aContent to global character indices.
-  CharIterator chit(this, CharIterator::eAddressable, aContent,
+  CharIterator chit(this, CharIterator::CharacterFilter::Addressable, aContent,
                     /* aPostReflow */ false);
   if (!chit.AdvanceToSubtree() || !chit.Next(charnum) ||
       chit.IsAfterSubtree()) {
@@ -3764,7 +3781,7 @@ float SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
 
   // Convert charnum/nchars from addressable characters relative to
   // aContent to global character indices.
-  CharIterator chit(this, CharIterator::eAddressable, aContent);
+  CharIterator chit(this, CharIterator::CharacterFilter::Addressable, aContent);
   if (!chit.AdvanceToSubtree() || !chit.Next(charnum) ||
       chit.IsAfterSubtree()) {
     aRv.ThrowIndexSizeError("Character index out of range");
@@ -3782,7 +3799,8 @@ float SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
   // Find each rendered run that intersects with the range defined
   // by charnum/nchars.
   nscoord textLength = 0;
-  TextRenderedRunIterator runIter(this, TextRenderedRunIterator::eAllFrames);
+  TextRenderedRunIterator runIter(
+      this, TextRenderedRunIterator::RenderedRunFilter::AllFrames);
   TextRenderedRun run = runIter.Current();
   while (run.mFrame) {
     // If this rendered run is past the substring we are interested in, we
@@ -3844,8 +3862,8 @@ int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
 
   int32_t result = -1;
 
-  TextRenderedRunIterator it(this, TextRenderedRunIterator::eAllFrames,
-                             aContent);
+  TextRenderedRunIterator it(
+      this, TextRenderedRunIterator::RenderedRunFilter::AllFrames, aContent);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
     // Hit test this rendered run.  Later runs will override earlier ones.
     int32_t index = run.GetCharNumAtPosition(context, p);
@@ -3877,7 +3895,7 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetStartPositionOfChar(
 
   UpdateGlyphPositioning();
 
-  CharIterator it(this, CharIterator::eAddressable, aContent);
+  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
   if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return nullptr;
@@ -3895,12 +3913,13 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetStartPositionOfChar(
  *
  * aIterator, if provided, must be a CharIterator that already points to
  * aTextElementCharIndex that is restricted to aContent and is using
- * filter mode eAddressable.
+ * filter mode CharacterFilter::Addressable.
  */
 static gfxFloat GetGlyphAdvance(SVGTextFrame* aFrame, nsIContent* aContent,
                                 uint32_t aTextElementCharIndex,
                                 CharIterator* aIterator) {
-  MOZ_ASSERT(!aIterator || (aIterator->Filter() == CharIterator::eAddressable &&
+  MOZ_ASSERT(!aIterator || (aIterator->Filter() ==
+                                CharIterator::CharacterFilter::Addressable &&
                             aIterator->GetSubtree() == aContent &&
                             aIterator->GlyphStartTextElementCharIndex() ==
                                 aTextElementCharIndex),
@@ -3909,7 +3928,8 @@ static gfxFloat GetGlyphAdvance(SVGTextFrame* aFrame, nsIContent* aContent,
   Maybe<CharIterator> newIterator;
   CharIterator* it = aIterator;
   if (!it) {
-    newIterator.emplace(aFrame, CharIterator::eAddressable, aContent);
+    newIterator.emplace(aFrame, CharIterator::CharacterFilter::Addressable,
+                        aContent);
     if (!newIterator->AdvanceToSubtree()) {
       MOZ_ASSERT_UNREACHABLE("Invalid aContent");
       return 0.0;
@@ -3959,7 +3979,7 @@ already_AddRefed<DOMSVGPoint> SVGTextFrame::GetEndPositionOfChar(
 
   UpdateGlyphPositioning();
 
-  CharIterator it(this, CharIterator::eAddressable, aContent);
+  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
   if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return nullptr;
@@ -4005,7 +4025,7 @@ already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
   UpdateGlyphPositioning();
 
   // Search for the character whose addressable index is aCharNum.
-  CharIterator it(this, CharIterator::eAddressable, aContent);
+  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
   if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return nullptr;
@@ -4073,7 +4093,7 @@ float SVGTextFrame::GetRotationOfChar(nsIContent* aContent, uint32_t aCharNum,
 
   UpdateGlyphPositioning();
 
-  CharIterator it(this, CharIterator::eAddressable, aContent);
+  CharIterator it(this, CharIterator::CharacterFilter::Addressable, aContent);
   if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
     aRv.ThrowIndexSizeError("Character index out of range");
     return 0;
@@ -4322,7 +4342,8 @@ bool SVGTextFrame::ResolvePositions(nsTArray<gfxPoint>& aDeltas,
   NS_ASSERTION(mPositions.IsEmpty(), "expected mPositions to be empty");
   RemoveStateBits(NS_STATE_SVG_POSITIONING_MAY_USE_PERCENTAGES);
 
-  CharIterator it(this, CharIterator::eOriginal, /* aSubtree */ nullptr);
+  CharIterator it(this, CharIterator::CharacterFilter::Original,
+                  /* aSubtree */ nullptr);
   if (it.AtEnd()) {
     return false;
   }
@@ -4426,7 +4447,7 @@ void SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions) {
 /**
  * Physical text-anchor values.
  */
-enum TextAnchorSide { eAnchorLeft, eAnchorMiddle, eAnchorRight };
+enum class TextAnchorSide { Left, Middle, Right };
 
 /**
  * Converts a logical text-anchor value to its physical value, based on whether
@@ -4467,17 +4488,15 @@ static void ShiftAnchoredChunk(nsTArray<CharPosition>& aCharPositions,
   gfxFloat shift = aVertical ? aCharPositions[aChunkStart].mPosition.y
                              : aCharPositions[aChunkStart].mPosition.x;
   switch (aAnchorSide) {
-    case eAnchorLeft:
+    case TextAnchorSide::Left:
       shift -= aVisIStartEdge;
       break;
-    case eAnchorMiddle:
+    case TextAnchorSide::Middle:
       shift -= (aVisIStartEdge + aVisIEndEdge) / 2;
       break;
-    case eAnchorRight:
+    case TextAnchorSide::Right:
       shift -= aVisIEndEdge;
       break;
-    default:
-      MOZ_ASSERT_UNREACHABLE("unexpected value for aAnchorSide");
   }
 
   if (shift != 0.0) {
@@ -4499,7 +4518,8 @@ void SVGTextFrame::AdjustChunksForLineBreaks() {
 
   nsBlockFrame::LineIterator line = block->LinesBegin();
 
-  CharIterator it(this, CharIterator::eOriginal, /* aSubtree */ nullptr);
+  CharIterator it(this, CharIterator::CharacterFilter::Original,
+                  /* aSubtree */ nullptr);
   while (!it.AtEnd() && line != block->LinesEnd()) {
     if (it.GetTextFrame() == line->mFirstChild) {
       mPositions[it.TextElementCharIndex()].mStartOfChunk = true;
@@ -4523,7 +4543,8 @@ void SVGTextFrame::AdjustPositionsForClusters() {
   // have accumulated.
   gfxFloat partialAdvance = 0.0;
 
-  CharIterator it(this, CharIterator::eUnskipped, /* aSubtree */ nullptr);
+  CharIterator it(this, CharIterator::CharacterFilter::Unskipped,
+                  /* aSubtree */ nullptr);
   bool isFirst = true;
   while (!it.AtEnd()) {
     if (it.IsClusterAndLigatureGroupStart() || isFirst) {
@@ -4641,7 +4662,8 @@ gfxFloat SVGTextFrame::GetOffsetScale(nsIFrame* aTextPathFrame) {
   if (!geomElement) {
     return 1.0;
   }
-  return geomElement->GetPathLengthScale(SVGGeometryElement::eForTextPath);
+  return geomElement->GetPathLengthScale(
+      SVGGeometryElement::PathLengthScaleUsageType::TextPath);
 }
 
 gfxFloat SVGTextFrame::GetStartOffset(nsIFrame* aTextPathFrame) {
@@ -4668,7 +4690,8 @@ gfxFloat SVGTextFrame::GetStartOffset(nsIFrame* aTextPathFrame) {
 void SVGTextFrame::DoTextPathLayout() {
   nsPresContext* context = PresContext();
 
-  CharIterator it(this, CharIterator::eOriginal, /* aSubtree */ nullptr);
+  CharIterator it(this, CharIterator::CharacterFilter::Original,
+                  /* aSubtree */ nullptr);
   while (!it.AtEnd()) {
     nsIFrame* textPathFrame = it.TextPathFrame();
     if (!textPathFrame) {
@@ -4817,7 +4840,8 @@ void SVGTextFrame::DoTextPathLayout() {
 void SVGTextFrame::DoAnchoring() {
   nsPresContext* presContext = PresContext();
 
-  CharIterator it(this, CharIterator::eOriginal, /* aSubtree */ nullptr);
+  CharIterator it(this, CharIterator::CharacterFilter::Original,
+                  /* aSubtree */ nullptr);
 
   // Don't need to worry about skipped or trimmed characters.
   while (!it.AtEnd() &&
@@ -5185,7 +5209,7 @@ void SVGTextFrame::DoReflow() {
     return;
   }
 
-  UniquePtr<gfxContext> renderingContext =
+  std::unique_ptr<gfxContext> renderingContext =
       presContext->PresShell()->CreateReferenceRenderingContext();
 
   if (UpdateFontSizeScaleFactor()) {
@@ -5325,16 +5349,17 @@ Point SVGTextFrame::TransformFramePointToTextChild(
   Point pointInUserSpace = aPoint * cssPxPerDevPx + framePosition;
 
   // Find the closest rendered run for the text frames beneath aChildFrame.
-  TextRenderedRunIterator it(this, TextRenderedRunIterator::eAllFrames,
-                             aChildFrame);
+  TextRenderedRunIterator it(
+      this, TextRenderedRunIterator::RenderedRunFilter::AllFrames, aChildFrame);
   TextRenderedRun hit;
   gfxPoint pointInRun;
   nscoord dx = nscoord_MAX;
   nscoord dy = nscoord_MAX;
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
-    uint32_t flags = TextRenderedRun::eIncludeFill |
-                     TextRenderedRun::eIncludeStroke |
-                     TextRenderedRun::eNoHorizontalOverflow;
+    TextRenderedRun::GeometryFlags flags(
+        TextRenderedRun::GeometryFlag::IncludeFill,
+        TextRenderedRun::GeometryFlag::IncludeStroke,
+        TextRenderedRun::GeometryFlag::NoHorizontalOverflow);
     gfxRect runRect = run.GetRunUserSpaceRect(flags).ToThebesRect();
 
     gfxMatrix m = run.GetTransformFromRunUserSpaceToUserSpace(presContext);
@@ -5393,8 +5418,8 @@ gfxRect SVGTextFrame::TransformFrameRectFromTextChild(
   nsPresContext* presContext = PresContext();
 
   gfxRect result;
-  TextRenderedRunIterator it(this, TextRenderedRunIterator::eAllFrames,
-                             aChildFrame);
+  TextRenderedRunIterator it(
+      this, TextRenderedRunIterator::RenderedRunFilter::AllFrames, aChildFrame);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
     // First, translate aRect from aChildFrame to this run's frame.
     nsRect rectInTextFrame = aRect + aChildFrame->GetOffsetTo(run.mFrame);
@@ -5403,8 +5428,9 @@ gfxRect SVGTextFrame::TransformFrameRectFromTextChild(
     gfxRect rectInFrameUserSpace = AppUnitsToFloatCSSPixels(rectInTextFrame);
 
     // Intersect it with the run.
-    uint32_t flags =
-        TextRenderedRun::eIncludeFill | TextRenderedRun::eIncludeStroke;
+    TextRenderedRun::GeometryFlags flags(
+        TextRenderedRun::GeometryFlag::IncludeFill,
+        TextRenderedRun::GeometryFlag::IncludeStroke);
 
     if (rectInFrameUserSpace.IntersectRect(
             rectInFrameUserSpace,

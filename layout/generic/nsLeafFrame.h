@@ -6,8 +6,8 @@
 
 /* base class for rendering objects that do not have child lists */
 
-#ifndef nsLeafFrame_h___
-#define nsLeafFrame_h___
+#ifndef nsLeafFrame_h_
+#define nsLeafFrame_h_
 
 #include "nsDisplayList.h"
 #include "nsIFrame.h"
@@ -51,4 +51,4 @@ class nsLeafFrame : public nsIFrame {
   virtual ~nsLeafFrame();
 };
 
-#endif /* nsLeafFrame_h___ */
+#endif /* nsLeafFrame_h_ */

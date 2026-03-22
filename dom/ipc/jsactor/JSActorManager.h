@@ -45,8 +45,7 @@ class JSActorManager : public nsISupports {
    * Handle receiving a raw message from the other side.
    */
   void ReceiveRawMessage(const JSActorMessageMeta& aMetadata,
-                         JSIPCValue&& aData,
-                         UniquePtr<ipc::StructuredCloneData> aStack);
+                         JSIPCValue&& aData, ipc::StructuredCloneData* aStack);
 
   virtual const nsACString& GetRemoteType() const = 0;
 

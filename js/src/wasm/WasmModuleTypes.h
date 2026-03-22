@@ -439,6 +439,14 @@ struct BranchHintCollection {
 
 enum class GlobalKind { Import, Constant, Variable };
 
+struct GlobalType {
+  ValType type;
+  bool isMutable = false;
+
+  GlobalType() = default;
+  GlobalType(ValType type, bool isMutable) : type(type), isMutable(isMutable) {}
+};
+
 // A GlobalDesc describes a single global variable.
 //
 // wasm can import and export mutable and immutable globals.
@@ -480,12 +488,12 @@ class GlobalDesc {
     }
   }
 
-  explicit GlobalDesc(ValType type, bool isMutable, uint32_t importIndex,
+  explicit GlobalDesc(const GlobalType& type, uint32_t importIndex,
                       ModuleKind kind = ModuleKind::Wasm)
       : kind_(GlobalKind::Import) {
-    initial_ = InitExpr(LitVal(type));
+    initial_ = InitExpr(LitVal(type.type));
     importIndex_ = importIndex;
-    isMutable_ = isMutable;
+    isMutable_ = type.isMutable;
     isWasm_ = kind == Wasm;
     isExport_ = false;
     offset_ = UINT32_MAX;
@@ -876,30 +884,39 @@ static_assert(MaxMemory32StandardPagesValidation <=
 static_assert(MaxMemory32TinyPagesValidation <= UINT64_MAX);
 #endif
 
-struct TableDesc {
+struct TableType {
   Limits limits;
   RefType elemType;
-  bool isImported;
-  bool isExported;
-  bool isAsmJS;
+
+  TableType() = default;
+  TableType(Limits limits, RefType elemType)
+      : limits(limits), elemType(elemType) {}
+};
+
+struct TableDesc {
+  TableType type;
+
+  bool isImported = false;
+  bool isExported = false;
+  bool isAsmJS = false;
   mozilla::Maybe<InitExpr> initExpr;
 
   TableDesc() = default;
-  TableDesc(Limits limits, RefType elemType,
-            mozilla::Maybe<InitExpr>&& initExpr, bool isAsmJS,
-            bool isImported = false, bool isExported = false)
-      : limits(limits),
-        elemType(elemType),
+  TableDesc(const TableType& type, mozilla::Maybe<InitExpr>&& initExpr,
+            bool isAsmJS, bool isImported = false, bool isExported = false)
+      : type(type),
         isImported(isImported),
         isExported(isExported),
         isAsmJS(isAsmJS),
         initExpr(std::move(initExpr)) {}
 
-  AddressType addressType() const { return limits.addressType; }
+  AddressType addressType() const { return type.limits.addressType; }
 
-  uint64_t initialLength() const { return limits.initial; }
+  uint64_t initialLength() const { return type.limits.initial; }
 
-  mozilla::Maybe<uint64_t> maximumLength() const { return limits.maximum; }
+  mozilla::Maybe<uint64_t> maximumLength() const { return type.limits.maximum; }
+
+  RefType elemType() const { return type.elemType; }
 };
 
 using TableDescVector = Vector<TableDesc, 0, SystemAllocPolicy>;

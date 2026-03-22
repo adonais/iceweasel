@@ -69,6 +69,9 @@ add_task(async function test_IPProtectionService_updateState_signedIn() {
 add_task(async function test_IPProtectionService_updateState_signedOut() {
   let sandbox = sinon.createSandbox();
   setupStubs(sandbox);
+  sandbox
+    .stub(IPPEnrollAndEntitleManager, "isEnrolledAndEntitled")
+    .get(() => true);
 
   await IPProtectionService.init();
 
@@ -77,7 +80,7 @@ add_task(async function test_IPProtectionService_updateState_signedOut() {
   let signedOutEventPromise = waitForEvent(
     IPProtectionService,
     "IPProtectionService:StateChanged",
-    () => IPProtectionService.state === IPProtectionStates.UNAVAILABLE
+    () => IPProtectionService.state === IPProtectionStates.UNAUTHENTICATED
   );
 
   IPProtectionService.updateState();
@@ -94,6 +97,36 @@ add_task(async function test_IPProtectionService_updateState_signedOut() {
 });
 
 /**
+ * Tests that updateEntitlement refreshes usage when an entitlement is found.
+ */
+add_task(
+  async function test_IPProtectionService_updateEntitlement_refreshes_usage() {
+    const sandbox = sinon.createSandbox();
+    setupStubs(sandbox);
+
+    IPProtectionService.init();
+    IPPEnrollAndEntitleManager.resetEntitlement();
+
+    const refreshUsageStub = sandbox.stub(IPPProxyManager, "refreshUsage");
+
+    await IPPEnrollAndEntitleManager.updateEntitlement();
+
+    Assert.ok(
+      IPPEnrollAndEntitleManager.isEnrolledAndEntitled,
+      "Should be entitled after updateEntitlement"
+    );
+
+    Assert.ok(
+      refreshUsageStub.calledOnce,
+      "refreshUsage should be called when entitlement is found"
+    );
+
+    IPProtectionService.uninit();
+    sandbox.restore();
+  }
+);
+
+/**
  * Tests that refetchEntitlement works as expected if a linked VPN is found and sends an event.
  */
 add_task(
@@ -108,16 +141,15 @@ add_task(
     );
 
     IPProtectionService.init();
+    await IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
+    IPProtectionService.updateState();
+
     await waitForReady;
 
     IPProtectionService.guardian.fetchUserInfo.resolves({
       status: 200,
       error: null,
-      entitlement: {
-        subscribed: true,
-        uid: 42,
-        created_at: "2023-01-01T12:00:00.000Z",
-      },
+      entitlement: createTestEntitlement({ subscribed: true }),
     });
 
     let hasUpgradedEventPromise = waitForEvent(
@@ -150,6 +182,8 @@ add_task(
     setupStubs(sandbox);
 
     await IPProtectionService.init();
+    await IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
+    IPProtectionService.updateState();
 
     IPProtectionService.guardian.fetchUserInfo.resolves({
       status: 404,
@@ -185,6 +219,8 @@ add_task(async function test_IPProtectionService_hasUpgraded_signed_out() {
   setupStubs(sandbox);
 
   await IPProtectionService.init();
+  await IPPEnrollAndEntitleManager.maybeEnrollAndEntitle();
+  IPProtectionService.updateState();
 
   sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => false);
 
@@ -203,4 +239,43 @@ add_task(async function test_IPProtectionService_hasUpgraded_signed_out() {
 
   IPProtectionService.uninit();
   sandbox.restore();
+});
+
+/**
+ * Tests that changing the guardian endpoint preference and reinitializing
+ * the service correctly updates the guardian's endpoint configuration.
+ */
+add_task(async function test_guardian_endpoint_updates_on_reinit() {
+  await IPProtectionService.init();
+
+  let guardian1 = IPProtectionService.guardian;
+  Assert.equal(
+    guardian1.guardianEndpoint,
+    "https://vpn.mozilla.org/",
+    "Initial guardian should have default endpoint"
+  );
+
+  Services.prefs.setCharPref(
+    "browser.ipProtection.guardian.endpoint",
+    "https://test.example.com/"
+  );
+
+  IPProtectionService.uninit();
+  await IPProtectionService.init();
+
+  let guardian2 = IPProtectionService.guardian;
+  Assert.equal(
+    guardian2.guardianEndpoint,
+    "https://test.example.com/",
+    "Guardian should have updated endpoint after reinit"
+  );
+
+  Assert.notStrictEqual(
+    guardian1,
+    guardian2,
+    "Guardian instances should be different after reinit"
+  );
+
+  IPProtectionService.uninit();
+  Services.prefs.clearUserPref("browser.ipProtection.guardian.endpoint");
 });

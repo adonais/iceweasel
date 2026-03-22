@@ -35,9 +35,6 @@ Var TestBreakpointNumber
 !include "WordFunc.nsh"
 !include "control_utils.nsh"
 
-Function ExitProcess
-FunctionEnd
-
 Function AttachConsole
     ; NSIS doesn't attach a console to the installer, so we'll do that now
     System::Call 'kernel32::AttachConsole(i -1)i.r0'
@@ -111,7 +108,7 @@ Var TestFailureCount
 !define /redef ElevateUAC ``
 
 !include stub.nsh
-
+!include get_installation_type.nsh
 
 ; .onInit is responsible for running the tests
 Function .onInit
@@ -155,8 +152,6 @@ Function .onInit
     ${EndIf}
     FileClose $Stdout
     Return
-OnError:
-    Abort "Failed to run tests."
 FunctionEnd
 
 ; Expect installation to abort if windows version < 10

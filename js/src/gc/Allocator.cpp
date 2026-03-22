@@ -333,10 +333,11 @@ void* js::gc::AllocateTenuredCellInGC(Zone* zone, AllocKind thingKind) {
 
 void GCRuntime::startBackgroundAllocTaskIfIdle() {
   AutoLockHelperThreadState lock;
-  if (!allocTask.wasStarted(lock)) {
-    // Join the previous invocation of the task. This will return immediately
-    // if the thread has never been started.
+  if (allocTask.isFinished(lock)) {
     allocTask.joinWithLockHeld(lock);
+  }
+
+  if (allocTask.isIdle(lock)) {
     allocTask.startWithLockHeld(lock);
   }
 }

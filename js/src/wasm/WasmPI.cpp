@@ -831,9 +831,30 @@ static bool WasmPIWrapSuspendingImport(JSContext* cx, unsigned argc,
   return false;
 }
 
+static bool ValidateTypes(JSContext* cx, const ValTypeVector& src) {
+  for (ValType t : src) {
+    if (t.typeDef()) {
+      // Error for internal types defined in the main module.
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_JSPI_ARG_TYPE);
+      return false;
+    }
+  }
+  return true;
+}
+
 JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
-                                         ValTypeVector&& params,
-                                         ValTypeVector&& results) {
+                                         const FuncType& type) {
+  if (!ValidateTypes(cx, type.args()) || !ValidateTypes(cx, type.results())) {
+    return nullptr;
+  }
+  ValTypeVector params, results;
+  if (!params.append(type.args().begin(), type.args().end()) ||
+      !results.append(type.results().begin(), type.results().end())) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
+
   MOZ_ASSERT(IsCallable(ObjectValue(*func)) &&
              !IsCrossCompartmentWrapper(func));
 
@@ -874,18 +895,6 @@ JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
     return nullptr;
   }
   return wasmFunc;
-}
-
-JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
-                                         const FuncType& type) {
-  ValTypeVector params, results;
-  if (!params.append(type.args().begin(), type.args().end()) ||
-      !results.append(type.results().begin(), type.results().end())) {
-    ReportOutOfMemory(cx);
-    return nullptr;
-  }
-  return WasmSuspendingFunctionCreate(cx, func, std::move(params),
-                                      std::move(results));
 }
 
 // Promising
@@ -1078,8 +1087,20 @@ class PromisingFunctionModuleFactory {
       return nullptr;
     }
 
+    if (!ValidateTypes(cx, fnType.args()) ||
+        !ValidateTypes(cx, fnType.results())) {
+      return nullptr;
+    }
+    ValTypeVector paramsForWrapper, resultsForWrapper;
+    if (!paramsForWrapper.append(fnType.args().begin(), fnType.args().end()) ||
+        !resultsForWrapper.append(fnType.results().begin(),
+                                  fnType.results().end())) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
+
     StructType boxedResultType;
-    if (!StructType::createImmutable(fnType.results(), &boxedResultType)) {
+    if (!StructType::createImmutable(resultsForWrapper, &boxedResultType)) {
       ReportOutOfMemory(cx);
       return nullptr;
     }
@@ -1088,13 +1109,6 @@ class PromisingFunctionModuleFactory {
       return nullptr;
     }
 
-    ValTypeVector paramsForWrapper, resultsForWrapper;
-    if (!paramsForWrapper.append(fnType.args().begin(), fnType.args().end()) ||
-        !resultsForWrapper.append(fnType.results().begin(),
-                                  fnType.results().end())) {
-      ReportOutOfMemory(cx);
-      return nullptr;
-    }
     MOZ_ASSERT(codeMeta->funcs.length() == WrappedFnIndex);
     if (!moduleMeta->addDefinedFunc(std::move(paramsForWrapper),
                                     std::move(resultsForWrapper))) {
@@ -1203,19 +1217,21 @@ static bool WasmPIPromisingFunction(JSContext* cx, unsigned argc, Value* vp) {
   return RejectPromiseWithPendingError(cx, promise);
 }
 
-JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func,
-                                        ValTypeVector&& params,
-                                        ValTypeVector&& results) {
+JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func) {
   RootedFunction wrappedWasmFunc(cx, &func->as<JSFunction>());
   MOZ_ASSERT(wrappedWasmFunc->isWasm());
   const FuncType& wrappedWasmFuncType =
       wrappedWasmFunc->wasmTypeDef()->funcType();
 
-  MOZ_ASSERT(results.length() == 0 && params.length() == 0);
+  ValTypeVector results;
   if (!results.append(RefType::extern_())) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
+  if (!ValidateTypes(cx, wrappedWasmFuncType.args())) {
+    return nullptr;
+  }
+  ValTypeVector params;
   if (!params.append(wrappedWasmFuncType.args().begin(),
                      wrappedWasmFuncType.args().end())) {
     ReportOutOfMemory(cx);
@@ -1225,6 +1241,10 @@ JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func,
   PromisingFunctionModuleFactory moduleFactory;
   SharedModule module = moduleFactory.build(
       cx, wrappedWasmFunc, std::move(params), std::move(results));
+  if (!module) {
+    return nullptr;
+  }
+
   // Instantiate the module.
   Rooted<ImportValues> imports(cx);
 
@@ -1362,8 +1382,8 @@ JSObject* GetSuspendingPromiseResult(Instance* instance, void* result,
       results->storeVal(val, 0);
     } else {
       // The multi-value result is wrapped into ArrayObject/Iterable.
-      Rooted<ArrayObject*> array(cx);
-      if (!IterableToArray(cx, jsValue, &array)) {
+      Rooted<ArrayObject*> array(cx, IterableToArray(cx, jsValue));
+      if (!array) {
         return nullptr;
       }
       if (fields.length() != array->length()) {

@@ -84,7 +84,7 @@ impl Rate for RateMetric {
         };
 
         #[cfg(feature = "with_gecko")]
-        if gecko_profiler::can_accept_markers() {
+        if gecko_profiler::current_thread_is_being_profiled_for_markers() {
             gecko_profiler::add_marker(
                 "Rate::addToNumerator",
                 super::profiler_utils::TelemetryProfilerCategory,
@@ -118,7 +118,7 @@ impl Rate for RateMetric {
         };
 
         #[cfg(feature = "with_gecko")]
-        if gecko_profiler::can_accept_markers() {
+        if gecko_profiler::current_thread_is_being_profiled_for_markers() {
             gecko_profiler::add_marker(
                 "Rate::addToDenominator",
                 super::profiler_utils::TelemetryProfilerCategory,

@@ -44,6 +44,10 @@ class DownloadTelemetryMiddleware : Middleware<DownloadUIState, DownloadUIAction
                 Downloads.shareFile.record(NoExtras())
             }
 
+            is DownloadUIAction.RenameFileClicked -> {
+                Downloads.renameFile.record(NoExtras())
+            }
+
             is DownloadUIAction.PauseDownload -> {
                 Downloads.pauseDownload.record(NoExtras())
             }

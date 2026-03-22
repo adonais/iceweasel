@@ -14,24 +14,19 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   return console.createInstance({
-    prefix: "TabNotes",
+    prefix: "TabNotesController",
     maxLogLevel: Services.prefs.getBoolPref("browser.tabs.notes.debug", false)
       ? "Debug"
       : "Warn",
   });
 });
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "TAB_NOTES_ENABLED",
-  "browser.tabs.notes.enabled",
-  false
-);
 
 const EVENTS = [
   "CanonicalURL:Identified",
   "TabNote:Created",
   "TabNote:Edited",
   "TabNote:Removed",
+  "TabNote:Expand",
 ];
 
 /**
@@ -45,20 +40,71 @@ const EVENTS = [
  * startup and be notified when windows are opened/closed.
  *
  * @see https://firefox-source-docs.mozilla.org/browser/CategoryManagerIndirection.html
+ *
+ * Expected life cycle from Firefox startup:
+ * - One call to `browserWindowDelayedStartup` from the first browser window created. Since
+ *   we haven't gotten far enough along in startup yet, we do nothing.
+ * - One call to `browserFirstWindowReady` when the first window has loaded. If tab notes
+ *   is enabled, then we initialize TabNotes and the first window.
+ * - As windows are opened (`browserWindowDelayedStartup`) or closed (`browserWindowUnload`),
+ *   we register/unregister from canonical URL and tab notes events.
+ * - As the user interacts with the browser, this class mediates between TabNotes storage and
+ *   Tabbrowser state to make sure everything stays consistent.
+ * - If the tab notes preference is enabled/disabled, the DesktopActorRegistry will start/stop
+ *   the CanonicalURL actor and this class will observe those messages. This class is responsible
+ *   for stopping/starting the TabNotes storage connection.
+ * - When the user quits, `browserQuitApplicationGranted` will stop the TabNotes storage
+ *   connection.
  */
 class TabNotesControllerClass {
+  /** @type {boolean} */
+  TAB_NOTES_ENABLED;
+
+  /** Whether `browser-first-window-ready` has been received on startup yet. */
+  #isStartupComplete = false;
+  /** Whether the tab notes machinery is currently wired up and running. */
+  #isInitialized = false;
+
   /**
    * Registered with `browser-first-window-ready` to be notified of
    * app startup.
    *
    * @see tabnotes.manifest
    */
-  init() {
-    if (lazy.TAB_NOTES_ENABLED) {
-      lazy.TabNotes.init();
-    } else {
-      lazy.logConsole.info("Tab notes disabled");
+  browserFirstWindowReady() {
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "TAB_NOTES_ENABLED",
+      "browser.tabs.notes.enabled",
+      false
+    );
+    this.#isStartupComplete = true;
+    Services.obs.addObserver(this, "CanonicalURL:ActorRegistered");
+    Services.obs.addObserver(this, "CanonicalURL:ActorUnregistered");
+    if (this.TAB_NOTES_ENABLED) {
+      lazy.logConsole.debug("browserFirstWindowReady", "Tab notes enabled");
+      return this.#init().then(() => {
+        for (const win of lazy.BrowserWindowTracker.orderedWindows) {
+          this.#initWindow(win);
+        }
+      });
     }
+    lazy.logConsole.debug("browserFirstWindowReady", "Tab notes disabled");
+    return Promise.resolve();
+  }
+
+  /**
+   * Starts up application-level systems in order to make sure tab notes are usable.
+   *
+   * @returns {Promise<void>}
+   */
+  async #init() {
+    if (!this.#isInitialized) {
+      this.#isInitialized = true;
+      lazy.logConsole.debug("TabNotes initialized");
+      return lazy.TabNotes.init();
+    }
+    return Promise.resolve();
   }
 
   /**
@@ -68,12 +114,40 @@ class TabNotesControllerClass {
    * @param {Window} win
    * @see tabnotes.manifest
    */
-  registerWindow(win) {
-    if (lazy.TAB_NOTES_ENABLED) {
-      EVENTS.forEach(eventName => win.addEventListener(eventName, this));
-      win.gBrowser.addTabsProgressListener(this);
-      lazy.logConsole.debug("registerWindow", EVENTS, win);
+  browserWindowDelayedStartup(win) {
+    lazy.logConsole.debug("browserWindowDelayedStartup", win);
+    if (!this.#isStartupComplete) {
+      lazy.logConsole.debug(
+        "browserWindowDelayedStartup",
+        "initialization deferred until startup complete"
+      );
+      return;
     }
+    if (this.TAB_NOTES_ENABLED) {
+      this.#initWindow(win);
+    }
+  }
+
+  /**
+   * Initializes a specific window in order to hook into the life cycle of tabs
+   * and tab notes.
+   *
+   * @param {Window} win
+   */
+  #initWindow(win) {
+    EVENTS.forEach(eventName => win.addEventListener(eventName, this));
+    win.gBrowser.addTabsProgressListener(this);
+
+    // check tabs that may have had canonicalUrl restored from session data
+    for (const tab of win.gBrowser.tabs) {
+      if (tab.canonicalUrl && lazy.TabNotes.isEligible(tab)) {
+        lazy.TabNotes.has(tab).then(hasTabNote => {
+          tab.hasTabNote = hasTabNote;
+        });
+      }
+    }
+
+    lazy.logConsole.debug("initWindow", win, EVENTS);
   }
 
   /**
@@ -82,12 +156,23 @@ class TabNotesControllerClass {
    * @param {Window} win
    * @see tabnotes.manifest
    */
-  unregisterWindow(win) {
-    if (lazy.TAB_NOTES_ENABLED) {
-      EVENTS.forEach(eventName => win.removeEventListener(eventName, this));
-      win.gBrowser.removeTabsProgressListener(this);
-      lazy.logConsole.debug("unregisterWindow", EVENTS, win);
+  browserWindowUnload(win) {
+    if (this.TAB_NOTES_ENABLED) {
+      this.#unloadWindow(win);
+      lazy.logConsole.debug("browserWindowUnload", EVENTS, win);
     }
+  }
+
+  /**
+   * Stops listening to the life cycle of tabs and tab notes for a particular
+   * window.
+   *
+   * @param {Window} win
+   */
+  #unloadWindow(win) {
+    EVENTS.forEach(eventName => win.removeEventListener(eventName, this));
+    win.gBrowser.removeTabsProgressListener(this);
+    lazy.logConsole.debug("unloadWindow", win, EVENTS);
   }
 
   /**
@@ -96,14 +181,26 @@ class TabNotesControllerClass {
    *
    * @see tabnotes.manifest
    */
-  quit() {
-    if (lazy.TAB_NOTES_ENABLED) {
-      lazy.TabNotes.deinit();
-    }
+  browserQuitApplicationGranted() {
+    return this.#deinit();
   }
 
   /**
-   * @param {CanonicalURLIdentifiedEvent|TabNoteCreatedEvent|TabNoteEditedEvent|TabNoteRemovedEvent} event
+   * Shuts down application-level systems in order to make sure tab notes are
+   * no longer using system resources.
+   *
+   * @returns {Promise<void>}
+   */
+  async #deinit() {
+    if (this.#isInitialized) {
+      this.#isInitialized = false;
+      lazy.logConsole.debug("TabNotes deinitialized");
+    }
+    return lazy.TabNotes.deinit();
+  }
+
+  /**
+   * @param {CanonicalURLIdentifiedEvent|TabNoteCreatedEvent|TabNoteEditedEvent|TabNoteRemovedEvent|TabNoteExpandEvent} event
    */
   handleEvent(event) {
     switch (event.type) {
@@ -172,7 +269,7 @@ class TabNotesControllerClass {
             });
           }
 
-          // A new tab note was removed from a specific canonical URL. Ensure that
+          // A tab note was removed from a specific canonical URL. Ensure that
           // all tabs with the same canonical URL also indicate that there is no
           // longer a tab note.
           const { canonicalUrl } = event.target;
@@ -185,6 +282,91 @@ class TabNotesControllerClass {
           }
           lazy.logConsole.debug("TabNote:Removed", canonicalUrl);
         }
+        break;
+
+      case "TabNote:Expand": {
+        const tab = event.target;
+        lazy.TabNotes.get(tab).then(note => {
+          if (note) {
+            lazy.logConsole.debug("TabNote:Expand", note);
+            Glean.tabNotes.expanded.record({ note_length: note.text.length });
+          }
+        });
+      }
+    }
+  }
+
+  /**
+   * Observes messages from the DesktopActorRegistry about the CanonicalURL actor
+   * being registered and unregistered. Instead of observing the tab notes preference
+   * directly, we instead have the DesktopActorRegistry observe the tab notes pref,
+   * manage the CanonicalURL actor, and only then tell us when the CanonicalURL actor
+   * is in a state that we can work with.
+   *
+   * @type {Extract<nsIObserver, Function>}
+   */
+  observe(_aSubject, aTopic) {
+    switch (aTopic) {
+      case "CanonicalURL:ActorRegistered":
+        // Tab notes pref was flipped from disabled to enabled while the
+        // browser was running, and now the CanonicalURL actor has been
+        // registered with the browser.
+        // Ask all browsers to report their canonical URLs, if possible.
+        lazy.logConsole.debug(
+          "CanonicalURL actor registered, requesting canonical URLs"
+        );
+        this.#init()
+          .then(() => {
+            for (const win of lazy.BrowserWindowTracker.orderedWindows) {
+              this.#initWindow(win);
+              for (const tab of win.gBrowser.tabs) {
+                try {
+                  /** @type {CanonicalURLParent|undefined} */
+                  let parent =
+                    tab.linkedBrowser.browsingContext?.currentWindowGlobal.getActor(
+                      "CanonicalURL"
+                    );
+
+                  parent?.sendAsyncMessage("CanonicalURL:Detect");
+                } catch (e) {
+                  if (
+                    DOMException.isInstance(e) &&
+                    e.message.includes("Window protocol")
+                  ) {
+                    // Tab is on a URL that doesn't support the CanonicalURL
+                    // actor (e.g. about:config) and that's OK.
+                  } else {
+                    lazy.logConsole.error(e);
+                  }
+                }
+              }
+            }
+          })
+          .then(() => {
+            Services.obs.notifyObservers(null, "TabNote:Enabled");
+          });
+
+        break;
+      case "CanonicalURL:ActorUnregistered":
+        // Tab notes pref was flipped from enabled to disabled while the
+        // browser was running, and now the CanonicalURL actor has been
+        // unregistered with the browser.
+        // Reset the canonical URL and tab notes state for all tabs.
+        lazy.logConsole.debug(
+          "CanonicalURL actor unregistered, clearing all tabs"
+        );
+        this.#deinit()
+          .then(() => {
+            for (const win of lazy.BrowserWindowTracker.orderedWindows) {
+              this.#unloadWindow(win);
+              for (const tab of win.gBrowser.tabs) {
+                this.#resetTab(tab);
+              }
+            }
+          })
+          .then(() => {
+            Services.obs.notifyObservers(null, "TabNote:Disabled");
+          });
         break;
     }
   }
@@ -212,11 +394,12 @@ class TabNotesControllerClass {
         aWebProgress.loadType & Ci.nsIDocShell.LOAD_CMD_RELOAD ||
         aWebProgress.loadType & Ci.nsIDocShell.LOAD_CMD_HISTORY
       ) {
-        // User is reloading/returning to the same document via history. We
-        // can count on CanonicalURLChild to listen for `pageshow` and tell us
+        // User is reloading or returning to the same document via history. We
+        // can count on CanonicalURLChild to listen for `pageshow` (for traditional
+        // web sites) or `popstate` (for single-page applications) and tell us
         // about the canonical URL at the new location.
         lazy.logConsole.debug(
-          "reload/history navigation, waiting for pageshow",
+          "reload/history navigation, waiting for pageshow or popstate",
           aLocation.spec
         );
         return;
@@ -241,9 +424,11 @@ class TabNotesControllerClass {
           );
 
         if (parent) {
-          parent.sendAsyncMessage("CanonicalURL:Detect");
+          parent.sendAsyncMessage("CanonicalURL:DetectFromPushState", {
+            pushStateUrl: aLocation.spec,
+          });
           lazy.logConsole.debug(
-            "requesting CanonicalURL:Detect due to history.pushState",
+            "requesting CanonicalURL:DetectFromPushState due to history.pushState",
             aLocation.spec
           );
         }
@@ -256,14 +441,28 @@ class TabNotesControllerClass {
       return;
     }
 
+    if (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SESSION_STORE) {
+      // Location was changed as part of a session restoration. In this case
+      // the canonical URL was already retrieved from session data.
+      lazy.logConsole.debug("preserving tab note state during session restore");
+      return;
+    }
+
     // General case: we are doing normal navigation to another URL, so we
     // clear the canonical URL/tab note state on the tab and wait for
     // `CanonicalURL:Identified` to tell us whether the new location has
     // a tab note.
     const tab = aBrowser.ownerGlobal.gBrowser.getTabForBrowser(aBrowser);
-    tab.canonicalUrl = undefined;
-    tab.hasTabNote = false;
+    this.#resetTab(tab);
     lazy.logConsole.debug("clear tab note due to location change", tab);
+  }
+
+  /**
+   * @param {MozTabbrowserTab} tab
+   */
+  #resetTab(tab) {
+    delete tab.canonicalUrl;
+    tab.hasTabNote = false;
   }
 }
 

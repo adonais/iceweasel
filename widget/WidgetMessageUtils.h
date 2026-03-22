@@ -40,6 +40,12 @@ struct ParamTraits<mozilla::LookAndFeel::ColorID>
 };
 
 template <>
+struct ParamTraits<mozilla::ColorScheme>
+    : ContiguousEnumSerializerInclusive<mozilla::ColorScheme,
+                                        mozilla::ColorScheme::Light,
+                                        mozilla::ColorScheme::Dark> {};
+
+template <>
 struct ParamTraits<mozilla::widget::TransparencyMode>
     : ContiguousEnumSerializerInclusive<
           mozilla::widget::TransparencyMode,

@@ -1,6 +1,16 @@
 // Make enterWeakMarkingMode expensive so it gets forced into a single slice.
 
-gczeal(0); // We need full control here.
+// We need full control here.
+gcparam("concurrentMarkingEnabled", 0);
+gczeal(0);
+gc();
+assertEq(gcstate(), "NotActive");
+
+function checkFinishMarkingDuringSweeping(expected) {
+  if (hasFunction["currentgc"]) {
+    assertEq(currentgc().finishMarkingDuringSweeping, expected);
+  }
+}
 
 var keys = [];
 var maps = Array(1000).fill().map(() => new WeakMap);
@@ -24,28 +34,28 @@ while (["Prepare", "MarkRoots"].includes(gcstate())) {
 }
 assertEq(gcstate(), "Mark");
 
-// This will yield before leaving marking, in order to give the first sweep
-// slice a full budget.
-print("gcslice(10000) #1");
-gcslice(10000);
-assertEq(gcstate(), "Mark");
-
-// First Sweep slice will hit the long enterWeakMarkingMode and yield as soon as
-// the budget runs out, and set up the next Sweep slice to finish.
-print("gcslice(10000) #2");
-gcslice(10000);
+// Then continue until we reach Sweep.
+//
+// The last mark slice will yield before leaving marking, in order to give the
+// first sweep slice a full budget.
+//
+// The first Sweep slice will hit the long enterWeakMarkingMode and yield as
+// soon as the budget runs out, and set up the next Sweep slice to finish.
+while (gcstate() === "Mark") {
+    gcslice(10000);
+}
 assertEq(gcstate(), "Sweep");
-hasFunction["currentgc"] && assertEq(currentgc().finishMarkingDuringSweeping, true);
+checkFinishMarkingDuringSweeping(true);
 
 // This slice will finish the marking, but will go way over budget and so will
 // yield as soon as the marking is done. This will still be during Sweep (in the
 // middle of sweepWeakCaches).
-print("gcslice(1) #3");
+//
 // Use more than gcslice(1) because it is possible to get a few things added to
 // the mark stack from read barriers.
 gcslice(100);
 assertEq(gcstate(), "Sweep");
-hasFunction["currentgc"] && assertEq(currentgc().finishMarkingDuringSweeping, false);
+checkFinishMarkingDuringSweeping(false);
 
 // There's still a lot of sweeping left to do, because all of the dead stuff
 // needs to be finalized.
@@ -61,13 +71,12 @@ while (["Prepare", "MarkRoots"].includes(gcstate())) {
 }
 assertEq(gcstate(), "Mark");
 
-gcslice(10000);
-assertEq(gcstate(), "Mark");
+while (gcstate() === "Mark") {
+    gcslice(100);
+}
+assertEq(gcstate(), "Sweep");
+checkFinishMarkingDuringSweeping(false);
 
 gcslice(1);
 assertEq(gcstate(), "Sweep");
-hasFunction["currentgc"] && assertEq(currentgc().finishMarkingDuringSweeping, false);
-
-gcslice(1);
-assertEq(gcstate(), "Sweep");
-hasFunction["currentgc"] && assertEq(currentgc().finishMarkingDuringSweeping, false);
+checkFinishMarkingDuringSweeping(false);

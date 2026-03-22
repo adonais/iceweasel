@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef XPATHGENERATOR_H__
-#define XPATHGENERATOR_H__
+#ifndef XPATHGENERATOR_H_
+#define XPATHGENERATOR_H_
 #include "nsINode.h"
 #include "nsString.h"
 

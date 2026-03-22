@@ -72,7 +72,7 @@ def test_scriptinfo_mochitest_missing_perfmetadata():
     with temp_file(name="sample.html", content="<html></html>") as temp:
         with pytest.raises(ParseError) as exc_info:
             ScriptInfo(temp)
-        assert "MissingPerfMetadata" in str(exc_info.value)
+        assert "Missing `perfMetadata`, `evalMetadata` variable" in str(exc_info.value)
 
 
 @pytest.mark.parametrize("script", [EXAMPLE_XPCSHELL_TEST, EXAMPLE_XPCSHELL_TEST2])

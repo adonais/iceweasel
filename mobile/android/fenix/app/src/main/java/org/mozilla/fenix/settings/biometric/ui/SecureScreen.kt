@@ -11,12 +11,12 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.composableStore
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.biometric.ui.state.BiometricAuthenticationState
@@ -44,7 +44,7 @@ fun SecureScreen(
     onExit: () -> Unit = {},
     content: @Composable () -> Unit,
 ) {
-    val state by store.observeAsState(store.state) { it }
+    val state by store.stateFlow.collectAsState()
 
     LaunchedEffect(state.shouldExit) {
         if (state.shouldExit) {

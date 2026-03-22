@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsDNSPrefetch_h___
-#define nsDNSPrefetch_h___
+#ifndef nsDNSPrefetch_h_
+#define nsDNSPrefetch_h_
 
 #include <functional>
 

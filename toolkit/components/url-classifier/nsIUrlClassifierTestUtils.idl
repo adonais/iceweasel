@@ -10,15 +10,26 @@
 [scriptable, uuid(d63d6302-05fe-4b0e-aff9-f6b118f91ada)]
 interface nsIUrlClassifierTestUtils : nsISupports {
   /**
-   * Make update response for the V5 protocol. The update response only contains
-   * a single hash. This is used for testing.
+   * Make update response for the V5 protocol with 4-byte hashes. The update
+   * response only contains a single hash. This is used for testing.
    *
    * @param aName The name of the list.
-   * @param aSingleHash The single hash.
+   * @param aSingleHash The single hash (4 bytes).
    *
    * @returns A string that contains the update response.
    */
   ACString makeUpdateResponseV5(in ACString aName, in uint32_t aSingleHash);
+
+  /**
+   * Make update response for the V5 protocol with 32-byte hashes. The update
+   * response only contains a single hash. This is used for testing.
+   *
+   * @param aName The name of the list.
+   * @param aFullHash The full hash (32 bytes).
+   *
+   * @returns A string that contains the update response.
+   */
+  ACString makeUpdateResponseV5_32b(in ACString aName, in ACString aFullHash);
 
   /**
    * Make find full hash response for the V5 protocol. This is used for testing.
@@ -44,4 +55,12 @@ interface nsIUrlClassifierTestUtils : nsISupports {
    * @returns A base64 encoded string that contains the full hash.
    */
   ACString generateFullHash(in ACString aFragment);
+
+  /**
+   * Generate full hash(32 bytes) from the given fragment as raw bytes.
+   * @param aFragment The fragment.
+   *
+   * @returns A string containing the raw 32-byte hash.
+   */
+  ACString generateFullHashRaw(in ACString aFragment);
 };

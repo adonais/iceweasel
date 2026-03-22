@@ -233,16 +233,4 @@ add_task(async function test_canBackupResource() {
     SiteSettingsBackupResource.canBackupResource,
     "Should be able to backup after clearing prefs"
   );
-
-  Services.prefs.setBoolPref(USE_OLD_CLEAR_HISTORY_DIALOG_PREF, true);
-  Services.prefs.setBoolPref(SANITIZE_ON_SHUTDOWN_PREF, true);
-  Services.prefs.setBoolPref(SITE_SETTINGS_CLEARED_ON_SHUTDOWN_OLD_PREF, true);
-  Assert.ok(
-    !SiteSettingsBackupResource.canBackupResource,
-    "Cannot backup when sanitizeOnShutdown and site settings cleared on shutdown (old) are enabled"
-  );
-
-  Services.prefs.clearUserPref(USE_OLD_CLEAR_HISTORY_DIALOG_PREF);
-  Services.prefs.clearUserPref(SANITIZE_ON_SHUTDOWN_PREF);
-  Services.prefs.clearUserPref(SITE_SETTINGS_CLEARED_ON_SHUTDOWN_OLD_PREF);
 });

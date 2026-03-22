@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_indexeddb_idbresult_h__
-#define mozilla_dom_indexeddb_idbresult_h__
+#ifndef mozilla_dom_indexeddb_idbresult_h_
+#define mozilla_dom_indexeddb_idbresult_h_
 
 #include <type_traits>
 #include <utility>
@@ -154,4 +154,4 @@ detail::IDBError<Special> IDBError(detail::SpecialConstant<Special> aResult) {
 
 }  // namespace mozilla::dom::indexedDB
 
-#endif  // mozilla_dom_indexeddb_idbresult_h__
+#endif  // mozilla_dom_indexeddb_idbresult_h_

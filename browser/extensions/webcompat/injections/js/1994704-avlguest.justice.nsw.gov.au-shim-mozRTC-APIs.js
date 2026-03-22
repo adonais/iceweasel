@@ -11,17 +11,12 @@
  * needed. We can just set it to RTCPeerConnection.
  */
 
-/* globals exportFunction */
+if (!window.mozRTCPeerConnection) {
+  console.info(
+    "moz-prefixed JS APIs are being shimmed for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1994704 for details."
+  );
 
-console.info(
-  "moz-prefixed JS APIs are being shimmed for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1994704 for details."
-);
-
-window.wrappedJSObject.mozRTCPeerConnection =
-  window.wrappedJSObject.RTCPeerConnection;
-
-window.wrappedJSObject.mozRTCSessionDescription =
-  window.wrappedJSObject.RTCSessionDescription;
-
-window.wrappedJSObject.mozRTCIceCandidate =
-  window.wrappedJSObject.RTCIceCandidate;
+  window.mozRTCPeerConnection = window.RTCPeerConnection;
+  window.mozRTCSessionDescription = window.RTCSessionDescription;
+  window.mozRTCIceCandidate = window.RTCIceCandidate;
+}

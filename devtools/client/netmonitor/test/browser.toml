@@ -145,6 +145,8 @@ skip-if = [
 
 ["browser_net_cache_details.js"]
 
+["browser_net_cache_svg_size.js"]
+
 ["browser_net_cached-status.js"]
 skip-if = [
   "verify", # Bug 1975964
@@ -391,6 +393,8 @@ skip-if = [
 
 ["browser_net_requests_with_empty_response.js"]
 
+["browser_net_requests-keep-alive.js"]
+
 ["browser_net_response_CORS_blocked.js"]
 
 ["browser_net_response_node-expanded.js"]
@@ -539,6 +543,8 @@ fail-if = [
 ["browser_net_use_as_fetch.js"]
 
 ["browser_net_view-source-debugger.js"]
+
+["browser_net_view-source-requests.js"]
 
 ["browser_net_waterfall-click.js"]
 

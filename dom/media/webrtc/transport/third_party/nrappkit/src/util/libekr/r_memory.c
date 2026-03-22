@@ -42,6 +42,8 @@
 #include "r_common.h"
 #include "r_memory.h"
 
+#ifndef NO_MALLOC_REPLACE
+
 typedef struct r_malloc_chunk_ {
 #ifdef SANITY_CHECKS
      UINT4 hdr;
@@ -53,7 +55,7 @@ typedef struct r_malloc_chunk_ {
 
 #define CHUNK_MEMORY_OFFSET                    offsetof(struct r_malloc_chunk_, memory)
 #define GET_CHUNK_ADDR_FROM_MEM_ADDR(memp) \
-        ((struct r_malloc_chunk *)(((unsigned char*)(memp))-CHUNK_MEMORY_OFFSET))
+        ((r_malloc_chunk *)(((unsigned char*)(memp))-CHUNK_MEMORY_OFFSET))
 #define CHUNK_SIZE(size) (size+sizeof(r_malloc_chunk))
 
 #define HDR_FLAG 0x464c4147
@@ -68,7 +70,7 @@ void *r_malloc(int type, size_t size)
 
     total=size+sizeof(r_malloc_chunk);
 
-    if(!(chunk=malloc(total)))
+    if(!(chunk=(r_malloc_chunk*)malloc(total)))
       return(0);
 
 #ifdef SANITY_CHECKS
@@ -115,6 +117,8 @@ void r_free(void *ptr)
     free(chunk);
   }
 
+#endif // ifndef NO_MALLOC_REPLACE
+
 char *r_strdup(const char *str)
   {
     int len;
@@ -125,7 +129,7 @@ char *r_strdup(const char *str)
 
     len=strlen(str)+1;
 
-    if(!(nstr=r_malloc(0,len)))
+    if(!(nstr=(char*)RMALLOC(len)))
       return(0);
 
     memcpy(nstr,str,len);

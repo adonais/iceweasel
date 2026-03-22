@@ -1623,7 +1623,7 @@ def gen_invoke_rustc(version, rustup_wrapper=False):
                 "",
             )
         if args == ("--print", "target-list"):
-            # Raw list returned by rustc version 1.87
+            # Raw list returned by rustc version 1.90
             rust_targets = [
                 "aarch64-apple-darwin",
                 "aarch64-apple-ios",
@@ -1745,6 +1745,8 @@ def gen_invoke_rustc(version, rustup_wrapper=False):
                 "i686-win7-windows-gnu",
                 "i686-win7-windows-msvc",
                 "i686-wrs-vxworks",
+                "loongarch32-unknown-none",
+                "loongarch32-unknown-none-softfloat",
                 "loongarch64-unknown-linux-gnu",
                 "loongarch64-unknown-linux-musl",
                 "loongarch64-unknown-linux-ohos",
@@ -1872,6 +1874,7 @@ def gen_invoke_rustc(version, rustup_wrapper=False):
                 "x86_64-apple-watchos-sim",
                 "x86_64-fortanix-unknown-sgx",
                 "x86_64-linux-android",
+                "x86_64-lynx-lynxos178",
                 "x86_64-pc-cygwin",
                 "x86_64-pc-nto-qnx710",
                 "x86_64-pc-nto-qnx710_iosock",

@@ -9,10 +9,19 @@ global-privacy-control-description =
     .label = Tell websites not to sell or share my data
     .accesskey = s
 
-non-technical-privacy-header = Website Privacy Preferences
+non-technical-privacy-group =
+    .label = Website Privacy Preferences
 
-non-technical-privacy-label =
-     .aria-label = { non-technical-privacy-header }
+do-not-track-removal3 =
+    .message = We no longer support the “Do Not Track” feature.
+
+non-technical-privacy-heading =
+    .label = Additional protections
+
+preferences-privacy-relay-available =
+    .label = Suggest { -relay-brand-name } email masks
+    .description = Hides your real email address to protect your inbox from spam.
+
 
 # Do not translate.
 # "Global Privacy Control" or "GPC" are a web platform feature name and abbreviation
@@ -145,21 +154,12 @@ search-results-help-link = Need help? Visit <a data-l10n-name="url">{ -brand-sho
 
 ## General Section
 
-startup-header = Startup
+startup-group =
+    .label = Startup
 
 always-check-default =
     .label = Always check if { -brand-short-name } is your default browser
     .accesskey = y
-
-is-default-browser =
-    .message = { -brand-short-name } is currently your default browser
-
-is-not-default-browser =
-    .message = { -brand-short-name } is not your default browser
-
-set-as-my-default-browser =
-    .label = Make Default…
-    .accesskey = D
 
 startup-restore-windows-and-tabs =
     .label = Open previous windows and tabs
@@ -308,27 +308,30 @@ settings-tabs-show-image-in-preview =
     .accessKey = h
 
 
-browser-layout-header = Browser Layout
+browser-layout-header2 =
+    .label = Browser Layout
 
-browser-layout-horizontal-tabs =
+browser-layout-horizontal-tabs2 =
     .label = Horizontal tabs
-browser-layout-horizontal-tabs-desc = Display at top of browser
+    .title = Tabs at the top
+    .description = Tabs at the top
 
-browser-layout-vertical-tabs =
+browser-layout-vertical-tabs2 =
     .label = Vertical tabs
-browser-layout-vertical-tabs-desc = Display on the side, in the sidebar
+    .title = Tabs on the side, in the sidebar
+    .description = Tabs on the side, in the sidebar
 
-browser-layout-show-sidebar =
+browser-layout-show-sidebar2 =
     .label = Show sidebar
-browser-layout-show-sidebar-desc = Quickly access bookmarks, tabs from your phone, AI chatbots, and more without leaving your main view.
+    .description = Quickly access bookmarks, tabs from your phone, AI chatbots, and more without leaving your main view.
 
 ## General Section - Language & Appearance
 
 language-and-appearance-header = Language and Appearance
 
-preferences-web-appearance-header = Website appearance
-
-preferences-web-appearance-description = Some websites adapt their color scheme based on your preferences. Choose which color scheme you’d like to use for those sites.
+appearance-group =
+  .label = Website appearance
+  .description = Some websites adapt their color scheme based on your preferences. Choose which color scheme you’d like to use for those sites.
 
 preferences-web-appearance-choice-auto2 =
   .label = Automatic
@@ -373,12 +376,15 @@ preferences-colors-manage-button =
     .label = Manage Colors…
     .accesskey = C
 
-preferences-fonts-header = Fonts
+preferences-fonts-header2 =
+  .label = Fonts
 
-default-font = Default font
-    .accesskey = D
-default-font-size = Size
-    .accesskey = S
+default-font-2 =
+  .label = Default font
+  .accesskey = D
+default-font-size-2 =
+  .label = Size
+  .accesskey = S
 
 advanced-fonts =
     .label = Advanced…
@@ -407,6 +413,33 @@ preferences-text-zoom-override-warning =
 language-header = Language
 
 choose-language-description = Choose your preferred language for displaying pages
+
+website-language-heading =
+  .label = Website language
+  .description = Some web pages are displayed in multiple languages. Choose languages in your preferred order.
+
+website-preferred-language =
+  .label = Preferred languages
+
+website-add-language =
+  .label = Add language
+
+website-add-language-button =
+  .aria-label = Add selected language
+  .title = Add selected language
+
+# The pattern used to generate strings presented to the user in the
+# website languages selection list.
+#
+# Example:
+#   Icelandic
+#   Spanish (Chile)
+#
+# Variables:
+#   $locale (String) - A name of the locale (for example: "Icelandic", "Spanish (Chile)")
+website-remove-language-button =
+  .aria-label = Remove { $locale }
+  .title = Remove { $locale }
 
 choose-button =
     .label = Choose…
@@ -518,9 +551,19 @@ settings-translations-subpage-no-sites-added =
 use-system-locale =
    .label = Use your operating system settings for “{ $localeName }” to format dates, times, numbers, and measurements.
 
+settings-spellcheck-header =
+    .label = Spell check
+
 check-user-spelling =
     .label = Check your spelling as you type
     .accesskey = t
+
+spellcheck-download-dictionaries =
+    .label = Download dictionaries
+
+spellcheck-promo =
+    .heading = How to use spell checking
+    .message = Right-click a text field to turn spell check on or off or to change the language. Not all fields support spell check.
 
 ## General Section - Files and Applications
 
@@ -638,7 +681,8 @@ applications-ask-before-handling =
     .label = Ask whether to open or save files
     .accesskey = A
 
-drm-content-header = Digital Rights Management (DRM) Content
+drm-group =
+  .label = Digital Rights Management (DRM) Content
 
 play-drm-content =
     .label = Play DRM-controlled content
@@ -712,7 +756,8 @@ support-share-ideas =
 
 ## General Section - Performance
 
-performance-title = Performance
+performance-group =
+  .label = Performance
 
 performance-use-recommended-settings-checkbox =
     .label = Use recommended performance settings
@@ -739,9 +784,8 @@ performance-default-content-process-count =
 
 ## General Section - Browsing
 
-browsing-title = Browsing
-browsing-group-label =
-    .aria-label = Browsing
+browsing-group =
+  .label = Browsing
 
 browsing-use-autoscroll =
     .label = Use autoscrolling
@@ -796,21 +840,35 @@ browsing-cfr-features =
 
 ## General Section - Proxy
 
-network-settings-title = Network Settings
+network-proxy-group2 =
+  .label = Proxy settings
+  .description = Configure how { -brand-short-name } connects to the internet.
 
-network-proxy-connection-description = Configure how { -brand-short-name } connects to the internet.
-
-network-proxy-connection-learn-more = Learn more
-
-network-proxy-connection-settings =
-    .label = Settings…
-    .accesskey = e
+network-proxy-connection-settings2 =
+    .label = Configure proxy
+    .description = Changing these settings may cause connections issues
+    .accesskey = p
 
 ## Home Section
 
 home-new-windows-tabs-header = New Windows and Tabs
 
 home-new-windows-tabs-description2 = Choose what you see when you open your homepage, new windows, and new tabs.
+
+## Home Section - Default Browser
+
+home-default-browser-title =
+    .label = Default browser
+
+is-default-browser-2 =
+    .message = { -brand-short-name } is your default browser. Good choice.
+
+is-not-default-browser-2 =
+    .message = Psst, { -brand-short-name } isn’t your default.
+
+set-as-my-default-browser-2 =
+    .label = Make default
+    .accesskey = D
 
 ## Home Section - Home Page Customization
 
@@ -855,8 +913,12 @@ home-homepage-custom-homepage-button =
 
 home-custom-homepage-header = Custom Homepage
 
+home-custom-homepage-subpage =
+    .heading = Custom Homepage
+
 # Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
-home-custom-homepage-subheader = Website address(es)
+home-custom-homepage-card-header =
+    .label = Website address(es)
 
 home-custom-homepage-address =
     .placeholder = Enter address
@@ -864,17 +926,23 @@ home-custom-homepage-address-button =
     .label = Add address
 
 # Shown when no custom websites/URLs to use as a homepage have been added yet
-home-custom-homepage-no-websites-yet = No websites added yet.
+home-custom-homepage-no-results =
+    .label = No websites added yet.
+
+home-custom-homepage-delete-address-button =
+    .aria-label = Delete address
+    .title = Delete address
 
 # Further options to use when setting the home page. Two action buttons are placed in line with this prompt
 # to replace the current home page with a currently open page or bookmark.
-home-custom-homepage-replace-with = Replace with
+home-custom-homepage-replace-with-prompt =
+    .label = Replace with
 
-# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with)
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
 home-custom-homepage-current-pages-button =
     .label = Current opened pages
 
-# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with)
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
 home-custom-homepage-bookmarks-button =
     .label = Bookmarks…
 
@@ -1028,7 +1096,6 @@ search-show-suggestions-private-windows-2 =
 search-suggestions-cant-show-2 =
     .message = Search suggestions will not be shown in location bar results because you have configured { -brand-short-name } to never remember history.
 
-
 addressbar-header-1 =
     .label = Address Bar
     .description = Choose which suggestions display in your address bar
@@ -1095,8 +1162,22 @@ addressbar-restore-dismissed-suggestions-button-2 =
     .label = Restore suggestions
 
 search-one-click-header2 = Search Shortcuts
-
 search-one-click-desc = Choose the alternative search engines that appear below the address bar and search bar when you start to enter a keyword.
+search-one-click-header-3 =
+    .label = Additional search engines
+    .description = Choose which search engines and shortcuts appear in your address bar.
+
+update-search-engine-success =
+    .message = Search engine successfully updated
+
+search-edit-engine-2 =
+    .title = Edit search engine
+search-delete-engine =
+    .title = Delete search engine
+search-enable-engine =
+    .title = Enable search engine
+search-outlink-to-extensions-page =
+    .title = Manage in extensions and themes
 
 search-choose-engine-column =
     .label = Search Engine
@@ -1112,6 +1193,9 @@ search-remove-engine =
     .accesskey = R
 search-add-engine =
     .label = Add
+    .accesskey = A
+search-add-engine-2 =
+    .label = Add search engine
     .accesskey = A
 search-edit-engine =
     .label = Edit
@@ -1528,7 +1612,9 @@ autofill-creditcard-os-auth-dialog-caption = { -brand-full-name }
 
 ## Privacy section - Autofill
 
-autofill-payment-methods-title = Payment methods
+payments-group =
+    .label = Payment methods
+
 autofill-payment-methods-header =
     .aria-label = Payment methods
 autofill-payment-methods-checkbox-message-2 =
@@ -1541,7 +1627,7 @@ autofill-payment-methods-manage-payments-button =
     .accesskey = m
 # This operation requires the user to authenticate with the operating system (device sign-in)
 autofill-reauth-payment-methods-checkbox-2 =
-    .label = Require device sign in to autofill and manage payments methods
+    .label = Require device sign in to autofill and manage payment methods
     .accesskey = o
 
 autofill-payment-methods-add-button = Add new payment method
@@ -1568,9 +1654,8 @@ payment-moz-box-item =
   .label = { $cardNumber }
   .description = { $expDate }
 
-autofill-addresses-title = Addresses and more
-autofill-addresses-header =
-    .aria-label = Addresses and more
+addresses-group =
+    .label = Addresses and more
 autofill-addresses-checkbox-message =
     .label = Save and autofill addresses
     .accesskey = S
@@ -1604,36 +1689,27 @@ address-moz-box-item =
 
 ## Privacy Section - History
 
-history-header = History
-
-# This label is followed, on the same line, by a dropdown list of options
-# (Remember history, etc.).
-# In English it visually creates a full sentence, e.g.
-# "Firefox will" + "Remember history".
-#
-# If this doesn't work for your language, you can translate this message:
-#   - Simply as "Firefox", moving the verb into each option.
-#     This will result in "Firefox" + "Will remember history", etc.
-#   - As a stand-alone message, for example "Firefox history settings:".
-history-remember-label2 = { -brand-short-name } will
+history-group =
+    .label = History
 
 history-remember-option-all =
     .label = Remember history
-history-remember-option-never =
+history-remember-option-never2 =
     .label = Never remember history
-history-remember-option-custom =
-    .label = Use custom settings for history
+    .description = Every window acts like a private window. When on, extensions need to be allowed.
+history-remember-option-custom2 =
+    .label = Customize history
 
-history-remember-description3 =
-    .aria-label = { history-remember-label2 }
+history-remember-description4 =
+    .aria-label = { history-group.label }
     .description = { -brand-short-name } will remember your browsing, download, form, and search history.
 
-history-dontremember-description3 =
-    .aria-label = { history-remember-label2 }
+history-dontremember-description4 =
+    .aria-label = { history-group.label }
     .description = { -brand-short-name } will use the same settings as private browsing, and will not remember any history as you browse the Web.
 
-history-custom-description3 =
-    .aria-label = { history-remember-label2 }
+history-custom-description4 =
+    .aria-label = { history-group.label }
     .description = { -brand-short-name } will use custom settings for your browsing, download, form and search history.
 
 history-private-browsing-permanent =
@@ -1660,28 +1736,44 @@ history-clear-button =
     .label = Clear History…
     .accesskey = s
 
+history-header2 =
+    .heading = History
+
+history-section-header =
+    .label = History
+    .description = Choose what you want { -brand-short-name } to remember when you close the browser.
+
+history-custom-section-header =
+    .label = Advanced settings
+    .description = Customize what you want { -brand-short-name } to remember when you close the browser.
+
+history-custom-button =
+    .label = Choose what you want { -brand-short-name } to remember
+
 ## Privacy Section - Site Data
 
-sitedata-header = Cookies and Site Data
-
-sitedata-label =
-     .aria-label = { sitedata-header }
+cookies-site-data-group =
+    .label = Cookies and Site Data
 
 sitedata-total-size-calculating = Calculating site data and cache size…
 
 # Variables:
 #   $value (number) - Value of the unit (for example: 4.6, 500)
 #   $unit (string) - Name of the unit (for example: "bytes", "KB")
-sitedata-total-size2 = Your stored cookies, history, site data, and cache are currently using <strong>{ $value } { $unit }</strong> of disk space.
+sitedata-total-size3 = Websites are currently using <strong>{ $value } { $unit }</strong> of disk space.
 
 sitedata-learn-more = Learn more
 
-sitedata-delete-on-close =
-    .label = Delete cookies and site data when { -brand-short-name } is closed
+sitedata-delete-on-close2 =
+    .label = Clear cookies and site data every time you close { -brand-short-name }
     .accesskey = c
 
 sitedata-delete-on-close-private-browsing3 =
     .message = Based on your history settings, { -brand-short-name } deletes cookies and site data from your session when you close the browser.
+
+sitedata-delete-on-close-private-browsing4 =
+    .heading = History won’t be saved.
+    .message = { -brand-short-name } clears cookies and site data from your session when you close the browser.
 
 sitedata-option-block-cross-site-trackers =
     .label = Cross-site trackers
@@ -1712,6 +1804,19 @@ sitedata-cookies-exceptions2 =
     .label = Manage exceptions
     .accesskey = x
     .description = You can specify which websites are always or never allowed to use cookies and site data.
+
+sitedata-heading =
+    .label = Browsing data
+    .description = Manage your cookies, history, cache, website data, and more.
+
+sitedata-settings3 =
+    .label = Clear data for specific sites
+    .accesskey = s
+
+sitedata-cookies-exceptions3 =
+    .label = Manage exceptions
+    .accesskey = x
+    .description = Choose how specific sites handle cookies and site data.
 
 ## Privacy Section - Cookie Banner Blocking
 
@@ -1851,9 +1956,9 @@ tracking-manage-exceptions =
 
 ## Privacy Section - Permissions
 
-permissions-header2 =
+permissions-header3 =
     .label = Permissions
-    .description = Permissions you give to websites you browse.
+    .description = Manage what websites can access, control, or trigger.
 
 permissions-location2 =
     .label = Location
@@ -1898,8 +2003,8 @@ permissions-block-popups-exceptions-button2 =
     .accesskey = E
     .searchkeywords = popups
 
-permissions-addon-install-warning2 =
-    .label = Warn when websites try to install extensions
+permissions-addon-install-warning3 =
+    .label = Show warning when websites try to install extensions
     .accesskey = W
 
 permissions-addon-exceptions2 =
@@ -1969,12 +2074,17 @@ privacy-segmentation-radio-on =
 
 security-header = Security
 
-security-browsing-protection = Deceptive Content and Dangerous Software Protection
+browsing-protection-group2 =
+    .label = Deceptive content and dangerous software protection
+    .description = Dangerous sites and downloads can put your data and device at risk. { -brand-short-name } automatically blocks them, and warns you about risky or unwanted software.
 
 security-enable-safe-browsing =
     .label = Block dangerous and deceptive content
     .accesskey = B
 security-enable-safe-browsing-link = Learn more
+
+security-safe-browsing-warning =
+    .message = Turning this off reduces protection against scams, malicious sites, and dangerous downloads.
 
 security-block-downloads =
     .label = Block dangerous downloads
@@ -1986,16 +2096,16 @@ security-block-uncommon-software =
 
 ## Privacy Section - Certificates
 
-certs-description2 =
+certs-description3 =
     .label = Certificates
-    .description = Configure the certificates that { -brand-short-name } uses for authentication.
+    .description = Configure the certificates that { -brand-short-name } uses to verify secure connections.
 
-certs-view =
-    .label = View Certificates…
+certs-view2 =
+    .label = Manage certificates
     .accesskey = C
 
-certs-devices =
-    .label = Security Devices…
+certs-devices2 =
+    .label = Manage security devices
     .accesskey = D
 
 certs-thirdparty-toggle =
@@ -2014,11 +2124,12 @@ space-alert-under-5gb-message2 = <strong>{ -brand-short-name } is running out of
 
 ## Privacy Section - HTTPS-Only
 
-httpsonly-header = HTTPS-Only Mode
-
-httpsonly-label =
-    .aria-label = { httpsonly-header }
+httpsonly-group =
+    .label = HTTPS-Only Mode
     .description = Only allows secure connections to websites. { -brand-short-name } will ask before connecting insecurely.
+
+httpsonly-label2 =
+    .aria-label = { httpsonly-group.label }
 
 httpsonly-learn-more2 = How HTTPS-Only works
 
@@ -2035,6 +2146,9 @@ httpsonly-radio-disabled3 =
 ## DoH Section
 
 preferences-doh-header = DNS over HTTPS
+dns-over-https-group2 =
+    .label = DNS over HTTPS
+    .description = Domain Name System over HTTPS (DoH) encrypts site lookups so it’s harder for your internet provider or others to see what websites you’re about to visit.
 
 preferences-doh-description2 = Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.
 
@@ -2095,6 +2209,91 @@ preferences-doh-select-resolver = Choose provider:
 preferences-doh-manage-exceptions =
     .label = Manage Exceptions…
     .accesskey = x
+
+preferences-doh-overview-default =
+    .label = Default protection
+    .description = Use secure DNS in regions where it’s available.
+
+preferences-doh-overview-custom =
+    .label = Custom
+    .description = Always use secure DNS with control over your provider and fallback behavior.
+
+preferences-doh-overview-off =
+    .label = Off
+    .description = Use your default DNS resolver.
+
+preferences-doh-advanced-button =
+    .label = Advanced settings
+
+preferences-doh-advanced-section =
+    .label = Advanced settings
+    .description = Domain Name System over HTTPS (DoH) encrypts site lookups so it’s harder for your internet provider or others to see what websites you’re about to visit.
+
+preferences-doh-manage-exceptions2 =
+    .label = Manage exceptions
+    .accesskey = x
+
+preferences-doh-radio-default =
+    .label = Default
+    .description = Use secure DNS in regions where it’s available
+
+preferences-doh-radio-custom =
+    .label = Custom
+    .description = Always use secure DNS with control over your provider and fallback behavior.
+
+preferences-doh-radio-off =
+    .label = Off
+    .description = Use your default DNS resolver
+
+preferences-doh-fallback-label =
+    .label = Always warn me if secure DNS isn’t available.
+
+preferences-doh-status-item-off =
+    .message = DNS over HTTPS is off
+
+# Variables:
+#   $reason (string) - A string representation of the reason DoH is not active. For example NS_ERROR_UNKNOWN_HOST or TRR_RCODE_FAIL.
+#   $name (string) - The name of the DNS over HTTPS resolver. If a custom resolver is used, the name will be the domain of the URL.
+preferences-doh-status-item-not-active =
+    .message = DNS over HTTPS is not working because we encountered an error ({ $reason }) while trying to use the provider { $name }
+
+
+# Variables:
+#   $reason (string) - A string representation of the reason DoH is not active. For example NS_ERROR_UNKNOWN_HOST or TRR_RCODE_FAIL.
+preferences-doh-status-item-not-active-bad-url =
+    .message = DNS over HTTPS is not working because we received an invalid URL ({ $reason })
+
+
+# Variables:
+#   $name (string) - The name of the DNS over HTTPS resolver. If a custom resolver is used, the name will be the domain of the URL.
+preferences-doh-status-item-active =
+    .message = DNS over HTTPS is using the provider { $name }
+
+# Variables:
+#   $reason (string) - A string representation of the reason DoH is not active. For example NS_ERROR_UNKNOWN_HOST or TRR_RCODE_FAIL.
+#   $name (string) - The name of the DNS over HTTPS resolver. If a custom resolver is used, the name will be the domain of the URL.
+preferences-doh-status-item-not-active-local =
+    .message = DNS over HTTPS is not working because we encountered an error ({ $reason }) while trying to use the local provider { $name }
+
+# Variables:
+#   $name (string) - The name of the DNS over HTTPS resolver. If a custom resolver is used, the name will be the domain of the URL.
+preferences-doh-status-item-active-local =
+    .message = DNS over HTTPS is using the local provider { $name }
+
+preferences-doh-select-resolver-label =
+    .label = Choose provider:
+
+# Variables:
+#   $name (String) - Display name or URL for the DNS over HTTPS provider
+connection-dns-over-https-url-item =
+    .label = { $name }
+    .tooltiptext = Use this provider for resolving DNS over HTTPS
+
+preferences-doh-custom-provider-label =
+    .aria-label = Enter a custom provider URL
+
+preferences-doh-header2 =
+  .heading = DNS over HTTPS
 
 ## The following strings are used in the Download section of settings
 
@@ -2174,6 +2373,182 @@ preferences-ai-controls-block-confirmation-cancel =
     .label = Cancel
 preferences-ai-controls-block-confirmation-confirm =
     .label = Block
+
+## Privacy and security status card
+
+security-privacy-status-ok-header = { -brand-short-name } is on guard
+
+# This is the header above a section telling the user about problems in their settings
+security-privacy-status-problem-header = { -brand-short-name } recommends some security improvements
+security-privacy-status-ok-label = Enhanced Tracking Protection is on
+security-privacy-status-problem-label = We found settings affecting your protection
+security-privacy-status-problem-helper-label = View issues
+security-privacy-status-pending-trackers-label = Looking up how many trackers { -brand-short-name } blocked over the last month
+
+# This label tells the user how many trackers we have blocked for them.
+# Variables:
+#   $trackerCount (Number) - Number of trackers we have blocked in the last month
+security-privacy-status-trackers-label = { $trackerCount ->
+      [one] { $trackerCount } tracker blocked over the last month
+      *[other] { $trackerCount } trackers blocked over the last month
+  }
+# This string appears under "Enhanced Tracking Protection is on" when a user has enabled "Strict" in Enhanced Tracking Protection advanced settings
+security-privacy-status-strict-enabled-label = You have <a data-l10n-name="strict-tracking-protection">strict protection</a>
+# This string appears under "Enhanced Tracking Protection is on" when a user has enabled "Custom" in Enhanced Tracking Protection advanced settings
+security-privacy-status-custom-enabled-label = You have <a data-l10n-name="custom-tracking-protection">custom protection</a>
+security-privacy-status-up-to-date-label = You’ve got the latest, safest version of { -brand-short-name }
+security-privacy-status-update-needed-label = A new version of { -brand-short-name } is available.
+security-privacy-status-update-error-label = { -brand-short-name } is having trouble updating itself
+security-privacy-status-update-checking-label = { -brand-short-name } is checking for updates
+security-privacy-status-update-needed-description = Update for the latest speed, stability, and security updates.
+security-privacy-status-update-button-label =
+  .label = Update { -brand-short-name }
+
+security-privacy-image-warning =
+  .alt = A shield with an exclamation mark, expressing concern over your security warnings
+security-privacy-image-ok =
+  .alt = A shield with a check mark, showing that you have no outstanding security issues
+
+security-privacy-issue-card =
+  .heading = Security warnings
+issue-card-reset-button =
+  .label = Reset
+issue-card-dismiss-button =
+  .tooltiptext = Dismiss
+  .aria-label = Dismiss
+
+## Enhanced Tracking Protection (ETP) status section
+
+preferences-etp-status-header =
+    .label = Enhanced Tracking Protection
+    .description = Sites use trackers to follow you online and show creepy ads. { -brand-short-name } shields you as you browse, blocking trackers automatically so you’re in control of your digital trail.
+
+preferences-etp-level-standard =
+    .label = Standard (default)
+    .description = Strong, reliable protections that work smoothly with most websites.
+
+preferences-etp-level-strict =
+    .label = Strict
+    .description = Stronger protections that block more trackers, but may cause some sites to break.
+
+preferences-etp-level-custom =
+    .label = Custom
+    .description = Choose which protections to turn on or off.
+
+preferences-etp-status-advanced-button =
+    .label = Advanced settings
+
+preferences-etp-status-protections-dashboard-link =
+        .label = View your personalized protections dashboard
+        .description = See how many sneaky trackers { -brand-short-name } has blocked for you, including social media trackers, fingerprinters, and cryptominers.
+
+preferences-etp-header =
+    .heading = Enhanced Tracking Protection
+
+preferences-etp-advanced-settings-group =
+    .label = Advanced settings
+    .description = Sites use trackers to follow you online and show creepy ads. { -brand-short-name } shields you as you browse, blocking most trackers automatically so you’re in control of your digital trail.
+
+preferences-etp-customize-button =
+    .label = Customize tracking protection
+
+preferences-etp-reload-tabs-hint =
+    .message = Reload your tabs to apply these changes.
+preferences-etp-reload-tabs-hint-button =
+  .label = Reload all tabs
+
+preferences-etp-rfp-warning-message =
+    .message = You’re using Resist Fingerprinting (RFP), which replaces some of { -brand-short-name }’s fingerprinting protection settings. This might cause some sites to break.
+
+preferences-etp-level-warning-message =
+    .heading = Heads up! Some sites may not work as expected.
+    .message = Some sites build trackers into their features or content. When { -brand-short-name } blocks them, the site looks broken. Try using “Fix site issue” or turning off tracking protection on that site.
+
+preferences-etp-manage-exceptions-button =
+    .label = Manage exceptions
+    .description = Manage websites where Enhanced Tracking Protection is disabled.
+
+preferences-etp-customize-header =
+    .heading = Customize tracking protection
+
+preferences-etp-reset =
+    .label = Reset customizations
+    .description = Restore settings to a preset protection level.
+
+preferences-etp-reset-standard-button =
+    .label = Reset to standard
+
+preferences-etp-reset-strict-button =
+    .label = Reset to strict
+
+preferences-etp-custom-control-group =
+    .label = Tracking protection
+    .description = Choose which protections to turn on or off.
+
+preferences-etp-custom-cookies-enabled =
+    .label = Cookies
+
+preferences-etp-custom-cookie-behavior =
+    .aria-label = Cookies
+
+preferences-etpc-custom-cookie-behavior-accept-all =
+    .label = Allow all cookies
+
+preferences-etp-custom-tracking-protection-enabled =
+    .label = Tracking content
+
+preferences-etp-custom-tracking-protection-enabled-context =
+    .aria-label = Tracking content
+
+preferences-etp-custom-crypto-mining-protection-enabled =
+    .label = Cryptominers
+
+preferences-etp-custom-known-fingerprinting-protection-enabled =
+    .label = Known fingerprinters
+
+preferences-etp-custom-suspect-fingerprinting-protection-enabled =
+    .label = Suspected fingerprinters
+
+preferences-etp-custom-suspect-fingerprinting-protection-enabled-context =
+    .aria-label = Suspected fingerprinters
+
+## Warnings section
+
+security-privacy-issue-warning-fingerprinters =
+  .label = Known fingerprinters are not blocked
+  .description = This may allow some trackers to follow you without cookies.
+
+security-privacy-issue-warning-third-party-cookies =
+  .label = Third-party cookies are enabled
+  .description = Third-party cookies are used to track you across websites.
+
+security-privacy-issue-warning-password-manager =
+  .label = Password manager is disabled
+  .description = Password managers help you store strong passwords for your accounts.
+
+security-privacy-issue-warning-popup-blocker =
+  .label = Popup blocker is disabled
+  .description = Popups are interruptive and potentially harmful.
+
+security-privacy-issue-warning-extension-install =
+  .label = Websites can install extensions
+  .description = Websites can install extensions to { -brand-short-name } without asking.
+
+security-privacy-issue-warning-safe-browsing =
+  .label = Dangerous and deceptive content is not blocked
+  .description = Your exposure to scams and malware from websites is increased.
+
+security-privacy-issue-warning-doh =
+  .label = DNS over HTTPS is disabled
+  .description = DNS over HTTPS hides what sites you visit from your network provider.
+
+security-privacy-issue-warning-ech =
+  .label = Encrypted Client Hello is disabled
+  .description = Encrypted Client Hello hides what sites you visit from your network provider.
+
+security-privacy-issue-warning-proxy-autodetection =
+  .label = Proxy auto-configuration is enabled
+  .description = Proxy auto-configuration could let untrusted networks to monitor your activity.
 
 pane-iceweasel-title = Iceweasel
 category-iceweasel =

@@ -16,6 +16,8 @@ support-files = ["data/engine.xml"]
 
 ["test_UrlbarPrefs.js"]
 
+["test_UrlbarProviderAiChat.js"]
+
 ["test_UrlbarProviderSearchSuggestions.js"]
 
 ["test_UrlbarProviderSemanticHistorySearch.js"]
@@ -184,8 +186,6 @@ skip-if = [
 ["test_resultGroups.js"]
 
 ["test_result_highlights.js"]
-
-["test_result_title.js"]
 
 ["test_richsuggestions.js"]
 

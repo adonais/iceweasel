@@ -309,8 +309,6 @@ lintpref:
             - 'browser/branding/unofficial/pref/firefox-branding.js'
             - 'browser/branding/aurora/pref/firefox-branding.js'
             - 'browser/app/profile/channel-prefs.js'
-            - 'mobile/android/installer/mobile-l10n.js'
-            - 'mobile/android/locales/en-US/mobile-l10n.js'
             - 'tools/lint/lintpref.yml'
 
 node-licenses:
@@ -327,6 +325,7 @@ node-licenses:
             ln -s ../tools/lint/eslint/eslint-plugin-spidermonkey-js node_modules &&
             cp -r $MOZ_FETCHES_DIR/eslint-plugin-mozilla/node_modules tools/lint/eslint/eslint-plugin-mozilla/node_modules &&
             cp -r $MOZ_FETCHES_DIR/stylelint-plugin-mozilla/node_modules tools/lint/stylelint/stylelint-plugin-mozilla/node_modules &&
+            cp -r $MOZ_FETCHES_DIR/terser/node_modules tools/terser/node_modules &&
             ./mach lint -v -l node-licenses -f treeherder -f json:/builds/worker/mozlint.json .
     when:
         files-changed:
@@ -338,12 +337,14 @@ node-licenses:
             - package.json
             - tools/lint/eslint/eslint-plugin-mozilla/package.json
             - tools/lint/stylelint/stylelint-plugin-mozilla/package.json
+            - tools/terser/package.json
     fetches:
         toolchain:
             - linux64-node
             - node-modules
             - eslint-plugin-mozilla
             - stylelint-plugin-mozilla
+            - terser
 
 node-package-names:
     description: Lint for node package name issues
@@ -449,7 +450,9 @@ test-manifest:
         files-changed:
             - '**/*.toml'
             - 'python/mozlint/**'
-            - 'tools/lint/**'
+            - 'tools/lint/test/files/test_manifest_toml/**'
+            - 'tools/lint/test/test_manifest_toml.py'
+            - 'tools/lint/test-manifest-toml/**'
 
 wptlint-gecko:
     description: web-platform-tests linter
@@ -816,6 +819,19 @@ c-includes:
             - 'tools/lint/includes.yml'
             - 'tools/lint/includes/**'
             - 'mfbt/api.yml'
+
+header-guards:
+    description: Checks include header guards
+    treeherder:
+        symbol: cpp(guards)
+    run:
+        mach: lint -l header-guards -f treeherder -f json:/builds/worker/mozlint.json .
+    when:
+        files-changed:
+            - '**/*.h'
+            - '**/*.hpp'
+            - 'tools/lint/header-guards.yml'
+            - 'tools/lint/header_guards/**'
 
 gecko-trace:
     description: Check that all `gecko-trace.yaml` files are correct

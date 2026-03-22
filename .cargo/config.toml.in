@@ -40,9 +40,9 @@ git = "https://github.com/gfx-rs/rspirv"
 rev = "89ce4d0e64c91b0635f617409dc57cb031749a39"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/gfx-rs/wgpu?rev=0a4a0a70cd11482ac685c5b0745dedebaa284d57"]
+[source."git+https://github.com/gfx-rs/wgpu?rev=b285d3f9bb128a4c9c00951aa8e54303f6ac0b78"]
 git = "https://github.com/gfx-rs/wgpu"
-rev = "0a4a0a70cd11482ac685c5b0745dedebaa284d57"
+rev = "b285d3f9bb128a4c9c00951aa8e54303f6ac0b78"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/glandium/allocator-api2?rev=ad5f3d56a5a4519eff52af4ff85293431466ef5c"]
@@ -75,24 +75,19 @@ git = "https://github.com/jfkthame/mapped_hyph.git"
 rev = "eff105f6ad7ec9b79816cfc1985a28e5340ad14b"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/application-services?rev=0376c542e4a31cde8d33dd0e8da17dcfbc6c58b2"]
-git = "https://github.com/mozilla/application-services"
-rev = "0376c542e4a31cde8d33dd0e8da17dcfbc6c58b2"
-replace-with = "vendored-sources"
-
-[source."git+https://github.com/mozilla/audioipc?rev=82fe7fa7e3aaa35468137239a0e4c2f867457214"]
+[source."git+https://github.com/mozilla/audioipc?rev=c8d3f03cb5f889e4cab18cc1360ad0daa074f17a"]
 git = "https://github.com/mozilla/audioipc"
-rev = "82fe7fa7e3aaa35468137239a0e4c2f867457214"
+rev = "c8d3f03cb5f889e4cab18cc1360ad0daa074f17a"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/cubeb-coreaudio-rs?rev=7b996ab09d0a57a2345cd1c4509f0a8491cd3d66"]
+[source."git+https://github.com/mozilla/cubeb-coreaudio-rs?rev=5b689a7f90086e07c271ad1cf79325ee06112ab6"]
 git = "https://github.com/mozilla/cubeb-coreaudio-rs"
-rev = "7b996ab09d0a57a2345cd1c4509f0a8491cd3d66"
+rev = "5b689a7f90086e07c271ad1cf79325ee06112ab6"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/cubeb-pulse-rs?rev=4e3ea4bbc582705a4e7d9220679525283c035a7e"]
+[source."git+https://github.com/mozilla/cubeb-pulse-rs?rev=9cebfcceb073e9dd10cfb275a7590bca58d4c251"]
 git = "https://github.com/mozilla/cubeb-pulse-rs"
-rev = "4e3ea4bbc582705a4e7d9220679525283c035a7e"
+rev = "9cebfcceb073e9dd10cfb275a7590bca58d4c251"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/mozilla/memtest?rev=ad681ba425beb0aeba95f03e671432b4be932174"]
@@ -105,14 +100,14 @@ git = "https://github.com/mozilla/midir.git"
 rev = "54759f681f3b523e120d047adec2bb1a97152017"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/mp4parse-rust?rev=26788821a443614d88470fe71f51f66720696096"]
+[source."git+https://github.com/mozilla/mp4parse-rust?rev=f2d96807b8becf7485f035b393575fcfc76cec4c"]
 git = "https://github.com/mozilla/mp4parse-rust"
-rev = "26788821a443614d88470fe71f51f66720696096"
+rev = "f2d96807b8becf7485f035b393575fcfc76cec4c"
 replace-with = "vendored-sources"
 
-[source."git+https://github.com/mozilla/neqo?tag=v0.21.0"]
+[source."git+https://github.com/mozilla/neqo?tag=v0.22.2"]
 git = "https://github.com/mozilla/neqo"
-tag = "v0.21.0"
+tag = "v0.22.2"
 replace-with = "vendored-sources"
 
 [source."git+https://github.com/rust-lang/rust-bindgen?rev=9366e0af8da529c958b4cd4fcbe492d951c86f5c"]

@@ -11,7 +11,7 @@
 
 #include <stdarg.h>
 
-#include "jsnum.h"
+#include "builtin/Number.h"
 
 using namespace js;
 

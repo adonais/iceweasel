@@ -44,7 +44,7 @@ add_task(async function test_ignoreListOnLoadSettings() {
   let finishListening = TestUtils.listenForConsoleMessages();
 
   Assert.ok(
-    !Services.search.isInitialized,
+    !SearchService.isInitialized,
     "Search service should not be initialized to begin with for this sub test"
   );
 
@@ -58,22 +58,22 @@ add_task(async function test_ignoreListOnLoadSettings() {
     "settings-update-complete"
   );
 
-  await Services.search.init();
+  await SearchService.init();
 
   await ignoreListUpdateCompleted;
 
   Assert.ok(
-    !Services.search.getEngineByName("Test search engine"),
+    !SearchService.getEngineByName("Test search engine"),
     "Should not have installed the add-on engine from settings"
   );
 
   Assert.ok(
-    !Services.search.getEngineByName("OpenSearchTest"),
+    !SearchService.getEngineByName("OpenSearchTest"),
     "Should not have installed the OpenSearch engine from settings"
   );
 
   Assert.deepEqual(
-    (await Services.search.getEngines()).map(e => e.id),
+    (await SearchService.getEngines()).map(e => e.id),
     ["defaultEngine"],
     "Should have correctly started and installed only the default engine"
   );
@@ -120,7 +120,7 @@ add_task(async function test_ignoreListOnLoadSettings() {
 
 add_task(async function test_ignoreListOnInstall() {
   Assert.ok(
-    Services.search.isInitialized,
+    SearchService.isInitialized,
     "Search service should have been initialized to begin with for this sub test"
   );
 
@@ -130,7 +130,7 @@ add_task(async function test_ignoreListOnInstall() {
     search_url_get_params: "",
   });
 
-  let engine = Services.search.getEngineByName(kSearchEngineID1);
+  let engine = SearchService.getEngineByName(kSearchEngineID1);
   Assert.equal(
     engine,
     null,
@@ -150,7 +150,7 @@ add_task(async function test_ignoreListOnInstall() {
   });
 
   // An ignored engine shouldn't be available at all
-  engine = Services.search.getEngineByName(kSearchEngineID2);
+  engine = SearchService.getEngineByName(kSearchEngineID2);
   Assert.equal(
     engine,
     null,
@@ -173,7 +173,7 @@ add_task(async function test_ignoreListOnInstall() {
   });
 
   // An ignored engine shouldn't be available at all
-  engine = Services.search.getEngineByName(kSearchEngineID3);
+  engine = SearchService.getEngineByName(kSearchEngineID3);
   Assert.equal(
     engine,
     null,

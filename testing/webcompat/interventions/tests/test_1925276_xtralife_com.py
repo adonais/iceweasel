@@ -1,4 +1,5 @@
 import pytest
+from webdriver.error import StaleElementReferenceException
 
 URL = "https://www.xtralife.com/"
 
@@ -11,7 +12,12 @@ HEADER_CSS = ".headerContent"
 async def search_results_positioned_properly(client):
     await client.navigate(URL, wait="none")
     client.await_css(HERO_CSS, is_displayed=True)
-    client.await_css(SEARCH_CSS, is_displayed=True).send_keys("test")
+    for _ in range(4):
+        try:
+            client.await_css(SEARCH_CSS, is_displayed=True).send_keys("test")
+            break
+        except StaleElementReferenceException:
+            pass
     results = client.await_css(SEARCH_RESULTS_CSS, is_displayed=True)
     header = client.await_css(HEADER_CSS, is_displayed=True)
     return client.execute_script(

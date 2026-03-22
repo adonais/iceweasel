@@ -123,10 +123,7 @@ ENameValueFlag HTMLAreaAccessible::NativeName(nsString& aName) const {
   ENameValueFlag nameFlag = LocalAccessible::NativeName(aName);
   if (!aName.IsEmpty()) return nameFlag;
 
-  if (!mContent->AsElement()->GetAttr(nsGkAtoms::alt, aName)) {
-    Value(aName);
-  }
-
+  mContent->AsElement()->GetAttr(nsGkAtoms::alt, aName);
   return eNameOK;
 }
 

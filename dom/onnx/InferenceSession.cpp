@@ -221,23 +221,23 @@ bool InferenceSession::InInferenceProcess(JSContext*, JSObject*) {
 nsCString InferenceSessionSessionOptionsToString(
     const InferenceSessionSessionOptions& aOptions) {
   return nsFmtCString(
-      FMT_STRING("EnableCpuMemArena: {}, "
-                 "EnableGraphCapture: {}, "
-                 "EnableMemPattern: {}, "
-                 "EnableProfiling: {}, "
-                 "ExecutionMode: {}, "
-                 "ExecutionProviders: {}, "
-                 "Extra: {}, "
-                 "FreeDimensionOverrides: {}, "
-                 "GraphOptimizationLevel: {}, "
-                 "InterOpNumThreads: {}, "
-                 "IntraOpNumThreads: {}, "
-                 "LogId: {}, "
-                 "LogSeverityLevel: {}, "
-                 "LogVerbosityLevel: {}, "
-                 "OptimizedModelFilePath: {}, "
-                 "PreferredOutputLocation: {}, "
-                 "ProfileFilePrefix: {}"),
+      "EnableCpuMemArena: {}, "
+      "EnableGraphCapture: {}, "
+      "EnableMemPattern: {}, "
+      "EnableProfiling: {}, "
+      "ExecutionMode: {}, "
+      "ExecutionProviders: {}, "
+      "Extra: {}, "
+      "FreeDimensionOverrides: {}, "
+      "GraphOptimizationLevel: {}, "
+      "InterOpNumThreads: {}, "
+      "IntraOpNumThreads: {}, "
+      "LogId: {}, "
+      "LogSeverityLevel: {}, "
+      "LogVerbosityLevel: {}, "
+      "OptimizedModelFilePath: {}, "
+      "PreferredOutputLocation: {}, "
+      "ProfileFilePrefix: {}",
       aOptions.mEnableCpuMemArena, aOptions.mEnableGraphCapture,
       aOptions.mEnableMemPattern, aOptions.mEnableProfiling,
       aOptions.mExecutionMode,

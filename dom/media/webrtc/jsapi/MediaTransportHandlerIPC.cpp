@@ -95,7 +95,8 @@ RefPtr<MediaTransportHandler::IceLogPromise>
 MediaTransportHandlerIPC::GetIceLog(const nsCString& aPattern) {
   return mInitPromise->Then(
       mThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /* dummy */) {
+      [=, this,
+       self = RefPtr<MediaTransportHandlerIPC>(this)](bool /* dummy */) {
         if (!mChild) {
           return IceLogPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
         }
@@ -123,7 +124,7 @@ MediaTransportHandlerIPC::GetIceLog(const nsCString& aPattern) {
 void MediaTransportHandlerIPC::ClearIceLog() {
   mInitPromise->Then(
       mThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
+      [this, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendClearIceLog();
         }
@@ -134,7 +135,7 @@ void MediaTransportHandlerIPC::ClearIceLog() {
 void MediaTransportHandlerIPC::EnterPrivateMode() {
   mInitPromise->Then(
       mThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
+      [this, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendEnterPrivateMode();
         }
@@ -145,7 +146,7 @@ void MediaTransportHandlerIPC::EnterPrivateMode() {
 void MediaTransportHandlerIPC::ExitPrivateMode() {
   mInitPromise->Then(
       mThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
+      [this, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendExitPrivateMode();
         }
@@ -158,7 +159,7 @@ void MediaTransportHandlerIPC::CreateIceCtx(const std::string& aName) {
 
   mInitPromise->Then(
       mThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
+      [=, this, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           CSFLogDebug(LOGTAG, "%s starting", __func__);
           if (NS_WARN_IF(!mChild->SendCreateIceCtx(aName))) {
@@ -186,7 +187,7 @@ nsresult MediaTransportHandlerIPC::SetIceConfig(
 
   mInitPromise->Then(
       mThread, __func__,
-      [=, iceServers = aIceServers.Clone(),
+      [=, this, iceServers = aIceServers.Clone(),
        self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           if (NS_WARN_IF(!mChild->SendSetIceConfig(std::move(iceServers),
@@ -229,7 +230,7 @@ void MediaTransportHandlerIPC::EnsureProvisionalTransport(
     const std::string& aLocalPwd, int aComponentCount) {
   mInitPromise->Then(
       mThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
+      [=, this, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendEnsureProvisionalTransport(aTransportId, aLocalUfrag,
                                                  aLocalPwd, aComponentCount);
@@ -242,7 +243,7 @@ void MediaTransportHandlerIPC::SetTargetForDefaultLocalAddressLookup(
     const std::string& aTargetIp, uint16_t aTargetPort) {
   mInitPromise->Then(
       mThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
+      [=, this, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendSetTargetForDefaultLocalAddressLookup(aTargetIp,
                                                             aTargetPort);
@@ -261,7 +262,7 @@ void MediaTransportHandlerIPC::StartIceGathering(
     const nsTArray<NrIceStunAddr>& aStunAddrs) {
   mInitPromise->Then(
       mThread, __func__,
-      [=, stunAddrs = aStunAddrs.Clone(),
+      [=, this, stunAddrs = aStunAddrs.Clone(),
        self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendStartIceGathering(aDefaultRouteOnly,
@@ -280,7 +281,7 @@ void MediaTransportHandlerIPC::ActivateTransport(
     bool aPrivacyRequested) {
   mInitPromise->Then(
       mThread, __func__,
-      [=, keyDer = aKeyDer.Clone(), certDer = aCertDer.Clone(),
+      [=, this, keyDer = aKeyDer.Clone(), certDer = aCertDer.Clone(),
        self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendActivateTransport(aTransportId, aLocalUfrag, aLocalPwd,
@@ -298,7 +299,7 @@ void MediaTransportHandlerIPC::RemoveTransportsExcept(
                                         aTransportIds.end());
   mInitPromise->Then(
       mThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
+      [=, this, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendRemoveTransportsExcept(transportIds);
         }
@@ -310,7 +311,7 @@ void MediaTransportHandlerIPC::StartIceChecks(
     bool aIsControlling, const std::vector<std::string>& aIceOptions) {
   mInitPromise->Then(
       mThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
+      [=, this, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendStartIceChecks(aIsControlling, aIceOptions);
         }
@@ -336,7 +337,7 @@ void MediaTransportHandlerIPC::AddIceCandidate(
     const std::string& aUfrag, const std::string& aObfuscatedAddress) {
   mInitPromise->Then(
       mThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
+      [=, this, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendAddIceCandidate(aTransportId, aCandidate, aUfrag,
                                       aObfuscatedAddress);
@@ -348,7 +349,7 @@ void MediaTransportHandlerIPC::AddIceCandidate(
 void MediaTransportHandlerIPC::UpdateNetworkState(bool aOnline) {
   mInitPromise->Then(
       mThread, __func__,
-      [=, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
+      [=, this, self = RefPtr<MediaTransportHandlerIPC>(this)](bool /*dummy*/) {
         if (mChild) {
           mChild->SendUpdateNetworkState(aOnline);
         }

@@ -329,6 +329,10 @@ bool FFmpegVideoEncoder<LIBAV_VER>::ShouldTryHardware() const {
   if (mCodecID == AV_CODEC_ID_H264 || mCodecID == AV_CODEC_ID_HEVC) {
     return StaticPrefs::media_ffvpx_hw_enabled();
   }
+
+  if (StaticPrefs::media_ffvpx_hw_minimal()) {
+    return false;
+  }
 #endif
 
   if (mConfig.mHardwarePreference == HardwarePreference::RequireSoftware) {

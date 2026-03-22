@@ -32,7 +32,6 @@
 #endif
 #include "builtin/FinalizationRegistryObject.h"
 #include "builtin/MapObject.h"
-#include "builtin/ShadowRealm.h"
 #include "builtin/Symbol.h"
 #ifdef JS_HAS_INTL_API
 #  include "builtin/temporal/Duration.h"
@@ -84,10 +83,13 @@ using namespace js;
 
 namespace js {
 
-extern const JSClass IntlClass;
 extern const JSClass JSONClass;
 extern const JSClass MathClass;
 extern const JSClass ReflectClass;
+
+namespace intl {
+extern const JSClass IntlClass;
+}
 
 }  // namespace js
 
@@ -226,9 +228,6 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
 
     case JSProto_AsyncIterator:
       return !IsAsyncIteratorHelpersEnabled();
-
-    case JSProto_ShadowRealm:
-      return !JS::Prefs::experimental_shadow_realms();
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
     case JSProto_SuppressedError:
@@ -432,11 +431,12 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
   // how standard protos are linked together and the properties we want to
   // enforce. Generally, it's fine if we don't watch for mutations on protos
   // until they get exposed to user code.
-  if (proto && !JSObject::setFlag(cx, proto, ObjectFlag::IsUsedAsPrototype)) {
+  if (proto && !JSObject::setIsUsedAsPrototype(cx, proto)) {
     return false;
   }
 
-  if (JS::Prefs::objectfuse_for_js_builtin_ctors_protos()) {
+  if (ShouldUseObjectFuses() &&
+      JS::Prefs::objectfuse_for_js_builtin_ctors_protos()) {
     if (proto &&
         !NativeObject::setHasObjectFuse(cx, proto.as<NativeObject>())) {
       return false;
@@ -1073,8 +1073,6 @@ void GlobalObjectData::trace(JSTracer* trc, GlobalObject* global) {
   TraceNullableEdge(trc, &setObjectTemplate, "set-object-template");
 
   TraceNullableEdge(trc, &iterResultTemplate, "iter-result-template_");
-  TraceNullableEdge(trc, &iterResultWithoutPrototypeTemplate,
-                    "iter-result-without-prototype-template");
 
   TraceNullableEdge(trc, &selfHostingScriptSource,
                     "self-hosting-script-source");

@@ -90,6 +90,10 @@ document.addEventListener(
           gBrowser.tabNoteMenu.openPanel(TabContextMenu.contextTab, {
             telemetrySource: lazy.TabNotes.TELEMETRY_SOURCE.TAB_CONTEXT_MENU,
           });
+          Services.prefs.setBoolPref(
+            "browser.tabs.notes.newBadge.enabled",
+            false
+          );
           break;
         case "context_deleteNote":
           TabContextMenu.deleteTabNotes();
@@ -202,9 +206,6 @@ document.addEventListener(
           }
           break;
         // == editBookmarkPanel ==
-        case "editBookmarkPanel_showForNewBookmarks":
-          StarUI.onShowForNewBookmarksCheckboxCommand();
-          break;
         case "editBookmarkPanelDoneButton":
           StarUI.panel.hidePopup();
           break;
@@ -257,7 +258,7 @@ document.addEventListener(
           ToolbarContextMenu.onDownloadsAutoHideChange(event);
           break;
         case "toolbar-context-always-show-extensions-button":
-          if (event.target.getAttribute("checked") == "true") {
+          if (event.target.hasAttribute("checked")) {
             gUnifiedExtensions.showExtensionsButtonInToolbar();
           } else {
             gUnifiedExtensions.hideExtensionsButtonFromToolbar();
@@ -496,7 +497,10 @@ document.addEventListener(
             event.target,
             TabContextMenu.contextTab.linkedBrowser.currentURI,
             TabContextMenu.contextTab.linkedBrowser.contentTitle,
-            TabContextMenu.contextTab.multiselected
+            {
+              multiselected: TabContextMenu.contextTab.multiselected,
+              contextMenuType: "tab",
+            }
           );
           break;
         case "context_reopenInContainerPopupMenu":
@@ -544,9 +548,6 @@ document.addEventListener(
           break;
         case "bhTooltip":
           BookmarksEventHandler.fillInBHTooltip(event.target, event);
-          break;
-        case "tabContextMenu":
-          TabContextMenu.addNewBadge();
           break;
         case "moveTabOptionsMenu":
           gProfiles.populateMoveTabMenu(event.target);
@@ -604,6 +605,10 @@ document.addEventListener(
         case "tabbrowser-tab-tooltip":
         case "bhTooltip":
           event.target.removeAttribute("position");
+          break;
+        case "tabContextMenu":
+          // Reset Send Tab exposure tracking when tab context menu closes
+          gSync._resetSendTabExposureTracking();
           break;
       }
     });

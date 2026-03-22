@@ -6,8 +6,8 @@
 
 /* utility functions for drawing borders and backgrounds */
 
-#ifndef nsCSSRendering_h___
-#define nsCSSRendering_h___
+#ifndef nsCSSRendering_h_
+#define nsCSSRendering_h_
 
 #include "gfxBlur.h"
 #include "gfxContext.h"
@@ -937,4 +937,4 @@ class nsContextBoxBlur {
   bool mPreTransformed;
 };
 
-#endif /* nsCSSRendering_h___ */
+#endif /* nsCSSRendering_h_ */

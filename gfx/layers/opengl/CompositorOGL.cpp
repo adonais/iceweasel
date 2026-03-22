@@ -1497,7 +1497,7 @@ void CompositorOGL::InsertFrameDoneSync() {
   const auto& egl = gle->mEgl;
 
   EGLSync sync = nullptr;
-  if (AndroidHardwareBufferApi::Get()) {
+  if (AndroidHardwareBufferManager::Get()) {
     sync = egl->fCreateSync(LOCAL_EGL_SYNC_NATIVE_FENCE_ANDROID, nullptr);
   }
   if (sync) {

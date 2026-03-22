@@ -283,46 +283,72 @@ class Telemetry {
    *        }
    */
   recordEvent(method, object, value = null, extra = null) {
-    // Only string values are allowed so cast all values to strings.
-    if (extra) {
-      for (let [name, val] of Object.entries(extra)) {
-        val = val + "";
-
-        if (val.length > 80) {
-          const sig = `${method},${object},${value}`;
-
-          dump(
-            `Warning: The property "${name}" was added to a telemetry ` +
-              `event with the signature ${sig} but it's value "${val}" is ` +
-              `longer than the maximum allowed length of 80 characters.\n` +
-              `The property value has been trimmed to 80 characters before ` +
-              `sending.\nCALLER: ${getCaller()}`
-          );
-
-          val = val.substring(0, 80);
-        }
-
-        extra[name] = val;
-      }
-    }
-    // Automatically flag the record with the session ID
-    // if the current Telemetry instance relates to a toolbox
-    // so that data can be aggregated per toolbox instance.
-    // Note that we also aggregate data per about:debugging instance.
-    if (!extra) {
-      extra = {};
-    }
-    extra.session_id = this.sessionId;
-    if (value !== null) {
-      extra.value = value;
-    }
-
     // Using the Glean API directly insteade of doing string manipulations
     // would be better. See bug 1921793.
     const eventName = `${method}_${object}`.replace(/(_[a-z])/g, c =>
       c[1].toUpperCase()
     );
+
+    if (extra) {
+      extra = Telemetry.sanitizeEventExtras(extra, `devtoolsMain.${eventName}`);
+    } else {
+      extra = {};
+    }
+
+    // Automatically flag the record with the session ID
+    // if the current Telemetry instance relates to a toolbox
+    // so that data can be aggregated per toolbox instance.
+    // Note that we also aggregate data per about:debugging instance.
+    extra.session_id = this.sessionId;
+
+    if (value !== null) {
+      extra.value = value;
+    }
+
     Glean.devtoolsMain[eventName]?.record(extra);
+  }
+
+  /**
+   * Sanitize all extra keys intended to be used with a Glean event.
+   * All values will be converted to string and capped to 80 characters by
+   * default. Will return a copy of the object with sanitized values.
+   *
+   * @param {object} extras
+   *        The extras object to sanitize.
+   * @param {string} eventName
+   *        The name of the Glean event (used for logging purposes).
+   * @param {object=} options
+   * @param {number} options.limit
+   *        Optional maximum size (in bytes) for each value. Defaults to 80.
+   * @returns {object}
+   *          The sanitized extras.
+   */
+  static sanitizeEventExtras(extras, eventName, options = {}) {
+    const { limit = 80 } = options;
+    if (limit > 500) {
+      // Glean event extra values can contain up to 500 bytes.
+      // https://mozilla.github.io/glean/book/reference/metrics/event.html?highlight=extra_keys#recorded-errors
+      throw new Error(
+        `Expected "options.limit" to be a number <= 500, got ${limit}`
+      );
+    }
+
+    const sanitized = {};
+    for (let [name, value] of Object.entries(extras)) {
+      // Only string values are allowed so cast all values to strings.
+      value = value + "";
+
+      if (value.length > limit) {
+        dump(
+          `Glean event "${eventName}" extra key "${name}" cropped to ${limit} characters\nCALLER: ${getCaller()}\n`
+        );
+        value = value.substring(0, limit);
+      }
+
+      sanitized[name] = value;
+    }
+
+    return sanitized;
   }
 
   /**

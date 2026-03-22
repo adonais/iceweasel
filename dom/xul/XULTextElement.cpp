@@ -39,6 +39,18 @@ nsChangeHint XULTextElement::GetAttributeChangeHint(
   return nsXULElement::GetAttributeChangeHint(aAttribute, aModType);
 }
 
+void XULTextElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                                  const nsAttrValue* aValue,
+                                  const nsAttrValue* aOldValue,
+                                  nsIPrincipal* aSubjectPrincipal,
+                                  bool aNotify) {
+  nsXULElement::AfterSetAttr(aNamespaceID, aName, aValue, aOldValue,
+                             aSubjectPrincipal, aNotify);
+  if (aNamespaceID == kNameSpaceID_None && aName == nsGkAtoms::disabled) {
+    SetStates(ElementState::DISABLED, !!aValue, aNotify);
+  }
+}
+
 JSObject* XULTextElement::WrapNode(JSContext* aCx,
                                    JS::Handle<JSObject*> aGivenProto) {
   return XULTextElement_Binding::Wrap(aCx, this, aGivenProto);

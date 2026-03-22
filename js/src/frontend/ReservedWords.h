@@ -72,6 +72,7 @@
   MACRO(of, of, TokenKind::Of)                                            \
   MACRO(set, set, TokenKind::Set)                                         \
   MACRO(static, static_, TokenKind::Static)                               \
+  IF_SOURCE_PHASE_IMPORTS(MACRO(source, source, TokenKind::Source))       \
   MACRO(target, target, TokenKind::Target)                                \
   MACRO(yield, yield, TokenKind::Yield)
 

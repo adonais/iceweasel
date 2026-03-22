@@ -17,7 +17,7 @@ use crate::frame_builder::{FrameBuildingContext, FrameBuildingState};
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
 use crate::internal_types::LayoutPrimitiveInfo;
 use crate::prim_store::{
-    EdgeAaSegmentMask, PrimitiveInstanceKind,
+    EdgeMask, PrimitiveInstanceKind,
     PrimitiveOpacity, PrimKey,
     PrimTemplate, PrimTemplateCommonData, PrimitiveStore, SegmentInstanceIndex,
     SizeKey, InternablePrimitive,
@@ -38,7 +38,7 @@ use crate::image_tiling;
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct VisibleImageTile {
     pub src_color: RenderTaskId,
-    pub edge_flags: EdgeAaSegmentMask,
+    pub edge_flags: EdgeMask,
     pub local_rect: LayoutRect,
     pub local_clip_rect: LayoutRect,
 }
@@ -406,14 +406,14 @@ impl ImageData {
     }
 }
 
-fn edge_flags_for_tile_spacing(tile_spacing: &LayoutSize) -> EdgeAaSegmentMask {
-    let mut flags = EdgeAaSegmentMask::empty();
+fn edge_flags_for_tile_spacing(tile_spacing: &LayoutSize) -> EdgeMask {
+    let mut flags = EdgeMask::empty();
 
     if tile_spacing.width > 0.0 {
-        flags |= EdgeAaSegmentMask::LEFT | EdgeAaSegmentMask::RIGHT;
+        flags |= EdgeMask::LEFT | EdgeMask::RIGHT;
     }
     if tile_spacing.height > 0.0 {
-        flags |= EdgeAaSegmentMask::TOP | EdgeAaSegmentMask::BOTTOM;
+        flags |= EdgeMask::TOP | EdgeMask::BOTTOM;
     }
 
     flags
@@ -778,9 +778,9 @@ fn test_struct_sizes() {
     // (b) You made a structure larger. This is not necessarily a problem, but should only
     //     be done with care, and after checking if talos performance regresses badly.
     assert_eq!(mem::size_of::<Image>(), 32, "Image size changed");
-    assert_eq!(mem::size_of::<ImageTemplate>(), 68, "ImageTemplate size changed");
+    assert_eq!(mem::size_of::<ImageTemplate>(), 72, "ImageTemplate size changed");
     assert_eq!(mem::size_of::<ImageKey>(), 52, "ImageKey size changed");
     assert_eq!(mem::size_of::<YuvImage>(), 32, "YuvImage size changed");
-    assert_eq!(mem::size_of::<YuvImageTemplate>(), 80, "YuvImageTemplate size changed");
+    assert_eq!(mem::size_of::<YuvImageTemplate>(), 84, "YuvImageTemplate size changed");
     assert_eq!(mem::size_of::<YuvImageKey>(), 52, "YuvImageKey size changed");
 }

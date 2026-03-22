@@ -461,7 +461,7 @@ void AnimationInfo::AddAnimationForProperty(
       static_cast<float>(aAnimation->CurrentOrPendingPlaybackRate());
   animation->previousPlaybackRate() =
       aAnimation->HasPendingPlaybackRate()
-          ? static_cast<float>(aAnimation->PlaybackRate())
+          ? static_cast<float>(aAnimation->PlaybackRateInternal())
           : std::numeric_limits<float>::quiet_NaN();
   animation->transformData() = aTransformData;
   animation->easingFunction() = timing.TimingFunction();

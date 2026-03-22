@@ -47,6 +47,7 @@
 #include "api/units/timestamp.h"
 #include "api/video/video_content_type.h"
 #include "api/video_codecs/scalability_mode.h"
+#include "call/call.h"
 #include "common_video/include/quality_limitation_reason.h"
 #include "media/base/media_channel.h"
 #include "media/base/stream_params.h"
@@ -64,7 +65,6 @@
 #include "pc/rtp_sender_proxy.h"
 #include "pc/rtp_transceiver.h"
 #include "pc/transport_stats.h"
-#include "pc/webrtc_sdp.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/ip_address.h"
@@ -106,7 +106,7 @@ std::string RTCCodecStatsIDFromTransportAndCodecParameters(
   // lines for the same PT and transport, which should be illegal SDP, then we
   // wouldn't need `fmtp` to be part of the ID here.
   StringBuilder fmtp;
-  if (WriteFmtpParameters(codec_params.parameters, &fmtp)) {
+  if (WriteFmtpParameters(codec_params.parameters, fmtp)) {
     sb << '_' << fmtp.Release();
   }
   return sb.str();
@@ -381,7 +381,7 @@ std::string GetCodecIdAndMaybeCreateCodecStats(
   }
 
   StringBuilder fmtp;
-  if (WriteFmtpParameters(codec_params.parameters, &fmtp)) {
+  if (WriteFmtpParameters(codec_params.parameters, fmtp)) {
     codec_stats->sdp_fmtp_line = fmtp.Release();
   }
   codec_stats->transport_id = transport_id;
@@ -439,6 +439,20 @@ void SetInboundRTPStreamStatsFromMediaReceiverInfo(
   }
   inbound_stats->total_processing_delay =
       media_receiver_info.total_processing_delay_seconds;
+}
+
+void AppendCallStats(const Call::Stats& call_stats,
+                     RTCInboundRtpStreamStats& rtp_stats) {
+  if (!rtp_stats.ssrc.has_value()) {
+    return;
+  }
+  auto it = call_stats.sent_ccfb_stats_per_ssrc.find(*rtp_stats.ssrc);
+  if (it == call_stats.sent_ccfb_stats_per_ssrc.end()) {
+    return;
+  }
+  rtp_stats.packets_reported_as_lost = it->second.num_packets_reported_lost;
+  rtp_stats.packets_reported_as_lost_but_recovered =
+      it->second.num_packets_reported_recovered;
 }
 
 std::unique_ptr<RTCInboundRtpStreamStats> CreateInboundAudioStreamStats(
@@ -1718,13 +1732,11 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
   RTC_DCHECK_RUN_ON(network_thread_);
   Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
-  bool spec_lifetime = is_unified_plan_ &&
-                       !env_.field_trials().IsDisabled("WebRTC-RTP-Lifetime");
   for (const RtpTransceiverStatsInfo& stats : transceiver_stats_infos) {
     if (stats.media_type == MediaType::AUDIO) {
-      ProduceAudioRTPStreamStats_n(timestamp, stats, spec_lifetime, report);
+      ProduceAudioRTPStreamStats_n(timestamp, stats, report);
     } else if (stats.media_type == MediaType::VIDEO) {
-      ProduceVideoRTPStreamStats_n(timestamp, stats, spec_lifetime, report);
+      ProduceVideoRTPStreamStats_n(timestamp, stats, report);
     } else {
       RTC_DCHECK_NOTREACHED();
     }
@@ -1734,7 +1746,6 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
 void RTCStatsCollector::ProduceAudioRTPStreamStats_n(
     Timestamp timestamp,
     const RtpTransceiverStatsInfo& stats,
-    bool spec_lifetime,
     RTCStatsReport* report) const {
   RTC_DCHECK_RUN_ON(network_thread_);
   Thread::ScopedDisallowBlockingCalls no_blocking_calls;
@@ -1756,16 +1767,18 @@ void RTCStatsCollector::ProduceAudioRTPStreamStats_n(
     }
     // Check both packets received and samples received to handle the Insertable
     // Streams use case of receiving media without receiving packets.
-    if (spec_lifetime && voice_receiver_info.packets_received == 0 &&
+    if (is_unified_plan_ && voice_receiver_info.packets_received == 0 &&
         voice_receiver_info.total_samples_received == 0) {
       // The SSRC is known despite not receiving any packets. This happens if
       // SSRC is signalled in the SDP which we should not rely on for getStats.
       continue;
     }
     // Inbound.
-    auto inbound_audio = CreateInboundAudioStreamStats(
-        *stats.track_media_info_map.voice_media_info(), voice_receiver_info,
-        transport_id, mid, timestamp, report);
+    std::unique_ptr<RTCInboundRtpStreamStats> inbound_audio =
+        CreateInboundAudioStreamStats(
+            *stats.track_media_info_map.voice_media_info(), voice_receiver_info,
+            transport_id, mid, timestamp, report);
+    AppendCallStats(call_stats_, *inbound_audio);
     // TODO(hta): This lookup should look for the sender, not the track.
     scoped_refptr<AudioTrackInterface> audio_track =
         stats.track_media_info_map.GetAudioTrack(voice_receiver_info);
@@ -1809,7 +1822,7 @@ void RTCStatsCollector::ProduceAudioRTPStreamStats_n(
     if (!voice_sender_info.connected()) {
       continue;  // The SSRC is not known yet.
     }
-    if (spec_lifetime && !stats.current_direction.has_value()) {
+    if (is_unified_plan_ && !stats.current_direction.has_value()) {
       continue;  // The SSRC is known but the O/A has not completed.
     }
     auto outbound_audio = CreateOutboundRTPStreamStatsFromVoiceSenderInfo(
@@ -1853,7 +1866,6 @@ void RTCStatsCollector::ProduceAudioRTPStreamStats_n(
 void RTCStatsCollector::ProduceVideoRTPStreamStats_n(
     Timestamp timestamp,
     const RtpTransceiverStatsInfo& stats,
-    bool spec_lifetime,
     RTCStatsReport* report) const {
   RTC_DCHECK_RUN_ON(network_thread_);
   Thread::ScopedDisallowBlockingCalls no_blocking_calls;
@@ -1873,15 +1885,17 @@ void RTCStatsCollector::ProduceVideoRTPStreamStats_n(
     }
     // Check both packets received and frames received to handle the Insertable
     // Streams use case of receiving media without receiving packets.
-    if (spec_lifetime && video_receiver_info.packets_received == 0 &&
+    if (is_unified_plan_ && video_receiver_info.packets_received == 0 &&
         video_receiver_info.frames_received == 0) {
       // The SSRC is known despite not receiving any packets. This happens if
       // SSRC is signalled in the SDP which we should not rely on for getStats.
       continue;
     }
-    auto inbound_video = CreateInboundRTPStreamStatsFromVideoReceiverInfo(
-        transport_id, mid, *stats.track_media_info_map.video_media_info(),
-        video_receiver_info, timestamp, report);
+    std::unique_ptr<RTCInboundRtpStreamStats> inbound_video =
+        CreateInboundRTPStreamStatsFromVideoReceiverInfo(
+            transport_id, mid, *stats.track_media_info_map.video_media_info(),
+            video_receiver_info, timestamp, report);
+    AppendCallStats(call_stats_, *inbound_video);
     scoped_refptr<VideoTrackInterface> video_track =
         stats.track_media_info_map.GetVideoTrack(video_receiver_info);
     if (video_track) {
@@ -1918,7 +1932,7 @@ void RTCStatsCollector::ProduceVideoRTPStreamStats_n(
     if (!video_sender_info.connected()) {
       continue;  // The SSRC is not known yet.
     }
-    if (spec_lifetime && !stats.current_direction.has_value()) {
+    if (is_unified_plan_ && !stats.current_direction.has_value()) {
       continue;  // The SSRC is known but the O/A has not completed.
     }
     auto outbound_video = CreateOutboundRTPStreamStatsFromVideoSenderInfo(

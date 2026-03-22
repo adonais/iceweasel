@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _WEBRTC_IPC_TRAITS_H_
-#define _WEBRTC_IPC_TRAITS_H_
+#ifndef WEBRTC_IPC_TRAITS_H_
+#define WEBRTC_IPC_TRAITS_H_
 
 #include <vector>
 
@@ -85,4 +85,4 @@ DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::DtlsDigest, algorithm_, value_)
 
 }  // namespace IPC
 
-#endif  // _WEBRTC_IPC_TRAITS_H_
+#endif  // WEBRTC_IPC_TRAITS_H_

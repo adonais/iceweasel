@@ -52,14 +52,14 @@
 #include "r_log.h"
 #include "r_macros.h"
 
-static char CB_ACTIONS[] = { NR_REG_CB_ACTION_ADD,
-                             NR_REG_CB_ACTION_DELETE,
-                             NR_REG_CB_ACTION_CHANGE,
-                             NR_REG_CB_ACTION_FINAL };
+static const char CB_ACTIONS[] = { NR_REG_CB_ACTION_ADD,
+                                   NR_REG_CB_ACTION_DELETE,
+                                   NR_REG_CB_ACTION_CHANGE,
+                                   NR_REG_CB_ACTION_FINAL };
 
 typedef struct nr_reg_cb_info_ {
      char            action;
-     void          (*cb)(void *cb_arg, char action, NR_registry name);
+     void          (*cb)(void *cb_arg, char action, NR_registry_name name);
      void           *cb_arg;
      NR_registry     name;
 } nr_reg_cb_info;
@@ -75,8 +75,8 @@ static int nr_reg_validate_action(char action);
 static int nr_reg_assoc_destroy(void *ptr);
 static int compute_cb_id(void *cb, char action, unsigned char cb_id[SIZEOF_CB_ID]);
 static int nr_reg_info_free(void *ptr);
-static int nr_reg_raise_event_recurse(char *name, char *tmp, int action);
-static int nr_reg_register_callback(NR_registry name, char action, void (*cb)(void *cb_arg, char action, NR_registry name), void *cb_arg);
+static int nr_reg_raise_event_recurse(const char *name, char *tmp, int action);
+static int nr_reg_register_callback(NR_registry_name name, char action, void (*cb)(void *cb_arg, char action, NR_registry_name name), void *cb_arg);
 
 int
 nr_reg_cb_init()
@@ -114,7 +114,7 @@ nr_reg_validate_action(char action)
 }
 
 int
-nr_reg_register_callback(NR_registry name, char action, void (*cb)(void *cb_arg, char action, NR_registry name), void *cb_arg)
+nr_reg_register_callback(NR_registry_name name, char action, void (*cb)(void *cb_arg, char action, NR_registry_name name), void *cb_arg)
 {
     int r, _status;
     r_assoc *assoc = 0;
@@ -135,7 +135,7 @@ nr_reg_register_callback(NR_registry name, char action, void (*cb)(void *cb_arg,
     if ((r=nr_reg_validate_action(action)))
       ABORT(r);
 
-    if ((r=r_assoc_fetch(nr_registry_callbacks, name, strlen(name)+1, (void*)&assoc))) {
+    if ((r=r_assoc_fetch(nr_registry_callbacks, name, strlen(name)+1, (void**)&assoc))) {
       if (r == R_NOT_FOUND)
         create_assoc = 1;
       else
@@ -150,10 +150,10 @@ nr_reg_register_callback(NR_registry name, char action, void (*cb)(void *cb_arg,
         ABORT(r);
     }
 
-    if ((r=compute_cb_id(cb, action, cb_id)))
+    if ((r=compute_cb_id((void*)cb, action, cb_id)))
       ABORT(r);
 
-    if ((r=r_assoc_fetch(assoc, (char*)cb_id, SIZEOF_CB_ID, (void*)&info))) {
+    if ((r=r_assoc_fetch(assoc, (char*)cb_id, SIZEOF_CB_ID, (void**)&info))) {
       if (r == R_NOT_FOUND)
         create_info = 1;
       else
@@ -161,11 +161,11 @@ nr_reg_register_callback(NR_registry name, char action, void (*cb)(void *cb_arg,
     }
 
     if (create_info) {
-      if (!(info=(void*)RCALLOC(sizeof(*info))))
+      if (!(info=R_NEW(nr_reg_cb_info)))
         ABORT(R_NO_MEMORY);
     }
 
-    strncpy(info->name, name, sizeof(info->name));
+    (void)strlcpy(info->name, name, sizeof(info->name));
     info->action = action;
     info->cb = cb;
     info->cb_arg = cb_arg;
@@ -200,10 +200,10 @@ compute_cb_id(void *cb, char action, unsigned char cb_id[SIZEOF_CB_ID])
    return 0;
 }
 
-char *
+const char *
 nr_reg_action_name(int action)
 {
-    char *name = "*Unknown*";
+    const char *name = "*Unknown*";
 
     switch (action) {
     case NR_REG_CB_ACTION_ADD:     name = "add";     break;
@@ -230,7 +230,7 @@ nr_reg_info_free(void *ptr)
 
 /* call with tmp=0 */
 int
-nr_reg_raise_event_recurse(char *name, char *tmp, int action)
+nr_reg_raise_event_recurse(const char *name, char *tmp, int action)
 {
     int r, _status;
     r_assoc *assoc = 0;
@@ -248,7 +248,7 @@ nr_reg_raise_event_recurse(char *name, char *tmp, int action)
       free_tmp = 1;
     }
 
-    if ((r=r_assoc_fetch(nr_registry_callbacks, tmp, strlen(tmp)+1, (void*)&assoc))) {
+    if ((r=r_assoc_fetch(nr_registry_callbacks, tmp, strlen(tmp)+1, (void**)&assoc))) {
       if (r != R_NOT_FOUND)
         ABORT(r);
 
@@ -264,7 +264,7 @@ nr_reg_raise_event_recurse(char *name, char *tmp, int action)
           ABORT(r);
 
       for (;;) {
-        if ((r=r_assoc_iter(&iter, (void*)&key, &keyl, (void*)&info))) {
+        if ((r=r_assoc_iter(&iter, (void**)&key, &keyl, (void**)&info))) {
           if (r == R_EOD)
             break;
           else
@@ -309,11 +309,11 @@ nr_reg_raise_event_recurse(char *name, char *tmp, int action)
 /* NON-STATIC METHODS */
 
 int
-nr_reg_raise_event(NR_registry name, int action)
+nr_reg_raise_event(NR_registry_name name, int action)
 {
     int r, _status;
     int count;
-    char *event = nr_reg_action_name(action);
+    const char *event = nr_reg_action_name(action);
 
     r_log(NR_LOG_REGISTRY, LOG_DEBUG, "raising event '%s' on '%s'", event, name);
 
@@ -344,7 +344,7 @@ nr_reg_raise_event(NR_registry name, int action)
 /* PUBLIC METHODS */
 
 int
-NR_reg_register_callback(NR_registry name, char action, void (*cb)(void *cb_arg, char action, NR_registry name), void *cb_arg)
+NR_reg_register_callback(NR_registry_name name, char action, void (*cb)(void *cb_arg, char action, NR_registry_name name), void *cb_arg)
 {
     int r, _status;
     size_t i;

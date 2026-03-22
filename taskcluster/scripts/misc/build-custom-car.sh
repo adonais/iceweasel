@@ -68,12 +68,6 @@ if [[ $(uname -s) == "Darwin" ]]; then
   mkdir -p "$MACOS_SYSROOT/usr/include"
   touch "$MACOS_SYSROOT/usr/include/DarwinFoundation.modulemap"
 
-
-  # Avoid mixing up the system python and toolchain python in the
-  # python path configuration
-  # https://bugs.python.org/issue22490
-  unset __PYVENV_LAUNCHER__
-
   # Set the SDK path for build, which is technically a higher version
   # than what is associated with the current OS version (10.15).
   # This should work as long as MACOSX_DEPLOYMENT_TARGET is set correctly

@@ -383,7 +383,7 @@ add_task(async function test_sync_outgoing() {
 
     ok((await engine._store.getAllIDs())[guid]);
 
-    Services.logins.removeLogin(foundLogins[0]);
+    await Services.logins.removeLoginAsync(foundLogins[0]);
     foundLogins = await Services.logins.searchLoginsAsync({
       origin: "http://mozilla.com",
     });

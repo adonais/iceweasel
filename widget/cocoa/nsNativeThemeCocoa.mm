@@ -654,28 +654,43 @@ static void DrawCellWithSnapping(NSCell* cell, CGContextRef cgContext,
 static float VerticalAlignFactor(nsIFrame* aFrame) {
   if (!aFrame) return 0.5f;  // default: center
 
-  const auto& va = aFrame->StyleDisplay()->mVerticalAlign;
-  auto kw = va.IsKeyword() ? va.AsKeyword() : StyleVerticalAlignKeyword::Middle;
-  switch (kw) {
-    case StyleVerticalAlignKeyword::Top:
-    case StyleVerticalAlignKeyword::TextTop:
+  const auto& alignmentBaseline = aFrame->StyleDisplay()->mAlignmentBaseline;
+  const auto& baselineShift = aFrame->StyleDisplay()->mBaselineShift;
+
+  if (baselineShift.IsKeyword()) {
+    switch (baselineShift.AsKeyword()) {
+      case StyleBaselineShiftKeyword::Top:
+        return 0.0f;
+
+      case StyleBaselineShiftKeyword::Sub:
+      case StyleBaselineShiftKeyword::Super:
+        return 0.5f;
+
+      case StyleBaselineShiftKeyword::Bottom:
+        return 1.0f;
+
+      default:
+        break;
+    }
+  }
+
+  switch (alignmentBaseline) {
+    case StyleAlignmentBaseline::TextTop:
       return 0.0f;
 
-    case StyleVerticalAlignKeyword::Sub:
-    case StyleVerticalAlignKeyword::Super:
-    case StyleVerticalAlignKeyword::Middle:
-    case StyleVerticalAlignKeyword::MozMiddleWithBaseline:
+    case StyleAlignmentBaseline::Middle:
+    case StyleAlignmentBaseline::MozMiddleWithBaseline:
       return 0.5f;
 
-    case StyleVerticalAlignKeyword::Baseline:
-    case StyleVerticalAlignKeyword::Bottom:
-    case StyleVerticalAlignKeyword::TextBottom:
+    case StyleAlignmentBaseline::Baseline:
+    case StyleAlignmentBaseline::TextBottom:
       return 1.0f;
 
     default:
-      MOZ_ASSERT_UNREACHABLE("invalid vertical-align");
-      return 0.5f;
+      break;
   }
+
+  return 0.5f;
 }
 
 static void ApplyControlParamsToNSCell(
@@ -1717,21 +1732,6 @@ LayoutDeviceIntSize nsNativeThemeCocoa::GetMinimumWidgetSize(
   return result;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(LayoutDeviceIntSize());
-}
-
-bool nsNativeThemeCocoa::WidgetAttributeChangeRequiresRepaint(
-    StyleAppearance aAppearance, nsAtom* aAttribute) {
-  // Some widget types just never change state.
-  switch (aAppearance) {
-    case StyleAppearance::MozWindowTitlebar:
-    case StyleAppearance::MozSidebar:
-    case StyleAppearance::Tooltip:
-    case StyleAppearance::Menupopup:
-      return false;
-    default:
-      break;
-  }
-  return Theme::WidgetAttributeChangeRequiresRepaint(aAppearance, aAttribute);
 }
 
 bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext,

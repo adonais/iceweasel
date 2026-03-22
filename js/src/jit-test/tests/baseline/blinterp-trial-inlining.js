@@ -1,4 +1,4 @@
-// |jit-test| --inlining-entry-threshold=1; --trial-inlining-warmup-threshold=50; --baseline-warmup-threshold=200; --ion-warmup-threshold=1000
+// |jit-test| --inlining-entry-threshold=1; --trial-inlining-warmup-threshold=50; --baseline-warmup-threshold=200; --ion-warmup-threshold=1000; --no-threads; --no-cgc
 
 let options = getJitCompilerOptions();
 if (!options['blinterp.enable'] ||

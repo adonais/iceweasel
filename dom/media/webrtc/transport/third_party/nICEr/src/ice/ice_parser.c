@@ -93,7 +93,7 @@ grab_token(char **str, char **out)
 
     len = c - *str;
 
-    tmp = RMALLOC(len + 1);
+    tmp = (char*)RMALLOC(len + 1);
     if (!tmp)
         ABORT(R_NO_MEMORY);
 
@@ -121,7 +121,7 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
     char *rel_addr=0;
     unsigned char transport;
 
-    if(!(cand=RCALLOC(sizeof(nr_ice_candidate))))
+    if(!(cand=R_NEW(nr_ice_candidate)))
         ABORT(R_NO_MEMORY);
 
     if(!(cand->label=r_strdup(orig)))
@@ -240,7 +240,7 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
 
     for (i = 1; nr_ice_candidate_type_names[i]; ++i) {
         if(!strncasecmp(nr_ice_candidate_type_names[i], str, strlen(nr_ice_candidate_type_names[i]))) {
-            cand->type=i;
+            cand->type=(nr_ice_candidate_type)i;
             break;
         }
     }
@@ -324,7 +324,7 @@ nr_ice_peer_candidate_from_attribute(nr_ice_ctx *ctx,char *orig,nr_ice_media_str
 
       for (i = 1; nr_ice_candidate_tcp_type_names[i]; ++i) {
         if(!strncasecmp(nr_ice_candidate_tcp_type_names[i], str, strlen(nr_ice_candidate_tcp_type_names[i]))) {
-          cand->tcp_type=i;
+          cand->tcp_type=(nr_socket_tcp_type)i;
           fast_forward(&str, strlen(nr_ice_candidate_tcp_type_names[i]));
           break;
         }

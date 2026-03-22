@@ -10,8 +10,8 @@
  * SVG and MathML.
  */
 
-#ifndef __NS_STYLEDELEMENT_H_
-#define __NS_STYLEDELEMENT_H_
+#ifndef NS_STYLEDELEMENT_H_
+#define NS_STYLEDELEMENT_H_
 
 #include "mozilla/dom/Element.h"
 #include "nsString.h"
@@ -96,4 +96,4 @@ class nsStyledElement : public nsStyledElementBase {
                      const nsAttrValue* aValue, bool aNotify) override;
 };
 
-#endif  // __NS_STYLEDELEMENT_H_
+#endif  // NS_STYLEDELEMENT_H_

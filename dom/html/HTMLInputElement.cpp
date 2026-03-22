@@ -7,6 +7,7 @@
 #include "mozilla/dom/HTMLInputElement.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include "HTMLDataListElement.h"
 #include "HTMLFormSubmissionConstants.h"
@@ -121,6 +122,10 @@
 // input type=date
 #include "js/Date.h"
 
+#ifdef ACCESSIBILITY
+#  include "nsAccessibilityService.h"
+#endif
+
 NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Input)
 
 // XXX align=left, hspace, vspace, border? other nav4 attrs
@@ -183,6 +188,14 @@ static constexpr nsAttrValue::EnumTableEntry kCaptureTable[] = {
 
 static constexpr const nsAttrValue::EnumTableEntry* kCaptureDefault =
     &kCaptureTable[2];
+
+static constexpr nsAttrValue::EnumTableEntry kColorSpaceTable[] = {
+    {"limited-srgb", StyleColorSpace::Srgb},
+    {"display-p3", StyleColorSpace::DisplayP3},
+};
+
+static constexpr const nsAttrValue::EnumTableEntry* kColorSpaceDefault =
+    &kColorSpaceTable[0];
 
 using namespace blink;
 
@@ -721,18 +734,31 @@ static bool IsPickerBlocked(Document* aDoc) {
 /**
  * Parse a CSS color string and convert it to the target colorspace if it
  * succeeds.
+ * Step 2 of:
  * https://html.spec.whatwg.org/#update-a-color-well-control-color
+ *
+ * We have this function separately for datalist implementation to filter out
+ * invalid values.
  *
  * @param aValue the string to be parsed
  * @return the parsed result as a HTML compatible form
  */
 static Maybe<StyleAbsoluteColor> MaybeComputeColor(Document* aDocument,
                                                    const nsAString& aValue) {
-  // A few steps are ignored given we don't support alpha and colorspace. See
-  // bug 1919718.
-  return ServoCSSParser::ComputeColorWellControlColor(
-      aDocument->EnsureStyleSet().RawData(), NS_ConvertUTF16toUTF8(aValue),
-      StyleColorSpace::Srgb);
+  // Step 2: Let color be the result of parsing element's value.
+  return ServoCSSParser::ComputeAbsoluteColor(
+      aDocument->EnsureStyleSet().RawData(), NS_ConvertUTF16toUTF8(aValue));
+}
+
+/**
+ * MaybeComputeColor + Step 3 of:
+ * https://html.spec.whatwg.org/#update-a-color-well-control-color
+ */
+static StyleAbsoluteColor MaybeComputeColorOrBlack(Document* aDocument,
+                                                   const nsAString& aValue) {
+  return MaybeComputeColor(aDocument, aValue)
+      // Step 3: If color is failure, then set color to opaque black.
+      .valueOr(StyleAbsoluteColor::BLACK);
 }
 
 /**
@@ -753,8 +779,59 @@ static void SerializeColorForHTMLCompatibility(const StyleAbsoluteColor& aColor,
                        NS_GET_B(color));
 }
 
+static void ClampColorComponents(StyleAbsoluteColor& aColor) {
+  MOZ_ASSERT(aColor.color_space == StyleColorSpace::Srgb);
+  aColor.components._0 = std::clamp(aColor.components._0, 0.0f, 1.0f);
+  aColor.components._1 = std::clamp(aColor.components._1, 0.0f, 1.0f);
+  aColor.components._2 = std::clamp(aColor.components._2, 0.0f, 1.0f);
+}
+
+// https://html.spec.whatwg.org/#serialize-a-color-well-control-color
+static void SerializeColor(const StyleAbsoluteColor& aColor,
+                           StyleColorSpace aTargetColorSpace,
+                           bool aSpecifiedAlpha, nsAString& aResult) {
+  // Step 2: Let htmlCompatible be false.
+  bool htmlCompatible = false;
+
+  // Step 3: If element's alpha attribute is not specified, then set color's
+  // alpha component to be fully opaque.
+  // (Setting colorspace here as it's easier.)
+  StyleAbsoluteColor color = aColor.ToColorSpace(aTargetColorSpace);
+  if (!aSpecifiedAlpha) {
+    color.alpha = 1.0;
+  }
+
+  // Step 4: If element's colorspace attribute is in the Limited sRGB state:
+  if (color.color_space == StyleColorSpace::Srgb) {
+    // Step 4.2: Round each of color's components so they are in the range 0 to
+    // 255, inclusive. Components are to be rounded towards +∞.
+    ClampColorComponents(color);
+
+    if (!aSpecifiedAlpha) {
+      // Step 4.3: If element's alpha attribute is not specified, then set
+      // htmlCompatible to true.
+      htmlCompatible = true;
+    } else {
+      // Step 4.4: Otherwise, set color to color converted using the 'color()'
+      // function.
+      // (Unset the legacy bit to force `color()`)
+      color.flags &= ~StyleColorFlags::IS_LEGACY_SRGB;
+    }
+  }
+
+  // Step 6: Return the result of serializing color. If htmlCompatible is true,
+  // then do so with HTML-compatible serialization requested.
+  if (htmlCompatible) {
+    SerializeColorForHTMLCompatibility(color, aResult);
+    return;
+  }
+  nsAutoCString result;
+  Servo_AbsoluteColor_ToCss(&color, &result);
+  CopyUTF8toUTF16(result, aResult);
+}
+
 nsTArray<nsString> HTMLInputElement::GetColorsFromList() {
-  RefPtr<HTMLDataListElement> dataList = GetList();
+  RefPtr<HTMLDataListElement> dataList = GetListInternal();
   if (!dataList) {
     return {};
   }
@@ -775,9 +852,7 @@ nsTArray<nsString> HTMLInputElement::GetColorsFromList() {
     // https://html.spec.whatwg.org/#serialize-a-color-well-control-color
     if (Maybe<StyleAbsoluteColor> result =
             MaybeComputeColor(OwnerDoc(), value)) {
-      // Serialization step 6: If htmlCompatible is true, then do so with
-      // HTML-compatible serialization requested.
-      SerializeColorForHTMLCompatibility(*result, value);
+      SerializeColor(*result, GetColorSpaceEnum(), Alpha(), value);
       colors.AppendElement(value);
     }
   }
@@ -1061,12 +1136,6 @@ UploadLastDir::Observe(nsISupports* aSubject, char const* aTopic,
   }
   return NS_OK;
 }
-
-#ifdef ACCESSIBILITY
-// Helper method
-static nsresult FireEventForAccessibility(HTMLInputElement* aTarget,
-                                          EventMessage aEventMessage);
-#endif
 
 //
 // construction, destruction
@@ -1488,6 +1557,8 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       }
       UpdatePlaceholderShownState();
       needValidityUpdate = true;
+    } else if (aName == nsGkAtoms::colorspace || aName == nsGkAtoms::alpha) {
+      UpdateColor();
     }
 
     if (CreatesDateTimeWidget()) {
@@ -1557,6 +1628,13 @@ void HTMLInputElement::ResultForDialogSubmit(nsAString& aResult) {
   }
 }
 
+bool HTMLInputElement::Alpha() const {
+  if (!StaticPrefs::dom_forms_alpha_enabled()) {
+    return false;
+  }
+  return HasAttr(nsGkAtoms::alpha);
+}
+
 void HTMLInputElement::GetAutocomplete(nsAString& aValue) {
   if (!DoesAutocompleteApply()) {
     return;
@@ -1582,6 +1660,25 @@ void HTMLInputElement::GetAutocompleteInfo(Nullable<AutocompleteInfo>& aInfo) {
 
 void HTMLInputElement::GetCapture(nsAString& aValue) {
   GetEnumAttr(nsGkAtoms::capture, kCaptureDefault->tag, aValue);
+}
+
+void HTMLInputElement::GetColorSpace(nsAString& aValue) const {
+  if (!StaticPrefs::dom_forms_colorspace_enabled()) {
+    aValue.Truncate();
+    aValue.AppendLiteral("limited-srgb");
+    return;
+  }
+  GetEnumAttr(nsGkAtoms::colorspace, kColorSpaceDefault->tag, aValue);
+}
+
+StyleColorSpace HTMLInputElement::GetColorSpaceEnum() const {
+  if (!StaticPrefs::dom_forms_colorspace_enabled()) {
+    return StyleColorSpace::Srgb;
+  }
+  if (const nsAttrValue* captureVal = GetParsedAttr(nsGkAtoms::colorspace)) {
+    return static_cast<StyleColorSpace>(captureVal->GetEnumValue());
+  }
+  return StyleColorSpace::Srgb;
 }
 
 void HTMLInputElement::GetFormEnctype(nsAString& aValue) {
@@ -1796,7 +1893,11 @@ void HTMLInputElement::SetValue(const nsAString& aValue, CallerType aCallerType,
   }
 }
 
-HTMLDataListElement* HTMLInputElement::GetList() const {
+Element* HTMLInputElement::GetListForBindings() const {
+  return RetargetReferenceTargetForBindings(GetListInternal());
+}
+
+HTMLDataListElement* HTMLInputElement::GetListInternal() const {
   nsAutoString dataListId;
   GetAttr(nsGkAtoms::list, dataListId);
   if (dataListId.IsEmpty()) {
@@ -1808,8 +1909,9 @@ HTMLDataListElement* HTMLInputElement::GetList() const {
     return nullptr;
   }
 
-  return HTMLDataListElement::FromNodeOrNull(
-      docOrShadow->GetElementById(dataListId));
+  Element* target = docOrShadow->GetElementById(dataListId);
+  Element* list = target ? target->ResolveReferenceTarget() : nullptr;
+  return HTMLDataListElement::FromNodeOrNull(list);
 }
 
 void HTMLInputElement::SetValue(Decimal aValue, CallerType aCallerType) {
@@ -2064,23 +2166,45 @@ void HTMLInputElement::GetColor(InputPickerColor& aValue) {
   nsAutoString value;
   GetValue(value, CallerType::System);
 
-  StyleAbsoluteColor color =
-      MaybeComputeColor(OwnerDoc(), value).valueOr(StyleAbsoluteColor::BLACK);
+  // We should pass colorspace info to the color picker (bug 2009748), but for
+  // now we pass sRGB values.
+  StyleAbsoluteColor color = MaybeComputeColorOrBlack(OwnerDoc(), value)
+                                 .ToColorSpace(StyleColorSpace::Srgb);
+  ClampColorComponents(color);
   aValue.mComponent1 = color.components._0;
   aValue.mComponent2 = color.components._1;
   aValue.mComponent3 = color.components._2;
-  // aValue.mAlpha = color.alpha;
+  aValue.mAlpha = Alpha() ? color.alpha : NAN;
+
   // aValue.mColorSpace = mColorSpace;
+}
+
+// SetValueInternal is CAN_RUN_SCRIPT but only for text inputs.
+MOZ_CAN_RUN_SCRIPT_BOUNDARY void HTMLInputElement::UpdateColor() {
+  // https://html.spec.whatwg.org/#attr-input-colorspace
+  // Whenever the element's alpha or colorspace attributes are changed, the user
+  // agent must run update a color well control color given the element.
+  // (But it involves setting value, which will run sanitization, which will
+  // call the same function. So we just call Get/SetValue here.)
+  if (mType != FormControlType::InputColor) {
+    // This is only needed for color, basically no-op for others.
+    return;
+  }
+  if (!mValueChanged) {
+    SetDefaultValueAsValue();
+    return;
+  }
+  nsAutoString value;
+  GetValue(value, CallerType::NonSystem);
+  SetValueInternal(value, {ValueSetterOption::ByInternalAPI});
 }
 
 void HTMLInputElement::SetUserInputColor(const InputPickerColor& aValue) {
   MOZ_ASSERT(mType == FormControlType::InputColor,
              "setUserInputColor is only for type=color.");
 
-  // TODO(krosylight): We should ultimately get a helper method where the compat
-  // serialization happens only conditionally
   nsAutoString serialized;
-  SerializeColorForHTMLCompatibility(
+  SerializeColor(
       StyleAbsoluteColor{
           .components =
               StyleColorComponents{
@@ -2088,10 +2212,10 @@ void HTMLInputElement::SetUserInputColor(const InputPickerColor& aValue) {
                   ._1 = aValue.mComponent2,
                   ._2 = aValue.mComponent3,
               },
-          .alpha = 1,
+          .alpha = aValue.mAlpha,
           .color_space = StyleColorSpace::Srgb,
       },
-      serialized);
+      GetColorSpaceEnum(), Alpha(), serialized);
 
   // (We are either Chrome/UA but the principal doesn't matter for color inputs)
   SetUserInput(serialized, *NodePrincipal());
@@ -2891,6 +3015,11 @@ nsresult HTMLInputElement::SetValueInternal(
             do_QueryFrame(GetPrimaryFrame());
         if (colorControlFrame) {
           colorControlFrame->UpdateColor();
+#ifdef ACCESSIBILITY
+          if (nsAccessibilityService* accService = GetAccService()) {
+            accService->ColorValueChanged(colorControlFrame->PresShell(), this);
+          }
+#endif
         }
       }
       return NS_OK;
@@ -4237,21 +4366,6 @@ void HTMLInputElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
     nsContentUtils::DispatchTrustedEvent<WidgetEvent>(
         OwnerDoc(), static_cast<Element*>(this), eFormChange, CanBubble::eYes,
         Cancelable::eNo);
-#ifdef ACCESSIBILITY
-    // Fire an event to notify accessibility
-    if (mType == FormControlType::InputCheckbox) {
-      if (nsContentUtils::MayHaveFormCheckboxStateChangeListeners()) {
-        FireEventForAccessibility(this, eFormCheckboxStateChange);
-      }
-    } else if (nsContentUtils::MayHaveFormRadioStateChangeListeners()) {
-      FireEventForAccessibility(this, eFormRadioStateChange);
-      // Fire event for the previous selected radio.
-      nsCOMPtr<nsIContent> content = do_QueryInterface(aVisitor.mItemData);
-      if (auto* previous = HTMLInputElement::FromNodeOrNull(content)) {
-        FireEventForAccessibility(previous, eFormRadioStateChange);
-      }
-    }
-#endif
   }
 
   switch (mType) {
@@ -5074,11 +5188,10 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
     case FormControlType::InputColor: {
       // https://html.spec.whatwg.org/#update-a-color-well-control-color
       // https://html.spec.whatwg.org/#serialize-a-color-well-control-color
-      StyleAbsoluteColor color = MaybeComputeColor(OwnerDoc(), aValue)
-                                     .valueOr(StyleAbsoluteColor::BLACK);
+      StyleAbsoluteColor color = MaybeComputeColorOrBlack(OwnerDoc(), aValue);
       // Serialization step 6: If htmlCompatible is true, then do so with
       // HTML-compatible serialization requested.
-      SerializeColorForHTMLCompatibility(color, aValue);
+      SerializeColor(color, GetColorSpaceEnum(), Alpha(), aValue);
       break;
     }
     default:
@@ -5561,6 +5674,10 @@ bool HTMLInputElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       return aResult.ParseEnumValue(aValue, kCaptureTable, false,
                                     kCaptureDefault);
     }
+    if (aAttribute == nsGkAtoms::colorspace) {
+      return aResult.ParseEnumValue(aValue, kColorSpaceTable, false,
+                                    kColorSpaceDefault);
+    }
     if (ParseImageAttribute(aAttribute, aValue, aResult)) {
       // We have to call |ParseImageAttribute| unconditionally since we
       // don't know if we're going to have a type="image" attribute yet,
@@ -6008,7 +6125,7 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
   // I.e. show the autocomplete dropdown based on the list attribute.
   // XXX Form-fill support on android is bug 1535985.
   if (StaticPrefs::dom_input_showPicker_datalist_enabled() &&
-      IsSingleLineTextControl(true) && GetList()) {
+      IsSingleLineTextControl(true) && GetListInternal()) {
     if (nsCOMPtr<nsIFormFillController> controller =
             do_GetService("@mozilla.org/satchel/form-fill-controller;1")) {
       controller->SetControlledElement(this);
@@ -6016,16 +6133,6 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
     }
   }
 }
-
-#ifdef ACCESSIBILITY
-/*static*/ nsresult FireEventForAccessibility(HTMLInputElement* aTarget,
-                                              EventMessage aEventMessage) {
-  Element* element = static_cast<Element*>(aTarget);
-  return nsContentUtils::DispatchTrustedEvent<WidgetEvent>(
-      element->OwnerDoc(), element, aEventMessage, CanBubble::eYes,
-      Cancelable::eYes);
-}
-#endif
 
 void HTMLInputElement::UpdateApzAwareFlag() {
 #if !defined(ANDROID) && !defined(XP_MACOSX)
@@ -6300,6 +6407,7 @@ void HTMLInputElement::SaveState() {
 }
 
 void HTMLInputElement::DoneCreatingElement() {
+  MOZ_ASSERT(!mDoneCreating);
   mDoneCreating = true;
 
   //
@@ -7566,12 +7674,16 @@ void HTMLInputElement::GetWebkitEntries(
   aSequence.AppendElements(mFileData->mEntries);
 }
 
-already_AddRefed<nsINodeList> HTMLInputElement::GetLabels() {
+already_AddRefed<nsINodeList> HTMLInputElement::GetLabelsForBindings() {
+  return GetLabelsInternal();
+}
+
+already_AddRefed<nsINodeList> HTMLInputElement::GetLabelsInternal() {
   if (!IsLabelable()) {
     return nullptr;
   }
 
-  return nsGenericHTMLElement::Labels();
+  return nsGenericHTMLElement::LabelsInternal();
 }
 
 void HTMLInputElement::MaybeFireInputPasswordRemoved() {
@@ -7606,4 +7718,9 @@ void HTMLInputElement::UpdateRadioGroupState() {
 
 }  // namespace mozilla::dom
 
+#undef NS_OUTER_ACTIVATE_EVENT
 #undef NS_ORIGINAL_CHECKED_VALUE
+#undef NS_ORIGINAL_INDETERMINATE_VALUE
+#undef NS_PRE_HANDLE_BLUR_EVENT
+#undef NS_IN_SUBMIT_CLICK
+#undef NS_CONTROL_TYPE

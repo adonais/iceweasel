@@ -25,7 +25,6 @@ import org.mozilla.fenix.helpers.TestHelper.scrollToElementByText
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
-import org.mozilla.fenix.ui.robots.enhancedTrackingProtection
 import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
 
@@ -108,6 +107,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
 
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericPage.url) {
+            waitForPageToLoad()
         }.openSiteSecuritySheet {
             verifyETPSwitchVisibility(false)
         }.closeSiteSecuritySheet(composeTestRule) {
@@ -133,6 +133,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
 
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstPage.url) {
+            waitForPageToLoad(waitingTimeLong)
         }.openSiteSecuritySheet {
         }.toggleEnhancedTrackingProtectionFromSheet {
             verifyEnhancedTrackingProtectionSheetStatus("OFF", false)
@@ -160,6 +161,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
 
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(trackingPage.url) {
+            waitForPageToLoad(waitingTimeLong)
             verifyUrl(trackingPage.url.toString())
         }.openSiteSecuritySheet {
         }.toggleEnhancedTrackingProtectionFromSheet {
@@ -194,7 +196,9 @@ class EnhancedTrackingProtectionTest : TestSetup() {
 
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(firstPage.url) {
+            verifyPageContent(firstPage.content)
         }.openSiteSecuritySheet {
+            verifyEnhancedTrackingProtectionSheetStatus("ON", true)
         }.toggleEnhancedTrackingProtectionFromSheet {
             verifyEnhancedTrackingProtectionSheetStatus("OFF", false)
         }.closeSiteSecuritySheet(composeTestRule) {
@@ -217,6 +221,7 @@ class EnhancedTrackingProtectionTest : TestSetup() {
         }
         browserScreen(composeTestRule) {
         }.openSiteSecuritySheet {
+            mDevice.waitForIdle()
             verifyEnhancedTrackingProtectionSheetStatus("ON", true)
         }
     }
@@ -373,12 +378,15 @@ class EnhancedTrackingProtectionTest : TestSetup() {
             // browsing a basic page to allow GV to load on a fresh run
         }.enterURLAndEnterToBrowser(genericWebPage.url) {
             waitForPageToLoad()
+            verifyPageContent(genericWebPage.content)
         }
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(trackingPage.url) {
+            waitForPageToLoad()
             verifyTrackingProtectionWebContent("social not blocked")
             verifyTrackingProtectionWebContent("ads not blocked")
             verifyTrackingProtectionWebContent("analytics not blocked")
+            verifyTrackingProtectionWebContent("Cryptomining blocked")
         }.openSiteSecuritySheet {
         }.openDetails {
             verifyCrossSiteCookiesBlocked(true)

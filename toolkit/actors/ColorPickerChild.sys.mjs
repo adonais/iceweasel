@@ -40,6 +40,7 @@ export class ColorPickerChild extends InputPickerChildCommon {
       component1: rgb[0],
       component2: rgb[1],
       component3: rgb[2],
+      alpha: rgb[3],
     });
   }
 

@@ -361,6 +361,11 @@ newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Passar en Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Passar en Celsius
 newtab-weather-menu-learn-more = Ne saber mai
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Mostrar la prevision metèo de { $provider }
+    .aria-description = { $provider } ∙ Esponsorizat
 
 ## Topic Labels
 

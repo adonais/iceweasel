@@ -908,7 +908,7 @@ void DemangleSymbol(const char* aSymbol, char* aBuffer, int aBufLen) {
 
 #  if defined(MOZ_DEMANGLE_SYMBOLS)
   /* See demangle.h in the gcc source for the voodoo */
-  char* demangled = abi::__cxa_demangle(aSymbol, 0, 0, 0);
+  char* demangled = abi::__cxa_demangle(aSymbol, nullptr, nullptr, nullptr);
 
   if (demangled) {
     strncpy(aBuffer, demangled, aBufLen);

@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsStreamUtils_h__
-#define nsStreamUtils_h__
+#ifndef nsStreamUtils_h_
+#define nsStreamUtils_h_
 
 #include "nsCOMPtr.h"
 #include "nsStringFwd.h"
@@ -329,4 +329,4 @@ extern nsresult NS_MakeAsyncNonBlockingInputStream(
     nsIAsyncInputStream** aAsyncInputStream, bool aCloseWhenDone = true,
     uint32_t aFlags = 0, uint32_t aSegmentSize = 0, uint32_t aSegmentCount = 0);
 
-#endif  // !nsStreamUtils_h__
+#endif  // !nsStreamUtils_h_

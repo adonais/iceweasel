@@ -111,7 +111,7 @@ class Element;
   struct StyleLocked##name_;         \
   }                                  \
   SERVO_ARC_TYPE(name_, mozilla::StyleLocked##name_)
-#include "mozilla/ServoLockedArcTypeList.h"
+#include "mozilla/ServoLockedArcTypeList.inc"
 
 #define UNLOCKED_RULE_TYPE(name_) \
   namespace mozilla {             \
@@ -156,7 +156,7 @@ SERVO_ARC_TYPE(StyleSheetContents, mozilla::StyleStylesheetContents)
     }                                                           \
   };                                                            \
   }
-#include "mozilla/ServoBoxedTypeList.h"
+#include "mozilla/ServoBoxedTypeList.inc"
 #undef SERVO_BOXED_TYPE
 
 // Other special cases.

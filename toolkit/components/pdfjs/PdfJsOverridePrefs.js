@@ -32,4 +32,6 @@
   pref("pdfjs.enableAltTextModelDownload", false);
   pref("pdfjs.enableGuessAltText", false);
 
+  pref("pdfjs.enableHWA", true);
+
 #endif

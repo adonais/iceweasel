@@ -512,6 +512,145 @@ def android_geckoview_docs(
     return 0
 
 
+@SubCommand(
+    "android",
+    "update-buildconfig",
+    """Update .buildconfig.yml with latest gradle project configuration.""",
+    virtualenv_name="buildconfig",
+)
+@CommandArgument(
+    "project",
+    choices=["fenix", "focus", "android-components"],
+    help="The project to update (fenix, focus, or android-components).",
+)
+@CommandArgument(
+    "--check",
+    action="store_true",
+    help="Check that .buildconfig.yml is up-to-date instead of updating it.",
+)
+def android_update_buildconfig(command_context, project, check=False):
+    from pathlib import Path
+
+    import yaml
+    from mozversioncontrol import get_repository_object
+
+    _PROJECT_DIRS = {
+        "fenix": "fenix",
+        "focus": "focus-android",
+        "android-components": "android-components",
+    }
+    topsrcdir = Path(command_context.topsrcdir)
+    gradle_root = topsrcdir / "mobile" / "android" / _PROJECT_DIRS[project]
+    build_config_file = gradle_root / ".buildconfig.yml"
+
+    build_config = yaml.safe_load(build_config_file.read_text(encoding="utf-8"))
+
+    os.environ["MOZ_BUILD_CONFIG_LINT"] = "1"
+
+    if project == "android-components":
+        gradle_projects = list(build_config["projects"].keys())
+    else:
+        gradle_projects = ["app"]
+
+    ret = gradle(
+        command_context,
+        ["printProjectDependencies"],
+        verbose=True,
+        topsrcdir=str(gradle_root),
+    )
+    if ret:
+        return ret
+
+    import json
+    from pathlib import Path
+
+    deps_output = Path(gradle_root) / "build" / "printProjectDependencies.json"
+    all_deps = json.loads(deps_output.read_text(encoding="utf-8"))
+
+    for project_name in gradle_projects:
+        build_config["projects"][project_name]["upstream_dependencies"] = all_deps.get(
+            project_name, []
+        )
+
+    if project in ("fenix", "focus"):
+        ret = gradle(
+            command_context,
+            ["printVariants"],
+            verbose=True,
+            topsrcdir=str(gradle_root),
+        )
+        if ret:
+            return ret
+
+        variants_output = Path(gradle_root) / "app" / "build" / "printVariants.json"
+        build_config["variants"] = json.loads(
+            variants_output.read_text(encoding="utf-8")
+        )
+
+    with open(build_config_file, "w", encoding="utf-8", newline="\n") as f:
+        yaml.safe_dump(build_config, f)
+
+    repo = get_repository_object(topsrcdir)
+    changed_files = repo.get_changed_files(diff_filter="M")
+    rel_path = build_config_file.relative_to(topsrcdir).as_posix()
+    changed = rel_path in changed_files
+
+    if changed:
+        if check:
+            task_id = os.environ.get("TASK_ID")
+            if task_id:
+                diff = repo.diff_stream(extensions=[".buildconfig.yml"]).read()
+                output_dir = Path(
+                    os.environ.get("ARTIFACTS_DIR", "/builds/worker/artifacts")
+                )
+                output_dir.mkdir(parents=True, exist_ok=True)
+                diff_file = output_dir / "buildconfig.diff"
+                diff_file.write_text(diff, encoding="utf-8", newline="\n")
+                tc_root_url = os.environ["TASKCLUSTER_ROOT_URL"]
+                artifact_url = (
+                    f"{tc_root_url}/api/queue/v1/task/{task_id}"
+                    "/artifacts/public%2Fbuildconfig.diff"
+                )
+                command_context.log(
+                    logging.ERROR,
+                    "buildconfig",
+                    {"artifact_url": artifact_url},
+                    "[gradle:error] .buildconfig.yml changed! Please update it by running:   "
+                    '"curl --location --compressed {artifact_url} | git apply"   '
+                    "Then commit and push!",
+                )
+            else:
+                command_context.log(
+                    logging.ERROR,
+                    "buildconfig",
+                    {},
+                    ".buildconfig.yml updated! Please commit these changes.",
+                )
+
+            command_context.log(
+                logging.ERROR,
+                "buildconfig",
+                {"rel_path": rel_path},
+                "TEST-UNEXPECTED-FAIL | {rel_path} | build config changed",
+            )
+            return 1
+
+        command_context.log(
+            logging.INFO,
+            "buildconfig",
+            {"path": str(build_config_file)},
+            "Updated {path} with latest Gradle config!",
+        )
+    else:
+        command_context.log(
+            logging.INFO,
+            "buildconfig",
+            {"name": build_config_file.name},
+            "All good! {name} is up-to-date with Gradle.",
+        )
+    return 0
+
+
 @Command(
     "gradle",
     category="devenv",

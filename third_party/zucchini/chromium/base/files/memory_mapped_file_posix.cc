@@ -85,9 +85,18 @@ bool MemoryMappedFile::MapFileRegionToMemory(
       break;
   }
 
+#if defined(MOZ_ZUCCHINI)
+  auto* data = static_cast<uint8_t*>(mmap(nullptr, map_size, flags, MAP_SHARED,
+                                          file_.GetPlatformFile(), map_start));
+  if (data != MAP_FAILED) {
+    data_ = data;
+  }
+  else {
+#else
   data_ = static_cast<uint8_t*>(mmap(nullptr, map_size, flags, MAP_SHARED,
                                      file_.GetPlatformFile(), map_start));
   if (data_ == MAP_FAILED) {
+#endif  // MOZ_ZUCCHINI
     DPLOG(ERROR) << "mmap " << file_.GetPlatformFile();
     return false;
   }
@@ -106,5 +115,23 @@ void MemoryMappedFile::CloseHandles() {
   file_.Close();
   length_ = 0;
 }
+
+#if defined(MOZ_ZUCCHINI)
+bool MemoryMappedFile::Flush() {
+  if (!data_) {
+    return false;
+  }
+
+  // Synchronize memory-mapped changes to disk. MS_SYNC ensures all writes are
+  // completed before returning. MS_INVALIDATE is critical on macOS to
+  // invalidate kernel code signing caches, ensuring subsequent opens will
+  // revalidate signatures.
+  bool success = msync(data_, length_, MS_SYNC | MS_INVALIDATE) == 0;
+  if (!success) {
+    PLOG(ERROR) << "msync failed";
+  }
+  return success;
+}
+#endif  // MOZ_ZUCCHINI
 
 }  // namespace base

@@ -253,7 +253,7 @@ nsresult nsHtml5TreeOperation::AppendText(const char16_t* aBuffer,
                                 aBuilder);
   }
 
-  nsNodeInfoManager* nodeInfoManager = aParent->OwnerDoc()->NodeInfoManager();
+  nsNodeInfoManager* nodeInfoManager = aParent->NodeInfoManager();
   RefPtr<nsTextNode> text = new (nodeInfoManager) nsTextNode(nodeInfoManager);
   NS_ASSERTION(text, "Infallible malloc failed?");
   rv = text->SetText(aBuffer, aLength, false);
@@ -738,8 +738,7 @@ nsresult nsHtml5TreeOperation::FosterParentText(
                                   previousSibling->GetAsText(), aBuilder);
     }
 
-    nsNodeInfoManager* nodeInfoManager =
-        aStackParent->OwnerDoc()->NodeInfoManager();
+    nsNodeInfoManager* nodeInfoManager = aStackParent->NodeInfoManager();
     RefPtr<nsTextNode> text = new (nodeInfoManager) nsTextNode(nodeInfoManager);
     NS_ASSERTION(text, "Infallible malloc failed?");
     rv = text->SetText(aBuffer, aLength, false);
@@ -762,7 +761,7 @@ nsresult nsHtml5TreeOperation::FosterParentText(
 nsresult nsHtml5TreeOperation::AppendComment(nsIContent* aParent,
                                              char16_t* aBuffer, int32_t aLength,
                                              nsHtml5DocumentBuilder* aBuilder) {
-  nsNodeInfoManager* nodeInfoManager = aParent->OwnerDoc()->NodeInfoManager();
+  nsNodeInfoManager* nodeInfoManager = aParent->NodeInfoManager();
   RefPtr<Comment> comment = new (nodeInfoManager) Comment(nodeInfoManager);
   NS_ASSERTION(comment, "Infallible malloc failed?");
   nsresult rv = comment->SetText(aBuffer, aLength, false);
@@ -912,7 +911,7 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       // intendedParent == nullptr is a special case where the
       // intended parent is the document.
       nsNodeInfoManager* nodeInfoManager =
-          intendedParent ? intendedParent->OwnerDoc()->NodeInfoManager()
+          intendedParent ? intendedParent->NodeInfoManager()
                          : mBuilder->GetNodeInfoManager();
 
       *target = CreateHTMLElement(name, attributes, aOperation.mFromNetwork,
@@ -931,7 +930,7 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       // intendedParent == nullptr is a special case where the
       // intended parent is the document.
       nsNodeInfoManager* nodeInfoManager =
-          intendedParent ? intendedParent->OwnerDoc()->NodeInfoManager()
+          intendedParent ? intendedParent->NodeInfoManager()
                          : mBuilder->GetNodeInfoManager();
 
       *target = CreateSVGElement(name, attributes, aOperation.mFromNetwork,
@@ -949,7 +948,7 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
       // intendedParent == nullptr is a special case where the
       // intended parent is the document.
       nsNodeInfoManager* nodeInfoManager =
-          intendedParent ? intendedParent->OwnerDoc()->NodeInfoManager()
+          intendedParent ? intendedParent->NodeInfoManager()
                          : mBuilder->GetNodeInfoManager();
 
       *target =

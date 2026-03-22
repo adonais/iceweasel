@@ -279,9 +279,8 @@ export class ProfileSaveOrUploadDialog {
         },
       });
 
-      const { extractProfileTokenFromJwt } = await import(
-        "chrome://global/content/aboutLogging/jwt.mjs"
-      );
+      const { extractProfileTokenFromJwt } =
+        await import("chrome://global/content/aboutLogging/jwt.mjs");
       const hash = extractProfileTokenFromJwt(uploadResult);
       const profileUrl = "https://profiler.firefox.com/public/" + hash;
       document.l10n.setArgs(this.#uploadedMessageText, {
@@ -291,9 +290,8 @@ export class ProfileSaveOrUploadDialog {
 
       // Save the uploaded profile information to IndexedDB
       try {
-        const { saveUploadedProfile } = await import(
-          "chrome://global/content/aboutLogging/profileStorage.mjs"
-        );
+        const { saveUploadedProfile } =
+          await import("chrome://global/content/aboutLogging/profileStorage.mjs");
 
         const uploadDate = new Date();
         const profileName = await document.l10n.formatValue(

@@ -272,16 +272,19 @@ def test_geckoprofiler_archive_profiles(mock_extract, tmp_path):
     work_dir = tmp_path / "work"
     work_dir.mkdir()
 
-    # Profiles are now streamed as .json directly from device (not compressed)
-    profile = work_dir / "profile-0.json"
+    # Profiles are streamed as .json directly from device and then stored
+    # inside test_name/geckoprofiler/ to match real tgz structure
+    profile_dir = work_dir / "test_gecko" / "geckoprofiler"
+    profile_dir.mkdir(parents=True)
+    profile = profile_dir / "profile-0.json"
     with open(profile, "w") as f:
         f.write('{"meta": {"profile_type": "gecko"}}')
 
     tgz_file = tmp_path / "test_gecko.tgz"
     with tarfile.open(tgz_file, "w:gz") as tar:
-        tar.add(profile, arcname=profile.name)
+        tar.add(profile, arcname="test_gecko/geckoprofiler/profile-0.json")
 
-    mock_extract.return_value = ([profile], work_dir)
+    mock_extract.return_value = ([profile], work_dir, work_dir)
 
     profiler._archive_profiles()
 

@@ -74,7 +74,7 @@ nsMathMLmfracFrame::TransmitAutomaticData() {
   if (mEmbellishData.flags.contains(MathMLEmbellishFlag::EmbellishedOperator)) {
     // even when embellished, we need to record that <mfrac> won't fire
     // Stretch() on its embellished child
-    mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
+    mEmbellishData.direction = StretchDirection::Unsupported;
   }
 
   return NS_OK;
@@ -93,8 +93,8 @@ nscoord nsMathMLmfracFrame::CalcLineThickness(nsString& aThicknessAttribute,
   if (!aThicknessAttribute.IsEmpty()) {
     lineThickness = defaultThickness;
     ParseAndCalcNumericValue(aThicknessAttribute, &lineThickness,
-                             dom::MathMLElement::PARSE_ALLOW_NEGATIVE,
-                             aFontSizeInflation, this);
+                             aFontSizeInflation, this,
+                             dom::MathMLElement::ParseFlag::AllowNegative);
     // MathML Core says a negative value is interpreted as 0.
     if (lineThickness < 0) {
       lineThickness = 0;

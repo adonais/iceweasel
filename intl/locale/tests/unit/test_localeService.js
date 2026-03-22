@@ -300,7 +300,7 @@ add_test(function test_locale_service_glue() {
   run_next_test();
 });
 
-add_test(function test_font_langauge_group() {
+add_test(function test_font_language_group() {
   const origAvLocales = localeService.availableLocales;
 
   for (const [locales, expGroup] of [
@@ -330,6 +330,29 @@ add_test(function test_font_langauge_group() {
       localeService.availableLocales = [locale, "en-US"];
       localeService.requestedLocales = [locale];
       Assert.equal(localeService.fontLanguageGroup, expGroup, locale);
+    }
+  }
+
+  localeService.availableLocales = origAvLocales;
+
+  run_next_test();
+});
+
+add_test(function test_url_fixup_suffix() {
+  const origAvLocales = localeService.availableLocales;
+
+  for (const [locales, expSuffix] of [
+    [["be"], ".by"],
+    [["cs"], ".cz"],
+    [["da"], ".dk"],
+    [["nb-NO", "nn-NO"], ".no"],
+    [["sk"], ".sk"],
+    [["en-US", "fi"], ".com"],
+  ]) {
+    for (const locale of locales) {
+      localeService.availableLocales = [locale, "en-US"];
+      localeService.requestedLocales = [locale];
+      Assert.equal(localeService.urlFixupSuffix, expSuffix, locale);
     }
   }
 

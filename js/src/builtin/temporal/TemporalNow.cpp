@@ -10,11 +10,11 @@
 
 #include <stdint.h>
 
-#include "jsdate.h"
 #include "jspubtd.h"
 #include "jstypes.h"
 #include "NamespaceImports.h"
 
+#include "builtin/Date.h"
 #include "builtin/temporal/Calendar.h"
 #include "builtin/temporal/Instant.h"
 #include "builtin/temporal/PlainDate.h"

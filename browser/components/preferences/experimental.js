@@ -13,6 +13,7 @@ const gExperimentalPane = {
   inited: false,
   _featureGatesContainer: null,
   _firefoxLabs: null,
+  _observerAdded: false,
 
   /** @type {Promise<void>} */
   _renderingPromise: Promise.resolve(),
@@ -42,6 +43,7 @@ const gExperimentalPane = {
     await this._queueRender();
 
     Services.obs.addObserver(this, ExperimentAPI.ENROLLMENTS_UPDATED);
+    this._observerAdded = true;
   },
 
   /**
@@ -186,7 +188,10 @@ const gExperimentalPane = {
   _removeObservers() {
     ExperimentAPI.manager.store.off("update", this._onNimbusUpdate);
 
-    Services.obs.removeObserver(this, ExperimentAPI.ENROLLMENTS_UPDATED);
+    if (this._observerAdded) {
+      Services.obs.removeObserver(this, ExperimentAPI.ENROLLMENTS_UPDATED);
+      this._observerAdded = false;
+    }
   },
 
   // Reset the features to their default values

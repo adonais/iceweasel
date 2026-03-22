@@ -558,8 +558,16 @@ class ADBHost(ADBCommand):
 
         ::
 
-            [{'device_serial': 'b313b945', 'state': 'device', 'product': 'd2vzw',
-              'usb': '1-7', 'device': 'd2vzw', 'model': 'SCH_I535' }]
+            [
+                {
+                    "device_serial": "b313b945",
+                    "state": "device",
+                    "product": "d2vzw",
+                    "usb": "1-7",
+                    "device": "d2vzw",
+                    "model": "SCH_I535",
+                }
+            ]
         """
         # b313b945               device usb:1-7 product:d2vzw model:SCH_I535 device:d2vzw
         # from Android system/core/adb/transport.c statename()

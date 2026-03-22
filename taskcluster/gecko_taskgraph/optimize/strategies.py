@@ -103,3 +103,17 @@ class SkipUnlessMissing(OptimizationStrategy):
         return bool(
             self.index_search.should_replace_task(task, params, deadline, [index])
         )
+
+
+@register_strategy("skip-constrained")
+class SkipConstrained(OptimizationStrategy):
+    """Skips tasks on constrained worker pools.
+
+    Always skips tasks that are on pools with capacity issues, typically
+    hardware.
+    """
+
+    def should_remove_task(self, task, params, _):
+        if task.task["provisionerId"] == "releng-hardware":
+            return True
+        return False

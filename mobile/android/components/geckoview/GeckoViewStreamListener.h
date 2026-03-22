@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GeckoViewStreamListener_h__
-#define GeckoViewStreamListener_h__
+#ifndef GeckoViewStreamListener_h_
+#define GeckoViewStreamListener_h_
 
 #include "nsIStreamListener.h"
 #include "nsIInterfaceRequestor.h"
@@ -54,4 +54,4 @@ class GeckoViewStreamListener : public nsIStreamListener,
 
 }  // namespace mozilla
 
-#endif  // GeckoViewStreamListener_h__
+#endif  // GeckoViewStreamListener_h_

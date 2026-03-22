@@ -98,10 +98,8 @@ export default class RestoreFromBackup extends MozLitElement {
     this.addEventListener("BackupUI:StateWasUpdated", this);
 
     // Resize the textarea when the window is resized
-    if (this.aboutWelcomeEmbedded) {
-      this._handleWindowResize = () => this.resizeTextarea();
-      window.addEventListener("resize", this._handleWindowResize);
-    }
+    this._handleWindowResize = () => this.resizeTextarea();
+    window.addEventListener("resize", this._handleWindowResize);
   }
 
   maybeGetBackupFileInfo() {
@@ -126,9 +124,7 @@ export default class RestoreFromBackup extends MozLitElement {
 
     // Resize the textarea. This only runs once on initial render,
     // and once each time one of our reactive properties is changed.
-    if (this.aboutWelcomeEmbedded) {
-      this.resizeTextarea();
-    }
+    this.resizeTextarea();
 
     if (changedProperties.has("backupServiceState")) {
       // If we got a recovery error, recoveryInProgress should be false
@@ -423,40 +419,29 @@ export default class RestoreFromBackup extends MozLitElement {
     let describedBy = "";
     const { backupFileInfo, recoveryErrorCode } = this.backupServiceState || {};
 
-    if (this.aboutWelcomeEmbedded) {
-      if (recoveryErrorCode && !this.isIncorrectPassword) {
-        describedBy = "backup-generic-file-error";
-      } else if (!backupFileInfo) {
-        describedBy = "restore-from-backup-no-backup-file-link";
-      } else {
-        describedBy = "restore-from-backup-backup-found-info";
-      }
-    }
-
-    if (this.aboutWelcomeEmbedded) {
-      return html`
-        <textarea
-          id="backup-filepicker-input"
-          rows="1"
-          readonly
-          .value=${backupFileName}
-          style=${styles}
-          @input=${this.handleTextareaResize}
-          aria-describedby=${describedBy}
-          data-l10n-id="restore-from-backup-filepicker-input"
-        ></textarea>
-      `;
+    if (
+      this.aboutWelcomeEmbedded &&
+      recoveryErrorCode &&
+      !this.isIncorrectPassword
+    ) {
+      describedBy = "backup-generic-file-error";
+    } else if (!backupFileInfo) {
+      describedBy = "restore-from-backup-no-backup-file-link";
+    } else {
+      describedBy = "restore-from-backup-backup-found-info";
     }
 
     return html`
-      <input
+      <textarea
         id="backup-filepicker-input"
-        type="text"
+        rows="1"
         readonly
         .value=${backupFileName}
         style=${styles}
+        @input=${this.handleTextareaResize}
+        aria-describedby=${describedBy}
         data-l10n-id="restore-from-backup-filepicker-input"
-      />
+      ></textarea>
     `;
   }
 

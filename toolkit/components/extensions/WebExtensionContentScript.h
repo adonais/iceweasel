@@ -67,6 +67,7 @@ class MOZ_STACK_CLASS DocInfo final {
   bool ShouldMatchActiveTabPermission() const;
 
   uint64_t FrameID() const;
+  nsresult GetInnerWindowID(uint64_t* aInnerWindowID) const;
 
   nsPIDOMWindowOuter* GetWindow() const {
     if (mObj.is<Window>()) {
@@ -126,7 +127,11 @@ class MozDocumentMatcher : public nsISupports, public nsWrapperCache {
   bool Matches(const DocInfo& aDoc, bool aIgnorePermissions) const;
   bool Matches(const DocInfo& aDoc) const { return Matches(aDoc, false); }
 
-  bool MatchesURI(const URLInfo& aURL, bool aIgnorePermissions) const;
+  bool MatchesURI(const URLInfo& aURL, bool aIgnorePermissions,
+                  const Maybe<DocInfo>& aDoc) const;
+  bool MatchesURI(const URLInfo& aURL, bool aIgnorePermissions) const {
+    return MatchesURI(aURL, aIgnorePermissions, Nothing());
+  }
   bool MatchesURI(const URLInfo& aURL) const { return MatchesURI(aURL, false); }
 
   bool MatchesWindowGlobal(dom::WindowGlobalChild& aWindow,
@@ -168,6 +173,10 @@ class MozDocumentMatcher : public nsISupports, public nsWrapperCache {
   MozDocumentMatcher(dom::GlobalObject& aGlobal,
                      const dom::MozDocumentMatcherInit& aInit, bool aRestricted,
                      ErrorResult& aRv);
+
+  void LogMozExtExecuteScriptDeprecationWarning(const URLInfo& aURL,
+                                                uint64_t aInnerWindowID,
+                                                bool aAllowed) const;
 
   RefPtr<WebExtensionPolicy> mExtension;
 

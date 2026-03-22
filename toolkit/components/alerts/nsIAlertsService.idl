@@ -7,6 +7,7 @@
 #include "nsIObserver.idl"
 
 interface imgIRequest;
+interface imgIContainer;
 interface nsICancelable;
 interface nsIPrincipal;
 interface nsIURI;
@@ -19,25 +20,6 @@ static constexpr nsLiteralString kAlertActionDisable = u"snooze"_ns;
 static constexpr nsLiteralString kAlertActionSettings = u"settings"_ns;
 %}
 
-[scriptable, uuid(a71a637d-de1d-47c6-a8d2-c60b2596f471)]
-interface nsIAlertNotificationImageListener : nsISupports
-{
-  /**
-   * Called when the image finishes loading.
-   *
-   * @param aUserData An opaque parameter passed to |loadImage|.
-   * @param aRequest  The image request.
-   */
-  void onImageReady(in nsISupports aUserData, in imgIRequest aRequest);
-
-  /**
-   * Called if the alert doesn't have an image, or if the image request times
-   * out or fails.
-   *
-   * @param aUserData An opaque parameter passed to |loadImage|.
-   */
-  void onImageMissing(in nsISupports aUserData);
-};
 
 [scriptable, uuid(a054c2c9-2787-4686-859c-45609d790056)]
 interface nsIAlertAction : nsISupports
@@ -131,6 +113,11 @@ interface nsIAlertNotification : nsISupports
    * that time, the alert will show without an image.
    */
   readonly attribute AString imageURL;
+
+  /**
+   * The actual image container to use for the alert. This should be what imageURL returns.
+   */
+  attribute imgIContainer image;
 
   /** The title for the alert. */
   readonly attribute AString title;
@@ -244,22 +231,6 @@ interface nsIAlertNotification : nsISupports
    * On non-Windows, this field is ignored.
    */
   attribute AString opaqueRelaunchData;
-
-  /**
-   * Loads the image associated with this alert.
-   *
-   * @param aTimeout  The number of milliseconds to wait before cancelling the
-   *                  image request. If zero, there is no timeout.
-   * @param aListener An |nsIAlertNotificationImageListener| implementation,
-   *                  notified when the image loads. The listener is kept alive
-   *                  until the request completes.
-   * @param aUserData An opaque parameter passed to the listener's methods.
-   *                  Not used by the libnotify backend, but the OS X backend
-   *                  passes the pending notification.
-   */
-  nsICancelable loadImage(in unsigned long aTimeout,
-                          in nsIAlertNotificationImageListener aListener,
-                          [optional] in nsISupports aUserData);
 
   /**
    * Retrieves the action object by the action name or null if not.

@@ -296,6 +296,12 @@ private fun AcornColorGrid(
                         modifier = Modifier.colorGridItemShort(color = colorScheme.information),
                         color = colorScheme.onPrimary,
                     )
+
+                    Text(
+                        text = "success",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.success),
+                        color = colorScheme.onPrimary,
+                    )
                 }
             }
         }

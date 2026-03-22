@@ -17,21 +17,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "isSiteSettingsClearedOnShutdown",
-  "privacy.clearOnShutdown.siteSettings",
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "isSiteSettingsClearedOnShutdown2",
   "privacy.clearOnShutdown_v2.siteSettings",
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "useOldClearHistoryDialog",
-  "privacy.sanitize.useOldClearHistoryDialog",
   false
 );
 
@@ -56,10 +42,7 @@ export class SiteSettingsBackupResource extends BackupResource {
       return true;
     }
 
-    if (lazy.useOldClearHistoryDialog) {
-      return !lazy.isSiteSettingsClearedOnShutdown;
-    }
-    return !lazy.isSiteSettingsClearedOnShutdown2;
+    return !lazy.isSiteSettingsClearedOnShutdown;
   }
 
   async backup(

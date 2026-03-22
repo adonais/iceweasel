@@ -449,251 +449,136 @@ async function getActualResult({
 }
 
 /**
- * Does some "show less frequently" tests where the cap is set in remote
- * settings and Nimbus. See `doOneShowLessFrequentlyTest()`. This function
- * assumes the matching behavior implemented by the given `SuggestFeature` is
- * based on matching prefixes of the given keyword starting at the first word.
- * It also assumes the `SuggestFeature` provides suggestions in remote settings.
+ * Tests the `show_less_frequently` command for a given feature.
  *
  * @param {object} options
  *   Options object.
  * @param {SuggestFeature} options.feature
- *   The feature that provides the suggestion matched by the searches.
- * @param {*} options.expectedResult
- *   The expected result that should be matched, for searches that are expected
- *   to match a result. Can also be a function; it's passed the current search
- *   string and it should return the expected result.
+ *   The feature being tested.
+ * @param {SuggestFeature} options.keyword
+ *   The keyword to search for. Its length must be at least 3, and each prefix
+ *   starting at `keyword.length - 3` must match a suggestion.
+ * @param {object} options.expectedResult
+ *   The result that is expected to match the keyword and its prefixes.
+ * @param {string} options.minKeywordLengthPref
+ *   The name of the pref for the min keyword length being tested.
  * @param {string} options.showLessFrequentlyCountPref
- *   The name of the pref that stores the "show less frequently" count being
- *   tested.
- * @param {string} options.nimbusCapVariable
- *   The name of the Nimbus variable that stores the "show less frequently" cap
- *   being tested.
- * @param {object} options.keyword
- *   The primary keyword to use during the test.
- * @param {number} options.keywordBaseIndex
- *   The index in `keyword` to base substring checks around. This function will
- *   test substrings starting at the beginning of keyword and ending at the
- *   following indexes: one index before `keywordBaseIndex`,
- *   `keywordBaseIndex`, `keywordBaseIndex` + 1, `keywordBaseIndex` + 2, and
- *   `keywordBaseIndex` + 3.
+ *   The name of the pref for the "show less frequently" count being tested.
  */
-async function doShowLessFrequentlyTests({
+async function doShowLessFrequentlyTest({
   feature,
-  expectedResult,
-  showLessFrequentlyCountPref,
-  nimbusCapVariable,
   keyword,
-  keywordBaseIndex = keyword.indexOf(" "),
-}) {
-  // Do some sanity checks on the keyword. Any checks that fail are errors in
-  // the test.
-  if (keywordBaseIndex <= 0) {
-    throw new Error(
-      "keywordBaseIndex must be > 0, but it's " + keywordBaseIndex
-    );
-  }
-  if (keyword.length < keywordBaseIndex + 3) {
-    throw new Error(
-      "keyword must have at least two chars after keywordBaseIndex"
-    );
-  }
-
-  let tests = [
-    {
-      showLessFrequentlyCount: 0,
-      canShowLessFrequently: true,
-      newSearches: {
-        [keyword.substring(0, keywordBaseIndex - 1)]: false,
-        [keyword.substring(0, keywordBaseIndex)]: true,
-        [keyword.substring(0, keywordBaseIndex + 1)]: true,
-        [keyword.substring(0, keywordBaseIndex + 2)]: true,
-        [keyword.substring(0, keywordBaseIndex + 3)]: true,
-      },
-    },
-    {
-      showLessFrequentlyCount: 1,
-      canShowLessFrequently: true,
-      newSearches: {
-        [keyword.substring(0, keywordBaseIndex)]: false,
-      },
-    },
-    {
-      showLessFrequentlyCount: 2,
-      canShowLessFrequently: true,
-      newSearches: {
-        [keyword.substring(0, keywordBaseIndex + 1)]: false,
-      },
-    },
-    {
-      showLessFrequentlyCount: 3,
-      canShowLessFrequently: false,
-      newSearches: {
-        [keyword.substring(0, keywordBaseIndex + 2)]: false,
-      },
-    },
-    {
-      showLessFrequentlyCount: 3,
-      canShowLessFrequently: false,
-      newSearches: {},
-    },
-  ];
-
-  info("Testing 'show less frequently' with cap in remote settings");
-  await doOneShowLessFrequentlyTest({
-    tests,
-    feature,
-    expectedResult,
-    showLessFrequentlyCountPref,
-    rs: {
-      show_less_frequently_cap: 3,
-    },
-  });
-
-  // Nimbus should override remote settings.
-  info("Testing 'show less frequently' with cap in Nimbus and remote settings");
-  await doOneShowLessFrequentlyTest({
-    tests,
-    feature,
-    expectedResult,
-    showLessFrequentlyCountPref,
-    rs: {
-      show_less_frequently_cap: 10,
-    },
-    nimbus: {
-      [nimbusCapVariable]: 3,
-    },
-  });
-}
-
-/**
- * Does a group of searches, increments the "show less frequently" count, and
- * repeats until all groups are done. The cap can be set by remote settings
- * config and/or Nimbus.
- *
- * @param {object} options
- *   Options object.
- * @param {SuggestFeature} options.feature
- *   The feature that provides the suggestion matched by the searches.
- * @param {*} options.expectedResult
- *   The expected result that should be matched, for searches that are expected
- *   to match a result. Can also be a function; it's passed the current search
- *   string and it should return the expected result.
- * @param {string} options.showLessFrequentlyCountPref
- *   The name of the pref that stores the "show less frequently" count being
- *   tested.
- * @param {object} options.tests
- *   An array where each item describes a group of new searches to perform and
- *   expected state. Each item should look like this:
- *   `{ showLessFrequentlyCount, canShowLessFrequently, newSearches }`
- *
- *   {number} showLessFrequentlyCount
- *     The expected value of `showLessFrequentlyCount` before the group of
- *     searches is performed.
- *   {boolean} canShowLessFrequently
- *     The expected value of `canShowLessFrequently` before the group of
- *     searches is performed.
- *   {object} newSearches
- *     An object that maps each search string to a boolean that indicates
- *     whether the first remote settings suggestion should be triggered by the
- *     search string. Searches are cumulative: The intended use is to pass a
- *     large initial group of searches in the first search group, and then each
- *     following `newSearches` is a diff against the previous.
- * @param {object} options.rs
- *   The remote settings config to set.
- * @param {object} options.nimbus
- *   The Nimbus variables to set.
- */
-async function doOneShowLessFrequentlyTest({
-  feature,
   expectedResult,
+  minKeywordLengthPref,
   showLessFrequentlyCountPref,
-  tests,
-  rs = {},
-  nimbus = {},
 }) {
-  // Disable Merino so we trigger only remote settings suggestions. The
-  // `SuggestFeature` is expected to add remote settings suggestions using
-  // keywords start starting with the first word in each full keyword, but the
-  // mock Merino server will always return whatever suggestion it's told to
-  // return regardless of the search string. That means Merino will return a
-  // suggestion for a keyword that's smaller than the first full word.
-  UrlbarPrefs.set("quicksuggest.online.enabled", false);
+  let showLessFrequentlyCap = 3;
 
-  // Set Nimbus variables and RS config.
-  let cleanUpNimbus = await UrlbarTestUtils.initNimbusFeature(nimbus);
+  if (keyword.length < showLessFrequentlyCap) {
+    throw new Error(
+      "keyword must be long enough to 'Show less frequently' enough times"
+    );
+  }
+
   await QuickSuggestTestUtils.withConfig({
-    config: rs,
+    config: { show_less_frequently_cap: showLessFrequentlyCap },
     callback: async () => {
-      let cumulativeSearches = {};
+      // Do `showLessFrequentlyCap` searches and trigger the
+      // `show_less_frequently` command after each one. In each iteration, the
+      // length of `searchString` increases by 1.
+      for (let count = 0; count < showLessFrequentlyCap; count++) {
+        let searchString = keyword.substring(
+          0,
+          keyword.length - showLessFrequentlyCap + count + 1
+        );
 
-      for (let {
-        showLessFrequentlyCount,
-        canShowLessFrequently,
-        newSearches,
-      } of tests) {
         info(
-          "Starting subtest: " +
+          "Doing search: " +
             JSON.stringify({
-              showLessFrequentlyCount,
-              canShowLessFrequently,
-              newSearches,
+              count,
+              searchString,
             })
         );
 
+        // Check prefs and other values before searching.
+        Assert.equal(
+          UrlbarPrefs.get(minKeywordLengthPref),
+          count == 0 ? 0 : searchString.length,
+          "minKeywordLength pref should be correct before search " + count
+        );
         Assert.equal(
           feature.showLessFrequentlyCount,
-          showLessFrequentlyCount,
-          "showLessFrequentlyCount should be correct initially"
+          count,
+          "showLessFrequentlyCount should be correct before search " + count
         );
         Assert.equal(
           UrlbarPrefs.get(showLessFrequentlyCountPref),
-          showLessFrequentlyCount,
-          "Pref should be correct initially"
+          count,
+          "showLessFrequentlyCount pref should be correct before search " +
+            count
         );
-        Assert.equal(
+        Assert.ok(
           feature.canShowLessFrequently,
-          canShowLessFrequently,
-          "canShowLessFrequently should be correct initially"
+          "canShowLessFrequently should be correct before search " + count
         );
 
-        // Merge the current `newSearches` object into the cumulative object.
-        cumulativeSearches = {
-          ...cumulativeSearches,
-          ...newSearches,
-        };
+        // Do the search.
+        await check_results({
+          context: createContext(searchString, {
+            providers: [UrlbarProviderQuickSuggest.name],
+            isPrivate: false,
+          }),
+          matches: [expectedResult],
+        });
 
-        for (let [searchString, isExpected] of Object.entries(
-          cumulativeSearches
-        )) {
-          info("Doing search: " + JSON.stringify({ searchString, isExpected }));
+        // Trigger the command.
+        triggerCommand({
+          feature,
+          searchString,
+          command: "show_less_frequently",
+          result: expectedResult,
+          expectedCountsByCall: {
+            acknowledgeFeedback: 1,
+            invalidateResultMenuCommands:
+              count == showLessFrequentlyCap - 1 ? 1 : 0,
+          },
+        });
 
-          let results = [];
-          if (isExpected) {
-            results.push(
-              typeof expectedResult == "function"
-                ? expectedResult(searchString)
-                : expectedResult
-            );
-          }
-
-          await check_results({
-            context: createContext(searchString, {
-              providers: [UrlbarProviderQuickSuggest.name],
-              isPrivate: false,
-            }),
-            matches: results,
-          });
-        }
-
-        feature.incrementShowLessFrequentlyCount();
+        // The same search should now match nothing.
+        await check_results({
+          context: createContext(searchString, {
+            providers: [UrlbarProviderQuickSuggest.name],
+            isPrivate: false,
+          }),
+          matches: [],
+        });
       }
+
+      // Check prefs and other values now that all searches are done.
+      Assert.equal(
+        UrlbarPrefs.get(minKeywordLengthPref),
+        keyword.length + 1,
+        "minKeywordLength pref should be correct after all searches"
+      );
+      Assert.equal(
+        feature.showLessFrequentlyCount,
+        showLessFrequentlyCap,
+        "showLessFrequentlyCount should be correct after all searches"
+      );
+      Assert.equal(
+        UrlbarPrefs.get(showLessFrequentlyCountPref),
+        showLessFrequentlyCap,
+        "showLessFrequentlyCap pref should be correct after all searches"
+      );
+      Assert.ok(
+        !feature.canShowLessFrequently,
+        "canShowLessFrequently should be correct after all searches"
+      );
     },
   });
 
-  await cleanUpNimbus();
+  UrlbarPrefs.clear(minKeywordLengthPref);
   UrlbarPrefs.clear(showLessFrequentlyCountPref);
-  UrlbarPrefs.clear("quicksuggest.online.enabled");
 }
 
 /**

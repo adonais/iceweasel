@@ -6,8 +6,8 @@
 
 /* representation of simple property values within CSS declarations */
 
-#ifndef nsCSSValue_h___
-#define nsCSSValue_h___
+#ifndef nsCSSValue_h_
+#define nsCSSValue_h_
 
 #include "nsCoord.h"
 
@@ -131,4 +131,4 @@ class nsCSSValue {
   float mValue;
 };
 
-#endif /* nsCSSValue_h___ */
+#endif /* nsCSSValue_h_ */

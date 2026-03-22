@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _MTRANSPORTHANDLER_H__
-#define _MTRANSPORTHANDLER_H__
+#ifndef MTRANSPORTHANDLER_H_
+#define MTRANSPORTHANDLER_H_
 
 #include <set>
 #include <string>
@@ -201,4 +201,4 @@ void TokenizeCandidate(const std::string& aCandidate,
 
 }  // namespace mozilla
 
-#endif  //_MTRANSPORTHANDLER_H__
+#endif  // MTRANSPORTHANDLER_H_

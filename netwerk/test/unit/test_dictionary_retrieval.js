@@ -493,6 +493,141 @@ add_task(async function test_multiple_dictionary_matches() {
   }
 });
 
+// Test case-insensitive Vary header removal (Bug 2010968)
+add_task(async function test_vary_header_case_insensitive_removal() {
+  // Test that RemoveFromVary removes Accept-Encoding regardless of case
+  // Both "Accept-Encoding" and "accept-encoding" should be properly removed
+
+  // Setup dictionary endpoints with different Vary header cases
+  await server.registerPathHandler(
+    "/dict/vary-uppercase",
+    function (request, response) {
+      response.writeHead(200, {
+        "Content-Type": "application/octet-stream",
+        "Use-As-Dictionary":
+          'match="/test/uppercase/*", id="vary-upper-dict", type=raw',
+        "Cache-Control": "max-age=3600",
+        Vary: "Accept-Encoding, User-Agent",
+      });
+      response.end("VARY_UPPERCASE_DICT_DATA", "binary");
+    }
+  );
+
+  await server.registerPathHandler(
+    "/dict/vary-lowercase",
+    function (request, response) {
+      response.writeHead(200, {
+        "Content-Type": "application/octet-stream",
+        "Use-As-Dictionary":
+          'match="/test/lowercase/*", id="vary-lower-dict", type=raw',
+        "Cache-Control": "max-age=3600",
+        Vary: "accept-encoding, User-Agent",
+      });
+      response.end("VARY_LOWERCASE_DICT_DATA", "binary");
+    }
+  );
+
+  await server.registerPathHandler(
+    "/dict/vary-mixedcase",
+    function (request, response) {
+      response.writeHead(200, {
+        "Content-Type": "application/octet-stream",
+        "Use-As-Dictionary":
+          'match="/test/mixed/*", id="vary-mixed-dict", type=raw',
+        "Cache-Control": "max-age=3600",
+        Vary: "AcCePt-EnCoDiNg, User-Agent",
+      });
+      response.end("VARY_MIXEDCASE_DICT_DATA", "binary");
+    }
+  );
+
+  // Test 1: Uppercase Accept-Encoding
+  let urlUpper = `https://localhost:${server.port()}/dict/vary-uppercase`;
+  let chanUpper = makeChan(urlUpper);
+  let [reqUpper, dataUpper] = await channelOpenPromise(chanUpper);
+  Assert.equal(
+    dataUpper,
+    "VARY_UPPERCASE_DICT_DATA",
+    "Dictionary with uppercase Accept-Encoding should be fetched"
+  );
+
+  // Check the Vary header - Accept-Encoding should be removed
+  let varyUpper = reqUpper
+    .QueryInterface(Ci.nsIHttpChannel)
+    .getResponseHeader("Vary");
+  Assert.ok(
+    !varyUpper.toLowerCase().includes("accept-encoding"),
+    `Vary header should not contain Accept-Encoding (was: "${varyUpper}")`
+  );
+  Assert.ok(
+    varyUpper.includes("User-Agent"),
+    "Vary header should still contain User-Agent"
+  );
+
+  // Verify dictionary was stored
+  await new Promise(resolve => {
+    verifyDictionaryStored(urlUpper, true, resolve);
+  });
+
+  // Test 2: Lowercase accept-encoding
+  let urlLower = `https://localhost:${server.port()}/dict/vary-lowercase`;
+  let chanLower = makeChan(urlLower);
+  let [reqLower, dataLower] = await channelOpenPromise(chanLower);
+  Assert.equal(
+    dataLower,
+    "VARY_LOWERCASE_DICT_DATA",
+    "Dictionary with lowercase accept-encoding should be fetched"
+  );
+
+  // Check the Vary header - accept-encoding should be removed
+  let varyLower = reqLower
+    .QueryInterface(Ci.nsIHttpChannel)
+    .getResponseHeader("Vary");
+  Assert.ok(
+    !varyLower.toLowerCase().includes("accept-encoding"),
+    `Vary header should not contain accept-encoding (was: "${varyLower}")`
+  );
+  Assert.ok(
+    varyLower.includes("User-Agent"),
+    "Vary header should still contain User-Agent"
+  );
+
+  // Verify dictionary was stored
+  await new Promise(resolve => {
+    verifyDictionaryStored(urlLower, true, resolve);
+  });
+
+  // Test 3: Mixed case AcCePt-EnCoDiNg
+  let urlMixed = `https://localhost:${server.port()}/dict/vary-mixedcase`;
+  let chanMixed = makeChan(urlMixed);
+  let [reqMixed, dataMixed] = await channelOpenPromise(chanMixed);
+  Assert.equal(
+    dataMixed,
+    "VARY_MIXEDCASE_DICT_DATA",
+    "Dictionary with mixed case Accept-Encoding should be fetched"
+  );
+
+  // Check the Vary header - AcCePt-EnCoDiNg should be removed
+  let varyMixed = reqMixed
+    .QueryInterface(Ci.nsIHttpChannel)
+    .getResponseHeader("Vary");
+  Assert.ok(
+    !varyMixed.toLowerCase().includes("accept-encoding"),
+    `Vary header should not contain Accept-Encoding in any case (was: "${varyMixed}")`
+  );
+  Assert.ok(
+    varyMixed.includes("User-Agent"),
+    "Vary header should still contain User-Agent"
+  );
+
+  // Verify dictionary was stored
+  await new Promise(resolve => {
+    verifyDictionaryStored(urlMixed, true, resolve);
+  });
+
+  dump("**** Case-insensitive Vary header removal test complete\n");
+});
+
 // Cleanup
 add_task(async function cleanup() {
   // Clear cache

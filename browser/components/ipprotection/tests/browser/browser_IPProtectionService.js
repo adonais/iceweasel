@@ -22,8 +22,40 @@ const { TelemetryTestUtils } = ChromeUtils.importESModule(
 
 AddonTestUtils.initMochitest(this);
 
-// Don't add an experiment so we can test adding and removing it.
-DEFAULT_EXPERIMENT = null;
+async function optInUser() {
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+  let content = await openPanel();
+  let unauthenticatedContent = content.unauthenticatedEl;
+  let getStartedButton = unauthenticatedContent.shadowRoot.querySelector(
+    "#unauthenticated-get-started"
+  );
+  Assert.ok(getStartedButton, "Get Started button should be visible");
+
+  const waitForStateChange = BrowserTestUtils.waitForEvent(
+    IPProtectionService,
+    "IPProtectionService:StateChanged",
+    false,
+    () => IPProtectionService.state === IPProtectionStates.READY
+  );
+
+  const optInPromise = BrowserTestUtils.waitForEvent(
+    document,
+    "IPProtection:OptIn"
+  );
+
+  getStartedButton.click();
+
+  await optInPromise;
+
+  if (IPProtectionService.state !== IPProtectionStates.READY) {
+    await waitForStateChange;
+  }
+
+  await closePanel();
+}
 
 /**
  * Tests getting eligibility from a Nimbus experiment and
@@ -64,6 +96,7 @@ add_task(async function test_IPProtectionService_updateEligibility() {
  * Tests a user who was previously enrolled will be shown the widget.
  */
 add_task(async function test_IPProtectionService_updateEnrollment() {
+  Services.prefs.clearUserPref("browser.ipProtection.enabled");
   setupService({
     isSignedIn: true,
     isEnrolledAndEntitled: true,
@@ -87,7 +120,7 @@ add_task(async function test_IPProtectionService_updateEnrollment() {
 });
 
 /**
- * Tests a user in the experiment can enroll with Guardian on opening the panel.
+ * Tests a user in the experiment can enroll with Guardian by clicking get started.
  */
 add_task(async function test_IPProtectionService_enroll() {
   setupService({
@@ -106,20 +139,16 @@ add_task(async function test_IPProtectionService_enroll() {
   IPProtectionService.updateState();
   Assert.equal(
     IPProtectionService.state,
-    IPProtectionStates.READY,
-    "User should now be enrolling"
+    IPProtectionStates.UNAUTHENTICATED,
+    "User should now be unauthenticated"
   );
 
-  setupService({
-    isEnrolledAndEntitled: true,
-  });
-  await openPanel();
-  await IPProtectionService.enrolling;
+  await optInUser();
 
   Assert.equal(
     IPProtectionService.state,
     IPProtectionStates.READY,
-    "User should now be enrolled"
+    "User should now be enrolling"
   );
 
   cleanupService();
@@ -127,57 +156,13 @@ add_task(async function test_IPProtectionService_enroll() {
 });
 
 /**
- * Tests a user who has signed in is enrolled when enrolled in the experiment.
- * This state is only likely when testing the experiment.
- */
-add_task(
-  async function test_IPProtectionService_enroll_when_enrolled_in_experiment() {
-    setupService({
-      isEnrolledAndEntitled: false,
-      isSignedIn: true,
-      canEnroll: true,
-    });
-
-    let cleanupAlpha = await setupExperiment({
-      enabled: true,
-      variant: "alpha",
-    });
-
-    await waitForWidgetAdded();
-
-    setupService({
-      isEnrolledAndEntitled: true,
-    });
-    let content = await openPanel();
-
-    await IPProtectionService.enrolling;
-
-    Assert.equal(
-      IPProtectionService.state,
-      IPProtectionStates.READY,
-      "User should now be enrolled"
-    );
-
-    let statusCard = content.statusCardEl;
-
-    // User is already signed in so the toggle should be available.
-    Assert.ok(
-      statusCard?.connectionToggleEl,
-      "Status card connection toggle should be present"
-    );
-
-    cleanupService();
-    await cleanupAlpha();
-  }
-);
-
-/**
  *  Tests the entitlement updates when in the experiment.
  */
 add_task(
   async function test_IPProtectionService_updateEntitlement_in_experiment() {
+    Services.prefs.clearUserPref("browser.ipProtection.enabled");
     setupService({
-      isEnrolledAndEntitled: false,
+      isEnrolledAndEntitled: true,
       isSignedIn: true,
       canEnroll: true,
     });
@@ -188,12 +173,6 @@ add_task(
     });
 
     await waitForWidgetAdded();
-
-    setupService({
-      isEnrolledAndEntitled: true,
-    });
-    await openPanel();
-    await IPProtectionService.enrolling;
 
     Assert.equal(
       IPProtectionService.state,
@@ -210,6 +189,7 @@ add_task(
  * Tests the entitlement updates when not in the experiment.
  */
 add_task(async function test_IPProtectionService_updateEntitlement() {
+  Services.prefs.clearUserPref("browser.ipProtection.enabled");
   setupService({
     isSignedIn: true,
     isEnrolledAndEntitled: true,
@@ -231,7 +211,73 @@ add_task(async function test_IPProtectionService_updateEntitlement() {
   await SpecialPowers.popPrefEnv();
 });
 
+/**
+ * Tests the usage is refreshed and the panel shows
+ * the used amount after sign-in.
+ */
+add_task(async function test_IPProtectionService_update_usage_on_sign_in() {
+  Services.prefs.clearUserPref("browser.ipProtection.enabled");
+  IPPEnrollAndEntitleManager.resetEntitlement();
+
+  let usageChangedPromise = BrowserTestUtils.waitForEvent(
+    IPPProxyManager,
+    "IPPProxyManager:UsageChanged"
+  );
+  let usage = makeUsage("5368709120", "4294967296");
+  setupService({
+    isSignedIn: false,
+  });
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.enabled", true]],
+  });
+
+  await waitForWidgetAdded();
+
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+    isLinkedToGuardian: true,
+    usageInfo: usage,
+  });
+  // Dispatch a sign-in event to trigger the usage refresh.
+  IPPSignInWatcher.dispatchEvent(
+    new CustomEvent("IPPSignInWatcher:StateChanged", {
+      bubbles: true,
+      composed: true,
+    })
+  );
+
+  await usageChangedPromise;
+
+  let content = await openPanel();
+
+  let statusCard = content.statusCardEl;
+  let statusBoxEl = statusCard.statusBoxEl;
+  let bandwidthEl = statusBoxEl.shadowRoot
+    .querySelector(`slot[name="bandwidth"]`)
+    .assignedElements()[0];
+
+  await bandwidthEl.updateComplete;
+
+  Assert.ok(
+    BrowserTestUtils.isVisible(bandwidthEl),
+    "Bandwidth usage should be visible after entitlement refreshes usage"
+  );
+
+  Assert.equal(
+    bandwidthEl.max,
+    5368709120,
+    "Bandwidth max should match mocked usage"
+  );
+
+  await closePanel();
+  cleanupService();
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function test_ipprotection_ready() {
+  Services.prefs.clearUserPref("browser.ipProtection.enabled");
   setupService({
     isSignedIn: true,
     isEnrolledAndEntitled: true,
@@ -258,7 +304,7 @@ add_task(async function test_ipprotection_ready() {
 });
 
 /**
- * Tests showing an error and dismissing it on panel close.
+ * Tests showing an error state UI and dismissing it on panel close.
  */
 add_task(async function test_IPProtectionService_pass_errors() {
   setupService({
@@ -274,38 +320,38 @@ add_task(async function test_IPProtectionService_pass_errors() {
 
   let content = await openPanel();
 
-  let messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
+  let statusBoxLoadedPromise = BrowserTestUtils.waitForMutationCondition(
     content.shadowRoot,
     { childList: true, subtree: true },
-    () => content.shadowRoot.querySelector("ipprotection-message-bar")
+    () => content.shadowRoot.querySelector("ipprotection-status-box")
   );
 
   let statusCard = content.statusCardEl;
 
-  let toggleChangedPromise = BrowserTestUtils.waitForMutationCondition(
-    statusCard.shadowRoot,
-    { childList: true, subtree: true },
-    () => !statusCard.toggleEnabled
-  );
+  let turnOnButton = statusCard.actionButtonEl;
 
-  statusCard.connectionToggleEl.click();
+  turnOnButton.click();
 
-  await messageBarLoadedPromise;
-  await toggleChangedPromise;
+  await statusBoxLoadedPromise;
 
   Assert.equal(
     IPPProxyManager.state,
-    IPPProxyStates.ERROR,
-    "Proxy is not active"
+    IPPProxyStates.READY,
+    "Proxy should be in READY state when activation fails"
   );
 
-  let messageBar = content.shadowRoot.querySelector("ipprotection-message-bar");
+  let statusBox = content.statusBoxEl;
 
   Assert.ok(
-    !statusCard.connectionToggleEl.pressed,
-    "Toggle is still turned off because of an error"
+    !content.statusCardEl,
+    "Status card should be hidden when there's an error"
   );
-  Assert.ok(messageBar, "Message bar should be present");
+  Assert.ok(statusBox, "Status box should be present for generic error");
+  Assert.equal(
+    statusBox.type,
+    ERRORS.GENERIC,
+    "Status box type should be generic-error"
+  );
   Assert.equal(
     content.state.error,
     ERRORS.GENERIC,
@@ -321,9 +367,6 @@ add_task(async function test_IPProtectionService_pass_errors() {
   await closePanel();
 
   Assert.equal(content.state.error, "", "Should have no error");
-
-  // Reset the errors
-  IPPProxyManager.errors = [];
 
   await cleanupAlpha();
   cleanupService();
@@ -355,7 +398,8 @@ add_task(async function test_IPProtectionService_retry_errors() {
     false,
     () => !!IPPProxyManager.activatedAt
   );
-  statusCard.connectionToggleEl.click();
+  let turnOnButton = statusCard.actionButtonEl;
+  turnOnButton.click();
 
   await startedEventPromise;
 
@@ -387,10 +431,8 @@ add_task(async function test_IPProtectionService_stop_on_signout() {
     BrowserTestUtils.isVisible(content),
     "ipprotection content component should be present"
   );
-  Assert.ok(
-    statusCard.connectionToggleEl,
-    "Status card connection toggle should be present"
-  );
+  let turnOnButton = statusCard.actionButtonEl;
+  Assert.ok(turnOnButton, "Status card turn on button should be present");
 
   let startedEventPromise = BrowserTestUtils.waitForEvent(
     IPPProxyManager,
@@ -398,7 +440,7 @@ add_task(async function test_IPProtectionService_stop_on_signout() {
     false,
     () => !!IPPProxyManager.activatedAt
   );
-  statusCard.connectionToggleEl.click();
+  turnOnButton.click();
 
   await startedEventPromise;
 
@@ -421,73 +463,6 @@ add_task(async function test_IPProtectionService_stop_on_signout() {
     IPPProxyManager.state,
     IPPProxyStates.ACTIVE,
     "Proxy has stopped"
-  );
-
-  await closePanel();
-  await cleanupAlpha();
-  cleanupService();
-});
-
-function waitForTabReloaded(tab) {
-  return new Promise(resolve => {
-    gBrowser.addTabsProgressListener({
-      async onLocationChange(aBrowser) {
-        if (tab.linkedBrowser == aBrowser) {
-          gBrowser.removeTabsProgressListener(this);
-          await Promise.resolve();
-          resolve();
-        }
-      },
-    });
-  });
-}
-
-/**
- * Tests a user start or stopping the proxy reloads the current tab.
- */
-add_task(async function test_IPProtectionService_reload() {
-  setupService({
-    isSignedIn: true,
-    canEnroll: true,
-  });
-  let cleanupAlpha = await setupExperiment({ enabled: true, variant: "alpha" });
-
-  setupService({
-    isEnrolledAndEntitled: true,
-  });
-
-  let content = await openPanel();
-  let statusCard = content.statusCardEl;
-  await IPProtectionService.enrolling;
-  Assert.equal(
-    IPProtectionService.state,
-    IPProtectionStates.READY,
-    "Proxy is ready"
-  );
-
-  Assert.ok(
-    BrowserTestUtils.isVisible(content),
-    "ipprotection content component should be present"
-  );
-  Assert.ok(
-    statusCard.connectionToggleEl,
-    "Status card connection toggle should be present"
-  );
-
-  let tabReloaded = waitForTabReloaded(gBrowser.selectedTab);
-  statusCard.connectionToggleEl.click();
-  await tabReloaded;
-
-  Assert.equal(IPPProxyManager.state, IPPProxyStates.ACTIVE, "Proxy is active");
-
-  tabReloaded = waitForTabReloaded(gBrowser.selectedTab);
-  statusCard.connectionToggleEl.click();
-  await tabReloaded;
-
-  Assert.notStrictEqual(
-    IPPProxyManager.state,
-    IPPProxyStates.ACTIVE,
-    "Proxy is not active"
   );
 
   await closePanel();

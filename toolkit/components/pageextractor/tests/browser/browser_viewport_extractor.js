@@ -21,7 +21,7 @@ add_task(async function test_viewport_extraction() {
   `;
 
   is(
-    await actor.getText({ justViewport: true }),
+    (await actor.getText({ justViewport: true })).text,
     "Viewport page 1",
     "Viewport-only extraction returns the first page."
   );
@@ -31,13 +31,13 @@ add_task(async function test_viewport_extraction() {
   });
 
   is(
-    await actor.getText({ justViewport: true }),
+    (await actor.getText({ justViewport: true })).text,
     "Viewport page 2",
     "Viewport extraction follows the current scroll position."
   );
 
   is(
-    await actor.getText(),
+    (await actor.getText()).text,
     ["Viewport page 1", "Viewport page 2", "Viewport page 3"].join("\n"),
     "Full document extraction includes all content."
   );

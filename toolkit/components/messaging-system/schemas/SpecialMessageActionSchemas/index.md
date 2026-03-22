@@ -39,6 +39,12 @@ Opens a new private browsing window.
 
 Opens a sidebar pane.
 
+### `OPEN_TAB_IN_SPLITVIEW`
+
+* args: (none)
+
+Opens the selected tab in a splitview with about:opentabs.
+
 ### `OPEN_URL`
 
 * args: `string` (a url)

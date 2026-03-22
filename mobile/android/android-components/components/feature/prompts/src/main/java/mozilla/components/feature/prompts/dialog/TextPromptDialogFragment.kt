@@ -17,6 +17,7 @@ import android.widget.TextView
 import androidx.core.view.inputmethod.EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.feature.prompts.R
+import mozilla.components.feature.prompts.ext.Truncation
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 
 private const val KEY_USER_EDIT_TEXT = "KEY_USER_EDIT_TEXT"
@@ -78,14 +79,26 @@ internal class TextPromptDialogFragment : AbstractPromptTextDialogFragment(), Te
         val label = view.findViewById<TextView>(R.id.input_label)
         val editText = view.findViewById<EditText>(R.id.input_value)
 
-        label.text = labelInput
-        editText.setText(defaultInputValue)
+        label.text = truncateText(labelInput)
+        editText.setText(truncateText(defaultInputValue))
         editText.addTextChangedListener(this)
         editText.imeOptions = if (private == true) IME_FLAG_NO_PERSONALIZED_LEARNING else IME_NULL
 
         addCheckBoxIfNeeded(view)
 
         return builder.setView(view)
+    }
+
+    /**
+     * Truncates text to prevent ANR during text measurement.
+     */
+    private fun truncateText(text: String?): String {
+        if (text == null) return ""
+        return if (text.length > Truncation.MAX_MESSAGE_LENGTH) {
+            text.substring(0, Truncation.MAX_MESSAGE_LENGTH) + "…"
+        } else {
+            text
+        }
     }
 
     override fun afterTextChanged(editable: Editable) {

@@ -6,7 +6,7 @@
 
 /**
  * @import { HiddenFrame } from "resource://gre/modules/HiddenFrame.sys.mjs"
- * @import { GetTextOptions } from './PageExtractor.d.ts'
+ * @import { GetTextOptions, ExtractionResult } from './PageExtractor.d.ts'
  * @import { PageExtractorChild } from './PageExtractorChild.sys.mjs'
  */
 
@@ -33,7 +33,7 @@ export class PageExtractorParent extends JSWindowActorParent {
    * @see PageExtractorChild#getReaderModeContent
    *
    * @param {boolean} force - Bypass the `isProbablyReaderable` check.
-   * @returns {Promise<string | null>}
+   * @returns {Promise<ExtractionResult>}
    */
   getReaderModeContent(force = false) {
     return this.sendQuery("PageExtractorParent:GetReaderModeContent", force);
@@ -56,13 +56,14 @@ export class PageExtractorParent extends JSWindowActorParent {
    * @see PageExtractorChild#getText
    *
    * @param {Partial<GetTextOptions>} options
-   * @returns {Promise<string | null>}
+   * @returns {Promise<ExtractionResult>}
    */
-  getText(options = {}) {
+  async getText(options = {}) {
     if (this.#isPDF()) {
-      return this.browsingContext.currentWindowGlobal
+      const text = await this.browsingContext.currentWindowGlobal
         .getActor("Pdfjs")
         .getTextContent();
+      return { text, links: [], canvasSnapshots: [] };
     }
     return this.sendQuery("PageExtractorParent:GetText", options);
   }
@@ -82,24 +83,25 @@ export class PageExtractorParent extends JSWindowActorParent {
    *
    * @template T - The value resolved in the callback.
    *
-   * @param {string} url
+   * @param {string} urlString
    * @param {(actor: PageExtractorParent) => Promise<T>} callback
    * @returns {Promise<T>}
    */
-  static async getHeadlessExtractor(url, callback) {
+  static async getHeadlessExtractor(urlString, callback) {
+    const url = URL.parse(urlString);
+    if (!url) {
+      throw new Error("A valid URL must be provided.");
+    }
+    if (!["http:", "https:"].includes(url.protocol)) {
+      throw new Error("Only http: and https: URLs are supported.");
+    }
     // The hidden browser manager controls the lifetime of the hidden browser.
     return lazy.HiddenBrowserManager.withHiddenBrowser(async browser => {
-      const { host } = new URL(url);
+      const { host } = url;
       // Create a custom message manager group for this browser so that the PageExtractor
       // actor can communicate with it. The actor is registered to use this custom
       // message manager group.
       browser.setAttribute("messagemanagergroup", "headless-browsers");
-      if (url.startsWith("about:")) {
-        throw new Error("about: pages are not supported.");
-      }
-      if (url.startsWith("file:")) {
-        throw new Error("file: pages are not supported.");
-      }
 
       /** @type {PromiseWithResolvers<PageExtractorParent>} */
       let actorResolver = Promise.withResolvers();
@@ -127,7 +129,7 @@ export class PageExtractorParent extends JSWindowActorParent {
             // about:blank is loaded first before loading the actual page.
             return;
           }
-          if (location.hostPort != host) {
+          if (URL.fromURI(location).host != host) {
             lazy.console.log(
               "A location change happened that wasn't the host.",
               location.host,
@@ -169,7 +171,7 @@ export class PageExtractorParent extends JSWindowActorParent {
 
       lazy.console.log("Loading a headless PageExtractor", url);
 
-      browser.fixupAndLoadURIString(url, {
+      browser.loadURI(url.URI, {
         triggeringPrincipal:
           Services.scriptSecurityManager.getSystemPrincipal(),
       });

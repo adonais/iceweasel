@@ -66,13 +66,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Hapus tapak di ieu piranti</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s mupus réréméh, jujutan, jeung data loka anjeun nalika anjeun nutup sakabéh jandéla nyamuni. %2$s</string>
-  <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
     This string is used in felt_privacy_info_card_subtitle as the text for the link.
@@ -615,11 +608,7 @@
   <string name="customize_addon_collection_user_hint">Pamilik koléksi (Sandiasma)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Koléksi Émboh geus dirobah. Kaluar ti aplikasi pikeun nerapkeun parobahan…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Asup deui</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Markah</string>
@@ -1065,7 +1054,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Édit</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Tiron</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Tiron</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Bagikeun</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -1107,7 +1096,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Mupus %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">BEDO</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">BEDO</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Mundur</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -1335,23 +1324,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Jadikeun Firefox panyungsi baku</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Cobaan nyungsi nyamuni</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Cobaan nyungsi nyamuni</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Nyungsi tanpa neundeun réréméh atawa jujutan dina %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Nyungsi tanpa neundeun réréméh atawa jujutan dina %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Kotéktak tanpa tapak</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Kotéktak tanpa tapak</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Nyungsi nyamuni dina %1$s moal neundeun iber anjeun.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Nyungsi nyamuni dina %1$s moal neundeun iber anjeun.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Mitembeyan maluruh</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Mitembeyan maluruh</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Balangsiar di nu deukeut. Atawa manggihan nu pikaresepeun.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Balangsiar di nu deukeut. Atawa manggihan nu pikaresepeun.</string>
   <!--
     Survey
 
@@ -2414,6 +2403,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Tambahkeun kana tab nyamuni</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 

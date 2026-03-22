@@ -6,7 +6,7 @@
 
 #include "SMILFloatType.h"
 
-#include <math.h>
+#include <cmath>
 
 #include "mozilla/SMILValue.h"
 #include "nsDebug.h"
@@ -57,7 +57,7 @@ nsresult SMILFloatType::ComputeDistance(const SMILValue& aFrom,
   const double& from = aFrom.mU.mDouble;
   const double& to = aTo.mU.mDouble;
 
-  aDistance = fabs(to - from);
+  aDistance = std::abs(to - from);
 
   return NS_OK;
 }

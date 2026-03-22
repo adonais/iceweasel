@@ -21,7 +21,6 @@ use crate::std::{
     },
 };
 use crate::ui::{self, test::model, ui_impl::Interact};
-use ::glean::TestGetValue;
 
 /// A simple thread-safe counter which can be used in tests to mark that certain code paths were
 /// hit.
@@ -96,6 +95,33 @@ const MOCK_MINIDUMP_EXTRA: &str = r#"{
         "SomeNestedJson": { "foo": "bar" },
         "URL": "https://url.example.com"
     }"#;
+
+static MOCK_MINIDUMP_EXTRA_EXPECTED: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
+    format!(
+        r#"{{
+        "Vendor": "FooCorp",
+        "ProductName": "Bar",
+        "ReleaseChannel": "release",
+        "BuildID": "1234",
+        "AsyncShutdownTimeout": "{{}}",
+        "StackTraces": {{
+            "status": "OK"
+        }},
+        "Version": "100.0",
+        "ServerURL": "https://reports.example.com",
+        "TelemetryServerURL": "https://telemetry.example.com",
+        "TelemetryClientId": "telemetry_client",
+        "TelemetryProfileGroupId": "telemetry_profile_group",
+        "TelemetrySessionId": "telemetry_session",
+        "SomeNestedJson": {{ "foo": "bar" }},
+        "URL": "https://url.example.com",
+        "ProcessType": "main",
+        "CrashTime": "{time}",
+        "MinidumpSha256Hash": "{MOCK_MINIDUMP_SHA256}"
+    }}"#,
+        time = current_unix_time()
+    )
+});
 
 fn compact_json(json: &str) -> String {
     let value: serde_json::Value = serde_json::from_str(json).unwrap();
@@ -358,7 +384,7 @@ impl AssertFiles {
         self.inner
             .check(
                 self.data("pending/minidump.extra"),
-                compact_json(MOCK_MINIDUMP_EXTRA),
+                compact_json(&*MOCK_MINIDUMP_EXTRA_EXPECTED),
             )
             .check_bytes(dmp, MOCK_MINIDUMP_FILE);
         self
@@ -399,6 +425,8 @@ impl AssertFiles {
                     "metadata": {
                         "AsyncShutdownTimeout": "{}",
                         "BuildID": "1234",
+                        "CrashTime": current_unix_time().to_string(),
+                        "ProcessType": "main",
                         "ProductName": "Bar",
                         "ReleaseChannel": "release",
                         "Version": "100.0",
@@ -582,24 +610,30 @@ fn no_restart_with_windows_error_reporting() {
     // Keep the files around so we can ensure they match what we expect.
     test.config.delete_dump = false;
     // Add the "WindowsErrorReporting" key to the extra file
-    const MINIDUMP_EXTRA_CONTENTS: &str = r#"{
-                            "Vendor": "FooCorp",
-                            "ProductName": "Bar",
-                            "ReleaseChannel": "release",
-                            "BuildID": "1234",
-                            "StackTraces": {
-                                "status": "OK"
-                            },
-                            "Version": "100.0",
-                            "ServerURL": "https://reports.example.com",
-                            "TelemetryServerURL": "https://telemetry.example.com",
-                            "TelemetryClientId": "telemetry_client",
-                            "TelemetryProfileGroupId": "telemetry_profile_group",
-                            "TelemetrySessionId": "telemetry_session",
-                            "SomeNestedJson": { "foo": "bar" },
-                            "URL": "https://url.example.com",
-                            "WindowsErrorReporting": "1"
-                        }"#;
+    let minidump_extra_contents: &str = &format!(
+        r#"{{
+            "Vendor": "FooCorp",
+            "ProductName": "Bar",
+            "ReleaseChannel": "release",
+            "BuildID": "1234",
+            "StackTraces": {{
+                "status": "OK"
+            }},
+            "Version": "100.0",
+            "ServerURL": "https://reports.example.com",
+            "TelemetryServerURL": "https://telemetry.example.com",
+            "TelemetryClientId": "telemetry_client",
+            "TelemetryProfileGroupId": "telemetry_profile_group",
+            "TelemetrySessionId": "telemetry_session",
+            "SomeNestedJson": {{ "foo": "bar" }},
+            "URL": "https://url.example.com",
+            "WindowsErrorReporting": "1",
+            "ProcessType": "main",
+            "CrashTime": "{time}",
+            "MinidumpSha256Hash": "{MOCK_MINIDUMP_SHA256}"
+        }}"#,
+        time = current_unix_time()
+    );
     test.files = {
         let mock_files = MockFiles::new();
         mock_files
@@ -610,7 +644,7 @@ fn no_restart_with_windows_error_reporting() {
             )
             .add_file_result(
                 "minidump.extra",
-                Ok(MINIDUMP_EXTRA_CONTENTS.into()),
+                Ok(minidump_extra_contents.into()),
                 current_system_time(),
             );
         test.mock.set(MockFS, mock_files.clone());
@@ -640,7 +674,7 @@ fn no_restart_with_windows_error_reporting() {
         let dmp = assert_files.data("pending/minidump.dmp");
         let extra = assert_files.data("pending/minidump.extra");
         assert_files
-            .check(extra, compact_json(MINIDUMP_EXTRA_CONTENTS))
+            .check(extra, compact_json(minidump_extra_contents))
             .check_bytes(dmp, MOCK_MINIDUMP_FILE);
     }
 
@@ -851,142 +885,11 @@ fn glean_ping() {
     let submitted_glean_ping = Counter::new();
     cc! { (submitted_glean_ping)
         test.before_run(move || {
-            crate::glean::crash.test_before_next_submit(move |_| {
+            crashping::test_before_next_send(move |_| {
                 submitted_glean_ping.inc();
             });
         })
     };
-    test.run(|interact| {
-        interact.element("quit", |_style, b: &model::Button| b.click.fire(&()));
-    });
-    submitted_glean_ping.assert_one();
-}
-
-#[test]
-fn glean_ping_extra_stack_trace_fields() {
-    let mut test = GuiTest::new();
-    test.enable_glean_pings();
-    let submitted_glean_ping = Counter::new();
-
-    const MINIDUMP_EXTRA_CONTENTS: &str = r#"{
-                            "Vendor": "FooCorp",
-                            "ProductName": "Bar",
-                            "ReleaseChannel": "release",
-                            "BuildID": "1234",
-                            "StackTraces": {
-                                "status": "OK",
-                                "foobar": "baz",
-                                "crash_info": {
-                                    "type": "bad crash",
-                                    "address": "0xcafe",
-                                    "crashing_thread": 1
-                                },
-                                "main_module": 0,
-                                "modules": [{
-                                    "base_addr": "0xcafe",
-                                    "end_addr": "0xf000",
-                                    "code_id": "CODEID",
-                                    "debug_file": "debug_file.so",
-                                    "debug_id": "DEBUGID",
-                                    "filename": "file.so",
-                                    "version": "1.0.0"
-                                }],
-                                "threads": [
-                                    {"frames": [
-                                        {
-                                            "ip": "0xf00",
-                                            "trust": "crash",
-                                            "module_index": 0
-                                        }
-                                    ]},
-                                    {"frames": [
-                                        {
-                                            "ip": "0x0",
-                                            "trust": "crash",
-                                            "module_index": 0
-                                        },
-                                        {
-                                            "ip": "0xbadf00d",
-                                            "trust": "cfi",
-                                            "module_index": 0
-                                        }
-                                    ]}
-                                ]
-                            },
-                            "Version": "100.0",
-                            "ServerURL": "https://reports.example.com",
-                            "TelemetryServerURL": "https://telemetry.example.com",
-                            "TelemetryClientId": "telemetry_client",
-                            "TelemetryProfileGroupId": "telemetry_profile_group",
-                            "TelemetrySessionId": "telemetry_session",
-                            "SomeNestedJson": { "foo": "bar" },
-                            "URL": "https://url.example.com",
-                            "WindowsErrorReporting": "1"
-                        }"#;
-    test.files = {
-        let mock_files = MockFiles::new();
-        mock_files
-            .add_file_result(
-                "minidump.dmp",
-                Ok(MOCK_MINIDUMP_FILE.into()),
-                current_system_time(),
-            )
-            .add_file_result(
-                "minidump.extra",
-                Ok(MINIDUMP_EXTRA_CONTENTS.into()),
-                current_system_time(),
-            );
-        test.mock.set(MockFS, mock_files.clone());
-        mock_files
-    };
-
-    cc! { (submitted_glean_ping)
-        test.before_run(move || {
-            glean::crash.test_before_next_submit(move |_| {
-                assert_eq!(
-                    glean::crash::stack_traces.test_get_value(None),
-                    Some(serde_json::json! {{
-                        "crash_type": "bad crash",
-                        "crash_address":"0xcafe",
-                        "crash_thread": 1,
-                        "main_module": 0,
-                        "modules": [{
-                            "base_address": "0xcafe",
-                            "end_address": "0xf000",
-                            "code_id": "CODEID",
-                            "debug_file": "debug_file.so",
-                            "debug_id": "DEBUGID",
-                            "filename": "file.so",
-                            "version": "1.0.0"
-                        }],
-                        "threads": [
-                            {"frames": [
-                                {
-                                    "module_index": 0,
-                                    "ip": "0xf00",
-                                    "trust": "crash"
-                                },
-                            ]},
-                            {"frames": [
-                                {
-                                    "module_index": 0,
-                                    "ip": "0x0",
-                                    "trust": "crash"
-                                },
-                                {
-                                    "module_index": 0,
-                                    "ip": "0xbadf00d",
-                                    "trust": "cfi"
-                                }
-                            ]}
-                        ]
-                    }})
-                );
-                submitted_glean_ping.inc();
-            });
-        })
-    };
-
     test.run(|interact| {
         interact.element("quit", |_style, b: &model::Button| b.click.fire(&()));
     });
@@ -1034,8 +937,11 @@ fn details_window() {
         assert_eq!(details_visible(), false);
         interact.element("quit", |_style, b: &model::Button| b.click.fire(&()));
         assert_eq!(details_text,
-            "AsyncShutdownTimeout: {}\n\
+            format!("AsyncShutdownTimeout: {{}}\n\
              BuildID: 1234\n\
+             CrashTime: {time}\n\
+             MinidumpSha256Hash: {MOCK_MINIDUMP_SHA256}\n\
+             ProcessType: main\n\
              ProductName: Bar\n\
              ReleaseChannel: release\n\
              SubmittedFrom: Client\n\
@@ -1043,7 +949,9 @@ fn details_window() {
              URL: https://url.example.com\n\
              Vendor: FooCorp\n\
              Version: 100.0\n\
-             This report also contains technical information about the state of the application when it crashed.\n"
+             This report also contains technical information about the state of the application when it crashed.\n",
+             time = current_unix_time()
+             )
         );
     });
 }
@@ -1202,7 +1110,8 @@ fn add_memtest_output_to_extra() {
         interact.element("quit", |_style, b: &model::Button| b.click.fire(&()));
     });
 
-    let mut value: serde_json::Value = serde_json::from_str(MOCK_MINIDUMP_EXTRA).unwrap();
+    let mut value: serde_json::Value =
+        serde_json::from_str(&*MOCK_MINIDUMP_EXTRA_EXPECTED).unwrap();
     value["MemtestOutput"] = "memtest output".into();
     let new_extra = serde_json::to_string(&value).unwrap();
 
@@ -1398,8 +1307,10 @@ fn background_task_network_backend() {
                                 "AsyncShutdownTimeout":"{}",
                                 "Version":"100.0",
                                 "URL":"https://url.example.com",
+                                "Throttleable":"1",
+                                "CrashTime": current_unix_time().to_string(),
+                                "MinidumpSha256Hash": MOCK_MINIDUMP_SHA256,
                                 "SubmittedFrom":"Client",
-                                "Throttleable":"1"
                             }).to_string(),
                         },
                         "filename": "extra.json",
@@ -1560,8 +1471,10 @@ fn background_task_curl_fallback() {
                                     "AsyncShutdownTimeout":"{}",
                                     "Version":"100.0",
                                     "URL":"https://url.example.com",
+                                    "Throttleable":"1",
+                                    "CrashTime": current_unix_time().to_string(),
+                                    "MinidumpSha256Hash": MOCK_MINIDUMP_SHA256,
                                     "SubmittedFrom":"Client",
-                                    "Throttleable":"1"
                                 }).to_string(),
                             },
                             "filename": "extra.json",

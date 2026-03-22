@@ -184,7 +184,6 @@ gfxAndroidPlatform::~gfxAndroidPlatform() {
   FT_Done_Library(gPlatformFTLibrary);
   gPlatformFTLibrary = nullptr;
   layers::AndroidHardwareBufferManager::Shutdown();
-  layers::AndroidHardwareBufferApi::Shutdown();
 }
 
 void gfxAndroidPlatform::InitAcceleration() { gfxPlatform::InitAcceleration(); }

@@ -423,7 +423,7 @@ export let ContentBlockingPrefs = {
     }
   },
 
-  updateCBCategory(preserveAllowListSettings = false) {
+  updateCBCategory(preserveAllowListSettings = true) {
     if (
       this.switchingCategory ||
       !Services.prefs.prefHasUserValue(this.PREF_CB_CATEGORY)
@@ -490,9 +490,9 @@ export let ContentBlockingPrefs = {
     }
   },
 
-  setPrefExpectationsAndUpdate(preserveAllowListSettings = false) {
+  setPrefExpectationsAndUpdate() {
     this.setPrefExpectations();
-    this.updateCBCategory(preserveAllowListSettings);
+    this.updateCBCategory();
   },
 
   observe(subject, topic, data) {
@@ -521,17 +521,16 @@ export let ContentBlockingPrefs = {
     if (data.startsWith("privacy.trackingprotection")) {
       this.setPrefExpectations();
     } else if (data == this.PREF_CB_CATEGORY) {
-      this.updateCBCategory();
+      this.updateCBCategory(false);
     } else if (data == "browser.contentblocking.features.strict") {
       this.setPrefExpectationsAndUpdate();
     } else if (data == this.PREF_LNA_ETP_ENABLED) {
-      // updates tagging of LNA restrictions with ETP strict mode
       this.setPrefExpectationsAndUpdate();
     }
   },
 
   init() {
-    this.setPrefExpectationsAndUpdate(true);
+    this.setPrefExpectationsAndUpdate();
     this.matchCBCategory();
 
     for (let prefix of PREF_PREFIXES_TO_OBSERVE) {

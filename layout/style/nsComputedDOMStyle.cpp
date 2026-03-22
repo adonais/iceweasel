@@ -12,6 +12,7 @@
 
 #include "AnchorPositioningUtils.h"
 #include "NonCustomCSSPropertyId.h"
+#include "PseudoStyleType.h"
 #include "mozilla/AppUnits.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ComputedStyleInlines.h"
@@ -33,7 +34,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "nsCSSProps.h"
-#include "nsCSSPseudoElements.h"
 #include "nsContentUtils.h"
 #include "nsDOMCSSDeclaration.h"
 #include "nsDOMCSSValueList.h"
@@ -68,8 +68,7 @@ using namespace mozilla::dom;
 already_AddRefed<nsComputedDOMStyle> NS_NewComputedDOMStyle(
     dom::Element* aElement, const nsAString& aPseudoElt, Document* aDocument,
     nsComputedDOMStyle::StyleType aStyleType, mozilla::ErrorResult&) {
-  auto request = nsCSSPseudoElements::ParsePseudoElement(
-      aPseudoElt, CSSEnabledState::ForAllContent);
+  auto request = PseudoStyleRequest::Parse(aPseudoElt);
   auto returnEmpty = nsComputedDOMStyle::AlwaysReturnEmptyStyle::No;
   if (!request) {
     if (!aPseudoElt.IsEmpty() && aPseudoElt.First() == u':') {
@@ -598,7 +597,7 @@ nsMargin nsComputedDOMStyle::GetAdjustedValuesForBoxSizing() {
   const nsStylePosition* stylePos = StylePosition();
 
   nsMargin adjustment;
-  if (stylePos->mBoxSizing == StyleBoxSizing::Border) {
+  if (stylePos->mBoxSizing == StyleBoxSizing::BorderBox) {
     adjustment = mInnerFrame->GetUsedBorderAndPadding();
   }
 

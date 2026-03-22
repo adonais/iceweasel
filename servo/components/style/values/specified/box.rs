@@ -9,8 +9,8 @@ pub use crate::logical_geometry::WritingModeProperty;
 use crate::parser::{Parse, ParserContext};
 use crate::properties::{LonghandId, PropertyDeclarationId, PropertyId};
 use crate::values::generics::box_::{
-    GenericContainIntrinsicSize, GenericLineClamp, GenericOverflowClipMargin, GenericPerspective,
-    GenericVerticalAlign, OverflowClipMarginBox, VerticalAlignKeyword,
+    BaselineShiftKeyword, GenericBaselineShift, GenericContainIntrinsicSize, GenericLineClamp,
+    GenericOverflowClipMargin, GenericPerspective, OverflowClipMarginBox,
 };
 use crate::values::specified::length::{LengthPercentage, NonNegativeLength};
 use crate::values::specified::{AllowQuirks, Integer, NonNegativeNumberOrPercentage};
@@ -29,6 +29,11 @@ fn grid_enabled() -> bool {
 #[cfg(feature = "servo")]
 fn grid_enabled() -> bool {
     style_config::get_bool("layout.grid.enabled")
+}
+
+#[inline]
+fn appearance_base_select_enabled(_context: &ParserContext) -> bool {
+    static_prefs::pref!("dom.select.customizable_select.enabled")
 }
 
 /// The specified value of `overflow-clip-margin`.
@@ -614,10 +619,10 @@ pub type ContainIntrinsicSize = GenericContainIntrinsicSize<NonNegativeLength>;
 /// A specified value for the `line-clamp` property.
 pub type LineClamp = GenericLineClamp<Integer>;
 
-/// A specified value for the `vertical-align` property.
-pub type VerticalAlign = GenericVerticalAlign<LengthPercentage>;
+/// A specified value for the `baseline-shift` property.
+pub type BaselineShift = GenericBaselineShift<LengthPercentage>;
 
-impl Parse for VerticalAlign {
+impl Parse for BaselineShift {
     fn parse<'i, 't>(
         context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -625,13 +630,114 @@ impl Parse for VerticalAlign {
         if let Ok(lp) =
             input.try_parse(|i| LengthPercentage::parse_quirky(context, i, AllowQuirks::Yes))
         {
-            return Ok(GenericVerticalAlign::Length(lp));
+            return Ok(BaselineShift::Length(lp));
         }
 
-        Ok(GenericVerticalAlign::Keyword(VerticalAlignKeyword::parse(
-            input,
-        )?))
+        Ok(BaselineShift::Keyword(BaselineShiftKeyword::parse(input)?))
     }
+}
+
+/// A specified value for the `dominant-baseline` property.
+/// https://drafts.csswg.org/css-inline-3/#dominant-baseline
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToCss,
+    ToShmem,
+    ToComputedValue,
+    ToResolvedValue,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum DominantBaseline {
+    /// Equivalent to 'alphabetic' in horizontal writing modes and in vertical writing
+    /// modes when 'text-orientation' is sideways. Equivalent to 'central' in vertical
+    /// writing modes when 'text-orientation' is 'mixed' or 'upright'.
+    Auto,
+    /// Use the text-under baseline.
+    #[parse(aliases = "text-before-edge")]
+    TextBottom,
+    /// Use the alphabetic baseline.
+    Alphabetic,
+    /// Use the ideographic-under baseline.
+    Ideographic,
+    /// In general, use the x-middle baselines; except under text-orientation: upright
+    /// (where the alphabetic and x-height baselines are essentially meaningless) use
+    /// the central baseline instead.
+    Middle,
+    /// Use the central baseline.
+    Central,
+    /// Use the math baseline.
+    Mathematical,
+    /// Use the hanging baseline.
+    Hanging,
+    /// Use the text-over baseline.
+    #[parse(aliases = "text-after-edge")]
+    TextTop,
+}
+
+/// A specified value for the `alignment-baseline` property.
+/// https://drafts.csswg.org/css-inline-3/#alignment-baseline
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    FromPrimitive,
+    Hash,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToCss,
+    ToShmem,
+    ToComputedValue,
+    ToResolvedValue,
+    ToTyped,
+)]
+#[repr(u8)]
+pub enum AlignmentBaseline {
+    /// Use the dominant baseline choice of the parent.
+    Baseline,
+    /// Use the text-under baseline.
+    TextBottom,
+    /// Use the alphabetic baseline.
+    /// TODO: Bug 2010717 - Remove css(skip) to support alignment-baseline: alphabetic
+    #[css(skip)]
+    Alphabetic,
+    /// Use the ideographic-under baseline.
+    /// TODO: Bug 2010718 - Remove css(skip) support alignment-baseline: ideographic
+    #[css(skip)]
+    Ideographic,
+    /// In general, use the x-middle baselines; except under text-orientation: upright
+    /// (where the alphabetic and x-height baselines are essentially meaningless) use
+    /// the central baseline instead.
+    Middle,
+    /// Use the central baseline.
+    /// TODO: Bug 2010719 - Remove css(skip) to support alignment-baseline: central
+    #[css(skip)]
+    Central,
+    /// Use the math baseline.
+    /// TODO: Bug 2010720 - Remove css(skip) to support alignment-baseline: mathematical
+    #[css(skip)]
+    Mathematical,
+    /// Use the hanging baseline.
+    /// TODO: Bug 2017197 - Remove css(skip) to support alignment-baseline: hanging
+    #[css(skip)]
+    Hanging,
+    /// Use the text-over baseline.
+    TextTop,
+    /// Used to implement the deprecated "align=middle" attribute for HTML img elements.
+    #[cfg(feature = "gecko")]
+    MozMiddleWithBaseline,
 }
 
 /// A specified value for the `baseline-source` property.
@@ -660,6 +766,16 @@ pub enum BaselineSource {
     First,
     /// Use last baseline for alignment.
     Last,
+}
+
+impl BaselineSource {
+    /// Parse baseline source, but without the auto keyword, for the shorthand.
+    pub fn parse_non_auto<'i>(input: &mut Parser<'i, '_>) -> Result<Self, ParseError<'i>> {
+        Ok(try_match_ident_ignore_ascii_case! { input,
+            "first" => Self::First,
+            "last" => Self::Last,
+        })
+    }
 }
 
 /// https://drafts.csswg.org/css-scroll-snap-1/#snap-axis
@@ -1570,6 +1686,10 @@ pub enum Appearance {
     Textfield,
     /// The dropdown button(s) that open up a dropdown list.
     MenulistButton,
+    /// Only relevant to the <select> element and ::picker(select) pseudo-element,
+    /// allowing them to be styled.
+    #[parse(condition = "appearance_base_select_enabled")]
+    BaseSelect,
     /// Menu Popup background.
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Menupopup,

@@ -367,7 +367,7 @@ int32_t AccessibleWrap::GetAndroidClass(role aRole) {
     return androidClass;
 
   switch (aRole) {
-#include "RoleMap.h"
+#include "RoleMap.inc"
     default:
       return java::SessionAccessibility::CLASSNAME_VIEW;
   }

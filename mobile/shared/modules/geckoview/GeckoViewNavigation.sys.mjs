@@ -180,6 +180,10 @@ export class GeckoViewNavigation extends GeckoViewModule {
           appLinkLaunchType,
         } = aData;
 
+        if (appLinkLaunchType) {
+          this.moduleManager._applinkNavigation ??= Promise.withResolvers();
+        }
+
         let navFlags = convertFlags(flags);
         // For performance reasons we don't call the LoadUriDelegate.loadUri
         // from Gecko, and instead we call it directly in the loadUri Java API.

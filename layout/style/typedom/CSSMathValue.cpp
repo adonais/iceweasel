@@ -13,8 +13,9 @@ namespace mozilla::dom {
 CSSMathValue::CSSMathValue(nsCOMPtr<nsISupports> aParent)
     : CSSNumericValue(std::move(aParent)) {}
 
-CSSMathValue::CSSMathValue(nsCOMPtr<nsISupports> aParent, ValueType aValueType)
-    : CSSNumericValue(std::move(aParent), aValueType) {}
+CSSMathValue::CSSMathValue(nsCOMPtr<nsISupports> aParent,
+                           NumericValueType aNumericValueType)
+    : CSSNumericValue(std::move(aParent), aNumericValueType) {}
 
 // start of CSSMathtValue Web IDL implementation
 

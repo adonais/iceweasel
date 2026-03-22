@@ -251,7 +251,7 @@ nsresult GenerateRandomName(nsCString& aOutSalt, uint32_t aLength);
 // path. This is based on code from nsExternalAppHandler::SetUpTempFile.
 nsresult GenerateRandomPathName(nsCString& aOutSalt, uint32_t aLength);
 
-already_AddRefed<TaskQueue> CreateMediaDecodeTaskQueue(const char* aName);
+already_AddRefed<TaskQueue> CreateMediaDecodeTaskQueue(StaticString aName);
 
 // Iteratively invokes aWork until aCondition returns true, or aWork returns
 // false. Use this rather than a while loop to avoid bogarting the task queue.

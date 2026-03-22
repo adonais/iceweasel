@@ -179,6 +179,14 @@ const gLoggingPresets = {
       description: "about-logging-preset-web-compat-description",
     },
   },
+  navigation: {
+    modules:
+      "SHIPBFCache:5,PageCache:5,nsSHistory:5,SessionHistory:5,DocumentChannel:5,nsDocShell:5,NavigationAPI:5",
+    l10nIds: {
+      label: "about-logging-preset-navigation",
+      description: "about-logging-preset-navigation-description",
+    },
+  },
   ...gOsSpecificLoggingPresets,
   custom: {
     modules: "",
@@ -525,20 +533,6 @@ function init() {
 
   $("#copy-as-url").onclick = copyAsURL;
 
-  function openMenu(event) {
-    if (
-      event.type == "mousedown" ||
-      event.inputSource == MouseEvent.MOZ_SOURCE_KEYBOARD ||
-      !event.detail
-    ) {
-      document.querySelector("panel-list").toggle(event);
-    }
-  }
-
-  let menuButton = $("#open-menu-button");
-  menuButton.addEventListener("mousedown", openMenu);
-  menuButton.addEventListener("click", openMenu);
-
   $$("input[type=radio]").forEach(radio => {
     radio.onchange = e => {
       updateLoggingOutputType(e.target.value);
@@ -654,9 +648,8 @@ async function captureProfile() {
       throw profileCaptureResult.error;
     }
     if (!gProfileSaveOrUpload) {
-      const { ProfileSaveOrUploadDialog } = await import(
-        "chrome://global/content/aboutLogging/profileSaveUploadLogic.mjs"
-      );
+      const { ProfileSaveOrUploadDialog } =
+        await import("chrome://global/content/aboutLogging/profileSaveUploadLogic.mjs");
       gProfileSaveOrUpload = new ProfileSaveOrUploadDialog();
     }
     gProfileSaveOrUpload.init(new Uint8Array(profileCaptureResult.profile));

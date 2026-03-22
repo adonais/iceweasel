@@ -14,12 +14,10 @@
       var mockL10n;
 
       add_setup(async function setup() {
-        ({ html, render } = await import(
-          "chrome://global/content/vendor/lit.all.mjs"
-        ));
-        ({ MozLitElement } = await import(
-          "chrome://global/content/lit-utils.mjs"
-        ));
+        ({ html, render } =
+          await import("chrome://global/content/vendor/lit.all.mjs"));
+        ({ MozLitElement } =
+          await import("chrome://global/content/lit-utils.mjs"));
         renderTarget = document.getElementById("render");
 
         const l10nReg = new L10nRegistry();

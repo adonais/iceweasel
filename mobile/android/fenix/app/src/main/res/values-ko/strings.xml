@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">이 기기에 흔적을 남기지 마세요</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s는 모든 사생활 보호 탭을 닫을 때 쿠키, 기록 및 사이트 데이터를 삭제합니다. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -325,6 +318,8 @@
   <string name="browser_menu_translate_page_2">페이지 번역</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">페이지 요약</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">신규</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">깨진 사이트 신고…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -377,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">페이지가 %1$s에서 %2$s로 번역되었습니다.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">기기를 흔들어 이 페이지를 몇 초 만에 요약하세요. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -927,8 +924,6 @@
   <string name="preferences_search_browsing_history">방문 기록 검색</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">북마크 검색</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">바로 가기 표시</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">동기화된 탭 검색</string>
   <!-- Preference for account settings -->
@@ -949,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">%1$s 제안</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">검색어와 관련된 웹 제안을 받음</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">입력할 때 Mozilla에서 제안을 가져옴</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">링크 공유</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -975,7 +972,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">이 폴더를 사용할 권한이 없습니다. 다른 폴더를 선택해 보세요.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">이 폴더를 사용할 권한이 없습니다. 다른 폴더를 선택해 보세요.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">다른 앱으로 다운로드 관리</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1039,8 +1036,10 @@
   <!--
     Customize Home
 
-    Header text for jumping back into the recent tab in customize the home screen
+    Title for the customize home screen section with privacy report.
   -->
+  <string name="customize_toggle_privacy_report">개인정보 보호 보고서</string>
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">최근 탭</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">북마크</string>
@@ -1523,7 +1522,7 @@
   -->
   <string name="remote_improvements_title">원격 개선 허용</string>
   <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
-  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox는 기능과 성능, 업데이트 간의 안정성을 개선합니다. 변경 사항이 원격으로 적용되었습니다.</string>
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox는 업데이트 사이에 기능, 성능 및 안정성을 개선할 것입니다. 변경 사항은 원격으로 적용됩니다.</string>
   <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
   <string name="remote_improvements_learn_more">더 알아보기</string>
   <!-- Title for remote improvements preference in Advanced settings -->
@@ -1599,6 +1598,8 @@
   <string name="tab_manager_multiselect_menu_item_share">공유</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">모음집에 추가</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">그룹에 추가</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">선택한 탭 공유</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1639,6 +1640,27 @@
   <string name="pwa_site_controls_title_private">%1$s (사생활 보호 모드)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">탭 검색 열기</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">탭 그룹 만들기</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">그룹 편집</string>
+  <string name="create_tab_group_save_button">저장</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">탭 그룹 편집 닫기</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">그룹</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">%d 그룹</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">이름</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">이름</string>
   <!--
     History
 
@@ -1754,11 +1776,26 @@
   <string name="download_rename_dialog_label">이름</string>
   <string name="download_rename_dialog_confirm_button">저장</string>
   <string name="download_rename_dialog_cancel_button">취소</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">\"%s\" 파일이 이미 이 위치에 존재합니다</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">파일 이름에 \"/\"를 사용할 수 없음</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">파일 이름을 변경할 수 없음</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">시스템 또는 저장소 제한으로 이 파일의 이름을 변경할 수 없습니다.</string>
   <string name="download_rename_error_dismiss_button">확인</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">%s 파일 형식으로 변경하시겠습니까?</string>
+  <string name="change_file_extension_description">이 작업은 파일을 다른 앱에서 열 수 있으며 기기에 위험할 수 있습니다.</string>
+  <string name="change_file_extension_cancel_button">취소</string>
+  <string name="change_file_extension_confirm_button">변경</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">진행 중</string>
   <!--
@@ -1958,7 +1995,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">편집</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">복사</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">복사</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">공유</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2014,11 +2051,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s 삭제됨</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">실행 취소</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">실행 취소</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">%s 삭제됨</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s 삭제됨</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">삭제된 항목: %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">삭제된 항목: %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">뒤로</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2288,23 +2325,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Firefox를 기본 브라우저로 설정하세요</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">사생활 보호 모드 사용해보기</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">사생활 보호 모드 사용해보기</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">%1$s에 저장된 쿠키나 기록이 없는 탐색</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s에 저장된 쿠키나 기록이 없는 탐색</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">흔적 없이 브라우징하기</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">흔적 없이 브라우징하기</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">%1$s의 사생활 보호 모드는 사용자 정보를 저장하지 않습니다.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s의 사생활 보호 모드는 사용자 정보를 저장하지 않습니다.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">첫 번째 검색 시작</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">첫 번째 검색 시작</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">근처에 있는 것을 찾아 보거나 재미있는 것을 발견해 보세요.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">근처에 있는 것을 찾아 보거나 재미있는 것을 발견해 보세요.</string>
   <!--
     Survey
 
@@ -2480,6 +2517,16 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s는 온라인 활동을 추적하는 가장 일반적인 여러 추적기로부터 사용자를 보호합니다.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">더 알아보기</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="other">추적기 %d개 차단됨</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">보호되고 있습니다</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">표준 (기본값)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2876,6 +2923,10 @@
   <string name="preferences_email_masks_suggest_learn_more">더 알아보기</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">이메일 가리기 관리</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">5개의 무료 이메일 마스크를 사용해서 재사용할 마스크를 하나를 선택했습니다.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">지금 이메일 마스크를 사용할 수 없습니다. 몇 분 후 다시 시도하세요.</string>
   <!--
     Autofill
 
@@ -3646,6 +3697,13 @@
   -->
   <string name="connection_security_panel_verified_by">%s이(가) 인증함</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">%s에 발급됨</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">규정 (EU) 2024/1183에 명시된 대로 자격 요건을 충족합니다.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3695,6 +3753,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">사생활 보호 탭에 추가</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -3733,6 +3793,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Firefox에서 검색을 사용하지 않음</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">동기화를 사용하지 않음</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">느리거나 버그가 있음</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">기능을 찾기 어렵거나 누락되어 있음</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">혼란스럽거나 사용하기 어려움</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">괜찮음, 하지만 다른 브라우저보다 좋지 않음</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Firefox를 계속 사용할 계획임</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Firefox의 인쇄를 개선할 수 있도록 도와주세요. 잠깐이면 됩니다.</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3747,6 +3817,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Firefox의 검색 경험에 얼마나 만족하시나요?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Firefox의 동기화 경험에 얼마나 만족하시나요?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Firefox를 개선할 수 있도록 도와주세요. 지금까지의 경험을 가장 잘 설명한 항목은 무엇입니까?</string>
   <!--
     Accessibility
 
@@ -4045,8 +4117,6 @@
   <string name="content_description_settings_search_navigate_back">뒤로</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">최근 검색 없음</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">오류 발생</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">모두 지우기</string>
   <!-- Section header for recent search results -->

@@ -286,6 +286,7 @@ void nsMathMLmmultiscriptsFrame::PlaceMultiScript(
   bmMultiSub.ascent = bmMultiSup.ascent = -0x7FFFFFFF;
   bmMultiSub.descent = bmMultiSup.descent = -0x7FFFFFFF;
   nscoord italicCorrection = 0;
+  nscoord largeOpItalicCorrection = 0;
 
   nsBoundingMetrics boundingMetrics;
   boundingMetrics.width = 0;
@@ -338,6 +339,19 @@ void nsMathMLmmultiscriptsFrame::PlaceMultiScript(
         // (see TeXbook Ch.11, p.64), as we estimate the italic creation
         // ourselves and it isn't the same as TeX.
         italicCorrection += onePixel;
+      }
+
+      if (tag != nsGkAtoms::msup) {
+        // If the base is a largeop, determine its italic correction.
+        // https://w3c.github.io/mathml-core/#base-with-subscript
+        if (nsIMathMLFrame* mathMLFrame = do_QueryFrame(baseFrame)) {
+          nsEmbellishData baseFrameEmbellishData;
+          mathMLFrame->GetEmbellishData(baseFrameEmbellishData);
+          if (baseFrameEmbellishData.flags.contains(
+                  MathMLEmbellishFlag::LargeOp)) {
+            largeOpItalicCorrection = mathMLFrame->ItalicCorrection();
+          }
+        }
       }
 
       // we update boundingMetrics.{ascent,descent} with that
@@ -674,6 +688,10 @@ void nsMathMLmmultiscriptsFrame::PlaceMultiScript(
             // https://bugzilla.mozilla.org/show_bug.cgi?id=928675
             if (isPreScript) {
               x += width - subScriptSize.Width() - subScriptMargin.LeftRight();
+            } else {
+              // post subscripts are shifted by the largeOpItalicCorrection
+              // value.
+              x -= largeOpItalicCorrection;
             }
             dy = aDesiredSize.BlockStartAscent() -
                  subScriptSize.BlockStartAscent() + maxSubScriptShift;

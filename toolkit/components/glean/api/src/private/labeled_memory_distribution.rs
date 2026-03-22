@@ -51,7 +51,7 @@ impl LabeledMemoryDistributionMetric {
             LabeledMemoryDistributionMetric::Parent(p) => p.accumulate_samples(samples),
             LabeledMemoryDistributionMetric::Child { id, label } => {
                 #[cfg(feature = "with_gecko")]
-                if gecko_profiler::can_accept_markers() {
+                if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                     gecko_profiler::add_marker(
                         "MemoryDistribution::accumulate",
                         TelemetryProfilerCategory,
@@ -88,7 +88,7 @@ impl MemoryDistribution for LabeledMemoryDistributionMetric {
             LabeledMemoryDistributionMetric::Parent(p) => p.accumulate(sample),
             LabeledMemoryDistributionMetric::Child { id, label } => {
                 #[cfg(feature = "with_gecko")]
-                if gecko_profiler::can_accept_markers() {
+                if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                     gecko_profiler::add_marker(
                         "MemoryDistribution::accumulate",
                         TelemetryProfilerCategory,

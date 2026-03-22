@@ -325,6 +325,13 @@ bool StructType::init() {
 
   if (layout.hasOOL()) {
     totalSizeOOL_ = layout.totalSizeOOL();
+    MOZ_ASSERT(totalSizeOOL_ > 0);
+    if (totalSizeOOL_ < sizeof(uintptr_t)) {
+      // This is required by WasmStructObject::obj_moved, in order to ensure
+      // that the block is at least big enough to hold a forwarding pointer.
+      // See comments at WasmStructObject::obj_moved.
+      totalSizeOOL_ = sizeof(uintptr_t);
+    }
     FieldAccessPath oolPointerPath = layout.oolPointerPath();
     MOZ_ASSERT(!oolPointerPath.hasOOL());
     oolPointerOffset_ = oolPointerPath.ilOffset();

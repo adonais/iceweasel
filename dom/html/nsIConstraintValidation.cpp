@@ -101,7 +101,7 @@ void nsIConstraintValidation::SetValidityState(ValidityStateType aState,
     nsCOMPtr<nsIFormControl> formCtrl = do_QueryInterface(this);
     NS_ASSERTION(formCtrl, "This interface should be used by form elements!");
 
-    if (HTMLFormElement* form = formCtrl->GetForm()) {
+    if (HTMLFormElement* form = formCtrl->GetFormInternal()) {
       form->UpdateValidity(IsValid());
     }
     if (HTMLFieldSetElement* fieldSet = formCtrl->GetFieldSet()) {
@@ -124,7 +124,7 @@ void nsIConstraintValidation::SetBarredFromConstraintValidation(bool aBarred) {
     // If the element is going to be barred from constraint validation, we can
     // inform the form and fieldset that we are now valid. Otherwise, we are now
     // invalid.
-    if (HTMLFormElement* form = formCtrl->GetForm()) {
+    if (HTMLFormElement* form = formCtrl->GetFormInternal()) {
       form->UpdateValidity(aBarred);
     }
     HTMLFieldSetElement* fieldSet = formCtrl->GetFieldSet();

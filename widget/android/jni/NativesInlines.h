@@ -116,4 +116,4 @@ RefPtr<DetachPromise> NativeWeakPtr<NativeImpl>::Detach() {
 }
 
 }  // namespace mozilla::jni
-#endif
+#endif  // mozilla_jni_NativesInlines_h_

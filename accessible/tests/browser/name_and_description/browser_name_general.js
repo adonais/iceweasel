@@ -293,3 +293,32 @@ addAccessibleTask(
   },
   { topLevel: true, chrome: true }
 );
+
+/**
+ * Test the name of image map areas.
+ */
+addAccessibleTask(
+  `
+<map name="map">
+  <area id="noName" href="https://example.com/">
+  <area id="alt" href="https://example.com/" alt="alt">
+  <area id="title" href="https://example.com/" title="title">
+  <area id="altTitle" href="https://example.com/" alt="alt" title="title">
+  <area id="noNameForm" href="https://example.com/" role="form">
+</map>
+<img src="https://example.com/a11y/accessible/tests/mochitest/moz.png" usemap="#map">
+  `,
+  async function testArea(browser, docAcc) {
+    const noName = findAccessibleChildByID(docAcc, "noName");
+    testName(noName, null);
+    const alt = findAccessibleChildByID(docAcc, "alt");
+    testName(alt, "alt");
+    const title = findAccessibleChildByID(docAcc, "title");
+    testName(title, "title");
+    const altTitle = findAccessibleChildByID(docAcc, "altTitle");
+    testName(altTitle, "alt");
+    const noNameForm = findAccessibleChildByID(docAcc, "noNameForm");
+    testName(noNameForm, null);
+  },
+  { chrome: true, topLevel: true }
+);

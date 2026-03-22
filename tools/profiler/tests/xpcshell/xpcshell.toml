@@ -101,8 +101,8 @@ skip-if = [
 skip-if = [
   "asan",
   "os == 'android' && release_or_beta", # Bug 1992989
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && release_or_beta && opt",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && release_or_beta && opt",
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt && release_or_beta",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && release_or_beta",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && release_or_beta",
@@ -122,8 +122,8 @@ skip-if = [
 skip-if = [
   "asan",
   "os == 'android' && release_or_beta", # Bug 1992989
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && release_or_beta && opt",
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && release_or_beta && opt",
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt && release_or_beta",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && release_or_beta",
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && release_or_beta",

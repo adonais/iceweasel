@@ -179,13 +179,16 @@ function getElements(opts) {
         },
         name
       ),
-      span({ className: "attrEqual" }, "="),
-      StringRep({
-        className: "attrValue",
-        object: value,
-        cropLimit: MAX_ATTRIBUTE_LENGTH,
-        title,
-      })
+      // only show the `=attrValue` part if the attribute has a non empty value
+      value ? span({ className: "attrEqual" }, "=") : null,
+      value
+        ? StringRep({
+            className: "attrValue",
+            object: value,
+            cropLimit: MAX_ATTRIBUTE_LENGTH,
+            title,
+          })
+        : null
     );
 
     return arr.concat([" ", attribute]);

@@ -12,6 +12,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.cancel
@@ -106,7 +107,7 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
     override fun onStart() {
         super.onStart()
 
-        scope = requireComponents.core.store.flowScoped(viewLifecycleOwner) { flow ->
+        scope = requireComponents.core.store.flowScoped(viewLifecycleOwner, Dispatchers.Main) { flow ->
             flow.map { state -> state.tabs.size }
                 .distinctUntilChanged()
                 .collect { openTabs -> updateTabCount(openTabs) }

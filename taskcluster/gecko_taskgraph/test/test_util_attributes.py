@@ -28,15 +28,41 @@ class MatchRunOnProjects(unittest.TestCase):
         self.assertTrue(match_run_on_projects({"project": "mozilla-release"}, ["all"]))
 
     def test_release(self):
-        self.assertFalse(match_run_on_projects({"project": "birch"}, ["release"]))
-        self.assertTrue(match_run_on_projects({"project": "larch"}, ["release"]))
-        self.assertFalse(match_run_on_projects({"project": "autoland"}, ["release"]))
-        self.assertTrue(
-            match_run_on_projects({"project": "mozilla-central"}, ["release"])
+        self.assertFalse(
+            match_run_on_projects({"project": "birch", "level": "3"}, ["release"])
         )
-        self.assertTrue(match_run_on_projects({"project": "mozilla-beta"}, ["release"]))
         self.assertTrue(
-            match_run_on_projects({"project": "mozilla-release"}, ["release"])
+            match_run_on_projects({"project": "larch", "level": "3"}, ["release"])
+        )
+        self.assertFalse(
+            match_run_on_projects({"project": "autoland", "level": "3"}, ["release"])
+        )
+        self.assertTrue(
+            match_run_on_projects(
+                {"project": "mozilla-central", "level": "3"}, ["release"]
+            )
+        )
+        self.assertTrue(
+            match_run_on_projects(
+                {"project": "mozilla-beta", "level": "3"}, ["release"]
+            )
+        )
+        self.assertTrue(
+            match_run_on_projects(
+                {"project": "mozilla-release", "level": "3"}, ["release"]
+            )
+        )
+        self.assertTrue(
+            match_run_on_projects(
+                {"project": "firefox", "level": "3", "head_ref": "refs/heads/main"},
+                ["release"],
+            )
+        )
+        self.assertFalse(
+            match_run_on_projects(
+                {"project": "firefox", "level": "1", "head_ref": "refs/heads/main"},
+                ["release"],
+            )
         )
 
     def test_integration(self):
@@ -55,32 +81,40 @@ class MatchRunOnProjects(unittest.TestCase):
 
     def test_combo(self):
         self.assertTrue(
-            match_run_on_projects({"project": "birch"}, ["release", "birch", "maple"])
+            match_run_on_projects(
+                {"project": "birch", "level": "3"}, ["release", "birch", "maple"]
+            )
         )
         self.assertTrue(
-            match_run_on_projects({"project": "larch"}, ["release", "birch", "maple"])
+            match_run_on_projects(
+                {"project": "larch", "level": "3"}, ["release", "birch", "maple"]
+            )
         )
         self.assertTrue(
-            match_run_on_projects({"project": "maple"}, ["release", "birch", "maple"])
+            match_run_on_projects(
+                {"project": "maple", "level": "3"}, ["release", "birch", "maple"]
+            )
         )
         self.assertFalse(
             match_run_on_projects(
-                {"project": "autoland"}, ["release", "birch", "maple"]
+                {"project": "autoland", "level": "3"}, ["release", "birch", "maple"]
             )
         )
         self.assertTrue(
             match_run_on_projects(
-                {"project": "mozilla-central"}, ["release", "birch", "maple"]
+                {"project": "mozilla-central", "level": "3"},
+                ["release", "birch", "maple"],
             )
         )
         self.assertTrue(
             match_run_on_projects(
-                {"project": "mozilla-beta"}, ["release", "birch", "maple"]
+                {"project": "mozilla-beta", "level": "3"}, ["release", "birch", "maple"]
             )
         )
         self.assertTrue(
             match_run_on_projects(
-                {"project": "mozilla-release"}, ["release", "birch", "maple"]
+                {"project": "mozilla-release", "level": "3"},
+                ["release", "birch", "maple"],
             )
         )
         self.assertTrue(match_run_on_projects({"project": "birch"}, ["birch", "trunk"]))
@@ -103,11 +137,21 @@ def test_match_run_on_repo_type(repo_type, run_on_repo_types, expected):
 @pytest.mark.parametrize(
     "params,expected",
     (
-        ({"project": "autoland"}, "staging"),
-        ({"project": "mozilla-central"}, "production"),
-        ({"project": "firefox", "head_ref": "refs/heads/test"}, "staging"),
-        ({"project": "firefox", "head_ref": "refs/tags/beta"}, "staging"),
-        ({"project": "firefox", "head_ref": "refs/heads/beta"}, "production"),
+        ({"project": "autoland", "level": "3"}, "staging"),
+        ({"project": "mozilla-central", "level": "3"}, "production"),
+        (
+            {"project": "firefox", "level": "3", "head_ref": "refs/heads/test"},
+            "staging",
+        ),
+        ({"project": "firefox", "level": "3", "head_ref": "refs/tags/beta"}, "staging"),
+        (
+            {"project": "firefox", "level": "3", "head_ref": "refs/heads/beta"},
+            "production",
+        ),
+        (
+            {"project": "firefox", "level": "1", "head_ref": "refs/heads/beta"},
+            "staging",
+        ),
     ),
 )
 def test_release_level(params, expected):

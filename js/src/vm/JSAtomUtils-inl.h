@@ -9,8 +9,7 @@
 
 #include "vm/JSAtomUtils.h"
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "gc/MaybeRooted.h"
 #include "vm/JSAtomState.h"
 #include "vm/JSContext.h"

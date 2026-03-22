@@ -463,7 +463,7 @@ Moof::Moof(const Box& aBox, const TrackParseMode& aTrackParseMode,
   // file are dispatched to the media element in a single "encrypted" event.
   // So append contiguous boxes here.
   for (size_t i = 0; i < psshBoxes.Length(); ++i) {
-    Box box = psshBoxes[i];
+    const Box& box = psshBoxes[i];
     if (i == 0 || box.Offset() != psshBoxes[i - 1].NextOffset()) {
       mPsshes.AppendElement();
     }
@@ -528,8 +528,8 @@ Moof::Moof(const Box& aBox, const TrackParseMode& aTrackParseMode,
       TimeUnit presentationDuration =
           ctsOrder.LastElement()->mCompositionRange.end -
           ctsOrder[0]->mCompositionRange.start;
-      auto decodeOffset = aMdhd.ToTimeUnit(static_cast<int64_t>(*aDecodeTime) -
-                                           aEdts.mMediaStart);
+      auto decodeOffset =
+          aMdhd.ToTimeUnit(CheckedInt64(*aDecodeTime) - aEdts.mMediaStart);
       auto offsetOffset = aMvhd.ToTimeUnit(aEdts.mEmptyOffset);
       TimeUnit endDecodeTime =
           (decodeOffset.isOk() && offsetOffset.isOk())
@@ -948,8 +948,14 @@ Result<Ok, nsresult> Moof::ParseTrun(const Box& aBox, const Mvhd& aMvhd,
   if (flags & 0x04) {
     firstSampleFlags = MOZ_TRY(reader->ReadU32());
   }
-  nsTArray<MP4Interval<TimeUnit>> timeRanges;
-  uint64_t decodeTime = *aDecodeTime;
+
+  // Bug 2004835: use CheckedInt to make sure we don't overflow.
+  // According to the spec, MP4 times shall be unsigned 64 bits integer,
+  // but we need signed integers here for the computation. So we aren't
+  // 100% compliant but we don't expect such big values anyway: we just
+  // need to handle potential high/invalid values correctly and not
+  // overflow in this case
+  CheckedInt64 decodeTime = *aDecodeTime;
 
   if (!mIndex.SetCapacity(mIndex.Length() + sampleCount, fallible)) {
     LOG_ERROR(Moof, "Out of Memory");
@@ -980,14 +986,13 @@ Result<Ok, nsresult> Moof::ParseTrun(const Box& aBox, const Mvhd& aMvhd,
       offset += sampleSize;
 
       TimeUnit decodeOffset =
-          MOZ_TRY(aMdhd.ToTimeUnit((int64_t)decodeTime - aEdts.mMediaStart));
+          MOZ_TRY(aMdhd.ToTimeUnit(decodeTime - aEdts.mMediaStart));
       TimeUnit emptyOffset = MOZ_TRY(aMvhd.ToTimeUnit(aEdts.mEmptyOffset));
       sample.mDecodeTime = decodeOffset + emptyOffset;
-      TimeUnit startCts = MOZ_TRY(aMdhd.ToTimeUnit(
-          (int64_t)decodeTime + ctsOffset - aEdts.mMediaStart));
-      TimeUnit endCts =
-          MOZ_TRY(aMdhd.ToTimeUnit((int64_t)decodeTime + ctsOffset +
-                                   sampleDuration - aEdts.mMediaStart));
+      TimeUnit startCts =
+          MOZ_TRY(aMdhd.ToTimeUnit(decodeTime + ctsOffset - aEdts.mMediaStart));
+      TimeUnit endCts = MOZ_TRY(aMdhd.ToTimeUnit(
+          decodeTime + ctsOffset + sampleDuration - aEdts.mMediaStart));
       sample.mCompositionRange =
           MP4Interval<TimeUnit>(startCts + emptyOffset, endCts + emptyOffset);
       // Sometimes audio streams don't properly mark their samples as keyframes,
@@ -1003,7 +1008,11 @@ Result<Ok, nsresult> Moof::ParseTrun(const Box& aBox, const Mvhd& aMvhd,
   TimeUnit roundTime = MOZ_TRY(aMdhd.ToTimeUnit(sampleCount));
   mMaxRoundingError = roundTime + mMaxRoundingError;
 
-  *aDecodeTime = decodeTime;
+  if (!decodeTime.isValid()) {
+    LOG_WARN(Moof, "Decode time overflow in ParseTrun");
+    return Err(NS_ERROR_FAILURE);
+  }
+  *aDecodeTime = decodeTime.value();
 
   LOG_DEBUG(Trun, "Done.");
   return Ok();

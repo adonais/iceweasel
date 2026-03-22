@@ -263,8 +263,6 @@
   <string name="mozac_feature_addons_blocklisted_2">%1$s የMozilla መመሪያዎችን ይጥሳል እና በ%2$s ላይ መጫን አይቻልም።</string>
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s መጫን አልተቻለም ምክንያቱም የድርጅት ፖሊሲዎችን በመጠቀም በድርጅት ብቻ ስለሚጫን፤ ይህም በዚህ መድረክ ላይ የማይደገፍ ነው።</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s የMozilla መመሪያዎችን ይጥሳል እና በ%2$s ላይ መጫን አይቻልም።</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">%1$sን ማንቃት አልተሳካም</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -303,10 +301,6 @@
   <string name="mozac_feature_addons_status_see_details">ዝርዝሮችን ይመልከቱ</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">ይህ ቅጥያ የMozilla መመሪያዎችን ስለጣሰ ታግዷል እና ተሰናክሏል።</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">ይህ ቅጥያ የMozilla መመሪያዎችን በመጣሱ የተከለከለ ነው እና ተሰናክሏል። እሱን ማንቃት ይችላሉ፣ ግን ይህ አደገኛ ሊሆን ይችላል።</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">ይህ ቅጥያ የMozilla መመሪያዎችን ይጥሳል። እሱን መጠቀም አደገኛ ሊሆን ይችላል።</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">%1$s ደህንነቱ የተጠበቀ እንደሆነ ሊረጋገጥ አልቻለም እና ተሰናክሏል።</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

@@ -8,6 +8,7 @@ import logging
 import os
 import subprocess
 import sys
+from contextlib import contextmanager
 from datetime import date, timedelta
 from urllib.parse import urlparse
 
@@ -16,6 +17,7 @@ from mach.decorators import Command, CommandArgument, SubCommand
 from mozbuild.base import BuildEnvironmentNotFoundException, MozbuildObject
 from mozbuild.base import MachCommandConditions as conditions
 from mozbuild.nodeutil import find_node_executable
+from mozbuild.util import construct_log_filename
 from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
 
 UNKNOWN_TEST = """
@@ -41,6 +43,33 @@ name or suite alias.
 
 The following test suites and aliases are supported: {}
 """.strip()
+
+
+@contextmanager
+def resource_monitor_profile(command_context, output_dir=None, command_name="test"):
+    monitor = SystemResourceMonitor(poll_interval=0.1)
+    monitor.start()
+
+    try:
+        yield monitor
+    finally:
+        if output_dir:
+            monitor.stop(upload_dir=output_dir)
+            profile_path = os.path.join(output_dir, "profile_resource-usage.json")
+        else:
+            monitor.stop()
+            log_subdir = os.path.join("logs", command_name)
+            command_context._ensure_state_subdir_exists(log_subdir)
+            profile_path = command_context._get_state_filename(
+                construct_log_filename("profile"), subdir=log_subdir
+            )
+
+        with open(profile_path, "w", encoding="utf-8", newline="\n") as fh:
+            to_write = json.dumps(monitor.as_profile(), separators=(",", ":"))
+            fh.write(to_write)
+        print(f"Resource usage profile saved to: {profile_path}")
+        if not output_dir:
+            print("View it with: ./mach resource-usage")
 
 
 def get_test_parser():
@@ -775,17 +804,23 @@ def test_info(command_context):
 class TestInfoNodeRunner(MozbuildObject):
     """Run TestInfo node tests."""
 
-    def run_node_cmd(self, monitor, days=1, revision=None, output_dir=None):
+    def run_node_cmd(
+        self, monitor, harness="xpcshell", days=1, revision=None, output_dir=None
+    ):
         """Run the TestInfo node command."""
 
         self.test_timings_dir = os.path.join(self.topsrcdir, "testing", "timings")
-        test_runner_script = os.path.join(
-            self.test_timings_dir, "fetch-xpcshell-data.js"
-        )
+        test_runner_script = os.path.join(self.test_timings_dir, "fetch-test-data.js")
 
         # Build the command to run
         node_binary, _ = find_node_executable()
-        cmd = [node_binary, test_runner_script]
+        cmd = [
+            node_binary,
+            "--max-old-space-size=16384",
+            test_runner_script,
+            "--harness",
+            harness,
+        ]
 
         if revision:
             cmd.extend(["--revision", revision])
@@ -847,12 +882,8 @@ class TestInfoNodeRunner(MozbuildObject):
 )
 @CommandArgument("--output-dir", help="Path to report file.")
 def test_info_xpcshell_timings(command_context, days, output_dir, revision=None):
-    # Start resource monitoring with 0.1s sampling rate
-    monitor = SystemResourceMonitor(poll_interval=0.1)
-    monitor.start()
-
-    try:
-        # node fetch-xpcshell-data.js --days 1
+    with resource_monitor_profile(command_context, output_dir) as monitor:
+        # node fetch-test-data.js --harness xpcshell --days 1
         runner = TestInfoNodeRunner.from_environment(
             cwd=os.getcwd(), detect_virtualenv_mozinfo=False
         )
@@ -876,23 +907,51 @@ def test_info_xpcshell_timings(command_context, days, output_dir, revision=None)
         runner.run_node_cmd(
             monitor, days=days, revision=revision, output_dir=output_dir
         )
-    finally:
-        # Stop resource monitoring and save profile
-        if output_dir:
-            monitor.stop(upload_dir=output_dir)
-            profile_path = os.path.join(output_dir, "profile_resource-usage.json")
-        else:
-            monitor.stop()
-            # This is where ./mach resource-usage will find the profile.
-            profile_path = command_context._get_state_filename(
-                "profile_build_resources.json"
-            )
-        with open(profile_path, "w", encoding="utf-8", newline="\n") as fh:
-            to_write = json.dumps(monitor.as_profile(), separators=(",", ":"))
-            fh.write(to_write)
-        print(f"Resource usage profile saved to: {profile_path}")
-        if not output_dir:
-            print("View it with: ./mach resource-usage")
+
+
+@SubCommand(
+    "test-info",
+    "mochitest-timings",
+    description="Collect timing information for Mochitest test jobs.",
+)
+@CommandArgument(
+    "--days",
+    default=1,
+    help="Number of days to download and aggregate, starting with yesterday",
+)
+@CommandArgument(
+    "--revision",
+    default="",
+    help="revision to fetch data for ('mozilla-central:<revision id>', '<revision id>' for a try push or 'current' to take the revision from the environment)",
+)
+@CommandArgument("--output-dir", help="Path to report file.")
+def test_info_mochitest_timings(command_context, days, output_dir, revision=None):
+    with resource_monitor_profile(command_context, output_dir) as monitor:
+        runner = TestInfoNodeRunner.from_environment(
+            cwd=os.getcwd(), detect_virtualenv_mozinfo=False
+        )
+
+        # Handle 'current' special value to use current build's revision
+        if revision == "current":
+            rev = os.environ.get("MOZ_SOURCE_CHANGESET", "")
+            repo = os.environ.get("MOZ_SOURCE_REPO", "")
+
+            if rev and repo:
+                # Extract project name from repository URL
+                parsed_url = urlparse(repo)
+                project = os.path.basename(parsed_url.path)
+                revision = f"{project}:{rev}"
+        elif revision and ":" not in revision:
+            # Bare revision ID without project prefix - assume it's a try push
+            revision = f"try:{revision}"
+
+        runner.run_node_cmd(
+            monitor,
+            harness="mochitest",
+            days=days,
+            revision=revision,
+            output_dir=output_dir,
+        )
 
 
 @SubCommand(
@@ -1378,3 +1437,44 @@ def platform_diff(
     from platform_diff import PlatformDiff
 
     PlatformDiff(command_context, task_id, replace).run()
+
+
+@SubCommand(
+    "test-info",
+    "manifest-timings",
+    description="Collect manifest runtime data from errorsummary logs.",
+)
+@CommandArgument("--output-dir", help="Path to output directory.")
+def test_info_manifest_timings(command_context, output_dir):
+    with resource_monitor_profile(command_context, output_dir) as monitor:
+        runtimes_dir = os.path.join(command_context.topsrcdir, "testing", "runtimes")
+        script_path = os.path.join(runtimes_dir, "fetch-manifest-data.js")
+
+        node_binary, _ = find_node_executable()
+        cmd = [node_binary, script_path]
+
+        if output_dir:
+            cmd.extend(["--output-dir", os.path.abspath(output_dir)])
+
+        print(f"Running: {' '.join(cmd)}")
+        print(f"Working directory: {runtimes_dir}")
+
+        process = subprocess.Popen(
+            cmd,
+            cwd=runtimes_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        for line_ in process.stdout:
+            line = line_.rstrip()
+            print(line)
+
+            if line:
+                monitor.record_event(line)
+
+        return_code = process.wait()
+        if return_code != 0:
+            raise subprocess.CalledProcessError(return_code, cmd)

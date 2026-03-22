@@ -1357,6 +1357,94 @@ add_task(async function test_helpers_change_password_with_error() {
   }
 });
 
+add_test(function test_oauth_flow_is_active() {
+  let mockMessage = {
+    command: "fxaccounts:oauth_flow_is_active",
+    messageId: "12345",
+    data: {},
+  };
+
+  let channel = new FxAccountsWebChannel({
+    channel_id: WEBCHANNEL_ID,
+    content_uri: URL_STRING,
+  });
+
+  channel._channel = {
+    send(response, context) {
+      Assert.equal(response.command, "fxaccounts:oauth_flow_is_active");
+      Assert.equal(response.messageId, "12345");
+      Assert.equal(response.data.isActive, false);
+      Assert.equal(context, mockSendingContext);
+      run_next_test();
+    },
+  };
+
+  channel._channelCallback(WEBCHANNEL_ID, mockMessage, mockSendingContext);
+});
+
+add_test(function test_oauth_flow_begin() {
+  let mockMessage = {
+    command: "fxaccounts:oauth_flow_begin",
+    messageId: "12347",
+    data: {
+      scopes: ["profile", "https://identity.mozilla.com/apps/oldsync"],
+    },
+  };
+
+  let channel = new FxAccountsWebChannel({
+    channel_id: WEBCHANNEL_ID,
+    content_uri: URL_STRING,
+  });
+
+  channel._channel = {
+    send(response, context) {
+      Assert.equal(response.command, "fxaccounts:oauth_flow_begin");
+      Assert.equal(response.messageId, "12347");
+      Assert.ok(response.data);
+
+      Assert.equal(response.data.action, "email");
+      Assert.equal(response.data.response_type, "code");
+      Assert.equal(response.data.access_type, "offline");
+      Assert.equal(
+        response.data.scope,
+        "profile https://identity.mozilla.com/apps/oldsync"
+      );
+      Assert.ok(response.data.client_id);
+      Assert.ok(response.data.state);
+
+      Assert.equal(context, mockSendingContext);
+
+      // Now verify that a flow is in progress
+      let inProgressMessage = {
+        command: "fxaccounts:oauth_flow_is_active",
+        messageId: "12348",
+        data: {},
+      };
+
+      channel._channel = {
+        send(inProgressResponse, inProgressContext) {
+          Assert.equal(
+            inProgressResponse.command,
+            "fxaccounts:oauth_flow_is_active"
+          );
+          Assert.equal(inProgressResponse.messageId, "12348");
+          Assert.equal(inProgressResponse.data.isActive, true);
+          Assert.equal(inProgressContext, mockSendingContext);
+          run_next_test();
+        },
+      };
+
+      channel._channelCallback(
+        WEBCHANNEL_ID,
+        inProgressMessage,
+        mockSendingContext
+      );
+    },
+  };
+
+  channel._channelCallback(WEBCHANNEL_ID, mockMessage, mockSendingContext);
+});
+
 function makeObserver(aObserveTopic, aObserveFunc) {
   let callback = function (aSubject, aTopic, aData) {
     log.debug("observed " + aTopic + " " + aData);

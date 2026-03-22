@@ -82,7 +82,7 @@ async function testIsBookmarksMenuItemStateChecked(expected) {
     document.querySelector(`menuitem[data-visibility-enum="${e}"]`)
   );
 
-  let checkedItem = menuitems.filter(m => m.getAttribute("checked") == "true");
+  let checkedItem = menuitems.filter(m => m.hasAttribute("checked"));
   is(checkedItem.length, 1, "should have only one menuitem checked");
   is(
     checkedItem[0].dataset.visibilityEnum,

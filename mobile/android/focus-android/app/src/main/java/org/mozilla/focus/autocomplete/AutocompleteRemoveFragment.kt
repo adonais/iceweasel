@@ -8,10 +8,6 @@ import android.content.Context
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import mozilla.components.browser.domains.CustomDomains
 import org.mozilla.focus.GleanMetrics.Autocomplete
 import org.mozilla.focus.R
@@ -43,16 +39,12 @@ class AutocompleteRemoveFragment : AutocompleteListFragment() {
     private fun removeSelectedDomains(context: Context) {
         val domains = (binding.domainList.adapter as DomainListAdapter).selection()
         if (domains.isNotEmpty()) {
-            viewLifecycleOwner.lifecycleScope.launch {
-                withContext(Dispatchers.IO) {
-                    CustomDomains.remove(context, domains)
-                    Autocomplete.domainRemoved.add()
-                }
+            CustomDomains.remove(context, domains)
+            Autocomplete.domainRemoved.add()
 
-                requireComponents.appStore.dispatch(
-                    AppAction.NavigateUp(requireComponents.store.state.selectedTabId),
-                )
-            }
+            requireComponents.appStore.dispatch(
+                AppAction.NavigateUp(requireComponents.store.state.selectedTabId),
+            )
         }
     }
 

@@ -15,6 +15,7 @@
 #include "UrlClassifierFeatureEmailTrackingProtection.h"
 #include "UrlClassifierFeatureFingerprintingAnnotation.h"
 #include "UrlClassifierFeatureFingerprintingProtection.h"
+#include "UrlClassifierFeatureGlobalCache.h"
 #include "UrlClassifierFeatureHarmfulAddonProtection.h"
 #include "UrlClassifierFeaturePhishingProtection.h"
 #include "UrlClassifierFeatureSocialTrackingAnnotation.h"
@@ -44,6 +45,7 @@ void UrlClassifierFeatureFactory::Shutdown() {
   UrlClassifierFeatureEmailTrackingProtection::MaybeShutdown();
   UrlClassifierFeatureFingerprintingAnnotation::MaybeShutdown();
   UrlClassifierFeatureFingerprintingProtection::MaybeShutdown();
+  UrlClassifierFeatureGlobalCache::MaybeShutdown();
   UrlClassifierFeaturePhishingProtection::MaybeShutdown();
   UrlClassifierFeatureSocialTrackingAnnotation::MaybeShutdown();
   UrlClassifierFeatureSocialTrackingProtection::MaybeShutdown();
@@ -160,6 +162,17 @@ void UrlClassifierFeatureFactory::GetPhishingProtectionFeatures(
 }
 
 /* static */
+void UrlClassifierFeatureFactory::GetRealTimeProtectionFeatures(
+    nsTArray<RefPtr<nsIUrlClassifierFeature>>& aFeatures) {
+  nsCOMPtr<nsIUrlClassifierFeature> feature;
+
+  feature = UrlClassifierFeatureGlobalCache::MaybeCreate();
+  if (feature) {
+    aFeatures.AppendElement(feature);
+  }
+}
+
+/* static */
 already_AddRefed<nsIUrlClassifierFeature>
 UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   if (!XRE_IsParentProcess()) {
@@ -217,6 +230,12 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   // Fingerprinting Protection
   feature =
       UrlClassifierFeatureFingerprintingProtection::GetIfNameMatches(aName);
+  if (feature) {
+    return feature.forget();
+  }
+
+  // GlobalCache
+  feature = UrlClassifierFeatureGlobalCache::GetIfNameMatches(aName);
   if (feature) {
     return feature.forget();
   }
@@ -314,6 +333,12 @@ void UrlClassifierFeatureFactory::GetFeatureNames(nsTArray<nsCString>& aArray) {
 
   // Fingerprinting Protection
   name.Assign(UrlClassifierFeatureFingerprintingProtection::Name());
+  if (!name.IsEmpty()) {
+    aArray.AppendElement(name);
+  }
+
+  // GlobalCache
+  name.Assign(UrlClassifierFeatureGlobalCache::Name());
   if (!name.IsEmpty()) {
     aArray.AppendElement(name);
   }

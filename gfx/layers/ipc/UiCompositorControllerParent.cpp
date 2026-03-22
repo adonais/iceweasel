@@ -7,6 +7,7 @@
 
 #if defined(MOZ_WIDGET_ANDROID)
 #  include "apz/src/APZCTreeManager.h"
+#  include "mozilla/layers/AndroidHardwareBuffer.h"
 #  include "mozilla/widget/AndroidCompositorWidget.h"
 #endif
 #include <utility>
@@ -139,14 +140,39 @@ mozilla::ipc::IPCResult UiCompositorControllerParent::RecvDefaultClearColor(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-UiCompositorControllerParent::RecvRequestScreenPixels() {
+mozilla::ipc::IPCResult UiCompositorControllerParent::RecvRequestScreenPixels(
+    uint64_t aRequestId, gfx::IntRect aSourceRect, gfx::IntSize aDestSize) {
 #if defined(MOZ_WIDGET_ANDROID)
   LayerTreeState* state =
       CompositorBridgeParent::GetIndirectShadowTree(mRootLayerTreeId);
 
   if (state && state->mWrBridge) {
-    state->mWrBridge->RequestScreenPixels(this);
+    state->mWrBridge->RequestScreenPixels(aSourceRect, aDestSize)
+        ->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [target = RefPtr{this},
+             aRequestId](RefPtr<AndroidHardwareBuffer> aHardwareBuffer) {
+              UniqueFileHandle bufferFd =
+                  aHardwareBuffer->SerializeToFileDescriptor();
+              UniqueFileHandle fenceFd =
+                  aHardwareBuffer->GetAndResetAcquireFence();
+              target
+                  ->SendScreenPixels(
+                      aRequestId,
+                      aHardwareBuffer
+                          ? Some(ipc::FileDescriptor(std::move(bufferFd)))
+                          : Nothing(),
+                      fenceFd ? Some(ipc::FileDescriptor(std::move(fenceFd)))
+                              : Nothing())
+                  // Ensure the hardware buffer remains alive until child side
+                  // has finished using it.
+                  ->Then(GetCurrentSerialEventTarget(), __func__,
+                         [aHardwareBuffer](
+                             ScreenPixelsPromise::ResolveOrRejectValue&&) {});
+            },
+            [target = RefPtr{this}, aRequestId](nsresult aError) {
+              (void)target->SendScreenPixels(aRequestId, Nothing(), Nothing());
+            });
     state->mWrBridge->ScheduleForcedGenerateFrame(wr::RenderReasons::OTHER);
   }
 #endif  // defined(MOZ_WIDGET_ANDROID)
@@ -184,12 +210,6 @@ void UiCompositorControllerParent::ToolbarAnimatorMessageFromCompositor(
   }
 
   (void)SendToolbarAnimatorMessageFromCompositor(aMessage);
-}
-
-bool UiCompositorControllerParent::AllocPixelBuffer(const int32_t aSize,
-                                                    ipc::Shmem* aMem) {
-  MOZ_ASSERT(aSize > 0);
-  return AllocShmem(aSize, aMem);
 }
 
 void UiCompositorControllerParent::NotifyLayersUpdated() {

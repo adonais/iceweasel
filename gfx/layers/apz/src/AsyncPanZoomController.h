@@ -566,6 +566,10 @@ class AsyncPanZoomController {
   // direction.
   bool CanScroll(const ParentLayerPoint& aDelta) const;
 
+  // Return whether or not a scroll delta will be able to scroll or overscroll
+  // in either direction
+  bool CanScrollOrOverscroll(const ParentLayerPoint& aDelta) const;
+
   // Return whether or not a scroll delta will be able to scroll in either
   // direction with wheel.
   bool CanScrollWithWheel(const ParentLayerPoint& aDelta) const;

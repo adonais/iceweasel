@@ -1457,8 +1457,9 @@ function add_resultGroups_task({
     let provider = registerBasicTestProvider(providerResults);
     let context = createContext("foo", { providers: [provider.name] });
     let controller = UrlbarTestUtils.newMockController();
-    await UrlbarProvidersManager.startQuery(context, controller);
-    UrlbarProvidersManager.unregisterProvider(provider);
+    let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+    await providersManager.startQuery(context, controller);
+    providersManager.unregisterProvider(provider);
     let expectedResults = expectedResultIndexes.map(i => providerResults[i]);
     Assert.deepEqual(context.results, expectedResults);
     setResultGroups(null);

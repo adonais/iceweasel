@@ -4,6 +4,7 @@
 
 package org.mozilla.focus
 
+import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.StrictMode
@@ -11,19 +12,24 @@ import android.util.Log.INFO
 import androidx.annotation.OpenForTesting
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.emoji2.text.DefaultEmojiCompatConfig
+import androidx.emoji2.text.EmojiCompat
 import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration.Builder
 import androidx.work.Configuration.Provider
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.support.AppServicesInitializer
 import mozilla.components.support.base.facts.register
 import mozilla.components.support.base.log.Log
 import mozilla.components.support.base.log.sink.AndroidLogSink
 import mozilla.components.support.ktx.android.content.isMainProcess
-import mozilla.components.support.locale.LocaleAwareApplication
+import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.remotesettings.GlobalRemoteSettingsDependencyProvider
 import mozilla.components.support.rusthttp.RustHttpConfig
 import mozilla.components.support.webextensions.WebExtensionSupport
@@ -41,9 +47,10 @@ import mozilla.components.support.AppServicesInitializer.Config as AppServiceCon
 /**
  * Focus application class.
  */
-open class FocusApplication : LocaleAwareApplication(), Provider {
+open class FocusApplication : Application(), Provider {
 
     protected val applicationScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    protected val ioDispatcher = Dispatchers.IO
 
     open val components: Components by lazy { Components(this) }
 
@@ -83,6 +90,8 @@ open class FocusApplication : LocaleAwareApplication(), Provider {
 
             initializeRemoteSettingsSupport()
 
+            refreshSearchEngineUpdate()
+
             setupLeakCanary()
 
             components.appStartReasonProvider.registerInAppOnCreate(this)
@@ -91,15 +100,39 @@ open class FocusApplication : LocaleAwareApplication(), Provider {
             ProcessLifecycleOwner.get().lifecycle.addObserver(lockObserver)
 
             applicationScope.launch {
+                // Initialize EmojiCompat manually.
+                initializeEmojiCompat()
+
                 // Remove stale temporary uploaded files.
                 components.fileUploadsDirCleaner.cleanUploadsDirectory()
             }
         }
     }
 
+    private fun refreshSearchEngineUpdate() {
+        components.store.dispatch(SearchAction.RefreshSearchEnginesAction)
+    }
+
     override fun onConfigurationChanged(config: android.content.res.Configuration) {
         applicationContext.resources.configuration.uiMode = config.uiMode
-        super.onConfigurationChanged(config)
+
+        if (isMainProcess()) {
+            super.onConfigurationChanged(config)
+            // Update locale on main process
+            LocaleManager.updateResources(this)
+        } else {
+            super.onConfigurationChanged(config)
+        }
+    }
+
+    override fun attachBaseContext(base: Context) {
+        // Sets the locale information. Other threads do not have locale aware needs
+        if (base.isMainProcess()) {
+            val localeAwareContext = LocaleManager.updateResources(base)
+            super.attachBaseContext(localeAwareContext)
+        } else {
+            super.attachBaseContext(base)
+        }
     }
 
     protected open fun setupLeakCanary() {
@@ -122,6 +155,46 @@ open class FocusApplication : LocaleAwareApplication(), Provider {
         val nimbus = components.experiments
         // … which we then can populate the feature configuration.
         FocusNimbus.initialize { nimbus }
+    }
+
+    /**
+     * Initializes EmojiCompat manually on a background thread.
+     *
+     * By initializing manually, we avoid the startup penalty associated with the default
+     * EmojiCompat initializer's ContentProvider. [DefaultEmojiCompatConfig] is used to
+     * automatically find a compatible font provider (such as Google Play Services).
+     *
+     * @param dispatcher The [CoroutineDispatcher] on which the initialization will occur.
+     * Defaults to [ioDispatcher].
+     */
+    private suspend fun initializeEmojiCompat(dispatcher: CoroutineDispatcher = ioDispatcher) {
+        withContext(dispatcher) {
+            // If the device has no compatible provider (e.g. no Play Services), config will be null.
+            val config = DefaultEmojiCompatConfig.create(applicationContext) ?: return@withContext
+
+            config.setReplaceAll(true)
+
+            config.registerInitCallback(
+                object : EmojiCompat.InitCallback() {
+                    override fun onInitialized() {
+                        Log.log(
+                            tag = "EmojiCompat",
+                            message = "EmojiCompat initialization completed",
+                        )
+                    }
+
+                    override fun onFailed(throwable: Throwable?) {
+                        Log.log(
+                            tag = "EmojiCompat",
+                            throwable = throwable,
+                            message = "EmojiCompat initialization failed",
+                        )
+                    }
+                },
+            )
+
+            EmojiCompat.init(config)
+        }
     }
 
     protected open fun initializeTelemetry() {
@@ -156,8 +229,8 @@ open class FocusApplication : LocaleAwareApplication(), Provider {
      * Finish Megazord setup sequence.
      */
     @OpenForTesting
-    open fun finishSetupMegazord() {
-        applicationScope.launch(Dispatchers.IO) {
+    open fun finishSetupMegazord(dispatcher: CoroutineDispatcher = ioDispatcher) {
+        applicationScope.launch(dispatcher) {
             // We need to use an unwrapped client because native components do not support private
             // requests.
             @Suppress("Deprecation")

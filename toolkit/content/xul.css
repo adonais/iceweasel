@@ -99,7 +99,7 @@ browser,
 editor,
 iframe,
 label:is(.text-link, [onclick]),
-tab[selected="true"]:not([ignorefocus="true"]) {
+tab[selected]:not([ignorefocus]) {
   -moz-user-focus: normal;
 }
 

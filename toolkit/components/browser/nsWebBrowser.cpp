@@ -82,11 +82,12 @@ nsIWidget* nsWebBrowser::EnsureWidget() {
 }
 
 /* static */
-already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
-    nsIWebBrowserChrome* aContainerWindow, nsIWidget* aParentWidget,
-    dom::BrowsingContext* aBrowsingContext,
-    dom::WindowGlobalChild* aInitialWindowChild,
-    nsIOpenWindowInfo* aOpenWindowInfo) {
+nsresult nsWebBrowser::Create(nsIWebBrowserChrome* aContainerWindow,
+                              nsIWidget* aParentWidget,
+                              dom::BrowsingContext* aBrowsingContext,
+                              dom::WindowGlobalChild* aInitialWindowChild,
+                              nsIOpenWindowInfo* aOpenWindowInfo,
+                              nsWebBrowser** aWebBrowser) {
   MOZ_ASSERT(aOpenWindowInfo, "Must have openwindowinfo");
   MOZ_ASSERT_IF(aInitialWindowChild,
                 aInitialWindowChild->BrowsingContext() == aBrowsingContext);
@@ -98,12 +99,12 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
       aBrowsingContext->IsContent() ? typeContentWrapper : typeChromeWrapper);
 
   // nsWebBrowser::SetContainer also calls nsWebBrowser::EnsureDocShellTreeOwner
-  NS_ENSURE_SUCCESS(browser->SetContainerWindow(aContainerWindow), nullptr);
-  NS_ENSURE_SUCCESS(browser->SetParentWidget(aParentWidget), nullptr);
+  MOZ_TRY(browser->SetContainerWindow(aContainerWindow));
+  MOZ_TRY(browser->SetParentWidget(aParentWidget));
 
   nsCOMPtr<nsIWidget> docShellParentWidget = browser->EnsureWidget();
   if (NS_WARN_IF(!docShellParentWidget)) {
-    return nullptr;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   uint64_t outerWindowId =
@@ -112,7 +113,7 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   RefPtr<nsDocShell> docShell =
       nsDocShell::Create(aBrowsingContext, outerWindowId);
   if (NS_WARN_IF(!docShell)) {
-    return nullptr;
+    return NS_ERROR_FAILURE;
   }
   browser->SetDocShell(docShell);
   MOZ_ASSERT(browser->mDocShell == docShell);
@@ -139,16 +140,14 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   // events from subframes. To solve that we install our own chrome event
   // handler that always gets called (even for subframes) for any bubbling
   // event.
-  nsresult rv = docShell->InitWindow(docShellParentWidget, 0, 0, 0, 0,
-                                     aOpenWindowInfo, aInitialWindowChild);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return nullptr;
-  }
+  MOZ_TRY(docShell->InitWindow(docShellParentWidget, 0, 0, 0, 0,
+                               aOpenWindowInfo, aInitialWindowChild));
 
   docShellTreeOwner->AddToWatcher();  // evil twin of Remove in SetDocShell(0)
   docShellTreeOwner->AddChromeListeners();
 
-  return browser.forget();
+  browser.forget(aWebBrowser);
+  return NS_OK;
 }
 
 void nsWebBrowser::InternalDestroy() {

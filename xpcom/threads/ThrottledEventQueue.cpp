@@ -372,6 +372,10 @@ class ThrottledEventQueue::Inner final : public nsISupports {
     return mBaseTarget->UnregisterShutdownTask(aTask);
   }
 
+  nsIEventTarget::FeatureFlags GetFeatures() {
+    return mBaseTarget->GetFeatures();
+  }
+
   bool IsOnCurrentThread() { return mBaseTarget->IsOnCurrentThread(); }
 
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -443,6 +447,10 @@ ThrottledEventQueue::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
 NS_IMETHODIMP
 ThrottledEventQueue::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   return mInner->UnregisterShutdownTask(aTask);
+}
+
+nsIEventTarget::FeatureFlags ThrottledEventQueue::GetFeatures() {
+  return mInner->GetFeatures();
 }
 
 NS_IMETHODIMP

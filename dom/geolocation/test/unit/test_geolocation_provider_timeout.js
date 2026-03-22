@@ -11,13 +11,6 @@ async function getCurrentMetrics() {
   };
 }
 
-var oldMetrics;
-
-async function checkMetrics() {
-  let metrics = await getCurrentMetrics();
-  Assert.equal(metrics.ipCount, oldMetrics.ipCount + 1);
-}
-
 var httpserver = null;
 var geolocation = null;
 
@@ -34,7 +27,8 @@ function successCallback() {
 async function errorCallback() {
   Assert.ok(true);
   // Even though we timed out, we should have recorded the attempt.
-  await checkMetrics();
+  let metrics = await getCurrentMetrics();
+  Assert.equal(metrics.ipCount, 1);
   do_test_finished();
 }
 
@@ -44,7 +38,6 @@ async function run_test() {
   // Initialize Glean and get current state.
   do_get_profile();
   Services.fog.initializeFOG();
-  oldMetrics = await getCurrentMetrics();
 
   httpserver = new HttpServer();
   httpserver.registerPathHandler("/geo", geoHandler);

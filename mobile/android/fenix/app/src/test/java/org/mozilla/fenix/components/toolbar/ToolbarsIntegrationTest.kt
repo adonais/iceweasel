@@ -58,7 +58,6 @@ class ToolbarsIntegrationTest {
             browserLayout = browserLayout,
             engineView = engineView,
             toolbar = toolbar,
-            navbar = navbar,
             topToolbarHeight = { topToolbarHeight },
             onToolbarsReset = onToolbarsReset,
         )
@@ -75,7 +74,6 @@ class ToolbarsIntegrationTest {
 
         verify(exactly = 0) { onToolbarsReset() }
         verify(exactly = 0) { toolbar.enableScrolling() }
-        verify(exactly = 0) { navbar.enableScrolling() }
         assertEquals(23, layoutParams.topMargin)
         assertEquals(32, layoutParams.bottomMargin)
     }
@@ -108,7 +106,6 @@ class ToolbarsIntegrationTest {
         assertEquals(0, layoutParams.bottomMargin)
         verify { onToolbarsReset() }
         verify { toolbar.enableScrolling() }
-        verify { navbar.enableScrolling() }
     }
 
     @Test
@@ -127,8 +124,6 @@ class ToolbarsIntegrationTest {
         verify { engineView.setVerticalClipping(0) }
         verify { toolbar.disableScrolling() }
         verify { toolbar.expand() }
-        verify { navbar.disableScrolling() }
-        verify { navbar.expand() }
     }
 
     @Test
@@ -147,7 +142,5 @@ class ToolbarsIntegrationTest {
         verify { engineView.setVerticalClipping(0) }
         verify { toolbar.disableScrolling() }
         verify { toolbar.expand() }
-        verify { navbar.disableScrolling() }
-        verify { navbar.expand() }
     }
 }

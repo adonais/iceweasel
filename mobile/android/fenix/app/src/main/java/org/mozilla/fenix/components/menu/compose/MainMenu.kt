@@ -44,7 +44,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
@@ -63,7 +62,10 @@ import org.mozilla.fenix.components.menu.MenuDialogTestTag.MORE_OPTION_CHEVRON
 import org.mozilla.fenix.components.menu.compose.header.MozillaAccountMenuItem
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
+import org.mozilla.fenix.theme.ThemedValue
+import org.mozilla.fenix.theme.ThemedValueProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -422,7 +424,6 @@ private fun ToolsAndActionsMenuGroup(
             Badge(
                 badgeText = badgeText,
                 state = menuItemState,
-                badgeBackgroundColor = badgeBackgroundColor,
             )
         }
 
@@ -708,10 +709,12 @@ private fun MoreExtensionsMenuItem(
     }
 }
 
-@PreviewLightDark
+@Preview
 @Composable
-private fun MenuDialogPreview() {
-    FirefoxTheme {
+private fun MenuDialogPreview(
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
+) {
+    FirefoxTheme(theme) {
         Column(
             modifier = Modifier
                 .background(color = MaterialTheme.colorScheme.surface),
@@ -773,9 +776,9 @@ private fun MenuDialogPreview() {
 @Preview
 @Composable
 private fun MenuDialogPrivatePreview(
-    @PreviewParameter(SiteLoadingPreviewParameterProvider::class) isSiteLoading: Boolean,
+    @PreviewParameter(SiteLoadingPreviewParameterProvider::class) state: ThemedValue<Boolean>,
 ) {
-    FirefoxTheme(theme = Theme.Private) {
+    FirefoxTheme(theme = state.theme) {
         Column(
             modifier = Modifier
                 .background(color = MaterialTheme.colorScheme.surface),
@@ -788,7 +791,7 @@ private fun MenuDialogPrivatePreview(
                 showQuitMenu = true,
                 isBottomToolbar = true,
                 isExpandedToolbarEnabled = false,
-                isSiteLoading = isSiteLoading,
+                isSiteLoading = state.value,
                 isExtensionsExpanded = true,
                 isMoreMenuExpanded = true,
                 isBookmarked = false,
@@ -862,6 +865,6 @@ private fun MenuDialogPrivatePreview(
  * A [PreviewParameterProvider] implementation that provides boolean values
  * representing the loading state of a site.
  */
-class SiteLoadingPreviewParameterProvider : PreviewParameterProvider<Boolean> {
-    override val values = sequenceOf(true, false)
-}
+class SiteLoadingPreviewParameterProvider : ThemedValueProvider<Boolean>(
+    sequenceOf(true, false),
+)

@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _NS_DEVICECONTEXT_H_
-#define _NS_DEVICECONTEXT_H_
+#ifndef NS_DEVICECONTEXT_H_
+#define NS_DEVICECONTEXT_H_
 
 #include <stdint.h>                    // for uint32_t
 #include "gfxTypes.h"                  // for gfxFloat
@@ -306,4 +306,4 @@ class nsDeviceContext final {
   bool mIsInitialized = false;
 };
 
-#endif /* _NS_DEVICECONTEXT_H_ */
+#endif /* NS_DEVICECONTEXT_H_ */

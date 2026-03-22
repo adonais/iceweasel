@@ -25,6 +25,7 @@ struct ImageEnablementCookie {
   const nsLiteralCString mMimeType;
 };
 
+#ifdef MOZ_JXL
 static void UpdateDocumentViewerRegistration(const char* aPref, void* aData) {
   auto* cookie = static_cast<ImageEnablementCookie*>(aData);
 
@@ -47,6 +48,7 @@ static void UpdateDocumentViewerRegistration(const char* aPref, void* aData) {
     );
   }
 }
+#endif
 
 static bool sInitialized = false;
 nsresult mozilla::image::EnsureModuleInitialized() {
@@ -56,10 +58,12 @@ nsresult mozilla::image::EnsureModuleInitialized() {
     return NS_OK;
   }
 
+#ifdef MOZ_JXL
   static ImageEnablementCookie kJXLCookie = {
       mozilla::StaticPrefs::image_jxl_enabled, "image/jxl"_ns};
   Preferences::RegisterCallbackAndCall(UpdateDocumentViewerRegistration,
                                        "image.jxl.enabled", &kJXLCookie);
+#endif
 
   mozilla::image::ShutdownTracker::Initialize();
   mozilla::image::ImageFactory::Initialize();

@@ -458,7 +458,11 @@ pub fn create_and_register_metric(
                 disabled,
                 ..Default::default()
             };
-            let metric = QuantityMetric::new(BaseMetricId(metric_id), meta);
+            let metric = if permit_non_commutative_operations_over_ipc.unwrap_or(false) {
+                QuantityMetric::with_unordered_ipc(BaseMetricId(metric_id), meta)
+            } else {
+                QuantityMetric::new(BaseMetricId(metric_id), meta)
+            };
             let metric32: u32 = (14 << 27) | metric_id;
             assert!(
                 __jog_metric_maps::QUANTITY_MAP.write()?.insert(BaseMetricId(metric_id), metric).is_none(),

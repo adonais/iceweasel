@@ -7,8 +7,8 @@
 // See the comment at the top of mfbt/HashTable.h for a comparison between
 // PLDHashTable and mozilla::HashTable.
 
-#ifndef nsTHashtable_h__
-#define nsTHashtable_h__
+#ifndef nsTHashtable_h_
+#define nsTHashtable_h_
 
 #include <iterator>
 #include <new>
@@ -977,4 +977,4 @@ class nsTHashtable<nsPtrHashKey<T>>
   void SwapElements(nsTHashtable& aOther) { Base::SwapElements(aOther); }
 };
 
-#endif  // nsTHashtable_h__
+#endif  // nsTHashtable_h_

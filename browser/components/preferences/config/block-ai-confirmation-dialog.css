@@ -4,7 +4,7 @@
 
 dialog {
   padding: var(--space-large);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-size-tokens */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-width: 28rem;
   box-sizing: border-box;
 }

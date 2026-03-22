@@ -60,13 +60,6 @@
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">o kama sona pona e nasin len</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">sina weka e poki lipu ale la ilo %1$s li weka e sona sina. %2$s</string>
-  <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
     This string is used in felt_privacy_info_card_subtitle as the text for the link.
@@ -542,11 +535,7 @@
   <string name="customize_addon_collection_hint">nimi kulupu</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">mama kulupu (nanpa)</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">o lukin e poki poka</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">lipu awen</string>
@@ -987,7 +976,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">o ante</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">o jo</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">o jo</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">o pana</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -1028,11 +1017,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">mi weka e %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">O NI ALA</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">O NI ALA</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">mi weka e %s</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">mi weka e %s</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">mi weka e lipu %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">mi weka e lipu %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">o tawa pini</string>
   <!-- Content description for bookmark search floating action button -->
@@ -1187,12 +1176,12 @@
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">sina lukin e lipu lon ilo %1$s la ilo ante li ken ala alasa e sina</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">sina lukin e lipu lon ilo %1$s la ilo ante li ken ala alasa e sina</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">ilo %1$s la sona sina li awen ala lon nasin len</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">ilo %1$s la sona sina li awen ala lon nasin len</string>
   <!-- Preference for not taking the short survey. -->
   <string name="preferences_not_take_survey">mi wile ala</string>
   <!--

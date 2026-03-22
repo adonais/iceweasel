@@ -62,12 +62,7 @@ data class BrowserMenuState(
  *
  * @property recommendedAddons A list of recommended [Addon]s to suggest.
  * @property availableAddons A list of installed and enabled [Addon]s to be shown.
- * @property showExtensionsOnboarding Show extensions promotion banner onboarding.
- * @property showDisabledExtensionsOnboarding Show extensions promotion banner onboarding when
- * all installed extensions have been disabled.
  * @property addonInstallationInProgress The [Addon] that is currently being installed.
- * @property shouldShowManageExtensionsMenuItem Indicates if manage extensions menu item
- * should be displayed to the user.
  * @property browserWebExtensionMenuItem A list of [WebExtensionMenuItem]s
  * to be shown in the menu.
  * @property accesspoint The [MenuAccessPoint] that was used to navigate to the menu dialog.
@@ -75,10 +70,7 @@ data class BrowserMenuState(
 data class ExtensionMenuState(
     val recommendedAddons: List<Addon> = emptyList(),
     val availableAddons: List<Addon> = emptyList(),
-    val showExtensionsOnboarding: Boolean = false,
-    val showDisabledExtensionsOnboarding: Boolean = false,
     val addonInstallationInProgress: Addon? = null,
-    val shouldShowManageExtensionsMenuItem: Boolean = false,
     val browserWebExtensionMenuItem: List<WebExtensionMenuItem> = emptyList(),
     val accesspoint: MenuAccessPoint? = null,
 ) {

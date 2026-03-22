@@ -213,10 +213,10 @@ strong {
   margin-block-end: 0;
 }
 
-.devtools-tooltip-inactive-css .link,
-.devtools-tooltip-css-compatibility .link {
+:is(.devtools-tooltip-inactive-css, .devtools-tooltip-css-compatibility) .link {
   color: var(--theme-link-color);
   cursor: pointer;
+  text-decoration: 1px underline;
 }
 
 /* Tooltip: Compatibility tooltip */
@@ -1024,6 +1024,16 @@ strong {
       border-block-start: 1px solid var(--theme-splitter-color);
     }
   }
+}
+
+/* Tooltip: attr() */
+.devtools-tooltip-css-attr {
+  padding: 5px 10px;
+  width: max-content;
+  max-width: 400px;
+  max-height: 200px;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 /* Indent the content script items */

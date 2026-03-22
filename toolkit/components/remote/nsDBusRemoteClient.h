@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef DBusRemoteClient_h__
-#define DBusRemoteClient_h__
+#ifndef DBusRemoteClient_h_
+#define DBusRemoteClient_h_
 
 #ifdef MOZ_ENABLE_DBUS
 #  include <gio/gio.h>
@@ -35,4 +35,4 @@ class nsDBusRemoteClient : public nsRemoteClient {
   nsACString& mStartupToken;
 };
 
-#endif  // DBusRemoteClient_h__
+#endif  // DBusRemoteClient_h_

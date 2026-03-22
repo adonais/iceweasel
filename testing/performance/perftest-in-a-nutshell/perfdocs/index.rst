@@ -235,6 +235,21 @@ How to trigger a custom Gecko Profile
  Note that the full set of threads is not documented. Teams typically know the ones they need, and may use presets.
 
 
+Triggering Simpleperf Profiles in CI
+------------------------------------
+
+`Simpleperf is an android profiling tool  <https://firefox-source-docs.mozilla.org/performance/profiling_with_simpleperf.html#profiling-on-android-with-simpleperf>`_  which can profile all threads on an android device and also works for non-fenix apps.
+At the moment we only have support for simpleperf with our video applink startup tests.
+
+To trigger a CI run, go to one of those jobs, and click the `Generate Performance Profile` button.
+
+ .. image:: ./generate_performance_profile.png
+    :alt: Generate Performance Profile Button
+    :scale: 50%
+    :align: center
+
+When the job completes, click on the artifacts tab, and then click the `Open in Firefox Profiler` hyperlink. You'll be re-directed to a screen where you can then load and interact with the simpleperf profiles.
+
 Side-by-Side
 ------------
 

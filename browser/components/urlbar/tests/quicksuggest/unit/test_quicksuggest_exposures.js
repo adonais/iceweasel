@@ -411,6 +411,7 @@ async function doMaxResultsTest({
   // If history results should be included, register a test provider that adds a
   // bunch of history results.
   let historyProvider;
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
   let historyResults = [];
   if (includeHistory) {
     for (let i = 0; i < maxResults; i++) {
@@ -425,7 +426,7 @@ async function doMaxResultsTest({
     historyProvider = new UrlbarTestUtils.TestProvider({
       results: historyResults,
     });
-    UrlbarProvidersManager.registerProvider(historyProvider);
+    providersManager.registerProvider(historyProvider);
     providerNames.push(historyProvider.name);
   }
 
@@ -452,7 +453,7 @@ async function doMaxResultsTest({
   });
 
   if (historyProvider) {
-    UrlbarProvidersManager.unregisterProvider(historyProvider);
+    providersManager.unregisterProvider(historyProvider);
   }
   UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
   await QuickSuggestTestUtils.forceSync();

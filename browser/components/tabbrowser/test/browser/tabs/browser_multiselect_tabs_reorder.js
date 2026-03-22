@@ -65,16 +65,6 @@ add_task(async function () {
   // Disable tab animations
   gReduceMotionOverride = true;
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.dragDrop.multiselectStacking", false]],
-  });
-  info("Test tab reorder without tab stacking");
-  await moveTabs();
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.dragDrop.multiselectStacking", true]],
-  });
   info("Test tab reorder with tab stacking");
   await moveTabs();
-  await SpecialPowers.popPrefEnv();
 });

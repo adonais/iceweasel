@@ -123,7 +123,8 @@ For help on implementing providers in general, see the address bar's
 `Architecture Overview`__.
 
 If you are creating the provider in the internal address bar implementation in
-mozilla-central, then don't forget to register it in ``UrlbarProvidersManager``.
+mozilla-central, then don't forget to register it in a ``ProvidersManager``
+instance.
 
 __ https://firefox-source-docs.mozilla.org/browser/urlbar/overview.html#urlbarprovider
 

@@ -75,6 +75,10 @@ newtab-menu-save-to-pocket = រក្សាទុកទៅ { -pocket-brand-name
 newtab-menu-delete-pocket = លុបចេញពី { -pocket-brand-name }
 newtab-menu-archive-pocket = ទុកក្នុងប័ណ្ណសារក្នុង { -pocket-brand-name }
 
+## Message displayed in a modal window to explain privacy and provide context for sponsored content.
+
+newtab-privacy-modal-button-done = ធ្វើ​រួច
+
 ##
 
 # Bookmark is a noun in this case, "Remove bookmark".
@@ -146,8 +150,68 @@ newtab-pocket-read-more = ប្រធានបទកំពុងពេញនិ
 newtab-pocket-more-recommendations = ការណែនាំច្រើនទៀត
 newtab-pocket-cta-button = ទាញយក { -pocket-brand-name }
 
+## Thumbs up and down buttons that shows over a newtab stories card thumbnail on hover.
+
+# Clicking the thumbs down button for this story informs us that the user does not feel like the story is interesting for them
+newtab-pocket-thumbs-down-tooltip =
+    .title = មិនមែនសម្រាប់ខ្ញុំទេ
+
 ## Error Fallback Content.
 ## This message and suggested action link are shown in each section of UI that fails to render.
 
 newtab-error-fallback-info = អូ មានអ្វីមួយខុសប្រក្រតីក្នុងការផ្ទុក​ខ្លឹមសារ​នេះ។
 newtab-error-fallback-refresh-link = ផ្ទុកទំព័រឡើងវិញ ដើម្បីព្យាយាមម្ដងទៀត។
+
+## New Tab Wallpapers
+
+newtab-wallpaper-title = ផ្ទាំងរូបភាព
+
+## New Tab Weather
+
+newtab-weather-opt-in-not-now =
+    .label = កុំទាន់
+newtab-weather-opt-in-yes =
+    .label = បាទ/ចាស៎
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = ទីក្រុងញូវយ៉ក
+
+## Topic Selection Modal
+
+newtab-topic-selection-cancel-button = បោះបង់
+
+## Confirmation modal for blocking a section
+
+newtab-section-cancel-button = កុំទាន់
+
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-cta = សាកល្បងឥឡូវនេះ
+
+## Strings for reporting issues with ads and content
+
+newtab-report-ads-reason-not-interested =
+    .label = ខ្ញុំមិនចាប់អារម្មណ៍ទេ
+newtab-report-cancel = បោះបង់
+
+## Strings for task / to-do list productivity widget
+
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = ថ្មី
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = បានបញ្ចប់ ({ $number })
+newtab-widget-lists-menu-delete = លុបបញ្ជីនេះ
+newtab-widget-lists-menu-hide = លាក់បញ្ជីទាំងអស់
+newtab-widget-lists-input-menu-delete = លុប
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = បញ្ជីថ្មី
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-warning = ការជូនដំណឹងត្រូវបានបិទ
+newtab-widget-timer-menu-notifications = បិទការជូនដំណឹង
+newtab-widget-timer-menu-notifications-on = បើកការជូនដំណឹង

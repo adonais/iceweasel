@@ -13,16 +13,22 @@ use crate::values::computed::{NonNegativeNumber, Percentage, Zoom};
 use crate::values::generics::length::{
     GenericLengthOrNumber, GenericLengthPercentageOrNormal, GenericMaxSize, GenericSize,
 };
+#[cfg(feature = "gecko")]
+use crate::values::generics::position::TreeScoped;
 use crate::values::generics::NonNegative;
 use crate::values::generics::{length as generics, ClampToNonNegative};
 use crate::values::resolved::{Context as ResolvedContext, ToResolvedValue};
 use crate::values::specified::length::{AbsoluteLength, FontBaseSize, LineHeightBase};
+#[cfg(feature = "gecko")]
+use crate::values::DashedIdent;
 use crate::values::{specified, CSSFloat};
 use crate::Zero;
 use app_units::Au;
 use std::fmt::{self, Write};
 use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
-use style_traits::{CSSPixel, CssString, CssWriter, NumericValue, ToCss, ToTyped, TypedValue};
+use style_traits::{
+    CSSPixel, CssString, CssWriter, NumericValue, ToCss, ToTyped, TypedValue, UnitValue,
+};
 
 pub use super::image::Image;
 pub use super::length_percentage::{LengthPercentage, NonNegativeLengthPercentage};
@@ -335,10 +341,10 @@ impl ToCss for CSSPixelLength {
 
 impl ToTyped for CSSPixelLength {
     fn to_typed(&self) -> Option<TypedValue> {
-        Some(TypedValue::Numeric(NumericValue::Unit {
+        Some(TypedValue::Numeric(NumericValue::Unit(UnitValue {
             value: self.0 as f32,
             unit: CssString::from("px"),
-        }))
+        })))
     }
 }
 
@@ -526,7 +532,7 @@ pub type MaxSize = GenericMaxSize<NonNegativeLengthPercentage>;
 #[cfg(feature = "gecko")]
 use crate::{
     gecko_bindings::structs::AnchorPosResolutionParams, logical_geometry::PhysicalAxis,
-    values::generics::length::AnchorSizeKeyword, values::DashedIdent,
+    values::generics::length::AnchorSizeKeyword,
 };
 
 /// Resolve the anchor function with the given resolver. Returns `Err()` if no anchor is found.
@@ -534,7 +540,7 @@ use crate::{
 /// anchor size keyword is not specified.
 #[cfg(feature = "gecko")]
 pub fn resolve_anchor_size(
-    anchor_name: &DashedIdent,
+    anchor_name: &TreeScoped<DashedIdent>,
     prop_axis: PhysicalAxis,
     anchor_size_keyword: AnchorSizeKeyword,
     params: &AnchorPosResolutionParams,
@@ -545,7 +551,8 @@ pub fn resolve_anchor_size(
     let valid = unsafe {
         Gecko_GetAnchorPosSize(
             params,
-            anchor_name.0.as_ptr(),
+            anchor_name.value.0.as_ptr(),
+            &anchor_name.scope,
             prop_axis as u8,
             anchor_size_keyword as u8,
             &mut offset,
@@ -579,9 +586,10 @@ impl TryTacticAdjustment for MaxSize {
             | Self::MaxContent
             | Self::MinContent
             | Self::FitContent
-            | Self::MozAvailable
             | Self::WebkitFillAvailable
             | Self::Stretch => {},
+            #[cfg(feature = "gecko")]
+            Self::MozAvailable => {},
         }
     }
 }
@@ -603,9 +611,10 @@ impl TryTacticAdjustment for Size {
             | Self::MaxContent
             | Self::MinContent
             | Self::FitContent
-            | Self::MozAvailable
             | Self::WebkitFillAvailable
             | Self::Stretch => {},
+            #[cfg(feature = "gecko")]
+            Self::MozAvailable => {},
         }
     }
 }

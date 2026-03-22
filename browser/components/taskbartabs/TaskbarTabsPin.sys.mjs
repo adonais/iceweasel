@@ -26,13 +26,14 @@ export const TaskbarTabsPin = {
    *
    * @param {TaskbarTab} aTaskbarTab - A Taskbar Tab to pin to the taskbar.
    * @param {TaskbarTabsRegistry} aRegistry - The registry to track pin resources with.
+   * @param {imgIContainer} aIcon - The icon to show with this Taskbar Tab.
    * @returns {Promise} Resolves once finished.
    */
-  async pinTaskbarTab(aTaskbarTab, aRegistry) {
+  async pinTaskbarTab(aTaskbarTab, aRegistry, aIcon) {
     lazy.logConsole.info("Pinning Taskbar Tab to the taskbar.");
 
     try {
-      let iconPath = await createTaskbarIconFromFavicon(aTaskbarTab);
+      let iconPath = await createTaskbarIcon(aTaskbarTab, aIcon);
 
       let shortcut = await createShortcut(aTaskbarTab, iconPath, aRegistry);
 
@@ -114,13 +115,11 @@ export const TaskbarTabsPin = {
  * to an icon file.
  *
  * @param {TaskbarTab} aTaskbarTab - The Taskbar Tab to generate an icon file for.
+ * @param {imgIContainer} aIcon - The icon to associate with this Taskbar Tab.
  * @returns {Promise<nsIFile>} The created icon file.
  */
-async function createTaskbarIconFromFavicon(aTaskbarTab) {
+async function createTaskbarIcon(aTaskbarTab, aIcon) {
   lazy.logConsole.info("Creating Taskbar Tabs shortcut icon.");
-
-  let url = Services.io.newURI(aTaskbarTab.startUrl);
-  let imgContainer = await lazy.TaskbarTabsUtils.getFavicon(url);
 
   let iconFile = getIconFile(aTaskbarTab);
 
@@ -128,7 +127,7 @@ async function createTaskbarIconFromFavicon(aTaskbarTab) {
 
   await IOUtils.makeDirectory(iconFile.parent.path);
 
-  await lazy.ShellService.createWindowsIcon(iconFile, imgContainer);
+  await lazy.ShellService.createWindowsIcon(iconFile, aIcon);
 
   return iconFile;
 }

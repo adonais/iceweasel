@@ -13,7 +13,7 @@ const TEST_URI = `
 add_task(async function () {
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
   const { inspector, view: ruleView } = await openRuleView();
-  const { document: doc, store } = selectChangesView(inspector);
+  const { document: doc, store } = await selectChangesView(inspector);
 
   info("Change the top-level h1 inline style color from red to blue");
   await selectNode("h1", inspector);

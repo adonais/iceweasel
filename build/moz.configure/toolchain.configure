@@ -79,6 +79,13 @@ option(
 
 
 option(
+    env="AR_FLAGS",
+    help="Extra flags for creating static archives",
+    nargs=1,
+    default="",
+)
+
+option(
     env="LIBS",
     help="Extra libraries for linking object files",
     nargs=1,
@@ -3657,12 +3664,14 @@ def ar_config(c_compiler, toolchain_prefix=None):
     if not toolchain_prefix:
         toolchain_prefix = dependable(None)
 
-    @depends(toolchain_prefix, c_compiler)
-    def ar_config(toolchain_prefix, c_compiler):
+    @depends(toolchain_prefix, c_compiler, "AR_FLAGS")
+    @imports(_from="mozshellutil", _import="split")
+    def ar_config(toolchain_prefix, c_compiler, env_flags):
+        extra_ar_flags = tuple(split(env_flags[0]))
         if c_compiler.type == "clang-cl":
             return namespace(
                 names=("llvm-lib",),
-                flags=("-llvmlibthin", "-out:$@"),
+                flags=("-llvmlibthin", "-out:$@") + extra_ar_flags,
             )
 
         names = tuple("%s%s" % (p, "ar") for p in (toolchain_prefix or ()) + ("",))
@@ -3679,7 +3688,7 @@ def ar_config(c_compiler, toolchain_prefix=None):
 
         return namespace(
             names=names,
-            flags=("crs", "$@"),
+            flags=("crs",) + extra_ar_flags + ("$@",),
         )
 
     return ar_config

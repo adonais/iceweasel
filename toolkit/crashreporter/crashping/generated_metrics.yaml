@@ -17,7 +17,7 @@ crash:
     - https://bugzilla.mozilla.org/1950749
     data_sensitivity:
     - technical
-    description: Product application's build ID.
+    description: Application build ID, the format is YYYYMMDDHHMMSS.
     expires: never
     notification_emails:
     - crash-reporting-wg@mozilla.org
@@ -48,6 +48,21 @@ crash:
     data_sensitivity:
     - technical
     description: Product version.
+    expires: never
+    notification_emails:
+    - crash-reporting-wg@mozilla.org
+    - stability@mozilla.org
+    send_in_pings:
+    - crash
+    type: string
+  application_build_id:
+    bugs:
+    - https://bugzilla.mozilla.org/1950749
+    data_reviews:
+    - https://bugzilla.mozilla.org/1950749
+    data_sensitivity:
+    - technical
+    description: The Android application's build ID.
     expires: never
     notification_emails:
     - crash-reporting-wg@mozilla.org
@@ -92,21 +107,6 @@ crash:
     - technical
     description: If the app was invoked in background task mode via `--backgroundtask
       <task name>`, the string "task name".
-    expires: never
-    notification_emails:
-    - crash-reporting-wg@mozilla.org
-    - stability@mozilla.org
-    send_in_pings:
-    - crash
-    type: string
-  build_id:
-    bugs:
-    - https://bugzilla.mozilla.org/1950749
-    data_reviews:
-    - https://bugzilla.mozilla.org/1950749
-    data_sensitivity:
-    - technical
-    description: Application build ID, the format is YYYYMMDDHHMMSS.
     expires: never
     notification_emails:
     - crash-reporting-wg@mozilla.org
@@ -334,7 +334,7 @@ crash:
     send_in_pings:
     - crash
     type: string
-  minidump_sha_256_hash:
+  minidump_sha256_hash:
     bugs:
     - https://bugzilla.mozilla.org/1950749
     data_reviews:

@@ -6,8 +6,8 @@
 
 /* rendering object for CSS "display: ruby-base" */
 
-#ifndef nsRubyBaseFrame_h___
-#define nsRubyBaseFrame_h___
+#ifndef nsRubyBaseFrame_h_
+#define nsRubyBaseFrame_h_
 
 #include "nsRubyContentFrame.h"
 
@@ -43,4 +43,4 @@ class nsRubyBaseFrame final : public nsRubyContentFrame {
       : nsRubyContentFrame(aStyle, aPresContext, kClassID) {}
 };
 
-#endif /* nsRubyBaseFrame_h___ */
+#endif /* nsRubyBaseFrame_h_ */

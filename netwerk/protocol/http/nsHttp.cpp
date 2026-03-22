@@ -43,7 +43,7 @@ constexpr uint64_t kWebTransportErrorCodeEnd = 0x52e4a40fa9e2;
 // find out how many atoms we have
 #define HTTP_ATOM(_name, _value) Unused_##_name,
 enum {
-#include "nsHttpAtomList.h"
+#include "nsHttpAtomList.inc"
   NUM_HTTP_ATOMS
 };
 #undef HTTP_ATOM
@@ -67,7 +67,7 @@ nsresult CreateAtomTable(
   // fill the table with our known atoms
   const nsHttpAtomLiteral* atoms[] = {
 #define HTTP_ATOM(_name, _value) &(_name),
-#include "nsHttpAtomList.h"
+#include "nsHttpAtomList.inc"
 #undef HTTP_ATOM
   };
 

@@ -1,5 +1,6 @@
 // META: title=Language Model Destroy
 // META: script=/resources/testdriver.js
+// META: script=/resources/testdriver-vendor.js
 // META: script=../resources/util.js
 // META: timeout=long
 
@@ -37,11 +38,6 @@ promise_test(async t => {
     "inputUsage must be accessible."
   );
   assert_equals(
-    typeof session.temperature, "number",
-    "temperature must be accessible."
-  );
-  assert_equals(
-    typeof session.topK, "number",
-    "topK must be accessible."
-  );
+      typeof session.temperature, 'undefined', 'temperature is deprecated.');
+  assert_equals(typeof session.topK, 'undefined', 'topK is deprecated.');
 });

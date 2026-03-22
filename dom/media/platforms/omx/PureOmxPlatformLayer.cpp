@@ -25,7 +25,7 @@
 namespace mozilla {
 
 #define OMX_FUNC(func) extern typeof(func)* func;
-#include "OmxFunctionList.h"
+#include "OmxFunctionList.inc"
 #undef OMX_FUNC
 
 PureOmxBufferData::PureOmxBufferData(

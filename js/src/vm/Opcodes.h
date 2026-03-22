@@ -853,6 +853,20 @@
      */ \
     MACRO(DynamicImport, dynamic_import, NULL, 1, 2, 1, JOF_BYTE) \
     /*
+     * Dynamic import.source of the module specified by the string value on the
+     * top of the stack.
+     *
+     * Implements: [Import Calls][1].
+     *
+     * [1]: https://tc39.es/proposal-source-phase-imports/#sec-import-calls
+     *
+     *   Category: Expressions
+     *   Type: Other expressions
+     *   Operands:
+     *   Stack: moduleId => promise
+     */ \
+    IF_SOURCE_PHASE_IMPORTS(MACRO(DynamicImportSource, dynamic_import_source, NULL, 1, 1, 1, JOF_BYTE)) \
+    /*
      * Push the `import.meta` object.
      *
      * This must be used only in module code.
@@ -3626,40 +3640,77 @@
  */
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
-#  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-    MACRO(242)                                   \
-    MACRO(243)                                   \
-    MACRO(244)                                   \
-    MACRO(245)                                   \
-    MACRO(246)                                   \
-    MACRO(247)                                   \
-    MACRO(248)                                   \
-    MACRO(249)                                   \
-    MACRO(250)                                   \
-    MACRO(251)                                   \
-    MACRO(252)                                   \
-    MACRO(253)                                   \
-    MACRO(254)                                   \
-    MACRO(255)
+#  ifdef ENABLE_SOURCE_PHASE_IMPORTS
+#    define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+      MACRO(243)                                   \
+      MACRO(244)                                   \
+      MACRO(245)                                   \
+      MACRO(246)                                   \
+      MACRO(247)                                   \
+      MACRO(248)                                   \
+      MACRO(249)                                   \
+      MACRO(250)                                   \
+      MACRO(251)                                   \
+      MACRO(252)                                   \
+      MACRO(253)                                   \
+      MACRO(254)                                   \
+      MACRO(255)
+#  else
+#    define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+      MACRO(242)                                   \
+      MACRO(243)                                   \
+      MACRO(244)                                   \
+      MACRO(245)                                   \
+      MACRO(246)                                   \
+      MACRO(247)                                   \
+      MACRO(248)                                   \
+      MACRO(249)                                   \
+      MACRO(250)                                   \
+      MACRO(251)                                   \
+      MACRO(252)                                   \
+      MACRO(253)                                   \
+      MACRO(254)                                   \
+      MACRO(255)
+#  endif
 #else
-#  define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-    MACRO(239)                                   \
-    MACRO(240)                                   \
-    MACRO(241)                                   \
-    MACRO(242)                                   \
-    MACRO(243)                                   \
-    MACRO(244)                                   \
-    MACRO(245)                                   \
-    MACRO(246)                                   \
-    MACRO(247)                                   \
-    MACRO(248)                                   \
-    MACRO(249)                                   \
-    MACRO(250)                                   \
-    MACRO(251)                                   \
-    MACRO(252)                                   \
-    MACRO(253)                                   \
-    MACRO(254)                                   \
-    MACRO(255)
+#  ifdef ENABLE_SOURCE_PHASE_IMPORTS
+#    define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+      MACRO(240)                                   \
+      MACRO(241)                                   \
+      MACRO(242)                                   \
+      MACRO(243)                                   \
+      MACRO(244)                                   \
+      MACRO(245)                                   \
+      MACRO(246)                                   \
+      MACRO(247)                                   \
+      MACRO(248)                                   \
+      MACRO(249)                                   \
+      MACRO(250)                                   \
+      MACRO(251)                                   \
+      MACRO(252)                                   \
+      MACRO(253)                                   \
+      MACRO(254)                                   \
+      MACRO(255)
+#  else
+#    define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
+      MACRO(239)                                   \
+      MACRO(240)                                   \
+      MACRO(241)                                   \
+      MACRO(242)                                   \
+      MACRO(243)                                   \
+      MACRO(244)                                   \
+      MACRO(245)                                   \
+      MACRO(246)                                   \
+      MACRO(247)                                   \
+      MACRO(248)                                   \
+      MACRO(249)                                   \
+      MACRO(250)                                   \
+      MACRO(251)                                   \
+      MACRO(252)                                   \
+      MACRO(253)                                   \
+      MACRO(254)                                   \
+      MACRO(255)
+#  endif
 #endif
 
 namespace js {

@@ -10,6 +10,17 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
+  SelectableProfileService:
+    "resource:///modules/profiles/SelectableProfileService.sys.mjs",
+});
+
+ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
+  return console.createInstance({
+    prefix: "PreferencesBackupResource",
+    maxLogLevel: Services.prefs.getBoolPref("browser.backup.log", false)
+      ? "Debug"
+      : "Warn",
+  });
 });
 
 const PROFILE_RESTORATION_DATE_PREF = "browser.backup.profile-restoration-date";
@@ -63,6 +74,36 @@ export class PreferencesBackupResource extends BackupResource {
     return prefsOverrideMap;
   }
 
+  /**
+   * Parses preferences from a prefs.js file buffer.
+   *
+   * @param {Uint8Array} prefsBuffer - The raw bytes of a prefs.js file.
+   * @param {string[]} [prefNames] - Optional list of pref names to extract.
+   *                                 If not provided, returns all prefs.
+   * @returns {Map<string, *>} Map of pref names to their values.
+   */
+  static getPrefsFromBuffer(prefsBuffer, prefNames = null) {
+    const prefSet = prefNames ? new Set(prefNames) : null;
+    const prefs = new Map();
+
+    const addPref = (_kind, name, value) => {
+      if (!prefSet || prefSet.has(name)) {
+        prefs.set(name, value);
+      }
+    };
+
+    Services.prefs.parsePrefsFromBuffer(prefsBuffer, {
+      onStringPref: addPref,
+      onIntPref: addPref,
+      onBoolPref: addPref,
+      onError(_message) {
+        // ignore any errors here, we'll use the default value when evaluating
+      },
+    });
+
+    return prefs;
+  }
+
   async backup(
     stagingPath,
     profilePath = PathUtils.profileDir,
@@ -73,6 +114,7 @@ export class PreferencesBackupResource extends BackupResource {
     const simpleCopyFiles = [
       "xulstore.json",
       "containers.json",
+      "customKeys.json",
       "handlers.json",
       "search.json.mozlz4",
       "user.js",
@@ -178,6 +220,7 @@ export class PreferencesBackupResource extends BackupResource {
       "prefs.js",
       "xulstore.json",
       "containers.json",
+      "customKeys.json",
       "handlers.json",
       "user.js",
       "chrome",
@@ -188,8 +231,6 @@ export class PreferencesBackupResource extends BackupResource {
       simpleCopyFiles
     );
 
-    // Append browser.backup.scheduled.last-backup-file to prefs.js with the
-    // current timestamp.
     const LINEBREAK = AppConstants.platform === "win" ? "\r\n" : "\n";
     let prefsFile = await IOUtils.getFile(destProfilePath);
     prefsFile.append("prefs.js");
@@ -198,10 +239,58 @@ export class PreferencesBackupResource extends BackupResource {
     // prefs.js file, we need to add the preamble.
     const includePreamble = !(await IOUtils.exists(prefsFile.path));
     let addToPrefsJs = includePreamble ? Services.prefs.prefsJsPreamble : "";
+
+    // Append browser.backup.scheduled.last-backup-file to prefs.js with the
+    // current timestamp.
     addToPrefsJs += `user_pref("${PROFILE_RESTORATION_DATE_PREF}", ${Math.round(Date.now() / 1000)});${LINEBREAK}`;
+
     await IOUtils.writeUTF8(prefsFile.path, addToPrefsJs, {
       mode: "appendOrCreate",
     });
+
+    if (lazy.SelectableProfileService.currentProfile) {
+      lazy.logConsole.debug(
+        `We're recovering into a profile group, let's make sure to set the right selectable profile prefs`
+      );
+
+      // Before adding prefs to the db, let's make sure we choose the most restrictive settings
+      // for data collection in the group.
+      const dataCollectionPrefs = [
+        "browser.discovery.enabled",
+        "app.shield.optoutstudies.enabled",
+        "datareporting.healthreport.uploadEnabled",
+        "datareporting.usage.uploadEnabled",
+        "browser.crashReports.unsubmittedCheck.autoSubmit2",
+      ];
+
+      const prefsFilePath = PathUtils.join(recoveryPath, "prefs.js");
+      const prefsBuffer = await IOUtils.read(prefsFilePath);
+      const backupPrefs = PreferencesBackupResource.getPrefsFromBuffer(
+        prefsBuffer,
+        dataCollectionPrefs
+      );
+      const defaults = Services.prefs.getDefaultBranch(null);
+
+      for (let pref of dataCollectionPrefs) {
+        let groupPrefValue =
+          await lazy.SelectableProfileService.getDBPref(pref);
+        let backupPrefValue = backupPrefs.has(pref)
+          ? backupPrefs.get(pref)
+          : defaults.getBoolPref(pref, false);
+
+        // the group has it enabled, but our backup has it disabled!
+        if (groupPrefValue && !backupPrefValue) {
+          Services.prefs.setBoolPref(pref, false);
+        }
+      }
+
+      // Since the user might have messed with their prefs, let's make sure to
+      // update the selectable profile specific ones (including the shared prefs db)
+      await lazy.SelectableProfileService.addSelectableProfilePrefs(
+        destProfilePath
+      );
+    }
+
     return null;
   }
 
@@ -210,6 +299,7 @@ export class PreferencesBackupResource extends BackupResource {
       "prefs.js",
       "xulstore.json",
       "containers.json",
+      "customKeys.json",
       "handlers.json",
       "search.json.mozlz4",
       "user.js",

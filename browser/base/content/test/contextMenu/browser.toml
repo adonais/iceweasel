@@ -41,6 +41,10 @@ skip-if = [
   "os == 'win'", # Bug 1719856
 ]
 
+["browser_contextmenu_bookmark_link_text.js"]
+
+["browser_contextmenu_chrome_images.js"]
+
 ["browser_contextmenu_contenteditable.js"]
 
 ["browser_contextmenu_cross_boundary_selection.js"]

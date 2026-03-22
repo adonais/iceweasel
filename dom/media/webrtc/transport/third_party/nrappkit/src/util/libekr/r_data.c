@@ -89,7 +89,7 @@ int r_data_create(Data **dp, const UCHAR *d, size_t l)
     Data *d_=0;
     int _status;
 
-    if(!(d_=(Data *)RCALLOC(sizeof(Data))))
+    if(!(d_=R_NEW(Data)))
       ABORT(R_NO_MEMORY);
     if(!(d_->data=(UCHAR *)RMALLOC(l)))
       ABORT(R_NO_MEMORY);
@@ -114,9 +114,9 @@ int r_data_alloc(Data **dp, size_t l)
     Data *d_=0;
     int _status;
 
-    if(!(d_=(Data *)RCALLOC(sizeof(Data))))
+    if(!(d_=R_NEW(Data)))
       ABORT(R_NO_MEMORY);
-    if(!(d_->data=(UCHAR *)RCALLOC(l)))
+    if(!(d_->data=(UCHAR*)RCALLOC_RAWSIZE(l)))
       ABORT(R_NO_MEMORY);
 
     d_->len=l;

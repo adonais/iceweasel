@@ -9,7 +9,6 @@
 // found in the LICENSE file.
 #include "jit/riscv64/MacroAssembler-riscv64.h"
 
-#include "jsmath.h"
 #include "jit/Bailouts.h"
 #include "jit/BaselineFrame.h"
 #include "jit/JitFrames.h"
@@ -18,6 +17,7 @@
 #include "jit/MoveEmitter.h"
 #include "jit/riscv64/SharedICRegisters-riscv64.h"
 #include "util/Memory.h"
+#include "util/PortableMath.h"
 #include "vm/JitActivation.h"  // jit::JitActivation
 #include "vm/JSContext.h"
 #include "wasm/WasmStubs.h"
@@ -547,6 +547,21 @@ void MacroAssemblerRiscv64Compat::minMax32(Register lhs, Register rhs,
     std::swap(lhs, rhs);
   }
 
+  if (HasZbbExtension()) {
+    UseScratchRegisterScope temps(this);
+    const Register rhsSExt = temps.Acquire();
+    move32(rhs, rhsSExt);
+    move32(lhs, dest);
+    // Using signed max/min to match the (signed)
+    // Assembler::GreaterThan/Assembler::LessThan below
+    if (isMax) {
+      max(dest, dest, rhsSExt);
+    } else {
+      min(dest, dest, rhsSExt);
+    }
+    return;
+  }
+
   auto cond = isMax ? Assembler::GreaterThan : Assembler::LessThan;
   if (lhs != dest) {
     move32(lhs, dest);
@@ -556,6 +571,26 @@ void MacroAssemblerRiscv64Compat::minMax32(Register lhs, Register rhs,
 
 void MacroAssemblerRiscv64Compat::minMax32(Register lhs, Imm32 rhs,
                                            Register dest, bool isMax) {
+  if (HasZbbExtension()) {
+    UseScratchRegisterScope temps(this);
+    Register realRhs;
+    if (rhs.value == 0) {
+      realRhs = zero;
+    } else {
+      realRhs = temps.Acquire();
+      ma_li(realRhs, rhs);
+    }
+    // Using signed max/min to match the (signed)
+    // Assembler::GreaterThan/Assembler::LessThan below
+    move32(lhs, dest);
+    if (isMax) {
+      max(dest, dest, realRhs);
+    } else {
+      min(dest, dest, realRhs);
+    }
+    return;
+  }
+
   if (rhs.value == 0) {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
@@ -588,6 +623,17 @@ void MacroAssemblerRiscv64Compat::minMax32(Register lhs, Imm32 rhs,
 
 void MacroAssemblerRiscv64Compat::minMaxPtr(Register lhs, Register rhs,
                                             Register dest, bool isMax) {
+  if (HasZbbExtension()) {
+    // Using signed max/min to match the (signed)
+    // Assembler::GreaterThan/Assembler::LessThan below
+    if (isMax) {
+      max(dest, lhs, rhs);
+    } else {
+      min(dest, lhs, rhs);
+    }
+    return;
+  }
+
   if (rhs == dest) {
     std::swap(lhs, rhs);
   }
@@ -601,6 +647,25 @@ void MacroAssemblerRiscv64Compat::minMaxPtr(Register lhs, Register rhs,
 
 void MacroAssemblerRiscv64Compat::minMaxPtr(Register lhs, ImmWord rhs,
                                             Register dest, bool isMax) {
+  if (HasZbbExtension()) {
+    UseScratchRegisterScope temps(this);
+    Register realRhs;
+    if (rhs.value == 0) {
+      realRhs = zero;
+    } else {
+      realRhs = temps.Acquire();
+      ma_li(realRhs, rhs);
+    }
+    // Using signed max/min to match the (signed)
+    // Assembler::GreaterThan/Assembler::LessThan below
+    if (isMax) {
+      max(dest, lhs, realRhs);
+    } else {
+      min(dest, lhs, realRhs);
+    }
+    return;
+  }
+
   if (rhs.value == 0) {
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
@@ -1318,8 +1383,23 @@ void MacroAssemblerRiscv64::computeScaledAddress(const BaseIndex& address,
     MOZ_ASSERT(shift <= 4);
     slli(dest, index, shift);
   } else if (shift) {
-    Register tmp = dest == base ? temps.Acquire() : dest;
     MOZ_ASSERT(shift <= 4);
+    if (HasZbaExtension()) {
+      switch (shift) {
+        case 1:
+          sh1add(dest, index, base);
+          return;
+        case 2:
+          sh2add(dest, index, base);
+          return;
+        case 3:
+          sh3add(dest, index, base);
+          return;
+        default:
+          break;
+      }
+    }
+    Register tmp = dest == base ? temps.Acquire() : dest;
     slli(tmp, index, shift);
     add(dest, base, tmp);
   } else {
@@ -1337,8 +1417,23 @@ void MacroAssemblerRiscv64::computeScaledAddress32(const BaseIndex& address,
     MOZ_ASSERT(shift <= 4);
     slliw(dest, index, shift);
   } else if (shift) {
-    Register tmp = dest == base ? temps.Acquire() : dest;
     MOZ_ASSERT(shift <= 4);
+    if (HasZbaExtension()) {
+      switch (shift) {
+        case 1:
+          sh1add_uw(dest, index, base);
+          return;
+        case 2:
+          sh2add_uw(dest, index, base);
+          return;
+        case 3:
+          sh3add_uw(dest, index, base);
+          return;
+        default:
+          break;
+      }
+    }
+    Register tmp = dest == base ? temps.Acquire() : dest;
     slliw(tmp, index, shift);
     addw(dest, base, tmp);
   } else {
@@ -6350,7 +6445,12 @@ void MacroAssemblerRiscv64::Clz32(Register rd, Register xx) {
 }
 
 #if JS_CODEGEN_RISCV64
-void MacroAssemblerRiscv64::Clz64(Register rd, Register xx) {
+void MacroAssemblerRiscv64::Clz64(Register rd, Register rs) {
+  if (HasZbbExtension()) {
+    clz(rd, rs);
+    return;
+  }
+
   // 64 bit: count number of leading zeros.
   //  int n = 64;
   //  unsigned y;
@@ -6368,8 +6468,8 @@ void MacroAssemblerRiscv64::Clz64(Register rd, Register xx) {
   Register x = rd;
   Register y = temps.Acquire();
   Register n = temps.Acquire();
-  MOZ_ASSERT(xx != y && xx != n);
-  mv(x, xx);
+  MOZ_ASSERT(rs != y && rs != n);
+  mv(x, rs);
   ma_li(n, Imm32(64));
   srli(y, x, 32);
   ma_branch(&L0, Equal, y, Operand(zero_reg));
@@ -6403,6 +6503,7 @@ void MacroAssemblerRiscv64::Clz64(Register rd, Register xx) {
   bind(&L5);
 }
 #endif
+
 void MacroAssemblerRiscv64::Ctz32(Register rd, Register rs) {
   if (HasZbbExtension()) {
 #if JS_CODEGEN_RISCV64
@@ -6434,6 +6535,7 @@ void MacroAssemblerRiscv64::Ctz32(Register rd, Register rs) {
     ma_sub32(rd, scratch, rd);
   }
 }
+
 #if JS_CODEGEN_RISCV64
 void MacroAssemblerRiscv64::Ctz64(Register rd, Register rs) {
   if (HasZbbExtension()) {
@@ -6462,6 +6564,7 @@ void MacroAssemblerRiscv64::Ctz64(Register rd, Register rs) {
   }
 }
 #endif
+
 void MacroAssemblerRiscv64::Popcnt32(Register rd, Register rs,
                                      Register scratch) {
   if (HasZbbExtension()) {
@@ -6798,6 +6901,11 @@ void MacroAssemblerRiscv64::Float64Min(FPURegister dst, FPURegister src1,
 
 void MacroAssemblerRiscv64::Rol(Register rd, Register rs, const Operand& rt) {
   if (rt.is_reg()) {
+    if (HasZbbExtension()) {
+      rolw(rd, rs, rt.rm());
+      return;
+    }
+
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
 
@@ -6847,6 +6955,11 @@ void MacroAssemblerRiscv64::Ror(Register rd, Register rs, const Operand& rt) {
 
 void MacroAssemblerRiscv64::Drol(Register rd, Register rs, const Operand& rt) {
   if (rt.is_reg()) {
+    if (HasZbbExtension()) {
+      rol(rd, rs, rt.rm());
+      return;
+    }
+
     UseScratchRegisterScope temps(this);
     Register scratch = temps.Acquire();
 

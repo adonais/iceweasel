@@ -14,7 +14,7 @@
 #include <cmath>
 #include <stdint.h>
 
-#include "jsnum.h"
+#include "builtin/Number.h"
 
 using namespace js;
 using namespace js::temporal;

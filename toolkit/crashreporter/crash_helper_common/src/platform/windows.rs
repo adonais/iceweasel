@@ -34,18 +34,24 @@ pub enum PlatformError {
     AcceptFailed(WIN32_ERROR),
     #[error("Broken pipe")]
     BrokenPipe,
-    #[error("Failed to duplicate clone handle")]
-    CloneHandleFailed(#[source] std::io::Error),
+    #[error("Failed to duplicate handle: {0}")]
+    DuplicateHandleFailed(WIN32_ERROR),
     #[error("Could not create event: {0}")]
     CreateEventFailed(WIN32_ERROR),
+    #[error("Could not create or add an I/O completion port: {0}")]
+    CreateIoCompletionPortFailed(WIN32_ERROR),
     #[error("Could not create a pipe: {0}")]
     CreatePipeFailure(WIN32_ERROR),
+    #[error("Malformed string cannot be converted")]
+    InvalidString,
     #[error("I/O error: {0}")]
     IOError(WIN32_ERROR),
     #[error("No process handle specified")]
     MissingProcessHandle,
     #[error("Could not listen for incoming connections: {0}")]
     ListenFailed(WIN32_ERROR),
+    #[error("Could not parse HANDLE from string")]
+    ParseHandle,
     #[error("Receiving {expected} bytes failed, only {received} bytes received")]
     ReceiveTooShort { expected: usize, received: usize },
     #[error("Could not reset event: {0}")]
@@ -54,8 +60,12 @@ pub enum PlatformError {
     SendTooShort { expected: usize, sent: usize },
     #[error("Could not set event: {0}")]
     SetEventFailed(WIN32_ERROR),
-    #[error("Value too large")]
+    #[error("Could not set pipe state in message mode: {0}")]
+    SetNamedPipeHandleState(WIN32_ERROR),
+    #[error("Value exceeds a 32-bit integer")]
     ValueTooLarge,
+    #[error("Waiting for pipe failed: {0}")]
+    WaitNamedPipeFailed(WIN32_ERROR),
 }
 
 pub(crate) fn get_last_error() -> WIN32_ERROR {

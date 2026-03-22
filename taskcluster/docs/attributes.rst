@@ -119,6 +119,11 @@ used for different kinds of builds that target the same platform.  Values are
  * ``debug``
  * ``opt``
 
+ccov
+====
+
+Marks tasks related to code coverage collection.
+
 test_platform
 =============
 

@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
@@ -14,6 +15,9 @@ android {
         compose = true
     }
     namespace = 'mozilla.components.support.utils'
+    testFixtures {
+        enable = true
+    }
 }
 
 dependencies {
@@ -26,10 +30,12 @@ dependencies {
     implementation libs.androidx.activity.compose
     implementation libs.androidx.annotation
     implementation platform(libs.androidx.compose.bom)
+    implementation libs.androidx.compose.runtime.saveable
     implementation libs.androidx.compose.foundation
     implementation libs.androidx.compose.ui
     implementation libs.androidx.core
     implementation libs.androidx.core.ktx
+    implementation libs.androidx.documentfile
     implementation libs.kotlinx.coroutines
 
     testImplementation project(":components:support-test")
@@ -38,6 +44,9 @@ dependencies {
     testImplementation libs.androidx.test.junit
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.robolectric
+
+    testFixturesImplementation platform(libs.androidx.compose.bom)
+    testFixturesImplementation libs.androidx.compose.runtime.saveable
 }
 
 apply from: '../../../common-config.gradle'

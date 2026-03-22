@@ -14,21 +14,21 @@
   <!-- Text for context menu item to open the image in a new tab. -->
   <string name="mozac_feature_contextmenu_open_image_in_new_tab">فتح الصورة في تبويب جديد</string>
   <!-- Text for context menu item to save / download the link. -->
-  <string name="mozac_feature_contextmenu_download_link">تنزيل الرابط</string>
+  <string name="mozac_feature_contextmenu_download_link">نزّل الرابط</string>
   <!-- Text for context menu item to share the link with an other app. -->
   <string name="mozac_feature_contextmenu_share_link">مشاركة الرابط</string>
   <!-- Text for context menu item to share the image with an other app. -->
   <string name="mozac_feature_contextmenu_share_image">مشاركة الصورة</string>
   <!-- Text for context menu item to copy the link to the clipboard. -->
-  <string name="mozac_feature_contextmenu_copy_link">نسخ الرابط</string>
+  <string name="mozac_feature_contextmenu_copy_link">انسخ الرابط</string>
   <!-- Text for context menu item to copy the link text to the clipboard. -->
-  <string name="mozac_feature_contextmenu_copy_link_text">نسخ نص الرابط</string>
+  <string name="mozac_feature_contextmenu_copy_link_text">انسخ نص الرابط</string>
   <!-- Text for context menu item to copy the URL pointing to the image to the clipboard. -->
   <string name="mozac_feature_contextmenu_copy_image_location">نسخ مكان الصورة</string>
   <!-- Text for context menu item to save / download the image. -->
   <string name="mozac_feature_contextmenu_save_image">حفظ الصورة</string>
   <!-- Text for context menu item to copy the image to the clipboard. -->
-  <string name="mozac_feature_contextmenu_copy_image">نسخ الصورة</string>
+  <string name="mozac_feature_contextmenu_copy_image">انسخ الصورة</string>
   <!-- Text for context menu item to save / download the file. -->
   <string name="mozac_feature_contextmenu_save_file_to_device">حفظ الملف في الجهاز</string>
   <!-- Text for confirmation "snackbar" shown after opening a link in a new tab. -->
@@ -36,11 +36,11 @@
   <!-- Text for confirmation "snackbar" shown after opening a link in a new private tab. -->
   <string name="mozac_feature_contextmenu_snackbar_new_private_tab_opened">تم فتح تبويب خاص جديد</string>
   <!-- Text for confirmation "snackbar" shown after copying a link or image URL to the clipboard. -->
-  <string name="mozac_feature_contextmenu_snackbar_link_copied">تم تسخ الرابط إلى الحافظة</string>
+  <string name="mozac_feature_contextmenu_snackbar_link_copied">تم نسخ الرابط إلى الحافظة</string>
   <!-- Text for confirmation "snackbar" shown after copying a link text to the clipboard. -->
   <string name="mozac_feature_contextmenu_snackbar_link_text_copied">تم نسخ نص الرابط إلى الحافظة</string>
   <!-- Action shown in a "snacbkar" after opening a new/private tab. Clicking this action will switch to the newly opened tab. -->
-  <string name="mozac_feature_contextmenu_snackbar_action_switch">الانتقال</string>
+  <string name="mozac_feature_contextmenu_snackbar_action_switch">التبديل</string>
   <!-- Text for context menu item to open the link in an external app. -->
   <string name="mozac_feature_contextmenu_open_link_in_external_app">فتح الرابط في تطبيق خارجي</string>
   <!-- Text for context menu item to share the email with another app. -->

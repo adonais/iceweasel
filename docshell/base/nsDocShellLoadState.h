@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsDocShellLoadState_h__
-#define nsDocShellLoadState_h__
+#ifndef nsDocShellLoadState_h_
+#define nsDocShellLoadState_h_
 
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/NavigationBinding.h"
@@ -765,4 +765,4 @@ class nsDocShellLoadState final {
   bool mIsInitialAboutBlankHandlingProhibited;
 };
 
-#endif /* nsDocShellLoadState_h__ */
+#endif /* nsDocShellLoadState_h_ */

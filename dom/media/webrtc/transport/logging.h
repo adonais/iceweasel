@@ -6,8 +6,8 @@
 
 // Original author: ekr@rtfm.com
 
-#ifndef logging_h__
-#define logging_h__
+#ifndef logging_h_
+#define logging_h_
 
 #include <sstream>
 
@@ -63,4 +63,4 @@
       }                                                           \
     } while (0)
 #endif  // MOZILLA_INTERNAL_API
-#endif  // logging_h__
+#endif  // logging_h_

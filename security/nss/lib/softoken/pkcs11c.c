@@ -5376,7 +5376,7 @@ sftk_compareKeysEqual(CK_SESSION_HANDLE hSession,
     /* fetch the pkcs11 objects from the handles */
     session = sftk_SessionFromHandle(hSession);
     if (session == NULL) {
-        return CKR_SESSION_HANDLE_INVALID;
+        return PR_FALSE;
     }
 
     key1obj = sftk_ObjectFromHandle(key1, session);
@@ -5408,7 +5408,7 @@ loser:
         sftk_FreeObject(key1obj);
     }
     if (key2obj) {
-        sftk_FreeObject(key1obj);
+        sftk_FreeObject(key2obj);
     }
     if (att1) {
         sftk_FreeAttribute(att1);
@@ -5902,17 +5902,17 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
         }
     }
 
-    isKEM = sftk_isTrue(privateKey, CKA_ENCAPSULATE);
+    isKEM = sftk_isTrue(privateKey, CKA_DECAPSULATE);
     if (isKEM) {
         unsigned char *cipher_text = NULL;
         CK_ULONG cipher_text_length = 0;
         CK_OBJECT_HANDLE key1 = CK_INVALID_HANDLE;
         CK_OBJECT_HANDLE key2 = CK_INVALID_HANDLE;
-        CK_KEY_TYPE genType = CKO_SECRET_KEY;
-        CK_ATTRIBUTE template = { CKA_KEY_TYPE, NULL, 0 };
+        CK_KEY_TYPE genClass = CKO_SECRET_KEY;
+        CK_ATTRIBUTE template = { CKA_CLASS, NULL, 0 };
 
-        template.pValue = &genType;
-        template.ulValueLen = sizeof(genType);
+        template.pValue = &genClass;
+        template.ulValueLen = sizeof(genClass);
         crv = CKR_OK;
         switch (keyType) {
             case CKK_ML_KEM:
@@ -5939,7 +5939,7 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
             goto kem_done;
         }
         if (!sftk_compareKeysEqual(hSession, key1, key2)) {
-            crv = CKR_DEVICE_ERROR;
+            crv = CKR_GENERAL_ERROR;
             goto kem_done;
         }
     kem_done:
@@ -5952,7 +5952,7 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
             NSC_DestroyObject(hSession, key2);
         }
         if (crv != CKR_OK) {
-            return CKR_DEVICE_ERROR;
+            return crv;
         }
     }
 
@@ -7212,6 +7212,10 @@ sftk_unwrapPrivateKey(SFTKObject *key, SECItem *bpki)
         case SEC_OID_ML_DSA_87_PUBLIC_KEY:
             paramSet = CKP_ML_DSA_87;
         mldsa_next:
+            if (pki->privateKey.data == NULL || pki->privateKey.len == 0) {
+                PORT_SetError(SEC_ERROR_BAD_KEY);
+                goto loser;
+            }
             switch (pki->privateKey.data[0]) {
                 case SEC_ASN1_CONTEXT_SPECIFIC | 0:
                     keyTemplate = nsslowkey_PQSeedTemplate;

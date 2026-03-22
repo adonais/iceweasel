@@ -14,6 +14,7 @@
 #define LOG_ENABLED() LOG5_ENABLED()
 
 #include "nsHttpHandler.h"
+#include "nsHttpConnectionMgr.h"
 #include "Http2StreamTunnel.h"
 #include "nsHttpConnectionInfo.h"
 #include "nsQueryObject.h"
@@ -197,6 +198,8 @@ FWD_TS_T_ADDREF(GetTlsSocketControl, nsITLSSocketControl);
 FWD_TS_T_PTR(GetConnectionFlags, uint32_t);
 FWD_TS_T(SetConnectionFlags, uint32_t);
 FWD_TS_T(SetIsPrivate, bool);
+FWD_TS_T(SetIsTRRConnection, bool);
+FWD_TS_T_PTR(GetIsTRRConnection, bool);
 FWD_TS_T_PTR(GetTlsFlags, uint32_t);
 FWD_TS_T(SetTlsFlags, uint32_t);
 FWD_TS_T_PTR(GetRecvBufferSize, uint32_t);
@@ -350,28 +353,9 @@ nsresult OutputStreamTunnel::OnSocketReady(nsresult condition) {
   nsresult rv = NS_OK;
   if (callback) {
     rv = callback->OnOutputStreamReady(this);
-    MaybeSetRequestDone(callback);
   }
 
   return rv;
-}
-
-void OutputStreamTunnel::MaybeSetRequestDone(
-    nsIOutputStreamCallback* aCallback) {
-  RefPtr<nsHttpConnection> conn = do_QueryObject(aCallback);
-  if (!conn) {
-    return;
-  }
-
-  RefPtr<Http2StreamTunnel> tunnel;
-  nsresult rv = GetStream(getter_AddRefs(tunnel));
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  if (conn->RequestDone()) {
-    tunnel->SetRequestDone();
-  }
 }
 
 NS_IMPL_ISUPPORTS(OutputStreamTunnel, nsIOutputStream, nsIAsyncOutputStream)

@@ -10,62 +10,56 @@
  * This site is deliberately blocking Firefox, possibly due to bug 1992579.
  */
 
-/* globals cloneInto, exportFunction */
+if (!window.chrome) {
+  console.info(
+    "The window environment is being altered for compatibility reasons. If you're a web developer working on this site, please get in touch with developer-outreach@mozilla.com. See https://bugzilla.mozilla.org/show_bug.cgi?id=1950282 for details."
+  );
 
-console.info(
-  "The window environment is being altered for compatibility reasons. If you're a web developer working on this site, please get in touch with developer-outreach@mozilla.com. See https://bugzilla.mozilla.org/show_bug.cgi?id=1950282 for details."
-);
+  delete window.InstallTrigger;
+  delete window.mozInnerScreenX;
+  delete window.mozInnerScreenY;
+  delete window.MozConsentBanner;
 
-delete window.wrappedJSObject.InstallTrigger;
-delete window.wrappedJSObject.mozInnerScreenX;
-delete window.wrappedJSObject.mozInnerScreenY;
-delete window.wrappedJSObject.MozConsentBanner;
+  const nav = Object.getPrototypeOf(navigator);
+  const vendor = Object.getOwnPropertyDescriptor(nav, "vendor");
+  vendor.get = () => "Google Inc.";
+  Object.defineProperty(nav, "vendor", vendor);
 
-const nav = Object.getPrototypeOf(navigator.wrappedJSObject);
-const vendor = Object.getOwnPropertyDescriptor(nav, "vendor");
-vendor.get = exportFunction(() => "Google Inc.", window);
-Object.defineProperty(nav, "vendor", vendor);
+  const supports = Object.getOwnPropertyDescriptor(CSS, "supports");
+  const oldSupports = supports.value;
+  supports.value = function (query) {
+    if (query.includes("moz-")) {
+      return false;
+    }
+    return oldSupports.call(this, query);
+  };
+  Object.defineProperty(CSS, "supports", supports);
 
-const css = CSS.wrappedJSObject;
-const supports = Object.getOwnPropertyDescriptor(css, "supports");
-const oldSupports = supports.value;
-supports.value = exportFunction(function (query) {
-  if (query.includes("moz-")) {
-    return false;
+  function generateTimeStamp(base, factor = 10) {
+    if (base) {
+      // increase another timestamp by a little
+      return (base + Math.random() * factor).toString().substr(0, 14);
+    }
+    const r = Math.random().toString();
+    const d10 = `1${r.substr(5, 9)}`;
+    const d3 = r.substr(2, 3);
+    return parseFloat(`${d10}.${d3}`);
   }
-  return oldSupports.call(this, query);
-}, window);
-Object.defineProperty(css, "supports", supports);
 
-function generateTimeStamp(base, factor = 10) {
-  if (base) {
-    // increase another timestamp by a little
-    return (base + Math.random() * factor).toString().substr(0, 14);
-  }
-  const r = Math.random().toString();
-  const d10 = `1${r.substr(5, 9)}`;
-  const d3 = r.substr(2, 3);
-  return parseFloat(`${d10}.${d3}`);
-}
+  const startLoadTime = generateTimeStamp();
+  const commitLoadTime = generateTimeStamp(startLoadTime);
+  const firstPaintTime = generateTimeStamp(commitLoadTime);
+  const finishDocumentLoadTime = generateTimeStamp(firstPaintTime);
+  const finishLoadTime = generateTimeStamp(finishDocumentLoadTime);
 
-const startLoadTime = generateTimeStamp();
-const commitLoadTime = generateTimeStamp(startLoadTime);
-const firstPaintTime = generateTimeStamp(commitLoadTime);
-const finishDocumentLoadTime = generateTimeStamp(firstPaintTime);
-const finishLoadTime = generateTimeStamp(finishDocumentLoadTime);
-
-const csi = cloneInto(
-  {
+  const csi = {
     onloadT: parseInt(finishDocumentLoadTime * 100),
     pageT: generateTimeStamp().toString().substr(-11),
     startE: parseInt(parseFloat(startLoadTime * 100)),
     tran: 10 + parseInt(4 + Math.random() * 4),
-  },
-  window
-);
+  };
 
-const loadTimes = cloneInto(
-  {
+  const loadTimes = {
     commitLoadTime,
     connectionInfo: "h3",
     finishDocumentLoadTime,
@@ -79,12 +73,9 @@ const loadTimes = cloneInto(
     wasAlternateProtocolAvailable: false,
     wasFetchedViaSpdy: true,
     wasNpnNegotiated: true,
-  },
-  window
-);
+  };
 
-window.wrappedJSObject.chrome = cloneInto(
-  {
+  window.chrome = {
     app: {
       InstallState: {
         DISABLED: "disabled",
@@ -116,69 +107,56 @@ window.wrappedJSObject.chrome = cloneInto(
     loadTimes() {
       return loadTimes;
     },
-  },
-  window,
-  { cloneFunctions: true }
-);
+  };
 
-const ua = navigator.userAgent;
-const mobile = ua.includes("Mobile") || ua.includes("Tablet");
+  const ua = navigator.userAgent;
+  const mobile = ua.includes("Android");
 
-// Very roughly matches Chromium's GetPlatformForUAMetadata()
-let platform = "Linux";
-if (mobile) {
-  platform = "Android";
-} else if (navigator.platform.startsWith("Win")) {
-  platform = "Windows";
-} else if (navigator.platform.startsWith("Mac")) {
-  platform = "macOS";
-}
+  // Very roughly matches Chromium's GetPlatformForUAMetadata()
+  let platform = "Linux";
+  if (mobile) {
+    platform = "Android";
+  } else if (navigator.platform.startsWith("Win")) {
+    platform = "Windows";
+  } else if (navigator.platform.startsWith("Mac")) {
+    platform = "macOS";
+  }
 
-const version = (ua.match(/Firefox\/([0-9]+)/) || ["", "58.0"])[1];
+  const version = ua.match(/Chrome\/([0-9]+)/)[1];
 
-// These match Chrome's output as of version 126.
-const brands = [
-  {
-    brand: "Not/A)Brand",
-    version: "8",
-  },
-  {
-    brand: "Chromium",
-    version,
-  },
-  {
-    brand: "Google Chrome",
-    version,
-  },
-];
+  // These match Chrome's output as of version 126.
+  const brands = [
+    {
+      brand: "Not/A)Brand",
+      version: "8",
+    },
+    {
+      brand: "Chromium",
+      version,
+    },
+    {
+      brand: "Google Chrome",
+      version,
+    },
+  ];
 
-const userAgentData = cloneInto(
-  {
+  // Site checks the high-entropy platformVersion on Windows.
+  const userAgentData = {
     brands,
     mobile,
     platform,
     getHighEntropyValues() {
-      return window.wrappedJSObject.Promise.resolve(
-        cloneInto(
-          {
-            brands,
-            mobile,
-            platform,
-            platformVersion: "19.0.0",
-          },
-          window
-        )
-      );
+      return Promise.resolve({
+        brands,
+        mobile,
+        platform,
+        platformVersion: "19.0.0",
+      });
     },
-  },
-  window,
-  { cloneFunctions: true }
-);
+  };
 
-Object.defineProperty(window.navigator.wrappedJSObject, "userAgentData", {
-  get: exportFunction(function () {
-    return userAgentData;
-  }, window),
-
-  set: exportFunction(function () {}, window),
-});
+  Object.defineProperty(nav, "userAgentData", {
+    get: () => userAgentData,
+    set: () => {},
+  });
+}

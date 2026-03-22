@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_ipc_backgroundparent_h__
-#define mozilla_ipc_backgroundparent_h__
+#ifndef mozilla_ipc_backgroundparent_h_
+#define mozilla_ipc_backgroundparent_h_
 
 #include "base/process.h"
 #include "mozilla/dom/ContentParent.h"
@@ -114,4 +114,4 @@ inline void AssertIsInMainProcess() { MOZ_ASSERT(XRE_IsParentProcess()); }
 }  // namespace ipc
 }  // namespace mozilla
 
-#endif  // mozilla_ipc_backgroundparent_h__
+#endif  // mozilla_ipc_backgroundparent_h_

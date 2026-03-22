@@ -16,7 +16,6 @@ use crate::command_buffer::{CommandBufferIndex, PrimitiveCommand};
 use crate::image_tiling::{self, Repetition};
 use crate::border::{get_max_scale_for_border, build_border_instances};
 use crate::clip::{ClipStore, ClipNodeRange};
-use crate::pattern::Pattern;
 use crate::renderer::{GpuBufferAddress, GpuBufferBuilderF, GpuBufferWriterF, GpuBufferDataF};
 use crate::spatial_tree::{SpatialNodeIndex, SpatialTree};
 use crate::clip::{ClipDataStore, ClipNodeFlags, ClipChainInstance, ClipItemKind};
@@ -34,9 +33,9 @@ use crate::render_backend::DataStores;
 use crate::render_task_graph::RenderTaskId;
 use crate::render_task_cache::RenderTaskCacheKeyKind;
 use crate::render_task_cache::{RenderTaskCacheKey, to_cache_size, RenderTaskParent};
-use crate::render_task::{EmptyTask, MaskSubPass, RenderTask, RenderTaskKind, SubPass};
+use crate::render_task::{EmptyTask, RenderTask, RenderTaskKind};
 use crate::segment::SegmentBuilder;
-use crate::util::{clamp_to_scale_factor, ScaleOffset};
+use crate::util::clamp_to_scale_factor;
 use crate::visibility::{compute_conservative_visible_rect, PrimitiveVisibility, VisibilityState};
 
 
@@ -364,6 +363,8 @@ fn prepare_interned_prim_for_render(
             quad::prepare_quad(
                 prim_data,
                 &prim_data.kind.outer_shadow_rect,
+                prim_data.common.aligned_aa_edges,
+                prim_data.common.transformed_aa_edges,
                 prim_instance_index,
                 &None,
                 prim_spatial_node_index,
@@ -374,7 +375,6 @@ fn prepare_interned_prim_for_render(
                 targets,
                 &data_stores.clip,
                 frame_state,
-                pic_state,
                 scratch,
             );
 
@@ -657,6 +657,8 @@ fn prepare_interned_prim_for_render(
                 quad::prepare_quad(
                     prim_data,
                     &prim_data.common.prim_rect,
+                    prim_data.common.aligned_aa_edges,
+                    prim_data.common.transformed_aa_edges,
                     prim_instance_index,
                     &None,
                     prim_spatial_node_index,
@@ -667,7 +669,6 @@ fn prepare_interned_prim_for_render(
                     targets,
                     &data_stores.clip,
                     frame_state,
-                    pic_state,
                     scratch,
                 );
 
@@ -733,13 +734,45 @@ fn prepare_interned_prim_for_render(
             profile_scope!("LinearGradient");
             let prim_data = &mut data_stores.linear_grad[*data_handle];
             if !*use_legacy_path {
+                // For SWGL, evaluating the gradient is faster than reading from the texture cache.
+                let mut should_cache = !frame_context.fb_config.is_software
+                    && frame_state.resource_cache.texture_cache.allocated_color_bytes() < 10_000_000;
+                if should_cache {
+                    let surface = &frame_state.surfaces[pic_context.surface_index.0];
+                    let clipped_surface_rect = surface.get_surface_rect(
+                        &prim_instance.vis.clip_chain.pic_coverage_rect,
+                        frame_context.spatial_tree,
+                    );
+
+                    should_cache = if let Some(rect) = clipped_surface_rect {
+                        rect.width() < 512 && rect.height() < 512
+                    } else {
+                        false
+                    };
+                }
+
+                let cache_key = if should_cache {
+                    quad::cache_key(
+                        data_handle.uid(),
+                        prim_spatial_node_index,
+                        frame_context.spatial_tree,
+                        &prim_instance.vis.clip_chain,
+                        frame_state.clip_store,
+                        &data_stores.clip,
+                    )
+                } else {
+                    None
+                };
+
                 quad::prepare_repeatable_quad(
                     prim_data,
                     &prim_data.common.prim_rect,
                     prim_data.stretch_size,
                     prim_data.tile_spacing,
+                    prim_data.common.aligned_aa_edges,
+                    prim_data.common.transformed_aa_edges,
                     prim_instance_index,
-                    &None,
+                    &cache_key,
                     prim_spatial_node_index,
                     &prim_instance.vis.clip_chain,
                     device_pixel_scale,
@@ -748,7 +781,6 @@ fn prepare_interned_prim_for_render(
                     targets,
                     &data_stores.clip,
                     frame_state,
-                    pic_state,
                     scratch,
                 );
 
@@ -851,6 +883,8 @@ fn prepare_interned_prim_for_render(
                     &prim_data.common.prim_rect,
                     prim_data.stretch_size,
                     prim_data.tile_spacing,
+                    prim_data.common.aligned_aa_edges,
+                    prim_data.common.transformed_aa_edges,
                     prim_instance_index,
                     &None,
                     prim_spatial_node_index,
@@ -861,7 +895,6 @@ fn prepare_interned_prim_for_render(
                     targets,
                     &data_stores.clip,
                     frame_state,
-                    pic_state,
                     scratch,
                 );
 
@@ -906,7 +939,8 @@ fn prepare_interned_prim_for_render(
                 // the code so that we only call it as much as we really need it,
                 // while avoiding this much boilerplate for each primitive that uses
                 // caching.
-                let mut should_cache = frame_context.fb_config.is_software;
+                let mut should_cache = frame_context.fb_config.is_software
+                    && frame_state.resource_cache.texture_cache.allocated_color_bytes() < 30_000_000;
                 if should_cache {
                     let surface = &frame_state.surfaces[pic_context.surface_index.0];
                     let clipped_surface_rect = surface.get_surface_rect(
@@ -939,6 +973,8 @@ fn prepare_interned_prim_for_render(
                     &prim_data.common.prim_rect,
                     prim_data.stretch_size,
                     prim_data.tile_spacing,
+                    prim_data.common.aligned_aa_edges,
+                    prim_data.common.transformed_aa_edges,
                     prim_instance_index,
                     &cache_key,
                     prim_spatial_node_index,
@@ -949,7 +985,6 @@ fn prepare_interned_prim_for_render(
                     targets,
                     &data_stores.clip,
                     frame_state,
-                    pic_state,
                     scratch,
                 );
 
@@ -1034,18 +1069,6 @@ fn prepare_interned_prim_for_render(
                     .clipped_local_rect
                     .cast_unit();
 
-                let pattern = Pattern::color(ColorF::WHITE);
-
-                let prim_address_f = quad::write_prim_blocks(
-                    &mut frame_state.frame_gpu_data.f32,
-                    prim_local_rect.to_untyped(),
-                    prim_instance.vis.clip_chain.local_clip_rect.to_untyped(),
-                    pattern.base_color,
-                    pattern.texture_input.task_id,
-                    &[],
-                    ScaleOffset::identity(),
-                );
-
                 // Handle masks on the source. This is the common case, and occurs for:
                 // (a) Any masks in the same coord space as the surface
                 // (b) All masks if the surface and parent are axis-aligned
@@ -1072,18 +1095,32 @@ fn prepare_interned_prim_for_render(
                         count: frame_state.clip_store.clip_node_instances.len() as u32 - first_clip_node_index,
                     };
 
-                    let masks = MaskSubPass {
-                        clip_node_range,
-                        prim_spatial_node_index,
-                        prim_address_f,
-                    };
-
                     // Add the mask as a sub-pass of the picture
                     let pic_task_id = pic.primary_render_task_id.expect("uh oh");
                     let pic_task = frame_state.rg_builder.get_task_mut(pic_task_id);
-                    pic_task.add_sub_pass(SubPass::Masks {
-                        masks,
-                    });
+
+                    let RenderTaskKind::Picture(info) = &pic_task.kind else { unreachable!() };
+
+                    let task_rect = DeviceRect::from_origin_and_size(
+                        info.content_origin,
+                        pic_task.get_target_size().to_f32(),
+                    );
+
+                    quad::prepare_clip_range(
+                        clip_node_range,
+                        pic_task_id,
+                        &task_rect,
+                        &prim_local_rect,
+                        prim_spatial_node_index,
+                        info.raster_spatial_node_index,
+                        info.device_pixel_scale,
+                        &data_stores.clip,
+                        frame_state.clip_store,
+                        frame_context.spatial_tree,
+                        frame_state.rg_builder,
+                        &mut frame_state.frame_gpu_data.f32,
+                        frame_state.transforms,
+                    );
                 }
 
                 // Handle masks on the target. This is the rare case, and occurs for:
@@ -1137,16 +1174,23 @@ fn prepare_interned_prim_for_render(
                         count: frame_state.clip_store.clip_node_instances.len() as u32 - first_clip_node_index,
                     };
 
-                    let masks = MaskSubPass {
-                        clip_node_range,
-                        prim_spatial_node_index,
-                        prim_address_f,
-                    };
+                    let task_rect = clipped_surface_rect.to_f32();
 
-                    let clip_task = frame_state.rg_builder.get_task_mut(clip_task_id);
-                    clip_task.add_sub_pass(SubPass::Masks {
-                        masks,
-                    });
+                    quad::prepare_clip_range(
+                        clip_node_range,
+                        clip_task_id,
+                        &task_rect,
+                        &prim_local_rect,
+                        prim_spatial_node_index,
+                        raster_spatial_node_index,
+                        device_pixel_scale,
+                        &data_stores.clip,
+                        frame_state.clip_store,
+                        frame_context.spatial_tree,
+                        frame_state.rg_builder,
+                        &mut frame_state.frame_gpu_data.f32,
+                        frame_state.transforms,
+                    );
 
                     let clip_task_index = ClipTaskIndex(scratch.clip_mask_instances.len() as _);
                     scratch.clip_mask_instances.push(ClipMaskKind::Mask(clip_task_id));

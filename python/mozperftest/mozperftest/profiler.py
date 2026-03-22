@@ -5,17 +5,23 @@
 from mozperftest.system.geckoprofiler import GeckoProfiler
 from mozperftest.system.simpleperf import SimpleperfProfiler
 
-PROFILERS = [SimpleperfProfiler, GeckoProfiler]
+PROFILERS = {
+    "simpleperf": SimpleperfProfiler,
+    "geckoprofiler": GeckoProfiler,
+}
 
 
 class ProfilingMediator:
     """Used to start and stop any profilers setup through the system later."""
 
-    def __init__(self):
+    def __init__(self, profilers=None):
+        if profilers is None:
+            profilers = list(PROFILERS.keys())
         self.active_profilers = []
-        for profiler in PROFILERS:
-            if profiler.is_enabled():
-                self.active_profilers.append(profiler.get_controller())
+        for name in profilers:
+            profiler_class = PROFILERS[name]
+            if profiler_class.is_enabled():
+                self.active_profilers.append(profiler_class.get_controller())
 
     def start(self, options=None):
         for profiler in self.active_profilers:

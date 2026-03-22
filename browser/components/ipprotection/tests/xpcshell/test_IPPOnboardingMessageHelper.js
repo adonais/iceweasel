@@ -24,13 +24,15 @@ add_task(async function test_IPPOnboardingMessage() {
   let sandbox = sinon.createSandbox();
   setupStubs(sandbox);
 
-  IPProtectionService.init();
-
-  await waitForEvent(
+  let readyEventPromise = waitForEvent(
     IPProtectionService,
     "IPProtectionService:StateChanged",
     () => IPProtectionService.state === IPProtectionStates.READY
   );
+
+  IPProtectionService.init();
+
+  await readyEventPromise;
 
   Assert.ok(
     !IPPProxyManager.activatedAt,

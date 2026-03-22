@@ -167,6 +167,13 @@ LargeIconLayout.args = {
   layout: "large-icon",
 };
 
+export const MediumIconLayout = Template.bind({});
+MediumIconLayout.args = {
+  ...WithIcon.args,
+  iconSrc: "chrome://global/skin/icons/info.svg",
+  layout: "medium-icon",
+};
+
 export const WithSlottedActions = Template.bind({});
 WithSlottedActions.args = {
   ...Default.args,

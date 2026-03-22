@@ -5,16 +5,15 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavDirections
 import androidx.navigation.NavOptions
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.engine.Engine
 import mozilla.components.lib.crash.store.CrashReportOption
 import mozilla.components.service.nimbus.NimbusApi
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.mock
-import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.isNull
@@ -36,11 +35,6 @@ import org.mozilla.fenix.utils.Settings
 
 @RunWith(AndroidJUnit4::class)
 class DataChoicesMiddlewareTest {
-
-    @get:Rule
-    val coroutineTestRule = MainCoroutineRule()
-    private val dispatcher = coroutineTestRule.testDispatcher
-    private val scope = coroutineTestRule.scope
 
     private lateinit var settings: Settings
     private lateinit var nimbus: NimbusApi
@@ -70,11 +64,11 @@ class DataChoicesMiddlewareTest {
         `when`(crashReportCache.getReportOption())
             .thenReturn(CrashReportOption.Auto)
 
-        val store = makeStore()
+        val store = makeStore(this)
 
         store.dispatch(ViewCreated)
 
-        dispatcher.scheduler.advanceUntilIdle()
+        testScheduler.advanceUntilIdle()
 
         assertEquals(false, store.state.telemetryEnabled)
         assertEquals(false, store.state.usagePingEnabled)
@@ -84,26 +78,27 @@ class DataChoicesMiddlewareTest {
     }
 
     @Test
-    fun `when telemetry is clicked then telemetry and experimentation are toggled and components are notified`() {
-        `when`(settings.isTelemetryEnabled).thenReturn(true)
-        `when`(settings.isExperimentationEnabled).thenReturn(true)
+    fun `when telemetry is clicked then telemetry and experimentation are toggled and components are notified`() =
+        runTest {
+            `when`(settings.isTelemetryEnabled).thenReturn(true)
+            `when`(settings.isExperimentationEnabled).thenReturn(true)
 
-        val store = makeStore()
+            val store = makeStore(this)
 
-        store.dispatch(ChoiceAction.TelemetryClicked)
+            store.dispatch(ChoiceAction.TelemetryClicked)
 
-        verify(settings).isTelemetryEnabled = false
-        assertEquals(false, store.state.telemetryEnabled)
-        verify(settings).isExperimentationEnabled = false
-        verify(metrics).stop(MetricServiceType.Data)
-        verify(nimbus).resetTelemetryIdentifiers()
-        verify(engine).notifyTelemetryPrefChanged(false)
-    }
+            verify(settings).isTelemetryEnabled = false
+            assertEquals(false, store.state.telemetryEnabled)
+            verify(settings).isExperimentationEnabled = false
+            verify(metrics).stop(MetricServiceType.Data)
+            verify(nimbus).resetTelemetryIdentifiers()
+            verify(engine).notifyTelemetryPrefChanged(false)
+        }
 
     @Test
-    fun `when measurement data is clicked then marketing telemetry is toggled`() {
+    fun `when measurement data is clicked then marketing telemetry is toggled`() = runTest {
         `when`(settings.isMarketingTelemetryEnabled).thenReturn(false)
-        val store = makeStore()
+        val store = makeStore(this)
 
         store.dispatch(ChoiceAction.MeasurementDataClicked)
 
@@ -113,9 +108,9 @@ class DataChoicesMiddlewareTest {
     }
 
     @Test
-    fun `when usage ping is clicked then daily usage ping is toggled`() {
+    fun `when usage ping is clicked then daily usage ping is toggled`() = runTest {
         `when`(settings.isDailyUsagePingEnabled).thenReturn(true)
-        val store = makeStore()
+        val store = makeStore(this)
 
         store.dispatch(ChoiceAction.UsagePingClicked)
 
@@ -125,23 +120,24 @@ class DataChoicesMiddlewareTest {
     }
 
     @Test
-    fun `when a crash report option is selected then it is saved to the crash report cache`() = runTest {
-        val store = makeStore()
+    fun `when a crash report option is selected then it is saved to the crash report cache`() =
+        runTest {
+            val store = makeStore(this)
 
-        store.dispatch(ChoiceAction.ReportOptionClicked(CrashReportOption.Never))
-        dispatcher.scheduler.advanceUntilIdle()
+            store.dispatch(ChoiceAction.ReportOptionClicked(CrashReportOption.Never))
+            testScheduler.advanceUntilIdle()
 
-        verify(crashReportCache).setReportOption(CrashReportOption.Never)
-        assertEquals(CrashReportOption.Never, store.state.selectedCrashOption)
-    }
+            verify(crashReportCache).setReportOption(CrashReportOption.Never)
+            assertEquals(CrashReportOption.Never, store.state.selectedCrashOption)
+        }
 
     @Test
-    fun `when studies is clicked then navigation to the studies screen is triggered`() {
+    fun `when studies is clicked then navigation to the studies screen is triggered`() = runTest {
         val destination = mock(NavDestination::class.java)
         `when`(destination.id).thenReturn(R.id.dataChoicesFragment)
         `when`(nav.currentDestination).thenReturn(destination)
 
-        val store = makeStore()
+        val store = makeStore(this)
         store.dispatch(ChoiceAction.StudiesClicked)
 
         val directionsCaptor = argumentCaptor<NavDirections>()
@@ -155,24 +151,26 @@ class DataChoicesMiddlewareTest {
     }
 
     @Test
-    fun `when learn more is clicked then the corresponding help topic callback is invoked`() {
-        var invokedTopic: SupportUtils.SumoTopic? = null
-        val store = makeStore { topic -> invokedTopic = topic }
+    fun `when learn more is clicked then the corresponding help topic callback is invoked`() =
+        runTest {
+            var invokedTopic: SupportUtils.SumoTopic? = null
+            val store = makeStore(scope = this) { topic -> invokedTopic = topic }
 
-        store.dispatch(LearnMore.TelemetryLearnMoreClicked)
-        assertEquals(SupportUtils.SumoTopic.TECHNICAL_AND_INTERACTION_DATA, invokedTopic)
+            store.dispatch(LearnMore.TelemetryLearnMoreClicked)
+            assertEquals(SupportUtils.SumoTopic.TECHNICAL_AND_INTERACTION_DATA, invokedTopic)
 
-        store.dispatch(LearnMore.MeasurementDataLearnMoreClicked)
-        assertEquals(SupportUtils.SumoTopic.MARKETING_DATA, invokedTopic)
+            store.dispatch(LearnMore.MeasurementDataLearnMoreClicked)
+            assertEquals(SupportUtils.SumoTopic.MARKETING_DATA, invokedTopic)
 
-        store.dispatch(LearnMore.CrashLearnMoreClicked)
-        assertEquals(SupportUtils.SumoTopic.CRASH_REPORTS, invokedTopic)
+            store.dispatch(LearnMore.CrashLearnMoreClicked)
+            assertEquals(SupportUtils.SumoTopic.CRASH_REPORTS, invokedTopic)
 
-        store.dispatch(LearnMore.UsagePingLearnMoreClicked)
-        assertEquals(SupportUtils.SumoTopic.USAGE_PING_SETTINGS, invokedTopic)
-    }
+            store.dispatch(LearnMore.UsagePingLearnMoreClicked)
+            assertEquals(SupportUtils.SumoTopic.USAGE_PING_SETTINGS, invokedTopic)
+        }
 
     private fun makeStore(
+        scope: CoroutineScope,
         learnMoreClicked: (SupportUtils.SumoTopic) -> Unit = {},
     ) = DataChoicesStore(
         initialState = DataChoicesState(),

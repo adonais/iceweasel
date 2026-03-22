@@ -38,4 +38,7 @@ assert.throws(RangeError, () => instance.round({ largestUnit: "years", relativeT
 relativeTo = "2019-11-01T00:00+04:15[UTC]";
 assert.throws(RangeError, () => instance.round({ largestUnit: "years", relativeTo }), "date-time + offset + IANA annotation throws if wall time and exact time mismatch");
 
+relativeTo = "2025-01-01T00:00:00+00:0000";
+assert.throws(RangeError, () => instance.round({ largestUnit: "years", relativeTo }), "date-time with offset like 00:0000 shouldn't parse");
+
 reportCompare(0, 0);

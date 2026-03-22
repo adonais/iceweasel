@@ -7,7 +7,7 @@ Transform the repackage signing task into an actual task description.
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from taskgraph.util.taskcluster import get_artifact_path
 from voluptuous import Optional
 
@@ -18,7 +18,7 @@ from gecko_taskgraph.util.scriptworker import get_signing_type_per_platform
 
 transforms = TransformSequence()
 
-repackage_signing_description_schema = Schema({
+repackage_signing_description_schema = LegacySchema({
     Optional("label"): str,
     Optional("extra"): object,
     Optional("attributes"): task_description_schema["attributes"],

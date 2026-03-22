@@ -13,11 +13,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.colorResource
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.view.updateLayoutParams
 import androidx.navigation.NavController
@@ -38,6 +41,8 @@ import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.ktx.android.view.ImeInsetsSynchronizer
 import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
@@ -47,6 +52,7 @@ import org.mozilla.fenix.components.toolbar.ToolbarPosition.TOP
 import org.mozilla.fenix.databinding.FragmentHomeBinding
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
+import org.mozilla.fenix.wallpapers.Wallpaper
 
 /**
  * A wrapper over the [BrowserToolbar] composable to allow for extra customisation and
@@ -58,6 +64,8 @@ import org.mozilla.fenix.utils.Settings
  * @param toolbarStore [BrowserToolbarStore] containing the composable toolbar state.
  * @param appStore [AppStore] to sync from.
  * @param browserStore [BrowserStore] to sync from.
+ * @param browsingModeManager [BrowsingModeManager] Manager holding current state of whether
+ * the browser is in private mode or not.
  * @param settings [Settings] for querying various application settings.
  * @param directToSearchConfig [DirectToSearchConfig] configuration for starting with the toolbar in search mode.
  * @param tabStripContent [Composable] as the tab strip content to be displayed together with this toolbar.
@@ -73,6 +81,7 @@ internal class HomeToolbarComposable(
     private val toolbarStore: BrowserToolbarStore,
     private val appStore: AppStore,
     private val browserStore: BrowserStore,
+    private val browsingModeManager: BrowsingModeManager,
     private val settings: Settings,
     private val directToSearchConfig: DirectToSearchConfig,
     private val tabStripContent: @Composable () -> Unit,
@@ -96,8 +105,13 @@ internal class HomeToolbarComposable(
 
         setContent {
             val isSearching = toolbarStore.observeAsComposableState { it.isEditMode() }.value
+            val isSearchEmpty =
+                toolbarStore.observeAsComposableState { it.editState.query.current.isEmpty() }.value
             val shouldShowTabStrip: Boolean = remember { settings.isTabStripEnabled }
             val isAddressBarVisible = remember { addressBarVisibility }
+
+            val currentWallpaperName = appStore.observeAsComposableState { it.wallpaperState.currentWallpaper.name }
+            val isEdgeToEdgeBackgroundEnabled = currentWallpaperName.value == Wallpaper.EDGE_TO_EDGE
 
             BackInvokedHandler(isSearching) {
                 val sourceTabId = appStore.state.searchState.sourceTabId
@@ -136,7 +150,22 @@ internal class HomeToolbarComposable(
                                 ),
                             ),
                         ) {
-                            BrowserToolbar(toolbarStore)
+                            val (backgroundColor, outlineColor) =
+                                if (browsingModeManager.mode == BrowsingMode.Private) {
+                                    MaterialTheme.colorScheme.surface to
+                                            colorResource(R.color.homepage_tab_edge_to_edge_private_toolbar_outline)
+                                } else if (isEdgeToEdgeBackgroundEnabled && isSearchEmpty) {
+                                    colorResource(R.color.homepage_tab_edge_to_edge_toolbar_background) to
+                                            colorResource(R.color.homepage_tab_edge_to_edge_toolbar_outline)
+                                } else {
+                                    MaterialTheme.colorScheme.surface to DividerDefaults.color
+                                }
+
+                            BrowserToolbar(
+                                store = toolbarStore,
+                                backgroundColor = backgroundColor,
+                                outlineColor = outlineColor,
+                            )
                         }
                     }
                     if (settings.toolbarPosition == BOTTOM) {

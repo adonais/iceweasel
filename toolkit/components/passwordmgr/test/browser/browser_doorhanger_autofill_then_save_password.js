@@ -180,5 +180,5 @@ async function test_save_change({
   );
 
   // Clean up the database before the next test case is executed.
-  Services.logins.removeAllUserFacingLogins();
+  await Services.logins.removeAllUserFacingLoginsAsync();
 }

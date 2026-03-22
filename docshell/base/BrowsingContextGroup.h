@@ -92,6 +92,10 @@ class BrowsingContextGroup final : public nsWrapperCache {
   // details.
   bool IsKnownForMessageReader(IPC::MessageReader* aReader);
 
+  // Check if the process with the given ChildID is aware of this
+  // BrowsingContextGroup's existence.
+  bool IsKnownForChildID(GeckoChildID aChildID);
+
   // When a BrowsingContext is being discarded, we may want to keep the
   // corresponding BrowsingContextGroup alive until the other process
   // acknowledges that the BrowsingContext has been discarded. A `KeepAlive`

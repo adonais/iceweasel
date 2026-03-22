@@ -446,7 +446,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">தொகு</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">நகலெடு</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">நகலெடு</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">பகிர்</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -480,7 +480,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s அழிக்கப்பட்டது</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">செயல்தவிர்</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">செயல்தவிர்</string>
   <!--
     Site Permissions
 

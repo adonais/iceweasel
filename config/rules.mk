@@ -829,7 +829,6 @@ endif
 
 ################################################################################
 # The default location for prefs is the gre prefs directory.
-# PREF_DIR is used for L10N_PREF_JS_EXPORTS in various locales/ directories.
 PREF_DIR = defaults/pref
 
 # If DIST_SUBDIR is defined it indicates that app and gre dirs are

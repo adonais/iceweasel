@@ -7,14 +7,6 @@
 #include "jit/InlinableNatives.h"
 
 #ifdef JS_HAS_INTL_API
-#  include "builtin/intl/Collator.h"
-#  include "builtin/intl/DateTimeFormat.h"
-#  include "builtin/intl/DisplayNames.h"
-#  include "builtin/intl/DurationFormat.h"
-#  include "builtin/intl/ListFormat.h"
-#  include "builtin/intl/NumberFormat.h"
-#  include "builtin/intl/PluralRules.h"
-#  include "builtin/intl/RelativeTimeFormat.h"
 #  include "builtin/intl/Segmenter.h"
 #endif
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
@@ -44,37 +36,11 @@ const JSClass* js::jit::InlinableNativeGuardToClass(InlinableNative native) {
   switch (native) {
 #ifdef JS_HAS_INTL_API
     // Intl natives.
-    case InlinableNative::IntlGuardToCollator:
-      return &CollatorObject::class_;
-    case InlinableNative::IntlGuardToDateTimeFormat:
-      return &DateTimeFormatObject::class_;
-    case InlinableNative::IntlGuardToDisplayNames:
-      return &DisplayNamesObject::class_;
-    case InlinableNative::IntlGuardToDurationFormat:
-      return &DurationFormatObject::class_;
-    case InlinableNative::IntlGuardToListFormat:
-      return &ListFormatObject::class_;
-    case InlinableNative::IntlGuardToNumberFormat:
-      return &NumberFormatObject::class_;
-    case InlinableNative::IntlGuardToPluralRules:
-      return &PluralRulesObject::class_;
-    case InlinableNative::IntlGuardToRelativeTimeFormat:
-      return &RelativeTimeFormatObject::class_;
-    case InlinableNative::IntlGuardToSegmenter:
-      return &SegmenterObject::class_;
     case InlinableNative::IntlGuardToSegments:
-      return &SegmentsObject::class_;
+      return &intl::SegmentsObject::class_;
     case InlinableNative::IntlGuardToSegmentIterator:
-      return &SegmentIteratorObject::class_;
+      return &intl::SegmentIteratorObject::class_;
 #else
-    case InlinableNative::IntlGuardToCollator:
-    case InlinableNative::IntlGuardToDateTimeFormat:
-    case InlinableNative::IntlGuardToDisplayNames:
-    case InlinableNative::IntlGuardToListFormat:
-    case InlinableNative::IntlGuardToNumberFormat:
-    case InlinableNative::IntlGuardToPluralRules:
-    case InlinableNative::IntlGuardToRelativeTimeFormat:
-    case InlinableNative::IntlGuardToSegmenter:
     case InlinableNative::IntlGuardToSegments:
     case InlinableNative::IntlGuardToSegmentIterator:
       MOZ_CRASH("Intl API disabled");
@@ -179,15 +145,6 @@ bool js::jit::CanInlineNativeCrossRealm(InlinableNative native) {
       // RNG state is per-realm.
       return false;
 
-    case InlinableNative::IntlGuardToCollator:
-    case InlinableNative::IntlGuardToDateTimeFormat:
-    case InlinableNative::IntlGuardToDisplayNames:
-    case InlinableNative::IntlGuardToDurationFormat:
-    case InlinableNative::IntlGuardToListFormat:
-    case InlinableNative::IntlGuardToNumberFormat:
-    case InlinableNative::IntlGuardToPluralRules:
-    case InlinableNative::IntlGuardToRelativeTimeFormat:
-    case InlinableNative::IntlGuardToSegmenter:
     case InlinableNative::IntlGuardToSegments:
     case InlinableNative::IntlGuardToSegmentIterator:
     case InlinableNative::IsRegExpObject:

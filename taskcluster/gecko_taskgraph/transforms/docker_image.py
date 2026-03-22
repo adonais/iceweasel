@@ -12,7 +12,7 @@ import taskgraph
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util import json
 from taskgraph.util.docker import create_context_tar, generate_context_hash
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from voluptuous import Optional, Required
 
 from gecko_taskgraph.util.docker import (
@@ -36,7 +36,7 @@ IMAGE_BUILDER_IMAGE = (
 
 transforms = TransformSequence()
 
-docker_image_schema = Schema({
+docker_image_schema = LegacySchema({
     # Name of the docker image.
     Required("name"): str,
     # Name of the parent docker image.

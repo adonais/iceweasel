@@ -10,10 +10,10 @@
  * The site is checking for window.chrome, so let's spoof that.
  */
 
-/* globals exportFunction */
+if (!window.chrome) {
+  console.info(
+    "window.chrome has been shimmed for compatibility reasons. https://bugzilla.mozilla.org/show_bug.cgi?id=1898983 for details."
+  );
 
-console.info(
-  "window.chrome has been shimmed for compatibility reasons. https://bugzilla.mozilla.org/show_bug.cgi?id=1898983 for details."
-);
-
-window.wrappedJSObject.chrome = new window.wrappedJSObject.Object();
+  window.chrome = {};
+}

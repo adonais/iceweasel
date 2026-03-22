@@ -11,6 +11,7 @@ support-files = [
   "fission_document.html",
   "fission_iframe.html",
   "helper_service_workers_navigation.js",
+  "test_image.png",
   "test_service_worker.js",
   "test_sw_page.html",
   "test_sw_page_worker.js",
@@ -26,6 +27,8 @@ skip-if = [
 ]
 
 ["browser_target_command_content_scripts.js"]
+
+["browser_target_command_content_scripts_imagetab.js"]
 
 ["browser_target_command_detach.js"]
 

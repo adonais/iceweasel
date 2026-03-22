@@ -47,6 +47,7 @@ class AcornColors(
     tabInactive: Color,
     information: Color,
     surfaceDimVariant: Color,
+    success: Color,
 ) {
     // Layers
 
@@ -169,6 +170,13 @@ class AcornColors(
         private set
 
     /**
+     * Attention-grabbing color against surface for fills, icons, and text,
+     * indicating successful information
+     */
+    internal var success by mutableStateOf(success)
+        private set
+
+    /**
      * Updates the existing colors with the provided [AcornColors].
      */
     @Suppress("LongMethod")
@@ -198,6 +206,7 @@ class AcornColors(
         tabInactive = other.tabInactive
         information = other.information
         surfaceDimVariant = other.surfaceDimVariant
+        success = other.success
     }
 
     /**
@@ -230,6 +239,7 @@ class AcornColors(
         tabInactive: Color = this.tabInactive,
         information: Color = this.information,
         surfaceDimVariant: Color = this.surfaceDimVariant,
+        success: Color = this.success,
     ): AcornColors = AcornColors(
         layer2 = layer2,
         layer3 = layer3,
@@ -256,6 +266,7 @@ class AcornColors(
         tabInactive = tabInactive,
         information = information,
         surfaceDimVariant = surfaceDimVariant,
+        success = success,
     )
 }
 
@@ -285,6 +296,7 @@ val darkColorPalette = AcornColors(
     tabInactive = PhotonColors.DarkGrey80,
     information = PhotonColors.Blue30,
     surfaceDimVariant = PhotonColors.DarkGrey80,
+    success = PhotonColors.Green50,
 )
 
 val lightColorPalette = AcornColors(
@@ -313,6 +325,7 @@ val lightColorPalette = AcornColors(
     tabInactive = PhotonColors.LightGrey20,
     information = PhotonColors.Blue60,
     surfaceDimVariant = PhotonColors.LightGrey20,
+    success = PhotonColors.Green80,
 )
 
 val privateColorPalette = darkColorPalette.copy(
@@ -507,3 +520,11 @@ val ColorScheme.surfaceDimVariant: Color
     @Composable
     @ReadOnlyComposable
     get() = AcornTheme.colors.surfaceDimVariant
+
+/**
+ * @see AcornColors.success
+ */
+val ColorScheme.success: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = AcornTheme.colors.success

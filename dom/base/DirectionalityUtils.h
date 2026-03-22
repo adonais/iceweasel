@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef DirectionalityUtils_h___
-#define DirectionalityUtils_h___
+#ifndef DirectionalityUtils_h_
+#define DirectionalityUtils_h_
 
 #include "nsStringFwd.h"
 #include "nscore.h"
@@ -164,4 +164,4 @@ void SetDirOnBind(mozilla::dom::Element* aElement, nsIContent* aParent);
 void ResetDir(mozilla::dom::Element* aElement);
 }  // end namespace mozilla
 
-#endif /* DirectionalityUtils_h___ */
+#endif /* DirectionalityUtils_h_ */

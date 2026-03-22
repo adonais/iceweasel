@@ -110,7 +110,6 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/MemoryReporting.h"
 
 #include <memory>
 #include <tuple>
@@ -736,7 +735,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     setHashCodeScrambler(hcs);
   }
 
-  size_t sizeOfExcludingObject(mozilla::MallocSizeOf mallocSizeOf) const {
+  size_t sizeOfExcludingObject() const {
     MOZ_ASSERT(obj->isTenured());  // Assumes data is not in the nursery.
 
     size_t size = 0;
@@ -1461,9 +1460,7 @@ class MOZ_STACK_CLASS OrderedHashMapImpl {
   }
   static constexpr size_t sizeofImplData() { return Impl::sizeofData(); }
 
-  size_t sizeOfExcludingObject(mozilla::MallocSizeOf mallocSizeOf) const {
-    return impl.sizeOfExcludingObject(mallocSizeOf);
-  }
+  size_t sizeOfExcludingObject() const { return impl.sizeOfExcludingObject(); }
 };
 
 class OrderedHashSetObject : public detail::OrderedHashTableObject {};
@@ -1565,9 +1562,7 @@ class MOZ_STACK_CLASS OrderedHashSetImpl {
   }
   static constexpr size_t sizeofImplData() { return Impl::sizeofData(); }
 
-  size_t sizeOfExcludingObject(mozilla::MallocSizeOf mallocSizeOf) const {
-    return impl.sizeOfExcludingObject(mallocSizeOf);
-  }
+  size_t sizeOfExcludingObject() const { return impl.sizeOfExcludingObject(); }
 };
 
 }  // namespace js

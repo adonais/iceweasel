@@ -533,7 +533,7 @@ export class LoginDataSource extends DataSourceBase {
     }
 
     if (confirmed) {
-      Services.logins.removeAllLogins();
+      await Services.logins.removeAllLoginsAsync();
       this.setNotification({
         id: "delete-login-success",
         l10nArgs: { total },
@@ -543,8 +543,8 @@ export class LoginDataSource extends DataSourceBase {
     }
   }
 
-  confirmRemoveLogin([record]) {
-    Services.logins.removeLogin(record);
+  async confirmRemoveLogin([record]) {
+    await Services.logins.removeLoginAsync(record);
     this.cancelDialog();
   }
 
@@ -776,7 +776,7 @@ export class LoginDataSource extends DataSourceBase {
     if (logins.length != 1) {
       return;
     }
-    Services.logins.removeLogin(logins[0]);
+    await Services.logins.removeLoginAsync(logins[0]);
     this.setNotification({
       id: "delete-login-success",
       l10nArgs: { total: 1 },

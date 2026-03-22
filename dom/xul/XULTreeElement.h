@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef XULTreeElement_h__
-#define XULTreeElement_h__
+#ifndef XULTreeElement_h_
+#define XULTreeElement_h_
 
 #include "nsCycleCollectionParticipant.h"
 #include "nsITreeView.h"

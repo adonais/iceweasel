@@ -45,6 +45,8 @@ fail-if = [
 
 ["browser_browser_toolbox_netmonitor_stackframes.js"]
 
+["browser_browser_toolbox_network_throttling.js"]
+
 ["browser_browser_toolbox_print_preview.js"]
 
 ["browser_browser_toolbox_rtl.js"]

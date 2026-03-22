@@ -26,8 +26,12 @@ def configure_error(message):
 @imports("subprocess")
 @imports(_from="mozshellutil", _import="quote")
 @imports(_from="mozbuild.util", _import="system_encoding")
+@imports(_from="mozbuild.util", _import="sanitize_shell_env")
 def get_cmd_output(*args, **kwargs):
     log.debug("Executing: `%s`", quote(*args))
+    env = kwargs.get("env") or os.environ
+    if env:
+        kwargs["env"] = sanitize_shell_env(env)
     proc = subprocess.Popen(
         args,
         stdout=subprocess.PIPE,

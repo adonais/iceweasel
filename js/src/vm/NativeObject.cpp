@@ -357,10 +357,17 @@ bool NativeObject::growSlots(JSContext* cx, uint32_t oldCapacity,
 
   auto* newHeaderSlots =
       new (allocation) ObjectSlots(newCapacity, dictionarySpan, uid);
-  slots_ = newHeaderSlots->slots();
 
-  Debug_SetSlotRangeToCrashOnTouch(slots_ + oldCapacity,
+  HeapSlot* newSlots = newHeaderSlots->slots();
+#ifdef JS_GC_CONCURRENT_MARKING
+  InitializeSlotRange(newSlots + oldCapacity, newSlots + newCapacity);
+#else
+  Debug_SetSlotRangeToCrashOnTouch(newSlots + oldCapacity,
                                    newCapacity - oldCapacity);
+#endif
+
+  gc::MemoryReleaseFence(zone());
+  slots_ = newSlots;
 
   MOZ_ASSERT(hasDynamicSlots());
   return true;
@@ -394,9 +401,22 @@ bool NativeObject::allocateInitialSlots(JSContext* cx, uint32_t capacity) {
 
   auto* headerSlots = new (allocation)
       ObjectSlots(capacity, 0, ObjectSlots::NoUniqueIdInDynamicSlots);
-  slots_ = headerSlots->slots();
+  HeapSlot* slots = headerSlots->slots();
 
-  Debug_SetSlotRangeToCrashOnTouch(slots_, capacity);
+#ifdef JS_GC_CONCURRENT_MARKING
+  // TODO: This (and the other uses of InitializeSlotRange in this file) may
+  // unnecessarily initialize slots that get explicitly initialized later.
+  InitializeSlotRange(slots, slots + capacity);
+#else
+  Debug_SetSlotRangeToCrashOnTouch(slots, capacity);
+#endif
+
+  // Fence between initializing slot data and writing the slots_ pointer ensure
+  // marking doesn't observe uninitialized memory.
+  // todo: may be moot because the object isn't reachable yet
+  gc::MemoryReleaseFence(this);
+
+  slots_ = slots;
 
   MOZ_ASSERT(hasDynamicSlots());
   return true;
@@ -418,9 +438,16 @@ bool NativeObject::allocateSlots(Nursery& nursery, uint32_t newCapacity) {
 
   auto* newHeaderSlots = new (allocation) ObjectSlots(
       newCapacity, dictionarySpan, ObjectSlots::NoUniqueIdInDynamicSlots);
-  slots_ = newHeaderSlots->slots();
 
-  Debug_SetSlotRangeToCrashOnTouch(slots_, newCapacity);
+  HeapSlot* newSlots = newHeaderSlots->slots();
+#ifdef JS_GC_CONCURRENT_MARKING
+  InitializeSlotRange(newSlots, newSlots + newCapacity);
+#else
+  Debug_SetSlotRangeToCrashOnTouch(newSlots, newCapacity);
+#endif
+
+  gc::MemoryReleaseFence(zone());
+  slots_ = newSlots;
 
   MOZ_ASSERT(hasDynamicSlots());
   return true;
@@ -507,6 +534,7 @@ void NativeObject::shrinkSlots(JSContext* cx, uint32_t oldCapacity,
 
   auto* newHeaderSlots =
       new (allocation) ObjectSlots(newCapacity, dictionarySpan, uid);
+  gc::MemoryReleaseFence(zone());
   slots_ = newHeaderSlots->slots();
 }
 
@@ -641,6 +669,7 @@ DenseElementResult NativeObject::maybeDensifySparseElements(
 
 void NativeObject::moveShiftedElements() {
   MOZ_ASSERT(isExtensible());
+  MOZ_ASSERT(canMoveElementsHeader());
 
   ObjectElements* header = getElementsHeader();
   uint32_t numShifted = header->numShiftedElements();
@@ -688,6 +717,10 @@ void NativeObject::maybeMoveShiftedElements() {
 bool NativeObject::tryUnshiftDenseElements(uint32_t count) {
   MOZ_ASSERT(isExtensible());
   MOZ_ASSERT(count > 0);
+
+  if (!canMoveElementsHeader()) {
+    return false;
+  }
 
   ObjectElements* header = getElementsHeader();
   uint32_t numShifted = header->numShiftedElements();
@@ -875,7 +908,7 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
   // move them here, the code below will include the shifted elements in the
   // resize.
   uint32_t numShifted = getElementsHeader()->numShiftedElements();
-  if (numShifted > 0) {
+  if (numShifted > 0 && canMoveElementsHeader()) {
     // If the number of elements is small, it's cheaper to just move them as
     // it may avoid a malloc/realloc. Note that there's no technical reason
     // for using this particular value, but it works well in real-world use
@@ -982,16 +1015,20 @@ bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
   }
 
   ObjectElements* newheader = reinterpret_cast<ObjectElements*>(newHeaderSlots);
-  // Update the elements pointer to point to the new elements buffer.
-  elements_ = newheader->elements() + numShifted;
+  HeapSlot* newElements = newheader->elements() + numShifted;
 
   // Clear the "fixed elements" flag, because if this code has been reached,
   // this object now has dynamic elements.
-  getElementsHeader()->flags &= ~ObjectElements::FIXED;
-  getElementsHeader()->capacity = newCapacity;
+  ObjectElements::fromElements(newElements)->flags &= ~ObjectElements::FIXED;
+  ObjectElements::fromElements(newElements)->capacity = newCapacity;
 
   // Poison the uninitialized portion of the new elements buffer.
-  Debug_SetSlotRangeToCrashOnTouch(elements_ + initlen, newCapacity - initlen);
+  Debug_SetSlotRangeToCrashOnTouch(newElements + initlen,
+                                   newCapacity - initlen);
+
+  // Update the elements pointer to point to the new elements buffer.
+  gc::MemoryReleaseFence(zone());
+  elements_ = newElements;
 
   return true;
 }
@@ -1006,7 +1043,7 @@ void NativeObject::shrinkElements(JSContext* cx, uint32_t reqCapacity) {
 
   // If we have shifted elements, consider moving them.
   uint32_t numShifted = getElementsHeader()->numShiftedElements();
-  if (numShifted > 0) {
+  if (numShifted > 0 && canMoveElementsHeader()) {
     maybeMoveShiftedElements();
     numShifted = getElementsHeader()->numShiftedElements();
   }
@@ -1039,9 +1076,12 @@ void NativeObject::shrinkElements(JSContext* cx, uint32_t reqCapacity) {
     return;  // Leave elements at its old size.
   }
 
-  ObjectElements* newheader = reinterpret_cast<ObjectElements*>(newHeaderSlots);
-  elements_ = newheader->elements() + numShifted;
-  getElementsHeader()->capacity = newCapacity;
+  ObjectElements* newHeader = reinterpret_cast<ObjectElements*>(newHeaderSlots);
+  HeapSlot* newElements = newHeader->elements() + numShifted;
+  ObjectElements::fromElements(newElements)->capacity = newCapacity;
+
+  gc::MemoryReleaseFence(zone());
+  elements_ = newElements;
 }
 
 void NativeObject::shrinkCapacityToInitializedLength(JSContext* cx) {
@@ -1053,7 +1093,8 @@ void NativeObject::shrinkCapacityToInitializedLength(JSContext* cx) {
   // length never exceed the length. This mechanism is also used when an object
   // becomes non-extensible.
 
-  if (getElementsHeader()->numShiftedElements() > 0) {
+  if (getElementsHeader()->numShiftedElements() > 0 &&
+      canMoveElementsHeader()) {
     moveShiftedElements();
   }
 
@@ -1457,29 +1498,6 @@ static MOZ_ALWAYS_INLINE bool AddDataProperty(JSContext* cx,
   }
 
   obj->initSlot(slot, v);
-
-  return CallAddPropertyHook(cx, obj, id, v);
-}
-
-bool js::AddSlotAndCallAddPropHook(JSContext* cx, Handle<NativeObject*> obj,
-                                   HandleValue v, Handle<Shape*> newShape) {
-  MOZ_ASSERT(newShape->asShared().lastProperty().isDataProperty());
-
-  RootedId id(cx, newShape->asShared().lastProperty().key());
-  MOZ_ASSERT(!id.isInt());
-
-  bool hasUnpreservedWrapper = obj->hasUnpreservedWrapper();
-
-  uint32_t slot = newShape->asShared().lastProperty().slot();
-  if (!obj->setShapeAndAddNewSlot(cx, &newShape->asShared(), slot)) {
-    return false;
-  }
-  obj->initSlot(slot, v);
-
-  if (MOZ_UNLIKELY(hasUnpreservedWrapper)) {
-    MaybePreserveDOMWrapper(cx, obj);
-    MOZ_ASSERT(!obj->hasUnpreservedWrapper());
-  }
 
   return CallAddPropertyHook(cx, obj, id, v);
 }

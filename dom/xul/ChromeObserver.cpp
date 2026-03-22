@@ -24,8 +24,6 @@ NS_IMPL_ISUPPORTS(ChromeObserver, nsIMutationObserver)
 ChromeObserver::ChromeObserver(Document* aDocument)
     : nsStubMutationObserver(), mDocument(aDocument) {}
 
-ChromeObserver::~ChromeObserver() = default;
-
 void ChromeObserver::Init() {
   mDocument->AddMutationObserver(this);
   Element* rootElement = mDocument->GetRootElement();

@@ -154,7 +154,7 @@ MIDIPermissionRequest::Run() {
         } else {
           nsContentUtils::ReportToConsoleNonLocalized(
               u"Silently denying site request for MIDI access because no devices were detected. You may need to restart your browser after connecting a new device."_ns,
-              nsIScriptError::infoFlag, "WebMIDI"_ns, mWindow->GetDoc());
+              nsIScriptError::infoFlag, "WebMIDI"_ns, self->mWindow->GetDoc());
           self->CancelWithRandomizedDelay();
         }
       },

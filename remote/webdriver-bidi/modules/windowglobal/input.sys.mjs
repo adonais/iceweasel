@@ -317,19 +317,14 @@ class InputModule extends WindowGlobalBiDiModule {
    */
   _toBrowserWindowCoordinates(options) {
     const { position } = options;
-
-    const [x, y] = position;
     const window = this.messageHandler.window;
-    const dpr = window.devicePixelRatio;
 
-    const val = lazy.LayoutUtils.rectToTopLevelWidgetRect(window, {
-      left: x,
-      top: y,
+    return lazy.LayoutUtils.rectToTopLevelWidgetRect(window, {
+      left: position[0],
+      top: position[1],
       height: 0,
       width: 0,
     });
-
-    return [val.x / dpr, val.y / dpr];
   }
 }
 

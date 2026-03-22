@@ -719,6 +719,11 @@ nsThread::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   return mEventTarget->UnregisterShutdownTask(aTask);
 }
 
+nsIEventTarget::FeatureFlags nsThread::GetFeatures() {
+  return (mIsMainThread ? SUPPORTS_PRIORITIZATION : SUPPORTS_BASE) |
+         (SUPPORTS_SHUTDOWN_TASKS | SUPPORTS_SHUTDOWN_TASK_DISPATCH);
+}
+
 NS_IMETHODIMP
 nsThread::GetRunningEventDelay(TimeDuration* aDelay, TimeStamp* aStart) {
   if (mIsAPoolThreadFreePtr && *mIsAPoolThreadFreePtr) {
@@ -1523,8 +1528,7 @@ void PerformanceCounterState::MaybeReportAccumulatedTime(const nsCString& aName,
         static MarkerSchema MarkerTypeDisplay() {
           using MS = MarkerSchema;
           MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-          schema.AddKeyLabelFormat("category", "Type", MS::Format::String,
-                                   MS::PayloadFlags::Searchable);
+          schema.AddKeyLabelFormat("category", "Type", MS::Format::String);
           return schema;
         }
       };

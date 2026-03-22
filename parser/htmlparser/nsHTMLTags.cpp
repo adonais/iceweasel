@@ -17,7 +17,7 @@ using namespace mozilla;
 #define HTML_TAG(_tag, _classname, _interfacename) (u"" #_tag),
 #define HTML_OTHER(_tag)
 const char16_t* const nsHTMLTags::sTagNames[] = {
-#include "nsHTMLTagList.h"
+#include "nsHTMLTagList.inc"
 };
 #undef HTML_TAG
 #undef HTML_OTHER

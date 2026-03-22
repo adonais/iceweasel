@@ -12,11 +12,6 @@ using namespace mozilla;
 
 namespace mozilla {
 
-NS_QUERYFRAME_HEAD(ButtonControlFrame)
-  NS_QUERYFRAME_ENTRY(nsIAnonymousContentCreator)
-  NS_QUERYFRAME_ENTRY(ButtonControlFrame)
-NS_QUERYFRAME_TAIL_INHERITING(nsBlockFrame)
-
 void ButtonControlFrame::EnsureNonEmptyLabel(nsAString& aLabel) {
   if (aLabel.IsEmpty()) {
     // Have to use a space character of some sort for line-block-size

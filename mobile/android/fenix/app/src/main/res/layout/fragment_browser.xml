@@ -83,6 +83,13 @@
                 android:layout_height="wrap_content" />
 
             <ViewStub
+                android:id="@+id/emailMaskBarStub"
+                android:inflatedId="@+id/emailMaskBar"
+                android:layout="@layout/email_mask_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <ViewStub
                 android:id="@+id/addressSelectBarStub"
                 android:inflatedId="@+id/addressSelectBar"
                 android:layout="@layout/address_select_bar"

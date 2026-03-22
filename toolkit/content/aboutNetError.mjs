@@ -10,6 +10,7 @@ import {
   isCaptive,
   gErrorCode,
   gHasSts,
+  gOffline,
   searchParams,
   getHostName,
   getSubjectAltNames,
@@ -19,11 +20,12 @@ import {
   gNoConnectivity,
   retryThis,
   handleNSSFailure,
-  errorHasNoUserFix,
-  COOP_MDN_DOCS,
-  COEP_MDN_DOCS,
-  HTTPS_UPGRADES_MDN_DOCS,
 } from "chrome://global/content/aboutNetErrorHelpers.mjs";
+import { initializeRegistry } from "chrome://global/content/errors/error-registry.mjs";
+import {
+  errorHasNoUserFix,
+  getResolvedErrorConfig,
+} from "chrome://global/content/errors/error-lookup.mjs";
 
 const formatter = new Intl.DateTimeFormat();
 
@@ -658,140 +660,34 @@ function setNetErrorMessageFromParts(parentElement, parts) {
  * @returns { Array<["li" | "p" | "span" | "a", string, Record<string, string> | undefined]> }
  */
 function getNetErrorDescParts(noConnectivity) {
-  switch (gErrorCode) {
-    case "connectionFailure":
-    case "netInterrupt":
-    case "netReset":
-    case "netTimeout": {
-      let errorTags = [
-        ["li", "neterror-load-error-try-again"],
-        ["li", "neterror-load-error-connection"],
-        ["li", "neterror-load-error-firewall"],
-      ];
-      if (RPMShowOSXLocalNetworkPermissionWarning()) {
-        errorTags.push(["li", "neterror-load-osx-permission"]);
-      }
-      return errorTags;
-    }
+  // Build context for resolving description parts
+  const context = {
+    hostname: HOST_NAME,
+    noConnectivity,
+    showOSXPermissionWarning: RPMShowOSXLocalNetworkPermissionWarning(),
+    offline: gOffline,
+  };
 
-    case "httpErrorPage": // 4xx
-      return [["li", "neterror-http-error-page"]];
-    case "serverError": // 5xx
-      return [["li", "neterror-load-error-try-again"]];
-    case "blockedByCOOP": {
-      return [
-        ["p", "certerror-blocked-by-corp-headers-description"],
-        ["a", "certerror-coop-learn-more", COOP_MDN_DOCS],
-      ];
-    }
-    case "blockedByCOEP": {
-      return [
-        ["p", "certerror-blocked-by-corp-headers-description"],
-        ["a", "certerror-coep-learn-more", COEP_MDN_DOCS],
-      ];
-    }
-    case "blockedByPolicy":
-    case "deniedPortAccess":
-    case "malformedURI":
-      return [];
-
-    case "captivePortal":
-      return [["p", ""]];
-    case "contentEncodingError":
-      return [["li", "neterror-content-encoding-error"]];
-    case "corruptedContentErrorv2":
-      return [
-        ["p", "neterror-corrupted-content-intro"],
-        ["li", "neterror-corrupted-content-contact-website"],
-      ];
-    case "dnsNotFound":
-      if (noConnectivity) {
-        return [
-          ["span", "neterror-dns-not-found-offline-hint-header"],
-          ["li", "neterror-dns-not-found-offline-hint-different-device"],
-          ["li", "neterror-dns-not-found-offline-hint-modem"],
-          ["li", "neterror-dns-not-found-offline-hint-reconnect"],
-        ];
-      }
-      return [
-        ["span", "neterror-dns-not-found-hint-header"],
-        ["li", "neterror-dns-not-found-hint-try-again"],
-        ["li", "neterror-dns-not-found-hint-check-network"],
-        ["li", "neterror-dns-not-found-hint-firewall"],
-      ];
-    case "fileAccessDenied":
-      return [["li", "neterror-access-denied"]];
-    case "fileNotFound":
-      return [
-        ["li", "neterror-file-not-found-filename"],
-        ["li", "neterror-file-not-found-moved"],
-      ];
-    case "inadequateSecurityError":
-      return [
-        ["p", "neterror-inadequate-security-intro", { hostname: HOST_NAME }],
-        ["p", "neterror-inadequate-security-code"],
-      ];
-    case "invalidHeaderValue": {
-      return [["li", "neterror-http-error-page"]];
-    }
-    case "mitm": {
+  // Get MITM name if available (for mitm error)
+  if (gErrorCode === "mitm") {
+    try {
       const failedCertInfo = document.getFailedCertSecurityInfo();
-      const errArgs = {
-        hostname: HOST_NAME,
-        mitm: getMitmName(failedCertInfo),
-      };
-      return [["span", "certerror-mitm", errArgs]];
+      context.mitmName = getMitmName(failedCertInfo);
+    } catch {
+      context.mitmName = "";
     }
-    case "netOffline":
-      return [["li", "neterror-net-offline"]];
-    case "networkProtocolError":
-      return [
-        ["p", "neterror-network-protocol-error-intro"],
-        ["li", "neterror-network-protocol-error-contact-website"],
-      ];
-    case "notCached":
-      return [
-        ["p", "neterror-not-cached-intro"],
-        ["li", "neterror-not-cached-sensitive"],
-        ["li", "neterror-not-cached-try-again"],
-      ];
-    case "nssFailure2":
-      return [
-        ["li", "neterror-nss-failure-not-verified"],
-        ["li", "neterror-nss-failure-contact-website"],
-      ];
-    case "proxyConnectFailure":
-      return [
-        ["li", "neterror-proxy-connect-failure-settings"],
-        ["li", "neterror-proxy-connect-failure-contact-admin"],
-      ];
-    case "proxyResolveFailure":
-      return [
-        ["li", "neterror-proxy-resolve-failure-settings"],
-        ["li", "neterror-proxy-resolve-failure-connection"],
-        ["li", "neterror-proxy-resolve-failure-firewall"],
-      ];
-    case "redirectLoop":
-      return [["li", "neterror-redirect-loop"]];
-    case "sslv3Used":
-      return [["span", "neterror-sslv3-used"]];
-    case "unknownProtocolFound":
-      return [["li", "neterror-unknown-protocol"]];
-    case "unknownSocketType":
-      return [
-        ["li", "neterror-unknown-socket-type-psm-installed"],
-        ["li", "neterror-unknown-socket-type-server-config"],
-      ];
-    case "unsafeContentType":
-      return [["li", "neterror-unsafe-content-type"]];
-    case "basicHttpAuthDisabled":
-      return [
-        ["li", "neterror-basic-http-auth", { hostname: HOST_NAME }],
-        ["a", "neterror-learn-more-link", HTTPS_UPGRADES_MDN_DOCS],
-      ];
-    default:
-      return [["p", "neterror-generic-error"]];
   }
+
+  const config = getResolvedErrorConfig(gErrorCode, context);
+
+  // Convert config descriptionParts to legacy tuple format
+  const parts = config.descriptionParts || [];
+  return parts.map(part => {
+    if (part.tag === "a") {
+      return [part.tag, part.dataL10nId, part.href];
+    }
+    return [part.tag, part.dataL10nId, part.dataL10nArgs];
+  });
 }
 
 function setNetErrorMessageFromCode() {
@@ -1422,6 +1318,9 @@ async function init() {
 async function main() {
   await init();
   if (!NetErrorCard.isSupported()) {
+    // Initialize the error registry for legacy path
+    initializeRegistry();
+
     for (let button of document.querySelectorAll(".try-again")) {
       button.addEventListener("click", function () {
         retryThis(this);

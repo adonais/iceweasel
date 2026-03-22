@@ -72,7 +72,7 @@ void a11y::PlatformInit() {
     sLocalizedStrings.InsertOrUpdate(u##stringRole##_ns, localizedStr);     \
   }
 
-#include "RoleMap.h"
+#include "RoleMap.inc"
 #undef ROLE
 }
 

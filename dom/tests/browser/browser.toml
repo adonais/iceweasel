@@ -14,6 +14,9 @@ support-files = [
   "dummy.png",
   "helper_localStorage.js",
 ]
+prefs = [
+  "dom.script_loader.experimental.navigation_cache.check_memory_pressure=false",
+]
 
 ["browser_ConsoleAPI_originAttributes.js"]
 

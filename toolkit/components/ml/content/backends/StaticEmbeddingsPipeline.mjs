@@ -217,8 +217,15 @@ export class StaticEmbeddingsPipeline {
       }
       const modelFile = await worker.getModelFile({ url });
       const filePath = modelFile.ok[2];
+      const opfsStart = ChromeUtils.now();
       const fileHandle = await lazy.OPFS.getFileHandle(filePath);
       const file = await fileHandle.getFile();
+      ChromeUtils.addProfilerMarker(
+        "MLEngine:OPFS",
+        { startTime: opfsStart },
+        `Retrieved model file from OPFS`
+      );
+
       let stream = file.stream();
       if (compression) {
         const decompressionStream = new DecompressionStream("zstd");
@@ -356,8 +363,14 @@ export class StaticEmbeddingsPipeline {
         // is lower.
         const embedding = new Float32Array(this.#dimensions);
 
+        let tokenizeStart = ChromeUtils.now();
         /** @type {number[]} */
         const tokenIds = this.#tokenizer.encode(text);
+        ChromeUtils.addProfilerMarker(
+          "MLEngine:StaticEmbeddings",
+          { startTime: tokenizeStart },
+          `Tokenized text: ${tokenIds.length} tokens`
+        );
         tokenCount += tokenIds.length;
 
         // Sum up the embeddings.
@@ -397,15 +410,15 @@ export class StaticEmbeddingsPipeline {
     };
 
     ChromeUtils.addProfilerMarker(
-      "StaticEmbeddingsPipeline",
-      beforeResponse,
-      `Processed ${sequenceCount} sequences with ${tokenCount} tokens.`
+      "MLEngine:StaticEmbeddings",
+      { startTime: beforeResponse },
+      `Processing ${sequenceCount} sequences with ${tokenCount} tokens`
     );
 
     if (this.#initializeStart) {
       ChromeUtils.addProfilerMarker(
-        "StaticEmbeddingsPipeline",
-        this.#initializeStart,
+        "MLEngine:StaticEmbeddings",
+        { startTime: this.#initializeStart },
         "Time to first response"
       );
       this.#initializeStart = null;

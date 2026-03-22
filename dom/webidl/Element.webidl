@@ -282,7 +282,7 @@ dictionary ShadowRootInit {
 
   // https://github.com/whatwg/dom/pull/1353
   [Pref="dom.shadowdom.referenceTarget.enabled"]
-  DOMString referenceTarget;
+  DOMString? referenceTarget;
 };
 
 // https://dom.spec.whatwg.org/#element
@@ -312,6 +312,7 @@ Element includes ParentNode;
 Element includes Animatable;
 Element includes GeometryUtils;
 Element includes ARIAMixin;
+Element includes ARIANotifyMixin;
 
 // https://fullscreen.spec.whatwg.org/#api
 partial interface Element {

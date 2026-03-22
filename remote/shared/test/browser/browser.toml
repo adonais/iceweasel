@@ -2,8 +2,9 @@
 tags = "remote"
 subsuite = "remote"
 support-files = [
-    "amosigned.xpi",
     "head.js",
+    "webextensions/*",
+    "workers/*",
 ]
 
 ["browser_Addon.js"]
@@ -28,3 +29,11 @@ support-files = [
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1923833: Window restoring doesn't work after the window was minimized on Wayland
 ]
+
+["browser_WorkerListener.js"]
+
+["browser_WorkerListener_chromeWorker.js"]
+
+["browser_WorkerListener_serviceWorker.js"]
+
+["browser_WorkerListener_sharedWorker.js"]

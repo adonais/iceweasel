@@ -15,7 +15,6 @@
 #filter substitution
 
 [@AB_CD@]
-@BINPATH@/@PREF_DIR@/mobile-l10n.js
 @BINPATH@/default.locale
 @BINPATH@/hyphenation/*
 @BINPATH@/localization/*
@@ -81,7 +80,7 @@
 
 #ifdef MOZ_CRASHREPORTER
 @BINPATH@/@DLL_PREFIX@crashhelper@DLL_SUFFIX@
-@BINPATH@/@DLL_PREFIX@minidump_analyzer@DLL_SUFFIX@
+@BINPATH@/@DLL_PREFIX@crashtools@DLL_SUFFIX@
 #endif
 
 ; GMP clearkey plugin

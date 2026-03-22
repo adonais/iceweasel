@@ -665,3 +665,4 @@ void OpaqueResponseBlocker::MaybeRunOnStopRequest(HttpBaseChannel* aChannel) {
 NS_IMPL_ISUPPORTS(OpaqueResponseBlocker, nsIStreamListener, nsIRequestObserver)
 
 }  // namespace mozilla::net
+#undef LOGORB

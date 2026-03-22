@@ -14,7 +14,7 @@
         android:id="@+id/search_engine_wrapper"
         android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
         android:paddingTop="16dp"

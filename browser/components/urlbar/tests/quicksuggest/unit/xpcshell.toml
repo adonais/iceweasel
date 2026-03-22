@@ -14,6 +14,8 @@ prefs = [
 ["test_merinoClient_sessions.js"]
 requesttimeoutfactor = 2  # Slow on Windows
 
+["test_merinoClient_weather.js"]
+
 ["test_quicksuggest.js"]
 requesttimeoutfactor = 2  # Slow on Linux
 
@@ -59,6 +61,8 @@ skip-if = [
 ["test_quicksuggest_migrate_v5.js"]
 
 ["test_quicksuggest_migrate_v6.js"]
+
+["test_quicksuggest_migrate_v7.js"]
 
 ["test_quicksuggest_relevanceRanking.js"]
 

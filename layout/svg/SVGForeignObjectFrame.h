@@ -7,9 +7,10 @@
 #ifndef LAYOUT_SVG_SVGFOREIGNOBJECTFRAME_H_
 #define LAYOUT_SVG_SVGFOREIGNOBJECTFRAME_H_
 
+#include <memory>
+
 #include "mozilla/ISVGDisplayableFrame.h"
 #include "mozilla/PresShellForwards.h"
-#include "mozilla/UniquePtr.h"
 #include "nsContainerFrame.h"
 
 class gfxContext;
@@ -82,7 +83,7 @@ class SVGForeignObjectFrame final : public nsContainerFrame,
   // If width or height is less than or equal to zero we must disable rendering
   bool IsDisabled() const { return mRect.width <= 0 || mRect.height <= 0; }
 
-  UniquePtr<gfxMatrix> mCanvasTM;
+  std::unique_ptr<gfxMatrix> mCanvasTM;
 };
 
 }  // namespace mozilla

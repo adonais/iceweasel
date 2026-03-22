@@ -233,7 +233,7 @@ inside. The resulting localized content will look like this:
 
 .. code-block:: html
 
-  <p data-l10n-id="update-application-info" data-l10n-args='{"version": "60.0"}'">
+  <p data-l10n-id="update-application-info" data-l10n-args='{"version": "60.0"}'>
     You are using Firefox Version: 60.0.
     Please read the <a href="http://www.mozilla.org/privacy">privacy policy</a>.
   </p>

@@ -290,6 +290,7 @@ export class SelectOption {
     INSECURE_FORM: 1 << 1,
     DUPLICATE_USERNAME: 1 << 2,
     MATCHING_ORIGIN: 1 << 3,
+    FIREFOX_RELAY: 1 << 4,
   };
 
   constructor({ value, hint }) {
@@ -641,6 +642,23 @@ export const GeckoViewAutocomplete = {
           }
           break;
         }
+        case "generic": {
+          const { fillMessageName } = JSON.parse(option.comment);
+          if (fillMessageName == "PasswordManager:firefoxRelay") {
+            // The Relay option may be passed along with address autocomplete items.
+            // Only set the selection type if it has not already been set.
+            if (!selectionType) {
+              selectionType = "login";
+            }
+            selectOptions.push(
+              new SelectOption({
+                value: {},
+                hint: SelectOption.Hint.FIREFOX_RELAY | insecureHint,
+              })
+            );
+          }
+          break;
+        }
         default:
           debug`delegateSelection - ignoring unknown option style ${option.style}`;
       }
@@ -688,7 +706,10 @@ export const GeckoViewAutocomplete = {
 
     debug`delegateSelection selected option: ${selectedOption}`;
 
-    if (selectionType === "login") {
+    if (
+      selectionType === "login" ||
+      SelectOption.Hint.FIREFOX_RELAY & selectedOption.hint
+    ) {
       const selectedLogin = selectedOption?.value?.toLoginInfo();
 
       if (!selectedLogin) {

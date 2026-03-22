@@ -7,8 +7,9 @@
 #ifndef DOM_SVG_SVGANIMATEDNUMBER_H_
 #define DOM_SVG_SVGANIMATEDNUMBER_H_
 
+#include <memory>
+
 #include "mozilla/SMILAttr.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/DOMSVGAnimatedNumber.h"
 #include "mozilla/dom/SVGElement.h"
 #include "nsCycleCollectionParticipant.h"
@@ -52,7 +53,7 @@ class SVGAnimatedNumber {
 
   already_AddRefed<dom::DOMSVGAnimatedNumber> ToDOMAnimatedNumber(
       SVGElement* aSVGElement);
-  UniquePtr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
+  std::unique_ptr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
   float mAnimVal;

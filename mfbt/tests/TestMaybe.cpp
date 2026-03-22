@@ -194,6 +194,22 @@ static_assert(Maybe<int>(std::in_place, 43) ==
                 return val + 1;
               }));
 
+/* Test we're not using extra bytes to store trivial scalars */
+template <class T>
+struct FakeStorage {
+  T value;
+  char flag;
+};
+
+static_assert(sizeof(FakeStorage<char>) == sizeof(Maybe<char>),
+              "extra padding does not change structure size");
+static_assert(sizeof(FakeStorage<short>) == sizeof(Maybe<short>),
+              "extra padding does not change structure size");
+static_assert(sizeof(FakeStorage<int>) == sizeof(Maybe<int>),
+              "extra padding does not change structure size");
+static_assert(sizeof(FakeStorage<long>) == sizeof(Maybe<long>),
+              "extra padding does not change structure size");
+
 struct TriviallyDestructible {
   TriviallyDestructible() {  // not trivially constructible
   }

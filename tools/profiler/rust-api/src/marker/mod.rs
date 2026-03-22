@@ -140,7 +140,7 @@ pub type CowString = Cow<'static, str>;
 /// Marker API to add a new simple marker without any payload.
 /// Please see the module documentation on how to add a marker with this API.
 pub fn add_untyped_marker(name: &str, category: ProfilingCategoryPair, mut options: MarkerOptions) {
-    if !crate::profiler_state::can_accept_markers() {
+    if !crate::profiler_state::current_thread_is_being_profiled_for_markers() {
         // Nothing to do.
         return;
     }
@@ -164,7 +164,7 @@ pub fn add_text_marker(
     mut options: MarkerOptions,
     text: &str,
 ) {
-    if !crate::profiler_state::can_accept_markers() {
+    if !crate::profiler_state::current_thread_is_being_profiled_for_markers() {
         // Nothing to do.
         return;
     }
@@ -205,7 +205,7 @@ impl<'a> AutoProfilerTextMarker<'a> {
         options: MarkerOptions,
         text: &'a str,
     ) -> Option<AutoProfilerTextMarker<'a>> {
-        if !crate::profiler_state::can_accept_markers() {
+        if !crate::profiler_state::current_thread_is_being_profiled_for_markers() {
             return None;
         }
         let start = ProfilerTime::now();
@@ -315,7 +315,7 @@ pub fn add_marker<T>(
 ) where
     T: ProfilerMarker + 'static,
 {
-    if !crate::profiler_state::can_accept_markers() {
+    if !crate::profiler_state::current_thread_is_being_profiled_for_markers() {
         // Nothing to do.
         return;
     }
@@ -351,7 +351,7 @@ pub fn add_marker<T>(
 /// Record a marker using the Rust `add_marker` API, but delay evaluation of
 /// arguments until we're sure that the profiler can accept markers.
 ///
-/// This macro is equivalent to testing `gecko_profiler::can_accept_markers`
+/// This macro is equivalent to testing `gecko_profiler::current_thread_is_being_profiled_for_markers`
 /// before calling `gecko_profiler::add_marker`. Note that
 /// `gecko_profiler::add_marker` already performs this check, but after
 /// arguments to the function have already been evaluated, which is too late
@@ -376,7 +376,7 @@ pub fn add_marker<T>(
 #[macro_export]
 macro_rules! lazy_add_marker {
     ($name:expr, $category:expr, $options:expr, $payload:expr) => {
-        if gecko_profiler::can_accept_markers() {
+        if gecko_profiler::current_thread_is_being_profiled_for_markers() {
             gecko_profiler::add_marker($name, $category, $options, $payload);
         }
     };
@@ -384,14 +384,14 @@ macro_rules! lazy_add_marker {
     // so take advantage of that to provide a version that drops the
     // `options` argument, and gives a default value instead.
     ($name: expr, $category:expr, $payload:expr) => {
-        if gecko_profiler::can_accept_markers() {
+        if gecko_profiler::current_thread_is_being_profiled_for_markers() {
             gecko_profiler::add_marker($name, $category, Default::default(), $payload);
         }
     };
     // Take advantage of overloading to provide a version that drops the
     // category as well.
     ($name: expr, $payload:expr) => {
-        if gecko_profiler::can_accept_markers() {
+        if gecko_profiler::current_thread_is_being_profiled_for_markers() {
             gecko_profiler::add_marker(
                 $name,
                 gecko_profiler::ProfilingCategoryPair::Other(None),
@@ -500,7 +500,7 @@ impl<'a> AutoProfilerMarker<'a> {
         category: ProfilingCategoryPair,
         options: MarkerOptions,
     ) -> Option<AutoProfilerMarker<'a>> {
-        if !crate::profiler_state::can_accept_markers() {
+        if !crate::profiler_state::current_thread_is_being_profiled_for_markers() {
             return None;
         }
         // Record our starting marker.
@@ -525,7 +525,7 @@ impl<'a> Drop for AutoProfilerMarker<'a> {
         // guarantee that it's still running though, so check again! If the
         // profiler has stopped, then there's no point recording the second of a
         // pair of markers.
-        if !crate::profiler_state::can_accept_markers() {
+        if !crate::profiler_state::current_thread_is_being_profiled_for_markers() {
             return;
         }
         // record the ending marker
@@ -636,7 +636,7 @@ impl<'a> AutoProfilerFlowMarker<'a> {
         options: MarkerOptions,
         flow: FlowStackMarker,
     ) -> Option<AutoProfilerFlowMarker<'a>> {
-        if !crate::profiler_state::can_accept_markers() {
+        if !crate::profiler_state::current_thread_is_being_profiled_for_markers() {
             return None;
         }
         Some(AutoProfilerFlowMarker {
@@ -656,7 +656,7 @@ impl<'a> Drop for AutoProfilerFlowMarker<'a> {
         // guarantee that it's still running though, so check again! If the
         // profiler has stopped, then there's no point recording the second of a
         // pair of markers.
-        if !crate::profiler_state::can_accept_markers() {
+        if !crate::profiler_state::current_thread_is_being_profiled_for_markers() {
             return;
         }
         // record the ending marker

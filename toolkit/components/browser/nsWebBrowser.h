@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsWebBrowser_h__
-#define nsWebBrowser_h__
+#ifndef nsWebBrowser_h_
+#define nsWebBrowser_h_
 
 // Local Includes
 #include "nsDocShellTreeOwner.h"
@@ -89,11 +89,12 @@ class nsWebBrowser final : public nsIWebBrowser,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void FocusDeactivate(uint64_t aActionId);
   void SetWillChangeProcess();
 
-  static already_AddRefed<nsWebBrowser> Create(
-      nsIWebBrowserChrome* aContainerWindow, nsIWidget* aParentWidget,
-      mozilla::dom::BrowsingContext* aBrowsingContext,
-      mozilla::dom::WindowGlobalChild* aInitialWindowChild,
-      nsIOpenWindowInfo* aOpenWindowInfo);
+  static nsresult Create(nsIWebBrowserChrome* aContainerWindow,
+                         nsIWidget* aParentWidget,
+                         mozilla::dom::BrowsingContext* aBrowsingContext,
+                         mozilla::dom::WindowGlobalChild* aInitialWindowChild,
+                         nsIOpenWindowInfo* aOpenWindowInfo,
+                         nsWebBrowser** aWebBrowser);
 
  protected:
   virtual ~nsWebBrowser();
@@ -131,4 +132,4 @@ class nsWebBrowser final : public nsIWebBrowser,
   nsIWidget* mParentWidget;
 };
 
-#endif /* nsWebBrowser_h__ */
+#endif /* nsWebBrowser_h_ */

@@ -121,7 +121,7 @@ async function addTestTab(
     browser: tab.linkedBrowser,
     panel,
     win,
-    toolbox: panel._toolbox,
+    toolbox: panel.toolbox,
     doc,
     store,
   };

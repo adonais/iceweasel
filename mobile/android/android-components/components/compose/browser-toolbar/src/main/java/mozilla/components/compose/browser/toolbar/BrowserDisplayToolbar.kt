@@ -4,23 +4,14 @@
 
 package mozilla.components.compose.browser.toolbar
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -32,16 +23,10 @@ import mozilla.components.compose.browser.toolbar.concept.PageOrigin
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.ProgressBarConfig
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity
-import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Bottom
 import mozilla.components.compose.browser.toolbar.ui.FullDisplayToolbar
-import mozilla.components.compose.browser.toolbar.ui.MinimalDisplayToolbar
 import mozilla.components.compose.browser.toolbar.utils.DisplayToolbarDataProvider
 import mozilla.components.compose.browser.toolbar.utils.DisplayToolbarPreviewModel
-import mozilla.components.support.utils.KeyboardState
-import mozilla.components.support.utils.keyboardAsState
-
-// The value I've observed in my tests. Can differ based on device or keyboard used.
-private const val DEFAULT_KEYBOARD_ANIMATION_TIME_MILLIS = 285
+import mozilla.components.support.base.log.logger.Logger
 
 /**
  * Sub-component of the [BrowserToolbar] responsible for displaying the URL and related
@@ -51,6 +36,8 @@ private const val DEFAULT_KEYBOARD_ANIMATION_TIME_MILLIS = 285
  * @param gravity [ToolbarGravity] for where the toolbar is being placed on the screen.
  * @param progressBarConfig [ProgressBarConfig] configuration for the progress bar.
  * If `null` a progress bar will not be displayed.
+ * @param backgroundColor Color of the background.
+ * @param outlineColor Color of the divider.
  * @param browserActionsStart List of browser [Action]s to be displayed at the start of the
  * toolbar, outside of the URL bounding box.
  * These should be actions relevant to the browser as a whole.
@@ -76,6 +63,8 @@ fun BrowserDisplayToolbar(
     pageOrigin: PageOrigin,
     gravity: ToolbarGravity,
     progressBarConfig: ProgressBarConfig?,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
+    outlineColor: Color = DividerDefaults.color,
     browserActionsStart: List<Action> = emptyList(),
     pageActionsStart: List<Action> = emptyList(),
     pageActionsEnd: List<Action> = emptyList(),
@@ -83,101 +72,30 @@ fun BrowserDisplayToolbar(
     onInteraction: (BrowserToolbarEvent) -> Unit,
     useMinimalBottomToolbarWhenEnteringText: Boolean = false,
 ) {
-    val isKeyboardShowing by when (useMinimalBottomToolbarWhenEnteringText) {
-        true -> keyboardAsState()
-        false -> remember { mutableStateOf(KeyboardState.Closed) }
-    }
-
-    val toolbarsTransitionAnimationSpec = remember {
-        tween<Float>(
-            durationMillis = DEFAULT_KEYBOARD_ANIMATION_TIME_MILLIS,
-            easing = LinearEasing,
-        )
-    }
-    val toolbarElementsAnimationSpec = remember {
-        tween<Rect>(
-            durationMillis = DEFAULT_KEYBOARD_ANIMATION_TIME_MILLIS,
-            easing = FastOutSlowInEasing,
-        )
-    }
-
-    SharedTransitionLayout {
-        AnimatedContent(
-            targetState = gravity == Bottom && isKeyboardShowing == KeyboardState.Opened,
-            transitionSpec = {
-                fadeIn(animationSpec = toolbarsTransitionAnimationSpec) togetherWith
-                    fadeOut(animationSpec = toolbarsTransitionAnimationSpec)
-            },
-        ) { isKeyboardShown ->
-            val toolbarModifier = Modifier
-                .fillMaxWidth()
-                .sharedBounds(
-                    rememberSharedContentState(key = "toolbar_bounds"),
-                    animatedVisibilityScope = this,
-                    enter = fadeIn(),
-                    exit = fadeOut(),
-                    resizeMode = SharedTransitionScope.ResizeMode.ScaleToBounds(),
-                )
-
-            val browserActionsStartTrait = Modifier.sharedElement(
-                sharedContentState = rememberSharedContentState(key = "browser_actions_start"),
-                animatedVisibilityScope = this@AnimatedContent,
-                boundsTransform = { _, _ -> toolbarElementsAnimationSpec },
-            )
-
-            val pageActionsStartTrait = Modifier.sharedElement(
-                sharedContentState = rememberSharedContentState(key = "page_actions_start"),
-                animatedVisibilityScope = this@AnimatedContent,
-                boundsTransform = { _, _ -> toolbarElementsAnimationSpec },
-            )
-
-            val originTrait = Modifier.sharedElement(
-                sharedContentState = rememberSharedContentState(key = "url_box"),
-                animatedVisibilityScope = this@AnimatedContent,
-                boundsTransform = { _, _ -> toolbarElementsAnimationSpec },
-            )
-
-            val pageActionsEndTrait = Modifier.sharedElement(
-                sharedContentState = rememberSharedContentState(key = "page_actions_end"),
-                animatedVisibilityScope = this@AnimatedContent,
-                boundsTransform = { _, _ -> toolbarElementsAnimationSpec },
-            )
-
-            val browserActionsEndTrait = Modifier.sharedElement(
-                sharedContentState = rememberSharedContentState(key = "browser_actions_end"),
-                animatedVisibilityScope = this@AnimatedContent,
-                boundsTransform = { _, _ -> toolbarElementsAnimationSpec },
-            )
-
-            if (isKeyboardShown) {
-                MinimalDisplayToolbar(
-                    pageOrigin = pageOrigin,
-                    pageActionsStart = pageActionsStart,
-                    gravity = gravity,
-                    modifier = toolbarModifier,
-                    pageActionsStartModifier = pageActionsStartTrait,
-                    originModifier = originTrait,
-                )
-            } else {
-                FullDisplayToolbar(
-                    pageOrigin = pageOrigin,
-                    gravity = gravity,
-                    progressBarConfig = progressBarConfig,
-                    browserActionsStart = browserActionsStart,
-                    pageActionsStart = pageActionsStart,
-                    pageActionsEnd = pageActionsEnd,
-                    browserActionsEnd = browserActionsEnd,
-                    onInteraction = onInteraction,
-                    modifier = toolbarModifier,
-                    browserActionsStartModifier = browserActionsStartTrait,
-                    pageActionsStartModifier = pageActionsStartTrait,
-                    originModifier = originTrait,
-                    pageActionsEndModifier = pageActionsEndTrait,
-                    browserActionsEndModifier = browserActionsEndTrait,
-                )
-            }
+    LaunchedEffect(useMinimalBottomToolbarWhenEnteringText) {
+        if (useMinimalBottomToolbarWhenEnteringText) {
+            Logger("BrowserDisplayToolbar").warn("useMinimalBottomToolbarWhenEnteringText is not supported")
         }
     }
+
+    FullDisplayToolbar(
+        pageOrigin = pageOrigin,
+        gravity = gravity,
+        progressBarConfig = progressBarConfig,
+        browserActionsStart = browserActionsStart,
+        pageActionsStart = pageActionsStart,
+        pageActionsEnd = pageActionsEnd,
+        browserActionsEnd = browserActionsEnd,
+        onInteraction = onInteraction,
+        modifier = Modifier.fillMaxWidth(),
+        backgroundColor = backgroundColor,
+        outlineColor = outlineColor,
+        browserActionsStartModifier = Modifier,
+        pageActionsStartModifier = Modifier,
+        originModifier = Modifier,
+        pageActionsEndModifier = Modifier,
+        browserActionsEndModifier = Modifier,
+    )
 }
 
 @PreviewLightDark

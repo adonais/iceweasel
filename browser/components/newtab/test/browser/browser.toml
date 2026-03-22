@@ -11,6 +11,8 @@ prefs = [
   "browser.newtabpage.sponsor-protection.debug=true",
 ]
 
+["browser_newtab_background_animation.js"]
+
 ["browser_sponsor_protection.js"]
 
 ["browser_sponsored_annotation.js"]

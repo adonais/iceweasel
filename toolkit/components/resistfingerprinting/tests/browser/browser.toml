@@ -2,6 +2,7 @@
 support-files = [
   "canvas-fingerprinter.html",
   "empty.html",
+  "iframe_orientation.html",
   "font-fingerprinter.html",
   "head-fpp-matrix.js",
   "head.js",
@@ -57,6 +58,8 @@ skip-if = [
 
 ["browser_fpp_remote_settings_jexl.js"]
 
+["browser_iframe_orientation.js"]
+
 ["browser_js_locale.js"]
 
 ["browser_navigator_online.js"]
@@ -80,12 +83,25 @@ support-files = ["file_pdf.pdf"]
 
 ["browser_usercharacteristics.js"]
 
+["browser_usercharacteristics_canvas_filtering.js"]
+skip-if = [
+  "os == 'win' && arch == 'x86'", # OOM on win32 due to memory constraints
+]
+
+["browser_usercharacteristics_clientrects.js"]
+
+["browser_usercharacteristics_css.js"]
+
 ["browser_usercharacteristics_gamepads.js"]
 
 ["browser_usercharacteristics_linux_distro.js"]
 skip-if = ["os != 'linux'"]
 
 ["browser_usercharacteristics_math.js"]
+
+["browser_usercharacteristics_mathml.js"]
+
+["browser_usercharacteristics_svg.js"]
 
 ["browser_usercharacteristics_timezone.js"]
 

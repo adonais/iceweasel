@@ -24,6 +24,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AttributionCode:
     "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   WindowsRegistry: "resource://gre/modules/WindowsRegistry.sys.mjs",
   WindowsVersionInfo:
     "resource://gre/modules/components-utils/WindowsVersionInfo.sys.mjs",
@@ -1011,8 +1012,7 @@ EnvironmentCache.prototype = {
         }
         if (
           aData == "engine-changed" &&
-          aSubject.QueryInterface(Ci.nsISearchEngine) &&
-          Services.search.defaultEngine != aSubject
+          lazy.SearchService.defaultEngine != aSubject.wrappedJSObject
         ) {
           return;
         }
@@ -1049,7 +1049,7 @@ EnvironmentCache.prototype = {
         this._sessionWasRestored = true;
         // Make sure to initialize the search service once we've done restoring
         // the windows, so that we don't risk loosing search data.
-        Services.search.init();
+        lazy.SearchService.init();
         // The default browser check could take some time, so just call it after
         // the session was restored.
         this._updateDefaultBrowser();
@@ -1089,9 +1089,9 @@ EnvironmentCache.prototype = {
     }
 
     this._log.trace(
-      "_updateSearchEngine - isInitialized: " + Services.search.isInitialized
+      "_updateSearchEngine - isInitialized: " + lazy.SearchService.isInitialized
     );
-    if (!Services.search.isInitialized) {
+    if (!lazy.SearchService.isInitialized) {
       return;
     }
 
@@ -1099,7 +1099,7 @@ EnvironmentCache.prototype = {
     this._currentEnvironment.settings = this._currentEnvironment.settings || {};
 
     // Update the search engine entry in the current environment.
-    const defaultEngineInfo = Services.search.getDefaultEngineInfo();
+    const defaultEngineInfo = lazy.SearchService.getDefaultEngineInfo();
     this._currentEnvironment.settings.defaultSearchEngine =
       defaultEngineInfo.defaultSearchEngine;
     this._currentEnvironment.settings.defaultSearchEngineData = {

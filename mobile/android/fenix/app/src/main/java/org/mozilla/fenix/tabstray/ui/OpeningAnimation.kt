@@ -42,8 +42,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.trace
 import mozilla.components.browser.state.state.TabSessionState
 import org.mozilla.fenix.compose.TabThumbnail
+import org.mozilla.fenix.tabstray.TabsTrayTraceTag.TRACE_NAME_ANIMATION_TAB_MANAGER_TO_THUMBNAIL
+import org.mozilla.fenix.tabstray.TabsTrayTraceTag.TRACE_NAME_ANIMATION_THUMBNAIL_TO_TAB_MANAGER
 import kotlin.math.min
 
 private const val SHARED_ELEMENT_DURATION = 200
@@ -156,19 +159,23 @@ internal fun TabManagerTransitionLayout(
             ) {
                 when (targetState) {
                     is TabManagerAnimationState.TabManagerToThumbnail -> {
-                        TabManagerSharedElementThumbnail(
-                            transitionTab = targetState.tab,
-                            transitionPaddingValues = tabManagerAnimationHelper.transitionPaddingValues,
-                        )
+                        trace(TRACE_NAME_ANIMATION_TAB_MANAGER_TO_THUMBNAIL) {
+                            TabManagerSharedElementThumbnail(
+                                transitionTab = targetState.tab,
+                                transitionPaddingValues = tabManagerAnimationHelper.transitionPaddingValues,
+                            )
+                        }
                     }
                     TabManagerAnimationState.ThumbnailToTabManager -> {
-                        DisposableEffect(Unit) {
-                            onDispose {
-                                onExitTransitionCompleted.invoke()
+                        trace(TRACE_NAME_ANIMATION_THUMBNAIL_TO_TAB_MANAGER) {
+                            DisposableEffect(Unit) {
+                                onDispose {
+                                    onExitTransitionCompleted.invoke()
+                                }
                             }
-                        }
 
-                        content()
+                            content()
+                        }
                     }
                 }
             }

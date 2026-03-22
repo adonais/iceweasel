@@ -10,6 +10,8 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  HomePage: "resource:///modules/HomePage.sys.mjs",
 });
 
 /*
@@ -39,7 +41,7 @@ Preferences.addAll([
 ]);
 
 if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
-  // Homepage / New Windows
+  // Set up `browser.startup.homepage` to show homepage options for Homepage / New Windows
   Preferences.addSetting(
     /** @type {{ useCustomHomepage: boolean } & SettingConfig } */ ({
       id: "homepageNewWindows",
@@ -54,8 +56,8 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
             return "home";
           case BLANK_HOMEPAGE_URL:
             return "blank";
-          // Bug 1969951 - Custom value can be any string so leaving it as default value to catch
-          // non-default/blank entires.
+          // Custom value can be any string so leaving it as default value to catch
+          // non-default/blank entries.
           default:
             return "custom";
         }
@@ -72,7 +74,6 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
           case "blank":
             return BLANK_HOMEPAGE_URL;
           case "custom":
-            // Bug 1969951 - Add values set in subpage here
             return setting.pref.value;
           default:
             throw new Error("No handler for this value");
@@ -81,15 +82,283 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
     })
   );
 
+  // Set up `browser.startup.homepage` again to update and display its value
+  // on the Homepage and Custom Homepage settings panes.
+  Preferences.addSetting({
+    id: "homepageDisplayPref",
+    pref: "browser.startup.homepage",
+  });
+
+  Preferences.addSetting({
+    id: "disableCurrentPagesButton",
+    pref: "pref.browser.homepage.disable_button.current_page",
+  });
+
+  Preferences.addSetting({
+    id: "disableBookmarkButton",
+    pref: "pref.browser.homepage.disable_button.bookmark_page",
+  });
+
   // Homepage / Choose Custom Homepage URL Button
   Preferences.addSetting({
     id: "homepageGoToCustomHomepageUrlPanel",
-    deps: ["homepageNewWindows"],
+    deps: ["homepageNewWindows", "homepageDisplayPref"],
     visible: ({ homepageNewWindows }) => {
-      return homepageNewWindows.value == "custom";
+      return homepageNewWindows.value === "custom";
     },
     onUserClick: () => {
-      // Bug 1969951 - Navigate to Custom Homepage Subpage
+      gotoPref("customHomepage");
+    },
+
+    getControlConfig(config, { homepageDisplayPref }) {
+      let customURLsDescription;
+
+      // Make sure we only show user-provided values for custom URLs rather than
+      // values we set in `browser.startup.homepage` for "Firefox Home"
+      // and "Blank Page".
+      if (
+        [DEFAULT_HOMEPAGE_URL, BLANK_HOMEPAGE_URL].includes(
+          homepageDisplayPref.value.trim()
+        )
+      ) {
+        customURLsDescription = null;
+      } else {
+        // Add a comma-separated list of Custom URLs the user set for their homepage
+        // to the description part of the "Choose a specific site" box button.
+        customURLsDescription = homepageDisplayPref.value
+          .split("|")
+          .map(uri => BrowserUtils.formatURIStringForDisplay(uri))
+          .filter(Boolean)
+          .join(", ");
+      }
+
+      return {
+        ...config,
+        controlAttrs: {
+          ...config.controlAttrs,
+          ".description": customURLsDescription,
+        },
+      };
+    },
+  });
+
+  Preferences.addSetting(
+    /** @type {{ _inputValue: string } & SettingConfig } */ ({
+      id: "customHomepageAddUrlInput",
+      _inputValue: "",
+      get() {
+        return this._inputValue;
+      },
+
+      set(val, _, setting) {
+        this._inputValue = val.trim() ?? "";
+        setting.onChange();
+      },
+    })
+  );
+
+  Preferences.addSetting({
+    id: "customHomepageAddAddressButton",
+    deps: ["homepageDisplayPref", "customHomepageAddUrlInput"],
+    onUserClick(e, { homepageDisplayPref, customHomepageAddUrlInput }) {
+      // Focus is being stolen by a parent component here (moz-fieldset).
+      // Focus on the button to get the input value.
+      e.target.focus();
+
+      let inputVal = customHomepageAddUrlInput.value;
+
+      // Don't do anything for empty strings
+      if (!inputVal) {
+        return;
+      }
+
+      if (
+        [DEFAULT_HOMEPAGE_URL, BLANK_HOMEPAGE_URL].includes(
+          homepageDisplayPref.value.trim()
+        )
+      ) {
+        // Replace the default homepage value with the new Custom URL.
+        homepageDisplayPref.value = inputVal;
+      } else {
+        // Append this URL to the list of Custom URLs saved in prefs.
+        let urls = HomePage.parseCustomHomepageURLs(homepageDisplayPref.value);
+        urls.push(inputVal);
+        homepageDisplayPref.value = urls.join("|");
+      }
+
+      // Reset the field to empty string
+      customHomepageAddUrlInput.value = "";
+    },
+  });
+
+  Preferences.addSetting({
+    id: "customHomepageReplaceWithCurrentPagesButton",
+    deps: ["homepageDisplayPref", "disableCurrentPagesButton"],
+    onUserClick(e, { homepageDisplayPref }) {
+      let tabs = HomePage.getTabsForCustomHomepage();
+
+      if (tabs.length) {
+        homepageDisplayPref.value = tabs
+          .map(t => t.linkedBrowser.currentURI.spec)
+          .join("|");
+      }
+    },
+    disabled: ({ disableCurrentPagesButton }) =>
+      // Disable this button if the only open tab is `about:preferences`/`about:settings`
+      // or when an enterprise policy sets a special pref to true
+      HomePage.getTabsForCustomHomepage().length < 1 ||
+      disableCurrentPagesButton?.value === true,
+  });
+
+  Preferences.addSetting({
+    id: "customHomepageReplaceWithBookmarksButton",
+    deps: ["homepageDisplayPref", "disableBookmarkButton"],
+    onUserClick(e, { homepageDisplayPref }) {
+      const rv = { urls: null, names: null };
+
+      // Callback to use when bookmark dialog closes
+      const closingCallback = event => {
+        if (event.detail.button !== "accept") {
+          return;
+        }
+        if (rv.urls) {
+          homepageDisplayPref.value = rv.urls.join("|");
+        }
+      };
+
+      gSubDialog.open(
+        "chrome://browser/content/preferences/dialogs/selectBookmark.xhtml",
+        {
+          features: "resizable=yes, modal=yes",
+          closingCallback,
+        },
+        rv
+      );
+    },
+    disabled: ({ disableBookmarkButton }) =>
+      // Disable this button if an enterprise policy sets a special pref to true
+      disableBookmarkButton?.value === true,
+  });
+
+  Preferences.addSetting({
+    id: "customHomepageBoxGroup",
+    deps: ["homepageDisplayPref"],
+    getControlConfig(config, { homepageDisplayPref }) {
+      const urls = HomePage.parseCustomHomepageURLs(homepageDisplayPref.value);
+      let listItems = [];
+      let type = "list";
+
+      // Show a reorderable list of Custom URLs if the user has provided any.
+      // Make sure to exclude "Firefox Home" and "Blank Page" values that are also
+      // stored in the homepage pref.
+      if (
+        [DEFAULT_HOMEPAGE_URL, BLANK_HOMEPAGE_URL].includes(
+          homepageDisplayPref.value.trim()
+        ) === false
+      ) {
+        type = "reorderable-list";
+        listItems = urls.map((url, index) => ({
+          id: `customHomepageUrl-${index}`,
+          key: `url-${index}-${url}`,
+          control: "moz-box-item",
+          controlAttrs: { label: url, "data-url": url },
+          options: [
+            {
+              control: "moz-button",
+              iconSrc: "chrome://global/skin/icons/delete.svg",
+              l10nId: "home-custom-homepage-delete-address-button",
+              slot: "actions-start",
+              controlAttrs: {
+                "data-action": "delete",
+                "data-index": index,
+              },
+            },
+          ],
+        }));
+      } else {
+        // If no custom URLs have been set, show the "no results" string instead.
+        listItems = [
+          {
+            control: "moz-box-item",
+            l10nId: "home-custom-homepage-no-results",
+            controlAttrs: {
+              class: "description-deemphasized",
+            },
+          },
+        ];
+      }
+
+      return {
+        ...config,
+        controlAttrs: {
+          ...config.controlAttrs,
+          type,
+        },
+        options: [
+          {
+            id: "customHomepageBoxForm",
+            control: "moz-box-item",
+            slot: "header",
+            items: [
+              {
+                id: "customHomepageAddUrlInput",
+                l10nId: "home-custom-homepage-address",
+                control: "moz-input-text",
+              },
+              {
+                id: "customHomepageAddAddressButton",
+                l10nId: "home-custom-homepage-address-button",
+                control: "moz-button",
+                slot: "actions",
+              },
+            ],
+          },
+          ...listItems,
+          {
+            id: "customHomepageBoxActions",
+            control: "moz-box-item",
+            l10nId: "home-custom-homepage-replace-with-prompt",
+            slot: "footer",
+            items: [
+              {
+                id: "customHomepageReplaceWithCurrentPagesButton",
+                l10nId: "home-custom-homepage-current-pages-button",
+                control: "moz-button",
+                slot: "actions",
+              },
+              {
+                id: "customHomepageReplaceWithBookmarksButton",
+                l10nId: "home-custom-homepage-bookmarks-button",
+                control: "moz-button",
+                slot: "actions",
+              },
+            ],
+          },
+        ],
+      };
+    },
+    onUserReorder(e, { homepageDisplayPref }) {
+      let urls = HomePage.parseCustomHomepageURLs(homepageDisplayPref.value);
+
+      let { draggedIndex, targetIndex } = e.detail;
+      let [moved] = urls.splice(draggedIndex, 1);
+      urls.splice(targetIndex, 0, moved);
+
+      homepageDisplayPref.value = urls.join("|");
+    },
+    onUserClick(e, { homepageDisplayPref }) {
+      let urls = HomePage.parseCustomHomepageURLs(homepageDisplayPref.value);
+
+      if (
+        e.target.localName === "moz-button" &&
+        e.target.getAttribute("data-action") === "delete"
+      ) {
+        let index = Number(e.target.dataset.index);
+        if (Number.isInteger(index) && index >= 0 && index < urls.length) {
+          urls.splice(index, 1);
+          homepageDisplayPref.value = urls.join("|");
+        }
+      }
     },
   });
 
@@ -298,11 +567,21 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
     pref: "browser.newtabpage.activity-stream.topSitesRows",
   });
 
+  // Dependency prefs for stories & sponsored stories visibility
+  Preferences.addSetting({
+    id: "systemTopstories",
+    pref: "browser.newtabpage.activity-stream.feeds.system.topstories",
+  });
+
   // Stories
   Preferences.addSetting({
     id: "stories",
     pref: "browser.newtabpage.activity-stream.feeds.section.topstories",
+    deps: ["systemTopstories"],
+    visible: ({ systemTopstories }) => systemTopstories.value,
   });
+
+  // Dependencies for "manage topics" checkbox
   Preferences.addSetting({
     id: "sectionsEnabled",
     pref: "browser.newtabpage.activity-stream.discoverystream.sections.enabled",
@@ -319,6 +598,7 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
     id: "sectionsCustomizeMenuPanelEnabled",
     pref: "browser.newtabpage.activity-stream.discoverystream.sections.customizeMenuPanel.enabled",
   });
+
   Preferences.addSetting({
     id: "manageTopics",
     deps: [
@@ -326,30 +606,20 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
       "topicLabelsEnabled",
       "sectionsPersonalizationEnabled",
       "sectionsCustomizeMenuPanelEnabled",
-      "sectionTopstories",
+      "stories",
     ],
     visible: ({
       sectionsEnabled,
       topicLabelsEnabled,
       sectionsPersonalizationEnabled,
       sectionsCustomizeMenuPanelEnabled,
-      sectionTopstories,
+      stories,
     }) =>
       sectionsEnabled.value &&
       topicLabelsEnabled.value &&
       sectionsPersonalizationEnabled.value &&
       sectionsCustomizeMenuPanelEnabled.value &&
-      sectionTopstories.value,
-  });
-
-  // Dependency prefs for sponsored stories visibility
-  Preferences.addSetting({
-    id: "systemTopstories",
-    pref: "browser.newtabpage.activity-stream.feeds.system.topstories",
-  });
-  Preferences.addSetting({
-    id: "sectionTopstories",
-    pref: "browser.newtabpage.activity-stream.feeds.section.topstories",
+      stories.value,
   });
 
   // Support Firefox: sponsored content
@@ -376,9 +646,9 @@ if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
   Preferences.addSetting({
     id: "sponsoredStories",
     pref: "browser.newtabpage.activity-stream.showSponsored",
-    deps: ["systemTopstories", "sectionTopstories"],
+    deps: ["systemTopstories", "stories"],
     visible: ({ systemTopstories }) => !!systemTopstories.value,
-    disabled: ({ sectionTopstories }) => !sectionTopstories.value,
+    disabled: ({ stories }) => !stories.value,
   });
   Preferences.addSetting({
     id: "supportFirefoxPromo",

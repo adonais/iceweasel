@@ -17,6 +17,7 @@ import mozilla.components.browser.state.action.LastAccessAction
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.selector.normalTabs
+import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
@@ -168,6 +169,11 @@ interface TabManagerController : SyncedTabsController, InactiveTabsController, T
         tab: TabSessionState,
         source: String?,
     )
+
+    /**
+     * Handle the completion of the TabTray transition animation.
+     */
+    fun handleNavigationRequested()
 
     /**
      * Exits multi select mode when the back button was pressed.
@@ -322,7 +328,6 @@ class DefaultTabManagerController(
         if (navController.currentDestination?.id == R.id.browserFragment) {
             return
         } else if (!navController.popBackStack(R.id.browserFragment, false)) {
-            navController.popBackStack()
             navController.navigate(R.id.browserFragment)
         }
     }
@@ -331,7 +336,6 @@ class DefaultTabManagerController(
         if (navController.currentDestination?.id == R.id.homeFragment) {
             return
         } else if (!navController.popBackStack(R.id.homeFragment, false)) {
-            navController.popBackStack()
             navController.navigate(
                 TabManagementFragmentDirections.actionGlobalHome(),
             )
@@ -580,10 +584,8 @@ class DefaultTabManagerController(
                 val mode = BrowsingMode.fromBoolean(tab.content.private)
                 browsingModeManager.mode = mode
 
-                if (tab.content.url == ABOUT_HOME_URL) {
-                    handleNavigateToHome()
-                } else {
-                    handleNavigateToBrowser()
+                if (!settings.tabManagerOpeningAnimationEnabled) {
+                    handleNavigationRequested()
                 }
             }
 
@@ -594,6 +596,18 @@ class DefaultTabManagerController(
             source != INACTIVE_TABS_FEATURE_NAME -> {
                 tabsTrayStore.dispatch(TabsTrayAction.AddSelectTab(tab))
             }
+        }
+    }
+
+     private fun selectedTabisHome(): Boolean {
+        return browserStore.state.selectedTab?.content?.url == ABOUT_HOME_URL
+    }
+
+    override fun handleNavigationRequested() {
+        if (selectedTabisHome()) {
+            handleNavigateToHome()
+        } else {
+            handleNavigateToBrowser()
         }
     }
 

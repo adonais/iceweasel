@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __TX_XPATH_SINGLENODE_CONTEXT
-#define __TX_XPATH_SINGLENODE_CONTEXT
+#ifndef TX_XPATH_SINGLENODE_CONTEXT
+#define TX_XPATH_SINGLENODE_CONTEXT
 
 #include "txIXPathContext.h"
 #include "txXPathNode.h"
@@ -61,4 +61,4 @@ class txSingleNodeContext : public txIEvalContext {
   txIMatchContext* mInner;
 };
 
-#endif  // __TX_XPATH_SINGLENODE_CONTEXT
+#endif  // TX_XPATH_SINGLENODE_CONTEXT

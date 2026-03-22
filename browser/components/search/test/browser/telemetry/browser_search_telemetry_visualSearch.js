@@ -118,7 +118,7 @@ add_setup(async function () {
   await SearchTestUtils.updateRemoteSettingsConfig(SEARCH_CONFIG);
   await waitForIdle();
 
-  let engine = await Services.search.getDefault();
+  let engine = await SearchService.getDefault();
   Assert.equal(
     engine.id,
     ENGINE_ID,
@@ -139,8 +139,8 @@ add_setup(async function () {
     search_url: "https://example.com/nonconfig-engine",
     search_url_get_params: "q={searchTerms}",
   });
-  let nonconfigEngine = Services.search.getEngineByName(NONCONFIG_ENGINE_NAME);
-  nonconfigEngine.wrappedJSObject._urls.push(
+  let nonconfigEngine = SearchService.getEngineByName(NONCONFIG_ENGINE_NAME);
+  nonconfigEngine._urls.push(
     new EngineURL({
       type: SearchUtils.URL_TYPE.VISUAL_SEARCH,
       template: "https://example.com/nonconfig-engine-visual",
@@ -203,14 +203,10 @@ add_task(async function nonPrivateWindow() {
     {
       impression: {
         provider: "example-visual",
-        tagged: "true",
-        partner_code: "ff",
         search_mode: "image_search",
         source: "contextmenu_visual",
-        is_shopping_page: "false",
-        is_private: "false",
-        shopping_tab_displayed: "false",
-        is_signed_in: "false",
+        has_ai_summary: "unknown",
+        shopping_tab_displayed: "unknown",
       },
       abandonment: {
         reason: SearchSERPTelemetryUtils.ABANDONMENTS.TAB_CLOSE,
@@ -291,14 +287,11 @@ async function doPrivateWindowTest(shouldRecordCounts) {
       {
         impression: {
           provider: "example-visual",
-          tagged: "true",
-          partner_code: "ff",
           search_mode: "image_search",
           source: "contextmenu_visual",
-          is_shopping_page: "false",
           is_private: "true",
-          shopping_tab_displayed: "false",
-          is_signed_in: "false",
+          has_ai_summary: "unknown",
+          shopping_tab_displayed: "unknown",
         },
         abandonment: {
           reason: SearchSERPTelemetryUtils.ABANDONMENTS.TAB_CLOSE,
@@ -343,18 +336,15 @@ add_task(async function nonconfigEngine() {
 
   Services.fog.testResetFOG();
 
-  let engine = Services.search.getEngineByName(NONCONFIG_ENGINE_NAME);
+  let engine = SearchService.getEngineByName(NONCONFIG_ENGINE_NAME);
   Assert.ok(
-    engine.wrappedJSObject.getURLOfType(SearchUtils.URL_TYPE.VISUAL_SEARCH),
+    engine.getURLOfType(SearchUtils.URL_TYPE.VISUAL_SEARCH),
     "Sanity check: Nonconfig engine has a visual search URL"
   );
 
   // Make the nonconfig engine the default so that it handles visual searches.
-  let previousEngine = await Services.search.getDefault();
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  let previousEngine = await SearchService.getDefault();
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   await openAndCheckMenu({
     shouldBeShown: true,
@@ -373,9 +363,9 @@ add_task(async function nonconfigEngine() {
     "impressionCounts.contextmenuVisual should not be recorded with the engine ID"
   );
 
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     previousEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
   await SpecialPowers.popPrefEnv();
 });

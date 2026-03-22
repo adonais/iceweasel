@@ -9,6 +9,7 @@
 
 #include "mozilla/Assertions.h"
 
+#include <compare>
 #include <stdint.h>
 
 #include "jstypes.h"
@@ -62,17 +63,7 @@ class Increment final {
    */
   uint32_t value() const { return value_; }
 
-  bool operator==(const Increment& other) const {
-    return value_ == other.value_;
-  }
-
-  bool operator<(const Increment& other) const { return value_ < other.value_; }
-
-  // Other operators are implemented in terms of operator== and operator<.
-  bool operator!=(const Increment& other) const { return !(*this == other); }
-  bool operator>(const Increment& other) const { return other < *this; }
-  bool operator<=(const Increment& other) const { return !(other < *this); }
-  bool operator>=(const Increment& other) const { return !(*this < other); }
+  constexpr auto operator<=>(const Increment&) const = default;
 };
 
 /**
@@ -225,11 +216,7 @@ class Precision final {
     MOZ_ASSERT(value < 10);
   }
 
-  bool operator==(const Precision& other) const {
-    return value_ == other.value_;
-  }
-
-  bool operator!=(const Precision& other) const { return !(*this == other); }
+  constexpr auto operator<=>(const Precision&) const = default;
 
   /**
    * Return the number of fractional second digits.

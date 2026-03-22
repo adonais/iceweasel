@@ -616,7 +616,7 @@ function enableButtonsForCertTree(certTree, idList) {
   let disableButtons = nothingOrContainerSelected(certTree);
 
   for (let id of idList) {
-    document.getElementById(id).setAttribute("disabled", disableButtons);
+    document.getElementById(id).toggleAttribute("disabled", disableButtons);
   }
 }
 

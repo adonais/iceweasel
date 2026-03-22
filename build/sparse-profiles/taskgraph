@@ -44,6 +44,11 @@ path:browser/components/aboutwelcome/package.json
 path:browser/components/aboutwelcome/package-lock.json
 path:browser/components/asrouter/package.json
 path:browser/components/asrouter/package-lock.json
+path:tools/terser/package.json
+path:tools/terser/package-lock.json
+path:remote/test/puppeteer/package.json
+path:remote/test/puppeteer/package-lock.json
+path:remote/test/puppeteer/test/package.json
 
 # for new-style try pushes
 path:try_task_config.json
@@ -68,12 +73,12 @@ glob:**/*.ini
 glob:**/*.list
 glob:**/*.toml
 path:testing/mozbase/manifestparser
-path:testing/runtimes
 path:testing/web-platform/tests/
 path:testing/web-platform/mozilla/tests/
 glob:testing/web-platform/*.py
 
 # For scheduling android-gradle-dependencies.
+path:config/milestone.txt
 path:gradle/
 path:mobile/android/config/
 glob:**/*.gradle

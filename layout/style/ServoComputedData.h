@@ -27,6 +27,10 @@ struct ServoComputedCustomProperties {
   uintptr_t mNonInherited;
 };
 
+struct ServoUsedAttributes {
+  uintptr_t mUsedAttributes;
+};
+
 struct ServoRuleNode {
   uintptr_t mPtr;
 };
@@ -76,6 +80,7 @@ class ServoComputedData {
 
  private:
   mozilla::ServoComputedCustomProperties custom_properties;
+  mozilla::ServoUsedAttributes attribute_references;
   /// The rule node representing the ordered list of rules matched for this
   /// node.  Can be None for default values and text nodes.  This is
   /// essentially an optimization to avoid referencing the root rule node.

@@ -115,6 +115,10 @@ class EditorLineBreakBase {
     return IsPreformattedLineBreak() && !Offset() &&
            TextRef().TextDataLength() == 1u;
   }
+  [[nodiscard]] bool IsPreformattedLineBreakAtStartOfText() const {
+    MOZ_ASSERT_IF(mOffsetInText, mContent->IsText());
+    return mOffsetInText.isSome() && !mOffsetInText.value();
+  }
 
   [[nodiscard]] nsIContent& ContentRef() const { return *mContent; }
 

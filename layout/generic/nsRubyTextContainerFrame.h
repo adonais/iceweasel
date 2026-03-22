@@ -6,8 +6,8 @@
 
 /* rendering object for CSS "display: ruby-text-container" */
 
-#ifndef nsRubyTextContainerFrame_h___
-#define nsRubyTextContainerFrame_h___
+#ifndef nsRubyTextContainerFrame_h_
+#define nsRubyTextContainerFrame_h_
 
 #include "nsBlockFrame.h"
 
@@ -75,4 +75,4 @@ class nsRubyTextContainerFrame final : public nsContainerFrame {
   nscoord mISize;
 };
 
-#endif /* nsRubyTextContainerFrame_h___ */
+#endif /* nsRubyTextContainerFrame_h_ */

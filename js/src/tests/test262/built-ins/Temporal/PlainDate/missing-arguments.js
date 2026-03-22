@@ -22,4 +22,8 @@ const args = [
 assert.throws(RangeError, () => new Temporal.PlainDate(...args));
 assert.compareArray(actual, expected, "order of operations");
 
+assert.throws(RangeError, () => new Temporal.PlainDate(), "no arguments");
+assert.throws(RangeError, () => new Temporal.PlainDate(2021), "only year");
+
+
 reportCompare(0, 0);

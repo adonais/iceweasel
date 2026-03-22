@@ -280,7 +280,7 @@ uint64_t ServiceWorkerInfo::GetNextID() const {
   return ++gServiceWorkerInfoCurrentID;
 }
 
-void ServiceWorkerInfo::PostMessage(RefPtr<ServiceWorkerCloneData>&& aData,
+void ServiceWorkerInfo::PostMessage(ipc::StructuredCloneData* aData,
                                     const PostMessageSource& aSource) {
   RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
   if (NS_WARN_IF(!swm)) {
@@ -304,7 +304,7 @@ void ServiceWorkerInfo::PostMessage(RefPtr<ServiceWorkerCloneData>&& aData,
       return;
   }
 
-  mServiceWorkerPrivate->SendMessageEvent(std::move(aData), lifetime, aSource);
+  mServiceWorkerPrivate->SendMessageEvent(aData, lifetime, aSource);
 }
 
 Maybe<ClientInfo> ServiceWorkerInfo::GetClientInfo() {

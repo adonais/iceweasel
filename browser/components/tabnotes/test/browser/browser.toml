@@ -8,6 +8,8 @@ support-files = [
 
 ["browser_tab_notes_adopt.js"]
 
+["browser_tab_notes_enable_disable.js"]
+
 ["browser_tab_notes_menu.js"]
 
 ["browser_tab_notes_telemetry.js"]

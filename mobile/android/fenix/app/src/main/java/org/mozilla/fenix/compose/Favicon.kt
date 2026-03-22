@@ -29,8 +29,8 @@ import mozilla.components.browser.icons.compose.WithIcon
 import mozilla.components.compose.base.utils.inComposePreview
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 internal val FAVICON_ROUNDED_CORNER_SHAPE = RoundedCornerShape(2.dp)
 
@@ -180,7 +180,7 @@ private fun FaviconPlaceholder(
 @Preview
 @Composable
 private fun FaviconPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         Favicon(

@@ -226,10 +226,6 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
     kIceConnectionMax,
   };
   static constexpr absl::string_view AsString(IceConnectionState state);
-  template <typename Sink>
-  void AbslStringify(Sink& sink, IceConnectionState state) {
-    sink.Append(AsString(state));
-  }
 
   // TLS certificate policy.
   enum TlsCertPolicy {
@@ -692,6 +688,11 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
 
     // The burst interval of the pacer, see TaskQueuePacedSender constructor.
     std::optional<TimeDelta> pacer_burst_interval;
+
+    // Always negotiate datachannels as the first m-line in the SDP even if
+    // no datachannel have been created yet.
+    // https://github.com/w3c/webrtc-pc/issues/3072
+    bool always_negotiate_data_channels = false;
 
     //
     // Don't forget to update operator== if adding something.
@@ -1230,6 +1231,29 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   // Dtor protected as objects shouldn't be deleted via this interface.
   ~PeerConnectionInterface() override = default;
 };
+
+template <typename Sink>
+void AbslStringify(Sink& sink, PeerConnectionInterface::SignalingState state) {
+  sink.Append(PeerConnectionInterface::AsString(state));
+}
+
+template <typename Sink>
+void AbslStringify(Sink& sink,
+                   PeerConnectionInterface::IceGatheringState state) {
+  sink.Append(PeerConnectionInterface::AsString(state));
+}
+
+template <typename Sink>
+void AbslStringify(Sink& sink,
+                   PeerConnectionInterface::PeerConnectionState state) {
+  sink.Append(PeerConnectionInterface::AsString(state));
+}
+
+template <typename Sink>
+void AbslStringify(Sink& sink,
+                   PeerConnectionInterface::IceConnectionState state) {
+  sink.Append(PeerConnectionInterface::AsString(state));
+}
 
 // PeerConnection callback interface, used for RTCPeerConnection events.
 // Application should implement these methods.

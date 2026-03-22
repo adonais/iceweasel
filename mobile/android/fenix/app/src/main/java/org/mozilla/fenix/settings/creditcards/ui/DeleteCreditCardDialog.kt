@@ -15,8 +15,8 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.button.TextButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Composable for the delete credit card dialog.
@@ -60,7 +60,7 @@ internal fun DeleteCreditCardDialog(
 @Composable
 @Preview
 private fun PreviewDeleteCreditCardDialog(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) = FirefoxTheme(theme) {
     DeleteCreditCardDialog()
 }

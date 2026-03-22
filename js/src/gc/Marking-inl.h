@@ -185,7 +185,7 @@ inline void PreWriteBarrierDuringFlattening(JSString* str) {
 
   auto* cell = reinterpret_cast<TenuredCell*>(str);
   JS::shadow::Zone* zone = cell->shadowZoneFromAnyThread();
-  if (!zone->needsIncrementalBarrier()) {
+  if (!zone->needsMarkingBarrier()) {
     return;
   }
 

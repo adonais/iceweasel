@@ -17,7 +17,6 @@
 #include "ClearKeySession.h"
 
 #include <assert.h>
-#include <string.h>
 
 #include "BigEndian.h"
 #include "ClearKeyDecryptionManager.h"

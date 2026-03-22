@@ -86,7 +86,7 @@ add_task(async function test_pref_check() {
 
   Services.prefs.setBoolPref("webcompat.test.pref1", true);
   Services.prefs.setBoolPref("webcompat.test.pref2", false);
-  await WebCompatExtension.noOngoingInterventionChanges();
+  await WebCompatExtension.interventionsSettled();
   interventions = (await WebCompatExtension.getInterventionById("test"))
     .interventions;
 
@@ -109,7 +109,7 @@ add_task(async function test_pref_check() {
 
   Services.prefs.setBoolPref("webcompat.test.pref1", false);
   Services.prefs.setBoolPref("webcompat.test.pref2", true);
-  await WebCompatExtension.noOngoingInterventionChanges();
+  await WebCompatExtension.interventionsSettled();
   interventions = (await WebCompatExtension.getInterventionById("test"))
     .interventions;
 
@@ -132,7 +132,7 @@ add_task(async function test_pref_check() {
 
   Services.prefs.clearUserPref("webcompat.test.pref1");
   Services.prefs.clearUserPref("webcompat.test.pref2");
-  await WebCompatExtension.noOngoingInterventionChanges();
+  await WebCompatExtension.interventionsSettled();
   interventions = (await WebCompatExtension.getInterventionById("test"))
     .interventions;
 

@@ -24,6 +24,7 @@ enum class PseudoStyleType : uint8_t;
 class ErrorResult;
 struct Keyframe;
 struct PropertyStyleAnimationValuePair;
+struct PseudoStyleRequest;
 
 namespace dom {
 class Document;

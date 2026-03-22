@@ -65,10 +65,10 @@ p {
 .logo {
   background: image-set(url("chrome://branding/content/about-logo-private.png"), url("chrome://branding/content/about-logo-private@2x.png") 2x) no-repeat center
     center;
-  background-size: 96px;
+  background-size: var(--size-image-xxlarge);
   display: inline-block;
-  height: 96px;
-  width: 96px;
+  height: var(--size-image-xxlarge);
+  width: var(--size-image-xxlarge);
 }
 
 .wordmark {

@@ -23,8 +23,6 @@ support-files = [
 
 ["test_bug290397.html"]
 
-["test_bug323656.html"]
-
 ["test_bug344830.html"]
 support-files = ["bug344830_testembed.svg"]
 

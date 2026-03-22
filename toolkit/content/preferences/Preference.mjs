@@ -341,6 +341,9 @@ export class Preference extends EventEmitter {
           return this._branch.getStringPref(this.id);
         case "fontname": {
           const family = this._branch.getStringPref(this.id);
+          if (!family) {
+            return family;
+          }
           const fontEnumerator = Cc[
             "@mozilla.org/gfx/fontenumerator;1"
           ].createInstance(Ci.nsIFontEnumerator);

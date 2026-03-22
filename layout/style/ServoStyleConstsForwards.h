@@ -29,6 +29,7 @@
 #  include "nsColor.h"
 #  include "nsCompatibility.h"
 #  include "nsCoord.h"
+#  include "nsGkAtoms.h"
 #  include "nsIURI.h"
 
 struct RawServoAnimationValueTable;
@@ -51,6 +52,11 @@ namespace mozilla {
 // Forward declaration for `StyleLengthPercentageUnion::AsCalc`, which
 // references the type below in the generated code.
 struct StyleCalcLengthPercentage;
+
+// Forward declaration required due to a circular type dependency between
+// StyleNumericValue and StyleSumValue.
+// cbindgen does not currently emit this forward declaration automatically.
+struct StyleNumericValue;
 
 namespace gfx {
 struct FontVariation;
@@ -205,11 +211,11 @@ using StyleMatrixTransformOperator =
     nsStyleTransformMatrix::MatrixTransformOperator;
 
 #  define SERVO_LOCKED_ARC_TYPE(name_) struct StyleLocked##type_;
-#  include "mozilla/ServoLockedArcTypeList.h"
+#  include "mozilla/ServoLockedArcTypeList.inc"
 #  undef SERVO_LOCKED_ARC_TYPE
 
 #  define SERVO_BOXED_TYPE(name_, type_) struct Style##type_;
-#  include "mozilla/ServoBoxedTypeList.h"
+#  include "mozilla/ServoBoxedTypeList.inc"
 #  undef SERVO_BOXED_TYPE
 
 using StyleAtomicUsize = std::atomic<size_t>;

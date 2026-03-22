@@ -140,6 +140,15 @@ def test_push_to_try(repo, monkeypatch):
         assert repo.vcs == "jj"
         expected = [
             (str(vcs._git._tool), "cinnabar", "--version"),
+            (
+                str(tool),
+                "operation",
+                "log",
+                "-n1",
+                "--no-graph",
+                "-T",
+                "id.short(16)",
+            ),
             (str(tool), "debug", "snapshot"),
             (
                 str(tool),

@@ -638,7 +638,7 @@ export var PanelMultiView = class extends AssociatedToNode {
     let subviews = Array.from(this._viewStack.children);
     let viewCache = this.document.getElementById("appMenu-viewCache");
     for (let subview of subviews) {
-      viewCache.appendChild(subview);
+      viewCache.moveBefore(subview, null);
     }
   }
 

@@ -137,6 +137,16 @@ def find_npm_executable(min_version=NPM_MIN_VERSION):
     return find_executable("npm", min_version, True)
 
 
+def find_npx_executable(min_version=NPM_MIN_VERSION):
+    """Find the npx executable from the mozbuild directory.
+
+    Returns a tuple containing the path to an executable binary and a
+    version tuple. Both tuple entries will be None if an npx executable
+    could not be resolved.
+    """
+    return find_executable("npx", min_version, True)
+
+
 def find_executable(name, min_version, use_node_for_version_check=False):
     paths = find_node_paths()
     exe = which(name, path=paths)

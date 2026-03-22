@@ -41,7 +41,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.clearInvocations
 import org.mockito.Mockito.never
-import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.robolectric.Shadows.shadowOf
@@ -163,9 +162,7 @@ class FxaWebChannelFeatureTest {
         val controller: BuiltInWebExtensionController = mock()
 
         val tab = createTab("https://www.mozilla.org", id = "test-tab", engineSession = engineSession)
-        val store = spy(
-            BrowserStore(initialState = BrowserState(tabs = listOf(tab), selectedTabId = tab.id)),
-        )
+        val store = BrowserStore(initialState = BrowserState(tabs = listOf(tab), selectedTabId = tab.id))
 
         val webchannelFeature = FxaWebChannelFeature(null, engine, store, accountManager, serverConfig)
         webchannelFeature.extensionController = controller
@@ -1070,6 +1067,6 @@ class FxaWebChannelFeatureTest {
         whenever(port.senderUrl()).thenReturn("https://foo.bar/email")
         whenever(serverConfig.server).thenReturn(FxaServer.Custom("https://foo.bar"))
 
-        return spy(FxaWebChannelFeature(null, mock(), store, accountManager, serverConfig, fxaCapabilities))
+        return FxaWebChannelFeature(null, mock(), store, accountManager, serverConfig, fxaCapabilities)
     }
 }

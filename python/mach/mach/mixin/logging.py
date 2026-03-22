@@ -47,8 +47,12 @@ class LoggingMixin:
 
         .. code-block:: python
 
-            self.log(logging.DEBUG, 'login', {'username': 'johndoe'},
-                'User login: {username}')
+            self.log(
+                logging.DEBUG,
+                "login",
+                {"username": "johndoe"},
+                "User login: {username}",
+            )
         """
         self._logger.log(level, format_str, extra={"action": action, "params": params})
 

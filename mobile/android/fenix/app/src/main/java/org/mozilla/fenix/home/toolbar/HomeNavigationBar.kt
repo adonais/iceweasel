@@ -9,6 +9,7 @@ import android.content.Context
 import android.view.ViewGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,7 +19,6 @@ import mozilla.components.compose.browser.toolbar.NavigationBar
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Bottom
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
-import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.support.utils.KeyboardState
 import mozilla.components.support.utils.keyboardAsState
 import org.mozilla.fenix.R
@@ -45,7 +45,7 @@ class HomeNavigationBar(
 
     @Composable
     private fun DefaultNavigationBarContent() {
-        val uiState by toolbarStore.observeAsState(initialValue = toolbarStore.state) { it }
+        val uiState by toolbarStore.stateFlow.collectAsState()
         val toolbarGravity = remember(settings) {
             when (settings.shouldUseBottomToolbar) {
                 true -> Bottom

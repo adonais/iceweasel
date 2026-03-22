@@ -8,8 +8,8 @@
 // nsScrollbarFrame
 //
 
-#ifndef nsScrollbarFrame_h__
-#define nsScrollbarFrame_h__
+#ifndef nsScrollbarFrame_h_
+#define nsScrollbarFrame_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ScrollTypes.h"

@@ -8,9 +8,9 @@ import json
 import os
 import platform
 import ssl
-
-from six.moves import urllib
-from six.moves.urllib.parse import ParseResult, urlparse
+import urllib.parse
+import urllib.request
+from urllib.parse import ParseResult, urlparse
 
 from mozharness.base.errors import BaseErrorList
 from mozharness.base.log import FATAL, WARNING

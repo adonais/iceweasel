@@ -38,6 +38,7 @@ void CoalescedTouchData::Coalesce(const WidgetTouchEvent& aEvent,
                                   const uint64_t& aInputBlockId,
                                   const nsEventStatus& aApzResponse) {
   MOZ_ASSERT(aEvent.mMessage == eTouchMove);
+  MOZ_ASSERT(!aEvent.mFlags.mIsSynthesizedForTests);
   if (IsEmpty()) {
     CreateCoalescedTouchEvent(aEvent);
     mGuid = aGuid;
@@ -91,6 +92,7 @@ bool CoalescedTouchData::CanCoalesce(const WidgetTouchEvent& aEvent,
                                      const uint64_t& aInputBlockId,
                                      const nsEventStatus& aApzResponse) {
   MOZ_ASSERT(!IsEmpty());
+  MOZ_ASSERT(!mCoalescedInputEvent->mFlags.mIsSynthesizedForTests);
   if (mGuid != aGuid || mInputBlockId != aInputBlockId ||
       mCoalescedInputEvent->mModifiers != aEvent.mModifiers ||
       mCoalescedInputEvent->mInputSource != aEvent.mInputSource ||

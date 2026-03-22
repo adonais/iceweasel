@@ -1060,4 +1060,8 @@ open class DummyEngineSession : EngineSession() {
     fun notifyInternalObservers(block: Observer.() -> Unit) {
         notifyObservers(block)
     }
+
+    override fun processBackPressed(
+        onResult: (Boolean) -> Unit,
+    ) {}
 }

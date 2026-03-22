@@ -461,6 +461,11 @@ https_first_disabled = true
 
 ["browser_result_menu_general.js"]
 
+["browser_result_noTitle.js"]
+support-files = [
+  "no_title.html"
+]
+
 ["browser_result_onSelection.js"]
 
 ["browser_results_format_displayValue.js"]
@@ -672,11 +677,6 @@ skip-if = [
 
 ["browser_switchTab_inputHistory.js"]
 
-["browser_switchTab_noTitle.js"]
-support-files = [
-  "no_title.html"
-]
-
 ["browser_switchTab_notFoundPage.js"]
 
 ["browser_switchTab_override.js"]
@@ -755,10 +755,6 @@ tags = "search-telemetry"
 support-files = [
   "urlbarTelemetrySearchSuggestions.sjs",
   "urlbarTelemetrySearchSuggestions.xml",
-]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1775830
-  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1775830
 ]
 
 ["browser_urlbar_telemetry_autofill.js"]

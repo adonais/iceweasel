@@ -363,7 +363,9 @@ static const struct {
     {"goog-harmful-proto", "pha-4b"},
     {"goog-badbinurl-proto", "mwb-4b"},
     {"goog-downloadwhite-proto", "csdda-32b"},
+    {"goog-globalcache-proto", "gc-32b"},
     {"test-google5-malware-proto", "test-4b"},
+    {"test-globalcache-proto", "test-32b"},
 };
 
 static const struct {

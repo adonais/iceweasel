@@ -806,3 +806,5 @@ mozilla-detekt-rules:
     active: true
   MozillaUseLazyMonitored:
     active: true
+  NoSystemCurrentTimeMillis:
+    active: true

@@ -69,6 +69,50 @@ nsUrlClassifierTestUtils::MakeUpdateResponseV5(const nsACString& aName,
 }
 
 NS_IMETHODIMP
+nsUrlClassifierTestUtils::MakeUpdateResponseV5_32b(const nsACString& aName,
+                                                   const nsACString& aFullHash,
+                                                   nsACString& aResponse) {
+  if (NS_WARN_IF(aName.IsEmpty()) || NS_WARN_IF(aFullHash.Length() != 32)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  v5::BatchGetHashListsResponse response;
+
+  v5::HashList* hashList = response.add_hash_lists();
+
+  hashList->set_name("test-32b");
+  hashList->set_partial_update(false);
+  hashList->set_version("\x00\x00\x00\x01");
+
+  v5::RiceDeltaEncoded256Bit* riceDelta =
+      hashList->mutable_additions_thirty_two_bytes();
+
+  // Split the 32-byte hash into four 64-bit parts (big-endian).
+  const uint8_t* data =
+      reinterpret_cast<const uint8_t*>(aFullHash.BeginReading());
+  uint64_t part1 = BigEndian::readUint64(data);
+  uint64_t part2 = BigEndian::readUint64(data + 8);
+  uint64_t part3 = BigEndian::readUint64(data + 16);
+  uint64_t part4 = BigEndian::readUint64(data + 24);
+
+  riceDelta->set_first_value_first_part(part1);
+  riceDelta->set_first_value_second_part(part2);
+  riceDelta->set_first_value_third_part(part3);
+  riceDelta->set_first_value_fourth_part(part4);
+  riceDelta->set_rice_parameter(30);
+  riceDelta->set_entries_count(0);
+
+  std::string s;
+  response.SerializeToString(&s);
+
+  nsCString out(s.c_str(), s.size());
+
+  aResponse = out;
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsUrlClassifierTestUtils::MakeFindFullHashResponseV5(
     const nsACString& aFullHash, nsACString& aResponse) {
   if (NS_WARN_IF(aFullHash.IsEmpty())) {
@@ -128,6 +172,23 @@ nsUrlClassifierTestUtils::GenerateFullHash(const nsACString& aFragment,
   lookupHash.FromPlaintext(aFragment);
 
   lookupHash.ToString(aFullHash);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsUrlClassifierTestUtils::GenerateFullHashRaw(const nsACString& aFragment,
+                                              nsACString& aFullHash) {
+  if (NS_WARN_IF(aFragment.IsEmpty())) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  Completion lookupHash;
+  lookupHash.FromPlaintext(aFragment);
+
+  // Return raw bytes (32 bytes).
+  aFullHash.Assign(reinterpret_cast<const char*>(lookupHash.buf),
+                   Completion::sHashSize);
 
   return NS_OK;
 }

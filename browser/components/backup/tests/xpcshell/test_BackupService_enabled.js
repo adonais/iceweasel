@@ -73,9 +73,6 @@ add_task(async function test_archive_killswitch_enrollment() {
       );
       await cleanupExperiment();
     },
-    // Nimbus calls onUpdate if any experiments are running, meaning that the
-    // observer service will be notified twice, i.e. one spurious call.
-    startup: 0,
   });
 });
 
@@ -102,17 +99,13 @@ add_task(async function test_archive_policy() {
       storedDefault = defaults.getBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME);
       defaults.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, false);
       defaults.lockPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME);
-      return 0;
     },
     enable: () => {
       const defaults = Services.prefs.getDefaultBranch("");
       defaults.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, storedDefault);
       Services.prefs.unlockPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME);
       Services.prefs.setBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME, true);
-      return 0;
     },
-    // At startup, there wouldn't have been a spurious call.
-    startup: 0,
   });
 });
 
@@ -207,9 +200,6 @@ add_task(async function test_restore_killswitch_enrollment() {
       );
       await cleanupExperiment();
     },
-    // Nimbus calls onUpdate if any experiments are running, meaning that the
-    // observer service will be notified twice, i.e. one spurious call.
-    startup: 0,
   });
 });
 
@@ -234,16 +224,12 @@ add_task(async function test_restore_policy() {
       storedDefault = defaults.getBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME);
       defaults.setBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME, false);
       Services.prefs.lockPref(BACKUP_RESTORE_ENABLED_PREF_NAME);
-      return 0;
     },
     async enable() {
       Services.prefs.unlockPref(BACKUP_RESTORE_ENABLED_PREF_NAME);
       const defaults = Services.prefs.getDefaultBranch("");
       defaults.setBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME, storedDefault);
-      return 0;
     },
-    // At startup, there wouldn't have been a spurious call.
-    startup: 0,
   });
 });
 
@@ -259,7 +245,7 @@ add_task(async function test_restore_selectable_profiles() {
   });
 });
 
-async function archiveTemplate({ internalReason, disable, enable, startup }) {
+async function archiveTemplate({ internalReason, disable, enable }) {
   Services.telemetry.clearScalars();
   Services.fog.testResetFOG();
 
@@ -271,8 +257,8 @@ async function archiveTemplate({ internalReason, disable, enable, startup }) {
   let callback = () => calledCount++;
   Services.obs.addObserver(callback, "backup-service-status-updated");
 
-  let spurious = (await disable()) ?? 0;
-  Assert.equal(calledCount, 1 + spurious, "Observers were notified on disable");
+  await disable();
+  Assert.equal(calledCount, 1, "Observers were notified on disable");
   assertStatus("archive", bs.archiveEnabledStatus, false, internalReason);
 
   let backup = await bs.createBackup();
@@ -281,12 +267,8 @@ async function archiveTemplate({ internalReason, disable, enable, startup }) {
     "Creating a backup should fail when archiving is disabled."
   );
 
-  spurious += (await enable()) ?? 0;
-  Assert.equal(
-    calledCount,
-    2 + spurious,
-    "Observers were notified on re-enable"
-  );
+  await enable();
+  Assert.equal(calledCount, 2, "Observers were notified on re-enable");
   assertStatus("archive", bs.archiveEnabledStatus, true, "reenabled");
 
   backup = await bs.createBackup();
@@ -303,10 +285,10 @@ async function archiveTemplate({ internalReason, disable, enable, startup }) {
   bs.uninitStatusObservers();
 
   // Also check that it works at startup.
-  spurious += (startup ?? 0) + ((await disable()) ?? 0);
+  await disable();
   bs = new BackupService();
   bs.initStatusObservers();
-  Assert.equal(calledCount, 3 + spurious, "Observers were notified at startup");
+  Assert.equal(calledCount, 3, "Observers were notified at startup");
   assertStatus("archive", bs.archiveEnabledStatus, false, internalReason);
   await enable();
   bs.uninitStatusObservers();
@@ -314,7 +296,7 @@ async function archiveTemplate({ internalReason, disable, enable, startup }) {
   Services.obs.removeObserver(callback, "backup-service-status-updated");
 }
 
-async function restoreTemplate({ internalReason, disable, enable, startup }) {
+async function restoreTemplate({ internalReason, disable, enable }) {
   Services.telemetry.clearScalars();
   Services.fog.testResetFOG();
 
@@ -332,8 +314,8 @@ async function restoreTemplate({ internalReason, disable, enable, startup }) {
   let callback = () => calledCount++;
   Services.obs.addObserver(callback, "backup-service-status-updated");
 
-  let spurious = (await disable()) ?? 0;
-  Assert.equal(calledCount, 1 + spurious, "Observers were notified on disable");
+  await disable();
+  Assert.equal(calledCount, 1, "Observers were notified on disable");
   assertStatus("restore", bs.restoreEnabledStatus, false, internalReason);
 
   const recoveryDir = await IOUtils.createUniqueDirectory(
@@ -347,18 +329,15 @@ async function restoreTemplate({ internalReason, disable, enable, startup }) {
       null,
       false,
       PathUtils.profileDir,
-      recoveryDir
+      recoveryDir,
+      true
     ),
     /.*disabled.*/,
     "Recovery should throw when the restore is disabled."
   );
 
-  spurious += (await enable()) ?? 0;
-  Assert.equal(
-    calledCount,
-    2 + spurious,
-    "Observers were notified on re-enable"
-  );
+  await enable();
+  Assert.equal(calledCount, 2, "Observers were notified on re-enable");
   assertStatus("restore", bs.restoreEnabledStatus, true, "reenabled");
 
   let recoveredProfile = await bs.recoverFromBackupArchive(
@@ -366,7 +345,8 @@ async function restoreTemplate({ internalReason, disable, enable, startup }) {
     null,
     false,
     PathUtils.profileDir,
-    recoveryDir
+    recoveryDir,
+    true
   );
   Assert.ok(
     recoveredProfile,
@@ -380,10 +360,10 @@ async function restoreTemplate({ internalReason, disable, enable, startup }) {
   bs.uninitStatusObservers();
 
   // Also check that it works at startup.
-  spurious += (startup ?? 0) + ((await disable()) ?? 0);
+  await disable();
   bs = new BackupService();
   bs.initStatusObservers();
-  Assert.equal(calledCount, 3 + spurious, "Observers were notified at startup");
+  Assert.equal(calledCount, 3, "Observers were notified at startup");
   assertStatus("restore", bs.restoreEnabledStatus, false, internalReason);
   await enable();
   bs.uninitStatusObservers();

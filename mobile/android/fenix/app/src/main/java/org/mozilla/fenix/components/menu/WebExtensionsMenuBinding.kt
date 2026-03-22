@@ -95,14 +95,6 @@ class WebExtensionsMenuBinding(
                     )
                 }
 
-                if (webExtensionMenuItems.isEmpty() && eligibleExtensions.filter { !it.isBuiltIn }
-                        .all { !it.enabled }
-                ) {
-                    menuStore.dispatch(MenuAction.UpdateShowDisabledExtensionsOnboarding(true))
-                } else {
-                    menuStore.dispatch(MenuAction.UpdateShowDisabledExtensionsOnboarding(false))
-                }
-
                 menuStore.dispatch(
                     MenuAction.UpdateWebExtensionBrowserMenuItems(webExtensionMenuItems),
                 )

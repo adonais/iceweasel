@@ -4,6 +4,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#ifndef GFX_LAYERS_IPC_SHAREDPLANARYCBCRIMAGE_H_
+#define GFX_LAYERS_IPC_SHAREDPLANARYCBCRIMAGE_H_
+
 #include <stdint.h>             // for uint8_t, uint32_t
 #include "ImageContainer.h"     // for PlanarYCbCrImage, etc
 #include "mozilla/RefPtr.h"     // for RefPtr
@@ -61,3 +64,5 @@ class SharedPlanarYCbCrImage : public PlanarYCbCrImage {
 }  // namespace mozilla
 
 #endif
+
+#endif  // GFX_LAYERS_IPC_SHAREDPLANARYCBCRIMAGE_H_

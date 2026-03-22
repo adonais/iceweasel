@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_RootedDictionary_h__
-#define mozilla_dom_RootedDictionary_h__
+#ifndef mozilla_dom_RootedDictionary_h_
+#define mozilla_dom_RootedDictionary_h_
 
 #include "jsapi.h"
 #include "mozilla/dom/Nullable.h"
@@ -38,4 +38,4 @@ class MOZ_RAII NullableRootedDictionary final : public Nullable<T>,
 
 }  // namespace mozilla::dom
 
-#endif /* mozilla_dom_RootedDictionary_h__ */
+#endif /* mozilla_dom_RootedDictionary_h_ */

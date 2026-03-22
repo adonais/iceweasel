@@ -105,6 +105,9 @@ internal class FakeCreditCardsAddressesStorage : CreditCardsAddressesStorage {
     }
 
     override suspend fun getAllCreditCards(): List<CreditCard> = creditCards
+    override suspend fun countAllCreditCards(): Long {
+        return creditCards.count().toLong()
+    }
 
     override suspend fun deleteCreditCard(guid: String): Boolean {
         return creditCards.remove(creditCards.find { it.guid == guid })
@@ -125,6 +128,9 @@ internal class FakeCreditCardsAddressesStorage : CreditCardsAddressesStorage {
 
     override suspend fun getAllAddresses(): List<Address> {
         return addresses
+    }
+    override suspend fun countAllAddresses(): Long {
+        return addresses.count().toLong()
     }
 
     override suspend fun updateAddress(guid: String, address: UpdatableAddressFields) {

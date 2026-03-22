@@ -7,6 +7,7 @@
 // HttpLog.h should generally be included first
 #include "HttpLog.h"
 
+#include "nsHttpConnectionMgr.h"
 #include "nsHttpHandler.h"
 #include "Http3StreamTunnel.h"
 #include "Http3Session.h"
@@ -267,27 +268,9 @@ nsresult Http3TransportLayer::OutputStreamTunnel::OnSocketReady(
   nsresult rv = NS_OK;
   if (callback) {
     rv = callback->OnOutputStreamReady(this);
-    MaybeSetRequestDone(callback);
   }
 
   return rv;
-}
-
-void Http3TransportLayer::OutputStreamTunnel::MaybeSetRequestDone(
-    nsIOutputStreamCallback* aCallback) {
-  RefPtr<nsHttpConnection> conn = do_QueryObject(aCallback);
-  if (!conn) {
-    return;
-  }
-
-  RefPtr<Http3StreamTunnel> tunnel = mTransport->GetStream();
-  if (!tunnel) {
-    return;
-  }
-
-  if (conn->RequestDone()) {
-    tunnel->SetRequestDone();
-  }
 }
 
 NS_IMETHODIMP
@@ -491,6 +474,8 @@ FWD_H3ST_ADDREF(GetScriptableSelfAddr, nsINetAddr);
 FWD_H3ST_PTR(GetConnectionFlags, uint32_t);
 FWD_H3ST(SetConnectionFlags, uint32_t);
 FWD_H3ST(SetIsPrivate, bool);
+FWD_H3ST(SetIsTRRConnection, bool);
+FWD_H3ST_PTR(GetIsTRRConnection, bool);
 FWD_H3ST_PTR(GetTlsFlags, uint32_t);
 FWD_H3ST(SetTlsFlags, uint32_t);
 FWD_H3ST_PTR(GetRecvBufferSize, uint32_t);
@@ -767,10 +752,6 @@ nsresult Http3StreamTunnel::OnWriteSegment(char* buf, uint32_t count,
   return Http3Stream::OnWriteSegment(buf, count, countWritten);
 }
 
-void Http3StreamTunnel::SetRequestDone() {
-  LOG(("Http3StreamTunnel::SetRequestDone %p", this));
-}
-
 void Http3StreamTunnel::HasDataToWrite() {
   mSession->StreamHasDataToWrite(this);
 }
@@ -804,7 +785,7 @@ already_AddRefed<nsHttpConnection> Http3StreamTunnel::CreateHttpConnection(
 }
 
 void Http3StreamTunnel::CleanupStream(nsresult aReason) {
-  if (mSession) {
+  if (mSession && !mClosed) {
     LOG(("Http3StreamTunnel::CleanupStream %p", this));
     mSession->CloseStream(this, aReason);
   }

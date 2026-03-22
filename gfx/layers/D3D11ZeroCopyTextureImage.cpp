@@ -20,6 +20,13 @@ namespace layers {
 
 using namespace gfx;
 
+void ZeroCopyUsageInfo::DisableZeroCopyNV12Texture(DisableReason aReason) {
+  mSupportsZeroCopyNV12Texture = false;
+  if (aReason == DisableReason::UsingTooManyFrames) {
+    gfxCriticalNoteOnce << "Disable zero copy by using too many video frames";
+  }
+}
+
 /* static */
 RefPtr<IMFSampleWrapper> IMFSampleWrapper::Create(IMFSample* aVideoSample) {
   RefPtr<IMFSampleWrapper> wrapper = new IMFSampleWrapper(aVideoSample);
@@ -58,7 +65,7 @@ D3D11ZeroCopyTextureImage::~D3D11ZeroCopyTextureImage() {
 }
 
 void D3D11ZeroCopyTextureImage::AllocateTextureClient(
-    KnowsCompositor* aKnowsCompositor, RefPtr<ZeroCopyUsageInfo> aUsageInfo,
+    KnowsCompositor* aKnowsCompositor, ZeroCopyUsageInfo* aUsageInfo,
     const RefPtr<FenceD3D11> aWriteFence) {
   if (aWriteFence) {
     aWriteFence->IncrementAndSignal();

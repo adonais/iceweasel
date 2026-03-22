@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsINode_h___
-#define nsINode_h___
+#ifndef nsINode_h_
+#define nsINode_h_
 
 #include <iosfwd>
 
@@ -118,6 +118,7 @@ struct DOMPointInit;
 struct GetRootNodeOptions;
 enum class AllowRangeCrossShadowBoundary : bool;  // defined in AbstractRange.h
 enum class CallerType : uint32_t;
+struct AriaNotificationOptions;
 }  // namespace dom
 }  // namespace mozilla
 
@@ -799,6 +800,11 @@ class nsINode : public mozilla::dom::EventTarget {
    */
   Document* OwnerDoc() const MOZ_NONNULL_RETURN {
     return mNodeInfo->GetDocument();
+  }
+
+  // Returns our owning NodeInfo manager.
+  nsNodeInfoManager* NodeInfoManager() const {
+    return mNodeInfo->NodeInfoManager();
   }
 
   /**
@@ -1528,6 +1534,13 @@ class nsINode : public mozilla::dom::EventTarget {
     mozilla::UniquePtr<mozilla::LinkedList<mozilla::dom::AbstractRange>>
         mClosestCommonInclusiveAncestorRanges;
   };
+
+  /**
+   * Helper to allocate slot memory from the appropriate arena,
+   * or from the heap if no arena is available.
+   * Always returns allocated memory.
+   */
+  void* AllocateSlots(size_t aSize);
 
   /**
    * Functions for managing flags and slots
@@ -2631,7 +2644,7 @@ class nsINode : public mozilla::dom::EventTarget {
   }
 #define TOUCH_EVENT EVENT
 #define DOCUMENT_ONLY_EVENT EVENT
-#include "mozilla/EventNameList.h"
+#include "mozilla/EventNameList.inc"
 #undef DOCUMENT_ONLY_EVENT
 #undef TOUCH_EVENT
 #undef EVENT
@@ -2639,6 +2652,9 @@ class nsINode : public mozilla::dom::EventTarget {
   NodeSelectorFlags GetSelectorFlags() const {
     return static_cast<NodeSelectorFlags>(mSelectorFlags.Get());
   }
+
+  void AriaNotify(const nsAString& aAnnouncement,
+                  const mozilla::dom::AriaNotificationOptions& aOptions);
 
  protected:
   static bool Traverse(nsINode* tmp, nsCycleCollectionTraversalCallback& cb);
@@ -2790,4 +2806,4 @@ inline nsISupports* ToSupports(nsINode* aPointer) { return aPointer; }
 #define NS_IMPL_FROMNODE_HTML_WITH_TAG(_class, _tag) \
   NS_IMPL_FROMNODE_WITH_TAG(_class, kNameSpaceID_XHTML, _tag)
 
-#endif /* nsINode_h___ */
+#endif /* nsINode_h_ */

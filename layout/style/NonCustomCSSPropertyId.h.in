@@ -63,7 +63,7 @@ Hash<NonCustomCSSPropertyId>(const NonCustomCSSPropertyId& aValue)
 enum nsCSSFontDesc {
   eCSSFontDesc_UNKNOWN = -1,
 #define CSS_FONT_DESC(name_, method_) eCSSFontDesc_##method_,
-#include "nsCSSFontDescList.h"
+#include "nsCSSFontDescList.inc"
 #undef CSS_FONT_DESC
   eCSSFontDesc_COUNT
 };
@@ -73,7 +73,7 @@ enum nsCSSFontDesc {
 enum nsCSSCounterDesc {
   eCSSCounterDesc_UNKNOWN = -1,
 #define CSS_COUNTER_DESC(name_, method_) eCSSCounterDesc_##method_,
-#include "nsCSSCounterDescList.h"
+#include "nsCSSCounterDescList.inc"
 #undef CSS_COUNTER_DESC
   eCSSCounterDesc_COUNT
 };

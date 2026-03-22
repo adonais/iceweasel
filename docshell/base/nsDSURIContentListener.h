@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsDSURIContentListener_h__
-#define nsDSURIContentListener_h__
+#ifndef nsDSURIContentListener_h_
+#define nsDSURIContentListener_h_
 
 #include "nsCOMPtr.h"
 #include "nsIURIContentListener.h"
@@ -98,4 +98,4 @@ class nsDSURIContentListener final : public nsIURIContentListener,
   nsIURIContentListener* mParentContentListener;
 };
 
-#endif /* nsDSURIContentListener_h__ */
+#endif /* nsDSURIContentListener_h_ */

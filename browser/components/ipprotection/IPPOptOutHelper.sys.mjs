@@ -2,39 +2,43 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   IPProtectionService:
     "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
 const OPTED_OUT_PREF = "browser.ipProtection.optedOut";
+const WIDGET_ID = "ipprotection-button";
 
 /**
  * This class monitors the optedOut pref and if it sees an opted-out state, it
- * sets the state on IPProtectionService
+ * sets the state on IPProtectionService and removes the toolbar widget.
  */
 class IPPOptedOutHelperSingleton {
-  constructor() {
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "optedOut",
-      OPTED_OUT_PREF,
-      false,
-      () => {
-        lazy.IPProtectionService.updateState();
-      }
-    );
+  init() {
+    Services.prefs.addObserver(OPTED_OUT_PREF, this);
   }
 
-  init() {}
-
-  uninit() {}
+  uninit() {
+    Services.prefs.removeObserver(OPTED_OUT_PREF, this);
+  }
 
   initOnStartupCompleted() {}
+
+  get optedOut() {
+    return Services.prefs.getBoolPref(OPTED_OUT_PREF, false);
+  }
+
+  observe(_subject, _topic, _data) {
+    lazy.IPProtectionService.updateState();
+    if (this.optedOut) {
+      lazy.CustomizableUI.removeWidgetFromArea(WIDGET_ID);
+    }
+  }
 }
 
 const IPPOptOutHelper = new IPPOptedOutHelperSingleton();

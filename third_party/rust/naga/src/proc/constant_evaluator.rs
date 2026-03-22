@@ -979,7 +979,7 @@ impl<'a> ConstantEvaluator<'a> {
     /// constant expression arena.
     ///
     /// Report errors according to WGSL's rules for constant evaluation.
-    pub fn for_wgsl_module(
+    pub const fn for_wgsl_module(
         module: &'a mut crate::Module,
         global_expression_kind_tracker: &'a mut ExpressionKindTracker,
         layouter: &'a mut crate::proc::Layouter,
@@ -1001,7 +1001,7 @@ impl<'a> ConstantEvaluator<'a> {
     /// constant expression arena.
     ///
     /// Report errors according to GLSL's rules for constant evaluation.
-    pub fn for_glsl_module(
+    pub const fn for_glsl_module(
         module: &'a mut crate::Module,
         global_expression_kind_tracker: &'a mut ExpressionKindTracker,
         layouter: &'a mut crate::proc::Layouter,
@@ -1014,7 +1014,7 @@ impl<'a> ConstantEvaluator<'a> {
         )
     }
 
-    fn for_module(
+    const fn for_module(
         behavior: Behavior<'a>,
         module: &'a mut crate::Module,
         global_expression_kind_tracker: &'a mut ExpressionKindTracker,
@@ -1035,7 +1035,7 @@ impl<'a> ConstantEvaluator<'a> {
     /// expression arena.
     ///
     /// Report errors according to WGSL's rules for constant evaluation.
-    pub fn for_wgsl_function(
+    pub const fn for_wgsl_function(
         module: &'a mut crate::Module,
         expressions: &'a mut Arena<Expression>,
         local_expression_kind_tracker: &'a mut ExpressionKindTracker,
@@ -1068,7 +1068,7 @@ impl<'a> ConstantEvaluator<'a> {
     /// expression arena.
     ///
     /// Report errors according to GLSL's rules for constant evaluation.
-    pub fn for_glsl_function(
+    pub const fn for_glsl_function(
         module: &'a mut crate::Module,
         expressions: &'a mut Arena<Expression>,
         local_expression_kind_tracker: &'a mut ExpressionKindTracker,
@@ -1091,7 +1091,7 @@ impl<'a> ConstantEvaluator<'a> {
         }
     }
 
-    pub fn to_ctx(&self) -> crate::proc::GlobalCtx<'_> {
+    pub const fn to_ctx(&self) -> crate::proc::GlobalCtx<'_> {
         crate::proc::GlobalCtx {
             types: self.types,
             constants: self.constants,
@@ -1268,7 +1268,11 @@ impl<'a> ConstantEvaluator<'a> {
                 let base = self.check_and_get(base)?;
                 let index = self.check_and_get(index)?;
 
-                self.access(base, self.constant_index(index)?, span)
+                let index_val: u32 = self
+                    .to_ctx()
+                    .get_const_val_from(index, self.expressions)
+                    .map_err(|_| ConstantEvaluatorError::InvalidAccessIndexTy)?;
+                self.access(base, index_val as usize, span)
             }
             Expression::Swizzle {
                 size,
@@ -1665,7 +1669,13 @@ impl<'a> ConstantEvaluator<'a> {
 
             // computational
             crate::MathFunction::Sign => {
-                component_wise_signed!(self, span, [arg], |e| { Ok([e.signum()]) })
+                component_wise_signed!(self, span, [arg], |e| {
+                    Ok([if e.is_zero() {
+                        Zero::zero()
+                    } else {
+                        e.signum()
+                    }])
+                })
             }
             crate::MathFunction::Fma => {
                 component_wise_float!(
@@ -1787,7 +1797,12 @@ impl<'a> ConstantEvaluator<'a> {
                     F: core::ops::Mul<F>,
                     F: num_traits::Float + iter::Sum,
                 {
-                    e.iter().map(|&ei| ei * ei).sum::<F>().sqrt()
+                    if e.len() == 1 {
+                        // Avoids possible overflow in squaring
+                        e[0].abs()
+                    } else {
+                        e.iter().map(|&ei| ei * ei).sum::<F>().sqrt()
+                    }
                 }
 
                 let result = match_literal_vector!(match e1 => Literal {
@@ -1808,12 +1823,17 @@ impl<'a> ConstantEvaluator<'a> {
                     F: core::ops::Mul<F>,
                     F: num_traits::Float + iter::Sum + core::ops::Sub,
                 {
-                    a.iter()
-                        .zip(b.iter())
-                        .map(|(&aa, &bb)| aa - bb)
-                        .map(|ei| ei * ei)
-                        .sum::<F>()
-                        .sqrt()
+                    if a.len() == 1 {
+                        // Avoids possible overflow in squaring
+                        (a[0] - b[0]).abs()
+                    } else {
+                        a.iter()
+                            .zip(b.iter())
+                            .map(|(&aa, &bb)| aa - bb)
+                            .map(|ei| ei * ei)
+                            .sum::<F>()
+                            .sqrt()
+                    }
                 }
                 let result = match_literal_vector!(match (e1, e2) => Literal {
                     Float => |e1, e2| { float_distance(e1, e2) },
@@ -2113,24 +2133,6 @@ impl<'a> ConstantEvaluator<'a> {
                     .ok_or(ConstantEvaluatorError::InvalidAccessIndex)
             }
             _ => Err(ConstantEvaluatorError::InvalidAccessBase),
-        }
-    }
-
-    fn constant_index(&self, expr: Handle<Expression>) -> Result<usize, ConstantEvaluatorError> {
-        match self.expressions[expr] {
-            Expression::ZeroValue(ty)
-                if matches!(
-                    self.types[ty].inner,
-                    TypeInner::Scalar(crate::Scalar {
-                        kind: ScalarKind::Uint,
-                        ..
-                    })
-                ) =>
-            {
-                Ok(0)
-            }
-            Expression::Literal(Literal::U32(index)) => Ok(index as usize),
-            _ => Err(ConstantEvaluatorError::InvalidAccessIndexTy),
         }
     }
 
@@ -2589,6 +2591,10 @@ impl<'a> ConstantEvaluator<'a> {
         let left = self.eval_zero_value_and_splat(left, span)?;
         let right = self.eval_zero_value_and_splat(right, span)?;
 
+        // Note: in most cases constant evaluation checks for overflow, but for
+        // i32/u32, it uses wrapping arithmetic. See
+        // <https://gpuweb.github.io/gpuweb/wgsl/#integer-types>.
+
         let expr = match (&self.expressions[left], &self.expressions[right]) {
             (&Expression::Literal(left_value), &Expression::Literal(right_value)) => {
                 let literal = match op {
@@ -2637,15 +2643,9 @@ impl<'a> ConstantEvaluator<'a> {
                             _ => return Err(ConstantEvaluatorError::InvalidBinaryOpArgs),
                         }),
                         (Literal::U32(a), Literal::U32(b)) => Literal::U32(match op {
-                            BinaryOperator::Add => a.checked_add(b).ok_or_else(|| {
-                                ConstantEvaluatorError::Overflow("addition".into())
-                            })?,
-                            BinaryOperator::Subtract => a.checked_sub(b).ok_or_else(|| {
-                                ConstantEvaluatorError::Overflow("subtraction".into())
-                            })?,
-                            BinaryOperator::Multiply => a.checked_mul(b).ok_or_else(|| {
-                                ConstantEvaluatorError::Overflow("multiplication".into())
-                            })?,
+                            BinaryOperator::Add => a.wrapping_add(b),
+                            BinaryOperator::Subtract => a.wrapping_sub(b),
+                            BinaryOperator::Multiply => a.wrapping_mul(b),
                             BinaryOperator::Divide => a
                                 .checked_div(b)
                                 .ok_or(ConstantEvaluatorError::DivisionByZero)?,

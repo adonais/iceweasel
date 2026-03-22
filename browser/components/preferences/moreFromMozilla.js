@@ -170,7 +170,7 @@ var gMoreFromMozillaPane = {
 
     products.push({
       id: "mdn",
-      title_string_id: "more-from-moz-mdn-title",
+      title_string_id: "more-from-moz-mdn-title2",
       description_string_id: "more-from-moz-mdn-description",
       region: "global",
       button: {

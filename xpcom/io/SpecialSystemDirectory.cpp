@@ -111,6 +111,8 @@ static nsresult GetRegWindowsAppDataFolder(bool aLocal, nsIFile** aFile) {
   return NS_NewLocalFile(nsDependentString(path, len), aFile);
 }
 
+static const auto kOneDrivePersonalSubkey{u"Personal"_ns};
+
 static nsresult GetOneDriveSyncRoot(const nsAString& aSubkey, nsIFile** aFolder,
                                     nsIWindowsRegKey* aRegistrySvc = nullptr) {
   nsresult rv = NS_OK;
@@ -124,6 +126,14 @@ static nsresult GetOneDriveSyncRoot(const nsAString& aSubkey, nsIFile** aFolder,
   rv = registrySvc->Open(nsIWindowsRegKey::ROOT_KEY_CURRENT_USER, path,
                          nsIWindowsRegKey::ACCESS_READ);
   NS_ENSURE_SUCCESS(rv, rv);
+  if (aSubkey.Equals(kOneDrivePersonalSubkey)) {
+    auto isUserLoggedIn{false};
+    rv = registrySvc->HasValue(u"cid"_ns, &isUserLoggedIn);
+    NS_ENSURE_SUCCESS(rv, rv);
+    if (!isUserLoggedIn) {
+      return NS_ERROR_FILE_NOT_FOUND;
+    }
+  }
   bool hasUserFolder = false;
   rv = registrySvc->HasValue(u"UserFolder"_ns, &hasUserFolder);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -585,7 +595,7 @@ nsresult GetSpecialSystemDirectory(SystemDirectories aSystemSystemDirectory,
       return GetKnownFolder(FOLDERID_Documents, aFile);
     }
     case Win_OneDrivePersonal: {
-      return GetOneDriveSyncRoot(u"Personal"_ns, aFile);
+      return GetOneDriveSyncRoot(kOneDrivePersonalSubkey, aFile);
     }
 #endif  // XP_WIN
 

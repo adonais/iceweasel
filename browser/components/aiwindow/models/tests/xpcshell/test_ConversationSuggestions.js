@@ -32,9 +32,9 @@ const { sinon } = ChromeUtils.importESModule(
 /**
  * Constants for preference keys and test values
  */
-const PREF_API_KEY = "browser.aiwindow.apiKey";
-const PREF_ENDPOINT = "browser.aiwindow.endpoint";
-const PREF_MODEL = "browser.aiwindow.model";
+const PREF_API_KEY = "browser.smartwindow.apiKey";
+const PREF_ENDPOINT = "browser.smartwindow.endpoint";
+const PREF_MODEL = "browser.smartwindow.model";
 const PREF_HISTORY_ENABLED = "places.history.enabled";
 const PREF_PRIVATE_BROWSING = "browser.privatebrowsing.autostart";
 
@@ -502,24 +502,24 @@ add_task(async function test_generateConversationStartersSidebar_happy_path() {
     // Verify the prompt content
     const callArgs = fakeEngine.run.firstCall.args[0];
     Assert.equal(
-      callArgs.messages.length,
+      callArgs.args.length,
       2,
       "run should be called with 2 messages"
     );
     Assert.ok(
-      callArgs.messages[1].content.includes(
+      callArgs.args[1].content.includes(
         '{"title":"Current Tab","url":"https://current.example.com"}'
       ),
       "Prompt should include current tab info"
     );
     Assert.ok(
-      callArgs.messages[1].content.includes(
+      callArgs.args[1].content.includes(
         '{"title":"Tab 2","url":"https://tab2.example.com"}'
       ),
       "Prompt should include other tab info"
     );
     Assert.ok(
-      callArgs.messages[1].content.includes(
+      callArgs.args[1].content.includes(
         "\n- Memory summary 1\n- Memory summary 2"
       ),
       "Prompt should include memory summaries"
@@ -583,24 +583,24 @@ add_task(
       // Verify the prompt content
       const callArgs = fakeEngine.run.firstCall.args[0];
       Assert.equal(
-        callArgs.messages.length,
+        callArgs.args.length,
         2,
         "run should be called with 2 messages"
       );
       Assert.ok(
-        callArgs.messages[1].content.includes(
+        callArgs.args[1].content.includes(
           '{"title":"Current Tab","url":"https://current.example.com"}'
         ),
         "Prompt should include current tab info"
       );
       Assert.ok(
-        callArgs.messages[1].content.includes(
+        callArgs.args[1].content.includes(
           '{"title":"Tab 2","url":"https://tab2.example.com"}'
         ),
         "Prompt should include other tab info"
       );
       Assert.ok(
-        !callArgs.messages[1].content.includes(
+        !callArgs.args[1].content.includes(
           "\n- Memory summary 1\n- Memory summary 2"
         ),
         "Prompt should not include memory summaries"
@@ -665,24 +665,24 @@ add_task(
       // Verify the prompt content
       const callArgs = fakeEngine.run.firstCall.args[0];
       Assert.equal(
-        callArgs.messages.length,
+        callArgs.args.length,
         2,
         "run should be called with 2 messages"
       );
       Assert.ok(
-        callArgs.messages[1].content.includes(
+        callArgs.args[1].content.includes(
           '{"title":"Current Tab","url":"https://current.example.com"}'
         ),
         "Prompt should include current tab info"
       );
       Assert.ok(
-        callArgs.messages[1].content.includes(
+        callArgs.args[1].content.includes(
           '{"title":"Tab 2","url":"https://tab2.example.com"}'
         ),
         "Prompt should include other tab info"
       );
       Assert.ok(
-        !callArgs.messages[1].content.includes("\nUser Memories:\n"),
+        !callArgs.args[1].content.includes("\nUser Memories:\n"),
         "Prompt shouldn't include user memories block"
       );
 
@@ -741,20 +741,20 @@ add_task(async function test_generateConversationStartersSidebar_no_tabs() {
     // Verify the prompt content
     const callArgs = fakeEngine.run.firstCall.args[0];
     Assert.equal(
-      callArgs.messages.length,
+      callArgs.args.length,
       2,
       "run should be called with 2 messages"
     );
     Assert.ok(
-      callArgs.messages[1].content.includes("\nNo current tab\n"),
+      callArgs.args[1].content.includes("\nNo current tab\n"),
       "Prompt should indicate no current tab"
     );
     Assert.ok(
-      callArgs.messages[1].content.includes("\nNo tabs available\n"),
+      callArgs.args[1].content.includes("\nNo tabs available\n"),
       "Prompt should indicate no tabs available"
     );
     Assert.ok(
-      callArgs.messages[1].content.includes(
+      callArgs.args[1].content.includes(
         "\n- Memory summary 1\n- Memory summary 2"
       ),
       "Prompt should include memory summaries"
@@ -816,22 +816,22 @@ add_task(async function test_generateConversationStartersSidebar_one_tab() {
     // Verify the prompt content
     const callArgs = fakeEngine.run.firstCall.args[0];
     Assert.equal(
-      callArgs.messages.length,
+      callArgs.args.length,
       2,
       "run should be called with 2 messages"
     );
     Assert.ok(
-      callArgs.messages[1].content.includes(
+      callArgs.args[1].content.includes(
         '\n{"title":"Only Tab","url":"https://only.example.com"}'
       ),
       "Prompt should include current tab info"
     );
     Assert.ok(
-      callArgs.messages[1].content.includes("\nOnly current tab is open\n"),
+      callArgs.args[1].content.includes("\nOnly current tab is open\n"),
       "Prompt should indicate only current tab is open"
     );
     Assert.ok(
-      callArgs.messages[1].content.includes(
+      callArgs.args[1].content.includes(
         "\n- Memory summary 1\n- Memory summary 2"
       ),
       "Prompt should include memory summaries"
@@ -929,7 +929,7 @@ add_task(
 
       const callArgs = fakeEngine.run.firstCall.args[0];
       Assert.ok(
-        callArgs.messages[1].content.includes(
+        callArgs.args[1].content.includes(
           "You can do this and cannot do that."
         ),
         "Prompt should include assistant limitations from remote settings"

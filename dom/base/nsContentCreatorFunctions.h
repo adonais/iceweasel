@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsContentCreatorFunctions_h__
-#define nsContentCreatorFunctions_h__
+#ifndef nsContentCreatorFunctions_h_
+#define nsContentCreatorFunctions_h_
 
 #include "mozilla/dom/FromParser.h"
 #include "nsCOMPtr.h"
@@ -72,4 +72,4 @@ nsresult NS_NewSVGElement(mozilla::dom::Element** aResult,
                           already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
                           mozilla::dom::FromParser aFromParser);
 
-#endif  // nsContentCreatorFunctions_h__
+#endif  // nsContentCreatorFunctions_h_

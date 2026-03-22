@@ -66,7 +66,6 @@ win32-embedded-uniffi-bindgen:
         platform: win32/opt
     run:
         arguments: ['i686-pc-windows-msvc']
-        toolchain-artifact: public/build/embedded-uniffi-bindgen.zip
     attributes:
         build_platform: win32-embedded-uniffi-bindgen
     fetches:
@@ -81,7 +80,6 @@ win64-aarch64-embedded-uniffi-bindgen:
         platform: windows2012-aarch64/opt
     run:
         arguments: ['aarch64-pc-windows-msvc']
-        toolchain-artifact: public/build/embedded-uniffi-bindgen.zip
     attributes:
         build_platform: win64-aarch64-embedded-uniffi-bindgen
     fetches:
@@ -96,7 +94,6 @@ win64-embedded-uniffi-bindgen:
         platform: win64/opt
     run:
         arguments: ['x86_64-pc-windows-msvc']
-        toolchain-artifact: public/build/embedded-uniffi-bindgen.zip
     attributes:
         build_platform: win64-embedded-uniffi-bindgen
     fetches:

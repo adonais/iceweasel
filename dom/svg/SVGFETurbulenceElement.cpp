@@ -18,10 +18,10 @@ using namespace mozilla::gfx;
 namespace mozilla::dom {
 
 // Stitch Options
-static const unsigned short SVG_STITCHTYPE_STITCH = 1;
-static const unsigned short SVG_STITCHTYPE_NOSTITCH = 2;
+constexpr uint16_t SVG_STITCHTYPE_STITCH = 1;
+constexpr uint16_t SVG_STITCHTYPE_NOSTITCH = 2;
 
-static const int32_t MAX_OCTAVES = 10;
+static constexpr int32_t MAX_OCTAVES = 10;
 
 JSObject* SVGFETurbulenceElement::WrapNode(JSContext* aCx,
                                            JS::Handle<JSObject*> aGivenProto) {
@@ -32,7 +32,7 @@ SVGElement::NumberInfo SVGFETurbulenceElement::sNumberInfo[1] = {
     {nsGkAtoms::seed, 0}};
 
 SVGElement::NumberPairInfo SVGFETurbulenceElement::sNumberPairInfo[1] = {
-    {nsGkAtoms::baseFrequency, 0, 0}};
+    {nsGkAtoms::baseFrequency, 0}};
 
 SVGElement::IntegerInfo SVGFETurbulenceElement::sIntegerInfo[1] = {
     {nsGkAtoms::numOctaves, 1}};
@@ -64,13 +64,13 @@ NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGFETurbulenceElement)
 already_AddRefed<DOMSVGAnimatedNumber>
 SVGFETurbulenceElement::BaseFrequencyX() {
   return mNumberPairAttributes[BASE_FREQ].ToDOMAnimatedNumber(
-      SVGAnimatedNumberPair::eFirst, this);
+      SVGAnimatedNumberPairWhichOne::First, this);
 }
 
 already_AddRefed<DOMSVGAnimatedNumber>
 SVGFETurbulenceElement::BaseFrequencyY() {
   return mNumberPairAttributes[BASE_FREQ].ToDOMAnimatedNumber(
-      SVGAnimatedNumberPair::eSecond, this);
+      SVGAnimatedNumberPairWhichOne::Second, this);
 }
 
 already_AddRefed<DOMSVGAnimatedInteger> SVGFETurbulenceElement::NumOctaves() {
@@ -95,9 +95,9 @@ FilterPrimitiveDescription SVGFETurbulenceElement::GetPrimitiveDescription(
     const nsTArray<bool>& aInputsAreTainted,
     nsTArray<RefPtr<SourceSurface>>& aInputImages) {
   float fX = mNumberPairAttributes[BASE_FREQ].GetAnimValue(
-      SVGAnimatedNumberPair::eFirst);
+      SVGAnimatedNumberPairWhichOne::First);
   float fY = mNumberPairAttributes[BASE_FREQ].GetAnimValue(
-      SVGAnimatedNumberPair::eSecond);
+      SVGAnimatedNumberPairWhichOne::Second);
   float seed = mNumberAttributes[OCTAVES].GetAnimValue();
   uint32_t octaves =
       std::clamp(mIntegerAttributes[OCTAVES].GetAnimValue(), 0, MAX_OCTAVES);

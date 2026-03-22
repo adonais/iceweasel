@@ -5,6 +5,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 DIRS += ["build", "decoders", "encoders", "remote"]
+
+if CONFIG["MOZ_JXL"]:
+    DIRS += ["rust/jxl"]
+
 TEST_DIRS += ["test/gtest"]
 
 if CONFIG["FUZZING_INTERFACES"]:
@@ -64,8 +68,10 @@ EXPORTS.mozilla.image += [
     "ICOFileHeaders.h",
     "ImageMemoryReporter.h",
     "ImageUtils.h",
+    "PlaybackType.h",
     "Resolution.h",
     "SourceBuffer.h",
+    "SurfaceCache.h",
     "SurfaceFlags.h",
     "WebRenderImageProvider.h",
 ]

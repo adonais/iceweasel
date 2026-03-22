@@ -760,7 +760,7 @@ bool CodeGeneratorShared::createNativeToBytecodeScriptList(
     // Add script from current tree.
     bool found = false;
     for (uint32_t i = 0; i < scripts.length(); i++) {
-      if (scripts[i].sourceAndExtent.matches(tree->script())) {
+      if (scripts[i].scriptData.sourceAndExtent.matches(tree->script())) {
         found = true;
         break;
       }

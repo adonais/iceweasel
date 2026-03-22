@@ -511,12 +511,23 @@ bool Factory::DoesBackendSupportDataDrawtarget(BackendType aType) {
   return false;
 }
 
-uint32_t Factory::GetMaxSurfaceSize(BackendType aType) {
+size_t Factory::GetMaxSurfaceSize(BackendType aType) {
   switch (aType) {
     case BackendType::CAIRO:
       return DrawTargetCairo::GetMaxSurfaceSize();
     case BackendType::SKIA:
       return DrawTargetSkia::GetMaxSurfaceSize();
+    default:
+      return 0;
+  }
+}
+
+size_t Factory::GetMaxSurfaceArea(BackendType aType) {
+  switch (aType) {
+    case BackendType::CAIRO:
+      return DrawTargetCairo::GetMaxSurfaceArea();
+    case BackendType::SKIA:
+      return DrawTargetSkia::GetMaxSurfaceArea();
     default:
       return 0;
   }

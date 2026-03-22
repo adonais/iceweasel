@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsMathMLmoFrame_h___
-#define nsMathMLmoFrame_h___
+#ifndef nsMathMLmoFrame_h_
+#define nsMathMLmoFrame_h_
 
 #include "nsMathMLChar.h"
 #include "nsMathMLTokenFrame.h"
@@ -59,7 +59,7 @@ class nsMathMLmoFrame final : public nsMathMLTokenFrame {
   // This method is called by the parent frame to ask <mo>
   // to stretch itself.
   NS_IMETHOD
-  Stretch(DrawTarget* aDrawTarget, nsStretchDirection aStretchDirection,
+  Stretch(DrawTarget* aDrawTarget, StretchDirection aStretchDirection,
           nsBoundingMetrics& aContainerSize,
           ReflowOutput& aDesiredStretchSize) override;
 
@@ -68,10 +68,11 @@ class nsMathMLmoFrame final : public nsMathMLTokenFrame {
     return nsMathMLContainerFrame::ChildListChanged();
   }
 
+  nscoord ItalicCorrection() final;
+
  protected:
   explicit nsMathMLmoFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
       : nsMathMLTokenFrame(aStyle, aPresContext, kClassID),
-        mFlags(0),
         mMinSize(0),
         mMaxSize(0) {}
   virtual ~nsMathMLmoFrame();
@@ -96,4 +97,4 @@ class nsMathMLmoFrame final : public nsMathMLTokenFrame {
   bool IsFrameInSelection(nsIFrame* aFrame);
 };
 
-#endif /* nsMathMLmoFrame_h___ */
+#endif /* nsMathMLmoFrame_h_ */

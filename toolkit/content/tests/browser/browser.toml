@@ -144,6 +144,8 @@ tags = "audiochannel"
 ["browser_delay_autoplay_webAudio.js"]
 tags = "audiochannel"
 
+["browser_error_registry.js"]
+
 ["browser_f7_caret_browsing.js"]
 
 ["browser_findbar.js"]
@@ -194,6 +196,8 @@ support-files = [
 ]
 
 ["browser_media_wakelock_webaudio.js"]
+
+["browser_move_preserving_browser_element.js"]
 
 ["browser_moz_support_link_open_links_in_chrome.js"]
 

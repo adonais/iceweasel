@@ -50,8 +50,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
    debug purposes on an about:webrtc page or similar.
 */
 
-#ifndef rlogconnector_h__
-#define rlogconnector_h__
+#ifndef rlogconnector_h_
+#define rlogconnector_h_
 
 #include <stdint.h>
 
@@ -123,4 +123,4 @@ class RLogConnector {
 
 }  // namespace mozilla
 
-#endif  // rlogconnector_h__
+#endif  // rlogconnector_h_

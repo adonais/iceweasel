@@ -36,7 +36,7 @@ tags = "coverage"
 ["test_HealthPing.js"]
 skip-if = [
   "os == 'android' && arch == 'x86_64'",
-  "verify && os == 'win'",
+  "os == 'win' && verify",
 ]
 tags = "addons"
 
@@ -161,7 +161,7 @@ tags = "addons"
 ["test_TelemetrySession.js"]
 tags = "addons"
 skip-if = [
-  "os == 'linux' && verify && debug",
+  "os == 'linux' && debug && verify",
 ]
 
 ["test_TelemetrySession_abortedSessionQueued.js"]
@@ -180,7 +180,7 @@ run-if = [
 
 ["test_ThirdPartyModulesPing.js"]
 run-if = [
-  "(os == 'win' && !msix)", # Disabled for MSIX due to https://bugzilla.mozilla.org/show_bug.cgi?id=1807929,
+  "os == 'win' && !msix", # Disabled for MSIX due to https://bugzilla.mozilla.org/show_bug.cgi?id=1807929,
 ]
 skip-if = [
   "artifact", # disabled for artifact for bug 1982870.
@@ -210,7 +210,6 @@ skip-if = [
   "debug",
   "os == 'android'",
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt", #  Bug 1781452
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && tsan", #  Bug 1781452
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", #  Bug 1781452
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", #  Bug 1781452
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", #  Bug 1781452

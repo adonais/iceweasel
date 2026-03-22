@@ -117,7 +117,7 @@ impl IPCServer {
         key: IPCConnectorKey,
         header: &Header,
         data: Vec<u8>,
-        ancillary_data: Option<AncillaryData>,
+        ancillary_data: Vec<AncillaryData>,
         generator: &mut CrashGenerator,
     ) -> Result<()> {
         let connection = self
@@ -141,7 +141,7 @@ impl IPCServer {
                 }
                 messages::Kind::RegisterChildProcess => {
                     let message = messages::RegisterChildProcess::decode(&data, ancillary_data)?;
-                    let connector = IPCConnector::from_ancillary(message.ipc_endpoint)?;
+                    let connector = IPCConnector::from_ancillary(message.ancillary_data)?;
                     connector.send_message(messages::ChildProcessRendezVous::new(
                         process::id() as Pid
                     ))?;

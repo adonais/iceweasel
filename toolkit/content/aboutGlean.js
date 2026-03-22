@@ -339,6 +339,10 @@ function onLoad() {
       settingsChanged();
     });
   initMetricsSettings();
+
+  document.getElementById("export-data").addEventListener("click", () => {
+    exportData();
+  });
 }
 
 /**
@@ -888,6 +892,28 @@ function prettyPrint(jsonValue) {
   return pretty;
 }
 
+function getDocsURL(datum) {
+  const upperRegExp = /[A-Z]/;
+  const app = "firefox_desktop";
+  let category = datum.category;
+  let index = category.search(upperRegExp);
+  while (index != -1) {
+    category = category.replace(
+      upperRegExp,
+      "_" + category[index].toLowerCase()
+    );
+    index = category.search(upperRegExp);
+  }
+
+  let name = datum.name;
+  index = name.search(upperRegExp);
+  while (index != -1) {
+    name = name.replace(upperRegExp, "_" + name[index].toLowerCase());
+    index = name.search(upperRegExp);
+  }
+  return `https://dictionary.telemetry.mozilla.org/apps/${app}/metrics/${category}_${name}`;
+}
+
 /**
  * Updates the `about:glean` metrics table body based on the data points in FILTERED_METRIC_DATA.
  */
@@ -955,30 +981,8 @@ function updateTable() {
     // On click, rewrite the metric category+name to snake-case, so we can link to the Glean dictionary.
     // TODO: add canonical_name field to metrics https://bugzilla.mozilla.org/show_bug.cgi?id=1983630
     .on("click", datum => {
-      const upperRegExp = /[A-Z]/;
-      const app = "firefox_desktop";
-      let category = datum.category;
-      let index = category.search(upperRegExp);
-      while (index != -1) {
-        category = category.replace(
-          upperRegExp,
-          "_" + category[index].toLowerCase()
-        );
-        index = category.search(upperRegExp);
-      }
-
-      let name = datum.name;
-      index = name.search(upperRegExp);
-      while (index != -1) {
-        name = name.replace(upperRegExp, "_" + name[index].toLowerCase());
-        index = name.search(upperRegExp);
-      }
-      window
-        .open(
-          `https://dictionary.telemetry.mozilla.org/apps/${app}/metrics/${category}_${name}`,
-          "_blank"
-        )
-        .focus();
+      const url = getDocsURL(datum);
+      window.open(url, "_blank").focus();
     });
 
   // Since `.enter` has been called on `rows` and we've handled new data points, everything
@@ -1086,6 +1090,32 @@ function updateFilteredMetricData(searchString) {
   }
 
   updateTable();
+}
+
+function exportData() {
+  const data = MAPPED_METRIC_DATA.toSorted((a, b) =>
+    d3.ascending(a.fullName, b.fullName)
+  ).reduce(
+    (accumulator, datum) => [
+      ...accumulator,
+      {
+        name: `${datum.fullName}`,
+        docs: getDocsURL(datum),
+        value: datum.value,
+      },
+    ],
+    []
+  );
+  const href = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data))}`;
+  const anchor = document.createElement("a");
+  anchor.setAttribute("href", href);
+  anchor.setAttribute(
+    "download",
+    `about-glean-export-${new Date().toJSON()}.json`
+  );
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
 }
 
 window.addEventListener("load", onLoad);

@@ -101,6 +101,11 @@ support-files = ["!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js
 
 ["test_multiple_touches.html"]
 
+["test_pointer_boundary_events_iframe.html"]
+skip-if = [
+  "os == 'android'", # Bug 2014260
+]
+
 ["test_pointercancel_target_at_dragstart.html"]
 
 ["test_pointercancel_target_at_dragstart_with_capture.html"]
@@ -120,12 +125,14 @@ support-files = [
   "file_pointercapture_xorigin_iframe_touch.html",
 ]
 skip-if = [
-  "display == 'wayland' && os_version == '22.04'", # Bug 1856971
+  "os == 'linux' && os_version == '22.04' && display == 'wayland'", # Bug 1856971
 ]
+
+["test_pointerevent_altitude_azimuth_angle.html"]
 
 ["test_pointermove_drag_scrollbar.html"]
 run-if = [
-  "os == '!android'", # scrollbar not showed on mobile
+  "os != 'android'", # scrollbar not showed on mobile
 ]
 
 ["test_pointermove_isPrimary_subsequent_pens.html"]

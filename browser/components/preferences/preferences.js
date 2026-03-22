@@ -18,7 +18,7 @@
 
 /** @import MozButton from "chrome://global/content/elements/moz-button.mjs" */
 /** @import {SettingConfig, SettingEmitChange} from "chrome://global/content/preferences/Setting.mjs" */
-/** @import {SettingControlConfig} from "chrome://browser/content/preferences/widgets/setting-control.mjs" */
+/** @import {SettingControlConfig, SettingOptionConfig} from "chrome://browser/content/preferences/widgets/setting-control.mjs" */
 /** @import {SettingGroup} from "chrome://browser/content/preferences/widgets/setting-group.mjs" */
 /** @import {SettingPane, SettingPaneConfig} from "chrome://browser/content/preferences/widgets/setting-pane.mjs" */
 
@@ -99,7 +99,6 @@ ChromeUtils.defineESModuleGetters(this, {
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
-  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   SelectionChangedMenulist:
     "resource:///modules/SelectionChangedMenulist.sys.mjs",
@@ -108,7 +107,6 @@ ChromeUtils.defineESModuleGetters(this, {
   TransientPrefs: "resource:///modules/TransientPrefs.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(this, "gSubDialog", function () {
@@ -236,11 +234,6 @@ var SettingGroupManager = ChromeUtils.importESModule(
  * @type {Record<string, SettingPaneConfig>}
  */
 const CONFIG_PANES = Object.freeze({
-  containers2: {
-    parent: "general",
-    l10nId: "containers-section-header",
-    groupIds: ["containers"],
-  },
   dnsOverHttps: {
     parent: "privacy",
     l10nId: "preferences-doh-header2",
@@ -250,6 +243,7 @@ const CONFIG_PANES = Object.freeze({
     parent: "privacy",
     l10nId: "autofill-payment-methods-manage-payments-title",
     groupIds: ["managePayments"],
+    iconSrc: "chrome://browser/skin/payment-methods-16.svg",
   },
   paneProfiles: {
     parent: "general",
@@ -264,12 +258,13 @@ const CONFIG_PANES = Object.freeze({
   etpCustomize: {
     parent: "etp",
     l10nId: "preferences-etp-customize-header",
-    groupIds: ["etpReset", "etpCustomize"],
+    groupIds: ["etpCustomize", "etpReset"],
   },
   manageAddresses: {
     parent: "privacy",
     l10nId: "autofill-addresses-manage-addresses-title",
     groupIds: ["manageAddresses"],
+    iconSrc: "chrome://browser/skin/notification-icons/geo.svg",
   },
   translations: {
     parent: "general",
@@ -283,12 +278,7 @@ const CONFIG_PANES = Object.freeze({
   ai: {
     l10nId: "preferences-ai-controls-header",
     iconSrc: "chrome://global/skin/icons/highlights.svg",
-    groupIds: [
-      "aiControlsDescription",
-      "aiFeatures",
-      "aiStatesDescription",
-      "aiWindowFeatures",
-    ],
+    groupIds: ["aiControlsDescription", "aiFeatures", "aiStatesDescription"],
     module: "chrome://browser/content/preferences/config/aiFeatures.mjs",
     visible: () =>
       Services.prefs.getBoolPref("browser.preferences.aiControls", false),
@@ -297,6 +287,25 @@ const CONFIG_PANES = Object.freeze({
     parent: "privacy",
     l10nId: "history-header2",
     groupIds: ["historyAdvanced"],
+  },
+  customHomepage: {
+    parent: "home",
+    l10nId: "home-custom-homepage-subpage",
+    groupIds: ["customHomepage"],
+  },
+  personalizeSmartWindow: {
+    parent: "ai",
+    l10nId: "ai-window-personalize-header",
+    iconSrc: "chrome://devtools/skin/images/globe.svg",
+    groupIds: ["assistantModelGroup", "memoriesGroup"],
+    module: "chrome://browser/content/preferences/config/aiFeatures.mjs",
+  },
+  manageMemories: {
+    parent: "personalizeSmartWindow",
+    l10nId: "ai-window-manage-memories-header",
+    groupIds: ["manageMemories"],
+    module: "chrome://browser/content/preferences/config/aiFeatures.mjs",
+    supportPage: "smart-window-memories",
   },
 });
 
@@ -632,16 +641,20 @@ function spotlight(subcategory, category) {
 }
 
 function scrollAndHighlight(subcategory) {
-  let element = document.querySelector(`[data-subcategory="${subcategory}"]`);
-  if (!element) {
+  let elements = document.querySelectorAll(
+    `[data-subcategory~="${subcategory}"]`
+  );
+  if (!elements.length) {
     return;
   }
 
-  element.scrollIntoView({
+  elements[0].scrollIntoView({
     behavior: "smooth",
     block: "center",
   });
-  element.classList.add("spotlight");
+  for (let element of elements) {
+    element.classList.add("spotlight");
+  }
 }
 
 function friendlyPrefCategoryNameToInternalName(aName) {

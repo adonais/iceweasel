@@ -151,20 +151,21 @@ fun FilledButton(
  * @param modifier [Modifier] to be applied to the layout.
  * @param enabled Controls the enabled state of the button.
  * When false, this button will not be clickable
- * @param contentColor The color to be used for the button's text and icon when enabled.
- * @param containerColor The background fill color of the button when enabled.
+ * @param contentColor The [Color] to be used for the button's text and icon when enabled.
+ * @param containerColor The background fill [Color] of the button when enabled.
+ * @param outlineColor The [Color] to be used for the button's outline when enabled.
  * @param icon Optional [Painter] used to display an [Icon] before the button text.
  * @param iconModifier [Modifier] to be applied to the icon.
  * @param onClick Invoked when the user clicks on the button.
  */
-
 @Composable
 fun OutlinedButton(
     text: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    contentColor: Color = ButtonDefaults.outlinedButtonColors().contentColor,
+    contentColor: Color = MaterialTheme.colorScheme.primary,
     containerColor: Color = ButtonDefaults.outlinedButtonColors().containerColor,
+    outlineColor: Color = MaterialTheme.colorScheme.outline,
     icon: Painter? = null,
     iconModifier: Modifier = Modifier,
     onClick: () -> Unit,
@@ -178,6 +179,7 @@ fun OutlinedButton(
             containerColor = containerColor,
         ),
         contentPadding = AcornTheme.buttonContentPadding(),
+        border = enabled.getBorderColor(outlineColor),
     ) {
         ButtonContent(text = text, icon = icon, modifier = iconModifier)
     }
@@ -202,7 +204,7 @@ fun DestructiveButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     contentColor: Color = MaterialTheme.colorScheme.error,
-    containerColor: Color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+    containerColor: Color = ButtonDefaults.outlinedButtonColors().containerColor,
     icon: Painter? = null,
     iconModifier: Modifier = Modifier,
     onClick: () -> Unit,
@@ -216,16 +218,28 @@ fun DestructiveButton(
             containerColor = containerColor,
         ),
         contentPadding = AcornTheme.buttonContentPadding(),
-        border = if (enabled) {
-            BorderStroke(
-                width = 1.dp,
-                color = contentColor,
-            )
-        } else {
-            outlinedButtonBorder(enabled = false)
-        },
+        border = enabled.getBorderColor(contentColor),
     ) {
         ButtonContent(text = text, icon = icon, modifier = iconModifier)
+    }
+}
+
+/**
+ * Extension function to return the appropriate border color based on the enabled state.
+ *
+ * @param this [Boolean] indicating whether the button is enabled or not.
+ * @param borderOutline The [Color] to be used for the button's border when enabled.
+ * @return [BorderStroke] representing the border of the button.
+ */
+@Composable
+private fun Boolean.getBorderColor(borderOutline: Color): BorderStroke {
+    return if (this) {
+        BorderStroke(
+            width = 1.dp,
+            color = borderOutline,
+        )
+    } else {
+        outlinedButtonBorder(enabled = false)
     }
 }
 

@@ -781,7 +781,7 @@ const char16_t* Event::GetEventName(EventMessage aEventType) {
 #define MESSAGE_TO_EVENT(name_, _message, _type, _struct) \
   case _message:                                          \
     return u"" #name_;
-#include "mozilla/EventNameList.h"
+#include "mozilla/EventNameList.inc"
 #undef MESSAGE_TO_EVENT
     default:
       break;

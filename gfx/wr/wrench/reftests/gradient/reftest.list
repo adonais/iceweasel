@@ -124,6 +124,10 @@ fuzzy(2,23000) == linear-large.yaml linear-large-ref.yaml
 fuzzy-if(env(android,device),255,1) == conic-large-hard-stop.yaml conic-large-hard-stop-ref.yaml # Android device is Samsung Galaxy A51
 fuzzy(1,80000) == radial-large.yaml radial-large-ref.png
 
+# Exercise the gradient segmentation code
+fuzzy(36,2800) == radial-segments-rotated.yaml radial-segments-rotated-ref.yaml
+fuzzy(35,1000) fuzzy-if(platform(swgl),60,2900) == radial-segments-rotated-clipped.yaml radial-segments-rotated-clipped-ref.yaml
+
 # crash tests
 == linear-far-endpoints.yaml linear-far-endpoints.yaml
 == linear-nan.yaml linear-nan.yaml

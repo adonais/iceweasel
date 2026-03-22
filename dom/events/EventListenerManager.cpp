@@ -459,12 +459,6 @@ void EventListenerManager::AddEventListenerInternal(
           window->SetHasSMILTimeEventListeners();
         }
         break;
-      case eFormCheckboxStateChange:
-        nsContentUtils::SetMayHaveFormCheckboxStateChangeListeners();
-        break;
-      case eFormRadioStateChange:
-        nsContentUtils::SetMayHaveFormRadioStateChangeListeners();
-        break;
       case eMozOrientationChange:
         if (nsScreen* screen = mTarget->GetAsScreen()) {
           if (nsPIDOMWindowOuter* outer = screen->GetOuter()) {

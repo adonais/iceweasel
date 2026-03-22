@@ -34,4 +34,15 @@ libs::
 	$(call py_action,preprocessor $(MOZ_GPU_PROCESS_NAME).app/Contents/Resources/English.lproj/InfoPlist.strings,-Fsubstitution --output-encoding utf-16 -DAPP_NAME='$(MOZ_GPU_PROCESS_NAME_BRANDED)' $(srcdir)/macbuild/Contents/Resources/English.lproj/InfoPlist.strings.in -o $(DIST)/bin/$(MOZ_GPU_PROCESS_NAME).app/Contents/Resources/English.lproj/InfoPlist.strings)
 	$(NSINSTALL) -D $(DIST)/bin/$(MOZ_GPU_PROCESS_NAME).app/Contents/MacOS
 	cp $(DIST)/bin/$(MOZ_CHILD_PROCESS_NAME) "$(DIST)/bin/$(MOZ_GPU_PROCESS_NAME).app/Contents/MacOS/$(MOZ_GPU_PROCESS_NAME_BRANDED)"
+ifdef NIGHTLY_BUILD
+ifndef MOZ_NO_SMART_CARDS
+	# security-module-helper
+	$(NSINSTALL) -D $(DIST)/bin/$(MOZ_PKCS11_PROCESS_NAME).app
+	rsync -a -C --exclude '*.in' $(srcdir)/macbuild/Contents $(DIST)/bin/$(MOZ_PKCS11_PROCESS_NAME).app
+	$(call py_action,preprocessor $(MOZ_PKCS11_PROCESS_NAME).app/Contents/Info.plist,-Fsubstitution -DEXECUTABLE='$(MOZ_PKCS11_PROCESS_NAME_BRANDED)' -DBUNDLEID='$(MOZ_PKCS11_PROCESS_BUNDLEID)' -DMOZ_PKCS11_PROCESS_NAME_BRANDED='$(MOZ_PKCS11_PROCESS_NAME_BRANDED)' -DMOZ_DEVELOPER_REPO_PATH='$(topsrcdir)' -DMOZ_DEVELOPER_OBJ_PATH='$(topobjdir)' $(srcdir)/macbuild/Contents/Info.plist.in -o $(DIST)/bin/$(MOZ_PKCS11_PROCESS_NAME).app/Contents/Info.plist)
+	$(call py_action,preprocessor $(MOZ_PKCS11_PROCESS_NAME).app/Contents/Resources/English.lproj/InfoPlist.strings,-Fsubstitution --output-encoding utf-16 -DAPP_NAME='$(MOZ_PKCS11_PROCESS_BUNDLENAME)' $(srcdir)/macbuild/Contents/Resources/English.lproj/InfoPlist.strings.in -o $(DIST)/bin/$(MOZ_PKCS11_PROCESS_NAME).app/Contents/Resources/English.lproj/InfoPlist.strings)
+	$(NSINSTALL) -D $(DIST)/bin/$(MOZ_PKCS11_PROCESS_NAME).app/Contents/MacOS
+	cp $(DIST)/bin/$(MOZ_CHILD_PROCESS_NAME) "$(DIST)/bin/$(MOZ_PKCS11_PROCESS_NAME).app/Contents/MacOS/$(MOZ_PKCS11_PROCESS_NAME_BRANDED)"
+endif
+endif
 endif #}

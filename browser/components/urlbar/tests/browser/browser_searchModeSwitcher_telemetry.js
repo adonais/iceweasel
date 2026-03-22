@@ -22,18 +22,18 @@ add_task(async function test_opened() {
   await cleanUp();
 
   info("Open search mode switcher popup");
-  await UrlbarTestUtils.openSearchModeSwitcher(window);
+  const popup1 = await UrlbarTestUtils.openSearchModeSwitcher(window);
   Assert.equal(Glean.urlbarUnifiedsearchbutton.opened.testGetValue(), 1);
 
   info("Close search mode switcher popup");
-  EventUtils.synthesizeKey("KEY_Escape", {});
+  popup1.hidePopup();
 
   info("Open search mode switcher popup again");
-  await UrlbarTestUtils.openSearchModeSwitcher(window);
+  const popup2 = await UrlbarTestUtils.openSearchModeSwitcher(window);
   Assert.equal(Glean.urlbarUnifiedsearchbutton.opened.testGetValue(), 2);
 
   info("Close search mode switcher popup again");
-  EventUtils.synthesizeKey("KEY_Escape", {});
+  popup2.hidePopup();
 });
 
 add_task(async function test_picked_search_engines() {
@@ -141,9 +141,9 @@ async function removeAddonSearchEngine(name) {
   let settingsWritten = SearchTestUtils.promiseSearchNotification(
     "write-settings-to-disk-complete"
   );
-  let engine = Services.search.getEngineByName(name);
+  let engine = SearchService.getEngineByName(name);
   await Promise.all([
-    Services.search.removeEngine(engine),
+    SearchService.removeEngine(engine),
     promiseEngineRemoved,
     settingsWritten,
   ]);

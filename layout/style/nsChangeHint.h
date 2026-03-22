@@ -6,8 +6,8 @@
 
 /* constants for what needs to be recomputed in response to style changes */
 
-#ifndef nsChangeHint_h___
-#define nsChangeHint_h___
+#ifndef nsChangeHint_h_
+#define nsChangeHint_h_
 
 #include "mozilla/Assertions.h"
 
@@ -501,4 +501,4 @@ using RestyleHint = StyleRestyleHint;
 
 }  // namespace mozilla
 
-#endif /* nsChangeHint_h___ */
+#endif /* nsChangeHint_h_ */

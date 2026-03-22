@@ -20,9 +20,9 @@ const { AppConstants } = SpecialPowers.ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
 
-// Windows will stop running the system geolocation monitor after a minute where
-// there were no geolocation clients.  So we expect the test not to create
-// new location monitors in that case.  On other platforms, we always recreate.
+// Windows will keep the monitor for a minute, so we expect the test not to
+// create new location monitors in that case.  On other platforms, we always
+// recreate.
 function shouldReRequestPosition() {
   return AppConstants.platform !== "win";
 }

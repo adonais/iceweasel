@@ -27,8 +27,8 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.doh.DohSettingsState
 import org.mozilla.fenix.settings.doh.ProtectionLevel
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Composable function that displays the exceptions list screen of DoH settings.
@@ -77,7 +77,7 @@ internal fun AddExceptionScreen(
 @FlexibleWindowPreview
 @Composable
 private fun AddExceptionScreenPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         AddExceptionScreen(

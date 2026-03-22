@@ -321,8 +321,6 @@
   <string name="mozac_feature_addons_blocklisted_2">%1$s enfranh las politicas de Mozilla e se pòt pas installar dins %2$s.</string>
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s a pas pogut èsser installat perque sonque una organizacion utilizant de politicas d\'entrepresa pòt l’installar, e aquò es pas pres en carga sus aquesta platafòrma.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s enfranh las politicas de Mozilla e se pòt pas installar dins %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Fracàs de l’activacion de %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -365,10 +363,6 @@
   <string name="mozac_feature_addons_status_see_details">Afichar los detalhs</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Aquesta extension es blocada, per enfranh las politicas de Mozilla e foguèt desactivada.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Aquesta extension es restrencha a causa de violacion de las politicas de Mozilla e foguèt desactivada. La podètz activar, mas pòt èsser perilhós.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Aquesta extension viola las politicas de Mozilla. Son usatge es perilhós.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">Se podiá pas verificar que %1$s foguèsse segur e foguèt desactivat.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

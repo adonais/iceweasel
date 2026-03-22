@@ -30,7 +30,7 @@ add_setup(async function () {
     set: [["test.wait300msAfterTabSwitch", true]],
   });
   await promiseSyncReady();
-  await Services.search.init();
+  await SearchService.init();
   // gSync.init() is called in a requestIdleCallback. Force its initialization.
   gSync.init();
   sinon
@@ -76,9 +76,12 @@ add_task(async function test_link_contextmenu() {
     .expects("sendTabToDevice")
     .once()
     .withExactArgs(
-      "https://www.example.org/",
-      [fxaDevices[1]],
-      "Click on me!!"
+      {
+        url: "https://www.example.org/",
+        title: "Click on me!!",
+        private: false,
+      },
+      [fxaDevices[1]]
     );
 
   // Add a link to the page

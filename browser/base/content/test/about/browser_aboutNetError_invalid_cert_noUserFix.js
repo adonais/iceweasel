@@ -51,6 +51,7 @@ add_task(async function checkNoUserFixCertErrors() {
       };
       const info = Cu.cloneInto(mockErrorInfo, netErrorCard);
       netErrorCard.errorInfo = info;
+      netErrorCard.errorConfig = netErrorCard.getErrorConfig();
       netErrorCard.advancedShowing = false;
       netErrorCard.hideExceptionButton = netErrorCard.shouldHideExceptionButton(
         info.errorCodeString

@@ -9,6 +9,7 @@ import androidx.test.uiautomator.UiSelector
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.Config
+import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithCondition
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
@@ -99,6 +100,7 @@ class SettingsAboutTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3132641
+    @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=2011974"])
     @Test
     fun verifyAboutFirefoxMenuSupportItemTest() {
         homeScreen(composeTestRule) {

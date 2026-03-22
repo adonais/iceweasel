@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home.topsites.controller
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.widget.EditText
@@ -26,6 +27,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesUseCases
+import mozilla.components.service.mars.MozAdsUseCases
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.ktx.android.view.showKeyboard
 import mozilla.components.support.ktx.kotlin.isUrl
@@ -35,9 +37,9 @@ import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.GleanMetrics.ShortcutsLibrary
 import org.mozilla.fenix.GleanMetrics.TopSites
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.components
@@ -111,7 +113,7 @@ interface TopSiteController {
  */
 @Suppress("LongParameterList")
 class DefaultTopSiteController(
-    private val activityRef: WeakReference<HomeActivity>,
+    private val activityRef: WeakReference<Activity>,
     private val navControllerRef: WeakReference<NavController>,
     private val store: BrowserStore,
     private val settings: Settings,
@@ -120,10 +122,11 @@ class DefaultTopSiteController(
     private val fenixBrowserUseCases: FenixBrowserUseCases,
     private val topSitesUseCases: TopSitesUseCases,
     private val marsUseCases: MARSUseCases,
+    private val mozAdsUseCases: MozAdsUseCases,
     private val viewLifecycleScope: CoroutineScope,
 ) : TopSiteController {
 
-    private val activity: HomeActivity
+    private val activity: Activity
         get() = requireNotNull(activityRef.get())
 
     private val navController: NavController
@@ -136,7 +139,9 @@ class DefaultTopSiteController(
             TopSites.openInPrivateTab.record(NoExtras())
         }
 
-        activity.browsingModeManager.mode = BrowsingMode.Private
+        activity.components.appStore.dispatch(
+            AppAction.BrowsingModeManagerModeChanged(BrowsingMode.Private),
+        )
 
         if (navController.currentDestination?.id == R.id.shortcutsFragment) {
             navController.navigate(ShortcutsFragmentDirections.actionShortcutsFragmentToBrowserFragment())
@@ -246,7 +251,11 @@ class DefaultTopSiteController(
             is TopSite.Frecent -> TopSites.openFrecency.record(NoExtras())
             is TopSite.Pinned -> TopSites.openPinned.record(NoExtras())
             is TopSite.Provided -> {
-                sendMarsTopSiteCallback(topSite.clickUrl)
+                if (settings.enableMozillaAdsClient) {
+                    sendMozAdsClickInteraction(clickUrl = topSite.clickUrl)
+                } else {
+                    sendMarsTopSiteCallback(topSite.clickUrl)
+                }
 
                 TopSites.openContileTopSite.record(NoExtras()).also {
                     recordTopSitesClickTelemetry(topSite, position)
@@ -323,7 +332,11 @@ class DefaultTopSiteController(
     }
 
     override fun handleTopSiteImpression(topSite: TopSite.Provided, position: Int) {
-        sendMarsTopSiteCallback(topSite.impressionUrl)
+        if (settings.enableMozillaAdsClient) {
+            sendMozAdsImpressionInteraction(impressionUrl = topSite.impressionUrl)
+        } else {
+            sendMarsTopSiteCallback(topSite.impressionUrl)
+        }
 
         TopSites.contileImpression.record(
             TopSites.ContileImpressionExtra(
@@ -341,6 +354,18 @@ class DefaultTopSiteController(
     private fun sendMarsTopSiteCallback(url: String) {
         viewLifecycleScope.launch(Dispatchers.IO) {
             marsUseCases.recordInteraction(url)
+        }
+    }
+
+    private fun sendMozAdsClickInteraction(clickUrl: String) {
+        viewLifecycleScope.launch(Dispatchers.IO) {
+            mozAdsUseCases.recordClickInteraction(clickUrl = clickUrl)
+        }
+    }
+
+    private fun sendMozAdsImpressionInteraction(impressionUrl: String) {
+        viewLifecycleScope.launch(Dispatchers.IO) {
+            mozAdsUseCases.recordImpressionInteraction(impressionUrl = impressionUrl)
         }
     }
 

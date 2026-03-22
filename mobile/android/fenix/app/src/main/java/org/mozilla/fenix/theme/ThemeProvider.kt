@@ -4,24 +4,44 @@
 
 package org.mozilla.fenix.theme
 
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import mozilla.components.compose.base.utils.inComposePreview
+import org.mozilla.fenix.theme.Theme.Dark
+import org.mozilla.fenix.theme.Theme.Light
 
 /**
- * This class can be used in compose previews to generate previews for each theme type.
- *
- * Example:
- * ```
- * @Preview
- * @Composable
- * private fun PreviewText(
- *     @PreviewParameter(ThemeProvider::class) theme: Theme,
- * ) = FirefoxTheme(theme) {
- *     Surface {
- *         Text("hello")
- *     }
- * }
- * ```
+ * Abstraction for providing the current [Theme] that is to be displayed.
  */
-class ThemeProvider : PreviewParameterProvider<Theme> {
-    override val values = Theme.entries.asSequence()
+interface ThemeProvider {
+    /**
+     * Returns the current [Theme] that is to be displayed.
+     */
+    @Composable
+    fun provideTheme(): Theme
+}
+
+/**
+ * The default [ThemeProvider]. Used when [Theme.Private] is not needed or when in a Compose Preview.
+ */
+object DefaultThemeProvider : ThemeProvider {
+    @Composable
+    override fun provideTheme() = if (isSystemInDarkTheme()) {
+        Dark
+    } else {
+        Light
+    }
+}
+
+/**
+ * Gets the [ThemeProvider] for the current context.
+ */
+@Composable
+fun getThemeProvider(): ThemeProvider {
+    return if (inComposePreview) {
+        DefaultThemeProvider
+    } else {
+        LocalContext.current.applicationContext as ThemeProvider
+    }
 }

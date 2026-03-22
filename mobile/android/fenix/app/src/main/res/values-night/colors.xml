@@ -133,12 +133,18 @@
     <color name="toggle_off_knob_normal_theme">@color/toggle_off_knob_dark_theme</color>
     <color name="toggle_off_track_normal_theme">@color/toggle_off_track_dark_theme</color>
     <color name="fill_link_from_clipboard_normal_theme">@color/photonViolet40</color>
-    <color name="sync_disconnected_icon_fill_normal_theme">#FFF36E</color>
-    <color name="sync_disconnected_background_normal_theme">#5B5846</color>
     <color name="add_on_private_browsing_exterior_circle_background_normal_theme">@color/accent_normal_theme</color>
     <color name="prompt_login_edit_text_cursor_color_normal_theme">@color/photonViolet50</color>
     <color name="search_suggestion_indicator_icon_color_normal_theme">@color/photonGreen60</color>
     <color name="search_suggestion_indicator_icon_bookmark_color_normal_theme">@color/photonBlue40</color>
+
+    <!-- Colors for Edge to Edge background  -->
+    <color name="homepage_edge_to_edge_gradient_start">#FF0A1A3B</color>
+    <color name="homepage_edge_to_edge_gradient_end">#FF293564</color>
+    <color name="homepage_tab_edge_to_edge_tab_strip_item_background_active">#213B6F</color>
+    <color name="homepage_tab_edge_to_edge_tab_strip_item_background_inactive">#0E1A40</color>
+    <color name="homepage_tab_edge_to_edge_toolbar_background">#152A57</color>
+    <color name="homepage_tab_edge_to_edge_toolbar_outline">#1E366B</color>
 
     <!-- Prompt colors -->
     <color name="mozac_feat_prompt_cancel_save_dialog_text_color" tools:ignore="UnusedResources">@color/fx_mobile_text_color_accent</color>

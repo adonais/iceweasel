@@ -827,7 +827,7 @@ gfx::DeviceResetReason RenderCompositorANGLE::IsContextLost(bool aForce) {
 }
 
 bool RenderCompositorANGLE::UseCompositor() const {
-  return mDCLayerTree && mDCLayerTree->UseNativeCompositor();
+  return mDCLayerTree && mDCLayerTree->UseCompositor();
 }
 
 bool RenderCompositorANGLE::UseLayerCompositor() const {
@@ -839,7 +839,7 @@ bool RenderCompositorANGLE::SupportAsyncScreenshot() {
 }
 
 bool RenderCompositorANGLE::ShouldUseNativeCompositor() {
-  return UseCompositor();
+  return mDCLayerTree && mDCLayerTree->UseNativeCompositor();
 }
 
 bool RenderCompositorANGLE::ShouldUseLayerCompositor() const {

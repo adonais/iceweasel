@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Nezanechávajte na tomto zariadení žiadne stopy</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">Keď zatvoríte všetky súkromné karty, %1$s odstráni vaše súbory cookie, históriu a údaje stránok. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -325,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Preložiť stránku</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Vytvor súhrn stránky</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Nové</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Nahlásiť nefunkčnú stránku…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -927,8 +922,6 @@
   <string name="preferences_search_browsing_history">Navrhovať z histórie prehliadania</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Navrhovať zo záložiek</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Zobrazovať skratky</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Hľadať v synchronizovaných kartách</string>
   <!-- Preference for account settings -->
@@ -975,7 +968,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">Nemáte povolenie na používanie tohto priečinka. Skúste vybrať iný.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Nemáte povolenie na používanie tohto priečinka. Skúste vybrať iný.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Spravovať sťahovania pomocou inej aplikácie</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1036,11 +1029,7 @@
   <string name="customize_addon_collection_user_hint">Vlastník kolekcie (ID používateľa)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Kolekcia rozšírení bola upravená. Aplikácia sa ukončuje a zmeny budú použité…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Návrat späť</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Záložky</string>
@@ -1640,6 +1629,17 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Otvoriť vyhľadávanie v kartách</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Vytvoriť skupinu kariet</string>
+  <string name="create_tab_group_save_button">Uložiť</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Skupina</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Názov</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -1754,11 +1754,26 @@
   <string name="download_rename_dialog_label">Názov</string>
   <string name="download_rename_dialog_confirm_button">Uložiť</string>
   <string name="download_rename_dialog_cancel_button">Zrušiť</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Súbor s názvom “%s” už na tomto mieste existuje</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Názvy súborov nesmú používať znak “/”</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Súbor sa nedá premenovať</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Tento súbor nie je možné premenovať z dôvodu systémových obmedzení alebo obmedzení úložiska.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Zmeniť typ súboru na %s?</string>
+  <string name="change_file_extension_description">Súbor sa tým môže otvoriť v inej aplikácii, čo môže byť pre vaše zariadenie nebezpečné.</string>
+  <string name="change_file_extension_cancel_button">Zrušiť</string>
+  <string name="change_file_extension_confirm_button">Áno, zmeniť</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Prebieha</string>
   <!--
@@ -1958,7 +1973,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Upraviť</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Kopírovať</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Kopírovať</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Zdieľať</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2014,11 +2029,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Bola odstránená záložka %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">SPÄŤ</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">SPÄŤ</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">Záložka %1$s bola odstránená</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">Záložka %1$s bola odstránená</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">Odstránené položky: %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Odstránené položky: %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Prejsť dozadu</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2288,23 +2303,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Nastavte si Firefox ako predvolený prehliadač</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Vyskúšajte súkromné prehliadanie</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Vyskúšajte súkromné prehliadanie</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Prehliadajte bez uložených súborov cookie alebo histórie v prehliadači %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Prehliadajte bez uložených súborov cookie alebo histórie v prehliadači %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Prehliadajte bez stopy</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Prehliadajte bez stopy</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Súkromné prehliadanie v prehliadači %1$s neukladá vaše informácie.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Súkromné prehliadanie v prehliadači %1$s neukladá vaše informácie.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Začnite prvé vyhľadávanie</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Začnite prvé vyhľadávanie</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Nájdite niečo v okolí. Alebo objavte niečo zábavné.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Nájdite niečo v okolí. Alebo objavte niečo zábavné.</string>
   <!--
     Survey
 
@@ -2876,6 +2891,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Ďalšie informácie</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Spravovať e‑mailové masky</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Použili ste svojich 5 bezplatných e‑mailových masiek, takže sme pre vás vybrali jednu na opätovné použitie.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">E‑mailové masky momentálne nie sú k dispozícii. Skúste to znova o niekoľko minút.</string>
   <!--
     Autofill
 
@@ -3588,7 +3607,7 @@
     Title text for the protection panel banner when tracking protection is enabled.
     %s is the name of the app (for example "Firefox").
   -->
-  <string name="protection_panel_banner_protected_title">%s je na stráži</string>
+  <string name="protection_panel_banner_protected_title">%s vás stráži</string>
   <!-- Description text for the protection panel banner when tracking protection is enabled. -->
   <string name="protection_panel_banner_protected_description">Ste chránení. Ak niečo zistíme, dáme vám vedieť.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
@@ -3646,6 +3665,13 @@
   -->
   <string name="connection_security_panel_verified_by">Overil ho %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Vydaný pre %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Kvalifikovaný podľa nariadenia (EÚ) 2024/1183.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3695,6 +3721,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Pridať medzi súkromné karty</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -4045,8 +4073,6 @@
   <string name="content_description_settings_search_navigate_back">Navigovať naspäť</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Žiadne nedávne vyhľadávania</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Vyskytla sa chyba</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Vymazať všetko</string>
   <!-- Section header for recent search results -->

@@ -1543,9 +1543,13 @@ class FunctionCompiler {
   // the offset rather than vice versa is that a small offset can be ignored
   // by both explicit bounds checking and bounds check elimination.
   void foldConstantPointer(MemoryAccessDesc* access, MDefinition** base) {
+    PageSize pageSize = codeMeta().memories[access->memoryIndex()].pageSize();
+    if (pageSize != PageSize::Standard) {
+      return;
+    }
+
     uint64_t offsetGuardLimit = GetMaxOffsetGuardLimit(
-        codeMeta().hugeMemoryEnabled(access->memoryIndex()),
-        codeMeta().memories[access->memoryIndex()].pageSize());
+        codeMeta().hugeMemoryEnabled(access->memoryIndex()), pageSize);
 
     if ((*base)->isConstant()) {
       uint64_t basePtr = 0;
@@ -2225,7 +2229,7 @@ class FunctionCompiler {
     // Load the table elements and load the element
     auto* elements = loadTableElements(tableIndex);
     auto* element = MWasmLoadTableElement::New(alloc(), elements, address32,
-                                               table.elemType);
+                                               table.elemType());
     curBlock_->add(element);
     return element;
   }
@@ -2242,7 +2246,7 @@ class FunctionCompiler {
 
     // Load the previous value
     auto* prevValue = MWasmLoadTableElement::New(alloc(), elements, address32,
-                                                 table.elemType);
+                                                 table.elemType());
     curBlock_->add(prevValue);
 
     // Compute the value's location for the post barrier
@@ -8099,7 +8103,7 @@ bool FunctionCompiler::emitTableGet() {
 
   const TableDesc& table = codeMeta().tables[tableIndex];
 
-  if (table.elemType.tableRepr() == TableRepr::Ref) {
+  if (table.elemType().tableRepr() == TableRepr::Ref) {
     MDefinition* ret = tableGetAnyRef(tableIndex, address);
     if (!ret) {
       return false;
@@ -8190,7 +8194,7 @@ bool FunctionCompiler::emitTableSet() {
 
   const TableDesc& table = codeMeta().tables[tableIndex];
 
-  if (table.elemType.tableRepr() == TableRepr::Ref) {
+  if (table.elemType().tableRepr() == TableRepr::Ref) {
     return tableSetAnyRef(tableIndex, address, value, bytecodeOffset);
   }
 
@@ -8274,7 +8278,8 @@ bool FunctionCompiler::emitRefNull() {
 
 bool FunctionCompiler::emitRefIsNull() {
   MDefinition* input;
-  if (!iter().readRefIsNull(&input)) {
+  RefType sourceType;
+  if (!iter().readRefIsNull(&input, &sourceType)) {
     return false;
   }
 
@@ -8282,12 +8287,16 @@ bool FunctionCompiler::emitRefIsNull() {
     return true;
   }
 
-  MDefinition* nullVal = constantNullRef(MaybeRefType());
-  if (!nullVal) {
+  // ref.is_null is implemented as a ref.test against the bottom type of the
+  // input ref's hierarchy. This will codegen to a simple null comparison, but
+  // allows this op to participate in other optimizations surrounding ref.test
+  // and ref.cast.
+  MDefinition* test = refTest(input, sourceType.bottomType());
+  if (!test) {
     return false;
   }
-  iter().setResult(
-      compare(input, nullVal, JSOp::Eq, MCompare::Compare_WasmAnyRef));
+
+  iter().setResult(test);
   return true;
 }
 
@@ -8609,6 +8618,9 @@ bool FunctionCompiler::emitSpeculativeInlineCallRef(
 
     elseBlocks.infallibleAppend(elseBlock);
   }
+
+  // The block that performs the fallback call should be cold.
+  curBlock_->setFrequency(Frequency::Unlikely);
 
   DefVector callResults;
   if (!callRef(funcType, actualCalleeFunc, bytecodeOffset, args,
@@ -10887,11 +10899,16 @@ bool wasm::IonDumpFunction(const CompilerEnvironment& compilerEnv,
 
   mirGen.spewEndFunction();
   graphSpewer.end();
-
-#else
-  out.printf("cannot dump Ion without --enable-jitspew");
-#endif
   return true;
+#else
+  UniqueChars errStr =
+      DuplicateString("cannot dump Ion without --enable-jitspew");
+  if (!errStr) {
+    return false;
+  }
+  *error = std::move(errStr);
+  return false;
+#endif
 }
 
 bool js::wasm::IonPlatformSupport() {

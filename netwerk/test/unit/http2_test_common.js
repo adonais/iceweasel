@@ -982,6 +982,21 @@ async function test_http2_empty_data(serverPort, origin = "localhost") {
   });
 }
 
+async function test_http2_continuation_stream_zero(
+  serverPort,
+  origin = "localhost"
+) {
+  var chan = makeHTTPChannel(
+    `https://${origin}:${serverPort}/continuation_stream_zero`
+  );
+  return new Promise(resolve => {
+    var listener = new Http2CheckListener();
+    listener.finish = resolve;
+    listener.shouldSucceed = false;
+    chan.asyncOpen(listener);
+  });
+}
+
 async function test_http2_status_phrase(serverPort, origin = "localhost") {
   var chan = makeHTTPChannel(`https://${origin}:${serverPort}/statusphrase`);
   return new Promise(resolve => {

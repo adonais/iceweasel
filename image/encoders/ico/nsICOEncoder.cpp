@@ -22,7 +22,7 @@ nsICOEncoder::nsICOEncoder()
     : mICOFileHeader{},
       mICODirEntry{},
       mImageBufferStart(nullptr),
-      mImageBufferCurr(0),
+      mImageBufferCurr(nullptr),
       mImageBufferSize(0),
       mImageBufferReadPoint(0),
       mFinished(false),

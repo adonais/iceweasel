@@ -746,16 +746,7 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
         nsAutoCString tmpPath;
         rv = workDir->GetNativePath(tmpPath);
         if (NS_SUCCEEDED(rv)) {
-          bool exists;
-          rv = workDir->Exists(&exists);
-          if (NS_SUCCEEDED(rv)) {
-            if (!exists) {
-              policy->AddPrefix(rdonly, tmpPath.get());
-              policy->AddPath(rdonly, tmpPath.get());
-            } else {
-              policy->AddTree(rdonly, tmpPath.get());
-            }
-          }
+          policy->AddFutureDir(rdonly, tmpPath.get());
         }
       }
     }
@@ -786,7 +777,7 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
     // Bug 1321134: DConf's single bit of shared memory
     // The leaf filename is "user" by default, but is configurable.
     nsPrintfCString shmPath("%s/dconf/", userDir);
-    policy->AddPrefix(rdwrcr, shmPath.get());
+    policy->AddFutureDir(rdwrcr, shmPath.get());
     policy->AddAncestors(shmPath.get());
     if (allowPulse) {
       // PulseAudio, if it can't get server info from X11, will break

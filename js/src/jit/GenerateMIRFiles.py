@@ -149,6 +149,7 @@ def gen_mir_class(
     can_recover,
     clone,
     can_consume_float32,
+    wasm_ref_type,
 ):
     """Generates class definition for a single MIR opcode."""
 
@@ -243,6 +244,8 @@ def gen_mir_class(
         code += "    setGuard();\\\n"
     if movable:
         code += "    setMovable();\\\n"
+    if wasm_ref_type is not None:
+        code += f"    setWasmRefType({wasm_ref_type});\\\n"
     # Note: MIRType::None is the default MIR result type so don't generate a
     # setResultType call for it.
     if result and result != "None":
@@ -402,6 +405,9 @@ def generate_mir_header(c_out, yaml_path):
             can_consume_float32 = op.get("can_consume_float32", None)
             assert can_consume_float32 in (None, True, False)
 
+            wasm_ref_type = op.get("wasm_ref_type", None)
+            assert result is None or isinstance(result, str)
+
             code = gen_mir_class(
                 name,
                 operands,
@@ -420,6 +426,7 @@ def generate_mir_header(c_out, yaml_path):
                 can_recover,
                 clone,
                 can_consume_float32,
+                wasm_ref_type,
             )
             mir_op_classes.append(code)
 

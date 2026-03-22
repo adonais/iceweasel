@@ -133,9 +133,9 @@ const HEADERS_NON_L10N_STRINGS = {
  * @param {object} commands
  *        The commands object with all interfaces defined from devtools/shared/commands/
  */
-class StorageUI {
+class StorageUI extends EventEmitter {
   constructor(panelWin, toolbox, commands) {
-    EventEmitter.decorate(this);
+    super();
     this._window = panelWin;
     this._panelDoc = panelWin.document;
     this._toolbox = toolbox;
@@ -227,6 +227,9 @@ class StorageUI {
 
     this._addButton = this._panelDoc.getElementById("add-button");
     this._addButton.addEventListener("click", this.onAddItem);
+
+    this._deleteAllButton = this._panelDoc.getElementById("delete-all-button");
+    this._deleteAllButton.addEventListener("click", this.onRemoveAll);
 
     this._window.addEventListener("resize", this.onPanelWindowResize, true);
 
@@ -435,6 +438,10 @@ class StorageUI {
     this.table.clear();
     this.hideSidebar();
     this.tree.clear();
+
+    // Do not attempt to load more items until the storage table has been
+    // populated again.
+    this.shouldLoadMoreItems = false;
   }
 
   set animationsEnabled(value) {
@@ -467,7 +474,7 @@ class StorageUI {
     );
     this.sidebarToggleBtn = null;
 
-    this._window.removeEventListener("resize", this.#onLazyPanelResize, true);
+    this._window.removeEventListener("resize", this.onPanelWindowResize, true);
 
     this._treePopup.removeEventListener(
       "popupshowing",
@@ -566,8 +573,8 @@ class StorageUI {
   makeFieldsEditable(editableFields) {
     if (editableFields && editableFields.length) {
       this.table.makeFieldsEditable(editableFields);
-    } else if (this.table._editableFieldsEngine) {
-      this.table._editableFieldsEngine.destroy();
+    } else if (this.table.editableFieldsEngine) {
+      this.table.editableFieldsEngine.destroy();
     }
   }
 
@@ -1005,6 +1012,9 @@ class StorageUI {
 
     // Add is only supported if the selected item has a host.
     this._addButton.hidden = !host || !this.supportsAddItem(type, host);
+
+    // Delete All is only supported if the selected item has a host.
+    this._deleteAllButton.hidden = !host || !this.supportsRemoveAll(type, host);
   }
 
   /**
@@ -1604,7 +1614,7 @@ class StorageUI {
 
   onVariableViewPopupShowing() {
     const item = this.view.getFocusedItem();
-    this._variableViewPopupCopy.setAttribute("disabled", !item);
+    this._variableViewPopupCopy.toggleAttribute("disabled", !item);
   }
 
   /**

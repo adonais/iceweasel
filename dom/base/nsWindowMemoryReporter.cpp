@@ -449,7 +449,7 @@ static void CollectWindowReports(nsGlobalWindowInner* aWindow,
   }
 #define PRES_ARENA_OBJECT(name_) \
   ARENA_OBJECT(name_, presArenaSundriesSize, "/layout/pres-arena/")
-#include "nsPresArenaObjectList.h"
+#include "nsPresArenaObjectList.inc"
 #undef PRES_ARENA_OBJECT
 
   if (presArenaSundriesSize > 0) {
@@ -463,7 +463,7 @@ static void CollectWindowReports(nsGlobalWindowInner* aWindow,
 #define DISPLAY_LIST_ARENA_OBJECT(name_)            \
   ARENA_OBJECT(name_, displayListArenaSundriesSize, \
                "/layout/display-list-arena/")
-#include "nsDisplayListArenaTypes.h"
+#include "nsDisplayListArenaTypes.inc"
 #undef DISPLAY_LIST_ARENA_OBJECT
 
   if (displayListArenaSundriesSize > 0) {
@@ -656,7 +656,7 @@ nsWindowMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
   size_t presArenaTotal = 0;
 #define PRES_ARENA_OBJECT(name_) \
   presArenaTotal += windowTotalSizes.mArenaSizes.NS_ARENA_SIZES_FIELD(name_);
-#include "nsPresArenaObjectList.h"
+#include "nsPresArenaObjectList.inc"
 #undef PRES_ARENA_OBJECT
 
   REPORT("window-objects/layout/pres-arena", presArenaTotal,
@@ -667,7 +667,7 @@ nsWindowMemoryReporter::CollectReports(nsIHandleReportCallback* aHandleReport,
 #define DISPLAY_LIST_ARENA_OBJECT(name_) \
   displayListArenaTotal +=               \
       windowTotalSizes.mArenaSizes.NS_ARENA_SIZES_FIELD(name_);
-#include "nsDisplayListArenaTypes.h"
+#include "nsDisplayListArenaTypes.inc"
 #undef DISPLAY_LIST_ARENA_OBJECT
 
   REPORT("window-objects/layout/display-list-arena", displayListArenaTotal,

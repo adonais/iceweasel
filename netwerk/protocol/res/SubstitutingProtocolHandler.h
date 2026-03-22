@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef SubstitutingProtocolHandler_h___
-#define SubstitutingProtocolHandler_h___
+#ifndef SubstitutingProtocolHandler_h_
+#define SubstitutingProtocolHandler_h_
 
 #include "nsISubstitutingProtocolHandler.h"
 
@@ -125,4 +125,4 @@ class SubstitutingProtocolHandler {
 }  // namespace net
 }  // namespace mozilla
 
-#endif /* SubstitutingProtocolHandler_h___ */
+#endif /* SubstitutingProtocolHandler_h_ */

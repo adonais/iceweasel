@@ -49,7 +49,8 @@ add_task(async function extension() {
           }),
         ],
       });
-      UrlbarProvidersManager.registerProvider(provider);
+      let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+      providersManager.registerProvider(provider);
 
       // Do a search that fetches the provider's result and check it.
       let heuristic = await search({
@@ -64,7 +65,7 @@ add_task(async function extension() {
       // Press enter to verify the heuristic result is loaded.
       await synthesizeEnterAndAwaitLoad(url);
 
-      UrlbarProvidersManager.unregisterProvider(provider);
+      providersManager.unregisterProvider(provider);
     });
   });
 });
@@ -415,23 +416,20 @@ async function withEngine(
   callback
 ) {
   await SearchTestUtils.installSearchExtension({ keyword });
-  let engine = Services.search.getEngineByName("Example");
+  let engine = SearchService.getEngineByName("Example");
   let originalEngine;
   if (makeDefault) {
-    originalEngine = await Services.search.getDefault();
-    await Services.search.setDefault(
-      engine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-    );
+    originalEngine = await SearchService.getDefault();
+    await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
   }
   await callback();
   if (originalEngine) {
-    await Services.search.setDefault(
+    await SearchService.setDefault(
       originalEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+      SearchService.CHANGE_REASON.UNKNOWN
     );
   }
-  await Services.search.removeEngine(engine);
+  await SearchService.removeEngine(engine);
 }
 
 /**

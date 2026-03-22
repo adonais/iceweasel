@@ -438,7 +438,14 @@ class IToplevelProtocol : public IRefCountedProtocol {
 
  public:
   // Shadows the method on IProtocol, which will forward to the top.
-  IProtocol* Lookup(Shmem::id_t aId);
+  IProtocol* Lookup(ActorId aId);
+
+  // Ensures aId is from the remote side's range, and reserves a slot in
+  // mActorMap for a future call to SetManagerAndRegister.
+  [[nodiscard]] bool TryReserve(ActorId aId);
+
+  // Abandon a reservation if SetManagerAndRegister will never be called.
+  void ClearReservation(ActorId aId);
 
   Shmem CreateSharedMemory(size_t aSize, bool aUnsafe);
   Shmem::Segment* LookupSharedMemory(Shmem::id_t aId);

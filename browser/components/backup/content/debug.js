@@ -129,7 +129,7 @@ let DebugUI = {
         try {
           let newProfile = await service.recoverFromSnapshotFolder(
             path,
-            true /* shouldLaunch */
+            true /* shouldLaunchOrQuit */
           );
           lastRecoveryStatus.textContent = `Created profile ${newProfile.name} at ${newProfile.rootDir.path}`;
         } catch (e) {
@@ -221,7 +221,7 @@ let DebugUI = {
           let newProfile = await service.recoverFromBackupArchive(
             path,
             recoveryCode,
-            true /* shouldLaunch */
+            true /* shouldLaunchOrQuit */
           );
           recoverFromArchiveStatus.textContent = `Created profile ${newProfile.name} at ${newProfile.rootDir.path}`;
         } catch (e) {

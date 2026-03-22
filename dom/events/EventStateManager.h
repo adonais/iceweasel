@@ -54,6 +54,7 @@ class Element;
 class Selection;
 class BrowserParent;
 class RemoteDragStartData;
+struct InteractionData;
 
 }  // namespace dom
 

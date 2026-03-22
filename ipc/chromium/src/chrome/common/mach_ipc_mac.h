@@ -44,7 +44,8 @@ kern_return_t MachReceivePortSendRight(
 // the parent process.
 bool MachChildProcessCheckIn(
     const char* bootstrap_service_name, mach_msg_timeout_t timeout,
-    std::vector<mozilla::UniqueMachSendRight>& send_rights);
+    std::vector<mozilla::UniqueMachSendRight>& send_rights,
+    std::vector<mozilla::UniqueMachReceiveRight>& receive_rights);
 
 //==============================================================================
 // Called by MacProcessLauncher to transfer ports to the child process, and
@@ -54,7 +55,8 @@ using MachHandleProcessCheckInPromise =
 RefPtr<MachHandleProcessCheckInPromise> MachHandleProcessCheckIn(
     mozilla::UniqueMachReceiveRight endpoint, pid_t child_pid,
     mozilla::TimeDuration timeout,
-    std::vector<mozilla::UniqueMachSendRight> send_rights);
+    std::vector<mozilla::UniqueMachSendRight> send_rights,
+    std::vector<mozilla::UniqueMachReceiveRight> receive_rights);
 #endif
 
 #endif  // BASE_MACH_IPC_MAC_H_

@@ -402,7 +402,7 @@ NetworkGeolocationProvider.prototype = {
 
     let timeoutId = lazy.setTimeout(
       () => fetchController.abort(),
-      Services.prefs.getIntPref("geo.provider.network.timeout")
+      Services.prefs.getIntPref("geo.provider.network.timeout", 60000)
     );
 
     let response = await fetch(url, fetchOpts);

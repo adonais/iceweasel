@@ -11,6 +11,8 @@ prefs = [
 
 ["test_GuardianClient.js"]
 
+["test_IPPAutoRestore.js"]
+
 ["test_IPPChannelFilter.js"]
 
 ["test_IPPExceptionsManager.js"]
@@ -18,8 +20,6 @@ prefs = [
 ["test_IPPOnboardingMessageHelper.js"]
 
 ["test_IPPStartupCache.js"]
-
-["test_IPProtection.js"]
 
 ["test_IPProtectionPanel.js"]
 
@@ -29,6 +29,6 @@ prefs = [
 
 ["test_IPProtectionStates.js"]
 
-["test_IPProtectionUsage.js"]
+["test_IPProtectionToolbarButton.js"]
 
 ["test_IPProxyManager.js"]

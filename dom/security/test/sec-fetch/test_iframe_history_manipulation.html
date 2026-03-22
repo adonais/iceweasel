@@ -17,7 +17,6 @@ let testCounter = 0;
 let testFrame;
 
 var script = SpecialPowers.loadChromeScript(() => {
-  /* eslint-env mozilla/chrome-script */
   Services.obs.addObserver(function onExamResp(subject) {
     let channel = subject.QueryInterface(Ci.nsIHttpChannel);
     info("request observed: " + channel.URI.spec);

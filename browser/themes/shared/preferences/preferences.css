@@ -79,6 +79,13 @@ setting-group[data-category] {
   margin: 0 0 32px;
 }
 
+/* Bug 2002963 - payments and addresses are in a groupbox together, but they probably shouldn't be */
+#formAutofillGroupBox:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
 html|h1 {
   margin: 0 0 var(--space-small);
 }
@@ -171,13 +178,19 @@ radio {
   margin: 4px 0;
 }
 
-.spotlight {
+.spotlight:not(setting-group:has(> moz-card)) {
   background-color: color-mix(in srgb, var(--color-accent-primary) 15%, transparent);
   outline: var(--border-color-selected) 1px dotted;
   animation: fade-out 0.5s ease-out 2s forwards;
   /* Show the border to spotlight the components in high-contrast mode. */
   border: 1px solid transparent;
   border-radius: var(--border-radius-xsmall);
+}
+
+setting-group:has(> moz-card).spotlight {
+  outline: 2px solid var(--border-color-selected);
+  border-radius: var(--border-radius-medium);
+  animation: fade-out 0.5s ease-out 2s forwards;
 }
 
 @keyframes fade-out {
@@ -187,7 +200,7 @@ radio {
   }
 }
 
-[data-subcategory] {
+[data-subcategory]:not(setting-group:has(> moz-card)) {
   margin-inline: -4px;
   padding-inline: 4px;
 }
@@ -480,10 +493,6 @@ a[is="moz-support-link"]:not(.sidebar-footer-link, [hidden]) {
 
 /* Search Pane */
 
-#engineList {
-  margin: 2px 0 5px;
-}
-
 #engineList > treechildren::-moz-tree-image(engineShown, checked),
 #blocklistsTree > treechildren::-moz-tree-image(selectionCol, checked) {
   list-style-image: url("chrome://global/skin/icons/check.svg");
@@ -502,7 +511,6 @@ a[is="moz-support-link"]:not(.sidebar-footer-link, [hidden]) {
   #blocklistsTree > treechildren::-moz-tree-image(hover) {
     fill: var(--text-color-list-item-hover);
     /* fill allows icon and text colors, but we have no such rules for stroke */
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
     stroke: var(--background-color-list-item-hover);
   }
 }
@@ -559,7 +567,7 @@ a[is="moz-support-link"]:not(.sidebar-footer-link, [hidden]) {
   margin-bottom: 0;
 }
 
-.text-link[disabled="true"] {
+.text-link[disabled] {
   pointer-events: none;
 }
 
@@ -950,7 +958,6 @@ dialog > .sync-engines-list + hbox {
     content: "";
     width: 1px;
     height: 100%;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
     background-color: var(--border-color);
     top: 0;
     inset-inline-end: 0;
@@ -1399,14 +1406,14 @@ richlistitem .text-link:hover {
   margin-block-end: var(--space-large);
 }
 
-/** SRD web-appearance-chooser control START **/
-.appearance-chooser-item {
+/** SRD setting-chooser control START **/
+.setting-chooser-item {
   flex: 1;
 
   &::part(image) {
     width: 54px;
     box-shadow: var(--box-shadow-card);
-    margin-block: var(--space-medium);
+    margin-block-start: var(--space-medium);
     border: var(--border-width) solid var(--border-color);
     border-radius: var(--border-radius-small);
   }
@@ -1415,7 +1422,7 @@ richlistitem .text-link:hover {
     transform: scaleX(-1);
   }
 }
-/** SRD web-appearance-chooser control END **/
+/** SRD setting-chooser control END **/
 
 /** SRD rows control for Homepage START **/
 setting-group[groupid="homepage"] {
@@ -1430,9 +1437,13 @@ setting-group[groupid="home"] {
 }
 /** SRD rows control for New Tab END **/
 
-setting-group[groupid="aiFeatures"] {
-  --select-max-width: fit-content;
+/** SRD History first item is label-less START **/
+/* bug 2001196: Workaround for using legend as label for the select. */
+setting-group[groupid="history"] > moz-fieldset::part(inputs),
+setting-group[groupid="history"] > moz-card > moz-fieldset::part(inputs) {
+  margin-block-start: 0;
 }
+/** SRD History first item is label-less END **/
 
 setting-group[groupid="aiFeatures"] {
   --select-max-width: fit-content;
@@ -1613,10 +1624,9 @@ setting-group[groupid="aiStatesDescription"] {
   background-clip: content-box;
   background-image:
     url("chrome://browser/content/preferences/etp-advanced-banner.svg"),
-    radial-gradient(94.12% 34.67% at 50% 50%, rgba(159, 116, 255, 0.5) 0%, rgba(159, 116, 255, 0) 100%), linear-gradient(135deg, #592acb 0%, #ab43e7 100%);
+    radial-gradient(151.822% 149.985% at 50% -42.53%, rgba(174, 73, 236, 1), rgba(33, 3, 64, 1));
   background-repeat: no-repeat;
   background-position: center;
-  background-size: cover;
   height: 128px;
 }
 

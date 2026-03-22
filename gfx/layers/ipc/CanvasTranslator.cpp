@@ -416,17 +416,14 @@ bool CanvasTranslator::SetDataSurfaceBuffer(
   DataSurfaceBufferWillChange(aId);
 
   // Finally, change the shmem mapping.
-  {
-    auto& dataSurfaceShmem = mDataSurfaceShmems[aId];
-    dataSurfaceShmem.mShmem = aBufferHandle.Map();
-    if (!dataSurfaceShmem.mShmem) {
-      // Try clearing out old mappings to see if resource limits were reached.
-      DataSurfaceBufferWillChange(0, false);
-      // Try mapping one last time.
-      dataSurfaceShmem.mShmem = aBufferHandle.Map();
-      if (!dataSurfaceShmem.mShmem) {
-        return false;
-      }
+  mDataSurfaceShmems[aId].mShmem = aBufferHandle.Map();
+  if (!mDataSurfaceShmems[aId].mShmem) {
+    // Try clearing out old mappings to see if resource limits were reached.
+    DataSurfaceBufferWillChange(0, false);
+    // Try mapping one last time.
+    mDataSurfaceShmems[aId].mShmem = aBufferHandle.Map();
+    if (!mDataSurfaceShmems[aId].mShmem) {
+      return false;
     }
   }
 

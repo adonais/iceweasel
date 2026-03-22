@@ -32,11 +32,7 @@ task-defaults:
                     default: true
             default: false
     docker-image:
-        by-test-platform:
-            linux1804.*:
-                in-tree: ubuntu1804-test
-            default:
-                in-tree: ubuntu2404-test
+        in-tree: ubuntu2404-test
     fetches:
         toolchain:
             by-test-platform:
@@ -156,9 +152,6 @@ tasks:
                     by-test-platform:
                         android-em.*/debug-isolated-process: []
                         android.*: built-projects
-                        linux1804-64(-qr)?/debug: ['mozilla-central']
-                        linux1804-64(-shippable)?(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/debug: ['mozilla-central']
                         linux2404-64(-shippable)?/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
@@ -249,6 +242,7 @@ tasks:
             chunked: true
             extra-options:
                 - --test-type=testharness
+                - --test-type=crashtest
                 - --default-exclude
                 - --tag=webcodecs
                 - --no-update-status-on-crash
@@ -296,8 +290,6 @@ tasks:
                 android.*/debug: 16
                 android.*: 8
                 linux.*64-tsan(-qr)?/opt: 16
-                linux1804-64(-qr)?/.*: 6
-                linux1804-64-asan(-qr)?/.*: 6
                 linux2404-64/.*: 6
                 linux2404-64-asan/.*: 6
                 macosx.*-64/debug: 6
@@ -321,9 +313,6 @@ tasks:
                 webrender-sw+no-fission:
                     by-test-platform:
                         android-em.*/debug: built-projects
-                        linux1804-64(-qr)?/.*: ['mozilla-central']
-                        linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
@@ -331,9 +320,6 @@ tasks:
                 no-fission:
                     by-test-platform:
                         android-em.*/debug-isolated-process: []
-                        linux1804-64(-qr)?/.*: ['mozilla-central']
-                        linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
@@ -541,9 +527,6 @@ tasks:
                     by-test-platform:
                         android-em.*/debug-isolated-process: []
                         android.*: built-projects
-                        linux1804-64(-qr)?/.*: ['mozilla-central']
-                        linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
@@ -633,9 +616,6 @@ tasks:
                         default: built-projects
                 no-fission:
                     by-test-platform:
-                        linux1804-64(-qr)?/.*: ['mozilla-central']
-                        linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
@@ -723,9 +703,6 @@ tasks:
                 webrender-sw+no-fission:
                     by-test-platform:
                         android-em.*/debug: built-projects
-                        linux1804-64(-qr)?/.*: ['mozilla-central']
-                        linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
@@ -733,9 +710,6 @@ tasks:
                 no-fission:
                     by-test-platform:
                         android-em.*/debug-isolated-process: []
-                        linux1804-64(-qr)?/.*: ['mozilla-central']
-                        linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
@@ -791,18 +765,12 @@ tasks:
                 webrender-sw+no-fission:
                     by-test-platform:
                         android-em.*/debug: built-projects
-                        linux1804-64(-qr)?/.*: ['mozilla-central']
-                        linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']
                         default: []
                 no-fission:
                     by-test-platform:
-                        linux1804-64(-qr)?/.*: ['mozilla-central']
-                        linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
-                        linux1804-64-asan(-qr)?/opt: ['mozilla-central']
                         linux2404-64/.*: ['mozilla-central']
                         linux2404-64-shippable/opt: ['mozilla-central']
                         linux2404-64-asan/opt: ['mozilla-central']

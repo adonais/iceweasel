@@ -650,7 +650,7 @@ RemoteLazyInputStream::CloneWithRange(uint64_t aStart, uint64_t aLength,
       // The copy failed, revert the changes we did and restore our previous
       // inner stream.
       mAsyncInnerStream = nullptr;
-      mInnerStream = innerStream;
+      mInnerStream = std::move(innerStream);
       return rv;
     }
 
@@ -731,7 +731,7 @@ RemoteLazyInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
         MOZ_ASSERT(mActor);
 
         mInputStreamCallback = aCallback;
-        mInputStreamCallbackEventTarget = eventTarget;
+        mInputStreamCallbackEventTarget = std::move(eventTarget);
         mInputStreamCallbackFlags = aFlags;
         mInputStreamCallbackRequestedCount = aRequestedCount;
         mState = ePending;
@@ -747,7 +747,7 @@ RemoteLazyInputStream::AsyncWait(nsIInputStreamCallback* aCallback,
         }
 
         mInputStreamCallback = aCallback;
-        mInputStreamCallbackEventTarget = eventTarget;
+        mInputStreamCallbackEventTarget = std::move(eventTarget);
         mInputStreamCallbackFlags = aFlags;
         mInputStreamCallbackRequestedCount = aRequestedCount;
         return NS_OK;
@@ -1133,7 +1133,7 @@ nsresult RemoteLazyInputStream::EnsureAsyncRemoteStream() {
   }
 
   MOZ_ASSERT(asyncStream);
-  mAsyncInnerStream = asyncStream;
+  mAsyncInnerStream = std::move(asyncStream);
   mInnerStream = nullptr;
 
   return NS_OK;

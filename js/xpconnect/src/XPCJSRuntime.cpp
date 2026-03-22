@@ -1420,8 +1420,8 @@ static void ReportZoneStats(const JS::ZoneStats& zStats,
   ZRREPORT_GC_BYTES(pathPrefix + "bigints/gc-heap"_ns, zStats.bigIntsGCHeap,
                     "BigInt values.");
 
-  ZRREPORT_BYTES(pathPrefix + "bigints/malloc-heap"_ns,
-                 zStats.bigIntsMallocHeap, "BigInt values.");
+  ZRREPORT_NONHEAP_BYTES(pathPrefix + "bigints/gc-buffers"_ns,
+                         zStats.bigIntsGCBuffers, "BigInt values.");
 
   ZRREPORT_GC_BYTES(pathPrefix + "jit-codes-gc-heap"_ns, zStats.jitCodesGCHeap,
                     "References to executable code pools used by the JITs.");
@@ -1451,8 +1451,9 @@ static void ReportZoneStats(const JS::ZoneStats& zStats,
   ZRREPORT_GC_BYTES(pathPrefix + "scopes/gc-heap"_ns, zStats.scopesGCHeap,
                     "Scope information for scripts.");
 
-  ZRREPORT_BYTES(pathPrefix + "scopes/malloc-heap"_ns, zStats.scopesMallocHeap,
-                 "Arrays of binding names and other binding-related data.");
+  ZRREPORT_NONHEAP_BYTES(
+      pathPrefix + "scopes/gc-buffers"_ns, zStats.scopesGCBuffers,
+      "Arrays of binding names and other binding-related data.");
 
   ZRREPORT_GC_BYTES(pathPrefix + "regexp-shareds/gc-heap"_ns,
                     zStats.regExpSharedsGCHeap, "Shared compiled regexp data.");
@@ -1688,15 +1689,21 @@ static void ReportClassStats(const ClassInfo& classInfo, const nsACString& path,
                     "Objects, including fixed slots.");
   }
 
-  if (classInfo.objectsMallocHeapSlots > 0) {
+  if (classInfo.objectsGCBufferSlots > 0) {
     REPORT_BYTES(path + "objects/gc-buffers/slots"_ns, KIND_NONHEAP,
-                 classInfo.objectsMallocHeapSlots, "Non-fixed object slots.");
+                 classInfo.objectsGCBufferSlots, "Non-fixed object slots.");
   }
 
-  if (classInfo.objectsMallocHeapElementsNormal > 0) {
+  if (classInfo.objectsGCBufferElementsNormal > 0) {
     REPORT_BYTES(path + "objects/gc-buffers/elements/normal"_ns, KIND_NONHEAP,
-                 classInfo.objectsMallocHeapElementsNormal,
+                 classInfo.objectsGCBufferElementsNormal,
                  "Normal (non-wasm) indexed elements.");
+  }
+
+  if (classInfo.objectsMallocHeapElementsArrayBuffer > 0) {
+    REPORT_BYTES(path + "objects/malloc-heap/elements/array-buffer"_ns,
+                 KIND_HEAP, classInfo.objectsMallocHeapElementsArrayBuffer,
+                 "JS array buffer elements allocated in the malloc heap.");
   }
 
   if (classInfo.objectsMallocHeapElementsAsmJS > 0) {
@@ -1756,6 +1763,11 @@ static void ReportClassStats(const ClassInfo& classInfo, const nsACString& path,
                  classInfo.objectsNonHeapCodeWasm,
                  "AOT-compiled wasm/asm.js code.");
   }
+
+  if (classInfo.objectsGCBufferMisc > 0) {
+    REPORT_BYTES(path + "objects/non-heap/misc"_ns, KIND_NONHEAP,
+                 classInfo.objectsGCBufferMisc, "Miscellaneous object data.");
+  }
 }
 
 static void ReportRealmStats(const JS::RealmStats& realmStats,
@@ -1802,8 +1814,8 @@ static void ReportRealmStats(const JS::RealmStats& realmStats,
       "JSScript instances. There is one per user-defined function in a "
       "script, and one for the top-level code in a script.");
 
-  ZRREPORT_BYTES(realmJSPathPrefix + "scripts/malloc-heap/data"_ns,
-                 realmStats.scriptsMallocHeapData,
+  ZRREPORT_BYTES(realmJSPathPrefix + "scripts/gc-buffers"_ns,
+                 realmStats.scriptsGCBuffers,
                  "Various variable-length tables in JSScripts.");
 
   ZRREPORT_BYTES(realmJSPathPrefix + "baseline/data"_ns,
@@ -2418,11 +2430,6 @@ void JSReporter::CollectReports(WindowPaths* windowPaths,
       KIND_OTHER, rtStats.zTotals.unusedGCThings.regExpShared,
       "Unused regexpshared cells within non-empty arenas.");
 
-  REPORT_BYTES(
-      "js-main-runtime-gc-heap-committed/unused/gc-things/small-buffers"_ns,
-      KIND_OTHER, rtStats.zTotals.unusedGCThings.smallBuffer,
-      "Unused small buffer cells within non-empty arenas.");
-
   REPORT_BYTES("js-main-runtime-gc-heap-committed/used/chunk-admin"_ns,
                KIND_OTHER, rtStats.gcHeapChunkAdmin,
                "The same as 'explicit/js-non-window/gc-heap/chunk-admin'.");
@@ -2874,18 +2881,6 @@ static void SetUseCounterCallback(JSObject* obj, JSUseCounter counter) {
       return;
     case JSUseCounter::OPTIMIZE_PROMISE_LOOKUP_FUSE:
       SetUseCounter(obj, eUseCounter_custom_JS_optimizePromiseLookup_fuse);
-      return;
-    case JSUseCounter::THENABLE_USE:
-      SetUseCounter(obj, eUseCounter_custom_JS_thenable);
-      return;
-    case JSUseCounter::THENABLE_USE_PROTO:
-      SetUseCounter(obj, eUseCounter_custom_JS_thenable_proto);
-      return;
-    case JSUseCounter::THENABLE_USE_STANDARD_PROTO:
-      SetUseCounter(obj, eUseCounter_custom_JS_thenable_standard_proto);
-      return;
-    case JSUseCounter::THENABLE_USE_OBJECT_PROTO:
-      SetUseCounter(obj, eUseCounter_custom_JS_thenable_object_proto);
       return;
     case JSUseCounter::LEGACY_LANG_SUBTAG:
       SetUseCounter(obj, eUseCounter_custom_JS_legacy_lang_subtag);

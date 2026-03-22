@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_VideoFrame_h
 #define mozilla_dom_VideoFrame_h
 
+#include "MediaResult.h"
 #include "js/TypeDecls.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Span.h"
@@ -221,7 +222,7 @@ class VideoFrame final : public nsISupports,
     uint32_t SampleBytes(const Plane& aPlane) const;
     gfx::IntSize SampleSize(const Plane& aPlane) const;
     bool IsValidSize(const gfx::IntSize& aSize) const;
-    size_t ByteCount(const gfx::IntSize& aSize) const;
+    Result<size_t, MediaResult> ByteCount(const gfx::IntSize& aSize) const;
 
    private:
     bool IsYUV() const;

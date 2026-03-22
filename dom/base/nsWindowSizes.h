@@ -62,7 +62,7 @@ struct nsStyleSizes {
   void addToTabSizes(nsTabSizes* aSizes) const {
 #define ADD_TO_TAB(name_) \
   aSizes->add(nsTabSizes::Style, NS_STYLE_SIZES_FIELD(name_));
-      FOR_EACH_STYLE_STRUCT(ADD_TO_TAB, ADD_TO_TAB)
+    FOR_EACH_STYLE_STRUCT(ADD_TO_TAB, ADD_TO_TAB)
 #undef ADD_TO_TAB
   }
 
@@ -91,8 +91,8 @@ struct nsArenaSizes {
       :
 #define PRES_ARENA_OBJECT(name_) NS_ARENA_SIZES_FIELD(name_)(0),
 #define DISPLAY_LIST_ARENA_OBJECT(name_) PRES_ARENA_OBJECT(name_)
-#include "nsDisplayListArenaTypes.h"
-#include "nsPresArenaObjectList.h"
+#include "nsDisplayListArenaTypes.inc"
+#include "nsPresArenaObjectList.inc"
 #undef PRES_ARENA_OBJECT
 #undef DISPLAY_LIST_ARENA_OBJECT
         dummy() {
@@ -102,8 +102,8 @@ struct nsArenaSizes {
 #define PRES_ARENA_OBJECT(name_) \
   aSizes->add(nsTabSizes::Other, NS_ARENA_SIZES_FIELD(name_));
 #define DISPLAY_LIST_ARENA_OBJECT(name_) PRES_ARENA_OBJECT(name_)
-#include "nsDisplayListArenaTypes.h"
-#include "nsPresArenaObjectList.h"
+#include "nsDisplayListArenaTypes.inc"
+#include "nsPresArenaObjectList.inc"
 #undef PRES_ARENA_OBJECT
 #undef DISPLAY_LIST_ARENA_OBJECT
   }
@@ -113,8 +113,8 @@ struct nsArenaSizes {
 
 #define PRES_ARENA_OBJECT(name_) total += NS_ARENA_SIZES_FIELD(name_);
 #define DISPLAY_LIST_ARENA_OBJECT(name_) PRES_ARENA_OBJECT(name_)
-#include "nsDisplayListArenaTypes.h"
-#include "nsPresArenaObjectList.h"
+#include "nsDisplayListArenaTypes.inc"
+#include "nsPresArenaObjectList.inc"
 #undef PRES_ARENA_OBJECT
 #undef DISPLAY_LIST_ARENA_OBJECT
 
@@ -123,8 +123,8 @@ struct nsArenaSizes {
 
 #define PRES_ARENA_OBJECT(name_) size_t NS_ARENA_SIZES_FIELD(name_);
 #define DISPLAY_LIST_ARENA_OBJECT(name_) PRES_ARENA_OBJECT(name_)
-#include "nsDisplayListArenaTypes.h"
-#include "nsPresArenaObjectList.h"
+#include "nsDisplayListArenaTypes.inc"
+#include "nsPresArenaObjectList.inc"
 #undef PRES_ARENA_OBJECT
 #undef DISPLAY_LIST_ARENA_OBJECT
 

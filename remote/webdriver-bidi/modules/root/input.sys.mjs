@@ -251,12 +251,17 @@ class InputModule extends RootBiDiModule {
    * @param {BrowsingContext} context - The Browsing Context to convert the
    *     coordinates for.
    */
-  #toBrowserWindowCoordinates(position, context) {
-    return this._forwardToWindowGlobal(
+  async #toBrowserWindowCoordinates(position, context) {
+    const chromeWindow = context.topChromeWindow;
+    const dpr = chromeWindow.devicePixelRatio;
+
+    const val = await this._forwardToWindowGlobal(
       "_toBrowserWindowCoordinates",
       context.id,
       { position }
     );
+
+    return [val.x / dpr, val.y / dpr];
   }
 
   /**

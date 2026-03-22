@@ -91,7 +91,6 @@ static nsresult Constructor(REFNSIID aIID, void** aResult) {
 // new component with ThreadRestriction::MainThreadOnly is added.
 IMPL(SecretDecoderRing, nullptr)
 IMPL(nsPK11TokenDB, nullptr)
-IMPL(PKCS11ModuleDB, nullptr)
 IMPL(nsNSSCertificateDB, nullptr)
 IMPL(nsCertTree, nullptr)
 IMPL(ContentSignatureVerifier, nullptr)

@@ -10,8 +10,8 @@
  * string that could be parsed into more or less the original DOM.
  */
 
-#ifndef nsXHTMLContentSerializer_h__
-#define nsXHTMLContentSerializer_h__
+#ifndef nsXHTMLContentSerializer_h_
+#define nsXHTMLContentSerializer_h_
 
 #include "nsString.h"
 #include "nsTArray.h"

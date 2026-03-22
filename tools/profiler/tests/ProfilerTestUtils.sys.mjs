@@ -177,7 +177,7 @@ export var ProfilerTestUtils = {
    * If a stop marker can't be found for a start marker, this will return an array
    * of only 1 element.
    *
-   * @param {InflatedMarker[]} networkMarkers Network markers
+   * @param {InflatedMarker[]} allNetworkMarkers Network markers
    * @return {InflatedMarker[][]} Pairs of network markers
    */
   getPairsOfNetworkMarkers(allNetworkMarkers) {
@@ -244,7 +244,7 @@ export var ProfilerTestUtils = {
    * Verify that a given JSON string is compact - i.e. does not contain
    * unexpected whitespace.
    *
-   * @param {string} the JSON string to check
+   * @param {string} s the JSON string to check.
    * @return {Bool} Whether the string is compact or not
    */
   verifyJSONStringIsCompact(s) {
@@ -322,7 +322,7 @@ export var ProfilerTestUtils = {
   /**
    * Verifies that a marker is an interval marker.
    *
-   * @param {InflatedMarker} marker
+   * @param {InflatedMarker} inflatedMarker
    * @returns {boolean}
    */
   isIntervalMarker(inflatedMarker) {

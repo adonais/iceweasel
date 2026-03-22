@@ -34,7 +34,7 @@
   :root[customtitlebar] {
     background-color: transparent;
 
-    &[sizemode="normal"]:not([gtktiledwindow="true"]) {
+    &[sizemode="normal"]:not([gtktiledwindow]) {
       /* Firefox draws its contents to a child window, while GTK takes care of
        * drawing the toplevel (which in most cases is just the window
        * decorations).
@@ -314,4 +314,8 @@
   @media not (-moz-gtk-csd-minimize-button) {
     display: none;
   }
+}
+
+.titlebar-return-to-opener {
+  --titlebar-button-position: env(-moz-gtk-csd-minimize-button-position);
 }

@@ -37,8 +37,8 @@ h3 {
 }
 
 splitview-opentabs {
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-size-tokens */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   width: var(--splitview-opentabs-card-width);
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-size-tokens */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   max-width: var(--splitview-opentabs-card-width);
 }

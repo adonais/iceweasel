@@ -7,7 +7,9 @@ package mozilla.components.feature.media.fullscreen
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.view.WindowManager
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -25,12 +27,13 @@ class MediaSessionFullscreenFeature(
     private val activity: Activity,
     private val store: BrowserStore,
     private val tabId: String?,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
 
     private var scope: CoroutineScope? = null
 
     override fun start() {
-        scope = store.flowScoped { flow ->
+        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
             flow.map {
                 it.tabs + it.customTabs
             }.map { tab ->

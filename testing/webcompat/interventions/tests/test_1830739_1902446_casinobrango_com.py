@@ -8,6 +8,7 @@ SUPPORTED_CSS = "#game_main"
 
 async def get_to_page(client):
     await client.navigate(URL)
+    client.hide_elements("#RowCookiesBox")
     client.switch_to_frame(client.await_css(IFRAME_CSS, timeout=45))
 
 

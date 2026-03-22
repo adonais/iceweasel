@@ -26,12 +26,16 @@ namespace net {
 class TRRService;
 class TRRServiceChannel;
 
-class TRR : public Runnable, public nsITimerCallback, public nsIStreamListener {
+class TRR : public Runnable,
+            public nsITimerCallback,
+            public nsIStreamListener,
+            public nsIRunnablePriority {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSITIMERCALLBACK
+  NS_DECL_NSIRUNNABLEPRIORITY
 
   // Number of "steps" we follow CNAME chains
   static const unsigned int kCnameChaseMax = 64;

@@ -404,6 +404,14 @@ typedef nsIContentSecurityPolicy_RequireTrustedTypesForDirectiveState RequireTru
 [function, scriptable, uuid(c3163b14-3a8f-46dd-a4af-bd04680364cd)]
 interface nsICSPEventListener : nsISupports
 {
-  // aJSON is the JSON format of SecurityPolicyViolationEventInit dictionary.
-  void onCSPViolationEvent(in AString aJSON);
+  /**
+   * Notify of CSP violation event.
+   * @param aJSON
+   *        Represents SecurityPolicyViolationEventInit, serialized into JSON.
+   *        See https://w3c.github.io/webappsec-csp/#securitypolicyviolationevent
+   * @param aReportGroupName
+   *        The report group name of the endpoint that the report which can be constructed
+   *        from aJSON should be sent to.
+   */
+  void onCSPViolationEvent(in AString aJSON, in AString aReportGroupName);
 };

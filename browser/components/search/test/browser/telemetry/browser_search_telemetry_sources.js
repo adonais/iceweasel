@@ -63,6 +63,7 @@ add_setup(async function () {
       ["browser.urlbar.suggest.searches", true],
       // Ensure to add search suggestion telemetry as search_suggestion not search_formhistory.
       ["browser.urlbar.maxHistoricalSearchSuggestions", 0],
+      ["browser.search.widget.new", true],
     ],
   });
   // Enable local telemetry recording for the duration of the tests.
@@ -141,14 +142,7 @@ async function track_ad_click(
   assertSERPTelemetry([
     {
       impression: {
-        provider: "example",
-        tagged: "true",
-        partner_code: "ff",
         source: expectedScalarSource,
-        is_shopping_page: "false",
-        is_private: "false",
-        shopping_tab_displayed: "false",
-        is_signed_in: "false",
       },
       engagements: [
         {
@@ -254,7 +248,7 @@ add_task(async function test_source_urlbar_oneoffs_newtab() {
           true
         );
 
-      let engines = await Services.search.getEngines();
+      let engines = await SearchService.getEngines();
       let index = engines.findIndex(e => e.name == "Example");
       let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
       EventUtils.synthesizeMouseAtCenter(oneOffs[index], {
@@ -368,21 +362,10 @@ add_task(async function test_source_searchbar() {
     "searchbar",
     async () => {
       tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
-
-      let sb = document.getElementById("searchbar");
-      // Write the search query in the searchbar.
-      sb.focus();
-      sb.value = "searchSuggestion";
-      sb.textbox.controller.startSearch("searchSuggestion");
-      // Wait for the popup to show.
-      await BrowserTestUtils.waitForEvent(sb.textbox.popup, "popupshown");
-      // And then for the search to complete.
-      await BrowserTestUtils.waitForCondition(
-        () =>
-          sb.textbox.controller.searchStatus >=
-          Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH,
-        "The search in the searchbar must complete."
-      );
+      await SearchbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        value: "searchSuggestion",
+      });
 
       let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
       EventUtils.synthesizeKey("KEY_Enter");
@@ -401,20 +384,10 @@ add_task(async function test_source_searchbar_newtab() {
     "searchbar",
     "searchbar",
     async () => {
-      let sb = document.getElementById("searchbar");
-      // Write the search query in the searchbar.
-      sb.focus();
-      sb.value = "searchSuggestion";
-      sb.textbox.controller.startSearch("searchSuggestion");
-      // Wait for the popup to show.
-      await BrowserTestUtils.waitForEvent(sb.textbox.popup, "popupshown");
-      // And then for the search to complete.
-      await BrowserTestUtils.waitForCondition(
-        () =>
-          sb.textbox.controller.searchStatus >=
-          Ci.nsIAutoCompleteController.STATUS_COMPLETE_NO_MATCH,
-        "The search in the searchbar must complete."
-      );
+      await SearchbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        value: "searchSuggestion",
+      });
 
       let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser);
       EventUtils.synthesizeKey("VK_RETURN", { altKey: true });

@@ -14,10 +14,8 @@ const FAR_FUTURE = 4102405200000; // 2100/01/01
 
 add_task(async function setup() {
   // Since these are xpcshell tests, we'll need to mock ui features
-  TabProvider.shouldSkipWindow = mockShouldSkipWindow;
-  TabProvider.getWindowEnumerator = mockGetWindowEnumerator.bind(this, [
-    "http://foo.com",
-  ]);
+  TabProvider.getOrderedNonPrivateWindows =
+    mockGetOrderedNonPrivateWindows.bind(this, ["http://foo.com"]);
 });
 
 async function prepareServer() {

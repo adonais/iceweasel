@@ -8,14 +8,7 @@ import static org.gradle.api.tasks.testing.TestResult.ResultType
 
 buildscript {
     repositories {
-        gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
-            maven {
-                url = repository
-                if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
-                    allowInsecureProtocol = true
-                }
-            }
-        }
+        gradle.configureMavenRepositories(delegate)
     }
 
     dependencies {
@@ -24,11 +17,13 @@ buildscript {
 }
 
 plugins {
+    alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.python.envs.plugin)
     alias(libs.plugins.protobuf.plugin)
     id 'org.mozilla.nimbus-gradle-plugin'
+    id 'ApkSizePlugin'
 }
 
 apply plugin: 'com.android.application'
@@ -118,7 +113,8 @@ android {
 
 	// If building locally, just use debug signing. In official automation builds, the
 	// files are signed using a separate service and not within gradle.
-        if (!gradle.mozconfig.substs.MOZ_AUTOMATION) {
+	// Also skip during buildconfig linting.
+        if (!gradle.mozconfig.substs.MOZ_AUTOMATION && System.getenv("MOZ_BUILD_CONFIG_LINT") != "1") {
             signingConfig = signingConfigs.debug
         }
 
@@ -253,7 +249,7 @@ android {
                 include "arm64-v8a"
             } else {
                 include "armeabi-v7a", "arm64-v8a", "x86_64"
-                if (gradle.mozconfig.substs.MOZILLA_OFFICIAL) {
+                if (gradle.mozconfig.substs.MOZILLA_OFFICIAL || System.getenv("MOZ_BUILD_CONFIG_LINT") == "1") {
                     universalApk true
                 }
             }
@@ -415,6 +411,21 @@ android.applicationVariants.configureEach { variant ->
     }
 
 // -------------------------------------------------------------------------------------------------
+// Google Play Integrity: Read token from local file if it exists
+// -------------------------------------------------------------------------------------------------
+
+    project.logger.debug("Google Play Integrity: ")
+
+    try {
+        def token = new File("${rootDir}/.gps_integrity_token").text.trim()
+        buildConfigField 'String', 'GPS_INTEGRITY_TOKEN', '"' + token + '"'
+        project.logger.debug("(Added from .gps_integrity_token file)")
+    } catch (FileNotFoundException ignored) {
+        buildConfigField 'String', 'GPS_INTEGRITY_TOKEN', '""'
+        project.logger.debug("X_X")
+    }
+
+// -------------------------------------------------------------------------------------------------
 // Nimbus: Read endpoint from local.properties of a local file if it exists
 // -------------------------------------------------------------------------------------------------
 
@@ -475,21 +486,6 @@ android.applicationVariants.configureEach { variant ->
         project.logger.debug("(Added from .wallpaper_url file)")
     } catch (FileNotFoundException ignored) {
         buildConfigField 'String', 'WALLPAPER_URL', '""'
-        project.logger.debug("--")
-    }
-
-// -------------------------------------------------------------------------------------------------
-// BuildConfig: Set the Pocket consumer key from a local file if it exists
-// -------------------------------------------------------------------------------------------------
-
-    project.logger.debug("Pocket consumer key: ")
-
-    try {
-        def token = new File("${rootDir}/.pocket_consumer_key").text.trim()
-        buildConfigField 'String', 'POCKET_CONSUMER_KEY', '"' + token + '"'
-        project.logger.debug("(Added from .pocket_consumer_key file)")
-    } catch (FileNotFoundException ignored) {
-        buildConfigField 'String', 'POCKET_CONSUMER_KEY', '""'
         project.logger.debug("--")
     }
 
@@ -591,6 +587,7 @@ dependencies {
     implementation project(':components:feature-session')
     implementation project(':components:feature-share')
     implementation project(':components:feature-sitepermissions')
+    implementation project(':components:feature-summarize')
     implementation project(':components:feature-syncedtabs')
     implementation project(':components:feature-toolbar')
     implementation project(':components:feature-tab-collections')
@@ -602,6 +599,7 @@ dependencies {
     implementation project(':components:feature-webnotifications')
     implementation project(':components:service-digitalassetlinks')
     implementation project(':components:service-firefox-accounts')
+    implementation project(":components:service-firefox-relay")
     implementation project(':components:service-glean')
     implementation project(':components:service-location')
     implementation project(':components:service-mars')
@@ -627,6 +625,10 @@ dependencies {
     implementation project(':components:lib-dataprotect')
     implementation project(':components:lib-push-firebase')
     implementation project(':components:lib-state')
+    implementation project(':components:lib-accelerometer-sensormanager')
+    implementation project(':components:lib-integrity-googleplay')
+    implementation project(':components:lib-llm-mlpa')
+    implementation project(':components:lib-shake')
 
     implementation ComponentsDependencies.mozilla_appservices_syncmanager
     implementation libs.accompanist.drawablepainter
@@ -663,12 +665,11 @@ dependencies {
     implementation libs.androidx.lifecycle.runtime
     implementation libs.androidx.lifecycle.service
     implementation libs.androidx.lifecycle.viewmodel
-    implementation libs.androidx.localbroadcastmanager
     implementation libs.androidx.navigation.compose
     implementation libs.androidx.navigation.fragment
     implementation libs.androidx.navigation.ui
-    implementation libs.androidx.navigation3.ui
     implementation libs.androidx.navigation3.runtime
+    implementation libs.androidx.navigation3.ui
     implementation libs.androidx.paging
     implementation libs.androidx.preferences
     implementation libs.androidx.profileinstaller
@@ -694,7 +695,7 @@ dependencies {
     testImplementation project(':components:support-test')
     testImplementation project(':components:support-test-fakes')
     testImplementation project(':components:support-test-libstate')
-    testImplementation testFixtures(project(':components:feature-downloads'))
+    testImplementation testFixtures(project(':components:support-utils'))
 
     testImplementation ComponentsDependencies.mozilla_appservices_full_megazord_libsForTests
 
@@ -811,6 +812,7 @@ tasks.register('printVariants') {
             build_type: variant.buildType.name,
             name: variant.name,
     ]}}
+    def outputFile = new File(projectDir, "build/printVariants.json")
     doLast {
         // AndroidTest is a special case not included above
         variants.get().add([
@@ -821,22 +823,25 @@ tasks.register('printVariants') {
             build_type: 'androidTest',
             name: 'androidTest',
         ])
-        println 'variants: ' + JsonOutput.toJson(variants.get())
+        def json = JsonOutput.toJson(variants.get())
+        outputFile.parentFile.mkdirs()
+        outputFile.text = json
+        logger.debug("Wrote variant info to $outputFile")
     }
 }
 
 // Work around generated SafeArgs code hitting USELESS_CAST warnings with Kotlin 2.3+
 // https://issuetracker.google.com/issues/458082829
-def safeArgsSrc = fileTree(layout.buildDirectory.dir("generated/source/navigation-args")) {
-    include "**/*.kt"
-}
+def safeArgsSrc = layout.buildDirectory
+    .dir("generated/java")
+    .map { dir -> fileTree(dir) { include "generateSafeArgs*/**/*.kt" } }
 
 tasks.register("suppressUselessCastInSafeArgs") {
     inputs.files(safeArgsSrc)
     outputs.upToDateWhen { false }
 
     doLast {
-        safeArgsSrc.each { File f ->
+        safeArgsSrc.get().each { File f ->
             if (!f.text.contains('@file:Suppress("USELESS_CAST")')) {
                 f.text =
 """@file:Suppress("USELESS_CAST")
@@ -902,14 +907,6 @@ if (gradle.hasProperty('localProperties.dependencySubstitutions.geckoviewTopsrcd
     apply from: "${topsrcdir}/substitute-local-geckoview.gradle"
 }
 
-android.applicationVariants.configureEach { variant ->
-    tasks.register("apkSize${variant.name.capitalize()}", ApkSizeTask) {
-        variantName = variant.name
-        apks = variant.outputs.collect { output -> output.outputFile.name }
-        dependsOn "package${variant.name.capitalize()}"
-    }
-}
-
 def getSupportedLocales() {
     // This isn't running as a task, instead the array is build when the gradle file is parsed.
     // https://github.com/mozilla-mobile/fenix/issues/14175
@@ -937,4 +934,25 @@ tasks.withType(DependencyTask).configureEach { task ->
 
     // make the dependency task depend on its cleanup task.
     task.dependsOn(tasks.named(cleanUpTaskName))
+}
+
+tasks.register("ktlint", Exec) {
+    group = "verification"
+    description = "Check Kotlin code style."
+    workingDir file("${gradle.mozconfig.topsrcdir}")
+    commandLine "./mach", "gradle", "-p", "mobile/android/fenix", ":ktlint"
+}
+
+tasks.register("ktlintFormat", Exec) {
+    group = "formatting"
+    description = "Fix Kotlin code style deviations."
+    workingDir file("${gradle.mozconfig.topsrcdir}")
+    commandLine "./mach", "gradle", "-p", "mobile/android/fenix", ":ktlintFormat"
+}
+
+tasks.register("detekt", Exec) {
+    group = "verification"
+    description = "Run detekt static analysis."
+    workingDir file("${gradle.mozconfig.topsrcdir}")
+    commandLine "./mach", "gradle", "-p", "mobile/android/fenix", ":detekt"
 }

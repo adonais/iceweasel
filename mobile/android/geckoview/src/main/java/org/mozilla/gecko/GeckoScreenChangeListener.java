@@ -8,7 +8,6 @@ package org.mozilla.gecko;
 import android.content.Context;
 import android.hardware.display.DisplayManager;
 import android.util.Log;
-import android.view.Display;
 import org.mozilla.gecko.util.ThreadUtils;
 
 public class GeckoScreenChangeListener implements DisplayManager.DisplayListener {
@@ -23,7 +22,13 @@ public class GeckoScreenChangeListener implements DisplayManager.DisplayListener
   public void onDisplayAdded(final int displayId) {}
 
   @Override
-  public void onDisplayRemoved(final int displayId) {}
+  public void onDisplayRemoved(final int displayId) {
+    if (DEBUG) {
+      Log.d(LOGTAG, "onDisplayRemoved");
+    }
+
+    GeckoAppShell.onDisplayRemoved(displayId);
+  }
 
   @Override
   public void onDisplayChanged(final int displayId) {
@@ -33,9 +38,9 @@ public class GeckoScreenChangeListener implements DisplayManager.DisplayListener
 
     // Even if onDisplayChanged is called, Configuration may not updated yet.
     // So we use Display's data instead.
-    if (displayId != Display.DEFAULT_DISPLAY) {
+    if (displayId != GeckoAppShell.getDisplayId()) {
       if (DEBUG) {
-        Log.d(LOGTAG, "Primary display is only supported");
+        Log.d(LOGTAG, "The display that GeckoView is attached is only supported");
       }
       return;
     }

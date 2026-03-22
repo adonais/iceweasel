@@ -102,7 +102,6 @@ namespace dom {
 class BrowsingContextGroup;
 class Element;
 class BrowserParent;
-class ClonedMessageData;
 class MemoryReport;
 class TabContext;
 class GetFilesHelper;
@@ -133,7 +132,6 @@ class ContentParent final : public PContentParent,
   typedef mozilla::ipc::GeckoChildProcessHost GeckoChildProcessHost;
   typedef mozilla::ipc::TestShellParent TestShellParent;
   typedef mozilla::ipc::PrincipalInfo PrincipalInfo;
-  typedef mozilla::dom::ClonedMessageData ClonedMessageData;
   typedef mozilla::dom::BrowsingContextGroup BrowsingContextGroup;
 
   friend class mozilla::PreallocatedProcessManagerImpl;
@@ -378,8 +376,8 @@ class ContentParent final : public PContentParent,
   virtual bool DoLoadMessageManagerScript(const nsAString& aURL,
                                           bool aRunInGlobalScope) override;
 
-  virtual nsresult DoSendAsyncMessage(const nsAString& aMessage,
-                                      StructuredCloneData& aData) override;
+  virtual nsresult DoSendAsyncMessage(
+      const nsAString& aMessage, NotNull<StructuredCloneData*> aData) override;
 
   /*
    * Attempt to add a KeepAlive for the given BrowserId. A KeepAlive will try to
@@ -540,6 +538,12 @@ class ContentParent final : public PContentParent,
       const nsTArray<PermissionRequest>& aRequests, nsIPrincipal* aPrincipal,
       nsIPrincipal* aTopLevelPrincipal, const bool& aIsHandlingUserInput,
       const bool& aMaybeUnsafePermissionDelegate, const TabId& aTabId);
+
+  mozilla::ipc::IPCResult RecvPContentPermissionRequestConstructor(
+      PContentPermissionRequestParent* aActor,
+      nsTArray<PermissionRequest>&& aRequests, nsIPrincipal* aPrincipal,
+      nsIPrincipal* aTopLevelPrincipal, const bool& aIsHandlingUserInput,
+      const bool& aMaybeUnsafePermissionDelegate, const TabId& tabId) override;
 
   bool DeallocPContentPermissionRequestParent(
       PContentPermissionRequestParent* actor);
@@ -732,7 +736,7 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvWindowPostMessage(
       const MaybeDiscarded<BrowsingContext>& aContext,
-      const ClonedOrErrorMessageData& aMessage, const PostMessageData& aData);
+      StructuredCloneData* aMessage, const PostMessageData& aData);
 
   FORWARD_SHMEM_ALLOCATOR_TO(PContentParent)
 
@@ -1021,11 +1025,11 @@ class ContentParent final : public PContentParent,
       const uint64_t& registrarId);
 
   mozilla::ipc::IPCResult RecvSyncMessage(
-      const nsAString& aMsg, const ClonedMessageData& aData,
-      nsTArray<UniquePtr<StructuredCloneData>>* aRetvals);
+      const nsAString& aMsg, NotNull<StructuredCloneData*> aData,
+      nsTArray<NotNull<RefPtr<StructuredCloneData>>>* aRetvals);
 
   mozilla::ipc::IPCResult RecvAsyncMessage(const nsAString& aMsg,
-                                           const ClonedMessageData& aData);
+                                           NotNull<StructuredCloneData*> aData);
 
   // MOZ_CAN_RUN_SCRIPT_BOUNDARY because we don't have MOZ_CAN_RUN_SCRIPT bits
   // in IPC code yet.
@@ -1056,7 +1060,7 @@ class ContentParent final : public PContentParent,
       const uint32_t& aLineNumber, const uint32_t& aColNumber,
       const uint32_t& aFlags, const nsACString& aCategory,
       const bool& aIsFromPrivateWindow, const bool& aIsFromChromeContext,
-      const ClonedMessageData& aStack);
+      NotNull<StructuredCloneData*> aStack);
 
  private:
   mozilla::ipc::IPCResult RecvScriptErrorInternal(
@@ -1064,7 +1068,7 @@ class ContentParent final : public PContentParent,
       const uint32_t& aLineNumber, const uint32_t& aColNumber,
       const uint32_t& aFlags, const nsACString& aCategory,
       const bool& aIsFromPrivateWindow, const bool& aIsFromChromeContext,
-      const ClonedMessageData* aStack = nullptr);
+      StructuredCloneData* aStack = nullptr);
 
  public:
   mozilla::ipc::IPCResult RecvCommitBrowsingContextTransaction(
@@ -1225,24 +1229,12 @@ class ContentParent final : public PContentParent,
           aReason,
       CompleteAllowAccessForResolver&& aResolver);
 
-  mozilla::ipc::IPCResult RecvSetAllowStorageAccessRequestFlag(
-      nsIPrincipal* aEmbeddedPrincipal, nsIURI* aEmbeddingOrigin,
-      SetAllowStorageAccessRequestFlagResolver&& aResolver);
-
-  mozilla::ipc::IPCResult RecvTestAllowStorageAccessRequestFlag(
-      nsIPrincipal* aEmbeddingPrincipal, nsIURI* aEmbeddedOrigin,
-      TestAllowStorageAccessRequestFlagResolver&& aResolver);
-
   mozilla::ipc::IPCResult RecvStoreUserInteractionAsPermission(
       nsIPrincipal* aPrincipal);
 
   mozilla::ipc::IPCResult RecvTestCookiePermissionDecided(
       const MaybeDiscarded<BrowsingContext>& aContext, nsIPrincipal* aPrincipal,
       const TestCookiePermissionDecidedResolver&& aResolver);
-
-  mozilla::ipc::IPCResult RecvTestStorageAccessPermission(
-      nsIPrincipal* aEmbeddingPrincipal, const nsCString& aEmbeddedOrigin,
-      const TestStorageAccessPermissionResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvNotifyMediaPlaybackChanged(
       const MaybeDiscarded<BrowsingContext>& aContext,
@@ -1295,9 +1287,9 @@ class ContentParent final : public PContentParent,
       uint32_t aShutdownStateId,
       ServiceWorkerShutdownState::Progress aProgress);
 
-  mozilla::ipc::IPCResult RecvRawMessage(
-      const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
-      const UniquePtr<ClonedMessageData>& aStack);
+  mozilla::ipc::IPCResult RecvRawMessage(const JSActorMessageMeta& aMeta,
+                                         JSIPCValue&& aData,
+                                         StructuredCloneData* aStack);
 
   mozilla::ipc::IPCResult RecvAbortOtherOrientationPendingPromises(
       const MaybeDiscarded<BrowsingContext>& aContext);
@@ -1357,7 +1349,7 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvSynchronizeNavigationAPIState(
       const MaybeDiscarded<BrowsingContext>& aContext,
-      const ClonedMessageData& aState);
+      NotNull<nsStructuredCloneContainer*> aState);
 
   mozilla::ipc::IPCResult RecvRemoveFromBFCache(
       const MaybeDiscarded<BrowsingContext>& aContext);

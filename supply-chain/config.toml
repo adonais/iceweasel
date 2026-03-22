@@ -227,6 +227,10 @@ notes = "Contains only upstream mainline history pending release."
 audit-as-crates-io = false
 notes = "This is a first-party crate which is entirely unrelated to the crates.io package of the same name."
 
+[policy.swgl]
+audit-as-crates-io = false
+notes = "This is an in-tree first-party crate that is published to crates.io by others."
+
 [policy.tabs]
 audit-as-crates-io = false
 notes = "This is a first-party crate, maintained by the appservices team, which is entirely unrelated to the crates.io package of the same name."
@@ -289,6 +293,10 @@ notes = "Upstream project which we pin."
 [policy.windows]
 audit-as-crates-io = true
 notes = "Local override of the crates.io crate that uses a non-vendored local copy of the downloaded crate"
+
+[policy.wr_glyph_rasterizer]
+audit-as-crates-io = false
+notes = "This is an in-tree first-party crate that is published to crates.io by others."
 
 [policy.wr_malloc_size_of]
 audit-as-crates-io = false
@@ -478,14 +486,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.goblin]]
 version = "0.1.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.gpu-alloc]]
-version = "0.5.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.gpu-alloc-types]]
-version = "0.2.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.gpu-descriptor]]

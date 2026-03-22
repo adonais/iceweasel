@@ -1329,8 +1329,12 @@ struct CCIntervalMarker : public mozilla::BaseMarkerType<CCIntervalMarker> {
 
   using MS = mozilla::MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
-      {"mReason", MS::InputType::CString, "Reason", MS::Format::String,
-       MS::PayloadFlags::Searchable},
+      {
+          "mReason",
+          MS::InputType::CString,
+          "Reason",
+          MS::Format::String,
+      },
       {"mMaxSliceTime", MS::InputType::TimeDuration, "Max Slice Time",
        MS::Format::Duration},
       {"mSuspected", MS::InputType::Uint32, "Suspected Objects",

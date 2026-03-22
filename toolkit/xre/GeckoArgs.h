@@ -27,6 +27,7 @@ struct ChildProcessArgs {
   std::vector<UniqueFileHandle> mFiles;
 #ifdef XP_DARWIN
   std::vector<UniqueMachSendRight> mSendRights;
+  std::vector<UniqueMachReceiveRight> mReceiveRights;
 #endif
 };
 
@@ -46,9 +47,16 @@ void AddToFdsToRemap(const ChildProcessArgs& aArgs,
 // to the number of mach send rights which can be passed on the command line.
 constexpr size_t kMaxPassedMachSendRights = 10;
 
+// Size of the internal static array of mach receive rights. This acts as a
+// limit to the number of mach receive rights which can be passed on the
+// command line.
+constexpr size_t kMaxPassedMachReceiveRights = 1;
+
 // Fill the internal static array with the mach send rights which were passed
 // from the parent process.
 void SetPassedMachSendRights(std::vector<UniqueMachSendRight>&& aSendRights);
+void SetPassedMachReceiveRights(
+    std::vector<UniqueMachReceiveRight>&& aReceiveRights);
 #endif
 
 template <typename T>
@@ -135,7 +143,10 @@ Maybe<UniqueFileHandle> CommandLineArg<UniqueFileHandle>::GetCommon(
 template <>
 Maybe<UniqueMachSendRight> CommandLineArg<UniqueMachSendRight>::GetCommon(
     const char* aMatch, int& aArgc, char** aArgv, const CheckArgFlag aFlags);
-#endif
+template <>
+Maybe<UniqueMachReceiveRight> CommandLineArg<UniqueMachReceiveRight>::GetCommon(
+    const char* aMatch, int& aArgc, char** aArgv, const CheckArgFlag aFlags);
+#endif  // XP_DARWIN
 
 template <>
 Maybe<mozilla::ipc::ReadOnlySharedMemoryHandle>
@@ -185,7 +196,10 @@ template <>
 void CommandLineArg<UniqueMachSendRight>::PutCommon(const char* aName,
                                                     UniqueMachSendRight aValue,
                                                     ChildProcessArgs& aArgs);
-#endif
+template <>
+void CommandLineArg<UniqueMachReceiveRight>::PutCommon(
+    const char* aName, UniqueMachReceiveRight aValue, ChildProcessArgs& aArgs);
+#endif  // XP_DARWIN
 
 template <>
 void CommandLineArg<mozilla::ipc::ReadOnlySharedMemoryHandle>::PutCommon(
@@ -237,8 +251,15 @@ static CommandLineArg<const char*> sCrashReporter{"-crashReporter",
 static CommandLineArg<UniqueFileHandle> sCrashReporter{"-crashReporter",
                                                        "crashreporter"};
 #endif
+#if defined(XP_DARWIN)
+static CommandLineArg<UniqueMachSendRight> sCrashHelperSend{"-crashHelperSend",
+                                                            "crashhelpersend"};
+static CommandLineArg<UniqueMachReceiveRight> sCrashHelperRecv{
+    "-crashHelperRecv", "crashhelperrecv"};
+#else
 static CommandLineArg<UniqueFileHandle> sCrashHelper{"-crashHelper",
                                                      "crashhelper"};
+#endif  // XP_DARWIN
 
 #if defined(XP_WIN)
 #  if defined(MOZ_SANDBOX)

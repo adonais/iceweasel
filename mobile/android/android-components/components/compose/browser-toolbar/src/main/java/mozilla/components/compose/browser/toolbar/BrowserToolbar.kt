@@ -4,10 +4,13 @@
 
 package mozilla.components.compose.browser.toolbar
 
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -66,6 +69,8 @@ fun BrowserToolbar(
     store: BrowserToolbarStore,
     cfr: BrowserToolbarCFR? = null,
     useMinimalBottomToolbarWhenEnteringText: Boolean = false,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
+    outlineColor: Color = DividerDefaults.color,
 ) {
     val uiState by store.observeAsComposableState { it }
     val cfrProperties = browserToolbarCFRProperties(uiState.gravity)
@@ -77,6 +82,13 @@ fun BrowserToolbar(
             isQueryPrefilled = uiState.editState.isQueryPrefilled,
             usePrivateModeQueries = uiState.editState.isQueryPrivate,
             gravity = uiState.gravity,
+            backgroundColor =
+                if (store.state.editState.query.current.isEmpty()) {
+                    backgroundColor
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
+            outlineColor = outlineColor,
             suggestion = uiState.editState.suggestion,
             editActionsStart = uiState.editState.editActionsStart,
             editActionsEnd = uiState.editState.editActionsEnd,
@@ -90,6 +102,8 @@ fun BrowserToolbar(
                 pageOrigin = uiState.displayState.pageOrigin,
                 progressBarConfig = uiState.displayState.progressBarConfig,
                 gravity = uiState.gravity,
+                backgroundColor = backgroundColor,
+                outlineColor = outlineColor,
                 browserActionsStart = uiState.displayState.browserActionsStart,
                 pageActionsStart = uiState.displayState.pageActionsStart,
                 pageActionsEnd = uiState.displayState.pageActionsEnd,

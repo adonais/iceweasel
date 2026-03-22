@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __FFmpegLibWrapper_h__
-#define __FFmpegLibWrapper_h__
+#ifndef FFmpegLibWrapper_h_
+#define FFmpegLibWrapper_h_
 
 #include "ffvpx/tx.h"
 #include "mozilla/Attributes.h"

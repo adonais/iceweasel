@@ -139,6 +139,7 @@ class DCLayerTree {
   void MaybeCommit();
   void WaitForCommitCompletion();
 
+  bool UseCompositor() const;
   bool UseNativeCompositor() const;
   bool UseLayerCompositor() const;
   void DisableNativeCompositor();
@@ -208,7 +209,7 @@ class DCLayerTree {
 
   int GetFrameId() { return mCurrentFrame; }
 
-  void SetPendingCommet() { mPendingCommit = true; }
+  void SetPendingCommit() { mPendingCommit = true; }
 
  protected:
   bool Initialize(HWND aHwnd, nsACString& aError);
@@ -223,7 +224,12 @@ class DCLayerTree {
   void ReleaseNativeCompositorResources();
   layers::OverlayInfo GetOverlayInfo();
 
-  bool mUseNativeCompositor = true;
+  enum class WebRenderOsCompositorKind {
+    NativeCompositor,
+    LayerCompositor,
+  };
+
+  Maybe<WebRenderOsCompositorKind> mCompositorKind;
   bool mEnableAsyncScreenshot = false;
   bool mEnableAsyncScreenshotInNextFrame = false;
   int mAsyncScreenshotLastFrameUsed = 0;

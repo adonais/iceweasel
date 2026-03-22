@@ -1018,7 +1018,7 @@ exports.getTopWindow = getTopWindow;
 /**
  * Check whether two objects are identical by performing
  * a deep equality check on their properties and values.
- * See toolkit/modules/ObjectUtils.jsm for implementation.
+ * See toolkit/modules/ObjectUtils.sys.mjs for implementation.
  *
  * @param {object} a
  * @param {object} b

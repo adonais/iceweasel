@@ -73,7 +73,7 @@ add_setup(async () => {
 
 add_task(async function test_remote_override() {
   // Sanity check that the search engine is set as default.
-  let defaultEngine = Services.search.defaultEngine;
+  let defaultEngine = SearchService.defaultEngine;
   Assert.equal(
     defaultEngine.id,
     "override",

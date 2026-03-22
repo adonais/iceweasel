@@ -67,6 +67,8 @@ function initPage() {
     // try to ping secure www link in the AboutHttpsOnlyErrorChild
     RPMTryPingSecureWWWLink();
   }
+
+  resetClickjackingTimeout();
 }
 
 /*  Suggestion Box */

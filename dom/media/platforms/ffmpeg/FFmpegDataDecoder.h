@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __FFmpegDataDecoder_h__
-#define __FFmpegDataDecoder_h__
+#ifndef FFmpegDataDecoder_h_
+#define FFmpegDataDecoder_h_
 
 #include "FFmpegLibWrapper.h"
 #include "PlatformDecoderModule.h"
@@ -60,6 +60,7 @@ class FFmpegDataDecoder<LIBAV_VER>
   virtual void InitCodecContext() MOZ_REQUIRES(sMutex) {}
   void ReleaseCodecContext() MOZ_REQUIRES(sMutex);
   AVFrame* PrepareFrame();
+  void ReleaseFrame();
   MediaResult InitSWDecoder(AVDictionary** aOptions);
   MediaResult InitDecoder(AVCodec* aCodec, AVDictionary** aOptions);
   MediaResult AllocateExtraData();
@@ -112,4 +113,4 @@ class FFmpegDataDecoder<LIBAV_VER>
 
 }  // namespace mozilla
 
-#endif  // __FFmpegDataDecoder_h__
+#endif  // FFmpegDataDecoder_h_

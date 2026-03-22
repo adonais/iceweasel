@@ -8,14 +8,16 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
+import kotlinx.coroutines.flow.map
 import mozilla.components.compose.base.button.TextButton
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.address.store.AddressState
 import org.mozilla.fenix.settings.address.store.AddressStore
@@ -23,8 +25,8 @@ import org.mozilla.fenix.settings.address.store.DeleteDialogAction
 import org.mozilla.fenix.settings.address.store.DialogState
 import org.mozilla.fenix.settings.address.store.ViewAppeared
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Dialog that is presented when deleting an address.
@@ -33,7 +35,9 @@ import org.mozilla.fenix.theme.ThemeProvider
  */
 @Composable
 internal fun DeleteAddressDialog(store: AddressStore) {
-    val dialogState by store.observeAsState(store.state.deleteDialog) { it.deleteDialog }
+    val dialogState by remember {
+        store.stateFlow.map { it.deleteDialog }
+    }.collectAsState(store.state.deleteDialog)
 
     if (dialogState is DialogState.Presenting) {
         AlertDialog(
@@ -65,7 +69,7 @@ internal fun DeleteAddressDialog(store: AddressStore) {
 @Preview
 @Composable
 private fun DeleteAddressDialogPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     val store = AddressStore(
         AddressState.initial().copy(deleteDialog = DialogState.Presenting),

@@ -10,9 +10,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Environment
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
+import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.DownloadAction
 import mozilla.components.browser.state.action.TabListAction
+import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.state.content.DownloadState.Status.CANCELLED
@@ -27,13 +31,11 @@ import mozilla.components.concept.fetch.Response
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
+import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.mock
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doReturn
@@ -46,13 +48,10 @@ import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class DownloadMiddlewareTest {
-
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
-    private val dispatcher = coroutinesTestRule.testDispatcher
+    private val dispatcher = StandardTestDispatcher()
 
     @Test
-    fun `service is started when download is queued`() = runTestOnMain {
+    fun `service is started when download is queued`() = runTest(dispatcher) {
         val applicationContext: Context = mock()
         val downloadMiddleware = spy(
             DownloadMiddleware(
@@ -70,6 +69,7 @@ class DownloadMiddlewareTest {
 
         val download = DownloadState("https://mozilla.org/download", destinationDirectory = "")
         store.dispatch(DownloadAction.AddDownloadAction(download))
+        dispatcher.scheduler.advanceUntilIdle()
 
         val intentCaptor = argumentCaptor<Intent>()
         verify(downloadMiddleware).startForegroundService(intentCaptor.capture())
@@ -81,6 +81,7 @@ class DownloadMiddlewareTest {
         val privateDownload = download.copy(id = "newId", private = true)
 
         store.dispatch(DownloadAction.AddDownloadAction(privateDownload))
+        dispatcher.scheduler.advanceUntilIdle()
 
         verify(downloadMiddleware, never()).saveDownload(any(), any())
         verify(downloadMiddleware.downloadStorage, never()).add(privateDownload)
@@ -89,7 +90,7 @@ class DownloadMiddlewareTest {
     }
 
     @Test
-    fun `saveDownload do not store private downloads`() = runTestOnMain {
+    fun `saveDownload do not store private downloads`() = runTest(dispatcher) {
         val applicationContext: Context = mock()
         val downloadMiddleware = spy(
             DownloadMiddleware(
@@ -108,12 +109,13 @@ class DownloadMiddlewareTest {
         val privateDownload = DownloadState("https://mozilla.org/download", private = true)
 
         store.dispatch(DownloadAction.AddDownloadAction(privateDownload))
+        dispatcher.scheduler.advanceUntilIdle()
 
         verify(downloadMiddleware.downloadStorage, never()).add(privateDownload)
     }
 
     @Test
-    fun `restarted downloads MUST not be passed to the downloadStorage`() = runTestOnMain {
+    fun `restarted downloads MUST not be passed to the downloadStorage`() = runTest(dispatcher) {
         val applicationContext: Context = mock()
         val downloadStorage: DownloadStorage = mock()
         val downloadMiddleware = DownloadMiddleware(
@@ -130,17 +132,19 @@ class DownloadMiddlewareTest {
 
         var download = DownloadState("https://mozilla.org/download", destinationDirectory = "")
         store.dispatch(DownloadAction.RestoreDownloadStateAction(download))
+        dispatcher.scheduler.advanceUntilIdle()
 
         verify(downloadStorage, never()).add(download)
 
         download = DownloadState("https://mozilla.org/download", destinationDirectory = "")
         store.dispatch(DownloadAction.AddDownloadAction(download))
+        dispatcher.scheduler.advanceUntilIdle()
 
         verify(downloadStorage).add(download)
     }
 
     @Test
-    fun `previously added downloads MUST be ignored`() = runTestOnMain {
+    fun `previously added downloads MUST be ignored`() = runTest(dispatcher) {
         val applicationContext: Context = mock()
         val downloadStorage: DownloadStorage = mock()
         val download = DownloadState("https://mozilla.org/download")
@@ -159,13 +163,14 @@ class DownloadMiddlewareTest {
         )
 
         store.dispatch(DownloadAction.AddDownloadAction(download))
+        dispatcher.scheduler.advanceUntilIdle()
 
         verify(downloadStorage, never()).add(download)
     }
 
     @Test
     fun `Given a download in the storage and deleteFileFromStorage is true, When RemoveDownloadAction is dispatched, Then it MUST be removed from the storage and the file deleted`() =
-        runTestOnMain {
+        runTest(dispatcher) {
             val applicationContext: Context = mock()
             val contentResolver: ContentResolver = mock()
             doReturn(contentResolver).`when`(applicationContext).contentResolver
@@ -197,8 +202,10 @@ class DownloadMiddlewareTest {
             )
 
             store.dispatch(DownloadAction.AddDownloadAction(download))
+            dispatcher.scheduler.advanceUntilIdle()
 
             store.dispatch(DownloadAction.RemoveDownloadAction(download.id))
+            dispatcher.scheduler.advanceUntilIdle()
 
             verify(downloadStorage).remove(download)
 
@@ -207,7 +214,7 @@ class DownloadMiddlewareTest {
 
     @Test
     fun `Given a download in the storage and deleteFileFromStorage is false, When RemoveDownloadAction is dispatched, Then it MUST be removed from the storage and the file deleted`() =
-        runTestOnMain {
+        runTest(dispatcher) {
             val applicationContext: Context = mock()
             val downloadStorage: DownloadStorage = mock()
             val downloadMiddleware = DownloadMiddleware(
@@ -234,8 +241,10 @@ class DownloadMiddlewareTest {
             )
 
             store.dispatch(DownloadAction.AddDownloadAction(download))
+            dispatcher.scheduler.advanceUntilIdle()
 
             store.dispatch(DownloadAction.RemoveDownloadAction(download.id))
+            dispatcher.scheduler.advanceUntilIdle()
 
             verify(downloadStorage).remove(download)
 
@@ -243,7 +252,7 @@ class DownloadMiddlewareTest {
         }
 
     @Test
-    fun `RemoveAllDownloadsAction MUST remove all downloads from the storage`() = runTestOnMain {
+    fun `RemoveAllDownloadsAction MUST remove all downloads from the storage`() = runTest(dispatcher) {
         val applicationContext: Context = mock()
         val downloadStorage: DownloadStorage = mock()
         val downloadMiddleware = DownloadMiddleware(
@@ -260,14 +269,16 @@ class DownloadMiddlewareTest {
 
         val download = DownloadState("https://mozilla.org/download", destinationDirectory = "")
         store.dispatch(DownloadAction.AddDownloadAction(download))
+        dispatcher.scheduler.advanceUntilIdle()
 
         store.dispatch(DownloadAction.RemoveAllDownloadsAction)
+        dispatcher.scheduler.advanceUntilIdle()
 
         verify(downloadStorage).removeAllDownloads()
     }
 
     @Test
-    fun `UpdateDownloadAction MUST update the storage when changes are needed`() = runTestOnMain {
+    fun `UpdateDownloadAction MUST update the storage when changes are needed`() = runTest(dispatcher) {
         val applicationContext: Context = mock()
         val downloadStorage: DownloadStorage = mock()
         val downloadMiddleware = DownloadMiddleware(
@@ -284,6 +295,7 @@ class DownloadMiddlewareTest {
 
         val download = DownloadState("https://mozilla.org/download", status = INITIATED)
         store.dispatch(DownloadAction.AddDownloadAction(download))
+        dispatcher.scheduler.advanceUntilIdle()
 
         val downloadInTheStore = store.state.downloads.getValue(download.id)
 
@@ -291,6 +303,7 @@ class DownloadMiddlewareTest {
 
         var updatedDownload = download.copy(status = COMPLETED, skipConfirmation = true)
         store.dispatch(DownloadAction.UpdateDownloadAction(updatedDownload))
+        dispatcher.scheduler.advanceUntilIdle()
 
         verify(downloadStorage).update(updatedDownload)
 
@@ -298,6 +311,7 @@ class DownloadMiddlewareTest {
         // changes on it shouldn't trigger an update on the storage.
         updatedDownload = updatedDownload.copy(skipConfirmation = false)
         store.dispatch(DownloadAction.UpdateDownloadAction(updatedDownload))
+        dispatcher.scheduler.advanceUntilIdle()
 
         verify(downloadStorage, times(1)).update(any())
 
@@ -305,11 +319,13 @@ class DownloadMiddlewareTest {
         updatedDownload = updatedDownload.copy(private = true)
 
         store.dispatch(DownloadAction.UpdateDownloadAction(updatedDownload))
+        dispatcher.scheduler.advanceUntilIdle()
+
         verify(downloadStorage, times(1)).update(any())
     }
 
     @Test
-    fun `RestoreDownloadsState MUST populate the store with items in the storage`() = runTestOnMain {
+    fun `RestoreDownloadsState MUST populate the store with items in the storage`() = runTest(dispatcher) {
             val applicationContext: Context = mock()
             val downloadStorage: DownloadStorage = mock()
             val downloadMiddleware = DownloadMiddleware(
@@ -351,7 +367,7 @@ class DownloadMiddlewareTest {
         }
 
     @Test
-    fun `private downloads MUST NOT be restored`() = runTestOnMain {
+    fun `private downloads MUST NOT be restored`() = runTest(dispatcher) {
         val applicationContext: Context = mock()
         val downloadStorage: DownloadStorage = mock()
         val downloadMiddleware = DownloadMiddleware(
@@ -379,7 +395,7 @@ class DownloadMiddlewareTest {
     }
 
     @Test
-    fun `sendDownloadIntent MUST call startForegroundService WHEN downloads are NOT COMPLETED, CANCELLED and FAILED`() = runTestOnMain {
+    fun `sendDownloadIntent MUST call startForegroundService WHEN downloads are NOT COMPLETED, CANCELLED and FAILED`() = runTest(dispatcher) {
             val applicationContext: Context = mock()
             val downloadMiddleware = spy(
                 DownloadMiddleware(
@@ -408,7 +424,7 @@ class DownloadMiddlewareTest {
         }
 
     @Test
-    fun `WHEN RemoveAllTabsAction and RemoveAllPrivateTabsAction are received THEN removePrivateNotifications must be called`() = runTestOnMain {
+    fun `WHEN RemoveAllTabsAction and RemoveAllPrivateTabsAction are received THEN removePrivateNotifications must be called`() = runTest(dispatcher) {
             val applicationContext: Context = mock()
             val downloadMiddleware = spy(
                 DownloadMiddleware(
@@ -437,7 +453,7 @@ class DownloadMiddlewareTest {
         }
 
     @Test
-    fun `WHEN RemoveTabsAction is received AND there is no private tabs THEN removePrivateNotifications MUST be called`() = runTestOnMain {
+    fun `WHEN RemoveTabsAction is received AND there is no private tabs THEN removePrivateNotifications MUST be called`() = runTest(dispatcher) {
             val applicationContext: Context = mock()
             val downloadMiddleware = spy(
                 DownloadMiddleware(
@@ -468,7 +484,7 @@ class DownloadMiddlewareTest {
         }
 
     @Test
-    fun `WHEN RemoveTabsAction is received AND there is a private tab THEN removePrivateNotifications MUST NOT be called`() = runTestOnMain {
+    fun `WHEN RemoveTabsAction is received AND there is a private tab THEN removePrivateNotifications MUST NOT be called`() = runTest(dispatcher) {
             val applicationContext: Context = mock()
             val downloadMiddleware = spy(
                 DownloadMiddleware(
@@ -499,7 +515,7 @@ class DownloadMiddlewareTest {
         }
 
     @Test
-    fun `WHEN RemoveTabAction is received AND there is no private tabs THEN removePrivateNotifications MUST be called`() = runTestOnMain {
+    fun `WHEN RemoveTabAction is received AND there is no private tabs THEN removePrivateNotifications MUST be called`() = runTest(dispatcher) {
             val applicationContext: Context = mock()
             val downloadMiddleware = spy(
                 DownloadMiddleware(
@@ -529,7 +545,7 @@ class DownloadMiddlewareTest {
         }
 
     @Test
-    fun `WHEN RemoveTabAction is received AND there is a private tab THEN removePrivateNotifications MUST NOT be called`() = runTestOnMain {
+    fun `WHEN RemoveTabAction is received AND there is a private tab THEN removePrivateNotifications MUST NOT be called`() = runTest(dispatcher) {
             val applicationContext: Context = mock()
             val downloadMiddleware = spy(
                 DownloadMiddleware(
@@ -559,28 +575,38 @@ class DownloadMiddlewareTest {
         }
 
     @Test
-    fun `WHEN removeStatusBarNotification is called THEN an ACTION_REMOVE_PRIVATE_DOWNLOAD intent must be created`() = runTestOnMain {
-            val applicationContext: Context = mock()
-            val downloadMiddleware = spy(
-                DownloadMiddleware(
-                    applicationContext,
-                    AbstractFetchDownloadService::class.java,
-                    coroutineContext = dispatcher,
-                    downloadStorage = mock(),
-                    deleteFileFromStorage = { false },
-                ),
-            )
-            val download = DownloadState("https://mozilla.org/download", notificationId = 100)
-            val store = mock<BrowserStore>()
+    fun `WHEN removeStatusBarNotification is called THEN an ACTION_REMOVE_PRIVATE_DOWNLOAD intent must be created`() = runTest(dispatcher) {
+        val applicationContext: Context = mock()
+        val downloadMiddleware = spy(
+            DownloadMiddleware(
+                applicationContext,
+                AbstractFetchDownloadService::class.java,
+                coroutineContext = dispatcher,
+                downloadStorage = mock(),
+                deleteFileFromStorage = { false },
+            ),
+        )
+        val download = DownloadState("https://mozilla.org/download", notificationId = 100)
+        val captureActionsMiddleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
+        val store = BrowserStore(
+            initialState = BrowserState(),
+            middleware = listOf(captureActionsMiddleware) + EngineMiddleware.create(
+                engine = mock(),
+                this,
+            ),
+        )
 
-            downloadMiddleware.removeStatusBarNotification(store, download)
+        downloadMiddleware.removeStatusBarNotification(store, download)
 
-            verify(store, times(1)).dispatch(DownloadAction.DismissDownloadNotificationAction(download.id))
-            verify(applicationContext, times(1)).startService(any())
+        captureActionsMiddleware.assertFirstAction(DownloadAction.DismissDownloadNotificationAction::class) { action ->
+            assertEquals(download.id, action.downloadId)
         }
 
+        verify(applicationContext, times(1)).startService(any())
+    }
+
     @Test
-    fun `WHEN removePrivateNotifications is called THEN removeStatusBarNotification will be called only for private download`() = runTestOnMain {
+    fun `WHEN removePrivateNotifications is called THEN removeStatusBarNotification will be called only for private download`() = runTest(dispatcher) {
             val applicationContext: Context = mock()
             val downloadMiddleware = spy(
                 DownloadMiddleware(
@@ -604,7 +630,7 @@ class DownloadMiddlewareTest {
         }
 
     @Test
-    fun `WHEN removePrivateNotifications is called THEN removeStatusBarNotification will be called for all private downloads`() = runTestOnMain {
+    fun `WHEN removePrivateNotifications is called THEN removeStatusBarNotification will be called for all private downloads`() = runTest(dispatcher) {
             val applicationContext: Context = mock()
             val downloadMiddleware = spy(
                 DownloadMiddleware(
@@ -631,7 +657,7 @@ class DownloadMiddlewareTest {
         }
 
     @Test
-    fun `WHEN an action for canceling a download response is received THEN a download response must be canceled`() = runTestOnMain {
+    fun `WHEN an action for canceling a download response is received THEN a download response must be canceled`() = runTest(dispatcher) {
             val response = mock<Response>()
             val download = DownloadState(id = "downloadID", url = "example.com/5MB.zip", response = response)
             val applicationContext: Context = mock()
@@ -691,7 +717,7 @@ class DownloadMiddlewareTest {
 
     @Test
     fun `when restoring downloads, if the file is deleted, the download is deleted`() =
-        runTestOnMain {
+        runTest(dispatcher) {
             val downloadStorage = mock<DownloadStorage>()
             val downloadMiddleware = DownloadMiddleware(
                 applicationContext = mock(),
@@ -730,7 +756,7 @@ class DownloadMiddlewareTest {
 
     @Test
     fun `WHEN RemoveDeletedDownloads is called on a completed file that doesn't exist THEN the download is deleted and browser state is updated`() =
-        runTestOnMain {
+        runTest(dispatcher) {
             val downloadStorage = mock<DownloadStorage>()
             val downloadMiddleware = DownloadMiddleware(
                 applicationContext = mock(),
@@ -766,7 +792,7 @@ class DownloadMiddlewareTest {
 
     @Test
     fun `WHEN RemoveDeletedDownloads is called on a file that exists THEN the download is not deleted and browser state is not updated`() =
-        runTestOnMain {
+        runTest(dispatcher) {
             val downloadStorage = mock<DownloadStorage>()
             val downloadMiddleware = DownloadMiddleware(
                 applicationContext = mock(),
@@ -810,7 +836,7 @@ class DownloadMiddlewareTest {
 
     @Test
     fun `WHEN RemoveDeletedDownloads is called on an in progress download and the file doesn't exist THEN the download is not deleted and browser state is not updated`() =
-        runTestOnMain {
+        runTest(dispatcher) {
             val downloadStorage = mock<DownloadStorage>()
             val downloadMiddleware = DownloadMiddleware(
                 applicationContext = mock(),
@@ -846,7 +872,7 @@ class DownloadMiddlewareTest {
 
     @Test
     fun `WHEN RemoveDeletedDownloads is called on an initiated download, where the file doesn't exist, THEN the download is not deleted and browser state is not updated`() =
-        runTestOnMain {
+        runTest(dispatcher) {
             val downloadStorage = mock<DownloadStorage>()
             val downloadMiddleware = DownloadMiddleware(
                 applicationContext = mock(),
@@ -882,7 +908,7 @@ class DownloadMiddlewareTest {
 
     @Test
     fun `WHEN RemoveDeletedDownloads is called on a failed download, where the file doesn't exist, THEN the download is not deleted and browser state is not updated`() =
-        runTestOnMain {
+        runTest(dispatcher) {
             val downloadStorage = mock<DownloadStorage>()
             val downloadMiddleware = DownloadMiddleware(
                 applicationContext = mock(),
@@ -918,7 +944,7 @@ class DownloadMiddlewareTest {
 
     @Test
     fun `WHEN RemoveDeletedDownloads is called on a paused download and the file doesn't exist THEN the download is not deleted and browser state is not updated`() =
-        runTestOnMain {
+        runTest(dispatcher) {
             val downloadStorage = mock<DownloadStorage>()
             val downloadMiddleware = DownloadMiddleware(
                 applicationContext = mock(),
@@ -954,7 +980,7 @@ class DownloadMiddlewareTest {
 
     @Test
     fun `WHEN RemoveDeletedDownloads is called on a cancelled download, where the file doesn't exist, THEN the download is deleted and browser state is updated`() =
-        runTestOnMain {
+        runTest(dispatcher) {
             val downloadStorage = mock<DownloadStorage>()
             val downloadMiddleware = DownloadMiddleware(
                 applicationContext = mock(),

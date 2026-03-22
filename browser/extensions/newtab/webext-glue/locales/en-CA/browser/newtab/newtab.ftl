@@ -329,18 +329,18 @@ newtab-custom-recent-subtitle = A selection of recent sites and content
 newtab-custom-weather-toggle =
     .label = Weather
     .description = Today’s forecast at a glance
-newtab-custom-trending-search-toggle =
-    .label = Trending searches
-    .description = Popular and frequently searched topics
 newtab-custom-widget-weather-toggle =
     .label = Weather
-newtab-custom-widget-trending-search-toggle =
-    .label = Trending searches
 newtab-custom-widget-lists-toggle =
     .label = Lists
 newtab-custom-widget-timer-toggle =
     .label = Timer
 newtab-custom-widget-section-title = Widgets
+newtab-custom-widget-section-toggle =
+    .label = Widgets
+newtab-widget-manage-title = Widgets
+newtab-widget-manage-widget-button =
+    .label = Manage widgets
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Close
@@ -468,6 +468,8 @@ newtab-weather-change-location-search-input-placeholder =
     .placeholder = Search location
     .aria-label = Search location
 newtab-weather-menu-weather-display = Weather display
+newtab-weather-todays-forecast = Today’s forecast
+newtab-weather-see-full-forecast = See full forecast
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -480,6 +482,7 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Switch to Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Switch to Celsius
+newtab-weather-menu-hide-weather-v2 = Hide weather
 newtab-weather-menu-hide-weather = Hide weather on New Tab
 newtab-weather-menu-learn-more = Learn more
 newtab-weather-menu-detect-my-location = Detect my location
@@ -492,6 +495,11 @@ newtab-weather-opt-in-yes =
     .label = Yes
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = See forecast in { $provider }
+    .aria-description = { $provider } ∙ Sponsored
 
 ## Topic Labels
 
@@ -596,7 +604,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Your favourites at your fingertips
 newtab-shortcuts-highlight-subtitle = Add a shortcut to keep your favourite sites one click away.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Why are you reporting this?
@@ -614,21 +622,13 @@ newtab-report-content-inappropriate-offensive =
     .label = Inappropriate or offensive
 newtab-report-content-spam-misleading =
     .label = Spam or misleading
+newtab-report-content-requires-payment-subscription =
+    .label = Requires payment or subscription
+newtab-report-content-requires-payment-subscription-learn-more = Learn more
 newtab-report-cancel = Cancel
 newtab-report-submit = Submit
 newtab-toast-thanks-for-reporting =
     .message = Thank you for reporting this.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Show trending searches
-newtab-trending-searches-hide-trending =
-    .title = Hide trending searches
-newtab-trending-searches-learn-more = Learn more
-newtab-trending-searches-dismiss = Hide trending searches
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Trending searches
 
 ## Strings for task / to-do list productivity widget
 
@@ -701,6 +701,12 @@ newtab-widget-timer-menu-notifications = Turn off notifications
 newtab-widget-timer-menu-notifications-on = Turn on notifications
 newtab-widget-timer-menu-hide = Hide timer
 newtab-widget-timer-menu-learn-more = Learn more
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = Top Headlines
+newtab-daily-briefing-card-menu-dismiss = Dismiss
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = Updated { $minutes }m ago
 newtab-widget-message-title = Stay focused with lists and a built-in timer
 # to-dos stands for "things to do".
 newtab-widget-message-copy = From quick reminders to daily to-dos, focus sessions to stretch breaks — stay on task and on time.
@@ -710,3 +716,25 @@ newtab-promo-card-cta = Learn more
 newtab-promo-card-dismiss-button =
     .title = Dismiss
     .aria-label = Dismiss
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-dismiss-button =
+    .title = Dismiss
+    .aria-label = Dismiss
+# "This space" refers to about:newtab. The call to action here ("make it your own")
+# is to customize newtab with a background image or colour, or by tweaking the
+# existing widgetry that appears on it.
+newtab-activation-window-message-customization-focus-header = Make this space your own
+newtab-activation-window-message-customization-focus-message = Choose a fresh wallpaper, add shortcuts to your favourite sites, and stay up-to-date on stories that interest you.
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = Start customizing
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = This space plays by your rules
+newtab-activation-window-message-values-focus-message = { -brand-product-name } lets you browse the way you like, with a more personal way to start your day online. Make { -brand-product-name } your own.

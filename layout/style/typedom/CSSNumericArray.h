@@ -44,6 +44,8 @@ class CSSNumericArray final : public nsISupports, public nsWrapperCache {
 
   // end of CSSNumericArray Web IDL declarations
 
+  const nsTArray<RefPtr<CSSNumericValue>>& GetValues() const { return mValues; }
+
  private:
   virtual ~CSSNumericArray() = default;
 

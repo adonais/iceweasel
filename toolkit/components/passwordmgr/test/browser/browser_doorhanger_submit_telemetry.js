@@ -401,5 +401,5 @@ async function test_submit_telemetry(tc) {
 
   // Clean up the database before the next test case is executed.
   await cleanupDoorhanger(notif);
-  Services.logins.removeAllUserFacingLogins();
+  await Services.logins.removeAllUserFacingLoginsAsync();
 }

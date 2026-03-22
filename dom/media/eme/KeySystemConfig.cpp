@@ -10,6 +10,7 @@
 #include "GMPUtils.h"
 #include "KeySystemNames.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/dom/ChromeUtilsBinding.h"
 #include "mozilla/dom/Promise.h"
 #include "nsPrintfCString.h"
 

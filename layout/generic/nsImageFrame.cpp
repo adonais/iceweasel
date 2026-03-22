@@ -43,7 +43,6 @@
 #include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "nsCOMPtr.h"
-#include "nsCSSAnonBoxes.h"
 #include "nsCSSRendering.h"
 #include "nsContentUtils.h"
 #include "nsFontMetrics.h"
@@ -973,7 +972,7 @@ Maybe<nsSize> nsImageFrame::GetViewTransitionBorderBoxSize() const {
   if (NS_WARN_IF(!vt)) {
     return {};
   }
-  return Style()->GetPseudoType() == PseudoStyleType::viewTransitionOld
+  return Style()->GetPseudoType() == PseudoStyleType::ViewTransitionOld
              ? vt->GetOldBorderBoxSize(name)
              : vt->GetNewBorderBoxSize(name);
 }
@@ -990,7 +989,7 @@ wr::ImageKey nsImageFrame::GetViewTransitionImageKey(
     return kNoKey;
   }
   const auto* key =
-      Style()->GetPseudoType() == PseudoStyleType::viewTransitionOld
+      Style()->GetPseudoType() == PseudoStyleType::ViewTransitionOld
           ? vt->ReadOldImageKey(name, aManager, aResources)
           : vt->GetNewImageKey(name);
   return key ? *key : kNoKey;
@@ -2375,7 +2374,7 @@ nsRect nsDisplayImage::GetDestRectViewTransition() const {
   nsSize borderBoxSize;
   Maybe<nsRect> activeRect;
 
-  if (image->Style()->GetPseudoType() == PseudoStyleType::viewTransitionOld) {
+  if (image->Style()->GetPseudoType() == PseudoStyleType::ViewTransitionOld) {
     inkOverflowRect = vt->GetOldInkOverflowRect(name).value();
     borderBoxSize = vt->GetOldBorderBoxSize(name).value();
     activeRect = vt->GetOldActiveRect(name);
@@ -3029,7 +3028,7 @@ static bool IsInAutoWidthTableCellForQuirk(nsIFrame* aFrame) {
   }
   // Check if the parent of the closest nsBlockFrame has auto width.
   nsBlockFrame* ancestor = nsLayoutUtils::FindNearestBlockAncestor(aFrame);
-  if (ancestor->Style()->GetPseudoType() == PseudoStyleType::cellContent) {
+  if (ancestor->Style()->GetPseudoType() == PseudoStyleType::MozCellContent) {
     // Assume direct parent is a table cell frame.
     nsIFrame* grandAncestor = static_cast<nsIFrame*>(ancestor->GetParent());
     return grandAncestor &&

@@ -144,7 +144,7 @@ skip-if = [
 skip-if = [
   "http2",
   "http3",
-  "xorigin && debug",
+  "debug && xorigin",
 ]
 
 ["test_bug502091.html"]
@@ -165,7 +165,7 @@ skip-if = [
 
 ["test_bug613662.xhtml"]
 skip-if = [
-  "xorigin && debug",
+  "debug && xorigin",
 ]
 
 ["test_bug639362.html"]

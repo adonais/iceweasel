@@ -125,6 +125,10 @@ RemoteLazyInputStreamThread::UnregisterShutdownTask(
   return mThread->UnregisterShutdownTask(aTask);
 }
 
+nsIEventTarget::FeatureFlags RemoteLazyInputStreamThread::GetFeatures() {
+  return mThread->GetFeatures();
+}
+
 NS_IMETHODIMP
 RemoteLazyInputStreamThread::DispatchDirectTask(
     already_AddRefed<nsIRunnable> aRunnable) {

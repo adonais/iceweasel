@@ -83,6 +83,37 @@ memory_watcher:
       psi_full_avg60:
         description: PSI full avg60 value (60-second average complete stall percentage)
         type: string
+      psi_available:
+        description:  PSI values are available.
+        type: boolean
+
+  non_oom_sample:
+    type: event
+    description: >
+      Records PSI (Pressure Stall Information) metrics sampled 120 seconds
+      after an OOM-killed content process. By capturing memory pressure
+      values that did not trigger further OOM kills, this helps establish
+      the boundary between recoverable memory pressure and OOM conditions.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010734
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010734
+    notification_emails:
+      - tli@mozilla.com
+    expires: never
+    extra_keys:
+      psi_some_avg10:
+        description: PSI some avg10 value (10-second average partial stall percentage)
+        type: string
+      psi_some_avg60:
+        description: PSI some avg60 value (60-second average partial stall percentage)
+        type: string
+      psi_full_avg10:
+        description: PSI full avg10 value (10-second average complete stall percentage)
+        type: string
+      psi_full_avg60:
+        description: PSI full avg60 value (60-second average complete stall percentage)
+        type: string
 
 memory_phc:
   slop:
@@ -1413,6 +1444,28 @@ system.os:
       - technical
     notification_emails:
       - gijs@mozilla.com
+    expires: never
+    send_in_pings:
+      - metrics
+      - sync
+      - update
+      - third-party-modules
+
+  libstdcxx_version:
+    type: string
+    lifetime: application
+    description: |
+      The Operating System's libstdc++ highest GLIBCXX version.
+      Linux only.
+      e.g. "3.4.33"
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2016621
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2016621
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - mhommey@mozilla.com
     expires: never
     send_in_pings:
       - metrics

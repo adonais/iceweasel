@@ -10,7 +10,6 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MediaControlKeySource.h"
 #include "mozilla/dom/BrowsingContextWebProgress.h"
-#include "mozilla/dom/EntryList.h"
 #include "mozilla/dom/FeaturePolicy.h"
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/Promise.h"
@@ -328,6 +327,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void GetLoadingSessionHistoryInfoFromParent(
       Maybe<LoadingSessionHistoryInfo>& aLoadingInfo);
 
+  MOZ_CAN_RUN_SCRIPT
   void HistoryCommitIndexAndLength();
 
   void SynchronizeLayoutHistoryState();
@@ -449,8 +449,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   bool CanOpenModalPicker();
 
   static bool ShouldEnforceParentalControls();
-
-  void MaybeReconstructActiveEntryList();
 
   // Get the load listener for the current load in this browsing context.
   already_AddRefed<net::DocumentLoadListener> GetCurrentLoad();
@@ -608,8 +606,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   void MaybeReuseNavigationKeyFromActiveEntry(SessionHistoryEntry* aEntry);
 
-  EntryList* GetActiveEntries();
-
   // XXX(farre): Store a ContentParent pointer here rather than mProcessId?
   // Indicates which process owns the docshell.
   uint64_t mProcessId;
@@ -650,7 +646,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     RefPtr<SessionHistoryEntry> mEntry;
   };
   nsTArray<LoadingSessionHistoryEntry> mLoadingEntries;
-  RefPtr<EntryList> mActiveEntryList;
   RefPtr<SessionHistoryEntry> mActiveEntry;
 
   RefPtr<nsSecureBrowserUI> mSecureBrowserUI;

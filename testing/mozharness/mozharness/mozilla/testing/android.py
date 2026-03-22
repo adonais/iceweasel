@@ -16,8 +16,6 @@ import tempfile
 import time
 from threading import Timer
 
-import six
-
 from mozharness.base.script import PostScriptAction, PreScriptAction
 from mozharness.mozilla.automation import EXIT_STATUS_DICT, TBPL_RETRY
 
@@ -524,7 +522,8 @@ class AndroidMixin:
 
     def kill_processes(self, process_name):
         self.info("Killing every process called %s" % process_name)
-        process_name = six.ensure_binary(process_name)
+        if isinstance(process_name, str):
+            process_name = process_name.encode("utf-8")
         out = subprocess.check_output(["ps", "-A"])
         for line in out.splitlines():
             if process_name in line:

@@ -9,18 +9,3 @@ include $(topsrcdir)/config/rules.mk
 install::
 	$(MAKE) -C build install
 	$(MAKE) -C shell install
-
-###############################################
-# Generating source package tarballs
-# (only possible when tar is found)
-ifneq (,$(TAR))
-
-source-package:
-	DIST=$(DIST) \
-	MOZJS_MAJOR_VERSION=$(MOZJS_MAJOR_VERSION) \
-	MOZJS_MINOR_VERSION=$(MOZJS_MINOR_VERSION) \
-	MOZJS_PATCH_VERSION=$(MOZJS_PATCH_VERSION) \
-	MOZJS_ALPHA=$(MOZJS_ALPHA) \
-	$(PYTHON3) $(srcdir)/make-source-package.py
-
-endif

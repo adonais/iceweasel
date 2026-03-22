@@ -58,6 +58,8 @@ prefs=["privacy.restrict3rdpartystorage.heuristic.window_open=false"]
 
 ["test_anchor_scroll_after_document_open.html"]
 
+["test_animations_playback_rate_multiplier.html"]
+
 ["test_bfcache_plus_hash.html"]
 
 ["test_bug385434.html"]

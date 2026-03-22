@@ -39,7 +39,6 @@
 #include "js/Modules.h"  // JS::Module{DynamicImport,Metadata,Resolve}Hook
 #include "js/ScriptPrivate.h"
 #include "js/shadow/Zone.h"
-#include "js/ShadowRealmCallbacks.h"
 #include "js/Stack.h"
 #include "js/StreamConsumer.h"
 #include "js/Symbol.h"
@@ -432,9 +431,6 @@ struct JSRuntime {
   bool getHostDefinedData(JSContext* cx,
                           JS::MutableHandle<JSObject*> data) const;
 
-  bool enqueuePromiseJob(JSContext* cx, js::HandleFunction job,
-                         js::HandleObject promise,
-                         js::HandleObject hostDefinedData);
   void addUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise);
   void removeUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise);
 
@@ -990,7 +986,7 @@ struct JSRuntime {
   js::MainThreadData<JS::AfterWaitCallback> afterWaitCallback;
 
  public:
-  void reportAllocationOverflow() {
+  void reportAllocOverflow() {
     js::ReportAllocationOverflow(static_cast<JSContext*>(nullptr));
   }
 
@@ -1156,20 +1152,6 @@ struct JSRuntime {
 #endif  // defined(NIGHTLY_BUILD)
 
  public:
-  JS::GlobalInitializeCallback getShadowRealmInitializeGlobalCallback() {
-    return shadowRealmInitializeGlobalCallback;
-  }
-
-  JS::GlobalCreationCallback getShadowRealmGlobalCreationCallback() {
-    return shadowRealmGlobalCreationCallback;
-  }
-
-  js::MainThreadData<JS::GlobalInitializeCallback>
-      shadowRealmInitializeGlobalCallback;
-
-  js::MainThreadData<JS::GlobalCreationCallback>
-      shadowRealmGlobalCreationCallback;
-
   js::MainThreadData<js::RuntimeFuses> runtimeFuses;
 };
 

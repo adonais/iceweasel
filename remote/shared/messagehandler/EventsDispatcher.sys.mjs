@@ -74,7 +74,7 @@ export class EventsDispatcher {
 
     const listeners = this.#listenersByEventName.get(name);
     for (const { contextDescriptor } of listeners.values()) {
-      if (this.#matchesContext(contextInfo, contextDescriptor)) {
+      if (this.#matchesRelatedContexts([contextInfo], contextDescriptor)) {
         return true;
       }
     }
@@ -225,18 +225,21 @@ export class EventsDispatcher {
     };
   }
 
-  #matchesContext(contextInfo, contextDescriptor) {
-    const eventBrowsingContext = BrowsingContext.get(contextInfo.contextId);
-    return this.#messageHandler.contextMatchesDescriptor(
-      eventBrowsingContext,
+  #matchesRelatedContexts(relatedContexts, contextDescriptor) {
+    const browsingContexts = relatedContexts.map(contextInfo =>
+      BrowsingContext.get(contextInfo.contextId)
+    );
+
+    return this.#messageHandler.contextsMatchDescriptor(
+      browsingContexts,
       contextDescriptor
     );
   }
 
-  #onMessageHandlerEvent = (name, event, contextInfo) => {
+  #onMessageHandlerEvent = (name, event, relatedContexts) => {
     const listeners = this.#listenersByEventName.get(name);
     for (const { callbacks, contextDescriptor } of listeners.values()) {
-      if (!this.#matchesContext(contextInfo, contextDescriptor)) {
+      if (!this.#matchesRelatedContexts(relatedContexts, contextDescriptor)) {
         continue;
       }
 

@@ -81,6 +81,7 @@ class gfxFT2FontBase : public gfxFont {
                              const nsTArray<gfxFontVariation>& aVariations,
                              FT_Face aFTFace);
 
+  // Callers must always pair lock and unlock, regardless of return value.
   FT_Face LockFTFace() const;
   void UnlockFTFace() const;
 

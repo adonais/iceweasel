@@ -98,7 +98,7 @@ class NoNetworkAccessStartupTests : TestSetup() {
         homeScreen(composeTestRule) {
         }.openThreeDotMenu {
         }.clickSettingsButton {
-        }.openTurnOnSyncMenu {
+        }.openTurnOnSyncMenu(composeTestRule) {
             tapOnUseEmailToSignIn()
             browserScreen(composeTestRule) {
                 verifyUrl("firefox.com")

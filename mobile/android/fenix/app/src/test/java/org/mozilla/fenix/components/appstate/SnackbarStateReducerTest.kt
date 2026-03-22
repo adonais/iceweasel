@@ -10,6 +10,7 @@ import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.DeletingBrowserDataInProgress
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.Dismiss
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.None
+import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.ShowSnackbar
 
 class SnackbarStateReducerTest {
     private val initialState = AppState(
@@ -38,5 +39,14 @@ class SnackbarStateReducerTest {
 
         assertTrue(finalState.snackbarState is None)
         assertTrue((finalState.snackbarState as None).previous == DeletingBrowserDataInProgress)
+    }
+
+    @Test
+    fun `WHEN show snackbar action is dispatched THEN state is updated with title`() {
+        val testTitle = "Test Title"
+        val finalState = AppStoreReducer.reduce(initialState, SnackbarAction.ShowSnackbar(testTitle))
+
+        assertTrue(finalState.snackbarState is ShowSnackbar)
+        assertTrue((finalState.snackbarState as ShowSnackbar).title == testTitle)
     }
 }

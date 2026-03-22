@@ -75,6 +75,12 @@ jobs:
           gh pr close "${PR}" --comment "(Automated Close) Please do not file pull requests here, see https://firefox-source-docs.mozilla.org/contributing/how_to_submit_a_patch.html"
           gh pr lock "${PR}"
 
+      - name: Check PR target
+        if: (steps.team.outputs.is_member == 'true' && steps.paths.outputs.only_allowed == 'true') && github.event.action == 'opened' && github.base_ref == 'main'
+        run: |
+          gh pr comment "${PR}" --body "> [!WARNING]
+          The base branch is currently set to \`main\`. Please Edit this PR and set the base to \`autoland\`."
+
       - name: Add Lando link
         if: (steps.team.outputs.is_member == 'true' && steps.paths.outputs.only_allowed == 'true') && github.event.action == 'opened'
         env:

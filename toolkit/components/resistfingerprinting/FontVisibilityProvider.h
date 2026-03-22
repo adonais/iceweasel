@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#ifndef __FontVisibilityProvider_h__
-#define __FontVisibilityProvider_h__
+#ifndef FontVisibilityProvider_h_
+#define FontVisibilityProvider_h_
 
 #include <stdint.h>
 
@@ -62,4 +62,4 @@ class FontVisibilityProvider {
   using FontVisibilityProvider::ReportBlockedFontFamily;
 };
 
-#endif  // __FontVisibilityProvider_h__
+#endif  // FontVisibilityProvider_h_

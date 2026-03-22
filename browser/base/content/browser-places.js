@@ -104,6 +104,8 @@ var StarUI = {
           case KeyEvent.DOM_VK_ESCAPE:
             if (this._isNewBookmark) {
               this._removeBookmarksOnPopupHidden = true;
+            } else {
+              this._cancelOnPopupHidden = true;
             }
             this.panel.hidePopup();
             break;
@@ -187,6 +189,11 @@ var StarUI = {
       gEditItemOverlay;
     gEditItemOverlay.uninitPanel(true);
 
+    if (this._cancelOnPopupHidden) {
+      this._cancelOnPopupHidden = false;
+      return;
+    }
+
     // Capture _removeBookmarksOnPopupHidden and _itemGuids values. Reset them
     // before we handle the next popup.
     const removeBookmarksOnPopupHidden = this._removeBookmarksOnPopupHidden;
@@ -205,8 +212,13 @@ var StarUI = {
       return;
     }
 
+    Services.prefs.setBoolPref(
+      "browser.bookmarks.editDialog.showForNewBookmarks",
+      this._element("editBookmarkPanel_showForNewBookmarks").checked
+    );
     await this._storeRecentlyUsedFolder(selectedFolderGuid, didChangeFolder);
     await bookmarkState.save();
+
     if (this._isNewBookmark) {
       this.showConfirmation();
     }
@@ -344,13 +356,6 @@ var StarUI = {
     await PlacesUtils.metadata.set(
       PlacesUIUtils.LAST_USED_FOLDERS_META_KEY,
       lastUsedFolderGuids
-    );
-  },
-
-  onShowForNewBookmarksCheckboxCommand() {
-    Services.prefs.setBoolPref(
-      "browser.bookmarks.editDialog.showForNewBookmarks",
-      this._element("editBookmarkPanel_showForNewBookmarks").checked
     );
   },
 
@@ -1509,7 +1514,7 @@ var BookmarkingUI = {
       menuItem.setAttribute("type", "radio");
       // The persisted state of the PersonalToolbar is stored in
       // "browser.toolbars.bookmarks.visibility".
-      menuItem.setAttribute(
+      menuItem.toggleAttribute(
         "checked",
         gBookmarksToolbarVisibility == visibilityEnum
       );
@@ -2214,9 +2219,9 @@ var BookmarkingUI = {
     menuItem.setAttribute("id", "show-other-bookmarks_PersonalToolbar");
     menuItem.setAttribute("toolbarId", "PersonalToolbar");
     menuItem.setAttribute("type", "checkbox");
-    menuItem.setAttribute("checked", SHOW_OTHER_BOOKMARKS);
     menuItem.setAttribute("selection-type", "none|single");
     menuItem.setAttribute("start-disabled", "true");
+    menuItem.toggleAttribute("checked", SHOW_OTHER_BOOKMARKS);
 
     MozXULElement.insertFTLIfNeeded("browser/toolbarContextMenu.ftl");
     document.l10n.setAttributes(
@@ -2259,6 +2264,7 @@ var BookmarkingUI = {
       is: "places-popup",
     });
     otherBookmarksPopup.setAttribute("placespopup", "true");
+    otherBookmarksPopup.setAttribute("native", "false");
     otherBookmarksPopup.setAttribute("context", "placesContext");
     otherBookmarksPopup.classList.add("toolbar-menupopup");
     otherBookmarksPopup.id = "OtherBookmarksPopup";

@@ -104,9 +104,9 @@ add_task(function test_parseConversationRow() {
     conv_id: "123456789012",
     page_url: "https://www.firefox.com",
     turn_index: 0,
-    insights_enabled: true,
-    insights_flag_source: 1,
-    insights_applied: '{ "some": "insights" }',
+    memories_enabled: true,
+    memories_flag_source: 1,
+    memories_applied: '{ "some": "memories" }',
     web_search_queries: '{ "some": "web search queries" }',
   });
 
@@ -131,9 +131,9 @@ add_task(function test_parseConversationRow() {
     soft.ok(URL.isInstance(message.pageUrl));
     soft.deepEqual(message.pageUrl.href, "https://www.firefox.com/");
     soft.equal(message.turnIndex, 0);
-    soft.equal(message.insightsEnabled, true);
-    soft.equal(message.insightsFlagSource, 1);
-    soft.deepEqual(message.insightsApplied, { some: "insights" });
+    soft.equal(message.memoriesEnabled, true);
+    soft.equal(message.memoriesFlagSource, 1);
+    soft.deepEqual(message.memoriesApplied, { some: "memories" });
     soft.deepEqual(message.webSearchQueries, { some: "web search queries" });
   });
 });
@@ -155,9 +155,9 @@ add_task(function test_missingField_parseConversationRow() {
     conv_id: "123456789012",
     page_url: "https://www.firefox.com",
     turn_index: 0,
-    insights_enabled: true,
-    insights_flag_source: 1,
-    insights_applied: '{ "some": "insights" }',
+    memories_enabled: true,
+    memories_flag_source: 1,
+    memories_applied: '{ "some": "memories" }',
     web_search_queries: '{ "some": "web search queries" }',
   });
 

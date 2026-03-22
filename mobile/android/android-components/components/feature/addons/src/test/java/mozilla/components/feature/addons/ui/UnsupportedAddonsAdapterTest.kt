@@ -12,12 +12,10 @@ import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.spy
@@ -26,9 +24,6 @@ import org.mockito.Mockito.verify
 
 @RunWith(AndroidJUnit4::class)
 class UnsupportedAddonsAdapterTest {
-
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
 
     @Test
     fun `removing successfully notifies the adapter item changed`() {

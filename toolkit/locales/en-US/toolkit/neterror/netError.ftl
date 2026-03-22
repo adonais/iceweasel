@@ -90,8 +90,7 @@ neterror-unknown-protocol = You might need to install other software to open thi
 
 neterror-redirect-loop = This problem can sometimes be caused by disabling or refusing to accept cookies.
 
-neterror-unknown-socket-type-psm-installed = Check to make sure your system has the Personal Security Manager installed.
-neterror-unknown-socket-type-server-config = This might be due to a non-standard configuration on the server.
+neterror-unknown-socket-type-client-config = This might be due to a configuration error with your client.
 
 neterror-not-cached-intro = The requested document is not available in { -brand-short-name }’s cache.
 neterror-not-cached-sensitive = As a security precaution, { -brand-short-name } does not automatically re-request sensitive documents.
@@ -218,3 +217,6 @@ fp-neterror-http-auth-disabled-what-can-you-do-body = Try changing the URL to HT
 # This string appears after the following string: "Why did this happen?" (fp-neterror-why-did-this-happen)
 fp-neterror-coop-coep-why-did-this-happen-body = Sometimes websites set up protections for themselves from unwanted interactions with other sites.
 fp-learn-more-about-https-connections = Learn about HTTPS connections
+
+fp-neterror-vpn-error-title = Couldn’t connect to VPN
+fp-neterror-vpn-error-description = Try again in a few minutes.

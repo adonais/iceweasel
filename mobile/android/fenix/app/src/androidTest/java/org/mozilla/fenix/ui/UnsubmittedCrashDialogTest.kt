@@ -47,7 +47,7 @@ class UnsubmittedCrashDialogTest : TestSetup() {
     @get:Rule(order = 0)
     val composeTestRule =
         AndroidComposeTestRule(
-            HomeActivityTestRule.withDefaultSettingsOverrides(useNewCrashReporterDialog = true),
+            HomeActivityTestRule.withDefaultSettingsOverrides(useNewCrashReporterFlow = true),
         ) { it.activity }
 
     private fun addCrashToStore(action: CrashAction) {

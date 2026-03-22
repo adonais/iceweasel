@@ -34,6 +34,7 @@ class ReviewPromptMiddlewareTest {
                 createJexlHelper = {
                     object : NimbusMessagingHelperInterface {
                         override fun evalJexl(expression: String) = assertUnused()
+                        override fun evalJexlDebug(expression: String) = assertUnused()
                         override fun getUuid(template: String) = assertUnused()
                         override fun stringFormat(template: String, uuid: String?) = assertUnused()
                     }
@@ -380,6 +381,7 @@ class ReviewPromptMiddlewareTest {
     private class FakeNimbusMessagingHelperInterface(val evalJexlValue: Boolean) :
         NimbusMessagingHelperInterface {
         override fun evalJexl(expression: String): Boolean = evalJexlValue
+        override fun evalJexlDebug(expression: String): String = ""
         override fun getUuid(template: String): String? = null
         override fun stringFormat(template: String, uuid: String?): String = ""
     }

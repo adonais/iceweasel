@@ -30,8 +30,8 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 private val shape = RoundedCornerShape(8.dp)
 
@@ -83,7 +83,7 @@ fun MicrosurveyCompleted(
 @FlexibleWindowPreview
 @Composable
 private fun MicrosurveyCompletedPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         MicrosurveyCompleted()

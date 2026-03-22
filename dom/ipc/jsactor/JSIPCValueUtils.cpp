@@ -20,12 +20,12 @@
 #include "js/Value.h"
 #include "js/friend/DumpFunctions.h"
 #include "js/friend/StackLimits.h"  // js::AutoCheckRecursionLimit
+#include "jsapi.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CycleCollectedJSRuntime.h"  // OOMReported
 #include "mozilla/Logging.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/DOMRect.h"
 #include "mozilla/dom/DOMRectBinding.h"
@@ -257,7 +257,7 @@ static JSIPCValue UntypedFromJSVal(Context& aCx, JS::Handle<JS::Value> aVal,
     FallbackLogging(aCx, aVal);
   }
 
-  auto data = MakeUnique<ipc::StructuredCloneData>();
+  auto data = MakeNotNull<RefPtr<ipc::StructuredCloneData>>();
   IgnoredErrorResult rv;
   data->Write(aCx, aVal, JS::UndefinedHandleValue, JS::CloneDataPolicy(), rv);
   if (!rv.Failed()) {
@@ -431,8 +431,8 @@ JSIPCValue JSIPCValueUtils::TypedFromJSVal(Context& aCx,
 static JSIPCValue UntypedFromJSValWithJSONFallback(
     Context& aCx, JS::Handle<JS::Value> aVal, JS::Handle<JS::Value> aTransfer,
     ErrorResult& aError) {
-  auto scd = MakeUnique<ipc::StructuredCloneData>();
-  if (!nsFrameMessageManager::GetParamsForMessage(aCx, aVal, aTransfer, *scd)) {
+  auto scd = MakeNotNull<RefPtr<ipc::StructuredCloneData>>();
+  if (!nsFrameMessageManager::GetParamsForMessage(aCx, aVal, aTransfer, scd)) {
     aError.ThrowDataCloneError("UntypedFromJSValWithJSONFallback");
     return JSIPCValue(void_t());
   }
@@ -441,6 +441,7 @@ static JSIPCValue UntypedFromJSValWithJSONFallback(
 
 JSIPCValue JSIPCValueUtils::FromJSVal(Context& aCx, JS::Handle<JS::Value> aVal,
                                       bool aSendTyped, ErrorResult& aError) {
+  aError.MightThrowJSException();
   if (aSendTyped) {
     return TypedFromJSVal(aCx, aVal, aError);
   }
@@ -454,6 +455,7 @@ JSIPCValue JSIPCValueUtils::FromJSVal(Context& aCx, JS::Handle<JS::Value> aVal,
 JSIPCValue JSIPCValueUtils::FromJSVal(Context& aCx, JS::Handle<JS::Value> aVal,
                                       JS::Handle<JS::Value> aTransferable,
                                       bool aSendTyped, ErrorResult& aError) {
+  aError.MightThrowJSException();
   bool hasTransferable =
       !aTransferable.isNull() && !aTransferable.isUndefined();
   if (!aSendTyped || hasTransferable) {
@@ -470,79 +472,6 @@ JSIPCValue JSIPCValueUtils::FromJSVal(Context& aCx, JS::Handle<JS::Value> aVal,
     return UntypedFromJSValWithJSONFallback(aCx, aVal, aTransferable, aError);
   }
   return TypedFromJSVal(aCx, aVal, aError);
-}
-
-bool JSIPCValueUtils::PrepareForSending(SCDHolder& aHolder,
-                                        JSIPCValue& aValue) {
-  switch (aValue.type()) {
-    case JSIPCValue::Tvoid_t:
-    case JSIPCValue::TnsString:
-    case JSIPCValue::Tnull_t:
-    case JSIPCValue::Tbool:
-    case JSIPCValue::Tdouble:
-    case JSIPCValue::Tint32_t:
-    case JSIPCValue::TnsIPrincipal:
-    case JSIPCValue::TMaybeDiscardedBrowsingContext:
-    case JSIPCValue::TJSIPCDOMRect:
-      return true;
-
-    case JSIPCValue::TArrayOfJSIPCProperty: {
-      auto& properties = aValue.get_ArrayOfJSIPCProperty();
-      for (auto& p : properties) {
-        if (!PrepareForSending(aHolder, p.value())) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    case JSIPCValue::TJSIPCArray:
-      for (auto& e : aValue.get_JSIPCArray().elements()) {
-        if (!PrepareForSending(aHolder, e)) {
-          return false;
-        }
-      }
-      return true;
-
-    case JSIPCValue::TJSIPCSet:
-      for (auto& e : aValue.get_JSIPCSet().elements()) {
-        if (!PrepareForSending(aHolder, e)) {
-          return false;
-        }
-      }
-      return true;
-
-    case JSIPCValue::TArrayOfJSIPCMapEntry:
-      for (auto& e : aValue.get_ArrayOfJSIPCMapEntry()) {
-        if (!PrepareForSending(aHolder, e.key())) {
-          return false;
-        }
-        if (!PrepareForSending(aHolder, e.value())) {
-          return false;
-        }
-      }
-      return true;
-
-    case JSIPCValue::TStructuredCloneData: {
-      UniquePtr<ipc::StructuredCloneData>* scd = aHolder.mSCDs.AppendElement(
-          std::move(aValue.get_StructuredCloneData()));
-      UniquePtr<ClonedMessageData> msgData = MakeUnique<ClonedMessageData>();
-      if (!(*scd)->BuildClonedMessageData(*msgData)) {
-        MOZ_LOG_SERIALIZE_WARN("BuildClonedMessageData failed");
-        return false;
-      }
-      aValue = std::move(msgData);
-      return true;
-    }
-
-    case JSIPCValue::TClonedMessageData:
-      MOZ_ASSERT(false, "ClonedMessageData in PrepareForSending");
-      return false;
-
-    default:
-      MOZ_ASSERT_UNREACHABLE("Invalid unhandled case");
-      return false;
-  }
 }
 
 static void ToJSObject(JSContext* aCx, nsTArray<JSIPCProperty>&& aProperties,
@@ -690,6 +619,8 @@ static void UntypedToJSVal(JSContext* aCx, ipc::StructuredCloneData& aData,
 void JSIPCValueUtils::ToJSVal(JSContext* aCx, JSIPCValue&& aIn,
                               JS::MutableHandle<JS::Value> aOut,
                               ErrorResult& aError) {
+  aError.MightThrowJSException();
+
   js::AutoCheckRecursionLimit recursion(aCx);
   if (!recursion.check(aCx)) {
     aError.NoteJSContextException(aCx);
@@ -720,7 +651,7 @@ void JSIPCValueUtils::ToJSVal(JSContext* aCx, JSIPCValue&& aIn,
       return;
 
     case JSIPCValue::Tdouble:
-      aOut.setDouble(aIn.get_double());
+      aOut.set(JS_NumberValue(aIn.get_double()));
       return;
 
     case JSIPCValue::Tint32_t:
@@ -796,12 +727,6 @@ void JSIPCValueUtils::ToJSVal(JSContext* aCx, JSIPCValue&& aIn,
 
     case JSIPCValue::TStructuredCloneData: {
       return UntypedToJSVal(aCx, *aIn.get_StructuredCloneData(), aOut, aError);
-    }
-
-    case JSIPCValue::TClonedMessageData: {
-      ipc::StructuredCloneData data;
-      data.BorrowFromClonedMessageData(*aIn.get_ClonedMessageData());
-      return UntypedToJSVal(aCx, data, aOut, aError);
     }
 
     default:

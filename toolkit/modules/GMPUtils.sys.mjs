@@ -182,8 +182,6 @@ export var GMPPrefs = {
   KEY_URL_OVERRIDE: "media.gmp-manager.url.override",
   KEY_CHROMIUM_UPDATE_URL: "media.gmp-manager.chromium-update-url",
   KEY_CERT_CHECKATTRS: "media.gmp-manager.cert.checkAttributes",
-  KEY_CERT_REQUIREBUILTIN: "media.gmp-manager.cert.requireBuiltIn",
-  KEY_CHECK_CONTENT_SIGNATURE: "media.gmp-manager.checkContentSignature",
   KEY_UPDATE_LAST_CHECK: "media.gmp-manager.lastCheck",
   KEY_UPDATE_LAST_EMPTY_CHECK: "media.gmp-manager.lastEmptyCheck",
   KEY_SECONDS_BETWEEN_CHECKS: "media.gmp-manager.secondsBetweenChecks",

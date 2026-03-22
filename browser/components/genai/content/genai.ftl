@@ -18,16 +18,3 @@ sidebar-menu-genai-page-assist-label =
   .label = Page Buddy
 
 genai-page-assist-title = Page Buddy
-
-## AI mode - Smart Assist Strings
-
-genai-smart-assist-sidebar-title =
-  .heading = Smart Assist
-
-menu-view-genai-smart-assist =
-  .label = Smart Assist
-
-sidebar-menu-genai-smart-assist-label =
-  .label = Smart Assist
-
-genai-smart-assist-title = Smart Assist

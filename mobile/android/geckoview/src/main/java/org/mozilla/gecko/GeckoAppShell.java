@@ -841,7 +841,7 @@ public class GeckoAppShell {
     if (sDensityDpiOverride != 0) {
       return sDensityDpiOverride;
     }
-    return sScreenCompat.getDensityDpi();
+    return sScreenCompat.getDensityDpi(sDisplayId);
   }
 
   public static synchronized void setDisplayDensityOverride(@Nullable final Float density) {
@@ -861,7 +861,7 @@ public class GeckoAppShell {
       return sDensityOverride;
     }
 
-    return sScreenCompat.getDensity();
+    return sScreenCompat.getDensity(sDisplayId);
   }
 
   private static int sTotalRam;
@@ -893,17 +893,19 @@ public class GeckoAppShell {
     sUseMaxScreenDepth = enable;
   }
 
-  /** Returns the colour depth of the default screen. This will either be 32, 24 or 16. */
+  /**
+   * Returns the colour depth of the default screen. This will typically be 24 as by default it only
+   * includes the bits used for color values, not alpha. However, if useMaxScreenDepth() has been
+   * enabled this will return the full depth.
+   */
   @WrapForJNI(calledFrom = "gecko")
   public static synchronized int getScreenDepth() {
     if (sScreenDepth == 0) {
-      sScreenDepth = 16;
+      sScreenDepth = 24;
       final Context applicationContext = getApplicationContext();
       final PixelFormat info = new PixelFormat();
-      final WindowManager wm =
-          (WindowManager) applicationContext.getSystemService(Context.WINDOW_SERVICE);
-      PixelFormat.getPixelFormatInfo(wm.getDefaultDisplay().getPixelFormat(), info);
-      if (info.bitsPerPixel >= 24 && isHighMemoryDevice(applicationContext)) {
+      PixelFormat.getPixelFormatInfo(sScreenCompat.getDisplay(sDisplayId).getPixelFormat(), info);
+      if (info.bitsPerPixel >= 24) {
         sScreenDepth = sUseMaxScreenDepth ? info.bitsPerPixel : 24;
       }
     }
@@ -912,14 +914,12 @@ public class GeckoAppShell {
   }
 
   @WrapForJNI(calledFrom = "gecko")
-  public static synchronized float getScreenRefreshRate() {
+  private static synchronized float getScreenRefreshRate() {
     if (sScreenRefreshRate != null) {
       return sScreenRefreshRate;
     }
 
-    final WindowManager wm =
-        (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-    final float refreshRate = wm.getDefaultDisplay().getRefreshRate();
+    final float refreshRate = sScreenCompat.getDisplay(sDisplayId).getRefreshRate();
     // Android 11+ supports multiple refresh rate. So we have to get refresh rate per call.
     // https://source.android.com/docs/core/graphics/multiple-refresh-rate
     if (Build.VERSION.SDK_INT < 30) {
@@ -931,9 +931,7 @@ public class GeckoAppShell {
 
   @WrapForJNI(calledFrom = "gecko")
   private static boolean hasHDRScreen() {
-    final Display display =
-        ((DisplayManager) getApplicationContext().getSystemService(Context.DISPLAY_SERVICE))
-            .getDisplay(Display.DEFAULT_DISPLAY);
+    final Display display = sScreenCompat.getDisplay(sDisplayId);
     return display != null && display.isHdr();
   }
 
@@ -1307,7 +1305,7 @@ public class GeckoAppShell {
   }
 
   /* package */ static int getRotation() {
-    return sScreenCompat.getRotation();
+    return sScreenCompat.getRotation(sDisplayId);
   }
 
   @WrapForJNI(calledFrom = "gecko")
@@ -1486,13 +1484,17 @@ public class GeckoAppShell {
   static final ScreenCompat sScreenCompat;
 
   private interface ScreenCompat {
-    Rect getScreenSize();
+    Rect getScreenSize(int displayId);
 
-    int getRotation();
+    int getRotation(int displayId);
 
-    int getDensityDpi();
+    int getDensityDpi(int displayId);
 
-    float getDensity();
+    float getDensity(int displayId);
+
+    Display getDisplay(int displayId);
+
+    void onDisplayRemoved(int displayId);
   }
 
   private static class JellyBeanMR1ScreenCompat implements ScreenCompat {
@@ -1504,24 +1506,20 @@ public class GeckoAppShell {
     }
 
     @Override
-    public Rect getScreenSize() {
-      final WindowManager wm =
-          (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-      final Display disp = wm.getDefaultDisplay();
+    public Rect getScreenSize(final int displayId) {
+      final Display disp = getDisplay(displayId);
       final Point size = new Point();
       disp.getRealSize(size);
       return new Rect(0, 0, size.x, size.y);
     }
 
     @Override
-    public int getRotation() {
-      final WindowManager wm =
-          (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-      return wm.getDefaultDisplay().getRotation();
+    public int getRotation(final int displayId) {
+      return getDisplay(displayId).getRotation();
     }
 
     @Override
-    public int getDensityDpi() {
+    public int getDensityDpi(final int displayId) {
       if (mDensityDpi == 0) {
         mDensityDpi = getDisplayMetrics().densityDpi;
       }
@@ -1529,69 +1527,122 @@ public class GeckoAppShell {
     }
 
     @Override
-    public float getDensity() {
+    public float getDensity(final int displayId) {
       if (mDensity == null) {
         mDensity = getDisplayMetrics().density;
       }
       return mDensity;
     }
+
+    @Override
+    public Display getDisplay(final int displayId) {
+      final DisplayManager displayManager =
+          (DisplayManager) getApplicationContext().getSystemService(Context.DISPLAY_SERVICE);
+      final Display display = displayManager.getDisplay(displayId);
+      if (display != null) {
+        return display;
+      }
+      if (displayId != Display.DEFAULT_DISPLAY) {
+        return getDisplay(Display.DEFAULT_DISPLAY);
+      }
+      // No display found even if default display. This should not happen.
+      throw new RuntimeException("No default display found");
+    }
+
+    @Override
+    public void onDisplayRemoved(final int displayId) {}
   }
 
   @RequiresApi(Build.VERSION_CODES.S)
   private static class AndroidSScreenCompat implements ScreenCompat {
     @SuppressLint("StaticFieldLeak")
-    private static Context sWindowContext;
+    private final SimpleArrayMap<Integer, Context> mWindowContextMap = new SimpleArrayMap<>();
 
-    private static Context getWindowContext() {
-      if (sWindowContext == null) {
-        final DisplayManager displayManager =
-            (DisplayManager) getApplicationContext().getSystemService(Context.DISPLAY_SERVICE);
-        final Display display = displayManager.getDisplay(Display.DEFAULT_DISPLAY);
-        sWindowContext =
-            getApplicationContext()
-                .createWindowContext(display, WindowManager.LayoutParams.TYPE_APPLICATION, null);
-        sWindowContext.registerComponentCallbacks(
-            new ComponentCallbacks() {
-              @Override
-              public void onConfigurationChanged(final Configuration newConfig) {
-                if (GeckoScreenOrientation.getInstance().update()) {
-                  // refreshScreenInfo is already called.
-                  return;
-                }
-                ScreenManagerHelper.refreshScreenInfo();
-              }
+    private final ComponentCallbacks mComponentCallbacks =
+        new ComponentCallbacks() {
+          @Override
+          public void onConfigurationChanged(final Configuration newConfig) {
+            if (GeckoScreenOrientation.getInstance().update()) {
+              // refreshScreenInfo is already called.
+              return;
+            }
+            ScreenManagerHelper.refreshScreenInfo();
+          }
 
-              @Override
-              public void onLowMemory() {}
-            });
+          @Override
+          public void onLowMemory() {}
+        };
+
+    private synchronized Context getWindowContext(final int displayId) {
+      Context windowContext = mWindowContextMap.get(displayId);
+      if (windowContext != null) {
+        return windowContext;
       }
-      return sWindowContext;
+
+      final DisplayManager displayManager =
+          (DisplayManager) getApplicationContext().getSystemService(Context.DISPLAY_SERVICE);
+      final Display display = displayManager.getDisplay(displayId);
+      if (display == null) {
+        if (displayId != Display.DEFAULT_DISPLAY) {
+          return getWindowContext(Display.DEFAULT_DISPLAY);
+        }
+        // No display found even if default display. This should not happen.
+        throw new RuntimeException("No default display found");
+      }
+      windowContext =
+          getApplicationContext()
+              .createWindowContext(display, WindowManager.LayoutParams.TYPE_APPLICATION, null);
+      windowContext.registerComponentCallbacks(mComponentCallbacks);
+      mWindowContextMap.put(displayId, windowContext);
+
+      return windowContext;
     }
 
-    private static DisplayMetrics getDisplayMetrics() {
-      return getWindowContext().getResources().getDisplayMetrics();
+    private DisplayMetrics getDisplayMetrics(final int displayId) {
+      return getWindowContext(displayId).getResources().getDisplayMetrics();
     }
 
     @Override
-    public Rect getScreenSize() {
-      final WindowManager windowManager = getWindowContext().getSystemService(WindowManager.class);
+    public Rect getScreenSize(final int displayId) {
+      final WindowManager windowManager =
+          getWindowContext(displayId).getSystemService(WindowManager.class);
       return windowManager.getCurrentWindowMetrics().getBounds();
     }
 
     @Override
-    public int getRotation() {
-      final WindowManager windowManager = getWindowContext().getSystemService(WindowManager.class);
-      return windowManager.getDefaultDisplay().getRotation();
+    public int getRotation(final int displayId) {
+      return getDisplay(displayId).getRotation();
     }
 
     @Override
-    public int getDensityDpi() {
-      return getDisplayMetrics().densityDpi;
+    public int getDensityDpi(final int displayId) {
+      return getDisplayMetrics(displayId).densityDpi;
     }
 
     @Override
-    public float getDensity() {
-      return getDisplayMetrics().density;
+    public float getDensity(final int displayId) {
+      return getDisplayMetrics(displayId).density;
+    }
+
+    @Override
+    public Display getDisplay(final int displayId) {
+      final Display display = getWindowContext(displayId).getDisplay();
+      if (display != null) {
+        return display;
+      }
+      if (displayId != Display.DEFAULT_DISPLAY) {
+        return getWindowContext(Display.DEFAULT_DISPLAY).getDisplay();
+      }
+      // No display found even if default display. This should not happen.
+      throw new RuntimeException("No default display found");
+    }
+
+    @Override
+    public synchronized void onDisplayRemoved(final int displayId) {
+      final Context context = mWindowContextMap.remove(displayId);
+      if (context != null) {
+        context.unregisterComponentCallbacks(mComponentCallbacks);
+      }
     }
   }
 
@@ -1603,8 +1654,11 @@ public class GeckoAppShell {
     }
   }
 
+  /** The display id that is associated with the GeckoView object. */
+  private static volatile int sDisplayId = Display.DEFAULT_DISPLAY;
+
   /* package */ static Rect getScreenSizeIgnoreOverride() {
-    return sScreenCompat.getScreenSize();
+    return sScreenCompat.getScreenSize(sDisplayId);
   }
 
   @WrapForJNI(calledFrom = "gecko")
@@ -1614,6 +1668,23 @@ public class GeckoAppShell {
     }
 
     return getScreenSizeIgnoreOverride();
+  }
+
+  /* package */ static void onDisplayRemoved(final int displayId) {
+    sScreenCompat.onDisplayRemoved(displayId);
+  }
+
+  /* package */ static int getDisplayId() {
+    return sDisplayId;
+  }
+
+  /**
+   * Set the display id that is associated with the GeckoView object.
+   *
+   * @param displayId The display id.
+   */
+  public static void setDisplayId(final int displayId) {
+    sDisplayId = displayId;
   }
 
   @WrapForJNI(calledFrom = "any")

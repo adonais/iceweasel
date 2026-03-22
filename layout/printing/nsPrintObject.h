@@ -3,8 +3,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#ifndef nsPrintObject_h___
-#define nsPrintObject_h___
+#ifndef nsPrintObject_h_
+#define nsPrintObject_h_
 
 #include "mozilla/UniquePtr.h"
 
@@ -82,4 +82,4 @@ class nsPrintObject final {
   bool mPrintingIsEnabled = false;
 };
 
-#endif /* nsPrintObject_h___ */
+#endif /* nsPrintObject_h_ */

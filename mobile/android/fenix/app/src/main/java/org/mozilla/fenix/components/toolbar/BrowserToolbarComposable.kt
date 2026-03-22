@@ -233,9 +233,11 @@ private fun toolbarCFRData(
                 enabled = shouldShowCFR,
                 title = title,
                 description = description,
-                onShown = { Toolbar.cfrShown.record(NoExtras()) },
-                onDismiss = {
+                onShown = {
                     settings.hasSeenBrowserToolbarCFR = true
+                    Toolbar.cfrShown.record(NoExtras())
+                },
+                onDismiss = {
                     settings.lastCfrShownTimeInMillis = System.currentTimeMillis()
                     Toolbar.cfrDismissed.record(NoExtras())
                 },

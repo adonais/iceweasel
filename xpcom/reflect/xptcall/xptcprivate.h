@@ -5,8 +5,8 @@
 
 /* All the xptcall private declarations - only include locally. */
 
-#ifndef xptcprivate_h___
-#define xptcprivate_h___
+#ifndef xptcprivate_h_
+#define xptcprivate_h_
 
 #include "xptcall.h"
 
@@ -64,4 +64,4 @@ class nsXPTCStubBase final : public nsIXPTCStubBase {
 #  define ATTRIBUTE_USED
 #endif
 
-#endif /* xptcprivate_h___ */
+#endif /* xptcprivate_h_ */

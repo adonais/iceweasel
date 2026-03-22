@@ -144,7 +144,7 @@ static const char* GetPrefNameForFeature(int32_t aFeature) {
   case nsIGfxInfo::FEATURE_##id:           \
     fullpref = BLOCKLIST_PREF_BRANCH pref; \
     break;
-#include "mozilla/widget/GfxInfoFeatureDefs.h"
+#include "mozilla/widget/GfxInfoFeatureDefs.inc"
 #undef GFXINFO_FEATURE
     default:
       MOZ_ASSERT_UNREACHABLE("Unexpected nsIGfxInfo feature?!");
@@ -228,7 +228,7 @@ static OperatingSystem BlocklistOSToOperatingSystem(const nsAString& os) {
   if (os.Equals(u##name##_ns)) { \
     return OperatingSystem::id;  \
   }
-#include "mozilla/widget/GfxInfoOperatingSystemDefs.h"
+#include "mozilla/widget/GfxInfoOperatingSystemDefs.inc"
 #undef GFXINFO_OS
   return OperatingSystem::Unknown;
 }
@@ -239,7 +239,7 @@ static RefreshRateStatus BlocklistToRefreshRateStatus(
   if (refreshRateStatus.Equals(u##name##_ns)) { \
     return RefreshRateStatus::id;               \
   }
-#include "mozilla/widget/GfxInfoRefreshRateStatusDefs.h"
+#include "mozilla/widget/GfxInfoRefreshRateStatusDefs.inc"
 #undef GFXINFO_OS
   return RefreshRateStatus::Unknown;
 }
@@ -267,7 +267,7 @@ static int32_t BlocklistFeatureToGfxFeature(const nsAString& aFeature) {
   if (aFeature.Equals(u##name##_ns)) {  \
     return nsIGfxInfo::FEATURE_##id;    \
   }
-#include "mozilla/widget/GfxInfoFeatureDefs.h"
+#include "mozilla/widget/GfxInfoFeatureDefs.inc"
 #undef GFXINFO_FEATURE
 
   // If we don't recognize the feature, it may be new, and something
@@ -284,7 +284,7 @@ static int32_t BlocklistFeatureStatusToGfxFeatureStatus(
   if (aStatus.Equals(u## #id##_ns)) { \
     return nsIGfxInfo::FEATURE_##id;  \
   }
-#include "mozilla/widget/GfxInfoFeatureStatusDefs.h"
+#include "mozilla/widget/GfxInfoFeatureStatusDefs.inc"
 #undef GFXINFO_FEATURE_STATUS
   return nsIGfxInfo::FEATURE_STATUS_OK;
 }
@@ -296,7 +296,7 @@ static void GfxFeatureStatusToBlocklistFeatureStatus(int32_t aStatus,
   case nsIGfxInfo::FEATURE_##id:     \
     aStatusOut.Assign(u## #id##_ns); \
     break;
-#include "mozilla/widget/GfxInfoFeatureStatusDefs.h"
+#include "mozilla/widget/GfxInfoFeatureStatusDefs.inc"
 #undef GFXINFO_FEATURE
     default:
       MOZ_ASSERT_UNREACHABLE("Unexpected feature status!");
@@ -310,7 +310,7 @@ static VersionComparisonOp BlocklistComparatorToComparisonOp(
   if (op.Equals(u## #id##_ns)) {       \
     return DRIVER_##id;                \
   }
-#include "mozilla/widget/GfxInfoDriverVersionCmpDefs.h"
+#include "mozilla/widget/GfxInfoDriverVersionCmpDefs.inc"
 #undef GFXINFO_DRIVER_VERSION_CMP
 
   // The default is to ignore it.
@@ -1603,9 +1603,6 @@ void GfxInfoBase::DescribeFeatures(JSContext* aCx, JS::Handle<JSObject*> aObj) {
   gfx::FeatureState& openglCompositing =
       gfxConfig::GetFeature(gfx::Feature::OPENGL_COMPOSITING);
   InitFeatureObject(aCx, aObj, "openglCompositing", openglCompositing, &obj);
-
-  gfx::FeatureState& omtp = gfxConfig::GetFeature(gfx::Feature::OMTP);
-  InitFeatureObject(aCx, aObj, "omtp", omtp, &obj);
 }
 
 bool GfxInfoBase::InitFeatureObject(JSContext* aCx,

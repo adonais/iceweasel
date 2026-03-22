@@ -8,8 +8,8 @@
  * This is the base class for all link classes.
  */
 
-#ifndef mozilla_dom_Link_h__
-#define mozilla_dom_Link_h__
+#ifndef mozilla_dom_Link_h_
+#define mozilla_dom_Link_h_
 
 #include "mozilla/dom/RustTypes.h"
 #include "nsCOMPtr.h"
@@ -140,4 +140,4 @@ class Link : public nsISupports {
 }  // namespace dom
 }  // namespace mozilla
 
-#endif  // mozilla_dom_Link_h__
+#endif  // mozilla_dom_Link_h_

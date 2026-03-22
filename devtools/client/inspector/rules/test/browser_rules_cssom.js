@@ -13,7 +13,7 @@ add_task(async function () {
   const { inspector, view } = await openRuleView();
   await selectNode("#target", inspector);
 
-  const elementStyle = view._elementStyle;
+  const elementStyle = view.elementStyle;
   let rule;
 
   rule = elementStyle.rules[1];

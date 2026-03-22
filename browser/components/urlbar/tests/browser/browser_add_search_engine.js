@@ -67,8 +67,8 @@ add_task(async function context_one() {
     });
 
     info("Remove the engine.");
-    let engine = await Services.search.getEngineByName("add_search_engine_0");
-    await Services.search.removeEngine(engine);
+    let engine = await SearchService.getEngineByName("add_search_engine_0");
+    await SearchService.removeEngine(engine);
 
     await UrlbarTestUtils.withContextMenu(window, async popup => {
       info("The separator and the add engine item should be present again.");
@@ -231,8 +231,8 @@ add_task(async function context_many() {
     });
 
     info("Remove the engine.");
-    let engine = await Services.search.getEngineByName("add_search_engine_0");
-    await Services.search.removeEngine(engine);
+    let engine = await SearchService.getEngineByName("add_search_engine_0");
+    await SearchService.removeEngine(engine);
 
     await UrlbarTestUtils.withContextMenu(window, async popup => {
       info("The separator and the add engine menu should be present.");

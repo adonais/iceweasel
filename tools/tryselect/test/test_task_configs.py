@@ -98,7 +98,8 @@ TASK_CONFIG_TESTS = {
     "rebuild": [
         ([], None),
         (["--rebuild", "10"], {"try_task_config": {"rebuild": 10}}),
-        (["--rebuild", "1"], SystemExit),
+        (["--rebuild", "1"], {"try_task_config": {"rebuild": 1}}),
+        (["--rebuild", "0"], SystemExit),
         (["--rebuild", "21"], SystemExit),
     ],
     "worker-overrides": [
@@ -235,6 +236,12 @@ def test_exisiting_tasks(mocker, responses, patch_ssh_user):
     responses.add(
         responses.GET,
         f"{TC_URL}/api/queue/v1/task/{task_id}/artifacts/public%2flabel-to-taskid.json",
+        status=303,
+        json={"url": f"{TC_URL}/artifacts/label-to-taskid.json"},
+    )
+    responses.add(
+        responses.GET,
+        f"{TC_URL}/artifacts/label-to-taskid.json",
         json=label_to_taskid,
     )
 
@@ -261,6 +268,12 @@ def test_exisiting_tasks_task_id(responses):
     responses.add(
         responses.GET,
         f"{TC_URL}/api/queue/v1/task/{task_id}/artifacts/public%2flabel-to-taskid.json",
+        status=303,
+        json={"url": f"{TC_URL}/artifacts/label-to-taskid.json"},
+    )
+    responses.add(
+        responses.GET,
+        f"{TC_URL}/artifacts/label-to-taskid.json",
         json=label_to_taskid,
     )
 
@@ -289,6 +302,12 @@ def test_exisiting_tasks_rev(responses):
     responses.add(
         responses.GET,
         f"{TC_URL}/api/queue/v1/task/{task_id}/artifacts/public%2flabel-to-taskid.json",
+        status=303,
+        json={"url": f"{TC_URL}/artifacts/label-to-taskid.json"},
+    )
+    responses.add(
+        responses.GET,
+        f"{TC_URL}/artifacts/label-to-taskid.json",
         json=label_to_taskid,
     )
 

@@ -14,6 +14,7 @@
 #include "ScriptLoader.h"
 #include "ScriptTrace.h"
 #include "js/Transcoding.h"
+#include "js/loader/ModuleLoadRequest.h"
 #include "js/loader/ScriptLoadRequest.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
@@ -24,6 +25,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/SharedSubResourceCache.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/Utf8.h"
 #include "mozilla/Vector.h"
 #include "mozilla/dom/CacheExpirationTime.h"
@@ -146,6 +148,8 @@ ScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
                                      uint32_t* aConsumedLength) {
   nsCOMPtr<nsIRequest> channelRequest;
   aLoader->GetRequest(getter_AddRefs(channelRequest));
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(channelRequest);
+  MOZ_ASSERT(channel, "StreamLoader must have a channel");
 
   auto firstTime = !mPreloadStartNotified;
   if (!mPreloadStartNotified) {
@@ -161,7 +165,7 @@ ScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
 
   nsresult rv = NS_OK;
   if (mRequest->IsUnknownDataType()) {
-    rv = EnsureKnownDataType(aLoader);
+    rv = EnsureKnownDataType(channel);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
@@ -170,7 +174,7 @@ ScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
   }
 
   if (mRequest->IsTextSource()) {
-    if (!EnsureDecoder(aLoader, aData, aDataLength,
+    if (!EnsureDecoder(channel, aData, aDataLength,
                        /* aEndOfStream = */ false)) {
       return NS_OK;
     }
@@ -188,6 +192,13 @@ ScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
     if (mSRIDataVerifier && NS_SUCCEEDED(mSRIStatus)) {
       mSRIStatus = mSRIDataVerifier->Update(aDataLength, aData);
     }
+  } else if (mRequest->IsWasmBytes()) {
+    auto& wasmBytes = mRequest->WasmBytes();
+    if (!wasmBytes.append(aData, aDataLength)) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+
+    *aConsumedLength = aDataLength;
   } else {
     MOZ_ASSERT(mRequest->IsSerializedStencil());
     if (!mRequest->SRIAndSerializedStencil().append(aData, aDataLength)) {
@@ -208,7 +219,7 @@ ScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
   return rv;
 }
 
-bool ScriptLoadHandler::TrySetDecoder(nsIIncrementalStreamLoader* aLoader,
+bool ScriptLoadHandler::TrySetDecoder(nsIChannel* aChannel,
                                       const uint8_t* aData,
                                       uint32_t aDataLength, bool aEndOfStream) {
   MOZ_ASSERT(mDecoder == nullptr,
@@ -238,21 +249,12 @@ bool ScriptLoadHandler::TrySetDecoder(nsIIncrementalStreamLoader* aLoader,
   }
 
   // BOM detection failed, check content stream for charset.
-  nsCOMPtr<nsIRequest> req;
-  nsresult rv = aLoader->GetRequest(getter_AddRefs(req));
-  NS_ASSERTION(req, "StreamLoader's request went away prematurely");
-  NS_ENSURE_SUCCESS(rv, false);
-
-  nsCOMPtr<nsIChannel> channel = do_QueryInterface(req);
-
-  if (channel) {
-    nsAutoCString label;
-    if (NS_SUCCEEDED(channel->GetContentCharset(label)) &&
-        (encoding = Encoding::ForLabel(label))) {
-      mDecoder = MakeUnique<ScriptDecoder>(encoding,
-                                           ScriptDecoder::BOMHandling::Ignore);
-      return true;
-    }
+  nsAutoCString label;
+  if (NS_SUCCEEDED(aChannel->GetContentCharset(label)) &&
+      (encoding = Encoding::ForLabel(label))) {
+    mDecoder =
+        MakeUnique<ScriptDecoder>(encoding, ScriptDecoder::BOMHandling::Ignore);
+    return true;
   }
 
   // Check the hint charset from the script element or preload
@@ -323,15 +325,31 @@ nsresult ScriptLoadHandler::MaybeDecodeSRI(uint32_t* sriLength) {
   return NS_OK;
 }
 
-nsresult ScriptLoadHandler::EnsureKnownDataType(
-    nsIIncrementalStreamLoader* aLoader) {
+nsresult ScriptLoadHandler::EnsureKnownDataType(nsIChannel* aChannel) {
   MOZ_ASSERT(mRequest->IsUnknownDataType());
   MOZ_ASSERT(mRequest->IsFetching());
 
-  nsCOMPtr<nsIRequest> req;
-  nsresult rv = aLoader->GetRequest(getter_AddRefs(req));
-  MOZ_ASSERT(req, "StreamLoader's request went away prematurely");
-  NS_ENSURE_SUCCESS(rv, rv);
+#ifdef NIGHTLY_BUILD
+  if (StaticPrefs::javascript_options_experimental_wasm_esm_integration()) {
+    if (mRequest->IsModuleRequest()) {
+      // https://html.spec.whatwg.org/multipage/webappapis.html#fetch-a-single-module-script
+      // Extract the content-type. If its essence is wasm, we'll attempt to
+      // compile this module as a wasm module. (Steps 13.2, 13.6)
+      nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
+      if (httpChannel) {
+        nsAutoCString mimeType;
+        if (NS_SUCCEEDED(httpChannel->GetContentType(mimeType))) {
+          if (nsContentUtils::HasWasmMimeTypeEssence(
+                  NS_ConvertUTF8toUTF16(mimeType))) {
+            mRequest->AsModuleRequest()->SetHasWasmMimeTypeEssence();
+            mRequest->getLoadedScript()->SetWasmBytes();
+            return NS_OK;
+          }
+        }
+      }
+    }
+  }
+#endif
 
   if (mRequest->mFetchSourceOnly) {
     mRequest->SetTextSource(mRequest->mLoadContext.get());
@@ -339,8 +357,7 @@ nsresult ScriptLoadHandler::EnsureKnownDataType(
     return NS_OK;
   }
 
-  nsCOMPtr<nsICacheInfoChannel> cic(do_QueryInterface(req));
-  if (cic) {
+  if (nsCOMPtr<nsICacheInfoChannel> cic = do_QueryInterface(aChannel)) {
     nsAutoCString altDataType;
     cic->GetAlternativeDataType(altDataType);
     if (altDataType.Equals(ScriptLoader::BytecodeMimeTypeFor(mRequest))) {
@@ -374,14 +391,12 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
 
   nsCOMPtr<nsIRequest> channelRequest;
   aLoader->GetRequest(getter_AddRefs(channelRequest));
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(channelRequest);
+  MOZ_ASSERT(channel, "StreamLoader must have a channel");
 
-  mRequest->mNetworkMetadata =
-      new SubResourceNetworkMetadataHolder(channelRequest);
+  mRequest->mNetworkMetadata = new SubResourceNetworkMetadataHolder(channel);
 
-  {
-    nsCOMPtr<nsIChannel> channel = do_QueryInterface(channelRequest);
-    channel->SetNotificationCallbacks(nullptr);
-  }
+  channel->SetNotificationCallbacks(nullptr);
 
   auto firstMessage = !mPreloadStartNotified;
   if (!mPreloadStartNotified) {
@@ -395,7 +410,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
 
   if (!mRequest->IsCanceled()) {
     if (mRequest->IsUnknownDataType()) {
-      rv = EnsureKnownDataType(aLoader);
+      rv = EnsureKnownDataType(channel);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
@@ -407,7 +422,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
 
     if (mRequest->IsTextSource()) {
       DebugOnly<bool> encoderSet =
-          EnsureDecoder(aLoader, aData, aDataLength, /* aEndOfStream = */ true);
+          EnsureDecoder(channel, aData, aDataLength, /* aEndOfStream = */ true);
       MOZ_ASSERT(encoderSet);
       rv = mDecoder->DecodeRawData(mRequest, aData, aDataLength,
                                    /* aEndOfStream = */ true);
@@ -419,6 +434,11 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
       // If SRI is required for this load, appending new bytes to the hash.
       if (mSRIDataVerifier && NS_SUCCEEDED(mSRIStatus)) {
         mSRIStatus = mSRIDataVerifier->Update(aDataLength, aData);
+      }
+    } else if (mRequest->IsWasmBytes()) {
+      auto& wasmBytes = mRequest->WasmBytes();
+      if (!wasmBytes.append(aData, aDataLength)) {
+        return NS_ERROR_OUT_OF_MEMORY;
       }
     } else {
       MOZ_ASSERT(mRequest->IsSerializedStencil());
@@ -467,7 +487,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
   // Everything went well, keep the CacheInfoChannel alive such that we can
   // later save the serialized stencil on the cache entry.
   // we have to mediate and use mRequest.
-  rv = mScriptLoader->OnStreamComplete(aLoader, mRequest, aStatus, mSRIStatus,
+  rv = mScriptLoader->OnStreamComplete(channel, mRequest, aStatus, mSRIStatus,
                                        mSRIDataVerifier.get());
 
   return rv;

@@ -156,16 +156,16 @@ inline gc::AllocKind WasmArrayObject::allocKindForOOL() {
 }
 
 /* static */
-inline gc::AllocKind WasmArrayObject::allocKindForIL(uint32_t storageBytes) {
+inline gc::AllocKind WasmArrayObject::allocKindForIL(uint32_t arrayDataBytes) {
   gc::AllocKind allocKind =
-      gc::GetGCObjectKindForBytes(sizeof(WasmArrayObject) + storageBytes);
+      gc::GetGCObjectKindForBytes(sizeof(WasmArrayObject) + arrayDataBytes);
   return gc::GetFinalizedAllocKindForClass(allocKind, &WasmArrayObject::class_);
 }
 
 inline gc::AllocKind WasmArrayObject::allocKind() const {
   if (isDataInline()) {
     // numElements_ was validated to not overflow when constructing this object
-    uint32_t storageBytes = calcStorageBytesUnchecked(
+    uint32_t storageBytes = calcArrayDataBytesUnchecked(
         typeDef().arrayType().elementType().size(), numElements_);
     return allocKindForIL(storageBytes);
   }
@@ -178,7 +178,7 @@ template <bool ZeroFields>
 MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
     js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
-    uint32_t numElements, uint32_t storageBytes) {
+    uint32_t numElements, uint32_t arrayDataBytes) {
   STATIC_ASSERT_WASMARRAYELEMENTS_NUMELEMENTS_IS_U32;
 
   MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
@@ -192,8 +192,13 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
 
   // This routine is for large arrays with out-of-line data only. For small
   // arrays use createArrayIL.
-  MOZ_ASSERT(storageBytes > WasmArrayObject_MaxInlineBytes);
+  MOZ_ASSERT(arrayDataBytes > WasmArrayObject_MaxInlineBytes);
 
+  // Ensured by WasmArrayObject::createArray.
+  MOZ_ASSERT(arrayDataBytes <= uint32_t(wasm::MaxArrayPayloadBytes));
+
+  // This doesn't need to be Rooted because the AllocateCellBuffer call that
+  // follows can't trigger GC.
   auto* arrayObj = (WasmArrayObject*)cx->newCell<WasmGcObject>(
       allocKind, initialHeap, typeDefData->clasp, allocSite);
   if (MOZ_UNLIKELY(!arrayObj)) {
@@ -201,27 +206,28 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
     return nullptr;
   }
 
-  uint8_t* outlineAlloc = AllocateCellBuffer<uint8_t>(
-      cx, arrayObj, storageBytes, MaxNurseryTrailerSize);
-  if (MOZ_UNLIKELY(!outlineAlloc)) {
+  uint8_t* oolAlloc = AllocateCellBuffer<uint8_t>(
+      cx, arrayObj, sizeof(OOLDataHeader) + arrayDataBytes,
+      MaxNurseryTrailerSize);
+  if (MOZ_UNLIKELY(!oolAlloc)) {
     arrayObj->numElements_ = 0;
     arrayObj->data_ = nullptr;
     ReportOutOfMemory(cx);
     return nullptr;
   }
 
-  DataHeader* outlineHeader = (DataHeader*)outlineAlloc;
-  *outlineHeader = DataIsOOL;
-  uint8_t* outlineData = dataHeaderToDataPointer(outlineHeader);
+  OOLDataHeader* oolHeader = (OOLDataHeader*)oolAlloc;
+  new (oolHeader) OOLDataHeader();
+  uint8_t* oolData = WasmArrayObject::oolDataHeaderToDataPointer(oolHeader);
 
   arrayObj->initShape(typeDefData->shape);
   arrayObj->superTypeVector_ = typeDefData->superTypeVector;
   arrayObj->numElements_ = numElements;
-  arrayObj->data_ = outlineData;
+  arrayObj->data_ = oolData;
   if constexpr (ZeroFields) {
-    uint32_t dataBytes = storageBytes - sizeof(DataHeader);
-    MOZ_ASSERT(dataBytes >= numElements * typeDefData->cached.array.elemSize);
-    memset(arrayObj->data_, 0, dataBytes);
+    MOZ_ASSERT(arrayDataBytes >=
+               numElements * typeDefData->cached.array.elemSize);
+    memset(arrayObj->data_, 0, arrayDataBytes);
   }
 
   MOZ_ASSERT(!arrayObj->isDataInline());
@@ -249,19 +255,19 @@ template <bool ZeroFields>
 MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayIL(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
     js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
-    uint32_t numElements, uint32_t storageBytes) {
+    uint32_t numElements, uint32_t arrayDataBytes) {
   STATIC_ASSERT_WASMARRAYELEMENTS_NUMELEMENTS_IS_U32;
 
   MOZ_ASSERT(IsWasmGcObjectClass(typeDefData->clasp));
   MOZ_ASSERT(!typeDefData->clasp->isNativeObject());
   AutoSetNewObjectMetadata metadata(cx);
-  gc::AllocKind allocKind = allocKindForIL(storageBytes);
+  gc::AllocKind allocKind = allocKindForIL(arrayDataBytes);
   debugCheckNewObject(typeDefData->shape, allocKind, initialHeap);
 
   mozilla::DebugOnly<const wasm::TypeDef*> typeDef = typeDefData->typeDef;
   MOZ_ASSERT(typeDef->kind() == wasm::TypeDefKind::Array);
 
-  MOZ_ASSERT(storageBytes <= WasmArrayObject_MaxInlineBytes);
+  MOZ_ASSERT(arrayDataBytes <= WasmArrayObject_MaxInlineBytes);
 
   // There's no need for `arrayObj` to be rooted, since the only thing we're
   // going to do is fill in some bits of it, then return it.
@@ -275,19 +281,13 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayIL(
   arrayObj->initShape(typeDefData->shape);
   arrayObj->superTypeVector_ = typeDefData->superTypeVector;
   arrayObj->numElements_ = numElements;
-
-  DataHeader* inlineHeader =
-      WasmArrayObject::addressOfInlineDataHeader(arrayObj);
-  uint8_t* inlineData = WasmArrayObject::addressOfInlineData(arrayObj);
-  *inlineHeader = DataIsIL;
-  arrayObj->data_ = inlineData;
+  arrayObj->data_ = arrayObj->inlineArrayData<uint8_t>();
 
   if constexpr (ZeroFields) {
-    uint32_t dataBytes = storageBytes - sizeof(DataHeader);
-    MOZ_ASSERT(dataBytes >= numElements * typeDefData->cached.array.elemSize);
-
+    MOZ_ASSERT(arrayDataBytes >=
+               numElements * typeDefData->cached.array.elemSize);
     if (numElements > 0) {
-      memset(arrayObj->data_, 0, dataBytes);
+      memset(arrayObj->data_, 0, arrayDataBytes);
     }
   }
 
@@ -305,11 +305,11 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayIL(
 template WasmArrayObject* WasmArrayObject::createArrayIL<true>(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
     js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
-    uint32_t numElements, uint32_t storageBytes);
+    uint32_t numElements, uint32_t arrayDataBytes);
 template WasmArrayObject* WasmArrayObject::createArrayIL<false>(
     JSContext* cx, wasm::TypeDefInstanceData* typeDefData,
     js::gc::AllocSite* allocSite, js::gc::Heap initialHeap,
-    uint32_t numElements, uint32_t storageBytes);
+    uint32_t numElements, uint32_t arrayDataBytes);
 
 /* static */
 template <bool ZeroFields>
@@ -319,22 +319,22 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArray(
     uint32_t numElements) {
   MOZ_ASSERT(typeDefData->cached.array.elemSize ==
              typeDefData->typeDef->arrayType().elementType().size());
-  mozilla::CheckedUint32 storageBytes =
-      calcStorageBytesChecked(typeDefData->cached.array.elemSize, numElements);
-  if (!storageBytes.isValid() ||
-      storageBytes.value() > uint32_t(wasm::MaxArrayPayloadBytes)) {
+  mozilla::CheckedUint32 arrayDataBytes = calcArrayDataBytesChecked(
+      typeDefData->cached.array.elemSize, numElements);
+  if (!arrayDataBytes.isValid() ||
+      arrayDataBytes.value() > uint32_t(wasm::MaxArrayPayloadBytes)) {
     js::ReportOversizedAllocation(cx, JSMSG_WASM_ARRAY_IMP_LIMIT);
     wasm::MarkPendingExceptionAsTrap(cx);
     return nullptr;
   }
 
-  if (storageBytes.value() <= WasmArrayObject_MaxInlineBytes) {
+  if (arrayDataBytes.value() <= WasmArrayObject_MaxInlineBytes) {
     return createArrayIL<ZeroFields>(cx, typeDefData, allocSite, initialHeap,
-                                     numElements, storageBytes.value());
+                                     numElements, arrayDataBytes.value());
   }
 
   return createArrayOOL<ZeroFields>(cx, typeDefData, allocSite, initialHeap,
-                                    numElements, storageBytes.value());
+                                    numElements, arrayDataBytes.value());
 }
 
 template WasmArrayObject* WasmArrayObject::createArray<true>(

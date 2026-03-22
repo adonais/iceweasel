@@ -4,7 +4,7 @@
 
 "use strict";
 
-const { MemoryStore } = ChromeUtils.importESModule(
+const { MemoryStore, makeMemoryId } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs"
 );
 
@@ -32,6 +32,7 @@ add_task(async function test_addMemory() {
     category: "Food & Drink",
     intent: "Plan / Organize",
     score: 3,
+    reasoning: "searches for nearest coffee places",
   });
 
   equal(
@@ -42,6 +43,11 @@ add_task(async function test_addMemory() {
   equal(memory1.category, "Food & Drink", "Category should match input");
   equal(memory1.intent, "Plan / Organize", "Intent should match with input");
   equal(memory1.score, 3, "Score should match input");
+  equal(
+    memory1.reasoning,
+    "searches for nearest coffee places",
+    "Reasoning should match input"
+  );
   await MemoryStore.hardDeleteMemory(memory1.id);
 });
 
@@ -61,6 +67,11 @@ add_task(async function test_addMemory_and_upsert_by_content() {
     "trip plans to Italy",
     "Memory summary should be stored"
   );
+  equal(
+    memory1.reasoning,
+    "",
+    "Reasoning should default to empty string when not provided"
+  );
 
   // Add another memory with same (summary, category, intent) – should upsert, not duplicate.
   const memory2 = await MemoryStore.addMemory({
@@ -68,6 +79,7 @@ add_task(async function test_addMemory_and_upsert_by_content() {
     category: "Travel & Transportation",
     intent: "Plan / Organize",
     score: 5,
+    reasoning: "User searches for Italy travel guides and visits booking sites",
   });
 
   equal(
@@ -79,6 +91,11 @@ add_task(async function test_addMemory_and_upsert_by_content() {
     memory2.score,
     5,
     "Second addMemory call for same id should update score"
+  );
+  equal(
+    memory2.reasoning,
+    "User searches for Italy travel guides and visits booking sites",
+    "Second addMemory call for same id should update reasoning"
   );
 
   const memories = await MemoryStore.getMemories();
@@ -121,12 +138,25 @@ add_task(async function test_updateMemory_and_soft_delete() {
     category: "debug",
     intent: "Monitor / Track",
     score: 1,
+    reasoning: "Initial reasoning for debugging",
   });
+
+  equal(
+    memory.reasoning,
+    "Initial reasoning for debugging",
+    "Initial reasoning should be set"
+  );
 
   const updated = await MemoryStore.updateMemory(memory.id, {
     score: 4,
+    reasoning: "Updated reasoning after more data",
   });
-  equal(updated.score, 4, "updateMemory should update fields");
+  equal(updated.score, 4, "updateMemory should update score");
+  equal(
+    updated.reasoning,
+    "Updated reasoning after more data",
+    "updateMemory should update reasoning"
+  );
 
   const deleted = await MemoryStore.softDeleteMemory(memory.id);
 
@@ -240,4 +270,85 @@ add_task(async function test_updateMeta_and_persistence_roundtrip() {
 
   const memories = await FreshStore.getMemories();
   ok(Array.isArray(memories), "Memories should be an array after reload");
+});
+
+add_task(async function test_reasoning_field_persistence() {
+  await MemoryStore.ensureInitialized();
+
+  const testReasoning =
+    "User frequently searches for coffee shops and visits coffee-related websites";
+
+  const memory = await MemoryStore.addMemory({
+    memory_summary: "Loves specialty coffee",
+    category: "Food & Drink",
+    intent: "Buy / Acquire",
+    score: 4,
+    reasoning: testReasoning,
+  });
+
+  equal(
+    memory.reasoning,
+    testReasoning,
+    "Reasoning should be stored when creating new memory"
+  );
+
+  const updatedReasoning =
+    "User searches for and visits multiple specialty coffee roasters";
+  const updated = await MemoryStore.updateMemory(memory.id, {
+    reasoning: updatedReasoning,
+  });
+
+  equal(
+    updated.reasoning,
+    updatedReasoning,
+    "Reasoning should be updatable via updateMemory"
+  );
+
+  await MemoryStore.testOnlyFlush();
+
+  const { MemoryStore: FreshStore } = ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs",
+    { ignoreCache: true }
+  );
+
+  await FreshStore.ensureInitialized();
+  const persistedMemories = await FreshStore.getMemories();
+  const persistedMemory = persistedMemories.find(m => m.id === memory.id);
+
+  ok(persistedMemory, "Memory should exist after reload");
+  equal(
+    persistedMemory.reasoning,
+    updatedReasoning,
+    "Reasoning should survive persistence roundtrip"
+  );
+
+  await FreshStore.hardDeleteMemory(memory.id);
+});
+
+add_task(async function test_create_memory_id_from_valid_category() {
+  const memoryPartial = {
+    memory_summary: "Likes coffee",
+    category: "Food & Drink",
+    intent: "Communicate / Share",
+  };
+  const memoryId = makeMemoryId(memoryPartial);
+  Assert.equal(
+    memoryId.split(".")[0],
+    "food_drink",
+    "Memory ID should start with the correct category prefix"
+  );
+});
+
+add_task(async function test_create_memory_id_from_invalid_category() {
+  const memoryPartial = {
+    memory_summary: "Likes coffee",
+    category: "Foods & Drinks",
+    intent: "Communicate / Share",
+  };
+  const memoryId = makeMemoryId(memoryPartial);
+  Assert.equal(
+    memoryId.split(".")[0],
+    "mem",
+    "Memory ID should start with the correct category prefix"
+  );
 });

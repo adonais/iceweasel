@@ -53,7 +53,8 @@ already_AddRefed<DOMSVGLengthList> DOMSVGAnimatedLengthList::AnimVal() {
 already_AddRefed<DOMSVGAnimatedLengthList>
 DOMSVGAnimatedLengthList::GetDOMWrapper(SVGAnimatedLengthList* aList,
                                         dom::SVGElement* aElement,
-                                        uint8_t aAttrEnum, uint8_t aAxis) {
+                                        uint8_t aAttrEnum,
+                                        SVGLength::Axis aAxis) {
   RefPtr<DOMSVGAnimatedLengthList> wrapper =
       SVGAnimatedLengthListTearoffTable().GetTearoff(aList);
   if (!wrapper) {

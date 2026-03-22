@@ -30,6 +30,7 @@ buildscript {
 plugins {
     id 'ApkSizePlugin'
     id "mozac.ConfigPlugin"
+    alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.detekt)
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
@@ -124,17 +125,6 @@ allprojects {
                 buildToolsVersion gradle.mozconfig.substs.ANDROID_BUILD_TOOLS_VERSION
                 testOptions {
                     unitTests.includeAndroidResources = true
-                }
-            }
-        }
-    }
-
-    repositories {
-        gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
-            maven {
-                url = repository
-                if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
-                    allowInsecureProtocol = true
                 }
             }
         }
@@ -415,35 +405,6 @@ afterEvaluate {
     }
 }
 
-apply plugin: 'idea'
-
-idea {
-    project {
-        languageLevel = '1.8'
-    }
-
-    module {
-        // Object directories take a huge amount of time for IntelliJ to index.
-        // Exclude them.  Convention is that object directories start with obj.
-        // IntelliJ is clever and will not exclude the parts of the object
-        // directory that are referenced, if there are any.  In practice,
-        // indexing the entirety of the tree is taking too long, so exclude all
-        // but mobile/.
-        def topsrcdirURI = file(topsrcdir).toURI()
-        excludeDirs += files(file(topsrcdir)
-            .listFiles({it.isDirectory()} as FileFilter)
-            .collect({topsrcdirURI.relativize(it.toURI()).toString()}) // Relative paths.
-            .findAll({!it.equals('mobile/')}))
-
-        // If topobjdir is below topsrcdir, hide only some portions of that tree.
-        def topobjdirURI = file(topobjdir).toURI()
-        if (!topsrcdirURI.relativize(topobjdirURI).isAbsolute()) {
-            excludeDirs -= file(topobjdir)
-            excludeDirs += files(file(topobjdir).listFiles())
-            excludeDirs -= file("${topobjdir}/gradle")
-        }
-    }
-}
 
 subprojects { project ->
     // Perform spotless lint in GeckoView projects only.
@@ -527,10 +488,31 @@ subprojects { project ->
     }
 }
 
+// These are convenience helpers to run lints over all the subprojects
+def mobileProjects = [":fenix", ":focus-android", ":android-components"]
+tasks.register("lint") {
+    group = "verification"
+    description = "Runs lint on all mobile projects."
+    mobileProjects.each { dependsOn "${it}:lint" }
+}
+tasks.register("ktlint") {
+    group = "verification"
+    description = "Runs ktlint on all mobile projects."
+    mobileProjects.each { dependsOn "${it}:ktlint" }
+}
+tasks.register("ktlintFormat") {
+    group = "formatting"
+    description = "Runs ktlintFormat on all mobile projects."
+    mobileProjects.each { dependsOn "${it}:ktlintFormat" }
+}
+tasks.named("detekt").configure {
+    // NOTE: We are replacing the default 'detekt' task.
+    description = "Runs detekt on all mobile projects."
+    mobileProjects.each { dependsOn "${it}:detekt" }
+}
+
 tasks.register("lint-a-c") {
-    subprojects.each{
-        if (it.tasks.findByName("lint") != null && it.projectDir.absolutePath.contains("android-components")) {
-            dependsOn it.tasks.named("lint")
-        }
-    }
+    group = "verification"
+    description = "(Deprecated) alias for :android-components:lint"
+    dependsOn ":android-components:lint"
 }

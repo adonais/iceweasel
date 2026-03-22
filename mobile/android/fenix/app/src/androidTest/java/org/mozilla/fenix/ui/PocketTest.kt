@@ -2,7 +2,6 @@ package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.AppAndSystemHelper.isNetworkConnected
@@ -83,7 +82,6 @@ class PocketTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2252513
     @Test
-    @Ignore("Disabled due to test instability - see Bug 2010926")
     fun openPocketStoryItemTest() {
         runWithCondition(isNetworkConnected()) {
             homeScreen(composeTestRule) {

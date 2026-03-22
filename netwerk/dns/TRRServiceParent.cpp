@@ -6,6 +6,7 @@
 
 #include "mozilla/net/TRRServiceParent.h"
 
+#include "DNSServiceBase.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/psm/PSMIPCTypes.h"
@@ -221,20 +222,21 @@ void TRRServiceParent::ReadEtcHostsFile() {
     return;
   }
 
-  DoReadEtcHostsFile([](const nsTArray<nsCString>* aArray) -> bool {
-    RefPtr<TRRServiceParent> service(sTRRServiceParentPtr);
-    if (service && aArray) {
-      nsTArray<nsCString> hosts(aArray->Clone());
-      NS_DispatchToMainThread(
-          NS_NewRunnableFunction("TRRServiceParent::ReadEtcHostsFile",
-                                 [service, hosts = std::move(hosts)]() mutable {
-                                   if (service->CanSend()) {
-                                     (void)service->SendUpdateEtcHosts(hosts);
-                                   }
-                                 }));
-    }
-    return !!service;
-  });
+  DNSServiceBase::DoReadEtcHostsFile(
+      [](const nsTArray<nsCString>* aArray) -> bool {
+        RefPtr<TRRServiceParent> service(sTRRServiceParentPtr);
+        if (service && aArray) {
+          nsTArray<nsCString> hosts(aArray->Clone());
+          NS_DispatchToMainThread(NS_NewRunnableFunction(
+              "TRRServiceParent::ReadEtcHostsFile",
+              [service, hosts = std::move(hosts)]() mutable {
+                if (service->CanSend()) {
+                  (void)service->SendUpdateEtcHosts(hosts);
+                }
+              }));
+        }
+        return !!service;
+      });
 }
 
 }  // namespace net

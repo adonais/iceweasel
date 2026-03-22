@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef NeqoHttp3Conn_h__
-#define NeqoHttp3Conn_h__
+#ifndef NeqoHttp3Conn_h_
+#define NeqoHttp3Conn_h_
 
 #include <cstdint>
 #include "mozilla/net/neqo_glue_ffi_generated.h"
@@ -131,8 +131,8 @@ class NeqoHttp3Conn final {
     neqo_http3conn_stream_stop_sending(this, aStreamId, aError);
   }
 
-  void SetResumptionToken(nsTArray<uint8_t>& aToken) {
-    neqo_http3conn_set_resumption_token(this, &aToken);
+  nsresult SetResumptionToken(nsTArray<uint8_t>& aToken) {
+    return neqo_http3conn_set_resumption_token(this, &aToken);
   }
 
   void SetEchConfig(nsTArray<uint8_t>& aEchConfig) {

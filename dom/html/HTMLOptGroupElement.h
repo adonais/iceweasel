@@ -58,17 +58,12 @@ class HTMLOptGroupElement final : public nsGenericHTMLElement {
     SetHTMLAttr(nsGkAtoms::label, aLabel, aError);
   }
 
+  // Get the select content element that contains this optgroup
+  HTMLSelectElement* GetSelect() const;
+
  protected:
   virtual ~HTMLOptGroupElement();
-
   JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
-
- protected:
-  /**
-   * Get the select content element that contains this option
-   * @param aSelectElement the select element [OUT]
-   */
-  Element* GetSelect();
 };
 
 }  // namespace dom

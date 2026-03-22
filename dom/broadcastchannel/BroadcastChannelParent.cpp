@@ -31,7 +31,7 @@ BroadcastChannelParent::~BroadcastChannelParent() {
 }
 
 mozilla::ipc::IPCResult BroadcastChannelParent::RecvPostMessage(
-    const MessageData& aData) {
+    NotNull<SharedMessageBody*> aData) {
   AssertIsOnBackgroundThread();
 
   if (NS_WARN_IF(!mService)) {

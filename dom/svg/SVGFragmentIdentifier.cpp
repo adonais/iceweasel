@@ -32,7 +32,7 @@ class MOZ_RAII AutoSVGViewHandler {
       : mRoot(aRoot), mValid(false) {
     mWasOverridden = mRoot->UseCurrentView();
     mRoot->mSVGView = nullptr;
-    mRoot->mCurrentViewID = nullptr;
+    mRoot->mCurrentViewID = VoidString();
   }
 
   ~AutoSVGViewHandler() {
@@ -52,7 +52,7 @@ class MOZ_RAII AutoSVGViewHandler {
 
   void CreateSVGView() {
     MOZ_ASSERT(!mSVGView, "CreateSVGView should not be called multiple times");
-    mSVGView = MakeUnique<SVGView>();
+    mSVGView = std::make_unique<SVGView>();
   }
 
   void SetViewBox(const gfx::Rect& aRect) {
@@ -85,7 +85,7 @@ class MOZ_RAII AutoSVGViewHandler {
       if (mSVGView->mTransforms) {
         return false;
       }
-      mSVGView->mTransforms = MakeUnique<SVGAnimatedTransformList>();
+      mSVGView->mTransforms = std::make_unique<SVGAnimatedTransformList>();
       if (NS_FAILED(
               mSVGView->mTransforms->SetBaseValueString(aParams, mRoot))) {
         return false;
@@ -108,7 +108,7 @@ class MOZ_RAII AutoSVGViewHandler {
 
  private:
   SVGSVGElement* mRoot;
-  UniquePtr<SVGView> mSVGView;
+  std::unique_ptr<SVGView> mSVGView;
   bool mValid;
   bool mWasOverridden;
 };
@@ -203,10 +203,7 @@ bool SVGFragmentIdentifier::ProcessFragmentIdentifier(
   auto* rootElement = SVGSVGElement::FromNode(aDocument->GetRootElement());
 
   if (SVGViewElement::FromNodeOrNull(aDocument->GetElementById(aAnchorName))) {
-    if (!rootElement->mCurrentViewID) {
-      rootElement->mCurrentViewID = MakeUnique<nsString>();
-    }
-    *rootElement->mCurrentViewID = aAnchorName;
+    rootElement->mCurrentViewID = aAnchorName;
     rootElement->mSVGView = nullptr;
     rootElement->InvalidateTransformNotifyFrame();
     if (nsIFrame* f = rootElement->GetPrimaryFrame()) {

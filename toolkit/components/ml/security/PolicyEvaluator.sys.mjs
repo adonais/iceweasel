@@ -73,17 +73,22 @@ const lazy = XPCOMUtils.declareLazy({
  * @returns {boolean} True if policy applies to this action
  */
 export function checkPolicyMatch(matchCriteria, action) {
+  const startTime = ChromeUtils.now();
+  let result = true;
   lazy.console.debug(
     "[PolicyEvaluator] checkPolicyMatch criteria:",
     JSON.stringify(matchCriteria),
     "action:",
     JSON.stringify(action)
   );
+
+  let criterias = Object.entries(matchCriteria ?? []);
   if (!matchCriteria || typeof matchCriteria !== "object") {
-    return false;
+    criterias = []; // disable loop
+    result = false;
   }
 
-  for (const [path, expectedValue] of Object.entries(matchCriteria)) {
+  for (const [path, expectedValue] of criterias) {
     const actualValue = lazy.resolveConditionPath(path, action, {});
 
     // Handle OR conditions with pipe separator
@@ -96,19 +101,28 @@ export function checkPolicyMatch(matchCriteria, action) {
       );
 
       if (!matches) {
-        return false;
+        result = false;
+        break;
       }
     } else if (expectedValue === "*") {
       if (actualValue === undefined || actualValue === null) {
-        return false;
+        result = false;
+        break;
       }
     } else if (actualValue !== expectedValue) {
       // Exact match required
-      return false;
+      result = false;
+      break;
     }
   }
 
-  return true;
+  ChromeUtils.addProfilerMarker(
+    "ML.Security.PolicyEvaluator.checkPolicyMatch",
+    { startTime },
+    `checkPolicyMatch for action: ${JSON.stringify(action)}`
+  );
+
+  return result;
 }
 
 /**

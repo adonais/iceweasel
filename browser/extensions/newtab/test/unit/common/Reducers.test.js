@@ -6,7 +6,6 @@ const {
   Dialog,
   Sections,
   Pocket,
-  Personalization,
   DiscoveryStream,
   Search,
   ExternalComponents,
@@ -714,29 +713,6 @@ describe("Reducers", () => {
       assert.equal(state.pocketCta.ctaText, data.cta_text);
       assert.equal(state.pocketCta.ctaUrl, data.cta_url);
       assert.equal(state.pocketCta.useCta, data.use_cta);
-    });
-  });
-  describe("Personalization", () => {
-    it("should return INITIAL_STATE by default", () => {
-      assert.equal(
-        Personalization(undefined, { type: "some_action" }),
-        INITIAL_STATE.Personalization
-      );
-    });
-    it("should set lastUpdated with DISCOVERY_STREAM_PERSONALIZATION_LAST_UPDATED", () => {
-      const state = Personalization(undefined, {
-        type: at.DISCOVERY_STREAM_PERSONALIZATION_LAST_UPDATED,
-        data: {
-          lastUpdated: 123,
-        },
-      });
-      assert.equal(state.lastUpdated, 123);
-    });
-    it("should set initialized to true with DISCOVERY_STREAM_PERSONALIZATION_INIT", () => {
-      const state = Personalization(undefined, {
-        type: at.DISCOVERY_STREAM_PERSONALIZATION_INIT,
-      });
-      assert.equal(state.initialized, true);
     });
   });
   describe("DiscoveryStream", () => {

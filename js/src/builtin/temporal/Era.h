@@ -8,10 +8,8 @@
 #define builtin_temporal_Era_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/MathAlgorithms.h"
 
 #include <initializer_list>
-#include <stdint.h>
 #include <string_view>
 
 #include "jstypes.h"
@@ -72,12 +70,6 @@ inline constexpr auto EthiopianAmeteAlem = {
     "aa"sv,
 };
 
-// "Intl era and monthCode" proposal follows CDLR which defines that Amete Alem
-// era is used for years before the incarnation. This may not match modern
-// usage, though. For the time being use a single era to check if we get any
-// user reports to clarify the situation.
-//
-// CLDR bug report: https://unicode-org.atlassian.net/browse/CLDR-18739
 inline constexpr auto Ethiopian = {
     "am"sv,
 };
@@ -149,13 +141,13 @@ constexpr auto& CalendarEras(CalendarId calendar) {
     case CalendarId::Chinese:
     case CalendarId::Coptic:
     case CalendarId::Dangi:
-    case CalendarId::Ethiopian:
     case CalendarId::EthiopianAmeteAlem:
     case CalendarId::Hebrew:
     case CalendarId::Indian:
     case CalendarId::Persian:
       return eras::Standard;
 
+    case CalendarId::Ethiopian:
     case CalendarId::Gregorian:
     case CalendarId::IslamicCivil:
     case CalendarId::IslamicTabular:
@@ -167,14 +159,6 @@ constexpr auto& CalendarEras(CalendarId calendar) {
       return eras::Japanese;
   }
   MOZ_CRASH("invalid calendar id");
-}
-
-/**
- * Return `true` iff the calendar has an inverse era.
- */
-constexpr bool CalendarEraHasInverse(CalendarId calendar) {
-  // More than one era implies an inverse era is used.
-  return CalendarEras(calendar).size() > 1;
 }
 
 /**
@@ -222,8 +206,9 @@ constexpr auto& CalendarEraNames(CalendarId calendar, EraCode era) {
       return eras::names::Coptic;
 
     case CalendarId::Ethiopian:
-      MOZ_ASSERT(era == EraCode::Standard);
-      return eras::names::Ethiopian;
+      MOZ_ASSERT(era == EraCode::Standard || era == EraCode::Inverse);
+      return era == EraCode::Standard ? eras::names::Ethiopian
+                                      : eras::names::EthiopianAmeteAlem;
 
     case CalendarId::EthiopianAmeteAlem:
       MOZ_ASSERT(era == EraCode::Standard);
@@ -285,7 +270,7 @@ constexpr auto& CalendarEraNames(CalendarId calendar, EraCode era) {
 }
 
 constexpr auto CalendarEraName(CalendarId calendar, EraCode era) {
-  auto& names = CalendarEraNames(calendar, era);
+  const auto& names = CalendarEraNames(calendar, era);
   MOZ_ASSERT(names.size() > 0);
   return *names.begin();
 }
@@ -299,33 +284,6 @@ constexpr bool CalendarHasMidYearEras(CalendarId calendar) {
   // Japanese eras can start in the middle of the year. All other calendars
   // start their eras at year boundaries. (Or don't have eras at all.)
   return calendar == CalendarId::Japanese;
-}
-
-constexpr bool IsJapaneseEraName(EraCode era) {
-  switch (era) {
-    case EraCode::Standard:
-    case EraCode::Inverse:
-      return false;
-    case EraCode::Meiji:
-    case EraCode::Taisho:
-    case EraCode::Showa:
-    case EraCode::Heisei:
-    case EraCode::Reiwa:
-      return true;
-  }
-  MOZ_CRASH("invalid era");
-}
-
-struct EraYear {
-  EraCode era = EraCode::Standard;
-  int32_t year = 0;
-};
-
-constexpr EraYear CalendarEraYear(CalendarId calendar, int32_t year) {
-  if (year > 0 || !CalendarEraHasInverse(calendar)) {
-    return EraYear{EraCode::Standard, year};
-  }
-  return EraYear{EraCode::Inverse, int32_t(mozilla::Abs(year) + 1)};
 }
 
 }  // namespace js::temporal

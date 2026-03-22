@@ -51,7 +51,7 @@ export class UrlbarEventBufferer {
   // Maximum time events can be deferred for. In automation providers can be
   // quite slow, thus we need a longer timeout to avoid intermittent failures.
   // Note: to avoid handling events too early, this timer should be larger than
-  // UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS.
+  // ProvidersManager.chunkResultsDelayMs.
   static DEFERRING_TIMEOUT_MS = Cu.isInAutomation ? 1500 : 300;
 
   /**

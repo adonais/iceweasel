@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsDocLoader_h__
-#define nsDocLoader_h__
+#ifndef nsDocLoader_h_
+#define nsDocLoader_h_
 
 #include "nsIDocumentLoader.h"
 #include "nsIWebProgress.h"
@@ -249,33 +249,19 @@ class nsDocLoader : public nsIDocumentLoader,
     MOZ_COUNTED_DTOR(nsStatusInfo)
   };
 
-  struct nsRequestInfo : public PLDHashEntryHdr {
-    explicit nsRequestInfo(const void* key)
-        : mKey(key),
-          mCurrentProgress(0),
+  struct nsRequestInfo {
+    explicit nsRequestInfo()
+        : mCurrentProgress(0),
           mMaxProgress(0),
           mUploading(false),
-          mLastStatus(nullptr) {
-      MOZ_COUNT_CTOR(nsRequestInfo);
-    }
+          mLastStatus(nullptr) {}
 
-    MOZ_COUNTED_DTOR(nsRequestInfo)
-
-    nsIRequest* Request() {
-      return static_cast<nsIRequest*>(const_cast<void*>(mKey));
-    }
-
-    const void* mKey;  // Must be first for the PLDHashTable stubs to work
     int64_t mCurrentProgress;
     int64_t mMaxProgress;
     bool mUploading;
 
     mozilla::UniquePtr<nsStatusInfo> mLastStatus;
   };
-
-  static void RequestInfoHashInitEntry(PLDHashEntryHdr* entry, const void* key);
-  static void RequestInfoHashClearEntry(PLDHashTable* table,
-                                        PLDHashEntryHdr* entry);
 
   // IMPORTANT: The ownership implicit in the following member
   // variables has been explicitly checked and set using nsCOMPtr
@@ -304,7 +290,7 @@ class nsDocLoader : public nsIDocumentLoader,
   int64_t mCurrentTotalProgress;
   int64_t mMaxTotalProgress;
 
-  PLDHashTable mRequestInfoHash;
+  nsTHashMap<nsIRequest*, nsRequestInfo> mRequestInfoHash;
   int64_t mCompletedTotalProgress;
 
   mozilla::LinkedList<nsStatusInfo> mStatusInfoList;
@@ -348,8 +334,6 @@ class nsDocLoader : public nsIDocumentLoader,
 
   bool mNotifyAboutBackgroundRequests;
 
-  static const PLDHashTableOps sRequestInfoHashOps;
-
   // A list of kids that are in the middle of their onload calls and will let
   // us know once they're done.  We don't want to fire onload for "normal"
   // DocLoaderIsEmpty calls (those coming from requests finishing in our
@@ -386,4 +370,4 @@ static inline nsISupports* ToSupports(nsDocLoader* aDocLoader) {
   return static_cast<nsIDocumentLoader*>(aDocLoader);
 }
 
-#endif /* nsDocLoader_h__ */
+#endif /* nsDocLoader_h_ */

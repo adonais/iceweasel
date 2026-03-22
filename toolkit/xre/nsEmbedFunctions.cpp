@@ -328,12 +328,14 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
   const int kTimeoutMs = 1000;
 
   std::vector<mozilla::UniqueMachSendRight> sendRights;
-  if (NS_WARN_IF(
-          !MachChildProcessCheckIn(mach_port_name, kTimeoutMs, sendRights))) {
+  std::vector<mozilla::UniqueMachReceiveRight> receiveRights;
+  if (NS_WARN_IF(!MachChildProcessCheckIn(mach_port_name, kTimeoutMs,
+                                          sendRights, receiveRights))) {
     return NS_ERROR_FAILURE;
   }
 
   geckoargs::SetPassedMachSendRights(std::move(sendRights));
+  geckoargs::SetPassedMachReceiveRights(std::move(receiveRights));
 
 #  if defined(MOZ_SANDBOX)
   std::string sandboxError;
@@ -349,18 +351,12 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
 
   bool exceptionHandlerIsSet = false;
   if (!CrashReporter::IsDummy()) {
-    auto crashReporterArg = geckoargs::sCrashReporter.Get(aArgc, aArgv);
-    auto crashHelperArg = geckoargs::sCrashHelper.Get(aArgc, aArgv);
-    if (crashReporterArg && crashHelperArg) {
-      exceptionHandlerIsSet = CrashReporter::SetRemoteExceptionHandler(
-          std::move(*crashReporterArg), std::move(*crashHelperArg));
-      MOZ_ASSERT(exceptionHandlerIsSet,
-                 "Should have been able to set remote exception handler");
+    exceptionHandlerIsSet =
+        CrashReporter::SetRemoteExceptionHandler(aArgc, aArgv);
 
-      if (!exceptionHandlerIsSet) {
-        // Bug 684322 will add better visibility into this condition
-        NS_WARNING("Could not setup crash reporting\n");
-      }
+    if (!exceptionHandlerIsSet) {
+      // Bug 684322 will add better visibility into this condition
+      NS_WARNING("Could not setup crash reporting");
     } else {
       // We might have registered a runtime exception module very early in
       // process startup to catch early crashes. This is before we process the

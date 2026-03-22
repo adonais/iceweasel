@@ -237,6 +237,21 @@ Maybe<uint32_t> MP4Metadata::TrackTypeToGlobalTrackIndex(
       continue;
     }
     if (TrackTypeEqual(aType, track_info.track_type)) {
+      bool skip = false;
+      if (track_info.track_type == MP4PARSE_TRACK_TYPE_AUDIO) {
+        Mp4parseTrackAudioInfo audio;
+        auto rv = mp4parse_get_track_audio_info(mParser.get(), i, &audio);
+        skip = rv != MP4PARSE_STATUS_OK || audio.sample_info_count == 0 ||
+               audio.sample_info[0].codec_type == MP4PARSE_CODEC_UNKNOWN;
+      } else if (track_info.track_type == MP4PARSE_TRACK_TYPE_VIDEO) {
+        Mp4parseTrackVideoInfo video;
+        auto rv = mp4parse_get_track_video_info(mParser.get(), i, &video);
+        skip = rv != MP4PARSE_STATUS_OK || video.sample_info_count == 0 ||
+               video.sample_info[0].codec_type == MP4PARSE_CODEC_UNKNOWN;
+      }
+      if (skip) {
+        continue;
+      }
       if (perType == aTrackNumber) {
         return Some(i);
       }

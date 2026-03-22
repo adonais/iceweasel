@@ -11,8 +11,8 @@
 
 **/
 
-#ifndef nsScrollbarButtonFrame_h___
-#define nsScrollbarButtonFrame_h___
+#ifndef nsScrollbarButtonFrame_h_
+#define nsScrollbarButtonFrame_h_
 
 #include "SimpleXULLeafFrame.h"
 #include "mozilla/Attributes.h"

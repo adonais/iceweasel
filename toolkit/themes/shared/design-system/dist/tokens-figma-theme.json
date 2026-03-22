@@ -40,9 +40,39 @@
     "forcedColors": "{Theme$background/color/canvas}"
   },
   "background/color/list/item/hover": {
-    "light": "color-mix(in srgb, var(--color-accent-primary) 20%, transparent)",
-    "dark": "color-mix(in srgb, var(--color-accent-primary) 20%, transparent)",
+    "light": "color-mix(in srgb, {Theme$color/accent/primary} 20%, transparent)",
+    "dark": "color-mix(in srgb, {Theme$color/accent/primary} 20%, transparent)",
     "forcedColors": "{HCM Theme$SelectedItem}"
+  },
+  "badge/text/color": {
+    "light": "{Theme$text/color}",
+    "dark": "{Theme$text/color}",
+    "forcedColors": "{HCM Theme$CanvasText}"
+  },
+  "badge/text/color/filled": {
+    "light": "{Colors$color/white}",
+    "dark": "{Colors$color/gray/100}",
+    "forcedColors": "{HCM Theme$AccentColorText}"
+  },
+  "badge/background/color": {
+    "light": "transparent",
+    "dark": "transparent",
+    "forcedColors": "{HCM Theme$Canvas}"
+  },
+  "badge/background/color/filled": {
+    "light": "{Colors$color/green/70}",
+    "dark": "{Colors$color/green/40}",
+    "forcedColors": "{HCM Theme$AccentColor}"
+  },
+  "badge/border/color": {
+    "light": "{Theme$border/color}",
+    "dark": "{Theme$border/color}",
+    "forcedColors": "{Theme$border/color}"
+  },
+  "badge/border/color/filled": {
+    "light": "rgba(251, 251, 254, 0.4)",
+    "dark": "rgba(21, 20, 26, 0.4)",
+    "forcedColors": "{HCM Theme$CanvasText}"
   },
   "border/color": {
     "light": "{Colors$color/gray/50}",
@@ -183,6 +213,26 @@
     "light": "{Theme$button/background/color/ghost/active}",
     "dark": "{Theme$button/background/color/ghost/active}",
     "forcedColors": "{Theme$button/background/color/ghost/active}"
+  },
+  "button/background/color/menu": {
+    "light": "{Theme$button/background/color/ghost}",
+    "dark": "{Theme$button/background/color/ghost}",
+    "forcedColors": "{Theme$button/background/color/ghost}"
+  },
+  "button/background/color/menu/active": {
+    "light": "{Theme$button/background/color/ghost/active}",
+    "dark": "{Theme$button/background/color/ghost/active}",
+    "forcedColors": "{Theme$button/background/color/primary}"
+  },
+  "button/background/color/menu/disabled": {
+    "light": "{Theme$button/background/color/ghost/disabled}",
+    "dark": "{Theme$button/background/color/ghost/disabled}",
+    "forcedColors": "{Theme$button/background/color/ghost/disabled}"
+  },
+  "button/background/color/menu/hover": {
+    "light": "{Theme$button/background/color/ghost/hover}",
+    "dark": "{Theme$button/background/color/ghost/hover}",
+    "forcedColors": "{Theme$button/background/color/primary}"
   },
   "button/background/color/selected": {
     "light": "{Theme$button/background/color/active}",
@@ -371,6 +421,26 @@
     "dark": "{Theme$button/text/color}",
     "forcedColors": "{HCM Theme$SelectedItem}"
   },
+  "button/text/color/menu": {
+    "light": "{Theme$button/text/color/ghost}",
+    "dark": "{Theme$button/text/color/ghost}",
+    "forcedColors": "{Theme$button/text/color/ghost}"
+  },
+  "button/text/color/menu/active": {
+    "light": "{Theme$button/text/color/ghost/active}",
+    "dark": "{Theme$button/text/color/ghost/active}",
+    "forcedColors": "{Theme$button/text/color/primary}"
+  },
+  "button/text/color/menu/disabled": {
+    "light": "{Theme$button/text/color/ghost/disabled}",
+    "dark": "{Theme$button/text/color/ghost/disabled}",
+    "forcedColors": "{Theme$button/text/color/ghost/disabled}"
+  },
+  "button/text/color/menu/hover": {
+    "light": "{Theme$button/text/color/ghost/hover}",
+    "dark": "{Theme$button/text/color/ghost/hover}",
+    "forcedColors": "{Theme$button/text/color/primary}"
+  },
   "button/text/color/primary": {
     "light": "{Colors$color/white}",
     "dark": "{Colors$color/gray/100}",
@@ -513,6 +583,26 @@
     "light": "rgba(0, 0, 0, 0.1)",
     "dark": "rgba(0, 0, 0, 0.4)",
     "forcedColors": "transparent"
+  },
+  "table/background/color": {
+    "light": "#f8f8fa",
+    "dark": "rgb(35, 34, 43)",
+    "forcedColors": "{HCM Theme$Canvas}"
+  },
+  "table/border/color": {
+    "light": "color-mix(in srgb, currentColor 41%, transparent)",
+    "dark": "color-mix(in srgb, currentColor 41%, transparent)",
+    "forcedColors": "{HCM Theme$CanvasText}"
+  },
+  "table/header/background/color": {
+    "light": "{Theme$color/accent/primary}",
+    "dark": "{Theme$color/accent/primary}",
+    "forcedColors": "{HCM Theme$AccentColor}"
+  },
+  "table/header/text/color": {
+    "light": "{Colors$color/white}",
+    "dark": "{Colors$color/gray/100}",
+    "forcedColors": "{HCM Theme$AccentColorText}"
   },
   "table/row/background/color": {
     "light": "{Theme$background/color/canvas}",

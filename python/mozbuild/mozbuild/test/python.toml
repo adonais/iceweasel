@@ -57,6 +57,8 @@ subsuite = "mozbuild"
 
 ["configure/test_util.py"]
 
+["controller/test_build_output.py"]
+
 ["controller/test_ccachestats.py"]
 
 ["controller/test_clobber.py"]

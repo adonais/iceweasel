@@ -9,11 +9,10 @@
  * boxes, also used for various anonymous boxes
  */
 
-#ifndef nsBlockFrame_h___
-#define nsBlockFrame_h___
+#ifndef nsBlockFrame_h_
+#define nsBlockFrame_h_
 
 #include "mozilla/IntrinsicISizesCache.h"
-#include "nsCSSPseudoElements.h"
 #include "nsContainerFrame.h"
 #include "nsFloatManager.h"
 #include "nsHTMLParts.h"
@@ -539,7 +538,7 @@ class nsBlockFrame : public nsContainerFrame {
       // box of a button to do it.
       auto pseudoType = Style()->GetPseudoType();
       return !mozilla::PseudoStyle::IsAnonBox(pseudoType) ||
-             pseudoType == mozilla::PseudoStyleType::scrolledContent;
+             pseudoType == mozilla::PseudoStyleType::MozScrolledContent;
     }
     return IsButtonControlFrame();
   }
@@ -1171,4 +1170,4 @@ class nsBlockInFlowLineIterator {
   bool FindValidLine();
 };
 
-#endif /* nsBlockFrame_h___ */
+#endif /* nsBlockFrame_h_ */

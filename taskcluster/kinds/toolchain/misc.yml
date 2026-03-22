@@ -411,6 +411,22 @@ browsertime:
         toolchain:
             - linux64-node
 
+puppeteer-build:
+    description: "Build Puppeteer with all dependencies and artifacts"
+    treeherder:
+        symbol: TL(puppeteer-build)
+    run:
+        script: puppeteer-build.sh
+        sparse-profile: null
+        resources:
+            - 'remote/test/puppeteer/package.json'
+            - 'remote/test/puppeteer/package-lock.json'
+            - 'remote/test/puppeteer/test/package.json'
+        toolchain-artifact: public/build/puppeteer-build.tar.zst
+    fetches:
+        toolchain:
+            - linux64-node
+
 aboutwelcome-node-modules:
     description: "npm install aboutwelcome node_modules"
     treeherder:
@@ -469,6 +485,21 @@ stylelint-plugin-mozilla:
             - 'tools/lint/stylelint/stylelint-plugin-mozilla/package.json'
             - 'tools/lint/stylelint/stylelint-plugin-mozilla/package-lock.json'
         toolchain-artifact: public/build/stylelint-plugin-mozilla.tar.zst
+    fetches:
+        toolchain:
+            - linux64-node
+
+terser:
+    description: "npm install terser node_modules"
+    treeherder:
+        symbol: TL(terser)
+    run:
+        script: terser.sh
+        sparse-profile: null
+        resources:
+            - 'tools/terser/package.json'
+            - 'tools/terser/package-lock.json'
+        toolchain-artifact: public/build/terser.tar.zst
     fetches:
         toolchain:
             - linux64-node
@@ -743,23 +774,6 @@ win64-vs2022-car:
             - build/vs/vs2022-car.yaml
         toolchain-artifact: project/gecko/vs/vs.tar.zst
 
-win64-vs2022:
-    description: "VS 2022"
-    attributes:
-        local-toolchain: true
-    treeherder:
-        symbol: TW64(msvc2022)
-    worker:
-        env:
-            MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
-    run:
-        script: get_vs.py
-        arguments:
-            - build/vs/vs2022.yaml
-        resources:
-            - build/vs/vs2022.yaml
-        toolchain-artifact: project/gecko/vs/vs.tar.zst
-
 win64-vs2026:
     description: "VS 2026"
     attributes:
@@ -826,23 +840,6 @@ win64-aarch64-WindowsAppSDK:
     fetches:
         fetch:
             - windowsappsdk-redist
-
-win64-aarch64-vs2022:
-    description: "VS 2022"
-    attributes:
-        local-toolchain: true
-    treeherder:
-        symbol: TWA64(msvc2022)
-    worker:
-        env:
-            MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
-    run:
-        script: get_vs.py
-        arguments:
-            - build/vs/vs2022-aarch64.yaml
-        resources:
-            - build/vs/vs2022-aarch64.yaml
-        toolchain-artifact: project/gecko/vs/vs.tar.zst
 
 win64-aarch64-vs2026:
     description: "VS 2026 (AArch64)"

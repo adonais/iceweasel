@@ -11,7 +11,7 @@ import { KEYS as defaultVisitorKeys } from "eslint-visitor-keys";
 import estraverse from "estraverse";
 import path from "path";
 import fs from "fs";
-import toml from "toml-eslint-parser";
+import { parseTOML } from "toml-eslint-parser";
 import servicesData from "./services.json" with { type: "json" };
 import { execFileSync } from "child_process";
 
@@ -519,9 +519,7 @@ export default {
     for (let name of names) {
       if (name.endsWith(".toml")) {
         try {
-          const ast = toml.parseTOML(
-            fs.readFileSync(path.join(dir, name), "utf8")
-          );
+          const ast = parseTOML(fs.readFileSync(path.join(dir, name), "utf8"));
           var manifest = {};
           ast.body.forEach(top => {
             if (top.type == "TOMLTopLevelTable") {

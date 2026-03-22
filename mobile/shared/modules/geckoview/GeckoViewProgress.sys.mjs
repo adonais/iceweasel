@@ -568,6 +568,13 @@ export class GeckoViewProgress extends GeckoViewModule {
       case "MozAfterPaint": // fall-through
       case "pageshow": {
         this._progressTracker?.handleEvent(aMsg);
+        if (aMsg.name === "pageshow") {
+          const nav = this.moduleManager._applinkNavigation;
+          if (nav) {
+            this.moduleManager._applinkNavigation = null;
+            nav.resolve();
+          }
+        }
         break;
       }
     }

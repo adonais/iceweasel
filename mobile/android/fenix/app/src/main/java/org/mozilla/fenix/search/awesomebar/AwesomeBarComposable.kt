@@ -44,6 +44,8 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.getRootView
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.search.BrowserStoreToFenixSearchMapperMiddleware
 import org.mozilla.fenix.search.BrowserToolbarToFenixSearchMapperMiddleware
@@ -96,6 +98,11 @@ class AwesomeBarComposable(
     @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
     @Composable
     fun SearchSuggestions() {
+        val deleteHistoryDelegate = remember(activity.getRootView(), searchStore) {
+            activity.getRootView()?.let {
+                DeleteHistoryEntryDelegate(it, it.context.components, searchStore)
+            }
+        }
         val isSearchActive = appStore.observeAsComposableState { it.searchState.isSearchActive }.value
         val state = searchStore.observeAsComposableState { it }.value
         val orientation by remember(state.searchSuggestionsOrientedAtBottom) {
@@ -196,12 +203,16 @@ class AwesomeBarComposable(
                     AwesomeBar(
                         text = state.query,
                         providers = state.searchSuggestionsProviders,
+                        hiddenSuggestions = state.hiddenSuggestions,
                         orientation = orientation,
                         onSuggestionClicked = { suggestion ->
                             searchStore.dispatch(SuggestionClicked(suggestion))
                         },
                         onAutoComplete = { suggestion ->
                             searchStore.dispatch(SuggestionSelected(suggestion))
+                        },
+                        onRemoveClicked = { suggestion ->
+                            deleteHistoryDelegate?.handleDeletingHistoryEntry(suggestion)
                         },
                         onVisibilityStateUpdated = {
                             browserStore.dispatch(AwesomeBarAction.VisibilityStateUpdated(it))

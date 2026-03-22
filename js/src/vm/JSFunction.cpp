@@ -12,8 +12,6 @@
 
 #include "mozilla/Maybe.h"
 
-#include <string.h>
-
 #include "jsapi.h"
 #include "jstypes.h"
 

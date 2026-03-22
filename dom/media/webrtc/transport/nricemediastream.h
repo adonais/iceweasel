@@ -41,8 +41,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 // This is a wrapper around the nICEr ICE stack
-#ifndef nricemediastream_h__
-#define nricemediastream_h__
+#ifndef nricemediastream_h_
+#define nricemediastream_h_
 
 #include <string>
 #include <vector>

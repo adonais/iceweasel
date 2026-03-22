@@ -601,7 +601,7 @@ bool MediaKeySystemAccessManager::AwaitInstall(
   MOZ_DIAGNOSTIC_ASSERT(
       aRequest->mTimer == nullptr,
       "Timer should not already be set on a request we're about to await");
-  aRequest->mTimer = timer;
+  aRequest->mTimer = std::move(timer);
 
   mPendingInstallRequests.AppendElement(std::move(aRequest));
   return true;

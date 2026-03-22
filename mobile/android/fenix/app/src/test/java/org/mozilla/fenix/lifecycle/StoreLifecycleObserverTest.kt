@@ -26,7 +26,7 @@ class StoreLifecycleObserverTest {
     @Test
     fun `WHEN onStart is called THEN dispatch StartAction`() {
         val appStore: AppStore = mockk(relaxed = true)
-        val observer = StoreLifecycleObserver(appStore, mockk())
+        val observer = StoreLifecycleObserver(appStore, BrowserStore())
 
         observer.onStart(mockk())
 
@@ -38,7 +38,7 @@ class StoreLifecycleObserverTest {
     @Test
     fun `WHEN onPause is called THEN dispatch PauseAction`() {
         val appStore: AppStore = mockk(relaxed = true)
-        val browserStore: BrowserStore = mockk(relaxed = true)
+        val browserStore = BrowserStore()
         val observer = StoreLifecycleObserver(appStore, browserStore)
 
         observer.onPause(mockk())
@@ -52,7 +52,7 @@ class StoreLifecycleObserverTest {
     @Test
     fun `WHEN onResume is called THEN dispatch ResumeAction`() {
         val appStore: AppStore = mockk(relaxed = true)
-        val browserStore: BrowserStore = mockk(relaxed = true)
+        val browserStore = BrowserStore()
         val observer = StoreLifecycleObserver(appStore, browserStore)
 
         observer.onResume(mockk())

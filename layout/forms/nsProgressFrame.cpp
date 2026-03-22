@@ -58,12 +58,12 @@ nsresult nsProgressFrame::CreateAnonymousContent(
 
   if (StaticPrefs::layout_css_modern_range_pseudos_enabled()) {
     // TODO(emilio): Create also a slider-track pseudo-element.
-    mBarDiv->SetPseudoElementType(PseudoStyleType::sliderFill);
+    mBarDiv->SetPseudoElementType(PseudoStyleType::SliderFill);
   } else {
     // Associate ::-moz-{progress,meter}-bar pseudo-element to the anon child.
     mBarDiv->SetPseudoElementType(mType == Type::Progress
-                                      ? PseudoStyleType::mozProgressBar
-                                      : PseudoStyleType::mozMeterBar);
+                                      ? PseudoStyleType::MozProgressBar
+                                      : PseudoStyleType::MozMeterBar);
   }
 
   // XXX(Bug 1631371) Check if this should use a fallible operation as it

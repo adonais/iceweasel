@@ -2082,14 +2082,33 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
     TimeUnit timestampOffset =
         mSourceBufferAttributes->GetTimestampOffset().ToBase(sample->mTime);
 
-    TimeInterval sampleInterval =
-        mSourceBufferAttributes->mGenerateTimestamps
-            ? TimeInterval(timestampOffset, timestampOffset + sampleDuration)
-            : TimeInterval(timestampOffset + sampleTime,
-                           timestampOffset + sampleTime + sampleDuration);
-    TimeUnit decodeTimestamp = mSourceBufferAttributes->mGenerateTimestamps
-                                   ? timestampOffset
-                                   : timestampOffset + sampleTimecode;
+    TimeUnit intervalStart;
+    TimeUnit intervalEnd;
+    TimeUnit decodeTimestamp;
+
+    if (mSourceBufferAttributes->mGenerateTimestamps) {
+      intervalStart = timestampOffset;
+      intervalEnd = timestampOffset + sampleDuration;
+      decodeTimestamp = timestampOffset;
+    } else {
+      intervalStart = timestampOffset + sampleTime;
+      intervalEnd = timestampOffset + sampleTime + sampleDuration;
+      decodeTimestamp = timestampOffset + sampleTimecode;
+    }
+
+    if (!intervalStart.IsValid() || !intervalEnd.IsValid() ||
+        !decodeTimestamp.IsValid()) {
+      SAMPLE_DEBUG(
+          "Skipping sample with invalid timestamp after applying offset "
+          "(intervalStart valid: %s, intervalEnd valid: %s, decodeTimestamp "
+          "valid: %s)",
+          intervalStart.IsValid() ? "yes" : "no",
+          intervalEnd.IsValid() ? "yes" : "no",
+          decodeTimestamp.IsValid() ? "yes" : "no");
+      continue;
+    }
+
+    TimeInterval sampleInterval(intervalStart, intervalEnd);
 
     SAMPLE_DEBUG(
         "Processing %s frame [%" PRId64 "%s,%" PRId64 "%s] (adjusted:[%" PRId64

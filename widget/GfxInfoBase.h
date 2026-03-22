@@ -5,8 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __mozilla_widget_GfxInfoBase_h__
-#define __mozilla_widget_GfxInfoBase_h__
+#ifndef _mozilla_widget_GfxInfoBase_h_
+#define _mozilla_widget_GfxInfoBase_h_
 
 #include "GfxDriverInfo.h"
 #include "GfxInfoCollector.h"
@@ -120,6 +120,11 @@ class GfxInfoBase : public nsIGfxInfo,
   virtual uint32_t OperatingSystemVersion() { return 0; }
   virtual GfxVersionEx OperatingSystemVersionEx() { return GfxVersionEx(); }
 
+  // Reports GL string values obtained from an OpenGL context to gfxInfo. Some
+  // gfxInfo implementations can use these in order to avoid having to create
+  // their own GL context during startup.
+  virtual void ReportGLStrings(gfx::GfxInfoGLStrings&& aStrings) {}
+
   // Convenience to get the application version
   static const nsCString& GetApplicationVersion();
 
@@ -202,4 +207,4 @@ class GfxInfoBase : public nsIGfxInfo,
 }  // namespace widget
 }  // namespace mozilla
 
-#endif /* __mozilla_widget_GfxInfoBase_h__ */
+#endif /* _mozilla_widget_GfxInfoBase_h_ */

@@ -83,6 +83,16 @@ features:
         description: The drawable displayed in the app menu for Settings
         type: String
         default: mozac_ic_settings
+  gecko-nimbus-validation:
+    description: "Feature for validating Nimbus Gecko functionality"
+    variables:
+      test-preference:
+        description: "A test gecko preference"
+        type: String
+        default: ""
+        gecko-pref:
+          pref: "gecko.nimbus.test"
+          branch: "default"
   cookie-banners:
     description: Features for cookie banner handling.
     variables:
@@ -403,6 +413,23 @@ features:
         type: Boolean
         default: false
 
+  homescreen-edge-to-edge-background:
+    description: >
+      Feature that sets an edge to edge background on the Home Screen if the user hasn't selected
+      a custom wallpaper
+    variables:
+      enabled:
+        description: Enables the feature
+        type: Boolean
+        default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+      - channel: nightly
+        value:
+          enabled: true
+
   remote-tab-management:
     description: >
       Features that let users manage tabs on other devices that are
@@ -564,10 +591,6 @@ features:
   menu-redesign:
     description: Control the new menu redesign.
     variables:
-      enabled:
-        description: If true, the new menu redesign is available.
-        type: Boolean
-        default: true
       report-site-issue:
         description: If true, report site issue menu item and preview is available.
         type: Boolean
@@ -576,13 +599,6 @@ features:
         description: If true, the menu banner is visible.
         type: Boolean
         default: true
-    defaults:
-      - channel: release
-        value:
-          enabled: false
-      - channel: release
-        value:
-          report-site-issue: false
 
   override-user-specified-homepage-sections:
     description: Whether to ignore the user-specified homepage section visibility settings and hide the options in the settings.
@@ -643,23 +659,13 @@ features:
         description: >
           Whether or not to enable tab strip.
         type: Boolean
-        default: false
+        default: true
       allow-on-all-devices:
         description: >
           Experimental: When true, bypasses device restrictions and enables use on all devices.
           May cause instability or unexpected behavior. This still requires the feature to be `enabled`.
         type: Boolean
         default: false
-    defaults:
-      - channel: developer
-        value:
-          enabled: true
-      - channel: nightly
-        value:
-          enabled: true
-      - channel: beta
-        value:
-          enabled: true
 
   search-suggestions-on-homepage:
     description: Enables search suggestions on homepage.
@@ -788,21 +794,12 @@ features:
         description: >
           Overrides the loadType when it is a same document navigation
         type: Boolean
-        default: true
+        default: false
       force-disable-uri:
         description: >
           Disable overriding the loadType during same document navigation on the domain specified by this URI.
         type: String
         default: ""
-    defaults:
-      - channel: nightly
-        value:
-          enabled: false
-          force-disable-uri: ""
-      - channel: developer
-        value:
-          enabled: false
-          force-disable-uri: ""
   doh:
     description: Feature controlling DNS over HTTPS (DoH).
     variables:
@@ -841,17 +838,7 @@ features:
           description: >
             Enables the user to search for settings.
           type: Boolean
-          default: false
-      defaults:
-        - channel: developer
-          value:
-            enabled: true
-        - channel: nightly
-          value:
-            enabled: true
-        - channel: beta
-          value:
-            enabled: true
+          default: true
 
   toolbar-redesign-option:
     description: Control the visibility of toolbar redesign option in settings.
@@ -865,25 +852,11 @@ features:
         description: >
           Whether or not the simple/expanded toolbar customization option is visible to the user.
         type: Boolean
-        default: false
-    defaults:
-      - channel: developer
-        value:
-          show-options: true
-          show-customization: false
-      - channel: nightly
-        value:
-          show-options: true
-          show-customization: false
+        default: true
 
   tab-management-enhancements:
     description: Control the visibility of the tab management enhancements.
     variables:
-      enabled:
-        description: >
-          Whether or not to enable the tab management enhancements.
-        type: Boolean
-        default: false
       opening_animation_enabled:
         description: Whether or not the Tab Manager opening animation is enabled. When enabled,
           a shared element transition will initiate, taking the currently-opened tab's thumbnail
@@ -893,16 +866,13 @@ features:
     defaults:
       - channel: release
         value:
-          enabled: false
           opening_animation_enabled: false
       - channel: beta
         value:
-          enabled: false
           opening_animation_enabled: false
       - channel: nightly
         value:
-          enabled: true
-          opening_animation_enabled: false
+          opening_animation_enabled: true
 
   tab-search:
     description: Control the visibility of the tab search feature.
@@ -921,7 +891,7 @@ features:
           enabled: false
       - channel: nightly
         value:
-          enabled: false
+          enabled: true
 
   suppress-sponsored-top-sites:
     description: Suppress sponsored top sites for new users for 14 days.
@@ -1002,17 +972,69 @@ features:
         type: Option<Int>
         default: 4
 
-  relay-email-masks:
-    description: Feature to enable Relay for users on Firefox on Android.
+  email-masks:
+    description: Feature to enable Email Mask for users on Firefox on Android.
     variables:
       enabled:
-        description: If true, Relay email masks feature is enabled.
+        description: If true, Email Mask feature is enabled.
         type: Boolean
         default: false
     defaults:
       - channel: developer
         value:
           enabled: true
+
+  native-share-sheet:
+    description: Feature to enable the Native Share Sheet for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, Native Share Sheet is enabled.
+        type: Boolean
+        default: false
+
+  browser-mode-toggle:
+    description: Feature to enable the Browser Mode Toggle for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, Browser Mode Toggle is enabled.
+        type: Boolean
+        default: false
+
+  merino-client:
+    description: Feature to enable the Merino Client for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, Merino Client is enabled.
+        type: Boolean
+        default: false
+
+  mozilla-ads-client:
+    description: Feature to enable the Mozilla Ads Client for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, Mozilla Ads Client is enabled.
+        type: Boolean
+        default: false
+
+  search-optimization-option:
+    description: Feature to enable the Search Optimization cards for users on Firefox on Android.
+    variables:
+      enabled:
+        description: If true, Search Optimization is enabled.
+        type: Boolean
+        default: false
+      show-stocks-card:
+        description: If true, Search Optimization Stock cards are enabled.
+        type: Boolean
+        default: false
+      show-flights-card:
+        description: If true, Search Optimization Flights cards are enabled.
+        type: Boolean
+        default: false
+      show-sports-card:
+        description: If true, Search Optimization Sports cards are enabled.
+        type: Boolean
+        default: false
 
 types:
   objects:

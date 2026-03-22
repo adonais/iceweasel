@@ -49,8 +49,8 @@ import mozilla.components.service.fxa.store.Account
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Image
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 private val BUTTON_HEIGHT = 56.dp
@@ -275,7 +275,7 @@ private fun MozillaAccountMenuItemPreviewContent() {
 @Preview
 @Composable
 private fun MozillaAccountMenuItemPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         MozillaAccountMenuItemPreviewContent()

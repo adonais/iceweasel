@@ -32,7 +32,9 @@ html {
 // Below variables are used via config JSON in AboutWelcomeDefaults
 // and referenced below inside dummy class to pass test browser_parsable_css
 .dummy {
-  background: var(--mr-welcome-background-color) var(--mr-welcome-background-gradient) var(--mr-secondary-position) var(--mr-screen-background-color);
+  /* No need to check for stylelint violations */
+  /* stylelint-disable-next-line */
+  background: var(--mr-welcome-background-color) var(--mr-welcome-background-gradient) var(--mr-secondary-position) var(--mr-screen-background-color) var(--mr-smart-window-background-gradient);
 }
 
 // Styling for content rendered in a Spotlight messaging surface.
@@ -114,17 +116,18 @@ html {
 }
 
 .onboardingContainer {
-  --grey-subtitle-1: light-dark(#696977, #FFF);
-  --mr-welcome-background-color: light-dark(#F8F6F4, #333336);
+  --grey-subtitle-1: light-dark(var(--color-gray-70), white);
+  --mr-welcome-background-color: light-dark(var(--color-gray-05), var(--color-gray-80));
   --mr-screen-heading-color: var(--text-color);
   --mr-welcome-background-gradient: linear-gradient(
     0deg,
     light-dark(rgba(144, 89, 255, 20%), rgba(144, 89, 255, 30%)) 0%,
     light-dark(rgba(2, 144, 238, 20%), rgba(2, 144, 238, 30%)) 100%
   );
-  --mr-screen-background-color: light-dark(#F8F6F4, #62697A);
-  --single-select-border-color: #8F8F9D;
-  --single-select-hover-color: light-dark(#DEDEDF, #52525E);
+  --mr-smart-window-background-gradient: radial-gradient(190% 105% at 50% 90%, light-dark(#FDF3F2, #4E243F) 0%, light-dark(#ECE4FB, #311764) 100%);
+  --mr-screen-background-color: light-dark(var(--color-gray-05), var(--color-gray-70));
+  --single-select-border-color: var(--color-gray-60);
+  --single-select-hover-color: light-dark(var(--color-gray-20), var(--color-gray-70));
   --picker-background-color: color-mix(in srgb, transparent 98%, light-dark(black, white) 2%);
   --picker-hover-background-color: color-mix(in srgb, transparent 95%, light-dark(black, white) 5%);
   --picker-border-color: var(--border-color);
@@ -135,6 +138,11 @@ html {
   --picker-checkbox-hover-color: var(--picker-checkbox-color);
   --picker-backup-flair-background: color-mix(in srgb, var(--color-accent-primary) 20%, transparent);
   --picker-backup-flair-color: var(--color-accent-primary);
+  --fancy-heading-selection-background-color: var(--color-gray-70);
+  --select-item-flair-background-color: var(--color-violet-50);
+  --tile-info-hover-background-color: oklch(from var(--color-violet-10) l c h / 30%);
+  --screen-1-yellow-circle-background-color: var(--color-purple-60);
+  --screen-2-yellow-circle-background-color: var(--color-pink-50);
 
   @media (forced-colors: active) {
     --picker-background-color: ButtonFace;
@@ -882,7 +890,7 @@ html {
               background-color: var(--background-color-canvas);
 
               .indicator {
-                background-color: var(--color-accent-primary);
+                background-color: var(--button-background-color-primary);
               }
             }
           }
@@ -1165,6 +1173,22 @@ html {
               margin-block-start: 24px;
               font-weight: var(--heading-font-weight);
               width: 100%;
+            }
+          }
+
+          .message-text.simple {
+            margin-block: auto;
+            margin-inline: 17% auto;
+            text-align: start;
+            width: 100%;
+            max-width: 450px;
+
+            h1 {
+              font-weight: var(--heading-font-weight);
+              font-size: 84px;
+              margin: 0;
+              width: 100%;
+              max-width: 100%;
             }
           }
         }
@@ -1737,8 +1761,8 @@ html {
 
         @media (prefers-color-scheme: dark) {
           &::selection {
-            color: #FFF;
-            background-color: #696977;
+            color: white;
+            background-color: var(--fancy-heading-selection-background-color);
           }
         }
       }
@@ -1758,6 +1782,23 @@ html {
     }
 
     .cta-paragraph {
+      .cta-paragraph-icon-wrapper {
+        display: inline;
+        padding-block-start: 2px;
+      }
+
+      .cta-paragraph-icon {
+        display: inline-block;
+      }
+
+      &.info-tile {
+        display: flex;
+        background-color: var(--background-color-information);
+        border-radius: var(--border-radius-small);
+        border: 1px solid var(--border-color-card);
+        padding: 10px 12px;
+      }
+
       a {
         margin: 0;
         text-decoration: underline;
@@ -1897,8 +1938,8 @@ html {
         .flair {
           height: 18px;
           border-radius: var(--border-radius-small);
-          background-color: #9059FF;
-          color: #FFF;
+          background-color: var(--select-item-flair-background-color);
+          color: white;
           padding: 2px 8px;
           position: absolute;
           right: 1px;
@@ -2069,7 +2110,7 @@ html {
 
       &:hover,
       &:focus {
-        background-color: rgba(217, 217, 227, 30%);
+        background-color: var(--tile-info-hover-background-color);
         border-radius: var(--border-radius-small);
       }
     }
@@ -2131,6 +2172,31 @@ html {
       > input {
         flex-grow: 0;
         flex-shrink: 0;
+      }
+    }
+  }
+
+  .textarea-container {
+    display: flex;
+    flex-flow: column nowrap;
+
+    .textarea-char-counter {
+      font-size: 13px;
+      color: var(--text-color-deemphasized);
+      text-align: end;
+      margin-block: -10px 4px;
+
+      &.invalid {
+        color: var(--text-color-error)
+      }
+    }
+
+    .textarea-input {
+      resize: none;
+
+      &.invalid {
+        border-color: var(--outline-color-error);
+        outline-color: var(--outline-color-error);
       }
     }
   }
@@ -2258,6 +2324,14 @@ html {
       background: url('chrome://global/skin/icons/arrow-down.svg') center center / 100% no-repeat;
     }
 
+    .external-link-icon {
+      width: 1.2em;
+      height: 1.3em;
+      -moz-context-properties: fill;
+      fill: currentColor;
+      background: url('chrome://global/skin/icons/open-in-new.svg') center center / 100% no-repeat;
+    }
+
     &[aria-expanded='true'] {
       border-end-start-radius: 0;
       border-end-end-radius: 0;
@@ -2323,7 +2397,8 @@ html {
         }
 
         &:has(+ .content-tile.has-header) {
-          button.tile-header[aria-expanded='false'] {
+          button.tile-header[aria-expanded='false'],
+          button.tile-header[role='link'] {
             border-bottom: none;
           }
         }
@@ -2342,12 +2417,7 @@ html {
           display: flex;
           flex-direction: column;
 
-          .header-title {
-            font-weight: var(--heading-font-weight);
-            line-height: 1.5;
-          }
-
-          .header-subtitle {
+          .header-title, .header-subtitle {
             font-weight: normal;
             line-height: 1.5;
           }
@@ -2629,6 +2699,7 @@ html {
       height: 6px;
       padding-block: 0;
       margin-block: 42px 0;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
       background-color: color-mix(in srgb, var(--button-text-color) 25%, transparent);
       justify-content: start;
       opacity: 1;
@@ -2808,7 +2879,7 @@ html {
       height: 165px;
       border-radius: var(--border-radius-circle);
       transform: translate(230%, -5%);
-      background: #952BB9;
+      background: var(--screen-1-yellow-circle-background-color);
       transition-delay: -0.2s;
     }
   }
@@ -2904,7 +2975,7 @@ html {
       height: 165px;
       border-radius: var(--border-radius-circle);
       transform: translate(160%, 130%);
-      background: #E7258C;
+      background: var(--screen-2-yellow-circle-background-color);
     }
   }
 

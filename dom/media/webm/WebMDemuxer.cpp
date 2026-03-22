@@ -523,13 +523,14 @@ nsresult WebMDemuxer::ReadMetadata() {
         return NS_ERROR_FAILURE;
       }
 
-      const uint32_t rate = AssertedCast<uint32_t>(std::max(0., params.rate));
-      if (rate > AudioInfo::MAX_RATE || rate == 0 ||
+      if (params.rate <= 0 || params.rate > AudioInfo::MAX_RATE ||
+          params.channels == 0 ||
           params.channels > AudioConfig::ChannelLayout::MAX_CHANNELS) {
         WEBM_DEBUG("Invalid audio param rate: %lf channel count: %d",
                    params.rate, params.channels);
         return NS_ERROR_DOM_MEDIA_METADATA_ERR;
       }
+      const uint32_t rate = AssertedCast<uint32_t>(params.rate);
       params.rate = rate;
 
       nsresult rv = SetAudioCodecInfo(context, track, params);

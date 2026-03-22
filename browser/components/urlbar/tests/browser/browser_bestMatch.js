@@ -168,11 +168,12 @@ async function withProvider(result, callback) {
     results: [result],
     priority: Infinity,
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
   try {
     await callback();
   } finally {
-    UrlbarProvidersManager.unregisterProvider(provider);
+    providersManager.unregisterProvider(provider);
   }
 }
 

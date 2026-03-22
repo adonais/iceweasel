@@ -4,7 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { AIWINDOW_URL } from "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs";
+import {
+  AIWINDOW_URL,
+  AIWindow,
+} from "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs";
 
 export const AIWindowUI = {
   BOX_ID: "ai-window-box",
@@ -40,7 +43,6 @@ export const AIWindowUI = {
   ensureBrowserIsAppended(chromeDoc, box) {
     const existingBrowser = chromeDoc.getElementById(this.BROWSER_ID);
     if (existingBrowser) {
-      // Already exists
       return existingBrowser;
     }
 
@@ -73,29 +75,66 @@ export const AIWindowUI = {
     if (!nodes) {
       return false;
     }
-    // The sidebar is considered open if the box is visible
     return !nodes.box.hidden;
+  },
+
+  _showSidebarElements(box, splitter) {
+    box.hidden = false;
+    splitter.hidden = false;
+    box.parentElement.hidden = false;
+  },
+
+  /**
+   * Open the AI Window in full window mode
+   *
+   * @param {Browser} browser
+   * @param {ChatConversation} conversation The conversation to open
+   */
+  openInFullWindow(browser, conversation) {
+    this.closeSidebar(browser.ownerGlobal);
+
+    browser.setAttribute("data-conversation-id", conversation.id);
+
+    const { contentDocument } = browser;
+    contentDocument.dispatchEvent(
+      new browser.contentWindow.CustomEvent("OpenConversation", {
+        detail: conversation,
+      })
+    );
   },
 
   /**
    * Open the AI Window sidebar
    *
    * @param {Window} win
+   * @param {ChatConversation} conversation The conversation to open in the sidebar
    */
-  openSidebar(win) {
+  openSidebar(win, conversation) {
     const nodes = this._getSidebarElements(win);
-
     if (!nodes) {
       return;
     }
 
-    const { chromeDoc, box, splitter } = nodes;
+    const { box, splitter } = nodes;
+    const aiBrowser = this.ensureBrowserIsAppended(win.document, box);
 
-    this.ensureBrowserIsAppended(chromeDoc, box);
+    this._showSidebarElements(box, splitter);
+    this._setAskButtonStyle(win, true);
 
-    box.hidden = false;
-    splitter.hidden = false;
-    box.parentElement.hidden = false;
+    if (conversation) {
+      aiBrowser.setAttribute("data-conversation-id", conversation.id);
+    } else {
+      aiBrowser.removeAttribute("data-conversation-id");
+    }
+
+    const contentDoc = aiBrowser.contentDocument;
+    if (contentDoc && aiBrowser.contentWindow) {
+      contentDoc.dispatchEvent(
+        new aiBrowser.contentWindow.CustomEvent("OpenConversation", {
+          detail: conversation,
+        })
+      );
+    }
   },
 
   /**
@@ -104,14 +143,18 @@ export const AIWindowUI = {
    * @param {Window} win
    */
   closeSidebar(win) {
-    const nodes = this._getSidebarElements(win);
-    if (!nodes) {
+    if (!this.isSidebarOpen(win)) {
       return;
     }
-    const { box, splitter } = nodes;
+    const { box, splitter } = this._getSidebarElements(win);
 
+    // @todo Bug2012536
+    // Test behavior of hidden vs collapsed with the intent that
+    // the document doesn't get unloaded so that the document isn't
+    // constantly being reloaded as result of tab switches
     box.hidden = true;
     splitter.hidden = true;
+    this._setAskButtonStyle(win, false);
   },
 
   /**
@@ -127,18 +170,67 @@ export const AIWindowUI = {
     }
     const { chromeDoc, box, splitter } = nodes;
 
-    const opening = box.hidden;
-    if (opening) {
-      this.ensureBrowserIsAppended(chromeDoc, box);
+    if (!box.hidden) {
+      box.hidden = true;
+      splitter.hidden = true;
+      this._setAskButtonStyle(win, false);
+      return false;
     }
 
-    box.hidden = !opening;
-    splitter.hidden = !opening;
+    this.ensureBrowserIsAppended(chromeDoc, box);
+    this._showSidebarElements(box, splitter);
+    this._setAskButtonStyle(win, true);
+    return true;
+  },
 
-    if (opening && box.parentElement?.hidden) {
-      box.parentElement.hidden = false;
+  /**
+   * Update the Ask Button style based on the sidebar state.
+   *
+   * @param {Window} win
+   * @param {boolean} sidebarIsOpen
+   */
+  _setAskButtonStyle(win, sidebarIsOpen) {
+    const askBtn = win.document.querySelector("#smartwindow-ask-button");
+    if (!askBtn) {
+      return;
+    }
+    askBtn.classList.toggle("sidebar-is-open", sidebarIsOpen);
+  },
+
+  /**
+   * Moves a full-page AI Window conversation into the sidebar.
+   *
+   * @param {Window} win
+   * @param {object} tab - The tab containing the full-page AI Window
+   * @returns {XULElement|null} The sidebar browser element
+   */
+  async moveFullPageToSidebar(win, tab) {
+    const fullPageBrowser = tab.linkedBrowser;
+    if (
+      !fullPageBrowser?.currentURI ||
+      !AIWindow.isAIWindowContentPage(fullPageBrowser.currentURI)
+    ) {
+      return null;
     }
 
-    return opening;
+    let conversationId = null;
+    try {
+      const aiWindowEl =
+        fullPageBrowser.contentDocument?.querySelector("ai-window");
+      conversationId = aiWindowEl?.conversationId ?? null;
+    } catch {
+      // Content may not be accessible
+    }
+
+    let conversation = null;
+    if (conversationId) {
+      conversation =
+        await AIWindow.chatStore.findConversationById(conversationId);
+    }
+
+    this.openSidebar(win, conversation);
+
+    const nodes = this._getSidebarElements(win);
+    return nodes ? nodes.chromeDoc.getElementById(this.BROWSER_ID) : null;
   },
 };

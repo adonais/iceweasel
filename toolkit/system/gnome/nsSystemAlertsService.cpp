@@ -40,7 +40,7 @@ NS_IMETHODIMP nsSystemAlertsService::ShowAlert(nsIAlertNotification* aAlert,
   }
 
   AddListener(alertName, alertListener);
-  return alertListener->InitAlertAsync(aAlert, aAlertListener);
+  return alertListener->InitAlert(aAlert, aAlertListener);
 }
 
 NS_IMETHODIMP nsSystemAlertsService::CloseAlert(const nsAString& aAlertName,

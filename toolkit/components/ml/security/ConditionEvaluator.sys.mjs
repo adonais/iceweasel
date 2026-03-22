@@ -124,7 +124,7 @@ function evaluateAllUrlsIn(condition, action, context) {
     return true;
   }
 
-  if (!ledger || typeof ledger.has !== "function") {
+  if (!ledger || typeof ledger.lookup !== "function") {
     lazy.console.error(
       "[ConditionEvaluator] Ledger not found or invalid:",
       condition.ledger
@@ -132,10 +132,10 @@ function evaluateAllUrlsIn(condition, action, context) {
     return false;
   }
 
-  const result = urls.every(url => ledger.has(url));
+  const result = urls.every(url => ledger.lookup(url));
 
   if (!result) {
-    const failedUrl = urls.find(url => !ledger.has(url));
+    const failedUrl = urls.find(url => !ledger.lookup(url));
     lazy.console.warn(
       `[ConditionEvaluator] URL not in ledger: ${failedUrl}`,
       condition.description || ""

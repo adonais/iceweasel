@@ -13,7 +13,7 @@ with Files("APZTestData.webidl"):
 with Files("AccessibleNode.webidl"):
     BUG_COMPONENT = ("Core", "Disability Access APIs")
 
-with Files("ARIAMixin.webidl"):
+with Files("ARIA*.webidl"):
     BUG_COMPONENT = ("Core", "Disability Access APIs")
 
 with Files("Addon*"):
@@ -87,6 +87,9 @@ with Files("Crypto.webidl"):
 
 with Files("Device*"):
     BUG_COMPONENT = ("Core", "DOM: Device Interfaces")
+
+with Files("DigitalCredential.webidl"):
+    BUG_COMPONENT = ("Core", "DOM: Credential Management")
 
 with Files("Directory.webidl"):
     BUG_COMPONENT = ("Core", "DOM: Device Interfaces")
@@ -422,6 +425,7 @@ WEBIDL_FILES = [
     "AppInfo.webidl",
     "APZTestData.webidl",
     "ARIAMixin.webidl",
+    "ARIANotifyMixin.webidl",
     "Attr.webidl",
     "AudioBuffer.webidl",
     "AudioBufferSourceNode.webidl",
@@ -563,6 +567,7 @@ WEBIDL_FILES = [
     "DedicatedWorkerGlobalScope.webidl",
     "DelayNode.webidl",
     "DeviceMotionEvent.webidl",
+    "DigitalCredential.webidl",
     "Directory.webidl",
     "Document.webidl",
     "DocumentFragment.webidl",
@@ -896,7 +901,6 @@ WEBIDL_FILES = [
     "ServiceWorkerContainer.webidl",
     "ServiceWorkerGlobalScope.webidl",
     "ServiceWorkerRegistration.webidl",
-    "ShadowRealmGlobalScope.webidl",
     "ShadowRoot.webidl",
     "SharedWorker.webidl",
     "SharedWorkerGlobalScope.webidl",

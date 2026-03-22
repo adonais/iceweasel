@@ -40,6 +40,11 @@ support-files = [
   "data/missing_json_block.html",
 ]
 
+["test_BackupService_crossProfileTypeRecovery.js"]
+prefs = [
+  "browser.backup.profiles.force-enable=true",
+]
+
 ["test_BackupService_enable_disable_encryption.js"]
 
 ["test_BackupService_enabled.js"]
@@ -100,7 +105,17 @@ run-sequentially = ["true"] # Mock Windows registry interferes with normal opera
 
 ["test_PreferencesBackupResource_searchEngines.js"]
 
+["test_PreferencesBackupResource_selectableProfile.js"]
+
 ["test_ResourceFailures.js"]
+
+["test_SelectableProfileBackupResource.js"]
+head = "../../../../../toolkit/profile/test/xpcshell/head.js ../../../profiles/tests/unit/head.js head.js"
+support-files = ["data/fake_avatar.png"]
+prefs = [
+  "browser.profiles.enabled=true",
+  "browser.profiles.created=false",
+]
 
 ["test_SessionStoreBackupResource.js"]
 

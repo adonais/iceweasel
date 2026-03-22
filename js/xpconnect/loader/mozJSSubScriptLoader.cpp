@@ -451,8 +451,8 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   // bytecode when JAR files from built-in add-ons installed in the profile
   // directory are updated.
   bool shouldUseCache =
-      !options.ignoreCache && (resourceType == scache::ResourceType::Gre ||
-                               resourceType == scache::ResourceType::App);
+      !ignoreCache && (resourceType == scache::ResourceType::Gre ||
+                       resourceType == scache::ResourceType::App);
 
   RefPtr<JS::Stencil> stencil;
   if (shouldUseCache) {
@@ -473,7 +473,7 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   bool storeIntoStartupCache = false;
   if (!stencil) {
     // Store into startup cache only when the script isn't come from any cache.
-    storeIntoStartupCache = cache;
+    storeIntoStartupCache = cache && shouldUseCache;
 
     JS::CompileOptions compileOptions(cx);
     ScriptPreloader::FillCompileOptionsForCachedStencil(compileOptions);
@@ -498,7 +498,7 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
 
   // As a policy choice, we don't store scripts that want return values
   // into the preload cache.
-  bool storeIntoPreloadCache = !ignoreCache && !options.wantReturnValue;
+  bool storeIntoPreloadCache = shouldUseCache && !options.wantReturnValue;
 
   (void)EvalStencil(cx, targetObj, loadScope, retval, uri,
                     storeIntoStartupCache, storeIntoPreloadCache, stencil);

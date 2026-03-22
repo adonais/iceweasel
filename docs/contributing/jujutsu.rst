@@ -232,8 +232,8 @@ and add the following:
 
 ::
 
-   [core]
-   fsmonitor = "watchman"
+   [fsmonitor]
+   backend = "watchman"
 
 Instead of scanning the file system, ``jj`` will (much like ``hg``\ ’s
 ``fsmonitor`` extension) use file system events to be notified about

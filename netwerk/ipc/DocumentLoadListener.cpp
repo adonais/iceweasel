@@ -188,8 +188,15 @@ static auto CreateDocumentLoadInfo(CanonicalBrowsingContext* aBrowsingContext,
       classificationFlags.thirdPartyFlags);
   loadInfo->SetHasValidUserGestureActivation(
       aLoadState->HasValidUserGestureActivation());
+  // External loads (e.g. links opened from other apps) are always
+  // user-initiated, so text fragment directives are allowed to scroll.
+  // XXX: This is inconsistent to the other code path that sets user activation
+  // based on the EXTERNAL load flag (nsDocShell::DoURILoad), which also sets
+  // the "normal" user activation if the flag is present. We should figure out
+  // if we should do this here as well.
   loadInfo->SetTextDirectiveUserActivation(
-      aLoadState->GetTextDirectiveUserActivation());
+      aLoadState->GetTextDirectiveUserActivation() ||
+      aLoadState->HasLoadFlags(nsIWebNavigation::LOAD_FLAGS_FROM_EXTERNAL));
   loadInfo->SetIsMetaRefresh(aLoadState->IsMetaRefresh());
 
   return loadInfo.forget();
@@ -972,12 +979,12 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
             bool handled = aValue.ResolveValue();
             if (handled) {
               self->DisconnectListeners(NS_ERROR_ABORT, NS_ERROR_ABORT);
-              mParentChannelListener = nullptr;
+              self->mParentChannelListener = nullptr;
             } else {
-              nsresult rv = mChannel->AsyncOpen(openInfo);
+              nsresult rv = self->mChannel->AsyncOpen(openInfo);
               if (NS_FAILED(rv)) {
                 self->DisconnectListeners(rv, rv);
-                mParentChannelListener = nullptr;
+                self->mParentChannelListener = nullptr;
               }
             }
           }
@@ -1300,6 +1307,10 @@ bool DocumentLoadListener::SpeculativeLoadInParent(
     // allocate an identifier for this load.
     nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
         RedirectChannelRegistrar::GetOrCreate();
+    if (!registrar) {
+      // Shutdown is in progress.
+      return false;
+    }
     uint64_t loadIdentifier = aLoadState->GetLoadIdentifier();
     DebugOnly<nsresult> rv =
         registrar->RegisterChannel(nullptr, loadIdentifier);
@@ -1314,6 +1325,10 @@ bool DocumentLoadListener::SpeculativeLoadInParent(
 void DocumentLoadListener::CleanupParentLoadAttempt(uint64_t aLoadIdent) {
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
+  if (!registrar) {
+    // Shutdown is in progress.
+    return;
+  }
 
   nsCOMPtr<nsIParentChannel> parentChannel;
   registrar->GetParentChannel(aLoadIdent, getter_AddRefs(parentChannel));
@@ -1334,6 +1349,11 @@ auto DocumentLoadListener::ClaimParentLoad(DocumentLoadListener** aListener,
     -> RefPtr<OpenPromise> {
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
+  if (!registrar) {
+    // Shutdown is in progress.
+    *aListener = nullptr;
+    return nullptr;
+  }
 
   nsCOMPtr<nsIParentChannel> parentChannel;
   registrar->GetParentChannel(aLoadIdent, getter_AddRefs(parentChannel));
@@ -1445,7 +1465,11 @@ void DocumentLoadListener::RedirectToRealChannelFinished(nsresult aRv) {
   // Wait for background channel ready on target channel
   nsCOMPtr<nsIRedirectChannelRegistrar> redirectReg =
       RedirectChannelRegistrar::GetOrCreate();
-  MOZ_ASSERT(redirectReg);
+  if (!redirectReg) {
+    // Shutdown is in progress.
+    FinishReplacementChannelSetup(NS_ERROR_ABORT);
+    return;
+  }
 
   nsCOMPtr<nsIParentChannel> redirectParentChannel;
   redirectReg->GetParentChannel(mRedirectChannelId,
@@ -1489,7 +1513,10 @@ void DocumentLoadListener::FinishReplacementChannelSetup(nsresult aResult) {
 
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
-  MOZ_ASSERT(registrar);
+  if (!registrar) {
+    // Shutdown is in progress.
+    return;
+  }
 
   nsCOMPtr<nsIParentChannel> redirectChannel;
   nsresult rv = registrar->GetParentChannel(mRedirectChannelId,
@@ -2279,7 +2306,11 @@ DocumentLoadListener::RedirectToRealChannel(
   // Register the new channel and obtain id for it
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
-  MOZ_ASSERT(registrar);
+  if (!registrar) {
+    // Shutdown is in progress.
+    return PDocumentChannelParent::RedirectToRealChannelPromise::
+        CreateAndReject(ipc::ResponseRejectReason::SendError, __func__);
+  }
   nsCOMPtr<nsIChannel> chan = mChannel;
   if (nsCOMPtr<nsIViewSourceChannel> vsc = do_QueryInterface(chan)) {
     chan = vsc->GetInnerChannel();

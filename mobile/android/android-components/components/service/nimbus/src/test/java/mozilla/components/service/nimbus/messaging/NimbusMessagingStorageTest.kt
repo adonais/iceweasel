@@ -818,6 +818,11 @@ class NimbusMessagingStorageTest {
         val myUuid = UUID.randomUUID().toString()
         val helper = object : NimbusMessagingHelperInterface {
             override fun evalJexl(expression: String) = false
+
+            override fun evalJexlDebug(expression: String): String {
+                return """{"success": false, "error": "Not implemented in test"}"""
+            }
+
             override fun getUuid(template: String): String? =
                 if (template.contains("{uuid}")) {
                     myUuid

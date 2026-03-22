@@ -654,7 +654,7 @@ nsresult nsAppShell::Init() {
   }
 
   if (!WinUtils::GetTimezoneName(mTimezoneName)) {
-    NS_WARNING("Unable to get system timezone name, timezone may be invalid\n");
+    NS_WARNING("Unable to get system timezone name, timezone may be invalid");
   }
 
   return nsBaseAppShell::Init();

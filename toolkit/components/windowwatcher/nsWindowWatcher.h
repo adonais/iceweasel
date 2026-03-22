@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __nsWindowWatcher_h__
-#define __nsWindowWatcher_h__
+#ifndef _nsWindowWatcher_h_
+#define _nsWindowWatcher_h_
 
 // {a21bfa01-f349-4394-a84c-8de5cf0737d0}
 #define NS_WINDOWWATCHER_CID \

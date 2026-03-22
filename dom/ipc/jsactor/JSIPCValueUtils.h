@@ -56,25 +56,6 @@ class JSIPCValueUtils {
   static JSIPCValue TypedFromJSVal(Context& aCx, JS::Handle<JS::Value> aVal,
                                    ErrorResult& aError);
 
-  // Wrapper class to abstract away the details of the auxiliary data structure
-  // needed for PrepareForSending.
-  class SCDHolder final {
-   public:
-    SCDHolder() = default;
-    ~SCDHolder() = default;
-    friend class JSIPCValueUtils;
-
-   private:
-    nsTArray<UniquePtr<ipc::StructuredCloneData>> mSCDs;
-  };
-
-  // Prepare a JSIPCValue for IPC by turning any StructuredCloneData it
-  // contains into ClonedMessageData. Auxiliary data needed for IPC
-  // serialization will be added to aHolder, so it needs to be kept alive
-  // until aValue is sent over IPC.
-  [[nodiscard]] static bool PrepareForSending(SCDHolder& aHolder,
-                                              JSIPCValue& aValue);
-
   // Convert the IPDL representation of a JS value back into the equivalent
   // JS value. This will return false on failure.
   static void ToJSVal(JSContext* aCx, JSIPCValue&& aIn,

@@ -689,7 +689,7 @@ nsStaticAtom* Accessible::ComputedARIARole() const {
   case roles::_geckoRole:                                                    \
     return ariaRole;
   switch (geckoRole) {
-#include "RoleMap.h"
+#include "RoleMap.inc"
   }
 #undef ROLE
   MOZ_ASSERT_UNREACHABLE("Unknown role");

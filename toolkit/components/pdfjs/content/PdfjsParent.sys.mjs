@@ -40,14 +40,6 @@ const PDFJS_DB_VERSION = 1;
 const PDFJS_STORE_NAME = "signatures";
 const PDFJS_SIGNATURE_STORAGE_CHANGED_TOPIC = "pdfjs:storedSignaturesChanged";
 
-var Svc = {};
-XPCOMUtils.defineLazyServiceGetter(
-  Svc,
-  "mime",
-  "@mozilla.org/mime;1",
-  Ci.nsIMIMEService
-);
-
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "matchesCountLimit",

@@ -10,7 +10,6 @@ const PSEUDO_PREF = "devtools.inspector.show_pseudo_elements";
 
 add_task(async function () {
   await pushPref(PSEUDO_PREF, true);
-  await pushPref("dom.customHighlightAPI.enabled", true);
   await pushPref("dom.text_fragments.enabled", true);
   await pushPref("layout.css.modern-range-pseudos.enabled", true);
   await pushPref("full-screen-api.transition-duration.enter", "0 0");
@@ -386,7 +385,7 @@ async function testBackdrop(inspector, view) {
   info("Request fullscreen");
   // Entering fullscreen is triggering an update, wait for it so it doesn't impact
   // the rest of the test
-  let onInspectorUpdated = view.once("ruleview-refreshed");
+  let onInspectorUpdated = inspector.once("rule-view-refreshed");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
     const canvas = content.document.querySelector("canvas");
     canvas.requestFullscreen();
@@ -407,7 +406,7 @@ async function testBackdrop(inspector, view) {
 
   // Exiting fullscreen is triggering an update, wait for it so it doesn't impact
   // the rest of the test
-  onInspectorUpdated = view.once("ruleview-refreshed");
+  onInspectorUpdated = inspector.once("rule-view-refreshed");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
     content.document.exitFullscreen();
     await ContentTaskUtils.waitForCondition(
@@ -584,11 +583,11 @@ async function assertPseudoElementRulesNumbers(
   );
 
   const rules = {
-    elementRules: view._elementStyle.rules.filter(rule => !rule.pseudoElement),
+    elementRules: view.elementStyle.rules.filter(rule => !rule.pseudoElement),
     ...Object.fromEntries(
       Object.entries(PSEUDO_DICT).map(([key, pseudoElementSelector]) => [
         key,
-        view._elementStyle.rules.filter(rule =>
+        view.elementStyle.rules.filter(rule =>
           rule.pseudoElement.startsWith(pseudoElementSelector)
         ),
       ])

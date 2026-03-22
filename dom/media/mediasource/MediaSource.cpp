@@ -180,12 +180,6 @@ void MediaSource::IsTypeSupported(const nsAString& aType,
     return;
   }
   if (mimeType == MEDIAMIMETYPE("video/webm")) {
-    if (!StaticPrefs::media_mediasource_webm_enabled() &&
-        !shouldResistFingerprinting) {
-      // Don't leak information about the fact that it's pref-disabled; just act
-      // like we can't play it.  Or should this throw "Unknown type"?
-      return aRv.ThrowNotSupportedError("Can't play type");
-    }
     if (!StaticPrefs::media_mediasource_vp9_enabled() && hasVP9 &&
         !IsVP9Forced(aDiagnostics) && !shouldResistFingerprinting) {
       // Don't leak information about the fact that it's pref-disabled; just act
@@ -195,12 +189,6 @@ void MediaSource::IsTypeSupported(const nsAString& aType,
     return;
   }
   if (mimeType == MEDIAMIMETYPE("audio/webm")) {
-    if (!StaticPrefs::media_mediasource_webm_enabled() &&
-        !shouldResistFingerprinting) {
-      // Don't leak information about the fact that it's pref-disabled; just act
-      // like we can't play it.  Or should this throw "Unknown type"?
-      return aRv.ThrowNotSupportedError("Can't play type");
-    }
     return;
   }
 

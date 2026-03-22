@@ -123,10 +123,13 @@ def RustLibrary(name, features=None, output_category=None, is_gkrust=False):
 
 
 @template
-def RustProgram(name):
+def RustProgram(name, features=None):
     """Template for Rust programs."""
     RUST_PROGRAMS += [name]
     DisableWarningsForRust()
+
+    if features:
+        RUST_PROGRAM_FEATURES = features
 
 
 @template
@@ -199,6 +202,16 @@ def HostRustLibrary(name, features=None):
 
     if features:
         HOST_RUST_LIBRARY_FEATURES = features
+
+
+@template
+def HostRustProgram(name, features=None):
+    """Template for host Rust programs."""
+    HOST_RUST_PROGRAMS += [name]
+    DisableWarningsForRust()
+
+    if features:
+        HOST_RUST_PROGRAM_FEATURES = features
 
 
 @template

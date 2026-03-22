@@ -16,6 +16,7 @@
 #include "InternalError.h"
 #include "OutOfMemoryError.h"
 #include "PipelineLayout.h"
+#include "PromiseHelpers.h"
 #include "QuerySet.h"
 #include "Queue.h"
 #include "RenderBundleEncoder.h"
@@ -70,6 +71,7 @@ Device::Device(Adapter* const aParent, RawId aDeviceId, RawId aQueueId,
       mAdapterInfo(std::move(aAdapterInfo)),
       mSupportSharedTextureInSwapChain(
           aParent->SupportSharedTextureInSwapChain()),
+      mLost(false),
       mLostPromise(std::move(aLostPromise)),
       mQueue(new class Queue(this, aQueueId)) {
   GetChild()->RegisterDevice(this);
@@ -89,13 +91,14 @@ dom::Promise* Device::GetLost(ErrorResult& aRv) {
 
 void Device::ResolveLost(dom::GPUDeviceLostReason aReason,
                          const nsAString& aMessage) {
-  if (mLostPromise->State() != dom::Promise::PromiseState::Pending) {
-    // The lost promise was already resolved or rejected.
+  if (mLost) {
     return;
   }
+  mLost = true;
+
   RefPtr<DeviceLostInfo> info =
       MakeRefPtr<DeviceLostInfo>(GetParentObject(), aReason, aMessage);
-  mLostPromise->MaybeResolve(info);
+  promise::MaybeResolve(RefPtr(mLostPromise), std::move(info));
 }
 
 already_AddRefed<Buffer> Device::CreateBuffer(
@@ -349,7 +352,12 @@ already_AddRefed<BindGroupLayout> Device::CreateBindGroupLayout(
     ffi::WGPUBindGroupLayoutEntry e = {};
     e.binding = entry.mBinding;
     e.visibility = entry.mVisibility;
+
+    size_t numTypesSpecified = 0;
+    auto markTypeFound = [&numTypesSpecified]() { numTypesSpecified += 1; };
+
     if (entry.mBuffer.WasPassed()) {
+      markTypeFound();
       switch (entry.mBuffer.Value().mType) {
         case dom::GPUBufferBindingType::Uniform:
           e.ty = ffi::WGPURawBindingType_UniformBuffer;
@@ -365,12 +373,14 @@ already_AddRefed<BindGroupLayout> Device::CreateBindGroupLayout(
       e.min_binding_size = entry.mBuffer.Value().mMinBindingSize;
     }
     if (entry.mTexture.WasPassed()) {
+      markTypeFound();
       e.ty = ffi::WGPURawBindingType_SampledTexture;
       e.view_dimension = &optional[i].dim;
       e.texture_sample_type = &optional[i].type;
       e.multisampled = entry.mTexture.Value().mMultisampled;
     }
     if (entry.mStorageTexture.WasPassed()) {
+      markTypeFound();
       switch (entry.mStorageTexture.Value().mAccess) {
         case dom::GPUStorageTextureAccess::Write_only: {
           e.ty = ffi::WGPURawBindingType_WriteonlyStorageTexture;
@@ -392,6 +402,7 @@ already_AddRefed<BindGroupLayout> Device::CreateBindGroupLayout(
       e.storage_texture_format = &optional[i].format;
     }
     if (entry.mSampler.WasPassed()) {
+      markTypeFound();
       e.ty = ffi::WGPURawBindingType_Sampler;
       switch (entry.mSampler.Value().mType) {
         case dom::GPUSamplerBindingType::Filtering:
@@ -405,8 +416,26 @@ already_AddRefed<BindGroupLayout> Device::CreateBindGroupLayout(
       }
     }
     if (entry.mExternalTexture.WasPassed()) {
+      markTypeFound();
       e.ty = ffi::WGPURawBindingType_ExternalTexture;
     }
+
+    switch (numTypesSpecified) {
+      case 1:
+        // This is what we want. 👍
+        break;
+
+      case 0:
+        e.ty = ffi::WGPURawBindingType_Error;
+        e.error_case = ffi::WGPUBindingTypeError_NoneSpecified;
+        break;
+
+      default:
+        e.ty = ffi::WGPURawBindingType_Error;
+        e.error_case = ffi::WGPUBindingTypeError_MultipleSpecified;
+        break;
+    }
+
     entries.AppendElement(e);
   }
 
@@ -665,10 +694,8 @@ already_AddRefed<ShaderModule> Device::CreateShaderModule(
 
   shaderModule->SetLabel(aDesc.mLabel);
 
-  auto pending_promise = WebGPUChild::PendingCreateShaderModulePromise{
-      RefPtr(promise), RefPtr(this), RefPtr(shaderModule)};
-  GetChild()->mPendingCreateShaderModulePromises.push_back(
-      std::move(pending_promise));
+  GetChild()->EnqueueCreateShaderModulePromise(
+      PendingCreateShaderModulePromise{std::move(promise), this, shaderModule});
 
   return shaderModule.forget();
 }
@@ -733,8 +760,7 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
   ffi::WGPUFace cullFace = ffi::WGPUFace_Front;
   ffi::WGPUVertexState vertexState = {};
   ffi::WGPUFragmentState fragmentState = {};
-  nsTArray<ffi::WGPUColorTargetState> colorStates;
-  nsTArray<ffi::WGPUBlendState> blendStates;
+  nsTArray<ffi::WGPUFfiOption_ColorTargetState> colorStates;
 
   webgpu::StringHelper label(aDesc.mLabel);
   desc.label = label.Get();
@@ -826,25 +852,28 @@ RawId CreateRenderPipelineImpl(RawId deviceId, WebGPUChild* aChild,
                                        fsConstants.Length()};
     }
 
-    // Note: we pre-collect the blend states into a different array
-    // so that we can have non-stale pointers into it.
-    for (const auto& colorState : stage.mTargets) {
+    for (const auto& colorStateOrNull : stage.mTargets) {
+      ffi::WGPUFfiOption_ColorTargetState opt = {};
+      if (colorStateOrNull.IsNull()) {
+        opt.tag = ffi::WGPUFfiOption_ColorTargetState_None_ColorTargetState;
+        colorStates.AppendElement(opt);
+        continue;
+      }
+      const auto& colorState = colorStateOrNull.Value();
       ffi::WGPUColorTargetState desc = {};
       desc.format = ConvertTextureFormat(colorState.mFormat);
-      desc.write_mask = colorState.mWriteMask;
-      colorStates.AppendElement(desc);
-      ffi::WGPUBlendState bs = {};
       if (colorState.mBlend.WasPassed()) {
         const auto& blend = colorState.mBlend.Value();
-        bs.alpha = ConvertBlendComponent(blend.mAlpha);
-        bs.color = ConvertBlendComponent(blend.mColor);
+        desc.blend.tag = ffi::WGPUFfiOption_BlendState_Some_BlendState;
+        desc.blend.some.alpha = ConvertBlendComponent(blend.mAlpha);
+        desc.blend.some.color = ConvertBlendComponent(blend.mColor);
+      } else {
+        desc.blend.tag = ffi::WGPUFfiOption_BlendState_None_BlendState;
       }
-      blendStates.AppendElement(bs);
-    }
-    for (size_t i = 0; i < colorStates.Length(); ++i) {
-      if (stage.mTargets[i].mBlend.WasPassed()) {
-        colorStates[i].blend = &blendStates[i];
-      }
+      desc.write_mask = colorState.mWriteMask;
+      opt.tag = ffi::WGPUFfiOption_ColorTargetState_Some_ColorTargetState;
+      opt.some = desc;
+      colorStates.AppendElement(opt);
     }
 
     fragmentState.targets = {colorStates.Elements(), colorStates.Length()};
@@ -911,10 +940,8 @@ already_AddRefed<dom::Promise> Device::CreateComputePipelineAsync(
   RawId pipelineId =
       CreateComputePipelineImpl(GetId(), GetChild(), aDesc, true);
 
-  auto pending_promise = WebGPUChild::PendingCreatePipelinePromise{
-      RefPtr(promise), RefPtr(this), false, pipelineId, aDesc.mLabel};
-  GetChild()->mPendingCreatePipelinePromises.push_back(
-      std::move(pending_promise));
+  GetChild()->EnqueueCreatePipelinePromise(PendingCreatePipelinePromise{
+      promise, this, false, pipelineId, aDesc.mLabel});
 
   return promise.forget();
 }
@@ -928,10 +955,8 @@ already_AddRefed<dom::Promise> Device::CreateRenderPipelineAsync(
 
   RawId pipelineId = CreateRenderPipelineImpl(GetId(), GetChild(), aDesc, true);
 
-  auto pending_promise = WebGPUChild::PendingCreatePipelinePromise{
-      RefPtr(promise), RefPtr(this), true, pipelineId, aDesc.mLabel};
-  GetChild()->mPendingCreatePipelinePromises.push_back(
-      std::move(pending_promise));
+  GetChild()->EnqueueCreatePipelinePromise(PendingCreatePipelinePromise{
+      promise, this, true, pipelineId, aDesc.mLabel});
 
   return promise.forget();
 }
@@ -981,12 +1006,10 @@ void Device::Destroy() {
 
   ffi::wgpu_client_destroy_device(GetClient(), GetId());
 
-  if (mLostPromise->State() != dom::Promise::PromiseState::Pending) {
-    return;
+  if (!mLost) {
+    mLost = true;
+    GetChild()->RegisterDeviceLostPromise(GetId(), mLostPromise);
   }
-  RefPtr<dom::Promise> pending_promise = mLostPromise;
-  GetChild()->mPendingDeviceLostPromises.insert(
-      {GetId(), std::move(pending_promise)});
 }
 
 void Device::PushErrorScope(const dom::GPUErrorFilter& aFilter) {
@@ -1001,10 +1024,8 @@ already_AddRefed<dom::Promise> Device::PopErrorScope(ErrorResult& aRv) {
 
   ffi::wgpu_client_pop_error_scope(GetClient(), GetId());
 
-  auto pending_promise =
-      WebGPUChild::PendingPopErrorScopePromise{RefPtr(promise), RefPtr(this)};
-  GetChild()->mPendingPopErrorScopePromises.push_back(
-      std::move(pending_promise));
+  GetChild()->EnqueuePopErrorScopePromise(
+      PendingPopErrorScopePromise{promise, this});
 
   return promise.forget();
 }

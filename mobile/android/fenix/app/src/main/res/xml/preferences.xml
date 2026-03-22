@@ -63,6 +63,12 @@
             android:title="@string/preferences_passwords_logins_and_passwords_2" />
 
         <androidx.preference.Preference
+            android:key="@string/pref_key_email_masks"
+            android:title="@string/preferences_email_masks"
+            app:iconSpaceReserved="false"
+            app:isPreferenceVisible="false" />
+
+        <androidx.preference.Preference
             app:iconSpaceReserved="false"
             android:key="@string/pref_key_credit_cards"
             android:title="@string/preferences_credit_cards_2" />

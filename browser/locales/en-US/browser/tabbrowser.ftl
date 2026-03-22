@@ -319,6 +319,9 @@ tab-context-move-split-view-to-group =
 
 ##
 
+tab-splitview-splitter =
+    .aria-label = Resize split view tabs
+
 tab-context-move-tab-to-group-saved-groups =
     .label = Closed Groups
 tab-group-editor-action-new-tab =
@@ -405,6 +408,10 @@ tab-note-editor-button-cancel =
 tab-note-editor-button-save =
     .label = Save
     .accesskey = S
+# Link to show the full tab note in case it was truncated.
+tab-note-preview-expand = Read more
+tab-note-panel-add-note-new-badge =
+    .label = New
 
 # Displayed within the tab note edit dialog box when the user has entered more
 # characters than are allowed.

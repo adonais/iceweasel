@@ -60,9 +60,7 @@ class ContentProcessMessageManager : public nsIMessageSender,
   [[nodiscard]] JSObject* GetOrCreateWrapper();
 
   using MessageManagerGlobal::AddMessageListener;
-  using MessageManagerGlobal::AddWeakMessageListener;
   using MessageManagerGlobal::RemoveMessageListener;
-  using MessageManagerGlobal::RemoveWeakMessageListener;
 
   // ContentProcessMessageManager
   void GetInitialProcessData(JSContext* aCx,

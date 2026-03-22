@@ -73,14 +73,10 @@ struct EventMarker {
   using MS = mozilla::MarkerSchema;
   static MS MarkerTypeDisplay() {
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("cat", "Category", MS::Format::UniqueString,
-                             MS::PayloadFlags::Searchable);
-    schema.AddKeyLabelFormat("met", "Method", MS::Format::UniqueString,
-                             MS::PayloadFlags::Searchable);
-    schema.AddKeyLabelFormat("obj", "Object", MS::Format::UniqueString,
-                             MS::PayloadFlags::Searchable);
-    schema.AddKeyLabelFormat("val", "Value", MS::Format::String,
-                             MS::PayloadFlags::Searchable);
+    schema.AddKeyLabelFormat("cat", "Category", MS::Format::UniqueString);
+    schema.AddKeyLabelFormat("met", "Method", MS::Format::UniqueString);
+    schema.AddKeyLabelFormat("obj", "Object", MS::Format::UniqueString);
+    schema.AddKeyLabelFormat("val", "Value", MS::Format::String);
     schema.SetTooltipLabel(
         "{marker.data.cat}.{marker.data.met}#{marker.data.obj} "
         "{marker.data.val}");
@@ -473,10 +469,6 @@ RecordEventResult RecordEvent(const StaticMutexAutoLock& lock,
   if (!CanRecordEvent(lock, eventKey, processType)) {
     return RecordEventResult::CannotRecord;
   }
-
-  // Count the number of times this event has been recorded.
-  TelemetryScalar::SummarizeEvent(UniqueEventName(category, method, object),
-                                  processType);
 
   EventRecordArray* eventRecords = GetEventRecordsForProcess(lock, processType);
   eventRecords->AppendElement(EventRecord(timestamp, eventKey, value, extra));

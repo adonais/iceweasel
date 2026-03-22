@@ -5,8 +5,9 @@
 use api::units::PictureRect;
 use crate::pattern::{PatternKind, PatternShaderInput};
 use crate::{spatial_tree::SpatialNodeIndex, render_task_graph::RenderTaskId, surface::SurfaceTileDescriptor, tile_cache::TileKey, renderer::GpuBufferAddress, FastHashMap, prim_store::PrimitiveInstanceIndex};
-use crate::gpu_types::{QuadSegment, TransformPaletteId};
-use crate::segment::EdgeAaSegmentMask;
+use crate::gpu_types::QuadSegment;
+use crate::segment::EdgeMask;
+use crate::transform::GpuTransformId;
 
 /// A tightly packed command stored in a command buffer
 #[cfg_attr(feature = "capture", derive(Serialize))]
@@ -80,9 +81,6 @@ bitflags! {
         /// cheaply be used as a device-space clip in the vertex shader.
         const APPLY_RENDER_TASK_CLIP = 1 << 1;
 
-        /// If true, the device-pixel scale is already applied, so ignore in vertex shaders
-        const IGNORE_DEVICE_PIXEL_SCALE = 1 << 2;
-
         /// If true, use segments for drawing the AA edges, to allow inner section to be opaque
         const USE_AA_SEGMENTS = 1 << 3;
 
@@ -125,9 +123,9 @@ pub enum PrimitiveCommand {
         // TODO(gw): Used for bounding rect only, could possibly remove
         prim_instance_index: PrimitiveInstanceIndex,
         gpu_buffer_address: GpuBufferAddress,
-        transform_id: TransformPaletteId,
+        transform_id: GpuTransformId,
         quad_flags: QuadFlags,
-        edge_flags: EdgeAaSegmentMask,
+        edge_flags: EdgeMask,
     },
 }
 
@@ -156,9 +154,9 @@ impl PrimitiveCommand {
         src_color_task_id: RenderTaskId,
         prim_instance_index: PrimitiveInstanceIndex,
         gpu_buffer_address: GpuBufferAddress,
-        transform_id: TransformPaletteId,
+        transform_id: GpuTransformId,
         quad_flags: QuadFlags,
-        edge_flags: EdgeAaSegmentMask,
+        edge_flags: EdgeMask,
     ) -> Self {
         PrimitiveCommand::Quad {
             pattern,
@@ -300,10 +298,10 @@ impl CommandBuffer {
                     );
                     let src_color_task_id = RenderTaskId { index: cmd_iter.next().unwrap().0 };
                     let data = cmd_iter.next().unwrap();
-                    let transform_id = TransformPaletteId(cmd_iter.next().unwrap().0);
+                    let transform_id = GpuTransformId(cmd_iter.next().unwrap().0);
                     let bits = cmd_iter.next().unwrap().0;
                     let quad_flags = QuadFlags::from_bits((bits >> 16) as u8).unwrap();
-                    let edge_flags = EdgeAaSegmentMask::from_bits((bits & 0xff) as u8).unwrap();
+                    let edge_flags = EdgeMask::from_bits((bits & 0xff) as u8).unwrap();
                     let gpu_buffer_address = GpuBufferAddress::from_u32(data.0);
                     let cmd = PrimitiveCommand::quad(
                         pattern,

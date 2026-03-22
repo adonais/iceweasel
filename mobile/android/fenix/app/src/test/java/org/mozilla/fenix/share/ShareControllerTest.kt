@@ -26,6 +26,7 @@ import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.concept.sync.Device
 import mozilla.components.concept.sync.DeviceType
 import mozilla.components.concept.sync.TabData
+import mozilla.components.concept.sync.TabPrivacy
 import mozilla.components.feature.accounts.push.SendTabUseCases
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.share.RecentAppsStorage
@@ -58,8 +59,8 @@ class ShareControllerTest {
 
     // Navigation between app fragments uses ShareTab as arguments. SendTabUseCases uses TabData.
     private val tabsData = listOf(
-        TabData("title0", "url0"),
-        TabData("title1", "url1"),
+        TabData("title0", "url0", TabPrivacy.Normal),
+        TabData("title1", "url1", TabPrivacy.Normal),
     )
     private val textToShare = "${shareData[0].url}\n\n${shareData[1].url}"
     private val sendTabUseCases = mockk<SendTabUseCases>(relaxed = true)
@@ -87,6 +88,7 @@ class ShareControllerTest {
                 appStore,
                 shareSubject,
                 shareData,
+                false,
                 sendTabUseCases,
                 saveToPdfUseCase,
                 printUseCase,
@@ -123,6 +125,7 @@ class ShareControllerTest {
                 appStore,
                 shareSubject,
                 shareData,
+                false,
                 mockk(),
                 mockk(),
                 mockk(),
@@ -192,6 +195,7 @@ class ShareControllerTest {
                 appStore,
                 shareSubject,
                 shareData,
+                false,
                 mockk(),
                 mockk(),
                 mockk(),
@@ -239,6 +243,7 @@ class ShareControllerTest {
                 appStore,
                 shareSubject,
                 shareData,
+                false,
                 mockk(),
                 mockk(),
                 mockk(),
@@ -285,6 +290,7 @@ class ShareControllerTest {
                 appStore = appStore,
                 shareSubject = shareSubject,
                 shareData = shareData,
+                isPrivate = false,
                 sendTabUseCases = mockk(),
                 saveToPdfUseCase = mockk(),
                 printUseCase = mockk(),
@@ -324,6 +330,7 @@ class ShareControllerTest {
                 appStore = appStore,
                 shareSubject = shareSubject,
                 shareData = shareData,
+                isPrivate = false,
                 sendTabUseCases = mockk(),
                 saveToPdfUseCase = mockk(),
                 printUseCase = mockk(),
@@ -355,6 +362,7 @@ class ShareControllerTest {
                 appStore = appStore,
                 shareSubject = shareSubject,
                 shareData = shareData,
+                isPrivate = false,
                 sendTabUseCases = mockk(),
                 saveToPdfUseCase = saveToPdfUseCase,
                 printUseCase = mockk(),
@@ -382,6 +390,7 @@ class ShareControllerTest {
                 appStore = appStore,
                 shareSubject = shareSubject,
                 shareData = shareData,
+                isPrivate = false,
                 sendTabUseCases = mockk(),
                 saveToPdfUseCase = mockk(),
                 printUseCase = printUseCase,
@@ -415,6 +424,7 @@ class ShareControllerTest {
                 appStore = appStore,
                 shareSubject = shareSubject,
                 shareData = shareData,
+                isPrivate = false,
                 sendTabUseCases = mockk(),
                 saveToPdfUseCase = mockk(),
                 printUseCase = mockk(),
@@ -438,6 +448,7 @@ class ShareControllerTest {
                 appStore = appStore,
                 shareSubject = null,
                 shareData = shareData,
+                isPrivate = false,
                 sendTabUseCases = mockk(),
                 saveToPdfUseCase = mockk(),
                 printUseCase = mockk(),
@@ -465,6 +476,7 @@ class ShareControllerTest {
                 appStore = appStore,
                 shareSubject = null,
                 shareData = partialTitlesShareData,
+                isPrivate = false,
                 sendTabUseCases = mockk(),
                 saveToPdfUseCase = mockk(),
                 printUseCase = mockk(),
@@ -492,6 +504,7 @@ class ShareControllerTest {
                 appStore = appStore,
                 shareSubject = null,
                 shareData = noTitleShareData,
+                isPrivate = false,
                 sendTabUseCases = mockk(),
                 saveToPdfUseCase = mockk(),
                 printUseCase = mockk(),
@@ -519,6 +532,7 @@ class ShareControllerTest {
                 context = activityContext,
                 shareSubject = null,
                 shareData = noTitleShareData,
+                isPrivate = false,
                 sendTabUseCases = mockk(),
                 saveToPdfUseCase = mockk(),
                 printUseCase = mockk(),
@@ -541,6 +555,7 @@ class ShareControllerTest {
                 appStore,
                 shareSubject,
                 shareData,
+                false,
                 sendTabUseCases,
                 saveToPdfUseCase,
                 printUseCase,
@@ -601,6 +616,7 @@ class ShareControllerTest {
                 appStore,
                 shareSubject,
                 shareData,
+                false,
                 sendTabUseCases,
                 saveToPdfUseCase,
                 printUseCase,
@@ -664,6 +680,7 @@ class ShareControllerTest {
                 appStore,
                 shareSubject,
                 shareData,
+                false,
                 sendTabUseCases,
                 saveToPdfUseCase,
                 printUseCase,
@@ -702,6 +719,7 @@ class ShareControllerTest {
                 appStore,
                 shareSubject,
                 shareData,
+                false,
                 sendTabUseCases,
                 saveToPdfUseCase,
                 printUseCase,
@@ -735,6 +753,7 @@ class ShareControllerTest {
             appStore,
             shareSubject,
             shareData,
+            false,
             sendTabUseCases,
             saveToPdfUseCase,
             printUseCase,
@@ -771,6 +790,7 @@ class ShareControllerTest {
                 appStore,
                 shareSubject,
                 shareData,
+                false,
                 sendTabUseCases,
                 saveToPdfUseCase,
                 printUseCase,
@@ -806,6 +826,7 @@ class ShareControllerTest {
             appStore,
             shareSubject,
             shareData,
+            false,
             sendTabUseCases,
             saveToPdfUseCase,
             printUseCase,
@@ -834,6 +855,7 @@ class ShareControllerTest {
             appStore = appStore,
             shareSubject = shareSubject,
             shareData = shareData,
+            isPrivate = false,
             sendTabUseCases = sendTabUseCases,
             saveToPdfUseCase = mockk(),
             printUseCase = mockk(),
@@ -857,6 +879,7 @@ class ShareControllerTest {
                 appStore,
                 shareSubject,
                 shareData,
+                false,
                 sendTabUseCases,
                 saveToPdfUseCase,
                 printUseCase,
@@ -881,6 +904,7 @@ class ShareControllerTest {
                 appStore = appStore,
                 shareSubject = null,
                 shareData = shareData,
+                isPrivate = false,
                 sendTabUseCases = sendTabUseCases,
                 saveToPdfUseCase = mockk(),
                 printUseCase = mockk(),
@@ -902,6 +926,7 @@ class ShareControllerTest {
             appStore,
             shareSubject,
             shareData,
+            false,
             sendTabUseCases,
             saveToPdfUseCase,
             printUseCase,
@@ -932,6 +957,7 @@ class ShareControllerTest {
                 appStore,
                 shareSubject,
                 shareData,
+                false,
                 sendTabUseCases,
                 saveToPdfUseCase,
                 printUseCase,
@@ -947,8 +973,8 @@ class ShareControllerTest {
 
             var tabData: List<TabData>
             val expected = listOf(
-                TabData(title = "title0", url = ""),
-                TabData(title = "title1", url = "data:,Hello%2C%20World!"),
+                TabData(title = "title0", url = "", privacy = TabPrivacy.Normal),
+                TabData(title = "title1", url = "data:,Hello%2C%20World!", privacy = TabPrivacy.Normal),
             )
 
             with(controller) {
@@ -960,4 +986,37 @@ class ShareControllerTest {
 
             assertEquals(expected, tabData)
         }
+
+    @Test
+    fun `ShareTab#toTabData respects private browsing mode`() {
+        runTest(testDispatcher) {
+            val privateController = DefaultShareController(
+                context = testContext,
+                appStore = appStore,
+                shareSubject = null,
+                shareData = shareData,
+                isPrivate = true,
+                sendTabUseCases = sendTabUseCases,
+                saveToPdfUseCase = mockk(),
+                printUseCase = mockk(),
+                sentFromFirefoxManager = sentFromFirefoxManager,
+                navController = navController,
+                recentAppsStorage = recentAppStorage,
+                viewLifecycleScope = this,
+                ioDispatcher = testDispatcher,
+                dismiss = dismiss,
+            )
+
+            var tabData: List<TabData>
+            val expected = listOf(
+                TabData(title = "title0", url = "url0", privacy = TabPrivacy.Private),
+                TabData(title = "title1", url = "url1", privacy = TabPrivacy.Private),
+            )
+
+            with(privateController) {
+                tabData = shareData.toTabData()
+            }
+            assertEquals(expected, tabData)
+        }
+    }
 }

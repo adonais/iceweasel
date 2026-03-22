@@ -14,5 +14,7 @@ pref(media.navigator.streams.fake,false) pref(media.getusermedia.camera.fake.for
 skip-if(Android) skip-if(cocoaWidget&&/^15\.30$/.test(os_version)) load 1991492_1.html # No screenshare on Android, macOS: bug 1984994
 skip-if(Android) skip-if(cocoaWidget&&/^15\.30$/.test(os_version)) load 1991492_2.html # No screenshare on Android, macOS: bug 1984994
 skip-if(Android) skip-if(cocoaWidget&&/^15\.30$/.test(os_version)) load 1991494.html # No screenshare on Android, macOS: bug 1984994
+pref(media.navigator.streams.fake,false) pref(media.getusermedia.camera.fake.force,true) load 2009260.html
 pref(media.navigator.permission.device,true) pref(media.audio_loopback_dev,"real-device-request-with-clear-cache") load getUserMedia-audio.html # bug 1767893
+load 2014868.html
 load pc-video-size1.html

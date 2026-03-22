@@ -325,7 +325,6 @@ export const BrowserWindowTracker = {
     let {
       openerWindow = undefined,
       private: isPrivate = false,
-      aiWindow = false,
       features = undefined,
       all = true,
       args = null,
@@ -352,9 +351,6 @@ export const BrowserWindowTracker = {
       }
     } else {
       windowFeatures += ",non-private";
-    }
-    if (aiWindow) {
-      windowFeatures += ",ai-window";
     }
     if (!args) {
       loadURIString ??= lazy.BrowserHandler.defaultArgs;

@@ -1270,9 +1270,9 @@ bool H264::DecodeRecoverySEI(const mozilla::MediaByteBuffer* aSEI,
   // skip over original exp-golomb encoded width/height
   br.ReadUE();  // skip width
   br.ReadUE();  // skip height
-  uint32_t width = aSize.width;
+  uint32_t width = std::max<uint32_t>(aSize.width, 16);
   uint32_t widthNeeded = width % 16 != 0 ? (width / 16 + 1) * 16 : width;
-  uint32_t height = aSize.height;
+  uint32_t height = std::max<uint32_t>(aSize.height, 16);
   uint32_t heightNeeded = height % 16 != 0 ? (height / 16 + 1) * 16 : height;
   bw.WriteUE(widthNeeded / 16 - 1);
   bw.WriteUE(heightNeeded / 16 - 1);

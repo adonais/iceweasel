@@ -211,18 +211,6 @@ class DateTimeFormat final {
   };
 
   /**
-   * Get static strings representing the enums. These match ECMA-402's resolved
-   * options.
-   * https://tc39.es/ecma402/#sec-intl.datetimeformat.prototype.resolvedoptions
-   */
-  static const char* ToString(DateTimeFormat::HourCycle aHourCycle);
-  static const char* ToString(DateTimeFormat::Style aStyle);
-  static const char* ToString(DateTimeFormat::Numeric aNumeric);
-  static const char* ToString(DateTimeFormat::Text aText);
-  static const char* ToString(DateTimeFormat::Month aMonth);
-  static const char* ToString(DateTimeFormat::TimeZoneName aTimeZoneName);
-
-  /**
    * A components bag specifies the components used to display a DateTime. Each
    * component can be styled individually, and ICU will attempt to create a best
    * match for a given locale.

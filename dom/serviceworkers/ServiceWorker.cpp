@@ -7,7 +7,6 @@
 #include "ServiceWorker.h"
 
 #include "ServiceWorkerChild.h"
-#include "ServiceWorkerCloneData.h"
 #include "ServiceWorkerManager.h"
 #include "ServiceWorkerPrivate.h"
 #include "ServiceWorkerRegistration.h"
@@ -196,17 +195,18 @@ void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
 
   // Window-to-SW messages do not allow memory sharing since they are not in the
   // same agent cluster group, but we do not want to throw an error during the
-  // serialization. Because of this, ServiceWorkerCloneData will propagate an
-  // error message data if the SameProcess serialization is required. So that
-  // the receiver (service worker) knows that it needs to throw while
-  // deserialization and sharing memory objects are not propagated to the other
-  // process.
+  // serialization. Because of this, we will propagate an error message data if
+  // the SameProcess serialization is required. So that the receiver (service
+  // worker) knows that it needs to throw while deserialization and sharing
+  // memory objects are not propagated to the other process.
   JS::CloneDataPolicy clonePolicy;
   if (global->IsSharedMemoryAllowed()) {
     clonePolicy.allowSharedMemoryObjects();
   }
 
-  RefPtr<ServiceWorkerCloneData> data = new ServiceWorkerCloneData();
+  auto data = MakeRefPtr<ipc::StructuredCloneData>(
+      JS::StructuredCloneScope::UnknownDestination,
+      StructuredCloneHolder::TransferringSupported);
   data->Write(aCx, aMessage, transferable, clonePolicy, aRv);
   if (aRv.Failed()) {
     return;
@@ -219,17 +219,11 @@ void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
   // spec for situations like SharedArrayBuffer which are limited to being sent
   // within the same agent cluster and where ServiceWorkers are always spawned
   // in their own agent cluster.
-  if (data->CloneScope() ==
-      StructuredCloneHolder::StructuredCloneScope::SameProcess) {
-    data->SetAsErrorMessageData();
+  if (data->CloneScope() != JS::StructuredCloneScope::DifferentProcess) {
+    data = nullptr;
   }
 
   if (!mActor) {
-    return;
-  }
-
-  ClonedOrErrorMessageData clonedData;
-  if (!data->BuildClonedMessageData(clonedData)) {
     return;
   }
 
@@ -255,7 +249,7 @@ void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,
         ClientInfoAndState(clientInfo.ref().ToIPC(), clientState.ref().ToIPC());
   }
 
-  mActor->SendPostMessage(clonedData, source);
+  mActor->SendPostMessage(data, source);
 }
 
 void ServiceWorker::PostMessage(JSContext* aCx, JS::Handle<JS::Value> aMessage,

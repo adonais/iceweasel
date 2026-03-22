@@ -8,7 +8,7 @@
  */
 add_task(async function test_aichat_actor_registration() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.aiwindow.enabled", true]],
+    set: [["browser.smartwindow.enabled", true]],
   });
 
   await BrowserTestUtils.withNewTab("about:aichatcontent", async browser => {
@@ -25,7 +25,7 @@ add_task(async function test_aichat_actor_registration() {
  */
 add_task(async function test_aichat_actor_disabled() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.aiwindow.enabled", false]],
+    set: [["browser.smartwindow.enabled", false]],
   });
 
   await BrowserTestUtils.withNewTab("about:aichatcontent", async browser => {

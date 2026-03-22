@@ -1310,7 +1310,7 @@ StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
   // called later in CompleteAllowAccessFor inside of AllowAccessFor.
   auto performPermissionGrant = aDocument->CreatePermissionGrantPromise(
       aInnerWindow, principal, aHasUserInteraction, aRequireUserInteraction,
-      Nothing(), aFrameOnly);
+      aFrameOnly);
 
   // Try to allow access for the given principal.
   return StorageAccessAPIHelper::AllowAccessForOnChildProcess(

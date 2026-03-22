@@ -25,8 +25,8 @@ add_setup(async function () {
   });
 
   // Move the second engine at the beginning of the one-off list.
-  let engineOneOff = Services.search.getEngineByName("MozSearch2");
-  await Services.search.moveEngine(engineOneOff, 0);
+  let engineOneOff = SearchService.getEngineByName("MozSearch2");
+  await SearchService.moveEngine(engineOneOff, 0);
 
   // Enable local telemetry recording for the duration of the tests.
   let oldCanRecord = Services.telemetry.canRecordExtended;

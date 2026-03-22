@@ -27,15 +27,21 @@ XPIDL_MODULE = "toolkitprofile"
 
 EXPORTS += ["nsProfileLock.h"]
 
-UNIFIED_SOURCES += ["nsProfileLock.cpp"]
+UNIFIED_SOURCES += [
+    "nsProfileLock.cpp",
+    "nsToolkitProfileService.cpp",
+]
+
+if CONFIG["OS_ARCH"] == "Darwin" and CONFIG["NIGHTLY_BUILD"]:
+    UNIFIED_SOURCES += [
+        "AppGroupPath.mm",
+    ]
 
 if CONFIG["OS_ARCH"] == "WINNT":
     UNIFIED_SOURCES += ["ProfileUnlockerWin.cpp"]
 
 if CONFIG["OS_TARGET"] == "Android":
     UNIFIED_SOURCES += ["ProfileUnlockerAndroid.cpp"]
-
-UNIFIED_SOURCES += ["nsToolkitProfileService.cpp"]
 
 LOCAL_INCLUDES += [
     "../xre",

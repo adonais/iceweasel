@@ -947,6 +947,10 @@
   white-space: break-spaces;
 }
 
+.ruleview-propertyvalue .inspector-attribute:not(.inspector-unmatched) {
+  color: var(--theme-highlight-blue);
+}
+
 .ruleview-show-unused-custom-css-properties {
   margin-block: 4px;
   /* Align the button with the properties above it. */

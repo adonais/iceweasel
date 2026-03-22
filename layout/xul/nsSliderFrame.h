@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsSliderFrame_h__
-#define nsSliderFrame_h__
+#ifndef nsSliderFrame_h_
+#define nsSliderFrame_h_
 
 #include "mozilla/Attributes.h"
 #include "nsAtom.h"

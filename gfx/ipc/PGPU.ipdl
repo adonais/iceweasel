@@ -187,6 +187,10 @@ child:
   // Buffer contains bincoded Rust structs.
   // https://firefox-source-docs.mozilla.org/toolkit/components/glean/dev/ipc.html
   async FOGData(ByteBuf buf);
+
+  // Reports GL string values obtained from an OpenGL context to gfxInfo in the
+  // parent process.
+  async ReportGLStrings(GfxInfoGLStrings aStrings);
 };
 
 } // namespace gfx

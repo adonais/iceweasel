@@ -27,9 +27,9 @@
 #  include <valgrind/memcheck.h>
 #endif
 
-#include "jsnum.h"
 #include "jstypes.h"
 
+#include "builtin/Number.h"
 #include "gc/Barrier.h"
 #include "gc/Memory.h"
 #include "jit/InlinableNatives.h"
@@ -1276,15 +1276,30 @@ static ArrayBufferContents ReallocateArrayBufferContents(JSContext* cx,
 }
 
 static ArrayBufferContents NewCopiedBufferContents(
-    JSContext* cx, Handle<ArrayBufferObject*> buffer) {
+    JSContext* cx, Handle<ArrayBufferObject*> buffer, size_t nbytes) {
+  size_t byteLength = buffer->byteLength();
+  MOZ_RELEASE_ASSERT(byteLength <= nbytes,
+                     "can't copy less than byteLength bytes");
+
   ArrayBufferContents dataCopy =
-      AllocateUninitializedArrayBufferContents(cx, buffer->byteLength());
+      AllocateUninitializedArrayBufferContents(cx, nbytes);
   if (dataCopy) {
-    if (auto count = buffer->byteLength()) {
-      memcpy(dataCopy.get(), buffer->dataPointer(), count);
+    // Copy the initial bytes from |buffer|.
+    if (byteLength) {
+      memcpy(dataCopy.get(), buffer->dataPointer(), byteLength);
+    }
+
+    // Zero the remaining bytes.
+    if (byteLength < nbytes) {
+      memset(dataCopy.get() + byteLength, 0, nbytes - byteLength);
     }
   }
   return dataCopy;
+}
+
+static ArrayBufferContents NewCopiedBufferContents(
+    JSContext* cx, Handle<ArrayBufferObject*> buffer) {
+  return NewCopiedBufferContents(cx, buffer, buffer->byteLength());
 }
 
 /* static */
@@ -2615,36 +2630,15 @@ template <class ArrayBufferType>
   size_t sourceByteLength = source->byteLength();
   size_t newMaxByteLength = source->maxByteLength();
 
-  if (newByteLength > sourceByteLength) {
-    // Copy into a larger buffer.
-    AutoSetNewObjectMetadata metadata(cx);
-    auto [buffer, toFill] = createBufferAndData<FillContents::Zero>(
-        cx, newByteLength, newMaxByteLength, metadata, nullptr);
-    if (!buffer) {
-      return nullptr;
-    }
-
-    // The `createBufferAndData()` call first zero-initializes the complete
-    // buffer and then we copy over |sourceByteLength| bytes from |source|. It
-    // seems prudent to only zero-initialize the trailing bytes of |toFill|
-    // to avoid writing twice to `toFill[0..newByteLength]`. We don't yet
-    // implement this optimization, because this method is only called for
-    // small, inline buffers, so any write optimizations probably won't make
-    // much of a difference.
-    std::copy_n(source->dataPointer(), sourceByteLength, toFill);
-
-    return buffer;
-  }
-
-  // Copy into a smaller or same size buffer.
   AutoSetNewObjectMetadata metadata(cx);
-  auto [buffer, toFill] = createBufferAndData<FillContents::Uninitialized>(
+  auto [buffer, toFill] = createBufferAndData<FillContents::Zero>(
       cx, newByteLength, newMaxByteLength, metadata, nullptr);
   if (!buffer) {
     return nullptr;
   }
 
-  std::uninitialized_copy_n(source->dataPointer(), newByteLength, toFill);
+  size_t nbytes = std::min(newByteLength, sourceByteLength);
+  std::copy_n(source->dataPointer(), nbytes, toFill);
 
   return buffer;
 }
@@ -3181,7 +3175,7 @@ bool ArrayBufferObject::ensureNonInline(JSContext* cx,
   }
 
   size_t nbytes = buffer->maxByteLength();
-  ArrayBufferContents copy = NewCopiedBufferContents(cx, buffer);
+  ArrayBufferContents copy = NewCopiedBufferContents(cx, buffer, nbytes);
   if (!copy) {
     return false;
   }
@@ -3225,7 +3219,7 @@ void ArrayBufferObject::addSizeOfExcludingThis(
         info->objectsMallocHeapElementsAsmJS +=
             mallocSizeOf(buffer.dataPointer());
       } else {
-        info->objectsMallocHeapElementsNormal +=
+        info->objectsMallocHeapElementsArrayBuffer +=
             mallocSizeOf(buffer.dataPointer());
       }
       break;

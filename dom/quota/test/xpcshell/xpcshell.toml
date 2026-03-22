@@ -187,6 +187,13 @@ skip-if = [
 
 ["test_tempMetadataCleanup.js"]
 
+["test_temporaryStorageCleanup.js"]
+# This test requires precise control over the storage repository contents,
+# including exact origin metadata (usage, persistence, and access time).
+# Conditioned profiles contain pre-existing data that would invalidate these
+# assumptions, so the test must run only on a clean profile.
+run-if = ["!condprof"]
+
 ["test_temporaryStorageEviction.js"]
 # This test requires precise control over storage size, which isn't compatible
 # with conditioned profiles that use a much larger default size. While the test

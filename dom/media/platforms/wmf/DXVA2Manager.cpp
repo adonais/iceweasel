@@ -375,9 +375,23 @@ class D3D11DXVA2Manager : public DXVA2Manager {
   void BeforeShutdownVideoMFTDecoder() override;
 
   bool SupportsZeroCopyNV12Texture() override {
-    if (mZeroCopyUsageInfo->SupportsZeroCopyNV12Texture() &&
-        (mDevice != DeviceManagerDx::Get()->GetCompositorDevice())) {
-      mZeroCopyUsageInfo->DisableZeroCopyNV12Texture();
+    // The maximum number of video frames for which the client can use with zero
+    // video frame copy. If the usage count exceeds the maximum count, the zero
+    // video frame copy is disabled to prevent run out of video frames at
+    // decoder. The max count is set to prevent accidental disabling of the zero
+    // video frame copy during normal video playback. During normal video
+    // playback, ZeroCopyUsageInfo::GetRefCount() was around 5 to 8. The maximum
+    // count is set sufficiently higher than the GetRefCount() during normal
+    // video playback.
+    const int maxVideoFrameUsageCount = 14;
+
+    if (mZeroCopyUsageInfo->SupportsZeroCopyNV12Texture()) {
+      if (mDevice != DeviceManagerDx::Get()->GetCompositorDevice()) {
+        mZeroCopyUsageInfo->DisableZeroCopyNV12Texture();
+      } else if (mZeroCopyUsageInfo->GetRefCount() > maxVideoFrameUsageCount) {
+        mZeroCopyUsageInfo->DisableZeroCopyNV12Texture(
+            ZeroCopyUsageInfo::DisableReason::UsingTooManyFrames);
+      }
     }
     return mZeroCopyUsageInfo->SupportsZeroCopyNV12Texture();
   }

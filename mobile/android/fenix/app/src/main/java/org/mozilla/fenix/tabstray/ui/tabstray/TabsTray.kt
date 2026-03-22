@@ -27,6 +27,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +41,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.TabSessionState
@@ -49,7 +51,6 @@ import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.SnackbarVisuals
 import mozilla.components.compose.base.snackbar.displaySnackbar
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.TabsTrayAction
 import org.mozilla.fenix.tabstray.TabsTrayState
@@ -62,7 +63,7 @@ import org.mozilla.fenix.tabstray.ui.fab.TabManagerFloatingToolbar
 import org.mozilla.fenix.tabstray.ui.tabpage.NormalTabsPage
 import org.mozilla.fenix.tabstray.ui.tabpage.PrivateTabsPage
 import org.mozilla.fenix.tabstray.ui.tabpage.SyncedTabsPage
-import org.mozilla.fenix.tabstray.ui.theme.getTabManagerTheme
+import org.mozilla.fenix.tabstray.ui.theme.TabManagerThemeProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.browser.storage.sync.Tab as SyncTab
 import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabClick as OnSyncedTabClick
@@ -179,7 +180,7 @@ fun TabsTray(
     onSyncedTabsFabClicked: () -> Unit,
     onUnlockPbmClick: () -> Unit,
 ) {
-    val tabsTrayState by tabsTrayStore.observeAsState(initialValue = tabsTrayStore.state) { it }
+    val tabsTrayState by tabsTrayStore.stateFlow.collectAsState()
     val pagerState = rememberPagerState(
         initialPage = Page.pageToPosition(tabsTrayState.selectedPage),
         pageCount = { Page.entries.size },
@@ -376,9 +377,10 @@ private fun TabsTrayPreview(
         )
     }
 
-    val page by tabsTrayStore.observeAsState(tabsTrayStore.state.selectedPage) { it.selectedPage }
+    val page by remember { tabsTrayStore.stateFlow.map { it.selectedPage } }
+        .collectAsState(initial = tabsTrayStore.state.selectedPage)
 
-    FirefoxTheme(theme = getTabManagerTheme(page = page)) {
+    FirefoxTheme(theme = TabManagerThemeProvider(selectedPage = page).provideTheme()) {
         TabsTray(
             tabsTrayStore = tabsTrayStore,
             displayTabsInGrid = tabTrayState.displayTabsInGrid,

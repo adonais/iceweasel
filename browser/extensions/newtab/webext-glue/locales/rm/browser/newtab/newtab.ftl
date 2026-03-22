@@ -329,18 +329,16 @@ newtab-custom-recent-subtitle = Ina selecziun da websites e cuntegn visità dacu
 newtab-custom-weather-toggle =
     .label = Aura
     .description = La previsiun da l’aura actuala en in’egliada
-newtab-custom-trending-search-toggle =
-    .label = Tschertgas frequentas
-    .description = Temas populars tschertgads frequentamain
 newtab-custom-widget-weather-toggle =
     .label = Aura
-newtab-custom-widget-trending-search-toggle =
-    .label = Tschertgas frequentas
 newtab-custom-widget-lists-toggle =
     .label = Glistas
 newtab-custom-widget-timer-toggle =
     .label = Svegliarin
 newtab-custom-widget-section-title = Widgets
+newtab-custom-widget-section-toggle =
+    .label = Widgets
+newtab-widget-manage-title = Widgets
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Serrar
@@ -492,6 +490,11 @@ newtab-weather-opt-in-yes =
     .label = Gea
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Mussar la previsiun da l’aura en { $provider }
+    .aria-description = { $provider } ∙ Sponsurà
 
 ## Topic Labels
 
@@ -596,7 +599,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Tes favurits adina per mauns
 newtab-shortcuts-highlight-subtitle = Agiuntescha ina nova scursanida per acceder a tias websites preferidas cun in singul clic.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Pertge annunzias ti quai?
@@ -618,17 +621,6 @@ newtab-report-cancel = Interrumper
 newtab-report-submit = Trametter
 newtab-toast-thanks-for-reporting =
     .message = Grazia per l’annunzia.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Mussar tschertgas frequentas
-newtab-trending-searches-hide-trending =
-    .title = Zuppentar tschertas frequentas
-newtab-trending-searches-learn-more = Ulteriuras infurmaziuns
-newtab-trending-searches-dismiss = Zuppentar tschertgas frequentas
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Tschertgas frequentas
 
 ## Strings for task / to-do list productivity widget
 
@@ -668,6 +660,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Nova glista
+newtab-widget-section-title = Widgets
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Zuppentar ils widgets
+    .aria-label = Zuppentar tut ils widgets
+newtab-widget-section-maximize =
+    .title = Extender ils widgets
+    .aria-label = Extender tut ils widgets a la grondezza entira
+newtab-widget-section-minimize =
+    .title = Reducir ils widgets
+    .aria-label = Reducir tut ils widgets a la grondezza cumpacta
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

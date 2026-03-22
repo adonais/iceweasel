@@ -323,18 +323,18 @@ newtab-custom-recent-subtitle = 最近のサイトとコンテンツの抜粋
 newtab-custom-weather-toggle =
     .label = 天気予報
     .description = 一目でわかる今日の天気
-newtab-custom-trending-search-toggle =
-    .label = トレンド検索
-    .description = 人気があり頻繁に検索されているトピックです
 newtab-custom-widget-weather-toggle =
     .label = 天気予報
-newtab-custom-widget-trending-search-toggle =
-    .label = トレンド検索
 newtab-custom-widget-lists-toggle =
     .label = ToDo リスト
 newtab-custom-widget-timer-toggle =
     .label = タイマー
 newtab-custom-widget-section-title = ウィジェット
+newtab-custom-widget-section-toggle =
+    .label = ウィジェット
+newtab-widget-manage-title = ウィジェット
+newtab-widget-manage-widget-button =
+    .label = ウィジェットを管理
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = 閉じる
@@ -462,6 +462,8 @@ newtab-weather-change-location-search-input-placeholder =
     .placeholder = 場所を検索
     .aria-label = 場所を検索
 newtab-weather-menu-weather-display = 天気表示
+newtab-weather-todays-forecast = 今日の天気予報
+newtab-weather-see-full-forecast = 天気予報の詳細を表示
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -474,6 +476,7 @@ newtab-weather-menu-temperature-option-fahrenheit = 華氏 (℉)
 newtab-weather-menu-temperature-option-celsius = 摂氏 (℃)
 newtab-weather-menu-change-temperature-units-fahrenheit = ファーレンハイト度に切り替える
 newtab-weather-menu-change-temperature-units-celsius = セルシウス度に切り替える
+newtab-weather-menu-hide-weather-v2 = 天気表示を隠す
 newtab-weather-menu-hide-weather = 新しいタブの天気表示を隠す
 newtab-weather-menu-learn-more = 詳細情報
 newtab-weather-menu-detect-my-location = 現在地を検出
@@ -486,6 +489,11 @@ newtab-weather-opt-in-yes =
     .label = はい
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = ニューヨーク
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = { $provider } による天気予報を表示します
+    .aria-description = 提供: { $provider }
 
 ## Topic Labels
 
@@ -590,7 +598,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = 指先一つでお気に入りに追加
 newtab-shortcuts-highlight-subtitle = ショートカットを追加してお気に入りのサイトに 1 クリックでアクセスできます。
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = この広告を報告した理由を教えてください。
@@ -608,21 +616,13 @@ newtab-report-content-inappropriate-offensive =
     .label = 不適切または攻撃的
 newtab-report-content-spam-misleading =
     .label = スパムまたはミスリード
+newtab-report-content-requires-payment-subscription =
+    .label = 支払いまたは購読が必要
+newtab-report-content-requires-payment-subscription-learn-more = 詳細情報
 newtab-report-cancel = キャンセル
 newtab-report-submit = 送信
 newtab-toast-thanks-for-reporting =
     .message = ご報告ありがとうございます。
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = トレンド検索を表示します
-newtab-trending-searches-hide-trending =
-    .title = トレンド検索を隠します
-newtab-trending-searches-learn-more = 詳細情報
-newtab-trending-searches-dismiss = トレンド検索を隠す
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = トレンド検索
 
 ## Strings for task / to-do list productivity widget
 
@@ -695,8 +695,12 @@ newtab-widget-timer-menu-notifications = 通知をオフにする
 newtab-widget-timer-menu-notifications-on = 通知をオンにする
 newtab-widget-timer-menu-hide = タイマーを隠す
 newtab-widget-timer-menu-learn-more = 詳細情報
-# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
-newtab-widget-keep-scrolling = 続きはスクロールしてください
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = トップニュース
+newtab-daily-briefing-card-menu-dismiss = 閉じる
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = { $minutes } 分前に更新
 newtab-widget-message-title = リストへの集中と組み込みタイマー
 # to-dos stands for "things to do".
 newtab-widget-message-copy = クイック通知から毎日の ToDo リストまで、時間内によく集中して休憩を取れるように、あなたの作業を支援します。
@@ -706,3 +710,25 @@ newtab-promo-card-cta = 詳細情報
 newtab-promo-card-dismiss-button =
     .title = 閉じる
     .aria-label = 閉じる
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-dismiss-button =
+    .title = 閉じる
+    .aria-label = 閉じる
+# "This space" refers to about:newtab. The call to action here ("make it your own")
+# is to customize newtab with a background image or colour, or by tweaking the
+# existing widgetry that appears on it.
+newtab-activation-window-message-customization-focus-header = あなただけのスペースにカスタマイズ
+newtab-activation-window-message-customization-focus-message = 新しい壁紙を選び、お気に入りのサイトのショートカットを追加し、興味のある最新のストーリーを追いかけましょう。
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = カスタマイズを開始
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = ここはあなただけのスペースです
+newtab-activation-window-message-values-focus-message = { -brand-product-name } でブラウジングすると、お好みの方法でオンラインの一日を始められます。あなただけの { -brand-product-name } にしましょう。

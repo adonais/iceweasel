@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef WebBrowserPersistRemoteDocument_h__
-#define WebBrowserPersistRemoteDocument_h__
+#ifndef WebBrowserPersistRemoteDocument_h_
+#define WebBrowserPersistRemoteDocument_h_
 
 #include "mozilla/PWebBrowserPersistDocumentParent.h"
 #include "nsCOMPtr.h"
@@ -55,4 +55,4 @@ class WebBrowserPersistRemoteDocument final
 
 }  // namespace mozilla
 
-#endif  // WebBrowserPersistRemoteDocument_h__
+#endif  // WebBrowserPersistRemoteDocument_h_

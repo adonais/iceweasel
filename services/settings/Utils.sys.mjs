@@ -50,7 +50,7 @@ ChromeUtils.defineLazyGetter(lazy, "isRunningTests", () => {
 
 // Overriding the server URL is normally disabled on Beta and Release channels,
 // except under some conditions.
-ChromeUtils.defineLazyGetter(lazy, "allowServerURLOverride", () => {
+ChromeUtils.defineLazyGetter(lazy, "allowServerURL", () => {
   if (!AppConstants.RELEASE_OR_BETA) {
     // Always allow to override the server URL on Nightly/DevEdition.
     return true;
@@ -65,13 +65,15 @@ ChromeUtils.defineLazyGetter(lazy, "allowServerURLOverride", () => {
     return true;
   }
 
-  if (lazy.gServerURL != AppConstants.REMOTE_SETTINGS_SERVER_URL) {
-    log.warn("Ignoring preference override of remote settings server");
-    log.warn(
-      "Allow by setting MOZ_REMOTE_SETTINGS_DEVTOOLS=1 in the environment"
-    );
+  // eslint-disable-next-line mozilla/valid-lazy
+  if (AppConstants.REMOTE_SETTINGS_SERVER_URLS.includes(lazy.gServerURL)) {
+    return true;
   }
 
+  log.warn("Ignoring preference override of remote settings server");
+  log.warn(
+    "Allow by setting MOZ_REMOTE_SETTINGS_DEVTOOLS=1 in the environment"
+  );
   return false;
 });
 
@@ -79,7 +81,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "gServerURL",
   "services.settings.server",
-  AppConstants.REMOTE_SETTINGS_SERVER_URL
+  AppConstants.REMOTE_SETTINGS_SERVER_URLS[0]
 );
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -97,9 +99,10 @@ const _cdnURLs = {};
 
 export var Utils = {
   get SERVER_URL() {
-    return lazy.allowServerURLOverride
-      ? lazy.gServerURL
-      : AppConstants.REMOTE_SETTINGS_SERVER_URL;
+    return lazy.allowServerURL
+      ? // eslint-disable-next-line mozilla/valid-lazy
+        lazy.gServerURL
+      : AppConstants.REMOTE_SETTINGS_SERVER_URLS[0];
   },
 
   CHANGES_PATH: "/buckets/monitor/collections/changes/changeset",
@@ -139,15 +142,23 @@ export var Utils = {
   get LOAD_DUMPS() {
     // Load dumps only if pulling data from the production server, or in tests.
     return (
-      this.SERVER_URL == AppConstants.REMOTE_SETTINGS_SERVER_URL ||
+      AppConstants.REMOTE_SETTINGS_SERVER_URLS.includes(this.SERVER_URL) ||
       lazy.isRunningTests
     );
   },
 
   get PREVIEW_MODE() {
+    // Release and beta require dev-tools or tests to use preview
+    if (
+      AppConstants.RELEASE_OR_BETA &&
+      !lazy.isRunningTests &&
+      Services.env.get("MOZ_REMOTE_SETTINGS_DEVTOOLS") !== "1"
+    ) {
+      return false;
+    }
     // We want to offer the ability to set preview mode via a preference
     // for consumers who want to pull from the preview bucket on startup.
-    if (_isUndefined(this._previewModeEnabled) && lazy.allowServerURLOverride) {
+    if (_isUndefined(this._previewModeEnabled)) {
       return lazy.gPreviewEnabled;
     }
     return !!this._previewModeEnabled;
@@ -490,7 +501,7 @@ export var Utils = {
 
     return {
       changes,
-      currentEtag: `"${timestamp}"`,
+      timestamp,
       serverTimeMillis,
       backoffSeconds,
       ageSeconds,

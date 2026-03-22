@@ -74,6 +74,12 @@ class MappedFileWriter {
   // iff the operation succeeds.
   bool Keep();
 
+#if defined(MOZ_ZUCCHINI)
+  // Flushes memory-mapped changes to disk. Returns true on success, false on
+  // error. On error, sets error_ so HasError() will return true.
+  bool Flush();
+#endif  // MOZ_ZUCCHINI
+
  private:
   enum OnCloseDeleteBehavior {
     kKeep,

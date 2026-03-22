@@ -1301,7 +1301,7 @@
     "record_in_processes": ["main"],
     "products": ["firefox", "fennec"],
     "alert_emails": ["seceng-telemetry@mozilla.com"],
-    "expires_in_version": "150",
+    "expires_in_version": "160",
     "keyed": true,
     "keys": ["known_text", "unknown", "unknown_matched", "known_text_matched"],
     "kind": "enumerated",
@@ -1314,7 +1314,7 @@
     "record_in_processes": ["main"],
     "products": ["firefox", "fennec"],
     "alert_emails": ["seceng-telemetry@mozilla.com"],
-    "expires_in_version": "150",
+    "expires_in_version": "160",
     "kind": "boolean",
     "releaseChannelCollection": "opt-out",
     "description": "Whether a probable font fingerprinting attempt was detected",
@@ -3649,15 +3649,6 @@
     "releaseChannelCollection": "opt-out",
     "description": "Time spent waiting for off-thread compiles in the script preloader."
   },
-  "NETWORK_DISK_CACHE_SHUTDOWN_V2": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 10000,
-    "n_buckets": 10,
-    "description": "Total Time spent (ms) during disk cache showdown [cache2]"
-  },
   "NETWORK_DISK_CACHE2_SHUTDOWN_CLEAR_PRIVATE": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -5655,9 +5646,9 @@
   "PWMGR_IMPORT_LOGINS_FROM_FILE_CATEGORICAL": {
     "record_in_processes": ["main"],
     "products": ["firefox"],
-    "bug_numbers": [1688653, 1749882, 1777397, 1850888, 1978988],
+    "bug_numbers": [1688653, 1749882, 1777397, 1850888, 1978988, 2010472],
     "alert_emails": ["passwords-dev@mozilla.org"],
-    "expires_in_version": "150",
+    "expires_in_version": "160",
     "kind": "categorical",
     "labels": ["added", "modified", "error", "no_change"],
     "releaseChannelCollection": "opt-out",
@@ -5946,22 +5937,6 @@
     "expires_in_version": "never",
     "kind": "boolean",
     "description": "Type of XMLHttpRequest, async or sync"
-  },
-  "LOCALDOMSTORAGE_SHUTDOWN_DATABASE_MS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "default",
-    "kind": "exponential",
-    "high": 3000,
-    "n_buckets": 10,
-    "description": "Time to flush and close the localStorage database (ms)"
-  },
-  "LOCALDOMSTORAGE_PRELOAD_PENDING_ON_FIRST_ACCESS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "default",
-    "kind": "boolean",
-    "description": "True when we had to wait for a pending preload on first access to localStorage data, false otherwise"
   },
   "TELEMETRY_ARCHIVE_DIRECTORIES_COUNT": {
     "record_in_processes": ["main"],
@@ -10801,7 +10776,8 @@
       "reset_streamfilter",
       "reset_parentapicall",
       "permissions_request",
-      "launchWebAuthFlow"
+      "launchWebAuthFlow",
+      "downloads_saveAs"
     ],
     "releaseChannelCollection": "opt-out",
     "description": "The number of times an event page hit the idle timeout and results in one of the categories, keyed by addon id."
@@ -10822,7 +10798,8 @@
       "reset_streamfilter",
       "reset_parentapicall",
       "permissions_request",
-      "launchWebAuthFlow"
+      "launchWebAuthFlow",
+      "downloads_saveAs"
     ],
     "releaseChannelCollection": "opt-out",
     "description": "The number of times an event page hit the idle timeout and results in one of the categories, keyed by addon id.",

@@ -9,8 +9,5 @@ browser.jar:
     content/browser/genai/chat.html
     content/browser/genai/chat.js
     content/browser/genai/pageAssist.html
-    content/browser/genai/smartAssist.html
-    content/browser/genai/smartAssistPage.html
     content/browser/genai/content/ (content/link-preview-card*)
     content/browser/genai/content/ (content/page-assist*)
-    content/browser/genai/content/ (content/smart-assist*)

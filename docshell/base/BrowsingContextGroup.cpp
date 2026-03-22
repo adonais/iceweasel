@@ -13,6 +13,7 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/ContentProcessManager.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/ThrottledEventQueue.h"
@@ -285,6 +286,54 @@ bool BrowsingContextGroup::IsKnownForMessageReader(
           "BrowsingContextGroup::IsKnownForMessageReader");
       return false;
   }
+}
+
+bool BrowsingContextGroup::IsKnownForChildID(GeckoChildID aChildID) {
+  // If the origin process is unknown, deny synced contexts from it.
+  if (NS_WARN_IF(aChildID == kInvalidGeckoChildID)) {
+    MOZ_ASSERT_UNREACHABLE("Unknown ChildID for BrowsingContextGroup");
+    return false;
+  }
+
+  // Allow deserializing a synced context from the parent process (ID 0), or the
+  // current process by-default.
+  if (aChildID == 0 || aChildID == XRE_GetChildID()) {
+    return true;
+  }
+
+  // If we're not in the parent process, deny any other messages (we shouldn't
+  // be receiving a BrowsingContext directly from a peer process anyways).
+  if (NS_WARN_IF(!XRE_IsParentProcess())) {
+    MOZ_ASSERT_UNREACHABLE("Unexpected peer ChildID for BrowsingContextGroup");
+    return false;
+  }
+
+  // Try to look up the ContentParent for this process.
+  // If we can't, be conservative and deny the request. (We should be
+  // deserializing StructuredCloneData instances containing BrowsingContexts
+  // before the process has a chance to go away)
+  ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
+  if (NS_WARN_IF(!cpm)) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Unexpected cross-process deserialization late in shutdown");
+    return false;
+  }
+  RefPtr<ContentParent> contentParent =
+      cpm->GetContentProcessById(ContentParentId(aChildID));
+  if (NS_WARN_IF(!contentParent)) {
+    MOZ_ASSERT_UNREACHABLE(
+        "ContentParent dead/missing when deserializing BrowsingContextGroup");
+    return false;
+  }
+
+  // The process should only be able to name this BCG if it is subscribed, or if
+  // the BCG has been destroyed (and has therefore stopped tracking subscribers)
+  if (NS_WARN_IF(!mDestroyed && !mSubscribers.Contains(contentParent))) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Process is not subscribed to this BrowsingContextGroup");
+    return false;
+  }
+  return true;
 }
 
 void BrowsingContextGroup::UpdateToplevelsSuspendedIfNeeded() {

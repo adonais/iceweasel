@@ -22,6 +22,7 @@ class GLContext;
 }
 
 namespace layers {
+class AndroidHardwareBuffer;
 class CompositionRecorder;
 class SyncObjectHost;
 }  // namespace layers
@@ -219,6 +220,13 @@ class RenderCompositor {
     return false;
   }
   virtual bool MaybeProcessScreenshotQueue() { return false; }
+#ifdef MOZ_WIDGET_ANDROID
+  virtual bool MaybeCaptureScreenPixels(
+      const gfx::IntRect& aSourceRect,
+      RefPtr<layers::AndroidHardwareBuffer> aHardwareBuffer) {
+    return false;
+  }
+#endif
 
   virtual RefPtr<layers::Fence> GetAndResetReleaseFence() { return nullptr; }
 

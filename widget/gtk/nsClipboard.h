@@ -5,8 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __nsClipboard_h_
-#define __nsClipboard_h_
+#ifndef _nsClipboard_h_
+#define _nsClipboard_h_
 
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
@@ -189,4 +189,4 @@ GdkAtom GetSelectionAtom(int32_t aWhichClipboard);
 mozilla::Maybe<nsIClipboard::ClipboardType> GetGeckoClipboardType(
     GtkClipboard* aGtkClipboard);
 
-#endif /* __nsClipboard_h_ */
+#endif /* _nsClipboard_h_ */

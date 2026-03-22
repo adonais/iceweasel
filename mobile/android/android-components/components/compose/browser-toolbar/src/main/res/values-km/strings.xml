@@ -8,7 +8,7 @@
 
 <resources>
   <!-- Content description for the clear URL text button. -->
-  <string name="mozac_clear_button_description">សម្អាត</string>
+  <string name="mozac_clear_button_description">ជម្រះ</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="mozac_browser_toolbar_search_hint">ស្វែងរក ឬបញ្ចូលអាសយដ្ឋាន</string>
   <!-- Contextual menu option for long pressing on the toolbar URL. Clicking it will copy the current URL -->
@@ -18,9 +18,9 @@
   <!-- Contextual menu option for long pressing on the toolbar URL. Clicking it will paste the text from clipboard and search for or load it as an URL. '&amp;' is replaced with the ampersand symbol: & -->
   <string name="mozac_browser_toolbar_long_press_popup_paste_and_go">បិទ​ភ្ជាប់ &amp; ទៅ</string>
   <!-- Text for the title displayed in the contextual feature recommendation popup promoting the new toolbar redesign. -->
-  <string name="mozac_toolbar_cfr_title">រចនាឡើងសម្រាប់ អែនដ្រយ។ កែលម្អសម្រាប់អ្នក</string>
+  <string name="mozac_toolbar_cfr_title">រចនាឡើងសម្រាប់អាន់ដ្រយ។ ប្រណិតសម្រាប់អ្នក។</string>
   <!-- Text for the description displayed in the contextual feature recommendation popup promoting the new toolbar redesign. -->
-  <string name="mozac_toolbar_cfr_description">យើងបានធ្វើឱ្យការរចនាមានភាពទាន់សម័យ និងទាន់សម័យឡើងវិញ</string>
+  <string name="mozac_toolbar_cfr_description">យើងបានធ្វើឱ្យការរចនាមានភាពស្រស់ស្អាត និងទាន់សម័យ។</string>
   <!-- Content description (not visible, for screen readers etc.) for the "minimal toolbar" containing just the URL instead of the big toolbar containing also other buttons. %1$s will be replaced with the domain name of the current website. -->
   <string name="mozac_minimal_display_toolbar_content_description">កំពុងបញ្ចូលអត្ថបទនៅក្នុង %1$s។ ចុចពីរដងដើម្បីឈប់</string>
 </resources>

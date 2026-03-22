@@ -17,8 +17,8 @@
   browser                                          (%browser/**/*.ftl)
   preview/aiFeatures.ftl                           (../locales-preview/aiFeatures.ftl)
   preview/aiWindow.ftl                             (../locales-preview/aiWindow.ftl)
+  preview/aiWindowContent.ftl                      (../locales-preview/aiWindowContent.ftl)
   preview/smartTabGroups.ftl                       (%chrome/overrides/smartTabGroups.ftl)
-  preview/ipProtection.ftl                         (../locales-preview/ipProtection.ftl)
   preview/privacyPreferences.ftl                   (../locales-preview/privacyPreferences.ftl)
 
 @AB_CD@.jar:

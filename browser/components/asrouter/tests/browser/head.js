@@ -96,7 +96,10 @@ class TelemetrySpy {
    * @param {object} expectedData
    */
   assertCalledWith(expectedData) {
-    let match = this.spy.calledWith("AWPage:TELEMETRY_EVENT", expectedData);
+    let match = this.spy.calledWith(
+      "AWPage:TELEMETRY_EVENT",
+      sinon.match(expectedData)
+    );
     if (match) {
       ok(true, "Expected telemetry sent");
     } else if (this.spy.called) {

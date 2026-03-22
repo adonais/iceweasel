@@ -209,7 +209,11 @@ export default class LoginItem extends HTMLElement {
     if (!this._breachAlert.hidden) {
       const breachDetails = this._breachesMap.get(this._login.guid);
       const breachTimestamp = new Date(breachDetails.BreachDate ?? 0).getTime();
-      this.#updateBreachAlert(this._login.origin, breachTimestamp);
+      this.#updateBreachAlert(
+        this._login.origin,
+        breachTimestamp,
+        breachDetails.Name
+      );
     }
     this._vulnerableAlert.hidden =
       !this._vulnerableLoginsMap ||
@@ -1021,9 +1025,10 @@ export default class LoginItem extends HTMLElement {
   // in favour of updating the props themselves.
   // NOTE: Adding this method here instead of login-alert because this file will be
   // refactored soon.
-  #updateBreachAlert(hostname, date) {
+  #updateBreachAlert(hostname, date, breachName) {
     this._breachAlert.hostname = hostname;
     this._breachAlert.date = date;
+    this._breachAlert.breachName = breachName || "";
   }
 
   #updateVulnerablePasswordAlert(hostname) {

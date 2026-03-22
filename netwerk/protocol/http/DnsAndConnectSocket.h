@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef DnsAndConnectSocket_h__
-#define DnsAndConnectSocket_h__
+#ifndef DnsAndConnectSocket_h_
+#define DnsAndConnectSocket_h_
 
 #include "mozilla/TimeStamp.h"
 #include "nsAHttpConnection.h"
@@ -263,4 +263,4 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
 }  // namespace net
 }  // namespace mozilla
 
-#endif  // DnsAndConnectSocket_h__
+#endif  // DnsAndConnectSocket_h_

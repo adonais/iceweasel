@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -30,16 +31,15 @@ import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.SwitchWithLabel
+import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsAction
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsState
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsStore
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Glean Debug Tools UI that allows for glean test pings to be sent.
@@ -52,7 +52,7 @@ fun GleanDebugToolsScreen(
     gleanDebugToolsStore: GleanDebugToolsStore,
     modifier: Modifier = Modifier,
 ) {
-    val gleanDebugToolsState by gleanDebugToolsStore.observeAsState(gleanDebugToolsStore.state) { it }
+    val gleanDebugToolsState by gleanDebugToolsStore.stateFlow.collectAsState()
 
     Surface {
         Column(
@@ -115,10 +115,11 @@ private fun GleanDebugLoggingSection(
 ) {
     GleanDebugSectionTitle(text = stringResource(R.string.glean_debug_tools_logging_title))
 
-    SwitchWithLabel(
+    SwitchListItem(
         label = stringResource(R.string.glean_debug_tools_log_pings_to_console),
         checked = logPingsToConsoleEnabled,
         modifier = Modifier.padding(horizontal = FirefoxTheme.layout.space.dynamic400),
+        showSwitchAfter = true,
     ) {
         onLogPingsToConsoleToggled()
     }
@@ -277,7 +278,7 @@ private fun getPingDropdownMenu(
 @Composable
 @FlexibleWindowPreview
 private fun GleanDebugToolsPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         GleanDebugToolsScreen(

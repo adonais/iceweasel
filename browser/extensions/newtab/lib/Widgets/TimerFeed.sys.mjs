@@ -4,11 +4,6 @@
 
 const lazy = {};
 
-// eslint-disable-next-line mozilla/use-static-import
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-
 ChromeUtils.defineESModuleGetters(lazy, {
   PersistentCache: "resource://newtab/lib/PersistentCache.sys.mjs",
 });
@@ -61,22 +56,12 @@ export class TimerFeed {
         Ci.nsIAlertsService
       );
 
-      /**
-       * @backward-compat { version 147 }
-       * Remove `alertsService.showAlertNotification` call once Firefox 147
-       * makes it to the release channel.
-       */
-
-      if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "147.0a1") >= 0) {
-        alertsService.showAlert(
-          new AlertNotification({
-            title,
-            text: body,
-          })
-        );
-      } else {
-        alertsService.showAlertNotification(null, title, body, false, "", null);
-      }
+      alertsService.showAlert(
+        new AlertNotification({
+          title,
+          text: body,
+        })
+      );
     } catch (err) {
       console.error("Failed to show system notification", err);
     }

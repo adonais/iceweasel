@@ -6,6 +6,7 @@
 
 #include "nsDOMMutationObserver.h"
 
+#include "PseudoStyleType.h"
 #include "mozilla/AnimationTarget.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
@@ -15,7 +16,6 @@
 #include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/KeyframeEffect.h"
-#include "nsCSSPseudoElements.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
 #include "nsIScriptGlobalObject.h"

@@ -25,7 +25,6 @@
 #include "mozilla/Services.h"
 #include "mozilla/ThreadEventQueue.h"
 #include "mozilla/Tokenizer.h"
-#include "mozilla/glean/DomStorageMetrics.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsComponentManagerUtils.h"
@@ -247,8 +246,6 @@ nsresult StorageDBThread::Shutdown() {
   if (!mThread) {
     return NS_ERROR_NOT_INITIALIZED;
   }
-
-  auto timer = glean::localdomstorage::shutdown_database.Measure();
 
   {
     MonitorAutoLock monitor(mThreadObserver->GetMonitor());

@@ -11,7 +11,9 @@ import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.mapNotNull
@@ -32,6 +34,7 @@ class CustomTabWindowFeature(
     private val activity: Activity,
     private val store: BrowserStore,
     private val sessionId: String,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
 
     private var scope: CoroutineScope? = null
@@ -72,7 +75,7 @@ class CustomTabWindowFeature(
      * Starts observing the configured session to listen for window requests.
      */
     override fun start() {
-        scope = store.flowScoped { flow ->
+        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
             flow.mapNotNull { state -> state.findCustomTab(sessionId) }
                 .distinctUntilChangedBy {
                     it.content.windowRequest

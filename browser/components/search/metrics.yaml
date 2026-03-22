@@ -140,8 +140,10 @@ sap:
       loaded successfully (use SERP telemetry).
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1938929
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1938929
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
     data_sensitivity:
       - interaction
     notification_emails:
@@ -158,13 +160,14 @@ sap:
           `contextmenu_visual`,
           `about_newtab`,
           `searchbar`,
+          `smartbar`
+          `smartwindow_assistant`
           `system`,
           `urlbar`,
           `urlbar_handoff`,
           `urlbar_persisted`,
           `urlbar_searchmode`,
           `webextension`
-          `aiwindow_assistant`
 
           Prior to Firefox 142, the possible source values were:
           `abouthome`, `contextmenu`, `newtab`, `searchbar`, `system`, `urlbar`,
@@ -252,7 +255,7 @@ sap:
       source:
         description: >
           The search access point from which the user initiated the search.
-          Possible values are `searchbar` and `urlbar`.
+          Possible values are `searchbar`, `smartbar` and `urlbar`.
         type: string
       provider_id:
         description: >
@@ -293,10 +296,12 @@ serp:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1816738
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1829953
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1851495
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1813162
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1824543
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1851495
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
     data_sensitivity:
       - interaction
     notification_emails:
@@ -332,6 +337,8 @@ serp:
           `opened_in_new_tab`,
           `reload`,
           `searchbar`,
+          `smartbar`,
+          `smartwindow_assistant`
           `system`,
           `urlbar`,
           `urlbar_handoff`,
@@ -340,7 +347,6 @@ serp:
           `tabhistory`,
           `unknown`,
           `webextension`
-          `aiwindow_assistant`
         type: string
       search_mode:
         description: >
@@ -354,7 +360,9 @@ serp:
         type: boolean
       is_shopping_page:
         description:
-          Indicates if the page is a shopping page.
+          Indicates if the page is a shopping page. Has a value of unknown if
+          we weren't able to record the value before the impression was
+          recorded.
         type: boolean
       is_private:
         description:
@@ -365,6 +373,12 @@ serp:
         description:
           Indicates if the page was loaded while the user is signed in to a
           provider's account. Added in Firefox 127.
+        type: boolean
+      has_ai_summary:
+        description:
+          Indicates if the page has an AI summary. Has a value of unknown if
+          we weren't able to record the value before the impression was
+          recorded.
         type: boolean
 
   engagement:
@@ -903,7 +917,7 @@ browser.engagement.navigation:
     expires: never
     telemetry_mirror: BROWSER_ENGAGEMENT_NAVIGATION_WEBEXTENSION
 
-  aiwindow_assistant:
+  smartwindow_assistant:
     type: labeled_counter
     description: >
       The count URI loads triggered in a subsession from the AI window assistant
@@ -912,6 +926,20 @@ browser.engagement.navigation:
       - https://bugzil.la/2001519
     data_reviews:
       - https://bugzil.la/2001519
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
+
+  smartbar:
+    type: labeled_counter
+    description: >
+      The count URI loads triggered in a subsession from the smartbar,
+      broken down by the originating action.
+    bugs:
+      - https://bugzil.la/2008925
+    data_reviews:
+      - https://bugzil.la/2008925
     notification_emails:
       - fx-search-telemetry@mozilla.com
       - rev-data@mozilla.com
@@ -1161,7 +1189,7 @@ browser.search.content:
     expires: never
     telemetry_mirror: BROWSER_SEARCH_CONTENT_WEBEXTENSION
 
-  aiwindow_assistant:
+  smartwindow_assistant:
     type: labeled_counter
     description: >
       Records counts for in-content searches where the search was most
@@ -1172,6 +1200,22 @@ browser.search.content:
       - https://bugzil.la/2001519
     data_reviews:
       - https://bugzil.la/2001519
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
+
+  smartbar:
+    type: labeled_counter
+    description: >
+      Records counts for in-content searches where the search was most
+      likely started from the smartbar. The key format is
+      <provider>:[tagged|tagged-follow-on|organic]:[code|other|none]
+      See https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
+    bugs:
+      - https://bugzil.la/2008925
+    data_reviews:
+      - https://bugzil.la/2008925
     notification_emails:
       - fx-search-telemetry@mozilla.com
       - rev-data@mozilla.com
@@ -1443,9 +1487,8 @@ browser.search.withads:
     description: >
       Records counts of SERP pages with adverts displayed where the search
       was started from a webextension. The key format is
-      ‘<provider>:<tagged|organic>’ See https://firefox-source-
-      docs.mozilla.org/browser/search/telemetry.html#browser-search-
-      content
+      ‘<provider>:<tagged|organic>’. See
+      https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.search.withads.webextension.
     bugs:
@@ -1458,18 +1501,33 @@ browser.search.withads:
     expires: never
     telemetry_mirror: BROWSER_SEARCH_WITHADS_WEBEXTENSION
 
-  aiwindow_assistant:
+  smartwindow_assistant:
     type: labeled_counter
     description: >
       Records counts of SERP pages with adverts displayed where the search
       was started from the AI window assistant. The key format is
-      ‘<provider>:<tagged|organic>’ See https://firefox-source-
-      docs.mozilla.org/browser/search/telemetry.html#browser-search-
-      content.
+      ‘<provider>:<tagged|organic>’. See
+      https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
     bugs:
       - https://bugzil.la/2001519
     data_reviews:
       - https://bugzil.la/2001519
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
+
+  smartbar:
+    type: labeled_counter
+    description: >
+      Records counts of SERP pages with adverts displayed where the search
+      was started from the smartbar. The key format is
+      ‘<provider>:<tagged|organic>’. See
+      https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
+    bugs:
+      - https://bugzil.la/2008925
+    data_reviews:
+      - https://bugzil.la/2008925
     notification_emails:
       - fx-search-telemetry@mozilla.com
       - rev-data@mozilla.com
@@ -1480,7 +1538,7 @@ browser.search.withads:
     description: >
       Records counts of SERP pages with adverts displayed where the search
       was started from the system, e.g. command line. The key format is
-      ‘<provider>:<tagged|organic>’
+      ‘<provider>:<tagged|organic>’.
       See https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.search.withads.system.
@@ -1537,9 +1595,8 @@ browser.search.withads:
     description: >
       Records counts of SERP pages with adverts displayed where the search
       was started from a place not categorized by the other scalars. The
-      key format is ‘<provider>:<tagged|organic>’ See https://firefox-
-      source-docs.mozilla.org/browser/search/telemetry.html#browser-
-      search-content
+      key format is ‘<provider>:<tagged|organic>’. See
+      https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.search.withads.unknown.
     bugs:
@@ -1557,10 +1614,8 @@ browser.search.adclicks:
     type: labeled_counter
     description: >
       Records clicks of adverts on SERP pages where the search was started
-      from the urlbar. The key format is ‘<provider>:<tagged|organic>’ See
-      https://firefox-source-
-      docs.mozilla.org/browser/search/telemetry.html#browser-search-
-      content
+      from the urlbar. The key format is ‘<provider>:<tagged|organic>’. See
+      https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.search.adclicks.urlbar.
     bugs:
@@ -1650,10 +1705,8 @@ browser.search.adclicks:
     type: labeled_counter
     description: >
       Records clicks of adverts on SERP pages where the search was started
-      from about:home. The key format is ‘<provider>:<tagged|organic>’ See
-      https://firefox-source-
-      docs.mozilla.org/browser/search/telemetry.html#browser-search-
-      content
+      from about:home. The key format is ‘<provider>:<tagged|organic>’. See
+      https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.search.adclicks.about_home.
     bugs:
@@ -1689,8 +1742,8 @@ browser.search.adclicks:
     description: >
       Records clicks of adverts on SERP pages where the search was started
       from the context menu. The key format is
-      ‘<provider>:<tagged|organic>’
-      See https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
+      ‘<provider>:<tagged|organic>’. See
+      https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
       This metric was generated to correspond to the Legacy Telemetry
       scalar browser.search.adclicks.contextmenu.
     bugs:
@@ -1738,7 +1791,7 @@ browser.search.adclicks:
     expires: never
     telemetry_mirror: BROWSER_SEARCH_ADCLICKS_WEBEXTENSION
 
-  aiwindow_assistant:
+  smartwindow_assistant:
     type: labeled_counter
     description: >
       Records clicks of adverts on SERP pages where the search was started
@@ -1748,6 +1801,21 @@ browser.search.adclicks:
       - https://bugzil.la/2001519
     data_reviews:
       - https://bugzil.la/2001519
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+      - rev-data@mozilla.com
+    expires: never
+
+  smartbar:
+    type: labeled_counter
+    description: >
+      Records clicks of adverts on SERP pages where the search was started
+      from the smartbar. The key format is ‘<provider>:<tagged|organic>’
+      See https://firefox-source-docs.mozilla.org/browser/search/telemetry.html#browser-search-content
+    bugs:
+      - https://bugzil.la/2008925
+    data_reviews:
+      - https://bugzil.la/2008925
     notification_emails:
       - fx-search-telemetry@mozilla.com
       - rev-data@mozilla.com

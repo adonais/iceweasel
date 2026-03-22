@@ -54,6 +54,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
+#include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FontFaceSet.h"
 #include "mozilla/dom/HTMLBodyElement.h"
@@ -890,6 +891,14 @@ void nsPresContext::SetColorSchemeOverride(
   }
 }
 
+void nsPresContext::UpdateAnimationsPlayBackRateMultiplier(double aMultiplier) {
+  if (mAnimationsPlayBackRateMultiplier == aMultiplier) {
+    return;
+  }
+  mAnimationsPlayBackRateMultiplier = aMultiplier;
+  mDocument->Timeline()->PostUpdateForAllAnimations();
+}
+
 void nsPresContext::RecomputeBrowsingContextDependentData() {
   MOZ_ASSERT(mDocument);
   dom::Document* doc = mDocument;
@@ -935,6 +944,9 @@ void nsPresContext::RecomputeBrowsingContextDependentData() {
     }
     EmulateMedium(mediumToEmulate);
   }
+
+  UpdateAnimationsPlayBackRateMultiplier(
+      top->AnimationsPlayBackRateMultiplier());
 
   mDocument->EnumerateExternalResources([](dom::Document& aSubResource) {
     if (nsPresContext* subResourcePc = aSubResource.GetPresContext()) {
@@ -1288,13 +1300,13 @@ void nsPresContext::SetSMILAnimations(dom::Document* aDoc, uint16_t aNewMode,
       case imgIContainer::kNormalAnimMode:
       case imgIContainer::kLoopOnceAnimMode:
         if (aOldMode == imgIContainer::kDontAnimMode) {
-          controller->Resume(SMILTimeContainer::PAUSE_USERPREF);
+          controller->Resume(SMILTimeContainer::PauseType::UserPref);
         }
         break;
 
       case imgIContainer::kDontAnimMode:
         if (aOldMode != imgIContainer::kDontAnimMode) {
-          controller->Pause(SMILTimeContainer::PAUSE_USERPREF);
+          controller->Pause(SMILTimeContainer::PauseType::UserPref);
         }
         break;
     }
@@ -1420,7 +1432,7 @@ void nsPresContext::SetOverrideDPPX(float aDPPX) {
                             MediaFeatureChangePropagation::JustThisDocument);
 }
 
-void nsPresContext::UpdateTopInnerSizeForRFP() {
+void nsPresContext::UpdateInnerSizeSpoofedForRFP() {
   if (!mDocument->ShouldResistFingerprinting(RFPTarget::WindowOuterSize) ||
       !mDocument->GetBrowsingContext() ||
       !mDocument->GetBrowsingContext()->IsTop()) {
@@ -1442,7 +1454,7 @@ void nsPresContext::UpdateTopInnerSizeForRFP() {
       break;
   }
 
-  (void)mDocument->GetBrowsingContext()->SetTopInnerSizeForRFP(
+  (void)mDocument->GetBrowsingContext()->SetInnerSizeSpoofedForRFP(
       CSSIntSize{(int)size.width, (int)size.height});
 }
 
@@ -2852,7 +2864,7 @@ void nsPresContext::SetVisibleArea(const nsRect& aRect) {
           MediaFeatureChangePropagation::JustThisDocument);
     }
 
-    UpdateTopInnerSizeForRFP();
+    UpdateInnerSizeSpoofedForRFP();
   }
 }
 
@@ -3027,6 +3039,22 @@ nscoord nsPresContext::GetBimodalDynamicToolbarHeightInAppUnits() const {
              ? CSSPixel::ToAppUnits(ScreenCoord(GetDynamicToolbarMaxHeight()) /
                                     GetMVMScale(mPresShell))
              : 0;
+}
+
+nscoord nsPresContext::GetBimodalDynamicToolbarHeightForFixedPosInAppUnits()
+    const {
+  if (GetDynamicToolbarState() != DynamicToolbarState::Collapsed) {
+    return 0;
+  }
+  if (mDynamicToolbarMaxHeight == 0) {
+    return 0;
+  }
+  RefPtr<MobileViewportManager> mvm = mPresShell->GetMobileViewportManager();
+  if (!mvm) {
+    return 0;
+  }
+  return CSSPixel::ToAppUnits(ScreenCoord(GetDynamicToolbarMaxHeight()) /
+                              mvm->GetIntrinsicScaleForFixedViewport());
 }
 
 void nsPresContext::SetSafeAreaInsets(

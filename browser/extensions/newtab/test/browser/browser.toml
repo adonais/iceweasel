@@ -19,6 +19,7 @@ prefs = [
   "browser.newtabpage.activity-stream.feeds.section.topstories=true",
   "browser.newtabpage.activity-stream.discoverystream.sections.region-content-config=",
   "messaging-system.log=all",
+  "browser.newtabpage.activity-stream.activationWindow.log=true",
 ]
 tags = "newtab"
 
@@ -28,6 +29,8 @@ skip-if = [
 ]
 
 ["browser_WallpaperThemeWorker.js"]
+
+["browser_activation_window.js"]
 
 ["browser_as_load_location.js"]
 
@@ -92,3 +95,5 @@ run-if = [
 ["browser_topsites_contextMenu_options.js"]
 
 ["browser_topsites_section.js"]
+
+["browser_topsites_sponsored.js"]

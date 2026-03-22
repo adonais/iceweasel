@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __D3D11TextureWrapper_h__
-#define __D3D11TextureWrapper_h__
+#ifndef D3D11TextureWrapper_h_
+#define D3D11TextureWrapper_h_
 
 #include <functional>
 
@@ -50,4 +50,4 @@ class D3D11TextureWrapper final {
 
 }  // namespace mozilla
 
-#endif  // __D3D11TextureWrapper_h__
+#endif  // D3D11TextureWrapper_h_

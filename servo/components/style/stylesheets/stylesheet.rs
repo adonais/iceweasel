@@ -29,16 +29,6 @@ use style_traits::ParsingMode;
 
 use super::scope_rule::ImplicitScopeRoot;
 
-/// This structure holds the user-agent and user stylesheets.
-pub struct UserAgentStylesheets {
-    /// The lock used for user-agent stylesheets.
-    pub shared_lock: SharedRwLock,
-    /// The user or user agent stylesheets.
-    pub user_or_user_agent_stylesheets: Vec<DocumentStyleSheet>,
-    /// The quirks mode stylesheet.
-    pub quirks_mode_stylesheet: DocumentStyleSheet,
-}
-
 /// A set of namespaces applying to a given stylesheet.
 ///
 /// The namespace id is used in gecko
@@ -553,11 +543,11 @@ impl Clone for Stylesheet {
         // Make a deep clone of the media, using the new lock.
         let media = self.media.read_with(&guard).clone();
         let media = Arc::new(lock.wrap(media));
-        let contents = lock.wrap(Arc::new(
+        let contents = lock.wrap(
             self.contents
                 .read_with(&guard)
-                .deep_clone_with_lock(&lock, &guard),
-        ));
+                .deep_clone(&lock, None, &guard),
+        );
 
         Stylesheet {
             contents,

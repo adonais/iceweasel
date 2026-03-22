@@ -98,6 +98,8 @@ skip-if = [
 
 ["browser_storage_delete_all.js"]
 
+["browser_storage_delete_all_button.js"]
+
 ["browser_storage_delete_tree.js"]
 
 ["browser_storage_delete_usercontextid.js"]

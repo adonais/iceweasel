@@ -197,7 +197,7 @@ JSObject* nsScreen::WrapObject(JSContext* aCx,
 CSSIntRect nsScreen::GetTopWindowInnerRectForRFP() {
   if (nsPIDOMWindowInner* inner = GetOwnerWindow()) {
     if (BrowsingContext* bc = inner->GetBrowsingContext()) {
-      CSSIntSize size = bc->Top()->GetTopInnerSizeForRFP();
+      CSSIntSize size = bc->TopInnerSizeSpoofedForRFP();
       return {0, 0, size.width, size.height};
     }
   }

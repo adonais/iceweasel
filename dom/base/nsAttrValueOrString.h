@@ -16,8 +16,8 @@
  * be used on the stack.
  */
 
-#ifndef nsAttrValueOrString_h___
-#define nsAttrValueOrString_h___
+#ifndef nsAttrValueOrString_h_
+#define nsAttrValueOrString_h_
 
 #include "nsAttrValue.h"
 #include "nsString.h"
@@ -82,4 +82,4 @@ class MOZ_STACK_CLASS nsAttrValueOrString {
   mutable nsCheapString mCheapString;
 };
 
-#endif  // nsAttrValueOrString_h___
+#endif  // nsAttrValueOrString_h_

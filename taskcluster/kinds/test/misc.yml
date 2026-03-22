@@ -109,12 +109,6 @@ test-verify:
     fetches:
         toolchain:
             by-test-platform:
-                linux1804.*:
-                    - linux64-node
-                    - linux64-minidump-stackwalk
-                    - linux64-fix-stacks
-                    - linux-python-dbusmock
-                    - linux64-1804-dbus-python
                 linux2204.*:
                     - linux64-node
                     - linux64-minidump-stackwalk

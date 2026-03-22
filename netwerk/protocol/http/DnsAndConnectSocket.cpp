@@ -22,6 +22,7 @@
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/glean/NetwerkProtocolHttpMetrics.h"
 #include "nsHttpHandler.h"
+#include "nsHttpConnectionMgr.h"
 #include "ConnectionEntry.h"
 #include "HttpConnectionUDP.h"
 #include "NullHttpTransaction.h"
@@ -690,8 +691,8 @@ nsresult DnsAndConnectSocket::SetupConn(bool isPrimary, nsresult status) {
     // therefore we need to use a Nulltransaction.
     // Ensure that the fallback transacion is always dispatched.
     if (!connTCP || ent->mConnInfo->GetFallbackConnection() ||
-        (ent->mConnInfo->FirstHopSSL() && !ent->UrgentStartQueueLength() &&
-         !ent->PendingQueueLength() && !ent->mConnInfo->UsingConnect())) {
+        (ent->mConnInfo->FirstHopSSL() && ent->UrgentStartQueueIsEmpty() &&
+         ent->PendingQueueIsEmpty() && !ent->mConnInfo->UsingConnect())) {
       LOG(
           ("DnsAndConnectSocket::SetupConn null transaction will "
            "be used to finish SSL handshake on conn %p\n",
@@ -1242,6 +1243,7 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupStreams(
   }
 
   (void)socketTransport->SetIsPrivate(ci->GetPrivate());
+  (void)socketTransport->SetIsTRRConnection(ci->GetIsTrrServiceChannel());
 
   if (dnsAndSock->mCaps & NS_HTTP_DISALLOW_ECH) {
     tmpFlags |= nsISocketTransport::DONT_TRY_ECH;

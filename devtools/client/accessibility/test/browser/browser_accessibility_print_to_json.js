@@ -17,16 +17,18 @@ function getMenuItems(toolbox) {
 async function newTabSelected(tab) {
   info("Waiting for the JSON viewer tab.");
   await BrowserTestUtils.waitForCondition(
-    () => gBrowser.selectedTab !== tab,
+    () =>
+      gBrowser.selectedTab !== tab &&
+      gBrowser.selectedTab.linkedBrowser.currentURI.spec !== "about:blank",
     "Current tab updated."
   );
   return gBrowser.selectedTab;
 }
 
 function parseSnapshotFromTabURI(tab) {
-  let snapshot = tab.label.split("data:application/json;charset=UTF-8,")[1];
-  snapshot = decodeURIComponent(snapshot);
-  return JSON.parse(snapshot);
+  const { spec } = tab.linkedBrowser.currentURI;
+  const snapshot = spec.split("data:application/json;charset=UTF-8,")[1];
+  return JSON.parse(decodeURIComponent(snapshot));
 }
 
 async function checkJSONSnapshotForRow({ doc, tab, toolbox }, index, expected) {

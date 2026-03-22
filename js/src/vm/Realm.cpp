@@ -12,9 +12,7 @@
 #include <stddef.h>
 
 #include "jsfriendapi.h"
-#include "jsmath.h"
 
-#include "builtin/WrappedFunctionObject.h"
 #include "debugger/DebugAPI.h"
 #include "debugger/Debugger.h"
 #include "gc/GC.h"
@@ -25,6 +23,7 @@
 #include "js/Proxy.h"
 #include "js/RootingAPI.h"
 #include "js/Wrapper.h"
+#include "util/RandomSeed.h"
 #include "vm/Compartment.h"
 #include "vm/DateTime.h"
 #include "vm/Iteration.h"
@@ -32,6 +31,7 @@
 #include "wasm/WasmInstance.h"
 
 #include "gc/Marking-inl.h"
+#include "gc/WeakMap-inl.h"
 #include "vm/JSObject-inl.h"
 
 using namespace js;
@@ -148,7 +148,7 @@ ObjectRealm::getOrCreateNonSyntacticLexicalEnvironment(JSContext* cx,
   MOZ_ASSERT(&ObjectRealm::get(enclosing) == this);
 
   if (!nonSyntacticLexicalEnvironments_) {
-    auto map = cx->make_unique<NonSyntacticLexialEnvironmentsMap>(cx);
+    auto map = cx->make_unique<NonSyntacticLexialEnvironmentsMap>(cx->zone());
     if (!map) {
       return nullptr;
     }
@@ -425,7 +425,8 @@ void Realm::setNewObjectMetadata(JSContext* cx, HandleObject obj) {
     cx->check(metadata);
 
     if (!objects_.objectMetadataTable) {
-      auto table = cx->make_unique<ObjectRealm::ObjectMetadataTable>(cx);
+      auto table =
+          cx->make_unique<ObjectRealm::ObjectMetadataTable>(cx->zone());
       if (!table) {
         oomUnsafe.crash("setNewObjectMetadata");
       }
@@ -602,12 +603,13 @@ void ObjectRealm::addSizeOfExcludingThis(
 
   if (objectMetadataTable) {
     *objectMetadataTablesArg +=
-        objectMetadataTable->shallowSizeOfIncludingThis(mallocSizeOf);
+        mallocSizeOf(objectMetadataTable.get()) +
+        objectMetadataTable->shallowSizeOfExcludingThis(mallocSizeOf);
   }
 
   if (auto& map = nonSyntacticLexicalEnvironments_) {
     *nonSyntacticLexicalEnvironmentsArg +=
-        map->shallowSizeOfIncludingThis(mallocSizeOf);
+        mallocSizeOf(map.get()) + map->shallowSizeOfExcludingThis(mallocSizeOf);
   }
 }
 
@@ -835,12 +837,6 @@ JS_PUBLIC_API Realm* JS::GetFunctionRealm(JSContext* cx, HandleObject objArg) {
     if (obj->is<BoundFunctionObject>()) {
       obj = obj->as<BoundFunctionObject>().getTarget();
       continue;
-    }
-
-    // WrappedFunctionObjects also have a [[Realm]] internal slot,
-    // which is the nonCCWRealm by construction.
-    if (obj->is<WrappedFunctionObject>()) {
-      return obj->nonCCWRealm();
     }
 
     // Step 4.

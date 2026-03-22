@@ -4,6 +4,10 @@
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+plugins {
+    alias(libs.plugins.dependency.analysis)
+}
+
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-parcelize'
@@ -45,7 +49,6 @@ dependencies {
     implementation libs.androidx.constraintlayout
     implementation libs.androidx.core.ktx
     implementation libs.androidx.lifecycle.livedata
-    implementation libs.androidx.localbroadcastmanager
     implementation libs.androidx.paging
     implementation libs.androidx.recyclerview
     implementation libs.androidx.room.runtime
@@ -64,6 +67,7 @@ dependencies {
     testImplementation libs.robolectric
 
     androidTestImplementation project(':components:support-android-test')
+    testImplementation testFixtures(project(':components:support-utils'))
 
     androidTestImplementation libs.androidx.arch.core.testing
     androidTestImplementation libs.androidx.room.testing

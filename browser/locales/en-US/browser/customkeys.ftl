@@ -18,6 +18,8 @@ customkeys-reset-all-confirm = Are you sure you wish to reset all keyboard short
 
 customkeys-history-reopen-tab = Reopen Last Closed Tab
 customkeys-history-reopen-window = Reopen Last Closed window
+customkeys-sidebar-toggle = Toggle Sidebar
+customkeys-view-picture-in-picture = Picture-in-Picture
 customkeys-dev-tools = Web Developer Tools
 customkeys-dev-inspector = DOM and Style Inspector
 customkeys-dev-webconsole = Web Console

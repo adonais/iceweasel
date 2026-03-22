@@ -88,10 +88,23 @@ describe("<Lists>", () => {
     // dispatch not called until transition has ended
     assert.equal(dispatch.callCount, 0);
     taskItem.simulate("transitionEnd", { propertyName: "opacity" });
-    assert.ok(dispatch.calledTwice);
+    assert.ok(dispatch.calledThrice);
     const [action] = dispatch.getCall(0).args;
     assert.equal(action.type, at.WIDGETS_LISTS_UPDATE);
     assert.ok(action.data.lists["test-list"].completed[0].completed);
+
+    // Verify old telemetry event
+    const [oldTelemetryEvent] = dispatch.getCall(1).args;
+    assert.equal(oldTelemetryEvent.type, at.WIDGETS_LISTS_USER_EVENT);
+    assert.equal(oldTelemetryEvent.data.userAction, "task_complete");
+
+    // Verify new unified telemetry event
+    const [newTelemetryEvent] = dispatch.getCall(2).args;
+    assert.equal(newTelemetryEvent.type, at.WIDGETS_USER_EVENT);
+    assert.equal(newTelemetryEvent.data.widget_name, "lists");
+    assert.equal(newTelemetryEvent.data.widget_source, "widget");
+    assert.equal(newTelemetryEvent.data.user_action, "task_complete");
+    assert.equal(newTelemetryEvent.data.widget_size, "medium");
   });
 
   it("should not dispatch an action when input is empty and Enter is pressed", () => {
@@ -115,13 +128,26 @@ describe("<Lists>", () => {
     const deleteButton = wrapper.find("panel-item.delete-item").at(0);
     deleteButton.props().onClick();
 
-    assert.ok(dispatch.calledTwice);
+    assert.ok(dispatch.calledThrice);
     const [action] = dispatch.getCall(0).args;
     assert.equal(action.type, at.WIDGETS_LISTS_UPDATE);
 
     // Check that the task list is now empty
     const updatedTasks = action.data.lists["test-list"].tasks;
     assert.equal(updatedTasks.length, 0, "Expected task to be removed");
+
+    // Verify old telemetry event
+    const [oldTelemetryEvent] = dispatch.getCall(1).args;
+    assert.equal(oldTelemetryEvent.type, at.WIDGETS_LISTS_USER_EVENT);
+    assert.equal(oldTelemetryEvent.data.userAction, "task_delete");
+
+    // Verify new unified telemetry event
+    const [newTelemetryEvent] = dispatch.getCall(2).args;
+    assert.equal(newTelemetryEvent.type, at.WIDGETS_USER_EVENT);
+    assert.equal(newTelemetryEvent.data.widget_name, "lists");
+    assert.equal(newTelemetryEvent.data.widget_source, "widget");
+    assert.equal(newTelemetryEvent.data.user_action, "task_delete");
+    assert.equal(newTelemetryEvent.data.widget_size, "medium");
   });
 
   it("should add a task with a valid URL and render it as a link", () => {
@@ -138,7 +164,7 @@ describe("<Lists>", () => {
 
     input.simulate("keyDown", { key: "Enter" });
 
-    assert.ok(dispatch.calledTwice, "Expected dispatch to be called");
+    assert.ok(dispatch.calledThrice, "Expected dispatch to be called");
 
     const [action] = dispatch.getCall(0).args;
     assert.equal(action.type, at.WIDGETS_LISTS_UPDATE);
@@ -149,6 +175,19 @@ describe("<Lists>", () => {
 
     assert.ok(newHyperlinkedTask, "Task with URL should be added");
     assert.ok(newHyperlinkedTask.isUrl, "Task should be marked as a URL");
+
+    // Verify old telemetry event
+    const [oldTelemetryEvent] = dispatch.getCall(1).args;
+    assert.equal(oldTelemetryEvent.type, at.WIDGETS_LISTS_USER_EVENT);
+    assert.equal(oldTelemetryEvent.data.userAction, "task_create");
+
+    // Verify new unified telemetry event
+    const [newTelemetryEvent] = dispatch.getCall(2).args;
+    assert.equal(newTelemetryEvent.type, at.WIDGETS_USER_EVENT);
+    assert.equal(newTelemetryEvent.data.widget_name, "lists");
+    assert.equal(newTelemetryEvent.data.widget_source, "widget");
+    assert.equal(newTelemetryEvent.data.user_action, "task_create");
+    assert.equal(newTelemetryEvent.data.widget_size, "medium");
   });
 
   it("should dispatch list change when dropdown selection changes", () => {
@@ -170,12 +209,25 @@ describe("<Lists>", () => {
     const deleteList = wrapper.find("panel-item").at(2);
     deleteList.props().onClick();
 
-    assert.ok(dispatch.calledThrice);
+    assert.equal(dispatch.callCount, 4);
     assert.equal(dispatch.getCall(0).args[0].type, at.WIDGETS_LISTS_UPDATE);
     assert.equal(
       dispatch.getCall(1).args[0].type,
       at.WIDGETS_LISTS_CHANGE_SELECTED
     );
+
+    // Verify old telemetry event
+    const [oldTelemetryEvent] = dispatch.getCall(2).args;
+    assert.equal(oldTelemetryEvent.type, at.WIDGETS_LISTS_USER_EVENT);
+    assert.equal(oldTelemetryEvent.data.userAction, "list_delete");
+
+    // Verify new unified telemetry event
+    const [newTelemetryEvent] = dispatch.getCall(3).args;
+    assert.equal(newTelemetryEvent.type, at.WIDGETS_USER_EVENT);
+    assert.equal(newTelemetryEvent.data.widget_name, "lists");
+    assert.equal(newTelemetryEvent.data.widget_source, "widget");
+    assert.equal(newTelemetryEvent.data.user_action, "list_delete");
+    assert.equal(newTelemetryEvent.data.widget_size, "medium");
   });
 
   it("should update list name when edited and saved", () => {
@@ -188,21 +240,47 @@ describe("<Lists>", () => {
     editableInput.simulate("change", { target: { value: "Updated List" } });
     editableInput.simulate("keyDown", { key: "Enter" });
 
-    assert.ok(dispatch.calledTwice);
+    assert.ok(dispatch.calledThrice);
     const [action] = dispatch.getCall(0).args;
     assert.equal(action.type, at.WIDGETS_LISTS_UPDATE);
     assert.equal(action.data.lists["test-list"].label, "Updated List");
+
+    // Verify old telemetry event
+    const [oldTelemetryEvent] = dispatch.getCall(1).args;
+    assert.equal(oldTelemetryEvent.type, at.WIDGETS_LISTS_USER_EVENT);
+    assert.equal(oldTelemetryEvent.data.userAction, "list_edit");
+
+    // Verify new unified telemetry event
+    const [newTelemetryEvent] = dispatch.getCall(2).args;
+    assert.equal(newTelemetryEvent.type, at.WIDGETS_USER_EVENT);
+    assert.equal(newTelemetryEvent.data.widget_name, "lists");
+    assert.equal(newTelemetryEvent.data.widget_source, "widget");
+    assert.equal(newTelemetryEvent.data.user_action, "list_edit");
+    assert.equal(newTelemetryEvent.data.widget_size, "medium");
   });
 
   it("should create a new list and dispatch update and select list actions", () => {
     const createListBtn = wrapper.find("panel-item").at(1); // assumes "Create a new list" is at index 1
     createListBtn.props().onClick();
-    assert.ok(dispatch.calledThrice);
+    assert.equal(dispatch.callCount, 4);
     assert.equal(dispatch.getCall(0).args[0].type, at.WIDGETS_LISTS_UPDATE);
     assert.equal(
       dispatch.getCall(1).args[0].type,
       at.WIDGETS_LISTS_CHANGE_SELECTED
     );
+
+    // Verify old telemetry event
+    const [oldTelemetryEvent] = dispatch.getCall(2).args;
+    assert.equal(oldTelemetryEvent.type, at.WIDGETS_LISTS_USER_EVENT);
+    assert.equal(oldTelemetryEvent.data.userAction, "list_create");
+
+    // Verify new unified telemetry event
+    const [newTelemetryEvent] = dispatch.getCall(3).args;
+    assert.equal(newTelemetryEvent.type, at.WIDGETS_USER_EVENT);
+    assert.equal(newTelemetryEvent.data.widget_name, "lists");
+    assert.equal(newTelemetryEvent.data.widget_source, "widget");
+    assert.equal(newTelemetryEvent.data.user_action, "list_create");
+    assert.equal(newTelemetryEvent.data.widget_size, "medium");
   });
 
   it("should copy the current list to clipboard with correct formatting", () => {
@@ -256,10 +334,18 @@ describe("<Lists>", () => {
     );
 
     // Confirm WIDGETS_LISTS_USER_EVENT telemetry `list_copy` event
-    assert.ok(dispatch.calledOnce);
-    const [copyEvent] = dispatch.lastCall.args;
+    assert.ok(dispatch.calledTwice);
+    const [copyEvent] = dispatch.getCall(0).args;
     assert.equal(copyEvent.type, at.WIDGETS_LISTS_USER_EVENT);
     assert.equal(copyEvent.data.userAction, "list_copy");
+
+    // Verify new unified telemetry event
+    const [newTelemetryEvent] = dispatch.getCall(1).args;
+    assert.equal(newTelemetryEvent.type, at.WIDGETS_USER_EVENT);
+    assert.equal(newTelemetryEvent.data.widget_name, "lists");
+    assert.equal(newTelemetryEvent.data.widget_source, "widget");
+    assert.equal(newTelemetryEvent.data.user_action, "list_copy");
+    assert.equal(newTelemetryEvent.data.widget_size, "medium");
 
     clipboardWriteTextStub.restore();
   });

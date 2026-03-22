@@ -5,7 +5,7 @@
 Support for running hazard jobs via dedicated scripts
 """
 
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
@@ -15,7 +15,7 @@ from gecko_taskgraph.transforms.job.common import (
     setup_secrets,
 )
 
-haz_run_schema = Schema({
+haz_run_schema = LegacySchema({
     Required("using"): "hazard",
     # The command to run within the task image (passed through to the worker)
     Required("command"): str,

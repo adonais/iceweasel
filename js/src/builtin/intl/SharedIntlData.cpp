@@ -75,14 +75,14 @@ js::intl::SharedIntlData::AvailableTimeZoneHasher::Lookup::Lookup(
 }
 
 js::intl::SharedIntlData::AvailableTimeZoneHasher::Lookup::Lookup(
-    const char* chars, size_t length)
-    : js::intl::SharedIntlData::LinearStringLookup(chars, length) {
+    std::string_view timeZone)
+    : js::intl::SharedIntlData::LinearStringLookup(timeZone) {
   hash = HashStringIgnoreCaseASCII(latin1Chars, length);
 }
 
 js::intl::SharedIntlData::AvailableTimeZoneHasher::Lookup::Lookup(
-    const char16_t* chars, size_t length)
-    : js::intl::SharedIntlData::LinearStringLookup(chars, length) {
+    std::u16string_view timeZone)
+    : js::intl::SharedIntlData::LinearStringLookup(timeZone) {
   hash = HashStringIgnoreCaseASCII(twoByteChars, length);
 }
 
@@ -290,7 +290,7 @@ bool js::intl::SharedIntlData::validateAndCanonicalizeTimeZone(
     return false;
   }
   return validateAndCanonicalizeTimeZone(
-      cx, AvailableTimeZoneSet::Lookup{timeZone.data(), timeZone.size()},
+      cx, AvailableTimeZoneSet::Lookup{{timeZone.data(), timeZone.size()}},
       identifier, primary);
 }
 
@@ -316,19 +316,19 @@ JSAtom* js::intl::SharedIntlData::canonicalizeAvailableTimeZone(
 
   using TimeZone = mozilla::intl::TimeZone;
 
-  intl::FormatBuffer<char16_t, TimeZone::TimeZoneIdentifierLength> buffer(cx);
+  FormatBuffer<char16_t, TimeZone::TimeZoneIdentifierLength> buffer(cx);
   auto result =
       TimeZone::GetCanonicalTimeZoneID(stableChars.twoByteRange(), buffer);
   if (result.isErr()) {
-    intl::ReportInternalError(cx, result.unwrapErr());
+    ReportInternalError(cx, result.unwrapErr());
     return nullptr;
   }
-  MOZ_ASSERT(std::u16string_view(u"Etc/Unknown") !=
-                 std::u16string_view(buffer.data(), buffer.length()),
-             "Invalid canonical time zone");
 
-  auto availablePtr = availableTimeZones.lookup(
-      AvailableTimeZoneSet::Lookup{buffer.data(), buffer.length()});
+  std::u16string_view timeZone{buffer.data(), buffer.length()};
+  MOZ_ASSERT(timeZone != u"Etc/Unknown", "Invalid canonical time zone");
+
+  auto availablePtr =
+      availableTimeZones.lookup(AvailableTimeZoneSet::Lookup{timeZone});
   MOZ_ASSERT(availablePtr, "Invalid time zone name");
 
   cx->markAtom(*availablePtr);
@@ -380,9 +380,8 @@ js::intl::SharedIntlData::LocaleHasher::Lookup::Lookup(
   }
 }
 
-js::intl::SharedIntlData::LocaleHasher::Lookup::Lookup(const char* chars,
-                                                       size_t length)
-    : js::intl::SharedIntlData::LinearStringLookup(chars, length) {
+js::intl::SharedIntlData::LocaleHasher::Lookup::Lookup(std::string_view locale)
+    : js::intl::SharedIntlData::LinearStringLookup(locale) {
   hash = mozilla::HashString(latin1Chars, length);
 }
 
@@ -528,19 +527,19 @@ bool js::intl::SharedIntlData::getAvailableLocales(
   // directly support it (but does support it through fallback, e.g. supporting
   // "en-GB" indirectly using "en" support).
   {
-    const char* lastDitch = intl::LastDitchLocale();
-    MOZ_ASSERT(strcmp(lastDitch, "en-GB") == 0);
+    static constexpr auto lastDitch = LastDitchLocale();
+    static_assert(lastDitch == "en-GB");
 
 #ifdef DEBUG
-    static constexpr char lastDitchParent[] = "en";
+    static constexpr std::string_view lastDitchParent = "en";
 
-    LocaleHasher::Lookup lookup(lastDitchParent, strlen(lastDitchParent));
+    LocaleHasher::Lookup lookup(lastDitchParent);
     MOZ_ASSERT(locales.has(lookup),
                "shouldn't be a need to add every locale implied by the "
                "last-ditch locale, merely just the last-ditch locale");
 #endif
 
-    if (!addLocale(lastDitch, strlen(lastDitch))) {
+    if (!addLocale(lastDitch.data(), lastDitch.length())) {
       return false;
     }
   }
@@ -854,7 +853,7 @@ js::intl::SharedIntlData::getDateTimePatternGenerator(JSContext* cx,
 
   auto result = mozilla::intl::DateTimePatternGenerator::TryCreate(locale);
   if (result.isErr()) {
-    intl::ReportInternalError(cx, result.unwrapErr());
+    ReportInternalError(cx, result.unwrapErr());
     return nullptr;
   }
   // The UniquePtr needs to be recreated as it's using a different Deleter in

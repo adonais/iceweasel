@@ -45,6 +45,9 @@ class CSSMatrixComponent final : public CSSTransformComponent {
 
   // end of CSSMatrixComponent Web IDL declarations
 
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
+
  protected:
   virtual ~CSSMatrixComponent() = default;
 };

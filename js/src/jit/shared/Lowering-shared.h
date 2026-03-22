@@ -186,6 +186,7 @@ class LIRGeneratorShared {
                           LDefinition::Policy policy = LDefinition::REGISTER);
   inline LInt64Definition tempInt64(
       LDefinition::Policy policy = LDefinition::REGISTER);
+  inline LBoxDefinition tempBox();
   inline LDefinition tempFloat32();
   inline LDefinition tempDouble();
 #ifdef ENABLE_WASM_SIMD

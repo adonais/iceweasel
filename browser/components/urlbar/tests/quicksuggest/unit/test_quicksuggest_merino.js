@@ -519,32 +519,26 @@ add_task(async function dismissals_amp() {
       MerinoTestUtils.server.makeDefaultResponse();
     MerinoTestUtils.server.response.body.suggestions = [suggestion];
 
-    let expectedResult = {
-      type: UrlbarUtils.RESULT_TYPE.URL,
-      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
-      heuristic: false,
-      payload: {
-        provider: suggestion.provider,
-        title: suggestion.full_keyword
-          ? `${suggestion.full_keyword} — ${suggestion.title}`
-          : suggestion.title,
-        url: suggestion.url,
-        originalUrl: suggestion.original_url || suggestion.url,
-        dismissalKey: suggestion.dismissal_key,
-        requestId: suggestion.request_id,
-        sponsoredImpressionUrl: suggestion.impression_url,
-        sponsoredClickUrl: suggestion.click_url,
-        sponsoredBlockId: suggestion.block_id,
-        sponsoredAdvertiser: suggestion.advertiser,
-        sponsoredIabCategory: suggestion.iab_category,
-        isBlockable: true,
-        isManageable: true,
-        isSponsored: true,
-        source: "merino",
-        telemetryType: "adm_sponsored",
-        descriptionL10n: { id: "urlbar-result-action-sponsored" },
-      },
-    };
+    let expectedResult = QuickSuggestTestUtils.ampResult({
+      suggestedIndex: -1,
+      provider: suggestion.provider,
+      title: suggestion.title,
+      fullKeyword: suggestion.full_keyword,
+      url: suggestion.url,
+      originalUrl: suggestion.original_url || suggestion.url,
+      dismissalKey: suggestion.dismissal_key,
+      requestId: suggestion.request_id,
+      impressionUrl: suggestion.impression_url,
+      clickUrl: suggestion.click_url,
+      blockId: suggestion.block_id,
+      advertiser: suggestion.advertiser,
+      iabCategory: suggestion.iab_category,
+      source: "merino",
+    });
+
+    if (!suggestion.full_keyword) {
+      delete expectedResult.payload.title;
+    }
 
     // Do a search. The Merino suggestion should be matched.
     let context = createContext(SEARCH_STRING, {
@@ -1136,10 +1130,9 @@ async function doUnmanagedTest({ pref, suggestion, shouldBeAdded }) {
   let dismissalPromise = TestUtils.topicObserved(
     "quicksuggest-dismissals-changed"
   );
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
   triggerCommand({
-    feature: UrlbarProvidersManager.getProvider(
-      UrlbarProviderQuickSuggest.name
-    ),
+    feature: providersManager.getProvider(UrlbarProviderQuickSuggest.name),
     command: "dismiss",
     result: context.results[0],
     expectedCountsByCall: {

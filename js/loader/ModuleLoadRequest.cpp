@@ -127,9 +127,14 @@ void ModuleLoadRequest::ModuleErrored() {
 
   MOZ_ASSERT(!IsFinished());
 
+  // Although the “error to rethrow” is only updated during static imports, a
+  // module loaded via a dynamic import may have had its module script
+  // previously fetched by a top-level module load or a static import, which
+  // would have already set the “error to rethrow”. Therefore, if hasRethrow is
+  // true, we do not assert that this request originates from a static import
+  // or a top-level module load.
   mozilla::DebugOnly<bool> hasRethrow =
       mModuleScript && mModuleScript->HasErrorToRethrow();
-  MOZ_ASSERT_IF(hasRethrow, !IsDynamicImport());
 
   // When LoadRequestedModules fails, we will set error to rethrow to the module
   // script or call SetErroredLoadingImports() and then call ModuleErrored().

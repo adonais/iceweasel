@@ -1722,8 +1722,8 @@ void nsLookAndFeel::UpdateRoundedBottomCornerStyles() {
   if (!gtk_css_provider_load_from_data(mRoundedCornerProvider.get(),
                                        string.get(), string.Length(),
                                        getter_Transfers(error))) {
-    NS_WARNING(nsPrintfCString("Failed to load provider: %s - %s\n",
-                               string.get(), error ? error->message : nullptr)
+    NS_WARNING(nsPrintfCString("Failed to load provider: %s - %s", string.get(),
+                               error ? error->message : nullptr)
                    .get());
   }
   gtk_style_context_add_provider_for_screen(

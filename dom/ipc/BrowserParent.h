@@ -64,7 +64,6 @@ class SourceSurface;
 namespace dom {
 
 class CanonicalBrowsingContext;
-class ClonedMessageData;
 class ContentParent;
 class Element;
 class DataTransfer;
@@ -88,7 +87,6 @@ class BrowserParent final : public PBrowserParent,
                             public nsSupportsWeakReference,
                             public TabContext,
                             public LiveResizeListener {
-  typedef mozilla::dom::ClonedMessageData ClonedMessageData;
   using TapType = GeckoContentController_TapType;
 
   friend class PBrowserParent;
@@ -327,11 +325,11 @@ class BrowserParent final : public PBrowserParent,
   mozilla::ipc::IPCResult RecvImageLoadComplete(const nsresult& aResult);
 
   mozilla::ipc::IPCResult RecvSyncMessage(
-      const nsString& aMessage, const ClonedMessageData& aData,
-      nsTArray<UniquePtr<ipc::StructuredCloneData>>* aRetVal);
+      const nsString& aMessage, NotNull<ipc::StructuredCloneData*> aData,
+      nsTArray<NotNull<RefPtr<ipc::StructuredCloneData>>>* aRetVal);
 
-  mozilla::ipc::IPCResult RecvAsyncMessage(const nsString& aMessage,
-                                           const ClonedMessageData& aData);
+  mozilla::ipc::IPCResult RecvAsyncMessage(
+      const nsString& aMessage, NotNull<ipc::StructuredCloneData*> aData);
 
   mozilla::ipc::IPCResult RecvNotifyIMEFocus(
       const ContentCache& aContentCache,
@@ -689,7 +687,7 @@ class BrowserParent final : public PBrowserParent,
                              LayoutDeviceIntRect* aDragRect);
 
   mozilla::ipc::IPCResult RecvEnsureLayersConnected(
-      CompositorOptions* aCompositorOptions);
+      Maybe<CompositorOptions>* aCompositorOptions);
 
   // LiveResizeListener implementation
   void LiveResizeStarted() override;
@@ -728,9 +726,10 @@ class BrowserParent final : public PBrowserParent,
   void SetBrowserBridgeParent(BrowserBridgeParent* aBrowser);
   void SetBrowserHost(BrowserHost* aBrowser);
 
-  bool ReceiveMessage(
-      const nsString& aMessage, bool aSync, ipc::StructuredCloneData* aData,
-      nsTArray<UniquePtr<ipc::StructuredCloneData>>* aJSONRetVal = nullptr);
+  bool ReceiveMessage(const nsString& aMessage, bool aSync,
+                      NotNull<ipc::StructuredCloneData*> aData,
+                      nsTArray<NotNull<RefPtr<ipc::StructuredCloneData>>>*
+                          aJSONRetVal = nullptr);
 
   virtual void ActorDestroy(ActorDestroyReason why) override;
 

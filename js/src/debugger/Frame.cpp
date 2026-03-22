@@ -20,9 +20,8 @@
 #include <string.h>  // for strlen
 #include <utility>   // for std::move
 
-#include "jsnum.h"  // for Int32ToString
-
 #include "builtin/Array.h"      // for NewDenseCopiedArray
+#include "builtin/Number.h"     // for Int32ToString
 #include "debugger/Debugger.h"  // for Completion, Debugger
 #include "debugger/DebugScript.h"
 #include "debugger/Environment.h"       // for DebuggerEnvironment

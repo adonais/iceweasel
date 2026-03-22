@@ -329,18 +329,16 @@ newtab-custom-recent-subtitle = Úrval af nýlegum síðum og efni
 newtab-custom-weather-toggle =
     .label = Veður
     .description = Veðurspá dagsins í skyndi
-newtab-custom-trending-search-toggle =
-    .label = Vinsælar leitir
-    .description = Vinsæl og algeng leitarefni
 newtab-custom-widget-weather-toggle =
     .label = Veður
-newtab-custom-widget-trending-search-toggle =
-    .label = Vinsælar leitir
 newtab-custom-widget-lists-toggle =
     .label = Listar
 newtab-custom-widget-timer-toggle =
     .label = Tímamælir
 newtab-custom-widget-section-title = Viðmótshlutar
+newtab-custom-widget-section-toggle =
+    .label = Viðmótshlutar
+newtab-widget-manage-title = Viðmótshlutar
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Loka
@@ -492,6 +490,11 @@ newtab-weather-opt-in-yes =
     .label = Já
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York borg
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Sjá veðurspá í { $provider }
+    .aria-description = { $provider } ∙ Kostað
 
 ## Topic Labels
 
@@ -596,7 +599,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Eftirlætin þín innan seilingar
 newtab-shortcuts-highlight-subtitle = Bættu við flýtileið til að hafa uppáhaldsvefina þína í eins-smells fjarlægð.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Af hverju ertu að tilkynna þetta?
@@ -618,17 +621,6 @@ newtab-report-cancel = Hætta við
 newtab-report-submit = Senda inn
 newtab-toast-thanks-for-reporting =
     .message = Takk fyrir að tilkynna þetta.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Sýna vinsælar leitir
-newtab-trending-searches-hide-trending =
-    .title = Fela vinsælar leitir
-newtab-trending-searches-learn-more = Frekari upplýsingar
-newtab-trending-searches-dismiss = Fela vinsælar leitir
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Vinsælar leitir
 
 ## Strings for task / to-do list productivity widget
 

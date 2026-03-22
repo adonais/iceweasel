@@ -56,5 +56,59 @@ assertEq(valueOfCalled, false);
 assertThrowsInstanceOf(() =>[1, 2, 3, 4][Symbol.iterator]().chunks(testToStringObj), RangeError);
 assertEq(toStringCalled, false);
 
+// Valid chunking test
+const chunks = [1, 2, 3, 4, 5].values().chunks(2);
+var result = chunks.next();
+assertEq(result.done, false);
+var chunk = result.value;
+assertEq(Array.isArray(chunk), true);
+assertEq(chunk[0], 1);
+assertEq(chunk[1], 2);
+assertEq(chunk.length, 2);
+
+result = chunks.next();
+assertEq(result.done, false);
+var chunk = result.value;
+assertEq(Array.isArray(chunk), true);
+assertEq(chunk[0], 3);
+assertEq(chunk[1], 4);
+assertEq(chunk.length, 2);
+
+result = chunks.next();
+assertEq(result.done, false);
+var chunk = result.value;
+assertEq(Array.isArray(chunk), true);
+assertEq(chunk[0], 5);
+assertEq(chunk.length, 1);
+
+result = chunks.next();
+assertEq(result.done, true);
+assertEq(result.value, undefined);
+
+// Valid chunking test
+testFunc = () => {};
+testObj = {key: "value"};
+const mixedTypeChunks = [testFunc, 1, "two", null, undefined, testObj].values().chunks(3);
+result = mixedTypeChunks.next();
+assertEq(result.done, false);
+var chunk = result.value;
+assertEq(Array.isArray(chunk), true);
+assertEq(chunk[0], testFunc);
+assertEq(chunk[1], 1);
+assertEq(chunk[2], "two");
+assertEq(chunk.length, 3);
+
+result = mixedTypeChunks.next();
+assertEq(result.done, false);
+var chunk = result.value;
+assertEq(chunk[0], null);
+assertEq(chunk[1], undefined);
+assertEq(chunk[2], testObj);
+assertEq(chunk.length, 3);
+
+result = mixedTypeChunks.next();
+assertEq(result.done, true);
+assertEq(result.value, undefined);
+
 if (typeof reportCompare === 'function')
     reportCompare(0, 0);

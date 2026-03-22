@@ -8,6 +8,7 @@ import {
   generateProfileInputs,
   aggregateSessions,
   topkAggregates,
+  countRecentVisits,
 } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesHistorySource.sys.mjs";
 import { getRecentChats } from "./MemoriesChatSource.sys.mjs";
 import {
@@ -23,24 +24,30 @@ import {
   INTENTS,
   HISTORY as SOURCE_HISTORY,
   CONVERSATION as SOURCE_CONVERSATION,
+  PREF_GENERATE_MEMORIES,
 } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs";
 import {
   getFormattedMemoryAttributeList,
   parseAndExtractJSON,
   generateMemories,
 } from "moz-src:///browser/components/aiwindow/models/memories/Memories.sys.mjs";
-import {
-  messageMemoryClassificationSystemPrompt,
-  messageMemoryClassificationPrompt,
-} from "moz-src:///browser/components/aiwindow/models/prompts/MemoriesPrompts.sys.mjs";
 import { MEMORIES_MESSAGE_CLASSIFY_SCHEMA } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchemas.sys.mjs";
+import { AIWindow } from "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs";
+import { EveryWindow } from "resource:///modules/EveryWindow.sys.mjs";
+import { AIWindowAccountAuth } from "moz-src:///browser/components/aiwindow/ui/modules/AIWindowAccountAuth.sys.mjs";
+import { EmbeddingsGenerator } from "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs";
+import { cosSim } from "chrome://global/content/ml/NLPUtils.sys.mjs";
 
 const K_DOMAINS_FULL = 100;
-const K_TITLES_FULL = 60;
+const K_TITLES_FULL = 100;
 const K_SEARCHES_FULL = 10;
+
 const K_DOMAINS_DELTA = 30;
 const K_TITLES_DELTA = 60;
 const K_SEARCHES_DELTA = 10;
+
+// for initial memory generation batches
+const TOKEN_BUDGET = 2000;
 
 const DEFAULT_HISTORY_FULL_LOOKUP_DAYS = 60;
 const DEFAULT_HISTORY_FULL_MAX_RESULTS = 3000;
@@ -54,26 +61,90 @@ const LAST_CONVERSATION_MEMORY_TS_ATTRIBUTE = "last_chat_memory_ts";
  * MemoriesManager class
  */
 export class MemoriesManager {
-  static #openAIEnginePromise = null;
-
   // Exposed to be stubbed for testing
   static _getRecentChats = getRecentChats;
 
+  // openaiEngine for memory generation
+  static #openAIEngineGenerationPromise = null;
+
+  // openAIEngine for memory usage
+  static #openAIEngineUsagePromise = null;
+
+  // Embeddings cache for semantic memory search
+  static #embeddingsGenerator = null;
+  static #memoryEmbeddingsCache = null;
+  static #memoryCacheKey = null;
+
   /**
-   * Creates and returns an class-level openAIEngine instance if one has not already been created.
-   * This current pulls from the general browser.aiwindow.* prefs, but will likely pull from memories-specific ones in the future
+   * Creates and returns an openAIEngine instance for memory generation.
+   * This engine loads prompts for: initial generation, deduplication, sensitivity filter.
    *
    * @returns {Promise<openAIEngine>}  openAIEngine instance
    */
-  static async ensureOpenAIEngine() {
-    if (!this.#openAIEnginePromise) {
-      this.#openAIEnginePromise = await openAIEngine.build(
-        MODEL_FEATURES.MEMORIES,
-        DEFAULT_ENGINE_ID,
+  static async ensureOpenAIEngineForGeneration() {
+    const buildFresh = () => {
+      this.#openAIEngineGenerationPromise = openAIEngine.build(
+        MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM,
+        `${DEFAULT_ENGINE_ID}-memories-generation`,
         SERVICE_TYPES.MEMORIES
       );
+      return this.#openAIEngineGenerationPromise;
+    };
+
+    if (!this.#openAIEngineGenerationPromise) {
+      return await buildFresh();
     }
-    return this.#openAIEnginePromise;
+
+    let engine;
+    try {
+      engine = await this.#openAIEngineGenerationPromise;
+    } catch (e) {
+      this.#openAIEngineGenerationPromise = null;
+      return await buildFresh();
+    }
+
+    const status = engine?.engineInstance?.engineStatus;
+    if (status !== "ready") {
+      this.#openAIEngineGenerationPromise = null;
+      return await buildFresh();
+    }
+    return engine;
+  }
+
+  /**
+   * Creates and returns an openAIEngine instance for memory usage.
+   * This engine loads prompts for: message classification, relevant context.
+   *
+   * @returns {Promise<openAIEngine>}  openAIEngine instance
+   */
+  static async ensureOpenAIEngineForUsage() {
+    const buildFresh = () => {
+      this.#openAIEngineUsagePromise = openAIEngine.build(
+        MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM,
+        `${DEFAULT_ENGINE_ID}-memories-usage`,
+        SERVICE_TYPES.MEMORIES
+      );
+      return this.#openAIEngineUsagePromise;
+    };
+
+    if (!this.#openAIEngineUsagePromise) {
+      return await buildFresh();
+    }
+
+    let engine;
+    try {
+      engine = await this.#openAIEngineUsagePromise;
+    } catch (e) {
+      this.#openAIEngineUsagePromise = null;
+      return await buildFresh();
+    }
+
+    const status = engine?.engineInstance?.engineStatus;
+    if (status !== "ready") {
+      this.#openAIEngineUsagePromise = null;
+      return await buildFresh();
+    }
+    return engine;
   }
 
   /**
@@ -92,7 +163,7 @@ export class MemoriesManager {
     const existingMemoriesSummaries = existingMemories.map(
       i => i.memory_summary
     );
-    const engine = await this.ensureOpenAIEngine();
+    const engine = await this.ensureOpenAIEngineForGeneration();
     const memories = await generateMemories(
       engine,
       sources,
@@ -167,10 +238,37 @@ export class MemoriesManager {
         topkAggregatesOpts
       );
     const sources = { history: [domainItems, titleItems, searchItems] };
-    return await this.generateAndSaveMemoriesFromSources(
-      sources,
-      SOURCE_HISTORY
+
+    const hasAnyHistory = sources.history.some(
+      items => Array.isArray(items) && !!items.length
     );
+
+    if (!hasAnyHistory) {
+      console.warn(
+        "MemoriesManager.generateMemoriesFromBrowsingHistory: " +
+          "History aggregates are empty; skipping memory generation."
+      );
+      return [];
+    }
+
+    const batches = this._createHistoryBatches(
+      domainItems,
+      titleItems,
+      searchItems,
+      TOKEN_BUDGET
+    );
+
+    const allGeneratedMemories = [];
+    for (let i = 0; i < batches.length; i++) {
+      const batchSources = { history: batches[i] };
+      const batchMemories = await this.generateAndSaveMemoriesFromSources(
+        batchSources,
+        SOURCE_HISTORY
+      );
+      allGeneratedMemories.push(...batchMemories);
+    }
+
+    return allGeneratedMemories;
   }
 
   /**
@@ -209,6 +307,15 @@ export class MemoriesManager {
       DEFAULT_CHAT_HALF_LIFE_DAYS_FULL_RESULTS
     );
     const sources = { conversation: chatMessages };
+
+    if (!Array.isArray(chatMessages) || chatMessages.length === 0) {
+      console.warn(
+        "MemoriesManager.generateMemoriesFromConversationHistory: " +
+          "No recent chat messages found; skipping memory generation."
+      );
+      return [];
+    }
+
     return await this.generateAndSaveMemoriesFromSources(
       sources,
       SOURCE_CONVERSATION
@@ -286,6 +393,22 @@ export class MemoriesManager {
    */
   static async getAllMemories(opts = { includeSoftDeleted: false }) {
     return await MemoryStore.getMemories(opts);
+  }
+
+  /**
+   * Retrieves memories by ID.
+   * This is a quick-access wrapper around MemoryStore.getMemories() specifically requiring the memoryIds option.
+   *
+   * @param {Array<string>} memoryIds   List of memory IDs
+   * @returns {Promise<Array<Map<{
+   *  memory_summary: string,
+   *  category: string,
+   *  intent: string,
+   *  score: number,
+   * }>>>}
+   */
+  static async getMemoriesByID(memoryIds) {
+    return await MemoryStore.getMemories({ memoryIds });
   }
 
   /**
@@ -399,38 +522,29 @@ export class MemoriesManager {
   }
 
   /**
-   * Builds the prompt to classify a user message into memory categories and intents.
-   *
-   * @param {string} message          User message to classify
-   * @returns {Promise<string>}       Prompt string to send to LLM for classifying the message
-   */
-  static async buildMessageMemoryClassificationPrompt(message) {
-    const categories = getFormattedMemoryAttributeList(CATEGORIES);
-    const intents = getFormattedMemoryAttributeList(INTENTS);
-
-    return await renderPrompt(messageMemoryClassificationPrompt, {
-      message,
-      categories,
-      intents,
-    });
-  }
-
-  /**
    * Classifies a user message into memory categories and intents.
    *
    * @param {string} message                                                        User message to classify
    * @returns {Promise<Map<{categories: Array<string>, intents: Array<string>}>>}}  Categories and intents into which the message was classified
    */
   static async memoryClassifyMessage(message) {
-    const messageClassifPrompt =
-      await this.buildMessageMemoryClassificationPrompt(message);
-
-    const engine = await this.ensureOpenAIEngine();
+    const engine = await this.ensureOpenAIEngineForUsage();
+    const systemPrompt = await engine.loadPrompt(
+      MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM
+    );
+    const userPromptTemplate = await engine.loadPrompt(
+      MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_USER
+    );
+    const userPrompt = await renderPrompt(userPromptTemplate, {
+      message,
+      categories: getFormattedMemoryAttributeList(CATEGORIES),
+      intents: getFormattedMemoryAttributeList(INTENTS),
+    });
 
     const response = await engine.run({
       args: [
-        { role: "system", content: messageMemoryClassificationSystemPrompt },
-        { role: "user", content: messageClassifPrompt },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
       ],
       responseFormat: {
         type: "json_schema",
@@ -443,43 +557,256 @@ export class MemoriesManager {
       categories: [],
       intents: [],
     });
+
     if (!parsed.categories || !parsed.intents) {
       return { categories: [], intents: [] };
     }
-
     return parsed;
   }
 
   /**
-   * Fetches relevant memories for a given user message.
+   * Clears the embeddings cache. Used for testing.
+   *
+   * @private
+   */
+  static _clearEmbeddingsCache() {
+    this.#memoryEmbeddingsCache = null;
+    this.#memoryCacheKey = null;
+  }
+
+  /**
+   * Computes a hash of memories for cache invalidation.
+   * Uses incremental FNV-1a hashing to avoid allocating large concatenated strings
+   * based on https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function#FNV-1a_hash
+   *
+   * @param {Array} memories  Array of memory objects with id and updated_at fields
+   * @returns {number}        32-bit hash representing the memories state
+   */
+  static #computeMemoriesHash(memories) {
+    // FNV-1a offset basis (32-bit)
+    let hash = 0x811c9dc5;
+
+    for (const m of memories) {
+      const str = `${m.id}-${m.updated_at}`;
+      for (let i = 0; i < str.length; i++) {
+        hash ^= str.charCodeAt(i);
+        // FNV prime, keep 32-bit
+        hash = (hash * 0x01000193) >>> 0;
+      }
+    }
+
+    return hash;
+  }
+
+  /**
+   * Fetches relevant memories for a given user message using semantic similarity.
+   * Uses embeddings and cosine similarity for fast, accurate memory retrieval.
    *
    * @param {string} message                  User message to find relevant memories for
-   * @returns {Promise<Array<Map<{
+   * @param {number} topK                     Number of top relevant memories to return (default: 5)
+   * @param {number} similarityThreshold      Minimum similarity score (0-1) to include (default: 0.3)
+   * @returns {Promise<Array<{
    *  memory_summary: string,
    *  category: string,
    *  intent: string,
    *  score: number,
-   * }>>>}                                    List of relevant memories
+   *  similarity: number,
+   * }>>}                                     List of relevant memories sorted by similarity
    */
-  static async getRelevantMemories(message) {
-    const existingMemories = await MemoriesManager.getAllMemories();
-    // Shortcut: if there aren't any existing memories, return empty list immediately
-    if (existingMemories.length === 0) {
+  static async getRelevantMemories(
+    message,
+    topK = 5,
+    similarityThreshold = 0.3
+  ) {
+    const memories = await MemoriesManager.getAllMemories();
+
+    if (memories.length === 0) {
       return [];
     }
 
-    const messageClassification =
-      await MemoriesManager.memoryClassifyMessage(message);
-    // Shortcut: if the message's category and/or intent is null, return empty list immediately
-    if (!messageClassification.categories || !messageClassification.intents) {
-      return [];
+    // Lazy initialize embeddings generator
+    if (!this.#embeddingsGenerator) {
+      this.#embeddingsGenerator = new EmbeddingsGenerator({
+        backend: "onnx-native",
+        embeddingSize: 384,
+      });
     }
 
-    // Filter existing memories to those that match the message's category
-    const candidateRelevantMemories = existingMemories.filter(memory => {
-      return messageClassification.categories.includes(memory.category);
-    });
+    // Re-embed memories only if cache is invalid
+    const currentCacheKey = this.#computeMemoriesHash(memories);
+    if (
+      !this.#memoryEmbeddingsCache ||
+      this.#memoryCacheKey !== currentCacheKey
+    ) {
+      const memoryTexts = memories.map(m => {
+        const summary = m.memory_summary?.toLowerCase() || "";
+        const reasoning = m.reasoning?.toLowerCase() || "";
+        return reasoning ? `${summary}. ${reasoning}` : summary;
+      });
+      const result = await this.#embeddingsGenerator.embedMany(memoryTexts);
+      this.#memoryEmbeddingsCache = result.output || result;
+      this.#memoryCacheKey = currentCacheKey;
+    }
 
-    return candidateRelevantMemories;
+    const queryResult = await this.#embeddingsGenerator.embed(
+      message.toLowerCase()
+    );
+    let queryEmbedding = queryResult.output || queryResult;
+
+    if (Array.isArray(queryEmbedding) && queryEmbedding.length === 1) {
+      queryEmbedding = queryEmbedding[0];
+    }
+
+    // Calculate cosine similarity
+    const similarities = this.#memoryEmbeddingsCache.map((memEmb, idx) => ({
+      ...memories[idx],
+      similarity: cosSim(queryEmbedding, memEmb),
+    }));
+
+    // Filter by threshold, sort by similarity, and return top K
+    return similarities
+      .filter(m => m.similarity >= similarityThreshold)
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, topK);
+  }
+
+  /**
+   * Helper returns true if memories generation should be enabled.
+   *
+   * Gating logic for all schedulers:
+   * - browser.smartwindow.enabled pref
+   * - memories-specific pref
+   * - and whether any AIWindow is currently active
+   *
+   * If window APIs are not available (or throw), this falls back to false.
+   */
+  static shouldEnableMemoriesSchedulers() {
+    // Pref checks
+    const aiWindowEnabled = AIWindow.isAIWindowEnabled();
+    const memoriesEnabled = Services.prefs.getBoolPref(
+      PREF_GENERATE_MEMORIES,
+      false
+    );
+    const hasConsent = AIWindowAccountAuth.hasToSConsent;
+
+    if (!aiWindowEnabled || !memoriesEnabled || !hasConsent) {
+      return false;
+    }
+
+    // Window/activity gate (fail closed)
+    try {
+      return EveryWindow.readyWindows.some(win =>
+        AIWindow.isAIWindowActive(win)
+      );
+    } catch (e) {
+      // If we cannot check window state, do NOT enable schedulers.
+      return false;
+    }
+  }
+
+  /**
+   * Count recent history visits.
+   * Thin wrapper around MemoriesHistorySource.countRecentVisits for callers/tests.
+   *
+   * @param {object} opts
+   * @returns {Promise<number>}
+   */
+  static async countRecentVisits(opts = {}) {
+    return await countRecentVisits(opts);
+  }
+
+  // Helper: Estimate token count for history items
+  static _estimateHistoryTokens(domainItems, titleItems, searchItems) {
+    let chars = 0;
+
+    // Domains: "domain.com,99.5\n"
+    chars += domainItems.reduce(
+      (sum, [domain, _score]) => sum + domain.length + 10,
+      0
+    );
+
+    // Titles: "Long Title | domain.com,99.5\n"
+    chars += titleItems.reduce(
+      (sum, [title, _score]) => sum + title.length + 10,
+      0
+    );
+
+    // Searches: can have multiple queries per item
+    chars += searchItems.reduce(
+      (sum, item) => sum + (item.q || []).join(",").length + 20,
+      0
+    );
+
+    // CSV headers and formatting overhead
+    chars += 1000;
+
+    // Rough conversion: 1 token ≈ 4 characters
+    return Math.ceil(chars / 4);
+  }
+
+  // Helper: Split history items into token-budget-compliant batches
+  static _createHistoryBatches(
+    domainItems,
+    titleItems,
+    searchItems,
+    tokenBudget
+  ) {
+    const batches = [];
+
+    // Calculate how many items per batch based on average item size
+    const totalItems =
+      domainItems.length + titleItems.length + searchItems.length;
+    const avgTokensPerItem =
+      this._estimateHistoryTokens(domainItems, titleItems, searchItems) /
+      totalItems;
+
+    const itemsPerBatch = Math.max(
+      10, // Minimum batch size
+      Math.floor((tokenBudget * 0.9) / avgTokensPerItem) // 0.9 for safety margin
+    );
+
+    // Calculate proportional splits
+    const domainRatio = domainItems.length / totalItems;
+    const titleRatio = titleItems.length / totalItems;
+    const searchRatio = searchItems.length / totalItems;
+
+    const domainsPerBatch = Math.ceil(itemsPerBatch * domainRatio);
+    const titlesPerBatch = Math.ceil(itemsPerBatch * titleRatio);
+    const searchesPerBatch = Math.ceil(itemsPerBatch * searchRatio);
+
+    let domainIdx = 0;
+    let titleIdx = 0;
+    let searchIdx = 0;
+
+    while (
+      domainIdx < domainItems.length ||
+      titleIdx < titleItems.length ||
+      searchIdx < searchItems.length
+    ) {
+      const batchDomains = domainItems.slice(
+        domainIdx,
+        domainIdx + domainsPerBatch
+      );
+      const batchTitles = titleItems.slice(titleIdx, titleIdx + titlesPerBatch);
+      const batchSearches = searchItems.slice(
+        searchIdx,
+        searchIdx + searchesPerBatch
+      );
+
+      // Only add batch if it has content
+      if (
+        !!batchDomains.length ||
+        !!batchTitles.length ||
+        batchSearches.length
+      ) {
+        batches.push([batchDomains, batchTitles, batchSearches]);
+      }
+
+      domainIdx += domainsPerBatch;
+      titleIdx += titlesPerBatch;
+      searchIdx += searchesPerBatch;
+    }
+
+    return batches;
   }
 }

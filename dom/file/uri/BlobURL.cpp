@@ -82,7 +82,7 @@ BlobURL::Serialize(mozilla::ipc::URIParams& aParams) {
 
   hostParams.revoked() = mRevoked;
 
-  aParams = hostParams;
+  aParams = std::move(hostParams);
 }
 
 bool BlobURL::Deserialize(const mozilla::ipc::URIParams& aParams) {

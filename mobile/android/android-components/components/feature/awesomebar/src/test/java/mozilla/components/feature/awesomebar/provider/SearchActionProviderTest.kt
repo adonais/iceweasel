@@ -5,6 +5,7 @@
 package mozilla.components.feature.awesomebar.provider
 
 import kotlinx.coroutines.test.runTest
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.test.mock
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -12,7 +13,7 @@ import org.junit.Test
 class SearchActionProviderTest {
     @Test
     fun `provider returns no suggestion for empty text`() = runTest {
-        val provider = SearchActionProvider(mock(), mock())
+        val provider = SearchActionProvider(BrowserStore(), mock())
         val suggestions = provider.onInputChanged("")
 
         assertEquals(0, suggestions.size)
@@ -20,7 +21,7 @@ class SearchActionProviderTest {
 
     @Test
     fun `provider returns no suggestion for blank text`() = runTest {
-        val provider = SearchActionProvider(mock(), mock())
+        val provider = SearchActionProvider(BrowserStore(), mock())
         val suggestions = provider.onInputChanged("     ")
 
         assertEquals(0, suggestions.size)
@@ -29,7 +30,7 @@ class SearchActionProviderTest {
     @Test
     fun `provider returns suggestion matching input`() = runTest {
         val provider = SearchActionProvider(
-            store = mock(),
+            store = BrowserStore(),
             searchEngine = mock(),
             searchUseCase = mock(),
         )

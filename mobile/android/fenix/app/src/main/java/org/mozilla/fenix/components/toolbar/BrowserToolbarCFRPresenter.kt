@@ -19,7 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat.getColor
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filter
@@ -59,6 +61,7 @@ private const val TAB_SWIPE_CFR_ARROW_OFFSET = 160
  * @param toolbar will serve as anchor for the CFRs
  * @param isPrivate Whether or not the session is private.
  * @param customTabId Optional custom tab id used to identify the custom tab in which to show a CFR.
+ * @param mainDispatcher The [CoroutineDispatcher] to be used for observing the browser store.
  */
 @Suppress("LongParameterList")
 class BrowserToolbarCFRPresenter(
@@ -68,6 +71,7 @@ class BrowserToolbarCFRPresenter(
     private val toolbar: BrowserToolbar,
     private val isPrivate: Boolean,
     private val customTabId: String? = null,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) {
     @VisibleForTesting
     internal var scope: CoroutineScope? = null
@@ -84,7 +88,7 @@ class BrowserToolbarCFRPresenter(
         if (!isPrivate && !settings.hasShownTabSwipeCFR &&
             !settings.isTabStripEnabled && settings.isSwipeToolbarToSwitchTabsEnabled
         ) {
-            scope = browserStore.flowScoped { flow ->
+            scope = browserStore.flowScoped(dispatcher = mainDispatcher) { flow ->
                 flow
                     .distinctUntilChangedBy { it.selectedNormalTab?.id }
                     .collect {
@@ -100,7 +104,7 @@ class BrowserToolbarCFRPresenter(
 
         when (getCFRToShow()) {
             ToolbarCFR.COOKIE_BANNERS -> {
-                scope = browserStore.flowScoped { flow ->
+                scope = browserStore.flowScoped(dispatcher = mainDispatcher) { flow ->
                     flow.mapNotNull { it.findCustomTabOrSelectedTab(customTabId) }
                         .ifAnyChanged { tab ->
                             arrayOf(

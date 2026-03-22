@@ -98,7 +98,6 @@ class RecentlyClosedTabsTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1605515
-    @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     fun openMultipleRecentlyClosedTabsTest() {
         val firstPage = mockWebServer.getGenericAsset(1)
@@ -134,6 +133,7 @@ class RecentlyClosedTabsTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2198690
+    // Couldn't enable it due to the bug I've discovered: https://bugzilla.mozilla.org/show_bug.cgi?id=2015388
     @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     fun openRecentlyClosedTabsInPrivateBrowsingTest() {
@@ -170,7 +170,6 @@ class RecentlyClosedTabsTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1605514
-    @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1956220"])
     fun shareMultipleRecentlyClosedTabsTest() {
@@ -202,7 +201,6 @@ class RecentlyClosedTabsTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1065438
-    @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1956220"])
     fun closedPrivateTabsAreNotSavedInRecentlyClosedTabsTest() {
@@ -230,7 +228,6 @@ class RecentlyClosedTabsTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1065439
-    @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=1956220"])
     fun deletingBrowserHistoryClearsRecentlyClosedTabsListTest() {

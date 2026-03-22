@@ -64,11 +64,11 @@
 static int reg_initted = 0;
 
 /* must be in the order the types are numbered */
-static char *typenames[] = { "char", "UCHAR", "INT2", "UINT2", "INT4", "UINT4", "INT8", "UINT8", "double", "Data", "string", "registry" };
+static const char *typenames[] = { "char", "UCHAR", "INT2", "UINT2", "INT4", "UINT4", "INT8", "UINT8", "double", "Data", "string", "registry" };
 
 int NR_LOG_REGISTRY=0;
 
-NR_registry NR_TOP_LEVEL_REGISTRY = "";
+NR_registry_name NR_TOP_LEVEL_REGISTRY = "";
 
 int
 NR_reg_init()
@@ -112,7 +112,7 @@ NR_reg_initted(void)
 
 #define NRREGGET(func, TYPE, type)                                  \
 int                                                                 \
-func(NR_registry name, type *out)                                   \
+func(NR_registry_name name, type *out)                              \
 {                                                                   \
     return nr_reg_get(name, TYPE, out);                             \
 }
@@ -126,13 +126,13 @@ NRREGGET(NR_reg_get_uint8,    NR_REG_TYPE_UINT8,    UINT8)
 NRREGGET(NR_reg_get_double,   NR_REG_TYPE_DOUBLE,   double)
 
 int
-NR_reg_get_registry(NR_registry name, NR_registry out)
+NR_reg_get_registry(NR_registry_name name, NR_registry out)
 {
     int r, _status;
     nr_scalar_registry_node *node = 0;
     int free_node = 0;
 
-    if ((r=nr_reg_fetch_node(name, NR_REG_TYPE_REGISTRY, (void*)&node, &free_node)))
+    if ((r=nr_reg_fetch_node(name, NR_REG_TYPE_REGISTRY, (nr_registry_node**)&node, &free_node)))
       ABORT(r);
 
     strncpy(out, name, sizeof(NR_registry));
@@ -145,26 +145,26 @@ NR_reg_get_registry(NR_registry name, NR_registry out)
 }
 
 int
-NR_reg_get_bytes(NR_registry name, UCHAR *out, size_t size, size_t *length)
+NR_reg_get_bytes(NR_registry_name name, UCHAR *out, size_t size, size_t *length)
 {
     return nr_reg_get_array(name, NR_REG_TYPE_BYTES, out, size, length);
 }
 
 int
-NR_reg_get_string(NR_registry name, char *out, size_t size)
+NR_reg_get_string(NR_registry_name name, char *out, size_t size)
 {
     return nr_reg_get_array(name, NR_REG_TYPE_STRING, (UCHAR*)out, size, 0);
 }
 
 int
-NR_reg_get_length(NR_registry name, size_t *length)
+NR_reg_get_length(NR_registry_name name, size_t *length)
 {
     return nr_reg_local_get_length(name, length);
 }
 
 #define NRREGSET(func, TYPE, type)                         \
 int                                                             \
-func(NR_registry name, type data)                               \
+func(NR_registry_name name, type data)                          \
 {                                                               \
     return nr_reg_set(name, TYPE, &data);                       \
 }
@@ -175,39 +175,39 @@ NRREGSET(NR_reg_set_int4,     NR_REG_TYPE_INT4,     INT4)
 NRREGSET(NR_reg_set_uint4,    NR_REG_TYPE_UINT4,    UINT4)
 
 int
-NR_reg_set_string(NR_registry name, char *data)
+NR_reg_set_string(NR_registry_name name, const char *data)
 {
-    return nr_reg_set_array(name, NR_REG_TYPE_STRING, (UCHAR*)data, strlen(data)+1);
+    return nr_reg_set_array(name, NR_REG_TYPE_STRING, (const UCHAR*)data, strlen(data)+1);
 }
 
 int
-NR_reg_set_registry(NR_registry name)
+NR_reg_set_registry(NR_registry_name name)
 {
     return nr_reg_set(name, NR_REG_TYPE_REGISTRY, 0);
 }
 
 int
-NR_reg_set_bytes(NR_registry name, unsigned char *data, size_t length)
+NR_reg_set_bytes(NR_registry_name name, const unsigned char *data, size_t length)
 {
     return nr_reg_set_array(name, NR_REG_TYPE_BYTES, data, length);
 }
 
 
 int
-NR_reg_del(NR_registry name)
+NR_reg_del(NR_registry_name name)
 {
     return nr_reg_local_del(name);
 }
 
 int
-NR_reg_get_child_count(NR_registry parent, unsigned int *count)
+NR_reg_get_child_count(NR_registry_name parent, unsigned int *count)
 {
     assert(sizeof(count) == sizeof(size_t));
     return nr_reg_local_get_child_count(parent, (size_t*)count);
 }
 
 int
-NR_reg_get_child_registry(NR_registry parent, unsigned int i, NR_registry child)
+NR_reg_get_child_registry(NR_registry_name parent, unsigned int i, NR_registry child)
 {
     int r, _status;
     size_t count;
@@ -220,7 +220,7 @@ NR_reg_get_child_registry(NR_registry parent, unsigned int i, NR_registry child)
         ABORT(R_NOT_FOUND);
     else {
         count++;
-        children = (NR_registry *)RCALLOC(count * sizeof(NR_registry));
+        children = R_NEW_CNT(NR_registry, count);
         if (!children)
             ABORT(R_NO_MEMORY);
 
@@ -241,7 +241,7 @@ NR_reg_get_child_registry(NR_registry parent, unsigned int i, NR_registry child)
 
 // convenience methods, call RFREE on the returned data
 int
-NR_reg_alloc_data(NR_registry name, Data *data)
+NR_reg_alloc_data(NR_registry_name name, Data *data)
 {
     int r, _status;
     size_t length;
@@ -251,7 +251,7 @@ NR_reg_alloc_data(NR_registry name, Data *data)
     if ((r=NR_reg_get_length(name, &length)))
       ABORT(r);
 
-    if (!(tmp = (void*)RMALLOC(length)))
+    if (!(tmp = (UCHAR*)RMALLOC(length)))
       ABORT(R_NO_MEMORY);
 
     if ((r=NR_reg_get_bytes(name, tmp, length, &sanity_check)))
@@ -271,7 +271,7 @@ NR_reg_alloc_data(NR_registry name, Data *data)
 }
 
 int
-NR_reg_alloc_string(NR_registry name, char **data)
+NR_reg_alloc_string(NR_registry_name name, char **data)
 {
     int r, _status;
     size_t length;
@@ -280,7 +280,7 @@ NR_reg_alloc_string(NR_registry name, char **data)
     if ((r=NR_reg_get_length(name, &length)))
       ABORT(r);
 
-    if (!(tmp = (void*)RMALLOC(length+1)))
+    if (!(tmp = (char*)RMALLOC(length+1)))
       ABORT(R_NO_MEMORY);
 
     if ((r=NR_reg_get_string(name, tmp, length+1)))
@@ -299,7 +299,7 @@ NR_reg_alloc_string(NR_registry name, char **data)
 }
 
 
-char *
+const char *
 nr_reg_type_name(int type)
 {
     if ((type < NR_REG_TYPE_CHAR) || (type > NR_REG_TYPE_REGISTRY))
@@ -308,46 +308,11 @@ nr_reg_type_name(int type)
     return(typenames[type]);
 }
 
-int
-nr_reg_compute_type(char *typename, int *type)
-{
-    int _status;
-    size_t i;
-
-#ifdef SANITY_CHECKS
-    assert(!strcasecmp(typenames[NR_REG_TYPE_CHAR],     "char"));
-    assert(!strcasecmp(typenames[NR_REG_TYPE_UCHAR],    "UCHAR"));
-    assert(!strcasecmp(typenames[NR_REG_TYPE_INT2],     "INT2"));
-    assert(!strcasecmp(typenames[NR_REG_TYPE_UINT2],    "UINT2"));
-    assert(!strcasecmp(typenames[NR_REG_TYPE_INT4],     "INT4"));
-    assert(!strcasecmp(typenames[NR_REG_TYPE_UINT4],    "UINT4"));
-    assert(!strcasecmp(typenames[NR_REG_TYPE_INT8],     "INT8"));
-    assert(!strcasecmp(typenames[NR_REG_TYPE_UINT8],    "UINT8"));
-    assert(!strcasecmp(typenames[NR_REG_TYPE_DOUBLE],   "double"));
-    assert(!strcasecmp(typenames[NR_REG_TYPE_BYTES],    "Data"));
-    assert(!strcasecmp(typenames[NR_REG_TYPE_STRING],   "string"));
-    assert(!strcasecmp(typenames[NR_REG_TYPE_REGISTRY], "registry"));
-    assert(sizeof(typenames)/sizeof(*typenames) == (NR_REG_TYPE_REGISTRY+1));
-#endif
-
-    for (i = 0; i < sizeof(typenames)/sizeof(*typenames); ++i) {
-      if (!strcasecmp(typenames[i], typename)) {
-        *type = i;
-        return 0;
-      }
-    }
-    ABORT(R_BAD_ARGS);
-
-    _status=0;
-  abort:
-    return(_status);
-}
-
 /* More convenience functions: the same as their parents but they
    take a prefix and a suffix */
 #define NRGET2(func, type, get) \
 int                                                                  \
-func(NR_registry parent, char *child, type *out)                     \
+func(NR_registry_name parent, const char *child, type *out)          \
 {                                                                    \
   int r, _status;                                                    \
   NR_registry registry;                                              \
@@ -374,7 +339,7 @@ NRGET2(NR_reg_alloc2_data,     Data,    NR_reg_alloc_data)
    take a prefix and a suffix */
 #define NRSET2(func, type, set) \
 int                                                                  \
-func(NR_registry parent, char *child, type in)                       \
+func(NR_registry_name parent, const char *child, type in)            \
 {                                                                    \
   int r, _status;                                                    \
   NR_registry registry;                                              \
@@ -392,11 +357,11 @@ abort:                                                               \
 }
 
 NRSET2(NR_reg_set2_uchar,    UCHAR,   NR_reg_set_uchar)
-NRSET2(NR_reg_set2_string,   char*,   NR_reg_set_string)
+NRSET2(NR_reg_set2_string,   const char*,   NR_reg_set_string)
 
 /* requires parent already in legal form */
 int
-NR_reg_make_registry(NR_registry parent, char *child, NR_registry out)
+NR_reg_make_registry(NR_registry_name parent, const char *child, NR_registry out)
 {
     int r, _status;
     size_t plen;

@@ -5,19 +5,19 @@
 package mozilla.components.feature.session
 
 import android.view.WindowManager
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.test.mock
-import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.doReturn
@@ -26,11 +26,10 @@ import org.mockito.Mockito.verify
 
 class FullScreenFeatureTest {
 
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
+    private val testDispatcher = StandardTestDispatcher()
 
     @Test
-    fun `Starting without tabs`() {
+    fun `Starting without tabs`() = runTest(testDispatcher) {
         var viewPort: Int? = null
         var fullscreen: Boolean? = null
 
@@ -39,18 +38,20 @@ class FullScreenFeatureTest {
             store = store,
             sessionUseCases = mock(),
             tabId = null,
+            mainDispatcher = testDispatcher,
             viewportFitChanged = { value -> viewPort = value },
             fullScreenChanged = { value -> fullscreen = value },
         )
 
         feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertNull(viewPort)
         assertNull(fullscreen)
     }
 
     @Test
-    fun `Starting with selected tab will not invoke callbacks with default state`() {
+    fun `Starting with selected tab will not invoke callbacks with default state`() = runTest(testDispatcher) {
         var viewPort: Int? = null
         var fullscreen: Boolean? = null
 
@@ -65,18 +66,20 @@ class FullScreenFeatureTest {
             store = store,
             sessionUseCases = mock(),
             tabId = null,
+            mainDispatcher = testDispatcher,
             viewportFitChanged = { value -> viewPort = value },
             fullScreenChanged = { value -> fullscreen = value },
         )
 
         feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertNull(viewPort)
         assertNull(fullscreen)
     }
 
     @Test
-    fun `Starting with selected tab`() {
+    fun `Starting with selected tab`() = runTest(testDispatcher) {
         var viewPort: Int? = null
         var fullscreen: Boolean? = null
 
@@ -105,18 +108,20 @@ class FullScreenFeatureTest {
             store = store,
             sessionUseCases = mock(),
             tabId = null,
+            mainDispatcher = testDispatcher,
             viewportFitChanged = { value -> viewPort = value },
             fullScreenChanged = { value -> fullscreen = value },
         )
 
         feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(42, viewPort)
         assertTrue(fullscreen!!)
     }
 
     @Test
-    fun `Selected tab switching to fullscreen mode`() {
+    fun `Selected tab switching to fullscreen mode`() = runTest(testDispatcher) {
         var viewPort: Int? = null
         var fullscreen: Boolean? = null
 
@@ -131,11 +136,13 @@ class FullScreenFeatureTest {
             store = store,
             sessionUseCases = mock(),
             tabId = null,
+            mainDispatcher = testDispatcher,
             viewportFitChanged = { value -> viewPort = value },
             fullScreenChanged = { value -> fullscreen = value },
         )
 
         feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         store.dispatch(
             ContentAction.FullScreenChangedAction(
@@ -143,13 +150,14 @@ class FullScreenFeatureTest {
                 true,
             ),
         )
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertNull(viewPort)
         assertTrue(fullscreen!!)
     }
 
     @Test
-    fun `Selected tab changing viewport`() {
+    fun `Selected tab changing viewport`() = runTest(testDispatcher) {
         var viewPort: Int? = null
         var fullscreen: Boolean? = null
 
@@ -164,11 +172,13 @@ class FullScreenFeatureTest {
             store = store,
             sessionUseCases = mock(),
             tabId = null,
+            mainDispatcher = testDispatcher,
             viewportFitChanged = { value -> viewPort = value },
             fullScreenChanged = { value -> fullscreen = value },
         )
 
         feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         store.dispatch(
             ContentAction.FullScreenChangedAction(
@@ -183,6 +193,7 @@ class FullScreenFeatureTest {
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES,
             ),
         )
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertNotEquals(0, viewPort)
         assertEquals(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES, viewPort)
@@ -190,7 +201,7 @@ class FullScreenFeatureTest {
     }
 
     @Test
-    fun `Fixed tab switching to fullscreen mode and back`() {
+    fun `Fixed tab switching to fullscreen mode and back`() = runTest(testDispatcher) {
         var viewPort: Int? = null
         var fullscreen: Boolean? = null
 
@@ -209,11 +220,13 @@ class FullScreenFeatureTest {
             store = store,
             sessionUseCases = mock(),
             tabId = "B",
+            mainDispatcher = testDispatcher,
             viewportFitChanged = { value -> viewPort = value },
             fullScreenChanged = { value -> fullscreen = value },
         )
 
         feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         store.dispatch(
             ContentAction.FullScreenChangedAction(
@@ -228,6 +241,7 @@ class FullScreenFeatureTest {
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES,
             ),
         )
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES, viewPort)
         assertTrue(fullscreen!!)
@@ -245,13 +259,14 @@ class FullScreenFeatureTest {
                 0,
             ),
         )
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(0, viewPort)
         assertFalse(fullscreen)
     }
 
     @Test
-    fun `Callback functions no longer get invoked when stopped, but get new value on next start`() {
+    fun `Callback functions no longer get invoked when stopped, but get new value on next start`() = runTest(testDispatcher) {
         var viewPort: Int? = null
         var fullscreen: Boolean? = null
 
@@ -270,6 +285,7 @@ class FullScreenFeatureTest {
             store = store,
             sessionUseCases = mock(),
             tabId = "B",
+            mainDispatcher = testDispatcher,
             viewportFitChanged = { value -> viewPort = value },
             fullScreenChanged = { value -> fullscreen = value },
         )
@@ -287,13 +303,16 @@ class FullScreenFeatureTest {
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER,
             ),
         )
+        testDispatcher.scheduler.advanceUntilIdle()
 
         feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER, viewPort)
         assertTrue(fullscreen!!)
 
         feature.stop()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         store.dispatch(
             ContentAction.FullScreenChangedAction(
@@ -308,18 +327,20 @@ class FullScreenFeatureTest {
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES,
             ),
         )
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER, viewPort)
         assertTrue(fullscreen)
 
         feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES, viewPort)
         assertFalse(fullscreen)
     }
 
     @Test
-    fun `onBackPressed will invoke usecase for active fullscreen mode`() {
+    fun `onBackPressed will invoke usecase for active fullscreen mode`() = runTest(testDispatcher) {
         val store = BrowserStore(
             BrowserState(
                 tabs = listOf(
@@ -339,10 +360,12 @@ class FullScreenFeatureTest {
             store = store,
             sessionUseCases = useCases,
             tabId = "B",
+            mainDispatcher = testDispatcher,
             fullScreenChanged = {},
         )
 
         feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         store.dispatch(
             ContentAction.FullScreenChangedAction(
@@ -357,6 +380,7 @@ class FullScreenFeatureTest {
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES,
             ),
         )
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(feature.onBackPressed())
 
@@ -364,7 +388,7 @@ class FullScreenFeatureTest {
     }
 
     @Test
-    fun `Fullscreen tab gets removed`() {
+    fun `Fullscreen tab gets removed`() = runTest(testDispatcher) {
         var viewPort: Int? = null
         var fullscreen: Boolean? = null
 
@@ -379,11 +403,13 @@ class FullScreenFeatureTest {
             store = store,
             sessionUseCases = mock(),
             tabId = null,
+            mainDispatcher = testDispatcher,
             viewportFitChanged = { value -> viewPort = value },
             fullScreenChanged = { value -> fullscreen = value },
         )
 
         feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         store.dispatch(
             ContentAction.FullScreenChangedAction(
@@ -398,6 +424,7 @@ class FullScreenFeatureTest {
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES,
             ),
         )
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES, viewPort)
         assertTrue(fullscreen!!)
@@ -405,13 +432,14 @@ class FullScreenFeatureTest {
         store.dispatch(
             TabListAction.RemoveTabAction(tabId = "A"),
         )
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(0, viewPort)
         assertFalse(fullscreen)
     }
 
     @Test
-    fun `onBackPressed will not invoke usecase if not in fullscreen mode`() {
+    fun `onBackPressed will not invoke usecase if not in fullscreen mode`() = runTest(testDispatcher) {
         val store = BrowserStore(
             BrowserState(
                 tabs = listOf(
@@ -430,10 +458,12 @@ class FullScreenFeatureTest {
         val feature = FullScreenFeature(
             store = store,
             sessionUseCases = useCases,
+            mainDispatcher = testDispatcher,
             fullScreenChanged = {},
         )
 
         feature.start()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         assertFalse(feature.onBackPressed())
 
@@ -441,7 +471,7 @@ class FullScreenFeatureTest {
     }
 
     @Test
-    fun `onBackPressed getting invoked without any tabs to observe`() {
+    fun `onBackPressed getting invoked without any tabs to observe`() = runTest(testDispatcher) {
         val exitUseCase: SessionUseCases.ExitFullScreenUseCase = mock()
         val useCases: SessionUseCases = mock()
         doReturn(exitUseCase).`when`(useCases).exitFullscreen
@@ -449,17 +479,19 @@ class FullScreenFeatureTest {
         val feature = FullScreenFeature(
             store = BrowserStore(),
             sessionUseCases = useCases,
+            mainDispatcher = testDispatcher,
             fullScreenChanged = {},
         )
 
         // Invoking onBackPressed without fullscreen mode
         assertFalse(feature.onBackPressed())
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verify(exitUseCase, never()).invoke(ArgumentMatchers.anyString())
     }
 
     @Test
-    fun `GIVEN fullscreen changes WHEN informing about this THEN ensure the isFullscreen property has the right value`() {
+    fun `GIVEN fullscreen changes WHEN informing about this THEN ensure the isFullscreen property has the right value`() = runTest(testDispatcher) {
         val store = BrowserStore(
             BrowserState(
                 tabs = listOf(createTab("https://www.mozilla.org", id = "A")),
@@ -471,6 +503,7 @@ class FullScreenFeatureTest {
             store = store,
             sessionUseCases = mock(),
             tabId = null,
+            mainDispatcher = testDispatcher,
             viewportFitChanged = { },
             fullScreenChanged = { value ->
                 assertTrue(value)

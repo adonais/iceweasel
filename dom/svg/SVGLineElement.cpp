@@ -23,13 +23,13 @@ JSObject* SVGLineElement::WrapNode(JSContext* aCx,
 
 SVGElement::LengthInfo SVGLineElement::sLengthInfo[4] = {
     {nsGkAtoms::x1, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
-     SVGContentUtils::X},
+     SVGLength::Axis::X},
     {nsGkAtoms::y1, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
-     SVGContentUtils::Y},
+     SVGLength::Axis::Y},
     {nsGkAtoms::x2, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
-     SVGContentUtils::X},
+     SVGLength::Axis::X},
     {nsGkAtoms::y2, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
-     SVGContentUtils::Y},
+     SVGLength::Axis::Y},
 };
 
 //----------------------------------------------------------------------
@@ -96,8 +96,8 @@ void SVGLineElement::GetMarkPoints(nsTArray<SVGMark>* aMarks) {
 
   float angle = std::atan2(y2 - y1, x2 - x1);
 
-  aMarks->AppendElement(SVGMark(x1, y1, angle, SVGMark::eStart));
-  aMarks->AppendElement(SVGMark(x2, y2, angle, SVGMark::eEnd));
+  aMarks->AppendElement(SVGMark(x1, y1, angle, SVGMark::Type::Start));
+  aMarks->AppendElement(SVGMark(x2, y2, angle, SVGMark::Type::End));
 }
 
 void SVGLineElement::GetAsSimplePath(SimplePath* aSimplePath) {

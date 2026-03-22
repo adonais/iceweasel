@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsCSPService_h___
-#define nsCSPService_h___
+#ifndef nsCSPService_h_
+#define nsCSPService_h_
 
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"
@@ -39,4 +39,4 @@ class CSPService : public nsIContentPolicy, public nsIChannelEventSink {
  protected:
   virtual ~CSPService();
 };
-#endif /* nsCSPService_h___ */
+#endif /* nsCSPService_h_ */

@@ -45,7 +45,7 @@ class AboutFragment(
 ) : Fragment(), AboutPageListener {
 
     private lateinit var appName: String
-    private var aboutPageAdapter: AboutPageAdapter? = AboutPageAdapter(this)
+    private var aboutPageAdapter: AboutPageAdapter? = null
     private var _binding: FragmentAboutBinding? = null
 
     private val binding get() = _binding!!
@@ -89,6 +89,7 @@ class AboutFragment(
 
     override fun onDestroyView() {
         super.onDestroyView()
+        binding.aboutList.adapter = null
         aboutPageAdapter = null
         _binding = null
     }

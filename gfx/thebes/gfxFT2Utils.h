@@ -29,11 +29,7 @@ class MOZ_STACK_CLASS gfxFT2LockedFace {
  public:
   explicit gfxFT2LockedFace(const gfxFT2FontBase* aFont)
       : mGfxFont(aFont), mFace(aFont->LockFTFace()) {}
-  ~gfxFT2LockedFace() {
-    if (mFace) {
-      mGfxFont->UnlockFTFace();
-    }
-  }
+  ~gfxFT2LockedFace() { mGfxFont->UnlockFTFace(); }
 
   FT_Face get() { return mFace; };
 

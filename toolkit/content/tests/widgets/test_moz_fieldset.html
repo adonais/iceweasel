@@ -16,9 +16,8 @@
       let html, render, renderTarget;
 
       add_setup(async function setup() {
-        ({ html, render } = await import(
-          "chrome://global/content/vendor/lit.all.mjs"
-        ));
+        ({ html, render } =
+          await import("chrome://global/content/vendor/lit.all.mjs"));
         renderTarget = document.getElementById("render");
       });
 

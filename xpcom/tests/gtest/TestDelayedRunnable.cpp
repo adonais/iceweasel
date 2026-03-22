@@ -118,7 +118,7 @@ TEST(DelayedRunnable, nsThreadShutdownTask)
 TEST(DelayedRunnable, TimerFiresBeforeRunnableRuns)
 {
   RefPtr<mozilla::SharedThreadPool> pool =
-      mozilla::SharedThreadPool::Get("Test Pool"_ns);
+      mozilla::SharedThreadPool::Get("Test Pool");
   auto tailTaskQueue1 =
       TaskQueue::Create(do_AddRef(pool), "TestDelayedRunnable tailTaskQueue1",
                         /* aSupportsTailDispatch = */ true);

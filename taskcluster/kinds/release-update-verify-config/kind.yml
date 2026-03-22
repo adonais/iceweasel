@@ -50,7 +50,7 @@ task-defaults:
         include-version:
             by-release-type:
                 beta: beta
-                release(-rc)?: nonbeta
+                release: nonbeta
                 esr.*: esr
                 default: beta
         last-watershed:
@@ -59,7 +59,7 @@ task-defaults:
                     by-platform:
                         linux64-aarch64.*: "136.0b6"
                         default: "72.0"
-                release(-rc)?:
+                release:
                     by-platform:
                         linux64-aarch64.*: "136.0"
                         default: "72.0.2"
@@ -86,7 +86,7 @@ tasks:
             channel:
                 by-release-type:
                     beta: "beta-localtest"
-                    release(-rc)?: "release-localtest"
+                    release: "release-localtest"
                     esr.*: "esr-localtest"
                     default: "default"
             mar-channel-id-override:
@@ -110,7 +110,7 @@ tasks:
             channel:
                 by-release-type:
                     beta: "beta-localtest"
-                    release(-rc)?: "release-localtest"
+                    release: "release-localtest"
                     esr.*: "esr-localtest"
                     default: "default"
             mar-channel-id-override:
@@ -134,7 +134,7 @@ tasks:
             channel:
                 by-release-type:
                     beta: "beta-localtest"
-                    release(-rc)?: "release-localtest"
+                    release: "release-localtest"
                     esr.*: "esr-localtest"
                     default: "default"
             mar-channel-id-override:
@@ -158,7 +158,7 @@ tasks:
             channel:
                 by-release-type:
                     beta: "beta-localtest"
-                    release(-rc)?: "release-localtest"
+                    release: "release-localtest"
                     esr.*: "esr-localtest"
                     default: "default"
             mar-channel-id-override:
@@ -182,7 +182,7 @@ tasks:
             channel:
                 by-release-type:
                     beta: "beta-localtest"
-                    release(-rc)?: "release-localtest"
+                    release: "release-localtest"
                     esr.*: "esr-localtest"
                     default: "default"
             mar-channel-id-override:
@@ -206,7 +206,7 @@ tasks:
             channel:
                 by-release-type:
                     beta: "beta-localtest"
-                    release(-rc)?: "release-localtest"
+                    release: "release-localtest"
                     esr.*: "esr-localtest"
                     default: "default"
             mar-channel-id-override:

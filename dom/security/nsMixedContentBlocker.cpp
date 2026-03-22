@@ -737,6 +737,16 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
     *aDecision = ACCEPT;
     return NS_OK;
   }
+
+  // #2 Carve-out: For now maintain the carve-out for Notification icon images
+  // that previously happened via the code above.
+  // TODO(Bug 2008728) - Remove this exception.
+  if (internalContentType ==
+      nsIContentPolicy::TYPE_INTERNAL_IMAGE_NOTIFICATION) {
+    *aDecision = ACCEPT;
+    return NS_OK;
+  }
+
   // Otherwise, we must have a window
   NS_ENSURE_TRUE(requestingWindow, NS_OK);
 

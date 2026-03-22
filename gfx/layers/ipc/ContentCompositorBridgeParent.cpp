@@ -186,7 +186,7 @@ ContentCompositorBridgeParent::AllocPWebRenderBridgeParent(
   api = api->Clone();
   RefPtr<AsyncImagePipelineManager> holder = root->AsyncImageManager();
   WebRenderBridgeParent* parent = new WebRenderBridgeParent(
-      this, aPipelineId, nullptr, root->CompositorScheduler(), std::move(api),
+      this, aPipelineId, root->CompositorScheduler(), std::move(api),
       std::move(holder), cbp->GetVsyncInterval());
   parent->AddRef();  // IPDL reference
 
@@ -258,6 +258,36 @@ mozilla::ipc::IPCResult ContentCompositorBridgeParent::RecvCheckContentOnlyTDR(
 #endif
   return IPC_OK();
 };
+
+mozilla::ipc::IPCResult
+ContentCompositorBridgeParent::RecvCheckAndClearWRDidRasterize(
+    const LayersId& aId, bool* aDidRasterize) {
+  *aDidRasterize = false;
+
+  const CompositorBridgeParent::LayerTreeState* state =
+      CompositorBridgeParent::GetIndirectShadowTree(aId);
+  if (!state || !state->mParent) {
+    return IPC_OK();
+  }
+
+  // Forward to the parent compositor which owns the renderer
+  RefPtr<wr::WebRenderAPI> api;
+  {
+    StaticMonitorAutoLock lock(CompositorBridgeParent::sIndirectLayerTreesLock);
+    LayersId rootId = state->mParent->RootLayerTreeId();
+    const CompositorBridgeParent::LayerTreeState& rootState =
+        CompositorBridgeParent::sIndirectLayerTrees[rootId];
+    if (rootState.mWrBridge) {
+      api = rootState.mWrBridge->GetWebRenderAPI();
+    }
+  }
+
+  if (api) {
+    *aDidRasterize = api->CheckAndClearDidRasterize();
+  }
+
+  return IPC_OK();
+}
 
 void ContentCompositorBridgeParent::DidCompositeLocked(
     LayersId aId, const VsyncId& aVsyncId, TimeStamp& aCompositeStart,

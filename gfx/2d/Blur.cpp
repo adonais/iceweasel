@@ -151,8 +151,6 @@ GaussianBlur::GaussianBlur(const Rect& aRect, const IntSize& aSpreadRadius,
   Init(aRect, aSpreadRadius, aSigma, aDirtyRect, aSkipRect, aFormat, aClamp);
 }
 
-GaussianBlur::GaussianBlur() {}
-
 void GaussianBlur::Init(const Rect& aRect, const IntSize& aSpreadRadius,
                         const Point& aBlurSigma, const Rect* aDirtyRect,
                         const Rect* aSkipRect, SurfaceFormat aFormat,
@@ -235,8 +233,6 @@ GaussianBlur::GaussianBlur(const Point& aSigma, bool aClamp)
     : mBlurSigma(aSigma),
       mBlurRadius(CalculateBlurRadius(aSigma)),
       mClamp(aClamp) {}
-
-GaussianBlur::~GaussianBlur() = default;
 
 IntSize GaussianBlur::GetSize() const { return mRect.Size(); }
 

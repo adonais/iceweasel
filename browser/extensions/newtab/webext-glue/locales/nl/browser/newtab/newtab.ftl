@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = Personaliseren
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = Sluiten
+    .aria-label = Sluiten
 
 ## Search box component.
 
@@ -329,18 +332,18 @@ newtab-custom-recent-subtitle = Een selectie van recente websites en inhoud
 newtab-custom-weather-toggle =
     .label = Weer
     .description = De weersverwachting van vandaag in een oogopslag
-newtab-custom-trending-search-toggle =
-    .label = Trending zoekopdrachten
-    .description = Populaire en veel gezochte onderwerpen
 newtab-custom-widget-weather-toggle =
     .label = Weer
-newtab-custom-widget-trending-search-toggle =
-    .label = Trending zoekopdrachten
 newtab-custom-widget-lists-toggle =
     .label = Lijsten
 newtab-custom-widget-timer-toggle =
     .label = Timer
 newtab-custom-widget-section-title = Widgets
+newtab-custom-widget-section-toggle =
+    .label = Widgets
+newtab-widget-manage-title = Widgets
+newtab-widget-manage-widget-button =
+    .label = Widgets beheren
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Sluiten
@@ -468,6 +471,8 @@ newtab-weather-change-location-search-input-placeholder =
     .placeholder = Locatie zoeken
     .aria-label = Locatie zoeken
 newtab-weather-menu-weather-display = Weerweergave
+newtab-weather-todays-forecast = Weersverwachting voor vandaag
+newtab-weather-see-full-forecast = Volledige weersverwachting bekijken
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -480,6 +485,7 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Wisselen naar Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Wisselen naar Celsius
+newtab-weather-menu-hide-weather-v2 = Weer verbergen
 newtab-weather-menu-hide-weather = Weer op nieuw tabblad verbergen
 newtab-weather-menu-learn-more = Meer info
 newtab-weather-menu-detect-my-location = Mijn locatie detecteren
@@ -492,6 +498,11 @@ newtab-weather-opt-in-yes =
     .label = Ja
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Weersverwachting bekijken voor { $provider }
+    .aria-description = { $provider } ∙ Gesponsord
 
 ## Topic Labels
 
@@ -596,7 +607,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Uw favorieten binnen handbereik
 newtab-shortcuts-highlight-subtitle = Voeg een snelkoppeling toe om uw favoriete websites op één klik afstand te houden.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Waarom meldt u dit?
@@ -614,21 +625,13 @@ newtab-report-content-inappropriate-offensive =
     .label = Ongepast of beledigend
 newtab-report-content-spam-misleading =
     .label = Spam of misleidend
+newtab-report-content-requires-payment-subscription =
+    .label = Vereist betaling of abonnement
+newtab-report-content-requires-payment-subscription-learn-more = Meer info
 newtab-report-cancel = Annuleren
 newtab-report-submit = Indienen
 newtab-toast-thanks-for-reporting =
     .message = Bedankt voor het melden.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Trending zoekopdrachten tonen
-newtab-trending-searches-hide-trending =
-    .title = Trending zoekopdrachten verbergen
-newtab-trending-searches-learn-more = Meer info
-newtab-trending-searches-dismiss = Trending zoekopdrachten verbergen
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Trending zoekopdrachten
 
 ## Strings for task / to-do list productivity widget
 
@@ -701,6 +704,12 @@ newtab-widget-timer-menu-notifications = Notificaties uitschakelen
 newtab-widget-timer-menu-notifications-on = Notificaties inschakelen
 newtab-widget-timer-menu-hide = Timer verbergen
 newtab-widget-timer-menu-learn-more = Meer info
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = Topberichten
+newtab-daily-briefing-card-menu-dismiss = Sluiten
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = { $minutes } min. geleden bijgewerkt
 newtab-widget-message-title = Blijf gefocust met lijsten en een ingebouwde timer
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Van snelle herinneringen tot dagelijkse to-do’s, en van focussessies tot lange pauzes – blijf bij de taak en op tijd.
@@ -710,3 +719,25 @@ newtab-promo-card-cta = Meer info
 newtab-promo-card-dismiss-button =
     .title = Sluiten
     .aria-label = Sluiten
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-dismiss-button =
+    .title = Sluiten
+    .aria-label = Sluiten
+# "This space" refers to about:newtab. The call to action here ("make it your own")
+# is to customize newtab with a background image or colour, or by tweaking the
+# existing widgetry that appears on it.
+newtab-activation-window-message-customization-focus-header = Deze ruimte aanpassen aan uw wensen
+newtab-activation-window-message-customization-focus-message = Kies een nieuwe achtergrond, voeg snelkoppelingen naar uw favoriete websites toe en blijf op de hoogte van verhalen die u interesseren.
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = Beginnen met aanpassen
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = Deze ruimte volgt uw regels
+newtab-activation-window-message-values-focus-message = Met { -brand-product-name } kunt u surfen zoals u dat wilt, met een meer persoonlijke manier om uw dag online te beginnen. Maak { -brand-product-name } van uzelf.

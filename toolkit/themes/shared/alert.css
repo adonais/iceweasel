@@ -116,10 +116,8 @@
 }
 
 #alertImage {
-  width: 80px;
-  height: 80px;
-  max-width: 80px;
-  max-height: 80px;
+  width: var(--size-image-xlarge);
+  height: var(--size-image-xlarge);
   object-fit: scale-down;
   margin: 0 7px 7px;
 }

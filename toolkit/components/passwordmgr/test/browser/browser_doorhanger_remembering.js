@@ -250,7 +250,7 @@ add_task(async function test_clickRemember() {
   checkOnlyLoginWasUsedTwice({ justChanged: false });
 
   // remove that login
-  Services.logins.removeLogin(login1);
+  await Services.logins.removeLoginAsync(login1);
   await cleanupDoorhanger();
 });
 
@@ -479,7 +479,7 @@ add_task(async function test_pwOnlyNewLoginMatchesUPForm() {
   Assert.equal(login.password, "notifyp1", "Check the password");
   Assert.equal(login.timesUsed, 2, "Check times used");
 
-  Services.logins.removeLogin(login);
+  await Services.logins.removeLoginAsync(login);
 });
 
 add_task(async function test_pwOnlyOldLoginMatchesUPForm() {
@@ -537,7 +537,7 @@ add_task(async function test_pwOnlyOldLoginMatchesUPForm() {
   Assert.equal(login.password, "notifyp1", "Check the password");
   Assert.equal(login.timesUsed, 2, "Check times used");
 
-  Services.logins.removeLogin(login);
+  await Services.logins.removeLoginAsync(login);
 });
 
 add_task(async function test_pwOnlyFormMatchesLogin() {
@@ -567,7 +567,7 @@ add_task(async function test_pwOnlyFormMatchesLogin() {
   Assert.equal(login.password, "notifyp1", "Check the password");
   Assert.equal(login.timesUsed, 2, "Check times used");
 
-  Services.logins.removeLogin(login1);
+  await Services.logins.removeLoginAsync(login1);
 });
 
 add_task(async function test_pwOnlyFormDoesntMatchExisting() {
@@ -599,7 +599,7 @@ add_task(async function test_pwOnlyFormDoesntMatchExisting() {
   Assert.equal(login.password, "notifyp1B", "Check the password unchanged");
   Assert.equal(login.timesUsed, 1, "Check times used");
 
-  Services.logins.removeLogin(login1B);
+  await Services.logins.removeLoginAsync(login1B);
 });
 
 add_task(async function test_changeUPLoginOnUPForm_dont() {
@@ -640,7 +640,7 @@ add_task(async function test_changeUPLoginOnUPForm_dont() {
   Assert.equal(login.password, "notifyp1", "Check the password unchanged");
   Assert.equal(login.timesUsed, 1, "Check times used");
 
-  Services.logins.removeLogin(login1);
+  await Services.logins.removeLoginAsync(login1);
 });
 
 add_task(async function test_changeUPLoginOnUPForm_remove() {
@@ -740,7 +740,7 @@ add_task(async function test_changeUPLoginOnUPForm_change() {
 
   // cleanup
   login1.password = "pass2";
-  Services.logins.removeLogin(login1);
+  await Services.logins.removeLoginAsync(login1);
   login1.password = "notifyp1";
 });
 
@@ -824,7 +824,7 @@ add_task(async function test_changePLoginOnPForm() {
   Assert.equal(login.password, "notifyp1", "Check the password changed");
   Assert.equal(login.timesUsed, 3, "Check times used");
 
-  Services.logins.removeLogin(login2);
+  await Services.logins.removeLoginAsync(login2);
 });
 
 add_task(async function test_checkUPSaveText() {
@@ -959,7 +959,7 @@ add_task(async function test_change2pw0unExistingDifferentUP() {
   Assert.equal(login.password, "notifyp1B", "Check the password unchanged");
   Assert.equal(login.timesUsed, 1, "Check times used");
 
-  Services.logins.removeLogin(login1B);
+  await Services.logins.removeLoginAsync(login1B);
 });
 
 add_task(async function test_change2pw0unExistingDifferentP() {
@@ -993,7 +993,7 @@ add_task(async function test_change2pw0unExistingDifferentP() {
   Assert.equal(login.password, "notifyp1B", "Check the password unchanged");
   Assert.equal(login.timesUsed, 1, "Check times used");
 
-  Services.logins.removeLogin(login2B);
+  await Services.logins.removeLoginAsync(login2B);
 });
 
 add_task(async function test_change2pw0unExistingWithSameP() {
@@ -1027,7 +1027,7 @@ add_task(async function test_change2pw0unExistingWithSameP() {
 
   await checkOnlyLoginWasUsedTwice({ justChanged: false });
 
-  Services.logins.removeLogin(login2);
+  await Services.logins.removeLoginAsync(login2);
 });
 
 add_task(async function test_changeUPLoginOnPUpdateForm() {
@@ -1068,7 +1068,7 @@ add_task(async function test_changeUPLoginOnPUpdateForm() {
 
   // cleanup
   login1.password = "pass2";
-  Services.logins.removeLogin(login1);
+  await Services.logins.removeLoginAsync(login1);
   login1.password = "notifyp1";
 });
 
@@ -1152,7 +1152,7 @@ add_task(async function test_recipeCaptureFields_ExistingLogin() {
   Assert.equal(login.password, "notifyp1", "Check the password unchanged");
   Assert.equal(login.timesUsed, 2, "Check times used incremented");
 
-  Services.logins.removeAllUserFacingLogins();
+  await Services.logins.removeAllUserFacingLoginsAsync();
 });
 
 add_task(async function test_saveUsingEnter() {
@@ -1209,7 +1209,7 @@ add_task(async function test_saveUsingEnter() {
     );
     Assert.equal(login.timesUsed, 1, "Check times used on new entry");
 
-    Services.logins.removeAllUserFacingLogins();
+    await Services.logins.removeAllUserFacingLoginsAsync();
   }
 
   await testWithTextboxSelector("#password-notification-password");

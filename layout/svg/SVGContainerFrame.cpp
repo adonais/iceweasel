@@ -431,8 +431,8 @@ gfxMatrix SVGDisplayContainerFrame::GetCanvasTM() {
     NS_ASSERTION(GetParent(), "null parent");
     auto* parent = static_cast<SVGContainerFrame*>(GetParent());
     auto* content = static_cast<SVGElement*>(GetContent());
-    mCanvasTM = MakeUnique<gfxMatrix>(content->ChildToUserSpaceTransform() *
-                                      parent->GetCanvasTM());
+    mCanvasTM = std::make_unique<gfxMatrix>(
+        content->ChildToUserSpaceTransform() * parent->GetCanvasTM());
   }
 
   return *mCanvasTM;

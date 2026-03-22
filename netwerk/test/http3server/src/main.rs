@@ -76,6 +76,10 @@ struct Http3TestServer {
     wt_unidi_conn_to_stream: HashMap<ConnectionRef, Http3OrWebTransportStream>,
     wt_unidi_echo_back: HashMap<Http3OrWebTransportStream, Http3OrWebTransportStream>,
     received_datagram: Option<Bytes>,
+    // When true, server will stop processing datagrams after accepting 0-RTT,
+    // simulating a stuck ZERORTT session that never transitions to CONNECTED.
+    stuck_0rtt_mode: bool,
+    stuck_0rtt_activated: bool,
 }
 
 impl ::std::fmt::Display for Http3TestServer {
@@ -96,6 +100,8 @@ impl Http3TestServer {
             wt_unidi_conn_to_stream: HashMap::new(),
             wt_unidi_echo_back: HashMap::new(),
             received_datagram: None,
+            stuck_0rtt_mode: false,
+            stuck_0rtt_activated: false,
         }
     }
 
@@ -189,13 +195,27 @@ impl Http3TestServer {
 }
 
 impl HttpServer for Http3TestServer {
-    fn process_multiple<'a>(
+    fn process_multiple<'a, D: IntoIterator<Item = Datagram<&'a mut [u8]>>>(
         &mut self,
-        dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
+        dgrams: D,
         now: Instant,
         max_datagrams: NonZeroUsize,
     ) -> OutputBatch {
+        // If stuck_0rtt_mode is enabled and we've already processed datagrams once,
+        // stop processing to simulate a connection stuck in ZERORTT state.
+        if self.stuck_0rtt_mode && self.stuck_0rtt_activated {
+            qinfo!("Stuck 0-RTT mode active - ignoring datagrams to keep session in ZERORTT");
+            // Return Callback to keep the server loop running but don't process datagrams
+            return OutputBatch::Callback(Duration::from_millis(100));
+        }
+
         let output = self.server.process_multiple(dgrams, now, max_datagrams);
+
+        // If we just processed datagrams with stuck mode enabled, mark it as activated
+        if self.stuck_0rtt_mode && !self.stuck_0rtt_activated {
+            qinfo!("Stuck 0-RTT mode activated - next datagrams will be ignored");
+            self.stuck_0rtt_activated = true;
+        }
 
         let output = if self.sessions_to_close.is_empty() && self.connections_to_close.is_empty() {
             output
@@ -283,6 +303,22 @@ impl HttpServer for Http3TestServer {
                                     .unwrap();
                             } else if path == b"/EarlyResponse" {
                                 stream.stream_stop_sending(Error::HttpNone.code()).unwrap();
+                            } else if path == b"/SetStuckZeroRtt" {
+                                qinfo!("Enabling stuck 0-RTT mode - next connection will be stuck in ZERORTT");
+                                self.stuck_0rtt_mode = true;
+                                let response_body = b"Stuck 0-RTT mode enabled".to_vec();
+                                stream
+                                    .send_headers(&[
+                                        Header::new(":status", "200"),
+                                        Header::new("cache-control", "no-cache"),
+                                        Header::new("content-type", "text/plain"),
+                                        Header::new(
+                                            "content-length",
+                                            response_body.len().to_string(),
+                                        ),
+                                    ])
+                                    .unwrap();
+                                self.new_response(stream, response_body, now);
                             } else if path == b"/RequestRejected" {
                                 stream
                                     .stream_stop_sending(Error::HttpRequestRejected.code())
@@ -712,9 +748,9 @@ impl ::std::fmt::Display for Server {
 }
 
 impl HttpServer for Server {
-    fn process_multiple<'a>(
+    fn process_multiple<'a, D: IntoIterator<Item = Datagram<&'a mut [u8]>>>(
         &mut self,
-        dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
+        dgrams: D,
         now: Instant,
         max_datagrams: NonZeroUsize,
     ) -> OutputBatch {
@@ -953,9 +989,9 @@ impl Http3ReverseProxyServer {
 }
 
 impl HttpServer for Http3ReverseProxyServer {
-    fn process_multiple<'a>(
+    fn process_multiple<'a, D: IntoIterator<Item = Datagram<&'a mut [u8]>>>(
         &mut self,
-        dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
+        dgrams: D,
         now: Instant,
         max_datagrams: NonZeroUsize,
     ) -> OutputBatch {
@@ -1103,9 +1139,9 @@ impl Http3ConnectProxyServer {
 }
 
 impl HttpServer for Http3ConnectProxyServer {
-    fn process_multiple<'a>(
+    fn process_multiple<'a, D: IntoIterator<Item = Datagram<&'a mut [u8]>>>(
         &mut self,
-        dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
+        dgrams: D,
         now: Instant,
         max_datagrams: NonZeroUsize,
     ) -> OutputBatch {
@@ -1471,9 +1507,9 @@ impl ::std::fmt::Display for NonRespondingServer {
 }
 
 impl HttpServer for NonRespondingServer {
-    fn process_multiple<'a>(
+    fn process_multiple<'a, D: IntoIterator<Item = Datagram<&'a mut [u8]>>>(
         &mut self,
-        _dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
+        _dgrams: D,
         _now: Instant,
         _max_datagrams: NonZeroUsize,
     ) -> OutputBatch {
@@ -1724,4 +1760,6 @@ extern "C" {}
 #[cfg_attr(target_os = "windows", link(name = "propsys"))]
 extern "C" {}
 #[cfg_attr(target_os = "windows", link(name = "iphlpapi"))]
+extern "C" {}
+#[cfg_attr(target_os = "windows", link(name = "rpcrt4"))]
 extern "C" {}

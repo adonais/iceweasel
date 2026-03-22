@@ -22,6 +22,24 @@ const { TestIndexedDBCache: SharedIndexedDBCache } = ChromeUtils.importESModule(
   "chrome://global/content/ml/ModelHub.sys.mjs"
 );
 
+const {
+  SecurityOrchestrator: SharedSecurityOrchestrator,
+  getSecurityOrchestrator: sharedGetSecurityOrchestrator,
+} = ChromeUtils.importESModule(
+  "chrome://global/content/ml/security/SecurityOrchestrator.sys.mjs"
+);
+
+const PREF_SECURITY_ENABLED = "browser.ml.security.enabled";
+
+async function setupSecurity() {
+  Services.prefs.setBoolPref(PREF_SECURITY_ENABLED, true);
+}
+
+async function teardownSecurity() {
+  Services.prefs.clearUserPref(PREF_SECURITY_ENABLED);
+  await SharedSecurityOrchestrator.resetForTesting();
+}
+
 function createRandomBlob(blockSize = 8, count = 1) {
   const blocks = Array.from({ length: count }, () =>
     Uint32Array.from(

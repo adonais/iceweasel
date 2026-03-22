@@ -8,8 +8,8 @@
  * Storage of the attributes of a DOM node.
  */
 
-#ifndef AttrArray_h___
-#define AttrArray_h___
+#ifndef AttrArray_h_
+#define AttrArray_h_
 
 #if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
 #include <xmmintrin.h>

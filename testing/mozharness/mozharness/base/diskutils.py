@@ -32,9 +32,6 @@ except DiskutilsError as e:
 import ctypes
 import logging
 import os
-import sys
-
-from six import string_types
 
 from mozharness.base.log import INFO, numeric_log_level
 
@@ -126,11 +123,7 @@ class DiskSize:
         dummy = ctypes.c_ulonglong()  # needed by the dll call but not used
         total = ctypes.c_ulonglong()  # stores the total space value
         free = ctypes.c_ulonglong()  # stores the free space value
-        # depending on path format (unicode or not) and python version (2 or 3)
-        # we need to call GetDiskFreeSpaceExW or GetDiskFreeSpaceExA
-        called_function = ctypes.windll.kernel32.GetDiskFreeSpaceExA
-        if isinstance(path, string_types) or sys.version_info >= (3,):
-            called_function = ctypes.windll.kernel32.GetDiskFreeSpaceExW
+        called_function = ctypes.windll.kernel32.GetDiskFreeSpaceExW
         # we're ready for the dll call. On error it returns 0
         if (
             called_function(

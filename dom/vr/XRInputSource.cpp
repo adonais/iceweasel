@@ -111,7 +111,7 @@ nsTArray<nsString> GetInputSourceProfile(gfx::VRControllerType aType) {
       profile.AppendElement(id);
       break;
     default:
-      NS_WARNING("Unsupported XR input source profile.\n");
+      NS_WARNING("Unsupported XR input source profile.");
       break;
   }
   return profile;

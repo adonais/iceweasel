@@ -399,7 +399,9 @@ class AsyncGeneratorObject : public AbstractGeneratorObject {
   State state() const {
     return static_cast<State>(getFixedSlot(Slot_State).toInt32());
   }
-  void setState(State state_) { setFixedSlot(Slot_State, Int32Value(state_)); }
+  void setState(State state_) {
+    setNeverGCThingFixedSlot(Slot_State, Int32Value(state_));
+  }
 
  private:
   // Queue is implemented in 2 ways.  If only one request is queued ever,

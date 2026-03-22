@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">この端末を追跡させません</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">すべてのプライベートタブを閉じると、%1$s により Cookie、履歴、サイトデータが削除されます。%2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -323,6 +316,10 @@
   <string name="browser_menu_save_as_pdf_2">PDF として保存</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">ページを翻訳</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">ページを要約</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">新機能</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">動作しないサイトを報告...</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -375,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">ページを %1$s から %2$s に翻訳しました。</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">端末を振ると、このページの内容を数秒で要約できます。⚡️</string>
   <!--
     Translation Toolbar
 
@@ -646,6 +645,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">設定を管理</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">気味の悪いトラッカーに別れを告げよう</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">リンクを開く時もプライバシー保護</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">私たちはあなたのデータを保護し、企業によるクリックの監視を自動的にブロックします。</string>
   <!-- "Set to default" onboarding button. -->
@@ -923,8 +924,6 @@
   <string name="preferences_search_browsing_history">閲覧履歴を検索する</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">ブックマークを検索する</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">ショートカットを表示する</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">同期したタブを検索する</string>
   <!-- Preference for account settings -->
@@ -945,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">%1$s からの提案</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">検索語句に関連した提案をウェブから取得します</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">入力に応じて Mozilla からの候補を取得する</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">リンク共有</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -971,7 +972,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">このフォルダーを使用する権限がありません。別のフォルダーを選択してください。</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">このフォルダーを使用する権限がありません。別のフォルダーを選択してください。</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">別のアプリでダウンロードを管理する</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1035,8 +1036,10 @@
   <!--
     Customize Home
 
-    Header text for jumping back into the recent tab in customize the home screen
+    Title for the customize home screen section with privacy report.
   -->
+  <string name="customize_toggle_privacy_report">プライバシー報告</string>
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">以前表示したタブ</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">ブックマーク</string>
@@ -1595,6 +1598,8 @@
   <string name="tab_manager_multiselect_menu_item_share">共有</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">コレクションに追加</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">グループに追加</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">選択したタブを共有</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1635,6 +1640,27 @@
   <string name="pwa_site_controls_title_private">%1$s (プライベートモード)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">タブ検索を開く</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">タブグループを作成</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">グループを編集</string>
+  <string name="create_tab_group_save_button">保存</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">タブグループの編集を閉じる</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">グループ</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">グループ %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">グループ名</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">グループ名</string>
   <!--
     History
 
@@ -1736,6 +1762,8 @@
   <string name="download_share_url">URL を共有</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">ファイルを共有</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">ファイル名を変更</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">本当に選択したアイテムを削除してもよろしいですか？</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
@@ -1748,6 +1776,26 @@
   <string name="download_rename_dialog_label">名前</string>
   <string name="download_rename_dialog_confirm_button">保存</string>
   <string name="download_rename_dialog_cancel_button">キャンセル</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">この場所には “%s” という同じ名前のファイルが存在します</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">ファイル名に “/” は使用できません</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">ファイル名を変更できません</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">システムまたはストレージの制限により、このファイルの名前を変更できません。</string>
+  <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">ファイル形式を %s に変更しますか？</string>
+  <string name="change_file_extension_description">この操作はファイルを別のアプリで開くため、端末に危険が及ぶ可能性があります。</string>
+  <string name="change_file_extension_cancel_button">キャンセル</string>
+  <string name="change_file_extension_confirm_button">はい、変更します</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">ダウンロード中</string>
   <!--
@@ -1947,7 +1995,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">編集</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">コピー</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">コピー</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">共有</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2003,11 +2051,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s を削除しました</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">元に戻す</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">元に戻す</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">%s を削除しました</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s を削除しました</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">削除されたアイテム: %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">削除されたアイテム: %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">前のページへ戻る</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2277,23 +2325,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Firefox を既定のブラウザーに設定しましょう</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">プライベートブラウジングを試す</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">プライベートブラウジングを試す</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Cookie や履歴を %1$s に保存せずに閲覧します</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Cookie や履歴を %1$s に保存せずに閲覧します</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">足跡を残さずにブラウジング</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">足跡を残さずにブラウジング</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">%1$s のプライベートブラウジングは知られたくない情報を残しません。</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s のプライベートブラウジングは知られたくない情報を残しません。</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">検索を使ってみよう</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">検索を使ってみよう</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">気になること、興味のあることをさがしてみましょう。</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">気になること、興味のあることをさがしてみましょう。</string>
   <!--
     Survey
 
@@ -2469,6 +2517,16 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s はインターネット上で個人の行動を追跡する数多くのトラッカーからあなたを守ります。</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">詳細情報</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="other">%d 個のトラッカーをブロックしました</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">保護されています</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">標準 (既定)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2865,6 +2923,10 @@
   <string name="preferences_email_masks_suggest_learn_more">詳細情報</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">メールマスクを管理</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">無料のメールマスク 5 個を使い切ったので、再利用する 1 個を選びました。</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">メールマスクは現在ご利用いただけません。数分後にもう一度お試しください。</string>
   <!--
     Autofill
 
@@ -3635,6 +3697,13 @@
   -->
   <string name="connection_security_panel_verified_by">認証局: %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">発行対象: %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Regulation (EU) 2024/1183 に規定された要件を満たしています。</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3684,6 +3753,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">プライベートタブに追加</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -3722,6 +3793,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Firefox では検索しない</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">同期を使用しない</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">動作が遅いか、バグが多い</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">機能が見つけにくい、または足りない</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">分かりにくい、または使いにくい</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">悪くはないが、他のブラウザーより優れているわけではない</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">私は今後も Firefox を使い続けるつもりです</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Firefox の印刷機能の改善にご協力ください。時間はかかりません。</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3736,6 +3817,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Firefox での検索にどの程度満足していますか？</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Firefox の同期機能にどの程度満足していますか？</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Firefox の改善にご協力ください。これまでのご利用経験の中で、最も当てはまるものはどれですか？</string>
   <!--
     Accessibility
 
@@ -4034,8 +4117,6 @@
   <string name="content_description_settings_search_navigate_back">前のページへ戻る</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">最近の検索はありません</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">問題が発生しています</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">すべて消去</string>
   <!-- Section header for recent search results -->

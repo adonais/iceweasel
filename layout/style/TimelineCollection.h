@@ -9,7 +9,7 @@
 
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/PseudoStyleType.h"
+#include "mozilla/PseudoStyleRequest.h"
 #include "mozilla/RefPtr.h"
 #include "nsAtomHashKeys.h"
 #include "nsTHashMap.h"

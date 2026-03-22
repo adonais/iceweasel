@@ -32,8 +32,8 @@
  * that the placeholder points to its out-of-flow.
  */
 
-#ifndef nsPlaceholderFrame_h___
-#define nsPlaceholderFrame_h___
+#ifndef nsPlaceholderFrame_h_
+#define nsPlaceholderFrame_h_
 
 #include "nsGkAtoms.h"
 #include "nsIFrame.h"
@@ -187,4 +187,4 @@ class nsPlaceholderFrame final : public nsIFrame {
   nsIFrame* mOutOfFlowFrame;
 };
 
-#endif /* nsPlaceholderFrame_h___ */
+#endif /* nsPlaceholderFrame_h_ */

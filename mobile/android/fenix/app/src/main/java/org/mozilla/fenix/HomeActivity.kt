@@ -161,7 +161,6 @@ import org.mozilla.fenix.splashscreen.DefaultSplashScreenStorage
 import org.mozilla.fenix.splashscreen.FetchExperimentsOperation
 import org.mozilla.fenix.splashscreen.SplashScreenManager
 import org.mozilla.fenix.tabhistory.TabHistoryDialogFragment
-import org.mozilla.fenix.tabstray.TabsTrayFragment
 import org.mozilla.fenix.theme.DefaultThemeManager
 import org.mozilla.fenix.theme.StatusBarColorManager
 import org.mozilla.fenix.theme.ThemeManager
@@ -197,7 +196,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         WebExtensionPopupObserver(components.core.store, ::openPopup)
     }
 
-    val webExtensionPromptFeature by lazy {
+    private val webExtensionPromptFeature by lazy {
         WebExtensionPromptFeature(
             store = components.core.store,
             context = this@HomeActivity,
@@ -395,7 +394,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         // Changing a language on the Language screen restarts the activity, but the activity keeps
         // the old layout direction. We have to update the direction manually.
         window.decorView.layoutDirection = Locale.getDefault().layoutDirection
-        window.setupPersistentInsets()
 
         binding = ActivityHomeBinding.inflate(layoutInflater)
         val isLauncherIntent = intent.toSafeIntent().isLauncherIntent
@@ -542,7 +540,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             defaultTopSitesBinding,
             TopSitesRefresher(
                 settings = settings(),
-                topSitesProvider = components.core.marsTopSitesProvider,
+                topSitesProvider = if (settings().enableMozillaAdsClient) {
+                    components.core.macTopSitesProvider
+                } else {
+                    components.core.marsTopSitesProvider
+                },
                 startupPathProvider = startupPathProvider,
                 visualCompletenessQueue = components.performance.visualCompletenessQueue,
             ),
@@ -733,6 +735,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         // DO NOT MOVE ANYTHING ABOVE THIS getProfilerTime CALL.
         val startProfilerTime = components.core.engine.profiler?.getProfilerTime()
 
+        window.setupPersistentInsets()
+
         components.termsOfUseManager.onStart()
 
         super.onStart()
@@ -845,7 +849,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         )
 
         components.core.contileTopSitesUpdater.stopPeriodicWork()
-        components.core.pocketStoriesService.stopPeriodicSponsoredStoriesRefresh()
         components.core.pocketStoriesService.stopPeriodicContentRecommendationsRefresh()
         components.core.pocketStoriesService.stopPeriodicSponsoredContentsRefresh()
         privateNotificationObserver?.stop()
@@ -927,19 +930,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             listOf(
                 CrashReporterIntentProcessor(components.appStore),
             ) + externalSourceIntentProcessors
-        val intentHandled =
-            intentProcessors.any { it.process(intent, navHost.navController, this.intent, settings()) }
+        intentProcessors.forEach { it.process(intent, navHost.navController, this.intent, settings()) }
         browsingModeManager.updateMode(intent)
-
-        if (intentHandled) {
-            supportFragmentManager
-                .primaryNavigationFragment
-                ?.childFragmentManager
-                ?.fragments
-                ?.lastOrNull()
-                ?.let { it as? TabsTrayFragment }
-                ?.also { it.dismissAllowingStateLoss() }
-        }
     }
 
     /**
@@ -1446,7 +1438,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
 
     @VisibleForTesting
     internal fun showCrashReporter(crashIDs: List<String>?, ctxt: Context) {
-        if (!settings().useNewCrashReporterDialog) {
+        if (!settings().useNewCrashReporterFlow) {
             return
         }
 

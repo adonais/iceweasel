@@ -354,7 +354,7 @@ bool GCUntilCacheSweep(JSContext* cx, const Cache& cache) {
 
   CHECK(IsIncrementalGCInProgress(cx));
   CHECK(zone->isGCSweeping());
-  CHECK(cache.needsIncrementalBarrier());
+  CHECK(cache.needsMarkingBarrier());
 
   return true;
 }
@@ -369,7 +369,7 @@ bool SweepCacheAndFinishGC(JSContext* cx, const Cache& cache) {
   JS::Zone* zone = JS::GetObjectZone(global);
   CHECK(!IsIncrementalGCInProgress(cx));
   CHECK(!zone->isCollecting());
-  CHECK(!cache.needsIncrementalBarrier());
+  CHECK(!cache.needsMarkingBarrier());
 
   return true;
 }
@@ -534,7 +534,7 @@ bool TestMap() {
   CHECK(cache.lookup(obj1)->key() == obj1);
 
   CHECK(GCUntilCacheSweep(cx, cache));
-  CHECK(cache.needsIncrementalBarrier());
+  CHECK(cache.needsMarkingBarrier());
 
   CHECK(!cache.has(obj2));
   CHECK(cache.put(obj2, 2));
@@ -542,7 +542,7 @@ bool TestMap() {
   CHECK(cache.lookup(obj2)->key() == obj2);
 
   CHECK(SweepCacheAndFinishGC(cx, cache));
-  CHECK(!cache.needsIncrementalBarrier());
+  CHECK(!cache.needsMarkingBarrier());
 
   CHECK(cache.count() == 2);
   CHECK(cache.has(obj1));

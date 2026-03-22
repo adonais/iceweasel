@@ -7,8 +7,8 @@
  * Interface definitions for the unified fuzzing interface
  */
 
-#ifndef FuzzingInterface_h__
-#define FuzzingInterface_h__
+#ifndef FuzzingInterface_h_
+#define FuzzingInterface_h_
 
 #include <fstream>
 
@@ -71,4 +71,4 @@ int afl_interface_raw(FuzzingTestFuncRaw testFunc);
   MOZ_LIBFUZZER_INTERFACE_RAW(initFunc, testFunc, moduleName);    \
   MOZ_AFL_INTERFACE_RAW(initFunc, testFunc, moduleName);
 
-#endif  // FuzzingInterface_h__
+#endif  // FuzzingInterface_h_

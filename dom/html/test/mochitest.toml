@@ -323,7 +323,7 @@ skip-if = [
 
 ["test_bug369370.html"]
 run-if = [
-  "os == '!android'",
+  "os != 'android'",
 ]
 
 ["test_bug371375.html"]

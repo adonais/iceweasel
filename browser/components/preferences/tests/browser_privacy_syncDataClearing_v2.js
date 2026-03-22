@@ -8,10 +8,7 @@
  */
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["privacy.clearOnShutdown.cookies", true],
-      ["privacy.sanitize.useOldClearHistoryDialog", false],
-    ],
+    set: [["privacy.clearOnShutdown.cookies", true]],
   });
 });
 

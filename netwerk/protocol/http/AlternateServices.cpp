@@ -322,6 +322,24 @@ AltSvcMapping::AltSvcMapping(nsIDataStorage* storage, int32_t epoch,
   }
 }
 
+AltSvcMapping::AltSvcMapping(const nsACString& originScheme,
+                             const nsACString& originHost, int32_t originPort,
+                             const nsACString& username, bool privateBrowsing,
+                             const nsACString& alternateHost,
+                             int32_t alternatePort, const nsACString& npnToken,
+                             const OriginAttributes& originAttributes,
+                             bool aIsHttp3, SupportedAlpnRank aRank)
+    : mAlternateHost(alternateHost),
+      mAlternatePort(alternatePort),
+      mOriginHost(originHost),
+      mOriginPort(originPort),
+      mUsername(username),
+      mPrivate(privateBrowsing),
+      mNPNToken(npnToken),
+      mOriginAttributes(originAttributes),
+      mIsHttp3(aIsHttp3),
+      mAlpnRank(aRank) {}
+
 void AltSvcMapping::MakeHashKey(nsCString& outKey,
                                 const nsACString& originScheme,
                                 const nsACString& originHost,
@@ -1226,7 +1244,7 @@ void AltSvcCache::UpdateAltServiceMapping(
 already_AddRefed<AltSvcMapping> AltSvcCache::GetAltServiceMapping(
     const nsACString& scheme, const nsACString& host, int32_t port,
     bool privateBrowsing, const OriginAttributes& originAttributes,
-    bool aHttp2Allowed, bool aHttp3Allowed) {
+    bool aHttp2Allowed, bool aHttp3Allowed, bool aForceHttp3First) {
   EnsureStorageInited();
 
   bool isHTTPS;
@@ -1242,6 +1260,12 @@ already_AddRefed<AltSvcMapping> AltSvcCache::GetAltServiceMapping(
 
   // First look for HTTP3
   if (aHttp3Allowed) {
+    if (aForceHttp3First) {
+      RefPtr<Http3FirstAltSvcMapping> mapping = new Http3FirstAltSvcMapping(
+          "https"_ns, host, port, ""_ns, privateBrowsing, host, port, "h3"_ns,
+          originAttributes, true, SupportedAlpnRank::HTTP_3_VER_1);
+      return mapping.forget();
+    }
     nsAutoCString key;
     AltSvcMapping::MakeHashKey(key, scheme, host, port, privateBrowsing,
                                originAttributes, true);
@@ -1405,6 +1429,28 @@ template class AltSvcTransaction<AltSvcTransactionChild>;
 
 NS_IMPL_ISUPPORTS(AltSvcOverride, nsIInterfaceRequestor,
                   nsISpeculativeConnectionOverrider)
+
+Http3FirstAltSvcMapping::Http3FirstAltSvcMapping(
+    const nsACString& originScheme, const nsACString& originHost,
+    int32_t originPort, const nsACString& username, bool privateBrowsing,
+    const nsACString& alternateHost, int32_t alternatePort,
+    const nsACString& npnToken, const OriginAttributes& originAttributes,
+    bool aIsHttp3, SupportedAlpnRank aRank)
+    : AltSvcMapping(originScheme, originHost, originPort, username,
+                    privateBrowsing, alternateHost, alternatePort, npnToken,
+                    originAttributes, aIsHttp3, aRank) {}
+
+Http3FirstAltSvcMapping::~Http3FirstAltSvcMapping() = default;
+
+void Http3FirstAltSvcMapping::GetConnectionInfo(
+    nsHttpConnectionInfo** outCI, nsProxyInfo* pi,
+    const OriginAttributes& originAttributes) {
+  RefPtr<nsHttpConnectionInfo> ci = new nsHttpConnectionInfo(
+      mOriginHost, mOriginPort, mNPNToken, mUsername, pi, originAttributes,
+      mAlternateHost, mAlternatePort, mIsHttp3, false);
+  ci->SetPrivate(mPrivate);
+  ci.forget(outCI);
+}
 
 }  // namespace net
 }  // namespace mozilla

@@ -331,14 +331,14 @@ endif
 
 SRC_TAR_PREFIX = $(MOZ_APP_NAME)-$(MOZ_PKG_VERSION)
 SRC_TAR_EXCLUDE_PATHS += \
-  --exclude='.hg*' \
-  --exclude='.git' \
-  --exclude='.gitattributes' \
-  --exclude='.gitkeep' \
-  --exclude='.gitmodules' \
+  --exclude='./.hg*' \
+  --exclude='./.git' \
+  --exclude='./.gitattributes' \
+  --exclude='./.gitkeep' \
+  --exclude='./.gitmodules' \
   --exclude='CVS' \
   --exclude='.cvs*' \
-  --exclude='.mozconfig*' \
+  --exclude='./.mozconfig*' \
   --exclude='*.pyc' \
   --exclude='$(MOZILLA_DIR)/Makefile' \
   --exclude='$(MOZILLA_DIR)/dist'

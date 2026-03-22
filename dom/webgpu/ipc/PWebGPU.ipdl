@@ -56,7 +56,7 @@ parent:
 child:
   async ServerMessage(ByteBuf buf);
 
-  async UncapturedError(RawId aDeviceId, nsCString message);
+  async UncapturedError(RawId aDeviceId, GPUErrorFilter type, nsCString message);
   async DeviceLost(RawId aDeviceId, uint8_t reason, nsCString message);
   async __delete__();
 };

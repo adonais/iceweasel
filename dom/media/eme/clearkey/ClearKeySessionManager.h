@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef __ClearKeyDecryptor_h__
-#define __ClearKeyDecryptor_h__
+#ifndef ClearKeyDecryptor_h_
+#define ClearKeyDecryptor_h_
 
 // This include is required in order for content_decryption_module to work
 // on Unix systems.
@@ -133,4 +133,4 @@ class ClearKeySessionManager final : public RefCounted {
   mozilla::TimeStamp mLastOutputProtectionQueryTime;
 };
 
-#endif  // __ClearKeyDecryptor_h__
+#endif  // ClearKeyDecryptor_h_

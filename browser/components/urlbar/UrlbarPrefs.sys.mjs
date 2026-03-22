@@ -10,11 +10,13 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
+import { TelemetryReportingPolicy } from "resource://gre/modules/TelemetryReportingPolicy.sys.mjs";
+
 const lazy = XPCOMUtils.declareLazy({
-  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
-  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 const PREF_URLBAR_BRANCH = "browser.urlbar.";
@@ -40,12 +42,24 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // Feature gate pref for addon suggestions in the urlbar.
   ["addons.featureGate", false],
 
+  // The minimum prefix length of an addons keyword the user must type to
+  // trigger the suggestion.
+  ["addons.minKeywordLength", 0],
+
   // The number of times the user has clicked the "Show less frequently" command
   // for addon suggestions.
   ["addons.showLessFrequentlyCount", 0],
 
   // Feature gate pref for AMP suggestions in the urlbar.
   ["amp.featureGate", false],
+
+  // The minimum prefix length of an AMP keyword the user must type to trigger
+  // the suggestion.
+  ["amp.minKeywordLength", 0],
+
+  // The number of times the user has clicked the "Show less frequently" command
+  // for AMP suggestions.
+  ["amp.showLessFrequentlyCount", 0],
 
   // "Autofill" is the name of the feature that automatically completes domains
   // and URLs that the user has visited as the user is typing them in the urlbar
@@ -201,11 +215,25 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // Feature gate pref for mdn suggestions in the urlbar.
   ["mdn.featureGate", true],
 
+  // The minimum prefix length of a mdn keyword the user must type to trigger
+  // the suggestion.
+  ["mdn.minKeywordLength", 0],
+
+  // If defined and non-zero, this is the maximum number of times the user
+  // will be able to click the "Show less frequently" command for mdn
+  // suggestions. If undefined or zero, the user will be able to click the
+  // command without any limit.
+  ["mdn.showLessFrequentlyCap", 0],
+
+  // The number of times the user has clicked the "Show less frequently" command
+  // for mdn suggestions.
+  ["mdn.showLessFrequentlyCount", 0],
+
   // Comma-separated list of client variants to send to Merino
   ["merino.clientVariants", ""],
 
   // The Merino endpoint URL, not including parameters.
-  ["merino.endpointURL", "https://merino.services.mozilla.com/api/v1/suggest"],
+  ["merino.endpointURL", ""],
 
   // OHTTP config URL for Merino requests.
   ["merino.ohttpConfigURL", ""],
@@ -257,6 +285,10 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // a keyword at least this many characters long, it will be shown as a top
   // pick.
   ["quicksuggest.ampTopPickCharThreshold", 5],
+
+  // Whether or not use the Nova icon size for AMP suggestion.
+  // Otherwise, use standard rich-suggestion size.
+  ["quicksuggest.ampTopPickUseNovaIconSize", false],
 
   // Whether the Firefox Suggest data collection opt-in result is enabled.
   ["quicksuggest.contextualOptIn", false],
@@ -564,10 +596,6 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // active window.
   ["switchTabs.adoptIntoActiveWindow", false],
 
-  // Controls whether searching for open tabs returns tabs from any container
-  // or only from the current container.
-  ["switchTabs.searchAllContainers", true],
-
   // The minimum number of characters needed to match a tab group name.
   ["tabGroups.minSearchLength", 1],
 
@@ -674,7 +702,7 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
 // the array so that we can preserve blame.
 const PREF_URLBAR_DEFAULTS_MAP = new Map(PREF_URLBAR_DEFAULTS);
 
-const PREF_OTHER_DEFAULTS = new Map([
+const PREF_OTHER_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   ["browser.fixup.dns_first_for_single_words", false],
   ["browser.ml.enable", false],
   ["browser.search.openintab", false],
@@ -683,8 +711,11 @@ const PREF_OTHER_DEFAULTS = new Map([
   ["browser.search.widget.new", false],
   ["keyword.enabled", true],
   ["security.insecure_connection_text.enabled", true],
+  [TelemetryReportingPolicy.TOU_ACCEPTED_DATE_PREF, 0],
   ["ui.popup.disable_autohide", false],
 ]);
+
+const PREF_OTHER_DEFAULTS_MAP = new Map(PREF_OTHER_DEFAULTS);
 
 // Default values for Nimbus urlbar variables that do not have fallback prefs.
 // Variables with fallback prefs do not need to be defined here because their
@@ -867,6 +898,99 @@ function makeDefaultResultGroups({ showSearchSuggestionsFirst }) {
   return rootGroup;
 }
 
+function makeSmartBarGroups() {
+  /**
+   * @type {ResultGroup}
+   */
+  return {
+    children: [
+      // heuristic
+      {
+        maxResultCount: 1,
+        children: [
+          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST },
+          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL },
+          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_HISTORY_URL },
+          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_AI_CHAT },
+          { group: lazy.UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK },
+        ],
+      },
+      // main
+      {
+        flexChildren: true,
+        children: [
+          // search suggestions
+          {
+            flex: 2,
+            children: [
+              {
+                availableSpan: 2,
+                group: lazy.UrlbarUtils.RESULT_GROUP.AI,
+              },
+              {
+                flexChildren: true,
+                children: [
+                  {
+                    // If `maxHistoricalSearchSuggestions` == 0, the muxer forces
+                    // `maxResultCount` to be zero and flex is ignored, per query.
+                    flex: 2,
+                    group: lazy.UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+                  },
+                  {
+                    flex: 99,
+                    group: lazy.UrlbarUtils.RESULT_GROUP.RECENT_SEARCH,
+                  },
+                  {
+                    flex: 4,
+                    group: lazy.UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+                  },
+                ],
+              },
+              {
+                group: lazy.UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION,
+              },
+            ],
+          },
+          // general
+          {
+            flex: 1,
+            group: lazy.UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
+            children: [
+              {
+                availableSpan: 3,
+                group: lazy.UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+              },
+              {
+                flexChildren: true,
+                children: [
+                  {
+                    flex: 2,
+                    group: lazy.UrlbarUtils.RESULT_GROUP.GENERAL,
+                    orderBy: "frecency",
+                  },
+                  {
+                    flex: 1,
+                    group: lazy.UrlbarUtils.RESULT_GROUP.REMOTE_TAB,
+                  },
+                  {
+                    // We show relatively many about-page results because they're
+                    // only added for queries starting with "about:".
+                    flex: 2,
+                    group: lazy.UrlbarUtils.RESULT_GROUP.ABOUT_PAGES,
+                  },
+                ],
+              },
+              {
+                group: lazy.UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+
 /**
  * Preferences class.  The exported object is a singleton instance.
  */
@@ -882,7 +1006,7 @@ class Preferences {
     ]);
 
     Services.prefs.addObserver(PREF_URLBAR_BRANCH, this, true);
-    for (let pref of PREF_OTHER_DEFAULTS.keys()) {
+    for (let pref of PREF_OTHER_DEFAULTS_MAP.keys()) {
       Services.prefs.addObserver(pref, this, true);
     }
     this._observerWeakRefs = [];
@@ -903,7 +1027,7 @@ class Preferences {
    * Returns the value for the preference with the given name.
    * For preferences in the "browser.urlbar."" branch, the passed-in name
    * should be relative to the branch. It's also possible to get prefs from the
-   * PREF_OTHER_DEFAULTS Map, specifying their full name.
+   * PREF_OTHER_DEFAULTS_MAP Map, specifying their full name.
    *
    * @param {string} pref
    *        The name of the preference to get.
@@ -922,7 +1046,7 @@ class Preferences {
    * Sets the value for the preference with the given name.
    * For preferences in the "browser.urlbar."" branch, the passed-in name
    * should be relative to the branch. It's also possible to set prefs from the
-   * PREF_OTHER_DEFAULTS Map, specifying their full name.
+   * PREF_OTHER_DEFAULTS_MAP Map, specifying their full name.
    *
    * @param {string} pref
    *        The name of the preference to set.
@@ -1028,9 +1152,7 @@ class Preferences {
       }
       case "smartbar": {
         // This is a temporary placeholder until smartbar gets its own config.
-        return this.#getOrCacheResultGroups(key, () =>
-          makeDefaultResultGroups({ showSearchSuggestionsFirst: false })
-        );
+        return this.#getOrCacheResultGroups(key, makeSmartBarGroups);
       }
       default: {
         throw new Error(`Unknown SAP name: ${context.sapName}`);
@@ -1082,7 +1204,10 @@ class Preferences {
    */
   observe(subject, topic, data) {
     let pref = data.replace(PREF_URLBAR_BRANCH, "");
-    if (!PREF_URLBAR_DEFAULTS_MAP.has(pref) && !PREF_OTHER_DEFAULTS.has(pref)) {
+    if (
+      !PREF_URLBAR_DEFAULTS_MAP.has(pref) &&
+      !PREF_OTHER_DEFAULTS_MAP.has(pref)
+    ) {
       return;
     }
     this.#notifyObservers("onPrefChanged", pref);
@@ -1246,7 +1371,7 @@ class Preferences {
     let defaultValue = PREF_URLBAR_DEFAULTS_MAP.get(pref);
     if (defaultValue === undefined) {
       branch = Services.prefs;
-      defaultValue = PREF_OTHER_DEFAULTS.get(pref);
+      defaultValue = PREF_OTHER_DEFAULTS_MAP.get(pref);
       if (defaultValue === undefined) {
         let nimbus = this._getNimbusDescriptor(pref);
         if (nimbus) {

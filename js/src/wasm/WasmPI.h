@@ -322,15 +322,9 @@ class SuspenderObject : public NativeObject {
 };
 
 JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
-                                         wasm::ValTypeVector&& params,
-                                         wasm::ValTypeVector&& results);
-
-JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
                                          const FuncType& type);
 
-JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func,
-                                        wasm::ValTypeVector&& params,
-                                        wasm::ValTypeVector&& results);
+JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func);
 
 SuspenderObject* CurrentSuspender(Instance* instance, int reserved);
 

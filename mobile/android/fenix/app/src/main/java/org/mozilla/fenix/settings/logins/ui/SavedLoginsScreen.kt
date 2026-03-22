@@ -27,6 +27,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,12 +50,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.flow.map
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.textfield.TextField
-import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.support.ktx.kotlin.trimmed
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
@@ -64,8 +65,8 @@ import org.mozilla.fenix.compose.list.SelectableFaviconListItem
 import org.mozilla.fenix.settings.biometric.ui.SecureScreen
 import org.mozilla.fenix.settings.logins.ui.LoginsSortOrder.Alphabetical.isGuidToDelete
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -122,7 +123,7 @@ internal object LoginsDestinations {
 
 @Composable
 private fun LoginsList(store: LoginsStore) {
-    val state by store.observeAsState(store.state) { it }
+    val state by store.stateFlow.collectAsState()
 
     LaunchedEffect(Unit) {
         store.dispatch(LoginsListAppeared)
@@ -386,7 +387,9 @@ private fun LoginListSortMenu(
     onDismissRequest: () -> Unit,
     store: LoginsStore,
 ) {
-    val sortOrder by store.observeAsState(store.state.sortOrder) { store.state.sortOrder }
+    val sortOrder by remember {
+        store.stateFlow.map { store.state.sortOrder }
+    }.collectAsState(store.state.sortOrder)
     DropdownMenu(
         menuItems = listOf(
             MenuItem.CheckableItem(
@@ -429,7 +432,7 @@ private fun createStore() = LoginsStore(
 @FlexibleWindowPreview
 @Composable
 private fun LoginsListScreenPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         LoginsList(store = createStore())
@@ -439,7 +442,7 @@ private fun LoginsListScreenPreview(
 @FlexibleWindowPreview
 @Composable
 private fun EmptyLoginsListScreenPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         LoginsList(store = LoginsStore())

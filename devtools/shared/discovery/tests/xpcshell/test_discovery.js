@@ -30,9 +30,9 @@ var gTestTransports = {};
  * Implements the same API as Transport in discovery.js.  Here, no UDP sockets
  * are used.  Instead, messages are delivered immediately.
  */
-class TestTransport {
+class TestTransport extends EventEmitter {
   constructor(port) {
-    EventEmitter.decorate(this);
+    super();
     this.port = port;
     gTestTransports[this.port] = this;
   }

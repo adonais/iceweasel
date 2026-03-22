@@ -92,6 +92,12 @@ class nsUrlClassifierDBService final : public nsIUrlClassifierDBService,
   nsresult CacheCompletions(
       const mozilla::safebrowsing::ConstCacheResultArray& results);
 
+  // Lookup without proxy callback wrapper. Use this when you need direct
+  // control over how lookup results are handled (e.g., coordinating multiple
+  // lookups or processing results off the main thread).
+  nsresult LookupURIWithoutProxy(const nsACString& aKey, FeatureHolder* aHolder,
+                                 nsIUrlClassifierLookupCallback* aCallback);
+
   static nsIThread* BackgroundThread();
 
   static bool ShutdownHasStarted();

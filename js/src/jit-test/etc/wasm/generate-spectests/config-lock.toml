@@ -1,6 +1,6 @@
 [[repos]]
 name = 'spec'
-commit = 'd7aada502'
+commit = '6e4c4bcaf'
 
 [[repos]]
 name = 'threads'
@@ -9,3 +9,7 @@ commit = '3635ca51a'
 [[repos]]
 name = 'custom-page-sizes'
 commit = 'cad80dc2c'
+
+[[repos]]
+name = 'compact-import-section'
+commit = 'a800fc626'

@@ -13,5 +13,3 @@ firefox-appdir = "browser"
 ["test_provider_id.js"]
 
 ["test_show_chat_entrypoint.js"]
-
-["test_smart_assist_engine.js"]

@@ -67,6 +67,11 @@
 #else
 #  define WASM_CUSTOM_PAGE_SIZES_ENABLED 0
 #endif
+#ifdef ENABLE_WASM_COMPACT_IMPORTS
+#  define WASM_COMPACT_IMPORTS_ENABLED 1
+#else
+#  define WASM_COMPACT_IMPORTS_ENABLED 0
+#endif
 
 // clang-format off
 #define JS_FOR_WASM_FEATURES(FEATURE)                                   \
@@ -132,7 +137,16 @@
     /* flag predicate     */ !IsFuzzingIon(cx),                         \
     /* flag force enable  */ false,                                     \
     /* flag fuzz enable   */ true,                                      \
-    /* preference name    */ custom_page_sizes)
+    /* preference name    */ custom_page_sizes)                         \
+  FEATURE(                                                              \
+    /* capitalized name   */ CompactImports,                            \
+    /* lower case name    */ compactImports,                            \
+    /* compile predicate  */ WASM_COMPACT_IMPORTS_ENABLED,              \
+    /* compiler predicate */ AnyCompilerAvailable(cx),                  \
+    /* flag predicate     */ true,                                      \
+    /* flag force enable  */ false,                                     \
+    /* flag fuzz enable   */ true,                                      \
+    /* preference name    */ compact_imports)
 
 // clang-format on
 

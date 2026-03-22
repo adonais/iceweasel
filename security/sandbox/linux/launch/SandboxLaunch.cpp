@@ -221,8 +221,8 @@ static void PreloadSandboxLib(base::environment_map* aEnv) {
 }
 
 static bool AttachSandboxReporter(geckoargs::ChildProcessArgs& aExtraOpts) {
-  UniqueFileHandle clientFileDescriptor(
-      dup(SandboxReporter::Singleton()->GetClientFileDescriptor()));
+  auto clientFileDescriptor = mozilla::DuplicateFileHandle(
+      SandboxReporter::Singleton()->GetClientFileDescriptor());
   if (!clientFileDescriptor) {
     SANDBOX_LOG_ERRNO("dup");
     return false;

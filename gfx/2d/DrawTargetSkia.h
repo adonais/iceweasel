@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _MOZILLA_GFX_DRAWTARGETSKIA_H
-#define _MOZILLA_GFX_DRAWTARGETSKIA_H
+#ifndef MOZILLA_GFX_DRAWTARGETSKIA_H
+#define MOZILLA_GFX_DRAWTARGETSKIA_H
 
 #include "2D.h"
 #include <sstream>
@@ -149,8 +149,10 @@ class DrawTargetSkia : public DrawTarget {
   bool Init(SkCanvas* aCanvas);
   bool Init(RefPtr<DataSourceSurface>&& aSurface);
 
-  // Skia assumes that texture sizes fit in 16-bit signed integers.
-  static size_t GetMaxSurfaceSize() { return 32767; }
+  // Skia assumes that texture sizes fit in 16-bit integers.
+  static size_t GetMaxSurfaceSize() { return 65535; }
+  // Skia assumes the surface area will fit in a 32-bit signed integer.
+  static size_t GetMaxSurfaceArea() { return 0x7FFFFFFF; }
 
   operator std::string() const {
     std::stringstream stream;

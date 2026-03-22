@@ -15,7 +15,7 @@
 }
 
 :root[customizing] .customization-target:not(#widget-overflow-fixed-list) {
-  min-width: 100px;
+  min-width: var(--size-layout-xsmall);
 }
 
 /* When customizing, overflowable toolbars move automatically moved items back
@@ -262,8 +262,8 @@ toolbarpaletteitem {
     justify-content: inherit;
   }
 
-  #PersonalToolbar & toolbarbutton[checked="true"],
-  toolbar & toolbarbutton[checked="true"] > :where(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
+  #PersonalToolbar & toolbarbutton[checked],
+  toolbar & toolbarbutton[checked] > :where(.toolbarbutton-icon, .toolbarbutton-text, .toolbarbutton-badge-stack) {
     background-color: revert !important;
   }
 

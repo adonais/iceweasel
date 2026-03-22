@@ -38,6 +38,13 @@ const messages = ruleMessages(ruleName, {
     }
     return message;
   },
+  warning: (value, suggestedValue) => {
+    let message = `${value} is allowed, but discouraged.`;
+    if (suggestedValue) {
+      message += ` Consider using ${suggestedValue} instead.`;
+    }
+    return message;
+  },
 });
 
 const meta = {
@@ -77,19 +84,42 @@ const ruleFunction = primaryOption => {
       );
 
       if (!isValid) {
-        const fixedValue = config.validator.getFixedValue(parsedValue);
+        const fixedValue = config.validator.getFixedValue(
+          value,
+          config.validator.customFixes
+        );
         const tokenCategories = config.validator.getTokenCategories();
+        const fix =
+          fixedValue !== null ? () => (decl.value = fixedValue) : undefined;
+
+        // Replace CSS variable usage with their locally defined values, if applicable.
+        // This allows us to check if suggestions work on the local variables, so we can set the severity to warning.
+        const resolvedValue = config.validator.getResolvedValue(value);
+        const suggestedValue = config.validator.getFixedValue(
+          resolvedValue,
+          config.validator.customSuggestions
+        );
+        const isSuggestedValueValid =
+          suggestedValue &&
+          config.validator.isValidPropertyValue(
+            valueParser(suggestedValue),
+            cssCustomProperties
+          );
+
+        let warningPropertyValue = value;
+        if (isSuggestedValueValid && resolvedValue !== value) {
+          warningPropertyValue = `${value}, which resolves to ${resolvedValue},`;
+        }
 
         report({
-          message: messages.rejected(value, tokenCategories, fixedValue),
+          message: isSuggestedValueValid
+            ? messages.warning(warningPropertyValue, suggestedValue)
+            : messages.rejected(value, tokenCategories, fixedValue),
+          severity: isSuggestedValueValid ? "warning" : "error",
           node: decl,
           result,
           ruleName,
-          fix: () => {
-            if (fixedValue !== null) {
-              decl.value = fixedValue;
-            }
-          },
+          fix,
         });
       }
     });

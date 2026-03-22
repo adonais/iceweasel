@@ -51,6 +51,8 @@
     /** @type {boolean} */
     #wasCreatedByAdoption = false;
 
+    #observerRemoved = false;
+
     constructor() {
       super();
 
@@ -79,6 +81,7 @@
       // Similar to above, always set up TabSelect listener, as this gets
       // removed in disconnectedCallback
       this.ownerGlobal.addEventListener("TabSelect", this);
+      this.addEventListener("SplitViewTabChange", this);
 
       if (this._initialized) {
         return;
@@ -95,12 +98,7 @@
         this.resetDefaultGroupName,
         "intl:app-locales-changed"
       );
-      window.addEventListener("unload", () => {
-        Services.obs.removeObserver(
-          this.resetDefaultGroupName,
-          "intl:app-locales-changed"
-        );
-      });
+      this.ownerGlobal.addEventListener("unload", this.#removeObserver);
 
       this.addEventListener("click", this);
 
@@ -150,9 +148,23 @@
       this.#updateTooltip();
     };
 
+    #removeObserver = () => {
+      if (this.#observerRemoved) {
+        return;
+      }
+      this.#observerRemoved = true;
+      Services.obs.removeObserver(
+        this.resetDefaultGroupName,
+        "intl:app-locales-changed"
+      );
+    };
+
     disconnectedCallback() {
       this.ownerGlobal.removeEventListener("TabSelect", this);
+      this.ownerGlobal.removeEventListener("unload", this.#removeObserver);
+      this.removeEventListener("SplitViewTabChange", this);
       this.#tabChangeObserver?.disconnect();
+      this.#removeObserver();
     }
 
     appendChild(node) {
@@ -492,7 +504,12 @@
       if (this.isBeingDragged) {
         return false;
       }
-      if (this.collapsed && !tab.selected && !tab.multiselected) {
+      if (
+        this.collapsed &&
+        !tab.selected &&
+        !tab.multiselected &&
+        !tab.splitview?.hasActiveTab
+      ) {
         return false;
       }
       return true;
@@ -562,8 +579,14 @@
     addTabs(tabsOrSplitViews, metricsContext = null) {
       for (let tabOrSplitView of tabsOrSplitViews) {
         if (gBrowser.isSplitViewWrapper(tabOrSplitView)) {
+          let splitViewToMove =
+            this.ownerGlobal === tabOrSplitView.ownerGlobal
+              ? tabOrSplitView
+              : gBrowser.adoptSplitView(tabOrSplitView, {
+                  elementIndex: gBrowser.tabs.at(-1)._tPos + 1,
+                });
           gBrowser.moveSplitViewToExistingGroup(
-            tabOrSplitView,
+            splitViewToMove,
             this,
             metricsContext
           );
@@ -601,8 +624,12 @@
           detail: metricsContext,
         })
       );
-      for (let i = this.tabs.length - 1; i >= 0; i--) {
-        gBrowser.ungroupTab(this.tabs[i]);
+      for (let i = this.tabsAndSplitViews.length - 1; i >= 0; i--) {
+        if (gBrowser.isSplitViewWrapper(this.tabsAndSplitViews[i])) {
+          gBrowser.ungroupSplitView(this.tabsAndSplitViews[i]);
+        } else if (gBrowser.isTab(this.tabsAndSplitViews[i])) {
+          gBrowser.ungroupTab(this.tabsAndSplitViews[i]);
+        }
       }
     }
 
@@ -686,6 +713,14 @@
       }
       if (previousTab.group === this) {
         this.#updateTabAriaHidden(previousTab);
+      }
+
+      this.#updateOverflowLabel();
+    }
+
+    on_SplitViewTabChange(event) {
+      for (const splitViewTab of event.target.tabs) {
+        this.#updateTabAriaHidden(splitViewTab);
       }
 
       this.#updateOverflowLabel();

@@ -6,8 +6,8 @@
 
 // Original author: ekr@rtfm.com
 
-#ifndef transportlayerloopback_h__
-#define transportlayerloopback_h__
+#ifndef transportlayerloopback_h_
+#define transportlayerloopback_h_
 
 #include <queue>
 

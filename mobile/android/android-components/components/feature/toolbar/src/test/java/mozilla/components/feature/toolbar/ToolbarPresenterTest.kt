@@ -39,15 +39,14 @@ class ToolbarPresenterTest {
     @Test
     fun `start with no custom tab id registers on store and renders selected tab`() {
         val toolbar: Toolbar = mock()
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
-                    customTabs = listOf(createCustomTab("https://www.example.org", id = "ct")),
-                    selectedTabId = "tab1",
-                ),
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
+                customTabs = listOf(createCustomTab("https://www.example.org", id = "ct")),
+                selectedTabId = "tab1",
             ),
         )
+
         val toolbarPresenter = spy(ToolbarPresenter(toolbar, store))
 
         toolbarPresenter.renderer = mock()
@@ -55,8 +54,6 @@ class ToolbarPresenterTest {
         toolbarPresenter.start()
 
         dispatcher.scheduler.advanceUntilIdle()
-
-        verify(store).observeManually(any())
 
         verify(toolbarPresenter).render(any())
 
@@ -69,13 +66,11 @@ class ToolbarPresenterTest {
     @Test
     fun `start with custom tab id registers on store and renders custom tab`() {
         val toolbar: Toolbar = mock()
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
-                    customTabs = listOf(createCustomTab("https://www.example.org", id = "ct")),
-                    selectedTabId = "tab1",
-                ),
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
+                customTabs = listOf(createCustomTab("https://www.example.org", id = "ct")),
+                selectedTabId = "tab1",
             ),
         )
         val toolbarPresenter = spy(ToolbarPresenter(toolbar, store, customTabId = "ct"))
@@ -85,7 +80,6 @@ class ToolbarPresenterTest {
 
         dispatcher.scheduler.advanceUntilIdle()
 
-        verify(store).observeManually(any())
         verify(toolbarPresenter).render(any())
 
         verify(toolbarPresenter.renderer).post("https://www.example.org")
@@ -97,13 +91,11 @@ class ToolbarPresenterTest {
     @Test
     fun `SiteInfoState change updates toolbar`() {
         val toolbar: Toolbar = mock()
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
-                    customTabs = listOf(createCustomTab("https://www.example.org", id = "ct")),
-                    selectedTabId = "tab1",
-                ),
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
+                customTabs = listOf(createCustomTab("https://www.example.org", id = "ct")),
+                selectedTabId = "tab1",
             ),
         )
 
@@ -134,22 +126,20 @@ class ToolbarPresenterTest {
     @Test
     fun `Toolbar gets cleared when all tabs are removed`() {
         val toolbar: Toolbar = mock()
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(
-                        TabSessionState(
-                            id = "tab1",
-                            content = ContentState(
-                                url = "https://www.mozilla.org",
-                                securityInfo = SecurityInfo.Secure("mozilla.org", "Mozilla"),
-                                searchTerms = "Hello World",
-                                progress = 60,
-                            ),
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(
+                    TabSessionState(
+                        id = "tab1",
+                        content = ContentState(
+                            url = "https://www.mozilla.org",
+                            securityInfo = SecurityInfo.Secure("mozilla.org", "Mozilla"),
+                            searchTerms = "Hello World",
+                            progress = 60,
                         ),
                     ),
-                    selectedTabId = "tab1",
                 ),
+                selectedTabId = "tab1",
             ),
         )
 
@@ -183,13 +173,11 @@ class ToolbarPresenterTest {
     @Test
     fun `Search terms changes updates toolbar`() {
         val toolbar: Toolbar = mock()
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
-                    customTabs = listOf(createCustomTab("https://www.example.org", id = "ct")),
-                    selectedTabId = "tab1",
-                ),
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
+                customTabs = listOf(createCustomTab("https://www.example.org", id = "ct")),
+                selectedTabId = "tab1",
             ),
         )
 
@@ -217,13 +205,11 @@ class ToolbarPresenterTest {
     @Test
     fun `Progress changes updates toolbar`() {
         val toolbar: Toolbar = mock()
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
-                    customTabs = listOf(createCustomTab("https://www.example.org", id = "ct")),
-                    selectedTabId = "tab1",
-                ),
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(createTab("https://www.mozilla.org", id = "tab1")),
+                customTabs = listOf(createCustomTab("https://www.example.org", id = "ct")),
+                selectedTabId = "tab1",
             ),
         )
 
@@ -258,23 +244,21 @@ class ToolbarPresenterTest {
     @Test
     fun `Toolbar does not get cleared if a background tab gets removed`() {
         val toolbar: Toolbar = mock()
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(
-                        TabSessionState(
-                            id = "tab1",
-                            content = ContentState(
-                                url = "https://www.mozilla.org",
-                                securityInfo = SecurityInfo.Secure("mozilla.org", "Mozilla"),
-                                searchTerms = "Hello World",
-                                progress = 60,
-                            ),
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(
+                    TabSessionState(
+                        id = "tab1",
+                        content = ContentState(
+                            url = "https://www.mozilla.org",
+                            securityInfo = SecurityInfo.Secure("mozilla.org", "Mozilla"),
+                            searchTerms = "Hello World",
+                            progress = 60,
                         ),
-                        createTab(id = "tab2", url = "https://www.example.org"),
                     ),
-                    selectedTabId = "tab1",
+                    createTab(id = "tab2", url = "https://www.example.org"),
                 ),
+                selectedTabId = "tab1",
             ),
         )
 
@@ -301,33 +285,31 @@ class ToolbarPresenterTest {
     @Test
     fun `Toolbar is updated when selected tab changes`() {
         val toolbar: Toolbar = mock()
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(
-                        TabSessionState(
-                            id = "tab1",
-                            content = ContentState(
-                                url = "https://www.mozilla.org",
-                                securityInfo = SecurityInfo.Secure("mozilla.org", "Mozilla"),
-                                searchTerms = "Hello World",
-                                progress = 60,
-                            ),
-                        ),
-                        TabSessionState(
-                            id = "tab2",
-                            content = ContentState(
-                                url = "https://www.example.org",
-                                securityInfo = SecurityInfo.Insecure("example.org", "Example"),
-                                searchTerms = "Example",
-                                permissionHighlights = PermissionHighlightsState(true),
-                                progress = 90,
-                            ),
-                            trackingProtection = TrackingProtectionState(enabled = true),
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(
+                    TabSessionState(
+                        id = "tab1",
+                        content = ContentState(
+                            url = "https://www.mozilla.org",
+                            securityInfo = SecurityInfo.Secure("mozilla.org", "Mozilla"),
+                            searchTerms = "Hello World",
+                            progress = 60,
                         ),
                     ),
-                    selectedTabId = "tab1",
+                    TabSessionState(
+                        id = "tab2",
+                        content = ContentState(
+                            url = "https://www.example.org",
+                            securityInfo = SecurityInfo.Insecure("example.org", "Example"),
+                            searchTerms = "Example",
+                            permissionHighlights = PermissionHighlightsState(true),
+                            progress = 90,
+                        ),
+                        trackingProtection = TrackingProtectionState(enabled = true),
+                    ),
                 ),
+                selectedTabId = "tab1",
             ),
         )
 
@@ -365,22 +347,20 @@ class ToolbarPresenterTest {
     @Test
     fun `displaying different tracking protection states`() {
         val toolbar: Toolbar = mock()
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(
-                        TabSessionState(
-                            id = "tab",
-                            content = ContentState(
-                                url = "https://www.mozilla.org",
-                                securityInfo = SecurityInfo.Secure("mozilla.org", "Mozilla"),
-                                searchTerms = "Hello World",
-                                progress = 60,
-                            ),
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(
+                    TabSessionState(
+                        id = "tab",
+                        content = ContentState(
+                            url = "https://www.mozilla.org",
+                            securityInfo = SecurityInfo.Secure("mozilla.org", "Mozilla"),
+                            searchTerms = "Hello World",
+                            progress = 60,
                         ),
                     ),
-                    selectedTabId = "tab",
                 ),
+                selectedTabId = "tab",
             ),
         )
 
@@ -415,22 +395,20 @@ class ToolbarPresenterTest {
     @Test
     fun `displaying different dot notification states`() {
         val toolbar: Toolbar = mock()
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(
-                        TabSessionState(
-                            id = "tab",
-                            content = ContentState(
-                                url = "https://www.mozilla.org",
-                                securityInfo = SecurityInfo.Secure("mozilla.org", "Mozilla"),
-                                searchTerms = "Hello World",
-                                progress = 60,
-                            ),
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(
+                    TabSessionState(
+                        id = "tab",
+                        content = ContentState(
+                            url = "https://www.mozilla.org",
+                            securityInfo = SecurityInfo.Secure("mozilla.org", "Mozilla"),
+                            searchTerms = "Hello World",
+                            progress = 60,
                         ),
                     ),
-                    selectedTabId = "tab",
                 ),
+                selectedTabId = "tab",
             ),
         )
 
@@ -502,12 +480,10 @@ class ToolbarPresenterTest {
     fun `GIVEN search terms should not be shown in display mode WHEN rendering a state with search terms set THEN toolbar url is the tab url`() {
         val url = "https://www.mozilla.org"
         val toolbar: Toolbar = mock()
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(createTab(url, id = "tab1", searchTerms = "search terms")),
-                    selectedTabId = "tab1",
-                ),
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(createTab(url, id = "tab1", searchTerms = "search terms")),
+                selectedTabId = "tab1",
             ),
         )
         val toolbarPresenter = spy(ToolbarPresenter(toolbar, store, shouldDisplaySearchTerms = false))
@@ -523,12 +499,16 @@ class ToolbarPresenterTest {
     fun `GIVEN search terms should be shown in display mode WHEN rendering a state with search terms set THEN toolbar url is set to the search terms`() {
         val searchTerm = "mozilla firefox"
         val toolbar: Toolbar = mock()
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(createTab("https://www.mozilla.org", id = "tab1", searchTerms = searchTerm)),
-                    selectedTabId = "tab1",
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(
+                    createTab(
+                        "https://www.mozilla.org",
+                        id = "tab1",
+                        searchTerms = searchTerm,
+                    ),
                 ),
+                selectedTabId = "tab1",
             ),
         )
         val toolbarPresenter = spy(ToolbarPresenter(toolbar, store, shouldDisplaySearchTerms = true))

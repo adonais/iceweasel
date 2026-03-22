@@ -999,7 +999,7 @@ class ScrollContainerFrame : public nsContainerFrame,
   void MarkNotRecentlyScrolled();
   nsExpirationState* GetExpirationState() { return &mActivityExpirationState; }
 
-  bool UsesOverlayScrollbars() const;
+  bool UseOverlayScrollbars() const;
   bool IsLastSnappedTarget(const nsIFrame* aFrame) const;
 
   // If aBuilder is non-null, returns the value cached on aBuilder. Pass null

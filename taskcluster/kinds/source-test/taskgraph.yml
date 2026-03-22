@@ -42,4 +42,4 @@ diff:
         files-changed:
             - 'taskcluster/kinds/**'
             - 'taskcluster/**/*.py'
-            - 'third_party/python/taskcluster_taskgraph/**/*.py'
+            - 'taskcluster/requirements.txt'

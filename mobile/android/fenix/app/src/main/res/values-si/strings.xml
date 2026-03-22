@@ -68,13 +68,6 @@
   -->
   <string name="felt_privacy_desc_card_title">මෙම උපාංගයේ කිසිදු හෝඩුවාවක් නොතබයි</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">ඔබ සියළුම පෞද්ගලික පටිති වැසූ විට, %1$s ඔබගේ දත්තකඩ, ඉතිහාසය සහ අඩවිවල දත්ත මකා දමයි. %2$s</string>
-  <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
     This string is used in felt_privacy_info_card_subtitle as the text for the link.
@@ -650,11 +643,7 @@
   <string name="customize_addon_collection_hint">එකතුවෙහි නම</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">එකතුවේ හිමිකරු (පරිශ්‍රීලක හැඳු.)</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">ආපසු පනින්න</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">පොත්යොමු</string>
@@ -1118,7 +1107,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">සංස්කරණය</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">පිටපතක්</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">පිටපතක්</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">බෙදාගන්න</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -1160,11 +1149,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s මැකිණි</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">පෙරසේ</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">පෙරසේ</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">%s මැකිණි</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s මැකිණි</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">මකන ලද අථක: %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">මකන ලද අථක: %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">ආපසු යාත්‍රණය</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -1398,23 +1387,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">ෆයර්ෆොක්ස් පෙරනිමි අතිරික්සුව කරන්න</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">පෞද්. පිරික්සුම බලන්න</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">පෞද්. පිරික්සුම බලන්න</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">%1$s හි සුරැකෙන දත්තකඩ හෝ ඉතිහාසයකින් තොරව පිරික්සන්න</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s හි සුරැකෙන දත්තකඩ හෝ ඉතිහාසයකින් තොරව පිරික්සන්න</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">හෝඩුවාවකින් තොරව පිරික්සන්න</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">හෝඩුවාවකින් තොරව පිරික්සන්න</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">%1$s පෞද්. පිරික්සුමේ ඔබගේ තොරතුරු සුරැකෙන්නේ නැත.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s පෞද්. පිරික්සුමේ ඔබගේ තොරතුරු සුරැකෙන්නේ නැත.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">ප්‍රථම සෙවීම අරඹන්න</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">ප්‍රථම සෙවීම අරඹන්න</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">අවට යමක් හෝ විනෝදාත්මක දෙයක් සොයා ගන්න.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">අවට යමක් හෝ විනෝදාත්මක දෙයක් සොයා ගන්න.</string>
   <!--
     Survey
 

@@ -947,7 +947,10 @@ void PointerEventHandler::PreHandlePointerEventsPreventDefault(
 
 /* static */
 void PointerEventHandler::PostHandlePointerEventsPreventDefault(
-    WidgetPointerEvent* aPointerEvent, WidgetGUIEvent* aMouseOrTouchEvent) {
+    PresShell* aPresShell, WidgetPointerEvent* aPointerEvent,
+    WidgetGUIEvent* aMouseOrTouchEvent) {
+  MOZ_ASSERT(aPresShell);
+
   if (!aPointerEvent->mIsPrimary || aPointerEvent->mMessage != ePointerDown ||
       !aPointerEvent->DefaultPreventedByContent()) {
     return;
@@ -956,10 +959,12 @@ void PointerEventHandler::PostHandlePointerEventsPreventDefault(
   if (!sActivePointersIds->Get(aPointerEvent->pointerId, &pointerInfo) ||
       !pointerInfo) {
     // We already added the PointerInfo for active pointer when
-    // PresShell::HandleEvent handling pointerdown event.
-#ifdef DEBUG
-    MOZ_CRASH("Got ePointerDown w/o active pointer info!!");
-#endif  // #ifdef DEBUG
+    // PresShell::HandleEvent handling pointerdown event. However, PreShell can
+    // be destroyed during handling of the pointerdown event, which causes the
+    // PointerInfo to be removed.
+    MOZ_ASSERT(aPresShell->IsDestroying(),
+               "If we got ePointerDown w/o active pointer info, the PresShell "
+               "should be destroying!!");
     return;
   }
   // PreventDefault only applied for active pointers.
@@ -1018,9 +1023,9 @@ void PointerEventHandler::InitPointerEventFromTouch(
   aPointerEvent.mModifiers = aTouchEvent.mModifiers;
   aPointerEvent.mWidth = aTouch.RadiusX(CallerType::System);
   aPointerEvent.mHeight = aTouch.RadiusY(CallerType::System);
-  aPointerEvent.tiltX = aTouch.tiltX;
-  aPointerEvent.tiltY = aTouch.tiltY;
+  aPointerEvent.mTilt = aTouch.mTilt;
   aPointerEvent.twist = aTouch.twist;
+  aPointerEvent.mAngle = aTouch.mAngle;
   aPointerEvent.mTimeStamp = aTouchEvent.mTimeStamp;
   aPointerEvent.mFlags = aTouchEvent.mFlags;
   aPointerEvent.mButton = button;
@@ -1322,7 +1327,7 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
     // corresponding mouse event.
     shell->HandleEventWithTarget(&event, aEventTargetFrame, aEventTargetContent,
                                  aStatus, true, aMouseOrTouchEventTarget);
-    PostHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
+    PostHandlePointerEventsPreventDefault(shell, &event, aMouseOrTouchEvent);
     // If pointer capture is released, we need to synthesize eMouseMove to
     // dispatch mouse boundary events later.
     mouseEvent->mSynthesizeMoveAfterDispatch |=
@@ -1379,7 +1384,8 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
         PreHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
         shell->HandleEventWithTarget(&event, frame, content, aStatus, true,
                                      aMouseOrTouchEventTarget);
-        PostHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
+        PostHandlePointerEventsPreventDefault(shell, &event,
+                                              aMouseOrTouchEvent);
       } else {
         // We didn't hit test for other touch events. Spec doesn't mention that
         // all pointer events should be dispatched to the same target as their
@@ -1391,7 +1397,8 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
         PreHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
         shell->HandleEvent(aEventTargetFrame, &event, aDontRetargetEvents,
                            aStatus);
-        PostHandlePointerEventsPreventDefault(&event, aMouseOrTouchEvent);
+        PostHandlePointerEventsPreventDefault(shell, &event,
+                                              aMouseOrTouchEvent);
       }
     }
   }
@@ -1436,7 +1443,9 @@ void PointerEventHandler::NotifyDestroyPresContext(
       ReleasePointerCapturingElementAtLastPointerUp();
     }
   }
-  // Clean up active pointer info
+  // Clean up active pointer info.
+  // XXX: This was added primarily for touch input. Could this cause any
+  // web-compat issue for mouse input in edge cases?
   for (auto iter = sActivePointersIds->Iter(); !iter.Done(); iter.Next()) {
     PointerInfo* data = iter.UserData();
     MOZ_ASSERT(data, "how could we have a null PointerInfo here?");

@@ -32,6 +32,7 @@
 #include "js/AllocPolicy.h"
 #include "js/CharacterEncoding.h"  // JS::ConstUTF8CharsZ
 #include "js/ColumnNumber.h"       // JS::ColumnNumberOneOrigin
+#include "js/Exception.h"          // JS::BorrowedErrorReport
 #include "js/RootingAPI.h"         // JS::HandleObject, JS::RootedObject
 #include "js/UniquePtr.h"          // js::UniquePtr
 #include "js/Value.h"              // JS::Value
@@ -414,14 +415,14 @@ struct MOZ_STACK_CLASS JS_PUBLIC_API ErrorReportBuilder {
   JSString* maybeCreateReportFromDOMException(JS::HandleObject obj,
                                               JSContext* cx);
 
-  // We may have a provided JSErrorReport, so need a way to represent that.
+  // If non-nullptr, this is either |&ownedReport| or |borrowedReport.report_|.
   JSErrorReport* reportp;
 
   // Or we may need to synthesize a JSErrorReport one of our own.
   JSErrorReport ownedReport;
 
-  // Root our exception value to keep a possibly borrowed |reportp| alive.
-  JS::RootedObject exnObject;
+  // Used to keep a possibly borrowed |reportp| alive.
+  JS::BorrowedErrorReport borrowedReport;
 
   // And for our filename.
   JS::UniqueChars filename;

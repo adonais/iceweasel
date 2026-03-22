@@ -137,7 +137,7 @@ static bool GetFile(nsIFile* dir, const nsACString& name,
     return false;
   }
 
-  result = file;
+  result = std::move(file);
   return true;
 }
 

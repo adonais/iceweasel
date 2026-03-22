@@ -21,47 +21,23 @@
   <html:h1 data-l10n-id="pane-general-title"/>
 </hbox>
 
+<!-- Default browser -->
+<html:setting-group groupid="defaultBrowser" data-category="paneGeneral" hidden="true" />
+
 <!-- Startup -->
-<groupbox id="startupGroup"
-          data-category="paneGeneral"
-          hidden="true">
-  <label><html:h2 data-l10n-id="startup-header"/></label>
-
-  <vbox id="startupPageBox">
-    <html:setting-group groupid="startup"/>
-  </vbox>
-
-</groupbox>
+<html:setting-group id="startupGroup" groupid="startup" data-category="paneGeneral" hidden="true"/>
 
 <!-- Data migration -->
 <html:setting-group groupid="importBrowserData" id="dataMigrationGroup" data-category="paneGeneral" hidden="true" />
 
 <!-- Profiles -->
-<groupbox id="profilesGroup" data-category="paneGeneral" hidden="true">
-  <html:setting-group groupid="profiles" data-category="paneGeneral"></html:setting-group>
-</groupbox>
+<html:setting-group id="profilesGroup" groupid="profiles" data-category="paneGeneral" hidden="true" />
 
 <!-- Tab preferences -->
-<groupbox data-category="paneGeneral" hidden="true">
-  <html:setting-group groupid="tabs"></html:setting-group>
-</groupbox>
+<html:setting-group data-category="paneGeneral" hidden="true" groupid="tabs" />
 
 <!-- Browser layout -->
-<groupbox data-category="paneGeneral"
-          data-subcategory="layout"
-          hidden="true">
-  <label><html:h2 data-l10n-id="browser-layout-header"/></label>
-  <radiogroup id="browserLayoutRadioGroup" preference="sidebar.verticalTabs">
-    <radio id="browserLayoutHorizontalTabs" data-l10n-id="browser-layout-horizontal-tabs" value="false"/>
-    <description  class="indent" data-l10n-id="browser-layout-horizontal-tabs-desc"></description>
-
-    <radio id="browserLayoutVerticalTabs" data-l10n-id="browser-layout-vertical-tabs" value="true" />
-    <description class="indent" data-l10n-id="browser-layout-vertical-tabs-desc"></description>
-  </radiogroup>
-  <checkbox id="browserLayoutShowSidebar" data-l10n-id="browser-layout-show-sidebar"
-            preference="sidebar.revamp"/>
-  <description class="indent" data-l10n-id="browser-layout-show-sidebar-desc"></description>
-</groupbox>
+<html:setting-group groupid="browserLayout" data-category="paneGeneral" data-subcategory="layout" hidden="true"></html:setting-group>
 
 <hbox id="languageAndAppearanceCategory"
       class="subcategory"
@@ -71,109 +47,19 @@
 </hbox>
 
 <!-- Website appearance -->
-<groupbox id="webAppearanceGroup" data-category="paneGeneral" hidden="true">
-  <html:h2 data-l10n-id="preferences-web-appearance-header"/>
-  <description class="description-deemphasized" data-l10n-id="preferences-web-appearance-description" />
-  <html:setting-group groupid="appearance"></html:setting-group>
-</groupbox>
+<html:setting-group groupid="appearance" data-category="paneGeneral" hidden="true"></html:setting-group>
 
 <!-- Colors -->
 <html:setting-group id="contrastControlGroup" groupid="contrast" data-category="paneGeneral" hidden="true" />
 
 <!-- Fonts -->
-<groupbox id="fontsGroup" data-category="paneGeneral" hidden="true">
-  <label><html:h2 data-l10n-id="preferences-fonts-header"/></label>
-
-  <hbox id="fontSettings">
-    <hbox align="center" flex="1">
-      <label control="defaultFont" data-l10n-id="default-font"/>
-      <menulist id="defaultFont" delayprefsave="true"/>
-      <label id="defaultFontSizeLabel" control="defaultFontSize" data-l10n-id="default-font-size"></label>
-      <menulist id="defaultFontSize" delayprefsave="true">
-        <menupopup>
-          <menuitem value="9" label="9"/>
-          <menuitem value="10" label="10"/>
-          <menuitem value="11" label="11"/>
-          <menuitem value="12" label="12"/>
-          <menuitem value="13" label="13"/>
-          <menuitem value="14" label="14"/>
-          <menuitem value="15" label="15"/>
-          <menuitem value="16" label="16"/>
-          <menuitem value="17" label="17"/>
-          <menuitem value="18" label="18"/>
-          <menuitem value="20" label="20"/>
-          <menuitem value="22" label="22"/>
-          <menuitem value="24" label="24"/>
-          <menuitem value="26" label="26"/>
-          <menuitem value="28" label="28"/>
-          <menuitem value="30" label="30"/>
-          <menuitem value="32" label="32"/>
-          <menuitem value="34" label="34"/>
-          <menuitem value="36" label="36"/>
-          <menuitem value="40" label="40"/>
-          <menuitem value="44" label="44"/>
-          <menuitem value="48" label="48"/>
-          <menuitem value="56" label="56"/>
-          <menuitem value="64" label="64"/>
-          <menuitem value="72" label="72"/>
-        </menupopup>
-      </menulist>
-    </hbox>
-
-    <button id="advancedFonts"
-            is="highlightable-button"
-            class="accessory-button"
-            data-l10n-id="advanced-fonts"
-            search-l10n-ids="
-              fonts-window.title,
-              fonts-langgroup-header,
-              fonts-proportional-size,
-              fonts-proportional-header,
-              fonts-serif,
-              fonts-sans-serif,
-              fonts-monospace,
-              fonts-langgroup-arabic.label,
-              fonts-langgroup-armenian.label,
-              fonts-langgroup-bengali.label,
-              fonts-langgroup-simpl-chinese.label,
-              fonts-langgroup-trad-chinese-hk.label,
-              fonts-langgroup-trad-chinese.label,
-              fonts-langgroup-cyrillic.label,
-              fonts-langgroup-devanagari.label,
-              fonts-langgroup-ethiopic.label,
-              fonts-langgroup-georgian.label,
-              fonts-langgroup-el.label,
-              fonts-langgroup-gujarati.label,
-              fonts-langgroup-gurmukhi.label,
-              fonts-langgroup-japanese.label,
-              fonts-langgroup-hebrew.label,
-              fonts-langgroup-kannada.label,
-              fonts-langgroup-khmer.label,
-              fonts-langgroup-korean.label,
-              fonts-langgroup-latin.label,
-              fonts-langgroup-malayalam.label,
-              fonts-langgroup-math.label,
-              fonts-langgroup-odia.label,
-              fonts-langgroup-sinhala.label,
-              fonts-langgroup-tamil.label,
-              fonts-langgroup-telugu.label,
-              fonts-langgroup-thai.label,
-              fonts-langgroup-tibetan.label,
-              fonts-langgroup-canadian.label,
-              fonts-langgroup-other.label,
-              fonts-minsize,
-              fonts-minsize-none.label,
-              fonts-default-serif.label,
-              fonts-default-sans-serif.label,
-              fonts-allow-own.label,
-            " />
-  </hbox>
-</groupbox>
+<html:setting-group id="fontsGroup" groupid="fonts" data-category="paneGeneral" hidden="true" />
 
 <!-- Zoom -->
 <html:setting-group id="zoomGroup" groupid="zoom" data-category="paneGeneral" hidden="true" />
 
 <!-- Languages -->
+<html:setting-group groupid="websiteLanguage" hidden="true" data-category="paneGeneral"></html:setting-group>
 <groupbox id="languagesGroup" data-category="paneGeneral" hidden="true">
   <label><html:h2 data-l10n-id="language-header"/></label>
 
@@ -228,10 +114,6 @@
             data-l10n-id="translate-exceptions"/>
   </hbox>
 
-  <checkbox id="checkSpelling"
-          data-l10n-id="check-user-spelling"
-          preference="layout.spellcheckDefault"/>
-
   <!-- This Translations UI is the pre-settings-redesign UI and should be removed
        when getting ready for the settings redesign to fully ship. -->
   <vbox id="translationsGroup" data-srd-groupid="translations" hidden="true" data-subcategory="translations">
@@ -262,6 +144,8 @@
 <!-- This Translations UI is compatible with the settings redesign -->
 <html:setting-group data-category="paneGeneral" groupid="translations" hidden="true"/>
 
+<html:setting-group data-category="paneGeneral" groupid="spellCheck" hidden="true"/>
+
 <!-- Files and Applications -->
 <hbox id="filesAndApplicationsCategory"
       class="subcategory"
@@ -271,9 +155,7 @@
 </hbox>
 
 <!--Downloads-->
-<groupbox id="downloadsGroup" data-category="paneGeneral" hidden="true">
-  <html:setting-group groupid="downloads"/>
-</groupbox>
+<html:setting-group groupid="downloads" data-category="paneGeneral" hidden="true"/>
 
 <groupbox id="applicationsGroup" data-category="paneGeneral" hidden="true">
   <label><html:h2 data-l10n-id="applications-header"/></label>
@@ -309,12 +191,7 @@
 
 
 <!-- DRM Content -->
-<groupbox id="drmGroup" data-category="paneGeneral" data-subcategory="drm" hidden="true">
-  <label class="section-heading">
-    <html:h2 data-l10n-id="drm-content-header"/>
-  </label>
-  <html:setting-group groupid="drm" />
-</groupbox>
+<html:setting-group groupid="drm" data-category="paneGeneral" data-subcategory="drm" hidden="true" />
 
 <hbox id="updatesCategory"
       class="subcategory"
@@ -489,51 +366,12 @@
 <!-- Support -->
 <html:setting-group groupid="support" data-category="paneGeneral" hidden="true" />
 
-<hbox id="performanceCategory"
-      class="subcategory"
-      hidden="true"
-      data-category="paneGeneral">
-  <html:h1 data-l10n-id="performance-title"/>
-</hbox>
-
 <!-- Performance -->
-<groupbox id="performanceGroup" data-category="paneGeneral" hidden="true">
-  <label class="search-header section-heading" hidden="true"><html:h2 data-l10n-id="performance-title"/></label>
-  <html:setting-group groupid="performance" />
-</groupbox>
-
-<hbox id="browsingCategory"
-      class="subcategory"
-      hidden="true"
-      data-category="paneGeneral">
-  <html:h1 data-l10n-id="browsing-title"/>
-</hbox>
+<html:setting-group groupid="performance" data-category="paneGeneral" hidden="true" />
 
 <!-- Browsing -->
-<groupbox id="browsingGroup" data-category="paneGeneral" hidden="true">
-  <label class="search-header section-heading" hidden="true"><html:h2 data-l10n-id="browsing-title"/></label>
-
-  <html:setting-group groupid="browsing"/>
-</groupbox>
-
-<hbox id="networkProxyCategory"
-      class="subcategory"
-      hidden="true"
-      data-category="paneGeneral">
-  <html:h1 data-l10n-id="network-settings-title"/>
-</hbox>
+<html:setting-group groupid="browsing" data-category="paneGeneral" hidden="true"/>
 
 <!-- Network Settings-->
-<groupbox id="connectionGroup" data-category="paneGeneral" hidden="true">
-  <label class="search-header" hidden="true"><html:h2 data-l10n-id="network-settings-title"/></label>
-  <description flex="1" control="connectionSettings" data-subcategory="netsettings"
-    class="section-description">
-    <html:span id="connectionSettingsDescription"/>
-    <html:a is="moz-support-link"
-          data-l10n-id="network-proxy-connection-learn-more"
-          support-page="prefs-connection-settings"
-    />
-  </description>
-  <html:setting-group groupid="networkProxy" />
-</groupbox>
+<html:setting-group groupid="networkProxy" data-category="paneGeneral" data-subcategory="netsettings" hidden="true" />
 </html:template>

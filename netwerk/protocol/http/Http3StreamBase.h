@@ -62,6 +62,8 @@ class Http3StreamBase : public SupportsWeakPtr, public ARefBase {
   void SetBlockedByFlowControl(bool aValue) { mBlockedByFlowControl = aValue; }
   bool BlockedByFlowControl() const { return mBlockedByFlowControl; }
 
+  bool Closed() const { return mClosed; }
+
  protected:
   ~Http3StreamBase();
 
@@ -75,6 +77,7 @@ class Http3StreamBase : public SupportsWeakPtr, public ARefBase {
   bool mResetRecv{false};
   bool mInTxQueue{false};
   bool mBlockedByFlowControl{false};
+  bool mClosed{false};
 };
 
 }  // namespace mozilla::net

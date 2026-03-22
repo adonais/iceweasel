@@ -124,6 +124,8 @@ class App extends Component {
     };
   }
 
+  #abortController = new AbortController();
+
   constructor(props) {
     super(props);
 
@@ -142,8 +144,6 @@ class App extends Component {
   componentWillUnmount() {
     this.#abortController.abort();
   }
-
-  #abortController = new AbortController();
 
   onBlur() {
     this.props.dispatch(actions.autocompleteClear());

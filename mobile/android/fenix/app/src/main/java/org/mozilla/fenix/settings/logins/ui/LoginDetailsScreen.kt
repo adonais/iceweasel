@@ -24,6 +24,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,19 +53,18 @@ import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
+import org.mozilla.fenix.ext.simplifiedUrl
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun LoginDetailsScreen(store: LoginsStore) {
-    val state by store.observeAsState(store.state) { it }
+    val state by store.stateFlow.collectAsState()
     val detailState = state.loginsLoginDetailState ?: return
     val snackbarHostState = remember { SnackbarHostState() }
-
     val deletionDialogState = state.loginDeletionDialogState
     if (deletionDialogState is LoginDeletionDialogState.Presenting) {
         LoginDeletionDialog(
@@ -130,7 +130,7 @@ private fun LoginDetailTopBar(
         ),
         title = {
             Text(
-                text = loginItem.getDomainName(),
+                text = loginItem.url.simplifiedUrl(),
                 style = FirefoxTheme.typography.headline5,
             )
         },
@@ -312,7 +312,10 @@ private fun LoginDetailsPassword(
                     Text.Resource(R.string.saved_login_reveal_password)
                 },
                 isPasswordVisible = isPasswordVisible,
-                onTrailingIconClick = { isPasswordVisible = !isPasswordVisible },
+                onTrailingIconClick = {
+                    isPasswordVisible = !isPasswordVisible
+                    store.dispatch(DetailLoginAction.PasswordVisibilityChanged(isPasswordVisible))
+                },
             )
 
             IconButton(
@@ -398,7 +401,7 @@ private fun createStore() = LoginsStore(
 @FlexibleWindowPreview
 @Composable
 private fun LoginDetailsScreenPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         LoginDetailsScreen(store = createStore())
@@ -408,7 +411,7 @@ private fun LoginDetailsScreenPreview(
 @Preview
 @Composable
 private fun LoginDeletionDialogPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         LoginDeletionDialog(

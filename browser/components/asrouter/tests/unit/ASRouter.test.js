@@ -279,17 +279,6 @@ describe("ASRouter", () => {
       MacAttribution: { applicationPath: "" },
       ToolbarBadgeHub: FakeToolbarBadgeHub,
       MomentsPageHub: FakeMomentsPageHub,
-      KintoHttpClient: class {
-        bucket() {
-          return this;
-        }
-        collection() {
-          return this;
-        }
-        getRecord() {
-          return Promise.resolve({ data: { attachment: { size: 42 } } });
-        }
-      },
       UnstoredDownloader: class {
         download() {
           return Promise.resolve({ buffer: "fake buffer" });
@@ -1141,6 +1130,9 @@ describe("ASRouter", () => {
       sandbox
         .stub(MessageLoaderUtils, "_getRemoteSettingsMessages")
         .resolves([{ id: "message_1" }]);
+      sandbox
+        .stub(MessageLoaderUtils, "_getRemoteSettingsLanguagePackRecord")
+        .resolves({ attachment: { size: 123 } });
       sandbox.stub(global.IOUtils, "exists").resolves(false);
       const spy = sandbox.spy();
       global.UnstoredDownloader.prototype.download = spy;
@@ -1162,7 +1154,7 @@ describe("ASRouter", () => {
         .stub(MessageLoaderUtils, "_getRemoteSettingsMessages")
         .resolves([{ id: "message_1" }]);
       sandbox
-        .stub(global.KintoHttpClient.prototype, "getRecord")
+        .stub(MessageLoaderUtils, "_getRemoteSettingsLanguagePackRecord")
         .resolves(null);
       const provider = {
         id: "cfr",
@@ -2841,7 +2833,7 @@ describe("ASRouter", () => {
   });
   describe("#_remoteSettingsLoader", () => {
     let provider;
-    let spy;
+    let downloadSpy;
     beforeEach(() => {
       provider = {
         id: "cfr",
@@ -2850,20 +2842,22 @@ describe("ASRouter", () => {
       sandbox
         .stub(MessageLoaderUtils, "_getRemoteSettingsMessages")
         .resolves([{ id: "message_1" }]);
+      sandbox
+        .stub(MessageLoaderUtils, "_getRemoteSettingsLanguagePackRecord")
+        .resolves({ attachment: { size: 42 } });
       sandbox.stub(global.IOUtils, "exists").resolves(false);
-      spy = sandbox.spy(global.UnstoredDownloader.prototype.download);
-      global.UnstoredDownloader.prototype.download = spy;
+      downloadSpy = sandbox.spy(global.UnstoredDownloader.prototype.download);
+      global.UnstoredDownloader.prototype.download = downloadSpy;
     });
     it("should be called with the expected dir path", async () => {
       const writeSpy = sandbox.spy(global.IOUtils, "write");
-
       sandbox
         .stub(global.Services.locale, "appLocaleAsBCP47")
         .get(() => "en-US");
 
       await MessageLoaderUtils._remoteSettingsLoader(provider, {});
 
-      assert.calledOnce(spy);
+      assert.calledOnce(downloadSpy);
       assert.calledWithMatch(
         writeSpy,
         "asrouter.ftl", // PathUtils.join() is mocked in `unit-entry.js` and only returns the filename.
@@ -2880,21 +2874,18 @@ describe("ASRouter", () => {
 
       await MessageLoaderUtils._remoteSettingsLoader(provider, {});
 
-      assert.calledOnce(spy);
+      assert.calledOnce(downloadSpy);
     });
     it("should not download if local file has same size", async () => {
       global.IOUtils.exists.resolves(true);
       sandbox.stub(global.IOUtils, "stat").resolves({ size: 42 });
-      sandbox
-        .stub(global.KintoHttpClient.prototype, "getRecord")
-        .resolves({ data: { attachment: { size: 42 } } });
       sandbox
         .stub(global.Services.locale, "appLocaleAsBCP47")
         .get(() => "en-US");
 
       await MessageLoaderUtils._remoteSettingsLoader(provider, {});
 
-      assert.notCalled(spy);
+      assert.notCalled(downloadSpy);
     });
     it("should allow fetch for known locales", async () => {
       sandbox
@@ -2903,33 +2894,31 @@ describe("ASRouter", () => {
 
       await MessageLoaderUtils._remoteSettingsLoader(provider, {});
 
-      assert.calledOnce(spy);
+      assert.calledOnce(downloadSpy);
     });
     it("should fallback to 'en-US' for locale 'und' ", async () => {
       sandbox.stub(global.Services.locale, "appLocaleAsBCP47").get(() => "und");
-      const getRecordSpy = sandbox.spy(
-        global.KintoHttpClient.prototype,
-        "getRecord"
-      );
 
       await MessageLoaderUtils._remoteSettingsLoader(provider, {});
 
-      assert.ok(getRecordSpy.args[0][0].includes("en-US"));
-      assert.calledOnce(spy);
+      assert.calledWithMatch(
+        MessageLoaderUtils._getRemoteSettingsLanguagePackRecord,
+        sinon.match("en-US")
+      );
+      assert.calledOnce(downloadSpy);
     });
     it("should fallback to 'ja-JP-mac' for locale 'ja-JP-macos'", async () => {
       sandbox
         .stub(global.Services.locale, "appLocaleAsBCP47")
         .get(() => "ja-JP-macos");
-      const getRecordSpy = sandbox.spy(
-        global.KintoHttpClient.prototype,
-        "getRecord"
-      );
 
       await MessageLoaderUtils._remoteSettingsLoader(provider, {});
 
-      assert.ok(getRecordSpy.args[0][0].includes("ja-JP-mac"));
-      assert.calledOnce(spy);
+      assert.calledWithMatch(
+        MessageLoaderUtils._getRemoteSettingsLanguagePackRecord,
+        sinon.match("ja-JP-mac")
+      );
+      assert.calledOnce(downloadSpy);
     });
     it("should not allow fetch for unsupported locales", async () => {
       sandbox
@@ -2938,7 +2927,7 @@ describe("ASRouter", () => {
 
       await MessageLoaderUtils._remoteSettingsLoader(provider, {});
 
-      assert.notCalled(spy);
+      assert.notCalled(downloadSpy);
     });
   });
   describe("#resetMessageState", () => {

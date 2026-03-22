@@ -84,8 +84,8 @@ urlbar:
           group names are: `heuristic`, `adaptive_history`, `search_history`,
           `search_suggest`, `search_suggest_rich`, `trending_search`,
           `trending_search_rich`, `top_pick`, `top_site`, `remote_tab`,
-          `addon`, `general`, `suggest`, `about_page`, `suggested_index`, and
-          `restrict_keyword`.
+          `addon`, `general`, `suggest`, `about_page`, `suggested_index`,
+          `restrict_keyword`, `ai`.
           If the group did not fall into any of these,
           this will be `unknown` and a bug should be filed to investigate it.
         type: string
@@ -96,6 +96,7 @@ urlbar:
           possible types are:
           `action`,
           `addon`,
+          `ai_chat`,
           `autofill_about`,
           `autofill_adaptive`,
           `autofill_origin`,
@@ -182,11 +183,13 @@ urlbar:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1805717
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1842247
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1917992
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2003067
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1800414#c2
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1805717#c4
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1842247#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1917992
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2003067
     data_sensitivity:
       - interaction
     notification_emails:
@@ -468,6 +471,7 @@ urlbar:
           not occur and indicates a bug. The possible types are:
           `action`,
           `addon`,
+          `ai_chat`,
           `autofill_about`,
           `autofill_adaptive`,
           `autofill_origin`,
@@ -567,6 +571,7 @@ urlbar:
       engagement_type:
         description: >
           Records how the user selected the result. The possible values are:
+          `ask_button`,
           `click`,
           `dismiss`,
           `drop_go`,
@@ -575,11 +580,13 @@ urlbar:
           `help`,
           `inaccurate_location`,
           `manage`,
+          `navigate_button`,
           `not_interested`,
           `not_now`,
           `not_relevant`,
           `opt_in`,
           `paste_go`,
+          `search_button`,
           `show_less_frequently`
         type: string
       groups:
@@ -591,7 +598,7 @@ urlbar:
           `search_suggest`, `search_suggest_rich`, `trending_search`,
           `trending_search_rich`, `top_pick`, `top_site`, `recent_search`,
           `remote_tab`, `addon`, `general`, `suggest`, `about_page`,
-          `suggested_index`, and `restrict_keyword`.
+          `suggested_index`, `restrict_keyword`, `ai`.
           If the group did not fall into any of these, this will be `unknown`
           and a bug should be filed to investigate it. If engagement_type is
           `drop_go` or `paste_go`, this  will be empty string because no results
@@ -604,6 +611,7 @@ urlbar:
           possible types are:
           `action`,
           `addon`,
+          `ai_chat`,
           `autofill_about`,
           `autofill_adaptive`,
           `autofill_origin`,
@@ -689,10 +697,14 @@ urlbar:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1797265
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1805717
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1842247
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2003067
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1797265#c3
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1805717#c4
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1842247#c3
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2003067
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2008925
     data_sensitivity:
       - interaction
     notification_emails:

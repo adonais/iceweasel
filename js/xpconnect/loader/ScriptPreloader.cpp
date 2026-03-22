@@ -207,8 +207,15 @@ void ScriptPreloader::InitContentChild(ContentParent& parent) {
   // should be a sufficiently rare occurrence that it's not worth trying to
   // handle specially.
   auto processType = GetChildProcessType(parent.GetRemoteType());
-  bool wantScriptData = !cache.mInitializedProcesses.contains(processType);
-  cache.mInitializedProcesses += processType;
+  bool wantScriptData =
+      !cache.mRequestedChildProcessStencils.contains(processType);
+  cache.mRequestedChildProcessStencils += processType;
+
+  // If we're starting a web process (e.g. a preload process during startup),
+  // make sure we receive its script data before kicking off the cache write.
+  if (processType == ProcessType::Web) {
+    cache.mRequiredChildProcessStencils += processType;
+  }
 
   auto fd = cache.mCacheData->cloneFileDescriptor();
   // Don't send original cache data to new processes if the cache has been
@@ -260,6 +267,34 @@ ScriptPreloader::~ScriptPreloader() { Cleanup(); }
 void ScriptPreloader::Cleanup() {
   mScripts.Clear();
   UnregisterWeakMemoryReporter(this);
+}
+
+void ScriptPreloader::StartCacheWriteIfReady() {
+  // Check if we're the right cache. Only the this-process ScriptPreloader in
+  // the parent process should do any cache writing.
+  if (!mChildCache) {
+    // If we don't have a child cache then we're not the right ScriptPreloader.
+    return;
+  }
+
+  if (mSaveComplete || mSaveThread) {
+    // We've already written the cache or are in the process of doing so.
+    return;
+  }
+
+  if (!mStartupHasAdvancedToCacheWritingStage) {
+    // Too early to write.
+    return;
+  }
+
+  if (!mChildCache->mReceivedChildProcessStencils.contains(
+          mChildCache->mRequiredChildProcessStencils)) {
+    // Still missing some expected child process script data.
+    return;
+  }
+
+  // Everything's ready, let's kick off the write task.
+  StartCacheWrite();
 }
 
 void ScriptPreloader::StartCacheWrite() {
@@ -330,10 +365,9 @@ nsresult ScriptPreloader::Observe(nsISupports* subject, const char* topic,
 
     MOZ_ASSERT(mStartupFinished);
     MOZ_ASSERT(XRE_IsParentProcess());
+    mStartupHasAdvancedToCacheWritingStage = true;
 
-    if (mChildCache && !mSaveComplete && !mSaveThread) {
-      StartCacheWrite();
-    }
+    StartCacheWriteIfReady();
   } else if (mContentStartupFinishedTopic.Equals(topic)) {
     // If this is an uninitialized about:blank viewer or a chrome: document
     // (which should always be an XBL binding document), ignore it. We don't
@@ -848,12 +882,12 @@ nsresult ScriptPreloader::Run() {
   MonitorAutoLock mal(mSaveMonitor.Lock());
   mSaveMonitor.NoteLockHeld();
 
-  // Ideally wait about 10 seconds before saving, to avoid unnecessary IO
+  // Wait about 3 seconds before saving, to avoid unnecessary IO
   // during early startup. But only if the cache hasn't been invalidated,
   // since that can trigger a new write during shutdown, and we don't want to
   // cause shutdown hangs.
   if (!mCacheInvalidated) {
-    mal.Wait(TimeDuration::FromSeconds(10));
+    mal.Wait(TimeDuration::FromSeconds(3));
   }
 
   auto result = URLPreloader::GetSingleton().WriteCache();
@@ -970,6 +1004,14 @@ void ScriptPreloader::NoteStencil(const nsCString& url,
 
   script->UpdateLoadTime(loadTime);
   script->mProcessTypes += processType;
+}
+
+void ScriptPreloader::NoteReceivedAllChildStencilsForProcess(
+    ProcessType aProcessType) {
+  mReceivedChildProcessStencils += aProcessType;
+
+  // We're the child cache. Tell the root cache to trigger a write if ready.
+  GetSingleton().StartCacheWriteIfReady();
 }
 
 /* static */

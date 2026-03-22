@@ -54,10 +54,11 @@ async def test_partition_context(
 
 @pytest.mark.parametrize("domain", ["", "alt"], ids=["same_origin", "cross_origin"])
 async def test_partition_context_iframe_with_set_cookie(
-    bidi_session, new_tab, inline, domain_value, domain, set_cookie
+    bidi_session, new_tab, inline, domain_value, domain, set_cookie, iframe
 ):
-    iframe_url = inline("<div id='in-iframe'>foo</div>", domain=domain)
-    page_url = inline(f"<iframe src='{iframe_url}'></iframe>")
+    iframe_html = "<div id='in-iframe'>foo</div>"
+    iframe_url = inline(iframe_html, domain=domain)
+    page_url = inline(iframe(iframe_html, domain=domain))
     await bidi_session.browsing_context.navigate(
         context=new_tab["context"], url=page_url, wait="complete"
     )
@@ -89,13 +90,11 @@ async def test_partition_context_iframe_with_set_cookie(
 # Because of Dynamic First-Party Isolation, adding the cookie with `document.cookie`
 # works only with same-origin iframes.
 async def test_partition_context_same_origin_iframe_with_document_cookie(
-    bidi_session,
-    new_tab,
-    inline,
-    add_document_cookie,
+    bidi_session, new_tab, inline, add_document_cookie, iframe
 ):
-    iframe_url = inline("<div id='in-iframe'>foo</div>")
-    page_url = inline(f"<iframe src='{iframe_url}'></iframe>")
+    iframe_html = "<div id='in-iframe'>foo</div>"
+    iframe_url = inline(iframe_html)
+    page_url = inline(iframe(iframe_html))
     await bidi_session.browsing_context.navigate(
         context=new_tab["context"], url=page_url, wait="complete"
     )

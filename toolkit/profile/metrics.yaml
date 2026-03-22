@@ -90,15 +90,18 @@ startup:
       - https://bugzil.la/1916867
       - https://bugzil.la/1958163
       - https://bugzil.la/1994608
+      - https://bugzil.la/2010455
     data_reviews:
       - https://bugzil.la/1878339
       - https://bugzil.la/1916867
       - https://bugzil.la/1958163
       - https://bugzil.la/1994608
+      - https://bugzil.la/2010455
     notification_emails:
       - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
       - kbryant@mozilla.com
-    expires: 150
+    expires: 156
     telemetry_mirror: STARTUP_PROFILE_DATABASE_VERSION
 
   profile_count:
@@ -113,15 +116,18 @@ startup:
       - https://bugzil.la/1916867
       - https://bugzil.la/1958163
       - https://bugzil.la/1994608
+      - https://bugzil.la/2010455
     data_reviews:
       - https://bugzil.la/1878339
       - https://bugzil.la/1916867
       - https://bugzil.la/1958163
       - https://bugzil.la/1994608
+      - https://bugzil.la/2010455
     notification_emails:
       - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
       - kbryant@mozilla.com
-    expires: 150
+    expires: 156
     unit: profiles
     telemetry_mirror: STARTUP_PROFILE_COUNT
 

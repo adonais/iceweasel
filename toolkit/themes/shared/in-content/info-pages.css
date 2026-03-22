@@ -126,12 +126,12 @@ tree {
 /* Tables */
 
 table {
-  background-color: var(--in-content-table-background);
+  background-color: var(--table-background-color);
   color: var(--text-color);
   font: message-box;
   text-align: start;
   width: 100%;
-  border: 1px solid var(--in-content-table-border-color);
+  border: 1px solid var(--table-border-color);
   border-radius: var(--border-radius-small);
   border-spacing: 0;
   overflow: hidden;
@@ -152,9 +152,9 @@ thead th {
 }
 
 th {
-  background-color: var(--in-content-table-header-background);
-  color: var(--in-content-table-header-color);
-  border: 1px solid var(--in-content-table-border-color);
+  background-color: var(--table-header-background-color);
+  color: var(--table-header-text-color);
+  border: 1px solid var(--table-border-color);
 }
 
 th.column {
@@ -163,13 +163,13 @@ th.column {
 }
 
 td {
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--table-border-color);
   unicode-bidi: plaintext; /* Make sure file paths will be LTR */
 }
 
 .action-box {
-  background-color: var(--in-content-table-background);
-  border: 1px solid var(--border-color);
+  background-color: var(--table-background-color);
+  border: 1px solid var(--table-border-color);
   border-radius: var(--border-radius-small);
   padding: 16px;
   flex: 1 1 25%;

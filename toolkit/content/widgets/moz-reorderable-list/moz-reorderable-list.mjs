@@ -320,6 +320,8 @@ export default class MozReorderableList extends MozLitElement {
       draggedElement: fromEl,
       targetElement: items[fromIndex + direction],
       position: Math.min(direction, 0),
+      draggedIndex: fromIndex,
+      targetIndex: fromIndex + direction,
     };
   }
 

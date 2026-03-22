@@ -16,7 +16,9 @@ import androidx.appcompat.app.AppCompatDelegate.NightMode
 import androidx.appcompat.content.res.AppCompatResources.getDrawable
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.graphics.scale
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.mapNotNull
 import mozilla.components.browser.menu.BrowserMenuBuilder
@@ -76,6 +78,7 @@ class CustomTabsToolbarFeature(
         CustomTabsToolbarButtonConfig(),
     private val customTabsColorsConfig: CustomTabsColorsConfig = CustomTabsColorsConfig(),
     private val customTabsToolbarListeners: CustomTabsToolbarListeners = CustomTabsToolbarListeners(),
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
     private val closeListener: () -> Unit,
 ) : LifecycleAwareFeature, UserInteractionHandler {
     private var initialized: Boolean = false
@@ -104,7 +107,7 @@ class CustomTabsToolbarFeature(
         val tabId = sessionId ?: return
         val tab = store.state.findCustomTab(tabId) ?: return
 
-        scope = store.flowScoped { flow ->
+        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
             flow
                 .mapNotNull { state -> state.findCustomTab(tabId) }
                 .ifAnyChanged { tab -> arrayOf(tab.content.title, tab.content.url) }

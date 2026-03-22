@@ -17,10 +17,13 @@ projects:
     - components:compose-base
     - components:compose-browser-toolbar
     - components:compose-cfr
+    - components:concept-accelerometer
     - components:concept-awesomebar
     - components:concept-base
     - components:concept-engine
     - components:concept-fetch
+    - components:concept-integrity
+    - components:concept-llm
     - components:concept-menu
     - components:concept-push
     - components:concept-storage
@@ -52,6 +55,7 @@ projects:
     - components:feature-session
     - components:feature-share
     - components:feature-sitepermissions
+    - components:feature-summarize
     - components:feature-syncedtabs
     - components:feature-tab-collections
     - components:feature-tabs
@@ -61,14 +65,19 @@ projects:
     - components:feature-webcompat
     - components:feature-webcompat-reporter
     - components:feature-webnotifications
+    - components:lib-accelerometer-sensormanager
     - components:lib-crash
     - components:lib-crash-sentry
     - components:lib-dataprotect
+    - components:lib-integrity-googleplay
+    - components:lib-llm-mlpa
     - components:lib-publicsuffixlist
     - components:lib-push-firebase
+    - components:lib-shake
     - components:lib-state
     - components:service-digitalassetlinks
     - components:service-firefox-accounts
+    - components:service-firefox-relay
     - components:service-glean
     - components:service-location
     - components:service-mars

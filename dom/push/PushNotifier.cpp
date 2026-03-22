@@ -23,10 +23,6 @@
 
 namespace mozilla::dom {
 
-PushNotifier::PushNotifier() = default;
-
-PushNotifier::~PushNotifier() = default;
-
 NS_IMPL_CYCLE_COLLECTION_0(PushNotifier)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PushNotifier)

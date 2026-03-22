@@ -6,8 +6,8 @@
 
 // Original author: ekr@rtfm.com
 
-#ifndef transportlayerdtls_h__
-#define transportlayerdtls_h__
+#ifndef transportlayerdtls_h_
+#define transportlayerdtls_h_
 
 #include <queue>
 #include <set>

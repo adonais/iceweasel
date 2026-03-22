@@ -68,6 +68,11 @@ interface nsICacheStorage : nsISupports
   const uint32_t OPEN_COMPLETE_ONLY = 1 << 7;
 
   /**
+   * Open even if we're revalidating/etc; used for Dictionary Cache loads
+   */
+  const uint32_t OPEN_ALWAYS = 1 << 8;
+
+  /**
    * Asynchronously opens a cache entry for the specified URI.
    * Result is fetched asynchronously via the callback.
    *

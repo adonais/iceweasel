@@ -61,6 +61,7 @@ var testList = [
   test_hostnames_resolving_to_local_addresses,
   test_proxies_with_local_addresses,
   test_speculative_connect_with_proxy_filter,
+  test_speculative_connect_with_proxy_filter_and_callback,
 ];
 
 var testDescription = [
@@ -69,6 +70,7 @@ var testDescription = [
   "Expect failure with resolved local IPs",
   "Expect failure for proxies with local IPs",
   "Expect failure without notification callbacks",
+  "Expect pass with notification callbacks and proxy filter",
 ];
 
 var testIdx = 0;
@@ -402,6 +404,35 @@ function test_speculative_connect_with_proxy_filter() {
     /NS_ERROR_FAILURE/,
     "speculativeConnect should throw when no callback is provided and a proxy filter is registered"
   );
+  pps.unregisterFilter(filter);
+  next_test();
+}
+
+function test_speculative_connect_with_proxy_filter_and_callback() {
+  let filter = new ProxyFilter("https", "localhost", 80, 0);
+  let pps = Cc["@mozilla.org/network/protocol-proxy-service;1"].getService();
+  pps.registerFilter(filter, 10);
+  let URI = ios.newURI("https://not-exist-dommain.com");
+  let principal = Services.scriptSecurityManager.createContentPrincipal(
+    URI,
+    {}
+  );
+
+  let callback = {
+    QueryInterface: ChromeUtils.generateQI(["nsIInterfaceRequestor"]),
+    getInterface() {
+      return null;
+    },
+  };
+
+  ios
+    .QueryInterface(Ci.nsISpeculativeConnect)
+    .speculativeConnect(URI, principal, callback, false);
+  Assert.ok(
+    true,
+    "speculativeConnect should succeed when callback is provided with proxy filter registered"
+  );
+
   pps.unregisterFilter(filter);
   next_test();
 }

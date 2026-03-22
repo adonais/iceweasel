@@ -310,6 +310,15 @@ add_task(async function () {
     content.testTransition.skipTransition();
     delete content.testTransition;
   });
+
+  await searchInMarkupView(inspector, "flex");
+  is(
+    inspector.selection.nodeFront,
+    await getNodeFront(".Buttons", inspector),
+    "The section.Buttons element is selected"
+  );
+  // Selected node markup: <section class="Buttons">
+  checkHighlightedSearchResults(inspector, ["flex"]);
 });
 
 function checkHighlightedSearchResults(inspector, expectedHighlights) {

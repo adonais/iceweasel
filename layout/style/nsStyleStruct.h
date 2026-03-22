@@ -9,8 +9,8 @@
  * internal API for computed style data for an element
  */
 
-#ifndef nsStyleStruct_h___
-#define nsStyleStruct_h___
+#ifndef nsStyleStruct_h_
+#define nsStyleStruct_h_
 
 #include <cstddef>  // offsetof()
 
@@ -1216,6 +1216,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTextReset {
   mozilla::StyleColor mTextDecorationColor;
   mozilla::StyleTextDecorationLength mTextDecorationThickness;
   mozilla::StyleTextDecorationInset mTextDecorationInset;
+  mozilla::StyleTextBoxTrim mTextBoxTrim;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
@@ -1256,6 +1257,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
   mozilla::LengthPercentage mWordSpacing;
   mozilla::StyleLetterSpacing mLetterSpacing;
   mozilla::StyleTextIndent mTextIndent;
+
+  mozilla::StyleTextBoxEdge mTextBoxEdge;
 
   mozilla::LengthPercentageOrAuto mTextUnderlineOffset;
   mozilla::StyleTextDecorationSkipInk mTextDecorationSkipInk;
@@ -1434,7 +1437,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVisibility {
   }
 
   bool UseLegacyCollapseBehavior() const {
-    return mMozBoxCollapse == mozilla::StyleMozBoxCollapse::Legacy;
+    return mMozBoxCollapse == mozilla::StyleBoxCollapse::Legacy;
   }
 
   /**
@@ -1467,8 +1470,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleVisibility {
   mozilla::StyleImageRendering mImageRendering;
   mozilla::StyleWritingModeProperty mWritingMode;
   mozilla::StyleTextOrientation mTextOrientation;
-  mozilla::StyleMozBoxCollapse mMozBoxCollapse;
+  mozilla::StyleBoxCollapse mMozBoxCollapse;
   mozilla::StylePrintColorAdjust mPrintColorAdjust;
+  mozilla::StyleDominantBaseline mDominantBaseline;
 
  private:
   mozilla::StyleImageOrientation mImageOrientation;
@@ -1674,7 +1678,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   mozilla::StylePerspective mChildPerspective;
   mozilla::Position mPerspectiveOrigin;
 
-  mozilla::StyleVerticalAlign mVerticalAlign;
+  mozilla::StyleAlignmentBaseline mAlignmentBaseline;
+  mozilla::StyleBaselineShift mBaselineShift;
   mozilla::StyleBaselineSource mBaselineSource;
 
   mozilla::StyleLineClamp mWebkitLineClamp;
@@ -2243,7 +2248,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleSVG {
   mozilla::StyleShapeRendering mShapeRendering;
   mozilla::StyleStrokeLinecap mStrokeLinecap;
   mozilla::StyleStrokeLinejoin mStrokeLinejoin;
-  mozilla::StyleDominantBaseline mDominantBaseline;
   mozilla::StyleTextAnchor mTextAnchor;
 
   /// Returns true if style has been set to expose the computed values of
@@ -2418,4 +2422,4 @@ STATIC_ASSERT_TYPE_LAYOUTS_MATCH(nsSize, nsSize_Simple);
 STATIC_ASSERT_FIELD_OFFSET_MATCHES(nsSize, nsSize_Simple, width);
 STATIC_ASSERT_FIELD_OFFSET_MATCHES(nsSize, nsSize_Simple, height);
 
-#endif /* nsStyleStruct_h___ */
+#endif /* nsStyleStruct_h_ */

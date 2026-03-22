@@ -88,7 +88,7 @@ pub struct GpuBufferHandle(u32);
 
 impl GpuBufferHandle {
     pub const INVALID: GpuBufferHandle = GpuBufferHandle(u32::MAX - 1);
-    const EPOCH_MASK: u32 = 0xFF000000;
+    const EPOCH_MASK: u32 = 0xFC000000; // Leading 6 bits
 
     fn new(addr: u32, epoch: u32) -> Self {
         Self(addr | epoch)
@@ -102,7 +102,7 @@ impl GpuBufferHandle {
 impl std::fmt::Debug for GpuBufferHandle {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let addr = self.0 & !Self::EPOCH_MASK;
-        let epoch = (self.0 & Self::EPOCH_MASK) >> 24;
+        let epoch = (self.0 & Self::EPOCH_MASK) >> 26;
         write!(f, "#{addr}@{epoch}")
     }
 }
@@ -111,7 +111,7 @@ impl std::fmt::Debug for GpuBufferHandle {
 //           In the future, we can change the PrimitiveInstanceData struct
 //           to use 2x u16 for the vertex attribute instead of an i32.
 #[repr(transparent)]
-#[derive(Copy, Debug, Clone, MallocSizeOf, Eq, PartialEq)]
+#[derive(Copy, Clone, MallocSizeOf, Eq, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct GpuBufferAddress(u32);
@@ -149,6 +149,16 @@ impl GpuBufferAddress {
     }
 
     pub const INVALID: GpuBufferAddress = GpuBufferAddress(u32::MAX - 1);
+}
+
+impl std::fmt::Debug for GpuBufferAddress {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if *self == Self::INVALID {
+            write!(f, "<invalid>")
+        } else {
+            write!(f, "#{}", self.0)
+        }
+    }
 }
 
 impl GpuBufferBlockF {
@@ -363,6 +373,7 @@ impl<'a, T> GpuBufferWriter<'a, T> where T: Texel {
     /// Close this writer, returning the GPU address of this set of block(s).
     pub fn finish_with_handle(self) -> GpuBufferHandle {
         assert!(self.buffer.len() <= self.index + self.max_block_count);
+        assert_eq!(self.index & (GpuBufferHandle::EPOCH_MASK as usize), 0);
 
         GpuBufferHandle::new(self.index as u32, self.epoch)
     }
@@ -403,7 +414,7 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
     pub fn new(memory: &FrameMemory, capacity: usize, frame_id: FrameId) -> Self {
         // Pick the first 8 bits of the frame id and store them in the upper bits
         // of the handles.
-        let epoch = ((frame_id.as_u64() % 254) as u32 + 1) << 24;
+        let epoch = ((frame_id.as_u64() % 62) as u32 + 1) << 26;
         GpuBufferBuilderImpl {
             data: memory.new_vec_with_capacity(capacity),
             deferred: Vec::new(),
@@ -412,7 +423,7 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
     }
 
     #[allow(dead_code)]
-    pub fn push(
+    pub fn push_blocks(
         &mut self,
         blocks: &[T],
     ) -> GpuBufferAddress {
@@ -532,6 +543,28 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
     }
 }
 
+impl GpuBufferBuilderF {
+    pub fn push<D>(&mut self, data: &D) -> GpuBufferAddress
+        where D: GpuBufferDataF
+    {
+        let mut writer = self.write_blocks(D::NUM_BLOCKS);
+        data.write(&mut writer);
+
+        writer.finish()
+    }
+}
+
+impl GpuBufferBuilderI {
+    pub fn push<D>(&mut self, data: &D) -> GpuBufferAddress
+        where D: GpuBufferDataI
+    {
+        let mut writer = self.write_blocks(D::NUM_BLOCKS);
+        data.write(&mut writer);
+
+        writer.finish()
+    }
+}
+
 fn ensure_row_capacity<T: Default>(data: &mut FrameVec<T>, cap: usize) {
     if (data.len() % MAX_VERTEX_TEXTURE_WIDTH) + cap > MAX_VERTEX_TEXTURE_WIDTH {
         finish_row(data);
@@ -578,10 +611,10 @@ fn test_gpu_buffer_sizing_push() {
     let mut builder = GpuBufferBuilderF::new(&frame_memory, 0, FrameId::first());
 
     let row = vec![GpuBufferBlockF::EMPTY; MAX_VERTEX_TEXTURE_WIDTH];
-    builder.push(&row);
+    builder.push_blocks(&row);
 
-    builder.push(&[GpuBufferBlockF::EMPTY]);
-    builder.push(&[GpuBufferBlockF::EMPTY]);
+    builder.push_blocks(&[GpuBufferBlockF::EMPTY]);
+    builder.push_blocks(&[GpuBufferBlockF::EMPTY]);
 
     let buffer = builder.finalize(&render_task_graph);
     assert_eq!(buffer.data.len(), MAX_VERTEX_TEXTURE_WIDTH * 2);

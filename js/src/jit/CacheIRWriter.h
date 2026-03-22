@@ -724,10 +724,6 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter {
   }
 #endif
 
-  void metaScriptedThisShape(Shape* thisShape) {
-    metaScriptedThisShape_(thisShape);
-  }
-
   void guardMultipleShapes(ObjOperandId obj, ListObject* shapes) {
     MOZ_ASSERT(shapes->length() > 0);
     guardMultipleShapes_(obj, shapes);

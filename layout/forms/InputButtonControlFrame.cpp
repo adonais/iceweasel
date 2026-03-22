@@ -8,6 +8,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "nsContentUtils.h"
+#include "nsIAnonymousContentCreator.h"
 #include "nsIFormControl.h"
 #include "nsTextNode.h"
 
@@ -16,12 +17,14 @@ using namespace mozilla;
 namespace mozilla {
 
 /* A frame for <input type={button,reset,submit} */
-class InputButtonControlFrame final : public ButtonControlFrame {
+class InputButtonControlFrame final : public ButtonControlFrame,
+                                      public nsIAnonymousContentCreator {
  public:
   InputButtonControlFrame(ComputedStyle* aStyle, nsPresContext* aPc)
       : ButtonControlFrame(aStyle, aPc, kClassID) {}
 
   NS_DECL_FRAMEARENA_HELPERS(InputButtonControlFrame)
+  NS_DECL_QUERYFRAME
 
 #ifdef DEBUG_FRAME_DUMP
   nsresult GetFrameName(nsAString& aResult) const override {
@@ -47,6 +50,10 @@ class InputButtonControlFrame final : public ButtonControlFrame {
 };
 
 NS_IMPL_FRAMEARENA_HELPERS(InputButtonControlFrame);
+
+NS_QUERYFRAME_HEAD(InputButtonControlFrame)
+  NS_QUERYFRAME_ENTRY(nsIAnonymousContentCreator)
+NS_QUERYFRAME_TAIL_INHERITING(ButtonControlFrame)
 
 void InputButtonControlFrame::Destroy(DestroyContext& aContext) {
   aContext.AddAnonymousContent(mTextContent.forget());

@@ -6,6 +6,7 @@
 # and *should* be revised.
 
 import re
+import time
 from operator import itemgetter
 
 RE_DOCSHELL = re.compile(r"I\/DocShellAndDOMWindowLeak ([+\-]{2})DOCSHELL")
@@ -23,6 +24,8 @@ class ShutdownLeaks:
         self.logger = logger
         self.tests = []
         self.leakedWindows = {}
+        self.windowCreationTimes = {}
+        self.docShellCreationTimes = {}
         self.hiddenWindowsCount = 0
         self.leakedDocShells = set()
         self.hiddenDocShellsCount = 0
@@ -117,11 +120,13 @@ class ShutdownLeaks:
 
         errors = []
         for test in self._parseLeakingTests():
-            for url, count in self._zipLeakedWindows(test["leakedWindows"]):
+            for windowId in test["leakedWindows"]:
+                url = self.leakedWindows[windowId]
+                timestamp = self.windowCreationTimes.get(windowId)
                 errors.append({
                     "test": test["fileName"],
-                    "msg": "leaked %d window(s) until shutdown [url = %s]"
-                    % (count, url),
+                    "msg": "leaked 1 window(s) until shutdown [url = %s]" % url,
+                    "time": timestamp,
                 })
                 failures += 1
 
@@ -131,11 +136,12 @@ class ShutdownLeaks:
                     % (test["fileName"], test["leakedWindowsString"])
                 )
 
-            if test["leakedDocShells"]:
+            for docShellId in test["leakedDocShells"]:
+                timestamp = self.docShellCreationTimes.get(docShellId)
                 errors.append({
                     "test": test["fileName"],
-                    "msg": "leaked %d docShell(s) until shutdown"
-                    % (len(test["leakedDocShells"])),
+                    "msg": "leaked 1 docShell(s) until shutdown",
+                    "time": timestamp,
                 })
                 failures += 1
                 self.logger.info(
@@ -186,8 +192,10 @@ class ShutdownLeaks:
             windows = self.currentTest["windows"]
             if created:
                 windows.add(key)
+                self.windowCreationTimes[key] = int(time.time() * 1000)
             else:
                 windows.discard(key)
+                self.windowCreationTimes.pop(key, None)
         elif int(pid) in self.seenShutdown and not created:
             url = self._parseValue(line, "url")
             if not self._isHiddenWindowURL(url):
@@ -215,8 +223,10 @@ class ShutdownLeaks:
             docShells = self.currentTest["docShells"]
             if created:
                 docShells.add(key)
+                self.docShellCreationTimes[key] = int(time.time() * 1000)
             else:
                 docShells.discard(key)
+                self.docShellCreationTimes.pop(key, None)
         elif int(pid) in self.seenShutdown and not created:
             url = self._parseValue(line, "url")
             if not self._isHiddenWindowURL(url):
@@ -235,7 +245,7 @@ class ShutdownLeaks:
 
         for test in self.tests:
             leakedWindows = [id for id in test["windows"] if id in self.leakedWindows]
-            test["leakedWindows"] = [self.leakedWindows[id] for id in leakedWindows]
+            test["leakedWindows"] = leakedWindows
             test["hiddenWindowsCount"] = self.hiddenWindowsCount
             test["leakedWindowsString"] = ", ".join([
                 "[pid = %s] [serial = %s]" % x for x in leakedWindows
@@ -256,17 +266,6 @@ class ShutdownLeaks:
                 leakingTests.append(test)
 
         return sorted(leakingTests, key=itemgetter("leakCount"), reverse=True)
-
-    def _zipLeakedWindows(self, leakedWindows):
-        counts = []
-        counted = set()
-
-        for url in leakedWindows:
-            if url not in counted:
-                counts.append((url, leakedWindows.count(url)))
-                counted.add(url)
-
-        return sorted(counts, key=itemgetter(1), reverse=True)
 
     def _isHiddenWindowURL(self, url):
         return url == "resource://gre-resources/hiddenWindowMac.xhtml"

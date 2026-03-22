@@ -35,6 +35,7 @@
 #include "nsCOMPtr.h"
 #include "nsContentPolicyUtils.h"
 #include "nsDOMNavigationTiming.h"
+#include "nsISocketTransport.h"
 #include "nsIThreadRetargetableStreamListener.h"
 #include "nsIStreamTransportService.h"
 #include "nsStringStream.h"

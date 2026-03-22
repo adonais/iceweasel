@@ -184,7 +184,7 @@ class ViaductResponseListener final : public nsIHttpHeaderVisitor,
  private:
   explicit ViaductResponseListener(ViaductRequestGuard&& aGuard)
       : mGuard(std::move(aGuard)), mChannel(nullptr) {
-    MOZ_LOG(gViaductLogger, LogLevel::Info,
+    MOZ_LOG(gViaductLogger, LogLevel::Debug,
             ("TRACE: ViaductResponseListener constructor called, guard valid: "
              "%s",
              mGuard.IsValid() ? "true" : "false"));
@@ -208,7 +208,7 @@ class ViaductResponseListener final : public nsIHttpHeaderVisitor,
   }
 
   ~ViaductResponseListener() {
-    MOZ_LOG(gViaductLogger, LogLevel::Info,
+    MOZ_LOG(gViaductLogger, LogLevel::Debug,
             ("TRACE: ViaductResponseListener destructor called"));
 
     ClearTimer();
@@ -246,22 +246,22 @@ NS_IMPL_ISUPPORTS(ViaductResponseListener, nsIHttpHeaderVisitor,
 
 void ViaductResponseListener::HandleError(nsresult aError,
                                           const char* aMessage) {
-  MOZ_LOG(gViaductLogger, LogLevel::Error,
+  MOZ_LOG(gViaductLogger, LogLevel::Debug,
           ("TRACE: HandleError called with message: %s (0x%08x)", aMessage,
            static_cast<uint32_t>(aError)));
 
   if (mGuard.IsValid()) {
-    MOZ_LOG(gViaductLogger, LogLevel::Info,
+    MOZ_LOG(gViaductLogger, LogLevel::Debug,
             ("TRACE: Calling CompleteWithError via guard"));
     mGuard.CompleteWithError(aError, aMessage);
   } else {
     MOZ_LOG(gViaductLogger, LogLevel::Error,
-            ("TRACE: HandleError called but guard is invalid"));
+            ("HandleError called but guard is invalid"));
   }
 }
 
 void ViaductResponseListener::SetStatusCode(uint16_t aStatusCode) {
-  MOZ_LOG(gViaductLogger, LogLevel::Info,
+  MOZ_LOG(gViaductLogger, LogLevel::Debug,
           ("TRACE: SetStatusCode called with code: %u", aStatusCode));
   if (!mGuard.IsValid()) {
     MOZ_LOG(gViaductLogger, LogLevel::Error,
@@ -274,7 +274,7 @@ void ViaductResponseListener::SetStatusCode(uint16_t aStatusCode) {
 }
 
 void ViaductResponseListener::SetUrl(const char* aUrl, size_t aLength) {
-  MOZ_LOG(gViaductLogger, LogLevel::Info,
+  MOZ_LOG(gViaductLogger, LogLevel::Debug,
           ("TRACE: SetUrl called with URL (length %zu)", aLength));
   if (!mGuard.IsValid()) {
     MOZ_LOG(gViaductLogger, LogLevel::Error,
@@ -288,7 +288,7 @@ void ViaductResponseListener::SetUrl(const char* aUrl, size_t aLength) {
 void ViaductResponseListener::AddHeader(const char* aKey, size_t aKeyLength,
                                         const char* aValue,
                                         size_t aValueLength) {
-  MOZ_LOG(gViaductLogger, LogLevel::Info,
+  MOZ_LOG(gViaductLogger, LogLevel::Debug,
           ("TRACE: AddHeader called - key length: %zu, value length: %zu",
            aKeyLength, aValueLength));
   if (!mGuard.IsValid()) {
@@ -302,7 +302,7 @@ void ViaductResponseListener::AddHeader(const char* aKey, size_t aKeyLength,
 }
 
 void ViaductResponseListener::ExtendBody(const uint8_t* aData, size_t aLength) {
-  MOZ_LOG(gViaductLogger, LogLevel::Info,
+  MOZ_LOG(gViaductLogger, LogLevel::Debug,
           ("TRACE: ExtendBody called with %zu bytes", aLength));
   if (!mGuard.IsValid()) {
     MOZ_LOG(gViaductLogger, LogLevel::Error,
@@ -315,14 +315,14 @@ void ViaductResponseListener::ExtendBody(const uint8_t* aData, size_t aLength) {
 }
 
 void ViaductResponseListener::Complete() {
-  MOZ_LOG(gViaductLogger, LogLevel::Info,
+  MOZ_LOG(gViaductLogger, LogLevel::Debug,
           ("TRACE: Complete called - marking request as successful"));
   if (!mGuard.IsValid()) {
     MOZ_LOG(gViaductLogger, LogLevel::Error,
             ("Complete called but guard is invalid"));
     return;
   }
-  MOZ_LOG(gViaductLogger, LogLevel::Info,
+  MOZ_LOG(gViaductLogger, LogLevel::Debug,
           ("TRACE: Calling Complete via guard"));
   mGuard.Complete();
 }
@@ -330,7 +330,7 @@ void ViaductResponseListener::Complete() {
 NS_IMETHODIMP
 ViaductResponseListener::VisitHeader(const nsACString& aHeader,
                                      const nsACString& aValue) {
-  MOZ_LOG(gViaductLogger, LogLevel::Info,
+  MOZ_LOG(gViaductLogger, LogLevel::Debug,
           ("TRACE: VisitHeader called for header: %s",
            PromiseFlatCString(aHeader).get()));
   AddHeader(aHeader.BeginReading(), aHeader.Length(), aValue.BeginReading(),
@@ -340,7 +340,7 @@ ViaductResponseListener::VisitHeader(const nsACString& aHeader,
 
 NS_IMETHODIMP
 ViaductResponseListener::OnStartRequest(nsIRequest* aRequest) {
-  MOZ_LOG(gViaductLogger, LogLevel::Info,
+  MOZ_LOG(gViaductLogger, LogLevel::Debug,
           ("TRACE: ========== OnStartRequest called =========="));
 
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aRequest);
@@ -381,7 +381,7 @@ ViaductResponseListener::OnStartRequest(nsIRequest* aRequest) {
 
   // Collect response headers - using 'this' since we implement
   // nsIHttpHeaderVisitor
-  MOZ_LOG(gViaductLogger, LogLevel::Info,
+  MOZ_LOG(gViaductLogger, LogLevel::Debug,
           ("TRACE: About to visit response headers"));
   rv = httpChannel->VisitResponseHeaders(this);
   if (NS_FAILED(rv)) {
@@ -446,7 +446,7 @@ ViaductResponseListener::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
 NS_IMETHODIMP
 ViaductResponseListener::Notify(nsITimer* aTimer) {
   MOZ_LOG(gViaductLogger, LogLevel::Warning,
-          ("TRACE: Request timeout fired - cancelling request"));
+          ("Request timeout fired - cancelling request"));
 
   ClearTimer();
 

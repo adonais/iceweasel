@@ -3,11 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 plugins {
+    alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
-
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-parcelize'
@@ -15,6 +14,12 @@ apply plugin: 'kotlin-parcelize'
 android {
     buildFeatures {
         compose = true
+    }
+
+    buildTypes {
+        release {
+            consumerProguardFiles 'proguard-rules-consumer.pro'
+        }
     }
 
     namespace = 'mozilla.components.browser.state'
@@ -25,6 +30,7 @@ dependencies {
     // consumer to have to manually import "concept-fetch".
     api project(':components:concept-fetch')
     api project(':components:lib-state')
+    compileOnly libs.mockito
 
     implementation project(':components:concept-awesomebar')
     implementation project(':components:concept-engine')

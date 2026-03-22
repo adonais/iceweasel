@@ -194,7 +194,7 @@ const char* ToChar(EventClassID aEventClassID) {
   case e##aName##Class:                \
     return "e" #aName "Class";
 
-#include "mozilla/EventClassList.h"
+#include "mozilla/EventClassList.inc"
 
 #undef NS_EVENT_CLASS
 #undef NS_ROOT_EVENT_CLASS
@@ -259,7 +259,7 @@ const char* ToChar(Command aCommand) {
   case Command::aName:                           \
     return "Command::" #aName;
 
-#include "mozilla/CommandList.h"
+#include "mozilla/CommandList.inc"
 
 #undef NS_DEFINE_COMMAND
 #undef NS_DEFINE_COMMAND_WITH_PARAM
@@ -277,7 +277,7 @@ const nsCString GetDOMKeyCodeName(uint32_t aKeyCode) {
   case aDOMKeyCode:                            \
     return nsLiteralCString(#aDOMKeyName);
 
-#include "mozilla/VirtualKeyCodeList.h"
+#include "mozilla/VirtualKeyCodeList.inc"
 
 #undef NS_DEFINE_VK
 #undef NS_DISALLOW_SAME_KEYCODE
@@ -341,7 +341,7 @@ Command GetInternalCommand(const nsACString& aCommandName,
 
 #define NS_DEFINE_COMMAND_NO_EXEC_COMMAND(aName)
 
-#include "mozilla/CommandList.h"
+#include "mozilla/CommandList.inc"
 
 #undef NS_DEFINE_COMMAND
 #undef NS_DEFINE_COMMAND_WITH_PARAM
@@ -366,7 +366,7 @@ Command GetInternalCommand(const nsACString& aCommandName,
     return const_cast<WidgetEvent*>(this)->As##aName();        \
   }
 
-#include "mozilla/EventClassList.h"
+#include "mozilla/EventClassList.inc"
 
 #undef NS_EVENT_CLASS
 #undef NS_ROOT_EVENT_CLASS
@@ -977,11 +977,10 @@ float WidgetMouseEventBase::ComputeMouseButtonPressure() const {
       }
       break;
     default:
-      NS_ASSERTION(false,
-                   nsFmtCString(FMT_STRING("This method is not designed for "
-                                           "{}, implement the case explicitly"),
-                                ToChar(mMessage))
-                       .get());
+      NS_ASSERTION(false, nsFmtCString("This method is not designed for "
+                                       "{}, implement the case explicitly",
+                                       ToChar(mMessage))
+                              .get());
   }
   switch (mInputSource) {
     // The caller must want to handle these cases.
@@ -1174,14 +1173,14 @@ double WidgetWheelEvent::OverriddenDeltaY() const {
 
 #define NS_DEFINE_KEYNAME(aCPPName, aDOMKeyName) (u"" aDOMKeyName),
 const char16_t* const WidgetKeyboardEvent::kKeyNames[] = {
-#include "mozilla/KeyNameList.h"
+#include "mozilla/KeyNameList.inc"
 };
 #undef NS_DEFINE_KEYNAME
 
 #define NS_DEFINE_PHYSICAL_KEY_CODE_NAME(aCPPName, aDOMCodeName) \
   (u"" aDOMCodeName),
 const char16_t* const WidgetKeyboardEvent::kCodeNames[] = {
-#include "mozilla/PhysicalKeyCodeNameList.h"
+#include "mozilla/PhysicalKeyCodeNameList.inc"
 };
 #undef NS_DEFINE_PHYSICAL_KEY_CODE_NAME
 
@@ -1279,6 +1278,12 @@ bool WidgetKeyboardEvent::ExecuteEditCommands(NativeKeyBindingsType aType,
   // This event should be trusted event here and we shouldn't expose native
   // key binding information to web contents with untrusted events.
   if (NS_WARN_IF(!IsTrusted())) {
+    return false;
+  }
+
+  // If this is a reply event, we shouldn't execute the native key bindings in
+  // the parent process.
+  if (NS_WARN_IF(IsHandledInRemoteProcess())) {
     return false;
   }
 
@@ -1703,7 +1708,7 @@ uint32_t WidgetKeyboardEvent::GetFallbackKeyCodeOfPunctuationKey(
 #define NS_DEFINE_COMMAND_NO_EXEC_COMMAND(aName) , ""
   static const char* const kCommands[] = {
       ""  // DoNothing
-#include "mozilla/CommandList.h"
+#include "mozilla/CommandList.inc"
   };
 #undef NS_DEFINE_COMMAND
 #undef NS_DEFINE_COMMAND_WITH_PARAM
@@ -1717,9 +1722,9 @@ uint32_t WidgetKeyboardEvent::GetFallbackKeyCodeOfPunctuationKey(
 /* static */
 uint32_t WidgetKeyboardEvent::ComputeLocationFromCodeValue(
     CodeNameIndex aCodeNameIndex) {
-  // Following commented out cases are not defined in PhysicalKeyCodeNameList.h
-  // but are defined by D3E spec.  So, they should be uncommented when the
-  // code values are defined in the header.
+  // Following commented out cases are not defined in
+  // PhysicalKeyCodeNameList.inc but are defined by D3E spec.  So, they should
+  // be uncommented when the code values are defined in the header.
   switch (aCodeNameIndex) {
     case CODE_NAME_INDEX_AltLeft:
     case CODE_NAME_INDEX_ControlLeft:
@@ -2299,7 +2304,7 @@ bool WidgetKeyboardEvent::IsLockableModifier(KeyNameIndex aKeyNameIndex) {
 
 #define NS_DEFINE_INPUTTYPE(aCPPName, aDOMName) (u"" aDOMName),
 const char16_t* const InternalEditorInputEvent::kInputTypeNames[] = {
-#include "mozilla/InputTypeList.h"
+#include "mozilla/InputTypeList.inc"
 };
 #undef NS_DEFINE_INPUTTYPE
 

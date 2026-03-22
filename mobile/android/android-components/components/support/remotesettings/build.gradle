@@ -1,20 +1,18 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 buildscript {
     repositories {
-        gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
-            maven {
-                url = repository
-                if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
-                    allowInsecureProtocol = true
-                }
-            }
-        }
+        gradle.configureMavenRepositories(delegate)
     }
     dependencies {
         classpath libs.kotlin.serialization
     }
+}
+
+plugins {
+    alias(libs.plugins.dependency.analysis)
 }
 
 apply plugin: 'com.android.library'
@@ -31,6 +29,7 @@ dependencies {
     implementation project(':components:support-ktx')
     implementation project(':components:support-utils')
 
+    implementation ComponentsDependencies.mozilla_appservices_errorsupport
     implementation ComponentsDependencies.mozilla_remote_settings
     implementation libs.androidx.work.runtime
     implementation libs.kotlinx.serialization.json

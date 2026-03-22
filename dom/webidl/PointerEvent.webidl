@@ -40,7 +40,7 @@ interface PointerEvent : MouseEvent
   [NeedsCallerType]
   readonly attribute long persistentDeviceId;
 
-  [Func="mozilla::dom::PointerEvent::EnableGetCoalescedEvents"]
+  [Func="nsContentUtils::IsSecureContextOrWebExtension"]
   sequence<PointerEvent> getCoalescedEvents();
   sequence<PointerEvent> getPredictedEvents();
 };

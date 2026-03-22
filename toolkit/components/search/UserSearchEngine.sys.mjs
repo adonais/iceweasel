@@ -12,6 +12,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
 });
 
@@ -129,7 +130,7 @@ export class UserSearchEngine extends SearchEngine {
   rename(newName) {
     if (newName == this.name) {
       return true;
-    } else if (Services.search.getEngineByName(newName)) {
+    } else if (lazy.SearchService.getEngineByName(newName)) {
       return false;
     }
     this._name = newName;
@@ -211,8 +212,11 @@ export class UserSearchEngine extends SearchEngine {
           );
         }
       })
-      .catch(e =>
-        console.warn(`Unable to change icon of engine ${this.name}:`, e.message)
-      );
+      .catch(e => {
+        console.warn(
+          `Unable to change icon of engine ${this.name}:`,
+          e.message
+        );
+      });
   }
 }

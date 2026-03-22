@@ -16,6 +16,7 @@ import mozilla.components.browser.state.action.AwesomeBarAction
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.awesomebar.AwesomeBar.GroupedSuggestion
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.ktx.kotlin.isUrl
@@ -56,6 +57,11 @@ interface SearchController {
     fun handleSearchEngineSuggestionClicked(searchEngine: SearchEngine)
 
     /**
+     * Handle showing a snackbar allowing users to control deleting a history suggestion.
+     */
+    fun handleRemoveHistorySuggestionButtonClicked(suggestion: GroupedSuggestion)
+
+    /**
      * @see [SearchSelectorInteractor.onMenuItemTapped]
      */
     fun handleMenuItemTapped(item: SearchSelectorMenu.Item)
@@ -76,6 +82,7 @@ class SearchDialogController(
     var focusToolbar: (() -> Unit)?,
     var clearToolbar: (() -> Unit)?,
     var dismissDialogAndGoBack: (() -> Unit)?,
+    var showDeleteHistoryItemSnackbar: ((GroupedSuggestion) -> Unit)?,
 ) : SearchController {
 
     override fun handleUrlCommitted(url: String, fromHomeScreen: Boolean) {
@@ -323,6 +330,10 @@ class SearchDialogController(
     override fun handleSearchEngineSuggestionClicked(searchEngine: SearchEngine) {
         clearToolbar?.invoke()
         handleSearchShortcutEngineSelected(searchEngine)
+    }
+
+    override fun handleRemoveHistorySuggestionButtonClicked(suggestion: GroupedSuggestion) {
+        showDeleteHistoryItemSnackbar?.invoke(suggestion)
     }
 
     override fun handleMenuItemTapped(item: SearchSelectorMenu.Item) {

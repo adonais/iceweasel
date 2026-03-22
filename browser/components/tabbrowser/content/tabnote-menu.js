@@ -26,7 +26,7 @@
         id="tabNotePanel"
         type="arrow"
         titlebar="normal"
-        class="tab-note-editor-panel"
+        class="tab-note-editor-panel panel-no-padding"
         orient="vertical"
         role="dialog"
         ignorekeys="true"
@@ -43,7 +43,7 @@
         <toolbarseparator />
 
         <html:div
-          class="panel-body
+          class="panel-subview-body
           tab-note-editor-name">
           <html:textarea
             id="tab-note-text"
@@ -55,7 +55,7 @@
         </html:div>
 
         <html:div
-          class="panel-action-row">
+          class="panel-action-row panel-footer">
           <html:div
             id="tab-note-overflow-indicator">
           </html:div>
@@ -207,8 +207,13 @@
       // CSS has a `field-sizing` attribute that does this automatically,
       // but it is not yet supported.
       // TODO bug2006439: Replace this with `field-sizing` after the implementation of bug1832409
-      this.#noteField.style.height = "auto";
-      this.#noteField.style.height = `${this.#noteField.scrollHeight}px`;
+      this.#noteField.style.height = "auto"; // Reset height so previous manual adjustments do not affect calculations
+      let computedStyle = getComputedStyle(this.#noteField);
+      let contentHeight =
+        this.#noteField.scrollHeight -
+        parseFloat(computedStyle.paddingTop) -
+        parseFloat(computedStyle.paddingBottom);
+      this.#noteField.style.height = `${contentHeight}px`;
     }
 
     /**
@@ -224,8 +229,6 @@
       }
       this.#currentTab = tab;
       this.#telemetrySource = options.telemetrySource;
-
-      this.#updatePanel();
 
       TabNotes.get(tab).then(note => {
         if (note) {
@@ -247,6 +250,8 @@
         this.#panel.openPopup(tab, {
           position: this.#panelPosition,
         });
+
+        this.#updatePanel();
       });
     }
 

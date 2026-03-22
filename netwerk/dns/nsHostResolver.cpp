@@ -1007,6 +1007,15 @@ nsresult nsHostResolver::NativeLookup(nsHostRecord* aRec,
   MOZ_ASSERT(aRec->IsAddrRecord() || IsNativeHTTPSEnabled());
   mLock.AssertCurrentThreadOwns();
 
+  if (aRec->type == nsIDNSService::RESOLVE_TYPE_HTTPSSVC &&
+      TRRService::Get()->IsExcludedFromTRR(aRec->host)) {
+    // If the host should be excluded from TRR
+    // (meaning it's a local domain or in /etc/hosts)
+    // then we probably shouldn't be using the HTTPS record for it either.
+    // Or otherwise we shouldn't use the record for ECH.
+    return NS_ERROR_UNKNOWN_HOST;
+  }
+
   RefPtr<nsHostRecord> rec(aRec);
 
   rec->mNativeStart = TimeStamp::Now();

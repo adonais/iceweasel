@@ -16,7 +16,18 @@ export { EditorState, Plugin, PluginKey, TextSelection } from "prosemirror-state
 export { EditorView, Decoration, DecorationSet } from "prosemirror-view";
 
 // Non-core
-export { defaultMarkdownParser } from "prosemirror-markdown";
+export {
+  defaultMarkdownParser,
+  defaultMarkdownSerializer,
+  MarkdownParser,
+  MarkdownSerializer,
+} from "prosemirror-markdown";
 
 // Third-party
-export { suggestionsPlugin, triggerCharacter } from "./prosemirror-suggestions/src/index.js";
+export {
+  markdownParser,
+  markdownSerializer,
+  mentionNodeSpec,
+  suggestionsPlugin,
+  triggerCharacter,
+} from "./prosemirror-suggestions/src/index.js";

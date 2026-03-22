@@ -24,7 +24,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.FragmentHomeBinding
 import org.mozilla.fenix.databinding.FragmentHomeToolbarViewLayoutBinding
-import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.increaseTapAreaVertically
 import org.mozilla.fenix.ext.isLargeWindow
 import org.mozilla.fenix.ext.pixelSizeFor
@@ -32,7 +31,6 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.HomeFragment
 import org.mozilla.fenix.home.HomeMenuView
 import org.mozilla.fenix.search.toolbar.SearchSelector
-import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataController
 import org.mozilla.fenix.utils.ToolbarPopupWindow
 import java.lang.ref.WeakReference
 
@@ -44,7 +42,6 @@ internal class HomeToolbarView(
     private val interactor: ToolbarInteractor,
     private val homeFragment: HomeFragment,
     private val homeActivity: HomeActivity,
-    private val deleteBrowsingDataController: DeleteBrowsingDataController,
 ) : FenixHomeToolbar {
     private var context = homeFragment.requireContext()
 
@@ -118,13 +115,6 @@ internal class HomeToolbarView(
     }
 
     /**
-     * Dismisses the home menu.
-     */
-    fun dismissMenu() {
-        homeMenuView?.dismissMenu()
-    }
-
-    /**
      * Configure the tab strip [ComposeView].
      *
      * @param block Configuration block for the tab strip [ComposeView].
@@ -160,12 +150,8 @@ internal class HomeToolbarView(
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun buildHomeMenu() = HomeMenuView(
         context = context,
-        lifecycleOwner = homeFragment.viewLifecycleOwner,
-        homeActivity = homeActivity,
         navController = homeFragment.findNavController(),
-        fenixBrowserUseCases = context.components.useCases.fenixBrowserUseCases,
         menuButton = WeakReference(toolbarBinding.menuButton),
-        deleteBrowsingDataController = deleteBrowsingDataController,
     ).also { it.build() }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -175,7 +161,6 @@ internal class HomeToolbarView(
         navController = homeFragment.findNavController(),
         tabCounter = toolbarBinding.tabButton,
         showLongPressMenu = !context.isLargeWindow(),
-        settings = context.settings(),
     )
 
     private fun initLayoutParameters() {

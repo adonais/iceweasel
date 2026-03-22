@@ -190,7 +190,7 @@ class Editor extends PureComponent {
     }
 
     editor.setUpdateListener(this.onEditorUpdated);
-    editor.setGutterEventListeners({
+    editor.enableGutter({
       click: (event, cm, line) => {
         // Ignore clicks on the code folding button
         if (

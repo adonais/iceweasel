@@ -572,8 +572,9 @@ void MediaDecodeTask::FinishDecode() {
 
       // Don't bother draining the previous resampler for unexpected edge case.
       if (sampleRate != destSampleRate) {
-        resampler = speex_resampler_init(channelCount, sampleRate, destSampleRate,
-                                         SPEEX_RESAMPLER_QUALITY_DEFAULT, nullptr);
+        resampler =
+            speex_resampler_init(channelCount, sampleRate, destSampleRate,
+                                 SPEEX_RESAMPLER_QUALITY_DEFAULT, nullptr);
         speex_resampler_skip_zeros(resampler);
       }
     }

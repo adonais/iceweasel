@@ -13,10 +13,15 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchSuggestionController:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
 });
+
+/**
+ * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
+ */
 
 const MAX_LOCAL_SUGGESTIONS = 3;
 const MAX_SUGGESTIONS = 6;
@@ -209,7 +214,7 @@ export let ContentSearch = {
       "searchString",
       "healthReportKey",
     ]);
-    let engine = Services.search.getEngineByName(data.engineName);
+    let engine = lazy.SearchService.getEngineByName(data.engineName);
     let submission = engine.getSubmission(data.searchString, "");
     let win = browser.ownerGlobal;
     if (!win) {
@@ -257,7 +262,7 @@ export let ContentSearch = {
   },
 
   async getSuggestions(engineName, searchString, browser) {
-    let engine = Services.search.getEngineByName(engineName);
+    let engine = lazy.SearchService.getEngineByName(engineName);
     if (!engine) {
       throw new Error("Unknown engine name: " + engineName);
     }
@@ -348,7 +353,7 @@ export let ContentSearch = {
       currentPrivateEngine: await this._currentEngineObj(true),
     };
 
-    for (let engine of await Services.search.getVisibleEngines()) {
+    for (let engine of await lazy.SearchService.getVisibleEngines()) {
       state.engines.push({
         name: engine.name,
         iconData: await this._getEngineIconURL(engine),
@@ -446,9 +451,9 @@ export let ContentSearch = {
   },
 
   _onMessageSetCurrentEngine({ data }) {
-    Services.search.setDefault(
-      Services.search.getEngineByName(data),
-      Ci.nsISearchService.CHANGE_REASON_USER_SEARCHBAR
+    lazy.SearchService.setDefault(
+      lazy.SearchService.getEngineByName(data),
+      lazy.SearchService.CHANGE_REASON.USER_SEARCHBAR
     );
   },
 
@@ -482,7 +487,7 @@ export let ContentSearch = {
   },
 
   _onMessageSpeculativeConnect({ browser, data: engineName }) {
-    let engine = Services.search.getEngineByName(engineName);
+    let engine = lazy.SearchService.getEngineByName(engineName);
     if (!engine) {
       throw new Error("Unknown engine name: " + engineName);
     }
@@ -500,8 +505,8 @@ export let ContentSearch = {
     let urlBar = win.gURLBar;
     let inPrivateBrowsing = lazy.PrivateBrowsingUtils.isBrowserPrivate(browser);
     let searchEngine = inPrivateBrowsing
-      ? Services.search.defaultPrivateEngine
-      : Services.search.defaultEngine;
+      ? lazy.SearchService.defaultPrivateEngine
+      : lazy.SearchService.defaultEngine;
     let isFirstChange = true;
 
     // It's possible that this is a handoff from about:home / about:newtab,
@@ -626,14 +631,14 @@ export let ContentSearch = {
   },
 
   async _currentEngineObj(usePrivate) {
-    let engine =
-      Services.search[usePrivate ? "defaultPrivateEngine" : "defaultEngine"];
-    let obj = {
+    let engine = usePrivate
+      ? await lazy.SearchService.getDefaultPrivate()
+      : await lazy.SearchService.getDefault();
+    return {
       name: engine.name,
       iconData: await this._getEngineIconURL(engine),
       isConfigEngine: engine.isConfigEngine,
     };
-    return obj;
   },
 
   /**
@@ -650,7 +655,7 @@ export let ContentSearch = {
    * Converts the engine's icon into a URL or an ArrayBuffer for passing to the
    * content process.
    *
-   * @param {nsISearchEngine} engine
+   * @param {SearchEngine} engine
    *   The engine to get the icon for.
    * @returns {string|iconData}
    *   The icon's URL or an iconData object containing the icon data.
@@ -701,7 +706,7 @@ export let ContentSearch = {
 
   _initService() {
     if (!this._initServicePromise) {
-      this._initServicePromise = Services.search.init();
+      this._initServicePromise = lazy.SearchService.init();
     }
     return this._initServicePromise;
   },

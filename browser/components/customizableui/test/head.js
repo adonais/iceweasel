@@ -326,6 +326,12 @@ function promiseOverflowHidden(win) {
   return promisePanelElementHidden(win, panelEl);
 }
 
+function hideOverflow() {
+  let panelHidePromise = promiseOverflowHidden(window);
+  PanelUI.overflowPanel.hidePopup();
+  return panelHidePromise;
+}
+
 function promisePanelElementHidden(win, aPanel) {
   return new Promise((resolve, reject) => {
     let timeoutId = win.setTimeout(() => {
@@ -458,8 +464,8 @@ function checkContextMenu(aContextMenu, aExpectedEntries, aWindow = window) {
         ? aWindow.document.getElementById(commandValue)
         : null;
       let menuItemDisabled = relatedCommand
-        ? relatedCommand.getAttribute("disabled") == "true"
-        : menuitem.getAttribute("disabled") == "true";
+        ? relatedCommand.hasAttribute("disabled")
+        : menuitem.hasAttribute("disabled");
       is(
         menuItemDisabled,
         !aExpectedEntries[i][1],

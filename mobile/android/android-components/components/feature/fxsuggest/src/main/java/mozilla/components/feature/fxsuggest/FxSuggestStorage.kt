@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.withContext
+import mozilla.appservices.errorsupport.RustComponentsErrorTelemetry
 import mozilla.appservices.remotesettings.RemoteSettingsServer
 import mozilla.appservices.suggest.SuggestApiException
 import mozilla.appservices.suggest.SuggestIngestionConstraints
@@ -126,6 +127,7 @@ class FxSuggestStorage(
             default
         } catch (e: UniffiInternalException) {
             Logger.error(e.toString())
+            RustComponentsErrorTelemetry.submitErrorPing("suggest-internal-error", e.toString())
             reportRustError("suggest-internal-error", e.toString())
             default
         }

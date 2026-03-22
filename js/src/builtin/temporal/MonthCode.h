@@ -10,6 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/EnumSet.h"
 
+#include <compare>
 #include <initializer_list>
 #include <stddef.h>
 #include <stdint.h>
@@ -89,32 +90,14 @@ class MonthCode final {
 
   constexpr bool isLeapMonth() const { return code_ >= Code::M01L; }
 
-  constexpr bool operator==(const MonthCode& other) const {
-    return other.code_ == code_;
-  }
-
-  constexpr bool operator!=(const MonthCode& other) const {
-    return !(*this == other);
-  }
-
-  constexpr bool operator<(const MonthCode& other) const {
+  constexpr auto operator<=>(const MonthCode& other) const {
     if (ordinal() != other.ordinal()) {
-      return ordinal() < other.ordinal();
+      return ordinal() <=> other.ordinal();
     }
-    return code_ < other.code_;
+    return code_ <=> other.code_;
   }
 
-  constexpr bool operator>(const MonthCode& other) const {
-    return other < *this;
-  }
-
-  constexpr bool operator<=(const MonthCode& other) const {
-    return !(other < *this);
-  }
-
-  constexpr bool operator>=(const MonthCode& other) const {
-    return !(*this < other);
-  }
+  constexpr bool operator==(const MonthCode&) const = default;
 
   constexpr explicit operator std::string_view() const {
     constexpr const char* name =

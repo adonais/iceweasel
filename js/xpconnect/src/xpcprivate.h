@@ -65,8 +65,8 @@
 
 /* All the XPConnect private declarations - only include locally. */
 
-#ifndef xpcprivate_h___
-#define xpcprivate_h___
+#ifndef xpcprivate_h_
+#define xpcprivate_h_
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
@@ -91,7 +91,6 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "xpcpublic.h"
 #include "js/HashTable.h"
@@ -227,12 +226,10 @@ class nsXPConnect final : public nsIXPConnect {
 
   void RecordTraversal(void* p, nsISupports* s);
 
- protected:
+ private:
+  nsXPConnect() = default;
   virtual ~nsXPConnect();
 
-  nsXPConnect();
-
- private:
   // Singleton instance
   static nsXPConnect* gSelf;
   static bool gOnceAliveNowDead;
@@ -2837,4 +2834,4 @@ void xpc_DelocalizeRuntime(JSRuntime* rt);
 
 /***************************************************************************/
 
-#endif /* xpcprivate_h___ */
+#endif /* xpcprivate_h_ */

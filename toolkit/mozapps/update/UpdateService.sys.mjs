@@ -252,6 +252,11 @@ const HTTP_ERROR_OFFSET = 1000;
 // attempting to access a job created by a different user.
 const HRESULT_E_ACCESSDENIED = -2147024891;
 
+// HRESULT for HTTP 406 defined in bitsmsg.rs as:
+// pub const BG_E_HTTP_ERROR_406: DWORD = 0x80190196;
+// Represented in JavaScript as signed 32-bit integer
+const BG_E_HTTP_ERROR_406 = -2145844842;
+
 const DOWNLOAD_CHUNK_SIZE = 300000; // bytes
 
 // The number of consecutive failures when updating using the service before
@@ -7084,6 +7089,11 @@ class Downloader {
           error = request.transferError;
           if (!error) {
             error = new BitsUnknownError();
+          } else if (
+            error.codeType == Ci.nsIBits.ERROR_CODE_TYPE_HRESULT &&
+            error.code == BG_E_HTTP_ERROR_406
+          ) {
+            Glean.update.blocked.add();
           }
         }
         AUSTLMY.pingBitsError(this.isCompleteUpdate, error);

@@ -1268,6 +1268,15 @@ export const ASRouterTriggerListeners = new Map([
           switch (topic) {
             case "idle": {
               const now = Date.now();
+              // Use the data (idle time in seconds) that nsUserIdleService is
+              // supposed to give us (reading subject.idleTime may trigger a
+              // new system call with different results).
+              const idleTimeSec = parseInt(data, 10);
+              if (isNaN(idleTimeSec)) {
+                throw new Error(
+                  `Idle observer notification received with invalid data: ${data}`
+                );
+              }
               // If the idle notification is within 1 second of the last wake
               // notification, ignore it. We do this to avoid counting time the
               // computer spent asleep as "idle time"
@@ -1275,7 +1284,7 @@ export const ASRouterTriggerListeners = new Map([
                 this._lastWakeTime &&
                 now - this._lastWakeTime < this._wakeDelay;
               if (!isImmediatelyAfterWake) {
-                this._idleSince = now - subject.idleTime;
+                this._idleSince = now - idleTimeSec * 1000;
               }
               break;
             }

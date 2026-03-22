@@ -157,7 +157,13 @@ class JSObject
     setHeaderPtr(shape);
   }
 
-  static bool setFlag(JSContext* cx, JS::HandleObject obj, js::ObjectFlag flag);
+  static bool setFlags(JSContext* cx, JS::HandleObject obj,
+                       js::ObjectFlags flags);
+
+  static bool setFlag(JSContext* cx, JS::HandleObject obj,
+                      js::ObjectFlag flag) {
+    return setFlags(cx, obj, {flag});
+  }
 
   bool hasFlag(js::ObjectFlag flag) const {
     return shape()->hasObjectFlag(flag);
@@ -165,6 +171,9 @@ class JSObject
 
   bool hasAnyFlag(js::ObjectFlags flags) const {
     return shape()->objectFlags().hasAnyFlag(flags);
+  }
+  bool hasAllFlags(js::ObjectFlags flags) const {
+    return shape()->objectFlags().hasAllFlags(flags);
   }
 
   // Change this object's shape for a prototype mutation.
@@ -188,9 +197,7 @@ class JSObject
   bool isUsedAsPrototype() const {
     return hasFlag(js::ObjectFlag::IsUsedAsPrototype);
   }
-  static bool setIsUsedAsPrototype(JSContext* cx, JS::HandleObject obj) {
-    return setFlag(cx, obj, js::ObjectFlag::IsUsedAsPrototype);
-  }
+  static bool setIsUsedAsPrototype(JSContext* cx, JS::HandleObject obj);
 
   bool useWatchtowerTestingLog() const {
     return hasFlag(js::ObjectFlag::UseWatchtowerTestingLog);

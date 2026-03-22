@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __PlayPromise_h__
-#define __PlayPromise_h__
+#ifndef PlayPromise_h_
+#define PlayPromise_h_
 
 #include "mozilla/dom/Promise.h"
 
@@ -31,4 +31,4 @@ class PlayPromise : public Promise {
 
 }  // namespace mozilla::dom
 
-#endif  // __PlayPromise_h__
+#endif  // PlayPromise_h_

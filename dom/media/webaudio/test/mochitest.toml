@@ -172,6 +172,7 @@ skip-if = [
 ["test_decoderDelay.html"]
 skip-if = [
   "isolated_process", # Bug 1709948
+  "os == 'android'", # Bug 2018243
 ]
 
 ["test_delayNode.html"]

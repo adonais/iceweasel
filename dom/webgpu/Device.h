@@ -121,6 +121,8 @@ class Device final : public DOMEventTargetHelper,
   // HTMLVideoElement.
   void ExpireExternalTextures();
 
+  // Used to guard losing the device multiple times.
+  bool mLost;
   RefPtr<dom::Promise> mLostPromise;
   RefPtr<Queue> mQueue;
   nsTHashSet<nsCString> mKnownWarnings;

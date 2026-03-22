@@ -56,9 +56,9 @@ CREATE TABLE message (
   usage_jsonb BLOB,
   page_url TEXT,
   turn_index INTEGER,
-  insights_enabled BOOLEAN,
-  insights_flag_source INTEGER,
-  insights_applied_jsonb BLOB,
+  memories_enabled BOOLEAN,
+  memories_flag_source INTEGER,
+  memories_applied_jsonb BLOB,
   web_search_queries_jsonb BLOB
 ) WITHOUT ROWID;
 `;
@@ -101,17 +101,20 @@ INSERT INTO message (
   message_id, conv_id, created_date, parent_message_id,
   revision_root_message_id, ordinal, is_active_branch, role,
   model_id, params_jsonb, content_jsonb, usage_jsonb, page_url, turn_index,
-  insights_enabled, insights_flag_source, insights_applied_jsonb,
+  memories_enabled, memories_flag_source, memories_applied_jsonb,
   web_search_queries_jsonb
 ) VALUES (
   :message_id, :conv_id, :created_date, :parent_message_id,
   :revision_root_message_id, :ordinal, :is_active_branch, :role,
   :model_id, jsonb(:params), jsonb(:content), jsonb(:usage), :page_url, :turn_index,
-  :insights_enabled, :insights_flag_source, jsonb(:insights_applied_jsonb),
+  :memories_enabled, :memories_flag_source, jsonb(:memories_applied_jsonb),
   jsonb(:web_search_queries_jsonb)
 )
 ON CONFLICT(message_id) DO UPDATE SET
-  is_active_branch = :is_active_branch;
+  is_active_branch = :is_active_branch,
+  memories_applied_jsonb = jsonb(:memories_applied_jsonb),
+  content_jsonb = jsonb(:content),
+  web_search_queries_jsonb = jsonb(:web_search_queries_jsonb);
 `;
 
 export const CONVERSATIONS_MOST_RECENT = `
@@ -169,13 +172,31 @@ export function getConversationMessagesSql(amount) {
       message_id, created_date, parent_message_id, revision_root_message_id,
       ordinal, is_active_branch, role, model_id, conv_id,
       json(params_jsonb) AS params, json(usage_jsonb) AS usage,
-      page_url, turn_index, insights_enabled, insights_flag_source, 
-      json(insights_applied_jsonb) AS insights_applied,
+      page_url, turn_index, memories_enabled, memories_flag_source, 
+      json(memories_applied_jsonb) AS memories_applied,
       json(web_search_queries_jsonb) AS web_search_queries,
       json(content_jsonb) AS content
       FROM message
       WHERE conv_id IN(${new Array(amount).fill("?").join(",")})
       ORDER BY ordinal ASC;
+  `;
+}
+
+export function getDeleteMessagesByIdsSql(amount) {
+  return `
+    DELETE FROM message WHERE message.message_id IN(${new Array(amount).fill("?").join(",")})
+  `;
+}
+
+export function getDeleteEmptyConversationsSql(amount) {
+  return `
+    DELETE FROM conversation
+    WHERE conversation.conv_id IN(${new Array(amount).fill("?").join(",")})
+      AND NOT EXISTS(
+        SELECT 1
+        FROM message m
+        WHERE m.conv_id = conversation.conv_id
+      )
   `;
 }
 
@@ -217,8 +238,8 @@ SELECT
   message_id, created_date, parent_message_id, revision_root_message_id,
   ordinal, is_active_branch, role, model_id, conv_id,
   json(params_jsonb) AS params, json(usage_jsonb) AS usage,
-  page_url, turn_index, insights_enabled, insights_flag_source,
-  json(insights_applied_jsonb) AS insights_applied,
+  page_url, turn_index, memories_enabled, memories_flag_source,
+  json(memories_applied_jsonb) AS memories_applied,
   json(web_search_queries_jsonb) AS web_search_queries,
   json(content_jsonb) AS content
 FROM message
@@ -232,8 +253,8 @@ SELECT
   message_id, created_date, parent_message_id, revision_root_message_id,
   ordinal, is_active_branch, role, model_id, conv_id,
   json(params_jsonb) AS params, json(usage_jsonb) AS usage,
-  page_url, turn_index, insights_enabled, insights_flag_source,
-  json(insights_applied_jsonb) AS insights_applied,
+  page_url, turn_index, memories_enabled, memories_flag_source,
+  json(memories_applied_jsonb) AS memories_applied,
   json(web_search_queries_jsonb) AS web_search_queries,
   json(content_jsonb) AS content
 FROM message

@@ -57,6 +57,8 @@ skip-if = [
 
 ["test_bug159849.html"]
 
+["test_bug2013707.html"]
+
 ["test_bug260264.html"]
 skip-if = [
   "os == 'android'",

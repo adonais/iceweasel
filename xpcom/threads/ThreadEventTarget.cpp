@@ -121,6 +121,11 @@ ThreadEventTarget::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   return mSink->UnregisterShutdownTask(aTask);
 }
 
+nsIEventTarget::FeatureFlags ThreadEventTarget::GetFeatures() {
+  // TODO: Check if SUPPORTS_SHUTDOWN_TASK_DISPATCH.
+  return SUPPORTS_SHUTDOWN_TASKS;
+}
+
 NS_IMETHODIMP
 ThreadEventTarget::IsOnCurrentThread(bool* aIsOnCurrentThread) {
   *aIsOnCurrentThread = IsOnCurrentThread();

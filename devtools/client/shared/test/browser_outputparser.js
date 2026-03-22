@@ -39,6 +39,7 @@ async function performTest() {
   testParseColorVariable(doc, parser);
   testParseFontFamily(doc, parser);
   testParseLightDark(doc, parser);
+  testParseAttr(doc, parser);
 
   host.destroy();
 }
@@ -1693,6 +1694,62 @@ function testParseLightDark(doc, parser) {
         },
       }
     );
+
+    const target = doc.querySelector("div");
+    target.appendChild(frag);
+
+    is(target.innerHTML, test.expected, test.message);
+    target.innerHTML = "";
+  }
+}
+
+function testParseAttr(doc, parser) {
+  const TESTS = [
+    {
+      message:
+        "Not passing getAttributeValue doesn't add unmatched classes to attribute name",
+      propertyValue: "attr(unknown)",
+      attributes: {},
+      getAttributeValue: null,
+      expected: `attr(unknown)`,
+    },
+    {
+      message:
+        "Passing known attribute doesn't add unmatched classes to attribute name",
+      propertyValue: "attr(data-x)",
+      attributes: { "data-x": "" },
+      expected: `attr(<span class="inspector-attribute" data-attribute="&quot;&quot;">data-x</span>)`,
+    },
+    {
+      message:
+        "Passing unknown attribute adds unmatched classes to attribute name",
+      propertyValue: "attr(data-x)",
+      attributes: {},
+      expected: `attr(<span class="inspector-attribute unmatched-class" data-attribute="Attribute data-x is not set">data-x</span>)`,
+    },
+    {
+      message:
+        "Passing unknown attribute adds unmatched classes to attribute name, not to fallback",
+      propertyValue: `attr(data-x, "fallback")`,
+      attributes: {},
+      expected: `attr(<span class="inspector-attribute unmatched-class" data-attribute="Attribute data-x is not set">data-x</span>, <span class="inspector-attr-fallback">"fallback"</span>)`,
+    },
+    {
+      message: "Passing known attribute adds unmatched classes to fallback",
+      propertyValue: `attr(data-x, "fallback")`,
+      attributes: { "data-x": "" },
+      expected: `attr(<span class="inspector-attribute" data-attribute="&quot;&quot;">data-x</span>, <span class="inspector-attr-fallback unmatched-class">"fallback"</span>)`,
+    },
+  ];
+
+  for (const test of TESTS) {
+    const frag = parser.parseCssProperty("content", test.propertyValue, {
+      unmatchedClass: "unmatched-class",
+      getAttributeValue:
+        "getAttributeValue" in test
+          ? test.getAttributeValue
+          : attrName => test.attributes[attrName] ?? null,
+    });
 
     const target = doc.querySelector("div");
     target.appendChild(frag);

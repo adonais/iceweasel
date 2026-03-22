@@ -587,12 +587,30 @@ static bool GetBuildConfiguration(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  value = BooleanValue(true);
+#else
+  value = BooleanValue(false);
+#endif
+  if (!JS_SetProperty(cx, info, "source-phase-imports", value)) {
+    return false;
+  }
+
 #ifdef FUZZING
   value = BooleanValue(true);
 #else
   value = BooleanValue(false);
 #endif
   if (!JS_SetProperty(cx, info, "fuzzing-defined", value)) {
+    return false;
+  }
+
+#ifdef JS_JITSPEW
+  value = BooleanValue(true);
+#else
+  value = BooleanValue(false);
+#endif
+  if (!JS_SetProperty(cx, info, "jitspew", value)) {
     return false;
   }
 
@@ -895,6 +913,7 @@ static bool RelazifyFunctions(JSContext* cx, unsigned argc, Value* vp) {
 
   cx->runtime()->allowRelazificationForTesting = true;
 
+  js::gc::FinishGC(cx, JS::GCReason::API);
   JS::PrepareForFullGC(cx);
   JS::NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);
 
@@ -3205,7 +3224,7 @@ static bool GetAtomMarkIndex(JSContext* cx, unsigned argc, Value* vp) {
   RootedObject callee(cx, &args.callee());
 
   if (args.length() != 1 || !args[0].isGCThing() ||
-      !args[0].toGCThing()->zone()->isAtomsZone()) {
+      !args[0].toGCThing()->zoneFromAnyThread()->isAtomsZone()) {
     ReportUsageErrorASCII(cx, callee,
                           "Expected an atom as the single argument");
     return false;
@@ -3605,7 +3624,7 @@ static bool NewObjectWithAddPropertyHook(JSContext* cx, unsigned argc,
       return true;
     }
     val.setInt32(val.toInt32() + 1);
-    return JS_DefinePropertyById(cx, obj, propId, val, 0);
+    return JS_DefinePropertyById(cx, obj, propId, val, JSPROP_PERMANENT);
   };
 
   static const JSClassOps classOps = {
@@ -3638,7 +3657,7 @@ static bool NewObjectWithAddPropertyHook(JSContext* cx, unsigned argc,
   }
   RootedId propId(cx, AtomToId(propName));
   RootedValue val(cx, Int32Value(0));
-  if (!JS_DefinePropertyById(cx, obj, propId, val, 0)) {
+  if (!JS_DefinePropertyById(cx, obj, propId, val, JSPROP_PERMANENT)) {
     return false;
   }
 
@@ -4850,7 +4869,7 @@ static bool SettlePromiseNow(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   int32_t flags = promise->flags();
-  promise->setFixedSlot(
+  promise->setNeverGCThingFixedSlot(
       PromiseSlot_Flags,
       Int32Value(flags | PROMISE_FLAG_RESOLVED | PROMISE_FLAG_FULFILLED));
   promise->setFixedSlot(PromiseSlot_ReactionsOrResult, UndefinedValue());
@@ -5110,10 +5129,13 @@ static bool ReadGeckoProfilingStack(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   struct InlineFrameInfo {
-    InlineFrameInfo(const char* kind, UniqueChars label)
-        : kind(kind), label(std::move(label)) {}
+    InlineFrameInfo(const char* kind, UniqueChars label, uint32_t line,
+                    uint32_t column)
+        : kind(kind), label(std::move(label)), line(line), column(column) {}
     const char* kind;
     UniqueChars label;
+    uint32_t line;
+    uint32_t column;
   };
 
   Vector<Vector<InlineFrameInfo, 0, TempAllocPolicy>, 0, TempAllocPolicy>
@@ -5158,7 +5180,8 @@ static bool ReadGeckoProfilingStack(JSContext* cx, unsigned argc, Value* vp) {
         return false;
       }
 
-      if (!frameInfo.back().emplaceBack(frameKindStr, std::move(label))) {
+      if (!frameInfo.back().emplaceBack(frameKindStr, std::move(label),
+                                        frames[i].line, frames[i].column)) {
         return false;
       }
     }
@@ -5203,6 +5226,16 @@ static bool ReadGeckoProfilingStack(JSContext* cx, unsigned argc, Value* vp) {
       }
 
       if (!JS_DefineProperty(cx, inlineFrameInfo, "label", frameLabel,
+                             propAttrs)) {
+        return false;
+      }
+
+      if (!JS_DefineProperty(cx, inlineFrameInfo, "line", inlineFrame.line,
+                             propAttrs)) {
+        return false;
+      }
+
+      if (!JS_DefineProperty(cx, inlineFrameInfo, "column", inlineFrame.column,
                              propAttrs)) {
         return false;
       }
@@ -11359,13 +11392,10 @@ JS_FN_HELP("getFuseState", GetFuseState, 0, 0,
 "  Converts a compiled wasm module to the wasm text format.\n"),
 
     JS_FN_HELP("wasmDumpIon", WasmDumpIon, 2, 0,
-"wasmDumpIon(bytecode, funcIndex, [, contents])\n",
-"wasmDumpIon(bytecode, funcIndex, [, contents])"
-"  Returns a dump of compiling a function in the specified module with Ion."
-"  The `contents` flag controls what is dumped. one of:"
-"    `mir` | `unopt-mir`: Unoptimized MIR (the default)"
-"    `opt-mir`: Optimized MIR"
-"    `lir`: LIR"),
+"wasmDumpIon(bytecode, funcIndex)\n",
+"wasmDumpIon(bytecode, funcIndex)"
+"  Returns a dump of compiling a function in the specified module with Ion, in"
+"  the iongraph JSON format."),
 
     JS_FN_HELP("wasmFunctionTier", WasmFunctionTier, 1, 0,
 "wasmFunctionTier(wasmFunc)\n",

@@ -603,6 +603,8 @@
 }
 
 .textLayer{
+  color-scheme:only light;
+
   position:absolute;
   text-align:initial;
   inset:0;

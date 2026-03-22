@@ -24,7 +24,6 @@
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TouchEvents.h"
 #include "nsGkAtoms.h"
 
@@ -36,6 +35,10 @@
 #include "nsTreeColumns.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLOptGroupElement.h"
+#include "mozilla/dom/HTMLOptionElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
+#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/ElementInternals.h"
 #include "mozilla/dom/HTMLLabelElement.h"
 #include "mozilla/dom/MouseEventBinding.h"
@@ -56,7 +59,7 @@ using mozilla::a11y::nsAccUtils;
 
 bool nsCoreUtils::IsLabelWithControl(nsIContent* aContent) {
   dom::HTMLLabelElement* label = dom::HTMLLabelElement::FromNode(aContent);
-  if (label && label->GetControl()) return true;
+  if (label && label->GetLabeledElementInternal()) return true;
 
   return false;
 }
@@ -584,15 +587,23 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
   if (!element) {
     return false;
   }
-  if (!element->HasServoData() || Servo_Element_IsDisplayNone(element)) {
-    // Out of the flat tree or in a display: none subtree.
-    return false;
+  // <option> and <optgroup> can create an accessible for comboboxes, if our
+  // select can also create an accessible (even if they're display: none)
+  if (auto* option = dom::HTMLOptionElement::FromNode(element)) {
+    if (auto* select = option->GetSelect(); select && select->IsCombobox()) {
+      element = select;
+    }
+  } else if (auto* optgroup = dom::HTMLOptGroupElement::FromNode(element)) {
+    if (auto* select = optgroup->GetSelect(); select && select->IsCombobox()) {
+      element = select;
+    }
   }
 
   // If we aren't display: contents or option/optgroup we can't create an
   // accessible without frame. Our select combobox code relies on the latter.
-  if (!element->IsDisplayContents() &&
-      !element->IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::optgroup)) {
+  // Note that we need to check primary frame explicitly for the <select> case
+  // above.
+  if (!element->GetPrimaryFrame() && !element->IsDisplayContents()) {
     return false;
   }
 
@@ -600,10 +611,9 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
   // create an accessible if we're in a content-visibility: hidden subtree.
   //
   // To check that, find the closest ancestor element with a frame.
-  for (nsINode* ancestor = element->GetFlattenedTreeParentNode();
-       ancestor && ancestor->IsContent();
-       ancestor = ancestor->GetFlattenedTreeParentNode()) {
-    if (nsIFrame* f = ancestor->AsContent()->GetPrimaryFrame()) {
+  for (nsIContent* c :
+       element->InclusiveFlatTreeAncestorsOfType<nsIContent>()) {
+    if (nsIFrame* f = c->GetPrimaryFrame()) {
       if (f->HidesContent(nsIFrame::IncludeContentVisibility::Hidden) ||
           f->IsHiddenByContentVisibilityOnAnyAncestor(
               nsIFrame::IncludeContentVisibility::Hidden)) {
@@ -681,7 +691,7 @@ const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
     return nullptr;
   }
 
-  const nsAtom* anchorName = nullptr;
+  ScopedNameRef anchorName{nullptr, StyleCascadeLevel::Default()};
   AnchorPosReferenceData* referencedAnchors =
       aPositionedFrame->GetProperty(nsIFrame::AnchorPosReferences());
 
@@ -694,15 +704,16 @@ const nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
       continue;
     }
 
-    if (anchorName && entry.GetKey() != anchorName) {
+    const auto& anchorKey = entry.GetKey();
+    if (anchorName.mName && anchorKey.mName != anchorName.mName) {
       // Multiple anchors referenced.
       return nullptr;
     }
 
-    anchorName = entry.GetKey();
+    anchorName = anchorKey;
   }
 
-  return anchorName
+  return anchorName.mName
              ? aPresShell->GetAnchorPosAnchor(anchorName, aPositionedFrame)
              : nullptr;
 }
@@ -716,6 +727,7 @@ nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
   nsIFrame* positionedFrame = nullptr;
   const auto* styleDisp = aAnchorFrame->StyleDisplay();
   if (styleDisp->HasAnchorName()) {
+    auto treeScope = styleDisp->mAnchorName.scope;
     for (auto& name : styleDisp->mAnchorName.AsSpan()) {
       for (nsIFrame* frame : aPresShell->GetAnchorPosPositioned()) {
         // Bug 1990069: We need to iterate over all positioned frames in doc and
@@ -729,10 +741,10 @@ nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
           // just skip this frame for now.
           continue;
         }
-        const auto* data = referencedAnchors->Lookup(name.AsAtom());
+        const ScopedNameRef nameRef(name.AsAtom(), treeScope);
+        const auto* data = referencedAnchors->Lookup(nameRef);
         if (data && *data && data->ref().mOffsetData) {
-          if (aAnchorFrame ==
-              aPresShell->GetAnchorPosAnchor(name.AsAtom(), frame)) {
+          if (aAnchorFrame == aPresShell->GetAnchorPosAnchor(nameRef, frame)) {
             if (positionedFrame) {
               // Multiple positioned frames reference this anchor.
               return nullptr;

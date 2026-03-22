@@ -276,8 +276,7 @@ void Assembler::GeneralLi(Register rd, int64_t imm) {
         // Bit 31 is 1. Either an overflow or a negative 64 bit
         if (up_32 == 0) {
           // Positive number, but overflow because of the add 0x800
-          slli(rd, rd, 32);
-          srli(rd, rd, 32);
+          ZeroExtendWord(rd, rd);
           return;
         }
         // low_32 is a negative 64 bit after the build
@@ -409,8 +408,7 @@ int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
         // Bit 31 is 1. Either an overflow or a negative 64 bit
         if (up_32 == 0) {
           // Positive number, but overflow because of the add 0x800
-          count++;
-          count++;
+          count += HasZbaExtension() ? /* zext.w */ 1 : /* slli; srli */ 2;
           return count;
         }
         // low_32 is a negative 64 bit after the build

@@ -9,6 +9,7 @@ import android.graphics.Color
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
+import kotlinx.coroutines.test.StandardTestDispatcher
 import mozilla.components.browser.state.action.WebExtensionAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
@@ -22,12 +23,10 @@ import mozilla.components.concept.toolbar.Toolbar
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.mock
-import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.inOrder
@@ -38,9 +37,7 @@ import org.mockito.Mockito.verify
 
 class WebExtensionToolbarFeatureTest {
 
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
-    private val dispatcher = coroutinesTestRule.testDispatcher
+    private val dispatcher = StandardTestDispatcher()
 
     @Test
     fun `render web extension actions from browser state`() {
@@ -59,25 +56,22 @@ class WebExtensionToolbarFeatureTest {
         val overriddenExtensions: Map<String, WebExtensionState> = mapOf(
             "id" to WebExtensionState("id", "url", "name", true, browserAction = overriddenBrowserAction, pageAction = overriddenPageAction),
         )
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    tabs = listOf(
-                        createTab(
-                            "https://www.example.org",
-                            id = "tab1",
-                            extensions = overriddenExtensions,
-                        ),
+        val store = BrowserStore(
+            BrowserState(
+                tabs = listOf(
+                    createTab(
+                        "https://www.example.org",
+                        id = "tab1",
+                        extensions = overriddenExtensions,
                     ),
-                    selectedTabId = "tab1",
-                    extensions = extensions,
                 ),
+                selectedTabId = "tab1",
+                extensions = extensions,
             ),
         )
         val webExtToolbarFeature = getWebExtensionToolbarFeature(toolbar, store)
         dispatcher.scheduler.advanceUntilIdle()
 
-        verify(store).observeManually(any())
         verify(webExtToolbarFeature).renderWebExtensionActions(any(), any())
 
         val browserActionCaptor = argumentCaptor<WebExtensionToolbarAction>()
@@ -117,17 +111,14 @@ class WebExtensionToolbarFeatureTest {
             ),
         )
 
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    extensions = extensions,
-                ),
+        val store = BrowserStore(
+            BrowserState(
+                extensions = extensions,
             ),
         )
         val webExtToolbarFeature = getWebExtensionToolbarFeature(toolbar, store)
         dispatcher.scheduler.advanceUntilIdle()
 
-        verify(store).observeManually(any())
         verify(webExtToolbarFeature, times(1)).renderWebExtensionActions(any(), any())
         val browserActionCaptor = argumentCaptor<WebExtensionToolbarAction>()
         val pageActionCaptor = argumentCaptor<WebExtensionToolbarAction>()
@@ -395,17 +386,15 @@ class WebExtensionToolbarFeatureTest {
             ),
         )
 
-        val store = spy(
-            BrowserStore(
-                BrowserState(
-                    extensions = extensions,
-                ),
+        val store = BrowserStore(
+            BrowserState(
+                extensions = extensions,
             ),
         )
+
         val webExtToolbarFeature = getWebExtensionToolbarFeature(toolbar, store)
         dispatcher.scheduler.advanceUntilIdle()
 
-        verify(store).observeManually(any())
         verify(webExtToolbarFeature).renderWebExtensionActions(any(), any())
 
         val pageActionCaptor = argumentCaptor<WebExtensionToolbarAction>()
@@ -417,7 +406,7 @@ class WebExtensionToolbarFeatureTest {
         toolbar: Toolbar = mock(),
         store: BrowserStore = BrowserStore(),
     ): WebExtensionToolbarFeature {
-        val webExtToolbarFeature = spy(WebExtensionToolbarFeature(toolbar, store))
+        val webExtToolbarFeature = spy(WebExtensionToolbarFeature(toolbar, store, dispatcher))
         val handler: Handler = mock()
         val looper: Looper = mock()
         val iconThread: HandlerThread = mock()

@@ -15,6 +15,24 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/ipprotection/IPProtectionService.sys.mjs",
 });
 
+async function resetCustomization() {
+  let customizationReadyPromise = BrowserTestUtils.waitForEvent(
+    window.gNavToolbox,
+    "customizationready"
+  );
+  gCustomizeMode.enter();
+  await customizationReadyPromise;
+
+  await gCustomizeMode.reset();
+
+  let afterCustomizationPromise = BrowserTestUtils.waitForEvent(
+    window.gNavToolbox,
+    "aftercustomization"
+  );
+  gCustomizeMode.exit();
+  await afterCustomizationPromise;
+}
+
 /**
  * Tests that toolbar widget is added and removed based on
  * `browser.ipProtection.enabled` controlled by Nimbus.
@@ -29,19 +47,21 @@ add_task(async function toolbar_added_and_removed() {
     IPProtectionWidget.WIDGET_ID
   ).position;
   // By default, the button for revamped sidebar is placed at the beginning of the navbar.
-  let expectedPosition = Services.prefs.getBoolPref("sidebar.revamp") ? 8 : 7;
+  let expectedPosition = Services.prefs.getBoolPref("sidebar.revamp") ? 9 : 8;
   Assert.equal(
     position,
     expectedPosition,
     "IP Protection widget added in the correct position"
   );
   // Disable the feature
-  await cleanupExperiment();
+  Services.prefs.clearUserPref("browser.ipProtection.enabled");
   widget = document.getElementById(IPProtectionWidget.WIDGET_ID);
   Assert.equal(widget, null, "IP Protection widget is removed");
 
   // Reenable the feature
-  await setupExperiment();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.enabled", true]],
+  });
   widget = document.getElementById(IPProtectionWidget.WIDGET_ID);
   Assert.ok(
     BrowserTestUtils.isVisible(widget),
@@ -84,8 +104,8 @@ add_task(async function toolbar_icon_status() {
   Assert.ok(content, "Panel content should be present");
 
   let statusCard = content.statusCardEl;
-  let toggle = statusCard.connectionToggleEl;
-  Assert.ok(toggle, "Status card connection toggle should be present");
+  let turnOnButton = statusCard.actionButtonEl;
+  Assert.ok(turnOnButton, "Status card turn on button should be present");
 
   let vpnOnPromise = BrowserTestUtils.waitForEvent(
     lazy.IPPProxyManager,
@@ -93,8 +113,8 @@ add_task(async function toolbar_icon_status() {
     false,
     () => !!IPPProxyManager.activatedAt
   );
-  // Toggle the VPN on
-  toggle.click();
+  // Turn the VPN on
+  turnOnButton.click();
   await vpnOnPromise;
   Assert.ok(
     button.classList.contains("ipprotection-on"),
@@ -106,8 +126,9 @@ add_task(async function toolbar_icon_status() {
     false,
     () => lazy.IPProtectionService.state === lazy.IPProtectionStates.READY
   );
-  // Toggle the VPN off
-  toggle.click();
+  // Turn the VPN off
+  let turnOffButton = statusCard.actionButtonEl;
+  turnOffButton.click();
   await vpnOffPromise;
   Assert.ok(
     !button.classList.contains("ipprotection-on"),
@@ -140,9 +161,10 @@ add_task(async function toolbar_icon_status_new_window() {
     false,
     () => !!IPPProxyManager.activatedAt
   );
-  // Toggle the VPN on
+  // Turn the VPN on
   let statusCard = content.statusCardEl;
-  statusCard.connectionToggleEl.click();
+  let turnOnButton = statusCard.actionButtonEl;
+  turnOnButton.click();
   await vpnOnPromise;
 
   let button = document.getElementById(IPProtectionWidget.WIDGET_ID);
@@ -232,7 +254,8 @@ add_task(async function toolbar_placement_customized() {
   );
 
   // Disable the feature
-  await cleanupExperiment();
+  Services.prefs.clearUserPref("browser.ipProtection.enabled");
+
   let widget = document.getElementById(IPProtectionWidget.WIDGET_ID);
   Assert.equal(widget, null, "IP Protection widget is removed");
 
@@ -244,7 +267,9 @@ add_task(async function toolbar_placement_customized() {
   );
 
   // Reenable the feature
-  await setupExperiment();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.enabled", true]],
+  });
 
   await waitForStateChange;
 
@@ -273,6 +298,11 @@ add_task(async function toolbar_removed() {
     isEnrolled: true,
   });
 
+  // Ensure that the added pref is still set, as it is unset at the end of each test.
+  await SpecialPowers.pushPrefEnv({
+    set: [[IPProtectionWidget.ADDED_PREF, true]],
+  });
+
   let start = CustomizableUI.getPlacementOfWidget(IPProtectionWidget.WIDGET_ID);
   Assert.equal(
     start.area,
@@ -287,7 +317,7 @@ add_task(async function toolbar_removed() {
   Assert.equal(end, null, "IP Protection widget is removed");
 
   // Disable the feature
-  await cleanupExperiment();
+  Services.prefs.clearUserPref("browser.ipProtection.enabled");
 
   const waitForStateChange = BrowserTestUtils.waitForEvent(
     lazy.IPProtectionService,
@@ -297,7 +327,9 @@ add_task(async function toolbar_removed() {
   );
 
   // Reenable the feature
-  await setupExperiment();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ipProtection.enabled", true]],
+  });
 
   await waitForStateChange;
 
@@ -310,5 +342,52 @@ add_task(async function toolbar_removed() {
     IPProtectionWidget.WIDGET_ID,
     start.area,
     start.position
+  );
+});
+
+/**
+ * Tests that toolbar widget can be moved and will reset
+ * back to the initial area on customize mode reset.
+ */
+add_task(async function toolbar_placement_reset() {
+  setupService({
+    isSignedIn: true,
+    isEnrolledAndEntitled: true,
+  });
+
+  let start = CustomizableUI.getPlacementOfWidget(IPProtectionWidget.WIDGET_ID);
+  Assert.equal(
+    start.area,
+    CustomizableUI.AREA_NAVBAR,
+    "IP Protection widget is initially added to the nav bar"
+  );
+
+  // Move widget to overflow
+  CustomizableUI.addWidgetToArea(
+    IPProtectionWidget.WIDGET_ID,
+    CustomizableUI.AREA_FIXED_OVERFLOW_PANEL
+  );
+
+  let end = CustomizableUI.getPlacementOfWidget(IPProtectionWidget.WIDGET_ID);
+  Assert.equal(
+    end.area,
+    CustomizableUI.AREA_FIXED_OVERFLOW_PANEL,
+    "IP Protection widget moved to the overflow area"
+  );
+
+  await resetCustomization();
+
+  let restored = CustomizableUI.getPlacementOfWidget(
+    IPProtectionWidget.WIDGET_ID
+  );
+  Assert.equal(
+    restored.area,
+    start.area,
+    "IP Protection widget is reset to the initial area after customize mode reset"
+  );
+  Assert.equal(
+    restored.position,
+    start.position,
+    "IP Protection widget is reset to the initial position after customize mode reset"
   );
 });

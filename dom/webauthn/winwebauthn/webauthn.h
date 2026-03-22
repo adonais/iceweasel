@@ -1,8 +1,8 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-#ifndef __WEBAUTHN_H_
-#define __WEBAUTHN_H_
+#ifndef WEBAUTHN_H_
+#define WEBAUTHN_H_
 
 #pragma once
 
@@ -1378,4 +1378,4 @@ WebAuthNGetW3CExceptionDOMError(
 #endif // WINAPI_FAMILY_PARTITION
 #pragma endregion
 
-#endif // __WEBAUTHN_H_
+#endif // WEBAUTHN_H_

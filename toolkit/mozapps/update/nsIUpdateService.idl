@@ -187,7 +187,6 @@ interface nsIUpdate : nsISupports
    *   "pending-elevate"    The update is ready to be applied but requires elevation.
    *   "applying"           The update is being applied.
    *   "applied"            The update is ready to be switched to.
-   *   "applied-os"         The update is OS update and to be installed.
    *   "applied-service"    The update is ready to be switched to with the service.
    *   "succeeded"          The update was successfully applied.
    *   "download-failed"    The update failed to be downloaded.

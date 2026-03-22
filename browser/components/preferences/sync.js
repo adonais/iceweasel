@@ -696,6 +696,7 @@ var gSyncPane = {
   },
 
   _init() {
+    initSettingGroup("defaultBrowserSync");
     initSettingGroup("sync");
     initSettingGroup("account");
 

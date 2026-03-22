@@ -24,7 +24,7 @@ struct nsRadioGroupStruct {
    * A strong pointer to the currently selected radio button.
    */
   RefPtr<HTMLInputElement> mSelectedRadioButton;
-  TreeOrderedArray<RefPtr<HTMLInputElement>> mRadioButtons;
+  TreeOrderedArray<RefPtr<HTMLInputElement>, TreeKind::DOM> mRadioButtons;
   uint32_t mRequiredRadioCount;
   bool mGroupSuffersFromValueMissing;
 };

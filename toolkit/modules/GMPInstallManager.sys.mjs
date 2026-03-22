@@ -19,7 +19,6 @@ import { ProductAddonChecker } from "resource://gre/modules/addons/ProductAddonC
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  CertUtils: "resource://gre/modules/CertUtils.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   ServiceRequest: "resource://gre/modules/ServiceRequest.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
@@ -269,60 +268,6 @@ GMPInstallManager.prototype = {
   },
 
   /**
-   * Records telemetry results on if fetching update.xml from Balrog succeeded
-   * when cert pinning was used to verify the response from Balrog. This
-   * should be removed once we're no longer using cert pinning.
-   *
-   * @param didGetAddonList
-   *        A boolean indicating if an update.xml containing the addon list was
-   *        successfully fetched (true) or not (false).
-   * @param err
-   *        The error that was thrown (if it exists) for the failure case. This
-   *        is expected to have a addonCheckerErr member which provides further
-   *        information on why the addon checker failed.
-   */
-  recordUpdateXmlTelemetryForCertPinning(didGetAddonList, err = null) {
-    let log = getScopedLogger(
-      "GMPInstallManager.recordUpdateXmlTelemetryForCertPinning"
-    );
-    try {
-      if (didGetAddonList) {
-        Glean.gmp.updateXmlFetchResult.cert_pin_success.add(1);
-        return;
-      }
-      // All remaining cases are failure cases.
-      if (!err?.addonCheckerErr) {
-        // Unknown error case. If this is happening we should audit error paths
-        // to identify why we're not getting an error, or not getting it
-        // labelled.
-        Glean.gmp.updateXmlFetchResult.cert_pin_unknown_error.add(1);
-        return;
-      }
-      const errorToHistogramMap = {
-        [ProductAddonChecker.NETWORK_REQUEST_ERR]: "cert_pin_net_request_error",
-        [ProductAddonChecker.NETWORK_TIMEOUT_ERR]: "cert_pin_net_timeout",
-        [ProductAddonChecker.ABORT_ERR]: "cert_pin_abort",
-        [ProductAddonChecker.VERIFICATION_MISSING_DATA_ERR]:
-          "cert_pin_missing_data",
-        [ProductAddonChecker.VERIFICATION_FAILED_ERR]: "cert_pin_failed",
-        [ProductAddonChecker.VERIFICATION_INVALID_ERR]: "cert_pin_invalid",
-        [ProductAddonChecker.XML_PARSE_ERR]: "cert_pin_xml_parse_error",
-      };
-      let metricID =
-        errorToHistogramMap[err.addonCheckerErr] ?? "cert_pin_unknown_error";
-      let metric = Glean.gmp.updateXmlFetchResult[metricID];
-      metric.add(1);
-    } catch (e) {
-      // We don't expect this path to be hit, but we don't want telemetry
-      // failures to break GMP updates, so catch any issues here and let the
-      // update machinery continue.
-      log.error(
-        `Failed to record telemetry result of getProductAddonList, got error: ${e}`
-      );
-    }
-  },
-
-  /**
    * Performs an addon check.
    *
    * @return a promise which will be resolved or rejected.
@@ -350,35 +295,11 @@ GMPInstallManager.prototype = {
     this._deferred = Promise.withResolvers();
     let deferredPromise = this._deferred.promise;
 
-    // Should content signature checking of Balrog replies be used? If so this
-    // will be done instead of the older cert pinning method.
-    let checkContentSignature = GMPPrefs.getBool(
-      GMPPrefs.KEY_CHECK_CONTENT_SIGNATURE,
-      true
-    );
-
-    let allowNonBuiltIn = true;
-    let certs = null;
-    // Only check certificates if we're not using a custom URL, and only if
-    // we're not checking a content signature.
-    if (
-      !Services.prefs.prefHasUserValue(GMPPrefs.KEY_URL_OVERRIDE) &&
-      !checkContentSignature
-    ) {
-      allowNonBuiltIn = !GMPPrefs.getString(
-        GMPPrefs.KEY_CERT_REQUIREBUILTIN,
-        true
-      );
-      if (GMPPrefs.getBool(GMPPrefs.KEY_CERT_CHECKATTRS, true)) {
-        certs = lazy.CertUtils.readCertPrefs(GMPPrefs.KEY_CERTS_BRANCH);
-      }
-    }
-
     let url = await this._getURL();
     let trustedContentSignatureRoot = this._getContentSignatureRootForURL(url);
 
     log.info(
-      `Fetching product addon list url=${url}, allowNonBuiltIn=${allowNonBuiltIn}, certs=${certs}, checkContentSignature=${checkContentSignature}, trustedContentSignatureRoot=${trustedContentSignatureRoot}`
+      `Fetching product addon list url=${url}, trustedContentSignatureRoot=${trustedContentSignatureRoot}`
     );
 
     let success = true;
@@ -386,24 +307,15 @@ GMPInstallManager.prototype = {
     try {
       res = await ProductAddonChecker.getProductAddonList(
         url,
-        allowNonBuiltIn,
-        certs,
-        checkContentSignature,
+        /* allowNonBuiltIn */ true,
+        /* verifyContentSignature */ true,
         trustedContentSignatureRoot
       );
 
-      if (checkContentSignature) {
-        this.recordUpdateXmlTelemetryForContentSignature(true);
-      } else {
-        this.recordUpdateXmlTelemetryForCertPinning(true);
-      }
+      this.recordUpdateXmlTelemetryForContentSignature(true);
     } catch (err) {
       success = false;
-      if (checkContentSignature) {
-        this.recordUpdateXmlTelemetryForContentSignature(false, err);
-      } else {
-        this.recordUpdateXmlTelemetryForCertPinning(false, err);
-      }
+      this.recordUpdateXmlTelemetryForContentSignature(false, err);
     }
 
     let localSources = getLocalSources();
@@ -900,7 +812,7 @@ GMPDownloader.prototype = {
     }
     return ProductAddonChecker.downloadAddon(gmpAddon).then(
       zipPath => {
-        let now = Math.round(Date.now() / 1000);
+        now = Math.round(Date.now() / 1000);
         GMPPrefs.setInt(GMPPrefs.KEY_PLUGIN_LAST_DOWNLOAD, now, gmpAddon.id);
         log.info(
           `install to directory path: ${gmpAddon.id}/${gmpAddon.version}`
@@ -914,7 +826,7 @@ GMPDownloader.prototype = {
           .then(
             extractedPaths => {
               // Success, set the prefs
-              let now = Math.round(Date.now() / 1000);
+              now = Math.round(Date.now() / 1000);
               GMPPrefs.setInt(
                 GMPPrefs.KEY_PLUGIN_LAST_UPDATE,
                 now,
@@ -952,7 +864,7 @@ GMPDownloader.prototype = {
                 reason,
                 gmpAddon.id
               );
-              let now = Math.round(Date.now() / 1000);
+              now = Math.round(Date.now() / 1000);
               GMPPrefs.setInt(
                 GMPPrefs.KEY_PLUGIN_LAST_INSTALL_FAILED,
                 now,
@@ -977,7 +889,7 @@ GMPDownloader.prototype = {
           reason,
           gmpAddon.id
         );
-        let now = Math.round(Date.now() / 1000);
+        now = Math.round(Date.now() / 1000);
         GMPPrefs.setInt(
           GMPPrefs.KEY_PLUGIN_LAST_DOWNLOAD_FAILED,
           now,

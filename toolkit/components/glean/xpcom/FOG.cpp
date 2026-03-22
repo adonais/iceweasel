@@ -62,6 +62,12 @@ static mozilla::Atomic<bool> gInitializeCalled(false);
 const uint32_t kIdleSecs = 5;
 
 // static
+void FOG::SetApplicationID(const nsACString& aAppId) {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  glean::impl::fog_set_application_id(PromiseFlatCString(aAppId).get());
+}
+
+// static
 already_AddRefed<FOG> FOG::GetSingleton() {
   if (gFOG) {
     return do_AddRef(gFOG);

@@ -49,7 +49,11 @@ struct AspectRatio {
       // using, so using default constructor is fine.
       return AspectRatio();
     }
-    return AspectRatio(aWidth / aHeight, aUseBoxSizing);
+    float ratio = aWidth / aHeight;
+    if (!std::isfinite(ratio)) [[unlikely]] {
+      return AspectRatio();
+    }
+    return AspectRatio(ratio, aUseBoxSizing);
   }
 
   template <typename T, typename Sub, typename Coord>

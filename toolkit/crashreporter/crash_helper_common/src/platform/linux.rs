@@ -11,13 +11,20 @@ use nix::{
     },
     sys::socket::{socketpair, AddressFamily, SockFlag, SockType},
 };
-use std::os::fd::{BorrowedFd, OwnedFd};
+use std::{
+    ffi::NulError,
+    os::fd::{BorrowedFd, OwnedFd},
+};
 use thiserror::Error;
 
 pub type ProcessHandle = ();
 
 #[derive(Error, Debug)]
 pub enum PlatformError {
+    #[error("A C string contained an interior NUL character")]
+    InteriorNul(#[from] NulError),
+    #[error("Could not parse file descriptor")]
+    ParseFileDescriptor,
     #[error("poll() call failed with error: {0}")]
     PollFailure(Errno),
     #[error("Could not set socket in non-blocking mode: {0}")]
@@ -25,7 +32,7 @@ pub enum PlatformError {
     #[error("Could not flag socket as close-after-exec: {0}")]
     SocketCloexecError(Errno),
     #[error("Could not create a socket pair: {0}")]
-    SocketpairFailure(#[from] Errno),
+    SocketpairFailure(Errno),
     #[error("sendmsg() call failed with error: {0}")]
     SendFailure(Errno),
     #[error("Sending {expected} bytes failed, only {sent} bytes sent")]
@@ -50,7 +57,9 @@ pub(crate) fn unix_socketpair() -> Result<(OwnedFd, OwnedFd), PlatformError> {
 
 pub(crate) fn set_socket_default_flags(socket: BorrowedFd) -> Result<(), PlatformError> {
     // All our sockets are in non-blocking mode.
-    let flags = OFlag::from_bits_retain(fcntl(socket, F_GETFL)?);
+    let flags = OFlag::from_bits_retain(
+        fcntl(socket, F_GETFL).map_err(PlatformError::SocketNonBlockError)?,
+    );
     fcntl(socket, F_SETFL(flags.union(OFlag::O_NONBLOCK)))
         .map(|_res| ())
         .map_err(PlatformError::SocketNonBlockError)

@@ -8,8 +8,9 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
-  UrlbarProvidersManager:
+  ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
@@ -130,7 +131,7 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
       heuristic: true,
       payload: {
         query,
-        engine: Services.search.defaultEngine.name,
+        engine: SearchService.defaultEngine.name,
       },
     }),
   ];
@@ -148,7 +149,7 @@ function makeProviderResults({ count = 0, type = undefined, specs = [] }) {
                 query,
                 suggestion: str,
                 lowerCaseSuggestion: str.toLowerCase(),
-                engine: Services.search.defaultEngine.name,
+                engine: SearchService.defaultEngine.name,
               },
             })
           );
@@ -286,9 +287,10 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
   // the heuristic. That lets us avoid any potential races with the built-in
   // providers; testing them is not important here.
   let provider = new DelayingTestProvider({ priority: Infinity });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
   registerCleanupFunction(() => {
-    UrlbarProvidersManager.unregisterProvider(provider);
+    providersManager.unregisterProvider(provider);
   });
 
   // Set up the first search. First, add the non-suggestedIndex results to the
@@ -555,5 +557,5 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
 
   await UrlbarTestUtils.promisePopupClose(window);
   gURLBar.handleRevert();
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 }

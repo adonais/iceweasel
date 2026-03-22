@@ -10,9 +10,6 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.concept.engine.EngineSession
@@ -25,15 +22,12 @@ import mozilla.components.support.test.any
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.mock
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyList
@@ -48,11 +42,6 @@ import org.mozilla.fenix.utils.LastSavedFolderCache
 
 @RunWith(AndroidJUnit4::class)
 class BookmarksMiddlewareTest {
-
-    @get:Rule
-    val coroutineRule = MainCoroutineRule()
-
-    private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var bookmarksStorage: BookmarksStorage
     private lateinit var clipboardManager: ClipboardManager
@@ -102,7 +91,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a nested bookmark structure WHEN the store is initialized on create THEN all the folders have nested child counts`() = runTestOnMain {
+    fun `GIVEN a nested bookmark structure WHEN the store is initialized on create THEN all the folders have nested child counts`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
@@ -113,8 +102,10 @@ class BookmarksMiddlewareTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf("folder guid 3"))).thenReturn(9u)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf("folder guid 4"))).thenReturn(1u)
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
+
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         val expectedMap =
             mapOf(
@@ -128,40 +119,48 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a nested bookmark structure WHEN SelectAll is clicked THEN all bookmarks are selected and reflected in state`() = runTestOnMain {
+    fun `GIVEN a nested bookmark structure WHEN SelectAll is clicked THEN all bookmarks are selected and reflected in state`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
         `when`(bookmarksStorage.countBookmarksInTrees(store.state.bookmarkItems.map { it.guid })).thenReturn(35u)
+
         store.dispatch(BookmarksListMenuAction.SelectAll)
+        testScheduler.advanceUntilIdle()
+
         assertEquals(store.state.selectedItems.size, store.state.bookmarkItems.size)
         assertEquals(35, store.state.recursiveSelectedCount)
     }
 
     @Test
-    fun `GIVEN bookmarks in storage and not signed into sync WHEN store is initialized THEN bookmarks will be loaded as display format`() = runTestOnMain {
+    fun `GIVEN bookmarks in storage and not signed into sync WHEN store is initialized THEN bookmarks will be loaded as display format`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(any()))).thenReturn(0u)
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
 
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
+        testScheduler.advanceUntilIdle()
 
         assertEquals(10, store.state.bookmarkItems.size)
     }
 
     @Test
-    fun `GIVEN bookmarks in storage and navigating directly to the edit screen WHEN store is initialized THEN bookmark to edit will be loaded`() = runTestOnMain {
+    fun `GIVEN bookmarks in storage and navigating directly to the edit screen WHEN store is initialized THEN bookmark to edit will be loaded`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         val parent = generateBookmark("item guid 1", null, "https://mozilla.org", position = 0u)
         val child = generateBookmark("item guid 2", null, "https://mozilla.org", position = 0u).copy(parentGuid = "item guid 1")
         `when`(bookmarksStorage.getBookmark("item guid 1")).thenReturn(Result.success(parent))
         `when`(bookmarksStorage.getBookmark("item guid 2")).thenReturn(Result.success(child))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
 
         val store = middleware.makeStore(bookmarkToLoad = "item guid 2")
+        testScheduler.advanceUntilIdle()
+
         val bookmark = BookmarkItem.Bookmark(
             url = "https://mozilla.org",
             title = "",
@@ -173,7 +172,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN bookmarks in storage and not signed into sync WHEN store is initialized THEN bookmarks will be sorted by last modified date`() = runTestOnMain {
+    fun `GIVEN bookmarks in storage and not signed into sync WHEN store is initialized THEN bookmarks will be sorted by last modified date`() = runTest {
         val reverseOrderByModifiedBookmarks = List(5) {
             generateBookmark(
                 guid = "$it",
@@ -196,14 +195,15 @@ class BookmarksMiddlewareTest {
         )
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(root))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
 
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
         assertEquals(5, store.state.bookmarkItems.size)
     }
 
     @Test
-    fun `GIVEN a bookmarks store WHEN SortMenuItem is clicked THEN Save the new sort order`() = runTestOnMain {
+    fun `GIVEN a bookmarks store WHEN SortMenuItem is clicked THEN Save the new sort order`() = runTest {
         val root = BookmarkNode(
             type = BookmarkNodeType.FOLDER,
             guid = BookmarkRoot.Mobile.id,
@@ -221,15 +221,18 @@ class BookmarksMiddlewareTest {
         saveSortOrder = {
             newSortOrder = it
         }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
 
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
         store.dispatch(BookmarksListMenuAction.SortMenu.NewestClicked)
+        testScheduler.advanceUntilIdle()
+
         assertEquals(BookmarksListSortOrder.Created(true), newSortOrder)
     }
 
     @Test
-    fun `GIVEN SelectFolderScreen WHEN SortMenuItem is clicked THEN Save the new sort order`() = runTestOnMain {
+    fun `GIVEN SelectFolderScreen WHEN SortMenuItem is clicked THEN Save the new sort order`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
@@ -246,60 +249,67 @@ class BookmarksMiddlewareTest {
             position = bookmark.position,
             dateAdded = bookmark.dateAdded,
         )
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
 
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
         store.dispatch(EditBookmarkClicked(bookmarkItem))
         store.dispatch(EditBookmarkAction.FolderClicked)
         store.dispatch(SelectFolderAction.ViewAppeared)
         assertEquals(false, store.state.sortMenuShown)
 
         store.dispatch(SelectFolderAction.SortMenu.SortMenuButtonClicked)
+        testScheduler.advanceUntilIdle()
 
         assertEquals(true, store.state.sortMenuShown)
 
         store.dispatch(SelectFolderAction.SortMenu.NewestClicked)
+        testScheduler.advanceUntilIdle()
+
         assertEquals(BookmarksListSortOrder.Created(true), newSortOrder)
     }
 
     @Test
-    fun `GIVEN bookmarks in storage and user has a desktop bookmark WHEN store is initialized THEN bookmarks, including desktop will be loaded as display format`() = runTestOnMain {
+    fun `GIVEN bookmarks in storage and user has a desktop bookmark WHEN store is initialized THEN bookmarks, including desktop will be loaded as display format`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(1u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
         `when`(bookmarksStorage.getTree(BookmarkRoot.Root.id)).thenReturn(Result.success(generateDesktopRootTree()))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(any()))).thenReturn(1u)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(isSignedIntoSync = true),
         )
+        testScheduler.advanceUntilIdle()
 
         assertEquals(11, store.state.bookmarkItems.size)
     }
 
     @Test
-    fun `GIVEN bookmarks in storage and not signed into sync but has existing desktop bookmarks WHEN store is initialized THEN bookmarks, including desktop will be loaded as display format`() = runTestOnMain {
+    fun `GIVEN bookmarks in storage and not signed into sync but has existing desktop bookmarks WHEN store is initialized THEN bookmarks, including desktop will be loaded as display format`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(1u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
         `when`(bookmarksStorage.getTree(BookmarkRoot.Root.id)).thenReturn(Result.success(generateDesktopRootTree()))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(any()))).thenReturn(1u)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         assertEquals(11, store.state.bookmarkItems.size)
     }
 
     @Test
-    fun `GIVEN no bookmarks under mobile root WHEN store is initialized THEN list of bookmarks will be empty`() = runTestOnMain {
+    fun `GIVEN no bookmarks under mobile root WHEN store is initialized THEN list of bookmarks will be empty`() = runTest {
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(null)
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
 
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         assertEquals(0, store.state.bookmarkItems.size)
     }
 
     @Test
-    fun `GIVEN bookmarks should be open in a new tab WHEN a bookmark is clicked THEN open it as a new tab`() {
+    fun `GIVEN bookmarks should be open in a new tab WHEN a bookmark is clicked THEN open it as a new tab`() = runTest {
         val url = "url"
         val bookmarkItem = BookmarkItem.Bookmark(url, "title", url, guid = "", position = null)
         val openBookmarksInNewTab = true
@@ -307,7 +317,7 @@ class BookmarksMiddlewareTest {
         var navigated = false
         navigateToBrowser = { navigated = true }
 
-        val middleware = buildMiddleware(openBookmarksInNewTab = openBookmarksInNewTab)
+        val middleware = buildMiddleware(this, openBookmarksInNewTab = openBookmarksInNewTab)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 bookmarkItems = listOf(bookmarkItem),
@@ -328,7 +338,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN bookmarks should not be open in a new tab WHEN a bookmark is clicked THEN open it in the existing tab`() {
+    fun `GIVEN bookmarks should not be open in a new tab WHEN a bookmark is clicked THEN open it in the existing tab`() = runTest {
         val url = "url"
         val bookmarkItem = BookmarkItem.Bookmark(url, "title", url, guid = "", position = null)
         val openBookmarksInNewTab = false
@@ -336,7 +346,7 @@ class BookmarksMiddlewareTest {
         var navigated = false
         navigateToBrowser = { navigated = true }
 
-        val middleware = buildMiddleware(openBookmarksInNewTab = openBookmarksInNewTab)
+        val middleware = buildMiddleware(this, openBookmarksInNewTab = openBookmarksInNewTab)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 bookmarkItems = listOf(bookmarkItem),
@@ -357,7 +367,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `WHEN folder is clicked THEN children are loaded and screen title is updated to folder title`() = runTestOnMain {
+    fun `WHEN folder is clicked THEN children are loaded and screen title is updated to folder title`() = runTest {
         val bookmarkTree = generateBookmarkTree()
         val folderNode = bookmarkTree.children!!.first { it.type == BookmarkNodeType.FOLDER }
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
@@ -365,7 +375,7 @@ class BookmarksMiddlewareTest {
         `when`(bookmarksStorage.getTree(folderNode.guid))
             .thenReturn(Result.success(generateBookmarkFolder(folderNode.guid, folderNode.title!!, BookmarkRoot.Mobile.id, folderNode.position!!)))
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default,
         )
@@ -378,17 +388,19 @@ class BookmarksMiddlewareTest {
                 ),
             ),
         )
+        testScheduler.advanceUntilIdle()
 
         assertEquals(folderNode.title, store.state.currentFolder.title)
         assertEquals(5, store.state.bookmarkItems.size)
     }
 
     @Test
-    fun `WHEN search button is clicked THEN navigate to search`() {
+    fun `WHEN search button is clicked THEN navigate to search`() = runTest {
         var navigated = false
         navigateToSearch = { navigated = true }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(SearchClicked)
 
@@ -396,10 +408,10 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN new search UX is used WHEN search button is clicked THEN don't navigate to search`() {
+    fun `GIVEN new search UX is used WHEN search button is clicked THEN don't navigate to search`() = runTest {
         var navigated = false
         navigateToSearch = { navigated = true }
-        val middleware = buildMiddleware(useNewSearchUX = true)
+        val middleware = buildMiddleware(this, useNewSearchUX = true)
         val captorMiddleware = CaptureActionsMiddleware<BookmarksState, BookmarksAction>()
         val store = BookmarksStore(
             initialState = BookmarksState.default,
@@ -412,9 +424,10 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `WHEN add folder button is clicked THEN navigate to folder screen`() {
-        val middleware = buildMiddleware()
+    fun `WHEN add folder button is clicked THEN navigate to folder screen`() = runTest {
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(AddFolderClicked)
 
@@ -422,9 +435,10 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN current screen is add folder WHEN parent folder is clicked THEN navigate to folder selection screen`() {
-        val middleware = buildMiddleware()
+    fun `GIVEN current screen is add folder WHEN parent folder is clicked THEN navigate to folder selection screen`() = runTest {
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(AddFolderAction.ParentFolderClicked)
 
@@ -432,9 +446,10 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN current screen is edit bookmark WHEN folder is clicked THEN navigate to folder selection screen`() {
-        val middleware = buildMiddleware()
+    fun `GIVEN current screen is edit bookmark WHEN folder is clicked THEN navigate to folder selection screen`() = runTest {
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(EditBookmarkAction.FolderClicked)
 
@@ -447,16 +462,19 @@ class BookmarksMiddlewareTest {
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
         `when`(bookmarksStorage.addFolder(BookmarkRoot.Mobile.id, "test")).thenReturn(Result.success("new-guid"))
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
         val newFolderTitle = "test"
 
         store.dispatch(AddFolderClicked)
         store.dispatch(AddFolderAction.TitleChanged(newFolderTitle))
+        testScheduler.advanceUntilIdle()
 
         assertNotNull(store.state.bookmarksAddFolderState)
 
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         verify(bookmarksStorage).addFolder(store.state.currentFolder.guid, title = newFolderTitle)
         verify(bookmarksStorage, times(2)).getTree(BookmarkRoot.Mobile.id)
@@ -464,11 +482,11 @@ class BookmarksMiddlewareTest {
         assertNull(store.state.bookmarksAddFolderState)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
-    fun `GIVEN current screen is add folder and new folder title is empty WHEN back is clicked THEN navigate back to the previous tree and don't save anything`() = runTestOnMain {
-        val middleware = buildMiddleware()
+    fun `GIVEN current screen is add folder and new folder title is empty WHEN back is clicked THEN navigate back to the previous tree and don't save anything`() = runTest {
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(AddFolderClicked)
         store.dispatch(AddFolderAction.TitleChanged("test"))
@@ -476,7 +494,7 @@ class BookmarksMiddlewareTest {
         assertNotNull(store.state.bookmarksAddFolderState)
 
         store.dispatch(BackClicked)
-        this.advanceUntilIdle()
+        testScheduler.advanceUntilIdle()
 
         verify(bookmarksStorage, never()).addFolder(parentGuid = store.state.currentFolder.guid, title = "")
         verify(navController).popBackStack()
@@ -484,12 +502,13 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN current screen is add folder and previous screen is select folder WHEN back is clicked THEN skip selection screen straight back to the edit bookmark screen`() = runTestOnMain {
+    fun `GIVEN current screen is add folder and previous screen is select folder WHEN back is clicked THEN skip selection screen straight back to the edit bookmark screen`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id, recursive = false)).thenReturn(Result.success(generateBookmarkTree()))
         `when`(bookmarksStorage.addFolder(BookmarkRoot.Mobile.id, "i'm a new folder")).thenReturn(Result.success("new-guid"))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         val bookmark = store.state.bookmarkItems.first { it is BookmarkItem.Bookmark } as BookmarkItem.Bookmark
         val newFolderTitle = "i'm a new folder"
@@ -500,6 +519,7 @@ class BookmarksMiddlewareTest {
         store.dispatch(AddFolderClicked)
         store.dispatch(AddFolderAction.TitleChanged(newFolderTitle))
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         assertNull(store.state.bookmarksSelectFolderState)
         verify(bookmarksStorage, times(3)).getTree(BookmarkRoot.Mobile.id, recursive = false)
@@ -507,17 +527,19 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN current screen is add folder and previous screen is not select folder WHEN back is clicked THEN navigate back`() = runTestOnMain {
+    fun `GIVEN current screen is add folder and previous screen is not select folder WHEN back is clicked THEN navigate back`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id, recursive = false)).thenReturn(Result.success(generateBookmarkTree()))
         `when`(bookmarksStorage.addFolder(BookmarkRoot.Mobile.id, "i'm a new folder")).thenReturn(Result.success("new-guid"))
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id, recursive = false)).thenReturn(Result.success(generateBookmarkTree()))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(AddFolderClicked)
         store.dispatch(AddFolderAction.TitleChanged("i'm a new folder"))
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         verify(bookmarksStorage, times(2)).getTree(BookmarkRoot.Mobile.id, recursive = false)
         verify(navController, times(1)).popBackStack()
@@ -527,7 +549,7 @@ class BookmarksMiddlewareTest {
     fun `GIVEN current screen is edit folder and new title is nonempty WHEN back is clicked THEN navigate back, save the folder, and load the updated tree`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(any()))).thenReturn(0u)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
@@ -537,11 +559,13 @@ class BookmarksMiddlewareTest {
                 ),
             ),
         )
+        testScheduler.advanceUntilIdle()
 
         val newFolderTitle = "test"
 
         store.dispatch(EditFolderAction.TitleChanged(newFolderTitle))
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         verify(bookmarksStorage).updateNode(
             guid = "folder guid 0",
@@ -561,7 +585,7 @@ class BookmarksMiddlewareTest {
     fun `GIVEN current screen is edit folder and new title is empty WHEN back is clicked THEN navigate back, without siving the folder, and load the updated tree`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 bookmarksEditFolderState = BookmarksEditFolderState(
@@ -570,11 +594,13 @@ class BookmarksMiddlewareTest {
                 ),
             ),
         )
+        testScheduler.advanceUntilIdle()
 
         val newFolderTitle = ""
 
         store.dispatch(EditFolderAction.TitleChanged(newFolderTitle))
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         verify(bookmarksStorage, never()).updateNode(
             guid = "folder guid 0",
@@ -595,7 +621,8 @@ class BookmarksMiddlewareTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
+
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(any()))).thenReturn(0u)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
@@ -611,11 +638,21 @@ class BookmarksMiddlewareTest {
         val newFolderTitle = ""
 
         store.dispatch(EditFolderAction.TitleChanged(newFolderTitle))
+        testScheduler.advanceUntilIdle()
+
         store.dispatch(EditFolderAction.ParentFolderClicked)
+        testScheduler.advanceUntilIdle()
+
         store.dispatch(SelectFolderAction.ViewAppeared)
+        testScheduler.advanceUntilIdle()
+
         store.dispatch(SelectFolderAction.ItemClicked(SelectFolderItem(0, newParentItem, SelectFolderExpansionState.None)))
+        testScheduler.advanceUntilIdle()
+
         store.dispatch(BackClicked)
         store.dispatch(BackClicked)
+
+        testScheduler.advanceUntilIdle()
 
         verify(bookmarksStorage).updateNode(
             guid = "folder guid 0",
@@ -634,16 +671,23 @@ class BookmarksMiddlewareTest {
     fun `GIVEN current screen is edit bookmark WHEN back is clicked THEN navigate back, save the bookmark, and load the updated tree`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
+
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
         val newBookmarkTitle = "my awesome bookmark"
 
         val bookmark = store.state.bookmarkItems.first { it is BookmarkItem.Bookmark } as BookmarkItem.Bookmark
         store.dispatch(EditBookmarkClicked(bookmark = bookmark))
+        testScheduler.advanceUntilIdle()
+
         store.dispatch(EditBookmarkAction.TitleChanged(title = newBookmarkTitle))
+        testScheduler.advanceUntilIdle()
 
         assertNotNull(store.state.bookmarksEditBookmarkState)
+
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         val expectedPosition = bookmark.position!!
         verify(bookmarksStorage).updateNode(
@@ -665,16 +709,19 @@ class BookmarksMiddlewareTest {
     fun `GIVEN current screen is edit bookmark and the bookmark title is empty WHEN back is clicked THEN navigate back`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
         val newBookmarkTitle = ""
 
         val bookmark = store.state.bookmarkItems.first { it is BookmarkItem.Bookmark } as BookmarkItem.Bookmark
         store.dispatch(EditBookmarkClicked(bookmark = bookmark))
         store.dispatch(EditBookmarkAction.TitleChanged(title = newBookmarkTitle))
+        testScheduler.advanceUntilIdle()
 
         assertNotNull(store.state.bookmarksEditBookmarkState)
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         verify(bookmarksStorage, never()).updateNode(
             guid = "item guid 0",
@@ -695,8 +742,9 @@ class BookmarksMiddlewareTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
         val newBookmarkTitle = ""
 
         val bookmark = store.state.bookmarkItems.first { it is BookmarkItem.Bookmark } as BookmarkItem.Bookmark
@@ -707,9 +755,12 @@ class BookmarksMiddlewareTest {
         store.dispatch(EditBookmarkAction.FolderClicked)
         store.dispatch(SelectFolderAction.ItemClicked(SelectFolderItem(0, newParentItem, SelectFolderExpansionState.None)))
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         assertNotNull(store.state.bookmarksEditBookmarkState)
+
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         verify(bookmarksStorage).updateNode(
             guid = "item guid 0",
@@ -725,13 +776,14 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN current screen is list and the top-level is loaded WHEN back is clicked THEN exit bookmarks`() = runTestOnMain {
+    fun `GIVEN current screen is list and the top-level is loaded WHEN back is clicked THEN exit bookmarks`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
         var exited = false
         exitBookmarks = { exited = true }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BackClicked)
 
@@ -739,12 +791,12 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN current screen is list and a bookmark is selected WHEN back is clicked THEN clear out selected item`() = runTestOnMain {
+    fun `GIVEN current screen is list and a bookmark is selected WHEN back is clicked THEN clear out selected item`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
         var exited = false
         exitBookmarks = { exited = true }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val item = BookmarkItem.Bookmark("ur", "title", "url", "guid", 0u)
         val parent = BookmarkItem.Folder("title", "guid", 0u)
         val store = middleware.makeStore(
@@ -761,13 +813,14 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN current screen is an empty list and the top-level is loaded WHEN sign into sync is clicked THEN navigate to sign into sync `() = runTestOnMain {
+    fun `GIVEN current screen is an empty list and the top-level is loaded WHEN sign into sync is clicked THEN navigate to sign into sync `() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
         var navigated = false
         navigateToSignIntoSync = { navigated = true }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(SignIntoSyncClicked)
 
@@ -775,13 +828,14 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN current screen is a subfolder WHEN close is clicked THEN exit bookmarks `() = runTestOnMain {
+    fun `GIVEN current screen is a subfolder WHEN close is clicked THEN exit bookmarks `() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
         var navigated = false
         exitBookmarks = { navigated = true }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(CloseClicked)
 
@@ -789,16 +843,17 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN current screen is list and a sub-level folder is loaded WHEN back is clicked THEN load the parent level`() = runTestOnMain {
+    fun `GIVEN current screen is list and a sub-level folder is loaded WHEN back is clicked THEN load the parent level`() = runTest {
         val tree = generateBookmarkTree()
         val firstFolderNode = tree.children!!.first { it.type == BookmarkNodeType.FOLDER }
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
         `when`(bookmarksStorage.getTree(firstFolderNode.guid)).thenReturn(Result.success(generateBookmarkTree()))
         `when`(bookmarksStorage.getBookmark(firstFolderNode.guid)).thenReturn(Result.success(firstFolderNode))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(any()))).thenReturn(0u)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(
             FolderClicked(
@@ -809,19 +864,22 @@ class BookmarksMiddlewareTest {
                 ),
             ),
         )
+        testScheduler.advanceUntilIdle()
 
         assertEquals(firstFolderNode.guid, store.state.currentFolder.guid)
+
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         assertEquals(BookmarkRoot.Mobile.id, store.state.currentFolder.guid)
         assertEquals(tree.children!!.size, store.state.bookmarkItems.size)
     }
 
     @Test
-    fun `GIVEN bookmarks in storage and not signed into sync WHEN select folder sub screen view is loaded THEN only mobile root is loaded onto screen`() = runTestOnMain {
+    fun `GIVEN bookmarks in storage and not signed into sync WHEN select folder sub screen view is loaded THEN only mobile root is loaded onto screen`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id, recursive = false)).thenReturn(Result.success(generateBookmarkTree()))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(any()))).thenReturn(0u)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
@@ -830,12 +888,13 @@ class BookmarksMiddlewareTest {
         )
 
         store.dispatch(SelectFolderAction.ViewAppeared)
+        testScheduler.advanceUntilIdle()
 
         assertEquals(1, store.state.bookmarksSelectFolderState?.folders?.count())
     }
 
     @Test
-    fun `GIVEN bookmarks in storage and not signed into sync WHEN expanding mobile root on select folder screen THEN mobile root children are shown as well`() = runTestOnMain {
+    fun `GIVEN bookmarks in storage and not signed into sync WHEN expanding mobile root on select folder screen THEN mobile root children are shown as well`() = runTest {
         val tree = generateBookmarkTree()
         tree.children?.forEach {
             if (it.type == BookmarkNodeType.FOLDER) {
@@ -844,7 +903,7 @@ class BookmarksMiddlewareTest {
         }
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id, false)).thenReturn(Result.success(tree))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(any()))).thenReturn(0u)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
@@ -866,18 +925,131 @@ class BookmarksMiddlewareTest {
         ),
             ),
         )
+        testScheduler.advanceUntilIdle()
 
         assertEquals(6, store.state.bookmarksSelectFolderState?.folders?.flattenToList()?.count())
     }
 
     @Test
-    fun `GIVEN a folder with subfolders WHEN select folder sub screen view is loaded THEN load folders into sub screen state without the selected folder`() = runTestOnMain {
+    fun `GIVEN select folder screen with created sort order WHEN mobile root is expanded THEN child folders respect the sort order`() = runTest {
+        val oldestFolder = BookmarkNode(
+            type = BookmarkNodeType.FOLDER,
+            guid = "a-folder-oldest",
+            parentGuid = BookmarkRoot.Mobile.id,
+            position = 0u,
+            title = "a-folder-oldest",
+            url = null,
+            dateAdded = 100,
+            lastModified = 0,
+            children = listOf(),
+        )
+        val newestFolder = BookmarkNode(
+            type = BookmarkNodeType.FOLDER,
+            guid = "b-folder-newest",
+            parentGuid = BookmarkRoot.Mobile.id,
+            position = 1u,
+            title = "b-folder-newest",
+            url = null,
+            dateAdded = 300,
+            lastModified = 0,
+            children = listOf(),
+        )
+        val middleFolder = BookmarkNode(
+            type = BookmarkNodeType.FOLDER,
+            guid = "c-folder",
+            parentGuid = BookmarkRoot.Mobile.id,
+            position = 2u,
+            title = "c-folder",
+            url = null,
+            dateAdded = 200,
+            lastModified = 0,
+            children = listOf(),
+        )
+        val root = BookmarkNode(
+            type = BookmarkNodeType.FOLDER,
+            guid = BookmarkRoot.Mobile.id,
+            parentGuid = null,
+            position = 0u,
+            title = "mobile",
+            url = null,
+            dateAdded = 0,
+            lastModified = 0,
+            children = listOf(newestFolder, oldestFolder, middleFolder),
+        )
+        `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
+        `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id, recursive = false)).thenReturn(Result.success(root))
+        `when`(bookmarksStorage.getTree(oldestFolder.guid, recursive = false)).thenReturn(Result.success(oldestFolder))
+        `when`(bookmarksStorage.getTree(newestFolder.guid, recursive = false)).thenReturn(Result.success(newestFolder))
+        `when`(bookmarksStorage.getTree(middleFolder.guid, recursive = false)).thenReturn(Result.success(middleFolder))
+        val middleware = buildMiddleware(this)
+        val store = middleware.makeStore(
+            initialState = BookmarksState.default.copy(
+                bookmarksSelectFolderState = BookmarksSelectFolderState(outerSelectionGuid = "selection guid"),
+            ),
+        )
+        testScheduler.advanceUntilIdle()
+
+        // Sort by oldest and assert sort order
+        store.dispatch(SelectFolderAction.ViewAppeared)
+        testScheduler.advanceUntilIdle()
+
+        store.dispatch(SelectFolderAction.SortMenu.OldestClicked)
+        testScheduler.advanceUntilIdle()
+
+        store.dispatch(
+            SelectFolderAction.ChevronClicked(
+                SelectFolderItem(
+                    indentation = 0,
+                    folder = BookmarkItem.Folder(
+                        guid = BookmarkRoot.Mobile.id,
+                        title = "",
+                        position = 0u,
+                    ),
+                    expansionState = SelectFolderExpansionState.Closed,
+                ),
+            ),
+        )
+        testScheduler.advanceUntilIdle()
+
+        val children = (store.state.bookmarksSelectFolderState?.folders?.first()?.expansionState as SelectFolderExpansionState.Open).children
+        assertEquals(listOf(oldestFolder.guid, middleFolder.guid, newestFolder.guid), children.map { it.guid })
+
+        // Below is a resort to Z to A and re-assertion on sort order
+        store.dispatch(SelectFolderAction.ViewAppeared)
+        testScheduler.advanceUntilIdle()
+
+        store.dispatch(SelectFolderAction.SortMenu.ZtoAClicked)
+        testScheduler.advanceUntilIdle()
+
+        store.dispatch(
+            SelectFolderAction.ChevronClicked(
+                SelectFolderItem(
+                    indentation = 0,
+                    folder = BookmarkItem.Folder(
+                        guid = BookmarkRoot.Mobile.id,
+                        title = "",
+                        position = 0u,
+                    ),
+                    expansionState = SelectFolderExpansionState.Closed,
+                ),
+            ),
+        )
+        testScheduler.advanceUntilIdle()
+
+        val childrenSecondCheck = (store.state.bookmarksSelectFolderState?.folders?.first()?.expansionState as SelectFolderExpansionState.Open).children
+        assertEquals(listOf(middleFolder.guid, newestFolder.guid, oldestFolder.guid), childrenSecondCheck.map { it.guid })
+    }
+
+    @Test
+    fun `GIVEN a folder with subfolders WHEN select folder sub screen view is loaded THEN load folders into sub screen state without the selected folder`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         val rootNode = generateBookmarkFolder("parent", "first", BookmarkRoot.Mobile.id, position = 0u).copy(
             children = generateBookmarkFolders("parent"),
         )
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id, recursive = true)).thenReturn(Result.success(rootNode))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
+        testScheduler.advanceUntilIdle()
+
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 bookmarksSelectFolderState = BookmarksSelectFolderState(outerSelectionGuid = "selection guid"),
@@ -889,12 +1061,15 @@ class BookmarksMiddlewareTest {
         )
         `when`(bookmarksStorage.countBookmarksInTrees(anyList())).thenReturn(0u)
         store.dispatch(BookmarksListMenuAction.SelectAll)
+        testScheduler.advanceUntilIdle()
+
         val bookmarkCount = store.state.selectedItems.size
         store.dispatch(BookmarksListMenuAction.MultiSelect.OpenInNormalTabsClicked)
+        testScheduler.advanceUntilIdle()
+
         assertEquals(bookmarkCount, store.state.bookmarksSelectFolderState?.folders?.count())
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `GIVEN selected folder WHEN OpenInNormalTabsClicked THEN urls opened as normal tabs`() = runTest {
         val bookmarkFolder = BookmarkItem.Folder(title = "folder", guid = "1234", position = 0u)
@@ -902,7 +1077,7 @@ class BookmarksMiddlewareTest {
 
         var trayShown = false
         showTabsTray = { trayShown = true }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState =
             BookmarksState.default.copy(
@@ -912,12 +1087,11 @@ class BookmarksMiddlewareTest {
         )
 
         store.dispatch(BookmarksListMenuAction.MultiSelect.OpenInNormalTabsClicked)
-        advanceUntilIdle()
+        testScheduler.advanceUntilIdle()
         verify(addNewTabUseCase).invoke(url = "url", private = false)
         assertTrue(trayShown)
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `GIVEN selected folder WHEN OpenInPrivateTabsClicked THEN urls opened as private tabs`() = runTest {
         val bookmarkFolder = BookmarkItem.Folder(title = "folder", guid = "1234", position = 0u)
@@ -925,7 +1099,7 @@ class BookmarksMiddlewareTest {
 
         var trayShown = false
         showTabsTray = { trayShown = true }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState =
             BookmarksState.default.copy(
@@ -935,16 +1109,16 @@ class BookmarksMiddlewareTest {
         )
 
         store.dispatch(BookmarksListMenuAction.MultiSelect.OpenInPrivateTabsClicked)
-        advanceUntilIdle()
+        testScheduler.advanceUntilIdle()
         verify(addNewTabUseCase).invoke(url = "url", private = true)
         assertTrue(trayShown)
     }
 
     @Test
-    fun `GIVEN bookmarks in storage and not signed into sync but have pre-existing desktop bookmarks saved WHEN select folder sub screen view is loaded THEN load folders, including desktop folders into sub screen state`() = runTestOnMain {
+    fun `GIVEN bookmarks in storage and not signed into sync but have pre-existing desktop bookmarks saved WHEN select folder sub screen view is loaded THEN load folders, including desktop folders into sub screen state`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(1u)
         mockDesktopFoldersForSelectScreen()
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(any()))).thenReturn(1u)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
@@ -953,12 +1127,13 @@ class BookmarksMiddlewareTest {
         )
 
         store.dispatch(SelectFolderAction.ViewAppeared)
+        testScheduler.advanceUntilIdle()
 
         assertEquals(4, store.state.bookmarksSelectFolderState?.folders?.count())
     }
 
     @Test
-    fun `GIVEN bookmarks in storage and has desktop bookmarks WHEN select folder sub screen view is loaded THEN load folders, including desktop folders into sub screen state`() = runTestOnMain {
+    fun `GIVEN bookmarks in storage and has desktop bookmarks WHEN select folder sub screen view is loaded THEN load folders, including desktop folders into sub screen state`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(1u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Root.id, recursive = false)).thenReturn(Result.success(generateDesktopRootTree()))
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id, recursive = false)).thenReturn(Result.success(generateBookmarkTree()))
@@ -966,7 +1141,7 @@ class BookmarksMiddlewareTest {
         `when`(bookmarksStorage.getTree(BookmarkRoot.Toolbar.id, recursive = false)).thenReturn(Result.success(generateBookmarkFolder(BookmarkRoot.Toolbar.id, "Toolbar", BookmarkRoot.Root.id, position = 1u)))
         `when`(bookmarksStorage.getTree(BookmarkRoot.Unfiled.id, recursive = false)).thenReturn(Result.success(generateBookmarkFolder(BookmarkRoot.Unfiled.id, "Unfiled", BookmarkRoot.Root.id, position = 2u)))
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 isSignedIntoSync = true,
@@ -975,12 +1150,13 @@ class BookmarksMiddlewareTest {
         )
 
         store.dispatch(SelectFolderAction.ViewAppeared)
+        testScheduler.advanceUntilIdle()
 
         assertEquals(5, store.state.bookmarksSelectFolderState?.folders?.count())
     }
 
     @Test
-    fun `GIVEN bookmarks in storage and has desktop bookmarks WHEN desktop folder is expanded THEN then load its children`() = runTestOnMain {
+    fun `GIVEN bookmarks in storage and has desktop bookmarks WHEN desktop folder is expanded THEN then load its children`() = runTest {
         val childFolderGuid = "child folder"
         val childFolder = generateBookmarkFolder(childFolderGuid, "title", BookmarkRoot.Toolbar.id, 5u)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(1u)
@@ -994,7 +1170,7 @@ class BookmarksMiddlewareTest {
         )
         `when`(bookmarksStorage.getTree("child folder", recursive = false)).thenReturn(Result.success(childFolder))
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 isSignedIntoSync = true,
@@ -1016,14 +1192,15 @@ class BookmarksMiddlewareTest {
         ),
             ),
         )
+        testScheduler.advanceUntilIdle()
 
         assertEquals(5, store.state.bookmarksSelectFolderState?.folders?.count())
         assertEquals(6, store.state.bookmarksSelectFolderState?.folders?.flattenToList()?.count())
     }
 
     @Test
-    fun `GIVEN current screen select folder WHEN back is clicked THEN pop the backstack`() = runTestOnMain {
-        val middleware = buildMiddleware()
+    fun `GIVEN current screen select folder WHEN back is clicked THEN pop the backstack`() = runTest {
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 bookmarksSelectFolderState = BookmarksSelectFolderState(outerSelectionGuid = "selection guid"),
@@ -1035,10 +1212,10 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN current screen select folder while multi-selecting WHEN back is clicked THEN pop the backstack and update the selected bookmark items`() = runTestOnMain {
+    fun `GIVEN current screen select folder while multi-selecting WHEN back is clicked THEN pop the backstack and update the selected bookmark items`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 bookmarksMultiselectMoveState = MultiselectMoveState(
@@ -1050,8 +1227,10 @@ class BookmarksMiddlewareTest {
                 ),
             ),
         )
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         verify(bookmarksStorage, times(2)).getTree(BookmarkRoot.Mobile.id)
         verify(navController).popBackStack()
@@ -1076,7 +1255,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN current screen select folder WHEN the search query is updated THEN FilteredFoldersLoaded gets dispatched with the filtered folders`() = runTestOnMain {
+    fun `GIVEN current screen select folder WHEN the search query is updated THEN FilteredFoldersLoaded gets dispatched with the filtered folders`() = runTest {
         val folders = listOf(
             SelectFolderItem(
                 0,
@@ -1130,7 +1309,7 @@ class BookmarksMiddlewareTest {
 
         val bookmarksFolder = folders.first()
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 bookmarksSelectFolderState = BookmarksSelectFolderState(
@@ -1145,29 +1324,34 @@ class BookmarksMiddlewareTest {
         val searchQueryNew = "bookmarks"
 
         store.dispatch(SelectFolderAction.SearchQueryUpdated(searchQueryNew))
+        testScheduler.advanceUntilIdle()
+
         assertEquals(listOf(bookmarksFolder), store.state.bookmarksSelectFolderState?.filteredFolders)
     }
 
     @Test
-    fun `WHEN edit clicked in bookmark item menu THEN nav to edit screen`() = runTestOnMain {
+    fun `WHEN edit clicked in bookmark item menu THEN nav to edit screen`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         val bookmark = store.state.bookmarkItems.first { it is BookmarkItem.Bookmark } as BookmarkItem.Bookmark
         store.dispatch(BookmarksListMenuAction.Bookmark.EditClicked(bookmark))
+        testScheduler.advanceUntilIdle()
 
         assertEquals(bookmark, store.state.bookmarksEditBookmarkState!!.bookmark)
         verify(navController).navigate(BookmarksDestinations.EDIT_BOOKMARK)
     }
 
     @Test
-    fun `WHEN copy clicked in bookmark item menu THEN copy bookmark url to clipboard`() {
+    fun `WHEN copy clicked in bookmark item menu THEN copy bookmark url to clipboard`() = runTest {
         val url = "url"
         val bookmarkItem = BookmarkItem.Bookmark(url = url, title = "title", previewImageUrl = url, guid = "guid", position = null)
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Bookmark.CopyClicked(bookmarkItem))
 
@@ -1175,13 +1359,14 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `WHEN share clicked in bookmark item menu THEN share the bookmark`() {
+    fun `WHEN share clicked in bookmark item menu THEN share the bookmark`() = runTest {
         var sharedBookmarks: List<BookmarkItem.Bookmark> = emptyList()
         shareBookmarks = { shareData ->
             sharedBookmarks = shareData
         }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
         val url = "url"
         val title = "title"
         val bookmarkItem = BookmarkItem.Bookmark(url = url, title = title, previewImageUrl = url, guid = "guid", position = null)
@@ -1197,7 +1382,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `WHEN open in normal tab clicked in bookmark item menu THEN add a normal tab and show the tabs tray in normal mode`() {
+    fun `WHEN open in normal tab clicked in bookmark item menu THEN add a normal tab and show the tabs tray in normal mode`() = runTest {
         val url = "url"
         val bookmarkItem = BookmarkItem.Bookmark(url = url, title = "title", previewImageUrl = url, guid = "guid", position = null)
         var trayShown = false
@@ -1206,8 +1391,9 @@ class BookmarksMiddlewareTest {
             mode = newMode
             trayShown = true
         }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Bookmark.OpenInNormalTabClicked(bookmarkItem))
 
@@ -1217,7 +1403,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `WHEN open in private tab clicked in bookmark item menu THEN add a private tab and show the tabs tray in private mode`() {
+    fun `WHEN open in private tab clicked in bookmark item menu THEN add a private tab and show the tabs tray in private mode`() = runTest {
         val url = "url"
         val bookmarkItem = BookmarkItem.Bookmark(url = url, title = "title", previewImageUrl = url, guid = "guid", position = null)
         var trayShown = false
@@ -1226,8 +1412,9 @@ class BookmarksMiddlewareTest {
             mode = newMode
             trayShown = true
         }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Bookmark.OpenInPrivateTabClicked(bookmarkItem))
 
@@ -1237,21 +1424,26 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a state with an undo snackbar WHEN snackbar is dismissed THEN delete all of the guids`() = runTestOnMain {
+    fun `GIVEN a state with an undo snackbar WHEN snackbar is dismissed THEN delete all of the guids`() = runTest {
         val tree = generateBookmarkTree()
         val firstGuid = tree.children!!.first().guid
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
         val bookmarkItem = BookmarkItem.Bookmark(url = "url", title = "title", previewImageUrl = "url", guid = firstGuid, position = 0u)
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(any()))).thenReturn(0u)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Bookmark.DeleteClicked(bookmarkItem))
+        testScheduler.advanceUntilIdle()
+
         assertEquals(BookmarksSnackbarState.UndoDeletion(listOf(firstGuid)), store.state.bookmarksSnackbarState)
 
         val initialCount = store.state.bookmarkItems.size
         store.dispatch(SnackbarAction.Dismissed)
+        testScheduler.advanceUntilIdle()
+
         assertEquals(BookmarksSnackbarState.None, store.state.bookmarksSnackbarState)
         assertEquals(initialCount - 1, store.state.bookmarkItems.size)
 
@@ -1259,9 +1451,9 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN we are in the select folder screen and we are moving multiple bookmarks and bookmark items is empty WHEN the folder is selected and back button is clicked THEN we show a snackbar describing the error`() = runTestOnMain {
+    fun `GIVEN we are in the select folder screen and we are moving multiple bookmarks and bookmark items is empty WHEN the folder is selected and back button is clicked THEN we show a snackbar describing the error`() = runTest {
         val tree = generateBookmarkTree()
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 bookmarkItems = listOf(),
@@ -1279,15 +1471,16 @@ class BookmarksMiddlewareTest {
         assertEquals(BookmarksSnackbarState.None, store.state.bookmarksSnackbarState)
 
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         assertEquals(BookmarksSnackbarState.SelectFolderFailed, store.state.bookmarksSnackbarState)
     }
 
     @Test
-    fun `GIVEN a user is on the edit screen with nothing on the backstack WHEN delete is clicked THEN pop the backstack, delete the bookmark and exit bookmarks`() = runTestOnMain {
+    fun `GIVEN a user is on the edit screen with nothing on the backstack WHEN delete is clicked THEN pop the backstack, delete the bookmark and exit bookmarks`() = runTest {
         var exited = false
         exitBookmarks = { exited = true }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 bookmarksEditBookmarkState = BookmarksEditBookmarkState(
@@ -1298,15 +1491,18 @@ class BookmarksMiddlewareTest {
         )
         `when`(navController.popBackStack()).thenReturn(false)
         store.dispatch(EditBookmarkAction.DeleteClicked)
+        testScheduler.advanceUntilIdle()
+
         verify(navController).popBackStack()
         verify(bookmarksStorage).deleteNode("guid")
         assertTrue(exited)
     }
 
     @Test
-    fun `WHEN edit clicked in folder item menu THEN nav to the edit screen`() {
-        val middleware = buildMiddleware()
+    fun `WHEN edit clicked in folder item menu THEN nav to the edit screen`() = runTest {
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Folder.EditClicked(folder = store.state.currentFolder))
 
@@ -1314,7 +1510,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a folder with fewer than 15 items WHEN open all in normal tabs clicked in folder item menu THEN open all the bookmarks as normal tabs and show the tabs tray in normal mode`() = runTestOnMain {
+    fun `GIVEN a folder with fewer than 15 items WHEN open all in normal tabs clicked in folder item menu THEN open all the bookmarks as normal tabs and show the tabs tray in normal mode`() = runTest {
         val guid = "guid"
         val folderItem = BookmarkItem.Folder(title = "title", guid = guid, position = 0u)
         val folder = generateBookmarkFolder(guid = guid, "title", "parentGuid", position = 0u)
@@ -1325,10 +1521,12 @@ class BookmarksMiddlewareTest {
             mode = newMode
             trayShown = true
         }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Folder.OpenAllInNormalTabClicked(folderItem))
+        testScheduler.advanceUntilIdle()
 
         folder.children!!.forEach { child ->
             verify(addNewTabUseCase).invoke(url = child.url!!, private = false)
@@ -1338,7 +1536,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a folder with 15 or more items WHEN open all in normal tabs clicked in folder item menu THEN show a warning`() = runTestOnMain {
+    fun `GIVEN a folder with 15 or more items WHEN open all in normal tabs clicked in folder item menu THEN show a warning`() = runTest {
         val guid = "guid"
         val folderItem = BookmarkItem.Folder(title = "title", guid = guid, position = 0u)
         val folder = generateBookmarkFolder(guid = guid, "title", "parentGuid", position = 0u).copy(
@@ -1354,10 +1552,13 @@ class BookmarksMiddlewareTest {
         `when`(bookmarksStorage.getTree(guid)).thenReturn(Result.success(folder))
         var trayShown = false
         showTabsTray = { _ -> trayShown = true }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Folder.OpenAllInNormalTabClicked(folderItem))
+        testScheduler.advanceUntilIdle()
+
         val expected = OpenTabsConfirmationDialog.Presenting(
             guidToOpen = guid,
             numberOfTabs = 15,
@@ -1372,7 +1573,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a folder with fewer than 15 items WHEN open all in private tabs clicked in folder item menu THEN open all the bookmarks as private tabs and show the tabs tray in private mode`() = runTestOnMain {
+    fun `GIVEN a folder with fewer than 15 items WHEN open all in private tabs clicked in folder item menu THEN open all the bookmarks as private tabs and show the tabs tray in private mode`() = runTest {
         val guid = "guid"
         val folderItem = BookmarkItem.Folder(title = "title", guid = guid, position = 0u)
         val folder = generateBookmarkFolder(guid = guid, "title", "parentGuid", position = 0u)
@@ -1383,10 +1584,12 @@ class BookmarksMiddlewareTest {
             mode = newMode
             trayShown = true
         }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Folder.OpenAllInPrivateTabClicked(folderItem))
+        testScheduler.advanceUntilIdle()
 
         folder.children!!.forEach { child ->
             verify(addNewTabUseCase).invoke(url = child.url!!, private = true)
@@ -1396,7 +1599,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a folder with 15 or more items WHEN open all in private tabs clicked in folder item menu THEN show a warning`() = runTestOnMain {
+    fun `GIVEN a folder with 15 or more items WHEN open all in private tabs clicked in folder item menu THEN show a warning`() = runTest {
         val guid = "guid"
         val folderItem = BookmarkItem.Folder(title = "title", guid = guid, position = 0u)
         val folder = generateBookmarkFolder(guid = guid, "title", "parentGuid", position = 0u).copy(
@@ -1412,10 +1615,13 @@ class BookmarksMiddlewareTest {
         `when`(bookmarksStorage.getTree(guid)).thenReturn(Result.success(folder))
         var trayShown = false
         showTabsTray = { _ -> trayShown = true }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Folder.OpenAllInPrivateTabClicked(folderItem))
+        testScheduler.advanceUntilIdle()
+
         val expected = OpenTabsConfirmationDialog.Presenting(
             guidToOpen = guid,
             numberOfTabs = 15,
@@ -1430,49 +1636,60 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `WHEN delete clicked in folder item menu THEN present a dialog showing the number of items to be deleted and when delete clicked, delete the selected folder`() = runTestOnMain {
+    fun `WHEN delete clicked in folder item menu THEN present a dialog showing the number of items to be deleted and when delete clicked, delete the selected folder`() = runTest {
         val tree = generateBookmarkTree()
         val folder = tree.children!!.first { it.type == BookmarkNodeType.FOLDER }
         val folderItem = BookmarkItem.Folder(guid = folder.guid, title = "title", position = folder.position)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(folderItem.guid))).thenReturn(19u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Folder.DeleteClicked(folderItem))
+        testScheduler.advanceUntilIdle()
+
         assertEquals(DeletionDialogState.Presenting(listOf(folderItem.guid), 19), store.state.bookmarksDeletionDialogState)
 
         store.dispatch(DeletionDialogAction.DeleteTapped)
+        testScheduler.advanceUntilIdle()
+
         assertEquals(DeletionDialogState.None, store.state.bookmarksDeletionDialogState)
         verify(bookmarksStorage).deleteNode(folder.guid)
     }
 
     @Test
-    fun `WHEN delete clicked in folder edit screen THEN present a dialog showing the number of items to be deleted and when delete clicked, delete the selected folder`() = runTestOnMain {
+    fun `WHEN delete clicked in folder edit screen THEN present a dialog showing the number of items to be deleted and when delete clicked, delete the selected folder`() = runTest {
         val tree = generateBookmarkTree()
         val folder = tree.children!!.first { it.type == BookmarkNodeType.FOLDER }
         val folderItem = BookmarkItem.Folder(guid = folder.guid, title = "title", position = folder.position)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(folderItem.guid))).thenReturn(19u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Folder.EditClicked(folderItem))
         store.dispatch(EditFolderAction.DeleteClicked)
+        testScheduler.advanceUntilIdle()
+
         assertEquals(DeletionDialogState.Presenting(listOf(folderItem.guid), 19), store.state.bookmarksDeletionDialogState)
 
         store.dispatch(DeletionDialogAction.DeleteTapped)
+        testScheduler.advanceUntilIdle()
+
         assertEquals(DeletionDialogState.None, store.state.bookmarksDeletionDialogState)
         verify(bookmarksStorage).deleteNode(folder.guid)
         verify(navController).popBackStack()
     }
 
     @Test
-    fun `WHEN toolbar edit clicked THEN navigate to the edit screen`() = runTestOnMain {
-        val middleware = buildMiddleware()
+    fun `WHEN toolbar edit clicked THEN navigate to the edit screen`() = runTest {
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.MultiSelect.EditClicked)
 
@@ -1480,7 +1697,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN selected tabs WHEN multi-select open in normal tabs clicked THEN open selected in new tabs and show tabs tray`() = runTestOnMain {
+    fun `GIVEN selected tabs WHEN multi-select open in normal tabs clicked THEN open selected in new tabs and show tabs tray`() = runTest {
         var shown = false
         var mode = true
         showTabsTray = { newMode ->
@@ -1493,12 +1710,13 @@ class BookmarksMiddlewareTest {
         val items = tree.children!!.filter { it.type == BookmarkNodeType.ITEM }.take(2).map {
             BookmarkItem.Bookmark(guid = it.guid, title = it.title!!, url = it.url!!, previewImageUrl = it.url!!, position = it.position!!)
         }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(selectedItems = items),
         )
 
         store.dispatch(BookmarksListMenuAction.MultiSelect.OpenInNormalTabsClicked)
+        testScheduler.advanceUntilIdle()
 
         assertTrue(items.size == 2)
         for (item in items) {
@@ -1509,7 +1727,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN selected tabs WHEN multi-select open in private tabs clicked THEN open selected in new private tabs and show tabs tray`() = runTestOnMain {
+    fun `GIVEN selected tabs WHEN multi-select open in private tabs clicked THEN open selected in new private tabs and show tabs tray`() = runTest {
         var shown = false
         var mode = false
         showTabsTray = { newMode ->
@@ -1522,12 +1740,13 @@ class BookmarksMiddlewareTest {
         val items = tree.children!!.filter { it.type == BookmarkNodeType.ITEM }.take(2).map {
             BookmarkItem.Bookmark(guid = it.guid, title = it.title!!, url = it.url!!, previewImageUrl = it.url!!, position = it.position!!)
         }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(selectedItems = items),
         )
 
         store.dispatch(BookmarksListMenuAction.MultiSelect.OpenInPrivateTabsClicked)
+        testScheduler.advanceUntilIdle()
 
         assertTrue(items.size == 2)
         for (item in items) {
@@ -1538,7 +1757,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN selected tabs WHEN multi-select share clicked THEN share all tabs`() = runTestOnMain {
+    fun `GIVEN selected tabs WHEN multi-select share clicked THEN share all tabs`() = runTest {
         var sharedBookmarks: List<BookmarkItem.Bookmark> = emptyList()
         shareBookmarks = { shareData ->
             sharedBookmarks = shareData
@@ -1549,7 +1768,7 @@ class BookmarksMiddlewareTest {
         val items = tree.children!!.filter { it.type == BookmarkNodeType.ITEM }.take(2).map {
             BookmarkItem.Bookmark(guid = it.guid, title = it.title!!, url = it.url!!, previewImageUrl = it.url!!, position = it.position!!)
         }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(selectedItems = items),
         )
@@ -1563,7 +1782,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a single item selected WHEN multi-select delete clicked THEN show snackbar`() = runTestOnMain {
+    fun `GIVEN a single item selected WHEN multi-select delete clicked THEN show snackbar`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
@@ -1571,16 +1790,20 @@ class BookmarksMiddlewareTest {
             BookmarkItem.Bookmark(guid = it.guid, title = it.title!!, url = it.url!!, previewImageUrl = it.url!!, position = it.position!!)
         }
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(selectedItems = listOf(bookmarkItem)),
         )
 
         store.dispatch(BookmarksListMenuAction.MultiSelect.DeleteClicked)
+        testScheduler.advanceUntilIdle()
+
         assertEquals(BookmarksSnackbarState.UndoDeletion(listOf(bookmarkItem.guid)), store.state.bookmarksSnackbarState)
 
         val initialCount = store.state.bookmarkItems.size
         store.dispatch(SnackbarAction.Dismissed)
+        testScheduler.advanceUntilIdle()
+
         assertEquals(BookmarksSnackbarState.None, store.state.bookmarksSnackbarState)
         assertEquals(initialCount - 1, store.state.bookmarkItems.size)
 
@@ -1588,7 +1811,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN two bookmarks WHEN each is deleted before a snackbar dismiss and undo is clicked after the first dismiss THEN the bookmarks are restored`() = runTestOnMain {
+    fun `GIVEN two bookmarks WHEN each is deleted before a snackbar dismiss and undo is clicked after the first dismiss THEN the bookmarks are restored`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
@@ -1602,8 +1825,9 @@ class BookmarksMiddlewareTest {
             BookmarkItem.Bookmark(it.guid, it.title!!, it.url!!, it.url!!, it.position!!)
         }
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Bookmark.DeleteClicked(bookmarkItemOne))
         assertEquals(store.state.bookmarksDeletionSnackbarQueueCount, 1)
@@ -1623,23 +1847,27 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN multiple selected items WHEN multi-select delete clicked THEN show the confirmation dialog`() = runTestOnMain {
+    fun `GIVEN multiple selected items WHEN multi-select delete clicked THEN show the confirmation dialog`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
         val items = tree.children!!.filter { it.type == BookmarkNodeType.ITEM }.take(2).map {
             BookmarkItem.Bookmark(guid = it.guid, title = it.title!!, url = it.url!!, previewImageUrl = it.url!!, position = null)
         }
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(selectedItems = items),
         )
         `when`(bookmarksStorage.countBookmarksInTrees(items.map { it.guid })).thenReturn(19u)
         store.dispatch(BookmarksListMenuAction.MultiSelect.DeleteClicked)
+        testScheduler.advanceUntilIdle()
+
         assertEquals(DeletionDialogState.Presenting(items.map { it.guid }, 19), store.state.bookmarksDeletionDialogState)
 
         val initialCount = store.state.bookmarkItems.size
         store.dispatch(DeletionDialogAction.DeleteTapped)
+        testScheduler.advanceUntilIdle()
+
         assertEquals(DeletionDialogState.None, store.state.bookmarksDeletionDialogState)
         assertEquals(initialCount - 2, store.state.bookmarkItems.size)
 
@@ -1649,11 +1877,11 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN selected items in state WHEN a folder is clicked THEN update the recursive state`() = runTestOnMain {
+    fun `GIVEN selected items in state WHEN a folder is clicked THEN update the recursive state`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 selectedItems = listOf(BookmarkItem.Folder("Folder 1", "guid1", position = 0u)),
@@ -1661,15 +1889,17 @@ class BookmarksMiddlewareTest {
         )
         `when`(bookmarksStorage.countBookmarksInTrees(listOf("guid1", "guid2"))).thenReturn(19u)
         store.dispatch(FolderClicked(BookmarkItem.Folder("Folder2", "guid2", position = 1u)))
+        testScheduler.advanceUntilIdle()
+
         assertEquals(19, store.state.recursiveSelectedCount)
     }
 
     @Test
-    fun `GIVEN selected items in state WHEN move folder is clicked THEN navigate to folder selection`() = runTestOnMain {
+    fun `GIVEN selected items in state WHEN move folder is clicked THEN navigate to folder selection`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
                 selectedItems = listOf(BookmarkItem.Folder("Folder 1", "guid1", position = 0u)),
@@ -1681,7 +1911,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `WHEN first bookmarks sync is complete THEN reload the bookmarks list`() = runTestOnMain {
+    fun `WHEN first bookmarks sync is complete THEN reload the bookmarks list`() = runTest {
         val syncedGuid = "sync"
         val tree = generateBookmarkTree()
         val afterSyncTree = tree.copy(children = tree.children?.plus(generateBookmark(guid = syncedGuid, "title", "url", position = (tree.children!!.size + 1).toUInt())))
@@ -1689,34 +1919,40 @@ class BookmarksMiddlewareTest {
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id))
             .thenReturn(Result.success(tree))
             .thenReturn(Result.success(afterSyncTree))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(FirstSyncCompleted)
+        testScheduler.advanceUntilIdle()
 
         assertTrue(store.state.bookmarkItems.any { it.guid == syncedGuid })
     }
 
     @Test
-    fun `GIVEN a bookmark has been deleted WHEN the view is disposed before the snackbar is dismissed THEN commit the deletion`() = runTestOnMain {
+    fun `GIVEN a bookmark has been deleted WHEN the view is disposed before the snackbar is dismissed THEN commit the deletion`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
         val bookmarkToDelete = store.state.bookmarkItems.first { it is BookmarkItem.Bookmark } as BookmarkItem.Bookmark
 
         store.dispatch(BookmarksListMenuAction.Bookmark.DeleteClicked(bookmarkToDelete))
+        testScheduler.advanceUntilIdle()
+
         val snackState = store.state.bookmarksSnackbarState
         assertTrue(snackState is BookmarksSnackbarState.UndoDeletion && snackState.guidsToDelete.first() == bookmarkToDelete.guid)
         store.dispatch(ViewDisposed)
+        testScheduler.advanceUntilIdle()
 
         verify(bookmarksStorage).deleteNode(bookmarkToDelete.guid)
     }
 
     @Test
-    fun `GIVEN adding a folder WHEN selecting a new parent THEN folder is updated`() = runTestOnMain {
+    fun `GIVEN adding a folder WHEN selecting a new parent THEN folder is updated`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
@@ -1725,8 +1961,9 @@ class BookmarksMiddlewareTest {
         val newFolderTitle = "newFolder"
         `when`(bookmarksStorage.addFolder(newParent.guid, newFolderTitle)).thenReturn(Result.success("new-guid"))
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(AddFolderClicked)
         store.dispatch(AddFolderAction.TitleChanged(newFolderTitle))
@@ -1739,12 +1976,13 @@ class BookmarksMiddlewareTest {
         assertEquals(newParentItem, store.state.bookmarksAddFolderState?.parent)
 
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         verify(bookmarksStorage).addFolder(parentGuid = newParent.guid, title = newFolderTitle)
     }
 
     @Test
-    fun `GIVEN editing a folder WHEN selecting a new parent THEN folder is updated`() = runTestOnMain {
+    fun `GIVEN editing a folder WHEN selecting a new parent THEN folder is updated`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
@@ -1753,20 +1991,29 @@ class BookmarksMiddlewareTest {
         val folderItem = BookmarkItem.Folder(title = folder.title!!, guid = folder.guid, position = folder.position)
         val newParentItem = BookmarkItem.Folder(title = newParent.title!!, guid = newParent.guid, position = newParent.position)
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(any()))).thenReturn(0u)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Folder.EditClicked(folderItem))
+        testScheduler.advanceUntilIdle()
+
         store.dispatch(EditFolderAction.ParentFolderClicked)
+        testScheduler.advanceUntilIdle()
+
         store.dispatch(SelectFolderAction.ViewAppeared)
         store.dispatch(SelectFolderAction.ItemClicked(SelectFolderItem(0, newParentItem, SelectFolderExpansionState.None)))
+        testScheduler.advanceUntilIdle()
+
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         assertNull(store.state.bookmarksSelectFolderState)
         assertEquals(newParentItem, store.state.bookmarksEditFolderState?.parent)
 
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         verify(bookmarksStorage).updateNode(
             folder.guid,
@@ -1780,7 +2027,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN editing a bookmark WHEN selecting a new parent THEN user can successfully add a new folder`() = runTestOnMain {
+    fun `GIVEN editing a bookmark WHEN selecting a new parent THEN user can successfully add a new folder`() = runTest {
         val tree = generateBookmarkTree()
         val newFolderGuid = "newFolderGuid"
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
@@ -1792,9 +2039,10 @@ class BookmarksMiddlewareTest {
         val parentForNewFolder = tree.children?.last { it.type == BookmarkNodeType.FOLDER }!!
         val parentForNewFolderItem = BookmarkItem.Folder(title = parentForNewFolder.title!!, guid = parentForNewFolder.guid, position = parentForNewFolder.position)
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(any()))).thenReturn(0u)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Bookmark.EditClicked(bookmarkItem))
         store.dispatch(EditBookmarkAction.FolderClicked)
@@ -1804,6 +2052,7 @@ class BookmarksMiddlewareTest {
         store.dispatch(AddFolderAction.ParentFolderClicked)
         store.dispatch(SelectFolderAction.ItemClicked(SelectFolderItem(0, parentForNewFolderItem, SelectFolderExpansionState.None)))
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         assertNotNull(store.state.bookmarksSelectFolderState)
         assertNull(store.state.bookmarksSelectFolderState?.innerSelectionGuid)
@@ -1811,6 +2060,8 @@ class BookmarksMiddlewareTest {
         assertEquals(newFolderTitle, store.state.bookmarksAddFolderState?.folderBeingAddedTitle)
 
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
+
         assertNull(store.state.bookmarksAddFolderState)
         verify(bookmarksStorage).addFolder(parentGuid = parentForNewFolder.guid, title = newFolderTitle)
 
@@ -1821,7 +2072,7 @@ class BookmarksMiddlewareTest {
 
     @Test
     fun `GIVEN the last saved folder cache WHEN deleting the folder THEN the value in cache is reset`() =
-        runTestOnMain {
+        runTest {
             val tree = generateBookmarkTree()
             val folder = tree.children!!.first { it.type == BookmarkNodeType.FOLDER }
             val folderItem =
@@ -1839,23 +2090,28 @@ class BookmarksMiddlewareTest {
             `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
             `when`(lastSavedFolderCache.getGuid()).thenReturn(folder.guid)
 
-            val middleware = buildMiddleware()
+            val middleware = buildMiddleware(this)
             val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
             store.dispatch(BookmarksListMenuAction.Folder.DeleteClicked(folderItem))
+            testScheduler.advanceUntilIdle()
+
             assertEquals(
                 DeletionDialogState.Presenting(listOf(folderItem.guid), 19),
                 store.state.bookmarksDeletionDialogState,
             )
 
             store.dispatch(DeletionDialogAction.DeleteTapped)
+            testScheduler.advanceUntilIdle()
+
             assertEquals(DeletionDialogState.None, store.state.bookmarksDeletionDialogState)
             verify(bookmarksStorage).deleteNode(folder.guid)
             verify(lastSavedFolderCache).setGuid(null)
         }
 
     @Test
-    fun `GIVEN editing a bookmark WHEN edit fails THAN last saved location does not change`() = runTestOnMain {
+    fun `GIVEN editing a bookmark WHEN edit fails THAN last saved location does not change`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
@@ -1864,8 +2120,9 @@ class BookmarksMiddlewareTest {
         `when`(bookmarksStorage.updateNode(eq(bookmark.guid), any())).thenReturn(Result.failure(IllegalStateException()))
         `when`(lastSavedFolderCache.getGuid()).thenReturn(bookmark.parentGuid)
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Bookmark.EditClicked(bookmarkItem))
         store.dispatch(EditBookmarkAction.TitleChanged(""))
@@ -1875,7 +2132,7 @@ class BookmarksMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN editing a bookmark WHEN edit fails THEN result is reported`() = runTestOnMain {
+    fun `GIVEN editing a bookmark WHEN edit fails THEN result is reported`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
@@ -1884,18 +2141,20 @@ class BookmarksMiddlewareTest {
         `when`(bookmarksStorage.updateNode(eq(bookmark.guid), any())).thenReturn(Result.failure(IllegalStateException()))
 
         var reported: BookmarksGlobalResultReport? = null
-        val middleware = buildMiddleware(reportResultGlobally = { reported = it })
+        val middleware = buildMiddleware(this, reportResultGlobally = { reported = it })
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Bookmark.EditClicked(bookmarkItem))
         store.dispatch(EditBookmarkAction.TitleChanged("a title with query strings or other failures"))
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         assertEquals(reported, BookmarksGlobalResultReport.EditBookmarkFailed)
     }
 
     @Test
-    fun `GIVEN adding a folder WHEN adding fails THEN result is reported`() = runTestOnMain {
+    fun `GIVEN adding a folder WHEN adding fails THEN result is reported`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
@@ -1903,45 +2162,48 @@ class BookmarksMiddlewareTest {
         `when`(bookmarksStorage.addFolder(BookmarkRoot.Mobile.id, newTitle)).thenReturn(Result.failure(IllegalStateException()))
 
         var reported: BookmarksGlobalResultReport? = null
-        val middleware = buildMiddleware(reportResultGlobally = { reported = it })
+        val middleware = buildMiddleware(this, reportResultGlobally = { reported = it })
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(AddFolderClicked)
         store.dispatch(AddFolderAction.TitleChanged(newTitle))
         store.dispatch(BackClicked)
 
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         assertEquals(BookmarksGlobalResultReport.AddFolderFailed, reported)
     }
 
     @Test
-    fun `GIVEN editing a folder WHEN adding fails THEN result is reported`() = runTestOnMain {
+    fun `GIVEN editing a folder WHEN adding fails THEN result is reported`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
         `when`(bookmarksStorage.updateNode(any(), any())).thenReturn(Result.failure(IllegalStateException()))
         val folder = tree.children?.first { it.type == BookmarkNodeType.FOLDER }!!
-        val newParent = tree.children?.last { it.type == BookmarkNodeType.FOLDER }!!
         val folderItem = BookmarkItem.Folder(title = folder.title!!, guid = folder.guid, position = folder.position)
 
         var reported: BookmarksGlobalResultReport? = null
-        val middleware = buildMiddleware(reportResultGlobally = { reported = it })
+        val middleware = buildMiddleware(this, reportResultGlobally = { reported = it })
         val store = middleware.makeStore()
+        testScheduler.advanceUntilIdle()
 
         store.dispatch(BookmarksListMenuAction.Folder.EditClicked(folderItem))
         store.dispatch(EditFolderAction.TitleChanged("secrets"))
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         assertEquals(BookmarksGlobalResultReport.EditFolderFailed, reported)
     }
 
     @Test
-    fun `GIVEN moving a bookmark item WHEN moving fails THEN result is reported`() = runTestOnMain {
+    fun `GIVEN moving a bookmark item WHEN moving fails THEN result is reported`() = runTest {
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(generateBookmarkTree()))
         `when`(bookmarksStorage.updateNode(any(), any())).thenReturn(Result.failure(IllegalStateException()))
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
 
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
@@ -1955,17 +2217,18 @@ class BookmarksMiddlewareTest {
             ),
         )
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
 
         assertEquals(BookmarksSnackbarState.SelectFolderFailed, store.state.bookmarksSnackbarState)
     }
 
     @Test
-    fun `while moving items and adding a new folder, returning from the add folder screen results in the move items being moved to the new folder`() = runTestOnMain {
+    fun `while moving items and adding a new folder, returning from the add folder screen results in the move items being moved to the new folder`() = runTest {
         val tree = generateBookmarkTree()
         `when`(bookmarksStorage.countBookmarksInTrees(listOf(BookmarkRoot.Menu.id, BookmarkRoot.Toolbar.id, BookmarkRoot.Unfiled.id))).thenReturn(0u)
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id)).thenReturn(Result.success(tree))
 
-        val middleware = buildMiddleware()
+        val middleware = buildMiddleware(this)
         val guidsToMove = listOf("item guid 1", "item guid 2")
         val store = middleware.makeStore(
             initialState = BookmarksState.default.copy(
@@ -1982,6 +2245,7 @@ class BookmarksMiddlewareTest {
         store.dispatch(AddFolderClicked)
         store.dispatch(AddFolderAction.ParentFolderClicked)
         store.dispatch(SelectFolderAction.ViewAppeared)
+        testScheduler.advanceUntilIdle()
 
         val parentNodeForNewFolder = tree.children!!.first { it.type == BookmarkNodeType.FOLDER }
         val parentForNewFolder = parentNodeForNewFolder.let {
@@ -2016,17 +2280,25 @@ class BookmarksMiddlewareTest {
 
         `when`(bookmarksStorage.getTree(parentForNewFolder.guid)).thenReturn(Result.success(parentNodeForNewFolder))
         store.dispatch(SelectFolderAction.ChevronClicked(mobileRootSelectableItem))
+        testScheduler.advanceUntilIdle()
+
         assertTrue((store.state.bookmarksSelectFolderState?.folders?.first()?.expansionState as? SelectFolderExpansionState.Open)?.children?.any { it.guid == parentForNewFolder.guid } == true)
 
         store.dispatch(SelectFolderAction.ItemClicked(SelectFolderItem(0, parentForNewFolder, SelectFolderExpansionState.None)))
+        testScheduler.advanceUntilIdle()
+
         assertNotNull(store.state.bookmarksSelectFolderState?.innerSelectionGuid)
 
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
+
         assertNull(store.state.bookmarksSelectFolderState?.innerSelectionGuid)
         assertEquals(parentForNewFolder, store.state.bookmarksAddFolderState?.parent)
 
         store.dispatch(AddFolderAction.TitleChanged(newFolder.title!!))
         store.dispatch(BackClicked)
+        testScheduler.advanceUntilIdle()
+
         assertNull(store.state.bookmarksAddFolderState)
         assertNull(store.state.bookmarksSelectFolderState)
         assertNull(store.state.bookmarksMultiselectMoveState)
@@ -2045,6 +2317,7 @@ class BookmarksMiddlewareTest {
     }
 
     private fun buildMiddleware(
+        scope: CoroutineScope,
         useNewSearchUX: Boolean = false,
         openBookmarksInNewTab: Boolean = false,
         reportResultGlobally: (BookmarksGlobalResultReport) -> Unit = {},
@@ -2064,11 +2337,10 @@ class BookmarksMiddlewareTest {
         showTabsTray = showTabsTray,
         resolveFolderTitle = resolveFolderTitle,
         getBrowsingMode = getBrowsingMode,
-        ioDispatcher = coroutineRule.testDispatcher,
         saveBookmarkSortOrder = saveSortOrder,
         lastSavedFolderCache = lastSavedFolderCache,
         reportResultGlobally = reportResultGlobally,
-        lifecycleScope = CoroutineScope(testDispatcher),
+        lifecycleScope = scope,
     )
 
     private fun BookmarksMiddleware.makeStore(
@@ -2157,7 +2429,7 @@ class BookmarksMiddlewareTest {
         `when`(previousBackStackEntry).thenReturn(backStackEntry)
     }
 
-    private suspend fun mockDesktopFoldersForSelectScreen() {
+    private fun mockDesktopFoldersForSelectScreen() = runTest {
         `when`(bookmarksStorage.getTree(BookmarkRoot.Root.id, recursive = false)).thenReturn(Result.success(generateDesktopRootTree()))
         `when`(bookmarksStorage.getTree(BookmarkRoot.Mobile.id, recursive = false)).thenReturn(Result.success(generateBookmarkTree()))
         `when`(bookmarksStorage.getTree(BookmarkRoot.Menu.id, recursive = false)).thenReturn(Result.success(generateBookmarkFolder(BookmarkRoot.Menu.id, "Menu", BookmarkRoot.Root.id, position = 0u)))

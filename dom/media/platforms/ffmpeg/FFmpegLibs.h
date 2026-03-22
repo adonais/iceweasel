@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __FFmpegLibs_h__
-#define __FFmpegLibs_h__
+#ifndef FFmpegLibs_h_
+#define FFmpegLibs_h_
 
 extern "C" {
 #ifdef __GNUC__
@@ -51,4 +51,4 @@ enum { LIBAV_VER = FFVPX_VERSION };
 enum { LIBAV_VER = LIBAVCODEC_VERSION_MAJOR };
 #endif
 
-#endif  // __FFmpegLibs_h__
+#endif  // FFmpegLibs_h_

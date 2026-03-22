@@ -64,7 +64,7 @@ static int nr_ice_pre_answer_request_create(nr_transport_addr *dst, nr_stun_serv
     nr_ice_pre_answer_request *par = 0;
     nr_stun_message_attribute *attr;
 
-    if (!(par = RCALLOC(sizeof(nr_ice_pre_answer_request))))
+    if (!(par = R_NEW(nr_ice_pre_answer_request)))
       ABORT(R_NO_MEMORY);
 
     par->req = *req; /* Struct assignment */
@@ -113,7 +113,7 @@ int nr_ice_component_create(nr_ice_media_stream *stream, int component_id, nr_ic
     int _status;
     nr_ice_component *comp=0;
 
-    if(!(comp=RCALLOC(sizeof(nr_ice_component))))
+    if(!(comp=R_NEW(nr_ice_component)))
       ABORT(R_NO_MEMORY);
 
     comp->state=NR_ICE_COMPONENT_UNPAIRED;
@@ -247,7 +247,7 @@ static int nr_ice_component_initialize_udp(struct nr_ice_ctx_ *ctx,nr_ice_compon
 
       if (!(component->stream->flags & NR_ICE_CTX_FLAGS_RELAY_ONLY)) {
         /* Create one host candidate */
-        if(r=nr_ice_candidate_create(ctx,component,isock,sock,HOST,0,0,
+        if(r=nr_ice_candidate_create(ctx,component,isock,sock,HOST,TCP_TYPE_NONE,0,
           component->component_id,&cand))
           ABORT(r);
 
@@ -270,7 +270,7 @@ static int nr_ice_component_initialize_udp(struct nr_ice_ctx_ *ctx,nr_ice_compon
           /* Ensure id is set (nr_ice_ctx_set_stun_servers does not) */
           component->stream->stun_servers[j].id = j;
           if(r=nr_ice_candidate_create(ctx,component,
-            isock,sock,SERVER_REFLEXIVE,0,
+            isock,sock,SERVER_REFLEXIVE,TCP_TYPE_NONE,
             &component->stream->stun_servers[j],component->component_id,&cand))
             ABORT(r);
           TAILQ_INSERT_TAIL(&component->candidates,cand,entry_comp);
@@ -310,7 +310,7 @@ static int nr_ice_component_initialize_udp(struct nr_ice_ctx_ *ctx,nr_ice_compon
           component->stream->turn_servers[j].turn_server.id = j + component->stream->stun_server_ct;
           /* srvrflx */
           if(r=nr_ice_candidate_create(ctx,component,
-            isock,sock,SERVER_REFLEXIVE,0,
+            isock,sock,SERVER_REFLEXIVE,TCP_TYPE_NONE,
             &component->stream->turn_servers[j].turn_server,component->component_id,&cand))
             ABORT(r);
           cand->state=NR_ICE_CAND_STATE_INITIALIZING; /* Don't start */
@@ -326,7 +326,7 @@ static int nr_ice_component_initialize_udp(struct nr_ice_ctx_ *ctx,nr_ice_compon
         if(r=nr_socket_turn_create(&turn_sock))
           ABORT(r);
         if(r=nr_ice_candidate_create(ctx,component,
-          isock,turn_sock,RELAYED,0,
+          isock,turn_sock,RELAYED,TCP_TYPE_NONE,
           &component->stream->turn_servers[j].turn_server,component->component_id,&cand))
            ABORT(r);
         if (srvflx_cand) {
@@ -351,7 +351,7 @@ static int nr_ice_component_get_port_from_ephemeral_range(uint16_t *port)
   {
     int _status, r;
     void *buf = port;
-    if(r=nr_crypto_random_bytes(buf, 2))
+    if(r=nr_crypto_random_bytes((UCHAR*)buf, 2))
       ABORT(r);
     *port|=49152; /* make it fit into IANA ephemeral port range >= 49152 */
     _status=0;
@@ -999,7 +999,7 @@ static int nr_ice_component_process_incoming_check(nr_ice_component *comp, nr_tr
 
 static int nr_ice_component_stun_server_cb(void *cb_arg,nr_stun_server_ctx *stun_ctx,nr_socket *sock, nr_stun_server_request *req, int *dont_free, int *error)
   {
-    nr_ice_component *pcomp=cb_arg;
+    nr_ice_component *pcomp=(nr_ice_component*)cb_arg;
     nr_transport_addr local_addr;
     int r,_status;
 
@@ -1307,7 +1307,7 @@ static void nr_ice_component_consent_failed(nr_ice_component *comp)
 
 static void nr_ice_component_consent_timeout_cb(NR_SOCKET s, int how, void *cb_arg)
   {
-    nr_ice_component *comp=cb_arg;
+    nr_ice_component *comp=(nr_ice_component*)cb_arg;
 
     comp->consent_timeout = 0;
 
@@ -1365,7 +1365,7 @@ static void nr_ice_component_consent_refreshed(nr_ice_component *comp)
 
 static void nr_ice_component_refresh_consent_cb(NR_SOCKET s, int how, void *cb_arg)
   {
-    nr_ice_cand_pair *pair=cb_arg;
+    nr_ice_cand_pair *pair=(nr_ice_cand_pair*)cb_arg;
     assert(pair && pair->remote && pair->remote->component);
     nr_ice_component *comp=pair->remote->component;
 
@@ -1431,7 +1431,7 @@ void nr_ice_component_consent_calc_consent_timer(nr_ice_component *comp)
 
 static void nr_ice_component_consent_timer_cb(NR_SOCKET s, int how, void *cb_arg)
   {
-    nr_ice_component *comp=cb_arg;
+    nr_ice_component *comp=(nr_ice_component*)cb_arg;
     int r;
 
     if (!comp->consent_ctx) {
@@ -1678,7 +1678,7 @@ int nr_ice_component_select_pair(nr_ice_peer_ctx *pctx, nr_ice_component *comp)
     }
 
     /* Make and fill the array */
-    if(!(pairs=RCALLOC(sizeof(nr_ice_cand_pair *)*ct)))
+    if(!(pairs=R_NEW_CNT(nr_ice_cand_pair*, ct)))
       ABORT(R_NO_MEMORY);
 
     ct=0;

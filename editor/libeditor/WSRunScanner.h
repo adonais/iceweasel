@@ -51,6 +51,11 @@ class MOZ_STACK_CLASS WSScanResult final {
     CollapsibleWhiteSpaces,
     // Visible characters except collapsible white-spaces.
     NonCollapsibleCharacters,
+    // Empty inline container elemnet such as `<span></span>`.  Note that it may
+    // be visible if its border/padding is not 0 for example.
+    // NOTE: This won't be used if it's the inline editing host at the scan
+    // start point.
+    EmptyInlineContainerElement,
     // Special content such as `<img>`, etc.
     SpecialContent,
     // <br> element.
@@ -81,6 +86,8 @@ class MOZ_STACK_CLASS WSScanResult final {
         return aStream << "WSType::CollapsibleWhiteSpaces";
       case WSType::NonCollapsibleCharacters:
         return aStream << "WSType::NonCollapsibleCharacters";
+      case WSType::EmptyInlineContainerElement:
+        return aStream << "WSType::EmptyInlineContainerElement";
       case WSType::SpecialContent:
         return aStream << "WSType::SpecialContent";
       case WSType::BRElement:
@@ -180,13 +187,22 @@ class MOZ_STACK_CLASS WSScanResult final {
   }
 
   /**
-   * Returns true if found or reached content is editable.
+   * Return true if found or reached content is editable.
    */
-  bool IsContentEditable() const { return mContent && mContent->IsEditable(); }
+  [[nodiscard]] bool ContentIsEditable() const {
+    return mContent && HTMLEditUtils::IsSimplyEditableNode(*mContent);
+  }
 
-  [[nodiscard]] bool IsContentEditableRoot() const {
-    return mContent && mContent->IsElement() &&
-           HTMLEditUtils::ElementIsEditableRoot(*mContent->AsElement());
+  /**
+   * Return true if found or reached content is removable node.
+   */
+  [[nodiscard]] bool ContentIsRemovable() const {
+    return mContent && HTMLEditUtils::IsRemovableNode(*mContent);
+  }
+
+  [[nodiscard]] bool ContentIsEditableRoot() const {
+    return ContentIsElement() &&
+           HTMLEditUtils::ElementIsEditableRoot(*ElementPtr());
   }
 
   /**
@@ -258,10 +274,97 @@ class MOZ_STACK_CLASS WSScanResult final {
   }
 
   /**
+   * The scanner reached an empty inline container element such as
+   * <span></span>.  Note that the element may be visible, e.g., may have
+   * non-zero border/padding.
+   */
+  [[nodiscard]] constexpr bool ReachedEmptyInlineContainerElement() const {
+    return mReason == WSType::EmptyInlineContainerElement;
+  }
+  /**
+   * The scanner reached an editable empty inline container element such as
+   * <span></span>.  Note that the element may be visible, e.g., may have
+   * non-zero border/padding.
+   */
+  [[nodiscard]] bool ReachedEditableEmptyInlineContainerElement() const {
+    return ReachedEmptyInlineContainerElement() && ContentIsEditable();
+  }
+  /**
+   * The scanner reached a removable empty inline container element such as
+   * <span></span>.  Note that the element may be visible, e.g., may have
+   * non-zero border/padding.
+   */
+  [[nodiscard]] bool ReachedRemovableEmptyInlineContainerElement() const {
+    return ReachedEmptyInlineContainerElement() && ContentIsRemovable();
+  }
+
+  /**
+   * The scanner reached an empty inline container element which is visible.
+   */
+  [[nodiscard]] bool ReachedVisibleEmptyInlineContainerElement(
+      const nsIContent* aAncestorLimiterToCheckDisplayNone = nullptr) const {
+    return ReachedEmptyInlineContainerElement() &&
+           HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*ElementPtr()) &&
+           !HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(
+               *ElementPtr(), aAncestorLimiterToCheckDisplayNone);
+  }
+  /**
+   * The scanner reached an editable empty inline container element which is
+   * visible.
+   */
+  [[nodiscard]] bool ReachedEditableEmptyInlineContainerElement(
+      const nsIContent* aAncestorLimiterToCheckDisplayNone = nullptr) const {
+    return ReachedVisibleEmptyInlineContainerElement(
+               aAncestorLimiterToCheckDisplayNone) &&
+           ContentIsEditable();
+  }
+  /**
+   * The scanner reached a removable empty inline container element which is
+   * visible.
+   */
+  [[nodiscard]] bool ReachedRemovableEmptyInlineContainerElement(
+      const nsIContent* aAncestorLimiterToCheckDisplayNone = nullptr) const {
+    return ReachedVisibleEmptyInlineContainerElement(
+               aAncestorLimiterToCheckDisplayNone) &&
+           ContentIsRemovable();
+  }
+
+  /**
+   * The scanner reached an empty inline container element which is invisible.
+   */
+  [[nodiscard]] bool ReachedInvisibleEmptyInlineContainerElement(
+      const nsIContent* aAncestorLimiterToCheckDisplayNone = nullptr) const {
+    return ReachedEmptyInlineContainerElement() &&
+           (!HTMLEditUtils::IsVisibleElementEvenIfLeafNode(*ElementPtr()) ||
+            HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(
+                *ElementPtr(), aAncestorLimiterToCheckDisplayNone));
+  }
+  /**
+   * The scanner reached an editable empty inline container element which is
+   * invisible.
+   */
+  [[nodiscard]] bool ReachedEditableInvisibleEmptyInlineContainerElement(
+      const nsIContent* aAncestorLimiterToCheckDisplayNone = nullptr) const {
+    return ReachedInvisibleEmptyInlineContainerElement(
+               aAncestorLimiterToCheckDisplayNone) &&
+           ContentIsEditable();
+  }
+  /**
+   * The scanner reached a removable empty inline container element which is
+   * invisible.
+   */
+  [[nodiscard]] bool ReachedRemovableInvisibleEmptyInlineContainerElement(
+      const nsIContent* aAncestorLimiterToCheckDisplayNone = nullptr) const {
+    return ReachedEditableInvisibleEmptyInlineContainerElement(
+               aAncestorLimiterToCheckDisplayNone) &&
+           ContentIsRemovable();
+  }
+
+  /**
    * The scanner reached <img> or something which is inline and is not a
    * container.
    */
-  bool ReachedSpecialContent() const {
+  [[nodiscard]] constexpr bool ReachedSpecialContent() const {
     return mReason == WSType::SpecialContent;
   }
 
@@ -397,7 +500,7 @@ class MOZ_STACK_CLASS WSScanResult final {
  private:
   nsCOMPtr<nsIContent> mContent;
   Maybe<uint32_t> mOffset;
-  WSType mReason;
+  WSType mReason = WSType::NotInitialized;
   ScanDirection mDirection = ScanDirection::Backward;
 };
 
@@ -423,6 +526,14 @@ class MOZ_STACK_CLASS WSRunScanner final {
     ReferHTMLDefaultStyle,
     // If set, stop scanning the DOM when it reaches a `Comment` node.
     StopAtComment,
+    // If set, ignore empty inline containers such as <span></span>.
+    IgnoreEmptyInlineContainers,
+    // If set, ignore empty inline containers which is not visible.  E.g.,
+    // <span></span> is ignored but <span style="border:1px solid"></span>
+    // and <span style="border:padding 1px"></span> are not ignored.
+    // XXX Currently, this does not work well if the inline container has only
+    // `::before` and/or `::after` content and the frame is dirty.
+    IgnoreInvisibleInlines,
   };
   using Options = EnumSet<Option>;
 
@@ -449,6 +560,32 @@ class MOZ_STACK_CLASS WSRunScanner final {
         aOptions.contains(Option::ReferHTMLDefaultStyle));
   }
 
+ private:
+  [[nodiscard]] static HTMLEditUtils::LeafNodeOptions ToLeafNodeOptions(
+      const Options& aOptions) {
+    using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
+    using LeafNodeOptions = HTMLEditUtils::LeafNodeOptions;
+    auto types =
+        aOptions.contains(Option::OnlyEditableNodes)
+            ? LeafNodeOptions{LeafNodeOption::TreatNonEditableNodeAsLeafNode}
+            : LeafNodeOptions{};
+    if (aOptions.contains(Option::StopAtComment)) {
+      types += LeafNodeOption::TreatCommentAsLeafNode;
+    }
+    if (aOptions.contains(Option::IgnoreInvisibleInlines)) {
+      types +=
+          LeafNodeOptions{LeafNodeOption::IgnoreInvisibleEmptyInlineContainers,
+                          LeafNodeOption::IgnoreInvisibleInlineVoidElements,
+                          LeafNodeOption::IgnoreInvisibleText};
+    }
+    if (aOptions.contains(Option::IgnoreEmptyInlineContainers)) {
+      types += LeafNodeOptions{LeafNodeOption::IgnoreAnyEmptyInlineContainers,
+                               LeafNodeOption::IgnoreEmptyText};
+    }
+    return types;
+  }
+
+ public:
   template <typename EditorDOMPointType>
   WSRunScanner(Options aOptions,  // NOLINT(performance-unnecessary-value-param)
                const EditorDOMPointType& aScanStartPoint,
@@ -681,8 +818,11 @@ class MOZ_STACK_CLASS WSRunScanner final {
     bool StartsFromNonCollapsibleCharacters() const {
       return mLeftWSType == WSType::NonCollapsibleCharacters;
     }
-    bool StartsFromSpecialContent() const {
+    [[nodiscard]] constexpr bool StartsFromSpecialContent() const {
       return mLeftWSType == WSType::SpecialContent;
+    }
+    [[nodiscard]] constexpr bool StartsFromEmptyInlineContainerElement() const {
+      return mLeftWSType == WSType::EmptyInlineContainerElement;
     }
     bool StartsFromPreformattedLineBreak() const {
       return mLeftWSType == WSType::PreformattedLineBreak;
@@ -698,8 +838,11 @@ class MOZ_STACK_CLASS WSRunScanner final {
     bool EndsByTrailingWhiteSpaces() const {
       return mRightWSType == WSType::TrailingWhiteSpaces;
     }
-    bool EndsBySpecialContent() const {
+    [[nodiscard]] constexpr bool EndsBySpecialContent() const {
       return mRightWSType == WSType::SpecialContent;
+    }
+    [[nodiscard]] constexpr bool EndsByEmptyInlineContainerElement() const {
+      return mRightWSType == WSType::EmptyInlineContainerElement;
     }
     bool EndsByBRElement() const { return mRightWSType == WSType::BRElement; }
     bool EndsByPreformattedLineBreak() const {
@@ -908,8 +1051,11 @@ class MOZ_STACK_CLASS WSRunScanner final {
       bool IsNonCollapsibleCharacters() const {
         return mReason == WSType::NonCollapsibleCharacters;
       }
-      bool IsSpecialContent() const {
+      [[nodiscard]] constexpr bool IsSpecialContent() const {
         return mReason == WSType::SpecialContent;
+      }
+      [[nodiscard]] constexpr bool IsEmptyInlineContainerElement() const {
+        return mReason == WSType::EmptyInlineContainerElement;
       }
       bool IsBRElement() const { return mReason == WSType::BRElement; }
       bool IsPreformattedLineBreak() const {
@@ -960,8 +1106,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
       EditorDOMPoint mPoint;
       // Must be one of WSType::NotInitialized,
       // WSType::NonCollapsibleCharacters, WSType::SpecialContent,
-      // WSType::BRElement, WSType::CurrentBlockBoundary,
-      // WSType::OtherBlockBoundary or WSType::InlineEditingHostBoundary.
+      // WSType::EmptyInlineContainerElement, WSType::BRElement,
+      // WSType::CurrentBlockBoundary, WSType::OtherBlockBoundary or
+      // WSType::InlineEditingHostBoundary.
       WSType mReason = WSType::NotInitialized;
     };
 
@@ -1026,7 +1173,12 @@ class MOZ_STACK_CLASS WSRunScanner final {
     bool StartsFromNonCollapsibleCharacters() const {
       return mStart.IsNonCollapsibleCharacters();
     }
-    bool StartsFromSpecialContent() const { return mStart.IsSpecialContent(); }
+    [[nodiscard]] bool StartsFromSpecialContent() const {
+      return mStart.IsSpecialContent();
+    }
+    [[nodiscard]] bool StartsFromEmptyInlineContainerElement() const {
+      return mStart.IsEmptyInlineContainerElement();
+    }
     bool StartsFromBRElement() const { return mStart.IsBRElement(); }
     bool StartsFromVisibleBRElement() const {
       return StartsFromBRElement() &&
@@ -1053,7 +1205,12 @@ class MOZ_STACK_CLASS WSRunScanner final {
     bool EndsByNonCollapsibleCharacters() const {
       return mEnd.IsNonCollapsibleCharacters();
     }
-    bool EndsBySpecialContent() const { return mEnd.IsSpecialContent(); }
+    [[nodiscard]] bool EndsBySpecialContent() const {
+      return mEnd.IsSpecialContent();
+    }
+    [[nodiscard]] bool EndsByEmptyInlineContainerElement() const {
+      return mEnd.IsEmptyInlineContainerElement();
+    }
     bool EndsByBRElement() const { return mEnd.IsBRElement(); }
     bool EndsByVisibleBRElement() const {
       return EndsByBRElement() &&

@@ -132,6 +132,7 @@ class DownloadRobot(private val composeTestRule: ComposeTestRule) {
         navigationToolbar(this@DownloadRobot.composeTestRule) {
         }.enterURLAndEnterToBrowser(url) {
             waitForPageToLoad(pageLoadWaitingTime = waitingTimeLong)
+            assertUIObjectExists(itemContainingText(downloadFile))
         }.clickDownloadLink(downloadFile) {
             verifyDownloadPrompt(downloadFile)
         }.clickDownload {

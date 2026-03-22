@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef dom_indexeddb_dbschema_h__
-#define dom_indexeddb_dbschema_h__
+#ifndef dom_indexeddb_dbschema_h_
+#define dom_indexeddb_dbschema_h_
 
 #include <cstdint>
 

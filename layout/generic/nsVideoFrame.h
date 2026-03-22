@@ -6,8 +6,8 @@
 
 /* rendering object for the HTML <video> element */
 
-#ifndef nsVideoFrame_h___
-#define nsVideoFrame_h___
+#ifndef nsVideoFrame_h_
+#define nsVideoFrame_h_
 
 #include "nsContainerFrame.h"
 #include "nsIAnonymousContentCreator.h"
@@ -144,4 +144,4 @@ class nsAudioFrame final : public nsVideoFrame {
   virtual ~nsAudioFrame();
 };
 
-#endif /* nsVideoFrame_h___ */
+#endif /* nsVideoFrame_h_ */

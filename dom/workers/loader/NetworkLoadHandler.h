@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_workers_NetworkLoadHandler_h__
-#define mozilla_dom_workers_NetworkLoadHandler_h__
+#ifndef mozilla_dom_workers_NetworkLoadHandler_h_
+#define mozilla_dom_workers_NetworkLoadHandler_h_
 
 #include "mozilla/dom/ScriptLoadHandler.h"
 #include "mozilla/dom/WorkerLoadContext.h"
@@ -76,4 +76,4 @@ class NetworkLoadHandler final : public nsIStreamLoaderObserver,
 
 }  // namespace mozilla::dom::workerinternals::loader
 
-#endif /* mozilla_dom_workers_NetworkLoadHandler_h__ */
+#endif /* mozilla_dom_workers_NetworkLoadHandler_h_ */

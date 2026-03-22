@@ -12,8 +12,6 @@
 
 #  include "mozilla/Assertions.h"
 
-#  include <string.h>
-
 namespace js {
 namespace jit {
 namespace disasm {

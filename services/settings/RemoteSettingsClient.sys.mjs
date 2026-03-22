@@ -778,9 +778,10 @@ export class RemoteSettingsClient extends EventEmitter {
           // we fetch them and validate the signature immediately.
           if (this.verifySignature && lazy.ObjectUtils.isEmpty(localMetadata)) {
             lazy.console.debug(`${this.identifier} pull collection metadata`);
-            const metadata = await this.httpClient().getData({
-              query: { _expected: expectedTimestamp },
-            });
+            const { metadata } = await this._fetchChangeset(
+              expectedTimestamp,
+              expectedTimestamp
+            );
             await this.db.importChanges(metadata);
             // We don't bother validating the signature if the dump was just loaded. We do
             // if the dump was loaded at some other point (eg. from .get()).
@@ -1153,7 +1154,7 @@ export class RemoteSettingsClient extends EventEmitter {
     const hasLocalData = localTimestamp !== null;
     const { retry = false } = options;
     // On retry, we fully re-fetch the collection (no `?_since`).
-    const since = retry || !hasLocalData ? undefined : `"${localTimestamp}"`;
+    const since = retry || !hasLocalData ? undefined : localTimestamp;
 
     // Define an executor that will verify the signature of the local data.
     const verifySignatureLocalData = (resolve, reject) => {

@@ -7,7 +7,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LoginHelper: "resource://gre/modules/LoginHelper.sys.mjs",
 });
 
-const rustMirrorTelemetryVersion = "3";
+const rustMirrorTelemetryVersion = "4";
 
 // checks validity of an origin
 function checkOrigin(origin) {
@@ -150,6 +150,24 @@ function normalizeRustStorageErrorMessage(error) {
     .replace(/\{[0-9a-fA-F-]{36}\}/, "{UUID}");
 }
 
+//Normalize a Unix timestamp (ms) to the first day of its month at 00:00 UTC
+function roundToMonthUTC(timestampMs) {
+  if (!timestampMs) {
+    return null;
+  }
+
+  const d = new Date(timestampMs);
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1, 0, 0, 0, 0);
+}
+
+function isFtpOrigin(origin) {
+  if (!origin || typeof origin !== "string") {
+    return false;
+  }
+
+  return origin.toLowerCase().includes("ftp");
+}
+
 function recordMirrorFailure(runId, operation, error, login = null) {
   // lookup poisoned status
   const poisoned = Services.prefs.getBoolPref(
@@ -175,9 +193,14 @@ function recordMirrorFailure(runId, operation, error, login = null) {
     has_punycode_origin: false,
     has_punycode_form_action_origin: false,
 
+    has_ftp_origin: false,
+
     has_empty_password: false,
     has_username_line_break: false,
     has_username_nul: false,
+
+    time_created: null,
+    time_last_used: null,
   };
 
   if (login) {
@@ -196,9 +219,14 @@ function recordMirrorFailure(runId, operation, error, login = null) {
       login.formActionOrigin
     );
 
+    data.has_ftp_origin = isFtpOrigin(login.origin);
+
     data.has_empty_password = !login.password;
     data.has_username_line_break = containsLineBreaks(login.username);
     data.has_username_nul = containsNul(login.username);
+
+    data.time_created = roundToMonthUTC(login.timeCreated);
+    data.time_last_used = roundToMonthUTC(login.timeLastUsed);
   }
 
   Glean.pwmgr.rustWriteFailure.record(data);
@@ -366,7 +394,7 @@ export class LoginManagerRustMirror {
       case "removeLogin":
         this.#logger.log(`removing login ${subject.guid}...`);
         try {
-          this.#rustStorage.removeLogin(subject);
+          await this.#rustStorage.removeLoginAsync(subject);
           this.#logger.log(`removed login ${subject.guid}.`);
         } catch (e) {
           status = "failure";
@@ -379,7 +407,7 @@ export class LoginManagerRustMirror {
       case "removeAllLogins":
         this.#logger.log("removing all logins...");
         try {
-          this.#rustStorage.removeAllLogins();
+          await this.#rustStorage.removeAllLoginsAsync();
           this.#logger.log("removed all logins.");
         } catch (e) {
           status = "failure";

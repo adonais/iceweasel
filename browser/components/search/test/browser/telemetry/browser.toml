@@ -172,6 +172,8 @@ support-files = [
 ["browser_search_telemetry_engagement_target_after_load.js"]
 support-files = ["searchTelemetryAd_components_text.html", "serp.css"]
 
+["browser_search_telemetry_impressionAttributes.js"]
+
 ["browser_search_telemetry_new_window.js"]
 support-files = ["searchTelemetry.html", "searchTelemetryAd.html"]
 

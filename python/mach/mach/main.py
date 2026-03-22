@@ -547,6 +547,7 @@ def get_argument_parser(context=None, action=CommandAction, topsrcdir=None):
         help="Print verbose output.",
     )
     verbosity.add_argument(
+        "-q",
         "--quiet",
         dest="quiet",
         action="store_true",

@@ -40,6 +40,7 @@ internal fun loginsReducer(state: LoginsState, action: LoginsAction) = when (act
             newPassword = action.item.password,
             isPasswordVisible = true,
         ),
+        updateLoginState = UpdateLoginState.None,
     )
     is DetailLoginMenuAction.DeleteLoginMenuItemClicked -> state.copy(
         loginDeletionDialogState = LoginDeletionDialogState.Presenting(action.item.guid),
@@ -110,6 +111,16 @@ private fun LoginsState.handleEditLoginAction(action: EditLoginAction): LoginsSt
     when (action) {
         is EditLoginAction.UsernameChanged -> copy(
             loginsEditLoginState = this.loginsEditLoginState?.copy(newUsername = action.usernameChanged),
+            updateLoginState = if (loginItems.hasDuplicate(
+                    host = this.loginsEditLoginState?.login?.url,
+                    username = action.usernameChanged,
+                    guid = this.loginsEditLoginState?.login?.guid,
+                )
+            ) {
+                UpdateLoginState.Duplicate
+            } else {
+                UpdateLoginState.None
+            },
         )
         is EditLoginAction.PasswordChanged -> copy(
             loginsEditLoginState = this.loginsEditLoginState?.copy(newPassword = action.passwordChanged),
@@ -188,10 +199,15 @@ private fun LoginsState.respondToAddLoginBackClick(): LoginsState = when {
 private fun LoginsState.respondToEditLoginBackClick(): LoginsState = when {
     loginsEditLoginState != null -> copy(
         loginsEditLoginState = null,
+        updateLoginState = UpdateLoginState.None,
     )
 
     else -> this
 }
 
-private fun List<LoginItem>.hasDuplicate(host: String?, username: String?): Boolean =
-    this.isNotEmpty() && this.any { it.url == host && it.username == username }
+private fun List<LoginItem>.hasDuplicate(
+    host: String?,
+    username: String?,
+    guid: String? = null,
+): Boolean =
+    this.isNotEmpty() && this.any { it.url == host && it.username == username && guid != it.guid }

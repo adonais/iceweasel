@@ -114,7 +114,7 @@ already_AddRefed<MediaRawData> EncodedVideoChunkData::TakeData() {
 
 nsCString EncodedVideoChunkData::ToString() const {
   return nsFmtCString(
-      FMT_STRING("EncodedVideoChunkData[bytes: {}, type: {}, ts: {}, dur: {}]"),
+      "EncodedVideoChunkData[bytes: {}, type: {}, ts: {}, dur: {}]",
       mBuffer ? mBuffer->Length() : 0, GetEnumString(mType).get(), mTimestamp,
       mDuration ? std::to_string(*mDuration).c_str() : "none");
 }

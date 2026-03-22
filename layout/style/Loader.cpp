@@ -2322,7 +2322,6 @@ void Loader::StartDeferredLoads() {
 NS_IMPL_CYCLE_COLLECTION_CLASS(Loader)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Loader)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSheets);
   for (nsCOMPtr<nsICSSLoaderObserver>& obs : tmp->mObservers.ForwardRange()) {
     ImplCycleCollectionTraverse(cb, obs, "mozilla::css::Loader.mObservers");
   }
@@ -2383,3 +2382,12 @@ void Loader::UnblockOnload(bool aFireSync) {
 
 }  // namespace css
 }  // namespace mozilla
+#undef LOG_ERROR
+#undef LOG_WARN
+#undef LOG_DEBUG
+#undef LOG
+#undef LOG_ERROR_ENABLED
+#undef LOG_WARN_ENABLED
+#undef LOG_DEBUG_ENABLED
+#undef LOG_ENABLED
+#undef LOG_URI

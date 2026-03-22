@@ -177,10 +177,13 @@
 #   - attribute not specified (default): no code generated
 #   - true: generates corresponding LIR classes in LIROpsGenerated.h
 #
-# lir_temps
-# ===================
+# lir_temps, lir_temp64s, lir_temp_boxes
+# ======================================
 # Specifies the number of temporary virtual registers, LDefinitions, used by
-# the corresponding LIR op in case generate_lir is true.
+# the corresponding LIR op in the case generate_lir is true. The temp can be
+# either a single LDefinition, a LInt64Definition, or a LBoxDefinition
+# depending on the variant used.
+#
 # Possible values:
 #   - attribute not specified (default): number of temps is set to 0
 #   - number: sets number of temps max 15
@@ -786,6 +789,7 @@
   alias_set: none
   generate_lir: true
   lir_temps: 1
+  lir_temp_boxes: 1
 
 - name: WasmAnyRefFromJSObject
   operands:
@@ -857,7 +861,7 @@
     wideningOp: wasm::FieldWideningOp
   type_policy: none
   result_type: Int32
-  congruent_to: if_operands_equal
+  congruent_to: custom
   alias_set: none
   generate_lir: true
 
@@ -1452,6 +1456,7 @@
   movable: true
   congruent_to: if_operands_equal
   alias_set: none
+  possibly_calls: true
   generate_lir: true
 
 # Index of last non-whitespace character.
@@ -1463,6 +1468,7 @@
   movable: true
   congruent_to: if_operands_equal
   alias_set: none
+  possibly_calls: true
   generate_lir: true
 
 - name: StringSplit
@@ -1659,6 +1665,15 @@
   possibly_calls: true
   generate_lir: true
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+- name: DynamicImportSource
+  operands:
+    specifier: Value
+  result_type: Object
+  possibly_calls: true
+  generate_lir: true
+#endif
+
 - name: Lambda
   gen_boilerplate: false
 
@@ -1818,17 +1833,6 @@
   congruent_to: if_operands_equal
   alias_set: custom
   clone: true
-  generate_lir: true
-
-# Read the elements of an array buffer view and adjust it with the given offset.
-- name: ArrayBufferViewElementsWithOffset
-  operands:
-    object: Object
-    offset: IntPtr
-  arguments:
-    elementType: Scalar::Type
-  result_type: Elements
-  alias_set: custom
   generate_lir: true
 
 # Read the length of a resizable typed array.
@@ -2890,15 +2894,6 @@
   alias_set: custom
   generate_lir: true
   lir_temps: 2
-
-- name: AddSlotAndCallAddPropHook
-  operands:
-    object: Object
-    value: Value
-  arguments:
-    shape: Shape*
-  possibly_calls: true
-  generate_lir: true
 
 - name: StoreDynamicSlot
   gen_boilerplate: false
@@ -4520,6 +4515,19 @@
 
 - name: WasmRefCastAbstract
   gen_boilerplate: false
+
+# Produced by OptimizeWasmCasts when a cast is known to always succeed.
+- name: WasmRefCastInfallible
+  operands:
+    ref: WasmAnyRef
+  arguments:
+    destType: wasm::RefType
+  result_type: WasmAnyRef
+  type_policy: none
+  wasm_ref_type: wasm::MaybeRefType(destType)
+  guard: true
+  alias_set: none
+  congruent_to: custom
 
 - name: WasmRefConvertAnyExtern
   gen_boilerplate: false

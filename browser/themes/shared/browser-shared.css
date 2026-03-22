@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@import url("chrome://global/skin/design-system/toolbar.css");
 @import url("chrome://browser/skin/browser-colors.css");
 @import url("chrome://browser/skin/addons/extension-controlled.css");
 @import url("chrome://browser/skin/addons/unified-extensions.css");
@@ -24,7 +25,7 @@
 @import url("chrome://browser/skin/places/editBookmarkPanel.css");
 @import url("chrome://browser/skin/searchbar.css");
 @import url("chrome://browser/skin/sidebar.css");
-@import url("chrome://browser/skin/smartbar.css");
+@import url("chrome://browser/skin/urlbar-variables.css");
 @import url("chrome://browser/skin/aiWindowSidebar.css");
 @import url("chrome://browser/skin/customizableui/customizeMode.css");
 @import url("chrome://browser/skin/UITour.css");
@@ -90,6 +91,7 @@ body {
   --browser-stack-z-index-devtools-splitter: 1;
   --browser-stack-z-index-dialog-stack: 2;
   --browser-stack-z-index-rdm-toolbar: 3;
+  --browser-stack-z-index-screenshots-panel: 4;
 
   /* z-indices that fight in the general browser / toolbox area */
   --browser-area-z-index-toolbox: 0;
@@ -100,18 +102,6 @@ body {
 
   /* on macOS the animation of the toolbox in fullscreen needs the toolbox to be higher */
   --browser-area-z-index-toolbox-while-animating: 4;
-
-  --toolbarbutton-border-radius: var(--button-border-radius);
-  --identity-box-margin-inline: 4px;
-  --urlbar-min-height: max(32px, 1.4em);
-  --urlbar-icon-padding: calc((var(--urlbar-min-height) - 2px /* border */ - 2px /* padding */ - 16px /* icon */) / 2);
-
-  /* This should be used for icons and chiclets inside the input field, as well
-     as result rows. It makes the gap around them more uniform when they are
-     close to the field edges. */
-  --urlbar-inner-border-radius: calc(var(--toolbarbutton-border-radius) - 1px);
-  --urlbar-searchmodeswitcher-inline-padding: 6px;
-  --urlbar-searchmodeswitcher-margin-inline-end: 0.45em;
 
   --lwt-additional-images: none;
   --lwt-background-alignment: right top;
@@ -138,14 +128,6 @@ body {
 
   &[lwtheme] {
     color: var(--lwt-text-color);
-  }
-
-  &[uidensity="compact"] {
-    --urlbar-min-height: max(26px, 1.4em);
-  }
-
-  &[uidensity="touch"] {
-    --urlbar-min-height: max(34px, 1.4em);
   }
 }
 
@@ -318,14 +300,14 @@ body {
 
   @media (-moz-platform: linux) and (-moz-gtk-csd-reversed-placement: 0) {
     :root:not([sizemode="normal"]) &[type="pre-tabs"],
-    :root[gtktiledwindow="true"] &[type="pre-tabs"] {
+    :root[gtktiledwindow] &[type="pre-tabs"] {
       display: none;
     }
   }
 
   @media (-moz-gtk-csd-reversed-placement) {
     :root:not([sizemode="normal"]) &[type="post-tabs"],
-    :root[gtktiledwindow="true"] &[type="post-tabs"] {
+    :root[gtktiledwindow] &[type="post-tabs"] {
       display: none;
     }
   }
@@ -410,14 +392,12 @@ body {
 /* Profiles menu */
 
 #menu_newProfile {
-  -moz-context-properties: fill;
-  fill: currentColor;
   --menuitem-icon: url(chrome://global/skin/icons/plus.svg);
 }
 
 .menuitem-iconic-profile {
+  --menuitem-icon-fill: var(--menu-profiles-theme-bg);
   -moz-context-properties: fill, stroke;
-  fill: var(--menu-profiles-theme-bg);
   stroke: var(--menu-profiles-theme-fg);
 }
 
@@ -462,6 +442,11 @@ body {
   :root[taskbartab] & {
     display: none;
   }
+}
+
+/* Share Button */
+.share-more-button {
+  --menuitem-icon: url("chrome://global/skin/icons/more.svg");
 }
 
 /* Bookmarks toolbar */
@@ -600,12 +585,6 @@ menupopup::part(drop-indicator) {
   font-weight: var(--font-weight-semibold);
 }
 
-.unified-nav-back,
-.unified-nav-forward {
-  -moz-context-properties: fill;
-  fill: currentColor;
-}
-
 .unified-nav-back[_moz-menuactive]:-moz-locale-dir(ltr),
 .unified-nav-forward[_moz-menuactive]:-moz-locale-dir(rtl) {
   --menuitem-icon: url("chrome://browser/skin/back.svg") !important;
@@ -686,10 +665,10 @@ menupopup::part(drop-indicator) {
 
 /* Various panels and popup notifications */
 
-#screenshotsPagePanel {
+.screenshotsPagePanel {
   position: relative;
   max-height: 0;
-  z-index: 1; /* Above the web content in this stack. */
+  z-index: var(--browser-stack-z-index-screenshots-panel); /* Above the web content in this stack. */
 }
 
 /* Override theme colors since the picker uses extra colors that
@@ -806,7 +785,7 @@ menupopup::part(drop-indicator) {
 }
 
 #contextual-feature-recommendation-notification {
-  width: 400px;
+  width: var(--size-layout-large);
 
   .popup-notification-icon {
     margin-inline-end: 4px;
@@ -1410,12 +1389,18 @@ popupnotificationcontent {
   padding-inline-end: var(--space-small);
   border-radius: var(--border-radius-medium);
 
-  :root[ai-window] & {
-    list-style-image: url("chrome://browser/skin/ai-window.svg");
-  }
-
+  /* Toggle button icon is designed to be slightly larger at 20px */
   > .toolbarbutton-icon {
     padding: 8px;
+    box-shadow: 0 0 16px 4px var(--box-shadow-color-darker-layer-1) inset;
+  }
+
+  :root[ai-window] & {
+    list-style-image: url("chrome://browser/skin/ai-window.svg");
+
+    > .toolbarbutton-icon {
+      box-shadow: 0 0 16px 4px var(--smartwindow-toggle-shadow-color) inset;
+    }
   }
 }
 
@@ -1453,6 +1438,39 @@ popupnotificationcontent {
 
   :root:not([ai-window]) &::after {
     display: none;
+  }
+}
+
+/* AI window immersive view (hidden nav bar and buttons) */
+:root[ai-window][aiwindow-immersive-view] {
+  #nav-bar:not(.browser-titlebar) {
+    height: 0;
+    min-height: 0;
+    visibility: hidden;
+  }
+
+  #urlbar-container,
+  #nav-bar-customization-target > *:not(#sidebar-button),
+  #nav-bar-overflow-button,
+  #PanelUI-button,
+  #smartwindow-ask-button {
+    visibility: hidden;
+  }
+
+  /* immersive view styles exclusive for first run */
+  &[aiwindow-first-run] {
+    #TabsToolbar > .toolbar-items {
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    /* stylelint-disable-next-line media-query-no-invalid */
+    @media -moz-pref("sidebar.verticalTabs") {
+      #sidebar-main {
+        opacity: 0.2;
+        pointer-events: none;
+      }
+    }
   }
 }
 

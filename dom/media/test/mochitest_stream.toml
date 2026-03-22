@@ -702,6 +702,7 @@ support-files = [
 # painting a video to the canvas throws. bug 1372457, bug 1526207
 prefs = [
   "media.android-media-codec.preferred=false",
+  "media.ffvpx-hw.minimal=true",
 ]
 
 ["test_streams_capture_origin.html"]

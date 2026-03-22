@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsWindowRoot_h__
-#define nsWindowRoot_h__
+#ifndef nsWindowRoot_h_
+#define nsWindowRoot_h_
 
 class nsIGlobalObject;
 

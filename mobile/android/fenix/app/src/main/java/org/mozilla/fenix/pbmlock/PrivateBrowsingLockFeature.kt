@@ -17,7 +17,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -102,6 +104,7 @@ class PrivateBrowsingLockFeature(
     private val appStore: AppStore,
     private val browserStore: BrowserStore,
     private val storage: PrivateBrowsingLockStorage,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : DefaultLifecycleObserver {
     private var browserStoreScope: CoroutineScope? = null
     private var appStoreScope: CoroutineScope? = null
@@ -172,7 +175,7 @@ class PrivateBrowsingLockFeature(
     }
 
     private fun observePrivateTabsClosure() {
-        browserStoreScope = browserStore.flowScoped { flow ->
+        browserStoreScope = browserStore.flowScoped(dispatcher = mainDispatcher) { flow ->
             flow
                 .map { it.privateTabs.size }
                 .distinctUntilChanged()
@@ -189,7 +192,7 @@ class PrivateBrowsingLockFeature(
     }
 
     private fun observeOpenInFirefoxRequest() {
-        appStoreScope = appStore.flowScoped { flow ->
+        appStoreScope = appStore.flowScoped(dispatcher = mainDispatcher) { flow ->
             flow.map { it.openInFirefoxRequested }
                 .distinctUntilChanged()
                 .filter { it }

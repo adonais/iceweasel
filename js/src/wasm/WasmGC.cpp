@@ -172,7 +172,7 @@ void wasm::EmitWasmPreBarrierGuard(MacroAssembler& masm, Register instance,
                                    MaybeTrapSiteDesc trapSiteDesc) {
   // If no incremental GC has started, we don't need the barrier.
   masm.loadPtr(
-      Address(instance, Instance::offsetOfAddressOfNeedsIncrementalBarrier()),
+      Address(instance, Instance::offsetOfAddressOfNeedsMarkingBarrier()),
       scratch);
   masm.branchTest32(Assembler::Zero, Address(scratch, 0), Imm32(0x1),
                     skipBarrier);
@@ -260,15 +260,15 @@ void wasm::EmitWasmPostBarrierGuard(MacroAssembler& masm,
                                     const mozilla::Maybe<Register>& object,
                                     Register otherScratch, Register setValue,
                                     Label* skipBarrier) {
+  // If the pointer being stored is to a tenured object, no barrier.
+  masm.branchWasmAnyRefIsNurseryCell(false, setValue, otherScratch,
+                                     skipBarrier);
+
   // If there is a containing object and it is in the nursery, no barrier.
   if (object) {
     masm.branchPtrInNurseryChunk(Assembler::Equal, *object, otherScratch,
                                  skipBarrier);
   }
-
-  // If the pointer being stored is to a tenured object, no barrier.
-  masm.branchWasmAnyRefIsNurseryCell(false, setValue, otherScratch,
-                                     skipBarrier);
 }
 
 void wasm::CheckWholeCellLastElementCache(MacroAssembler& masm,

@@ -39,8 +39,8 @@ class VideoCaptureAndroid : public VideoCaptureImpl {
 
   DeviceInfoAndroid _deviceInfo;
   jobject _jCapturer;  // Global ref to Java VideoCaptureAndroid object.
-  VideoCaptureCapability _captureCapability;
-  bool _captureStarted;
+  VideoCaptureCapability _captureCapability RTC_GUARDED_BY(api_checker_);
+  bool _captureStarted RTC_GUARDED_BY(api_lock_);
 };
 
 }  // namespace videocapturemodule

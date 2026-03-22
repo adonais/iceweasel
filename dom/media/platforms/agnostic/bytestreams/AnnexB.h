@@ -80,11 +80,11 @@ class AnnexB {
   static bool FindAllNalTypes(const Span<const uint8_t>& aSpan,
                               const nsTArray<NAL_TYPES>& aTypes);
 
- private:
   static size_t FindNalType(const Span<const uint8_t>& aSpan,
                             const nsTArray<AnnexB::NALEntry>& aNalEntries,
                             NAL_TYPES aType, size_t aStartIndex);
 
+ private:
   // AVCC box parser helper.
   static mozilla::Result<mozilla::Ok, nsresult> ConvertSPSOrPPS(
       mozilla::BufferReader& aReader, uint8_t aCount,

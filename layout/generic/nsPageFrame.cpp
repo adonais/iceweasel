@@ -1042,8 +1042,8 @@ void nsPageBreakFrame::Reflow(nsPresContext* aPresContext,
     // frame and thus "misplaced".  nsFieldSetFrame::Reflow deals with these
     // forced breaks explicitly instead.
     const nsContainerFrame* parent = GetParent();
-    if (parent &&
-        parent->Style()->GetPseudoType() == PseudoStyleType::fieldsetContent) {
+    if (parent && parent->Style()->GetPseudoType() ==
+                      PseudoStyleType::MozFieldsetContent) {
       while ((parent = parent->GetParent())) {
         if (const nsFieldSetFrame* const fieldset = do_QueryFrame(parent)) {
           const auto* const legend = fieldset->GetLegend();

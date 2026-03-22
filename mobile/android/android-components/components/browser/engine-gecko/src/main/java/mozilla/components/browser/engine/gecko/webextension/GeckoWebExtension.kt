@@ -261,7 +261,7 @@ class GeckoWebExtension(
                 tabDetails: GeckoNativeWebExtension.CreateTabDetails,
             ): GeckoResult<GeckoSession>? {
                 val geckoEngineSession = GeckoEngineSession(
-                    runtime,
+                    runtime = runtime,
                     defaultSettings = defaultSettings,
                     openGeckoSession = false,
                 )
@@ -280,7 +280,7 @@ class GeckoWebExtension(
                     tabHandler.onNewTab(
                         this@GeckoWebExtension,
                         GeckoEngineSession(
-                            runtime,
+                            runtime = runtime,
                             defaultSettings = defaultSettings,
                         ),
                         false,

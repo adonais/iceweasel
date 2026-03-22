@@ -21,7 +21,7 @@ skip-if = [
 
 ["test_temporaryfile_stream.html"]
 run-if = [
-  "os == '!android'",
+  "os != 'android'",
 ]
 support-files = [
   "blob_verify.sjs",

@@ -198,9 +198,7 @@ static void DoRegisterHostApp() {
       ->Then(GetCurrentSerialEventTarget(), __func__,
              [](const DBusCallPromise::ResolveOrRejectValue& aValue) {
                if (aValue.IsReject()) {
-                 NS_WARNING(
-                     "Failed to register host application for "
-                     "portals\n");
+                 NS_WARNING("Failed to register host application for portals");
                }
              });
 }
@@ -296,9 +294,7 @@ bool ShouldUsePortal(PortalKind aPortalKind) {
   const int32_t pref = [&] {
     switch (aPortalKind) {
       case PortalKind::FilePicker:
-#ifdef EARLY_BETA_OR_EARLIER
         autoBehavior = true;
-#endif
         return StaticPrefs::widget_use_xdg_desktop_portal_file_picker();
       case PortalKind::MimeHandler:
         // Mime portal breaks default browser handling, see bug 1516290.

@@ -6,6 +6,7 @@ support-files = [
 prefs = [
   "browser.sessionstore.closedTabsFromAllWindows=true",
   "browser.sessionstore.closedTabsFromClosedWindows=true",
+  "browser.toolbars.share-button.enabled=true",
   "browser.urlbar.trustPanel.featureGate=false",
   "sidebar.revamp=false",
 ]
@@ -247,7 +248,7 @@ skip-if = [
 
 ["browser_995164_registerArea_during_customize_mode.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && opt", # Bug 1779584
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1779584
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1779584
 ]
 
@@ -392,6 +393,24 @@ skip-if = [
 ["browser_screenshot_button_disabled.js"]
 
 ["browser_searchbar_removal.js"]
+
+["browser_share_tab_button_linux.js"]
+run-if = [
+  "os == 'linux'",
+]
+support-files = ["browser_shareurl.html"]
+
+["browser_share_tab_button_macosx.js"]
+run-if = [
+  "os == 'mac'",
+]
+support-files = ["browser_shareurl.html"]
+
+["browser_share_tab_button_win.js"]
+run-if = [
+  "os == 'win'",
+]
+support-files = ["browser_shareurl.html"]
 
 ["browser_sidebar_button_reset.js"]
 

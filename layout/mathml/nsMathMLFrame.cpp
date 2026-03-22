@@ -6,13 +6,13 @@
 
 #include "nsMathMLFrame.h"
 
+#include "PseudoStyleType.h"
 #include "gfxContext.h"
 #include "gfxMathTable.h"
 #include "gfxUtils.h"
 #include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/dom/MathMLElement.h"
 #include "mozilla/gfx/2D.h"
-#include "nsCSSPseudoElements.h"
 #include "nsCSSValue.h"
 #include "nsLayoutUtils.h"
 #include "nsMathMLChar.h"
@@ -49,7 +49,7 @@ NS_IMETHODIMP
 nsMathMLFrame::InheritAutomaticData(nsIFrame* aParent) {
   mEmbellishData.flags.clear();
   mEmbellishData.coreFrame = nullptr;
-  mEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
+  mEmbellishData.direction = StretchDirection::Unsupported;
   mEmbellishData.leadingSpace = 0;
   mEmbellishData.trailingSpace = 0;
 
@@ -97,7 +97,7 @@ void nsMathMLFrame::GetEmbellishDataFrom(nsIFrame* aFrame,
   // initialize OUT params
   aEmbellishData.flags.clear();
   aEmbellishData.coreFrame = nullptr;
-  aEmbellishData.direction = NS_STRETCH_DIRECTION_UNSUPPORTED;
+  aEmbellishData.direction = StretchDirection::Unsupported;
   aEmbellishData.leadingSpace = 0;
   aEmbellishData.trailingSpace = 0;
 
@@ -195,13 +195,10 @@ nscoord nsMathMLFrame::CalcLength(const nsCSSValue& aCSSValue,
   nsCSSUnit unit = aCSSValue.GetUnit();
   mozilla::dom::NonSVGFrameUserSpaceMetrics userSpaceMetrics(aFrame);
 
-  // The axis is only relevant for percentages, so it doesn't matter what we use
-  // here.
-  auto axis = SVGContentUtils::X;
-
   return nsPresContext::CSSPixelsToAppUnits(
       aCSSValue.GetFloatValue() *
-      SVGLength::GetPixelsPerCSSUnit(userSpaceMetrics, unit, axis,
+      SVGLength::GetPixelsPerCSSUnit(userSpaceMetrics, unit,
+                                     SVGLength::Axis::XY,
                                      /* aApplyZoom = */ true));
 }
 
@@ -222,15 +219,13 @@ void nsMathMLFrame::GetSupDropFromChild(nsIFrame* aChild, nscoord& aSupDrop,
 }
 
 /* static */
-void nsMathMLFrame::ParseAndCalcNumericValue(const nsString& aString,
-                                             nscoord* aLengthValue,
-                                             uint32_t aFlags,
-                                             float aFontSizeInflation,
-                                             nsIFrame* aFrame) {
+void nsMathMLFrame::ParseAndCalcNumericValue(
+    const nsString& aString, nscoord* aLengthValue, float aFontSizeInflation,
+    nsIFrame* aFrame, dom::MathMLElement::ParseFlags aFlags) {
   nsCSSValue cssValue;
 
   if (!dom::MathMLElement::ParseNumericValue(
-          aString, cssValue, aFlags, aFrame->PresContext()->Document())) {
+          aString, cssValue, aFrame->PresContext()->Document(), aFlags)) {
     // Invalid attribute value. aLengthValue remains unchanged, so the default
     // length value is used.
     return;
@@ -285,7 +280,7 @@ void nsDisplayMathMLBar::Paint(nsDisplayListBuilder* aBuilder,
 void nsMathMLFrame::DisplayBar(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                                const nsRect& aRect,
                                const nsDisplayListSet& aLists,
-                               uint32_t aIndex) {
+                               uint16_t aIndex) {
   if (!aFrame->StyleVisibility()->IsVisible() || aRect.IsEmpty()) {
     return;
   }

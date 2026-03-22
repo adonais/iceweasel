@@ -30,6 +30,7 @@
 #include "nsHttpChunkedDecoder.h"
 #include "nsHttpDigestAuth.h"
 #include "nsHttpHandler.h"
+#include "nsHttpConnectionMgr.h"
 #include "nsHttpNTLMAuth.h"
 #ifdef MOZ_AUTH_EXTENSION
 #  include "nsHttpNegotiateAuth.h"
@@ -60,6 +61,7 @@
 #include "nsQueryObject.h"
 #include "nsSocketTransportService2.h"
 #include "nsStringStream.h"
+#include "nsThreadUtils.h"
 #include "nsTransportUtils.h"
 #include "sslerr.h"
 #include "SpeculativeTransaction.h"
@@ -74,6 +76,19 @@
 using namespace mozilla::net;
 
 namespace mozilla::net {
+
+//-----------------------------------------------------------------------------
+// nsHttpTransaction::UpdateSecurityCallbacks
+//-----------------------------------------------------------------------------
+
+NS_IMPL_ISUPPORTS_INHERITED(nsHttpTransaction::UpdateSecurityCallbacks,
+                            Runnable, nsIRunnablePriority)
+
+NS_IMETHODIMP
+nsHttpTransaction::UpdateSecurityCallbacks::GetPriority(uint32_t* aPriority) {
+  *aPriority = mPriority;
+  return NS_OK;
+}
 
 //-----------------------------------------------------------------------------
 // nsHttpTransaction <public>
@@ -422,6 +437,12 @@ nsresult nsHttpTransaction::AsyncRead(nsIStreamListener* listener,
       nsInputStreamPump::Create(getter_AddRefs(transactionPump), mPipeIn);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  // If this is for a TRR request, we increase the priority of the
+  // OnInputStreamReady runnables
+  if (mIsTRRTransaction) {
+    transactionPump->SetHighPriority(true);
+  }
+
   rv = transactionPump->AsyncRead(listener);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -440,6 +461,10 @@ void nsHttpTransaction::SetH2WSConnRefTaken() {
     nsCOMPtr<nsIRunnable> event =
         NewRunnableMethod("nsHttpTransaction::SetH2WSConnRefTaken", this,
                           &nsHttpTransaction::SetH2WSConnRefTaken);
+    if (mIsTRRTransaction) {
+      event = new PrioritizableRunnable(
+          event.forget(), nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
+    }
     gSocketTransportService->Dispatch(event, NS_DISPATCH_NORMAL);
     return;
   }
@@ -544,12 +569,6 @@ void nsHttpTransaction::OnActivated() {
   mActivated = true;
   gHttpHandler->ConnMgr()->AddActiveTransaction(this);
   FinalizeConnInfo();
-  if (mConnection) {
-    RefPtr<HttpConnectionBase> conn = mConnection->HttpConnection();
-    if (conn) {
-      conn->RecordConnectionAddressType();
-    }
-  }
 }
 
 void nsHttpTransaction::GetSecurityCallbacks(nsIInterfaceRequestor** cb) {
@@ -566,8 +585,10 @@ void nsHttpTransaction::SetSecurityCallbacks(
   }
 
   if (gSocketTransportService) {
-    RefPtr<UpdateSecurityCallbacks> event =
-        new UpdateSecurityCallbacks(this, aCallbacks);
+    RefPtr<UpdateSecurityCallbacks> event = new UpdateSecurityCallbacks(
+        this, aCallbacks,
+        mIsTRRTransaction ? nsIRunnablePriority::PRIORITY_MEDIUMHIGH
+                          : nsIRunnablePriority::PRIORITY_NORMAL);
     gSocketTransportService->Dispatch(event, nsIEventTarget::DISPATCH_NORMAL);
   }
 }
@@ -897,6 +918,10 @@ void nsHttpTransaction::DontReuseConnection() {
     nsCOMPtr<nsIRunnable> event =
         NewRunnableMethod("nsHttpTransaction::DontReuseConnection", this,
                           &nsHttpTransaction::DontReuseConnection);
+    if (mIsTRRTransaction) {
+      event = new PrioritizableRunnable(
+          event.forget(), nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
+    }
     gSocketTransportService->Dispatch(event, NS_DISPATCH_NORMAL);
     return;
   }
@@ -1506,6 +1531,12 @@ void nsHttpTransaction::Close(nsresult reason) {
           if (psm::IsNSSErrorCode(-1 * NS_ERROR_GET_CODE(aStatus))) {
             return TRANSACTION_RESTART_HTTPS_RR_SEC_ERROR;
           }
+          if (aStatus == NS_ERROR_NOT_CONNECTED ||
+              aStatus == NS_ERROR_SOCKET_ADDRESS_IN_USE ||
+              aStatus == NS_ERROR_FILE_ALREADY_EXISTS ||
+              aStatus == NS_ERROR_NET_INTERRUPT) {
+            return TRANSACTION_RESTART_OTHERS;
+          }
           MOZ_ASSERT_UNREACHABLE("Unexpected reason");
           return TRANSACTION_RESTART_OTHERS;
         };
@@ -1639,6 +1670,13 @@ void nsHttpTransaction::Close(nsresult reason) {
     if (mOrigConnInfo) {
       glean::http::dns_httpssvc_connection_failed_reason.AccumulateSingleSample(
           HTTPSSVC_CONNECTION_OK);
+    }
+
+    if (mConnection) {
+      RefPtr<HttpConnectionBase> conn = mConnection->HttpConnection();
+      if (conn) {
+        conn->RecordConnectionAddressType();
+      }
     }
   }
 

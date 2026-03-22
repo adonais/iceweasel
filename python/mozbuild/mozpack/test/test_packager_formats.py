@@ -411,7 +411,7 @@ class TestFormatters(TestErrors, unittest.TestCase):
             self.assertFalse(is_resource(base, "defaults/pref/channel-prefs.js"))
             self.assertTrue(is_resource(base, "defaults/preferences/foo.js"))
             self.assertFalse(is_resource(base, "defaults/preferences/channel-prefs.js"))
-            self.assertTrue(is_resource(base, "modules/foo.jsm"))
+            self.assertTrue(is_resource(base, "modules/foo.sys.mjs"))
             self.assertTrue(is_resource(base, "greprefs.js"))
             self.assertTrue(is_resource(base, "hyphenation/foo"))
             self.assertTrue(is_resource(base, "default.locale"))

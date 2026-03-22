@@ -6,8 +6,6 @@
 
 #include "jit/loong64/MacroAssembler-loong64.h"
 
-#include "jsmath.h"
-
 #include "jit/Bailouts.h"
 #include "jit/BaselineFrame.h"
 #include "jit/JitFrames.h"
@@ -16,6 +14,7 @@
 #include "jit/MacroAssembler.h"
 #include "jit/MoveEmitter.h"
 #include "util/Memory.h"
+#include "util/PortableMath.h"
 #include "vm/JitActivation.h"  // js::jit::JitActivation
 #include "vm/JSContext.h"
 #include "wasm/WasmStubs.h"

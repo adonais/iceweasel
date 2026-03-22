@@ -395,6 +395,14 @@ export const FormAutofillHeuristics = {
   _parseHouseNumberFields(scanner, fieldDetail) {
     if (fieldDetail?.fieldName == "address-housenumber") {
       const savedIndex = scanner.parsingIndex;
+
+      // A house number suffix immediately afterwards implies that this
+      // really is a house number field.
+      const detail = scanner.getFieldDetailByIndex(savedIndex + 1);
+      if (detail?.fieldName == "address-extra-housesuffix") {
+        return false;
+      }
+
       for (let idx = 0; !scanner.parsingFinished; idx++) {
         const detail = scanner.getFieldDetailByIndex(idx);
         if (!detail) {

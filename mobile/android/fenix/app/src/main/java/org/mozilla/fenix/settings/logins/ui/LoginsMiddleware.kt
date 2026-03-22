@@ -127,6 +127,7 @@ internal class LoginsMiddleware(
             is AddLoginAction.HostChanged,
             is AddLoginAction.UsernameChanged,
             is AddLoginAction.PasswordChanged,
+            is DetailLoginAction.PasswordVisibilityChanged,
             is DetailLoginMenuAction.DeleteLoginMenuItemClicked,
             is LoginDeletionDialogAction.CancelTapped,
                 -> Unit

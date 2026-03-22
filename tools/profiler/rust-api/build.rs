@@ -80,6 +80,8 @@ fn generate_bindings() {
         .allowlist_function("gecko_profiler_.*")
         .allowlist_var("mozilla::profiler::detail::RacyFeatures::sActiveAndFeatures")
         .allowlist_type("mozilla::profiler::detail::RacyFeatures")
+        .allowlist_item("ThreadProfilingFeatures")
+        .rustified_enum("ThreadProfilingFeatures")
         .rustified_enum("mozilla::StackCaptureOptions")
         .rustified_enum("mozilla::MarkerSchema_Location")
         .rustified_enum("mozilla::MarkerSchema_Format")

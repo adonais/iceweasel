@@ -30,8 +30,8 @@ import org.mozilla.fenix.settings.address.store.DeleteTapped
 import org.mozilla.fenix.settings.address.store.SaveTapped
 import org.mozilla.fenix.settings.address.store.isEditing
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -105,7 +105,7 @@ private val AddressState.titleId: Int
 @Preview
 @Composable
 private fun AddTopBarPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     val store = AddressStore(AddressState.initial(), listOf())
 
@@ -117,7 +117,7 @@ private fun AddTopBarPreview(
 @Preview
 @Composable
 private fun EditTopBarPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     val address = Address("BEEF", "Work", "Mozilla", "", "", "", "", "", "", "", "")
     val store = AddressStore(AddressState.initial(address = address), listOf())

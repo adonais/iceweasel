@@ -199,9 +199,9 @@ def quote(*strings):
     """Given one or more strings, returns a quoted string that can be used
     literally on a shell command line.
 
-        >>> quote('a', 'b')
+        >>> quote("a", "b")
         "a b"
-        >>> quote('a b', 'c')
+        >>> quote("a b", "c")
         "'a b' c"
     """
     return " ".join(_quote(s) for s in strings)

@@ -62,6 +62,7 @@ describe("<FocusTimer>", () => {
         <FocusTimer
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={false}
         />
       </WrapWithProvider>
     );
@@ -99,6 +100,7 @@ describe("<FocusTimer>", () => {
         <FocusTimer
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={false}
         />
       </WrapWithProvider>
     );
@@ -117,7 +119,20 @@ describe("<FocusTimer>", () => {
       .onClick();
     wrapper.update();
     assert.ok(wrapper.find(".progress-circle-wrapper").exists());
-    assert.equal(dispatch.getCall(0).args[0].type, at.WIDGETS_TIMER_PLAY);
+
+    const [playAction] = dispatch.getCall(0).args;
+    assert.equal(playAction.type, at.WIDGETS_TIMER_PLAY);
+
+    const [oldTelemetryEvent] = dispatch.getCall(1).args;
+    assert.equal(oldTelemetryEvent.type, at.WIDGETS_TIMER_USER_EVENT);
+    assert.equal(oldTelemetryEvent.data.userAction, "timer_play");
+
+    const [newTelemetryEvent] = dispatch.getCall(2).args;
+    assert.equal(newTelemetryEvent.type, at.WIDGETS_USER_EVENT);
+    assert.equal(newTelemetryEvent.data.widget_name, "focus_timer");
+    assert.equal(newTelemetryEvent.data.widget_source, "widget");
+    assert.equal(newTelemetryEvent.data.user_action, "timer_play");
+    assert.equal(newTelemetryEvent.data.widget_size, "medium");
   });
 
   it("should pause the timer when pressing pause", () => {
@@ -139,6 +154,7 @@ describe("<FocusTimer>", () => {
         <FocusTimer
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={false}
         />
       </WrapWithProvider>
     );
@@ -148,7 +164,20 @@ describe("<FocusTimer>", () => {
     );
     assert.ok(pauseBtn.exists(), "Pause button should be rendered");
     pauseBtn.props().onClick();
-    assert.equal(dispatch.getCall(0).args[0].type, at.WIDGETS_TIMER_PAUSE);
+
+    const [pauseAction] = dispatch.getCall(0).args;
+    assert.equal(pauseAction.type, at.WIDGETS_TIMER_PAUSE);
+
+    const [oldTelemetryEvent] = dispatch.getCall(1).args;
+    assert.equal(oldTelemetryEvent.type, at.WIDGETS_TIMER_USER_EVENT);
+    assert.equal(oldTelemetryEvent.data.userAction, "timer_pause");
+
+    const [newTelemetryEvent] = dispatch.getCall(2).args;
+    assert.equal(newTelemetryEvent.type, at.WIDGETS_USER_EVENT);
+    assert.equal(newTelemetryEvent.data.widget_name, "focus_timer");
+    assert.equal(newTelemetryEvent.data.widget_source, "widget");
+    assert.equal(newTelemetryEvent.data.user_action, "timer_pause");
+    assert.equal(newTelemetryEvent.data.widget_size, "medium");
   });
 
   it("should reset timer should be hidden when timer is not running", () => {
@@ -177,6 +206,7 @@ describe("<FocusTimer>", () => {
         <FocusTimer
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={false}
         />
       </WrapWithProvider>
     );
@@ -187,7 +217,20 @@ describe("<FocusTimer>", () => {
 
     assert.ok(resetBtn.exists(), "Reset buttons should be rendered");
     resetBtn.props().onClick();
-    assert.equal(dispatch.getCall(0).args[0].type, at.WIDGETS_TIMER_RESET);
+
+    const [resetAction] = dispatch.getCall(0).args;
+    assert.equal(resetAction.type, at.WIDGETS_TIMER_RESET);
+
+    const [oldTelemetryEvent] = dispatch.getCall(1).args;
+    assert.equal(oldTelemetryEvent.type, at.WIDGETS_TIMER_USER_EVENT);
+    assert.equal(oldTelemetryEvent.data.userAction, "timer_reset");
+
+    const [newTelemetryEvent] = dispatch.getCall(2).args;
+    assert.equal(newTelemetryEvent.type, at.WIDGETS_USER_EVENT);
+    assert.equal(newTelemetryEvent.data.widget_name, "focus_timer");
+    assert.equal(newTelemetryEvent.data.widget_source, "widget");
+    assert.equal(newTelemetryEvent.data.user_action, "timer_reset");
+    assert.equal(newTelemetryEvent.data.widget_size, "medium");
 
     const initialUserDuration = 12 * 60;
 
@@ -209,6 +252,7 @@ describe("<FocusTimer>", () => {
         <FocusTimer
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={false}
         />
       </WrapWithProvider>
     );
@@ -233,6 +277,8 @@ describe("<FocusTimer>", () => {
       .filter(Boolean);
 
     assert.ok(types.includes(at.WIDGETS_TIMER_PAUSE));
+    assert.ok(types.includes(at.WIDGETS_TIMER_USER_EVENT));
+    assert.ok(types.includes(at.WIDGETS_USER_EVENT));
     assert.ok(types.includes(at.WIDGETS_TIMER_SET_TYPE));
 
     const findTypeToggled = dispatch
@@ -245,6 +291,32 @@ describe("<FocusTimer>", () => {
       "break",
       "timer should switch to break mode"
     );
+
+    const unifiedPauseEvent = dispatch
+      .getCalls()
+      .map(call => call.args[0])
+      .find(
+        action =>
+          action.type === at.WIDGETS_USER_EVENT &&
+          action.data.user_action === "timer_pause"
+      );
+
+    assert.ok(unifiedPauseEvent);
+    assert.equal(unifiedPauseEvent.data.widget_name, "focus_timer");
+    assert.equal(unifiedPauseEvent.data.widget_source, "widget");
+
+    const unifiedToggleEvent = dispatch
+      .getCalls()
+      .map(call => call.args[0])
+      .find(
+        action =>
+          action.type === at.WIDGETS_USER_EVENT &&
+          action.data.user_action === "timer_toggle_break"
+      );
+
+    assert.ok(unifiedToggleEvent);
+    assert.equal(unifiedToggleEvent.data.widget_name, "focus_timer");
+    assert.equal(unifiedToggleEvent.data.widget_source, "widget");
   });
 
   it("should dispatch set type when clicking the focus timer", () => {
@@ -260,6 +332,8 @@ describe("<FocusTimer>", () => {
       .filter(Boolean);
 
     assert.ok(types.includes(at.WIDGETS_TIMER_PAUSE));
+    assert.ok(types.includes(at.WIDGETS_TIMER_USER_EVENT));
+    assert.ok(types.includes(at.WIDGETS_USER_EVENT));
     assert.ok(types.includes(at.WIDGETS_TIMER_SET_TYPE));
 
     const findTypeToggled = dispatch
@@ -272,6 +346,19 @@ describe("<FocusTimer>", () => {
       "focus",
       "focus should switch to break mode"
     );
+
+    const unifiedToggleEvent = dispatch
+      .getCalls()
+      .map(call => call.args[0])
+      .find(
+        action =>
+          action.type === at.WIDGETS_USER_EVENT &&
+          action.data.user_action === "timer_toggle_focus"
+      );
+
+    assert.ok(unifiedToggleEvent);
+    assert.equal(unifiedToggleEvent.data.widget_name, "focus_timer");
+    assert.equal(unifiedToggleEvent.data.widget_source, "widget");
   });
 
   it("should toggle from focus to break timer automatically on end", () => {
@@ -294,6 +381,7 @@ describe("<FocusTimer>", () => {
         <FocusTimer
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={false}
         />
       </WrapWithProvider>
     );
@@ -311,6 +399,8 @@ describe("<FocusTimer>", () => {
       .filter(Boolean);
 
     assert.ok(types.includes(at.WIDGETS_TIMER_END));
+    assert.ok(types.includes(at.WIDGETS_TIMER_USER_EVENT));
+    assert.ok(types.includes(at.WIDGETS_USER_EVENT));
     assert.ok(types.includes(at.WIDGETS_TIMER_SET_TYPE));
 
     const findTypeToggled = dispatch
@@ -323,6 +413,19 @@ describe("<FocusTimer>", () => {
       "break",
       "timer should switch to break mode"
     );
+
+    const unifiedEndEvent = dispatch
+      .getCalls()
+      .map(call => call.args[0])
+      .find(
+        action =>
+          action.type === at.WIDGETS_USER_EVENT &&
+          action.data.user_action === "timer_end"
+      );
+
+    assert.ok(unifiedEndEvent);
+    assert.equal(unifiedEndEvent.data.widget_name, "focus_timer");
+    assert.equal(unifiedEndEvent.data.widget_source, "widget");
   });
 
   it("should toggle from break to focus timer automatically on end", () => {
@@ -346,6 +449,7 @@ describe("<FocusTimer>", () => {
         <FocusTimer
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={false}
         />
       </WrapWithProvider>
     );
@@ -360,6 +464,8 @@ describe("<FocusTimer>", () => {
     const types = dispatch.getCalls().map(call => call.args[0].type);
 
     assert.ok(types.includes(at.WIDGETS_TIMER_END));
+    assert.ok(types.includes(at.WIDGETS_TIMER_USER_EVENT));
+    assert.ok(types.includes(at.WIDGETS_USER_EVENT));
     assert.ok(types.includes(at.WIDGETS_TIMER_SET_TYPE));
 
     const findTypeToggled = dispatch
@@ -372,6 +478,19 @@ describe("<FocusTimer>", () => {
       "focus",
       "timer should switch to focus mode"
     );
+
+    const unifiedEndEvent = dispatch
+      .getCalls()
+      .map(call => call.args[0])
+      .find(
+        action =>
+          action.type === at.WIDGETS_USER_EVENT &&
+          action.data.user_action === "timer_end"
+      );
+
+    assert.ok(unifiedEndEvent);
+    assert.equal(unifiedEndEvent.data.widget_name, "focus_timer");
+    assert.equal(unifiedEndEvent.data.widget_source, "widget");
   });
 
   it("should pause when time input is focused", () => {
@@ -392,6 +511,7 @@ describe("<FocusTimer>", () => {
         <FocusTimer
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={false}
         />
       </WrapWithProvider>
     );
@@ -400,7 +520,19 @@ describe("<FocusTimer>", () => {
     assert.ok(minutesSpan.exists());
 
     minutesSpan.simulate("focus");
-    assert.equal(dispatch.getCall(0).args[0].type, at.WIDGETS_TIMER_PAUSE);
+
+    const [pauseAction] = dispatch.getCall(0).args;
+    assert.equal(pauseAction.type, at.WIDGETS_TIMER_PAUSE);
+
+    const [oldTelemetryEvent] = dispatch.getCall(1).args;
+    assert.equal(oldTelemetryEvent.type, at.WIDGETS_TIMER_USER_EVENT);
+    assert.equal(oldTelemetryEvent.data.userAction, "timer_pause");
+
+    const [newTelemetryEvent] = dispatch.getCall(2).args;
+    assert.equal(newTelemetryEvent.type, at.WIDGETS_USER_EVENT);
+    assert.equal(newTelemetryEvent.data.widget_name, "focus_timer");
+    assert.equal(newTelemetryEvent.data.widget_source, "widget");
+    assert.equal(newTelemetryEvent.data.user_action, "timer_pause");
   });
 
   it("should reset to user's initial duration after timer ends", () => {
@@ -428,6 +560,7 @@ describe("<FocusTimer>", () => {
         <FocusTimer
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={false}
         />
       </WrapWithProvider>
     );
@@ -483,6 +616,7 @@ describe("<FocusTimer>", () => {
         <FocusTimer
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={false}
         />
       </WrapWithProvider>
     );
@@ -573,6 +707,7 @@ describe("<FocusTimer>", () => {
           <FocusTimer
             dispatch={dispatch}
             handleUserInteraction={handleUserInteraction}
+            widgetsMayBeMaximized={false}
           />
         </WrapWithProvider>
       );
@@ -611,9 +746,19 @@ describe("<FocusTimer>", () => {
       );
       menuItem.props().onClick();
 
-      assert.ok(dispatch.calledOnce);
-      const [action] = dispatch.getCall(0).args;
-      assert.equal(action.type, at.SET_PREF);
+      assert.ok(dispatch.calledTwice);
+
+      const [setPrefAction] = dispatch.getCall(0).args;
+      assert.equal(setPrefAction.type, at.SET_PREF);
+      assert.equal(setPrefAction.data.name, "widgets.focusTimer.enabled");
+      assert.equal(setPrefAction.data.value, false);
+
+      const [telemetryEvent] = dispatch.getCall(1).args;
+      assert.equal(telemetryEvent.type, at.WIDGETS_ENABLED);
+      assert.equal(telemetryEvent.data.widget_name, "focus_timer");
+      assert.equal(telemetryEvent.data.widget_source, "context_menu");
+      assert.equal(telemetryEvent.data.enabled, false);
+      assert.equal(telemetryEvent.data.widget_size, "medium");
     });
 
     it("should dispatch OPEN_LINK when the Learn More option is clicked", () => {

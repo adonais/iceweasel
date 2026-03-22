@@ -7,7 +7,7 @@ from shlex import quote as shell_quote
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
 from taskgraph.util import path
-from taskgraph.util.schema import Schema, taskref_or_string
+from taskgraph.util.schema import LegacySchema, taskref_or_string
 from voluptuous import Any, Optional, Required
 
 secret_schema = {
@@ -24,7 +24,7 @@ dummy_secret_schema = {
     Optional("json"): bool,
 }
 
-gradlew_schema = Schema({
+gradlew_schema = LegacySchema({
     Required("using"): "gradlew",
     Optional("pre-gradlew"): [[str]],
     Required("gradlew"): [str],
@@ -36,7 +36,7 @@ gradlew_schema = Schema({
     Optional("dummy-secrets"): [dummy_secret_schema],
 })
 
-run_commands_schema = Schema({
+run_commands_schema = LegacySchema({
     Required("using"): "run-commands",
     Optional("pre-commands"): [[str]],
     Required("commands"): [[taskref_or_string]],

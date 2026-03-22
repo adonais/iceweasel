@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Không để lại dấu vết trên thiết bị này</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s xóa cookie, lịch sử và dữ liệu trang web của bạn khi bạn đóng tất cả các thẻ riêng tư. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -325,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Dịch trang</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Tóm tắt trang</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Mới</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Báo cáo trang web bị hỏng…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -377,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Đã dịch trang từ %1$s sang %2$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Lắc thiết bị của bạn để tóm tắt trang này trong vài giây. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -927,8 +924,6 @@
   <string name="preferences_search_browsing_history">Tìm kiếm lịch sử duyệt web</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Tìm kiếm dấu trang</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Hiển thị lối tắt</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Tìm kiếm các thẻ đã đồng bộ hóa</string>
   <!-- Preference for account settings -->
@@ -949,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Đề xuất từ %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Nhận đề xuất từ ​​web liên quan đến tìm kiếm của bạn</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Nhận các đề xuất từ Mozilla khi bạn nhập</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Chia sẻ liên kết</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -975,7 +972,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">Bạn không có quyền sử dụng thư mục này. Hãy thử chọn một thư mục khác.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Bạn không có quyền sử dụng thư mục này. Hãy thử chọn một thư mục khác.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Quản lý tải xuống bằng ứng dụng khác</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1039,8 +1036,10 @@
   <!--
     Customize Home
 
-    Header text for jumping back into the recent tab in customize the home screen
+    Title for the customize home screen section with privacy report.
   -->
+  <string name="customize_toggle_privacy_report">Báo cáo về quyền riêng tư</string>
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Trang đã xem gần đây</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Dấu trang</string>
@@ -1599,6 +1598,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Chia sẻ</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Thêm vào bộ sưu tập</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Thêm vào nhóm</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Chia sẻ các thẻ đã chọn</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1639,6 +1640,27 @@
   <string name="pwa_site_controls_title_private">%1$s (Chế độ riêng tư)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Mở tìm kiếm thẻ</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Tạo nhóm thẻ</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Chỉnh sửa nhóm</string>
+  <string name="create_tab_group_save_button">Lưu</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Đóng chỉnh sửa nhóm thẻ</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Nhóm thẻ</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Nhóm %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Tên</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Tên</string>
   <!--
     History
 
@@ -1754,11 +1776,26 @@
   <string name="download_rename_dialog_label">Tên</string>
   <string name="download_rename_dialog_confirm_button">Lưu</string>
   <string name="download_rename_dialog_cancel_button">Hủy bỏ</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Tập tin có tên “%s” đã tồn tại ở vị trí này</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Tên tập tin không được chứa ký tự “/”</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Không thể đổi tên tập tin</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Không thể đổi tên tập tin này do các hạn chế về hệ thống hoặc dung lượng lưu trữ.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Thay đổi loại tập tin thành %s?</string>
+  <string name="change_file_extension_description">Thao tác này sẽ mở tập tin bằng một ứng dụng khác và có thể gây rủi ro cho thiết bị của bạn.</string>
+  <string name="change_file_extension_cancel_button">Hủy bỏ</string>
+  <string name="change_file_extension_confirm_button">Có, thay đổi</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Trong tiến trình</string>
   <!--
@@ -1958,7 +1995,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Chỉnh sửa</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Sao chép</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Sao chép</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Chia sẻ</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2014,11 +2051,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Đã xóa %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">HOÀN TÁC</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">HOÀN TÁC</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">Đã xóa %s</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">Đã xóa %s</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">Đã xoá %s mục</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Đã xoá %s mục</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Điều hướng quay lại</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2288,23 +2325,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Đặt Firefox thành trình duyệt mặc định của bạn</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Thử duyệt web riêng tư</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Thử duyệt web riêng tư</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Duyệt mà không để lại lịch sử hoặc cookie trong %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Duyệt mà không để lại lịch sử hoặc cookie trong %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Duyệt web không để lại dấu vết</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Duyệt web không để lại dấu vết</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Duyệt web riêng tư trong %1$s không lưu thông tin của bạn.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Duyệt web riêng tư trong %1$s không lưu thông tin của bạn.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Bắt đầu tìm kiếm đầu tiên của bạn</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Bắt đầu tìm kiếm đầu tiên của bạn</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Tìm một cái gì đó gần đây. Hoặc khám phá một cái gì đó thú vị.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Tìm một cái gì đó gần đây. Hoặc khám phá một cái gì đó thú vị.</string>
   <!--
     Survey
 
@@ -2480,6 +2517,16 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s bảo vệ bạn khỏi các trình theo dõi phổ biến nhất đang theo dõi những điều bạn làm trên internet.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Tìm hiểu thêm</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="other">%d trình theo dõi đã bị chặn</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Bạn đã được bảo vệ</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Tiêu chuẩn (mặc định)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2876,6 +2923,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Tìm hiểu thêm</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Quản lý email ẩn danh</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Bạn đã sử dụng hết 5 email ẩn danh miễn phí, vì vậy chúng tôi đã chọn một cái để bạn sử dụng lại.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Hiện tại email ẩn danh không khả dụng. Hãy thử lại sau vài phút.</string>
   <!--
     Autofill
 
@@ -3646,6 +3697,13 @@
   -->
   <string name="connection_security_panel_verified_by">Đã xác minh bởi %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Cấp cho %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Được chứng nhận/đủ điều kiện theo quy định tại Quy định (EU) 2024/1183.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3695,6 +3753,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Thêm vào thẻ riêng tư</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -3733,6 +3793,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Tôi không sử dụng tìm kiếm trên Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Tôi không sử dụng đồng bộ hoá</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Nó chậm hoặc bị lỗi</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Các tính năng khó tìm hoặc bị thiếu</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Nó khó hiểu hoặc khó sử dụng</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Nó tạm ổn, nhưng không tốt hơn các trình duyệt khác</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Tôi dự định sẽ tiếp tục sử dụng Firefox</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Giúp việc in ấn trong Firefox tốt hơn. Chỉ mất một giây</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3747,6 +3817,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Bạn hài lòng với trải nghiệm tìm kiếm trên Firefox ở mức độ nào?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Bạn hài lòng với trải nghiệm đồng bộ hóa trong Firefox như thế nào?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Giúp chúng tôi cải thiện Firefox. Trải nghiệm của bạn cho đến nay được mô tả như thế nào?</string>
   <!--
     Accessibility
 
@@ -4045,8 +4117,6 @@
   <string name="content_description_settings_search_navigate_back">Điều hướng quay lại</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Không có tìm kiếm gần đây</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Có lỗi đã xảy ra</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Xóa tất cả</string>
   <!-- Section header for recent search results -->

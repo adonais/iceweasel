@@ -63,13 +63,12 @@ bool Platform::CreateFreezable(FreezableHandle& aHandle, size_t aSize) {
 }
 
 PlatformHandle Platform::CloneHandle(const PlatformHandle& aHandle) {
-  const int new_fd = dup(aHandle.get());
-  if (new_fd < 0) {
+  auto rv = DuplicateFileHandle(aHandle);
+  if (!rv) {
     MOZ_LOG_FMT(gSharedMemoryLog, LogLevel::Warning,
                 "failed to duplicate file descriptor: {}", strerror(errno));
-    return nullptr;
   }
-  return mozilla::UniqueFileHandle(new_fd);
+  return rv;
 }
 
 bool Platform::Freeze(FreezableHandle& aHandle) {

@@ -60,7 +60,14 @@ class BoxModel {
 
     this.inspector.selection.on("new-node-front", this.onNewSelection);
     this.inspector.sidebar.on("select", this.onSidebarSelect);
+
+    const { promise, resolve } = Promise.withResolvers();
+    this.initialized = promise;
+    this.#initializedPromiseResolve = resolve;
   }
+
+  #initializedPromiseResolve;
+
   /**
    * Destruction function called when the inspector is destroyed. Removes event listeners
    * and cleans up references.
@@ -85,6 +92,7 @@ class BoxModel {
     this._tooltip = null;
     this.document = null;
     this.inspector = null;
+    this.initialized = null;
   }
 
   get highlighters() {
@@ -166,7 +174,7 @@ class BoxModel {
       this._updateReasons.push(reason);
     }
 
-    const lastRequest = async function () {
+    const lastRequest = (async () => {
       if (
         !this.inspector ||
         !this.isPanelVisible() ||
@@ -213,19 +221,18 @@ class BoxModel {
       }
 
       this.inspector.emit("boxmodel-view-updated", this._updateReasons);
+      this.#initializedPromiseResolve();
 
       this._lastRequest = null;
       this._updateReasons = [];
 
       return null;
-    }
-      .bind(this)()
-      .catch(error => {
-        // If we failed because we were being destroyed while waiting for a request, ignore.
-        if (this.document) {
-          console.error(error);
-        }
-      });
+    })().catch(error => {
+      // If we failed because we were being destroyed while waiting for a request, ignore.
+      if (this.document) {
+        console.error(error);
+      }
+    });
 
     this._lastRequest = lastRequest;
   }
@@ -296,9 +303,9 @@ class BoxModel {
    * @param  {string} property
    *         The name of the property.
    */
-  onShowRulePreviewTooltip(target, property) {
+  async onShowRulePreviewTooltip(target, property) {
     const { highlightProperty } = this.inspector.getPanel("ruleview").view;
-    const isHighlighted = highlightProperty(property);
+    const isHighlighted = await highlightProperty(property);
 
     // Only show the tooltip if the property is not highlighted.
     // TODO: In the future, use an associated ruleId for toggling the tooltip instead of

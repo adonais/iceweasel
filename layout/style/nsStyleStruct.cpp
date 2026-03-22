@@ -355,7 +355,9 @@ AnchorPosResolutionParams::AutoResolutionOverrideParams::
               // It is presumed that this is called on a reflowed frame.
               return false;
             }
-            return references->Lookup(references->mDefaultAnchorName)->isSome();
+            const auto* entry = references->Lookup(
+                {references->mDefaultAnchorName, references->mAnchorTreeScope});
+            return entry && entry->isSome();
           }())} {}
 
 AnchorResolvedMargin AnchorResolvedMarginHelper::ResolveAnchor(
@@ -818,7 +820,6 @@ nsStyleSVG::nsStyleSVG()
       mShapeRendering(StyleShapeRendering::Auto),
       mStrokeLinecap(StyleStrokeLinecap::Butt),
       mStrokeLinejoin(StyleStrokeLinejoin::Miter),
-      mDominantBaseline(StyleDominantBaseline::Auto),
       mTextAnchor(StyleTextAnchor::Start) {
   MOZ_COUNT_CTOR(nsStyleSVG);
 }
@@ -844,7 +845,6 @@ nsStyleSVG::nsStyleSVG(const nsStyleSVG& aSource)
       mShapeRendering(aSource.mShapeRendering),
       mStrokeLinecap(aSource.mStrokeLinecap),
       mStrokeLinejoin(aSource.mStrokeLinejoin),
-      mDominantBaseline(aSource.mDominantBaseline),
       mTextAnchor(aSource.mTextAnchor) {
   MOZ_COUNT_CTOR(nsStyleSVG);
 }
@@ -900,7 +900,6 @@ nsChangeHint nsStyleSVG::CalcDifference(const nsStyleSVG& aNewData) const {
       mStrokeMiterlimit != aNewData.mStrokeMiterlimit ||
       mStrokeLinecap != aNewData.mStrokeLinecap ||
       mStrokeLinejoin != aNewData.mStrokeLinejoin ||
-      mDominantBaseline != aNewData.mDominantBaseline ||
       mTextAnchor != aNewData.mTextAnchor) {
     return hint | nsChangeHint_NeedReflow | nsChangeHint_RepaintFrame;
   }
@@ -1087,7 +1086,7 @@ nsStylePosition::nsStylePosition()
       mHeight(StyleSize::Auto()),
       mMinHeight(StyleSize::Auto()),
       mMaxHeight(StyleMaxSize::None()),
-      mPositionAnchor(StylePositionAnchor::None()),
+      mPositionAnchor(StylePositionAnchorKeyword::None()),
       mPositionVisibility(StylePositionVisibility::ANCHORS_VISIBLE),
       mPositionTryFallbacks(StylePositionTryFallbacks()),
       mPositionTryOrder(StylePositionTryOrder::Normal),
@@ -1105,7 +1104,7 @@ nsStylePosition::nsStylePosition()
       mFlexDirection(StyleFlexDirection::Row),
       mFlexWrap(StyleFlexWrap::Nowrap),
       mObjectFit(StyleObjectFit::Fill),
-      mBoxSizing(StyleBoxSizing::Content),
+      mBoxSizing(StyleBoxSizing::ContentBox),
       mOrder(0),
       mFlexGrow(0.0f),
       mFlexShrink(1.0f),
@@ -2294,13 +2293,13 @@ nsStyleDisplay::nsStyleDisplay()
                        {0.}},
       mChildPerspective(StylePerspective::None()),
       mPerspectiveOrigin(Position::FromPercentage(0.5f)),
-      mVerticalAlign(
-          StyleVerticalAlign::Keyword(StyleVerticalAlignKeyword::Baseline)),
+      mAlignmentBaseline(StyleAlignmentBaseline::Baseline),
+      mBaselineShift(StyleBaselineShift::Length(LengthPercentage::Zero())),
       mBaselineSource(StyleBaselineSource::Auto),
       mWebkitLineClamp(0),
       mShapeMargin(LengthPercentage::Zero()),
       mShapeOutside(StyleShapeOutside::None()),
-      mAnchorScope(StyleAnchorScope::None()) {
+      mAnchorScope(StyleAnchorScopeKeyword::None()) {
   MOZ_COUNT_CTOR(nsStyleDisplay);
 }
 
@@ -2351,7 +2350,8 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
       mTransformOrigin(aSource.mTransformOrigin),
       mChildPerspective(aSource.mChildPerspective),
       mPerspectiveOrigin(aSource.mPerspectiveOrigin),
-      mVerticalAlign(aSource.mVerticalAlign),
+      mAlignmentBaseline(aSource.mAlignmentBaseline),
+      mBaselineShift(aSource.mBaselineShift),
       mBaselineSource(aSource.mBaselineSource),
       mWebkitLineClamp(aSource.mWebkitLineClamp),
       mShapeImageThreshold(aSource.mShapeImageThreshold),
@@ -2596,7 +2596,8 @@ nsChangeHint nsStyleDisplay::CalcDifference(
   }
 
   if (mWebkitLineClamp != aNewData.mWebkitLineClamp ||
-      mVerticalAlign != aNewData.mVerticalAlign ||
+      mAlignmentBaseline != aNewData.mAlignmentBaseline ||
+      mBaselineShift != aNewData.mBaselineShift ||
       mBaselineSource != aNewData.mBaselineSource) {
     // XXX Can this just be AllReflowHints + RepaintFrame, and be included in
     // the block below?
@@ -2782,8 +2783,9 @@ nsStyleVisibility::nsStyleVisibility(const Document& aDocument)
       mImageRendering(StyleImageRendering::Auto),
       mWritingMode(StyleWritingModeProperty::HorizontalTb),
       mTextOrientation(StyleTextOrientation::Mixed),
-      mMozBoxCollapse(StyleMozBoxCollapse::Flex),
+      mMozBoxCollapse(StyleBoxCollapse::Flex),
       mPrintColorAdjust(StylePrintColorAdjust::Economy),
+      mDominantBaseline(StyleDominantBaseline::Auto),
       mImageOrientation(StyleImageOrientation::FromImage) {
   MOZ_COUNT_CTOR(nsStyleVisibility);
 }
@@ -2796,6 +2798,7 @@ nsStyleVisibility::nsStyleVisibility(const nsStyleVisibility& aSource)
       mTextOrientation(aSource.mTextOrientation),
       mMozBoxCollapse(aSource.mMozBoxCollapse),
       mPrintColorAdjust(aSource.mPrintColorAdjust),
+      mDominantBaseline(aSource.mDominantBaseline),
       mImageOrientation(aSource.mImageOrientation) {
   MOZ_COUNT_CTOR(nsStyleVisibility);
 }
@@ -2829,7 +2832,8 @@ nsChangeHint nsStyleVisibility::CalcDifference(
     }
   }
   if (mTextOrientation != aNewData.mTextOrientation ||
-      mMozBoxCollapse != aNewData.mMozBoxCollapse) {
+      mMozBoxCollapse != aNewData.mMozBoxCollapse ||
+      mDominantBaseline != aNewData.mDominantBaseline) {
     hint |= NS_STYLE_HINT_REFLOW;
   }
   if (mImageRendering != aNewData.mImageRendering) {
@@ -2941,7 +2945,8 @@ nsStyleTextReset::nsStyleTextReset()
       mTextDecorationColor(StyleColor::CurrentColor()),
       mTextDecorationThickness(StyleTextDecorationLength::Auto()),
       mTextDecorationInset(StyleTextDecorationInset::Length(
-          StyleLength::Zero(), StyleLength::Zero())) {
+          StyleLength::Zero(), StyleLength::Zero())),
+      mTextBoxTrim(StyleTextBoxTrim::NONE) {
   MOZ_COUNT_CTOR(nsStyleTextReset);
 }
 
@@ -2953,14 +2958,16 @@ nsStyleTextReset::nsStyleTextReset(const nsStyleTextReset& aSource)
       mInitialLetter(aSource.mInitialLetter),
       mTextDecorationColor(aSource.mTextDecorationColor),
       mTextDecorationThickness(aSource.mTextDecorationThickness),
-      mTextDecorationInset(aSource.mTextDecorationInset) {
+      mTextDecorationInset(aSource.mTextDecorationInset),
+      mTextBoxTrim(aSource.mTextBoxTrim) {
   MOZ_COUNT_CTOR(nsStyleTextReset);
 }
 
 nsChangeHint nsStyleTextReset::CalcDifference(
     const nsStyleTextReset& aNewData) const {
   if (mUnicodeBidi != aNewData.mUnicodeBidi ||
-      mInitialLetter != aNewData.mInitialLetter) {
+      mInitialLetter != aNewData.mInitialLetter ||
+      mTextBoxTrim != aNewData.mTextBoxTrim) {
     return NS_STYLE_HINT_REFLOW;
   }
 
@@ -3019,6 +3026,7 @@ nsStyleText::nsStyleText(const Document& aDocument)
       mTabSize(StyleNonNegativeLengthOrNumber::Number(8.f)),
       mWordSpacing(LengthPercentage::Zero()),
       mLetterSpacing(LengthPercentage::Zero()),
+      mTextBoxEdge(StyleTextBoxEdge::Auto()),
       mTextUnderlineOffset(LengthPercentageOrAuto::Auto()),
       mTextDecorationSkipInk(StyleTextDecorationSkipInk::Auto),
       mTextUnderlinePosition(StyleTextUnderlinePosition::AUTO),
@@ -3055,6 +3063,7 @@ nsStyleText::nsStyleText(const nsStyleText& aSource)
       mWordSpacing(aSource.mWordSpacing),
       mLetterSpacing(aSource.mLetterSpacing),
       mTextIndent(aSource.mTextIndent),
+      mTextBoxEdge(aSource.mTextBoxEdge),
       mTextUnderlineOffset(aSource.mTextUnderlineOffset),
       mTextDecorationSkipInk(aSource.mTextDecorationSkipInk),
       mTextUnderlinePosition(aSource.mTextUnderlinePosition),
@@ -3094,6 +3103,7 @@ nsChangeHint nsStyleText::CalcDifference(const nsStyleText& aNewData) const {
       (mTextSizeAdjust != aNewData.mTextSizeAdjust) ||
       (mLetterSpacing != aNewData.mLetterSpacing) ||
       (mTextIndent != aNewData.mTextIndent) ||
+      (mTextBoxEdge != aNewData.mTextBoxEdge) ||
       (mTextJustify != aNewData.mTextJustify) ||
       (mWordSpacing != aNewData.mWordSpacing) ||
       (mTabSize != aNewData.mTabSize) ||

@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsViewportInfo_h___
-#define nsViewportInfo_h___
+#ifndef nsViewportInfo_h_
+#define nsViewportInfo_h_
 
 #include <stdint.h>
 

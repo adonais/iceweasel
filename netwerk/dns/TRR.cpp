@@ -49,7 +49,18 @@
 namespace mozilla {
 namespace net {
 
-NS_IMPL_ISUPPORTS_INHERITED(TRR, Runnable, nsIStreamListener, nsITimerCallback)
+NS_IMPL_ISUPPORTS_INHERITED(TRR, Runnable, nsIStreamListener, nsITimerCallback,
+                            nsIRunnablePriority)
+
+NS_IMETHODIMP
+TRR::GetPriority(uint32_t* aPriority) {
+  if (StaticPrefs::network_trr_high_priority_events()) {
+    *aPriority = nsIRunnablePriority::PRIORITY_MEDIUMHIGH;
+  } else {
+    *aPriority = nsIRunnablePriority::PRIORITY_NORMAL;
+  }
+  return NS_OK;
+}
 
 // when firing off a normal A or AAAA query
 TRR::TRR(AHostResolver* aResolver, nsHostRecord* aRec, enum TrrType aType)
@@ -393,7 +404,7 @@ nsresult TRR::SendHTTPRequest() {
       mTimeoutMs ? mTimeoutMs : TRRService::Get()->GetRequestTimeout(),
       nsITimer::TYPE_ONE_SHOT);
 
-  mChannel = channel;
+  mChannel = std::move(channel);
   return NS_OK;
 }
 

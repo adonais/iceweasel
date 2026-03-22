@@ -29,22 +29,8 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
-  "isHistoryClearedOnShutdown2",
-  "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads",
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "useOldClearHistoryDialog",
-  "privacy.sanitize.useOldClearHistoryDialog",
-  false
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
   "isHistoryClearedOnShutdown",
-  "privacy.clearOnShutdown.history",
+  "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads",
   false
 );
 
@@ -296,11 +282,7 @@ export class BackupResource {
       return true;
     }
 
-    if (!lazy.useOldClearHistoryDialog) {
-      if (lazy.isHistoryClearedOnShutdown2) {
-        return false;
-      }
-    } else if (lazy.isHistoryClearedOnShutdown) {
+    if (lazy.isHistoryClearedOnShutdown) {
       return false;
     }
 

@@ -255,17 +255,25 @@ class WindowManager {
       };
       const promises = [];
 
-      if (width !== null && height !== null) {
+      const resize = width !== null && height !== null;
+      if (resize) {
         promises.push(new lazy.EventPromise(win, "resize", options));
-        win.resizeTo(width, height);
       }
 
       // Wayland doesn't support setting the window position.
-      if (!lazy.AppInfo.isWayland && x !== null && y !== null) {
+      const move = !lazy.AppInfo.isWayland && x !== null && y !== null;
+      if (move) {
         promises.push(
           new lazy.EventPromise(win.windowRoot, "MozUpdateWindowPos", options)
         );
+      }
+
+      if (move && resize) {
+        win.moveResize(x, y, width, height);
+      } else if (move) {
         win.moveTo(x, y);
+      } else if (resize) {
+        win.resizeTo(width, height);
       }
 
       try {

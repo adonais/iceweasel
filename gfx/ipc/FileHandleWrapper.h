@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _include_gfx_ipc_FileHandleWrapper_h__
-#define _include_gfx_ipc_FileHandleWrapper_h__
+#ifndef _include_gfx_ipc_FileHandleWrapper_h_
+#define _include_gfx_ipc_FileHandleWrapper_h_
 
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsISupportsImpl.h"
@@ -45,4 +45,4 @@ class FileHandleWrapper {
 }  // namespace gfx
 }  // namespace mozilla
 
-#endif  // _include_gfx_ipc_FileHandleWrapper_h__
+#endif  // _include_gfx_ipc_FileHandleWrapper_h_

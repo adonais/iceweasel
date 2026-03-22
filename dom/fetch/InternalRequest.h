@@ -16,6 +16,7 @@
 #include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsIChannelEventSink.h"
+#include "nsICookieJarSettings.h"
 #include "nsIInputStream.h"
 #include "nsISupportsImpl.h"
 #include "nsISupportsPriority.h"
@@ -50,7 +51,8 @@ namespace dom {
  * "frame"           | TYPE_INTERNAL_FRAME
  * "iframe"          | TYPE_SUBDOCUMENT, TYPE_INTERNAL_IFRAME
  * "image"           | TYPE_INTERNAL_IMAGE, TYPE_INTERNAL_IMAGE_PRELOAD,
- *                   | TYPE_IMAGE, TYPE_INTERNAL_IMAGE_FAVICON, TYPE_IMAGESET
+ *                   | TYPE_IMAGE, TYPE_INTERNAL_IMAGE_FAVICON, TYPE_IMAGESET,
+ *                   | TYPE_INTERNAL_IMAGE_NOTIFICATION
  * "json"            | TYPE_JSON, TYPE_INTERNAL_JSON_PRELOAD
  * "manifest"        | TYPE_WEB_MANIFEST
  * "object"          | TYPE_INTERNAL_OBJECT, TYPE_OBJECT
@@ -274,6 +276,14 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
 
   bool GetNeverTaint() { return mNeverTaint; }
 
+  void SetCookieJarSettings(nsICookieJarSettings* aCookieJarSettings) {
+    mCookieJarSettings = aCookieJarSettings;
+  }
+
+  nsICookieJarSettings* GetCookieJarSettings() const {
+    return mCookieJarSettings;
+  }
+
   const nsCString& GetFragment() const { return mFragment; }
 
   nsContentPolicyType ContentPolicyType() const { return mContentPolicyType; }
@@ -454,6 +464,7 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
 
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipalOverride;
   bool mNeverTaint = false;
+  nsCOMPtr<nsICookieJarSettings> mCookieJarSettings;
   int64_t mBodyLength{InternalResponse::UNKNOWN_BODY_SIZE};
 
   nsCString mPreferredAlternativeDataType;

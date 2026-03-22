@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_workers_workerprivate_h__
-#define mozilla_dom_workers_workerprivate_h__
+#ifndef mozilla_dom_workers_workerprivate_h_
+#define mozilla_dom_workers_workerprivate_h_
 
 #include <bitset>
 
@@ -1335,6 +1335,12 @@ class WorkerPrivate final
  public:
   void CancelGCTimers() { SetGCTimerMode(NoTimer); }
 
+  // Initialize global's endpoint list with the processed header result
+  // in mLoadInfo
+  void InitializeGlobalReportingEndpoints();
+
+  void SetReportingEndpointsHeader(const nsACString& aHeader);
+
  private:
   void ShutdownGCTimers();
 
@@ -1796,4 +1802,4 @@ class WorkerParentRef final {
 }  // namespace dom
 }  // namespace mozilla
 
-#endif /* mozilla_dom_workers_workerprivate_h__ */
+#endif /* mozilla_dom_workers_workerprivate_h_ */

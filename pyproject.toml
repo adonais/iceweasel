@@ -63,7 +63,6 @@ exclude = [
   "testing/mozharness/mozprocess",
   "testing/mozharness/setup.py",
   "testing/parse_build_tests_ccov.py",
-  "testing/runtimes/writeruntimes.py",
   "testing/tools/iceserver/iceserver.py",
   "testing/tools/websocketprocessbridge/websocketprocessbridge.py",
   "toolkit/content/tests/chrome/file_about_networking_wsh.py",
@@ -141,3 +140,4 @@ exclude = [
 # Enable preview mode for --output-format=json to get improved line/column reporting.
 # TODO: Remove preview once these features are in the stable release.
 preview = true
+docstring-code-format = true

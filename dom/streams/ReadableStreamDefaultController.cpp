@@ -297,6 +297,11 @@ void ReadableStreamDefaultControllerEnqueue(
 
       JS_GetPendingException(aCx, &errorValue);
 
+      // Clear the pending exception before calling into
+      // ReadableStreamDefaultControllerError as it will try to do AutoJSAPI,
+      // which demands no pending exception.
+      JS_ClearPendingException(aCx);
+
       // Step 4.2.1
 
       ReadableStreamDefaultControllerError(aCx, aController, errorValue, aRv);

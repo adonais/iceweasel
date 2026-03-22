@@ -37,9 +37,10 @@ add_task(async function viewContainsStaleRows() {
     name: "emptySlowProvider",
     addTimeout: 1000,
   });
-  UrlbarProvidersManager.registerProvider(slowProvider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(slowProvider);
   registerCleanupFunction(() => {
-    UrlbarProvidersManager.unregisterProvider(slowProvider);
+    providersManager.unregisterProvider(slowProvider);
   });
 
   await PlacesUtils.history.clear();
@@ -148,7 +149,7 @@ add_task(async function viewContainsStaleRows() {
   await UrlbarTestUtils.promisePopupClose(window, () =>
     EventUtils.synthesizeKey("KEY_Escape")
   );
-  UrlbarProvidersManager.unregisterProvider(slowProvider);
+  ProvidersManager.getInstanceForSap("urlbar").unregisterProvider(slowProvider);
 });
 
 // This tests the case where, before the search finishes, stale results have
@@ -186,12 +187,9 @@ add_task(async function staleReplacedWithFresh() {
   let engine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + "searchSuggestionEngineSlow.xml",
   });
-  let oldDefaultEngine = await Services.search.getDefault();
-  await Services.search.moveEngine(engine, 0);
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  let oldDefaultEngine = await SearchService.getDefault();
+  await SearchService.moveEngine(engine, 0);
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   let maxResults = UrlbarPrefs.get("maxRichResults");
 
@@ -322,8 +320,8 @@ add_task(async function staleReplacedWithFresh() {
     EventUtils.synthesizeKey("KEY_Escape")
   );
   await SpecialPowers.popPrefEnv();
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     oldDefaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 });

@@ -88,7 +88,7 @@ struct AutoResolving;
 class InternalJobQueue : public JS::JobQueue {
  public:
   explicit InternalJobQueue(JSContext* cx)
-      : queue(cx, SystemAllocPolicy()), draining_(false), interrupted_(false) {}
+      : draining_(false), interrupted_(false) {}
   ~InternalJobQueue() = default;
 
   // JS::JobQueue methods.
@@ -98,11 +98,8 @@ class InternalJobQueue : public JS::JobQueue {
   bool getHostDefinedGlobal(JSContext*,
                             JS::MutableHandle<JSObject*>) const override;
 
-  bool enqueuePromiseJob(JSContext* cx, JS::HandleObject promise,
-                         JS::HandleObject job, JS::HandleObject allocationSite,
-                         JS::HandleObject hostDefinedData) override;
   void runJobs(JSContext* cx) override;
-  bool empty() const override;
+
   bool isDrainingStopped() const override { return interrupted_; }
 
   // If we are currently in a call to runJobs(), make that call stop processing
@@ -112,19 +109,11 @@ class InternalJobQueue : public JS::JobQueue {
 
   void uninterrupt() { interrupted_ = false; }
 
-  // Return the front element of the queue, or nullptr if the queue is empty.
-  // This is only used by shell testing functions.
-  JSObject* maybeFront() const;
-
 #ifdef DEBUG
   JSObject* copyJobs(JSContext* cx);
 #endif
 
  private:
-  using Queue = js::TraceableFifo<JSObject*, 0, SystemAllocPolicy>;
-
-  JS::PersistentRooted<Queue> queue;
-
   // True if we are in the midst of draining jobs from this queue. We use this
   // to avoid re-entry (nested calls simply return immediately).
   bool draining_;
@@ -296,7 +285,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   /* Clear the pending exception (if any) due to OOM. */
   void recoverFromOutOfMemory();
 
-  void reportAllocationOverflow();
+  void reportAllocOverflow();
 
   // Accessors for immutable runtime data.
   JSAtomState& names() { return *runtime_->commonNames; }
@@ -1037,6 +1026,10 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   // eval() and Function() calls or not. This flag can be set when
   // evaluating the code for Debugger.Frame.prototype.eval.
   js::ContextData<bool> bypassCSPForDebugger;
+
+  // Set to true if a global lexical was initialized by the debugger using
+  // forceLexicalInitializationByName.
+  js::ContextData<bool> hasDebuggerForcedLexicalInit;
 
   // Debugger having set `exclusiveDebuggerOnEval` property to true
   // want their evaluations and calls to be ignore by all other Debuggers

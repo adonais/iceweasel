@@ -389,8 +389,6 @@ add_task(async function () {
         {
           name: "top",
           value: `1em`,
-          // This shouldn't be inactive. See Bug 1998357
-          inactiveCSS: true,
         },
         { name: "gap", value: `10px`, inactiveCSS: true },
       ],

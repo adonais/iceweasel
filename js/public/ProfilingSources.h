@@ -7,6 +7,7 @@
 #ifndef js_ProfilingSources_h
 #define js_ProfilingSources_h
 
+#include "mozilla/HashFunctions.h"
 #include "mozilla/Variant.h"
 
 #include <stdint.h>
@@ -140,6 +141,30 @@ struct JS_PUBLIC_API ProfilerJSSourceData {
         [](const RetrievableFile&) {}, [](const Unavailable&) {});
 
     return size;
+  }
+
+  mozilla::HashNumber hash() const {
+    using mozilla::HashBytes;
+    using mozilla::HashNumber;
+
+    HashNumber hash = 0;
+
+    if (filePathLength_ > 0) {
+      hash = HashBytes(filePath_.get(), filePathLength_, hash);
+    }
+
+    hash = data_.addTagToHash(hash);
+    data_.match(
+        [&](const SourceTextUTF16& srcText) {
+          hash = HashBytes(srcText.chars().get(),
+                           srcText.length() * sizeof(char16_t), hash);
+        },
+        [&](const SourceTextUTF8& srcText) {
+          hash = HashBytes(srcText.chars().get(), srcText.length(), hash);
+        },
+        [](const RetrievableFile&) {}, [](const Unavailable&) {});
+
+    return hash;
   }
 
  private:

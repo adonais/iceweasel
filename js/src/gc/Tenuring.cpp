@@ -704,8 +704,15 @@ void JSLinearString::maybeCloneCharsOnPromotionTyped(JSLinearString* str) {
   }
   js_memcpy(data, chars, nbytes);
 
+  // The dependent string will be overwritten with a new non-dependent linear
+  // string with a fresh set of flags appropriate for its new type. Preserve
+  // flags that still apply to the new string.
+  uint32_t saved_flags = str->flags() & PRESERVE_LINEAR_NONATOM_BITS_ON_REPLACE;
+
   // Overwrite the dest string with a new linear string.
   new (str) JSLinearString(data, len, false /* hasBuffer */);
+  MOZ_ASSERT((str->flags() & PRESERVE_LINEAR_NONATOM_BITS_ON_REPLACE) == 0);
+  str->setHeaderLengthAndFlags(len, str->flags() | saved_flags);
   if (str->isTenured()) {
     str->zone()->addCellMemory(str, nbytes, js::MemoryUse::StringContents);
   } else {
@@ -1548,7 +1555,7 @@ void TenuringTracer::printPromotionReport(
   fprintf(stderr, "  Reason: %s\n", ExplainGCReason(reason));
   fprintf(stderr, "  Nursery size: %4.1f MB used of %4.1f MB\n", usedMB,
           capacityMB);
-  fprintf(stderr, "  Promotion rate: %5.1f%%\n", fractionPromoted);
+  fprintf(stderr, "  Promotion rate: %5.1f%%\n", 100 * fractionPromoted);
 
   promotionStats->printReport(cx, nogc);
 }

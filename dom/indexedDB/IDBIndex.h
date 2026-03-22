@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_idbindex_h__
-#define mozilla_dom_idbindex_h__
+#ifndef mozilla_dom_idbindex_h_
+#define mozilla_dom_idbindex_h_
 
 #include "js/RootingAPI.h"
 #include "mozilla/UniquePtr.h"
@@ -169,4 +169,4 @@ class IDBIndex final : public nsISupports, public nsWrapperCache {
 }  // namespace dom
 }  // namespace mozilla
 
-#endif  // mozilla_dom_idbindex_h__
+#endif  // mozilla_dom_idbindex_h_

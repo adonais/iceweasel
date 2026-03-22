@@ -129,6 +129,9 @@ add_task(async function test_tool_pref_change() {
   const sidebar = document.querySelector("sidebar-main");
   await sidebar.updateComplete;
 
+  // Ensure the sidebar is visible so toolButtons are in the DOM
+  await ensureSidebarLauncherIsVisible();
+
   const origCount = sidebar.toolButtons.length;
   is(origCount, 1, "Expected number of initial tools");
 

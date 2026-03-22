@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.components.appstate
 
+import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_SHORT
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.concept.storage.BookmarkNode
@@ -16,7 +17,6 @@ import mozilla.components.lib.state.Action
 import mozilla.components.service.nimbus.messaging.Message
 import mozilla.components.service.nimbus.messaging.MessageSurfaceId
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
-import mozilla.components.service.pocket.PocketStory.PocketSponsoredStory
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import org.mozilla.fenix.bookmarks.BookmarksGlobalResultReport
 import org.mozilla.fenix.browser.StandardSnackbarError
@@ -472,6 +472,14 @@ sealed class AppAction : Action {
          * [SnackbarAction] dispatched to reset the [AppState.snackbarState] to its default state.
          */
         data object Reset : SnackbarAction()
+
+        /**
+         * [SnackbarAction] dispatched to show a snackbar with a custom title.
+         *
+         * @property title The title to display in the snackbar.
+         * @property duration The length of time for the snackbar to show.
+         */
+        data class ShowSnackbar(val title: String, val duration: Int = LENGTH_SHORT) : SnackbarAction()
     }
 
     /**
@@ -585,15 +593,6 @@ sealed class AppAction : Action {
          * Cleans all in-memory data about Pocket stories and categories.
          */
         data object PocketStoriesClean : ContentRecommendationsAction()
-
-        /**
-         * Replaces the current list of Pocket sponsored stories.
-         *
-         * @property sponsoredStories The new list of [PocketSponsoredStory] that was fetched.
-         */
-        data class PocketSponsoredStoriesChange(
-            val sponsoredStories: List<PocketSponsoredStory>,
-        ) : ContentRecommendationsAction()
 
         /**
          * Replaces the current list of [SponsoredContent]s.

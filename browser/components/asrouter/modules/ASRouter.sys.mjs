@@ -6,7 +6,7 @@
 // We use importESModule here instead of static import so that
 // the Karma test environment won't choke on this module. This
 // is because the Karma test environment already stubs out
-// XPCOMUtils, AppConstants and RemoteSettings, and overrides
+// XPCOMUtils and AppConstants, and overrides
 // importESModule to be a no-op (which can't be done for a static import
 // statement).
 
@@ -18,11 +18,6 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 // eslint-disable-next-line mozilla/use-static-import
 const { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
-);
-
-// eslint-disable-next-line mozilla/use-static-import
-const { RemoteSettings } = ChromeUtils.importESModule(
-  "resource://services-settings/remote-settings.sys.mjs"
 );
 
 const lazy = {};
@@ -42,7 +37,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FeatureCalloutBroker:
     "resource:///modules/asrouter/FeatureCalloutBroker.sys.mjs",
   InfoBar: "resource:///modules/asrouter/InfoBar.sys.mjs",
-  KintoHttpClient: "resource://services-common/kinto-http-client.sys.mjs",
   MacAttribution:
     "moz-src:///browser/components/attribution/MacAttribution.sys.mjs",
   MenuMessage: "resource:///modules/asrouter/MenuMessage.sys.mjs",
@@ -50,12 +44,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PanelTestProvider: "resource:///modules/asrouter/PanelTestProvider.sys.mjs",
   RemoteL10n: "resource:///modules/asrouter/RemoteL10n.sys.mjs",
+  RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
   TARGETING_PREFERENCES:
     "resource:///modules/asrouter/ASRouterPreferences.sys.mjs",
-  Utils: "resource://services-settings/Utils.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
   ToastNotification: "resource:///modules/asrouter/ToastNotification.sys.mjs",
@@ -313,17 +307,15 @@ export const MessageLoaderUtils = {
           RS_PROVIDERS_WITH_L10N.includes(provider.id) &&
           lazy.RemoteL10n.isLocaleSupported(MessageLoaderUtils.locale)
         ) {
-          const recordId = `${RS_FLUENT_RECORD_PREFIX}-${MessageLoaderUtils.locale}`;
-          const kinto = new lazy.KintoHttpClient(lazy.Utils.SERVER_URL);
-          const record = await kinto
-            .bucket(RS_MAIN_BUCKET)
-            .collection(RS_COLLECTION_L10N)
-            .getRecord(recordId);
-          if (record && record.data) {
+          const record =
+            await MessageLoaderUtils._getRemoteSettingsLanguagePackRecord(
+              MessageLoaderUtils.locale
+            );
+          if (record && record.attachment) {
             // Check that the file on disk is the same as the one on the server.
             // If the file is the same, we don't need to download it again.
             const localFile = lazy.RemoteL10n.cfrFluentFilePath;
-            const { size: remoteSize } = record.data.attachment;
+            const { size: remoteSize } = record.attachment;
             if (
               !(await IOUtils.exists(localFile)) ||
               (await IOUtils.stat(localFile)).size !== remoteSize
@@ -335,7 +327,7 @@ export const MessageLoaderUtils = {
                 RS_COLLECTION_L10N
               );
               // Await here in order to capture the exceptions for reporting.
-              const { buffer } = await downloader.download(record.data, {
+              const { buffer } = await downloader.download(record, {
                 retries: RS_DOWNLOAD_MAX_RETRIES,
               });
               // Write on disk.
@@ -371,7 +363,25 @@ export const MessageLoaderUtils = {
    * @returns {Promise<object[]>} Resolves with an array of messages
    */
   _getRemoteSettingsMessages(collection) {
-    return RemoteSettings(collection).get();
+    return lazy.RemoteSettings(collection).get();
+  },
+
+  /**
+   * Return the record pointing to the language pack to be downloaded.
+   *
+   * @param {string} locale The locale to use for RemoteL10n.
+   *
+   * @returns {Promise<object>}
+   */
+  async _getRemoteSettingsLanguagePackRecord(locale) {
+    const recordId = `${RS_FLUENT_RECORD_PREFIX}-${locale}`;
+    const [record] = await lazy.RemoteSettings(RS_COLLECTION_L10N).get({
+      filters: {
+        id: recordId, // rely on indexed field.
+      },
+      syncIfEmpty: true, // explicit default.
+    });
+    return record;
   },
 
   /**

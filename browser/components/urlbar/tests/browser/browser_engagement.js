@@ -108,7 +108,8 @@ async function doTest({
   expectedEndDetails = {},
 }) {
   let provider = new TestProvider();
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window: win,
@@ -164,7 +165,7 @@ async function doTest({
     );
   }
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 }
 
 /**

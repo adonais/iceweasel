@@ -166,10 +166,19 @@ ffi::WGPURecordedRenderPass* BeginRenderPass(
     desc.depth_stencil_attachment = &dsDesc;
   }
 
-  AutoTArray<ffi::WGPUFfiRenderPassColorAttachment, WGPUMAX_COLOR_ATTACHMENTS>
+  AutoTArray<ffi::WGPUFfiOption_FfiRenderPassColorAttachment,
+             WGPUMAX_COLOR_ATTACHMENTS>
       colorDescs;
 
-  for (const auto& ca : aDesc.mColorAttachments) {
+  for (const auto& caOrNull : aDesc.mColorAttachments) {
+    ffi::WGPUFfiOption_FfiRenderPassColorAttachment opt = {};
+    if (caOrNull.IsNull()) {
+      opt.tag = ffi::
+          WGPUFfiOption_FfiRenderPassColorAttachment_None_FfiRenderPassColorAttachment;
+      colorDescs.AppendElement(opt);
+      continue;
+    }
+    const auto& ca = caOrNull.Value();
     ffi::WGPUFfiRenderPassColorAttachment cd = {};
     // NOTE: We're assuming callers reified this to be a view.
     cd.view = ca.mView.GetAsGPUTextureView()->GetId();
@@ -200,7 +209,10 @@ ffi::WGPURecordedRenderPass* BeginRenderPass(
         }
         break;
     }
-    colorDescs.AppendElement(cd);
+    opt.tag = ffi::
+        WGPUFfiOption_FfiRenderPassColorAttachment_Some_FfiRenderPassColorAttachment;
+    opt.some = cd;
+    colorDescs.AppendElement(opt);
   }
 
   desc.color_attachments = {colorDescs.Elements(), colorDescs.Length()};
@@ -233,8 +245,19 @@ RenderPassEncoder::RenderPassEncoder(CommandEncoder* const aParent, RawId aId,
   // NOTE: We depend on callers ensuring that texture-or-view fields are reified
   // to views.
 
-  for (const auto& at : aDesc.mColorAttachments) {
-    mUsedTextureViews.AppendElement(at.mView.GetAsGPUTextureView());
+  for (const auto& atOrNull : aDesc.mColorAttachments) {
+    if (!atOrNull.IsNull()) {
+      const dom::GPURenderPassColorAttachment& colorAttachment =
+          atOrNull.Value();
+
+      mUsedTextureViews.AppendElement(
+          colorAttachment.mView.GetAsGPUTextureView());
+
+      if (colorAttachment.mResolveTarget.WasPassed()) {
+        mUsedTextureViews.AppendElement(
+            colorAttachment.mResolveTarget.Value().GetAsGPUTextureView());
+      }
+    }
   }
   if (aDesc.mDepthStencilAttachment.WasPassed()) {
     mUsedTextureViews.AppendElement(

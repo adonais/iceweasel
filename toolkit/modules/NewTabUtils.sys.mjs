@@ -8,11 +8,6 @@ import {
   SEARCH_SHORTCUTS_EXPERIMENT,
 } from "moz-src:///toolkit/components/search/SearchShortcuts.sys.mjs";
 
-// eslint-disable-next-line mozilla/use-static-import
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -49,22 +44,8 @@ const HISTORY_RESULTS_LIMIT = 100;
 // The maximum number of links Links.getLinks will return.
 const LINKS_GET_LINKS_LIMIT = 100;
 
-// The gather telemetry topic.
-const TOPIC_GATHER_TELEMETRY = "gather-telemetry";
-
-// Some default frecency threshold for Activity Stream requests
-ChromeUtils.defineLazyGetter(lazy, "pageFrecencyThreshold", () => {
-  // @backward-compat { version 147 }
-  // Frecency was graduated in 147 Nightly.
-  if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "147.0a1") >= 0) {
-    // 30 days ago, 7 visits. The threshold avoids one non-typed visit from
-    // immediately being included in recent history and is slightly higher than
-    // Top Sites to mimic how this had a higher threshold.
-    return lazy.PlacesUtils.history.pageFrecencyThreshold(30, 7, false);
-  }
-  // The old threshold used for classic frecency.
-  return 150;
-});
+// The idle-daily telemetry topic.
+const TOPIC_IDLE_DAILY = "idle-daily";
 
 // Some default query limit for Activity Stream requests
 const ACTIVITY_STREAM_DEFAULT_LIMIT = 12;
@@ -1015,7 +996,14 @@ var ActivityStreamProvider = {
       {
         ignoreBlocked: false,
         numItems: ACTIVITY_STREAM_DEFAULT_LIMIT,
-        topsiteFrecency: lazy.pageFrecencyThreshold,
+        // 30 days ago, 7 visits. The threshold avoids one non-typed visit from
+        // immediately being included in recent history and is slightly higher than
+        // Top Sites to mimic how this had a higher threshold.
+        topsiteFrecency: lazy.PlacesUtils.history.pageFrecencyThreshold(
+          30,
+          7,
+          false
+        ),
         onePerDomain: true,
         includeFavicon: true,
         hideWithSearchParam: Services.prefs.getCharPref(
@@ -1882,11 +1870,11 @@ var Telemetry = {
    * Initializes object.
    */
   init: function Telemetry_init() {
-    Services.obs.addObserver(this, TOPIC_GATHER_TELEMETRY);
+    Services.obs.addObserver(this, TOPIC_IDLE_DAILY);
   },
 
   uninit: function Telemetry_uninit() {
-    Services.obs.removeObserver(this, TOPIC_GATHER_TELEMETRY);
+    Services.obs.removeObserver(this, TOPIC_IDLE_DAILY);
   },
 
   /**
@@ -1902,7 +1890,7 @@ var Telemetry = {
   },
 
   /**
-   * Listens for gather telemetry topic.
+   * Listens for idle-daily telemetry trigger.
    */
   observe: function Telemetry_observe() {
     this._collect();

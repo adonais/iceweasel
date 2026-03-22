@@ -11,6 +11,8 @@
 //!
 //! The terms "layer" and "stacking context" can be used interchangeably
 //! in the context of coordinate systems.
+//!
+//! See also webrender/doc/coordinate-spaces.md
 
 pub use app_units::Au;
 use euclid::{Length, Rect, Scale, Size2D, Transform3D, Translation2D};

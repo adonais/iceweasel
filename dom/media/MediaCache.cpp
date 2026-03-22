@@ -1973,7 +1973,7 @@ void MediaCacheStream::NotifyDataStarted(uint32_t aLoadID, int64_t aOffset,
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
       "MediaCacheStream::NotifyDataStarted",
-      [=, client = RefPtr<ChannelMediaResource>(mClient)]() {
+      [=, this, client = RefPtr<ChannelMediaResource>(mClient)]() {
         NotifyDataStartedInternal(aLoadID, aOffset, aSeekable, aLength);
       });
   OwnerThread()->Dispatch(r.forget());

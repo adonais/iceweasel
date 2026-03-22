@@ -211,6 +211,32 @@ async function runJSCacheTests(tests) {
             info("clear disk cache");
             Services.cache2.clear();
           }
+          if (item.memoryPressureLowMemory) {
+            info("notifying memory pressure low-memory");
+            await SpecialPowers.spawn(browser, [], () => {
+              Services.obs.notifyObservers(
+                null,
+                "memory-pressure",
+                "low-memory"
+              );
+            });
+          }
+          if (item.memoryPressureHeapMinimize) {
+            info("notifying memory pressure heap-minimize");
+            await SpecialPowers.spawn(browser, [], () => {
+              Services.obs.notifyObservers(
+                null,
+                "memory-pressure",
+                "heap-minimize"
+              );
+            });
+          }
+          if (item.memoryPressureStop) {
+            info("notifying memory pressure stop");
+            await SpecialPowers.spawn(browser, [], () => {
+              Services.obs.notifyObservers(null, "memory-pressure-stop");
+            });
+          }
           const result = await SpecialPowers.spawn(
             browser,
             [test, item],

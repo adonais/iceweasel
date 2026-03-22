@@ -225,6 +225,10 @@ function Tester(aTests, structuredLogger, aCallback) {
   this.SimpleTest.harnessParameters = gConfig;
 
   this.MemoryStats = simpleTestScope.MemoryStats;
+  // Lazy import since we only use it if a test loaded it.
+  ChromeUtils.defineESModuleGetters(this, {
+    sinon: "resource://testing-common/Sinon.sys.mjs",
+  });
   this.ContentTask = ChromeUtils.importESModule(
     "resource://testing-common/ContentTask.sys.mjs"
   ).ContentTask;
@@ -243,7 +247,6 @@ function Tester(aTests, structuredLogger, aCallback) {
   this.PerTestCoverageUtils = ChromeUtils.importESModule(
     "resource://testing-common/PerTestCoverageUtils.sys.mjs"
   ).PerTestCoverageUtils;
-
   this.PromiseTestUtils.init();
 
   this.SimpleTestOriginal = {};
@@ -820,15 +823,6 @@ Tester.prototype = {
   },
 
   async notifyProfilerOfTestEnd() {
-    // Note the test run time
-    let name = this.currentTest.path;
-    name = name.slice(name.lastIndexOf("/") + 1);
-    ChromeUtils.addProfilerMarker(
-      "browser-test",
-      { category: "Test", startTime: this.lastStartTimestamp },
-      name
-    );
-
     // See if we should upload a profile of a failing test.
     if (this.currentTest.failCount) {
       // If MOZ_PROFILER_SHUTDOWN is set, the profiler got started from --profiler
@@ -838,6 +832,8 @@ Tester.prototype = {
         !Services.env.exists("MOZ_PROFILER_SHUTDOWN") &&
         Services.profiler.IsActive()
       ) {
+        let name = this.currentTest.path;
+        name = name.slice(name.lastIndexOf("/") + 1);
         let filename = `profile_${name}.json`;
         let path = Services.env.get("MOZ_UPLOAD_DIR");
         let profilePath = PathUtils.join(path, filename);
@@ -898,6 +894,10 @@ Tester.prototype = {
         }
       }
 
+      // Ensure any sinon stubs and spies have been cleaned up before the next test.
+      if (Cu.isESModuleLoaded("resource://testing-common/Sinon.sys.mjs")) {
+        this.sinon.restore();
+      }
       // Spare tests cleanup work.
       // Reset gReduceMotionOverride in case the test set it.
       if (typeof gReduceMotionOverride == "boolean") {
@@ -1012,12 +1012,17 @@ Tester.prototype = {
 
       // Notify a long running test problem if it didn't end up in a timeout.
       if (this.currentTest.unexpectedTimeouts && !this.currentTest.timedOut) {
+        let timeRan = Math.ceil((Date.now() - this.lastStartTime) / 1000);
+        let timeoutFactor = this.currentTest.scope.__maxTimeoutFactor;
+        let timeLimit = Math.round(gTimeoutSeconds * timeoutFactor);
         this.currentTest.addResult(
           new testResult({
             name:
-              "This test exceeded the timeout threshold. It should be" +
-              " rewritten or split up. If that's not possible, use" +
-              " requestLongerTimeout(N), but only as a last resort.",
+              `This test exceeded the timeout threshold. It should be ` +
+              `rewritten or split up. If that's not possible, use ` +
+              `requestLongerTimeout(N), but only as a last resort. ` +
+              `Test ran for ${timeRan}s, limit was ${timeLimit}s ` +
+              `(timeout factor ${timeoutFactor}).`,
           })
         );
       }
@@ -1126,8 +1131,8 @@ Tester.prototype = {
 
       this.structuredLogger.testEnd(
         this.currentTest.path,
-        "OK",
-        undefined,
+        this.currentTest.failCount > 0 ? "FAIL" : "PASS",
+        "PASS",
         "finished in " + time + "ms"
       );
       this.currentTest.setDuration(time);
@@ -1627,6 +1632,12 @@ Tester.prototype = {
               self.nextTest();
             } else {
               await self.notifyProfilerOfTestEnd();
+              self.structuredLogger.testEnd(
+                self.currentTest.path,
+                "TIMEOUT",
+                "PASS",
+                "Test timed out"
+              );
               self.finish();
             }
           },
@@ -1959,6 +1970,9 @@ function testScope(aTester, aTest, expected) {
 
   this.requestLongerTimeout = function test_requestLongerTimeout(aFactor) {
     self.__timeoutFactor = aFactor;
+    if (aFactor > self.__maxTimeoutFactor) {
+      self.__maxTimeoutFactor = aFactor;
+    }
   };
 
   this.expectUncaughtException = function test_expectUncaughtException(
@@ -2032,6 +2046,7 @@ testScope.prototype = {
   __waitTimer: null,
   __cleanupFunctions: [],
   __timeoutFactor: 1,
+  __maxTimeoutFactor: 1,
   __expectedMinAsserts: 0,
   __expectedMaxAsserts: 0,
   /** @type {AbortSignal} */

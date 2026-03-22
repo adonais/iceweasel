@@ -408,6 +408,17 @@ mozilla::ipc::IPCResult GPUChild::RecvFOGData(ByteBuf&& aBuf) {
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult GPUChild::RecvReportGLStrings(
+    GfxInfoGLStrings&& aStrings) {
+  nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
+  if (gfxInfo) {
+    static_cast<widget::GfxInfoBase*>(gfxInfo.get())
+        ->ReportGLStrings(std::move(aStrings));
+  }
+
+  return IPC_OK();
+}
+
 class DeferredDeleteGPUChild : public Runnable {
  public:
   explicit DeferredDeleteGPUChild(RefPtr<GPUChild>&& aChild)

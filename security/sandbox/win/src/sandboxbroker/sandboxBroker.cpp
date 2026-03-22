@@ -36,6 +36,7 @@
 #include "mozilla/WinDllServices.h"
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/ipc/LaunchError.h"
+#include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsCOMPtr.h"
 #include "nsDirectoryServiceDefs.h"
@@ -1114,14 +1115,18 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
   }
 
   if (StaticPrefs::security_sandbox_content_close_ksecdd_handle()) {
-    // bug 2006941 and bug 2008739 - Trellix DLP uses these functions, so don't
-    // do this if their DLLs are loaded
+    // bug 2006941 and bug 2008739 and bug 2022584 - Trellix DLP uses these
+    // functions, so don't do this if their DLLs are loaded
+    bool isTrellixDllLoaded;
 #if defined(_M_X64)
-    const wchar_t* trellixDllName = L"fcagff64.dll";
+    isTrellixDllLoaded = !!::GetModuleHandleW(L"fcagff64.dll") ||
+                         !!::GetModuleHandleW(L"fcagff64hc.dll");
+#elif defined(_M_ARM64)
+    isTrellixDllLoaded = !!::GetModuleHandleW(L"fcagffarm64hc.dll");
 #else
-    const wchar_t* trellixDllName = L"fcagff.dll";
+    isTrellixDllLoaded = !!::GetModuleHandleW(L"fcagff.dll");
 #endif
-    if (!::GetModuleHandleW(trellixDllName)) {
+    if (isTrellixDllLoaded) {
       result = config->AddKernelObjectToClose(L"File", L"\\Device\\KsecDD");
       MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
                          "AddKernelObjectToClose should never fail.");
@@ -1201,17 +1206,6 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
     AddCachedDirRule(config, sandbox::FileSemantics::kAllowReadonly,
                      sUserExtensionsDir, u"\\*"_ns);
 #endif
-  }
-
-  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
-    // Add the policy for the client side of a pipe. It is just a file
-    // in the \pipe\ namespace. We restrict it to pipes that start with
-    // "chrome." so the sandboxed process cannot connect to system services.
-    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                     L"\\??\\pipe\\chrome.*");
-    MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                       "With these static arguments AddRule should never fail, "
-                       "what happened?");
   }
 
   // Add the policy for the client side of the crash server pipe.
@@ -1365,6 +1359,11 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
     initialMitigations |= sandbox::MITIGATION_CET_COMPAT_MODE;
   }
 
+  // Bug 2008960 tracks removing the pref if we have seen no issues.
+  if (StaticPrefs::security_sandbox_gpu_extension_point_disable()) {
+    initialMitigations |= sandbox::MITIGATION_EXTENSION_POINT_DISABLE;
+  }
+
   sandbox::MitigationFlags delayedMitigations =
       sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
       sandbox::MITIGATION_DLL_SEARCH_ORDER;
@@ -1391,14 +1390,6 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   // sandbox::kPolMemPageCount.
   sandboxing::SizeTrackingConfig trackingConfig(config,
                                                 sandbox::kPolMemPageCount - 2);
-
-  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
-    // Add the policy for the client side of a pipe. It is just a file
-    // in the \pipe\ namespace. We restrict it to pipes that start with
-    // "chrome." so the sandboxed process cannot connect to system services.
-    SANDBOX_SUCCEED_OR_CRASH(trackingConfig.AllowFileAccess(
-        sandbox::FileSemantics::kAllowAny, L"\\??\\pipe\\chrome.*"));
-  }
 
   // Add the policy for the client side of the crash server pipe.
   SANDBOX_SUCCEED_OR_CRASH(
@@ -1502,17 +1493,6 @@ bool SandboxBroker::SetSecurityLevelForRDDProcess() {
   result = AddCigToConfig(config);
   SANDBOX_ENSURE_SUCCESS(result, "Failed to initialize signed policy rules.");
 
-  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
-    // Add the policy for the client side of a pipe. It is just a file
-    // in the \pipe\ namespace. We restrict it to pipes that start with
-    // "chrome." so the sandboxed process cannot connect to system services.
-    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                     L"\\??\\pipe\\chrome.*");
-    SANDBOX_ENSURE_SUCCESS(result,
-                           "With these static arguments AddRule should never "
-                           "fail, what happened?");
-  }
-
   // Add the policy for the client side of the crash server pipe.
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
                                    L"\\??\\pipe\\gecko-crash-server-pipe.*");
@@ -1585,17 +1565,6 @@ bool SandboxBroker::SetSecurityLevelForSocketProcess() {
 
   result = AddCigToConfig(config);
   SANDBOX_ENSURE_SUCCESS(result, "Failed to initialize signed policy rules.");
-
-  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
-    // Add the policy for the client side of a pipe. It is just a file
-    // in the \pipe\ namespace. We restrict it to pipes that start with
-    // "chrome." so the sandboxed process cannot connect to system services.
-    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                     L"\\??\\pipe\\chrome.*");
-    SANDBOX_ENSURE_SUCCESS(result,
-                           "With these static arguments AddRule should never "
-                           "fail, what happened?");
-  }
 
   // Add the policy for the client side of the crash server pipe.
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
@@ -1865,17 +1834,6 @@ bool BuildUtilitySandbox(sandbox::TargetConfig* config,
   }
 #endif
 
-  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
-    // Add the policy for the client side of a pipe. It is just a file
-    // in the \pipe\ namespace. We restrict it to pipes that start with
-    // "chrome." so the sandboxed process cannot connect to system services.
-    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                     L"\\??\\pipe\\chrome.*");
-    SANDBOX_ENSURE_SUCCESS(result,
-                           "With these static arguments AddRule should never "
-                           "fail, what happened?");
-  }
-
   // Add the policy for the client side of the crash server pipe.
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
                                    L"\\??\\pipe\\gecko-crash-server-pipe.*");
@@ -1888,6 +1846,8 @@ bool BuildUtilitySandbox(sandbox::TargetConfig* config,
 
 bool SandboxBroker::SetSecurityLevelForUtilityProcess(
     mozilla::ipc::SandboxingKind aSandbox) {
+  MOZ_ASSERT(IsUtilitySandboxEnabled(aSandbox));
+
   if (!mPolicy) {
     return false;
   }
@@ -1905,11 +1865,6 @@ bool SandboxBroker::SetSecurityLevelForUtilityProcess(
 #endif
     case mozilla::ipc::SandboxingKind::WINDOWS_UTILS:
       return BuildUtilitySandbox(config, WindowsUtilitySandboxProps());
-    case mozilla::ipc::SandboxingKind::WINDOWS_FILE_DIALOG:
-      // This process type is not sandboxed. (See commentary in
-      // `ipc::IsUtilitySandboxEnabled()`.)
-      MOZ_ASSERT_UNREACHABLE("No sandboxing for this process type");
-      return false;
     default:
       MOZ_ASSERT_UNREACHABLE("Unknown sandboxing value");
       return false;
@@ -1996,17 +1951,6 @@ bool SandboxBroker::SetSecurityLevelForGMPlugin(
   result = config->SetDelayedProcessMitigations(mitigations);
   SANDBOX_ENSURE_SUCCESS(result,
                          "Invalid flags for SetDelayedProcessMitigations.");
-
-  if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
-    // Add the policy for the client side of a pipe. It is just a file
-    // in the \pipe\ namespace. We restrict it to pipes that start with
-    // "chrome." so the sandboxed process cannot connect to system services.
-    result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                                     L"\\??\\pipe\\chrome.*");
-    SANDBOX_ENSURE_SUCCESS(result,
-                           "With these static arguments AddRule should never "
-                           "fail, what happened?");
-  }
 
   // Add the policy for the client side of the crash server pipe.
   result = config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,

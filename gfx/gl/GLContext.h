@@ -286,6 +286,13 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   GLRenderer Renderer() const { return mRenderer; }
   bool IsMesa() const { return mIsMesa; }
 
+  const nsCString& VendorString() const { return mVendorString; }
+  const nsCString& RendererString() const { return mRendererString; }
+  const nsCString& VersionString() const { return mVersionString; }
+  const nsTArray<nsCString>& ExtensionStrings() const {
+    return mExtensionStrings;
+  }
+
   bool IsContextLost() const { return mContextLost; }
 
   bool CheckContextLost() const {
@@ -340,6 +347,11 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   GLVendor mVendor = GLVendor::Other;
   GLRenderer mRenderer = GLRenderer::Other;
   bool mIsMesa = false;
+
+  nsCString mVendorString;
+  nsCString mRendererString;
+  nsCString mVersionString;
+  nsTArray<nsCString> mExtensionStrings;
 
   // -----------------------------------------------------------------------------
   // Extensions management
@@ -4072,8 +4084,7 @@ bool MarkBitfieldByString(const nsACString& str,
 }
 
 template <size_t N>
-void MarkBitfieldByStrings(const std::vector<nsCString>& strList,
-                           bool dumpStrings,
+void MarkBitfieldByStrings(Span<const nsCString> strList, bool dumpStrings,
                            const char* const (&markStrList)[N],
                            std::bitset<N>* const out_markList) {
   for (auto itr = strList.begin(); itr != strList.end(); ++itr) {

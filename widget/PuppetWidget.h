@@ -12,8 +12,8 @@
  * is forwarded to and/or data received from elsewhere.
  */
 
-#ifndef mozilla_widget_PuppetWidget_h__
-#define mozilla_widget_PuppetWidget_h__
+#ifndef mozilla_widget_PuppetWidget_h_
+#define mozilla_widget_PuppetWidget_h_
 
 #include "mozilla/gfx/2D.h"
 #include "mozilla/RefPtr.h"
@@ -385,4 +385,4 @@ class PuppetWidget final : public nsIWidget,
 }  // namespace widget
 }  // namespace mozilla
 
-#endif  // mozilla_widget_PuppetWidget_h__
+#endif  // mozilla_widget_PuppetWidget_h_

@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env webextensions */
 /* eslint-disable no-unsanitized/property */ /* bug 1903144 */
 /* import-globals-from readability/readability-0.4.2.js */
 /* import-globals-from readability/JSDOMParser-0.4.2.js */

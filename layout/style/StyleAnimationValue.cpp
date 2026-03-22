@@ -8,6 +8,7 @@
 
 #include "mozilla/StyleAnimationValue.h"
 
+#include "PseudoStyleType.h"
 #include "gfx2DGlue.h"
 #include "gfxMatrix.h"
 #include "gfxQuaternion.h"
@@ -22,7 +23,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/layers/LayersMessages.h"
 #include "nsCOMArray.h"
-#include "nsCSSPseudoElements.h"
 #include "nsComputedDOMStyle.h"
 #include "nsIFrame.h"
 #include "nsString.h"

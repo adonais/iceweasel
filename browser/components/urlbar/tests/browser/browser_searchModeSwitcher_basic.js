@@ -100,10 +100,17 @@ add_task(async function disabled_unified_button() {
 
   Assert.equal(
     BrowserTestUtils.isVisible(
-      gURLBar.querySelector(".searchmode-switcher-chicklet")
+      gURLBar.querySelector(".searchmode-switcher-title")
     ),
     false,
-    "Chicklet associated with Unified Search Button should not be visible."
+    "Title label associated with Unified Search Button should not be visible."
+  );
+  Assert.equal(
+    BrowserTestUtils.isVisible(
+      gURLBar.querySelector(".searchmode-switcher-close")
+    ),
+    false,
+    "Close button associated with Unified Search Button should not be visible."
   );
 
   await UrlbarTestUtils.exitSearchMode(window);
@@ -175,8 +182,8 @@ add_task(async function select_with_single_click() {
   await new Promise(r => setTimeout(r, 500));
 
   let target = popup.querySelector("menuitem[label=Bing]");
-  EventUtils.synthesizeMouseAtCenter(target, { type: "mousemove" });
   let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
+  EventUtils.synthesizeMouseAtCenter(target, { type: "mousemove" });
   EventUtils.synthesizeMouseAtCenter(target, { type: "mouseup" });
   await popupHidden;
 
@@ -201,7 +208,7 @@ function updateEngine(fun) {
 }
 
 add_task(async function new_window() {
-  let oldEngine = Services.search.getEngineByName("Bing");
+  let oldEngine = SearchService.getEngineByName("Bing");
   await updateEngine(() => {
     oldEngine.hidden = true;
   });
@@ -225,7 +232,7 @@ add_task(async function new_window() {
   await popupHidden;
   newWin.gURLBar.querySelector(".searchmode-switcher-close").click();
 
-  await Services.search.restoreDefaultEngines();
+  await SearchService.restoreDefaultEngines();
   await BrowserTestUtils.closeWindow(newWin);
 });
 
@@ -260,17 +267,14 @@ add_task(async function detect_searchmode_changes() {
 });
 
 async function setDefaultEngine(name) {
-  let engine = (await Services.search.getEngines()).find(e => e.name == name);
+  let engine = (await SearchService.getEngines()).find(e => e.name == name);
   Assert.ok(engine);
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 }
 
 add_task(async function test_icon_new_window() {
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
-  let expectedIcon = await Services.search.defaultEngine.getIconURL();
+  let expectedIcon = await SearchService.defaultEngine.getIconURL();
 
   Assert.equal(
     UrlbarTestUtils.getSearchModeSwitcherIcon(newWin),
@@ -308,9 +312,8 @@ add_task(async function test_search_icon_change() {
   popup.querySelector(`menuitem[label=${engineName}]`).click();
   await popupHidden;
 
-  const bingSearchEngineIconUrl = await Services.search
-    .getEngineByName(engineName)
-    .getIconURL();
+  const bingSearchEngineIconUrl =
+    await SearchService.getEngineByName(engineName).getIconURL();
 
   Assert.equal(
     UrlbarTestUtils.getSearchModeSwitcherIcon(newWin),
@@ -431,20 +434,20 @@ add_task(async function open_engine_page_directly() {
     },
   ];
 
+  let searchExtension = await SearchTestUtils.installSearchExtension(
+    {
+      name: "MozSearch",
+      search_url: "https://example.com/",
+      favicon_url: "https://example.com/favicon.ico",
+    },
+    { setAsDefault: true, skipUnload: true }
+  );
+
   for (let { action, input, expected } of TEST_DATA) {
     info(`Test for ${JSON.stringify({ action, input, expected })}`);
 
     info("Open a window");
     let newWin = await BrowserTestUtils.openNewBrowserWindow();
-
-    let searchExtension = await SearchTestUtils.installSearchExtension(
-      {
-        name: "MozSearch",
-        search_url: "https://example.com/",
-        favicon_url: "https://example.com/favicon.ico",
-      },
-      { setAsDefault: true, skipUnload: true }
-    );
 
     info(`Open the result popup with [${input}]`);
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -464,13 +467,9 @@ add_task(async function open_engine_page_directly() {
     );
 
     if (action == "click") {
-      EventUtils.synthesizeMouseAtCenter(
-        popup.querySelector("menuitem[label=MozSearch]"),
-        {
-          shiftKey: true,
-        },
-        newWin
-      );
+      popup.activateItem(popup.querySelector("menuitem[label=MozSearch]"), {
+        shiftKey: true,
+      });
     } else {
       await UrlbarTestUtils.selectMenuItem(popup, "menuitem[label=MozSearch]");
       EventUtils.synthesizeKey("KEY_Enter", { shiftKey: true }, newWin);
@@ -481,11 +480,92 @@ add_task(async function open_engine_page_directly() {
     await pageLoaded;
     Assert.ok(true, "The popup was hidden and expected page was loaded");
 
-    // Cleanup.
-    await PlacesUtils.history.clear();
-    await searchExtension.unload();
     await BrowserTestUtils.closeWindow(newWin);
   }
+
+  // Cleanup.
+  await PlacesUtils.history.clear();
+  await searchExtension.unload();
+});
+
+add_task(async function open_engine_page_in_tab() {
+  const TEST_DATA = [
+    {
+      action: "click",
+      input: "",
+      expected: "https://example.com/",
+    },
+    {
+      action: "click",
+      input: "a b c",
+      expected: "https://example.com/?q=a+b+c",
+    },
+    {
+      action: "key",
+      input: "",
+      expected: "https://example.com/",
+    },
+    {
+      action: "key",
+      input: "a b c",
+      expected: "https://example.com/?q=a+b+c",
+    },
+  ];
+
+  let searchExtension = await SearchTestUtils.installSearchExtension(
+    {
+      name: "MozSearch",
+      search_url: "https://example.com/",
+      favicon_url: "https://example.com/favicon.ico",
+    },
+    { setAsDefault: true, skipUnload: true }
+  );
+
+  for (let { action, input, expected } of TEST_DATA) {
+    info(`Test for ${JSON.stringify({ action, input, expected })}`);
+
+    info("Open a window");
+    let newWin = await BrowserTestUtils.openNewBrowserWindow();
+
+    info(`Open the result popup with [${input}]`);
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window: newWin,
+      value: input,
+    });
+
+    info("Open the mode switcher");
+    let popup = await UrlbarTestUtils.openSearchModeSwitcher(newWin);
+
+    info(`Do action of [${action}] on MozSearch menuitem`);
+    let newTabOpened = BrowserTestUtils.waitForNewTab(
+      newWin.gBrowser,
+      expected,
+      true
+    );
+
+    if (action == "click") {
+      EventUtils.synthesizeMouseAtCenter(
+        popup.querySelector("menuitem[label=MozSearch]"),
+        {
+          accelKey: true,
+        },
+        newWin
+      );
+    } else {
+      await UrlbarTestUtils.selectMenuItem(popup, "menuitem[label=MozSearch]");
+      EventUtils.synthesizeKey("KEY_Enter", { accelKey: true }, newWin);
+    }
+
+    await UrlbarTestUtils.assertSearchMode(newWin, null);
+    await newTabOpened;
+    Assert.ok(true, "Expected page was loaded");
+
+    await BrowserTestUtils.closeWindow(newWin);
+  }
+
+  // Cleanup.
+  await PlacesUtils.history.clear();
+  await searchExtension.unload();
 });
 
 add_task(async function test_enter_searchmode_by_key_if_single_result() {
@@ -723,9 +803,7 @@ add_task(async function test_search_service_fail() {
     .stub(UrlbarSearchUtils, "init")
     .rejects(new Error("Initialization failed"));
 
-  Services.search.wrappedJSObject.forceInitializationStatusForTests(
-    "not initialized"
-  );
+  SearchService.forceInitializationStatusForTests("not initialized");
 
   // Force updateSearchIcon to be triggered
   await SpecialPowers.pushPrefEnv({
@@ -763,7 +841,7 @@ add_task(async function test_search_service_fail() {
 
   stub.restore();
 
-  Services.search.wrappedJSObject.forceInitializationStatusForTests("success");
+  SearchService.forceInitializationStatusForTests("success");
 
   await BrowserTestUtils.closeWindow(newWin);
   await SpecialPowers.popPrefEnv();
@@ -816,14 +894,14 @@ add_task(async function test_search_mode_switcher_private_engine_icon() {
     { skipUnload: true }
   );
 
-  const defaultPrivateEngine = Services.search.getEngineByName(testEngineName);
+  const defaultPrivateEngine = SearchService.getEngineByName(testEngineName);
   const defaultPrivateEngineIcon = `moz-extension://${searchExtension.uuid}/private.png`;
-  const defaultEngine = await Services.search.getDefault();
+  const defaultEngine = await SearchService.getDefault();
   const defaultEngineIcon = await defaultEngine.getIconURL();
 
-  Services.search.setDefaultPrivate(
+  SearchService.setDefaultPrivate(
     defaultPrivateEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   Assert.notEqual(
@@ -832,12 +910,12 @@ add_task(async function test_search_mode_switcher_private_engine_icon() {
     "Default engine is not private engine."
   );
   Assert.equal(
-    (await Services.search.getDefault()).id,
+    (await SearchService.getDefault()).id,
     defaultEngine.id,
     "Default engine is still correct."
   );
   Assert.equal(
-    (await Services.search.getDefaultPrivate()).id,
+    (await SearchService.getDefaultPrivate()).id,
     defaultPrivateEngine.id,
     "Default private engine is correct."
   );
@@ -866,9 +944,9 @@ add_task(async function test_search_mode_switcher_private_engine_icon() {
   );
 
   info("Changing the default private engine.");
-  Services.search.setDefaultPrivate(
+  SearchService.setDefaultPrivate(
     defaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   info("Waiting for the icon to be updated.");
@@ -900,7 +978,8 @@ add_task(async function open_with_alt_option_with_open_view() {
   await promiseMenuOpen;
 
   let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  EventUtils.synthesizeKey("KEY_Escape");
+  const popup = UrlbarTestUtils.searchModeSwitcherPopup(window);
+  popup.hidePopup();
   await popupHidden;
 });
 
@@ -916,6 +995,7 @@ add_task(async function open_with_alt_option_with_closed_view() {
   await promiseMenuOpen;
 
   let popupHidden = UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
-  EventUtils.synthesizeKey("KEY_Escape");
+  const popup = UrlbarTestUtils.searchModeSwitcherPopup(window);
+  popup.hidePopup();
   await popupHidden;
 });

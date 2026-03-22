@@ -72,7 +72,11 @@ bool JSJitFrameIter::checkInvalidation(IonScript** ionScriptOut) const {
     return false;
   }
 
-  int32_t invalidationDataOffset = ((int32_t*)returnAddr)[-1];
+  // Use memcpy because this load may not be properly aligned.
+  int32_t invalidationDataOffset;
+  memcpy(&invalidationDataOffset, returnAddr - sizeof(int32_t),
+         sizeof(int32_t));
+
   uint8_t* ionScriptDataOffset = returnAddr + invalidationDataOffset;
   IonScript* ionScript = (IonScript*)Assembler::GetPointer(ionScriptDataOffset);
   MOZ_ASSERT(ionScript->containsReturnAddress(returnAddr));

@@ -330,18 +330,18 @@ newtab-custom-recent-subtitle = Izbor nedavnih spletnih mest in vsebin
 newtab-custom-weather-toggle =
     .label = Vreme
     .description = Današnja napoved vedno na očeh
-newtab-custom-trending-search-toggle =
-    .label = Trenutno iskano
-    .description = Priljubljene in pogosto iskane teme
 newtab-custom-widget-weather-toggle =
     .label = Vreme
-newtab-custom-widget-trending-search-toggle =
-    .label = Trenutno iskano
 newtab-custom-widget-lists-toggle =
     .label = Seznami
 newtab-custom-widget-timer-toggle =
     .label = Časovnik
 newtab-custom-widget-section-title = Pripomočki
+newtab-custom-widget-section-toggle =
+    .label = Pripomočki
+newtab-widget-manage-title = Pripomočki
+newtab-widget-manage-widget-button =
+    .label = Upravljanje pripomočkov
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Zapri
@@ -469,6 +469,8 @@ newtab-weather-change-location-search-input-placeholder =
     .placeholder = Išči lokacijo
     .aria-label = Išči lokacijo
 newtab-weather-menu-weather-display = Prikazovalnik vremena
+newtab-weather-todays-forecast = Napoved za današnji dan
+newtab-weather-see-full-forecast = Prikaži celotno napoved
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -481,6 +483,7 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celzij
 newtab-weather-menu-change-temperature-units-fahrenheit = Preklopi na stopinje Fahrenheita
 newtab-weather-menu-change-temperature-units-celsius = Preklopi na stopinje Celzija
+newtab-weather-menu-hide-weather-v2 = Skrij vreme
 newtab-weather-menu-hide-weather = Skrij vreme na novem zavihku
 newtab-weather-menu-learn-more = Več o tem
 newtab-weather-menu-detect-my-location = Zaznaj mojo lokacijo
@@ -492,6 +495,11 @@ newtab-weather-opt-in-yes =
     .label = Da
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Prikaži napoved v storitvi { $provider }
+    .aria-description = { $provider } ∙ Sponzorirano
 
 ## Topic Labels
 
@@ -596,7 +604,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Vaša priljubljena mesta na dosegu roke
 newtab-shortcuts-highlight-subtitle = Dodajte bližnjico in obdržite priljubljena spletna mesta le klik stran.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Zakaj to prijavljate?
@@ -614,21 +622,13 @@ newtab-report-content-inappropriate-offensive =
     .label = Neprimerno ali žaljivo
 newtab-report-content-spam-misleading =
     .label = Vsiljivo ali zavajajoče
+newtab-report-content-requires-payment-subscription =
+    .label = Zahteva plačilo ali naročnino
+newtab-report-content-requires-payment-subscription-learn-more = Več o tem
 newtab-report-cancel = Prekliči
 newtab-report-submit = Pošlji
 newtab-toast-thanks-for-reporting =
     .message = Hvala za prijavo.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Prikaži trenutno priljubljena iskanja
-newtab-trending-searches-hide-trending =
-    .title = Skrij trenutno priljubljena iskanja
-newtab-trending-searches-learn-more = Več o tem
-newtab-trending-searches-dismiss = Skrij trenutno priljubljena iskanja
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Trenutno iskano
 
 ## Strings for task / to-do list productivity widget
 
@@ -701,6 +701,12 @@ newtab-widget-timer-menu-notifications = Izklopi obvestila
 newtab-widget-timer-menu-notifications-on = Vklopi obvestila
 newtab-widget-timer-menu-hide = Skrij odštevalnik
 newtab-widget-timer-menu-learn-more = Več o tem
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = Glavne novice
+newtab-daily-briefing-card-menu-dismiss = Skrij
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = Posodobljeno pred { $minutes } min
 newtab-widget-message-title = Ostanite osredotočeni s seznami in vgrajenim časovnikom
 newtab-promo-card-title = Podprite { -brand-product-name(sklon: "tozilnik") }
 newtab-promo-card-body = Naši sponzorji podpirajo naše poslanstvo ustvarjanja boljšega spleta

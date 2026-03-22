@@ -235,18 +235,14 @@ h6 {
 }
 
 listing {
-  display: block;
-  font-family: -moz-fixed;
   font-size: medium;
-  white-space: pre;
-  margin-block: 1em;
 }
 
+listing,
 xmp,
 pre,
 plaintext {
   display: block;
-  font-family: -moz-fixed;
   white-space: pre;
   margin-block: 1em;
 }
@@ -512,8 +508,14 @@ dfn {
 tt,
 code,
 kbd,
-samp {
+pre,
+samp,
+listing,
+xmp,
+plaintext {
   font-family: -moz-fixed;
+  /* Replace this with text-spacing:none when the shorthand is implemented: */
+  text-autospace: no-autospace;
 }
 
 u,

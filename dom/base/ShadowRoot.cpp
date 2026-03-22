@@ -62,17 +62,7 @@ ShadowRoot::ShadowRoot(Element* aElement, ShadowRootMode aMode,
                        IsClonable aIsClonable, IsSerializable aIsSerializable,
                        Declarative aDeclarative,
                        already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-    : DocumentFragment(std::move(aNodeInfo)),
-      DocumentOrShadowRoot(this),
-      mMode(aMode),
-      mDelegatesFocus(aDelegatesFocus),
-      mSlotAssignment(aSlotAssignment),
-      mIsDetailsShadowTree(aElement->IsHTMLElement(nsGkAtoms::details)),
-      mIsAvailableToElementInternals(false),
-      mIsDeclarative(aDeclarative),
-      mIsClonable(aIsClonable),
-      mIsSerializable(aIsSerializable),
-      mReferenceTarget(nsGkAtoms::_empty) {
+    : DocumentFragment(std::move(aNodeInfo)), DocumentOrShadowRoot(this) {
   // nsINode.h relies on this.
   MOZ_ASSERT(static_cast<nsINode*>(this) == reinterpret_cast<nsINode*>(this));
   MOZ_ASSERT(static_cast<nsIContent*>(this) ==
@@ -85,7 +75,37 @@ ShadowRoot::ShadowRoot(Element* aElement, ShadowRootMode aMode,
   // track the subtree root using GetContainingShadow().
   ClearSubtreeRootPointer();
 
-  SetFlags(NODE_IS_IN_SHADOW_TREE);
+  uint32_t flags = NODE_IS_IN_SHADOW_TREE;
+
+  if (aMode == ShadowRootMode::Closed) {
+    flags |= SHADOW_ROOT_MODE_CLOSED;
+  }
+
+  if (aDelegatesFocus == Element::DelegatesFocus::Yes) {
+    flags |= SHADOW_ROOT_DELEGATES_FOCUS;
+  }
+
+  if (aSlotAssignment == SlotAssignmentMode::Manual) {
+    flags |= SHADOW_ROOT_SLOT_ASSIGNMENT_MANUAL;
+  }
+
+  if (aElement->IsHTMLElement(nsGkAtoms::details)) {
+    flags |= SHADOW_ROOT_IS_DETAILS_SHADOW_TREE;
+  }
+
+  if (aDeclarative == Declarative::Yes) {
+    flags |= SHADOW_ROOT_IS_DECLARATIVE;
+  }
+
+  if (aIsClonable == IsClonable::Yes) {
+    flags |= SHADOW_ROOT_IS_CLONABLE;
+  }
+
+  if (aIsSerializable == IsSerializable::Yes) {
+    flags |= SHADOW_ROOT_IS_SERIALIZABLE;
+  }
+
+  SetFlags(flags);
   if (Host()->IsInNativeAnonymousSubtree()) {
     // NOTE(emilio): We could consider just propagating the
     // IN_NATIVE_ANONYMOUS_SUBTREE flag (not making this an anonymous root), but
@@ -179,12 +199,11 @@ nsresult ShadowRoot::Bind() {
 }
 
 void ShadowRoot::Unbind() {
+  UnbindContext context(*this, /* aBatchState = */ nullptr);
   if (IsInComposedDoc()) {
     SetIsConnected(false);
     OwnerDoc()->RemoveComposedDocShadowRoot(*this);
   }
-
-  UnbindContext context(*this, /* aBatchState = */ nullptr);
   for (nsIContent* child = GetFirstChild(); child;
        child = child->GetNextSibling()) {
     child->UnbindFromTree(context);
@@ -624,7 +643,7 @@ void ShadowRoot::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 
 void ShadowRoot::GetSlotNameFor(const nsIContent& aContent,
                                 nsAString& aName) const {
-  if (mIsDetailsShadowTree) {
+  if (IsDetailsShadowTree()) {
     const auto* summary = HTMLSummaryElement::FromNode(aContent);
     if (summary && summary->IsMainSummary()) {
       aName.AssignLiteral("internal-main-summary");
@@ -757,7 +776,7 @@ void ShadowRoot::MaybeReassignContent(nsIContent& aElementOrText) {
 }
 
 void ShadowRoot::MaybeReassignMainSummary(SummaryChangeReason aReason) {
-  MOZ_ASSERT(mIsDetailsShadowTree);
+  MOZ_ASSERT(IsDetailsShadowTree());
   if (aReason == SummaryChangeReason::Insertion) {
     // We've inserted a summary element, may need to remove the existing one.
     SlotArray* array = mSlotMap.Get(u"internal-main-summary"_ns);
@@ -843,7 +862,7 @@ void ShadowRoot::MaybeUnslotHostChild(nsIContent& aChild) {
 
   slot->EnqueueSlotChangeEvent();
   slot->RemoveAssignedNode(aChild);
-  if (mIsDetailsShadowTree && aChild.IsHTMLElement(nsGkAtoms::summary)) {
+  if (IsDetailsShadowTree() && aChild.IsHTMLElement(nsGkAtoms::summary)) {
     MaybeReassignMainSummary(SummaryChangeReason::Deletion);
   }
 }
@@ -861,7 +880,7 @@ void ShadowRoot::MaybeSlotHostChild(nsIContent& aChild) {
     return;
   }
 
-  if (mIsDetailsShadowTree && aChild.IsHTMLElement(nsGkAtoms::summary)) {
+  if (IsDetailsShadowTree() && aChild.IsHTMLElement(nsGkAtoms::summary)) {
     MaybeReassignMainSummary(SummaryChangeReason::Insertion);
   }
 
@@ -940,7 +959,69 @@ void ShadowRoot::GetHTML(const GetHTMLOptions& aOptions, nsAString& aResult) {
       this, true, aResult, aOptions.mSerializableShadowRoots,
       aOptions.mShadowRoots);
 }
+
+// static
+bool ShadowRoot::ReferenceTargetIDTargetChanged(Element* aOldElement,
+                                                Element* aNewElement,
+                                                void* aData) {
+  ShadowRoot* shadowRoot = static_cast<ShadowRoot*>(aData);
+  if (aOldElement) {
+    aOldElement->RemoveReferenceTargetChangeObserver(
+        RecursiveReferenceTargetChanged, shadowRoot);
+  }
+  if (aNewElement) {
+    aNewElement->AddReferenceTargetChangeObserver(
+        RecursiveReferenceTargetChanged, shadowRoot);
+  }
+  shadowRoot->NotifyReferenceTargetChangedObservers();
+  return true;
+}
+
+// static
+bool ShadowRoot::RecursiveReferenceTargetChanged(void* aData) {
+  ShadowRoot* shadowRoot = static_cast<ShadowRoot*>(aData);
+  shadowRoot->NotifyReferenceTargetChangedObservers();
+  return true;
+}
+
 void ShadowRoot::SetReferenceTarget(RefPtr<nsAtom> aTarget) {
-  MOZ_ASSERT(aTarget);
-  mReferenceTarget = std::move(aTarget);
+  if (!StaticPrefs::dom_shadowdom_referenceTarget_enabled()) {
+    return;
+  }
+
+  if (aTarget == mReferenceTarget) {
+    return;
+  }
+
+  if (mReferenceTarget) {
+    RemoveIDTargetObserver(mReferenceTarget, ReferenceTargetIDTargetChanged,
+                           this, false);
+    if (Element* oldElement = GetReferenceTargetElement()) {
+      oldElement->RemoveReferenceTargetChangeObserver(
+          RecursiveReferenceTargetChanged, this);
+    }
+  }
+
+  if (!aTarget) {
+    mReferenceTarget = nullptr;
+  } else {
+    mReferenceTarget = std::move(aTarget);
+
+    Element* referenceTargetElement = AddIDTargetObserver(
+        mReferenceTarget, ReferenceTargetIDTargetChanged, this, false);
+    if (referenceTargetElement) {
+      referenceTargetElement->AddReferenceTargetChangeObserver(
+          RecursiveReferenceTargetChanged, this);
+    }
+  }
+
+  NotifyReferenceTargetChangedObservers();
+}
+
+void ShadowRoot::NotifyReferenceTargetChangedObservers() {
+  Element* host = GetHost();
+  if (!host) {
+    return;
+  }
+  host->NotifyReferenceTargetChanged();
 }

@@ -54,7 +54,6 @@
 @RESPATH@/fonts/*
 #endif
 @RESPATH@/hyphenation/*
-@RESPATH@/browser/@PREF_DIR@/firefox-l10n.js
 #ifdef HAVE_MAKENSISU
 @BINPATH@/uninstall/helper.exe
 #endif
@@ -87,6 +86,11 @@
 @BINPATH@/@MOZ_CHILD_PROCESS_NAME@.app/
 @BINPATH@/@MOZ_EME_PROCESS_NAME@.app/
 @BINPATH@/@MOZ_GPU_PROCESS_NAME@.app/
+#ifdef NIGHTLY_BUILD
+#ifndef MOZ_NO_SMART_CARDS
+@BINPATH@/@MOZ_PKCS11_PROCESS_NAME@.app/
+#endif
+#endif
 #endif
 #ifdef XP_WIN
 @BINPATH@/@MOZ_CHILD_PROCESS_NAME@
@@ -446,4 +450,8 @@ bin/libfreebl_64int_3.so
 
 #if defined(DESKTOP_LAUNCHER_ENABLED)
 @BINPATH@/desktop-launcher/desktop-launcher@BIN_SUFFIX@
+#endif
+
+#if defined(BUILT_BY_MOZILLA)
+@RESPATH@/distribution/*
 #endif

@@ -282,3 +282,20 @@ pub extern "C" fn locale_service_default_font_language_group(
     };
     out.assign(font_group)
 }
+
+/// The suffix appended prior to navigating when using `ctrl` or `command`
+/// when hitting return/enter in the URL bar.
+#[no_mangle]
+pub extern "C" fn locale_service_default_url_fixup_suffix(name: &nsACString, out: &mut nsACString) {
+    match langid_for_mozilla(name) {
+        Ok(langid) => match langid.language.as_str() {
+            "be" => out.assign(".by"),
+            "cs" => out.assign(".cz"),
+            "da" => out.assign(".dk"),
+            "nb" | "nn" => out.assign(".no"),
+            "sk" => out.assign(".sk"),
+            _ => out.assign(".com"),
+        },
+        Err(_) => out.assign(".com"),
+    }
+}

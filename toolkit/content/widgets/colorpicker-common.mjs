@@ -123,6 +123,10 @@ export class ColorPickerCommon {
     this.updateUI();
   }
 
+  enableAlphaPicker() {
+    this.element.querySelector(".spectrum-alpha").hidden = false;
+  }
+
   onElementClick(e) {
     e.stopPropagation();
   }
@@ -193,12 +197,6 @@ export class ColorPickerCommon {
   updateColorPreview() {
     // Overlay the rgba color over a checkered image background.
     this.colorPreview.style.setProperty("--overlay-color", this.rgbCssString);
-
-    // We should be able to distinguish the color preview on high luminance rgba values.
-    // Give the color preview a light grey border if the luminance of the current rgba
-    // tuple is great.
-    const colorLuminance = InspectorUtils.relativeLuminance(...this.rgbFloat);
-    this.colorPreview.classList.toggle("high-luminance", colorLuminance > 0.85);
 
     // Set title on color preview for better UX
     this.colorPreview.title = this.colorName;

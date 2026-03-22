@@ -48,6 +48,13 @@ ID
 # lint-ignore-next-line: syntax-difference
 !testing/web-platform/tests/tools/third_party/**/*.egg-info
 
+# Still add Cargo.toml.orig and dotfiles in third_party/rust because cargo
+# vendored crates contain those files, which some other rules ignore.
+# lint-ignore-next-line: syntax-difference
+!third_party/rust/**/Cargo.toml.orig
+# lint-ignore-next-line: syntax-difference
+!third_party/rust/**/.*
+
 # Ignore pywebsocket3 intermediate files.
 testing/web-platform/tests/tools/third_party/pywebsocket3/pywebsocket3.egg-info
 testing/web-platform/tests/tools/third_party/pywebsocket3/build
@@ -102,6 +109,7 @@ devtools/**/node_modules/
 tools/browsertime/node_modules/
 tools/lint/eslint/eslint-plugin-mozilla/node_modules/
 tools/lint/stylelint/stylelint-plugin-mozilla/node_modules/
+tools/terser/node_modules/
 browser/components/asrouter/node_modules/
 browser/components/aboutwelcome/node_modules/
 browser/extensions/newtab/node_modules/
@@ -197,7 +205,6 @@ remote/test/puppeteer/docs/puppeteer.api.json
 remote/test/puppeteer/experimental/
 remote/test/puppeteer/lib/
 remote/test/puppeteer/node_modules/
-remote/test/puppeteer/package-lock.json
 remote/test/puppeteer/packages/browsers/src/generated
 remote/test/puppeteer/packages/ng-schematics/test/build
 remote/test/puppeteer/packages/puppeteer/**/README.md
@@ -241,7 +248,6 @@ mobile/android/**/.gradle
 mobile/android/**/build
 mobile/android/**/.kotlin
 mobile/android/**/bin
-mobile/android/**/generated
 
 # app-services build artifacts.
 services/app-services/tools/nimbus-gradle-plugin/.gradle
@@ -326,6 +332,9 @@ lextab.py
 .vs/
 .vscode/
 *.user
+
+# Ignore Zed editor configuration files.
+.zed/
 
 # Thunderbird source tree
 /comm/

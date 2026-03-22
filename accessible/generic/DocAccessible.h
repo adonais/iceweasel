@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_a11y_DocAccessible_h__
-#define mozilla_a11y_DocAccessible_h__
+#ifndef mozilla_a11y_DocAccessible_h_
+#define mozilla_a11y_DocAccessible_h_
 
 #include "HyperTextAccessible.h"
 #include "AccEvent.h"
@@ -329,7 +329,7 @@ class DocAccessible : public HyperTextAccessible,
   /**
    * Return true if the given ID is referred by relation attribute.
    */
-  bool IsDependentID(dom::Element* aElement, const nsAString& aID) const {
+  bool IsDependentID(dom::Element* aElement, nsAtom* aID) const {
     return GetRelProviders(aElement, aID);
   }
 
@@ -424,6 +424,12 @@ class DocAccessible : public HyperTextAccessible,
    * refresh the cache on each of those frames' accessibles.
    */
   void RefreshAnchorRelationCacheForTarget(LocalAccessible* aTarget);
+
+  /**
+   * Queue cache updates for all invokers (popovertarget/commandfor) of a
+   * popover element.
+   */
+  void QueueCacheUpdateForPopoverInvokers(dom::Element* aPopoverEl);
 
  protected:
   virtual ~DocAccessible();
@@ -756,7 +762,7 @@ class DocAccessible : public HyperTextAccessible,
   };
 
   typedef nsTArray<mozilla::UniquePtr<AttrRelProvider>> AttrRelProviders;
-  typedef nsClassHashtable<nsStringHashKey, AttrRelProviders>
+  typedef nsClassHashtable<nsAtomHashKey, AttrRelProviders>
       DependentIDsHashtable;
 
   /**
@@ -764,11 +770,10 @@ class DocAccessible : public HyperTextAccessible,
    * a DOM document if the element is in uncomposed document or associated
    * with shadow DOM the element is in.
    */
-  AttrRelProviders* GetRelProviders(dom::Element* aElement,
-                                    const nsAString& aID) const;
+  AttrRelProviders* GetRelProviders(dom::Element* aElement, nsAtom* aID) const;
   AttrRelProviders* GetOrCreateRelProviders(dom::Element* aElement,
-                                            const nsAString& aID);
-  void RemoveRelProvidersIfEmpty(dom::Element* aElement, const nsAString& aID);
+                                            nsAtom* aID);
+  void RemoveRelProvidersIfEmpty(dom::Element* aElement, nsAtom* aID);
 
   /**
    * A map used to look up the target node for an implicit reverse relation
@@ -801,6 +806,7 @@ class DocAccessible : public HyperTextAccessible,
   nsTHashMap<nsIContent*, AttrRelProviders> mDependentElementsMap;
 
   friend class RelatedAccIterator;
+  friend class HTMLLabelIterator;
 
   /**
    * Used for our caching algorithm. We store the list of nodes that should be

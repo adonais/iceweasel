@@ -911,19 +911,15 @@ bool IMEContentObserver::OnMouseButtonEvent(nsPresContext& aPresContext,
 
 void IMEContentObserver::CharacterDataWillChange(
     nsIContent* aContent, const CharacterDataChangeInfo& aInfo) {
-  if (!aContent->IsText()) {
-    return;  // Ignore if it's a comment node or something other invisible data
-             // node.
+  if (!NeedsTextChangeNotification() || !aContent->IsText() ||
+      !nsContentUtils::IsInSameAnonymousTree(mRootElement, aContent)) {
+    // Ignore if it's a comment node, a node in a shadow tree or so, or some
+    // other invisible data node.
+    return;
   }
   MOZ_ASSERT(mPreCharacterDataChangeLength < 0,
              "CharacterDataChanged() should've reset "
              "mPreCharacterDataChangeLength");
-
-  if (!NeedsTextChangeNotification() ||
-      !nsContentUtils::IsInSameAnonymousTree(mRootElement, aContent)) {
-    return;
-  }
-
   mEndOfAddedTextCache.Clear(__FUNCTION__);
   mStartOfRemovingTextRangeCache.Clear(__FUNCTION__);
 
@@ -944,9 +940,11 @@ void IMEContentObserver::CharacterDataWillChange(
 
 void IMEContentObserver::CharacterDataChanged(
     nsIContent* aContent, const CharacterDataChangeInfo& aInfo) {
-  if (!aContent->IsText()) {
-    return;  // Ignore if it's a comment node or something other invisible data
-             // node.
+  if (!aContent->IsText() ||
+      !nsContentUtils::IsInSameAnonymousTree(mRootElement, aContent)) {
+    // Ignore if it's a comment node, a node in a shadow tree or so, or some
+    // other invisible data node.
+    return;
   }
 
   // Let TextComposition have a change to update composition string range in
@@ -958,8 +956,7 @@ void IMEContentObserver::CharacterDataChanged(
     }
   }
 
-  if (!NeedsTextChangeNotification() ||
-      !nsContentUtils::IsInSameAnonymousTree(mRootElement, aContent)) {
+  if (!NeedsTextChangeNotification()) {
     return;
   }
 
@@ -2686,10 +2683,8 @@ void IMEContentObserver::FlatTextCache::ContentAdded(
     const nsIContent& aLastContent, const Maybe<uint32_t>& aAddedFlatTextLength,
     const Element* aRootElement) {
   MOZ_ASSERT(nsContentUtils::ComparePoints(
-                 RawRangeBoundary(aFirstContent.GetParentNode(),
-                                  aFirstContent.GetPreviousSibling()),
-                 RawRangeBoundary(aLastContent.GetParentNode(),
-                                  aLastContent.GetPreviousSibling()))
+                 ConstRawRangeBoundary::FromChild(aFirstContent),
+                 ConstRawRangeBoundary::FromChild(aLastContent))
                  .value() <= 0);
   if (!mContainerNode) {
     return;  // No cache.
@@ -3001,37 +2996,31 @@ Result<std::pair<uint32_t, uint32_t>, nsresult> IMEContentObserver::
   MOZ_ASSERT(HasCache());
   const Maybe<int32_t> newLastContentComparedWithCachedFirstContent =
       nsContentUtils::ComparePoints(
-          RawRangeBoundary(aNewLastContent.GetParentNode(),
-                           aNewLastContent.GetPreviousSibling()),
-          RawRangeBoundary(mFirst->GetParentNode(),
-                           mFirst->GetPreviousSibling()));
+          ConstRawRangeBoundary::FromChild(aNewLastContent),
+          ConstRawRangeBoundary::FromChild(*mFirst));
   MOZ_RELEASE_ASSERT(newLastContentComparedWithCachedFirstContent.isSome());
   MOZ_ASSERT(*newLastContentComparedWithCachedFirstContent != 0);
   MOZ_ASSERT((*nsContentUtils::ComparePoints(
-                  RawRangeBoundary(aNewFirstContent.GetParentNode(),
-                                   aNewFirstContent.GetPreviousSibling()),
-                  RawRangeBoundary(mFirst->GetParentNode(),
-                                   mFirst->GetPreviousSibling())) > 0) ==
+                  ConstRawRangeBoundary::FromChild(aNewFirstContent),
+                  ConstRawRangeBoundary::FromChild(*mFirst)) > 0) ==
                  (*newLastContentComparedWithCachedFirstContent > 0),
              "New nodes shouldn't contain mFirst");
   const Maybe<int32_t> newFirstContentComparedWithCachedLastContent =
       mLast->GetNextSibling() == &aNewFirstContent
           ? Some(1)
           : nsContentUtils::ComparePoints(
-                RawRangeBoundary(aNewFirstContent.GetParentNode(),
-                                 aNewFirstContent.GetPreviousSibling()),
+                ConstRawRangeBoundary::FromChild(aNewFirstContent),
                 // aNewFirstContent and aNewLastContent may be descendants of
                 // mLast. Then, we need to ignore the new length.  Therefore,
                 // we need to compare aNewFirstContent position with next
                 // sibling of mLast.
-                RawRangeBoundary(mLast->GetParentNode(), mLast));
+                ConstRawRangeBoundary::After(*mLast));
   MOZ_RELEASE_ASSERT(newFirstContentComparedWithCachedLastContent.isSome());
   MOZ_ASSERT(*newFirstContentComparedWithCachedLastContent != 0);
   MOZ_ASSERT((*newFirstContentComparedWithCachedLastContent > 0) ==
                  (*nsContentUtils::ComparePoints(
-                      RawRangeBoundary(aNewLastContent.GetParentNode(),
-                                       aNewLastContent.GetPreviousSibling()),
-                      RawRangeBoundary(mLast->GetParentNode(), mLast)) > 0),
+                      ConstRawRangeBoundary::FromChild(aNewLastContent),
+                      ConstRawRangeBoundary::After(*mLast)) > 0),
              "New nodes shouldn't contain mLast");
 
   Result<uint32_t, nsresult> length =

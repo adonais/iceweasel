@@ -165,7 +165,7 @@ add_task(async function generalBeforeSuggestions_defaultChanged() {
       Assert.ok(engine2.name, "Engine 2 name is non-empty");
       Assert.notEqual(engine1.name, engine2.name, "Engine names are different");
       Assert.equal(
-        Services.search.defaultEngine.name,
+        SearchService.defaultEngine.name,
         engine2.name,
         "Engine 2 is default"
       );
@@ -195,7 +195,8 @@ add_task(async function suggestedIndex_only() {
 
   let index = -1;
   let provider = new SuggestedIndexProvider(index);
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await withSuggestions(async () => {
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -214,7 +215,7 @@ add_task(async function suggestedIndex_only() {
     await UrlbarTestUtils.promisePopupClose(window);
   });
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 
   // Add back history so subsequent tasks run with this test's initial state.
   await addHistory();
@@ -225,7 +226,8 @@ add_task(async function suggestedIndex_only() {
 add_task(async function suggestedIndex_first() {
   let index = 1;
   let provider = new SuggestedIndexProvider(index);
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -242,7 +244,7 @@ add_task(async function suggestedIndex_first() {
   });
   await UrlbarTestUtils.promisePopupClose(window);
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 });
 
 // The Firefox Suggest label should not appear above a suggested-index result
@@ -250,7 +252,8 @@ add_task(async function suggestedIndex_first() {
 add_task(async function suggestedIndex_notFirst() {
   let index = -1;
   let provider = new SuggestedIndexProvider(index);
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -270,12 +273,12 @@ add_task(async function suggestedIndex_notFirst() {
   });
   await UrlbarTestUtils.promisePopupClose(window);
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 });
 
 // Labels that appear multiple times but not consecutively should be shown.
 add_task(async function repeatLabels() {
-  let engineName = Services.search.defaultEngine.name;
+  let engineName = SearchService.defaultEngine.name;
   let results = [
     new UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -307,7 +310,8 @@ add_task(async function repeatLabels() {
     results,
     priority: Infinity,
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -321,7 +325,7 @@ add_task(async function repeatLabels() {
   });
   await UrlbarTestUtils.promisePopupClose(window);
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 });
 
 // Clicking a row label shouldn't do anything.
@@ -435,7 +439,8 @@ add_task(async function ariaLabel() {
     results,
     priority: Infinity,
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -454,11 +459,11 @@ add_task(async function ariaLabel() {
 
   await UrlbarTestUtils.promisePopupClose(window);
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 });
 
 add_task(async function hideRowLabel() {
-  let engineName = Services.search.defaultEngine.name;
+  let engineName = SearchService.defaultEngine.name;
   const results = [
     new UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -497,7 +502,8 @@ add_task(async function hideRowLabel() {
     results,
     priority: Infinity,
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -515,11 +521,11 @@ add_task(async function hideRowLabel() {
 
   await UrlbarTestUtils.promisePopupClose(window);
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 });
 
 add_task(async function previousRowLabelIsHidden_then_searchResults() {
-  let engineName = Services.search.defaultEngine.name;
+  let engineName = SearchService.defaultEngine.name;
   const results = [
     new UrlbarResult({
       type: UrlbarUtils.RESULT_TYPE.URL,
@@ -552,7 +558,8 @@ add_task(async function previousRowLabelIsHidden_then_searchResults() {
     results,
     priority: Infinity,
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
@@ -565,7 +572,7 @@ add_task(async function previousRowLabelIsHidden_then_searchResults() {
 
   await UrlbarTestUtils.promisePopupClose(window);
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 });
 
 /**
@@ -708,19 +715,16 @@ async function withSuggestions(
   let engine = await SearchTestUtils.installOpenSearchEngine({
     url: getRootDirectory(gTestPath) + engineBasename,
   });
-  let oldDefaultEngine = await Services.search.getDefault();
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  let oldDefaultEngine = await SearchService.getDefault();
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
   try {
     await callback(engine);
   } finally {
-    await Services.search.setDefault(
+    await SearchService.setDefault(
       oldDefaultEngine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+      SearchService.CHANGE_REASON.UNKNOWN
     );
-    await Services.search.removeEngine(engine);
+    await SearchService.removeEngine(engine);
     await SpecialPowers.popPrefEnv();
   }
 }

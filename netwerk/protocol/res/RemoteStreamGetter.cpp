@@ -130,7 +130,7 @@ void RemoteStreamGetter::OnStream(const Maybe<RemoteStreamInfo>& aStreamInfo) {
     return;
   }
 
-  mPump = pump;
+  mPump = std::move(pump);
 }
 
 }  // namespace net

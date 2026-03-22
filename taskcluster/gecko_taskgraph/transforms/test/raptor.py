@@ -5,7 +5,7 @@
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.copy import deepcopy
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.treeherder import join_symbol, split_symbol
 from voluptuous import Extra, Optional, Required
 
@@ -15,7 +15,7 @@ from gecko_taskgraph.util.perftest import is_external_browser
 transforms = TransformSequence()
 task_transforms = TransformSequence()
 
-raptor_description_schema = Schema({
+raptor_description_schema = LegacySchema({
     # Raptor specific configs.
     Optional("raptor"): {
         Optional("activity"): optionally_keyed_by("app", str),

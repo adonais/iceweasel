@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsGlobalWindowInner_h___
-#define nsGlobalWindowInner_h___
+#ifndef nsGlobalWindowInner_h_
+#define nsGlobalWindowInner_h_
 
 #include "nsHashKeys.h"
 #include "nsPIDOMWindow.h"
@@ -597,7 +597,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   }
 #define WINDOW_ONLY_EVENT EVENT
 #define TOUCH_EVENT EVENT
-#include "mozilla/EventNameList.h"
+#include "mozilla/EventNameList.inc"
 #undef TOUCH_EVENT
 #undef WINDOW_ONLY_EVENT
 #undef BEFOREUNLOAD_EVENT
@@ -780,6 +780,8 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void ResizeBy(int32_t aWidthDif, int32_t aHeightDif,
                 mozilla::dom::CallerType aCallerType,
                 mozilla::ErrorResult& aError);
+  void MoveResize(int32_t aX, int32_t aY, int32_t aWidth, int32_t aHeight,
+                  mozilla::ErrorResult& aError);
   void Scroll(double aXScroll, double aYScroll) {
     ScrollTo(aXScroll, aYScroll);
   }
@@ -983,6 +985,15 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
       const nsAString& aType, float aOffsetX, float aOffsetY,
       const mozilla::dom::SynthesizeMouseEventData& aMouseEventData,
       const mozilla::dom::SynthesizeMouseEventOptions& aOptions,
+      const mozilla::dom::Optional<
+          mozilla::OwningNonNull<mozilla::dom::VoidFunction>>& aCallback,
+      mozilla::ErrorResult& aError);
+
+  MOZ_CAN_RUN_SCRIPT bool SynthesizeTouchEvent(
+      const nsAString& aType,
+      const nsTArray<mozilla::dom::SynthesizeTouchEventData>& aTouches,
+      const int32_t aModifiers,
+      const mozilla::dom::SynthesizeTouchEventOptions& aOptions,
       const mozilla::dom::Optional<
           mozilla::OwningNonNull<mozilla::dom::VoidFunction>>& aCallback,
       mozilla::ErrorResult& aError);
@@ -1575,4 +1586,4 @@ inline nsGlobalWindowOuter* nsGlobalWindowInner::GetOuterWindowInternal()
   return nsGlobalWindowOuter::Cast(GetOuterWindow());
 }
 
-#endif /* nsGlobalWindowInner_h___ */
+#endif /* nsGlobalWindowInner_h_ */

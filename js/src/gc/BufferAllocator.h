@@ -41,7 +41,7 @@ class Nursery;
 namespace gc {
 
 struct BufferChunk;
-struct Cell;
+class Cell;
 class GCRuntime;
 struct LargeBuffer;
 struct SmallBufferRegion;
@@ -103,6 +103,10 @@ struct SmallBufferRegion;
 // No locks are required to allocate on the main thread, even when off-thread
 // sweeping is taking place. This is achieved by moving data to be swept to
 // separate containers from those used for allocation on the main thread.
+//
+// Multithreaded use is supported but requires external synchronization using a
+// mutex. This is configured by calling set/clearMultiThreadedUse() and checked
+// internally by checkAccess().
 //
 // Small and medium allocations
 // ----------------------------
@@ -222,6 +226,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   static constexpr size_t FullChunkSizeClass = AllocSizeClasses;
 
+  struct Stats;
+
   // An RAII guard to lock and unlock the buffer allocator lock.
   class AutoLock : public LockGuard<Mutex> {
    public:
@@ -280,7 +286,6 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
     void pushBack(size_t sizeClass, FreeRegion* region);
 
     void append(FreeLists&& other);
-    void prepend(FreeLists&& other);
 
     void remove(size_t sizeClass, FreeRegion* region);
 
@@ -292,6 +297,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
     void assertEmpty() const;
     void assertContains(size_t sizeClass, FreeRegion* region) const;
     void checkAvailable() const;
+
+    void getStats(Stats& stats);
   };
 
   class ChunkLists {
@@ -349,14 +356,14 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   // Chunks containing medium and small buffers. They may contain both
   // nursery-owned and tenured-owned buffers.
-  MainThreadData<BufferChunkList> mixedChunks;
+  MainThreadOrGCTaskData<BufferChunkList> mixedChunks;
 
   // Chunks containing only tenured-owned small and medium buffers.
-  MainThreadData<BufferChunkList> tenuredChunks;
+  MainThreadOrGCTaskData<BufferChunkList> tenuredChunks;
 
   // Free lists for the small and medium buffers in |mixedChunks| and
   // |tenuredChunks|. Used for allocation.
-  MainThreadData<FreeLists> freeLists;
+  MainThreadOrGCTaskData<FreeLists> freeLists;
 
   // Chunks that may contain nursery-owned buffers waiting to be swept during a
   // minor GC. Populated from |mixedChunks|.
@@ -372,14 +379,14 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 
   // Chunks that have been swept and are available for allocation but have not
   // had their free regions merged into |freeLists|. Owned by the main thread.
-  MainThreadData<ChunkLists> availableMixedChunks;
-  MainThreadData<ChunkLists> availableTenuredChunks;
+  MainThreadOrGCTaskData<ChunkLists> availableMixedChunks;
+  MainThreadOrGCTaskData<ChunkLists> availableTenuredChunks;
 
   // List of large nursery-owned buffers.
-  MainThreadData<LargeAllocList> largeNurseryAllocs;
+  MainThreadOrGCTaskData<LargeAllocList> largeNurseryAllocs;
 
   // List of large tenured-owned buffers.
-  MainThreadData<LargeAllocList> largeTenuredAllocs;
+  MainThreadOrGCTaskData<LargeAllocList> largeTenuredAllocs;
 
   // Map from allocation pointer to buffer metadata for large buffers.
   // Access requires holding the mutex during sweeping.
@@ -398,8 +405,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   mozilla::Atomic<bool, mozilla::Relaxed> hasMinorSweepDataToMerge;
 
   // GC state for minor and major GC.
-  MainThreadData<State> minorState;
-  MainThreadData<State> majorState;
+  MainThreadOrGCTaskData<State> minorState;
+  MainThreadOrGCTaskData<State> majorState;
 
   // Flags to tell the main thread that sweeping has finished and the state
   // should be updated.
@@ -409,11 +416,15 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   // A major GC was started while a minor GC was still sweeping. Chunks by the
   // minor GC will be moved directly to the list of chunks to sweep for the
   // major GC. This happens for the minor GC at the start of every major GC.
-  MainThreadData<bool> majorStartedWhileMinorSweeping;
+  MainThreadOrGCTaskData<bool> majorStartedWhileMinorSweeping;
 
   // A major GC finished while a minor GC was still sweeping. Some post major GC
   // cleanup will be deferred to the end of the minor sweeping.
-  MainThreadData<bool> majorFinishedWhileMinorSweeping;
+  MainThreadOrGCTaskData<bool> majorFinishedWhileMinorSweeping;
+
+#ifdef DEBUG
+  Mutex* multiThreadedMutex = nullptr;
+#endif
 
  public:
   explicit BufferAllocator(JS::Zone* zone);
@@ -450,6 +461,11 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void traceEdge(JSTracer* trc, Cell* owner, void** bufferp, const char* name);
   bool markTenuredAlloc(void* alloc);
   bool isMarkedBlack(void* alloc);
+
+  // Allow use off main thread while holding the given mutex. Must be called
+  // from the main thread.
+  void setMultiThreadedUse(Mutex* mutex);
+  void clearMultiThreadedUse();
 
   // For debugging, used to implement GetMarkInfo. Returns false for allocations
   // being swept on another thread.
@@ -490,6 +506,9 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
 #endif
 
  private:
+  void checkAccess() const;
+  void checkMainThread() const;
+
   void markNurseryOwnedAlloc(void* alloc, bool nurseryOwned);
   friend class js::Nursery;
 
@@ -557,17 +576,20 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void freeMedium(void* alloc);
   bool growMedium(void* alloc, size_t newBytes);
   bool shrinkMedium(void* alloc, size_t newBytes);
-  enum class ListPosition { Front, Back };
-  FreeRegion* addFreeRegion(FreeLists* freeLists, uintptr_t start,
-                            uintptr_t bytes, SizeKind kind, bool anyDecommitted,
-                            ListPosition position,
-                            bool expectUnchanged = false);
+  FreeRegion* makeFreeRegion(uintptr_t start, uintptr_t bytes,
+                             bool anyDecommitted, bool expectUnchanged = false);
+  void pushFreeRegionBack(FreeLists* freeLists, FreeRegion* region,
+                          SizeKind kind);
+  void pushFreeRegionFront(FreeLists* freeLists, FreeRegion* region,
+                           SizeKind kind);
   void updateFreeRegionStart(FreeLists* freeLists, FreeRegion* region,
                              uintptr_t newStart, SizeKind kind);
   FreeLists* getChunkFreeLists(BufferChunk* chunk);
   ChunkLists* getChunkAvailableLists(BufferChunk* chunk);
   void maybeUpdateAvailableLists(ChunkLists* availableChunks,
                                  BufferChunk* chunk, size_t oldChunkSizeClass);
+  bool canModifyAllocations(BufferChunk* chunk);
+  bool isConcurrentMarking() const;
   bool isSweepingChunk(BufferChunk* chunk);
   void traceMediumAlloc(JSTracer* trc, Cell* owner, void** allocp,
                         const char* name);
@@ -586,6 +608,8 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   // Get the maximum size class of allocations that can use a free region. This
   // rounds down to the largest class that can fit in this region.
   static size_t SizeClassForFreeRegion(size_t bytes, SizeKind kind);
+
+  static void CheckFreeRegionClass(FreeRegion* region, size_t sizeClass);
 
   static size_t SizeClassBytes(size_t sizeClass);
   friend struct BufferChunk;

@@ -8,11 +8,6 @@
 // AppConstants, and overrides importESModule to be a no-op (which
 // can't be done for a static import statement).
 
-// eslint-disable-next-line mozilla/use-static-import
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
-
 import {
   actionCreators as ac,
   actionTypes as at,
@@ -46,6 +41,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Region: "resource://gre/modules/Region.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   Sampling: "resource://gre/modules/components-utils/Sampling.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   Screenshots: "resource://newtab/lib/Screenshots.sys.mjs",
 });
 
@@ -54,20 +50,6 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
     "resource://messaging-system/lib/Logger.sys.mjs"
   );
   return new Logger("TopSitesFeed");
-});
-
-ChromeUtils.defineLazyGetter(lazy, "pageFrecencyThreshold", () => {
-  // @backward-compat { version 147 }
-  // Frecency was changed in 147 Nightly.
-  if (Services.vc.compare(AppConstants.MOZ_APP_VERSION, "147.0a1") >= 0) {
-    // 30 days ago, 5 visits. The threshold avoids one non-typed visit from
-    // immediately being included in recent history to mimic the original
-    // threshold which aimed to prevent first-run visits from being included in
-    // Top Sites.
-    return lazy.PlacesUtils.history.pageFrecencyThreshold(30, 5, false);
-  }
-  // The old threshold used for classic frecency: Slightly over one visit.
-  return 101;
 });
 
 const DEFAULT_SITES_PREF = "default.sites";
@@ -178,8 +160,11 @@ function smartshortcutsEnabled(values) {
 const OVERSAMPLE_MULTIPLIER = 2;
 
 function getShortHostnameForCurrentSearch() {
+  // @backward-compat { version 149 }
+  // SearchService replaces Services.search in 149.
   return lazy.NewTabUtils.shortHostname(
-    Services.search.defaultEngine.searchUrlDomain
+    // eslint-disable-next-line mozilla/valid-services
+    (Services.search ?? lazy.SearchService).defaultEngine.searchUrlDomain
   );
 }
 
@@ -1467,10 +1452,10 @@ export class TopSitesFeed {
       if (discoveryStreamSpocPositions?.length) {
         function reformatImageURL(url, width, height) {
           // Change the image URL to request a size tailored for the parent container width
-          // Also: force JPEG, quality 60, no upscaling, no EXIF data
+          // Also: force WebP, quality 75, no upscaling, no EXIF data
           // Uses Thumbor: https://thumbor.readthedocs.io/en/latest/usage.html
           // For now we wrap this in single quotes because this is being used in a url() css rule, and otherwise would cause a parsing error.
-          return `'https://img-getpocket.cdn.mozilla.net/${width}x${height}/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(
+          return `'https://img-getpocket.cdn.mozilla.net/${width}x${height}/filters:format(webp):quality(75):no_upscale():strip_exif()/${encodeURIComponent(
             url
           )}'`;
         }
@@ -1532,7 +1517,10 @@ export class TopSitesFeed {
     // We must wait for search services to initialize in order to access default
     // search engine properties without triggering a synchronous initialization
     try {
-      await Services.search.init();
+      // @backward-compat { version 149 }
+      // SearchService replaces Services.search in 149.
+      // eslint-disable-next-line mozilla/valid-services
+      await (Services.search ?? lazy.SearchService).init();
     } catch {
       // We continue anyway because we want the user to see their sponsored,
       // saved, or visited shortcut tiles even if search engines are not
@@ -1544,7 +1532,15 @@ export class TopSitesFeed {
     const cache = await this.frecentCache.request({
       // We need to overquery due to the top 5 alexa search + default search possibly being removed
       numItems: numFetch + SEARCH_FILTERS.length + 1,
-      topsiteFrecency: lazy.pageFrecencyThreshold,
+      // 30 days ago, 5 visits. The threshold avoids one non-typed visit from
+      // immediately being included in recent history to mimic the original
+      // threshold which aimed to prevent first-run visits from being included in
+      // Top Sites.
+      topsiteFrecency: lazy.PlacesUtils.history.pageFrecencyThreshold(
+        30,
+        5,
+        false
+      ),
     });
     for (let link of cache) {
       const hostname = lazy.NewTabUtils.shortURL(link);
@@ -1977,7 +1973,10 @@ export class TopSitesFeed {
 
     // Populate the state with available search shortcuts
     let searchShortcuts = [];
-    for (const engine of await Services.search.getAppProvidedEngines()) {
+    // @backward-compat { version 149 }
+    // SearchService replaces Services.search in 149.
+    for (const engine of await (Services.search ?? lazy.SearchService) // eslint-disable-line mozilla/valid-services
+      .getAppProvidedEngines()) {
       const shortcut = CUSTOM_SEARCH_SHORTCUTS.find(s =>
         engine.aliases.includes(s.keyword)
       );
@@ -2235,6 +2234,10 @@ export class TopSitesFeed {
    */
   _insertPin(site, originalIndex, draggedFromIndex) {
     let index = this._adjustPinIndexForSponsoredLinks(site, originalIndex);
+    let adjustedDraggedFromIndex = this._adjustPinIndexForSponsoredLinks(
+      site,
+      draggedFromIndex
+    );
 
     // Don't insert any pins past the end of the visible top sites. Otherwise,
     // we can end up with a bunch of pinned sites that can never be unpinned again
@@ -2250,11 +2253,11 @@ export class TopSitesFeed {
     if (!pinned[index]) {
       this._pinSiteAt(site, index);
     } else {
-      pinned[draggedFromIndex] = null;
+      pinned[adjustedDraggedFromIndex] = null;
       // Find the hole to shift the pinned site(s) towards. We shift towards the
       // hole left by the site being dragged.
       let holeIndex = index;
-      const indexStep = index > draggedFromIndex ? -1 : 1;
+      const indexStep = index > adjustedDraggedFromIndex ? -1 : 1;
       while (pinned[holeIndex]) {
         holeIndex += indexStep;
       }

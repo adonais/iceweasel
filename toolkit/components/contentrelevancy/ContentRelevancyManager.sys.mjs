@@ -106,14 +106,10 @@ class RelevancyManager {
     lazy.NimbusFeatures.contentRelevancy.onUpdate(this._nimbusUpdateCallback);
     this.#initialized = true;
 
-    if (
-      Services.startup.isInOrBeyondShutdownPhase(
-        Ci.nsIAppStartup.SHUTDOWN_PHASE_APPSHUTDOWNCONFIRMED
-      )
-    ) {
+    if (lazy.AsyncShutdown.profileChangeTeardown.isClosed) {
       // Corner case, where we're already in the shutdown phase while being constructed.  In this
       // case, uninitialize immediately to deregister callback handlers
-      // (#https://bugzilla.mozilla.org/show_bug.cgi?id=1990569#c11)
+      // (https://bugzilla.mozilla.org/show_bug.cgi?id=1990569#c11)
       this.uninit();
     } else {
       // If we're not in the above corner case, then register a shutdown blocker to uninitialize.

@@ -47,8 +47,6 @@ import mozprocess
 import mozrunner
 from manifestparser import TestManifest
 from manifestparser.filters import (
-    chunk_by_dir,
-    chunk_by_runtime,
     chunk_by_slice,
     failures,
     pathprefix,
@@ -146,7 +144,6 @@ TBPL_RETRY = 4  # Defined in mozharness
 class MessageLogger:
     """File-like object for logging messages (structured logs)"""
 
-    BUFFERING_THRESHOLD = 100
     # This is a delimiter used by the JS side to avoid logs interleaving
     DELIMITER = "\ue175\uee31\u2c32\uacbf"
     BUFFERED_ACTIONS = set(["test_status", "log"])
@@ -297,15 +294,7 @@ class MessageLogger:
             self.restore_buffering = self.restore_buffering or self.buffering
             self.buffering = False
             if self.buffered_messages:
-                snipped = len(self.buffered_messages) - self.BUFFERING_THRESHOLD
-                if snipped > 0:
-                    self.logger.info(
-                        f"<snipped {snipped} output lines - "
-                        "if you need more context, please use "
-                        "SimpleTest.requestCompleteLog() in your test>"
-                    )
-                # Dumping previously buffered messages
-                self.dump_buffered(limit=True)
+                self.dump_buffered()
 
             # Logging the error message
             self.logger.log_raw(message)
@@ -342,14 +331,9 @@ class MessageLogger:
     def flush(self):
         sys.stdout.flush()
 
-    def dump_buffered(self, limit=False):
-        if limit:
-            dumped_messages = self.buffered_messages[-self.BUFFERING_THRESHOLD :]
-        else:
-            dumped_messages = self.buffered_messages
-
+    def dump_buffered(self):
         last_timestamp = None
-        for buf in dumped_messages:
+        for buf in self.buffered_messages:
             # pylint --py3k W1619
             timestamp = datetime.fromtimestamp(buf["time"] / 1000).strftime("%H:%M:%S")
             if timestamp != last_timestamp:
@@ -1011,7 +995,7 @@ class MochitestDesktop:
             self.log = logger_options["log"]
         else:
             self.log = commandline.setup_logging(
-                "mochitest", logger_options, {"tbpl": sys.stdout}
+                "mochitest", logger_options, {"raw": sys.stdout}
             )
 
         self.message_logger = MessageLogger(
@@ -1733,52 +1717,14 @@ toolbar#nav-bar {
             if options.test_tags:
                 filters.append(tags(options.test_tags))
 
+            path_filter = None
             if options.test_paths:
                 options.test_paths = self.normalize_paths(options.test_paths)
-                filters.append(pathprefix(options.test_paths))
+                path_filter = pathprefix(options.test_paths)
+                filters.append(path_filter)
 
-            # Add chunking filters if specified
             if options.totalChunks:
-                if options.chunkByDir:
-                    filters.append(
-                        chunk_by_dir(
-                            options.thisChunk, options.totalChunks, options.chunkByDir
-                        )
-                    )
-                elif options.chunkByRuntime:
-                    if mozinfo.info["os"] == "android":
-                        platkey = "android"
-                    elif mozinfo.isWin:
-                        platkey = "windows"
-                    else:
-                        platkey = "unix"
-
-                    runtime_file = os.path.join(
-                        SCRIPT_DIR,
-                        "runtimes",
-                        f"manifest-runtimes-{platkey}.json",
-                    )
-                    if not os.path.exists(runtime_file):
-                        self.log.error("runtime file %s not found!" % runtime_file)
-                        sys.exit(1)
-
-                    # Given the mochitest flavor, load the runtimes information
-                    # for only that flavor due to manifest runtime format change in Bug 1637463.
-                    with open(runtime_file) as f:
-                        if "suite_name" in options:
-                            runtimes = json.load(f).get(options.suite_name, {})
-                        else:
-                            runtimes = {}
-
-                    filters.append(
-                        chunk_by_runtime(
-                            options.thisChunk, options.totalChunks, runtimes
-                        )
-                    )
-                else:
-                    filters.append(
-                        chunk_by_slice(options.thisChunk, options.totalChunks)
-                    )
+                filters.append(chunk_by_slice(options.thisChunk, options.totalChunks))
 
             noDefaultFilters = False
             if options.runFailures:
@@ -1797,6 +1743,16 @@ toolbar#nav-bar {
                 strictExpressions=True,
                 **info,
             )
+
+            # Store missing manifests for later use in structured logging
+            self.missing_manifests = set()
+            if path_filter and path_filter.missing:
+                self.missing_manifests = path_filter.missing
+                self.log.warning(
+                    "The following path(s) didn't resolve any tests:\n  {}".format(
+                        "  \n".join(sorted(path_filter.missing))
+                    )
+                )
 
             if len(tests) == 0:
                 self.log.error(
@@ -1930,6 +1886,11 @@ toolbar#nav-bar {
 
             self.log.info("Dumping active_tests to %s file." % options.dump_tests)
             sys.exit()
+
+        # Add missing manifests with empty test lists so they appear in
+        # group_result output with SKIP status
+        for missing_path in self.missing_manifests:
+            self.tests_by_manifest[missing_path] = []
 
         # Upload a list of test manifests that were executed in this run.
         if "MOZ_UPLOAD_DIR" in os.environ:
@@ -4238,13 +4199,14 @@ toolbar#nav-bar {
                 self.harness.countfail += numFailures
                 for message in errorMessages:
                     msg = {
-                        "action": "test_end",
+                        "action": "test_status",
+                        "subtest": "Shutdown",
                         "status": "FAIL",
                         "expected": "PASS",
                         "thread": None,
                         "pid": None,
                         "source": "mochitest",
-                        "time": int(time.time() * 1000),
+                        "time": message.get("time") or int(time.time() * 1000),
                         "test": message["test"],
                         "message": message["msg"],
                     }

@@ -99,4 +99,4 @@ class MockGraphInterface : public GraphInterface {
 
 }  // namespace mozilla
 
-#endif
+#endif  // MOCK_GRAPH_INTERFACE_H_

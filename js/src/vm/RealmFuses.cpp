@@ -12,6 +12,7 @@
 #include "builtin/RegExp.h"
 #include "builtin/WeakMapObject.h"
 #include "builtin/WeakSetObject.h"
+#include "debugger/DebugScript.h"
 #include "js/experimental/TypedData.h"
 #include "vm/GlobalObject.h"
 #include "vm/NativeObject.h"
@@ -113,10 +114,29 @@ bool js::OptimizeGetIteratorFuse::checkInvariant(JSContext* cx) {
 
 void js::OptimizeGetIteratorFuse::popFuse(JSContext* cx,
                                           RealmFuses& realmFuses) {
-  InvalidatingRealmFuse::popFuse(cx, realmFuses);
+  RealmFuse::popFuse(cx, realmFuses);
+  realmFuses.optimizeGetIteratorBytecodeFuse.popFuse(cx, realmFuses);
   MOZ_ASSERT(cx->global());
   cx->runtime()->setUseCounter(cx->global(),
                                JSUseCounter::OPTIMIZE_GET_ITERATOR_FUSE);
+}
+
+bool js::OptimizeGetIteratorBytecodeFuse::checkInvariant(JSContext* cx) {
+  auto& realmFuses = cx->realm()->realmFuses;
+  if (!realmFuses.optimizeGetIteratorFuse.intact()) {
+    return false;
+  }
+  // If there's a DebugScript for a script in this realm, this fuse should have
+  // been popped.
+  if (DebugScriptMap* map = cx->zone()->debugScriptMap) {
+    for (DebugScriptMap::Range r = map->all(); !r.empty(); r.popFront()) {
+      JSScript* script = r.front().key();
+      if (script->realm() == cx->realm()) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 bool js::OptimizeArrayIteratorPrototypeFuse::checkInvariant(JSContext* cx) {

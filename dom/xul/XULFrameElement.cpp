@@ -7,8 +7,10 @@
 #include "mozilla/dom/XULFrameElement.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
+#include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
+#include "mozilla/dom/UnbindContext.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "mozilla/dom/XULFrameElementBinding.h"
 #include "nsCOMPtr.h"
@@ -151,7 +153,7 @@ void XULFrameElement::SwapFrameLoaders(nsFrameLoaderOwner* aOtherLoaderOwner,
 nsresult XULFrameElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   MOZ_TRY(nsXULElement::BindToTree(aContext, aParent));
 
-  if (IsInComposedDoc()) {
+  if (IsInComposedDoc() && !aContext.IsMove()) {
     NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
                  "Missing a script blocker!");
     // We're in a document now.  Kick off the frame load.
@@ -162,10 +164,12 @@ nsresult XULFrameElement::BindToTree(BindContext& aContext, nsINode& aParent) {
 }
 
 void XULFrameElement::UnbindFromTree(UnbindContext& aContext) {
-  if (RefPtr<nsFrameLoader> frameLoader = GetFrameLoader()) {
-    frameLoader->Destroy();
+  if (!aContext.IsMove()) {
+    if (RefPtr<nsFrameLoader> frameLoader = GetFrameLoader()) {
+      frameLoader->Destroy();
+      mFrameLoader = nullptr;
+    }
   }
-  mFrameLoader = nullptr;
 
   nsXULElement::UnbindFromTree(aContext);
 }

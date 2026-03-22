@@ -11,6 +11,8 @@
 #  include <stdio.h>
 #endif
 #include "js/AllocPolicy.h"
+#include "js/ColumnNumber.h"
+#include "js/JitCodeAPI.h"
 #include "js/Vector.h"
 
 #ifdef JS_JITSPEW
@@ -37,6 +39,10 @@ class MBasicBlock;
 class MIRGraph;
 class LInstruction;
 enum class CacheOp : uint16_t;
+
+using ProfilerJitCodeVector = Vector<JS::JitCodeRecord, 0, SystemAllocPolicy>;
+
+void ResetPerfSpewer(bool enabled);
 
 struct AutoLockPerfSpewer {
   AutoLockPerfSpewer();
@@ -84,16 +90,20 @@ class PerfSpewer {
 
   // Save the debugInfo_ vector to the JIT dump file.
   void saveDebugInfo(const char* filename, uintptr_t base,
+                     JS::JitCodeRecord* maybeProfilerRecord,
                      AutoLockPerfSpewer& lock);
 
   // Save the generated IR file, if any, and the debug info to the JIT dump
   // file.
   void saveJitCodeDebugInfo(JSScript* script, JitCode* code,
+                            JS::JitCodeRecord* maybeProfilerRecord,
                             AutoLockPerfSpewer& lock);
 
   // Save the generated IR file, if any, and the debug info to the JIT dump
   // file.
-  void saveWasmCodeDebugInfo(uintptr_t codeBase, AutoLockPerfSpewer& lock);
+  void saveWasmCodeDebugInfo(uintptr_t codeBase,
+                             JS::JitCodeRecord* maybeProfilerRecord,
+                             AutoLockPerfSpewer& lock);
 
   void saveJSProfile(JitCode* code, JS::UniqueChars& desc, JSScript* script);
   void saveWasmProfile(uintptr_t codeBase, size_t codeSize,
@@ -123,10 +133,21 @@ class PerfSpewer {
   static void Init();
 
   static void CollectJitCodeInfo(JS::UniqueChars& function_name, JitCode* code,
+                                 JS::JitCodeRecord* maybeProfilerRecord,
                                  AutoLockPerfSpewer& lock);
   static void CollectJitCodeInfo(JS::UniqueChars& function_name,
                                  void* code_addr, uint64_t code_size,
+                                 JS::JitCodeRecord* maybeProfilerRecord,
                                  AutoLockPerfSpewer& lock);
+
+  // Explicitly free heap memory allocated using the system allocator. This must
+  // be called when the PerfSpewer is allocated in a LifoAlloc, since the
+  // destructor won't be called when the LifoAlloc is freed.
+  void reset() {
+    endRecording();
+    debugInfo_.clearAndFree();
+    irFileName_ = JS::UniqueChars();
+  }
 };
 
 void CollectPerfSpewerJitCodeProfile(JitCode* code, const char* msg);
@@ -215,7 +236,8 @@ class BaselinePerfSpewer : public PerfSpewer {
   const char* CodeName(uint32_t op) override;
 
  public:
-  void recordInstruction(MacroAssembler& masm, jsbytecode* pc, JSScript* script,
+  void recordInstruction(MacroAssembler& masm, jsbytecode* pc, unsigned line,
+                         JS::LimitedColumnNumberOneOrigin column,
                          CompilerFrameInfo& frame);
   void saveProfile(JSContext* cx, JSScript* script, JitCode* code);
 };

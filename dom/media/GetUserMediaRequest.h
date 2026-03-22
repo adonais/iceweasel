@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef GetUserMediaRequest_h__
-#define GetUserMediaRequest_h__
+#ifndef GetUserMediaRequest_h_
+#define GetUserMediaRequest_h_
 
 #include <cstdint>
 
@@ -90,4 +90,4 @@ class GetUserMediaRequest : public nsISupports, public nsWrapperCache {
 }  // namespace dom
 }  // namespace mozilla
 
-#endif  // GetUserMediaRequest_h__
+#endif  // GetUserMediaRequest_h_

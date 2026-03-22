@@ -143,7 +143,7 @@ module.exports = function (config) {
             },
             "content-src/components/CTAParagraph.jsx": {
               functions: 50,
-              branches: 75,
+              branches: 70,
             },
             "content-src/components/HeroImage.jsx": {
               branches: 62.5,

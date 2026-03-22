@@ -685,7 +685,7 @@ void nsJARURI::Serialize(URIParams& aParams) {
   SerializeURI(mJAREntry, params.jarEntry());
   params.charset() = mCharsetHint;
 
-  aParams = params;
+  aParams = std::move(params);
 }
 
 bool nsJARURI::Deserialize(const URIParams& aParams) {

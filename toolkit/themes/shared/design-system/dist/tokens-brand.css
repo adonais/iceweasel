@@ -55,6 +55,9 @@
     /** Page **/
     --page-main-content-width: 664px;
 
+    /** Table **/
+    --table-header-text-color: light-dark(var(--color-white), var(--color-gray-100));
+
     /** Text **/
     --text-color: light-dark(var(--color-gray-100), var(--color-gray-05));
     --text-color-accent-primary-selected: light-dark(var(--color-white), var(--color-gray-100));

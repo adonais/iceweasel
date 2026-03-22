@@ -605,11 +605,7 @@
   <string name="customize_addon_collection_hint">Җыентык исеме</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">Җыентык иясе (Кулланучы ID)</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Кире кайту</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Кыстыргычлар</string>
@@ -1050,7 +1046,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Үзгәртү</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Күчереп алу</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Күчереп алу</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Уртаклашу</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -1092,11 +1088,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s бетерелде</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">КИРЕ АЛУ</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">КИРЕ АЛУ</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">%s бетерелде</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s бетерелде</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">Бетерелгән элементлар: %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Бетерелгән элементлар: %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Кире кайту</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -1327,11 +1323,11 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Firefox-ны төп браузерыгыз итү</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Хосусый гизүне сынап карагыз</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Хосусый гизүне сынап карагыз</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Эзләр калдырмыйча гизегез</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Эзләр калдырмыйча гизегез</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Беренче эзләвегезне башлагыз</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Беренче эзләвегезне башлагыз</string>
   <!-- Preference for taking the short survey. -->
   <string name="preferences_take_survey">Анкетада катнашу</string>
   <!-- Preference for not taking the short survey. -->
@@ -2211,6 +2207,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Хосусый табларга өстәү</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 

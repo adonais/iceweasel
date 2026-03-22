@@ -82,6 +82,7 @@ const Template = ({
   type,
   showItemLabels,
   imageSrc,
+  showItemDescriptions,
 }) => {
   return html`
     <style>
@@ -141,6 +142,9 @@ const Template = ({
               ? AVATAR_L10N_IDS[i]
               : nothing}
             label=${showItemLabels ? `Item number ${i + 1}` : nothing}
+            description=${showItemDescriptions
+              ? `Description for item number ${i + 1}`
+              : nothing}
             imagesrc=${ifDefined(imageSrc)}
           >
             ${getSlottedContent(slottedItem, i)}
@@ -158,6 +162,7 @@ Default.args = {
   supportPage: "",
   type: "radio",
   showItemLabels: false,
+  showItemDescriptions: false,
 };
 
 export const WithPickerDescription = Template.bind({});
@@ -188,6 +193,12 @@ export const WithItemLabels = Template.bind({});
 WithItemLabels.args = {
   ...Default.args,
   showItemLabels: true,
+};
+
+export const WithItemDescriptions = Template.bind({});
+WithItemDescriptions.args = {
+  ...WithItemLabels.args,
+  showItemDescriptions: true,
 };
 
 export const WithImage = Template.bind({});

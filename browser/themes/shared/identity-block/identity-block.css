@@ -333,7 +333,7 @@
       list-style-image: url(chrome://browser/skin/trust-icon-active.svg);
     }
 
-    &.inactive {
+    &.inactive:not(.insecure) {
       list-style-image: url(chrome://browser/skin/trust-icon-disabled.svg);
     }
 

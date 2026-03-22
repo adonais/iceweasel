@@ -14,7 +14,6 @@ import {
   MESSAGE_TYPE_LIST,
   MESSAGE_TYPE_HASH,
 } from "modules/ActorConstants.mjs";
-import { MESSAGING_EXPERIMENTS_DEFAULT_FEATURES } from "modules/MessagingExperimentConstants.sys.mjs";
 
 enzyme.configure({ adapter: new Adapter() });
 
@@ -43,11 +42,8 @@ chai.tv4.addSchema("file:///FxMSCommon.schema.json", FxMSCommonSchema);
 
 const overrider = new GlobalOverrider();
 
-const RemoteSettings = name => ({
+const RemoteSettings = _cid => ({
   get: () => {
-    if (name === "attachment") {
-      return Promise.resolve([{ attachment: {} }]);
-    }
     return Promise.resolve([]);
   },
   on: () => {},
@@ -535,13 +531,7 @@ const TEST_GLOBAL = {
   FeatureCalloutBroker: {
     showFeatureCallout() {},
   },
-  NimbusFeatures: FakeNimbusFeatures([
-    ...MESSAGING_EXPERIMENTS_DEFAULT_FEATURES,
-    "glean",
-    "newtab",
-    "pocketNewtab",
-    "cookieBannerHandling",
-  ]),
+  NimbusFeatures: FakeNimbusFeatures,
   TelemetryEnvironment: {
     setExperimentActive() {},
     currentEnvironment: {

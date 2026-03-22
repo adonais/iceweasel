@@ -7,6 +7,7 @@
 #include "MediaElementAudioSourceNode.h"
 
 #include "AudioDestinationNode.h"
+#include "AudioNodeExternalInputTrack.h"
 #include "AudioNodeTrack.h"
 #include "MediaStreamTrack.h"
 #include "mozilla/dom/MediaElementAudioSourceNodeBinding.h"
@@ -64,6 +65,7 @@ MediaElementAudioSourceNode::Create(
     return nullptr;
   }
 
+  node->ListenForEffectiveVolumeChange();
   node->ListenForAllowedToPlay(aOptions);
   return node.forget();
 }
@@ -89,8 +91,25 @@ void MediaElementAudioSourceNode::ListenForAllowedToPlay(
       ->Track(mAllowedToPlayRequest);
 }
 
+void MediaElementAudioSourceNode::ListenForEffectiveVolumeChange() {
+  UpdateVolume(mElement->ComputedVolume());
+  mEffectiveVolumeChangeListener =
+      mElement->EffectiveVolumeChangeEvent().Connect(
+          AbstractThread::MainThread(), this,
+          &MediaElementAudioSourceNode::UpdateVolume);
+}
+
+void MediaElementAudioSourceNode::UpdateVolume(float aVolume) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!mTrack) {
+    return;
+  }
+  mTrack->AsAudioNodeExternalInputTrack()->SetVolume(aVolume);
+}
+
 void MediaElementAudioSourceNode::Destroy() {
   mAllowedToPlayRequest.DisconnectIfExists();
+  mEffectiveVolumeChangeListener.DisconnectIfExists();
   MediaStreamAudioSourceNode::Destroy();
 }
 

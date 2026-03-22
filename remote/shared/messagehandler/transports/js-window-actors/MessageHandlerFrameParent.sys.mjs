@@ -108,7 +108,7 @@ export class MessageHandlerFrameParent extends JSWindowActorParent {
   }
 
   async #handleMessageHandlerEventMessage(messageData) {
-    const { name, contextInfo, data, sessionId } = messageData;
+    const { data, name, relatedContexts, sessionId } = messageData;
     const [moduleName] = name.split(".");
 
     // Re-emit the event on the RootMessageHandler.
@@ -150,7 +150,7 @@ export class MessageHandlerFrameParent extends JSWindowActorParent {
         );
       }
     }
-    messageHandler.emitEvent(name, eventPayload, contextInfo);
+    messageHandler.emitEvent(name, eventPayload, relatedContexts);
   }
 
   async #handleSendCommandMessage(messageData) {

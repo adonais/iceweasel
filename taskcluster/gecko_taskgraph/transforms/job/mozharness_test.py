@@ -7,7 +7,7 @@ import os
 import re
 
 from taskgraph.util import json
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from taskgraph.util.taskcluster import get_artifact_path
 from voluptuous import Extra, Optional, Required
 
@@ -44,7 +44,7 @@ def get_variant(test_platform):
     return ""
 
 
-mozharness_test_run_schema = Schema({
+mozharness_test_run_schema = LegacySchema({
     Required("using"): "mozharness-test",
     Required("test"): {
         Required("test-platform"): str,

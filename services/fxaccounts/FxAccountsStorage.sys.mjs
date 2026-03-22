@@ -503,7 +503,7 @@ LoginManagerStorage.prototype = {
         httpRealm: FXA_PWDMGR_REALM,
       });
       for (let login of logins) {
-        Services.logins.removeLogin(login);
+        await Services.logins.removeLoginAsync(login);
       }
       return true;
     } catch (ex) {

@@ -472,7 +472,7 @@ class StyleInspectorMenu {
    */
   _onCopyRule() {
     const node = this._getClickedNode();
-    const rule = getRuleFromNode(node, this.view._elementStyle);
+    const rule = getRuleFromNode(node, this.view.elementStyle);
     if (!rule) {
       console.error("Can't copy rule, no rule found for node", node);
       return;

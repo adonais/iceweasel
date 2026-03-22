@@ -412,7 +412,6 @@ pub trait MatrixHelpers<Src, Dst> {
     fn exceeds_2d_scale(&self, limit: f64) -> bool;
     fn inverse_project(&self, target: &Point2D<f32, Dst>) -> Option<Point2D<f32, Src>>;
     fn inverse_rect_footprint(&self, rect: &Box2D<f32, Dst>) -> Option<Box2D<f32, Src>>;
-    fn transform_kind(&self) -> TransformedRectKind;
     fn is_simple_translation(&self) -> bool;
     fn is_simple_2d_translation(&self) -> bool;
     fn is_2d_scale_translation(&self) -> bool;
@@ -497,14 +496,6 @@ impl<Src, Dst> MatrixHelpers<Src, Dst> for Transform3D<f32, Src, Dst> {
             self.inverse_project(&rect.bottom_left())?,
             self.inverse_project(&rect.bottom_right())?,
         ]))
-    }
-
-    fn transform_kind(&self) -> TransformedRectKind {
-        if self.preserves_2d_axis_alignment() {
-            TransformedRectKind::AxisAligned
-        } else {
-            TransformedRectKind::Complex
-        }
     }
 
     fn is_simple_translation(&self) -> bool {

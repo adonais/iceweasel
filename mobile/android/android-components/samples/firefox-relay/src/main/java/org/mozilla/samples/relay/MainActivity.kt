@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import mozilla.appservices.fxaclient.FxaConfig
 import mozilla.appservices.fxaclient.FxaServer
@@ -21,6 +22,7 @@ import mozilla.components.concept.sync.DeviceType
 import mozilla.components.concept.sync.OAuthAccount
 import mozilla.components.concept.sync.Profile
 import mozilla.components.lib.fetch.httpurlconnection.HttpURLConnectionClient
+import mozilla.components.lib.state.ext.flow
 import mozilla.components.service.fxa.FxaAuthData
 import mozilla.components.service.fxa.PeriodicSyncConfig
 import mozilla.components.service.fxa.SyncConfig
@@ -31,19 +33,20 @@ import mozilla.components.service.fxa.manager.SCOPE_SESSION
 import mozilla.components.service.fxa.manager.SCOPE_SYNC
 import mozilla.components.service.fxa.sync.SyncReason
 import mozilla.components.service.fxa.toAuthType
-import mozilla.components.service.fxrelay.FxRelay
+import mozilla.components.service.fxrelay.eligibility.Eligible
+import mozilla.components.service.fxrelay.eligibility.Ineligible
+import mozilla.components.service.fxrelay.eligibility.RelayEligibilityStore
+import mozilla.components.service.fxrelay.eligibility.RelayFeature
 import mozilla.components.support.AppServicesInitializer
 import mozilla.components.support.base.log.Log
 import mozilla.components.support.base.log.sink.AndroidLogSink
 import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import mozilla.components.support.rusthttp.RustHttpConfig
 import mozilla.components.support.rustlog.RustLog
-import kotlin.collections.setOf
 
 const val CLIENT_ID = "3c49430b43dfba77"
 const val CONFIG_URL = "https://accounts.firefox.com"
 const val REDIRECT_URL = "$CONFIG_URL/oauth/success/3c49430b43dfba77"
-const val RELAY_URL = "https://relay.firefox.com"
 const val SCOPE_RELAY = "https://identity.mozilla.com/apps/relay"
 
 /**
@@ -65,6 +68,13 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
         )
     }
 
+    private val relayEligibilityStore by lazy { RelayEligibilityStore() }
+    private val relayFeature by lazy {
+        RelayFeature(
+            accountManager = accountManager,
+            store = relayEligibilityStore,
+        )
+    }
     private val accountObserver = object : AccountObserver {
         override fun onAuthenticated(account: OAuthAccount, authType: AuthType) {
             lifecycleScope.launch {
@@ -106,6 +116,7 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
         }
 
         initViews()
+        observeRelayEligibility()
     }
 
     private fun initViews() {
@@ -134,23 +145,20 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
 
         findViewById<View>(R.id.buttonRelayAddresses).setOnClickListener {
             lifecycleScope.launch {
-                val account = accountManager.authenticatedAccount()
-                    ?: run {
-                        Toast.makeText(
-                            applicationContext,
-                            "Account is null.",
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                        return@launch
+                val eligibilityState = relayEligibilityStore.state.eligibilityState
+
+                val message = if (eligibilityState is Eligible) {
+                    val emailMasks = relayFeature.fetchEmailMasks()
+                    if (emailMasks == null) {
+                        "Failed to fetch email masks"
+                    } else {
+                        "Fetched ${emailMasks.size} email masks"
                     }
+                } else {
+                    "Not eligible for Relay (state=$eligibilityState)"
+                }
 
-                val addressList = FxRelay(account).fetchAllAddresses()
-
-                Toast.makeText(
-                    applicationContext,
-                    "Fetched ${addressList.size} addresses",
-                    Toast.LENGTH_SHORT,
-                ).show()
+                Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -181,5 +189,29 @@ open class MainActivity : AppCompatActivity(), LoginFragment.OnLoginCompleteList
     private fun displayProfile(profile: Profile) {
         val txtView: TextView = findViewById(R.id.txtView)
         txtView.text = getString(R.string.signed_in, "${profile.displayName ?: ""} ${profile.email}")
+    }
+
+    private fun observeRelayEligibility() {
+        lifecycleScope.launch {
+            relayEligibilityStore.flow().collectLatest { state ->
+                val msg = when (val e = state.eligibilityState) {
+                    is Ineligible.FirefoxAccountNotLoggedIn -> "Relay: not logged in"
+                    is Ineligible.NoRelay -> "Relay: not eligible / no Relay"
+                    is Eligible.Free -> "Relay: eligible (free), remaining=${e.totalMasksUsed}"
+                    is Eligible.Premium -> "Relay: eligible (premium)"
+                }
+                findViewById<TextView>(R.id.txtView).text = msg
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        relayFeature.start()
+    }
+
+    override fun onStop() {
+        relayFeature.stop()
+        super.onStop()
     }
 }

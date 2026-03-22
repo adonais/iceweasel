@@ -18,7 +18,6 @@ import time
 import uuid
 from datetime import datetime
 
-import six
 import yaml
 from yaml import YAMLError
 
@@ -610,8 +609,6 @@ items from that key's value."
             # explicitly
             if c.get("update_channel"):
                 update_channel = c["update_channel"]
-                if six.PY2 and isinstance(update_channel, str):
-                    update_channel = update_channel.encode("utf-8")
                 env["MOZ_UPDATE_CHANNEL"] = update_channel
             else:  # let's just give the generic channel based on branch
                 env["MOZ_UPDATE_CHANNEL"] = "nightly-%s" % (self.branch,)
@@ -644,10 +641,7 @@ items from that key's value."
                 script=self, config=self.config, dirs=dirs
             )
         except MozconfigPathError as e:
-            if six.PY2:
-                self.fatal(e.message)
-            else:
-                self.fatal(e.msg)
+            self.fatal(e.msg)
 
         self.info(f"Use mozconfig: {abs_mozconfig_path}")
 

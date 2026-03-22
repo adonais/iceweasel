@@ -117,21 +117,6 @@ activity_stream:
       page: about:home or about_newtab - the page where the event occurred
       user_prefs: An integer representaing a user's A-S settings.
 
-aboutprivatebrowsing:
-  click:
-    objects: ["info_link", "promo_link", "dismiss_button"]
-    release_channel_collection: opt-out
-    record_in_processes: ["content"]
-    description: >
-      This is recorded when a user clicks a link on the private browsing newtab.
-    bug_numbers: [1709344, 1754635, 1781973, 1811146, 1841925, 1871197, 1922596, 1952111, 1984459]
-    notification_emails:
-      - "emz@mozilla.com"
-      - "tihuang@mozilla.com"
-    expiry_version: "149"
-    products:
-      - "firefox"
-
 readermode:
   view:
     objects: ["on", "off"]
@@ -1315,6 +1300,12 @@ fxa_avatar_menu:
         "signedin" and "login_failed".
       fxa_avatar: Boolean for whether or not account has set an avatar
       fxa_sync_on: Boolean for whether or not sync was configured at the time the event fired
+      device_count: >
+        Number of connected devices available to send tabs to (optional, only populated for send_tab)
+      action: >
+        The action selected by the user (optional, only populated for send_tab). Possible values
+        are "device" (sent to specific device), "all_devices" (sent to all devices), or
+        "manage_devices" (opened device management).
 
 fxa_app_menu:
   click:
@@ -1351,6 +1342,12 @@ fxa_app_menu:
         "signedin" and "login_failed".
       fxa_avatar: Boolean for whether or not account has set an avatar
       fxa_sync_on: Boolean for whether or not sync was configured at the time the event fired.
+      device_count: >
+        Number of connected devices available to send tabs to (optional, only populated for send_tab)
+      action: >
+        The action selected by the user (optional, only populated for send_tab). Possible values
+        are "device" (sent to specific device), "all_devices" (sent to all devices), or
+        "manage_devices" (opened device management).
 
 messaging_experiments:
   reach:

@@ -358,9 +358,24 @@ static already_AddRefed<DataSourceSurface> ScaleDataSourceSurface(
   uint8_t* srcBufferPtr = srcMap.GetData();
   uint8_t* dstBufferPtr = dstMap.GetData();
 
-  bool res = Scale(srcBufferPtr, srcSize.width, srcSize.height,
-                   srcMap.GetStride(), dstBufferPtr, dstSize.width,
-                   dstSize.height, dstMap.GetStride(), aSurface->GetFormat());
+  SamplingFilter filter = SamplingFilter::LINEAR;
+  switch (aOptions.mResizeQuality) {
+    case ResizeQuality::Pixelated:
+      filter = SamplingFilter::POINT;
+      break;
+    case ResizeQuality::Medium:
+    case ResizeQuality::High:
+      filter = SamplingFilter::GOOD;
+      break;
+    case ResizeQuality::Low:
+    default:
+      break;
+  }
+
+  bool res =
+      Scale(srcBufferPtr, srcSize.width, srcSize.height, srcMap.GetStride(),
+            dstBufferPtr, dstSize.width, dstSize.height, dstMap.GetStride(),
+            aSurface->GetFormat(), filter);
   if (!res) {
     return nullptr;
   }
@@ -1064,7 +1079,9 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateImageBitmapInternal(
   bool willModify = aOptions.mImageOrientation == ImageOrientation::FlipY ||
                     requiresPremultiply || requiresUnpremultiply;
   if ((willModify && !aAllocatedImageData) ||
-      (aOptions.mImageOrientation == ImageOrientation::FlipY &&
+      ((aOptions.mImageOrientation == ImageOrientation::FlipY ||
+        aOptions.mResizeWidth.WasPassed() ||
+        aOptions.mResizeHeight.WasPassed()) &&
        aCropRect.isSome()) ||
       aMustCopy) {
     dataSurface = surface->GetDataSurface();

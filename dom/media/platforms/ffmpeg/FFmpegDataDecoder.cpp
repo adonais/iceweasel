@@ -387,6 +387,7 @@ FFmpegDataDecoder<LIBAV_VER>::ProcessFlush() {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
   if (mCodecContext) {
     FFMPEG_LOG("FFmpegDataDecoder: flushing buffers");
+    ReleaseFrame();
     mLib->avcodec_flush_buffers(mCodecContext);
   }
   if (mCodecParser) {
@@ -404,14 +405,8 @@ void FFmpegDataDecoder<LIBAV_VER>::ProcessShutdown() {
 
   if (mCodecContext) {
     FFMPEG_LOG("FFmpegDataDecoder: shutdown");
+    ReleaseFrame();
     ReleaseCodecContext();
-#if LIBAVCODEC_VERSION_MAJOR >= 55
-    mLib->av_frame_free(&mFrame);
-#elif LIBAVCODEC_VERSION_MAJOR == 54
-    mLib->avcodec_free_frame(&mFrame);
-#else
-    mLib->av_freep(&mFrame);
-#endif
   }
 }
 
@@ -434,6 +429,16 @@ AVFrame* FFmpegDataDecoder<LIBAV_VER>::PrepareFrame() {
   mFrame = mLib->avcodec_alloc_frame();
 #endif
   return mFrame;
+}
+
+void FFmpegDataDecoder<LIBAV_VER>::ReleaseFrame() {
+#if LIBAVCODEC_VERSION_MAJOR >= 55
+  mLib->av_frame_free(&mFrame);
+#elif LIBAVCODEC_VERSION_MAJOR == 54
+  mLib->avcodec_free_frame(&mFrame);
+#else
+  mLib->av_freep(&mFrame);
+#endif
 }
 
 /* static */ AVCodec* FFmpegDataDecoder<LIBAV_VER>::FindSoftwareAVCodec(

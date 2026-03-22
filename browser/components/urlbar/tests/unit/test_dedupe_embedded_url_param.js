@@ -23,7 +23,7 @@ add_task(async function test_embedded_url_show_up_as_places_result() {
       makeSearchResult(context, {
         heuristic: true,
         query: "kitten",
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       makeVisitResult(context, {
         uri: "http://example.com/?url=http://kitten.com/",
@@ -93,7 +93,7 @@ add_task(async function test_deduplication_of_embedded_url_places_result() {
       makeSearchResult(context, {
         heuristic: true,
         query: "kitten",
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       makeVisitResult(context, {
         uri: "http://kitten.com/",
@@ -134,7 +134,7 @@ add_task(
         makeSearchResult(context, {
           heuristic: true,
           query: "kitten",
-          engineName: Services.search.defaultEngine.name,
+          engineName: SearchService.defaultEngine.name,
         }),
         makeVisitResult(context, {
           uri: "http://kitten.com/",
@@ -172,7 +172,7 @@ add_task(
         makeSearchResult(context, {
           heuristic: true,
           query: "kitten",
-          engineName: Services.search.defaultEngine.name,
+          engineName: SearchService.defaultEngine.name,
         }),
         makeVisitResult(context, {
           uri: "http://kitten.com/",
@@ -213,7 +213,7 @@ add_task(async function test_deduplication_of_embedded_url_switchTab_result() {
       makeSearchResult(context, {
         heuristic: true,
         query: "kitten",
-        engineName: Services.search.defaultEngine.name,
+        engineName: SearchService.defaultEngine.name,
       }),
       makeTabSwitchResult(context, {
         source: UrlbarUtils.RESULT_SOURCE.TAB,

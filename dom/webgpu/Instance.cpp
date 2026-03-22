@@ -32,10 +32,6 @@ GPU_IMPL_CYCLE_COLLECTION(WGSLLanguageFeatures, mParent)
 
 GPU_IMPL_CYCLE_COLLECTION(Instance, mOwner, mWgslLanguageFeatures)
 
-static inline nsDependentCString ToCString(const std::string_view s) {
-  return {s.data(), s.length()};
-}
-
 /* static */ bool Instance::PrefEnabled(JSContext* aCx, JSObject* aObj) {
   if (!StaticPrefs::dom_webgpu_enabled()) {
     return false;
@@ -118,10 +114,15 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   // Check if we should allow the request.
 
   std::optional<std::string_view> rejectionMessage = {};
-  const auto rejectIf = [&rejectionMessage](bool condition,
-                                            const char* message) {
+  const auto rejectIf = [&rejectionMessage, &promise, this](
+                            bool condition, const char* message) {
     if (condition && !rejectionMessage.has_value()) {
       rejectionMessage = message;
+      promise->MaybeResolve(JS::NullValue());
+      dom::AutoJSAPI api;
+      if (api.Init(mOwner)) {
+        JS::WarnUTF8(api.cx(), "%s", rejectionMessage.value().data());
+      }
     }
   };
 
@@ -146,7 +147,6 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   }
 
   if (rejectionMessage) {
-    promise->MaybeRejectWithNotSupportedError(ToCString(*rejectionMessage));
     return promise.forget();
   }
 
@@ -154,15 +154,14 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   // Make the request.
 
   auto* const canvasManager = gfx::CanvasManagerChild::Get();
-  if (!canvasManager) {
-    promise->MaybeRejectWithInvalidStateError(
-        "Failed to create CanvasManagerChild");
+  rejectIf(!canvasManager, "Failed to create CanvasManagerChild");
+  if (rejectionMessage) {
     return promise.forget();
   }
 
   RefPtr<WebGPUChild> child = canvasManager->GetWebGPUChild();
-  if (!child) {
-    promise->MaybeRejectWithInvalidStateError("Failed to create WebGPUChild");
+  rejectIf(!child, "Failed to create WebGPUChild");
+  if (rejectionMessage) {
     return promise.forget();
   }
 
@@ -223,9 +222,8 @@ already_AddRefed<dom::Promise> Instance::RequestAdapter(
   RawId adapter_id = ffi::wgpu_client_request_adapter(
       child->GetClient(), power_preference, aOptions.mForceFallbackAdapter);
 
-  auto pending_promise = WebGPUChild::PendingRequestAdapterPromise{
-      RefPtr(promise), RefPtr(this), adapter_id};
-  child->mPendingRequestAdapterPromises.push_back(std::move(pending_promise));
+  child->EnqueueRequestAdapterPromise(
+      PendingRequestAdapterPromise{promise, this, adapter_id});
 
   return promise.forget();
 }

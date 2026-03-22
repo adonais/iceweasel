@@ -57,6 +57,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchSERPTelemetry:
     "moz-src:///browser/components/search/SearchSERPTelemetry.sys.mjs",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.sys.mjs",
@@ -272,7 +273,7 @@ BrowserGlue.prototype = {
         // URI that it's been asked to load into a keyword search.
         let engine = null;
         try {
-          engine = Services.search.getEngineByName(
+          engine = lazy.SearchService.getEngineByName(
             subject.QueryInterface(Ci.nsISupportsString).data
           );
         } catch (ex) {
@@ -1336,7 +1337,7 @@ BrowserGlue.prototype = {
       }.bind(this),
 
       function searchBackgroundChecks() {
-        Services.search.runBackgroundChecks();
+        lazy.SearchService.runBackgroundChecks();
       },
     ];
 
@@ -1593,7 +1594,7 @@ BrowserGlue.prototype = {
     // Use an increasing number to keep track of the current state of the user's
     // profile, so we can move data around as needed as the browser evolves.
     // Completely unrelated to the current Firefox release number.
-    const APP_DATA_VERSION = 163;
+    const APP_DATA_VERSION = 165;
     const PREF = "browser.migration.version";
 
     let profileDataVersion = Services.prefs.getIntPref(PREF, -1);

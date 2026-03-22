@@ -2188,29 +2188,33 @@ void gfxFcPlatformFontList::GetFontList(nsAtom* aLangGroup,
   // Get the list of font family names using fontconfig
   GetSystemFontList(aListOfFonts, aLangGroup);
 
-  // Under Linux, the generics "serif", "sans-serif" and "monospace"
+  // Under Linux, the generics "serif", "sans-serif", "monospace" and "math"
   // are included in the pref fontlist. These map to whatever fontconfig
   // decides they should be for a given language, rather than one of the
   // fonts listed in the prefs font lists (e.g. font.name.*, font.name-list.*)
-  bool serif = false, sansSerif = false, monospace = false;
-  if (aGenericFamily.IsEmpty())
-    serif = sansSerif = monospace = true;
-  else if (aGenericFamily.LowerCaseEqualsLiteral("serif"))
+  bool serif = false, sansSerif = false, monospace = false, math = false;
+  if (aGenericFamily.IsEmpty()) {
+    serif = sansSerif = monospace = math = true;
+  } else if (aGenericFamily.LowerCaseEqualsLiteral("serif")) {
     serif = true;
-  else if (aGenericFamily.LowerCaseEqualsLiteral("sans-serif"))
+  } else if (aGenericFamily.LowerCaseEqualsLiteral("sans-serif")) {
     sansSerif = true;
-  else if (aGenericFamily.LowerCaseEqualsLiteral("monospace"))
+  } else if (aGenericFamily.LowerCaseEqualsLiteral("monospace")) {
     monospace = true;
-  else if (aGenericFamily.LowerCaseEqualsLiteral("cursive") ||
-           aGenericFamily.LowerCaseEqualsLiteral("fantasy") ||
-           aGenericFamily.LowerCaseEqualsLiteral("math"))
+  } else if (StaticPrefs::mathml_font_family_math_enabled() &&
+             aGenericFamily.LowerCaseEqualsLiteral("math")) {
+    math = true;
+  } else if (aGenericFamily.LowerCaseEqualsLiteral("cursive") ||
+             aGenericFamily.LowerCaseEqualsLiteral("fantasy")) {
     serif = sansSerif = true;
-  else
+  } else {
     MOZ_ASSERT_UNREACHABLE("unexpected CSS generic font family");
+  }
 
   // The first in the list becomes the default in
   // FontBuilder.readFontSelection() if the preference-selected font is not
   // available, so put system configured defaults first.
+  if (math) aListOfFonts.InsertElementAt(0, u"math"_ns);
   if (monospace) aListOfFonts.InsertElementAt(0, u"monospace"_ns);
   if (sansSerif) aListOfFonts.InsertElementAt(0, u"sans-serif"_ns);
   if (serif) aListOfFonts.InsertElementAt(0, u"serif"_ns);
@@ -2567,10 +2571,12 @@ void gfxFcPlatformFontList::AddGenericFonts(
     if (!fontlistValue.IsEmpty()) {
       if (!fontlistValue.EqualsLiteral("serif") &&
           !fontlistValue.EqualsLiteral("sans-serif") &&
-          !fontlistValue.EqualsLiteral("monospace")) {
+          !fontlistValue.EqualsLiteral("monospace") &&
+          !(StaticPrefs::mathml_font_family_math_enabled() &&
+            fontlistValue.EqualsLiteral("math"))) {
         usePrefFontList = true;
       } else {
-        // serif, sans-serif or monospace was specified
+        // serif, sans-serif, monospace or math was specified
         genericToLookup = fontlistValue;
       }
     }
@@ -2779,16 +2785,34 @@ struct MozLangGroupData {
 };
 
 const MozLangGroupData MozLangGroups[] = {
-    {nsGkAtoms::x_western, "en"},    {nsGkAtoms::x_cyrillic, "ru"},
-    {nsGkAtoms::x_devanagari, "hi"}, {nsGkAtoms::x_tamil, "ta"},
-    {nsGkAtoms::x_armn, "hy"},       {nsGkAtoms::x_beng, "bn"},
-    {nsGkAtoms::x_cans, "iu"},       {nsGkAtoms::x_ethi, "am"},
-    {nsGkAtoms::x_geor, "ka"},       {nsGkAtoms::x_gujr, "gu"},
-    {nsGkAtoms::x_guru, "pa"},       {nsGkAtoms::x_khmr, "km"},
-    {nsGkAtoms::x_knda, "kn"},       {nsGkAtoms::x_mlym, "ml"},
-    {nsGkAtoms::x_orya, "or"},       {nsGkAtoms::x_sinh, "si"},
-    {nsGkAtoms::x_tamil, "ta"},      {nsGkAtoms::x_telu, "te"},
-    {nsGkAtoms::x_tibt, "bo"},       {nsGkAtoms::Unicode, 0}};
+    // clang-format off
+  {nsGkAtoms::x_western, "en"},
+  {nsGkAtoms::x_cyrillic, "ru"},
+  {nsGkAtoms::x_devanagari, "hi"},
+  {nsGkAtoms::x_tamil, "ta"},
+  {nsGkAtoms::x_armn, "hy"},
+  {nsGkAtoms::x_beng, "bn"},
+  {nsGkAtoms::x_cans, "iu"},
+  {nsGkAtoms::x_ethi, "am"},
+  {nsGkAtoms::x_geor, "ka"},
+  {nsGkAtoms::x_gujr, "gu"},
+  {nsGkAtoms::x_guru, "pa"},
+  {nsGkAtoms::x_khmr, "km"},
+  {nsGkAtoms::x_knda, "kn"},
+  // Zmth is a script subtag for mathematical notation. fontconfig uses
+  // "und-zmth" to select math fonts:
+  // https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
+  // https://gitlab.freedesktop.org/fontconfig/fontconfig/-/blob/main/fc-lang/und_zmth.orth
+  {nsGkAtoms::x_math, "und-zmth"},
+  {nsGkAtoms::x_mlym, "ml"},
+  {nsGkAtoms::x_orya, "or"},
+  {nsGkAtoms::x_sinh, "si"},
+  {nsGkAtoms::x_tamil, "ta"},
+  {nsGkAtoms::x_telu, "te"},
+  {nsGkAtoms::x_tibt, "bo"},
+  {nsGkAtoms::Unicode, nullptr}
+    // clang-format on
+};
 
 bool gfxFcPlatformFontList::TryLangForGroup(const nsACString& aOSLang,
                                             nsAtom* aLangGroup,
@@ -2832,11 +2856,14 @@ void gfxFcPlatformFontList::GetSampleLangForGroup(nsAtom* aLanguage,
   // set up lang string
   const MozLangGroupData* mozLangGroup = nullptr;
 
-  // -- look it up in the list of moz lang groups
-  for (unsigned int i = 0; i < std::size(MozLangGroups); ++i) {
-    if (aLanguage == MozLangGroups[i].mozLangGroup) {
-      mozLangGroup = &MozLangGroups[i];
-      break;
+  if (aLanguage != nsGkAtoms::x_math ||
+      StaticPrefs::mathml_font_family_math_enabled()) {
+    // -- look it up in the list of moz lang groups
+    for (unsigned int i = 0; i < std::size(MozLangGroups); ++i) {
+      if (aLanguage == MozLangGroups[i].mozLangGroup) {
+        mozLangGroup = &MozLangGroups[i];
+        break;
+      }
     }
   }
 

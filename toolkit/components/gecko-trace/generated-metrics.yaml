@@ -24,7 +24,7 @@ gecko_trace:
 
       [1]: https://github.com/open-telemetry/opentelemetry-proto/blob/c0a98a1847d3124ac5f9ecd02d0e2d2732bbb590/opentelemetry/proto/trace/v1/trace.proto#L38
     send_in_pings:
-      - traces
+      - gecko-trace
     notification_emails:
       - mvanstraten@mozilla.com
     bugs:

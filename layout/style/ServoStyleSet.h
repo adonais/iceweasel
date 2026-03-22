@@ -14,13 +14,13 @@
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PostTraversalTask.h"
+#include "mozilla/PseudoStyleRequest.h"
+#include "mozilla/PseudoStyleType.h"
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/ServoUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/RustTypes.h"
 #include "nsAtom.h"
-#include "nsCSSAnonBoxes.h"
-#include "nsCSSPseudoElements.h"
 #include "nsChangeHint.h"
 #include "nsCoord.h"
 #include "nsIMemoryReporter.h"
@@ -258,7 +258,7 @@ class ServoStyleSet {
       const nsAtom* aPageName, const StylePagePseudoClassFlags& aPseudo);
 
   already_AddRefed<ComputedStyle> ResolveXULTreePseudoStyle(
-      dom::Element* aParentElement, nsCSSAnonBoxPseudoStaticAtom* aPseudoTag,
+      dom::Element* aParentElement, PseudoStyleType aType,
       ComputedStyle* aParentStyle, const AtomArray& aInputWord);
 
   // Try to resolve the staring style for a given element. Please call this
@@ -712,8 +712,8 @@ class ServoStyleSet {
 
   // Stores pointers to our cached ComputedStyles for non-inheriting anonymous
   // boxes.
-  EnumeratedArray<nsCSSAnonBoxes::NonInheriting, RefPtr<ComputedStyle>,
-                  size_t(nsCSSAnonBoxes::NonInheriting::_Count)>
+  EnumeratedArray<NonInheritingAnonBox, RefPtr<ComputedStyle>,
+                  size_t(NonInheritingAnonBox::_Count)>
       mNonInheritingComputedStyles;
 
  public:

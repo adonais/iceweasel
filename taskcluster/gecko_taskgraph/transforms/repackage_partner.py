@@ -9,7 +9,7 @@ import copy
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.taskcluster import get_artifact_prefix
 from voluptuous import Optional, Required
 
@@ -28,7 +28,7 @@ PACKAGE_FORMATS = copy.deepcopy(PACKAGE_FORMATS_VANILLA)
 PACKAGE_FORMATS["installer-stub"]["inputs"]["package"] = "target-stub{archive_format}"
 PACKAGE_FORMATS["installer-stub"]["args"].extend(["--package-name", "{package-name}"])
 
-packaging_description_schema = Schema({
+packaging_description_schema = LegacySchema({
     # unique label to describe this repackaging task
     Optional("label"): str,
     # Routes specific to this task, if defined

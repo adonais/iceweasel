@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   BrowserSearchTelemetry:
     "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
@@ -54,7 +54,7 @@ export const SearchUITestUtils = new (class {
    * @param {?boolean} expected.expectLegacyTelemetry
    *   Whether the `SEARCH_COUNTS` legacy histogram is expected to be updated.
    *   Pass false if the SAP telemetry is expected to be recorded only by Glean.
-   * @param {string} expected.source
+   * @param {keyof typeof lazy.BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES} expected.source
    *   The source of the search (e.g. urlbar, contextmenu etc.).
    * @param {number} expected.count
    *   The expected count for the source.
@@ -77,7 +77,7 @@ export const SearchUITestUtils = new (class {
       let expected = {
         provider_id: engineId ?? "other",
         provider_name: engineName,
-        source: lazy.BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES.get(source),
+        source,
         overridden_by_third_party: overriddenByThirdParty.toString(),
       };
 
@@ -95,11 +95,12 @@ export const SearchUITestUtils = new (class {
       "Should have the expected event telemetry data for sap.counts"
     );
 
+    let legacySource = lazy.BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES[source];
     let histogram = Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS");
 
     let histogramKey = overriddenByThirdParty
-      ? `${engineId}-addon.${source}`
-      : `${engineId ? "" : "other-"}${engineName}.${source}`;
+      ? `${engineId}-addon.${legacySource}`
+      : `${engineId ? "" : "other-"}${engineName}.${legacySource}`;
 
     let expectedSum;
     let expectedSnapshotKeys = [];

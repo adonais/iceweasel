@@ -16,8 +16,8 @@ interface ReportBody {
 ();
 };
 
-[Pref="dom.reporting.enabled",
- Exposed=(Window,Worker)]
+// Not exposed to Window for webcompat reasons
+[Exposed=(Window,Worker), LegacyNoInterfaceObject]
 interface Report {
   [Default] object toJSON
 ();
@@ -45,8 +45,8 @@ dictionary ReportingObserverOptions {
 
 typedef sequence<Report> ReportList;
 
-[Pref="dom.reporting.enabled",
- Exposed=Window]
+// Not exposed to Window for webcompat reasons
+[Exposed=Window, LegacyNoInterfaceObject]
 interface DeprecationReportBody : ReportBody {
   [Default] object toJSON();
 
@@ -85,6 +85,16 @@ interface CSPViolationReportBody : ReportBody {
   readonly attribute unsigned short statusCode;
   readonly attribute unsigned long? lineNumber;
   readonly attribute unsigned long? columnNumber;
+};
+
+// https://w3c.github.io/webappsec-subresource-integrity/#report-violations
+[Exposed=Window, Pref="dom.reporting.enabled"]
+interface IntegrityViolationReportBody : ReportBody {
+  [Default] object toJSON();
+  readonly attribute UTF8String documentURL;
+  readonly attribute UTF8String blockedURL;
+  readonly attribute UTF8String destination;
+  readonly attribute boolean    reportOnly;
 };
 
 // Used internally to process the JSON

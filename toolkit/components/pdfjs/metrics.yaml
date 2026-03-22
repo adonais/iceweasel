@@ -141,6 +141,17 @@ pdfjs:
     notification_emails:
       - cdenizet@mozilla.com
       - mcastelluccio@mozilla.com
+  tagged:
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1997134
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1997134
+    description: >
+      How many times PDF Viewer was used for tagged pdf.
+    expires: never
+    type: counter
+    notification_emails:
+      - pdfjs-team@mozilla.com
 pdfjs.editing.highlight:
     kind:
       type: labeled_counter

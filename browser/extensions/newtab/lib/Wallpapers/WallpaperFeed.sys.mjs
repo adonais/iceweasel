@@ -209,6 +209,7 @@ export class WallpaperFeed {
           background_position: record.background_position || "center",
           category: record.category || "",
           order: record.order || 0,
+          thumbnail: record.thumbnail || null,
         };
       }),
     ];

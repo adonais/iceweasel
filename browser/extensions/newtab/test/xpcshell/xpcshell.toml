@@ -21,6 +21,8 @@ support-files = ["topstories.json"]
 
 ["test_InferredFeatureModel.js"]
 
+["test_InferredPersonalizationFeed.js"]
+
 ["test_ListsFeed.js"]
 
 ["test_LocalInferredRanking.js"]

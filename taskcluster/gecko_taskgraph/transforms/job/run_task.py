@@ -11,7 +11,7 @@ import os
 from mozbuild.util import memoize
 from mozpack import path
 from taskgraph.transforms.run.common import support_caches
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from taskgraph.util.yaml import load_yaml
 from voluptuous import Any, Optional, Required
 
@@ -19,7 +19,7 @@ from gecko_taskgraph.transforms.job import run_job_using
 from gecko_taskgraph.transforms.job.common import add_tooltool, support_vcs_checkout
 from gecko_taskgraph.transforms.task import taskref_or_string
 
-run_task_schema = Schema({
+run_task_schema = LegacySchema({
     Required("using"): "run-task",
     # Use the specified caches.
     Optional("use-caches"): Any(bool, [str]),

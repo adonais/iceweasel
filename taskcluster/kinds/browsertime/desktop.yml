@@ -1049,7 +1049,7 @@ browsertime-webcodecs:
         run-visual-metrics: false
         subtests:
             by-test-platform:
-                # Since x264 isn't built into Ubuntu 18.04 by defualt, we skip it.
+                # Since x264 isn't built into Ubuntu 18.04 by default, we skip it.
                 linux.*.*:
                     - ve-av1-rt
                     - ve-av1-q
@@ -1248,14 +1248,17 @@ browsertime-trr-performance:
         apps: [firefox]
         run-visual-metrics: false
         subtests:
-            - trr-cloudf
+            - dns-multi
+            - dns-native
+            - dns-usatdy
             - trr-cira
+            - trr-cloudf
             - trr-comcas
-            - trr-next
-            - trr-native
             - trr-multi
-            - trr-w-clou
+            - trr-next
+            - trr-usatdy
             - trr-w-cira
+            - trr-w-clou
             - trr-w-comc
             - trr-w-next
 

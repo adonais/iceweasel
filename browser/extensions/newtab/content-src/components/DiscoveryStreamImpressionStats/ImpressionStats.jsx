@@ -88,47 +88,47 @@ export class ImpressionStats extends React.PureComponent {
     }
 
     if (this._needsImpressionStats(cards)) {
-      props.dispatch(
-        ac.DiscoveryStreamImpressionStats({
-          source: props.source.toUpperCase(),
-          window_inner_width: window.innerWidth,
-          window_inner_height: window.innerHeight,
-          tiles: cards.map(link => ({
-            id: link.id,
-            pos: link.pos,
-            type: props.flightId ? "spoc" : "organic",
-            ...(link.shim ? { shim: link.shim } : {}),
-            recommendation_id: link.recommendation_id,
-            fetchTimestamp: link.fetchTimestamp,
-            corpus_item_id: link.corpus_item_id,
-            scheduled_corpus_item_id: link.scheduled_corpus_item_id,
-            recommended_at: link.recommended_at,
-            received_rank: link.received_rank,
-            topic: link.topic,
-            features: link.features,
-            attribution: link.attribution,
-            ...(link.format
-              ? { format: link.format }
-              : {
-                  format: getActiveCardSize(
-                    window.innerWidth,
-                    link.class_names,
-                    link.section,
-                    link.flightId
-                  ),
-                }),
-            ...(link.section
-              ? {
-                  section: link.section,
-                  section_position: link.section_position,
-                  is_section_followed: link.is_section_followed,
-                  layout_name: link.sectionLayoutName,
-                }
-              : {}),
-          })),
-          firstVisibleTimestamp: props.firstVisibleTimestamp,
-        })
-      );
+      const impressionData = {
+        source: props.source.toUpperCase(),
+        window_inner_width: window.innerWidth,
+        window_inner_height: window.innerHeight,
+        tiles: cards.map(link => ({
+          id: link.id,
+          pos: link.pos,
+          type: props.flightId ? "spoc" : "organic",
+          ...(link.shim ? { shim: link.shim } : {}),
+          recommendation_id: link.recommendation_id,
+          fetchTimestamp: link.fetchTimestamp,
+          corpus_item_id: link.corpus_item_id,
+          scheduled_corpus_item_id: link.scheduled_corpus_item_id,
+          recommended_at: link.recommended_at,
+          received_rank: link.received_rank,
+          topic: link.topic,
+          features: link.features,
+          attribution: link.attribution,
+          ...(link.format
+            ? { format: link.format }
+            : {
+                format: getActiveCardSize(
+                  window.innerWidth,
+                  link.class_names,
+                  link.section,
+                  link.flightId
+                ),
+              }),
+          ...(link.section
+            ? {
+                section: link.section,
+                section_position: link.section_position,
+                is_section_followed: link.is_section_followed,
+                layout_name: link.sectionLayoutName,
+              }
+            : {}),
+        })),
+        firstVisibleTimestamp: props.firstVisibleTimestamp,
+      };
+
+      props.dispatch(ac.DiscoveryStreamImpressionStats(impressionData));
       this.impressionCardGuids = cards.map(link => link.id);
     }
   }

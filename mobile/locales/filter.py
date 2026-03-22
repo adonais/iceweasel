@@ -57,13 +57,4 @@ def test(mod, path, entity=None):
             return "error"
         return "ignore"
 
-    if mod not in ("mobile", "mobile/android"):
-        # we only have exceptions for mobile*
-        return "error"
-    if mod == "mobile/android":
-        if entity is None:
-            if re.match(r"mobile-l10n.js", path):
-                return "ignore"
-        return "error"
-
     return "error"

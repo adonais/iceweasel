@@ -148,7 +148,9 @@
     opacity: 0;
   }
 
-  browser[type="content"] {
+  /* Exclude browsers with smartwindow-content attribute which inherit
+     color-scheme from chrome to follow the browser theme */
+  browser[type="content"]:not([smartwindow-content]) {
     color-scheme: env(-moz-content-preferred-color-scheme);
   }
 
@@ -192,6 +194,7 @@
       margin: 0;
       position: absolute;
       max-width: none;
+      width: 100% !important;
 
       & > .browserContainer {
         border-radius: 0;
@@ -218,6 +221,11 @@
     .split-view-splitter {
       order: 1;
       flex: none;
+      -moz-user-focus: normal;
+
+      &:focus-visible {
+        outline: auto;
+      }
     }
 
     .split-view-panel[column="1"] {

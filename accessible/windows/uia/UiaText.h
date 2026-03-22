@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_a11y_UiaText_h__
-#define mozilla_a11y_UiaText_h__
+#ifndef mozilla_a11y_UiaText_h_
+#define mozilla_a11y_UiaText_h_
 
 #include "objbase.h"
 #include "uiautomation.h"
@@ -18,9 +18,9 @@ class Accessible;
 class MsaaAccessible;
 
 /**
- * ITextProvider implementation.
+ * ITextProvider2 implementation.
  */
-class UiaText : public ITextProvider {
+class UiaText : public ITextProvider2 {
  public:
   explicit UiaText(MsaaAccessible* aMsaa);
 
@@ -47,6 +47,15 @@ class UiaText : public ITextProvider {
 
   virtual /* [propget] */ HRESULT STDMETHODCALLTYPE get_SupportedTextSelection(
       /* [retval][out] */ __RPC__out enum SupportedTextSelection* aRetVal);
+
+  // ITextProvider2
+  virtual HRESULT STDMETHODCALLTYPE RangeFromAnnotation(
+      /* [in] */ __RPC__in_opt IRawElementProviderSimple* aAnnotationElement,
+      /* [retval][out] */ __RPC__deref_out_opt ITextRangeProvider** aRetVal);
+
+  virtual HRESULT STDMETHODCALLTYPE GetCaretRange(
+      /* [out] */ __RPC__out BOOL* aIsActive,
+      /* [retval][out] */ __RPC__deref_out_opt ITextRangeProvider** aRetVal);
 
  private:
   virtual ~UiaText() = default;

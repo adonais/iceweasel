@@ -293,9 +293,9 @@ static CanonicalElementAttributes CanonicalizeElementAttributes(
         CanonicalAttribute canonicalAttr = CanonicalizeAttribute(attribute);
         if (!attributes.EnsureInserted(canonicalAttr)) {
           if (aErrorMsg) {
-            aErrorMsg->Assign(nsFmtCString(
-                FMT_STRING("Duplicate attribute {} in 'attributes' of {}."),
-                canonicalAttr, CanonicalizeElement(aElement)));
+            aErrorMsg->Assign(
+                nsFmtCString("Duplicate attribute {} in 'attributes' of {}.",
+                             canonicalAttr, CanonicalizeElement(aElement)));
             return CanonicalElementAttributes();
           }
         }
@@ -318,8 +318,7 @@ static CanonicalElementAttributes CanonicalizeElementAttributes(
         if (!attributes.EnsureInserted(canonicalAttr)) {
           if (aErrorMsg) {
             aErrorMsg->Assign(nsFmtCString(
-                FMT_STRING(
-                    "Duplicate attribute {} in 'removeAttributes' of {}."),
+                "Duplicate attribute {} in 'removeAttributes' of {}.",
                 canonicalAttr, CanonicalizeElement(aElement)));
             return CanonicalElementAttributes();
           }
@@ -377,8 +376,8 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
       // with attributes element to elements.
       CanonicalElement elementName = CanonicalizeElement(element);
       if (elements.Contains(elementName)) {
-        aRv.ThrowTypeError(nsFmtCString(
-            FMT_STRING("Duplicate element {} in 'elements'."), elementName));
+        aRv.ThrowTypeError(
+            nsFmtCString("Duplicate element {} in 'elements'.", elementName));
         return;
       }
 
@@ -408,8 +407,7 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
       CanonicalElement canonical = CanonicalizeElement(element);
       if (!elements.EnsureInserted(canonical)) {
         aRv.ThrowTypeError(nsFmtCString(
-            FMT_STRING("Duplicate element {} in 'removeElements'."),
-            canonical));
+            "Duplicate element {} in 'removeElements'.", canonical));
         return;
       }
     }
@@ -431,8 +429,7 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
       CanonicalElement canonical = CanonicalizeElement(element);
       if (!elements.EnsureInserted(canonical)) {
         aRv.ThrowTypeError(nsFmtCString(
-            FMT_STRING(
-                "Duplicate element {} in 'replaceWithChildrenElements'."),
+            "Duplicate element {} in 'replaceWithChildrenElements'.",
             canonical));
         return;
       }
@@ -453,8 +450,8 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
       // attribute to attributes.
       CanonicalAttribute canonical = CanonicalizeAttribute(attribute);
       if (!attributes.EnsureInserted(canonical)) {
-        aRv.ThrowTypeError(nsFmtCString(
-            FMT_STRING("Duplicate attribute {} in 'attributes'."), canonical));
+        aRv.ThrowTypeError(
+            nsFmtCString("Duplicate attribute {} in 'attributes'.", canonical));
         return;
       }
     }
@@ -475,8 +472,7 @@ void Sanitizer::CanonicalizeConfiguration(const SanitizerConfig& aConfig,
       CanonicalAttribute canonical = CanonicalizeAttribute(attribute);
       if (!attributes.EnsureInserted(canonical)) {
         aRv.ThrowTypeError(nsFmtCString(
-            FMT_STRING("Duplicate attribute {} in 'removeAttributes'."),
-            canonical));
+            "Duplicate attribute {} in 'removeAttributes'.", canonical));
         return;
       }
     }
@@ -548,8 +544,8 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
     for (const CanonicalElement& name : mElements->Keys()) {
       if (mReplaceWithChildrenElements->Contains(name)) {
         aRv.ThrowTypeError(
-            nsFmtCString(FMT_STRING("Element {} can't be in both 'elements' "
-                                    "and 'replaceWithChildrenElements'."),
+            nsFmtCString("Element {} can't be in both 'elements' "
+                         "and 'replaceWithChildrenElements'.",
                          name));
         return;
       }
@@ -562,10 +558,10 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
   if (mRemoveElements && mReplaceWithChildrenElements) {
     for (const CanonicalElement& name : *mRemoveElements) {
       if (mReplaceWithChildrenElements->Contains(name)) {
-        aRv.ThrowTypeError(nsFmtCString(
-            FMT_STRING("Element {} can't be in both 'removeElements' and "
-                       "'replaceWithChildrenElements'."),
-            name));
+        aRv.ThrowTypeError(
+            nsFmtCString("Element {} can't be in both 'removeElements' and "
+                         "'replaceWithChildrenElements'.",
+                         name));
         return;
       }
     }
@@ -596,9 +592,8 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
           for (const CanonicalAttribute& name : *elemAttributes.mAttributes) {
             if (mAttributes->Contains(name)) {
               aRv.ThrowTypeError(nsFmtCString(
-                  FMT_STRING(
-                      "Attribute {} can't be part of both the 'attributes' of "
-                      "the element {} and the global 'attributes'."),
+                  "Attribute {} can't be part of both the 'attributes' of "
+                  "the element {} and the global 'attributes'.",
                   name, entry.GetKey()));
               return;
             }
@@ -612,9 +607,8 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
                *elemAttributes.mRemoveAttributes) {
             if (!mAttributes->Contains(name)) {
               aRv.ThrowTypeError(nsFmtCString(
-                  FMT_STRING(
-                      "Attribute {} can't be in 'removeAttributes' of the "
-                      "element {} but not in the global 'attributes'."),
+                  "Attribute {} can't be in 'removeAttributes' of the "
+                  "element {} but not in the global 'attributes'.",
                   name, entry.GetKey()));
               return;
             }
@@ -632,9 +626,8 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
           for (const CanonicalAttribute& name : *elemAttributes.mAttributes) {
             if (name.IsDataAttribute()) {
               aRv.ThrowTypeError(nsFmtCString(
-                  FMT_STRING(
-                      "Data attribute {} in the 'attributes' of the element {} "
-                      "is redundant with 'dataAttributes' being true."),
+                  "Data attribute {} in the 'attributes' of the element {} "
+                  "is redundant with 'dataAttributes' being true.",
                   name, entry.GetKey()));
               return;
             }
@@ -652,10 +645,10 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
       // attribute.
       for (const CanonicalAttribute& name : *mAttributes) {
         if (name.IsDataAttribute()) {
-          aRv.ThrowTypeError(nsFmtCString(
-              FMT_STRING("Data attribute {} in the global 'attributes' is "
-                         "redundant with 'dataAttributes' being true."),
-              name));
+          aRv.ThrowTypeError(
+              nsFmtCString("Data attribute {} in the global 'attributes' is "
+                           "redundant with 'dataAttributes' being true.",
+                           name));
           return;
         }
       }
@@ -674,8 +667,8 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
         // element[removeAttributes] exist.
         if (elemAttributes.mAttributes && elemAttributes.mRemoveAttributes) {
           return aRv.ThrowTypeError(
-              nsFmtCString(FMT_STRING("Element {} can't have both 'attributes' "
-                                      "and 'removeAttributes'."),
+              nsFmtCString("Element {} can't have both 'attributes' "
+                           "and 'removeAttributes'.",
                            entry.GetKey()));
         }
 
@@ -693,9 +686,8 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
           for (const CanonicalAttribute& name : *elemAttributes.mAttributes) {
             if (mRemoveAttributes->Contains(name)) {
               aRv.ThrowTypeError(nsFmtCString(
-                  FMT_STRING(
-                      "Attribute {} can't be in 'attributes' of the element {} "
-                      "while in the global 'removeAttributes'."),
+                  "Attribute {} can't be in 'attributes' of the element {} "
+                  "while in the global 'removeAttributes'.",
                   name, entry.GetKey()));
               return;
             }
@@ -708,11 +700,11 @@ void Sanitizer::IsValid(ErrorResult& aRv) {
           for (const CanonicalAttribute& name :
                *elemAttributes.mRemoveAttributes) {
             if (mRemoveAttributes->Contains(name)) {
-              aRv.ThrowTypeError(nsFmtCString(
-                  FMT_STRING("Attribute {} can't be part of both the "
-                             "'removeAttributes' of the element {} and the "
-                             "global 'removeAttributes'."),
-                  name, entry.GetKey()));
+              aRv.ThrowTypeError(
+                  nsFmtCString("Attribute {} can't be part of both the "
+                               "'removeAttributes' of the element {} and the "
+                               "global 'removeAttributes'.",
+                               name, entry.GetKey()));
               return;
             }
           }

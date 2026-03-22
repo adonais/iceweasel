@@ -37,7 +37,12 @@ class Mvhd : public Atom {
       : mCreationTime(0), mModificationTime(0), mTimescale(0), mDuration(0) {}
   explicit Mvhd(const Box& aBox);
 
-  Result<media::TimeUnit, nsresult> ToTimeUnit(int64_t aTimescaleUnits) const {
+  Result<media::TimeUnit, nsresult> ToTimeUnit(
+      CheckedInt64 aTimescaleUnits) const {
+    if (!aTimescaleUnits.isValid()) {
+      NS_WARNING("invalid aTimescaleUnits");
+      return Err(NS_ERROR_FAILURE);
+    }
     if (!mTimescale) {
       NS_WARNING("invalid mTimescale");
       return Err(NS_ERROR_FAILURE);

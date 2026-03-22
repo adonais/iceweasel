@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsFrameList_h___
-#define nsFrameList_h___
+#ifndef nsFrameList_h_
+#define nsFrameList_h_
 
 #include <stdio.h> /* for FILE* */
 
@@ -37,7 +37,6 @@ enum class FrameChildListID {
   ColGroup,
   Absolute,
   PushedAbsolute,
-  Fixed,
   Overflow,
   OverflowContainers,
   ExcessOverflowContainers,
@@ -476,4 +475,4 @@ class MOZ_RAII AutoFrameListPtr final {
 
 }  // namespace mozilla
 
-#endif /* nsFrameList_h___ */
+#endif /* nsFrameList_h_ */

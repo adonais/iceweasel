@@ -9,6 +9,7 @@ pub mod client;
 pub mod command;
 pub mod error;
 pub mod server;
+pub mod telemetry;
 
 pub use wgc::command::ffi::Command as CommandEncoderAction;
 
@@ -141,6 +142,7 @@ pub struct TextureViewDescriptor<'a> {
     mip_level_count: Option<&'a u32>,
     base_array_layer: u32,
     array_layer_count: Option<&'a u32>,
+    usage: wgt::TextureUsages,
 }
 
 // Declare an ID type for referring to external texture sources, and allow
@@ -352,6 +354,7 @@ enum DeviceAction<'a> {
         id::BindGroupLayoutId,
         wgc::binding_model::BindGroupLayoutDescriptor<'a>,
     ),
+    CreateBindGroupLayoutError(id::BindGroupLayoutId, wgc::Label<'a>),
     RenderPipelineGetBindGroupLayout(id::RenderPipelineId, u32, id::BindGroupLayoutId),
     ComputePipelineGetBindGroupLayout(id::ComputePipelineId, u32, id::BindGroupLayoutId),
     CreatePipelineLayout(

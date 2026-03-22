@@ -7,8 +7,8 @@
 
 // Original author: bcampen@mozilla.com
 
-#ifndef mediapipelinefilter_h__
-#define mediapipelinefilter_h__
+#ifndef mediapipelinefilter_h_
+#define mediapipelinefilter_h_
 
 #include <stdint.h>
 
@@ -89,4 +89,4 @@ class MediaPipelineFilter {
 
 }  // end namespace mozilla
 
-#endif  // mediapipelinefilter_h__
+#endif  // mediapipelinefilter_h_

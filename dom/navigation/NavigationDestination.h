@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_NavigationDestination_h___
-#define mozilla_dom_NavigationDestination_h___
+#ifndef mozilla_dom_NavigationDestination_h_
+#define mozilla_dom_NavigationDestination_h_
 
 #include "mozilla/dom/BindingDeclarations.h"
 #include "nsISupports.h"
@@ -71,4 +71,4 @@ class NavigationDestination final : public nsISupports, public nsWrapperCache {
 
 }  // namespace mozilla::dom
 
-#endif  // mozilla_dom_NavigationDestination_h___
+#endif  // mozilla_dom_NavigationDestination_h_

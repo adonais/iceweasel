@@ -17,7 +17,6 @@ support-files = ["focusableContent.html"]
 ["browser_toolbarButtonKeyPress.js"]
 skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug", # Bug 1775712
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && tsan", # Bug 1775712
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1775712
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1775712
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1775712

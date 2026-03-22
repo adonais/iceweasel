@@ -11,40 +11,42 @@
  * Chrome seems to incorrectly ignore the resizeMode constraint for getDisplayMedia.
  */
 
-/* globals exportFunction */
+if (
+  navigator.mediaDevices?.getDisplayMedia &&
+  !window.__firefoxWebCompatFixBug2000906
+) {
+  Object.defineProperty(window, "__firefoxWebCompatFixBug2000906", {
+    configurable: false,
+    value: true,
+  });
 
-console.info(
-  'getDisplayMedia has been modified to drop resizeMode: "none" for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=2000906 for details.'
-);
+  console.info(
+    'getDisplayMedia has been modified to drop resizeMode: "none" for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=2000906 for details.'
+  );
 
-function maybeDeleteResizeMode(video) {
-  const { resizeMode, width, height, frameRate } = video;
-  if (resizeMode == "none" && (width || height || frameRate)) {
-    delete video.resizeMode;
+  function maybeDeleteResizeMode(video) {
+    const { resizeMode, width, height, frameRate } = video;
+    if (resizeMode == "none" && (width || height || frameRate)) {
+      delete video.resizeMode;
+    }
   }
-}
 
-if (navigator.mediaDevices?.getDisplayMedia) {
   {
-    const { prototype } = MediaDevices.wrappedJSObject;
+    const { prototype } = MediaDevices;
     const { getDisplayMedia: gDM } = prototype;
-    prototype.getDisplayMedia = exportFunction(function getDisplayMedia(
-      options
-    ) {
+    prototype.getDisplayMedia = function getDisplayMedia(options) {
       const { video } = options || {};
       if (video) {
         maybeDeleteResizeMode(video);
       }
       return gDM.call(this, options);
-    }, window);
+    };
   }
 
   {
-    const { prototype } = MediaStreamTrack.wrappedJSObject;
+    const { prototype } = MediaStreamTrack;
     const { applyConstraints: aC } = prototype;
-    prototype.applyConstraints = exportFunction(function applyConstraints(
-      constraints
-    ) {
+    prototype.applyConstraints = function applyConstraints(constraints) {
       // Don't allow adding resizeMode if it wasn't there from the start.
       // Ideally we'd check for a gDM-sourced track instead but there's no
       // spec-compliant way to do that.
@@ -52,6 +54,6 @@ if (navigator.mediaDevices?.getDisplayMedia) {
         maybeDeleteResizeMode(constraints || {});
       }
       return aC.call(this, constraints);
-    }, window);
+    };
   }
 }

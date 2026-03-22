@@ -1,4 +1,4 @@
-// |jit-test|  --more-compartments; -P use_js_microtask_queue=true
+// |jit-test|  --more-compartments;
 
 var called = false;
 // A dead wrapper in the job queue shouldn't crash.

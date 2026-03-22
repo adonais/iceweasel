@@ -14,6 +14,7 @@
 #include "nsIProtocolProxyCallback.h"
 #include "nsIProxiedChannel.h"
 #include "nsIStreamListener.h"
+#include "nsITransport.h"
 #include "nsWeakReference.h"
 
 class nsDNSPrefetch;

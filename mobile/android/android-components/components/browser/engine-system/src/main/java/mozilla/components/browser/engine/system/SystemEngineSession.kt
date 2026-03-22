@@ -503,6 +503,15 @@ class SystemEngineSession(
         fullScreenCallback?.onCustomViewHidden()
     }
 
+    /**
+     * See [EngineSession.processBackPressed]
+     */
+    override fun processBackPressed(
+        onResult: (Boolean) -> Unit,
+    ) {
+        onResult(false)
+    }
+
     internal fun toggleDesktopUA(userAgent: String, requestDesktop: Boolean): String {
         return if (requestDesktop) {
             userAgent.replace("Mobile", "eliboM").replace("Android", "diordnA")

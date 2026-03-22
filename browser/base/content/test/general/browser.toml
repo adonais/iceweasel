@@ -351,8 +351,7 @@ https_first_disabled = true
 ["browser_newTabDrop.js"]
 https_first_disabled = true
 skip-if = [
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && fission && tsan", # high frequency intermittent
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && fission && tsan", # high frequency intermittent
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan && fission", # high frequency intermittent
 ]
 # DO NOT ADD MORE TESTS HERE. USE A TOPICAL DIRECTORY INSTEAD.
 

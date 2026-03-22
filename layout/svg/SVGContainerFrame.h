@@ -7,8 +7,9 @@
 #ifndef LAYOUT_SVG_SVGCONTAINERFRAME_H_
 #define LAYOUT_SVG_SVGCONTAINERFRAME_H_
 
+#include <memory>
+
 #include "mozilla/ISVGDisplayableFrame.h"
-#include "mozilla/UniquePtr.h"
 #include "nsContainerFrame.h"
 #include "nsIFrame.h"
 #include "nsQueryFrame.h"
@@ -143,7 +144,7 @@ class SVGDisplayContainerFrame : public SVGContainerFrame,
   /**
    * Cached canvasTM value.
    */
-  UniquePtr<gfxMatrix> mCanvasTM;
+  std::unique_ptr<gfxMatrix> mCanvasTM;
 };
 
 }  // namespace mozilla

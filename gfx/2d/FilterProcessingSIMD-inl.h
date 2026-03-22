@@ -4,6 +4,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#ifndef GFX_2D_FILTERPROCESSINGSIMD_INL_H_
+#define GFX_2D_FILTERPROCESSINGSIMD_INL_H_
+
 #include "FilterProcessing.h"
 
 #include "SIMD.h"
@@ -1190,3 +1193,5 @@ static already_AddRefed<DataSourceSurface> ApplyArithmeticCombine_SIMD(
 
 }  // namespace gfx
 }  // namespace mozilla
+
+#endif  // GFX_2D_FILTERPROCESSINGSIMD_INL_H_

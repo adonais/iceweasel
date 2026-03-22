@@ -240,18 +240,9 @@ nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
 
 #ifdef NIGHTLY_BUILD
   if (aRequest->HasWasmMimeTypeEssence()) {
-    MOZ_ASSERT(aRequest->IsTextSource());
-
-    ModuleLoader::MaybeSourceText maybeSource;
-    nsresult rv = aRequest->GetScriptSource(aCx, &maybeSource,
-                                            aRequest->mLoadContext.get());
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    auto compile = [&](auto& source) {
-      return JS::CompileWasmModule(aCx, aOptions, source);
-    };
-
-    auto* wasmModule = maybeSource.mapNonEmpty(compile);
+    MOZ_ASSERT(aRequest->IsWasmBytes());
+    auto* wasmModule =
+        JS::CompileWasmModule(aCx, aOptions, aRequest->WasmBytes());
     if (!wasmModule) {
       return NS_ERROR_FAILURE;
     }
@@ -260,6 +251,7 @@ nsresult ModuleLoader::CompileJavaScriptOrWasmModule(
     return NS_OK;
   }
 #endif
+  MOZ_ASSERT(!aRequest->IsWasmBytes());
 
   if (aRequest->IsCachedStencil()) {
     JS::InstantiateOptions instantiateOptions(aOptions);

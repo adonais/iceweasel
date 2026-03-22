@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsIncrementalStreamLoader_h__
-#define nsIncrementalStreamLoader_h__
+#ifndef nsIncrementalStreamLoader_h_
+#define nsIncrementalStreamLoader_h_
 
 #include "nsIThreadRetargetableStreamListener.h"
 #include "nsIIncrementalStreamLoader.h"
@@ -49,4 +49,4 @@ class nsIncrementalStreamLoader final : public nsIIncrementalStreamLoader {
   mozilla::Atomic<uint32_t, mozilla::MemoryOrdering::Relaxed> mBytesRead;
 };
 
-#endif  // nsIncrementalStreamLoader_h__
+#endif  // nsIncrementalStreamLoader_h_

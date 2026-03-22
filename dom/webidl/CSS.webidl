@@ -25,7 +25,7 @@ partial namespace CSS {
 
 // https://www.w3.org/TR/css-highlight-api-1/#registration
 partial namespace CSS {
-  [Pref="dom.customHighlightAPI.enabled", GetterThrows]
+  [GetterThrows]
   readonly attribute HighlightRegistry highlights;
 };
 

@@ -398,9 +398,11 @@
       add_task(async function testSettingGroupCallbacks() {
         const SETTING_ONE = "setting-first";
         const SETTING_TWO = "setting-second";
+        const SETTING_THREE = "setting-item-three";
 
         let clickCallbacks = [];
         let changeCallbacks = [];
+        let messageBarDismissCallbacks = [];
 
         await SpecialPowers.pushPrefEnv({
           set: [[PREF_ONE, true]],
@@ -421,6 +423,15 @@
             clickCallbacks.push(setting.id);
           },
         });
+        Preferences.addSetting({
+          id: SETTING_THREE,
+          onUserClick(_, __, setting) {
+            clickCallbacks.push(setting.id);
+          },
+          onMessageBarDismiss(_, __, setting) {
+            messageBarDismissCallbacks.push(setting.id);
+          },
+        });
         let config = {
           l10nId: GROUP_L10N_ID,
           items: [
@@ -433,13 +444,21 @@
               id: SETTING_TWO,
               control: "moz-box-button",
             },
+            {
+              l10nId: LABEL_L10N_ID,
+              id: SETTING_THREE,
+              control: "moz-message-bar",
+              controlAttrs: {
+                dismissable: true,
+              },
+            },
           ],
         };
 
         let result = await renderTemplate(config);
         let group = result.querySelector("setting-group");
         let fieldset = group.children[0];
-        let [item1, item2] = fieldset.children;
+        let [item1, item2, item3] = fieldset.children;
 
         is(
           item1.controlEl.localName,
@@ -449,7 +468,12 @@
         is(
           item2.controlEl.localName,
           "moz-box-button",
-          "First setting control renders a moz-box-button."
+          "Second setting control renders a moz-box-button."
+        );
+        is(
+          item3.controlEl.localName,
+          "moz-message-bar",
+          "Third setting control renders a moz-message-bar."
         );
 
         let settingOne = Preferences.getSetting(SETTING_ONE);
@@ -473,6 +497,18 @@
           clickCallbacks.length,
           1,
           "onUserClick is called when clicking on moz-box-button."
+        );
+
+        synthesizeMouseAtCenter(item3.controlEl.closeButton, {});
+        is(
+          clickCallbacks.length,
+          2,
+          "onUserClick is called when clicking on moz-message-bar."
+        );
+        is(
+          messageBarDismissCallbacks.length,
+          1,
+          "onMessageBarDismiss is called when clicking on moz-message-bar close button."
         );
       });
     </script>

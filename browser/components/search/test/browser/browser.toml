@@ -21,6 +21,10 @@ prefs = ["browser.search.widget.new=false"]
 
 ["browser_426329.js"]
 support-files = ["test.html", "discovery.html", "426329.xml"]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1920926 and being removed in bug 2012951
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 1920926 and being removed in bug 2012951
+]
 
 ["browser_addSearchEngineFromForm.js"]
 support-files = ["test.html", "test_windows1252.html"]
@@ -79,6 +83,8 @@ support-files = ["trendingSuggestionEngine.sjs"]
 
 ["browser_searchPanelHeader.js"]
 
+["browser_searchRestrictToken_privateWindow.js"]
+
 ["browser_search_annotation.js"]
 
 ["browser_search_discovery.js"]
@@ -105,8 +111,6 @@ skip-if = [
 ["browser_searchbar_results.js"]
 
 ["browser_searchbar_smallpanel_keyboard_navigation.js"]
-
-["browser_searchbar_widths.js"]
 
 ["browser_tooManyEnginesOffered.js"]
 

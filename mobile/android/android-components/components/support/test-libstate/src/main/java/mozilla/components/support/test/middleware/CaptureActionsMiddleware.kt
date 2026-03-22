@@ -77,6 +77,17 @@ class CaptureActionsMiddleware<S : State, A : Action> : Middleware<S, A> {
     }
 
     /**
+     * Asserts that no actions were dispatched on the store.
+     * Throws [AssertionError] if any action was found.
+     */
+    @Synchronized
+    fun assertNoActionDispatched() {
+        if (capturedActions.isNotEmpty()) {
+            throw AssertionError("Expected no actions, but found: $capturedActions")
+        }
+    }
+
+    /**
      * Resets the remembered list of actions.
      *
      * Usually this is called between test runs to avoid verifying actions of a previous test methods.

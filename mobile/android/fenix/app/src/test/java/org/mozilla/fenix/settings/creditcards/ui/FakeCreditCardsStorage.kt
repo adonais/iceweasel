@@ -56,6 +56,9 @@ class FakeCreditCardsStorage(
     override suspend fun getCreditCard(guid: String): CreditCard? = null
 
     override suspend fun getAllCreditCards(): List<CreditCard> = emptyList()
+    override suspend fun countAllCreditCards(): Long {
+        return getAllCreditCards().count().toLong()
+    }
 
     override suspend fun deleteCreditCard(guid: String): Boolean {
         deletedCard = guid
@@ -97,6 +100,10 @@ class FakeCreditCardsStorage(
     override suspend fun getAddress(guid: String): Address? = null
 
     override suspend fun getAllAddresses(): List<Address> = emptyList()
+
+    override suspend fun countAllAddresses(): Long {
+        return getAllAddresses().size.toLong()
+    }
 
     override suspend fun updateAddress(guid: String, address: UpdatableAddressFields) = Unit
 

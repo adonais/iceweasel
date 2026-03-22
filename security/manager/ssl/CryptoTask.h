@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla__CryptoTask_h
-#define mozilla__CryptoTask_h
+#ifndef mozilla_CryptoTask_h
+#define mozilla_CryptoTask_h
 
 #include "nsThreadUtils.h"
 
@@ -48,4 +48,4 @@ class CryptoTask : public Runnable {
 
 }  // namespace mozilla
 
-#endif  // mozilla__CryptoTask_h
+#endif  // mozilla_CryptoTask_h

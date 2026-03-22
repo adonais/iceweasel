@@ -91,7 +91,14 @@ export class AmpSuggestions extends SuggestProvider {
     }
   }
 
-  makeResult(queryContext, suggestion) {
+  makeResult(queryContext, suggestion, searchString) {
+    if (
+      this.showLessFrequentlyCount &&
+      searchString.length < this.#minKeywordLength
+    ) {
+      return null;
+    }
+
     let normalized = Object.assign({}, suggestion);
     if (suggestion.source == "merino") {
       // Normalize the Merino suggestion so it has the same properties as Rust
@@ -111,61 +118,82 @@ export class AmpSuggestions extends SuggestProvider {
     }
 
     let isTopPick =
-      lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") &&
-      lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") <=
-        queryContext.trimmedLowerCaseSearchString.length;
+      (lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") &&
+        lazy.UrlbarPrefs.get("quickSuggestAmpTopPickCharThreshold") <=
+          queryContext.trimmedLowerCaseSearchString.length) ||
+      lazy.UrlbarPrefs.get("quickSuggestSponsoredPriority");
 
-    let { value: title, highlights: titleHighlights } =
-      lazy.QuickSuggest.getFullKeywordTitleAndHighlights({
-        tokens: queryContext.tokens,
-        highlightType: isTopPick
-          ? lazy.UrlbarUtils.HIGHLIGHT.TYPED
-          : lazy.UrlbarUtils.HIGHLIGHT.SUGGESTED,
-        fullKeyword: normalized.fullKeyword,
-        title: normalized.title,
-      });
-
-    let payload = {
-      url: normalized.url,
-      originalUrl: normalized.rawUrl,
-      title,
-      requestId: normalized.requestId,
-      urlTimestampIndex: normalized.urlTimestampIndex,
-      sponsoredImpressionUrl: normalized.impressionUrl,
-      sponsoredClickUrl: normalized.clickUrl,
-      sponsoredBlockId: normalized.blockId,
-      sponsoredAdvertiser: normalized.advertiser,
-      sponsoredIabCategory: normalized.iabCategory,
-      isBlockable: true,
-      isManageable: true,
-    };
-
-    let resultParams = {};
-    if (isTopPick) {
-      resultParams.isBestMatch = true;
-      resultParams.suggestedIndex = 1;
-    } else {
-      if (lazy.UrlbarPrefs.get("quickSuggestSponsoredPriority")) {
-        resultParams.isBestMatch = true;
-        resultParams.suggestedIndex = 1;
-      } else {
-        resultParams.richSuggestionIconSize = 16;
-      }
-      payload.descriptionL10n = {
-        id: "urlbar-result-action-sponsored",
-      };
+    let richSuggestionIconSize;
+    if (!isTopPick) {
+      richSuggestionIconSize = 16;
+    } else if (!lazy.UrlbarPrefs.get("quickSuggestAmpTopPickUseNovaIconSize")) {
+      // Use the standard rich-suggestion size.
+      richSuggestionIconSize = 28;
     }
+    // Else, leave `richSuggestionIconSize` undefined so
+    // `UrlbarProviderQuickSuggest` uses the standard Nova size.
 
     return new lazy.UrlbarResult({
       type: lazy.UrlbarUtils.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
-      isRichSuggestion: true,
-      ...resultParams,
-      payload,
-      highlights: {
-        title: titleHighlights,
+      isNovaSuggestion: true,
+      isBestMatch: isTopPick,
+      richSuggestionIconSize,
+      payload: {
+        url: normalized.url,
+        originalUrl: normalized.rawUrl,
+        title: normalized.fullKeyword,
+        subtitle: normalized.title,
+        bottomTextL10n: {
+          id: "urlbar-result-action-sponsored",
+        },
+        requestId: normalized.requestId,
+        urlTimestampIndex: normalized.urlTimestampIndex,
+        sponsoredImpressionUrl: normalized.impressionUrl,
+        sponsoredClickUrl: normalized.clickUrl,
+        sponsoredBlockId: normalized.blockId,
+        sponsoredAdvertiser: normalized.advertiser,
+        sponsoredIabCategory: normalized.iabCategory,
       },
     });
+  }
+
+  getResultCommands() {
+    /** @type {UrlbarResultCommand[]} */
+    const commands = [];
+
+    if (this.canShowLessFrequently) {
+      commands.push({
+        name: "show_less_frequently",
+        l10n: {
+          id: "urlbar-result-menu-show-less-frequently",
+        },
+      });
+    }
+
+    commands.push(
+      {
+        name: "dismiss",
+        l10n: {
+          id: "urlbar-result-menu-dismiss-suggestion",
+        },
+      },
+      { name: "separator" },
+      {
+        name: "manage",
+        l10n: {
+          id: "urlbar-result-menu-manage-firefox-suggest",
+        },
+      },
+      {
+        name: "help",
+        l10n: {
+          id: "urlbar-result-menu-learn-more",
+        },
+      }
+    );
+
+    return commands;
   }
 
   onImpression(state, queryContext, controller, featureResults, details) {
@@ -184,15 +212,30 @@ export class AmpSuggestions extends SuggestProvider {
     }
   }
 
-  onEngagement(queryContext, controller, details, _searchString) {
+  onEngagement(queryContext, controller, details, searchString) {
     let { result } = details;
 
-    // Handle commands. These suggestions support the Dismissal and Manage
-    // commands. Dismissal is the only one we need to handle here. `UrlbarInput`
-    // handles Manage.
-    if (details.selType == "dismiss") {
-      lazy.QuickSuggest.dismissResult(result);
-      controller.removeResult(result);
+    switch (details.selType) {
+      case "help":
+      case "manage": {
+        // "manage" and "help" are handled by UrlbarInput, no need to do
+        // anything here.
+        return;
+      }
+      case "dismiss": {
+        lazy.QuickSuggest.dismissResult(result);
+        controller.removeResult(result);
+        break;
+      }
+      case "show_less_frequently": {
+        controller.view.acknowledgeFeedback(result);
+        this.incrementShowLessFrequentlyCount();
+        if (!this.canShowLessFrequently) {
+          controller.view.invalidateResultMenuCommands();
+        }
+        lazy.UrlbarPrefs.set("amp.minKeywordLength", searchString.length + 1);
+        break;
+      }
     }
 
     // A `quick-suggest` impression ping must always be submitted on engagement
@@ -222,6 +265,30 @@ export class AmpSuggestions extends SuggestProvider {
     if (pingData) {
       this.#submitQuickSuggestPing({ queryContext, result, ...pingData });
     }
+  }
+
+  incrementShowLessFrequentlyCount() {
+    if (this.canShowLessFrequently) {
+      lazy.UrlbarPrefs.set(
+        "amp.showLessFrequentlyCount",
+        this.showLessFrequentlyCount + 1
+      );
+    }
+  }
+
+  get showLessFrequentlyCount() {
+    const count = lazy.UrlbarPrefs.get("amp.showLessFrequentlyCount") || 0;
+    return Math.max(count, 0);
+  }
+
+  get canShowLessFrequently() {
+    const cap = lazy.QuickSuggest.config.showLessFrequentlyCap || 0;
+    return !cap || this.showLessFrequentlyCount < cap;
+  }
+
+  get #minKeywordLength() {
+    let minLength = lazy.UrlbarPrefs.get("amp.minKeywordLength");
+    return Math.max(minLength, 0);
   }
 
   isUrlEquivalentToResultUrl(url, result) {

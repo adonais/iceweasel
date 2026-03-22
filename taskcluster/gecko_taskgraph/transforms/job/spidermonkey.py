@@ -5,7 +5,7 @@
 Support for running spidermonkey jobs via dedicated scripts
 """
 
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
@@ -14,7 +14,7 @@ from gecko_taskgraph.transforms.job.common import (
     generic_worker_add_artifacts,
 )
 
-sm_run_schema = Schema({
+sm_run_schema = LegacySchema({
     Required("using"): Any(
         "spidermonkey",
         "spidermonkey-package",

@@ -267,14 +267,11 @@ add_setup(async () => {
   Services.locale.requestedLocales = ["en"];
 
   Services.fog.initializeFOG();
-  sinon.stub(
-    Services.search.wrappedJSObject,
-    "_showRemovalOfSearchEngineNotificationBox"
-  );
+  sinon.stub(SearchService, "_showRemovalOfSearchEngineNotificationBox");
 
   SearchTestUtils.setRemoteSettingsConfig(BASE_CONFIG);
 
-  await Services.search.init();
+  await SearchService.init();
 
   registerCleanupFunction(async () => {
     sinon.restore();
@@ -359,14 +356,14 @@ add_task(async function test_user_changes_separate_private_pref() {
     true
   );
 
-  await Services.search.setDefaultPrivate(
-    Services.search.getEngineById("newDefault"),
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+  await SearchService.setDefaultPrivate(
+    SearchService.getEngineById("newDefault"),
+    SearchService.CHANGE_REASON.UNKNOWN
   );
 
   Assert.notEqual(
-    await Services.search.getDefault(),
-    await Services.search.getDefaultPrivate(),
+    await SearchService.getDefault(),
+    await SearchService.getDefaultPrivate(),
     "Should have different engines for the pre-condition"
   );
 
@@ -448,14 +445,11 @@ add_task(async function test_default_engine_update() {
     },
     { skipUnload: true }
   );
-  let engine = Services.search.getEngineByName("engine");
+  let engine = SearchService.getEngineByName("engine");
 
   Assert.ok(!!engine, "Should have loaded the engine");
 
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   clearTelemetry();
 
@@ -481,7 +475,7 @@ add_task(async function test_default_engine_update() {
   const defaultEngineData = {
     id: engine.telemetryId,
     name: "Bar",
-    loadPath: engine.wrappedJSObject._loadPath,
+    loadPath: engine._loadPath,
     submissionURL: "https://www.google.com/search?q=&version=2.0",
   };
   await checkTelemetry("engine-update", defaultEngineData, defaultEngineData);

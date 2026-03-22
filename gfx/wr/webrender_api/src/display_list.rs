@@ -1557,6 +1557,7 @@ impl DisplayListBuilder {
         blur_radius: f32,
         spread_radius: f32,
         border_radius: di::BorderRadius,
+        shadow_radius: di::BorderRadius,
         clip_mode: di::BoxShadowClipMode,
     ) {
         let (common, box_bounds) = self.remap_common_coordinates_and_bounds(common, box_bounds);
@@ -1569,6 +1570,7 @@ impl DisplayListBuilder {
             blur_radius,
             spread_radius,
             border_radius,
+            shadow_radius,
             clip_mode,
         });
 

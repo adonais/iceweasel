@@ -107,7 +107,7 @@ nsresult SVGAnimatedTransformList::SetAnimValue(const SVGTransformList& aValue,
     domWrapper->InternalAnimValListWillChangeLengthTo(aValue.Length());
   }
   if (!mAnimVal) {
-    mAnimVal = MakeUnique<SVGTransformList>();
+    mAnimVal = std::make_unique<SVGTransformList>();
   }
   nsresult rv = mAnimVal->CopyFrom(aValue);
   if (NS_FAILED(rv)) {
@@ -153,9 +153,9 @@ bool SVGAnimatedTransformList::IsExplicitlySet() const {
   return mIsBaseSet || !mBaseVal.IsEmpty() || mAnimVal;
 }
 
-UniquePtr<SMILAttr> SVGAnimatedTransformList::ToSMILAttr(
+std::unique_ptr<SMILAttr> SVGAnimatedTransformList::ToSMILAttr(
     SVGElement* aSVGElement) {
-  return MakeUnique<SMILAnimatedTransformList>(this, aSVGElement);
+  return std::make_unique<SMILAnimatedTransformList>(this, aSVGElement);
 }
 
 nsresult SVGAnimatedTransformList::SMILAnimatedTransformList::ValueFromString(

@@ -43,10 +43,28 @@ interface BrowserPreferencesRuntime {
     ) = onError(UnsupportedOperationException(UNSUPPORTED_ERROR))
 
     /**
+     * Method for registering browser preferences for observation on the observer delegate.
+     */
+    fun registerPrefsForObservation(
+        prefs: List<String>,
+        onSuccess: () -> Unit,
+        onError: (Throwable) -> Unit,
+    ) = onError(UnsupportedOperationException(UNSUPPORTED_ERROR))
+
+    /**
      * Method for removing a specific browser preference for observation on the observer delegate.
      */
     fun unregisterPrefForObservation(
         pref: String,
+        onSuccess: () -> Unit,
+        onError: (Throwable) -> Unit,
+    ) = onError(UnsupportedOperationException(UNSUPPORTED_ERROR))
+
+    /**
+     * Method for removing a list of browser preference for observation on the observer delegate.
+     */
+    fun unregisterPrefsForObservation(
+        prefs: List<String>,
         onSuccess: () -> Unit,
         onError: (Throwable) -> Unit,
     ) = onError(UnsupportedOperationException(UNSUPPORTED_ERROR))

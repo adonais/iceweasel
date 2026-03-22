@@ -188,6 +188,10 @@ parent:
 
   sync SyncWithCompositor();
 
+  // Check if WebRender rasterized any tiles in the last frame, and clear the state.
+  // Used by reftest to verify no rasterization occurred.
+  sync CheckAndClearWRDidRasterize(LayersId id) returns (bool didRasterize);
+
   // The pipelineId is the same as the layersId
   async PWebRenderBridge(PipelineId pipelineId, LayoutDeviceIntSize aSize, WindowKind aKind);
 

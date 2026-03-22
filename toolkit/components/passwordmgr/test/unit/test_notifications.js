@@ -109,7 +109,7 @@ add_task(async function test_notifications() {
 
     expectedNotification = "removeLogin";
     expectedData = testuser2;
-    Services.logins.removeLogin(testuser2);
+    await Services.logins.removeLoginAsync(testuser2);
     Assert.equal(expectedNotification, null);
     await LoginTestUtils.checkLogins([]);
 
@@ -119,7 +119,7 @@ add_task(async function test_notifications() {
 
     expectedNotification = "removeAllLogins";
     expectedData = null;
-    Services.logins.removeAllLogins();
+    await Services.logins.removeAllLoginsAsync();
     Assert.equal(expectedNotification, null);
     await LoginTestUtils.checkLogins([]);
 
@@ -133,7 +133,7 @@ add_task(async function test_notifications() {
 
     expectedNotification = "removeAllLogins";
     expectedData = null;
-    Services.logins.removeAllLogins();
+    await Services.logins.removeAllLoginsAsync();
     Assert.equal(expectedNotification, null);
     await LoginTestUtils.checkLogins([]);
 

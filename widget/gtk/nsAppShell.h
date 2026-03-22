@@ -5,8 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsAppShell_h__
-#define nsAppShell_h__
+#ifndef nsAppShell_h_
+#define nsAppShell_h_
 
 #ifdef MOZ_ENABLE_DBUS
 #  include <gio/gio.h>
@@ -74,4 +74,4 @@ class nsAppShell : public nsBaseAppShell {
 #endif
 };
 
-#endif /* nsAppShell_h__ */
+#endif /* nsAppShell_h_ */

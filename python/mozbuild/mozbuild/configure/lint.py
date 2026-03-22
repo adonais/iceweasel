@@ -56,10 +56,11 @@ class LintSandbox(ConfigureSandbox):
         location.
 
         The location is determined from the values of obj and line.
-        - `obj` can be a function or DependsFunction, in which case
-          `line` corresponds to the line within the function the exception
+
+        - ``obj`` can be a function or DependsFunction, in which case
+          ``line`` corresponds to the line within the function the exception
           will be raised from (as an offset from the function's firstlineno).
-        - `obj` can be a stack frame, in which case `line` is ignored.
+        - ``obj`` can be a stack frame, in which case ``line`` is ignored.
         """
 
         def thrower(e):

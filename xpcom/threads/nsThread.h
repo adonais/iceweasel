@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsThread_h__
-#define nsThread_h__
+#ifndef nsThread_h_
+#define nsThread_h_
 
 #include "MainThreadUtils.h"
 #include "mozilla/AlreadyAddRefed.h"
@@ -353,4 +353,4 @@ class nsThreadShutdownContext final : public nsIThreadShutdown {
 extern int sCanaryOutputFD;
 #endif
 
-#endif  // nsThread_h__
+#endif  // nsThread_h_

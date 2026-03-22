@@ -75,6 +75,10 @@ class GeckoPromptDelegateTest {
 
     private lateinit var runtime: GeckoRuntime
 
+    private val testUrl = "https://mozilla.org"
+    private val testUrlWithFormAction = "https://sitewithformaction.com"
+    private val testHttpRealm = "testRealm"
+
     @Before
     fun setup() {
         runtime = mock()
@@ -954,6 +958,181 @@ class GeckoPromptDelegateTest {
         assertFalse(onLoginSelected)
     }
 
+    @Test
+    fun `onLoginSelect with both httpRealm and formActionOrigin provided uses original values`() {
+        val mockSession = GeckoEngineSession(runtime).also {
+            it.currentUrl = testUrl
+        }
+        var receivedPrompt: PromptRequest.SelectLoginPrompt? = null
+
+        val promptDelegate = GeckoPromptDelegate(mockSession)
+
+        mockSession.register(
+            object : EngineSession.Observer {
+                override fun onPromptRequest(promptRequest: PromptRequest) {
+                    receivedPrompt = promptRequest as PromptRequest.SelectLoginPrompt
+                }
+            },
+        )
+
+        val loginEntry = createLoginEntry(
+            httpRealm = testHttpRealm,
+            formActionOrigin = testUrlWithFormAction,
+        )
+        val loginSelectOption = Autocomplete.LoginSelectOption(loginEntry.toLoginEntry())
+
+        promptDelegate.onLoginSelect(
+            mock(),
+            geckoLoginSelectPrompt(arrayOf(loginSelectOption)),
+        )
+        shadowOf(getMainLooper()).idle()
+
+        val logins = receivedPrompt!!.logins
+        assertEquals(1, logins.size)
+        assertEquals(testHttpRealm, logins[0].httpRealm)
+        assertEquals(testUrlWithFormAction, logins[0].formActionOrigin)
+    }
+
+    @Test
+    fun `onLoginSelect with only httpRealm provided uses null for formActionOrigin`() {
+        val mockSession = GeckoEngineSession(runtime).also {
+            it.currentUrl = testUrl
+        }
+        var receivedPrompt: PromptRequest.SelectLoginPrompt? = null
+
+        val promptDelegate = GeckoPromptDelegate(mockSession)
+
+        mockSession.register(
+            object : EngineSession.Observer {
+                override fun onPromptRequest(promptRequest: PromptRequest) {
+                    receivedPrompt = promptRequest as PromptRequest.SelectLoginPrompt
+                }
+            },
+        )
+
+        val loginEntry = createLoginEntry(
+            httpRealm = testHttpRealm,
+            formActionOrigin = null,
+        )
+        val loginSelectOption = Autocomplete.LoginSelectOption(loginEntry.toLoginEntry())
+
+        promptDelegate.onLoginSelect(
+            mock(),
+            geckoLoginSelectPrompt(arrayOf(loginSelectOption)),
+        )
+        shadowOf(getMainLooper()).idle()
+
+        val logins = receivedPrompt!!.logins
+        assertEquals(1, logins.size)
+        assertEquals(testHttpRealm, logins[0].httpRealm)
+        assertNull(logins[0].formActionOrigin)
+    }
+
+    @Test
+    fun `onLoginSelect with only formActionOrigin provided uses null for httpRealm`() {
+        val mockSession = GeckoEngineSession(runtime).also {
+            it.currentUrl = testUrl
+        }
+        var receivedPrompt: PromptRequest.SelectLoginPrompt? = null
+
+        val promptDelegate = GeckoPromptDelegate(mockSession)
+
+        mockSession.register(
+            object : EngineSession.Observer {
+                override fun onPromptRequest(promptRequest: PromptRequest) {
+                    receivedPrompt = promptRequest as PromptRequest.SelectLoginPrompt
+                }
+            },
+        )
+
+        val loginEntry = createLoginEntry(
+            httpRealm = null,
+            formActionOrigin = testUrlWithFormAction,
+        )
+        val loginSelectOption = Autocomplete.LoginSelectOption(loginEntry.toLoginEntry())
+
+        promptDelegate.onLoginSelect(
+            mock(),
+            geckoLoginSelectPrompt(arrayOf(loginSelectOption)),
+        )
+        shadowOf(getMainLooper()).idle()
+
+        val logins = receivedPrompt!!.logins
+        assertEquals(1, logins.size)
+        assertNull(logins[0].httpRealm)
+        assertEquals(testUrlWithFormAction, logins[0].formActionOrigin)
+    }
+
+    @Test
+    fun `onLoginSelect with neither httpRealm nor formActionOrigin uses currentUrl as formActionOrigin`() {
+        val mockSession = GeckoEngineSession(runtime).also {
+            it.currentUrl = testUrl
+        }
+        var receivedPrompt: PromptRequest.SelectLoginPrompt? = null
+
+        val promptDelegate = GeckoPromptDelegate(mockSession)
+
+        mockSession.register(
+            object : EngineSession.Observer {
+                override fun onPromptRequest(promptRequest: PromptRequest) {
+                    receivedPrompt = promptRequest as PromptRequest.SelectLoginPrompt
+                }
+            },
+        )
+
+        val loginEntry = createLoginEntry(
+            httpRealm = null,
+            formActionOrigin = null,
+        )
+        val loginSelectOption = Autocomplete.LoginSelectOption(loginEntry.toLoginEntry())
+
+        promptDelegate.onLoginSelect(
+            mock(),
+            geckoLoginSelectPrompt(arrayOf(loginSelectOption)),
+        )
+        shadowOf(getMainLooper()).idle()
+
+        val logins = receivedPrompt!!.logins
+        assertEquals(1, logins.size)
+        assertNull(logins[0].httpRealm)
+        assertEquals(testUrl, logins[0].formActionOrigin)
+    }
+
+    @Test
+    fun `onLoginSelect with blank httpRealm and formActionOrigin uses currentUrl as formActionOrigin`() {
+        val mockSession = GeckoEngineSession(runtime).also {
+            it.currentUrl = testUrl
+        }
+        var receivedPrompt: PromptRequest.SelectLoginPrompt? = null
+
+        val promptDelegate = GeckoPromptDelegate(mockSession)
+
+        mockSession.register(
+            object : EngineSession.Observer {
+                override fun onPromptRequest(promptRequest: PromptRequest) {
+                    receivedPrompt = promptRequest as PromptRequest.SelectLoginPrompt
+                }
+            },
+        )
+
+        val loginEntry = createLoginEntry(
+            httpRealm = "",
+            formActionOrigin = "",
+        )
+        val loginSelectOption = Autocomplete.LoginSelectOption(loginEntry.toLoginEntry())
+
+        promptDelegate.onLoginSelect(
+            mock(),
+            geckoLoginSelectPrompt(arrayOf(loginSelectOption)),
+        )
+        shadowOf(getMainLooper()).idle()
+
+        val logins = receivedPrompt!!.logins
+        assertEquals(1, logins.size)
+        assertEquals("", logins[0].httpRealm)
+        assertEquals(testUrl, logins[0].formActionOrigin)
+    }
+
     fun createLogin(
         guid: String = "id",
         password: String = "password",
@@ -978,8 +1157,8 @@ class GeckoPromptDelegateTest {
         password: String = "password",
         username: String = "username",
         origin: String = "https://www.origin.com",
-        httpRealm: String = "httpRealm",
-        formActionOrigin: String = "https://www.origin.com",
+        httpRealm: String? = "httpRealm",
+        formActionOrigin: String? = "https://www.origin.com",
         usernameField: String = "usernameField",
         passwordField: String = "passwordField",
     ) = LoginEntry(

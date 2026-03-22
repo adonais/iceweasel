@@ -2452,6 +2452,8 @@ extern "C" {
         uint32_t            poll;                        // polling level (0 - no polling, 100 - aggressive polling)
         bool                strict_cpu;                  // strict cpu placement
         bool                paused;                      // start in paused state
+        void              (*thread_create_callback)(void);  // callback invoked when thread is created
+        void              (*thread_destroy_callback)(void); // callback invoked when thread is destroyed
     };
 
     struct ggml_threadpool;     // forward declaration, see ggml.c

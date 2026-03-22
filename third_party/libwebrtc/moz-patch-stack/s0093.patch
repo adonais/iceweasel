@@ -10,10 +10,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b050c455caa1d24a0
  2 files changed, 7 insertions(+), 5 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 1ad6866fac..7d8d06c678 100644
+index fdfcc347db..862f22e41d 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -280,6 +280,7 @@ config("rtc_prod_config") {
+@@ -281,6 +281,7 @@ config("rtc_prod_config") {
  }
  
  group("tracing") {
@@ -21,7 +21,7 @@ index 1ad6866fac..7d8d06c678 100644
    all_dependent_configs = [ "//third_party/perfetto/gn:public_config" ]
    if (rtc_use_perfetto) {
      if (build_with_chromium) {
-@@ -296,6 +297,7 @@ group("tracing") {
+@@ -297,6 +298,7 @@ group("tracing") {
          [ "//third_party/perfetto/include/perfetto/tracing" ]
    }
  }
@@ -30,13 +30,13 @@ index 1ad6866fac..7d8d06c678 100644
  if (rtc_use_perfetto) {
    rtc_library("webrtc_libperfetto") {
 diff --git a/modules/video_coding/generic_decoder.cc b/modules/video_coding/generic_decoder.cc
-index 2cb8db695f..2db0a4d381 100644
+index 613e77397e..109faa945e 100644
 --- a/modules/video_coding/generic_decoder.cc
 +++ b/modules/video_coding/generic_decoder.cc
 @@ -120,9 +120,9 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                                        std::optional<int32_t> decode_time_ms,
                                        std::optional<uint8_t> qp) {
-   RTC_DCHECK(_receiveCallback) << "Callback must not be null at this point";
+   RTC_DCHECK(receive_callback_) << "Callback must not be null at this point";
 -  TRACE_EVENT(
 -      "webrtc", "VCMDecodedFrameCallback::Decoded",
 -      perfetto::TerminatingFlow::ProcessScoped(decodedImage.rtp_timestamp()));

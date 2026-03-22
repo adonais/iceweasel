@@ -1921,10 +1921,6 @@ export class StyleEditorUI extends EventEmitter {
     }
 
     if (this.#prefObserver) {
-      this.#prefObserver.off(
-        PREF_AT_RULES_SIDEBAR,
-        this.#onAtRulesSidebarPrefChanged
-      );
       this.#prefObserver.destroy();
       this.#prefObserver = null;
     }

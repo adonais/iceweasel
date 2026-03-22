@@ -9,6 +9,7 @@
 #include <algorithm>  // For std::stable_sort, std::min
 #include <utility>
 
+#include "PseudoStyleType.h"   // For PseudoStyleType
 #include "js/ForOfIterator.h"  // For JS::ForOfIterator
 #include "js/PropertyAndElement.h"  // JS_Enumerate, JS_GetProperty, JS_GetPropertyById
 #include "jsapi.h"                  // For most JSAPI
@@ -29,7 +30,6 @@
 #include "mozilla/dom/Nullable.h"
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"
-#include "nsCSSPseudoElements.h"  // For PseudoStyleType
 #include "nsClassHashtable.h"
 #include "nsContentUtils.h"  // For GetContextForContent
 #include "nsIScriptError.h"

@@ -225,9 +225,18 @@ using UniqueFileHandle =
 
 #ifndef __wasm__
 // WASI does not have `dup`
+// On Unix, these set the close-on-exec flag for the new fd.
 MFBT_API UniqueFileHandle DuplicateFileHandle(detail::FileHandleType aFile);
 inline UniqueFileHandle DuplicateFileHandle(const UniqueFileHandle& aFile) {
   return DuplicateFileHandle(aFile.get());
+}
+#endif  // not wasm
+
+#ifdef XP_UNIX
+// For systems that don't have the full set of POSIX atomic cloexec APIs.
+MFBT_API void SetCloseOnExec(detail::FileHandleType aFile);
+inline void SetCloseOnExec(const UniqueFileHandle& aFile) {
+  SetCloseOnExec(aFile.get());
 }
 #endif
 

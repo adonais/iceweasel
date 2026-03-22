@@ -5,20 +5,25 @@
 /* import-globals-from extensionControlled.js */
 /* import-globals-from preferences.js */
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   AddonSearchEngine:
     "moz-src:///toolkit/components/search/AddonSearchEngine.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UserSearchEngine:
     "moz-src:///toolkit/components/search/UserSearchEngine.sys.mjs",
 });
+
+/**
+ * @import { SearchEngine } from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
+ */
 
 Preferences.addAll([
   { id: "browser.search.suggest.enabled", type: "bool" },
@@ -53,6 +58,25 @@ Preferences.addAll([
 ]);
 
 /**
+ * Gets the icon to use for a particular engine, falling back to the placeholder
+ * if necessary.
+ *
+ * @param {SearchEngine} engine
+ * @param {number} [width]
+ *   The display width of the icon. @see {SearchEngine.getIconURL}
+ */
+async function getEngineIcon(engine, width) {
+  let iconURL = await engine.getIconURL(width);
+
+  return (
+    iconURL ??
+    (window.devicePixelRatio > 1
+      ? "chrome://browser/skin/search-engine-placeholder@2x.png"
+      : "chrome://browser/skin/search-engine-placeholder.png")
+  );
+}
+
+/**
  * Generates the config needed to populate the dropdowns for the user's
  * default search engine and separate private default search engine.
  *
@@ -60,7 +84,7 @@ Preferences.addAll([
  *   Options for creating the config.
  * @param {string} options.settingId
  *   The id for the particular setting.
- * @param {() => Promise<nsISearchEngine>} options.getEngine
+ * @param {() => Promise<SearchEngine>} options.getEngine
  *   The method used to get the engine from the Search Service.
  * @param {(id: string) => Promise<void>} options.setEngine
  *   The method used to set a new engine.
@@ -69,8 +93,6 @@ Preferences.addAll([
 function createSearchEngineConfig({ settingId, getEngine, setEngine }) {
   return class extends Preferences.AsyncSetting {
     static id = settingId;
-    ENGINE_MODIFIED = "browser-search-engine-modified";
-    iconMap = new Map();
 
     /** @type {{options: PreferencesSettingsConfig[]}} */
     defaultGetControlConfig = { options: [] };
@@ -80,62 +102,47 @@ function createSearchEngineConfig({ settingId, getEngine, setEngine }) {
       return engine.id;
     }
 
+    /** @param {string} id */
     async set(id) {
       await setEngine(id);
     }
 
     async getControlConfig() {
-      let engines = await Services.search.getVisibleEngines();
-      await Promise.allSettled(engines.map(e => this.loadEngineIcon(e)));
+      let engines = await lazy.SearchService.getVisibleEngines();
+      let optionsInfo = await Promise.allSettled(
+        engines.map(async engine => {
+          let url = await getEngineIcon(engine);
+          return {
+            value: engine.id,
+            controlAttrs: { label: engine.name },
+            iconSrc: url,
+          };
+        })
+      );
+
       return {
-        options: engines.map(engine => ({
-          value: engine.id,
-          iconSrc: this.getEngineIcon(engine),
-          controlAttrs: {
-            label: engine.name,
-          },
-        })),
+        options: optionsInfo
+          .filter(o => o.status == "fulfilled")
+          .map(o => o.value),
       };
     }
 
-    getEngineIcon(engine) {
-      return this.iconMap.get(engine.id);
-    }
-
-    getPlaceholderIcon() {
-      return window.devicePixelRatio > 1
-        ? "chrome://browser/skin/search-engine-placeholder@2x.png"
-        : "chrome://browser/skin/search-engine-placeholder.png";
-    }
-
-    async loadEngineIcon(engine) {
-      try {
-        let iconURL = await engine.getIconURL();
-        let url = iconURL ?? this.getPlaceholderIcon();
-        this.iconMap.set(engine.id, url);
-        return url;
-      } catch (error) {
-        console.warn(`Failed to load icon for engine ${engine.name}:`, error);
-        let placeholderIcon = this.getPlaceholderIcon();
-        this.iconMap.set(engine.id, placeholderIcon);
-        return placeholderIcon;
-      }
-    }
-
     setup() {
-      Services.obs.addObserver(this, this.ENGINE_MODIFIED);
-      return () => Services.obs.removeObserver(this, this.ENGINE_MODIFIED);
+      Services.obs.addObserver(this, lazy.SearchUtils.TOPIC_ENGINE_MODIFIED);
+      return () =>
+        Services.obs.removeObserver(
+          this,
+          lazy.SearchUtils.TOPIC_ENGINE_MODIFIED
+        );
     }
 
-    observe(subject, topic, data) {
-      if (topic == this.ENGINE_MODIFIED) {
-        let engine = subject.QueryInterface(Ci.nsISearchEngine);
-
-        // Clean up cache for removed engines.
-        if (data == "engine-removed") {
-          this.iconMap.delete(engine.id);
-        }
-
+    /**
+     * @param {?{wrappedJSObject: SearchEngine}} subject
+     * @param {"browser-search-service"|"browser-search-engine-modified"} topic
+     * @param {string} _data
+     */
+    observe(subject, topic, _data) {
+      if (topic == lazy.SearchUtils.TOPIC_ENGINE_MODIFIED) {
         // Always emit change for any change that could affect the engine list
         // or default.
         this.emitChange();
@@ -147,11 +154,11 @@ function createSearchEngineConfig({ settingId, getEngine, setEngine }) {
 Preferences.addSetting(
   createSearchEngineConfig({
     settingId: "defaultEngineNormal",
-    getEngine: () => Services.search.getDefault(),
+    getEngine: () => lazy.SearchService.getDefault(),
     setEngine: id =>
-      Services.search.setDefault(
-        Services.search.getEngineById(id),
-        Ci.nsISearchService.CHANGE_REASON_USER
+      lazy.SearchService.setDefault(
+        lazy.SearchService.getEngineById(id),
+        lazy.SearchService.CHANGE_REASON.USER
       ),
   })
 );
@@ -214,11 +221,11 @@ Preferences.addSetting({
 Preferences.addSetting(
   createSearchEngineConfig({
     settingId: "defaultPrivateEngine",
-    getEngine: () => Services.search.getDefaultPrivate(),
+    getEngine: () => lazy.SearchService.getDefaultPrivate(),
     setEngine: id =>
-      Services.search.setDefaultPrivate(
-        Services.search.getEngineById(id),
-        Ci.nsISearchService.CHANGE_REASON_USER
+      lazy.SearchService.setDefaultPrivate(
+        lazy.SearchService.getEngineById(id),
+        lazy.SearchService.CHANGE_REASON.USER
       ),
   })
 );
@@ -376,9 +383,10 @@ Preferences.addSetting({
   ],
   visible: deps => deps.trendingFeaturegatePref.value,
   disabled: deps => {
-    let trendingSupported = Services.search.defaultEngine.supportsResponseType(
-      lazy.SearchUtils.URL_TYPE.TRENDING_JSON
-    );
+    let trendingSupported =
+      lazy.SearchService.defaultEngine.supportsResponseType(
+        lazy.SearchUtils.URL_TYPE.TRENDING_JSON
+      );
     return (
       !deps.searchSuggestionsEnabledPref.value ||
       deps.permanentPBEnabledPref.value ||
@@ -602,6 +610,418 @@ Preferences.addSetting({
   visible: determineSuggestionSettingsVisibility,
 });
 
+/**
+ * @type {?() => void}
+ *   Enables notification for an engine update from outside the setting.
+ */
+let searchEngineUpdateNotifier;
+Preferences.addSetting(
+  /** @type {{ _engineUpdateTriggered: boolean, _emitChange: Function } & SettingConfig} */ ({
+    id: "updateSearchEngineSuccess",
+    _engineUpdateTriggered: false,
+    _emitChange: null,
+    setup(emitChange) {
+      this._emitChange = emitChange;
+      searchEngineUpdateNotifier = () => {
+        this._engineUpdateTriggered = true;
+        emitChange();
+      };
+      return () => {
+        searchEngineUpdateNotifier = null;
+        this._emitChange = null;
+      };
+    },
+    onMessageBarDismiss(e) {
+      e.preventDefault();
+      this._engineUpdateTriggered = false;
+      this._emitChange?.();
+    },
+    visible() {
+      return this._engineUpdateTriggered;
+    },
+  })
+);
+
+/**
+ * Creates an AsyncSetting to handle an individual item in the search engine
+ * list.
+ *
+ * @param {string} settingId
+ * @param {SearchEngine} engine
+ */
+function EngineListItemSetting(settingId, engine) {
+  return class extends Preferences.AsyncSetting {
+    static id = settingId;
+
+    setup() {
+      /** @type {(subject: {wrappedJSObject: SearchEngine}, topic: string, data: string) => void} */
+      let onTargetEngineChanged = (subject, _topic, data) => {
+        if (
+          (data == lazy.SearchUtils.MODIFIED_TYPE.CHANGED ||
+            data == lazy.SearchUtils.MODIFIED_TYPE.ICON_CHANGED) &&
+          subject.wrappedJSObject == engine
+        ) {
+          this.emitChange();
+        }
+      };
+
+      Services.obs.addObserver(
+        onTargetEngineChanged,
+        lazy.SearchUtils.TOPIC_ENGINE_MODIFIED
+      );
+      return () =>
+        Services.obs.removeObserver(
+          onTargetEngineChanged,
+          lazy.SearchUtils.TOPIC_ENGINE_MODIFIED
+        );
+    }
+
+    async getControlConfig() {
+      /** @type {Partial<SettingControlConfig>} */
+      return {
+        // 24 is the same size as `--icon-size-large`.
+        iconSrc: await getEngineIcon(engine, 24),
+        controlAttrs: {
+          class: engine.hidden ? "description-deemphasized" : "",
+          label: engine.name,
+          description: engine.aliases.join(", "),
+          layout: "medium-icon",
+        },
+      };
+    }
+  };
+}
+
+Preferences.addSetting({
+  id: "addEngineButton",
+  onUserClick() {
+    gSubDialog.open(
+      "chrome://browser/content/search/addEngine.xhtml",
+      { features: "resizable=no, modal=yes" },
+      { mode: "NEW" }
+    );
+  },
+});
+
+/**
+ * @param {SettingConfig} config
+ */
+function maybeMakeSetting(config) {
+  if (!Preferences.getSetting(config.id)) {
+    Preferences.addSetting(config);
+  }
+}
+
+/**
+ * Creates a Setting to handle an individual toggle within the list item for
+ * a search engine in the engine list.
+ *
+ * @param {string} toggleId
+ * @param {SearchEngine} engine
+ * @returns {SettingConfig}
+ */
+function ToggleSetting(toggleId, engine) {
+  return {
+    id: toggleId,
+    setup(emitChange) {
+      /** @type {(subject: {wrappedJSObject: SearchEngine}, topic: string, data: string) => void} */
+      let onTargetEngineChanged = (subject, _topic, data) => {
+        if (
+          (data == lazy.SearchUtils.MODIFIED_TYPE.CHANGED ||
+            data == lazy.SearchUtils.MODIFIED_TYPE.ICON_CHANGED) &&
+          subject.wrappedJSObject == engine
+        ) {
+          emitChange();
+        }
+      };
+
+      Services.obs.addObserver(
+        onTargetEngineChanged,
+        lazy.SearchUtils.TOPIC_ENGINE_MODIFIED
+      );
+      return () =>
+        Services.obs.removeObserver(
+          onTargetEngineChanged,
+          lazy.SearchUtils.TOPIC_ENGINE_MODIFIED
+        );
+    },
+    get() {
+      return !engine.hidden;
+    },
+    onUserChange() {
+      engine.hidden = !engine.hidden;
+    },
+  };
+}
+
+Preferences.addSetting(
+  class extends Preferences.AsyncSetting {
+    static id = "engineList";
+
+    /**
+     * @type {?Map<Values<typeof lazy.UrlbarUtils.RESULT_SOURCE>, string[]>}
+     *   This maps local shortcut sources to their l10n names. The first item
+     *   in the string array is the display name for the local source.
+     *   All items in the string should be used for displaying as aliases.
+     */
+    #localShortcutL10nNames = null;
+
+    setup() {
+      Services.obs.addObserver(
+        this.emitChange,
+        "browser-search-engine-modified"
+      );
+      return () =>
+        Services.obs.removeObserver(
+          this.emitChange,
+          "browser-search-engine-modified"
+        );
+    }
+
+    /**
+     * Gets and caches the l10n names for the local shortcut sources.
+     */
+    async getL10nNames() {
+      if (this.#localShortcutL10nNames) {
+        return this.#localShortcutL10nNames;
+      }
+      this.#localShortcutL10nNames = new Map();
+
+      let getIDs = (suffix = "") =>
+        lazy.UrlbarUtils.LOCAL_SEARCH_MODES.map(mode => {
+          let name = lazy.UrlbarUtils.getResultSourceName(mode.source);
+          return { id: `urlbar-search-mode-${name}${suffix}` };
+        });
+
+      try {
+        let localizedIDs = getIDs();
+        let englishIDs = getIDs("-en");
+
+        let englishSearchStrings = new Localization([
+          "preview/enUS-searchFeatures.ftl",
+        ]);
+        let localizedNames = await document.l10n.formatValues(localizedIDs);
+        let englishNames = await englishSearchStrings.formatValues(englishIDs);
+
+        lazy.UrlbarUtils.LOCAL_SEARCH_MODES.forEach(({ source }, index) => {
+          let localizedName = localizedNames[index];
+          let englishName = englishNames[index];
+
+          // Add only the English name if localized and English are the same.
+          let names =
+            localizedName === englishName
+              ? [englishName]
+              : [localizedName, englishName];
+
+          this.#localShortcutL10nNames.set(source, names);
+        });
+      } catch (ex) {
+        console.error("Error loading l10n names", ex);
+      }
+      return this.#localShortcutL10nNames;
+    }
+
+    /**
+     * Handles options for deleting and removing search engines.
+     *
+     * @param {SearchEngine} engine
+     *   The engine to add settings for.
+     */
+    handleDeletionOptions(engine) {
+      /** @type {SettingControlConfig} */
+      let deletionOptions;
+      if (engine.isConfigEngine) {
+        let toggleId = `toggleEngine-${engine.id}`;
+        maybeMakeSetting(ToggleSetting(toggleId, engine));
+
+        deletionOptions = {
+          id: toggleId,
+          l10nId: "search-enable-engine",
+          control: "moz-toggle",
+          slot: "actions",
+        };
+      } else {
+        let deletionId = `deleteEngine-${engine.id}`;
+        maybeMakeSetting({
+          id: deletionId,
+          async onUserClick() {
+            let [body, removeLabel] = await document.l10n.formatValues([
+              "remove-engine-confirmation",
+              "remove-engine-remove",
+            ]);
+
+            let button = Services.prompt.confirmExBC(
+              window.browsingContext,
+              Services.prompt.MODAL_TYPE_CONTENT,
+              null,
+              body,
+              (Services.prompt.BUTTON_TITLE_IS_STRING *
+                Services.prompt.BUTTON_POS_0) |
+                (Services.prompt.BUTTON_TITLE_CANCEL *
+                  Services.prompt.BUTTON_POS_1),
+              removeLabel,
+              null,
+              null,
+              null,
+              {}
+            );
+
+            if (button == 0) {
+              await lazy.SearchService.removeEngine(
+                engine,
+                lazy.SearchService.CHANGE_REASON.USER
+              );
+            }
+          },
+        });
+
+        deletionOptions = {
+          id: deletionId,
+          l10nId: "search-delete-engine",
+          control: "moz-button",
+          iconSrc: "chrome://global/skin/icons/delete.svg",
+          slot: "actions",
+        };
+      }
+
+      return deletionOptions;
+    }
+
+    /**
+     * Curates the configuration for the list of search engines for display in
+     * the group box.
+     */
+    async makeEngineList() {
+      /** @type {SettingControlConfig[]} */
+      let configs = [];
+      for (let engine of await lazy.SearchService.getEngines()) {
+        let settingId = `engineList-${engine.id}`;
+        let editId = `editEngine-${engine.id}`;
+        let outlinkId = `outlink-${engine.id}`;
+
+        maybeMakeSetting(EngineListItemSetting(settingId, engine));
+        maybeMakeSetting({
+          id: editId,
+          disabled: () => engine.hidden,
+          onUserClick() {
+            gSubDialog.open(
+              "chrome://browser/content/search/addEngine.xhtml",
+              {
+                features: "resizable=no, modal=yes",
+                closingCallback: event => {
+                  if (event.detail.button == "accept") {
+                    searchEngineUpdateNotifier?.();
+                  }
+                },
+              },
+              { engine, mode: "EDIT" }
+            );
+          },
+        });
+
+        /** @type {SettingControlConfig} */
+        let config = {
+          id: settingId,
+          control: "moz-box-item",
+          items: [
+            {
+              id: editId,
+              l10nId: "search-edit-engine-2",
+              control: "moz-button",
+              iconSrc: "chrome://global/skin/icons/edit-outline.svg",
+              slot: "actions",
+            },
+          ],
+        };
+
+        // Addon search engines need an edit button to edit the alias names
+        // and an outlink icon, but they should not have a toggle or a delete
+        // button.
+        if (!(engine instanceof lazy.AddonSearchEngine)) {
+          config.items.push(this.handleDeletionOptions(engine));
+        } else {
+          maybeMakeSetting({
+            id: outlinkId,
+            onUserClick(e) {
+              e.preventDefault();
+              // @ts-expect-error topChromeWindow global
+              window.browsingContext.topChromeWindow.BrowserAddonUI.manageAddon(
+                engine.extensionID
+              );
+            },
+          });
+
+          config.items.push({
+            id: outlinkId,
+            l10nId: "search-outlink-to-extensions-page",
+            control: "moz-button",
+            iconSrc: "chrome://global/skin/icons/open-in-new.svg",
+            slot: "actions",
+          });
+        }
+
+        configs.push(config);
+      }
+
+      return configs;
+    }
+
+    /**
+     * Curates the configuration for the list of search modes for display in
+     * the group box.
+     */
+    async makeSearchModesList() {
+      let l10nNames = await this.getL10nNames();
+
+      /** @type {SettingControlConfig[]} */
+      let configs = [];
+      for (let searchMode of lazy.UrlbarUtils.LOCAL_SEARCH_MODES) {
+        let id = `searchmode-${searchMode.telemetryLabel}`;
+        maybeMakeSetting({ id });
+
+        // Convert the localized words into lowercase keywords prepended with
+        // an @ symbol.
+        let keywords = l10nNames
+          .get(searchMode.source)
+          .map(keyword => `@${keyword.toLowerCase()}`)
+          .join(", ");
+
+        // Add the restrict token as a keyword option as well.
+        keywords += `, ${searchMode.restrict}`;
+
+        configs.push({
+          id,
+          control: "moz-box-item",
+          slot: "static",
+          iconSrc: searchMode.icon,
+          controlAttrs: {
+            label: l10nNames.get(searchMode.source)[0],
+            description: keywords,
+            layout: "medium-icon",
+          },
+        });
+      }
+
+      return configs;
+    }
+
+    async onUserReorder(event) {
+      const { draggedElement, targetIndex } = event.detail;
+      let draggedEngineName = draggedElement.label;
+      let draggedEngine = lazy.SearchService.getEngineByName(draggedEngineName);
+      await lazy.SearchService.moveEngine(draggedEngine, targetIndex);
+    }
+    async getControlConfig() {
+      return {
+        items: [
+          ...(await this.makeEngineList()),
+          ...(await this.makeSearchModesList()),
+        ],
+      };
+    }
+  }
+);
+
 const ENGINE_FLAVOR = "text/x-moz-search-engine";
 const SEARCH_TYPE = "default_search";
 const SEARCH_KEY = "defaultSearch";
@@ -615,6 +1035,7 @@ var gSearchPane = {
     initSettingGroup("defaultEngine");
     initSettingGroup("searchSuggestions");
     initSettingGroup("firefoxSuggest");
+    initSettingGroup("searchShortcuts");
     this._engineStore = new EngineStore();
     gEngineView = new EngineView(this._engineStore);
 
@@ -680,16 +1101,10 @@ var gSearchPane = {
         break;
       }
       case "browser-search-engine-modified": {
-        let engine = subject.QueryInterface(Ci.nsISearchEngine);
-        switch (data) {
-          case "engine-default": {
-            // Pass through to the engine store to handle updates.
-            this._engineStore.browserSearchEngineModified(engine, data);
-            break;
-          }
-          default:
-            this._engineStore.browserSearchEngineModified(engine, data);
-        }
+        this._engineStore.browserSearchEngineModified(
+          subject.wrappedJSObject,
+          data
+        );
         break;
       }
     }
@@ -700,9 +1115,10 @@ var gSearchPane = {
   },
 
   async setDefaultEngine() {
-    await Services.search.setDefault(
-      document.getElementById("defaultEngine").selectedItem.engine,
-      Ci.nsISearchService.CHANGE_REASON_USER
+    await lazy.SearchService.setDefault(
+      document.getElementById("defaultEngine").selectedItem.engine
+        .originalEngine,
+      lazy.SearchService.CHANGE_REASON.USER
     );
     if (ExtensionSettingsStore.getSetting(SEARCH_TYPE, SEARCH_KEY) !== null) {
       ExtensionSettingsStore.select(
@@ -714,9 +1130,10 @@ var gSearchPane = {
   },
 
   async setDefaultPrivateEngine() {
-    await Services.search.setDefaultPrivate(
-      document.getElementById("defaultPrivateEngine").selectedItem.engine,
-      Ci.nsISearchService.CHANGE_REASON_USER
+    await lazy.SearchService.setDefaultPrivate(
+      document.getElementById("defaultPrivateEngine").selectedItem.engine
+        .originalEngine,
+      lazy.SearchService.CHANGE_REASON.USER
     );
   },
 };
@@ -740,7 +1157,7 @@ class EngineStore {
   #listeners = [];
 
   async init() {
-    let engines = await Services.search.getEngines();
+    let engines = await lazy.SearchService.getEngines();
 
     let visibleEngines = engines.filter(e => !e.hidden);
     for (let engine of visibleEngines) {
@@ -821,10 +1238,10 @@ class EngineStore {
   }
 
   /**
-   * Converts an nsISearchEngine object into an Engine Store
+   * Converts an SearchEngine object into an Engine Store
    * search engine object.
    *
-   * @param {nsISearchEngine} aEngine
+   * @param {SearchEngine} aEngine
    *   The search engine to convert.
    * @returns {object}
    *   The EngineStore search engine object.
@@ -836,10 +1253,8 @@ class EngineStore {
     for (let i of ["id", "name", "alias", "hidden", "isAppProvided"]) {
       clonedObj[i] = aEngine[i];
     }
-    clonedObj.isAddonEngine =
-      aEngine.wrappedJSObject instanceof lazy.AddonSearchEngine;
-    clonedObj.isUserEngine =
-      aEngine.wrappedJSObject instanceof lazy.UserSearchEngine;
+    clonedObj.isAddonEngine = aEngine instanceof lazy.AddonSearchEngine;
+    clonedObj.isUserEngine = aEngine instanceof lazy.UserSearchEngine;
     clonedObj.originalEngine = aEngine;
 
     // Trigger getting the iconURL for this engine.
@@ -895,14 +1310,18 @@ class EngineStore {
     var removedEngine = this.engines.splice(index, 1)[0];
     this.engines.splice(aNewIndex, 0, removedEngine);
 
-    return Services.search.moveEngine(aEngine.originalEngine, aNewIndex);
+    return lazy.SearchService.moveEngine(
+      aEngine.originalEngine,
+      aNewIndex,
+      true
+    );
   }
 
   /**
    * Called when a search engine is removed.
    *
-   * @param {nsISearchEngine} aEngine
-   *   The Engine being removed. Note that this is an nsISearchEngine object.
+   * @param {SearchEngine} aEngine
+   *   The Engine being removed. Note that this is an SearchEngine object.
    */
   removeEngine(aEngine) {
     if (this.engines.length == 1) {
@@ -931,11 +1350,10 @@ class EngineStore {
    * Update the default engine UI and engine tree view as appropriate when engine changes
    * or locale changes occur.
    *
-   * @param {nsISearchEngine} engine
+   * @param {SearchEngine} engine
    * @param {string} data
    */
   browserSearchEngineModified(engine, data) {
-    engine.QueryInterface(Ci.nsISearchEngine);
     switch (data) {
       case "engine-added":
         this.addEngine(engine);
@@ -963,7 +1381,7 @@ class EngineStore {
     // _cloneEngine is necessary here because all functions in
     // this file work on EngineStore search engine objects.
     let appProvidedEngines = (
-      await Services.search.getAppProvidedEngines()
+      await lazy.SearchService.getAppProvidedEngines()
     ).map(this._cloneEngine, this);
 
     for (var i = 0; i < appProvidedEngines.length; ++i) {
@@ -982,7 +1400,7 @@ class EngineStore {
         this.engines.splice(i, 0, e);
         let engine = e.originalEngine;
         engine.hidden = false;
-        await Services.search.moveEngine(engine, i);
+        await lazy.SearchService.moveEngine(engine, i, true);
         added++;
       }
     }
@@ -992,12 +1410,12 @@ class EngineStore {
     let policyRemovedEngineNames =
       Services.policies.getActivePolicies()?.SearchEngines?.Remove || [];
     for (let engineName of policyRemovedEngineNames) {
-      let engine = Services.search.getEngineByName(engineName);
+      let engine = lazy.SearchService.getEngineByName(engineName);
       if (engine) {
         try {
-          await Services.search.removeEngine(
+          await lazy.SearchService.removeEngine(
             engine,
-            Ci.nsISearchService.CHANGE_REASON_ENTERPRISE
+            lazy.SearchService.CHANGE_REASON.ENTERPRISE
           );
         } catch (ex) {
           // Engine might not exist
@@ -1005,7 +1423,7 @@ class EngineStore {
       }
     }
 
-    Services.search.resetToAppDefaultEngine();
+    lazy.SearchService.resetToAppDefaultEngine();
     gSearchPane.showRestoreDefaults(false);
     this.notifyRebuildViews();
     return added;
@@ -1052,8 +1470,8 @@ class EngineView {
     this._localShortcutL10nNames = new Map();
 
     let getIDs = (suffix = "") =>
-      UrlbarUtils.LOCAL_SEARCH_MODES.map(mode => {
-        let name = UrlbarUtils.getResultSourceName(mode.source);
+      lazy.UrlbarUtils.LOCAL_SEARCH_MODES.map(mode => {
+        let name = lazy.UrlbarUtils.getResultSourceName(mode.source);
         return { id: `urlbar-search-mode-${name}${suffix}` };
       });
 
@@ -1067,7 +1485,7 @@ class EngineView {
       let localizedNames = await document.l10n.formatValues(localizedIDs);
       let englishNames = await englishSearchStrings.formatValues(englishIDs);
 
-      UrlbarUtils.LOCAL_SEARCH_MODES.forEach(({ source }, index) => {
+      lazy.UrlbarUtils.LOCAL_SEARCH_MODES.forEach(({ source }, index) => {
         let localizedName = localizedNames[index];
         let englishName = englishNames[index];
 
@@ -1156,8 +1574,8 @@ class EngineView {
   }
 
   isEngineSelectedAndRemovable() {
-    let defaultEngine = Services.search.defaultEngine;
-    let defaultPrivateEngine = Services.search.defaultPrivateEngine;
+    let defaultEngine = lazy.SearchService.defaultEngine;
+    let defaultPrivateEngine = lazy.SearchService.defaultPrivateEngine;
     // We don't allow the last remaining engine to be removed, thus the
     // `this.lastEngineIndex != 0` check.
     // We don't allow the default engine to be removed.
@@ -1182,9 +1600,9 @@ class EngineView {
    */
   async promptAndRemoveEngine(engine) {
     if (engine.isAppProvided) {
-      Services.search.removeEngine(
+      lazy.SearchService.removeEngine(
         this.selectedEngine.originalEngine,
-        Ci.nsISearchService.CHANGE_REASON_USER
+        lazy.SearchService.CHANGE_REASON.USER
       );
       return;
     }
@@ -1218,9 +1636,9 @@ class EngineView {
 
     // Button 0 is the remove button.
     if (button == 0) {
-      Services.search.removeEngine(
+      lazy.SearchService.removeEngine(
         this.selectedEngine.originalEngine,
-        Ci.nsISearchService.CHANGE_REASON_USER
+        lazy.SearchService.CHANGE_REASON.USER
       );
     }
   }
@@ -1239,7 +1657,7 @@ class EngineView {
     if (index < engineCount) {
       return null;
     }
-    return UrlbarUtils.LOCAL_SEARCH_MODES[index - engineCount];
+    return lazy.UrlbarUtils.LOCAL_SEARCH_MODES[index - engineCount];
   }
 
   /**
@@ -1302,7 +1720,7 @@ class EngineView {
             break;
           case "editEngineButton":
             if (this.selectedEngine.isUserEngine) {
-              let engine = this.selectedEngine.originalEngine.wrappedJSObject;
+              let engine = this.selectedEngine.originalEngine;
               gSubDialog.open(
                 "chrome://browser/content/search/addEngine.xhtml",
                 { features: "resizable=no, modal=yes" },
@@ -1449,10 +1867,10 @@ class EngineView {
 
   // nsITreeView
   get rowCount() {
-    let localModes = UrlbarUtils.LOCAL_SEARCH_MODES;
+    let localModes = lazy.UrlbarUtils.LOCAL_SEARCH_MODES;
     if (!lazy.UrlbarPrefs.get("scotchBonnet.enableOverride")) {
       localModes = localModes.filter(
-        mode => mode.source != UrlbarUtils.RESULT_SOURCE.ACTIONS
+        mode => mode.source != lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS
       );
     }
     return this._engineStore.engines.length + localModes.length;
@@ -1553,7 +1971,7 @@ class EngineView {
       // the icons in CSS.
       let shortcut = this._getLocalShortcut(index);
       if (shortcut) {
-        return UrlbarUtils.getResultSourceName(shortcut.source);
+        return lazy.UrlbarUtils.getResultSourceName(shortcut.source);
       }
     }
     return "";
@@ -1649,9 +2067,10 @@ class EngineView {
   async #changeKeyword(aEngine, aNewKeyword) {
     let keyword = aNewKeyword.trim();
     if (keyword) {
-      let isBookmarkDuplicate = !!(await PlacesUtils.keywords.fetch(keyword));
+      let isBookmarkDuplicate =
+        !!(await lazy.PlacesUtils.keywords.fetch(keyword));
 
-      let dupEngine = await Services.search.getEngineByAlias(keyword);
+      let dupEngine = await lazy.SearchService.getEngineByAlias(keyword);
       let isEngineDuplicate = dupEngine !== null && dupEngine.id != aEngine.id;
 
       // Notify the user if they have chosen an existing engine/bookmark keyword
@@ -1689,7 +2108,7 @@ class EngineView {
    *   Resolves to true if the name was changed.
    */
   async #changeName(aEngine, aNewName) {
-    let valid = aEngine.originalEngine.wrappedJSObject.rename(aNewName);
+    let valid = aEngine.originalEngine.rename(aNewName);
     if (!valid) {
       let msg = await document.l10n.formatValue(
         "edit-engine-name-warning-duplicate",

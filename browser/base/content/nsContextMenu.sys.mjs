@@ -24,6 +24,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
@@ -94,6 +95,11 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 const PASSWORD_FIELDNAME_HINTS = ["current-password", "new-password"];
 const USERNAME_FIELDNAME_HINT = "username";
+
+const ALLOWED_CHROME_IMAGE_URLS = new Set([
+  "chrome://global/skin/illustrations/security-error.svg",
+  "chrome://global/skin/illustrations/no-connection.svg",
+]);
 
 export class nsContextMenu {
   /**
@@ -987,7 +993,7 @@ export class nsContextMenu {
     this.showItem("spell-check-enabled", canSpell);
     document
       .getElementById("spell-check-enabled")
-      .setAttribute("checked", canSpell && InlineSpellCheckerUI.enabled);
+      .toggleAttribute("checked", canSpell && InlineSpellCheckerUI.enabled);
 
     this.showItem("spell-add-to-dictionary", onMisspelling);
     this.showItem("spell-undo-add-to-dictionary", showUndo);
@@ -1410,11 +1416,7 @@ export class nsContextMenu {
       let revealPassword = this.document.getElementById(
         "context-reveal-password"
       );
-      if (this.passwordRevealed) {
-        revealPassword.setAttribute("checked", "true");
-      } else {
-        revealPassword.removeAttribute("checked");
-      }
+      revealPassword.toggleAttribute("checked", this.passwordRevealed);
     }
     this.showItem("context-reveal-password", shouldShow);
   }
@@ -1758,9 +1760,12 @@ export class nsContextMenu {
         });
       }, console.error);
     } else {
+      const isAllowedChromeImage = ALLOWED_CHROME_IMAGE_URLS.has(this.mediaURL);
+      const principal = isAllowedChromeImage ? systemPrincipal : this.principal;
+
       this.window.urlSecurityCheck(
         this.mediaURL,
-        this.principal,
+        principal,
         Ci.nsIScriptSecurityManager.DISALLOW_SCRIPT
       );
 
@@ -1768,7 +1773,7 @@ export class nsContextMenu {
       this.window.openLinkIn(this.mediaURL, where, {
         referrerInfo,
         forceAllowDataURI: true,
-        triggeringPrincipal: this.principal,
+        triggeringPrincipal: principal,
         triggeringRemoteType: this.remoteType,
         policyContainer: this.policyContainer,
       });
@@ -2166,7 +2171,12 @@ export class nsContextMenu {
         );
       }, console.error);
     } else if (this.onImage) {
-      this.window.urlSecurityCheck(this.mediaURL, this.principal);
+      const isAllowedChromeImage = ALLOWED_CHROME_IMAGE_URLS.has(this.mediaURL);
+      const principal = isAllowedChromeImage
+        ? Services.scriptSecurityManager.getSystemPrincipal()
+        : this.principal;
+
+      this.window.urlSecurityCheck(this.mediaURL, principal);
       this.window.internalSave(
         this.mediaURL,
         null, // originalURL
@@ -2183,7 +2193,7 @@ export class nsContextMenu {
         false, // don't skip prompt for where to save
         null, // cache key
         isPrivate,
-        this.principal
+        principal
       );
     } else if (this.onVideo || this.onAudio) {
       let defaultFileName = "";
@@ -2322,7 +2332,7 @@ export class nsContextMenu {
     // If the user saved, engineInfo contains `name` and `alias`.
     // Otherwise, it's undefined.
     if (engineInfo) {
-      let searchEngine = await Services.search.addUserEngine({
+      let searchEngine = await lazy.SearchService.addUserEngine({
         name: engineInfo.name,
         alias: engineInfo.alias,
         url,
@@ -2362,15 +2372,25 @@ export class nsContextMenu {
   // nicely for the disabled attribute).
   setItemAttr(aID, aAttr, aVal) {
     var elem = this.document.getElementById(aID);
-    if (elem) {
-      if (aVal == null) {
-        // null indicates attr should be removed.
-        elem.removeAttribute(aAttr);
-      } else {
-        // Set attr=val.
-        elem.setAttribute(aAttr, aVal);
-      }
+    if (!elem) {
+      return;
     }
+    if (aVal == null) {
+      // null indicates attr should be removed.
+      elem.removeAttribute(aAttr);
+      return;
+    }
+    if (typeof aVal == "boolean") {
+      // TODO(emilio): Replace this with toggleAttribute, but needs test fixes.
+      if (aVal) {
+        elem.setAttribute(aAttr, aVal);
+      } else {
+        elem.removeAttribute(aAttr);
+      }
+      return;
+    }
+    // Set attr=val.
+    elem.setAttribute(aAttr, aVal);
   }
 
   // Temporary workaround for DOM api not yet implemented by XUL nodes.
@@ -2782,8 +2802,8 @@ export class nsContextMenu {
 
     const { gNavigatorBundle } = this.window;
     // format "Search <engine> for <selection>" string to show in menu
-    let engineName = Services.search.defaultEngine.name;
-    let privateEngineName = Services.search.defaultPrivateEngine.name;
+    let engineName = lazy.SearchService.defaultEngine.name;
+    let privateEngineName = lazy.SearchService.defaultPrivateEngine.name;
     if (!menuItem.hidden) {
       const docIsPrivate = lazy.PrivateBrowsingUtils.isBrowserPrivate(
         this.browser
@@ -2827,7 +2847,7 @@ export class nsContextMenu {
     if (!menuitem) {
       return;
     }
-    if (!Services.search.hasSuccessfullyInitialized) {
+    if (!lazy.SearchService.hasSuccessfullyInitialized) {
       menuitem.hidden = true;
       return;
     }
@@ -2842,8 +2862,8 @@ export class nsContextMenu {
     );
     let engine =
       isBrowserPrivate || isPrivateSearchMenuitem
-        ? Services.search.defaultPrivateEngine
-        : Services.search.defaultEngine;
+        ? lazy.SearchService.defaultPrivateEngine
+        : lazy.SearchService.defaultEngine;
 
     menuitem.hidden =
       !isContextRelevant ||
@@ -2858,7 +2878,7 @@ export class nsContextMenu {
           )));
 
     if (!menuitem.hidden) {
-      let url = engine.wrappedJSObject.getURLOfType(searchUrlType);
+      let url = engine.getURLOfType(searchUrlType);
       if (
         url?.acceptedContentTypes &&
         (!this.contentData?.contentType ||
@@ -2911,7 +2931,7 @@ export class nsContextMenu {
         return;
       }
 
-      let visualSearchUrl = menuitem.engine.wrappedJSObject.getURLOfType(
+      let visualSearchUrl = menuitem.engine.getURLOfType(
         lazy.SearchUtils.URL_TYPE.VISUAL_SEARCH
       );
       this.window.document.l10n.setAttributes(

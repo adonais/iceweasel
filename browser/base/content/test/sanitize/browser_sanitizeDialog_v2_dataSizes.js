@@ -26,9 +26,6 @@ add_setup(async function () {
     await PlacesTestUtils.promiseAsyncUpdates();
     await SiteDataTestUtils.clear();
   });
-  await SpecialPowers.pushPrefEnv({
-    set: [["privacy.sanitize.useOldClearHistoryDialog", false]],
-  });
 });
 
 /**

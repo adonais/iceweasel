@@ -102,17 +102,11 @@
 
 #include "jsapi.h"
 #include "js/Initialization.h"
-#include "js/Prefs.h"
-#include "mozilla/StaticPrefs_javascript.h"
 #include "XPCSelfHostedShmem.h"
 
 #include "gfxPlatform.h"
 
 #include "mozilla/GeckoTrace.h"
-
-#ifdef XP_IOS
-#  include <CoreFoundation/CoreFoundation.h>
-#endif
 
 using base::AtExitManager;
 using mozilla::ipc::IOThreadParent;
@@ -224,47 +218,6 @@ class OggReporter final : public nsIMemoryReporter,
 };
 
 NS_IMPL_ISUPPORTS(OggReporter, nsIMemoryReporter)
-
-#ifdef XP_IOS
-// Check if iOS LockdownMode is enabled, which blocks the JIT everywhere.
-static bool IsLockdownModeEnabled() {
-  CFPropertyListRef prefValue = CFPreferencesCopyValue(
-      CFSTR("LDMGlobalEnabled"), kCFPreferencesAnyApplication,
-      kCFPreferencesCurrentUser, kCFPreferencesAnyHost);
-  bool enabled = prefValue == kCFBooleanTrue;
-  if (prefValue) CFRelease(prefValue);
-  return enabled;
-}
-#endif
-
-static bool sInitializedJS = false;
-
-static void InitializeJS() {
-#if defined(ENABLE_WASM_SIMD) && \
-    (defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86))
-  // Update static engine preferences, such as AVX, before
-  // `JS_InitWithFailureDiagnostic` is called.
-  JS::SetAVXEnabled(mozilla::StaticPrefs::javascript_options_wasm_simd_avx());
-#endif
-
-  if (XRE_IsParentProcess() &&
-      mozilla::StaticPrefs::javascript_options_main_process_disable_jit()) {
-    JS::DisableJitBackend();
-  }
-#ifdef XP_IOS
-  else if (IsLockdownModeEnabled()) {
-    JS::DisableJitBackend();
-  }
-#endif
-
-  // Set all JS::Prefs.
-  SET_JS_PREFS_FROM_BROWSER_PREFS;
-
-  const char* jsInitFailureReason = JS_InitWithFailureDiagnostic();
-  if (jsInitFailureReason) {
-    MOZ_CRASH_UNSAFE(jsInitFailureReason);
-  }
-}
 
 #define XPCOM_INIT_FATAL(message, res) \
   if (XRE_IsParentProcess()) {         \
@@ -457,10 +410,6 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   ogg_set_mem_functions(
       OggReporter::CountingMalloc, OggReporter::CountingCalloc,
       OggReporter::CountingRealloc, OggReporter::CountingFree);
-
-  // Initialize the JS engine.
-  InitializeJS();
-  sInitializedJS = true;
 
   rv = nsComponentManagerImpl::gComponentManager->Init();
   if (NS_FAILED(rv)) {
@@ -758,12 +707,6 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
     NS_ASSERTION(NS_SUCCEEDED(rv.value), "Component Manager shutdown failed.");
   } else {
     NS_WARNING("Component Manager was never created ...");
-  }
-
-  if (sInitializedJS) {
-    // Shut down the JS engine.
-    JS_ShutDown();
-    sInitializedJS = false;
   }
 
   mozilla::ScriptPreloader::DeleteCacheDataSingleton();

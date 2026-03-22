@@ -66,13 +66,6 @@
   -->
   <string name="felt_privacy_desc_card_title">ایس ڈوائیس اُتے کوئی پیڑھاں نہ چھڈو</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">جدوں وی آپݨیاں نجی ٹیباں نوں بند کردے او تاں %1$s تہاڈے کوکیاں، تاریخ تے سائیٹ ڈیٹے نوں ہٹا دندا اے۔ %2$s</string>
-  <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
     This string is used in felt_privacy_info_card_subtitle as the text for the link.
@@ -603,11 +596,7 @@
   <string name="customize_addon_collection_user_hint">بھنڈار مالک (ورتونکار ID)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">پھیلاؤ بھنڈار نوں سودھیا گیا۔ تبدیلیاں لاگو کرن لئی ایپلیکیشن نوں بند کیتا جا رہا اے…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">واپس جاؤ</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">اتے پتے</string>
@@ -1045,7 +1034,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">سودھو</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">کاپی کرو</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">کاپی کرو</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">سانجھا کرو</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -1083,7 +1072,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s مٹا گیا</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">موڑو</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">موڑو</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">واپس کرو</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -1301,23 +1290,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">فائرفاکس نوں آپݨا ڈفالٹ براؤزر بݨاؤ</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">نجی براؤز کرن نوں ازماؤ</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">نجی براؤز کرن نوں ازماؤ</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">%1$s وچ بناں کسے سنبھالے کوکی جاں تاریخ دے براؤز کرو</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s وچ بناں کسے سنبھالے کوکی جاں تاریخ دے براؤز کرو</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">بناں پیڑاں چھڈے براؤز کرو</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">بناں پیڑاں چھڈے براؤز کرو</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">%1$s نال نجی براؤز کرن سمیں تہاڈی جاݨکاری سنبھالدا نہیں اے۔</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">%1$s نال نجی براؤز کرن سمیں تہاڈی جاݨکاری سنبھالدا نہیں اے۔</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">آپݨی پہلی کھوج کرو</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">آپݨی پہلی کھوج کرو</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">نیڑے تیڑے کجھ لبھو۔ جاں کجھ موج مستی لئی لبھو۔</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">نیڑے تیڑے کجھ لبھو۔ جاں کجھ موج مستی لئی لبھو۔</string>
   <!--
     Survey
 

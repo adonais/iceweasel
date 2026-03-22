@@ -112,7 +112,7 @@ already_AddRefed<MediaRawData> EncodedAudioChunkData::TakeData() {
 
 nsCString EncodedAudioChunkData::ToString() const {
   return nsFmtCString(
-      FMT_STRING("EncodedAudioChunkData[bytes: {}, type: {}, ts: {}, dur: {}]"),
+      "EncodedAudioChunkData[bytes: {}, type: {}, ts: {}, dur: {}]",
       mBuffer ? mBuffer->Length() : 0, GetEnumString(mType).get(), mTimestamp,
       mDuration ? std::to_string(*mDuration).c_str() : "none");
 }
@@ -178,10 +178,14 @@ already_AddRefed<EncodedAudioChunk> EncodedAudioChunk::Constructor(
         return buf;
       });
 
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
   RefPtr<EncodedAudioChunk> chunk(new EncodedAudioChunk(
       global, buffer.forget(), aInit.mType, aInit.mTimestamp,
       OptionalToMaybe(aInit.mDuration)));
-  return aRv.Failed() ? nullptr : chunk.forget();
+  return chunk.forget();
 }
 
 EncodedAudioChunkType EncodedAudioChunk::Type() const {

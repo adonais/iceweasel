@@ -6,8 +6,8 @@
 
 /* rendering object for CSS display:inline objects */
 
-#ifndef nsInlineFrame_h___
-#define nsInlineFrame_h___
+#ifndef nsInlineFrame_h_
+#define nsInlineFrame_h_
 
 #include "nsContainerFrame.h"
 
@@ -208,4 +208,4 @@ class nsFirstLineFrame final : public nsInlineFrame {
   nsIFrame* PullOneFrame(nsPresContext*, InlineReflowInput&) override;
 };
 
-#endif /* nsInlineFrame_h___ */
+#endif /* nsInlineFrame_h_ */

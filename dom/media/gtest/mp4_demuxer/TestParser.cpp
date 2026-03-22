@@ -175,8 +175,8 @@ static const TestFileData testFiles[] = {
     // validMoof1? validMoofAll? audio_profile
     {"test_case_1156505.mp4", false, 0, false, -1, 0, 0, 0, -1., false, 152,
      false, false, 0},  // invalid ''trak box
-    {"test_case_1181213.mp4", true, 1, true, 0.41666666, 320, 240, 1,
-     0.47746032, true, 0, false, false, 2},
+    {"test_case_1181213.mp4", true, 1, true, 0.41699219, 320, 240, 1,
+     0.44099772, true, 0, false, false, 2},
     {"test_case_1181215.mp4", true, 0, false, -1, 0, 0, 0, -1, false, 0, false,
      false, 0},
     {"test_case_1181223.mp4", false, 0, false, 0.41666666, 320, 240, 0, -1,
@@ -188,13 +188,13 @@ static const TestFileData testFiles[] = {
     {"test_case_1181719.mp4", false, 0, false, -1, 0, 0, 0, -1, false, 0, false,
      false, 0},
 #endif
-    {"test_case_1185230.mp4", true, 2, true, 0.41666666, 320, 240, 2,
-     0.0000059754907, false, 0, false, false, 2},
+    {"test_case_1185230.mp4", true, 2, true, 0.41699219, 320, 240, 2,
+     0.44100001, false, 0, false, false, 2},
     {"test_case_1187067.mp4", true, 1, true, 0.080000, 160, 90, 0, -1, false, 0,
      false, false, 0},
     {"test_case_1200326.mp4", false, 0, false, -1, 0, 0, 0, -1, false, 0, false,
      false, 0},
-    {"test_case_1204580.mp4", true, 1, true, 0.502500, 320, 180, 0, -1, false,
+    {"test_case_1204580.mp4", true, 1, true, 0.50300002, 320, 180, 0, -1, false,
      0, false, false, 0},
     {"test_case_1216748.mp4", false, 0, false, -1, 0, 0, 0, -1, false, 152,
      false, false, 0},  // invalid 'trak' box
@@ -234,8 +234,8 @@ static const TestFileData testFiles[] = {
 
     {"test_case_1389527.mp4", true, 1, false, 5.005000, 80, 128, 1, 4.992000,
      false, 0, false, false, 2},
-    {"test_case_1395244.mp4", true, 1, true, 0.41666666, 320, 240, 1,
-     0.47746032, false, 0, false, false, 2},
+    {"test_case_1395244.mp4", true, 1, true, 0.41699219, 320, 240, 1,
+     0.44099772, false, 0, false, false, 2},
     {"test_case_1388991.mp4", true, 0, false, -1, 0, 0, 1, 30.000181, false, 0,
      false, false, 2},
     {"test_case_1410565.mp4", false, 0, false, 0, 0, 0, 0, 0, false, 0, false,
@@ -710,6 +710,26 @@ TEST(MoofParser, test_case_mp4_subsets) {
   }
 }
 #endif
+
+// Bug 2004835: check values too big to fit in an int64_t will result in
+// RebuildFragmentedIndex correctly returning false because we can't handle
+// them, instead of causing an overflow.
+TEST(MoofParser, overflow_tfdt)
+{
+  static const char* kTestFilename = "test_case_2004835-overflow-tfdt.mp4";
+  nsTArray<uint8_t> buffer = ReadTestFile(kTestFilename);
+
+  ASSERT_FALSE(buffer.IsEmpty());
+  RefPtr<ByteStream> stream =
+      new TestStream(buffer.Elements(), buffer.Length());
+
+  // File has only one track (video), whose ID is 1
+  const uint32_t videoTrackId = 1;
+  MoofParser parser(stream, AsVariant(videoTrackId), false);
+  const MediaByteRangeSet byteRanges(
+      MediaByteRange(0, int64_t(buffer.Length())));
+  EXPECT_FALSE(parser.RebuildFragmentedIndex(byteRanges));
+}
 
 uint8_t media_gtest_video_init_mp4[] = {
     0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d,

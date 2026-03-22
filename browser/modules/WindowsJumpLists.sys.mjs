@@ -182,8 +182,15 @@ var Builder = class {
       return;
     }
 
+    if (!this._showRecent) {
+      // Clear the recents list, so it won't appear if we disable frequents
+      // and tasks.  Recents will only appear if we disable frequents and
+      // tasks _and_ we do not clear the list here.
+      this._clearRecentsList();
+    }
+
     // anything to build?
-    if (!this._showFrequent && !this._showRecent && !this._showTasks) {
+    if (!this._showFrequent && !this._showTasks) {
       // don't leave the last list hanging on the taskbar.
       this._deleteActiveJumpList();
       return;
@@ -282,6 +289,10 @@ var Builder = class {
     } finally {
       this._isBuilding = false;
     }
+  }
+
+  _clearRecentsList() {
+    this._builder.clearRecentsList();
   }
 
   _deleteActiveJumpList() {

@@ -2553,6 +2553,12 @@ template already_AddRefed<gfxTextRun> gfxFontGroup::MakeTextRun(
     gfx::ShapedTextFlags aFlags, nsTextFrameUtils::Flags aFlags2,
     gfxMissingFontRecorder* aMFR);
 
+// ComputeRanges instantiation (used by
+// gfxPlatformFontList::ListFontsUsedForString).
+template void gfxFontGroup::ComputeRanges(nsTArray<TextRange>&, const char16_t*,
+                                          uint32_t, Script,
+                                          gfx::ShapedTextFlags);
+
 // Helper to get a hashtable that maps tags to Script codes, created on first
 // use.
 static const nsTHashMap<nsUint32HashKey, Script>* ScriptTagToCodeTable() {

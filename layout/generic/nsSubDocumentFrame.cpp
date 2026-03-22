@@ -13,28 +13,24 @@
 
 #include "RetainedDisplayListBuilder.h"
 #include "mozilla/ComputedStyleInlines.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/HTMLFrameElement.h"
 #include "mozilla/dom/ImageDocument.h"
 #include "mozilla/dom/RemoteBrowser.h"
 #include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/StackingContextHelper.h"  // for StackingContextHelper
 #include "mozilla/layers/WebRenderScrollData.h"
 #include "mozilla/layers/WebRenderUserData.h"
-#include "nsAttrValueInlines.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
 #include "nsDeviceContext.h"
 #include "nsDisplayList.h"
 #include "nsFrameSetFrame.h"
 #include "nsGenericHTMLElement.h"
-#include "nsGenericHTMLFrameElement.h"
 #include "nsGkAtoms.h"
 #include "nsIContentInlines.h"
 #include "nsIDocShell.h"
@@ -42,14 +38,11 @@
 #include "nsIObjectLoadingContent.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsLayoutUtils.h"
-#include "nsNameSpaceManager.h"
 #include "nsObjectLoadingContent.h"
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
-#include "nsServiceManagerUtils.h"
 #include "nsStyleConsts.h"
 #include "nsStyleStruct.h"
-#include "nsStyleStructInlines.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -671,18 +664,14 @@ void nsSubDocumentFrame::Reflow(nsPresContext* aPresContext,
   const auto wm = aReflowInput.GetWritingMode();
   aDesiredSize.SetSize(wm, aReflowInput.ComputedSizeWithBorderPadding(wm));
 
-  // "offset" is the offset of our content area from our frame's
-  // top-left corner.
-  nsPoint offset = nsPoint(aReflowInput.ComputedPhysicalBorderPadding().left,
-                           aReflowInput.ComputedPhysicalBorderPadding().top);
-
   if (nsCOMPtr<nsIDocShell> ds = GetExtantDocShell()) {
     const nsMargin& bp = aReflowInput.ComputedPhysicalBorderPadding();
-    nsSize innerSize(aDesiredSize.Width() - bp.LeftRight(),
-                     aDesiredSize.Height() - bp.TopBottom());
+    const nsRect innerRect(bp.left, bp.top,
+                           aDesiredSize.Width() - bp.LeftRight(),
+                           aDesiredSize.Height() - bp.TopBottom());
 
     // Size & position the view according to 'object-fit' & 'object-position'.
-    const nsRect destRect = GetDestRect(nsRect(offset, innerSize));
+    const nsRect destRect = GetDestRect(innerRect);
     auto rect = LayoutDeviceIntRect::FromAppUnitsToInside(
         destRect, PresContext()->AppUnitsPerDevPixel());
     mExtraOffset = destRect.TopLeft();

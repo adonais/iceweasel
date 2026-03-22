@@ -7,8 +7,8 @@
  * Implementation of an XPath NodeSet
  */
 
-#ifndef txNodeSet_h__
-#define txNodeSet_h__
+#ifndef txNodeSet_h_
+#define txNodeSet_h_
 
 #include "nsError.h"
 #include "txExprResult.h"

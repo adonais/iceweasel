@@ -114,3 +114,24 @@ function assertNewTabResourceMapping(expectedRootURISpec = null) {
     "Got the expected chrome://newtab/content substitution"
   );
 }
+
+/**
+ * Verify that newtabAddonVersion ASRouter targeting attribute is matching
+ * the expected newtab add-on version (which is expected to be set to either
+ * the version of the trainhop add-on XPI or the buil-in version, based on
+ * where the newtab resources are being currently being mapped to).
+ *
+ * @param {string} expectedNewtabVersion
+ *   newtab add-on version expected to be returned by the ASRouterTargeting
+ *   Environment targeting attribute named newtabAddonVersion.
+ */
+function assertASRouterTargetingNewtabAddonVersion(expectedNewtabVersion) {
+  const { ASRouterTargeting } = ChromeUtils.importESModule(
+    "resource:///modules/asrouter/ASRouterTargeting.sys.mjs"
+  );
+  Assert.equal(
+    ASRouterTargeting.Environment.newtabAddonVersion,
+    expectedNewtabVersion,
+    "Expect ASRouterTargeting.Environment.newtabAddonVersion to be set to the expected add-on version"
+  );
+}

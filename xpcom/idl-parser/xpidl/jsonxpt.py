@@ -106,7 +106,7 @@ def get_type(type, calltype, iid_is=None, size_is=None, needs_scriptable=None):
 
     if isinstance(type, xpidl.CEnum):
         # As far as XPConnect is concerned, cenums are just unsigned integers.
-        return {"tag": "TD_UINT%d" % type.width}
+        return {"tag": f"TD_UINT{type.width}"}
 
     raise Exception("Unknown type!")
 
@@ -239,7 +239,7 @@ def build_interface(iface):
         elif isinstance(member, xpidl.CDATA):
             pass
         else:
-            raise Exception("Unexpected interface member: %s" % member)
+            raise Exception(f"Unexpected interface member: {member}")
 
     for ref in set(needs_scriptable):
         p = iface.idl.getName(xpidl.TypeId(ref), None)

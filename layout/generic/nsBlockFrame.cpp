@@ -1128,7 +1128,8 @@ static bool IsLineClampRoot(const nsBlockFrame* aFrame) {
   // this forward as a limitation on the legacy -webkit-line-clamp feature,
   // since relaxing this limitation might create webcompat trouble.
   auto origDisplay = [&] {
-    if (aFrame->Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+    if (aFrame->Style()->GetPseudoType() ==
+        PseudoStyleType::MozScrolledContent) {
       // If we're the anonymous block inside the scroll frame, we need to look
       // at the original display of our parent frame.
       MOZ_ASSERT(aFrame->GetParent());
@@ -1306,7 +1307,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 #ifdef DEBUG
   if (gNoisyReflow) {
     IndentBy(stdout, gNoiseIndent);
-    fmt::println(FMT_STRING("{}: begin reflow: availSize={} computedSize={}"),
+    fmt::println("{}: begin reflow: availSize={} computedSize={}",
                  ListTag().get(), ToString(aReflowInput.AvailableSize()),
                  ToString(aReflowInput.ComputedSize()));
   }
@@ -1732,11 +1733,11 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   if (gNoisyReflow) {
     IndentBy(stdout, gNoiseIndent);
-    fmt::print(FMT_STRING("{}: status={} metrics={} carriedMargin={}"),
-               ListTag().get(), ToString(aStatus), ToString(aMetrics.Size(wm)),
+    fmt::print("{}: status={} metrics={} carriedMargin={}", ListTag().get(),
+               ToString(aStatus), ToString(aMetrics.Size(wm)),
                aMetrics.mCarriedOutBEndMargin.Get());
     if (HasOverflowAreas()) {
-      fmt::print(FMT_STRING(" overflow-ink={} overflow-scr={}"),
+      fmt::print(" overflow-ink={} overflow-scr={}",
                  ToString(aMetrics.InkOverflow()),
                  ToString(aMetrics.ScrollableOverflow()));
     }
@@ -2433,7 +2434,7 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
         inFlowScrollableOverflow.Union(line.ScrollableOverflowRect());
   }
 
-  if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+  if (Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent) {
     // Padding inflation only applies to scrolled containers.
     const auto paddingInflatedOverflow =
         ComputePaddingInflatedScrollableOverflow(inFlowChildBounds);
@@ -2469,7 +2470,7 @@ void nsBlockFrame::ComputeOverflowAreas(OverflowAreas& aOverflowAreas,
 // frame. HACK(dshin): Reaching out and querying the type like this isn't ideal.
 static bool RestrictPaddingInflationInInline(const nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
-  if (aFrame->Style()->GetPseudoType() != PseudoStyleType::scrolledContent) {
+  if (aFrame->Style()->GetPseudoType() != PseudoStyleType::MozScrolledContent) {
     // This can only happen when computing scrollable overflow for overflow:
     // visible frames (for scroll{Width,Height}).
     return false;
@@ -2568,8 +2569,9 @@ void nsBlockFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
   // Overflow area computed here should agree with one computed in
   // `ComputeOverflowAreas` (see bug 1800939 and bug 1800719). So the
   // documentation in that function applies here as well.
-  const bool isScrolled = aAsIfScrolled || Style()->GetPseudoType() ==
-                                               PseudoStyleType::scrolledContent;
+  const bool isScrolled =
+      aAsIfScrolled ||
+      Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent;
   // Note that we don't add line in-flow margins if we're not a BFC (which can
   // happen only for overflow: visible), so that we don't incorrectly account
   // for margins that otherwise collapse through, see bug 1936156. Note that
@@ -2923,9 +2925,8 @@ static void DumpLine(const BlockReflowState& aState, nsLineBox* aLine,
   if (nsBlockFrame::gNoisyReflow) {
     nsBlockFrame::IndentBy(stdout, nsBlockFrame::gNoiseIndent + aDeltaIndent);
     fmt::println(
-        FMT_STRING("line={} mBCoord={} dirty={} bounds={} overflow-ink={} "
-                   "overflow-scr={} deltaBCoord={} mPrevBEndMargin={} "
-                   "childCount={}"),
+        "line={} mBCoord={} dirty={} bounds={} overflow-ink={} "
+        "overflow-scr={} deltaBCoord={} mPrevBEndMargin={} childCount={}",
         static_cast<void*>(aLine), aState.mBCoord, YesOrNo(aLine->IsDirty()),
         ToString(aLine->GetBounds()), ToString(aLine->InkOverflowRect()),
         ToString(aLine->ScrollableOverflowRect()), aDeltaBCoord,
@@ -3574,7 +3575,13 @@ bool nsBlockFrame::ReflowDirtyLines(BlockReflowState& aState) {
           if (aState.mReflowInput.WillReflowAgainForClearance()) {
             line->MarkDirty();
             keepGoing = false;
-            aState.mReflowStatus.SetIncomplete();
+            // If we are going to be reflowed again by our ancestor due to a
+            // clearance frame being discovered, reset the reflow completion
+            // status. The current status does not matter to our parent frame
+            // since we will reflow again anyway. This also prevents the false
+            // assumption that we are incomplete when reflowing under an
+            // unconstrained available block-size.
+            aState.mReflowStatus.Reset();
             break;
           }
 
@@ -4336,7 +4343,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
     Maybe<LogicalSize> cbSize;
     LogicalSize availSize = availSpace.Size(wm);
     bool columnSetWrapperHasNoBSizeLeft = false;
-    if (Style()->GetPseudoType() == PseudoStyleType::columnContent) {
+    if (Style()->GetPseudoType() == PseudoStyleType::MozColumnContent) {
       // Calculate the multicol containing block's block size so that the
       // children with percentage block size get correct percentage basis.
       const ReflowInput* cbReflowInput =
@@ -4588,7 +4595,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
         }
       }
 
-      if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+      if (Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent) {
         auto lineFrameBounds = GetLineFrameInFlowBounds(*aLine, *frame);
         MOZ_ASSERT(aLine->GetChildCount() == 1,
                    "More than one child in block line?");
@@ -5077,7 +5084,7 @@ void nsBlockFrame::DoReflowInlineFrames(
 #ifdef DEBUG
   if (gNoisyReflow) {
     IndentBy(stdout, gNoiseIndent);
-    fmt::println(FMT_STRING("LineReflowStatus={}"), ToString(lineReflowStatus));
+    fmt::println("LineReflowStatus={}", ToString(lineReflowStatus));
   }
 #endif
 
@@ -5573,7 +5580,7 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
   // might have moved frames around!
   OverflowAreas overflowAreas;
   aLineLayout.RelativePositionFrames(overflowAreas);
-  if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+  if (Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent) {
     Maybe<nsRect> inFlowBounds;
     int32_t n = aLine->GetChildCount();
     for (nsIFrame* lineFrame = aLine->mFirstChild; n > 0;
@@ -5666,7 +5673,7 @@ bool nsBlockFrame::PlaceLine(BlockReflowState& aState,
     OverflowAreas lineOverflowAreas = aState.mFloatOverflowAreas;
     lineOverflowAreas.UnionWith(aLine->GetOverflowAreas());
     aLine->SetOverflowAreas(lineOverflowAreas);
-    if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+    if (Style()->GetPseudoType() == PseudoStyleType::MozScrolledContent) {
       Span<const nsIFrame* const> floats(aLine->Floats());
       // Guaranteed to have at least 1 element since `HasFloats()` is true.
       auto floatRect = GetNormalMarginRect(*floats[0]);
@@ -6505,7 +6512,7 @@ nsContainerFrame* nsBlockFrame::GetRubyContentPseudoFrame() {
   auto* firstChild = PrincipalChildList().FirstChild();
   if (firstChild && firstChild->IsRubyFrame() &&
       firstChild->Style()->GetPseudoType() ==
-          PseudoStyleType::blockRubyContent) {
+          PseudoStyleType::MozBlockRubyContent) {
     return static_cast<nsContainerFrame*>(firstChild);
   }
   return nullptr;
@@ -6651,11 +6658,11 @@ nsBlockInFlowLineIterator::nsBlockInFlowLineIterator(nsBlockFrame* aFrame,
 
 static bool AnonymousBoxIsBFC(const ComputedStyle* aStyle) {
   switch (aStyle->GetPseudoType()) {
-    case PseudoStyleType::fieldsetContent:
-    case PseudoStyleType::columnContent:
-    case PseudoStyleType::cellContent:
-    case PseudoStyleType::scrolledContent:
-    case PseudoStyleType::anonymousItem:
+    case PseudoStyleType::MozFieldsetContent:
+    case PseudoStyleType::MozColumnContent:
+    case PseudoStyleType::MozCellContent:
+    case PseudoStyleType::MozScrolledContent:
+    case PseudoStyleType::MozAnonymousItem:
       return true;
     default:
       return false;
@@ -6717,7 +6724,7 @@ static bool EstablishesBFC(const nsBlockFrame* aFrame) {
   }
 
   const auto* style = aFrame->Style();
-  if (style->GetPseudoType() == PseudoStyleType::marker) {
+  if (style->GetPseudoType() == PseudoStyleType::Marker) {
     if (aFrame->GetParent() &&
         aFrame->GetParent()->StyleList()->mListStylePosition ==
             StyleListStylePosition::Outside) {
@@ -6769,11 +6776,11 @@ void nsBlockFrame::UpdateFirstLetterStyle(ServoRestyleState& aRestyleState) {
     inFlowFrame = inFlowFrame->GetPlaceholderFrame();
   }
   nsIFrame* styleParent = CorrectStyleParentFrame(inFlowFrame->GetParent(),
-                                                  PseudoStyleType::firstLetter);
+                                                  PseudoStyleType::FirstLetter);
   ComputedStyle* parentStyle = styleParent->Style();
   RefPtr<ComputedStyle> firstLetterStyle =
       aRestyleState.StyleSet().ResolvePseudoElementStyle(
-          *mContent->AsElement(), PseudoStyleType::firstLetter, nullptr,
+          *mContent->AsElement(), PseudoStyleType::FirstLetter, nullptr,
           parentStyle);
   // Note that we don't need to worry about changehints for the continuation
   // styles: those will be handled by the styleParent already.
@@ -7774,7 +7781,8 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
-    DisplayPushedAbsoluteFrames(aBuilder, aLists);
+    // TODO(dshin, bug 2013284): Location of this doesn't align with observed
+    // behaviour.
     for (nsIFrame* f : GetChildList(FrameChildListID::Float)) {
       if (f->HasAnyStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW)) {
 #if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
@@ -7957,6 +7965,10 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         break;
       }
       lineCount++;
+    }
+
+    if (GetPrevInFlow()) {
+      DisplayPushedAbsoluteFrames(aBuilder, aLists);
     }
 
     if (nonDecreasingYs && lineCount >= MIN_LINES_NEEDING_CURSOR) {
@@ -8203,13 +8215,13 @@ void nsBlockFrame::SetInitialChildList(ChildListID aListID,
     bool haveFirstLetterStyle =
         (pseudo == PseudoStyleType::NotPseudo ||
          PseudoStyle::IsElementBackedPseudo(pseudo) ||
-         (pseudo == PseudoStyleType::cellContent &&
+         (pseudo == PseudoStyleType::MozCellContent &&
           !GetParent()->Style()->IsPseudoOrAnonBox()) ||
-         pseudo == PseudoStyleType::fieldsetContent ||
-         pseudo == PseudoStyleType::columnContent ||
-         (pseudo == PseudoStyleType::scrolledContent &&
+         pseudo == PseudoStyleType::MozFieldsetContent ||
+         pseudo == PseudoStyleType::MozColumnContent ||
+         (pseudo == PseudoStyleType::MozScrolledContent &&
           !GetParent()->IsListControlFrame()) ||
-         pseudo == PseudoStyleType::mozSVGText) &&
+         pseudo == PseudoStyleType::MozSvgText) &&
         !IsMathMLFrame() && !IsColumnSetWrapperFrame() &&
         !IsComboboxControlFrame() &&
         RefPtr<ComputedStyle>(GetFirstLetterStyle(PresContext())) != nullptr;
@@ -8745,19 +8757,19 @@ void nsBlockFrame::UpdatePseudoElementStyles(ServoRestyleState& aRestyleState) {
 
   if (nsIFrame* firstLineFrame = GetFirstLineFrame()) {
     nsIFrame* styleParent = CorrectStyleParentFrame(firstLineFrame->GetParent(),
-                                                    PseudoStyleType::firstLine);
+                                                    PseudoStyleType::FirstLine);
 
     ComputedStyle* parentStyle = styleParent->Style();
     RefPtr<ComputedStyle> firstLineStyle =
         aRestyleState.StyleSet().ResolvePseudoElementStyle(
-            *mContent->AsElement(), PseudoStyleType::firstLine, nullptr,
+            *mContent->AsElement(), PseudoStyleType::FirstLine, nullptr,
             parentStyle);
 
     // FIXME(bz): Can we make first-line continuations be non-inheriting anon
     // boxes?
     RefPtr<ComputedStyle> continuationStyle =
         aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-            PseudoStyleType::mozLineFrame, parentStyle);
+            PseudoStyleType::MozLineFrame, parentStyle);
 
     UpdateStyleOfOwnedChildFrame(firstLineFrame, firstLineStyle, aRestyleState,
                                  Some(continuationStyle.get()));
@@ -8952,6 +8964,6 @@ int32_t nsBlockFrame::GetDepth() const {
 already_AddRefed<ComputedStyle> nsBlockFrame::GetFirstLetterStyle(
     nsPresContext* aPresContext) {
   return aPresContext->StyleSet()->ProbePseudoElementStyle(
-      *mContent->AsElement(), PseudoStyleType::firstLetter, nullptr, Style());
+      *mContent->AsElement(), PseudoStyleType::FirstLetter, nullptr, Style());
 }
 #endif

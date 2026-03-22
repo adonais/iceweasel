@@ -4,14 +4,14 @@
 
 
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph.transforms.task import task_description_schema
 
 transforms = TransformSequence()
 
-bootstrap_schema = Schema({
+bootstrap_schema = LegacySchema({
     # Name of the bootstrap task.
     Required("name"): str,
     # Name of the docker image. Ideally, we'd also have tasks for mac and windows,

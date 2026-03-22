@@ -8,7 +8,6 @@
 
 #include <sstream>
 
-#include "mozilla/Debug.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/WritingModes.h"

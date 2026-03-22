@@ -18,11 +18,11 @@ def process_define_file(output, input):
     taking the corresponding source file and replacing some *#define/#undef*
     occurences:
 
-      - "#undef NAME" is turned into "#define NAME VALUE"
-      - "#define NAME" is unchanged
-      - "#define NAME ORIGINAL_VALUE" is turned into "#define NAME VALUE"
-      - "#undef UNKNOWN_NAME" is turned into "/* #undef UNKNOWN_NAME */"
-      -  Whitespaces are preserved.
+      - ``#undef NAME`` is turned into ``#define NAME VALUE``
+      - ``#define NAME`` is unchanged
+      - ``#define NAME ORIGINAL_VALUE`` is turned into ``#define NAME VALUE``
+      - ``#undef UNKNOWN_NAME`` is turned into ``/* #undef UNKNOWN_NAME */``
+      - Whitespaces are preserved.
 
     As a special rule, "#undef ALLDEFINES" is turned into "#define NAME
     VALUE" for all the defined variables.

@@ -1270,7 +1270,16 @@ uint32_t KeymapWrapper::ComputeDOMKeyCode(const GdkEventKey* aGdkKeyEvent) {
     // refer keyCode value without modifiers because web apps should be
     // able to identify the key as far as possible.
     guint keyvalWithoutModifier = GetGDKKeyvalWithoutModifier(aGdkKeyEvent);
-    return GetDOMKeyCodeFromKeyPairs(keyvalWithoutModifier);
+    if (auto keyCode = GetDOMKeyCodeFromKeyPairs(keyvalWithoutModifier)) {
+      return keyCode;
+    }
+    // If the unmodified keyval is a basic Latin letter or numeral (e.g., '6'
+    // for a dead key produced by Shift+6), compute the keyCode from it.
+    // This matches Chromium's behavior for dead keys. (Bug 2004800)
+    if (IsBasicLatinLetterOrNumeral(keyvalWithoutModifier)) {
+      return WidgetUtils::ComputeKeyCodeFromChar(keyvalWithoutModifier);
+    }
+    return 0;
   }
 
   // printable numpad keys should be resolved here.
@@ -1426,7 +1435,7 @@ KeyNameIndex KeymapWrapper::ComputeDOMKeyNameIndex(
   case aNativeKey:                                                     \
     return aKeyNameIndex;
 
-#include "NativeKeyToDOMKeyName.h"
+#include "NativeKeyToDOMKeyName.inc"
 
 #undef NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX
 
@@ -1445,7 +1454,7 @@ CodeNameIndex KeymapWrapper::ComputeDOMCodeNameIndex(
   case aNativeKey:                                                       \
     return aCodeNameIndex;
 
-#include "NativeKeyToDOMCodeName.h"
+#include "NativeKeyToDOMCodeName.inc"
 
 #undef NS_NATIVE_KEY_TO_DOM_CODE_NAME_INDEX
 
@@ -2011,6 +2020,30 @@ void KeymapWrapper::InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
 }
 
 /* static */
+void KeymapWrapper::InitKeyEventFromCommitString(
+    WidgetKeyboardEvent& aKeyEvent, const nsAString& aCommitString) {
+  MOZ_ASSERT(aCommitString.Length() == 1,
+             "InitKeyEventFromCommitString expects single character");
+
+  char16_t commitChar = aCommitString.CharAt(0);
+  aKeyEvent.mKeyCode = WidgetUtils::ComputeKeyCodeFromChar(commitChar);
+  aKeyEvent.mCharCode = commitChar;
+  aKeyEvent.mKeyNameIndex = KEY_NAME_INDEX_USE_STRING;
+  aKeyEvent.mKeyValue = aCommitString;
+  aKeyEvent.mCodeNameIndex = CODE_NAME_INDEX_UNKNOWN;
+  aKeyEvent.mLocation = eKeyLocationStandard;
+
+  guint modifierState = GetCurrentModifierState();
+  InitInputEvent(aKeyEvent, modifierState);
+
+  MOZ_LOG(gKeyLog, LogLevel::Info,
+          ("InitKeyEventFromCommitString, char='%c' (0x%04X), "
+           "mKeyCode=0x%02X, mModifiers=0x%08X",
+           static_cast<char>(commitChar), commitChar, aKeyEvent.mKeyCode,
+           aKeyEvent.mModifiers));
+}
+
+/* static */
 uint32_t KeymapWrapper::GetCharCodeFor(const GdkEventKey* aGdkKeyEvent) {
   // Anything above 0xf000 is considered a non-printable
   // Exception: directly encoded UCS characters
@@ -2221,7 +2254,7 @@ struct KeyCodeData {
 static struct KeyCodeData gKeyCodes[] = {
 #define NS_DEFINE_VK(aDOMKeyName, aDOMKeyCode) \
   {#aDOMKeyName, sizeof(#aDOMKeyName) - 1, aDOMKeyCode},
-#include "mozilla/VirtualKeyCodeList.h"
+#include "mozilla/VirtualKeyCodeList.inc"
 #undef NS_DEFINE_VK
     {nullptr, 0, 0}};
 

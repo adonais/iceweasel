@@ -322,3 +322,60 @@ add_task(async function test_basic_text_search_when_semantic_disabled() {
   Services.prefs.setBoolPref("browser.ml.enable", true);
   Services.prefs.setBoolPref("places.semanticHistory.featureGate", true);
 });
+
+// test: region = RO (not supported in semantic search), time range search should still work
+add_task(async function test_time_range_search_with_region_ro() {
+  await PlacesUtils.history.clear();
+
+  // Switch region to RO for this test.
+  Services.prefs.setCharPref("browser.search.region", "RO");
+
+  const now = Date.now();
+
+  const older = {
+    url: "https://example.com/older-ro",
+    title: "Older RO Page",
+    visits: [{ date: new Date(now - 60 * 60 * 1000) }], // 60 min ago
+  };
+  const inWindow = {
+    url: "https://example.com/in-window-ro",
+    title: "In Window RO Page",
+    visits: [{ date: new Date(now - 30 * 60 * 1000) }], // 30 min ago
+  };
+  const recent = {
+    url: "https://example.com/recent-ro",
+    title: "Recent RO Page",
+    visits: [{ date: new Date(now - 5 * 60 * 1000) }], // 5 min ago
+  };
+
+  await PlacesUtils.history.insertMany([older, inWindow, recent]);
+
+  // Time window: [45min ago, 15min ago]
+  const startTs = new Date(now - 45 * 60 * 1000).toISOString();
+  const endTs = new Date(now - 15 * 60 * 1000).toISOString();
+
+  const rowsStr = await searchBrowsingHistory({
+    searchTerm: "",
+    startTs,
+    endTs,
+    historyLimit: 15,
+  });
+  const rows = JSON.parse(rowsStr);
+  const urls = rows.results.map(r => r.url);
+
+  Assert.ok(
+    urls.includes(inWindow.url),
+    "In window entry should be included when region is RO"
+  );
+  Assert.ok(
+    !urls.includes(older.url),
+    "Older entry should be excluded when region is RO"
+  );
+  Assert.ok(
+    !urls.includes(recent.url),
+    "Recent entry should be excluded when region is RO"
+  );
+
+  // Restore region pref for other tests.
+  Services.prefs.setCharPref("browser.search.region", "US");
+});

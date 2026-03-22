@@ -272,6 +272,18 @@ void GPUParent::NotifyDisableRemoteCanvas() {
   (void)SendNotifyDisableRemoteCanvas();
 }
 
+void GPUParent::ReportGLStrings(GfxInfoGLStrings&& aStrings) {
+  if (!NS_IsMainThread()) {
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "gfx::GPUParent::ReportGLStrings",
+        [strings = std::move(aStrings)]() mutable -> void {
+          GPUParent::GetSingleton()->ReportGLStrings(std::move(strings));
+        }));
+    return;
+  }
+  (void)SendReportGLStrings(std::move(aStrings));
+}
+
 mozilla::ipc::IPCResult GPUParent::RecvInit(
     nsTArray<GfxVarUpdate>&& vars, const DevicePrefs& devicePrefs,
     nsTArray<LayerTreeIdMapping>&& aMappings,
@@ -378,7 +390,6 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
   SkInitCairoFT(false);
 
   if (gfxVars::UseAHardwareBufferSharedSurfaceWebglOop()) {
-    layers::AndroidHardwareBufferApi::Init();
     layers::AndroidHardwareBufferManager::Init();
   }
 

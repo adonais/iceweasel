@@ -67,6 +67,7 @@ enum class State {
   D(CheckHashTablesOnMinorGC, 13)        \
   D(Compact, 14)                         \
   D(CheckHeapAfterGC, 15)                \
+  D(ConcurrentMarking, 16)               \
   D(YieldBeforeSweepingAtoms, 17)        \
   D(CheckGrayMarking, 18)                \
   D(YieldBeforeSweepingCaches, 19)       \
@@ -110,8 +111,6 @@ enum class GCAbortReason {
 #define JS_FOR_EACH_INTERNAL_MEMORY_USE(_) \
   _(ArrayBufferContents)                   \
   _(StringContents)                        \
-  _(ScriptPrivateData)                     \
-  _(WeakMapObject)                         \
   _(ShapeSetForAdd)                        \
   _(PropMapChildren)                       \
   _(PropMapTable)                          \
@@ -122,8 +121,6 @@ enum class GCAbortReason {
   _(ModuleImportAttributes)                \
   _(BaselineScript)                        \
   _(IonScript)                             \
-  _(ArgumentsData)                         \
-  _(RareArgumentsData)                     \
   _(RegExpSharedBytecode)                  \
   _(RegExpSharedNamedCaptureData)          \
   _(RegExpSharedNamedCaptureSliceData)     \
@@ -151,7 +148,6 @@ enum class GCAbortReason {
   _(DebuggerOnStepHandler)                 \
   _(DebuggerOnPopHandler)                  \
   _(ICUObject)                             \
-  _(IntlOptions)                           \
   _(FinalizationRegistryRecordVector)      \
   _(FinalizationRegistryRegistrations)     \
   _(FinalizationRecordVector)              \

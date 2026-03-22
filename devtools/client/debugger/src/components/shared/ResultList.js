@@ -65,6 +65,7 @@ export default class ResultList extends Component {
             className: "icon",
           },
           React.createElement(DebuggerImage, {
+            className: item.iconClassName,
             name: item.icon,
           })
         ),

@@ -12,10 +12,6 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import mozilla.components.browser.domains.CustomDomains
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import mozilla.components.support.ktx.android.view.showKeyboard
@@ -73,10 +69,7 @@ class AutocompleteAddFragment : BaseSettingsLikeFragment() {
         R.id.save -> {
             val domain = binding.domainView.text.toString().trim()
 
-            viewLifecycleOwner.lifecycleScope.launch {
-                val domains = withContext(Dispatchers.IO) {
-                    CustomDomains.load(requireActivity())
-                }
+                val domains = CustomDomains.load(requireActivity())
 
                 val error = when {
                     domain.isEmpty() -> getString(R.string.preference_autocomplete_add_error)
@@ -89,7 +82,6 @@ class AutocompleteAddFragment : BaseSettingsLikeFragment() {
                 } else {
                     saveDomainAndClose(requireActivity().applicationContext, domain)
                 }
-            }
             true
         }
         // other options are not handled by this menu provider
@@ -97,12 +89,8 @@ class AutocompleteAddFragment : BaseSettingsLikeFragment() {
     }
 
     private fun saveDomainAndClose(context: Context, domain: String) {
-        viewLifecycleOwner.lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                CustomDomains.add(context, domain)
-                Autocomplete.domainAdded.add()
-            }
-        }
+        CustomDomains.add(context, domain)
+        Autocomplete.domainAdded.add()
 
         ViewUtils.showBrandedSnackbar(view, R.string.preference_autocomplete_add_confirmation, 0)
 

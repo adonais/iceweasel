@@ -16,10 +16,11 @@ Services.scriptloader.loadSubScript(
 ChromeUtils.defineESModuleGetters(this, {
   HttpServer: "resource://testing-common/httpd.sys.mjs",
   ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
   UrlbarProviderInterventions:
     "moz-src:///browser/components/urlbar/UrlbarProviderInterventions.sys.mjs",
-  UrlbarProvidersManager:
+  ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
 });
@@ -536,7 +537,7 @@ async function checkTip(win, expectedTip, closeView = true) {
   Assert.equal(result.type, UrlbarUtils.RESULT_TYPE.TIP, "Result type");
   let heuristic;
   let title;
-  let name = Services.search.defaultEngine.name;
+  let name = SearchService.defaultEngine.name;
   switch (expectedTip) {
     case UrlbarProviderSearchTips.TIP_TYPE.ONBOARD:
       heuristic = true;
@@ -706,16 +707,13 @@ function resetSearchTipsProvider() {
   Services.prefs.clearUserPref(
     `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`
   );
-  UrlbarProvidersManager.getProvider(
+  ProvidersManager.getInstanceForSap("urlbar").getProvider(
     "UrlbarProviderSearchTips"
   ).disableTipsForCurrentSession = false;
 }
 
 async function setDefaultEngine(name) {
-  let engine = (await Services.search.getEngines()).find(e => e.name == name);
+  let engine = (await SearchService.getEngines()).find(e => e.name == name);
   Assert.ok(engine);
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 }

@@ -3,16 +3,16 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 :host {
-  --aiwindow-text-accent: var(--color-violet-90);
-  --aiwindow-border-subtle: var(--color-gray-20);
-  --aiwindow-memory-item-bg: var(--color-gray-05);
+  --aiwindow-text-accent: light-dark(var(--color-violet-90), var(--color-white));
+  --aiwindow-border-subtle: light-dark(var(--color-gray-20), var(--color-gray-60));
+  --aiwindow-memory-item-bg: light-dark(var(--color-gray-05), var(--color-gray-80));
+  --aiwindow-popover-bg: light-dark(var(--color-white), var(--color-gray-90));
   --memories-accent-bg-hover: rgba(191, 143, 204, 0.2);
   --memories-accent-bg-active: rgba(191, 143, 204, 0.26);
   --memories-accent-border: rgba(0, 0, 0, 0);
 }
 
 :host([data-open]) moz-button.memories-trigger {
-  /* stylelint-disable-next-line */
   color: var(--aiwindow-text-accent);
   --button-background-color-ghost: var(--memories-accent-bg-hover);
   --button-border-color-ghost: var(--memories-accent-border);
@@ -25,6 +25,7 @@
 
 moz-button.memories-trigger {
   color: var(--text-color-deemphasized, rgba(21, 20, 26, 0.69));
+  --button-icon-fill: light-dark(var(--color-gray-70), var(--color-white));
   --button-padding: var(--space-small);
   --button-background-color-ghost-hover: var(--memories-accent-bg-hover);
   --button-border-color-ghost-hover: var(--memories-accent-border);
@@ -77,7 +78,7 @@ moz-button.memories-trigger:not([disabled]):hover::part(moz-button-label),
   border-style: solid;
   /* stylelint-disable-next-line */
   border-color: var(--aiwindow-border-subtle);
-  background: var(--color-white, white);
+  background: var(--aiwindow-popover-bg);
   box-shadow: var(--box-shadow-level-3);
   transition:
     opacity 120ms ease,
@@ -122,6 +123,7 @@ moz-button.memories-trigger:not([disabled]):hover::part(moz-button-label),
   font-weight: var(--font-weight-semibold);
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text-color);
 }
 
 .memories-remove-button {

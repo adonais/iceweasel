@@ -193,32 +193,32 @@ def populate_release_history(
 
 
 def _populate_nightly_history(product, branch, maxbuilds=4, maxsearch=10):
-    """Find relevant releases in Balrog
+    """Find relevant releases in Balrog.
+
     Not all releases have all platforms and locales, due
     to Taskcluster migration.
 
-        Args:
-            product (str): capitalized product name, AKA appName, e.g. Firefox
-            branch (str): branch name (mozilla-central)
-            maxbuilds (int): Maximum number of historical releases to populate
-            maxsearch(int): Traverse at most this many releases, to avoid
-                working through the entire history.
-        Returns:
-            json object based on data from balrog api
+    Args:
+        product (str): capitalized product name, AKA appName, e.g. Firefox
+        branch (str): branch name (mozilla-central)
+        maxbuilds (int): Maximum number of historical releases to populate
+        maxsearch(int): Traverse at most this many releases, to avoid
+            working through the entire history.
+    Returns:
+        json object based on data from balrog api::
 
             results = {
-                'platform1': {
-                    'locale1': {
-                        'buildid1': mar_url,
-                        'buildid2': mar_url,
-                        'buildid3': mar_url,
+                "platform1": {
+                    "locale1": {
+                        "buildid1": mar_url,
+                        "buildid2": mar_url,
+                        "buildid3": mar_url,
                     },
-                    'locale2': {
-                        'target.partial-1.mar': {'buildid1': 'mar_url'},
-                    }
+                    "locale2": {
+                        "target.partial-1.mar": {"buildid1": "mar_url"},
+                    },
                 },
-                'platform2': {
-                }
+                "platform2": {},
             }
     """
     last_releases = get_sorted_releases(product, branch)

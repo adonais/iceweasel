@@ -5,6 +5,7 @@
 
 // We are carefully controlling the sequence of GC events.
 gczeal(0);
+gcparam("concurrentMarkingEnabled", 0);
 
 // If a command-line parameter is given, use it as a substring restriction on
 // the tests to run.

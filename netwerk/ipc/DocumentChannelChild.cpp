@@ -166,7 +166,7 @@ DocumentChannelChild::AsyncOpen(nsIStreamListener* aListener) {
 
   mIsPending = true;
   mWasOpened = true;
-  mListener = listener;
+  mListener = std::move(listener);
 
   return NS_OK;
 }

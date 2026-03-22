@@ -12,15 +12,16 @@
   It implements all the common DOM interfaces and handles attributes.
 */
 
+#include <memory>
+
 #include "NonCustomCSSPropertyId.h"
 #include "gfxMatrix.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SVGAnimatedClass.h"
-#include "mozilla/SVGContentUtils.h"
-#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/DOMRect.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/SVGLength.h"
 #include "mozilla/gfx/MatrixFwd.h"
 #include "nsChangeHint.h"
 #include "nsCycleCollectionParticipant.h"
@@ -269,16 +270,6 @@ class SVGElement : public SVGElementBase  // nsIContent
                         info.mInfos[aAttrEnum].mName);
   }
 
-  enum {
-    /**
-     * Flag to indicate to GetAnimatedXxx() methods that the object being
-     * requested should be allocated if it hasn't already been allocated, and
-     * that the method should not return null. Only applicable to methods that
-     * need to allocate the object that they return.
-     */
-    DO_ALLOCATE = 0x1
-  };
-
   SVGAnimatedLength* GetAnimatedLength(uint8_t aAttrEnum);
   SVGAnimatedLength* GetAnimatedLength(const nsAtom* aAttrName);
   void GetAnimatedLengthValues(float* aFirst, ...);
@@ -301,20 +292,16 @@ class SVGElement : public SVGElementBase  // nsIContent
    *
    * Despite the fact that animated transform lists are used for a variety of
    * attributes, no SVG element uses more than one.
-   *
-   * It's relatively uncommon for elements to have their transform attribute
-   * set, so to save memory the SVGAnimatedTransformList is not allocated
-   * until the attribute is set/animated or its DOM wrapper is created. Callers
-   * that require the SVGAnimatedTransformList to be allocated and for this
-   * method to return non-null must pass the DO_ALLOCATE flag.
    */
-  virtual SVGAnimatedTransformList* GetAnimatedTransformList(
-      uint32_t aFlags = 0) {
+  virtual SVGAnimatedTransformList* GetExistingAnimatedTransformList() const {
+    return nullptr;
+  }
+  virtual SVGAnimatedTransformList* GetOrCreateAnimatedTransformList() {
     return nullptr;
   }
 
-  mozilla::UniquePtr<SMILAttr> GetAnimatedAttr(int32_t aNamespaceID,
-                                               nsAtom* aName) override;
+  std::unique_ptr<SMILAttr> GetAnimatedAttr(int32_t aNamespaceID,
+                                            nsAtom* aName) override;
   void AnimationNeedsResample();
   void FlushAnimations();
 
@@ -381,7 +368,7 @@ class SVGElement : public SVGElementBase  // nsIContent
     nsStaticAtom* const mName;
     const float mDefaultValue;
     const uint8_t mDefaultUnitType;
-    const uint8_t mCtxType;
+    const SVGLength::Axis mAxis;
   };
 
   template <typename Value, typename InfoValue>
@@ -407,11 +394,7 @@ class SVGElement : public SVGElementBase  // nsIContent
 
   using NumberAttributesInfo = AttributesInfo<SVGAnimatedNumber, NumberInfo>;
 
-  struct NumberPairInfo {
-    nsStaticAtom* const mName;
-    const float mDefaultValue1;
-    const float mDefaultValue2;
-  };
+  using NumberPairInfo = NumberInfo;
 
   using NumberPairAttributesInfo =
       AttributesInfo<SVGAnimatedNumberPair, NumberPairInfo>;
@@ -423,11 +406,7 @@ class SVGElement : public SVGElementBase  // nsIContent
 
   using IntegerAttributesInfo = AttributesInfo<SVGAnimatedInteger, IntegerInfo>;
 
-  struct IntegerPairInfo {
-    nsStaticAtom* const mName;
-    const int32_t mDefaultValue1;
-    const int32_t mDefaultValue2;
-  };
+  using IntegerPairInfo = IntegerInfo;
 
   using IntegerPairAttributesInfo =
       AttributesInfo<SVGAnimatedIntegerPair, IntegerPairInfo>;
@@ -458,7 +437,7 @@ class SVGElement : public SVGElementBase  // nsIContent
 
   struct LengthListInfo {
     nsStaticAtom* const mName;
-    const uint8_t mAxis;
+    const SVGLength::Axis mAxis;
     /**
      * Flag to indicate whether appending zeros to the end of the list would
      * change the rendering of the SVG for the attribute in question. For x and
@@ -515,7 +494,7 @@ class SVGElement : public SVGElementBase  // nsIContent
   void UnsetAttrInternal(int32_t aNameSpaceID, nsAtom* aName, bool aNotify);
 
   SVGAnimatedClass mClassAttribute;
-  UniquePtr<nsAttrValue> mClassAnimAttr;
+  std::unique_ptr<nsAttrValue> mClassAnimAttr;
 };
 
 /**

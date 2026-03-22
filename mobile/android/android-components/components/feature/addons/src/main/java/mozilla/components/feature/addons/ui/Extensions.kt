@@ -154,5 +154,5 @@ fun ImageView.setDefaultAddonIcon() {
     val safeContext = context ?: return
     val att = safeContext.theme.resolveAttribute(android.R.attr.textColorPrimary)
     setColorFilter(ContextCompat.getColor(safeContext, att))
-    setImageDrawable(AppCompatResources.getDrawable(safeContext, iconsR.drawable.mozac_ic_extension_24))
+    setImageDrawable(AppCompatResources.getDrawable(safeContext, iconsR.drawable.mozac_ic_extension_fill_24))
 }

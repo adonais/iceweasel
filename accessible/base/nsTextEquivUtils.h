@@ -22,7 +22,7 @@ class AccIterable;
 
 /**
  * Text equivalent computation rules. These rules are mapped to accessible roles
- * in RoleMap.h.
+ * in RoleMap.inc.
  */
 enum ETextEquivRule {
   // No rule. Equivalent to "name from author."

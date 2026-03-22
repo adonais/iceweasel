@@ -14,7 +14,6 @@
 #include <sys/types.h>
 #include <sys/sysctl.h>
 #include <cerrno>
-#include <cstring>
 #include <unistd.h>
 #ifdef __FreeBSD__
 #  include <sys/user.h>

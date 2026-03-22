@@ -5,10 +5,11 @@ ChromeUtils.defineESModuleGetters(this, {
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   TopSites: "resource:///modules/topsites/TopSites.sys.mjs",
   UrlbarProvider: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
-  UrlbarProvidersManager:
+  ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarTokenizer:
@@ -194,4 +195,26 @@ async function resetApplicationProvidedEngines() {
   );
   await SearchTestUtils.updateRemoteSettingsConfig();
   await settingsWritten;
+}
+
+async function startCustomizing(win = window) {
+  if (!win.document.documentElement.hasAttribute("customizing")) {
+    let eventPromise = BrowserTestUtils.waitForEvent(
+      win.gNavToolbox,
+      "customizationready"
+    );
+    win.gCustomizeMode.enter();
+    await eventPromise;
+  }
+}
+
+async function endCustomizing(win = window) {
+  if (win.document.documentElement.hasAttribute("customizing")) {
+    let eventPromise = BrowserTestUtils.waitForEvent(
+      win.gNavToolbox,
+      "aftercustomization"
+    );
+    win.gCustomizeMode.exit();
+    await eventPromise;
+  }
 }

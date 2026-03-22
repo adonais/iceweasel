@@ -9,23 +9,27 @@ add_setup(async function () {
   });
 });
 
-function getConfig(id, interventions) {
+function getConfig(
+  id,
+  interventions,
+  issue1 = { matches: ["*://example.com/*"] }
+) {
   return {
     id,
     label: id,
     bugs: {
-      issue1: {
-        matches: ["*://example.com/*"],
-      },
+      issue1,
     },
     interventions: interventions.map(i => {
       if (!i.platforms) {
-        i.platforms = "all";
+        i.platforms = ["all"];
       }
       const { css, js } = i;
-      delete i.css;
-      delete i.js;
-      i.content_scripts = { css, js };
+      if (css || js) {
+        delete i.css;
+        delete i.js;
+        i.content_scripts = { css, js };
+      }
       return i;
     }),
   };
@@ -277,18 +281,18 @@ add_task(async function test_individual_interventions_prefs() {
   Assert.deepEqual(
     configs.map(c => c.active),
     [true, false, true],
-    "The correct interventions were activated on startup"
+    "The correct interventions are activated on startup"
   );
   Assert.deepEqual(
     configs.map(c => c.interventions.map(i => i.enabled)),
-    [[true], [true], [true]],
-    "The correct interventions were made available on startup"
+    [[true], [false], [true]],
+    "The correct interventions are enabled on startup"
   );
   let reg = await WebCompatExtension.getRegisteredContentScriptsFor(["test"]);
   Assert.deepEqual(
     reg.map(r => r.js).flat(),
     ["lib/run.js", "lib/custom_functions.js"],
-    "The correct content scripts were registered on startup"
+    "The correct content scripts are registered on startup"
   );
 
   Services.prefs.setBoolPref(
@@ -303,7 +307,7 @@ add_task(async function test_individual_interventions_prefs() {
     "extensions.webcompat.disabled_interventions.test7",
     true
   );
-  await WebCompatExtension.noOngoingInterventionChanges();
+  await WebCompatExtension.interventionsSettled();
   configs = await WebCompatExtension.updateInterventions([
     config5,
     config6,
@@ -312,12 +316,12 @@ add_task(async function test_individual_interventions_prefs() {
   Assert.deepEqual(
     configs.map(c => c.active),
     [false, true, false],
-    "The correct interventions were activated by pref changes"
+    "The correct interventions are active after pref changes"
   );
   Assert.deepEqual(
     configs.map(c => c.interventions.map(i => i.enabled)),
-    [[true], [true], [true]],
-    "The correct interventions were made available by pref changes"
+    [[false], [true], [false]],
+    "The correct interventions are enabled after pref changes"
   );
   reg = await WebCompatExtension.getRegisteredContentScriptsFor(["test"]);
   Assert.deepEqual(
@@ -338,7 +342,7 @@ add_task(async function test_individual_interventions_prefs() {
     "extensions.webcompat.disabled_interventions.test7",
     false
   );
-  await WebCompatExtension.noOngoingInterventionChanges();
+  await WebCompatExtension.interventionsSettled();
   configs = await WebCompatExtension.updateInterventions([
     config5,
     config6,
@@ -351,7 +355,7 @@ add_task(async function test_individual_interventions_prefs() {
   );
   Assert.deepEqual(
     configs.map(c => c.interventions.map(i => i.enabled)),
-    [[true], [true], [true]],
+    [[true], [false], [true]],
     "The correct interventions were made available by pref changes"
   );
   reg = await WebCompatExtension.getRegisteredContentScriptsFor(["test"]);
@@ -524,4 +528,191 @@ add_task(async function test_individual_interventions_prefs() {
   Services.prefs.clearUserPref(
     "extensions.webcompat.disabled_interventions.test5"
   );
+});
+
+add_task(async function test_batched_webrequest_listeners() {
+  // Test that two interventions targeting the same origin, but matching different
+  // full URLs, only apply based on their full match-patterns.
+  const config8 = getConfig(
+    "test8",
+    [
+      {
+        ua_string: ["change_Gecko_to_like_Gecko"],
+      },
+    ],
+    {
+      blocks: ["*://example.com/*/general/download_page.html"],
+      matches: ["*://example.com/*/general/*"],
+    }
+  );
+
+  const config9 = getConfig(
+    "test9",
+    [
+      {
+        ua_string: ["change_Firefox_to_FireFox"],
+      },
+    ],
+    {
+      blocks: ["*://example.com/*/static/download_page.html"],
+      matches: ["*://example.com/*/static/*"],
+    }
+  );
+
+  // Also test that another one which matches the full origin also matches
+  // along with whichever one above also should match.
+  const config10 = getConfig(
+    "test10",
+    [
+      {
+        ua_string: ["replace_colon_in_rv_with_space"],
+      },
+    ],
+    {
+      matches: ["*://example.com/*"],
+    }
+  );
+
+  // Also test that the origin is strictly matched, so subdomains are not
+  // accidentally matched when they should not be, or slightly different
+  // domains (.net instead of .com, etc).
+  const config11 = getConfig(
+    "test11",
+    [
+      {
+        ua_string: ["add_Version_segment"],
+      },
+    ],
+    {
+      blocks: [
+        "*://example.net/*/about/download_page.html",
+        "*://www.example.com/*/about/download_page.html",
+      ],
+      matches: ["*://example.net/*", "*://www.example.com/*"],
+    }
+  );
+
+  await WebCompatExtension.interventionsSettled();
+  const configs = await WebCompatExtension.updateInterventions([
+    config8,
+    config9,
+    config10,
+    config11,
+  ]);
+  Assert.deepEqual(
+    configs.map(c => c.active),
+    [true, true, true, true],
+    "The interventions were activated"
+  );
+  Assert.deepEqual(
+    configs.map(c => c.interventions.map(i => i.enabled)),
+    [[true], [true], [true], [true]],
+    "The interventions were enabled"
+  );
+
+  let tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening:
+      "https://example.com/browser/browser/base/content/test/general/dummy_page.html",
+    waitForLoad: true,
+  });
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    const ua = content.navigator.userAgent;
+    ok(ua.includes("like Gecko"), "Intended UA override was applied");
+    ok(!ua.includes("FireFox"), "Unintended UA override was NOT applied");
+    ok(ua.includes("rv "), "Intended UA override was applied");
+    ok(!ua.includes("Version/0"), "Unintended UA override was NOT applied");
+
+    let blocked = false;
+    try {
+      fetch(
+        "https://example.com/browser/browser/base/content/test/general/download_page.html"
+      );
+    } catch (_) {
+      blocked = true;
+    }
+    ok(blocked, "blocked as expected");
+  });
+  await BrowserTestUtils.removeTab(tab);
+
+  tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening:
+      "https://example.com/browser/browser/base/content/test/static/dummy_page.html",
+    waitForLoad: true,
+  });
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    const ua = content.navigator.userAgent;
+    ok(ua.includes("FireFox"), "Intended UA override was applied");
+    ok(!ua.includes("like Gecko"), "Unintended UA override was NOT applied");
+    ok(ua.includes("rv "), "Intended UA override was applied");
+    ok(!ua.includes("Version/0"), "Unintended UA override was NOT applied");
+
+    let blocked = false;
+    try {
+      fetch(
+        "https://example.com/browser/browser/base/content/test/static/download_page.html"
+      );
+    } catch (_) {
+      blocked = true;
+    }
+    ok(blocked, "blocked as expected");
+  });
+  await BrowserTestUtils.removeTab(tab);
+
+  tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening:
+      "https://example.net/browser/browser/base/content/test/about/dummy_page.html",
+    waitForLoad: true,
+  });
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    const ua = content.navigator.userAgent;
+    ok(!ua.includes("FireFox"), "Unintended UA override was NOT applied");
+    ok(!ua.includes("like Gecko"), "Unintended UA override was NOT applied");
+    ok(!ua.includes("rv "), "Unintended UA override was NOT applied");
+    ok(ua.includes("Version/0"), "Intended UA override was applied");
+
+    let blocked = true;
+    try {
+      fetch(
+        "https://example.net/browser/browser/base/content/test/about/download_page.html"
+      );
+      blocked = false;
+    } catch (_) {}
+    ok(blocked, "NOT blocked as expected");
+  });
+  await BrowserTestUtils.removeTab(tab);
+
+  tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening:
+      "https://www.example.com/browser/browser/base/content/test/about/dummy_page.html",
+    waitForLoad: true,
+  });
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    const ua = content.navigator.userAgent;
+    ok(!ua.includes("FireFox"), "Unintended UA override was NOT applied");
+    ok(!ua.includes("like Gecko"), "Unintended UA override was NOT applied");
+    ok(!ua.includes("rv "), "Unintended UA override was NOT applied");
+    ok(ua.includes("Version/0"), "Intended UA override was applied");
+
+    let blocked = false;
+    try {
+      fetch(
+        "https://www.example.com/browser/browser/base/content/test/about/download_page.html"
+      );
+    } catch (_) {
+      blocked = true;
+    }
+    ok(blocked, "blocked as expected");
+  });
+  await BrowserTestUtils.removeTab(tab);
+
+  await WebCompatExtension.disableInterventions([
+    "test8",
+    "test9",
+    "test10",
+    "test11",
+  ]);
 });

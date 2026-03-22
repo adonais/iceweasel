@@ -1285,7 +1285,10 @@ class XPCShellTests:
             sys.stderr.write("*** offending mozinfo.info: %s\n" % repr(mozinfo.info))
             raise
 
+        # Store missing manifests for later use in structured logging
+        self.missing_manifests = set()
         if path_filter and path_filter.missing:
+            self.missing_manifests = path_filter.missing
             self.log.warning(
                 "The following path(s) didn't resolve any tests:\n  {}".format(
                     "  \n".join(sorted(path_filter.missing))
@@ -1516,6 +1519,13 @@ class XPCShellTests:
         """
         return os.path.abspath(dirname)
 
+    def buildNodeEnvironment(self):
+        """
+        Return the environment to use for the node process. This can be overridden
+        by subclasses to filter or modify the environment.
+        """
+        return self.env
+
     def trySetupNode(self):
         """
         Run node for HTTP/2 tests, if available, and updates mozinfo as appropriate.
@@ -1548,6 +1558,8 @@ class XPCShellTests:
 
         self.log.info("Found node at %s" % (nodeBin,))
 
+        node_env = self.buildNodeEnvironment()
+
         def read_streams(name, proc, pipe):
             output = "stdout" if pipe == proc.stdout else "stderr"
             for line in iter(pipe.readline, ""):
@@ -1570,7 +1582,7 @@ class XPCShellTests:
                         stdin=PIPE,
                         stdout=PIPE,
                         stderr=PIPE,
-                        env=self.env,
+                        env=node_env,
                         cwd=os.getcwd(),
                         universal_newlines=True,
                         start_new_session=True,
@@ -2441,6 +2453,11 @@ class XPCShellTests:
         for test in self.alltests:
             group = get_full_group_name(test)
             tests_by_manifest[group].append(test["id"])
+
+        # Add missing manifests with empty test lists so they appear in
+        # group_result output with SKIP status
+        for missing_path in self.missing_manifests:
+            tests_by_manifest[missing_path] = []
 
         self.log.suite_start(tests_by_manifest, name="xpcshell")
 

@@ -144,6 +144,11 @@ void Gecko_LoadStyleSheetAsync(
 uint64_t Gecko_ElementState(const mozilla::dom::Element*);
 bool Gecko_IsRootElement(const mozilla::dom::Element*);
 
+// Fills aArray with the cached lazy pseudo styles from aStyle.
+void Gecko_GetCachedLazyPseudoStyles(
+    const mozilla::ComputedStyle* aStyle,
+    nsTArray<const mozilla::ComputedStyle*>* aArray);
+
 bool Gecko_MatchLang(const mozilla::dom::Element*, nsAtom* override_lang,
                      bool has_override_lang, const char16_t* value);
 
@@ -343,6 +348,11 @@ void Gecko_NoteDirtySubtreeForInvalidation(const mozilla::dom::Element*);
 void Gecko_NoteAnimationOnlyDirtyElement(const mozilla::dom::Element*);
 void Gecko_InvalidatePositionTry(const mozilla::dom::Element*);
 
+// Called when a highlight pseudo-element style (::selection, ::highlight,
+// ::target-text) is invalidated. These pseudos need explicit repaint
+// triggering since their styles are resolved lazily during painting.
+void Gecko_NoteHighlightPseudoStyleInvalidated(const mozilla::dom::Document*);
+
 bool Gecko_AnimationNameMayBeReferencedFromStyle(const nsPresContext*,
                                                  nsAtom* name);
 
@@ -533,12 +543,6 @@ bool Gecko_DocumentRule_UseForPresentation(
 // Allocator hinting.
 void Gecko_SetJemallocThreadLocalArena(bool enabled);
 
-// Pseudo-element flags.
-#define CSS_PSEUDO_ELEMENT(name_, value_, flags_) \
-  const uint32_t SERVO_CSS_PSEUDO_ELEMENT_FLAGS_##name_ = flags_;
-#include "nsCSSPseudoElementList.h"
-#undef CSS_PSEUDO_ELEMENT
-
 bool Gecko_ErrorReportingEnabled(const mozilla::StyleSheet* sheet,
                                  const mozilla::css::Loader* loader,
                                  uint64_t* aOutWindowId);
@@ -640,6 +644,7 @@ void Gecko_PrintfStderr(const nsCString*);
 
 bool Gecko_GetAnchorPosOffset(
     const AnchorPosOffsetResolutionParams* aParams, const nsAtom* aAnchorName,
+    const mozilla::StyleCascadeLevel* aTreeScope,
     mozilla::StylePhysicalSide aPropSide,
     mozilla::StyleAnchorSideKeyword aAnchorSideKeyword, float aPercentage,
     mozilla::Length* aOut);
@@ -661,6 +666,7 @@ bool Gecko_GetAnchorPosOffset(
  */
 bool Gecko_GetAnchorPosSize(const AnchorPosResolutionParams* aParams,
                             const nsAtom* aAnchorName,
+                            const mozilla::StyleCascadeLevel* aTreeScope,
                             mozilla::StylePhysicalAxis aPropAxis,
                             mozilla::StyleAnchorSizeKeyword aAnchorSizeKeyword,
                             mozilla::Length* aOut);

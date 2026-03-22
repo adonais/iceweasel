@@ -28,6 +28,7 @@
 #include "nsGkAtoms.h"
 #include "nsWhitespaceTokenizer.h"
 #include "nsIChannelEventSink.h"
+#include "nsIDNSRecord.h"
 #include "nsIDNSService.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsCharSeparatedTokenizer.h"
@@ -1242,7 +1243,7 @@ nsresult nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  mHttpChannel = http;
+  mHttpChannel = std::move(http);
 
   return NS_OK;
 }

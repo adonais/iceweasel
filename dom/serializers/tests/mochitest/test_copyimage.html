@@ -46,7 +46,7 @@ function testCopyImage () {
   //--------- Prepare data and copy it.
 
   // Select the node.
-  var node = document.getElementById('logo');
+  var node = document.getElementById('image');
 
   // Set node and copy image.
   var docShell = SpecialPowers.wrap(window).docShell;
@@ -64,10 +64,12 @@ function testCopyImage () {
   // Does the clipboard contain image data ?
   ok(clipboard.hasDataMatchingFlavors(["image/png"], clipboard.kGlobalClipboard), "clipboard contains image");
 
+  const imgUrl = new URL('image.png', document.baseURI).href;
+
   // Is the text/plain data correct ?
-  testClipboardValue('text/plain', 'about:logo');
+  testClipboardValue('text/plain', imgUrl);
   // Is the text/html data correct ?
-  var expected = '<img id="logo" src="about:logo">';
+  var expected = `<img id="image" src="${imgUrl}">`;
   if (navigator.platform.includes("Win")) {
     expected = kTextHtmlPrefixClipboardDataWindows + expected + kTextHtmlSuffixClipboardDataWindows;
   }
@@ -81,7 +83,7 @@ addLoadEvent(testCopyImage);
 </script>
 </pre>
 <div>
-  <img id="logo" src="about:logo">
+  <img id="image" src="image.png">
 </div>
 </body>
 </html>

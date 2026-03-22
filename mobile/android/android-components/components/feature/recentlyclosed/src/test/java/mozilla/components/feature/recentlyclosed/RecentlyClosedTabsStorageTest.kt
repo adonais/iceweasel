@@ -7,6 +7,7 @@ package mozilla.components.feature.recentlyclosed
 import androidx.room.Room
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.state.recover.RecoverableTab
 import mozilla.components.browser.state.state.recover.TabState
 import mozilla.components.concept.base.crash.CrashReporting
@@ -16,13 +17,10 @@ import mozilla.components.feature.recentlyclosed.db.RecentlyClosedTabsDatabase
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
@@ -30,8 +28,6 @@ import java.io.IOException
 
 @RunWith(AndroidJUnit4::class)
 class RecentlyClosedTabsStorageTest {
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
 
     private lateinit var storage: RecentlyClosedTabsStorage
     private lateinit var engineStateStorage: TestEngineSessionStateStorage
@@ -95,7 +91,7 @@ class RecentlyClosedTabsStorageTest {
     }
 
     @Test
-    fun testAddingTabsWithMax() = runTestOnMain {
+    fun testAddingTabsWithMax() = runTest {
         // Test tab
         val t1 = System.currentTimeMillis()
         val closedTab = RecoverableTab(
@@ -156,7 +152,7 @@ class RecentlyClosedTabsStorageTest {
     }
 
     @Test
-    fun testAllowAddingSameTabTwice() = runTestOnMain {
+    fun testAllowAddingSameTabTwice() = runTest {
         // Test tab
         val engineState: EngineSessionState = mock()
         val closedTab = RecoverableTab(
@@ -184,7 +180,7 @@ class RecentlyClosedTabsStorageTest {
     }
 
     @Test
-    fun testRemovingAllTabs() = runTestOnMain {
+    fun testRemovingAllTabs() = runTest {
         // Test tab
         val t1 = System.currentTimeMillis()
         val closedTab = RecoverableTab(
@@ -228,7 +224,7 @@ class RecentlyClosedTabsStorageTest {
     }
 
     @Test
-    fun testRemovingOneTab() = runTestOnMain {
+    fun testRemovingOneTab() = runTest {
         // Test tab
         val engineState1: EngineSessionState = mock()
         val t1 = System.currentTimeMillis()
@@ -279,7 +275,7 @@ class RecentlyClosedTabsStorageTest {
     }
 
     @Test
-    fun testAddingTabWithEngineStateStorageFailure() = runTestOnMain {
+    fun testAddingTabWithEngineStateStorageFailure() = runTest {
         // 'fail' in tab's id will cause test engine session storage to fail on writing engineSessionState.
         val closedTab = RecoverableTab(
             engineSessionState = mock(),
@@ -300,7 +296,7 @@ class RecentlyClosedTabsStorageTest {
     }
 
     @Test
-    fun testAddingTabWithEngineStateStorageCausingOOM() = runTestOnMain {
+    fun testAddingTabWithEngineStateStorageCausingOOM() = runTest {
         // OutOfMemoryError on EngineSessionStateStorage::write will cause test engine session
         //  storage to fail on writing engineSessionState.
         engineStateStorage.throwsOutOfMemoryOnWrite = true
@@ -332,7 +328,7 @@ class RecentlyClosedTabsStorageTest {
     }
 
     @Test
-    fun testStorageFailuresAreCaught() = runTestOnMain {
+    fun testStorageFailuresAreCaught() = runTest {
         val engineState: EngineSessionState = mock()
         val closedTab = RecoverableTab(
             engineSessionState = engineState,

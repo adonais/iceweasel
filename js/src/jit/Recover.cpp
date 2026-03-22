@@ -8,8 +8,7 @@
 
 #include "mozilla/Casting.h"
 
-#include "jsmath.h"
-
+#include "builtin/Math.h"
 #include "builtin/Object.h"
 #include "builtin/String.h"
 #include "jit/AtomicOperations.h"

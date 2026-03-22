@@ -9,7 +9,7 @@ import os
 import re
 
 import taskgraph
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph import GECKO
@@ -25,7 +25,7 @@ source_definition = {
     Required("sha256"): str,
 }
 
-common_schema = Schema({
+common_schema = LegacySchema({
     # URL/SHA256 of a source file to build, which can either be a source
     # control (.dsc), or a tarball.
     Required(Any("dsc", "tarball")): source_definition,

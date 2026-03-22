@@ -14,10 +14,10 @@ use serde::{Deserialize, Serialize};
 use uniffi_bindgen::pipeline::initial;
 use uniffi_pipeline::PrintOptions;
 
-mod config_supplier;
+mod bindgen_paths;
 pub mod pipeline;
 
-use config_supplier::GeckoJsCrateConfigSupplier;
+use bindgen_paths::gecko_js_bindgen_paths;
 use pipeline::{gecko_js_pipeline, GeckoPipeline};
 use uniffi_pipeline::Node;
 
@@ -156,13 +156,13 @@ fn run_generate(
 ) -> Result<()> {
     let root = pipeline.execute(root)?;
     render(&args.cpp_path, root.cpp_scaffolding)?;
-    for module in root.modules.values() {
-        let dir = if module.fixture {
+    for namespace in root.namespaces.values() {
+        let dir = if namespace.fixture {
             &args.fixture_js_dir
         } else {
             &args.js_dir
         };
-        render(&dir.join(&module.js_filename), module)?;
+        render(&dir.join(&namespace.js_filename), namespace)?;
     }
     for entry in fs::read_dir(&args.docs_path)? {
         let path = entry?.path();
@@ -194,15 +194,14 @@ fn root_and_pipeline(
     library_path: Utf8PathBuf,
     fixtures_library_path: Utf8PathBuf,
 ) -> Result<(initial::Root, GeckoPipeline)> {
-    let config_supplier = GeckoJsCrateConfigSupplier::new()?;
-    let root = initial::Root::from_library(&config_supplier, &library_path, None)?;
+    let root = initial::Root::from_library(gecko_js_bindgen_paths()?, &library_path, None)?;
     let fixtures_root =
-        initial::Root::from_library(&config_supplier, &fixtures_library_path, None)?;
+        initial::Root::from_library(gecko_js_bindgen_paths()?, &fixtures_library_path, None)?;
     let root = initial::Root {
-        modules: root
-            .modules
+        namespaces: root
+            .namespaces
             .into_iter()
-            .chain(fixtures_root.modules)
+            .chain(fixtures_root.namespaces)
             .collect(),
         cdylib: None,
     };

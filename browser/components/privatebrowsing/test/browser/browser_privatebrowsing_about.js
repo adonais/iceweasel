@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 ChromeUtils.defineESModuleGetters(this, {
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -47,20 +48,20 @@ add_setup(async function () {
     ],
   });
 
-  const originalPrivateDefault = await Services.search.getDefaultPrivate();
+  const originalPrivateDefault = await SearchService.getDefaultPrivate();
   // We have to use a built-in engine as we are currently hard-coding the aliases.
-  const privateEngine = await Services.search.getEngineByName("DuckDuckGo");
-  await Services.search.setDefaultPrivate(
+  const privateEngine = await SearchService.getEngineByName("DuckDuckGo");
+  await SearchService.setDefaultPrivate(
     privateEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
   expectedEngineAlias = privateEngine.aliases[0];
   expectedIconURL = await privateEngine.getIconURL();
 
   registerCleanupFunction(async () => {
-    await Services.search.setDefaultPrivate(
+    await SearchService.setDefaultPrivate(
       originalPrivateDefault,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+      SearchService.CHANGE_REASON.UNKNOWN
     );
   });
 });

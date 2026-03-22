@@ -169,12 +169,6 @@ class BaseBootstrapper:
         to the user, if necessary.
         """
 
-    def suggest_install_pip3(self):
-        """Called if pip3 can't be found."""
-        print(
-            "Try installing pip3 with your system's package manager.", file=sys.stderr
-        )
-
     def install_system_packages(self):
         """
         Install packages shared by all applications. These are usually

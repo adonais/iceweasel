@@ -573,7 +573,7 @@ void WebGPUParent::ReportError(RawId aDeviceId, const GPUErrorFilter aType,
     }
   }
   // No error scope found, so fall back to the uncaptured error handler
-  if (!SendUncapturedError(aDeviceId, aMessage)) {
+  if (!SendUncapturedError(aDeviceId, aType, aMessage)) {
     NS_ERROR("SendDeviceUncapturedError failed");
   }
 }
@@ -769,7 +769,10 @@ void WebGPUParent::BufferUnmap(RawId aDeviceId, RawId aBufferId, bool aFlush) {
     const auto mapped = ffi::wgpu_server_buffer_get_mapped_range(
         mContext.get(), aDeviceId, aBufferId, offset, size,
         getRangeError.ToFFI());
-    ForwardError(getRangeError);
+    // We don't forward the error since `Buffer.unmap()` should not generate any
+    // errors. We only call `GetError` so that `ErrorBuffer`'s destructor
+    // doesn't assert.
+    getRangeError.GetError();
 
     if (mapped.ptr != nullptr && mapped.length >= size) {
       auto shmSize = mapData->mShmem->Size();
@@ -787,7 +790,10 @@ void WebGPUParent::BufferUnmap(RawId aDeviceId, RawId aBufferId, bool aFlush) {
   ErrorBuffer unmapError;
   ffi::wgpu_server_buffer_unmap(mContext.get(), aDeviceId, aBufferId,
                                 unmapError.ToFFI());
-  ForwardError(unmapError);
+  // We don't forward the error since `Buffer.unmap()` should not generate any
+  // errors. We only call `GetError` so that `ErrorBuffer`'s destructor doesn't
+  // assert.
+  unmapError.GetError();
 
   if (mapData && !mapData->mHasMapFlags) {
     // We get here if the buffer was mapped at creation without map flags.

@@ -523,9 +523,8 @@ void L10nOverlays::TranslateElement(Element& aElement,
     } else {
       // Else parse the translation's HTML into a DocumentFragment,
       // sanitize it and replace the element's content.
-      RefPtr<DocumentFragment> fragment =
-          new (aElement.OwnerDoc()->NodeInfoManager())
-              DocumentFragment(aElement.OwnerDoc()->NodeInfoManager());
+      auto* nim = aElement.NodeInfoManager();
+      RefPtr<DocumentFragment> fragment = new (nim) DocumentFragment(nim);
       // Note: these flags should be no less restrictive than the ones in
       // nsContentUtils::ParseFragmentHTML .
       // We supply the flags here because otherwise the parsing of HTML can

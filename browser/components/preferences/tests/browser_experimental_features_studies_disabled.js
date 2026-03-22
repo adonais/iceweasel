@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { EnterprisePolicyTesting } = ChromeUtils.importESModule(
-  "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
-);
-
 add_task(async function testHiddenWhenLabsDisabled() {
   const cleanup = await setupLabsTest();
   await SpecialPowers.pushPrefEnv({

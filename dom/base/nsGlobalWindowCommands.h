@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsGlobalWindowCommands_h__
-#define nsGlobalWindowCommands_h__
+#ifndef nsGlobalWindowCommands_h_
+#define nsGlobalWindowCommands_h_
 
 #include "nsStringFwd.h"
 #include "nscore.h"
@@ -38,4 +38,4 @@ class nsGlobalWindowCommands {
                                 KeyboardScrollAction* aOutAction);
 };
 
-#endif  // nsGlobalWindowCommands_h__
+#endif  // nsGlobalWindowCommands_h_

@@ -24,7 +24,7 @@ class GleanMetricsServiceTest {
     fun `WHEN installSearchTelemetryExtensions is called THEN install the ads and search telemetry extensions`() =
         runTest {
             val components = mock(Components::class.java)
-            val store = mock(BrowserStore::class.java)
+            val store = BrowserStore()
             val engine = mock(Engine::class.java)
             val adsExtension = mock(AdsTelemetry::class.java)
             val searchExtension = mock(InContentTelemetry::class.java)

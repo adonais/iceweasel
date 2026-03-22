@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef places_test_harness_h__
-#define places_test_harness_h__
+#ifndef places_test_harness_h_
+#define places_test_harness_h_
 
 #include "gtest/gtest.h"
 #include "mozilla/dom/PlacesEventBinding.h"
@@ -286,4 +286,4 @@ class WaitForConnectionClosed final : public nsIObserver {
 
 void disable_idle_service();
 
-#endif  // places_test_harness_h__
+#endif  // places_test_harness_h_

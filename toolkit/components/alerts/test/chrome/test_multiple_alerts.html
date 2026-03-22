@@ -17,7 +17,6 @@ const AlertNotification = Components.Constructor(
 );
 
 const chromeScript = SpecialPowers.loadChromeScript(_ => {
-  /* eslint-env mozilla/chrome-script */
   const {clearTimeout, setTimeout} = ChromeUtils.importESModule(
     "resource://gre/modules/Timer.sys.mjs"
   );

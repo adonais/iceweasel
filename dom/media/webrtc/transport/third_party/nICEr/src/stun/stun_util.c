@@ -139,10 +139,10 @@ nr_stun_different_transaction(UCHAR *msg, size_t len, nr_stun_message *req)
    return _status;
 }
 
-char*
+const char*
 nr_stun_msg_type(int type)
 {
-    char *ret = 0;
+    const char *ret = 0;
 
     switch (type) {
     case NR_STUN_MSG_BINDING_REQUEST:
@@ -205,7 +205,7 @@ nr_stun_msg_type(int type)
 int
 nr_random_alphanum(char *alphanum, int size)
 {
-    static char alphanums[256] = {
+    static const char alphanums[256] = {
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
         'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
         'U', 'V', 'W', 'X', 'Y', 'Z',

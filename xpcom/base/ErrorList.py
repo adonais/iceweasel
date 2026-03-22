@@ -1297,17 +1297,17 @@ def import_extra_errors(infile):
     Example json file (to add module):
     ```
     {
-      "MAILNEWS": {
-        "description": "Extra error codes for comm/mail",
-        "code": 16,
-        "members": {
-          "NS_MSG_ERROR_MBOX_MALFORMED": {
-            "severity": "FAILURE",
-            "code": 36,
-            "description": "Mbox message doesn't start with 'From ' separator line."
-          },
+        "MAILNEWS": {
+            "description": "Extra error codes for comm/mail",
+            "code": 16,
+            "members": {
+                "NS_MSG_ERROR_MBOX_MALFORMED": {
+                    "severity": "FAILURE",
+                    "code": 36,
+                    "description": "Mbox message doesn't start with 'From ' separator line.",
+                },
+            },
         }
-      }
     }
     ```
     """

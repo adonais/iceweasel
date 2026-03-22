@@ -33,7 +33,6 @@ namespace gfx {
   _(WEBRENDER_DCOMP_PRESENT, Feature, "WebRender DirectComposition")         \
   _(WEBRENDER_SCISSORED_CACHE_CLEARS, Feature,                               \
     "WebRender scissored cache clears")                                      \
-  _(OMTP, Feature, "Off Main Thread Painting")                               \
   _(WEBGPU, Feature, "WebGPU")                                               \
   _(X11_EGL, Feature, "X11 EGL")                                             \
   _(DMABUF, Feature, "DMABUF")                                               \

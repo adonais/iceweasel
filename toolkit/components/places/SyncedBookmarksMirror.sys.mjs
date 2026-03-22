@@ -1391,7 +1391,7 @@ export class SyncedBookmarksMirror {
           // down.
           await cleanupMirrorDatabase(this.db);
         }
-        await this.db.execute(`PRAGMA mirror.optimize(0x02)`);
+        await this.db.execute(`PRAGMA mirror.optimize(0x12)`);
         await this.db.execute(`DETACH mirror`);
         this.finalizeAt.removeBlocker(this.finalizeBound);
       })();

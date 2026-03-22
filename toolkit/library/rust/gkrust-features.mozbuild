@@ -85,5 +85,8 @@ if CONFIG["MOZ_ICU4X"]:
 if CONFIG["USE_LIBZ_RS"]:
     gkrust_features += ["libz-rs-sys"]
 
+if CONFIG["MOZ_JXL"]:
+    gkrust_features += ["jxl_decoder"]
+
 # This must remain last.
 gkrust_features = ["gkrust-shared/%s" % f for f in gkrust_features]

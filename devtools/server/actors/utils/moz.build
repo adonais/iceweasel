@@ -23,9 +23,6 @@ DevToolsModules(
     "source-url.js",
     "sources-manager.js",
     "stack.js",
-    "style-utils.js",
-    "stylesheet-utils.js",
-    "stylesheets-manager.js",
     "walker-search.js",
     "watchpoint-map.js",
 )

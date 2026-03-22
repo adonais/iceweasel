@@ -230,21 +230,19 @@ class TouchSimulator {
    *        The type of the touch event.
    */
   sendTouchEvent(win, clientX, clientY, type) {
-    const utils = win.windowUtils;
-    utils.sendTouchEvent(
+    win.synthesizeTouchEvent(
       type,
-      [0],
-      [clientX],
-      [clientY],
-      [0],
-      [0],
-      [0],
-      [0],
-      [0],
-      [0],
-      [0],
+      [
+        {
+          identifier: 0,
+          offsetX: clientX,
+          offsetY: clientY,
+          radiiX: 0,
+          radiiY: 0,
+        },
+      ],
       0,
-      utils.ASYNC_ENABLED
+      { isAsyncEnabled: true }
     );
     return true;
   }

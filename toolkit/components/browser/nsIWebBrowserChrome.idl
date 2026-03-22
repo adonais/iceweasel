@@ -85,6 +85,9 @@ interface nsIWebBrowserChrome : nsISupports
     // Whether this window should use out-of-process cross-origin subframes.
     const unsigned long CHROME_FISSION_WINDOW         = 1 << 21;
 
+    // Whether this is a Document Picture-in-Picture window
+    const unsigned long CHROME_DOCUMENT_PIP           = 1 << 22;
+
     // Prevents new window animations on MacOS and Windows. Currently
     // ignored for Linux.
     const unsigned long CHROME_SUPPRESS_ANIMATION     = 1 << 24;
@@ -109,10 +112,10 @@ interface nsIWebBrowserChrome : nsISupports
       CHROME_WINDOW_MINIMIZE | CHROME_LOCATIONBAR | CHROME_STATUSBAR |
       CHROME_SCROLLBARS | CHROME_TITLEBAR;
 
-    const unsigned long CHROME_DOCUMENT_PICTURE_IN_PICTURE =
+    const unsigned long CHROME_DOCUMENT_PICTURE_IN_PICTURE_FLAGS =
       CHROME_WINDOW_BORDERS | CHROME_WINDOW_CLOSE | CHROME_WINDOW_RESIZE |
       CHROME_WINDOW_MINIMIZE | CHROME_LOCATIONBAR | CHROME_STATUSBAR |
-      CHROME_SCROLLBARS | CHROME_TITLEBAR | CHROME_ALWAYS_ON_TOP;
+      CHROME_SCROLLBARS | CHROME_TITLEBAR | CHROME_ALWAYS_ON_TOP | CHROME_DOCUMENT_PIP;
 
     /**
      * The chrome flags for this browser chrome. The implementation should

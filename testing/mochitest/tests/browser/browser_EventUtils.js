@@ -108,6 +108,39 @@ add_task(async function synthesizeEventFromParent() {
     await synthesizeMouseFromParent(aBrowser, 10, 10, aAsyncEnabled);
   }
 
+  async function testSynthesizeTouchFromParent(aBrowser, aAsyncEnabled) {
+    info(`Testing synthesizeTouch with asyncEnabled=${aAsyncEnabled}`);
+
+    let haveReceiveTouchEvent = false;
+    const onTouchEnd = event => {
+      info(`Received touchend event: ${event.type} ${event.touches}`);
+      haveReceiveTouchEvent = true;
+    };
+    aBrowser.addEventListener("touchend", onTouchEnd, { once: true });
+
+    await new Promise(resolve => {
+      try {
+        EventUtils.synthesizeTouch(
+          aBrowser,
+          10,
+          10,
+          { asyncEnabled: aAsyncEnabled },
+          window,
+          () => {
+            ok(haveReceiveTouchEvent, "Should have received touchend event");
+            aBrowser.removeEventListener("touchend", onTouchEnd);
+            resolve();
+          }
+        );
+        ok(aAsyncEnabled, "synthesizeTouch should not throw");
+      } catch (e) {
+        ok(!aAsyncEnabled, `synthesizeTouch should throw error: ${e}`);
+        aBrowser.removeEventListener("touchend", onTouchEnd);
+        SimpleTest.executeSoon(resolve);
+      }
+    });
+  }
+
   await BrowserTestUtils.withNewTab(
     gBaseURL + "dummy.html",
     async function (browser) {
@@ -115,6 +148,8 @@ add_task(async function synthesizeEventFromParent() {
       await testSynthesizeWheelFromParent(browser, true);
       await testSynthesizeMouseFromParent(browser, false);
       await testSynthesizeMouseFromParent(browser, true);
+      await testSynthesizeTouchFromParent(browser, false);
+      await testSynthesizeTouchFromParent(browser, true);
     }
   );
 });
@@ -188,12 +223,35 @@ add_task(async function synthesizeEventFromContent() {
     });
   }
 
+  async function testSynthesizeTouchFromContent(aBrowser) {
+    info(`Testing synthesizeTouch`);
+
+    await SpecialPowers.spawn(aBrowser, [], async () => {
+      try {
+        EventUtils.synthesizeTouch(
+          content.document.body,
+          10,
+          10,
+          {},
+          content.window,
+          () => {
+            ok(false, "callback should not be called");
+          }
+        );
+        ok(false, "synthesizeTouch should throw error");
+      } catch (e) {
+        ok(true, `synthesizeTouch throws an error: ${e}`);
+      }
+    });
+  }
+
   await BrowserTestUtils.withNewTab(
     gBaseURL + "dummy.html",
     async function (browser) {
       await testSynthesizeWheelFromContent(browser, false);
       await testSynthesizeWheelFromContent(browser, true);
       await testSynthesizeMouseFromContent(browser);
+      await testSynthesizeTouchFromContent(browser);
     }
   );
 });

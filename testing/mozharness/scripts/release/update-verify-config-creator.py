@@ -62,9 +62,15 @@ def is_triangular(x):
     True
     >>> is_triangular(4)
     False
-    >>> all(is_triangular(x) for x in [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105])
+    >>> all(
+    ...     is_triangular(x)
+    ...     for x in [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 66, 78, 91, 105]
+    ... )
     True
-    >>> all(not is_triangular(x) for x in [4, 5, 8, 9, 11, 17, 25, 29, 39, 44, 59, 61, 72, 98, 112])
+    >>> all(
+    ...     not is_triangular(x)
+    ...     for x in [4, 5, 8, 9, 11, 17, 25, 29, 39, 44, 59, 61, 72, 98, 112]
+    ... )
     True
     """
     # pylint --py3k W1619

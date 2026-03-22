@@ -174,6 +174,14 @@ when running ``./mach try fuzzy --full`` - the ``--full`` part is necessary.
 The ``-upload-symbols`` task has a dependency on the build task, so you don't have to trigger
 the build task separately if you do this.
 
+.. note::
+
+   Upload-symbols jobs are only available on **try** and **release branches**
+   (mozilla-central, mozilla-beta, mozilla-release, ESR branches). They are
+   **not** available on **autoland**. If you need symbols for an autoland build,
+   you will need to reproduce the build on try and trigger the upload-symbols
+   job there.
+
 Adding Try jobs to a Phabricator patch
 --------------------------------------
 

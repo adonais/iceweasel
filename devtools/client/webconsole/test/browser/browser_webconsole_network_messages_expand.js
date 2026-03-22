@@ -69,7 +69,7 @@ add_task(async function task() {
     "An empty notice is displayed instead of the response content"
   );
   const responseContent = messageNode.querySelector(
-    "#response-panel .editor-row-container .CodeMirror"
+    "#response-panel .editor-row-container .cm-editor"
   );
   ok(!responseContent, "Response content is really not displayed");
 

@@ -74,6 +74,7 @@ struct ProcessingTimeMarker {
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
     schema.AddKeyLabelFormat("time", "Recorded Time", MS::Format::Milliseconds);
     schema.AddKeyLabelFormat("tracker", "Tracker Type", MS::Format::String);
+    schema.AddKeyFormat("label", MS::Format::String, MS::PayloadFlags::Hidden);
     schema.SetTooltipLabel("{marker.name} - {marker.data.label}");
     schema.SetTableLabel("{marker.data.label}: {marker.data.time}");
     return schema;
@@ -95,6 +96,7 @@ struct ProcessEnergyMarker {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
     schema.AddKeyLabelFormat("energy", "Energy (µWh)", MS::Format::Integer);
+    schema.AddKeyFormat("label", MS::Format::String, MS::PayloadFlags::Hidden);
     schema.SetTooltipLabel("{marker.name} - {marker.data.label}");
     schema.SetTableLabel("{marker.data.label}: {marker.data.energy}µWh");
     return schema;

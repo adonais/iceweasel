@@ -70,7 +70,7 @@ impl Counter for LabeledCounterMetric {
             LabeledCounterMetric::Parent(p) => p.add(amount),
             LabeledCounterMetric::Child { id, label } => {
                 #[cfg(feature = "with_gecko")]
-                if gecko_profiler::can_accept_markers() {
+                if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                     gecko_profiler::add_marker(
                         "LabeledCounter::add",
                         super::profiler_utils::TelemetryProfilerCategory,

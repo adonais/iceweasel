@@ -44,6 +44,12 @@ interface WebExtensionPolicy {
   readonly attribute DOMString name;
 
   /**
+   * The extension's version string.
+   */
+  [Constant]
+  readonly attribute DOMString version;
+
+  /**
    * The add-on's internal type as determined by parsing the manifest.json file.
    */
   [Constant]
@@ -323,6 +329,8 @@ dictionary WebExtensionInit {
   required DOMString baseURL;
 
   DOMString name = "";
+
+  DOMString version = "";
 
   DOMString type = "";
 

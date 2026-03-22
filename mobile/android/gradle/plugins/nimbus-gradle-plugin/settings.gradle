@@ -4,15 +4,9 @@
 
 buildscript {
     gradle.ext.mozconfig = gradle.root.mozconfig
+    gradle.ext.configureMavenRepositories = gradle.root.ext.configureMavenRepositories
 
     repositories {
-        gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
-            maven {
-                url = repository
-                if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
-                    allowInsecureProtocol = true
-                }
-            }
-        }
+        gradle.configureMavenRepositories(delegate)
     }
 }

@@ -39,8 +39,8 @@ import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.compose.settings.SettingsSectionHeader
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 /**
  * Composable function that renders the Data Choices settings screen.
@@ -337,7 +337,7 @@ private fun LearnMoreLink(onLearnMoreClicked: () -> Unit, learnMoreText: String)
 @FlexibleWindowPreview
 @Composable
 private fun DataChoicesPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         DataChoicesScreen(
@@ -351,7 +351,7 @@ private fun DataChoicesPreview(
 @Preview
 @Composable
 private fun DataChoicesTelemetryDisabledPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         DataChoicesScreen(
@@ -368,7 +368,7 @@ private fun DataChoicesTelemetryDisabledPreview(
 @Preview
 @Composable
 private fun DataChoicesMarketingSectionDisabledPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         DataChoicesScreen(

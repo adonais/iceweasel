@@ -2,7 +2,7 @@
   @include newtab-card-style;
 
   grid-column: span 1;
-  width: var(--newtab-card-grid-layout-width);
+  width: var(--newtab-card-width-medium);
 
   // Match the new card width if sections are enabled
   .has-sections-grid & {
@@ -25,10 +25,39 @@
   .city-wrapper {
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    margin-block-end: var(--space-xsmall);
+
+    .city-name {
+      width: 100%;
+    }
 
     h3 {
       margin-block: 0;
-      font-weight: var(--font-weight-semibold);
+      font-weight: var(--font-weight);
+      font-size: var(--font-size-root);
+    }
+
+    .location-input-wrapper {
+      padding-block: 0;
+
+      input {
+        width: 100%;
+      }
+    }
+  }
+
+  // Make sure context menu is only visible as you hover over the Weather Forecast widget
+  .weather-forecast-context-menu-wrapper {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  &:hover,
+  &:focus-within {
+    .weather-forecast-context-menu-wrapper {
+      opacity: 1;
+      pointer-events: auto;
     }
   }
 
@@ -39,13 +68,17 @@
     padding: var(--space-medium);
     border-radius: var(--border-radius-medium);
     width: 100%;
+  }
 
+
+  .current-weather-wrapper,
+  &.small-widget .forecast-row-items > li:first-of-type {
     // Setting background color based on temperature icon
     &:has(.iconId1, .iconId2, .iconId3, .iconId4, .iconId5, .iconId6, .iconId33) {
       background-color: var(--weather-sunny-background-color);
     }
 
-    &:has(.iconId7, .iconId8, .iconI11, .iconId32, .iconId34, .iconId35, .iconId36, .iconId37, .iconId38) {
+    &:has(.iconId7, .iconId8, .iconId11, .iconId32, .iconId34, .iconId35, .iconId36, .iconId37, .iconId38) {
       background-color: var(--weather-cloudy-background-color);
     }
 
@@ -53,7 +86,7 @@
       background-color: var(--weather-rainy-background-color);
     }
 
-    &:has(.iconId19, .iconId20, .iconId21, .iconId22, .iconId23, .iconId24, .iconId25, .iconId26, .iconId29, .iconId31, .iconId43, .iconId44 ) {
+    &:has(.iconId19, .iconId20, .iconId21, .iconId22, .iconId23, .iconId24, .iconId25, .iconId26, .iconId29, .iconId31, .iconId43, .iconId44) {
       background-color: var(--weather-snowy-background-color);
     }
 
@@ -62,18 +95,21 @@
     }
   }
 
+
   // Weather Symbol Icons
   .weather-icon-column {
-    width: var(--size-item-large);
-    height: var(--size-item-large);
     display: flex;
     align-items: center;
     justify-content: center;
     align-self: center;
+
+    .weather-icon {
+      width: var(--size-item-large);
+    }
   }
 
   .weather-icon {
-    width: var(--size-item-large);
+    width: var(--size-item-medium);
     height: auto;
     vertical-align: middle;
 
@@ -237,32 +273,40 @@ hr {
 
 .forecast-row {
   .today-forecast {
-    margin-block-start: 0;
+    margin-block-start: var(--space-small);
     font-weight: var(--font-weight-semibold);
   }
 
   .forecast-row-items {
     list-style: none;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     padding: 0;
-    margin-block-start: var(--space-small);
+    margin-block: var(--space-xxsmall);
 
     li {
       background: var(--newtab-background-color);
       border-radius: var(--border-radius-small);
       display: flex;
       flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      margin-inline: var(--space-xsmall);
-      padding-inline: var(--space-small);
-      padding-block: var(--space-xsmall);
+      margin-inline: var(--space-xxsmall);
+      padding: var(--space-small) var(--space-medium);
       font-size: var(--font-size-small);
+
+      &:first-of-type {
+        margin-inline-start: 0;
+      }
+
+      &:last-of-type {
+        margin-inline-end: 0;
+      }
     }
   }
 }
 
-.weather-forecast-footer {
+.forecast-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -277,3 +321,24 @@ hr {
   }
 }
 
+// Styles for the small version of Weather Forecast widget
+.small-widget {
+  height: 100%;
+  padding: var(--space-small);
+
+  .forecast-row-items {
+    li {
+      padding: var(--space-xsmall) var(--space-medium);
+    }
+  }
+
+  .forecast-footer {
+    margin-block-start: auto;
+  }
+
+  &:has(.location-search) {
+    .forecast-row-items {
+      display: none;
+    }
+  }
+}

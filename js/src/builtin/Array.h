@@ -122,9 +122,6 @@ extern bool HasAndGetElement(JSContext* cx, HandleObject obj, uint64_t index,
 
 /* Natives exposed for optimization by the interpreter and JITs. */
 
-extern bool array_includes(JSContext* cx, unsigned argc, js::Value* vp);
-extern bool array_indexOf(JSContext* cx, unsigned argc, js::Value* vp);
-extern bool array_lastIndexOf(JSContext* cx, unsigned argc, js::Value* vp);
 extern bool array_pop(JSContext* cx, unsigned argc, js::Value* vp);
 extern bool array_join(JSContext* cx, unsigned argc, js::Value* vp);
 extern bool array_sort(JSContext* cx, unsigned argc, js::Value* vp);

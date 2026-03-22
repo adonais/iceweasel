@@ -9,9 +9,14 @@
 #include "GLDefs.h"
 
 namespace mozilla {
+namespace layers {
+class AndroidHardwareBuffer;
+}
+
 namespace gl {
 
 class GLContext;
+class GLContextEGL;
 
 #ifdef DEBUG
 bool IsContextCurrent(GLContext* gl);
@@ -95,6 +100,20 @@ struct ScopedRenderbuffer final {
 
   GLuint RB() { return mRB; }
   operator GLuint() const { return mRB; }
+};
+
+struct ScopedEGLImageForAndroidHardwareBuffer final {
+ private:
+  GLContextEGL* const mGL;
+  EGLImage mImage;
+
+ public:
+  explicit ScopedEGLImageForAndroidHardwareBuffer(
+      GLContextEGL* aGL, layers::AndroidHardwareBuffer* aHardwareBuffer);
+  ~ScopedEGLImageForAndroidHardwareBuffer();
+
+  EGLImage Image() const { return mImage; }
+  operator EGLImage() const { return mImage; }
 };
 
 struct ScopedBindTexture final {

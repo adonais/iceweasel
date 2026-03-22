@@ -80,8 +80,10 @@ nsresult CSSNestedDeclarationsDeclaration::SetCSSDeclaration(
 
 nsDOMCSSDeclaration::ParsingEnvironment
 CSSNestedDeclarationsDeclaration::GetParsingEnvironment(nsIPrincipal*) const {
-  return GetParsingEnvironmentForRule(Rule(),
-                                      StyleCssRuleType::NestedDeclarations);
+  if (auto* parent = Rule()->GetParentRule()) {
+    return GetParsingEnvironmentForRule(parent, parent->Type());
+  }
+  return {};
 }
 
 CSSNestedDeclarations::CSSNestedDeclarations(

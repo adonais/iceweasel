@@ -236,6 +236,7 @@ class MarionetteTextTestRunner(StructuredTestRunner):
     def __init__(self, **kwargs):
         self.marionette = kwargs.pop("marionette")
         self.capabilities = kwargs.pop("capabilities")
+        self.group = kwargs.pop("group", None)
 
         StructuredTestRunner.__init__(self, **kwargs)
 
@@ -247,6 +248,7 @@ class MarionetteTextTestRunner(StructuredTestRunner):
             marionette=self.marionette,
             logger=self.logger,
             result_callbacks=self.result_callbacks,
+            group=self.group,
         )
 
     def run(self, test):
@@ -1152,7 +1154,7 @@ class BaseMarionetteTestRunner:
 
         self.tests.append({"filepath": filepath, "expected": expected, "group": group})
 
-    def run_test(self, filepath, expected):
+    def run_test(self, filepath, expected, group=None):
         testloader = unittest.TestLoader()
         suite = unittest.TestSuite()
         self.test_kwargs["expected"] = expected
@@ -1177,6 +1179,7 @@ class BaseMarionetteTestRunner:
                 marionette=self.marionette,
                 capabilities=self.capabilities,
                 result_callbacks=self.result_callbacks,
+                group=group,
             )
 
             results = runner.run(suite)
@@ -1214,10 +1217,21 @@ class BaseMarionetteTestRunner:
             random.seed(self.shuffle_seed)
             random.shuffle(tests)
 
+        current_group = None
         for test in tests:
-            self.run_test(test["filepath"], test["expected"])
+            group = test.get("group")
+            if group:
+                group = self._fix_test_path(group)
+            if group != current_group:
+                if current_group is not None:
+                    self.logger.group_end(name=current_group)
+                current_group = group
+                self.logger.group_start(name=current_group)
+            self.run_test(test["filepath"], test["expected"], group=group)
             if self.record_crash():
                 break
+        if current_group is not None:
+            self.logger.group_end(name=current_group)
 
     def run_test_sets(self):
         if len(self.tests) < 1:

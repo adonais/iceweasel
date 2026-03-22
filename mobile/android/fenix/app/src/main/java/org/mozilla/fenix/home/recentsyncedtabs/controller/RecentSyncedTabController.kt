@@ -11,13 +11,12 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
-import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.home.HomeFragment
 import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.recentsyncedtabs.RecentSyncedTab
 import org.mozilla.fenix.home.recentsyncedtabs.interactor.RecentSyncedTabInteractor
 import org.mozilla.fenix.tabstray.Page
-import org.mozilla.fenix.tabstray.TabsTrayAccessPoint
+import org.mozilla.fenix.tabstray.ui.AccessPoint
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -56,7 +55,7 @@ class DefaultRecentSyncedTabController(
     private val fenixBrowserUseCases: FenixBrowserUseCases,
     private val tabsUseCase: TabsUseCases,
     private val navController: NavController,
-    private val accessPoint: TabsTrayAccessPoint,
+    private val accessPoint: AccessPoint,
     private val appStore: AppStore,
     private val settings: Settings,
 ) : RecentSyncedTabController {
@@ -78,22 +77,12 @@ class DefaultRecentSyncedTabController(
 
     override fun handleSyncedTabShowAllClicked() {
         RecentSyncedTabs.showAllSyncedTabsClicked.add()
-        if (settings.tabManagerEnhancementsEnabled) {
-            navController.nav(
-                R.id.homeFragment,
-                HomeFragmentDirections.actionGlobalTabManagementFragment(
-                    page = Page.SyncedTabs,
-                    accessPoint = accessPoint,
-                ),
-            )
-        } else {
-            navController.navigate(
-                HomeFragmentDirections.actionGlobalTabsTrayFragment(
-                    page = Page.SyncedTabs,
-                    accessPoint = accessPoint,
-                ),
-            )
-        }
+        navController.navigate(
+            HomeFragmentDirections.actionGlobalTabManagementFragment(
+                page = Page.SyncedTabs,
+                accessPoint = accessPoint,
+            ),
+        )
     }
 
     override fun handleRecentSyncedTabRemoved(tab: RecentSyncedTab) {

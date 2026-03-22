@@ -897,8 +897,15 @@
 #trustpanel-siteinfo-icon {
   list-style-image: url(chrome://global/skin/icons/security-broken.svg);
 
-  #trustpanel-popup:is([connection^="secure"], [connection="extension"], [connection="chrome"], [connection="file"]) & {
+  #trustpanel-popup:is([connection^="secure"], [connection="extension"], [connection="chrome"], [connection="file"]):not(
+      [connection="secure-cert-user-overridden"]
+    )
+    & {
     list-style-image: url(chrome://global/skin/icons/security.svg);
+  }
+
+  #trustpanel-popup[connection="net-error-page"] & {
+    list-style-image: url(chrome://global/skin/icons/info.svg);
   }
 }
 

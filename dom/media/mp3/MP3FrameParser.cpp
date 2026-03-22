@@ -469,9 +469,9 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseXing(BufferReader* aReader,
 }
 
 template <typename T>
-int readAndConvertToInt(BufferReader* aReader) {
-  int value = AssertedCast<int>(aReader->ReadType<T>());
-  return value;
+int64_t readAndConvertToInt(BufferReader* aReader) {
+  static_assert(sizeof(T) <= 8);
+  return aReader->ReadType<T>();
 }
 
 Result<bool, nsresult> FrameParser::VBRHeader::ParseVBRI(
@@ -514,7 +514,7 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseVBRI(
 
       mTOC.reserve(vbriSeekOffsetsTableSize + 1);
 
-      int (*readFunc)(BufferReader*) = nullptr;
+      int64_t (*readFunc)(BufferReader*) = nullptr;
       switch (vbriSeekOffsetsBytesPerEntry) {
         case 1:
           readFunc = &readAndConvertToInt<uint8_t>;
@@ -534,7 +534,7 @@ Result<bool, nsresult> FrameParser::VBRHeader::ParseVBRI(
           break;
       }
       for (uint32_t i = 0; readFunc && i < vbriSeekOffsetsTableSize; i++) {
-        int entry = readFunc(aReader);
+        int64_t entry = readFunc(aReader);
         mTOC.push_back(entry * vbriSeekOffsetsScaleFactor);
       }
       MP3LOG(

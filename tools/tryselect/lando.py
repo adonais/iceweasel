@@ -419,9 +419,10 @@ class LandoAPI:
 
 
 def push_to_lando_try(
-    vcs: SupportedVcsRepository, commit_message: str, changed_files: dict
+    vcs: SupportedVcsRepository, commit_message: str, changed_files: dict, metrics
 ):
     """Push a set of patches to Lando's try endpoint."""
+    metrics.mach_try.vcs_prep.start()
     # Map `Repository` subclasses to the `patch_format` value Lando expects.
     PATCH_FORMAT_STRING_MAPPING = {
         GitRepository: "git-format-patch",
@@ -444,28 +445,42 @@ def push_to_lando_try(
     # Get the time when the push was initiated, not including Auth0 login time.
     push_start_time = time.perf_counter()
 
-    with vcs.try_commit(commit_message, changed_files) as head:
-        try:
-            base_commit, base_commit_vcs, patches = get_stack_info(vcs, head)
-        except ValueError as exc:
-            error_msg = "abort: error gathering patches for submission."
-            print(error_msg)
-            print(str(exc))
-            build.notify(error_msg)
-            return
+    head, cleanup_fn = vcs.prepare_try_push(commit_message, changed_files)
 
-        try:
-            # Make the try request to Lando.
-            response_json = lando_api.post_try_push_patches(
-                patches, patch_format, base_commit, base_commit_vcs
-            )
-        except LandoAPIException as exc:
-            error_msg = "abort: error submitting patches to Lando."
-            print(error_msg)
-            print(str(exc))
-            build.notify(error_msg)
-            return
+    def cleanup():
+        metrics.mach_try.vcs_cleanup.start()
+        cleanup_fn()
+        metrics.mach_try.vcs_cleanup.stop()
 
+    try:
+        base_commit, base_commit_vcs, patches = get_stack_info(vcs, head)
+    except ValueError as exc:
+        metrics.mach_try.vcs_prep.stop()
+        error_msg = "abort: error gathering patches for submission."
+        print(error_msg)
+        print(str(exc))
+        build.notify(error_msg)
+        cleanup()
+        return
+
+    metrics.mach_try.vcs_prep.stop()
+    try:
+        metrics.mach_try.vcs_push.start()
+        # Make the try request to Lando.
+        response_json = lando_api.post_try_push_patches(
+            patches, patch_format, base_commit, base_commit_vcs
+        )
+    except LandoAPIException as exc:
+        metrics.mach_try.vcs_push.stop()
+        error_msg = "abort: error submitting patches to Lando."
+        print(error_msg)
+        print(str(exc))
+        build.notify(error_msg)
+        cleanup()
+        return
+
+    metrics.mach_try.vcs_push.stop()
+    cleanup()
     duration = time.perf_counter() - push_start_time
 
     job_id = response_json["id"]

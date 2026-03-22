@@ -1114,7 +1114,7 @@ nsDataObj ::GetFileDescriptor(FORMATETC& aFE, STGMEDIUM& aSTG,
     else
       res = GetFileDescriptorInternetShortcutA(aFE, aSTG);
   } else
-    NS_WARNING("Not yet implemented\n");
+    NS_WARNING("Not yet implemented");
 
   return res;
 }  // GetFileDescriptor
@@ -1131,7 +1131,7 @@ nsDataObj ::GetFileContents(FORMATETC& aFE, STGMEDIUM& aSTG) {
   else if (IsFlavourPresent(kURLMime))
     return GetFileContentsInternetShortcut(aFE, aSTG);
   else
-    NS_WARNING("Not yet implemented\n");
+    NS_WARNING("Not yet implemented");
 
   return res;
 
@@ -2103,7 +2103,7 @@ nsDataObj ::GetUniformResourceLocator(FORMATETC& aFE, STGMEDIUM& aSTG,
     else
       res = ExtractUniformResourceLocatorA(aFE, aSTG);
   } else
-    NS_WARNING("Not yet implemented\n");
+    NS_WARNING("Not yet implemented");
   return res;
 }
 

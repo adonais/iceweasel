@@ -476,6 +476,7 @@ export const AddressMetaDataExtension = {
   },
   "data/NL": {
     alpha_3_code: "NLD",
+    address_reversed: true,
   },
   "data/NC": {
     alpha_3_code: "NCL",

@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(this, {
   PanelMultiView:
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  QWACs: "resource://gre/modules/psm/QWACs.sys.mjs",
   SiteDataManager: "resource:///modules/SiteDataManager.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
 });
@@ -112,12 +113,23 @@ const SMARTBLOCK_EMBED_INFO = [
 class TrustPanel {
   #state = null;
   #secInfo = null;
+
+  /**
+   * If the document is using a qualified website authentication certificate
+   * (QWAC), this may eventually be an nsIX509Cert corresponding to it.
+   */
+  #qwac = null;
+
+  /**
+   * Promise that will resolve when determining if the document is using a QWAC
+   * has resolved.
+   */
+  #qwacStatusPromise = null;
+
   #host = null;
   #uri = null;
   #uriHasHost = null;
   #pageExtensionPolicy = null;
-  #isSecureContext = null;
-  #isSecureInternalUI = null;
 
   #lastEvent = null;
 
@@ -177,20 +189,19 @@ class TrustPanel {
 
   async onContentBlockingEvent(
     event,
-    webProgress,
+    _webProgress,
     _isSimulated,
     _previousState
   ) {
     // Only accept contentblocking events for uris that we initialised `updateIdentity`
     // with, this can go wrong if trustpanel is enabled mid page load.
-    if (!this.#enabled || webProgress.browsingContext.currentURI != this.#uri) {
+    if (!this.#enabled || !this.#uri) {
       return;
     }
 
     // First update all our internal state based on the allowlist and the
     // different blockers:
     this.anyDetected = false;
-    this.anyBlocking = false;
     this.#lastEvent = event;
 
     // Check whether the user has added an exception for this site.
@@ -207,7 +218,6 @@ class TrustPanel {
       // the data with the document directly.
       blocker.activated = blocker.isBlocking(event);
       this.anyDetected = this.anyDetected || blocker.isDetected(event);
-      this.anyBlocking = this.anyBlocking || blocker.activated;
     }
 
     if (this.#popup) {
@@ -230,9 +240,10 @@ class TrustPanel {
         .addEventListener("click", event => this.#openBlockerSubview(event));
       document
         .getElementById("trustpanel-privacy-link")
-        .addEventListener("click", () =>
-          window.openTrustedLinkIn("about:preferences#privacy", "tab")
-        );
+        .addEventListener("click", () => {
+          this.#hidePopup();
+          window.openTrustedLinkIn("about:preferences#privacy", "tab");
+        });
       document
         .getElementById("trustpanel-clear-cookies-button")
         .addEventListener("click", event =>
@@ -263,12 +274,29 @@ class TrustPanel {
 
   async showPopup(opts = {}) {
     this.#initializePopup();
+
+    // Kick off background determination of QWAC status.
+    if (this.#isSecureContext && !this.#qwacStatusPromise) {
+      let qwacStatusPromise = QWACs.determineQWACStatus(
+        this.#secInfo,
+        this.#uri,
+        gBrowser.selectedBrowser.browsingContext
+      ).then(result => {
+        // Check that when this promise resolves, we're still on the same
+        // document as when it was created.
+        if (qwacStatusPromise == this.#qwacStatusPromise && result) {
+          this.#qwac = result;
+          this.#updateSecurityInformationSubview();
+        }
+      });
+      this.#qwacStatusPromise = qwacStatusPromise;
+    }
+
     await this.#updatePopup();
 
     this.#openingReason = opts.reason;
 
-    let anchor = document.getElementById("trust-icon-container");
-    PanelMultiView.openPopup(this.#popup, anchor, {
+    PanelMultiView.openPopup(this.#popup, this.#anchor(), {
       position: "bottomleft topleft",
     });
   }
@@ -295,21 +323,26 @@ class TrustPanel {
     this.#uri = uri;
 
     this.#secInfo = gBrowser.securityUI.secInfo;
+    // Clear any previously-determined QWAC information.
+    this.#qwac = null;
+    this.#qwacStatusPromise = null;
     this.#pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
-    this.#isSecureContext = this.#getIsSecureContext();
-
-    this.#isSecureInternalUI = false;
-    if (this.#uri.schemeIs("about")) {
-      let module = E10SUtils.getAboutModule(this.#uri);
-      if (module) {
-        let flags = module.getURIFlags(this.#uri);
-        this.#isSecureInternalUI = !!(
-          flags & Ci.nsIAboutModule.IS_SECURE_CHROME_UI
-        );
-      }
-    }
 
     this.#updateUrlbarIcon();
+  }
+
+  /**
+   * The trust icon may be hidden, in that case the identity box
+   * should be shown so use that as anchor.
+   *
+   * @returns {DOMElement}
+   */
+  #anchor() {
+    let anchors = [
+      document.getElementById("trust-icon-container"),
+      document.getElementById("identity-icon-box"),
+    ];
+    return anchors.find(element => element.checkVisibility());
   }
 
   #updateUrlbarIcon() {
@@ -325,7 +358,7 @@ class TrustPanel {
     }
 
     icon.setAttribute("tooltiptext", this.#tooltipText());
-    icon.classList.toggle("chickletShown", this.#isSecureInternalUI);
+    icon.classList.toggle("chickletShown", this.#isInternalSecurePage);
   }
 
   async #updatePopup() {
@@ -342,7 +375,6 @@ class TrustPanel {
   }
 
   async #updateMainView() {
-    let secureConnection = this.#isSecurePage();
     let assets = this.#trackingProtectionEnabled
       ? ETP_ENABLED_ASSETS
       : ETP_DISABLED_ASSETS;
@@ -385,9 +417,7 @@ class TrustPanel {
     );
     document.l10n.setAttributes(
       document.getElementById("trustpanel-connection-label"),
-      secureConnection
-        ? "trustpanel-connection-label-secure"
-        : "trustpanel-connection-label-insecure"
+      this.#connectionLabel()
     );
 
     this.#updateAttribute(
@@ -452,7 +482,7 @@ class TrustPanel {
     return this.#trackingProtectionEnabled ? "enabled" : "disabled";
   }
 
-  #openSecurityInformationSubview(event) {
+  #updateSecurityInformationSubview() {
     document.l10n.setAttributes(
       document.getElementById("trustpanel-securityInformationView"),
       "trustpanel-site-information-header",
@@ -487,7 +517,10 @@ class TrustPanel {
     document.getElementById("identity-popup-content-verifier").textContent =
       verifier;
     document.getElementById("identity-popup-content-owner").textContent = owner;
+  }
 
+  #openSecurityInformationSubview(event) {
+    this.#updateSecurityInformationSubview();
     document
       .getElementById("trustpanel-popup-multiView")
       .showSubView("trustpanel-securityInformationView", event.target);
@@ -547,7 +580,7 @@ class TrustPanel {
     document.l10n.setAttributes(
       document.getElementById("trustpanel-clearcookiesView"),
       "trustpanel-clear-cookies-header",
-      { host: window.gIdentityHandler.getHostForDisplay() }
+      { host: this.#host }
     );
     document
       .getElementById("trustpanel-popup-multiView")
@@ -592,18 +625,29 @@ class TrustPanel {
   }
 
   #isSecurePage() {
-    return (
-      this.#state & Ci.nsIWebProgressListener.STATE_IS_SECURE ||
-      this.#isInternalSecurePage(this.#uri) ||
-      this.#isPotentiallyTrustworthy
-    );
+    if (this.#isInternalSecurePage) {
+      return true;
+    }
+    if (this.#isSecureConnection) {
+      return true;
+    }
+    if (this.#isBrokenConnection) {
+      return false;
+    }
+    if (this.#isCertErrorPage || this.#isCertUserOverridden) {
+      return false;
+    }
+    if (this.#isPotentiallyTrustworthy) {
+      return true;
+    }
+    return false;
   }
 
-  #isInternalSecurePage(uri) {
-    if (uri && uri.schemeIs("about")) {
-      let module = E10SUtils.getAboutModule(uri);
+  get #isInternalSecurePage() {
+    if (this.#uri?.schemeIs("about")) {
+      let module = E10SUtils.getAboutModule(this.#uri);
       if (module) {
-        let flags = module.getURIFlags(uri);
+        let flags = module.getURIFlags(this.#uri);
         if (flags & Ci.nsIAboutModule.IS_SECURE_CHROME_UI) {
           return true;
         }
@@ -650,9 +694,8 @@ class TrustPanel {
    * Helper to parse out the important parts of _secInfo (of the SSL cert in
    * particular) for use in constructing identity UI strings
    */
-  #getIdentityData() {
+  #getIdentityData(cert = this.#secInfo.serverCert) {
     var result = {};
-    var cert = this.#secInfo.serverCert;
 
     // Human readable name of Subject
     result.subjectOrg = cert.organization;
@@ -678,7 +721,7 @@ class TrustPanel {
     return result;
   }
 
-  #getIsSecureContext() {
+  get #isSecureContext() {
     if (gBrowser.contentPrincipal?.originNoSuffix != "resource://pdf.js") {
       return gBrowser.securityUI.isSecureContext;
     }
@@ -850,6 +893,14 @@ class TrustPanel {
     return this.#uri.schemeIs("file");
   }
 
+  /**
+   * Returns a promise that will resolve when determining QWAC status has
+   * finished. Primarily intended for tests.
+   */
+  get qwacStatusPromise() {
+    return this.#qwacStatusPromise;
+  }
+
   #supplementalText() {
     let supplemental = "";
     let verifier = "";
@@ -860,9 +911,10 @@ class TrustPanel {
       verifier = this.#tooltipText();
     }
 
-    // Fill in organization information if we have a valid EV certificate.
-    if (this.#isEV) {
-      let iData = this.#getIdentityData();
+    // Fill in organization information if we have a valid EV certificate or
+    // QWAC.
+    if (this.#isEV || this.#qwac) {
+      let iData = this.#getIdentityData(this.#qwac || this.#secInfo.serverCert);
       owner = iData.subjectOrg;
       verifier = this.#tooltipText();
 
@@ -895,7 +947,7 @@ class TrustPanel {
 
     if (this.#uriHasHost && this.#isSecureConnection) {
       // This is a secure connection.
-      if (!this._isCertUserOverridden) {
+      if (!this.#isCertUserOverridden) {
         // It's a normal cert, verifier is the CA Org.
         tooltip = gNavigatorBundle.getFormattedString(
           "identity.identified.verifier",
@@ -904,7 +956,6 @@ class TrustPanel {
       }
     } else if (this.#isBrokenConnection) {
       if (this.#isMixedActiveContentLoaded) {
-        this._identityBox.classList.add("mixedActiveContent");
         if (
           UrlbarPrefs.getScotchBonnetPref("trimHttps") &&
           warnTextOnInsecure
@@ -916,7 +967,7 @@ class TrustPanel {
       tooltip = gNavigatorBundle.getString("identity.notSecure.tooltip");
     }
 
-    if (this._isCertUserOverridden) {
+    if (this.#isCertUserOverridden) {
       // Cert is trusted because of a security exception, verifier is a special string.
       tooltip = gNavigatorBundle.getString(
         "identity.identified.verified_by_you"
@@ -928,12 +979,14 @@ class TrustPanel {
   #connectionState() {
     // Determine connection security information.
     let connection = "not-secure";
-    if (this.#isSecureInternalUI) {
+    if (this.#isInternalSecurePage) {
       connection = "chrome";
     } else if (this.#pageExtensionPolicy) {
       connection = "extension";
     } else if (this.#isURILoadedFromFile) {
       connection = "file";
+    } else if (this.#qwac) {
+      connection = "secure-etsi";
     } else if (this.#isEV) {
       connection = "secure-ev";
     } else if (this.#isCertUserOverridden) {
@@ -956,6 +1009,16 @@ class TrustPanel {
       connection = "file";
     }
     return connection;
+  }
+
+  #connectionLabel() {
+    if (this.#isAboutNetErrorPage) {
+      return "identity-connection-failure";
+    }
+    if (this.#isSecurePage()) {
+      return "trustpanel-connection-label-secure";
+    }
+    return "trustpanel-connection-label-insecure";
   }
 
   #mixedContentState() {

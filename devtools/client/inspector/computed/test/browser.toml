@@ -54,6 +54,8 @@ fail-if = [
 
 ["browser_computed_keybindings_02.js"]
 
+["browser_computed_matched-selectors-jump-to-declaration.js"]
+
 ["browser_computed_matched-selectors-order.js"]
 
 ["browser_computed_matched-selectors-toggle.js"]
@@ -64,6 +66,7 @@ fail-if = [
 ["browser_computed_matched-selectors_01.js"]
 
 ["browser_computed_matched-selectors_02.js"]
+
 
 ["browser_computed_media-queries.js"]
 

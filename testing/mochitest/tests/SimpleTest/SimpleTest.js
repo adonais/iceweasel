@@ -624,7 +624,12 @@ SimpleTest._logResult = function (test, passInfo, failInfo, stack) {
   var result = test.result ? passInfo : failInfo;
   var diagnostic = test.diag || null;
   // BUGFIX : coercing test.name to a string, because some a11y tests pass an xpconnect object
-  var subtest = test.name ? String(test.name) : null;
+  var message = test.name ? String(test.name) : null;
+  // Combine assertion name with diagnostic info if present
+  if (diagnostic) {
+    message = message ? message + " - " + diagnostic : diagnostic;
+  }
+
   var isError = !test.result == !test.todo;
 
   if (parentRunner) {
@@ -641,10 +646,10 @@ SimpleTest._logResult = function (test, passInfo, failInfo, stack) {
 
     parentRunner.structuredLogger.testStatus(
       url,
-      subtest,
+      null, // mochitest-plain doesn't have subtests
       result.status,
       result.expected,
-      diagnostic,
+      message,
       stack
     );
   } else if (typeof dump === "function") {

@@ -8,8 +8,8 @@ in supporting documentation.  Samphan Raruenrom makes no
 representations about the suitability of this software for any
 purpose.  It is provided "as is" without express or implied warranty.
 */
-#ifndef __TH_CHAR_H__
-#define __TH_CHAR_H__
+#ifndef TH_CHAR_H_
+#define TH_CHAR_H_
 
 typedef unsigned char tis_char;
 

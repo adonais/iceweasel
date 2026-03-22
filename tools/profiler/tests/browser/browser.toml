@@ -13,6 +13,9 @@ support-files = ["simple.html"]
 ["browser_test_feature_js_sourceindex.js"]
 support-files = ["simple.html", "tracing.html"]
 
+["browser_test_feature_js_sources_deduplication.js"]
+support-files = ["simple.html", "test_dedup_script.js"]
+
 ["browser_test_feature_js_sources_retrieval.js"]
 support-files = [
   "simple.html",
@@ -48,7 +51,7 @@ support-files = ["do_work_500ms.html"]
 skip-if = [
   "ccov", #            The signals for the profiler conflict with the ccov signals
   "os == 'win'", # than these tests, so we're disabling them for now. See Bug 1904897.
-  "verify && debug",
+  "debug && verify",
 ]
 
 ["browser_test_feature_nostacksampling.js"]
@@ -109,6 +112,9 @@ support-files = ["simple.html"]
 
 ["browser_test_marker_network_sts.js"]
 support-files = ["simple.html"]
+
+["browser_test_markers_console_timing.js"]
+support-files = ["single_frame.html"]
 
 ["browser_test_markers_gc_cc.js"]
 

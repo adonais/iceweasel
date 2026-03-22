@@ -401,15 +401,13 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
     @OptIn(ExperimentalTestApi::class)
     fun verifyCollectionIsDisplayed(title: String, collectionExists: Boolean = true) {
         if (collectionExists) {
-            this@HomeScreenRobot.composeTestRule.waitUntilExactlyOneExists(hasText(title), waitingTime)
-            Log.i(TAG, "verifyCollectionIsDisplayed: Trying to verify that collection with title: $title is displayed")
-            this@HomeScreenRobot.composeTestRule.onNodeWithText(title).assertIsDisplayed()
-            Log.i(TAG, "verifyCollectionIsDisplayed: Verified that collection with title: $title is displayed")
+            Log.i(TAG, "verifyCollectionIsDisplayed: Waiting for $waitingTime until collection with title: $title exist")
+            composeTestRule.waitUntilExactlyOneExists(hasText(title), waitingTime)
+            Log.i(TAG, "verifyCollectionIsDisplayed: Waited for $waitingTime until collection with title: $title exist")
         } else {
-            this@HomeScreenRobot.composeTestRule.waitUntilDoesNotExist(hasText(title), waitingTime)
-            Log.i(TAG, "verifyCollectionIsDisplayed: Trying to verify that collection with title: $title is not displayed")
-            this@HomeScreenRobot.composeTestRule.onNodeWithText(title).assertIsNotDisplayed()
-            Log.i(TAG, "verifyCollectionIsDisplayed: Verified that collection with title: $title is not displayed")
+            Log.i(TAG, "verifyCollectionIsDisplayed: Waiting for $waitingTime until collection with title: $title does not exist")
+            composeTestRule.waitUntilDoesNotExist(hasText(title), waitingTime)
+            Log.i(TAG, "verifyCollectionIsDisplayed: Waited for $waitingTime until collection with title: $title does not exist")
         }
     }
 
@@ -561,17 +559,14 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
             Log.i(TAG, "openThreeDotMenu: Trying to click main menu button")
             composeTestRule.onNodeWithContentDescription(getStringResource(R.string.content_description_menu)).performClick()
             Log.i(TAG, "openThreeDotMenu: Clicked main menu button")
-            assertUIObjectExists(itemWithResId("$packageName:id/design_bottom_sheet"))
 
             ThreeDotMenuMainRobot(composeTestRule).interact()
             return ThreeDotMenuMainRobot.Transition(composeTestRule)
         }
 
-        @OptIn(ExperimentalTestApi::class)
         fun openSearch(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
-            composeTestRule.waitUntilAtLeastOneExists(hasTestTag(ADDRESSBAR_URL_BOX), waitingTime)
             Log.i(TAG, "openSearch: Trying to click navigation toolbar")
-            composeTestRule.onNodeWithTag(ADDRESSBAR_URL_BOX).performClick()
+            itemWithResId(ADDRESSBAR_URL_BOX).click()
             Log.i(TAG, "openSearch: Clicked navigation toolbar")
 
             SearchRobot(composeTestRule).interact()
@@ -751,11 +746,8 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
 
         fun expandCollection(title: String, interact: CollectionRobot.() -> Unit): CollectionRobot.Transition {
             Log.i(TAG, "expandCollection: Trying to click collection with title: $title")
-            composeTestRule.onNodeWithText(title).performClick()
+            itemContainingText(title).click()
             Log.i(TAG, "expandCollection: Clicked collection with title: $title")
-            Log.i(TAG, "expandCollection: Waiting for compose test rule to be idle")
-            composeTestRule.waitForIdle()
-            Log.i(TAG, "expandCollection: Waited for compose test rule to be idle")
 
             CollectionRobot(composeTestRule).interact()
             return CollectionRobot.Transition(composeTestRule)
@@ -810,16 +802,16 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
         }
 
         fun clickSignInOnboardingButton(
-            interact: SyncSignInRobot.() -> Unit,
-        ): SyncSignInRobot.Transition {
+            interact: SettingsSignInToSyncRobot.() -> Unit,
+        ): SettingsSignInToSyncRobot.Transition {
             Log.i(TAG, "clickSignInOnboardingButton: Trying to click \"Sign in\" onboarding button")
             composeTestRule.onNodeWithText(
                 getStringResource(R.string.juno_onboarding_sign_in_positive_button),
             ).performClick()
             Log.i(TAG, "clickSignInOnboardingButton: Clicked \"Sign in\" onboarding button")
 
-            SyncSignInRobot().interact()
-            return SyncSignInRobot.Transition(composeTestRule)
+            SettingsSignInToSyncRobot().interact()
+            return SettingsSignInToSyncRobot.Transition(composeTestRule)
         }
     }
 }

@@ -59,14 +59,14 @@ ScriptLoadContext::ScriptLoadContext(
       mIsNonAsyncScriptInserted(false),
       mIsXSLT(false),
       mInCompilingList(false),
-      mClassificationFlags({0, 0}),
       mWasCompiledOMT(false),
+      mIsPreload(false),
+      mUnreportedPreloadError(NS_OK),
       mLineNo(1),
       mColumnNo(0),
-      mIsPreload(false),
+      mClassificationFlags({0, 0}),
       mScriptElement(aScriptElement),
-      mSourceText(aSourceText),
-      mUnreportedPreloadError(NS_OK) {}
+      mSourceText(aSourceText) {}
 
 ScriptLoadContext::~ScriptLoadContext() {
   MOZ_ASSERT(NS_IsMainThread());

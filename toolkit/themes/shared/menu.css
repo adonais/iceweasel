@@ -11,22 +11,6 @@ panel {
   --menuitem-padding: 0.5em 1em;
   --menuitem-max-width: 42em;
 
-  --badge-text-color: var(--text-color-deemphasized);
-  --badge-background-color: transparent;
-  --badge-border-color: currentColor;
-
-  --badge-filled-text-color: light-dark(var(--color-white), var(--color-gray-100));
-  --badge-filled-background-color: light-dark(var(--color-green-70), var(--color-green-40));
-  --badge-filled-border-color: light-dark(rgba(251, 251, 254, 0.4), rgba(21, 20, 26, 0.4));
-
-  @media (forced-colors) {
-    --badge-text-color: CanvasText;
-    --badge-background-color: Canvas;
-    --badge-filled-border-color: CanvasText;
-    --badge-filled-text-color: AccentColorText;
-    --badge-filled-background-color: AccentColor;
-  }
-
   @media (-moz-platform: linux) {
     --menuitem-padding: 0.25em 0.5em;
   }
@@ -51,6 +35,7 @@ panel {
 menupopup {
   font: menu;
 
+  --menuitem-icon-fill: currentColor;
   /* Also apply the padding in the inline axis for menus */
   --panel-padding: var(--panel-padding-block);
 
@@ -66,6 +51,14 @@ menupopup {
   @media (-moz-platform: macos) {
     /* stylelint-disable-next-line font-family-no-missing-generic-family-keyword */
     font: -moz-pull-down-menu;
+
+    /* On macOS, native menu icons should always be black by default so that
+       they are considered template images. Template images should be used
+       whenever possible so that the OS can manage the icon color, as the OS
+       theme may differ from our theme. */
+    menubar[native] & {
+      --menuitem-icon-fill: black;
+    }
   }
 
   > menu > menupopup {
@@ -101,7 +94,7 @@ menulist > menupopup {
   }
 
   @media (-moz-platform: windows) {
-    > menuitem[_moz-menuactive][disabled="true"] {
+    > menuitem[_moz-menuactive][disabled] {
       color: GrayText;
     }
   }
@@ -189,10 +182,10 @@ menubar > menu {
       color: ThreeDShadow;
     }
 
-    &:not([disabled="true"]) {
+    &:not([disabled]) {
       color: inherit;
     }
-    &[_moz-menuactive]:not([disabled="true"]) {
+    &[_moz-menuactive]:not([disabled]) {
       color: -moz-menubarhovertext;
 
       *|*:root[lwtheme] & {
@@ -226,17 +219,20 @@ menucaption {
 
 menu,
 menuitem {
-  &:where([disabled="true"]) {
+  -moz-context-properties: fill;
+  fill: var(--menuitem-icon-fill);
+
+  &:where([disabled]) {
     color: var(--text-color-disabled);
     text-shadow: none;
   }
 
-  &:where([_moz-menuactive]:not([disabled="true"])) {
+  &:where([_moz-menuactive]:not([disabled])) {
     color: -moz-menuhovertext;
     background-color: -moz-menuhover;
   }
 
-  &:where([_moz-menuactive][disabled="true"]) {
+  &:where([_moz-menuactive][disabled]) {
     background-color: -moz-menuhoverdisabled;
   }
 }
@@ -362,7 +358,7 @@ menuitem[highlightable] > .menu-text {
 
 /* On linux, we use regular checkboxes and radio buttons */
 @media (-moz-platform: linux) {
-  menuitem:is([type="checkbox"], [checked="true"]) > .menu-icon {
+  menuitem:is([type="checkbox"], [checked]) > .menu-icon {
     visibility: inherit;
     appearance: auto;
     -moz-default-appearance: checkbox;
@@ -381,7 +377,7 @@ menuitem[highlightable] > .menu-text {
      checkboxes and radio buttons because the native drawing we use on other
      Windows versions looks pretty bad with the Win10 styles, so for now we'll
      insert a generic checkmark icon for both types. */
-  menuitem[checked="true"] > .menu-icon {
+  menuitem[checked] > .menu-icon {
     visibility: inherit;
     -moz-context-properties: fill, fill-opacity;
     fill: currentColor;
@@ -416,7 +412,7 @@ menupopup[needsgutter] {
       }
     }
 
-    > menuitem:is([checked="true"], [selected="true"])::before {
+    > menuitem:is([checked], [selected])::before {
       visibility: inherit;
     }
   }
@@ -433,7 +429,7 @@ menuitem[badge]::after {
 }
 
 menuitem.badge-new::after {
-  border-color: var(--badge-filled-border-color);
-  color: var(--badge-filled-text-color);
-  background-color: var(--badge-filled-background-color);
+  border-color: var(--badge-border-color-filled);
+  color: var(--badge-text-color-filled);
+  background-color: var(--badge-background-color-filled);
 }

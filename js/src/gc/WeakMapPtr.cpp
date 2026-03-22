@@ -52,7 +52,7 @@ template <typename K, typename V>
 bool JS::WeakMapPtr<K, V>::init(JSContext* cx) {
   MOZ_ASSERT(!initialized());
   typename WeakMapDetails::Utils<K, V>::PtrType map =
-      cx->new_<typename WeakMapDetails::Utils<K, V>::Type>(cx);
+      cx->new_<typename WeakMapDetails::Utils<K, V>::Type>(cx->zone());
   if (!map) {
     return false;
   }

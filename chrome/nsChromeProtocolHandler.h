@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsChromeProtocolHandler_h___
-#define nsChromeProtocolHandler_h___
+#ifndef nsChromeProtocolHandler_h_
+#define nsChromeProtocolHandler_h_
 
 #include "nsIProtocolHandler.h"
 #include "nsWeakReference.h"
@@ -33,4 +33,4 @@ class nsChromeProtocolHandler final : public nsIProtocolHandler,
   ~nsChromeProtocolHandler() {}
 };
 
-#endif /* nsChromeProtocolHandler_h___ */
+#endif /* nsChromeProtocolHandler_h_ */

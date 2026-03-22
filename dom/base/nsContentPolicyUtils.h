@@ -11,8 +11,8 @@
  * nsContentUtils.  That would work for almost all the callers...
  */
 
-#ifndef __nsContentPolicyUtils_h__
-#define __nsContentPolicyUtils_h__
+#ifndef _nsContentPolicyUtils_h_
+#define _nsContentPolicyUtils_h_
 
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/nsCSPService.h"
@@ -122,6 +122,7 @@ inline const char* NS_CP_ContentTypeName(nsContentPolicyType contentType) {
     CASE_RETURN(TYPE_INTERNAL_IMAGE);
     CASE_RETURN(TYPE_INTERNAL_IMAGE_PRELOAD);
     CASE_RETURN(TYPE_INTERNAL_IMAGE_FAVICON);
+    CASE_RETURN(TYPE_INTERNAL_IMAGE_NOTIFICATION);
     CASE_RETURN(TYPE_INTERNAL_STYLESHEET);
     CASE_RETURN(TYPE_INTERNAL_STYLESHEET_PRELOAD);
     CASE_RETURN(TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS);
@@ -318,4 +319,4 @@ inline nsIDocShell* NS_CP_GetDocShellFromContext(nsISupports* aContext) {
   return window->GetDocShell();
 }
 
-#endif /* __nsContentPolicyUtils_h__ */
+#endif /* _nsContentPolicyUtils_h_ */

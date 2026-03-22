@@ -342,7 +342,7 @@ void ExtensionStreamGetter::OnStream(already_AddRefed<nsIInputStream> aStream) {
     return;
   }
 
-  mPump = pump;
+  mPump = std::move(pump);
 }
 
 // Handle an FD sent from the parent.

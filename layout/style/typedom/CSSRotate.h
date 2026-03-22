@@ -63,6 +63,9 @@ class CSSRotate final : public CSSTransformComponent {
 
   // end of CSSRotate Web IDL declarations
 
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
+
  protected:
   virtual ~CSSRotate() = default;
 };

@@ -4,12 +4,16 @@
 
 package org.mozilla.fenix.tabstray
 
+import android.app.Dialog
 import android.content.Context
+import android.view.Window
+import android.view.WindowManager
 import androidx.navigation.NavController
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.spyk
 import io.mockk.verify
 import mozilla.components.browser.state.state.ContentState
@@ -22,12 +26,15 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.MockkRetryTestRule
 import org.mozilla.fenix.home.HomeScreenViewModel
 import org.mozilla.fenix.navigation.NavControllerProvider
 import org.mozilla.fenix.tabstray.ui.TabManagementFragment
+import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)

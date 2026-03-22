@@ -50,6 +50,14 @@
       #align {
         text-align: center;
       }
+
+      #set-important-inherited {
+        color: red !important;
+
+        & #with-important-inherited {
+          color: blue;
+        }
+      }
       </style>
   </head>
   <body>
@@ -63,5 +71,8 @@
       Align
       <div id="align-child" align="center">Align child</div>
     </div>
+    <aside id="set-important-inherited">
+      <did id="with-important-inherited">I'm blue</did>
+    </aside>
   </body>
 </html>

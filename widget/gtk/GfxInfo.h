@@ -5,8 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef WIDGET_GTK_GFXINFO_h__
-#define WIDGET_GTK_GFXINFO_h__
+#ifndef WIDGET_GTK_GFXINFO_h_
+#define WIDGET_GTK_GFXINFO_h_
 
 #include "GfxInfoBase.h"
 #include "nsString.h"
@@ -145,4 +145,4 @@ class GfxInfo final : public GfxInfoBase {
 }  // namespace widget
 }  // namespace mozilla
 
-#endif /* WIDGET_GTK_GFXINFO_h__ */
+#endif /* WIDGET_GTK_GFXINFO_h_ */

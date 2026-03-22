@@ -7,6 +7,7 @@
 #ifndef mozilla_RestyleManager_h
 #define mozilla_RestyleManager_h
 
+#include "mozilla/Atomics.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/OverflowChangedTracker.h"
 #include "mozilla/ServoElementSnapshot.h"
@@ -414,6 +415,13 @@ class RestyleManager {
   // changes by modifying classes, etc.
   void IncrementAnimationGeneration() { ++mAnimationGeneration; }
 
+  // Called when a highlight pseudo-element (::selection, ::highlight,
+  // ::target-text) style is invalidated. These pseudos need explicit repaint
+  // triggering since their styles are resolved lazily during painting.
+  void NoteHighlightPseudoStyleInvalidated() {
+    mNeedsPseudoElementSelectionsRepaint = true;
+  }
+
   // Apply change hints for animations on the compositor.
   //
   // There are some cases where we forcibly apply change hints for animations
@@ -581,6 +589,16 @@ class RestyleManager {
   // CSS animations.  We propagate TraversalRestyleBehavior::ForCSSRuleChanges
   // to traversal function if this flag is set.
   bool mRestyleForCSSRuleChanges = false;
+
+  // Set to true when a highlight pseudo-element (::selection, ::highlight,
+  // ::target-text) style is invalidated during the restyle. These pseudos have
+  // their styles resolved lazily during painting rather than during the restyle
+  // traversal, so we need to explicitly trigger a repaint at the end of the
+  // restyle.
+  // Uses Atomic because style invalidation can happen on worker threads during
+  // parallel style computation.
+  Atomic<bool, MemoryOrdering::Relaxed> mNeedsPseudoElementSelectionsRepaint{
+      false};
 
   // A hashtable with the elements that have changed state or attributes, in
   // order to calculate restyle hints during the traversal.

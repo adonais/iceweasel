@@ -345,7 +345,7 @@ class MOZ_STACK_CLASS FormDataParser {
       }
     }
 
-    MOZ_ASSERT_UNREACHABLE("Should never reach here.");
+    NS_WARNING("Body parse failed.");
     return false;
   }
 

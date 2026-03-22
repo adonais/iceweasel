@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef StructuredCloneTags_h__
-#define StructuredCloneTags_h__
+#ifndef StructuredCloneTags_h_
+#define StructuredCloneTags_h_
 
 #include "js/StructuredClone.h"
 
@@ -173,4 +173,4 @@ enum StructuredCloneTags : uint32_t {
 
 }  // namespace mozilla::dom
 
-#endif  // StructuredCloneTags_h__
+#endif  // StructuredCloneTags_h_

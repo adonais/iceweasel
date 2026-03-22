@@ -17,7 +17,6 @@
 #include <errno.h>
 
 #include "jsfriendapi.h"
-#include "jsmath.h"
 
 #include "gc/Memory.h"
 #include "jit/FlushICache.h"  // js::jit::FlushICache
@@ -26,6 +25,7 @@
 #include "threading/Mutex.h"
 #include "util/Memory.h"
 #include "util/Poison.h"
+#include "util/RandomSeed.h"
 #include "util/WindowsWrapper.h"
 #include "vm/MutexIDs.h"
 

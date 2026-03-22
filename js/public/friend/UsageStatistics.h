@@ -88,10 +88,6 @@ extern JS_PUBLIC_API void JS_SetAccumulateTelemetryCallback(
   _(WASM_LEGACY_EXCEPTIONS, WasmLegacyExceptions)          \
   _(ISHTMLDDA_FUSE, IsHTMLDDAFuse)                         \
   _(OPTIMIZE_GET_ITERATOR_FUSE, OptimizeGetIteratorFuse)   \
-  _(THENABLE_USE, ThenableUse)                             \
-  _(THENABLE_USE_PROTO, ThenableUseProto)                  \
-  _(THENABLE_USE_STANDARD_PROTO, ThenableUseStandardProto) \
-  _(THENABLE_USE_OBJECT_PROTO, ThenableUseObjectProto)     \
   _(LEGACY_LANG_SUBTAG, LegacyLangSubtag)                  \
   _(IC_STUB_TOO_LARGE, ICStubTooLarge)                     \
   _(IC_STUB_OOM, ICStubOOM)                                \

@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_FakeString_h__
-#define mozilla_dom_FakeString_h__
+#ifndef mozilla_dom_FakeString_h_
+#define mozilla_dom_FakeString_h_
 
 #include "js/String.h"
 #include "mozilla/RefPtr.h"
@@ -268,4 +268,4 @@ inline void AssignFromStringBuffer(
 
 }  // namespace mozilla
 
-#endif /* mozilla_dom_FakeString_h__ */
+#endif /* mozilla_dom_FakeString_h_ */

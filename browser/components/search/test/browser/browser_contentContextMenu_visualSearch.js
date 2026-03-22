@@ -328,12 +328,9 @@ async function setDefaultEngineAndCheckMenu({
   leaveOpen = false,
   shouldHaveNewBadge = false,
 }) {
-  let engine = Services.search.getEngineById(defaultEngineId);
+  let engine = SearchService.getEngineById(defaultEngineId);
   Assert.ok(engine, "Sanity check: Engine should exist: " + defaultEngineId);
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   let data = await openAndCheckMenu({
     win,
@@ -394,15 +391,15 @@ async function withPrivateWindow({ callback, privateDefaultEngineId = null }) {
       ],
     });
 
-    let engine = Services.search.getEngineById(privateDefaultEngineId);
+    let engine = SearchService.getEngineById(privateDefaultEngineId);
     Assert.ok(
       engine,
       "Sanity check: Engine should exist: " + privateDefaultEngineId
     );
 
-    await Services.search.setDefaultPrivate(
+    await SearchService.setDefaultPrivate(
       engine,
-      Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+      SearchService.CHANGE_REASON.UNKNOWN
     );
   }
 

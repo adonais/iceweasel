@@ -22,7 +22,7 @@ As a start let's discuss about how React renders normal plain components, that
 don't use `shouldComponentUpdate`. What we call plain components here are either:
 * classes that extend [`Component`](https://reactjs.org/docs/react-component.html)
 
-```javascript
+```jsx
   class Application extends React.Component {
     render() {
       return <div>{this.props.content}</div>;
@@ -35,7 +35,7 @@ don't use `shouldComponentUpdate`. What we call plain components here are either
   This is important to understand that these Stateless Components are _not_
   especially optimized in React.
 
-```javascript
+```jsx
   function Application(props) {
     return <div>{props.content}</div>;
   }
@@ -191,7 +191,7 @@ method with 2 parameters: the new props, and the new
 state. If this method returns false, then React will skip the render process for this
 component, **and its whole subtree**.
 
-```javascript
+```jsx
 class ComplexPanel extends React.Component {
   // Note: this syntax, new but supported by Babel, automatically binds the
   // method with the object instance.
@@ -236,7 +236,7 @@ A very common implementation of `shouldComponentUpdate` is provided by React's
 [`PureComponent`](https://reactjs.org/docs/react-api.html#reactpurecomponent):
 it will shallowly check the new props and states for reference equality.
 
-```javascript
+```jsx
 class ComplexPanel extends React.PureComponent {
   // Note: this syntax, new but supported by Babel, automatically binds the
   // method with the object instance.

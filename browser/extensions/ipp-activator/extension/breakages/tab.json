@@ -1,15 +1,7 @@
 [
   {
     "domains": ["youtube.com"],
-    "message": [
-      {
-        "text": "This website may not work with a VPN.",
-        "modifier": ["strong"]
-      },
-      {
-        "text": " Try signing in or turning VPN off while you use this website."
-      }
-    ],
+    "l10nId": "ipp-activator-breakage-sign-in-warning",
     "condition": {
       "type": "and",
       "conditions": [
@@ -34,15 +26,7 @@
   },
   {
     "domains": ["reddit.com"],
-    "message": [
-      {
-        "text": "This website may not work with a VPN.",
-        "modifier": ["strong"]
-      },
-      {
-        "text": " Try signing in or turning VPN off while you use this website."
-      }
-    ],
+    "l10nId": "ipp-activator-breakage-sign-in-warning",
     "condition": {
       "type": "not",
       "condition": {
@@ -59,12 +43,6 @@
       "wiki.mozilla.org",
       "bugs.webkit.org"
     ],
-    "message": [
-      {
-        "text": "This website may not work with a VPN.",
-        "modifier": ["strong"]
-      },
-      { "text": " Try turning VPN off while you use this website." }
-    ]
+    "l10nId": "ipp-activator-breakage-turn-off-warning"
   }
 ]

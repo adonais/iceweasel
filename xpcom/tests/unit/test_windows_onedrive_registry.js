@@ -9,11 +9,15 @@
 // Each "test suite" is a set of tests run on a specific registry
 // configuration.
 // NB: None of these files will actually exist.
+const customerId = "12345";
+
 const testSuites = [
   {
     registryMap: {
       "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Personal\\UserFolder":
         "Q:\\Me\\OneDrive",
+      "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Personal\\cid":
+        customerId,
     },
     personalFolder: "Q:\\Me\\OneDrive",
     businessFolders: [],
@@ -30,6 +34,8 @@ const testSuites = [
     registryMap: {
       "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Personal\\UserFolder":
         "Q:\\Me\\OneDrive - Personal",
+      "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Personal\\cid":
+        customerId,
       "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Business5\\UserFolder":
         "Q:\\Me\\OneDrive - Org1",
       "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Business6\\UserFolder":
@@ -72,7 +78,8 @@ let mockRegistry = {
     currentRegistryPath = "HKEY_CURRENT_USER\\" + path;
   },
   hasValue: value => {
-    Assert.equal(value, "UserFolder", "value is UserFolder");
+    const allowedKeys = new Set(["UserFolder", "cid"]);
+    Assert.ok(allowedKeys.has(value), `value is ${value}`);
     return currentRegistryPath + "\\" + value in currentRegistryContents;
   },
   readStringValue: value => {

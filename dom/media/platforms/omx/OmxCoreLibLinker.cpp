@@ -33,7 +33,7 @@ PRLibrary* OmxCoreLibLinker::sLinkedLib = nullptr;
 const char* OmxCoreLibLinker::sLibName = nullptr;
 
 #define OMX_FUNC(func) void (*func)();
-#include "OmxFunctionList.h"
+#include "OmxFunctionList.inc"
 #undef OMX_FUNC
 
 bool OmxCoreLibLinker::TryLinkingLibrary(const char* libName) {
@@ -93,7 +93,7 @@ bool OmxCoreLibLinker::Bind(const char* aLibName) {
       return false;                                                 \
     }                                                               \
   }
-#include "OmxFunctionList.h"
+#include "OmxFunctionList.inc"
 #undef OMX_FUNC
   return true;
 }

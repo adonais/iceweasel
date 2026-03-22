@@ -22,7 +22,7 @@ from mozbuild.repackaging.utils import (
 # When updating this, please make sure to keep in sync the script for symbol
 # scraping at
 # https://github.com/mozilla/symbol-scrapers/blob/master/firefox-flatpak/script.sh
-FREEDESKTOP_VERSION = "24.08"
+FREEDESKTOP_VERSION = "25.08"
 # The base app is shared by firefox and thunderbird
 FIREFOX_BASEAPP = "org.mozilla.firefox.BaseApp"
 FIREFOX_BASEAPP_CHANNEL = FREEDESKTOP_VERSION
@@ -140,7 +140,7 @@ def repackage_flatpak(
 
         if product == "firefox":
             distribution_ini = lib_dir / "firefox" / "distribution" / "distribution.ini"
-            distribution_ini.parent.mkdir(parents=True)
+            distribution_ini.parent.mkdir(parents=True, exist_ok=True)
             _inject_flatpak_distribution_ini(log, distribution_ini)
 
         application_ini_data = application_ini_data_from_directory(str(lib_dir))

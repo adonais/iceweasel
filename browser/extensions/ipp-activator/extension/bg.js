@@ -25,6 +25,7 @@ class IPPAddonActivator {
     this.tabActivated = this.#tabActivated.bind(this);
     this.tabRemoved = this.#tabRemoved.bind(this);
     this.onRequest = this.#onRequest.bind(this);
+    this.ippExceptionsChanged = this.#ippExceptionsChanged.bind(this);
 
     browser.ippActivator.isTesting().then(async isTesting => {
       await this.#loadAndRebuildBreakages();
@@ -177,6 +178,10 @@ class IPPAddonActivator {
       browser.tabs.onActivated.addListener(this.tabActivated);
       browser.tabs.onRemoved.addListener(this.tabRemoved);
     }
+
+    browser.ippActivator.onIPPExceptionsChanged.addListener(
+      this.ippExceptionsChanged
+    );
   }
 
   #unregisterListeners() {
@@ -196,8 +201,34 @@ class IPPAddonActivator {
       browser.webRequest.onBeforeRequest.removeListener(this.onRequest);
     }
 
+    browser.ippActivator.onIPPExceptionsChanged.removeListener(
+      this.ippExceptionsChanged
+    );
+
     this.#pendingTabs.clear();
     this.#pendingWebRequests.clear();
+  }
+
+  async #ippExceptionsChanged() {
+    if (!this.#shownDomainByTab.size) {
+      return;
+    }
+
+    const tabIds = Array.from(this.#shownDomainByTab.keys());
+    await Promise.allSettled(
+      tabIds.map(async tabId => {
+        try {
+          const tab = await browser.tabs.get(tabId);
+          if (!tab?.url) {
+            return;
+          }
+
+          if (await browser.ippActivator.hasExclusion(tab.url)) {
+            await this.#maybeHideNotification(tabId);
+          }
+        } catch (_) {}
+      })
+    );
   }
 
   async #tabUpdated(tabId, changeInfo, tab) {
@@ -219,8 +250,7 @@ class IPPAddonActivator {
           shownBase !== info.baseDomain &&
           shownBase !== info.host
         ) {
-          await browser.ippActivator.hideMessage(tabId);
-          this.#shownDomainByTab.delete(tabId);
+          await this.#maybeHideNotification(tabId);
         }
       } catch (_) {
         // ignore lookup issues
@@ -287,10 +317,12 @@ class IPPAddonActivator {
   async #maybeNotify(tab, breakages, url) {
     const info = await browser.ippActivator.getBaseDomainFromURL(url);
     if (!info.baseDomain && !info.host) {
+      await this.#maybeHideNotification(tab.id);
       return false;
     }
 
     if (await browser.ippActivator.hasExclusion(url)) {
+      await this.#maybeHideNotification(tab.id);
       return false;
     }
 
@@ -303,6 +335,7 @@ class IPPAddonActivator {
         b => Array.isArray(b.domains) && b.domains.includes(info.host)
       );
       if (!breakage) {
+        await this.#maybeHideNotification(tab.id);
         return false;
       }
 
@@ -312,12 +345,14 @@ class IPPAddonActivator {
     // Do not show the same notification again for the same base domain.
     const shown = await browser.ippActivator.getNotifiedDomains();
     if (Array.isArray(shown) && shown.includes(domain)) {
+      await this.#maybeHideNotification(tab.id);
       return false;
     }
 
     if (
       !(await ConditionFactory.run(breakage.condition, { tabId: tab.id, url }))
     ) {
+      await this.#maybeHideNotification(tab.id);
       return false;
     }
 
@@ -327,7 +362,7 @@ class IPPAddonActivator {
     // This function returns when the notification is dismissed. We don't want
     // to wait for that to happen.
     browser.ippActivator
-      .showMessage(breakage.message, tab.id)
+      .showMessage({ l10nId: breakage.l10nId }, tab.id)
       .then(async dismissed => {
         if (!dismissed) {
           return;
@@ -354,6 +389,13 @@ class IPPAddonActivator {
       });
 
     return true;
+  }
+
+  async #maybeHideNotification(tabId) {
+    if (this.#shownDomainByTab.get(tabId)) {
+      await browser.ippActivator.hideMessage(tabId);
+      this.#shownDomainByTab.delete(tabId);
+    }
   }
 
   async #onRequest(details) {

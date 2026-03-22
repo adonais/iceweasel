@@ -4631,8 +4631,7 @@ void TestUserMarker() {
       using MS = mozilla::MarkerSchema;
       MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
       schema.SetTooltipLabel("tooltip for test-minimal");
-      schema.AddKeyLabelFormat("text", "Text", MS::Format::String,
-                               MS::PayloadFlags::Searchable);
+      schema.AddKeyLabelFormat("text", "Text", MS::Format::String);
       return schema;
     }
   };

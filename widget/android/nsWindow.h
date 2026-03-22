@@ -44,10 +44,6 @@ class NPZCSupport;
 class PlatformCompositorWidgetDelegate;
 }  // namespace widget
 
-namespace ipc {
-class Shmem;
-}  // namespace ipc
-
 namespace a11y {
 class SessionAccessibility;
 }  // namespace a11y
@@ -240,8 +236,6 @@ class nsWindow final : public nsIWidget {
   void RecvToolbarAnimatorMessageFromCompositor(int32_t aMessage) override;
   void NotifyCompositorScrollUpdate(
       const mozilla::layers::CompositorScrollUpdate& aUpdate) override;
-  void RecvScreenPixels(mozilla::ipc::Shmem&& aMem, const ScreenIntSize& aSize,
-                        bool aNeedsYFlip) override;
   void UpdateDynamicToolbarMaxHeight(mozilla::ScreenIntCoord aHeight) override;
   mozilla::ScreenIntCoord GetDynamicToolbarMaxHeight() const override {
     return mDynamicToolbarMaxHeight;
@@ -268,7 +262,6 @@ class nsWindow final : public nsIWidget {
   bool IsTopLevel();
 
   void ConfigureAPZControllerThread() override;
-  void DispatchHitTest(const mozilla::WidgetTouchEvent& aEvent);
 
   already_AddRefed<GeckoContentController> CreateRootContentController()
       override;

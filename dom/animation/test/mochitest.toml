@@ -29,6 +29,10 @@ skip-if = [
 
 ["document-timeline/test_request_animation_frame.html"]
 
+["mozilla/test_animations_playback_rate_multiplier.html"]
+
+["mozilla/test_animations_playback_rate_multiplier_on_compositor.html"]
+
 ["mozilla/test_cascade.html"]
 
 ["mozilla/test_cubic_bezier_limits.html"]
@@ -73,7 +77,6 @@ skip-if = [
   "http3",
   "os == 'android'", # Bug 1784931
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug", # Bug 1856969
-  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && tsan", # Bug 1784931
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1784931
 ]
 

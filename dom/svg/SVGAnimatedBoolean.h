@@ -7,9 +7,10 @@
 #ifndef DOM_SVG_SVGANIMATEDBOOLEAN_H_
 #define DOM_SVG_SVGANIMATEDBOOLEAN_H_
 
+#include <memory>
+
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/SMILAttr.h"
-#include "mozilla/UniquePtr.h"
 #include "nsError.h"
 
 class nsAtom;
@@ -46,7 +47,7 @@ class SVGAnimatedBoolean {
 
   already_AddRefed<dom::DOMSVGAnimatedBoolean> ToDOMAnimatedBoolean(
       SVGElement* aSVGElement);
-  UniquePtr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
+  std::unique_ptr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
   bool mAnimVal;

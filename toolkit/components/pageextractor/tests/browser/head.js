@@ -71,6 +71,8 @@ async function html(strings, ...values) {
 
 /**
  * Start an HTTP server that serves page.html with the provided HTML.
+ * Explicitly encode the text as UTF-8 to correctly handle characters outside Latin-1,
+ * which the HttpServer renders incorrectly by default.
  *
  * @param {string} html
  * @param {number} statusCode
@@ -80,12 +82,21 @@ function serveOnce(html, statusCode = 200) {
   const server = new HttpServer();
 
   const { promise, resolve } = Promise.withResolvers();
+  const encoder = new TextEncoder();
+  const htmlUtf8 = encoder.encode(html);
 
   server.registerPathHandler("/page.html", (request, response) => {
     info("Request received for: " + url);
-    response.setHeader("Content-Type", "text/html");
+    response.setHeader("Content-Type", "text/html; charset=utf-8");
     response.setStatusLine(request.httpVersion, statusCode);
-    response.write(html);
+
+    const binaryOutputStream = Cc[
+      "@mozilla.org/binaryoutputstream;1"
+    ].createInstance(Ci.nsIBinaryOutputStream);
+
+    binaryOutputStream.setOutputStream(response.bodyOutputStream);
+    binaryOutputStream.writeByteArray(htmlUtf8);
+
     resolve(server.stop());
   });
 

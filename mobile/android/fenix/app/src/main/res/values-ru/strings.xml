@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Не оставлять следов на этом устройстве</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s удаляет ваши куки, историю и данные сайтов, когда вы закрываете все свои приватные вкладки. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -217,7 +210,7 @@
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
   -->
-  <string name="browser_menu_extension_plus_icon_content_description_2">Добавить %1$s</string>
+  <string name="browser_menu_extension_plus_icon_content_description_2">Добавить «%1$s»</string>
   <!-- Browser menu button that opens AMO in a tab -->
   <string name="browser_menu_discover_more_extensions">Откройте для себя больше расширений</string>
   <!-- Browser menu description that is shown when one or more extensions are disabled due to extension errors -->
@@ -325,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Перевести страницу</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Резюме по странице</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Создать</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Сломанный сайт?…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -377,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Страница переведена с %1$s на %2$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Встряхните устройство, чтобы просмотреть и пересказать эту страницу, займёт всего несколько секунд. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -927,8 +924,6 @@
   <string name="preferences_search_browsing_history">Поиск по истории просмотра сети</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Поиск закладок</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Отображать ярлыки</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Поиск облачных вкладок</string>
   <!-- Preference for account settings -->
@@ -949,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Предложения от %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Получать предложения из сети на основе вашего поиска</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Получать предложения от Mozilla по мере ввода текста</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Передача ссылок</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -975,7 +972,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">У вас нет прав на использование этой папки. Попробуйте выбрать другую.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">У вас нет прав на использование этой папки. Попробуйте выбрать другую.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Управление скачиванием с помощью другого приложения</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1039,8 +1036,10 @@
   <!--
     Customize Home
 
-    Header text for jumping back into the recent tab in customize the home screen
+    Title for the customize home screen section with privacy report.
   -->
+  <string name="customize_toggle_privacy_report">Отчёт о конфиденциальности</string>
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Перейти обратно в</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Закладки</string>
@@ -1599,6 +1598,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Поделиться</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Добавить в подборку</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Добавить в группу</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Поделиться выбранными вкладками</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1639,6 +1640,27 @@
   <string name="pwa_site_controls_title_private">%1$s (Приватный просмотр)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Поиск в открытых вкладках</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Создать группу вкладок</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Изменить группу</string>
+  <string name="create_tab_group_save_button">Сохранить</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Закрыть редактирование группы вкладок</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Группа</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Группа %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Имя</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Название</string>
   <!--
     History
 
@@ -1754,11 +1776,26 @@
   <string name="download_rename_dialog_label">Имя</string>
   <string name="download_rename_dialog_confirm_button">Сохранить</string>
   <string name="download_rename_dialog_cancel_button">Отменить</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Файл с именем «%s» уже существует в этой папке</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">В именах файлов нельзя использовать «/»</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Не могу переименовать файл</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Этот файл не может быть переименован из-за ограничений системы или хранилища.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Изменить тип файла на %s?</string>
+  <string name="change_file_extension_description">Это может привести к открытию файла в другом приложении и может быть рискованным для вашего устройства.</string>
+  <string name="change_file_extension_cancel_button">Отмена</string>
+  <string name="change_file_extension_confirm_button">Да, изменить его</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">В процессе</string>
   <!--
@@ -1958,7 +1995,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Изменить</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Копировать</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Копировать</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Поделиться</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2014,11 +2051,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s удалён</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">ОТМЕНИТЬ</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">ОТМЕНИТЬ</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">%s удалена</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s удалена</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">Удалённые элементы: %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Удалённые элементы: %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Перейти назад</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2288,23 +2325,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Сделайте Firefox вашим браузером по умолчанию</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Попробуйте приватный просмотр</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Попробуйте приватный просмотр</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Просмотр без сохранённых кук или истории в %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Просмотр без сохранённых кук или истории в %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Просматривайте сеть, не оставляя следа</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Просматривайте сеть, не оставляя следа</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Приватный просмотр в %1$s не сохраняет ваши действия.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Приватный просмотр в %1$s не сохраняет ваши действия.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Начните свой первый поиск</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Начните свой первый поиск</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Найдите что-нибудь поблизости. Или откройте для себя что-либо забавное.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Найдите что-нибудь поблизости. Или откройте для себя что-либо забавное.</string>
   <!--
     Survey
 
@@ -2480,6 +2517,18 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s защищает вас от многих наиболее распространённых трекеров, которые следят за вами, когда вы находитесь в сети.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Узнать больше</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d Трекер заблокирован</item>
+    <item quantity="few">%d Трекера заблокировано</item>
+    <item quantity="other">%d Трекеров заблокированы</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Вы защищены</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Обычная (по умолчанию)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2876,6 +2925,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Подробнее</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Управление псевдонимами эл. почты</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Вы использовали свои 5 бесплатных псевдонимов электронной почты, поэтому мы выбрали один из них, чтобы вы могли использовать его повторно.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Псевдонимы электронной почты сейчас недоступны. Попробуйте снова через несколько минут.</string>
   <!--
     Autofill
 
@@ -3316,7 +3369,7 @@
   -->
   <string name="a11y_action_label_collapse">свернуть</string>
   <!-- Current state for elements that can be collapsed if interacting with them. Talkback will dictate this after a state change. -->
-  <string name="a11y_state_label_collapsed">свернуто</string>
+  <string name="a11y_state_label_collapsed">свёрнуто</string>
   <!-- Action label for elements that can be expanded if interacting with them. Talkback will append this to say "Double tap to expand". -->
   <string name="a11y_action_label_expand">развернуть</string>
   <!-- Current state for elements that can be expanded if interacting with them. Talkback will dictate this after a state change. -->
@@ -3537,7 +3590,7 @@
     The dialog will be presented when the user requests deletion of a language.
     %1$s is the name of the language, for example, "Spanish" and %2$s is the size in kilobytes or megabytes of the language file.
   -->
-  <string name="delete_language_file_dialog_title">Удалить %1$s (%2$s)?</string>
+  <string name="delete_language_file_dialog_title">Удалить: %1$s (%2$s)?</string>
   <!-- Additional information for the dialog used by the translations feature to confirm deleting a language. %1$s is the name of the app (for example "Firefox"). -->
   <string name="delete_language_file_dialog_message">Если вы удалите этот язык, %1$s будет частично скачивать языки в ваш кеш по мере перевода.</string>
   <!--
@@ -3646,6 +3699,13 @@
   -->
   <string name="connection_security_panel_verified_by">Подтверждено %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Выдано %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Квалифицировано, как указано в Регламенте (EU) 2024/1183.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3695,6 +3755,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Добавить в приватные вкладки</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -3733,6 +3795,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Я не использую поиск в Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Я не использую синхронизацию</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Медленно или содержит ошибки</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Возможности, которые трудно найти или отсутствуют</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Сбивает с толку или трудно в использовании</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Нормально, но не лучше, чем в других браузерах</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Я планирую продолжать использовать Firefox</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Помогите улучшить печать в Firefox. Это займёт всего секунду</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3747,6 +3819,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Насколько вы удовлетворены поиском в Firefox?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Насколько вы удовлетворены синхронизацией в Firefox?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Помогите нам улучшить Firefox. Что лучше всего описывает ваш опыт?</string>
   <!--
     Accessibility
 
@@ -4045,8 +4119,6 @@
   <string name="content_description_settings_search_navigate_back">Перейти назад</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Нет недавних поисковых запросов</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Произошла ошибка</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Очистить всё</string>
   <!-- Section header for recent search results -->

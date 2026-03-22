@@ -32,7 +32,6 @@ import mozilla.components.compose.browser.toolbar.R as toolbarR
  * @param browserLayout The root layout of the engine view.
  * @param engineView The engine View rendering web content.
  * @param toolbar The top toolbar layout.
- * @param navbar The bottom navigation bar layout.
  * @param topToolbarHeight The height of the top toolbar.
  * @param onToolbarsReset Callback to be invoked when the toolbars need to be reset.
  */
@@ -44,7 +43,6 @@ class ToolbarsIntegration(
     private val browserLayout: ViewGroup,
     private val engineView: EngineView,
     private val toolbar: FenixBrowserToolbarView,
-    private val navbar: BrowserNavigationBar?,
     private val topToolbarHeight: () -> Int,
     private val onToolbarsReset: () -> Unit,
 ) : LifecycleAwareFeature {
@@ -84,9 +82,7 @@ class ToolbarsIntegration(
         when (isKeyboardShown) {
             true -> {
                 toolbar.disableScrolling()
-                navbar?.disableScrolling()
                 toolbar.expand()
-                navbar?.expand()
 
                 val isUsingBottomToolbar = settings.shouldUseBottomToolbar
                 val isTopToolbarShown = browserLayout.translationY.roundToInt() > 0
@@ -111,7 +107,6 @@ class ToolbarsIntegration(
             }
             false -> {
                 toolbar.enableScrolling()
-                navbar?.enableScrolling()
 
                 browserLayoutParams.topMargin = 0
                 browserLayoutParams.bottomMargin = 0

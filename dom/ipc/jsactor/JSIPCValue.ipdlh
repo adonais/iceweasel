@@ -6,7 +6,7 @@
 
 using mozilla::dom::MaybeDiscardedBrowsingContext from "mozilla/dom/BrowsingContext.h";
 using mozilla::null_t from "mozilla/ipc/IPCCore.h";
-using class mozilla::dom::ipc::StructuredCloneData from "mozilla/dom/ipc/StructuredCloneData.h";
+[RefCounted] using class mozilla::dom::ipc::StructuredCloneData from "mozilla/dom/ipc/StructuredCloneData.h";
 using mozilla::void_t from "mozilla/ipc/IPCCore.h";
 
 include ClientIPCTypes;
@@ -85,9 +85,7 @@ union JSIPCValue {
 
     // Structured clone objects are used as a fallback when serialization
     // fails, or for places like WebExtensions which send these directly.
-    // The ClonedMessageData version is used for sending over IPC.
-    UniquePtr<StructuredCloneData>;
-    UniquePtr<ClonedMessageData>;
+    StructuredCloneData;
 
     // Commonly used DOM objects.
     nsIPrincipal;

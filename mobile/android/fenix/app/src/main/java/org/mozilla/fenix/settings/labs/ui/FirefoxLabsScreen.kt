@@ -24,21 +24,22 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
-import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.map
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.utils.BackInvokedHandler
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.settings.labs.FeatureKey
@@ -48,8 +49,10 @@ import org.mozilla.fenix.settings.labs.store.LabsAction
 import org.mozilla.fenix.settings.labs.store.LabsState
 import org.mozilla.fenix.settings.labs.store.LabsStore
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
+import org.mozilla.fenix.theme.ThemedValue
+import org.mozilla.fenix.theme.ThemedValueProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -63,9 +66,8 @@ fun FirefoxLabsScreen(
     store: LabsStore,
     onNavigationIconClick: () -> Unit,
 ) {
-    val labsFeatures by store.observeAsState(initialValue = store.state.labsFeatures) { state ->
-        state.labsFeatures
-    }
+    val labsFeatures by remember { store.stateFlow.map { state -> state.labsFeatures } }
+        .collectAsState(initial = store.state.labsFeatures)
 
     BackInvokedHandler {
         onNavigationIconClick()
@@ -193,9 +195,8 @@ private fun EmptyState(modifier: Modifier = Modifier) {
 
 @Composable
 private fun FirefoxLabsDialog(store: LabsStore) {
-    val dialogState by store.observeAsState(initialValue = store.state.dialogState) { state ->
-        state.dialogState
-    }
+    val dialogState by remember { store.stateFlow.map { state -> state.dialogState } }
+        .collectAsState(initial = store.state.dialogState)
 
     when (val currentDialog = dialogState) {
         is DialogState.ToggleFeature -> {
@@ -304,52 +305,30 @@ private fun RestoreDefaultsDialog(
     )
 }
 
-private class FirefoxLabsScreenPreviewProvider : PreviewParameterProvider<List<LabsFeature>> {
-    override val values: Sequence<List<LabsFeature>>
-        get() {
-            val sequenceOf = sequenceOf(
-                listOf(
-                    LabsFeature(
-                        key = FeatureKey.HOMEPAGE_AS_A_NEW_TAB,
-                        name = R.string.firefox_labs_homepage_as_a_new_tab,
-                        description = R.string.firefox_labs_homepage_as_a_new_tab_description,
-                        enabled = true,
-                    ),
-                ),
-                emptyList(),
-            )
-            return sequenceOf
-        }
-}
+private class FirefoxLabsScreenPreviewProvider : ThemedValueProvider<List<LabsFeature>>(
+    sequenceOf(
+        listOf(
+            LabsFeature(
+                key = FeatureKey.HOMEPAGE_AS_A_NEW_TAB,
+                name = R.string.firefox_labs_homepage_as_a_new_tab,
+                description = R.string.firefox_labs_homepage_as_a_new_tab_description,
+                enabled = true,
+            ),
+        ),
+        emptyList(),
+    ),
+)
 
 @Composable
 @FlexibleWindowLightDarkPreview
 private fun FirefoxLabsScreenPreview(
-    @PreviewParameter(FirefoxLabsScreenPreviewProvider::class) labsFeatures: List<LabsFeature>,
+    @PreviewParameter(FirefoxLabsScreenPreviewProvider::class) state: ThemedValue<List<LabsFeature>>,
 ) {
-    FirefoxTheme {
+    FirefoxTheme(state.theme) {
         FirefoxLabsScreen(
             store = LabsStore(
                 initialState = LabsState(
-                    labsFeatures = labsFeatures,
-                    dialogState = DialogState.Closed,
-                ),
-            ),
-            onNavigationIconClick = {},
-        )
-    }
-}
-
-@Composable
-@Preview
-private fun FirefoxLabsScreenPrivatePreview(
-    @PreviewParameter(FirefoxLabsScreenPreviewProvider::class) labsFeatures: List<LabsFeature>,
-) {
-    FirefoxTheme(theme = Theme.Private) {
-        FirefoxLabsScreen(
-            store = LabsStore(
-                initialState = LabsState(
-                    labsFeatures = labsFeatures,
+                    labsFeatures = state.value,
                     dialogState = DialogState.Closed,
                 ),
             ),
@@ -361,7 +340,7 @@ private fun FirefoxLabsScreenPrivatePreview(
 @Preview
 @Composable
 private fun ToggleFeatureDialogPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         ToggleFeatureDialog(
@@ -375,7 +354,7 @@ private fun ToggleFeatureDialogPreview(
 @Preview
 @Composable
 private fun RestoreDefaultsDialogPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         RestoreDefaultsDialog(

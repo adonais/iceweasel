@@ -30,6 +30,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,7 +52,6 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Banner
 import org.mozilla.fenix.tabstray.Page
@@ -61,7 +61,7 @@ import org.mozilla.fenix.tabstray.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.TabsTrayStore
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.ui.tabstray.TabsTray
-import org.mozilla.fenix.tabstray.ui.theme.getTabManagerTheme
+import org.mozilla.fenix.tabstray.ui.theme.TabManagerThemeProvider
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.math.max
 import mozilla.components.ui.icons.R as iconsR
@@ -577,9 +577,9 @@ private fun TabsTrayBannerPreviewRoot(
             ),
         )
     }
-    val state by tabsTrayStore.observeAsState(tabsTrayStore.state) { it }
+    val state by tabsTrayStore.stateFlow.collectAsState()
 
-    FirefoxTheme(theme = getTabManagerTheme(page = state.selectedPage)) {
+    FirefoxTheme(theme = TabManagerThemeProvider(selectedPage = state.selectedPage).provideTheme()) {
         Box(modifier = Modifier.size(400.dp)) {
             TabsTrayBanner(
                 selectedPage = state.selectedPage,

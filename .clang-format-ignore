@@ -22,9 +22,9 @@ js/src/util/UnicodeNonBMP.h
 
 # Ignored because of bug 1506117 & 1342657
 layout/style/nsCSSAnonBoxList.h
-layout/style/nsCSSCounterDescList.h
-layout/style/nsCSSFontDescList.h
-layout/style/nsCSSPseudoElementList.h
+layout/style/nsCSSCounterDescList.inc
+layout/style/nsCSSFontDescList.inc
+layout/style/nsCSSPseudoElementList.inc
 layout/style/nsCSSVisitedDependentPropList.h
 layout/style/nsDOMCSSValueList.h
 layout/style/nsStyleStructList.h

@@ -106,14 +106,6 @@ export class DynamicSuggestions extends SuggestProvider {
     payload.isManageable = true;
     payload.helpUrl = lazy.QuickSuggest.HELP_URL;
 
-    if (!payload.title && payload.url) {
-      try {
-        // If there's no title, show the domain as the title. Not all valid URLs
-        // have a domain.
-        payload.title = new URL(payload.url).URI.displayHostPort;
-      } catch (e) {}
-    }
-
     let resultProperties = { ...result };
     delete resultProperties.payload;
     return new lazy.UrlbarResult({

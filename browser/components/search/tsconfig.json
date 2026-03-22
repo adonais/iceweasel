@@ -1,6 +1,5 @@
 {
-  "include": ["*.sys.mjs", "types/*.ts"],
-  "exclude": ["./SearchSERPTelemetry.sys.mjs"],
+  "include": ["*.sys.mjs", "test/**/*.mjs", "types/*.ts"],
   "extends": "../../../tools/@types/tsconfig.json",
 
   "compilerOptions": {

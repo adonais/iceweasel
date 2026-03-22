@@ -1,6 +1,7 @@
 use crate::capabilities::AndroidOptions;
 use mozdevice::{AndroidStorage, Device, Host, RemoteMetadata, UnixPathBuf};
 use mozprofile::profile::Profile;
+use std::env;
 use std::fs::File;
 use std::io;
 use std::path::PathBuf;
@@ -264,11 +265,19 @@ impl AndroidHandler {
         })
     }
 
-    pub fn copy_minidumps_files(&self, save_path: &str) -> Result<()> {
+    pub fn copy_minidumps_files(&self) -> Result<()> {
         let minidumps_path = self.profile.join("minidumps");
 
         match self.process.device.list_dir(&minidumps_path) {
             Ok(entries) => {
+                let save_path = match env::var("MINIDUMP_SAVE_PATH").map(PathBuf::from) {
+                    Ok(path) => path,
+                    Err(_) => {
+                        debug!("Set MINIDUMP_SAVE_PATH to store crash minidumps.");
+                        return Ok(());
+                    }
+                };
+
                 for entry in entries {
                     if let RemoteMetadata::RemoteFile(_) = entry.metadata {
                         let file_path = minidumps_path.join(&entry.name);
@@ -280,7 +289,7 @@ impl AndroidHandler {
                             .unwrap_or(String::from(""));
 
                         if extension == "dmp" || extension == "extra" {
-                            let mut dest_path = PathBuf::from(save_path);
+                            let mut dest_path = save_path.clone();
                             dest_path.push(&entry.name);
 
                             self.process
@@ -288,7 +297,7 @@ impl AndroidHandler {
                                 .pull(&file_path, &mut File::create(dest_path.as_path())?)?;
 
                             debug!(
-                                "Copied minidump file {:?} from the device to the local path {:?}.",
+                                "Copied minidump file {:?} from the device to {:?}.",
                                 entry.name, save_path
                             );
                         }

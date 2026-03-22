@@ -135,7 +135,7 @@ void SVGDocumentWrapper::StartAnimation() {
   if (doc) {
     SMILAnimationController* controller = doc->GetAnimationController();
     if (controller) {
-      controller->Resume(SMILTimeContainer::PAUSE_IMAGE);
+      controller->Resume(SMILTimeContainer::PauseType::Image);
     }
     doc->SetImageAnimationState(true);
   }
@@ -151,7 +151,7 @@ void SVGDocumentWrapper::StopAnimation() {
   if (Document* doc = mViewer->GetDocument()) {
     SMILAnimationController* controller = doc->GetAnimationController();
     if (controller) {
-      controller->Pause(SMILTimeContainer::PAUSE_IMAGE);
+      controller->Pause(SMILTimeContainer::PauseType::Image);
     }
     doc->SetImageAnimationState(false);
   }

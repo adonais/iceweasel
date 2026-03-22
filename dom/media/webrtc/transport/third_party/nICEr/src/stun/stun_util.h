@@ -46,7 +46,7 @@ int nr_stun_xor_mapped_address(UINT4 magicCookie, UINT12 transactionId, nr_trans
 
 int nr_stun_different_transaction(UCHAR *msg, size_t len, nr_stun_message *req);
 
-char* nr_stun_msg_type(int type);
+const char* nr_stun_msg_type(int type);
 
 int nr_random_alphanum(char *alphanum, int size);
 

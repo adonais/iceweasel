@@ -54,7 +54,7 @@ use crate::clip::{ClipIntern, ClipItemKey, ClipItemKeyKind, ClipStore};
 use crate::clip::{ClipInternData, ClipNodeId, ClipLeafId};
 use crate::clip::{PolygonDataHandle, ClipTreeBuilder};
 use crate::gpu_types::BlurEdgeMode;
-use crate::segment::EdgeAaSegmentMask;
+use crate::segment::EdgeMask;
 use crate::spatial_tree::{SceneSpatialTree, SpatialNodeContainer, SpatialNodeIndex, get_external_scroll_offset};
 use crate::frame_builder::FrameBuilderConfig;
 use glyph_rasterizer::{FontInstance, SharedFontResources};
@@ -1409,6 +1409,12 @@ impl<'a> SceneBuilder<'a> {
             rect: prim_rect,
             clip_rect,
             flags: common.flags,
+            // TODO: for CSS primitives axis-aligned edges should not get anti-aliased whereas
+            // for SVG primitives, they should. WebRender currently does not apply anti-aliasing
+            // to SVG aligned primitives as it should, which has gone largely unnoticed because
+            // most SVG primitives are rendered via blob-images.
+            aligned_aa_edges: EdgeMask::empty(),
+            transformed_aa_edges: EdgeMask::all(),
         };
 
         (layout, unsnapped_rect, spatial_node_index, clip_node_id)
@@ -1586,6 +1592,8 @@ impl<'a> SceneBuilder<'a> {
                     rect,
                     clip_rect: rect,
                     flags: info.flags,
+                    aligned_aa_edges: EdgeMask::empty(),
+                    transformed_aa_edges: EdgeMask::empty(),
                 };
 
                 let spatial_node = self.spatial_tree.get_node_info(spatial_node_index);
@@ -1662,7 +1670,13 @@ impl<'a> SceneBuilder<'a> {
                     &mut stops,
                     self.config.enable_dithering,
                     &mut |rect, start, end, stops, edge_aa_mask| {
-                        let layout = LayoutPrimitiveInfo { rect: *rect, clip_rect: *rect, flags };
+                        let layout = LayoutPrimitiveInfo {
+                            rect: *rect,
+                            clip_rect: *rect,
+                            flags,
+                            aligned_aa_edges: EdgeMask::empty(),
+                            transformed_aa_edges: edge_aa_mask,
+                        };
                         if let Some(prim_key_kind) = self.create_linear_gradient_prim(
                             &layout,
                             start,
@@ -1695,7 +1709,7 @@ impl<'a> SceneBuilder<'a> {
                         tile_size,
                         info.tile_spacing,
                         None,
-                        EdgeAaSegmentMask::all(),
+                        EdgeMask::all(),
                     ) {
                         self.add_nonshadowable_primitive(
                             spatial_node_index,
@@ -1731,22 +1745,26 @@ impl<'a> SceneBuilder<'a> {
 
                 let mut prim_rect = layout.rect;
                 let mut tile_spacing = info.tile_spacing;
+                let mut aa_mask = EdgeMask::all();
                 optimize_radial_gradient(
                     &mut prim_rect,
                     &mut tile_size,
                     &mut center,
                     &mut tile_spacing,
+                    &mut aa_mask,
                     &layout.clip_rect,
                     info.gradient.radius,
                     info.gradient.end_offset,
                     info.gradient.extend_mode,
                     &stops,
-                    &mut |solid_rect, color| {
+                    &mut |solid_rect, color, aa_mask| {
                         self.add_nonshadowable_primitive(
                             spatial_node_index,
                             clip_node_id,
                             &LayoutPrimitiveInfo {
                                 rect: *solid_rect,
+                                aligned_aa_edges: layout.aligned_aa_edges & aa_mask,
+                                transformed_aa_edges: layout.transformed_aa_edges & aa_mask,
                                 .. layout
                             },
                             Vec::new(),
@@ -1754,6 +1772,9 @@ impl<'a> SceneBuilder<'a> {
                         );
                     }
                 );
+
+                layout.aligned_aa_edges &= aa_mask;
+                layout.transformed_aa_edges &= aa_mask;
 
                 // TODO: create_radial_gradient_prim already calls
                 // this, but it leaves the info variable that is
@@ -1851,6 +1872,7 @@ impl<'a> SceneBuilder<'a> {
                     info.blur_radius,
                     info.spread_radius,
                     info.border_radius,
+                    info.shadow_radius,
                     info.clip_mode,
                     self.spatial_tree.is_root_coord_system(spatial_node_index),
                 );
@@ -3363,7 +3385,7 @@ impl<'a> SceneBuilder<'a> {
                             LayoutSize::new(border.height as f32, border.width as f32),
                             LayoutSize::zero(),
                             Some(Box::new(nine_patch)),
-                            EdgeAaSegmentMask::all(),
+                            EdgeMask::all(),
                         ) {
                             Some(prim) => prim,
                             None => return,
@@ -3445,7 +3467,7 @@ impl<'a> SceneBuilder<'a> {
         stretch_size: LayoutSize,
         mut tile_spacing: LayoutSize,
         nine_patch: Option<Box<NinePatchDescriptor>>,
-        edge_aa_mask: EdgeAaSegmentMask,
+        edge_aa_mask: EdgeMask,
     ) -> Option<LinearGradient> {
         let mut prim_rect = info.rect;
         simplify_repeated_primitive(&stretch_size, &mut tile_spacing, &mut prim_rect);

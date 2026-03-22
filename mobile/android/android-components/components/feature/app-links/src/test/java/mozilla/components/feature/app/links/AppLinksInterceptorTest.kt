@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.fragment.app.FragmentManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.ExternalPackage
 import mozilla.components.browser.state.state.PackageCategory
@@ -37,7 +38,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.Mockito.doReturn
-import org.mockito.Mockito.spy
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 
@@ -422,7 +422,7 @@ class AppLinksInterceptorTest {
         )
 
         val response = appLinksInterceptor.onLoadRequest(mockEngineSession, webUrlWithAppLink, null, true, false, false, false, false)
-        assert(response is RequestInterceptor.InterceptionResponse.AppIntent)
+        assert(response is RequestInterceptor.InterceptionResponse.Deny)
         verify(mockOpenRedirect).invoke(any(), anyBoolean(), any())
     }
 
@@ -432,12 +432,11 @@ class AppLinksInterceptorTest {
             context = mockContext,
             launchInApp = { true },
             useCases = mockUseCases,
-            launchFromInterceptor = true,
+            launchFromInterceptor = false,
         )
 
         val response = appLinksInterceptor.onLoadRequest(mockEngineSession, webUrlWithAppLink, null, true, false, false, false, false)
         assert(response is RequestInterceptor.InterceptionResponse.AppIntent)
-        verify(mockOpenRedirect).invoke(any(), anyBoolean(), any())
     }
 
     @Test
@@ -474,12 +473,10 @@ class AppLinksInterceptorTest {
             context = mockContext,
             launchInApp = { false },
             useCases = mockUseCases,
-            launchFromInterceptor = true,
         )
 
         val response = appLinksInterceptor.onLoadRequest(mockEngineSession, intentUrl, null, false, true, false, false, false)
         assert(response is RequestInterceptor.InterceptionResponse.AppIntent)
-        verify(mockOpenRedirect).invoke(any(), anyBoolean(), any())
     }
 
     @Test
@@ -701,14 +698,12 @@ class AppLinksInterceptorTest {
 
     @Test
     fun `WHEN caller and intent have the same package name THEN return true`() {
-        appLinksInterceptor = spy(
-            AppLinksInterceptor(
+        appLinksInterceptor = AppLinksInterceptor(
                 context = mockContext,
                 store = store,
                 launchInApp = { true },
                 useCases = mockUseCases,
-            ),
-        )
+            )
 
         val tabSessionState = TabSessionState(
             id = "tab1",
@@ -744,14 +739,12 @@ class AppLinksInterceptorTest {
 
     @Test
     fun `WHEN intent source is actionView or customTab THEN isAuthentication returns true`() {
-        appLinksInterceptor = spy(
-            AppLinksInterceptor(
+        appLinksInterceptor = AppLinksInterceptor(
                 context = mockContext,
                 store = store,
                 launchInApp = { true },
                 useCases = mockUseCases,
-            ),
-        )
+            )
 
         val tabSessionState = TabSessionState(
             id = "tab1",
@@ -802,5 +795,108 @@ class AppLinksInterceptorTest {
         assertFalse(isSubframeAllowed("abc"))
         assertFalse(isSubframeAllowed("http")) // we should never allow http for subframes
         assertFalse(isSubframeAllowed("https")) // we should never allow https for subframes
+    }
+
+    @Test
+    fun `WHEN authentication flow detected THEN app launches from interceptor and returns Deny`() {
+        val customSchemeUrl = "com.example://callback?code=abc123"
+        val appIntent = Intent.parseUri(customSchemeUrl, 0).apply {
+            component = ComponentName("com.example", "com.example.MainActivity")
+        }
+        val appRedirect = AppLinkRedirect(appIntent, "ExampleApp", null, null)
+
+        whenever(mockGetRedirect.invoke(customSchemeUrl)).thenReturn(appRedirect)
+
+        val tabSessionState = mozilla.components.browser.state.state.createTab(
+            url = "https://example.com",
+            private = false,
+            id = "tab1",
+            source = SessionState.Source.External.CustomTab(
+                ExternalPackage("com.example", PackageCategory.PRODUCTIVITY),
+            ),
+            engineSession = mockEngineSession,
+        )
+
+        val interceptor = AppLinksInterceptor(
+                context = mockContext,
+                launchInApp = { true },
+                useCases = mockUseCases,
+                store = BrowserStore().apply {
+                    dispatch(TabListAction.AddTabAction(tabSessionState))
+                },
+            )
+
+        val response = interceptor.onLoadRequest(
+            engineSession = mockEngineSession,
+            uri = customSchemeUrl,
+            lastUri = "https://example.com",
+            hasUserGesture = false,
+            isSameDomain = false,
+            isRedirect = true,
+            isDirectNavigation = false,
+            isSubframeRequest = false,
+        )
+
+        // Even with launchInApp=false, authentication flows should still launch
+        verify(mockOpenRedirect).invoke(
+            appIntent = any(),
+            launchInNewTask = anyBoolean(),
+            failedToLaunchAction = any(),
+        )
+
+        assertTrue(response is RequestInterceptor.InterceptionResponse.Deny)
+    }
+
+    @Test
+    fun `WHEN authentication flow without engineSupportsScheme check THEN still launches app`() {
+        // Test that authentication flows bypass the engineSupportsScheme check
+        val customSchemeUrl = "com.example:/callback?code=xyz"
+        val appIntent = Intent.parseUri(customSchemeUrl, 0).apply {
+            component = ComponentName("com.example", "com.example.MainActivity")
+        }
+        val appRedirect = AppLinkRedirect(appIntent, "ExampleApp", null, null)
+
+        whenever(mockGetRedirect.invoke(customSchemeUrl)).thenReturn(appRedirect)
+
+        val tabSessionState = mozilla.components.browser.state.state.createTab(
+            url = "https://example.com",
+            private = false,
+            id = "tab1",
+            source = SessionState.Source.External.CustomTab(
+                ExternalPackage("com.example", PackageCategory.PRODUCTIVITY),
+            ),
+            engineSession = mockEngineSession,
+        )
+
+        val testStore = BrowserStore().apply {
+            dispatch(TabListAction.AddTabAction(tabSessionState))
+        }
+
+        val interceptor = AppLinksInterceptor(
+                context = mockContext,
+                launchInApp = { false }, // launchInApp is false
+                useCases = mockUseCases,
+                store = testStore,
+            )
+
+        val response = interceptor.onLoadRequest(
+            engineSession = mockEngineSession,
+            uri = customSchemeUrl,
+            lastUri = "https://example.com",
+            hasUserGesture = false,
+            isSameDomain = false,
+            isRedirect = true,
+            isDirectNavigation = false,
+            isSubframeRequest = false,
+        )
+
+        // Even with launchInApp=false, authentication flows should still launch
+        verify(mockOpenRedirect).invoke(
+            appIntent = any(),
+            launchInNewTask = anyBoolean(),
+            failedToLaunchAction = any(),
+        )
+
+        assertTrue(response is RequestInterceptor.InterceptionResponse.Deny)
     }
 }

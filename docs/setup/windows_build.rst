@@ -83,7 +83,7 @@ the interactive setup process.
     selecting the destination directory for the source code clone. This is
     necessary to add the Microsoft Defender Antivirus exclusions automatically. You
     should select ``Yes`` on the UAC prompt, otherwise you will need
-    to :ref:`follow some manual steps below <Ensure antivirus exclusions>`.
+    to :ref:`follow some manual steps below <ensure-antivirus-exclusions>`.
 
 Choosing a build type
 ~~~~~~~~~~~~~~~~~~~~~
@@ -118,7 +118,7 @@ Microsoft Defender Antivirus manually
 
     If you are using Git and you're already missing files (you'll see them listed in ``git status``), you can have them brought back by discarding changes in your source tree: ``git restore .``.
 
-1. Build
+3. Build
 --------
 
 Now that your system is bootstrapped, you should be able to build!

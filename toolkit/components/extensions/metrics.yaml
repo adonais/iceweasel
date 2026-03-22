@@ -11,6 +11,49 @@ $tags:
   - 'WebExtensions :: General'
 
 extensions:
+  allow_execute_script_in_moz_extension:
+    type: boolean
+    expires: never
+    lifetime: application
+    description: >
+      Corresponds to the value of `extensions.webextensions.allow_executeScript_in_moz_extension` pref.
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/2011234/
+    data_reviews:
+      - https://bugzilla.mozilla.org/2011234/
+    data_sensitivity:
+      - technical
+
+  match_moz_extension_document:
+    type: event
+    expires: never
+    description: >
+      Telemetry event reporting add-ons ids of the add-ons that have
+      been matching extension pages (and either hit the restriction
+      or being allowed to match the extension page based on the value
+      of the related pref).
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/2011234/
+    data_reviews:
+      - https://bugzilla.mozilla.org/2011234/
+    data_sensitivity:
+      - technical
+      - interaction
+    extra_keys:
+      addon_id:
+        description: The add-on ID matching an extension page.
+        type: string
+      is_top_level_frame:
+        description: Set to true if the extension page was a top-level frame.
+        type: boolean
+      restricted:
+        description: Set to true if the matching was restricted.
+        type: boolean
+
   use_remote_pref:
     type: boolean
     expires: never
@@ -611,6 +654,7 @@ extensions.counters:
         - reset_parentapicall
         - permissions_request
         - launchWebAuthFlow
+        - downloads_saveAs
       lifetime: application
       notification_emails:
         - addons-dev-internal@mozilla.com
@@ -649,6 +693,7 @@ extensions.counters:
             - reset_parentapicall
             - permissions_request
             - launchWebAuthFlow
+            - downloads_saveAs
           description: Labels of the keyed categorical legacy telemetry histogram
             WEBEXT_EVENTPAGE_IDLE_RESULT_COUNT_BY_ADDONID.
       bugs:

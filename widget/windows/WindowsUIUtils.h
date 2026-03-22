@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_widget_WindowsUIUtils_h__
-#define mozilla_widget_WindowsUIUtils_h__
+#ifndef mozilla_widget_WindowsUIUtils_h_
+#define mozilla_widget_WindowsUIUtils_h_
 
 #include "nsIWindowsUIUtils.h"
 #include "nsString.h"
@@ -66,4 +66,4 @@ class WindowsUIUtils final : public nsIWindowsUIUtils {
   ~WindowsUIUtils();
 };
 
-#endif  // mozilla_widget_WindowsUIUtils_h__
+#endif  // mozilla_widget_WindowsUIUtils_h_

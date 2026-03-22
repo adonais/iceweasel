@@ -647,13 +647,13 @@ class SettingsRobot {
             return SettingsSubMenuLoginsAndPasswordRobot.Transition()
         }
 
-        fun openTurnOnSyncMenu(interact: SettingsTurnOnSyncRobot.() -> Unit): SettingsTurnOnSyncRobot.Transition {
+        fun openTurnOnSyncMenu(composeTestRule: ComposeTestRule, interact: SettingsSignInToSyncRobot.() -> Unit): SettingsSignInToSyncRobot.Transition {
             Log.i(TAG, "openTurnOnSyncMenu: Trying to click the \"Sync and save your data\" button")
             onView(withText("Sign in")).click()
             Log.i(TAG, "openTurnOnSyncMenu: Clicked the \"Sync and save your data\" button")
 
-            SettingsTurnOnSyncRobot().interact()
-            return SettingsTurnOnSyncRobot.Transition()
+            SettingsSignInToSyncRobot().interact()
+            return SettingsSignInToSyncRobot.Transition(composeTestRule)
         }
 
         fun openPrivateBrowsingSubMenu(interact: SettingsSubMenuPrivateBrowsingRobot.() -> Unit): SettingsSubMenuPrivateBrowsingRobot.Transition {

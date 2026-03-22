@@ -31,6 +31,9 @@ user_pref("media.navigator.streams.fake", true);
 user_pref("media.navigator.permission.disabled", true);
 // Disable the use of mDNS candidates, since mDNS is flaky on wpt testers
 user_pref("media.peerconnection.ice.obfuscate_host_addresses", false);
+// Allow scroll amount larger than one page on a single mouse wheel
+// event.
+user_pref("mousewheel.allow_scrolling_more_than_one_page", true);
 // Enable direct connection
 user_pref("network.proxy.type", 0);
 // Web-platform-tests load a lot of URLs very quickly. This puts avoidable and

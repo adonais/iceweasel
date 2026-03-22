@@ -34,6 +34,12 @@ support-files = ["blank.html"]
 ["test_notification_crossorigin_iframe_nested_glean.html"]
 support-files = ["blank.html"]
 
+["test_notification_image.html"]
+skip-if = [
+  "xorigin", # Bug 1792790
+]
+support-files = ["file_pink.gif"]
+
 ["test_notification_insecure_context.html"]
 # This test needs to be run on HTTP (not HTTPS).
 skip-if = [

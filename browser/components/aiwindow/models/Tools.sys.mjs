@@ -16,15 +16,28 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AIWindow:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
-  PageDataService:
-    "moz-src:///browser/components/pagedata/PageDataService.sys.mjs",
+  clearTimeout: "resource://gre/modules/Timer.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  MemoriesManager:
+    "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
+  // @todo Bug 2009194
+  // PageDataService:
+  //   "moz-src:///browser/components/pagedata/PageDataService.sys.mjs",
 });
 
 const GET_OPEN_TABS = "get_open_tabs";
 const SEARCH_BROWSING_HISTORY = "search_browsing_history";
 const GET_PAGE_CONTENT = "get_page_content";
+const RUN_SEARCH = "run_search";
+const GET_USER_MEMORIES = "get_user_memories";
 
-export const TOOLS = [GET_OPEN_TABS, SEARCH_BROWSING_HISTORY, GET_PAGE_CONTENT];
+export const TOOLS = [
+  GET_OPEN_TABS,
+  SEARCH_BROWSING_HISTORY,
+  GET_PAGE_CONTENT,
+  RUN_SEARCH,
+  GET_USER_MEMORIES,
+];
 
 export const toolsConfig = [
   {
@@ -78,18 +91,57 @@ export const toolsConfig = [
     function: {
       name: GET_PAGE_CONTENT,
       description:
-        "Retrieve cleaned text content of the provided browser page URL.",
+        "Retrieve cleaned text content of all the provided browser page URLs in the list.",
       parameters: {
+        type: "object",
         properties: {
-          url: {
-            type: "string",
-            description:
-              "The complete URL of the page to fetch content from. This must exactly match " +
-              "a URL from the current conversation context. Use the full URL including " +
-              "protocol (http/https). Example: 'https://www.example.com/article'.",
+          url_list: {
+            type: "array",
+            items: {
+              type: "string",
+              description:
+                "The complete URL of the page to fetch content from. This must exactly match " +
+                "a URL from the current conversation context. Use the full URL including " +
+                "protocol (http/https). Example: 'https://www.example.com/article'.",
+            },
+            minItems: 1,
+            description: "List of URLs to fetch content from.",
           },
         },
-        required: ["url"],
+        required: ["url_list"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: RUN_SEARCH,
+      description:
+        "Perform a web search using the browser's default search engine and return " +
+        "the search results page content. Use this when the user needs current web " +
+        "information that would benefit from a live search.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description:
+              "The search query to execute. Should be specific and search-engine optimized.",
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: GET_USER_MEMORIES,
+      description:
+        'Retrieves all memories saved about the user to answer questions like "What do you know about me?", "What memories have you saved?", "What do you remember about me?", etc. Respond to the user that these are memories.',
+      parameters: {
+        type: "object",
+        properties: {},
       },
     },
   },
@@ -143,10 +195,18 @@ export async function getOpenTabs(n = 15) {
     topTabs.map(async ({ url, title, lastAccessed }) => {
       let description = "";
       if (url) {
-        description =
-          lazy.PageDataService.getCached(url)?.description ||
-          (await lazy.PageDataService.fetchPageData(url))?.description ||
-          "";
+        // @todo Bug 2009194
+        // PageDataService halts code execution even in try/catch
+        //
+        // try {
+        //   description =
+        //     lazy.PageDataService.getCached(url)?.description ||
+        //     (await lazy.PageDataService.fetchPageData(url))?.description ||
+        //     "";
+        // } catch (e) {
+        //   console.log(e);
+        //   description = "";
+        // }
       }
       return { url, title, description, lastAccessed };
     })
@@ -180,12 +240,16 @@ export async function getOpenTabs(n = 15) {
  *  Includes `count` when matches exist, a `message` when none are found, or an
  *  `error` string on failure.
  */
-export async function searchBrowsingHistory({
-  searchTerm = "",
-  startTs = null,
-  endTs = null,
-  historyLimit = 15,
-}) {
+export async function searchBrowsingHistory(toolParams) {
+  const params = toolParams && typeof toolParams === "object" ? toolParams : {};
+
+  const {
+    searchTerm = "",
+    startTs = null,
+    endTs = null,
+    historyLimit = 15,
+  } = params;
+
   return implSearchBrowsingHistory({
     searchTerm,
     startTs,
@@ -230,6 +294,201 @@ export function stripSearchBrowsingHistoryFields(result) {
 }
 
 /**
+ * Performs a web search using the browser's default search engine,
+ * waits for the results page to load, and extracts its content.
+ */
+export class RunSearch {
+  static NAVIGATION_TIMEOUT_MS = 15000;
+  static CONTENT_SETTLE_MS = 2000;
+
+  static #ensureTabSelected(tab) {
+    if (!tab.selected) {
+      tab.ownerGlobal.gBrowser.selectedTab = tab;
+    }
+  }
+
+  /**
+   * @param {object} toolParams
+   * @param {string} toolParams.query
+   * @param {object} [context]
+   * @param {BrowsingContext} [context.browsingContext]
+   * @returns {Promise<string>}
+   */
+  static async runSearch({ query }, context = {}) {
+    if (!query || typeof query !== "string" || !query.trim()) {
+      return "Error: a non-empty search query is required.";
+    }
+
+    if (!context.browsingContext) {
+      return "Error: no browsingContext provided to perform search.";
+    }
+
+    const win = context.browsingContext.topChromeWindow;
+    if (!win || win.closed) {
+      return "Error: associated browser window not available or closed.";
+    }
+
+    // Get the original tab from the browsing context, not the currently selected tab
+    const originalBrowser = context.browsingContext.embedderElement;
+    let targetTab =
+      originalBrowser && win.gBrowser?.getTabForBrowser(originalBrowser);
+
+    if (targetTab) {
+      // Switch to the original tab if it's different from currently selected
+      RunSearch.#ensureTabSelected(targetTab);
+    } else {
+      return "Error: Original tab no longer exists, aborting search to avoid interfering with existing conversation.";
+    }
+
+    // If the original tab is the AI Window page, move to sidebar first
+    if (lazy.AIWindow.isAIWindowContentPage(originalBrowser.currentURI)) {
+      await RunSearch.#moveToSidebarIfNeeded(win, targetTab);
+
+      // Ensure we're still on the correct tab after the await
+      RunSearch.#ensureTabSelected(targetTab);
+    }
+
+    RunSearch.#showSearchingIndicator(win, true, query.trim());
+
+    try {
+      await RunSearch.#performSearchAndWait(win, originalBrowser, query.trim());
+      return RunSearch.#extractSerpContent(originalBrowser);
+    } catch (e) {
+      console.error("[RunSearch] search failed:", e);
+      return `Error performing search for "${query}": ${e.message}`;
+    } finally {
+      RunSearch.#showSearchingIndicator(win, false, null);
+    }
+  }
+
+  // TODO - this may be dead code. The fetch with history already yields a
+  // searching state, and the sidebar implementation may not need this at all.
+  // Revisit this in the future:
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=2016252 to find a more
+  // concrete way to target what side bar needs to show the indicator, if any
+  // at all. My guess is that this might be here because of the move to sidebar
+  // implementation, and the indicator state does not "transfer over". Possibly
+  // look into tapping into something more concrete like the conversation state
+  // in the AIWindow store to trigger this kind of UI state instead of trying
+  // to directly manipulate the sidebar UI from here.
+  static #showSearchingIndicator(win, isSearching, searchQuery) {
+    try {
+      const sidebar = win.document.getElementById("ai-window-box");
+      if (!sidebar) {
+        return;
+      }
+      const aiBrowser = sidebar.querySelector("#ai-window-browser");
+      if (!aiBrowser?.contentDocument) {
+        return;
+      }
+      const aiWindow = aiBrowser.contentDocument.querySelector("ai-window");
+      if (aiWindow?.showSearchingIndicator) {
+        aiWindow.showSearchingIndicator(isSearching, searchQuery);
+      }
+    } catch {
+      // Sidebar may not be available
+    }
+  }
+
+  static async #moveToSidebarIfNeeded(win, tab) {
+    await lazy.AIWindow.moveConversationToSidebar(win, tab);
+  }
+
+  /**
+   * Navigates to the search results and waits for the page to finish loading.
+   *
+   * @param {Window} win
+   * @param {XULElement} browser
+   * @param {string} query
+   */
+  static async #performSearchAndWait(win, browser, query) {
+    const navigationPromise = new Promise((resolve, reject) => {
+      const timeout = lazy.setTimeout(() => {
+        win.gBrowser.removeProgressListener(listener);
+        reject(new Error("Navigation timed out"));
+      }, RunSearch.NAVIGATION_TIMEOUT_MS);
+
+      const listener = {
+        QueryInterface: ChromeUtils.generateQI([
+          "nsIWebProgressListener",
+          "nsISupportsWeakReference",
+        ]),
+        onStateChange(_webProgress, _request, stateFlags) {
+          const complete =
+            Ci.nsIWebProgressListener.STATE_STOP |
+            Ci.nsIWebProgressListener.STATE_IS_NETWORK;
+          if ((stateFlags & complete) === complete) {
+            lazy.clearTimeout(timeout);
+            win.gBrowser.removeProgressListener(listener);
+            resolve();
+          }
+        },
+        onLocationChange() {},
+        onProgressChange() {},
+        onStatusChange() {},
+        onSecurityChange() {},
+        onContentBlockingEvent() {},
+      };
+
+      win.gBrowser.addProgressListener(listener);
+    });
+
+    await lazy.AIWindow.performSearch(query, win);
+    await navigationPromise;
+
+    // Allow JS rendering to settle
+    await new Promise(r => lazy.setTimeout(r, RunSearch.CONTENT_SETTLE_MS));
+  }
+
+  static async #extractSerpContent(browser) {
+    const windowContext = browser.browsingContext?.currentWindowContext;
+    if (!windowContext) {
+      return "Error: could not access search results page content.";
+    }
+
+    const pageExtractor = await windowContext.getActor("PageExtractor");
+    let extraction;
+    try {
+      extraction = await pageExtractor.getReaderModeContent();
+    } catch {
+      // Fall back to full text extraction
+    }
+
+    let text = extraction?.text ?? "";
+    if (!text) {
+      try {
+        extraction = await pageExtractor.getText();
+        text = extraction?.text ?? "";
+      } catch {
+        return "Error: failed to extract search results content.";
+      }
+    }
+
+    if (!text) {
+      return "No content could be extracted from the search results page.";
+    }
+
+    let cleanContent = text
+      .replace(/\s+/g, " ")
+      .replace(/\n\s*\n/g, "\n")
+      .trim();
+
+    const MAX_CHARS = 15000;
+    if (cleanContent.length > MAX_CHARS) {
+      const truncatePoint = cleanContent.lastIndexOf(".", MAX_CHARS);
+      if (truncatePoint > MAX_CHARS - 100) {
+        cleanContent = cleanContent.substring(0, truncatePoint + 1);
+      } else {
+        cleanContent = cleanContent.substring(0, MAX_CHARS) + "...";
+      }
+    }
+
+    const url = browser.currentURI?.spec || "unknown";
+    return `Search results from ${url}:\n\n${cleanContent}`;
+  }
+}
+
+/**
  * Class for handling page content extraction with configurable modes and limits.
  */
 export class GetPageContent {
@@ -237,32 +496,42 @@ export class GetPageContent {
   static FALLBACK_MODE = "full";
   static MAX_CHARACTERS = 10000;
 
+  /**
+   * @type {Record<string, (pageExtractor: PageExtractor) => Promise<{ text: string }>>}
+   */
   static MODE_HANDLERS = {
-    viewport: async pageExtractor => {
-      const result = await pageExtractor.getText({ justViewport: true });
-      return { text: result.text };
-    },
-    reader: async pageExtractor => {
-      const text = await pageExtractor.getReaderModeContent();
-      return { text: typeof text === "string" ? text : "" };
-    },
-    full: async pageExtractor => {
-      const result = await pageExtractor.getText();
-      return { text: result };
-    },
+    viewport: async pageExtractor =>
+      pageExtractor.getText({ justViewport: true }),
+    reader: async pageExtractor => pageExtractor.getReaderModeContent(),
+    full: async pageExtractor => pageExtractor.getText(),
   };
 
   /**
    * Tool entrypoint for get_page_content.
    *
    * @param {object} toolParams
-   * @param {string} toolParams.url
+   * @param {string[]} toolParams.url_list
    * @param {Set<string>} allowedUrls
-   * @returns {Promise<string>}
+   * @returns {Promise<Array<string>>}
    *  A promise resolving to a string containing the extracted page content
    *  with a descriptive header, or an error message if extraction fails.
    */
-  static async getPageContent({ url }, allowedUrls) {
+  static async getPageContent({ url_list }, allowedUrls = new Set()) {
+    // Ensure `url_list` is always an array
+    if (!Array.isArray(url_list)) {
+      throw new Error("getPageContent now requires { url_list: [...] }");
+    }
+
+    const promises = url_list.map(url =>
+      GetPageContent.#processSingleURL(url, allowedUrls)
+    );
+
+    // Run all fetches in parallel
+    const ret_contents = await Promise.all(promises);
+    return ret_contents;
+  }
+
+  static async #processSingleURL(url, allowedUrls) {
     try {
       // Search through the allowed URLs and extract directly if exists
       if (!allowedUrls.has(url)) {
@@ -271,7 +540,11 @@ export class GetPageContent {
         // while it's open, and with a "keep alive" timeout. For now it's simpler to just
         // load the page fresh every time.
         return PageExtractorParent.getHeadlessExtractor(url, pageExtractor =>
-          this.#runExtraction(pageExtractor, this.DEFAULT_MODE, url)
+          GetPageContent.#runExtraction(
+            pageExtractor,
+            GetPageContent.DEFAULT_MODE,
+            url
+          )
         );
       }
 
@@ -337,9 +610,9 @@ export class GetPageContent {
       const pageExtractor =
         await currentWindowContext.getActor("PageExtractor");
 
-      return this.#runExtraction(
+      return GetPageContent.#runExtraction(
         pageExtractor,
-        this.DEFAULT_MODE,
+        GetPageContent.DEFAULT_MODE,
         `"${targetTab.label}" (${url})`
       );
     } catch (error) {
@@ -347,7 +620,7 @@ export class GetPageContent {
       // i.e., will the LLM keep retrying get_page_content due to error?
       console.error(error);
       return `Error retrieving content from ${url}.`;
-      // Stripped ${error.message} content to not confruse the LLM
+      // Stripped ${error.message} content to not confuse the LLM
     }
   }
 
@@ -364,10 +637,10 @@ export class GetPageContent {
    */
   static async #runExtraction(pageExtractor, mode, label) {
     const selectedMode =
-      typeof mode === "string" && this.MODE_HANDLERS[mode]
+      typeof mode === "string" && GetPageContent.MODE_HANDLERS[mode]
         ? mode
-        : this.DEFAULT_MODE;
-    const handler = this.MODE_HANDLERS[selectedMode];
+        : GetPageContent.DEFAULT_MODE;
+    const handler = GetPageContent.MODE_HANDLERS[selectedMode];
     let extraction = null;
 
     try {
@@ -380,12 +653,7 @@ export class GetPageContent {
       );
     }
 
-    let pageContent = "";
-    if (typeof extraction === "string") {
-      pageContent = extraction;
-    } else if (typeof extraction?.text === "string") {
-      pageContent = extraction.text;
-    }
+    let pageContent = extraction?.text ?? "";
 
     // Track which mode was actually used (in case we fall back)
     let actualMode = selectedMode;
@@ -393,20 +661,17 @@ export class GetPageContent {
     // If reader mode returns no content, fall back to full mode
     if (!pageContent && selectedMode === "reader") {
       try {
-        const fallbackHandler = this.MODE_HANDLERS[this.FALLBACK_MODE];
+        const fallbackHandler =
+          GetPageContent.MODE_HANDLERS[GetPageContent.FALLBACK_MODE];
         extraction = await fallbackHandler(pageExtractor);
-        if (typeof extraction === "string") {
-          pageContent = extraction;
-        } else if (typeof extraction?.text === "string") {
-          pageContent = extraction.text;
-        }
+        pageContent = extraction?.text ?? "";
         if (pageContent) {
-          actualMode = this.FALLBACK_MODE;
+          actualMode = GetPageContent.FALLBACK_MODE;
         }
       } catch (err) {
         console.error(
           "[SmartWindow] get_page_content fallback mode failed",
-          this.FALLBACK_MODE,
+          GetPageContent.FALLBACK_MODE,
           err
         );
       }
@@ -414,7 +679,7 @@ export class GetPageContent {
 
     if (!pageContent) {
       return `get_page_content(${selectedMode}) returned no content for ${label}.`;
-      // Stripped message "Try another mode if you still need information." to not confruse the LLM
+      // Stripped message "Try another mode if you still need information." to not confuse the LLM
     }
 
     // Clean and truncate content for better LLM consumption
@@ -427,31 +692,32 @@ export class GetPageContent {
     // Limit content length but be more generous for LLM processing
     // Bug 1995043 - once reader mode has length truncation,
     // we can remove this and directly do this in pageExtractor.
-    if (cleanContent.length > this.MAX_CHARACTERS) {
+    if (cleanContent.length > GetPageContent.MAX_CHARACTERS) {
       // Try to cut at a sentence boundary
-      const truncatePoint = cleanContent.lastIndexOf(".", this.MAX_CHARACTERS);
-      if (truncatePoint > this.MAX_CHARACTERS - 100) {
+      const truncatePoint = cleanContent.lastIndexOf(
+        ".",
+        GetPageContent.MAX_CHARACTERS
+      );
+      if (truncatePoint > GetPageContent.MAX_CHARACTERS - 100) {
         cleanContent = cleanContent.substring(0, truncatePoint + 1);
       } else {
-        cleanContent = cleanContent.substring(0, this.MAX_CHARACTERS) + "...";
+        cleanContent =
+          cleanContent.substring(0, GetPageContent.MAX_CHARACTERS) + "...";
       }
     }
 
-    let modeLabel;
-    switch (actualMode) {
-      case "viewport":
-        modeLabel = "current viewport";
-        break;
-      case "reader":
-        modeLabel = "reader mode";
-        break;
-      case "full":
-        modeLabel = "full page";
-        break;
-    }
+    const modeLabel = {
+      viewport: "current viewport",
+      reader: "reader mode",
+      full: "full page",
+    }[actualMode];
 
-    return `Content (${modeLabel}) from ${label}:
-
-${cleanContent}`;
+    return `Content (${modeLabel}) from ${label}:\n\n${cleanContent}`;
   }
+}
+
+export async function getUserMemories() {
+  const memories = await lazy.MemoriesManager.getAllMemories();
+
+  return memories.map(memory => memory.memory_summary);
 }

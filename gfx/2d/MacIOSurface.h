@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef MacIOSurface_h__
-#define MacIOSurface_h__
+#ifndef MacIOSurface_h_
+#define MacIOSurface_h_
 #ifdef XP_DARWIN
 #  include <CoreVideo/CoreVideo.h>
 #  include <IOSurface/IOSurfaceRef.h>

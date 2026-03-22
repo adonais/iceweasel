@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/CSSStyleRule.h"
 
+#include "PseudoStyleType.h"
 #include "mozilla/CSSEnabledState.h"
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/PseudoStyleType.h"
@@ -14,7 +15,6 @@
 #include "mozilla/dom/CSSStyleRuleBinding.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/StylePropertyMap.h"
-#include "nsCSSPseudoElements.h"
 #include "nsISupports.h"
 
 namespace mozilla::dom {
@@ -314,8 +314,8 @@ bool CSSStyleRule::SelectorMatchesElement(uint32_t aSelectorIndex,
                                           Element& aElement,
                                           const nsAString& aPseudo,
                                           bool aRelevantLinkVisited) {
-  const auto pseudo = nsCSSPseudoElements::ParsePseudoElement(
-      aPseudo, CSSEnabledState::IgnoreEnabledState);
+  const auto pseudo =
+      PseudoStyleRequest::Parse(aPseudo, /* aIgnoreEnabledState = */ true);
   if (!pseudo) {
     return false;
   }
@@ -345,8 +345,8 @@ Element* CSSStyleRule::GetScopeRootFor(uint32_t aSelectorIndex,
                                        dom::Element& aElement,
                                        const nsAString& aPseudo,
                                        bool aRelevantLinkVisited) {
-  const auto pseudo = nsCSSPseudoElements::ParsePseudoElement(
-      aPseudo, CSSEnabledState::IgnoreEnabledState);
+  const auto pseudo =
+      PseudoStyleRequest::Parse(aPseudo, /* aIgnoreEnabledState = */ true);
   if (!pseudo) {
     return nullptr;
   }

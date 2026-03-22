@@ -47,6 +47,21 @@ registerCleanupFunction(async function () {
   Services.cookies.removeAll();
 });
 
+const isCmNextEnabled = Services.prefs.getBoolPref(
+  "devtools.webconsole.codemirrorNext"
+);
+const codemirrorSelectors = {
+  cmScroller: isCmNextEnabled ? ".cm-scroller" : ".CodeMirror-scroll",
+  cmContent: isCmNextEnabled ? ".cm-content" : ".CodeMirror-wrap",
+  cmLine: isCmNextEnabled
+    ? ".cm-content .cm-line"
+    : ".CodeMirror-code pre.CodeMirror-line",
+  cmLineNumbers: isCmNextEnabled
+    ? ".cm-lineNumbers"
+    : ".CodeMirror-linenumbers",
+  cmEditor: `#response-panel .editor-row-container ${isCmNextEnabled ? ".cm-editor" : ".CodeMirror"}`,
+};
+
 /**
  * Add a new tab and open the toolbox in it, and select the webconsole.
  *
@@ -1870,4 +1885,27 @@ async function getImageSizeFromClipboard() {
       };
     }
   );
+}
+
+/**
+ * Perform default setup for URL classifier tests (eg used for ETP warnings).
+ *
+ * @param {object=} options
+ * @param {boolean=} options.enableTrackingProtection
+ *        If true, sets the preference privacy.trackingprotection.enabled=true.
+ *        the test. Defaults to true.
+ */
+async function setupUrlClassifierTest(options = {}) {
+  const { UrlClassifierTestUtils } = ChromeUtils.importESModule(
+    "resource://testing-common/UrlClassifierTestUtils.sys.mjs"
+  );
+  await UrlClassifierTestUtils.addTestTrackers();
+  registerCleanupFunction(function () {
+    UrlClassifierTestUtils.cleanupTestTrackers();
+  });
+
+  const { enableTrackingProtection = true } = options;
+  if (enableTrackingProtection) {
+    await pushPref("privacy.trackingprotection.enabled", true);
+  }
 }

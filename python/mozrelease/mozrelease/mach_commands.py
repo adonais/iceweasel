@@ -83,6 +83,7 @@ def buglist_email(command_context, **options):
     "release",
     "push-scriptworker-canary",
     description="Push tasks to try, to test new scriptworker deployments.",
+    virtualenv_name="taskgraph",
 )
 @CommandArgument(
     "--address",

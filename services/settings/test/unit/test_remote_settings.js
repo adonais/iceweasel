@@ -810,7 +810,7 @@ add_task(async function test_inspect_method() {
   equal(mainBucket, "main");
   equal(serverURL, `http://localhost:${server.identity.primaryPort}/v1`);
   equal(defaultSigner, rsSigner);
-  equal(serverTimestamp, '"5000"');
+  equal(serverTimestamp, "5000");
 
   // A collection is listed in .inspect() if it has local data or if there
   // is a JSON dump for it.
@@ -1527,7 +1527,7 @@ wNuvFqc=
           ],
         },
       },
-    "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=3001&_since=%223000%22":
+    "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=3001&_since=3000":
       {
         sampleHeaders: [
           "Access-Control-Allow-Origin: *",
@@ -1558,7 +1558,7 @@ wNuvFqc=
           ],
         },
       },
-    "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=4001&_since=%224000%22":
+    "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=4001&_since=4000":
       {
         sampleHeaders: [
           "Access-Control-Allow-Origin: *",
@@ -1581,7 +1581,7 @@ wNuvFqc=
           ],
         },
       },
-    "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=10000&_since=%229999%22":
+    "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=10000&_since=9999":
       {
         sampleHeaders: [
           "Access-Control-Allow-Origin: *",
@@ -1596,7 +1596,7 @@ wNuvFqc=
           error: "Service Unavailable",
         },
       },
-    "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=10001&_since=%2210000%22":
+    "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=10001&_since=10000":
       {
         sampleHeaders: [
           "Access-Control-Allow-Origin: *",
@@ -1608,7 +1608,7 @@ wNuvFqc=
         status: { status: 200, statusText: "OK" },
         responseBody: "<invalid json",
       },
-    "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=11001&_since=%2211000%22":
+    "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=11001&_since=11000":
       {
         sampleHeaders: [
           "Access-Control-Allow-Origin: *",
@@ -1695,7 +1695,7 @@ wNuvFqc=
           ],
         },
       },
-    "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=1337&_since=%223000%22":
+    "GET:/v1/buckets/main/collections/password-fields/changeset?_expected=1337&_since=3000":
       {
         sampleHeaders: [
           "Access-Control-Allow-Origin: *",
@@ -1795,7 +1795,7 @@ wNuvFqc=
           ],
         },
       },
-    "GET:/v1/buckets/main/collections/with-local-fields/changeset?_expected=3000&_since=%222000%22":
+    "GET:/v1/buckets/main/collections/with-local-fields/changeset?_expected=3000&_since=2000":
       {
         sampleHeaders: [
           "Access-Control-Allow-Origin: *",

@@ -492,6 +492,23 @@ function getPhase(topic) {
       }
       return undefined;
     },
+
+    /**
+     * Reset the phase after a call to _trigger().
+     * For testing purposes only.
+     */
+    get _reset() {
+      let accepted = Services.prefs.getBoolPref(
+        "toolkit.asyncshutdown.testing",
+        false
+      );
+      if (accepted) {
+        return () => {
+          spinner = new Spinner(topic);
+        };
+      }
+      return undefined;
+    },
   });
   gPhases.set(topic, phase);
   return phase;

@@ -87,7 +87,9 @@ struct ChannelMarker {
     using MS = MarkerSchema;
     MS schema(MS::Location::MarkerChart, MS::Location::MarkerTable);
     schema.SetTableLabel("{marker.data.url}");
-    schema.AddKeyFormat("url", MS::Format::Url, MS::PayloadFlags::Searchable);
+    schema.AddKeyFormat("url", MS::Format::Url);
+    // Bug 1618687 - Use channelId to segment "Waiting for Socket Thread".
+    schema.AddKeyFormat("channelId", MS::Format::Integer);
     schema.AddStaticLabelValue(
         "Description",
         "Timestamp capturing various phases of a network channel's lifespan.");
@@ -938,7 +940,11 @@ mozilla::ipc::IPCResult HttpChannelParent::RecvRedirect2Verify(
   // Wait for background channel ready on target channel
   nsCOMPtr<nsIRedirectChannelRegistrar> redirectReg =
       RedirectChannelRegistrar::GetOrCreate();
-  MOZ_ASSERT(redirectReg);
+  if (!redirectReg) {
+    // Shutdown is in progress.
+    ContinueRedirect2Verify(NS_ERROR_ABORT);
+    return IPC_OK();
+  }
 
   nsCOMPtr<nsIParentChannel> redirectParentChannel;
   rv = redirectReg->GetParentChannel(mRedirectChannelId,
@@ -1786,7 +1792,10 @@ HttpChannelParent::StartRedirect(nsIChannel* newChannel, uint32_t redirectFlags,
   // Register the new channel and obtain id for it
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
-  MOZ_ASSERT(registrar);
+  if (!registrar) {
+    // Shutdown is in progress.
+    return NS_ERROR_ABORT;
+  }
 
   mRedirectChannelId = nsContentUtils::GenerateLoadIdentifier();
   rv = registrar->RegisterChannel(newChannel, mRedirectChannelId);
@@ -2123,7 +2132,12 @@ HttpChannelParent::OnRedirectResult(nsresult status) {
   if (mRedirectChannelId) {
     nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
         RedirectChannelRegistrar::GetOrCreate();
-    MOZ_ASSERT(registrar);
+    if (!registrar) {
+      // Shutdown is in progress.
+      mRedirectChannelId = 0;
+      CompleteRedirect(NS_ERROR_ABORT);
+      return NS_OK;
+    }
 
     rv = registrar->GetParentChannel(mRedirectChannelId,
                                      getter_AddRefs(redirectChannel));

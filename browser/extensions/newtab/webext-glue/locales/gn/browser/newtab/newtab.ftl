@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = Ñemomba’e
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = Mboyke
+    .aria-label = Mboyke
 
 ## Search box component.
 
@@ -254,7 +257,7 @@ newtab-empty-section-topstories-generic = Ko’ág̃a reikuaapáma. Eikejey ag̃
 
 newtab-discovery-empty-section-topstories-header = ¡Rejejokóma!
 newtab-discovery-empty-section-topstories-content = Ejujey ag̃ave tembiasaverã.
-newtab-discovery-empty-section-topstories-try-again-button = Eha’ãjey
+newtab-discovery-empty-section-topstories-try-again-button = Eha’ã jey
 newtab-discovery-empty-section-topstories-loading = Henyhẽhína…
 # Displays when a layout in a section took too long to fetch articles.
 newtab-discovery-empty-section-topstories-timed-out = ¡Háke! Haimete ñamyanyhẽ ko pehẽ’i, hákatu nahenyhẽmbamo’ãi.
@@ -328,18 +331,18 @@ newtab-custom-recent-subtitle = Tenda jeporavo ha tetepy ramovegua
 newtab-custom-weather-toggle =
     .label = Arapytu
     .description = Ko árape g̃uara ára
-newtab-custom-trending-search-toggle =
-    .label = Jeheka ojejapovéva
-    .description = Umi téma ojeguerohory ha ojehekavéva
 newtab-custom-widget-weather-toggle =
     .label = Arapytu
-newtab-custom-widget-trending-search-toggle =
-    .label = Eheka ojejapovéva
 newtab-custom-widget-lists-toggle =
     .label = Tysýi
 newtab-custom-widget-timer-toggle =
     .label = Aravojere
 newtab-custom-widget-section-title = Widgets
+newtab-custom-widget-section-toggle =
+    .label = Widgets
+newtab-widget-manage-title = Widgets
+newtab-widget-manage-widget-button =
+    .label = Eñangareko widgets
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Mboty
@@ -467,6 +470,8 @@ newtab-weather-change-location-search-input-placeholder =
     .placeholder = Eheka tendatee
     .aria-label = Eheka tendatee
 newtab-weather-menu-weather-display = Ára jehechaha
+newtab-weather-todays-forecast = Arareko ko árape g̃uarã
+newtab-weather-see-full-forecast = Ehechapaite arareko
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -479,6 +484,7 @@ newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
 newtab-weather-menu-change-temperature-units-fahrenheit = Eva Fahrenheit ndive
 newtab-weather-menu-change-temperature-units-celsius = Eva Celsius ndive
+newtab-weather-menu-hide-weather-v2 = Eñomi arapytu
 newtab-weather-menu-hide-weather = Eñomi arareko Tendayke Pyahúpe
 newtab-weather-menu-learn-more = Eikuaave
 newtab-weather-menu-detect-my-location = Ehecha che rendaite
@@ -491,6 +497,11 @@ newtab-weather-opt-in-yes =
     .label = Héẽ
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = Táva Nueva York
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Ehecha ára rehegua { $provider }-pe
+    .aria-description = { $provider } ∙ Oykekóva
 
 ## Topic Labels
 
@@ -572,7 +583,7 @@ newtab-section-mangage-topics-blocked-topics-empty-state = Ndojokói gueteri mba
 newtab-custom-wallpaper-title = Ko’ápe oĩ mba’erechaha rugua
 # 'Make firefox yours" means to customize or personalize
 newtab-custom-wallpaper-subtitle = Ehupi ne mba’erechaha teéva térã eiporavo sa’yete embohéra hag̃ua ne { -brand-product-name }.
-newtab-custom-wallpaper-cta = Eha’ãjey
+newtab-custom-wallpaper-cta = Eha’ã jey
 
 ## Strings for new user activation custom wallpaper highlight
 
@@ -595,7 +606,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = Eguerohoryvéva ne kuã ykerete
 newtab-shortcuts-highlight-subtitle = Embojuaju jeike pya’eha ereko hag̃ua erohoryvéva nde ykére.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = ¿Mba’ére emombe’u kóva rehegua?
@@ -613,21 +624,13 @@ newtab-report-content-inappropriate-offensive =
     .label = Nahendái térã oporoja’óva
 newtab-report-content-spam-misleading =
     .label = Spam térã japúva
+newtab-report-content-requires-payment-subscription =
+    .label = Oikotevẽ jehepyme’ẽ térã ñemboheraguapy
+newtab-report-content-requires-payment-subscription-learn-more = Eikuaave
 newtab-report-cancel = Heja
 newtab-report-submit = Mondo
 newtab-toast-thanks-for-reporting =
     .message = Aguyje emomarandu haguére.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Ehechauka jeheka ojejapovéva
-newtab-trending-searches-hide-trending =
-    .title = Eñomi jeheka ojejapovéva
-newtab-trending-searches-learn-more = Eikuaave
-newtab-trending-searches-dismiss = Eñomi jeheka ojejapovéva
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Jeheka ojejapovéva
 
 ## Strings for task / to-do list productivity widget
 
@@ -700,6 +703,12 @@ newtab-widget-timer-menu-notifications = Eipe’a ñemomarandu
 newtab-widget-timer-menu-notifications-on = Emyandy marandu’i
 newtab-widget-timer-menu-hide = Eñomi aravopapaha
 newtab-widget-timer-menu-learn-more = Kuaave
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = Marandu mba’eguasuvéva
+newtab-daily-briefing-card-menu-dismiss = Mokañy
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = Hekopyahu ojapo { $minutes }m
 newtab-widget-message-title = Epyta umi tysýi ndive ha aravopapaha reheve
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Mandu’arã guive tembiaporã peve, ñamindu’u ha jepytu’u jehetetirarã, ema’ẽ ne rembiapo ha aravo rehe.
@@ -709,3 +718,24 @@ newtab-promo-card-cta = Eikuaave
 newtab-promo-card-dismiss-button =
     .title = Mboyke
     .aria-label = Mboyke
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-dismiss-button =
+    .title = Mosẽ
+    .aria-label = Mosẽ
+# "This space" refers to about:newtab. The call to action here ("make it your own")
+# is to customize newtab with a background image or colour, or by tweaking the
+# existing widgetry that appears on it.
+newtab-activation-window-message-customization-focus-header = Eñemomba’e ko pa’ũre
+newtab-activation-window-message-customization-focus-message = Eiporavo mba’erechaha rugua pyahu, embojuaju jeike pya’eha tendaita ehayhuvévape ha eikuaameme tembiasakue erohorýva
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = Eñepyrũ emboava
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = Ko pa’ũ ohuga ambue tekoguatarãme

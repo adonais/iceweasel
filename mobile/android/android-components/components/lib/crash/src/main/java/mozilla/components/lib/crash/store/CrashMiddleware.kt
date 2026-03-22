@@ -6,6 +6,7 @@ package mozilla.components.lib.crash.store
 
 import android.text.format.DateUtils
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -233,7 +234,8 @@ class CrashMiddleware(
         }
     }
 
-    private suspend fun sendCrashReports(crashIDs: List<String>) {
+    @VisibleForTesting
+    internal suspend fun sendCrashReports(crashIDs: List<String>) {
         crashReporter.findCrashReports(crashIDs.toTypedArray()).forEach {
             crashReporter.submitReport(it)
         }

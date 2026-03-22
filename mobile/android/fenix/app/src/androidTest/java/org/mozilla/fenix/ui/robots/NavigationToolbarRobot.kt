@@ -7,7 +7,6 @@
 package org.mozilla.fenix.ui.robots
 
 import android.net.Uri
-import android.os.Build
 import android.util.Log
 import android.view.KeyEvent
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -17,14 +16,11 @@ import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.ComposeTestRule
-import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
-import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.espresso.AppNotIdleException
 import androidx.test.espresso.Espresso.onView
@@ -147,21 +143,13 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
         waitForAppWindowToBeUpdated()
     }
 
-    fun verifyClipboardSuggestionsAreDisplayed(link: String = "", shouldBeDisplayed: Boolean) {
-        assertUIObjectExists(
-            itemWithResId("$packageName:id/fill_link_from_clipboard"),
-            exists = shouldBeDisplayed,
-        )
-        // On Android 12 or above we don't SHOW the URL unless the user requests to do so.
-        // See for more information https://github.com/mozilla-mobile/fenix/issues/22271
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            assertUIObjectExists(
-                itemWithResIdAndText(
-                    "$packageName:id/clipboard_url",
-                    link,
-                ),
-                exists = shouldBeDisplayed,
-            )
+    fun verifyClipboardSuggestionsAreDisplayed(shouldBeDisplayed: Boolean) {
+        if (shouldBeDisplayed) {
+            composeTestRule.onNodeWithText(getStringResource(R.string.awesomebar_clipboard_title))
+                .assertIsDisplayed()
+        } else {
+            composeTestRule.onNodeWithText(getStringResource(R.string.awesomebar_clipboard_title))
+                .assertIsNotDisplayed()
         }
     }
 
@@ -316,6 +304,38 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyNavBarBarPosition: Verified the toolbar navbar position is at the bottom: $isAtBottom.")
     }
 
+    fun verifyTheTabCounter(numberOfOpenTabs: String, isPrivateBrowsingEnabled: Boolean = false) {
+        if (isPrivateBrowsingEnabled) {
+            Log.i(TAG, "verifyTabCounter: Trying to verify that the number of open private tabs is : $numberOfOpenTabs")
+            composeTestRule.onNodeWithContentDescription("Private Tabs Open: $numberOfOpenTabs. Tap to switch tabs.")
+                .assertIsDisplayed()
+            Log.i(TAG, "verifyTabCounter: Verified that the number of open private tabs is : $numberOfOpenTabs")
+        } else {
+            Log.i(TAG, "verifyTabCounter: Trying to verify that the number of open tabs is : $numberOfOpenTabs")
+            composeTestRule.onNodeWithContentDescription("Non-private Tabs Open: $numberOfOpenTabs. Tap to switch tabs.")
+                .assertIsDisplayed()
+            Log.i(TAG, "verifyTabCounter: Verified that the number of open tabs is : $numberOfOpenTabs")
+        }
+    }
+
+    fun verifyTheMainMenuButton() {
+        Log.i(TAG, "verifyTheMainMenuButton: Trying to verify that the main menu button is displayed")
+        composeTestRule.onNodeWithContentDescription(getStringResource(R.string.content_description_menu)).assertIsDisplayed()
+        Log.i(TAG, "verifyTheMainMenuButton: Verified that the main menu button is displayed")
+    }
+
+    fun verifyTheNewTabButton(isPrivateModeEnabled: Boolean = false) {
+        if (isPrivateModeEnabled) {
+            Log.i(TAG, "verifyTheNewTabButton: Trying to verify that the \"New private tab\" button is displayed.")
+            composeTestRule.onNodeWithContentDescription("New private tab").assertIsDisplayed()
+            Log.i(TAG, "verifyTheNewTabButton: Verified that the \"New private tab\" button is displayed.")
+        } else {
+            Log.i(TAG, "verifyTheNewTabButton: Trying to verify that the \"New tab\" button is displayed.")
+            composeTestRule.onNodeWithContentDescription("New tab").assertIsDisplayed()
+            Log.i(TAG, "verifyTheNewTabButton: Verified that the \"New tab\" button is displayed.")
+        }
+    }
+
     class Transition(private val composeTestRule: ComposeTestRule) {
         private lateinit var sessionLoadedIdlingResource: SessionLoadedIdlingResource
 
@@ -324,15 +344,35 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
             interact: BrowserRobot.() -> Unit,
         ): BrowserRobot.Transition {
             Log.i(TAG, "enterURLAndEnterToBrowser: Trying to click navigation toolbar")
-            composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL_BOX).onLast().performClick()
+            itemWithResId("ADDRESSBAR_URL_BOX").click()
             Log.i(TAG, "enterURLAndEnterToBrowser: Clicked navigation toolbar")
-            Log.i(TAG, "enterURLAndEnterToBrowser: Trying to set toolbar text to: $url and perform IME action")
-            composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).apply {
-                performTextReplacement(url.toString())
-                performImeAction()
+
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waited for compose rule to be idle")
+
+            Log.i(TAG, "enterURLAndEnterToBrowser: Trying to set toolbar text to: $url")
+            itemWithResId("ADDRESSBAR_SEARCH_BOX").setText(url.toString())
+            Log.i(TAG, "enterURLAndEnterToBrowser: Toolbar text was set to: $url")
+
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waited for compose rule to be idle")
+
+            runCatching {
+                Log.i(TAG, "enterURLAndEnterToBrowser: Trying to perform Compose IME action perform on the toolbar")
+                composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performImeAction()
+                Log.i(TAG, "enterURLAndEnterToBrowser: Compose IME action performed on the toolbar")
+            }.onFailure { throwable ->
+                Log.e(TAG, "enterURLAndEnterToBrowser: Compose IME action failed with: ${throwable::class.java.simpleName} - ${throwable.message}")
+                Log.d(TAG, "enterURLAndEnterToBrowser: Falling back to UiDevice pressEnter()")
+                mDevice.pressEnter()
+                Log.d(TAG, "enterURLAndEnterToBrowser: Fallback UiDevice pressEnter() completed")
             }
-            Log.i(TAG, "enterURLAndEnterToBrowser: Toolbar text was set to: $url and IME action performed")
-            waitForAppWindowToBeUpdated()
+
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waiting for compose rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "enterURLAndEnterToBrowser: Waited for compose rule to be idle")
 
             BrowserRobot(composeTestRule).interact()
             return BrowserRobot.Transition(composeTestRule)
@@ -499,6 +539,21 @@ class NavigationToolbarRobot(private val composeTestRule: ComposeTestRule) {
 
             UnifiedTrustPanelRobot().interact()
             return UnifiedTrustPanelRobot.Transition()
+        }
+
+        fun clickTheNewTabButton(isPrivateModeEnabled: Boolean = false, interact: SearchRobot.() -> Unit): SearchRobot.Transition {
+            if (isPrivateModeEnabled) {
+                Log.i(TAG, "clickTheNewTabButton: Trying to click the \"New private tab\" button.")
+                composeTestRule.onNodeWithContentDescription("New private tab").performClick()
+                Log.i(TAG, "clickTheNewTabButton: Clicked the \"New private tab\" button.")
+            } else {
+                Log.i(TAG, "clickTheNewTabButton: Trying to click the \"New tab\" button.")
+                composeTestRule.onNodeWithContentDescription("New tab").performClick()
+                Log.i(TAG, "clickTheNewTabButton: Clicked the \"New tab\" button.")
+            }
+
+            SearchRobot(composeTestRule).interact()
+            return SearchRobot.Transition(composeTestRule)
         }
     }
 }

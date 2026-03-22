@@ -32,6 +32,8 @@
       this.addEventListener("TabShow", this);
       this.addEventListener("TabHoverStart", this);
       this.addEventListener("TabHoverEnd", this);
+      this.addEventListener("TabNoteIconHoverStart", this);
+      this.addEventListener("TabNoteIconHoverEnd", this);
       this.addEventListener("TabGroupLabelHoverStart", this);
       this.addEventListener("TabGroupLabelHoverEnd", this);
       // Capture collapse/expand early so we mark animating groups before
@@ -158,6 +160,7 @@
       this._fullscreenMutationObserver.observe(document.documentElement, {
         attributeFilter: ["inFullscreen", "inDOMFullscreen"],
       });
+      window.addEventListener("uidensitychanged", this);
 
       this.boundObserve = (...args) => this.observe(...args);
       Services.prefs.addObserver("privacy.userContext", this.boundObserve);
@@ -227,24 +230,7 @@
 
       this.tooltip = "tabbrowser-tab-tooltip";
 
-      Services.prefs.addObserver(
-        "browser.tabs.dragDrop.multiselectStacking",
-        this.boundObserve
-      );
-      this.observe(
-        null,
-        "nsPref:changed",
-        "browser.tabs.dragDrop.multiselectStacking"
-      );
-    }
-
-    #initializeDragAndDrop() {
-      this.tabDragAndDrop = Services.prefs.getBoolPref(
-        "browser.tabs.dragDrop.multiselectStacking",
-        true
-      )
-        ? new window.TabStacking(this)
-        : new window.TabDragAndDrop(this);
+      this.tabDragAndDrop = new window.TabDragAndDrop(this);
       this.tabDragAndDrop.init();
     }
 
@@ -353,6 +339,24 @@
 
     on_TabHoverEnd(event) {
       this.previewPanel?.deactivate(event.target);
+    }
+
+    on_TabNoteIconHoverStart(event) {
+      if (!this._showTabHoverPreview) {
+        return;
+      }
+      this.ensureTabPreviewPanelLoaded();
+      this.previewPanel.activateNotePanel(
+        event.target,
+        event.detail.noteIconElement
+      );
+    }
+
+    on_TabNoteIconHoverEnd(event) {
+      this.previewPanel?.deactivateNotePanel(event.target);
+      if (event.detail.returningToTab) {
+        this.previewPanel?.activate(event.target);
+      }
     }
 
     cancelTabGroupPreview() {
@@ -805,6 +809,12 @@
       }
     }
 
+    on_uidensitychanged() {
+      this._updateCloseButtons();
+      this.#updateTabMinHeight();
+      this._handleTabSelect(true);
+    }
+
     // Utilities
 
     get emptyTabTitle() {
@@ -874,6 +884,23 @@
     get allGroups() {
       let children = Array.from(this.arrowScrollbox.children);
       return children.filter(node => node.tagName == "tab-group");
+    }
+
+    get allSplitViews() {
+      let children = Array.from(this.arrowScrollbox.children);
+      let splitViews = [];
+      for (let node of children) {
+        if (node.tagName == "tab-split-view-wrapper") {
+          splitViews.push(node);
+        } else if (node.tagName == "tab-group") {
+          splitViews.push(
+            ...Array.from(node.children).filter(
+              child => child.tagName == "tab-split-view-wrapper"
+            )
+          );
+        }
+      }
+      return splitViews;
     }
 
     /**
@@ -1236,12 +1263,9 @@
       }
     }
 
-    observe(aSubject, aTopic, aData) {
+    observe(aSubject, aTopic) {
       switch (aTopic) {
         case "nsPref:changed": {
-          if (aData == "browser.tabs.dragDrop.multiselectStacking") {
-            this.#initializeDragAndDrop();
-          }
           // This is has to deal with changes in
           // privacy.userContext.enabled and
           // privacy.userContext.newTabContainerOnLeftClick.enabled.
@@ -1494,12 +1518,6 @@
       }
     }
 
-    uiDensityChanged() {
-      this._updateCloseButtons();
-      this.#updateTabMinHeight();
-      this._handleTabSelect(true);
-    }
-
     _notifyBackgroundTab(aTab) {
       if (aTab.pinned || !aTab.visible || !this.overflowing) {
         return;
@@ -1716,10 +1734,6 @@
     destroy() {
       if (this.boundObserve) {
         Services.prefs.removeObserver("privacy.userContext", this.boundObserve);
-        Services.prefs.removeObserver(
-          "browser.tabs.dragDrop.multiselectStacking",
-          this.boundObserve
-        );
       }
       CustomizableUI.removeListener(this);
     }

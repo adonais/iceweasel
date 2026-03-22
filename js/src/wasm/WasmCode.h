@@ -33,7 +33,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 #include <utility>
 
 #include "jstypes.h"

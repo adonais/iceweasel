@@ -6,7 +6,8 @@ use nix::poll::{poll, PollFd, PollFlags, PollTimeout};
 use std::{collections::HashMap, os::fd::BorrowedFd, rc::Rc};
 
 use crate::{
-    ignore_eintr, ipc_queue::IPCQueueError, IPCConnector, IPCConnectorKey, IPCEvent, IPCListener,
+    ignore_eintr, ipc_queue::IPCQueueError, platform::PlatformError, IPCConnector, IPCConnectorKey,
+    IPCEvent, IPCListener,
 };
 
 pub struct IPCQueue {
@@ -41,7 +42,7 @@ impl IPCQueue {
 
         let mut events = Vec::<IPCEvent>::new();
         let mut num_events = ignore_eintr!(poll(&mut pollfds, PollTimeout::NONE))
-            .map_err(IPCQueueError::WaitError)?;
+            .map_err(|e| IPCQueueError::WaitError(PlatformError::PollFailure(e)))?;
 
         for (pollfd, (&key, connector)) in pollfds.iter().zip(&self.connectors) {
             // revents() returns None only if the kernel sends back data

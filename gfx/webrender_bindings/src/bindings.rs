@@ -648,11 +648,13 @@ pub extern "C" fn wr_renderer_render(
     buffer_age: usize,
     out_stats: &mut RendererStats,
     out_dirty_rects: &mut ThinVec<DeviceIntRect>,
+    out_did_rasterize: &mut bool,
 ) -> bool {
     match renderer.render(DeviceIntSize::new(width, height), buffer_age) {
         Ok(results) => {
             *out_stats = results.stats;
             out_dirty_rects.extend(results.dirty_rects);
+            *out_did_rasterize = results.did_rasterize_any_tile;
             true
         },
         Err(errors) => {
@@ -926,7 +928,7 @@ pub fn gecko_profiler_event_marker(name: &str) {
 
 pub fn gecko_profiler_add_text_marker(name: &str, text: &str, microseconds: f64) {
     use gecko_profiler::{gecko_profiler_category, MarkerOptions, MarkerTiming, ProfilerTime};
-    if !gecko_profiler::can_accept_markers() {
+    if !gecko_profiler::current_thread_is_being_profiled_for_markers() {
         return;
     }
 
@@ -2120,18 +2122,6 @@ pub extern "C" fn wr_window_new(
         static_prefs::pref!("gfx.webrender.precise-linear-gradients")
     };
 
-    let precise_radial_gradients = if software {
-        static_prefs::pref!("gfx.webrender.precise-radial-gradients-swgl")
-    } else {
-        static_prefs::pref!("gfx.webrender.precise-radial-gradients")
-    };
-
-    let precise_conic_gradients = if software {
-        static_prefs::pref!("gfx.webrender.precise-conic-gradients-swgl")
-    } else {
-        static_prefs::pref!("gfx.webrender.precise-conic-gradients")
-    };
-
     let opts = WebRenderOptions {
         enable_aa: true,
         enable_subpixel_aa,
@@ -2188,8 +2178,6 @@ pub extern "C" fn wr_window_new(
         max_shared_surface_size,
         enable_dithering,
         precise_linear_gradients,
-        precise_radial_gradients,
-        precise_conic_gradients,
         ..Default::default()
     };
 
@@ -4371,6 +4359,7 @@ pub extern "C" fn wr_dp_push_box_shadow(
     blur_radius: f32,
     spread_radius: f32,
     border_radius: BorderRadius,
+    shadow_radius: BorderRadius,
     clip_mode: BoxShadowClipMode,
 ) {
     debug_assert!(unsafe { is_in_main_thread() });
@@ -4392,6 +4381,7 @@ pub extern "C" fn wr_dp_push_box_shadow(
         blur_radius,
         spread_radius,
         border_radius,
+        shadow_radius,
         clip_mode,
     );
 }

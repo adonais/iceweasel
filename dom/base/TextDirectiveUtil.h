@@ -137,8 +137,11 @@ class TextDirectiveUtil final {
   /** Advances the start of `aRange` to the next non-whitespace position.
    * The function follows this section of the spec:
    * https://wicg.github.io/scroll-to-text-fragment/#next-non-whitespace-position
+   *
+   * Returns true if the range was successfully advanced to a non-whitespace
+   * position in a text node, false otherwise (that indicates end of document).
    */
-  static void AdvanceStartToNextNonWhitespacePosition(nsRange& aRange);
+  static bool AdvanceStartToNextNonWhitespacePosition(nsRange& aRange);
 
   /**
    * @brief Returns a point moved by one character or unicode surrogate pair.

@@ -342,8 +342,8 @@ function withCommonPathPrefixRemoved(pathArray) {
 }
 
 /**
- * This method has been copied from `ospath_win.jsm` as part of the migration
- * from `OS.Path` to `PathUtils`.
+ * This method has been copied as part of the migration from `OS.Path` to
+ * `PathUtils`.
  *
  * Return the windows drive name of a path, or |null| if the path does
  * not contain a drive name.

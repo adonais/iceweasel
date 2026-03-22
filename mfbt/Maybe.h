@@ -146,7 +146,7 @@ class Maybe_CopyMove_Enabler;
   }
 
 template <typename T>
-class Maybe_CopyMove_Enabler<T, true, true, true> {
+class MOZ_TRIVIAL_ABI Maybe_CopyMove_Enabler<T, true, true, true> {
  public:
   Maybe_CopyMove_Enabler() = default;
 
@@ -165,7 +165,7 @@ class Maybe_CopyMove_Enabler<T, true, true, true> {
 };
 
 template <typename T>
-class Maybe_CopyMove_Enabler<T, true, false, true> {
+class MOZ_TRIVIAL_ABI Maybe_CopyMove_Enabler<T, true, false, true> {
  public:
   Maybe_CopyMove_Enabler() = default;
 
@@ -273,10 +273,16 @@ struct MaybeStorage<T, false> : MaybeStorageBase<T> {
   }
 };
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wunused-value"
+#endif
 template <typename T>
 struct MaybeStorage<T, true> : MaybeStorageBase<T> {
  protected:
   char mIsSome = false;  // not bool -- guarantees minimal space consumption
+  // Make the padding explicit to help compiler optimization.
+  char padding[alignof(MaybeStorageBase<T>) - sizeof(char)] = {};
 
   constexpr MaybeStorage() = default;
   constexpr explicit MaybeStorage(const T& aVal)
@@ -289,6 +295,9 @@ struct MaybeStorage<T, true> : MaybeStorageBase<T> {
       : MaybeStorageBase<T>{std::in_place, std::forward<Args>(aArgs)...},
         mIsSome{true} {}
 };
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
 
 template <typename T>
 struct IsMaybeImpl : std::false_type {};

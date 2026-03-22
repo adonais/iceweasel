@@ -135,7 +135,7 @@
       var showUndo = spellui.canSpellCheck && spellui.canUndo();
 
       var enabledCheckbox = this.getMenuItem("spell-check-enabled");
-      enabledCheckbox.setAttribute("checked", enabled);
+      enabledCheckbox.toggleAttribute("checked", enabled);
 
       var overMisspelling = spellui.overMisspelling;
       this._setMenuItemVisibility("spell-add-to-dictionary", overMisspelling);

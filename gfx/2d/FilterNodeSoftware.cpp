@@ -1765,12 +1765,10 @@ void FilterNodeComponentTransferSoftware::SetAttribute(uint32_t aIndex,
 
 void FilterNodeComponentTransferSoftware::GenerateLookupTable(
     ptrdiff_t aComponent, uint8_t aTables[4][256], bool aDisabled) {
-  if (aDisabled) {
+  if (aDisabled || !FillLookupTable(aComponent, aTables[aComponent])) {
     for (int32_t i = 0; i < 256; ++i) {
       aTables[aComponent][i] = i;
     }
-  } else {
-    FillLookupTable(aComponent, aTables[aComponent]);
   }
 }
 
@@ -1927,32 +1925,28 @@ void FilterNodeTableTransferSoftware::SetAttribute(uint32_t aIndex,
   Invalidate();
 }
 
-void FilterNodeTableTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
+bool FilterNodeTableTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
                                                       uint8_t aTable[256]) {
   switch (aComponent) {
     case B8G8R8A8_COMPONENT_BYTEOFFSET_R:
-      FillLookupTableImpl(mTableR, aTable);
-      break;
+      return FillLookupTableImpl(mTableR, aTable);
     case B8G8R8A8_COMPONENT_BYTEOFFSET_G:
-      FillLookupTableImpl(mTableG, aTable);
-      break;
+      return FillLookupTableImpl(mTableG, aTable);
     case B8G8R8A8_COMPONENT_BYTEOFFSET_B:
-      FillLookupTableImpl(mTableB, aTable);
-      break;
+      return FillLookupTableImpl(mTableB, aTable);
     case B8G8R8A8_COMPONENT_BYTEOFFSET_A:
-      FillLookupTableImpl(mTableA, aTable);
-      break;
+      return FillLookupTableImpl(mTableA, aTable);
     default:
       MOZ_ASSERT(false, "unknown component");
-      break;
+      return false;
   }
 }
 
-void FilterNodeTableTransferSoftware::FillLookupTableImpl(
+bool FilterNodeTableTransferSoftware::FillLookupTableImpl(
     const std::vector<Float>& aTableValues, uint8_t aTable[256]) {
   uint32_t tvLength = aTableValues.size();
-  if (tvLength < 2) {
-    return;
+  if (tvLength < 1) {
+    return false;
   }
 
   for (size_t i = 0; i < 256; i++) {
@@ -1963,6 +1957,7 @@ void FilterNodeTableTransferSoftware::FillLookupTableImpl(
                                           (tvLength - 1) * (v2 - v1)));
     aTable[i] = std::clamp(val, 0, 255);
   }
+  return true;
 }
 
 void FilterNodeDiscreteTransferSoftware::SetAttribute(uint32_t aIndex,
@@ -1988,32 +1983,28 @@ void FilterNodeDiscreteTransferSoftware::SetAttribute(uint32_t aIndex,
   Invalidate();
 }
 
-void FilterNodeDiscreteTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
+bool FilterNodeDiscreteTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
                                                          uint8_t aTable[256]) {
   switch (aComponent) {
     case B8G8R8A8_COMPONENT_BYTEOFFSET_R:
-      FillLookupTableImpl(mTableR, aTable);
-      break;
+      return FillLookupTableImpl(mTableR, aTable);
     case B8G8R8A8_COMPONENT_BYTEOFFSET_G:
-      FillLookupTableImpl(mTableG, aTable);
-      break;
+      return FillLookupTableImpl(mTableG, aTable);
     case B8G8R8A8_COMPONENT_BYTEOFFSET_B:
-      FillLookupTableImpl(mTableB, aTable);
-      break;
+      return FillLookupTableImpl(mTableB, aTable);
     case B8G8R8A8_COMPONENT_BYTEOFFSET_A:
-      FillLookupTableImpl(mTableA, aTable);
-      break;
+      return FillLookupTableImpl(mTableA, aTable);
     default:
       MOZ_ASSERT(false, "unknown component");
-      break;
+      return false;
   }
 }
 
-void FilterNodeDiscreteTransferSoftware::FillLookupTableImpl(
+bool FilterNodeDiscreteTransferSoftware::FillLookupTableImpl(
     const std::vector<Float>& aTableValues, uint8_t aTable[256]) {
   uint32_t tvLength = aTableValues.size();
   if (tvLength < 1) {
-    return;
+    return false;
   }
 
   for (size_t i = 0; i < 256; i++) {
@@ -2023,6 +2014,7 @@ void FilterNodeDiscreteTransferSoftware::FillLookupTableImpl(
     int32_t val = NS_lround(255 * v);
     aTable[i] = std::clamp(val, 0, 255);
   }
+  return true;
 }
 
 FilterNodeLinearTransferSoftware::FilterNodeLinearTransferSoftware()
@@ -2068,33 +2060,30 @@ void FilterNodeLinearTransferSoftware::SetAttribute(uint32_t aIndex,
   Invalidate();
 }
 
-void FilterNodeLinearTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
+bool FilterNodeLinearTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
                                                        uint8_t aTable[256]) {
   switch (aComponent) {
     case B8G8R8A8_COMPONENT_BYTEOFFSET_R:
-      FillLookupTableImpl(mSlopeR, mInterceptR, aTable);
-      break;
+      return FillLookupTableImpl(mSlopeR, mInterceptR, aTable);
     case B8G8R8A8_COMPONENT_BYTEOFFSET_G:
-      FillLookupTableImpl(mSlopeG, mInterceptG, aTable);
-      break;
+      return FillLookupTableImpl(mSlopeG, mInterceptG, aTable);
     case B8G8R8A8_COMPONENT_BYTEOFFSET_B:
-      FillLookupTableImpl(mSlopeB, mInterceptB, aTable);
-      break;
+      return FillLookupTableImpl(mSlopeB, mInterceptB, aTable);
     case B8G8R8A8_COMPONENT_BYTEOFFSET_A:
-      FillLookupTableImpl(mSlopeA, mInterceptA, aTable);
-      break;
+      return FillLookupTableImpl(mSlopeA, mInterceptA, aTable);
     default:
       MOZ_ASSERT(false, "unknown component");
-      break;
+      return false;
   }
 }
 
-void FilterNodeLinearTransferSoftware::FillLookupTableImpl(
+bool FilterNodeLinearTransferSoftware::FillLookupTableImpl(
     Float aSlope, Float aIntercept, uint8_t aTable[256]) {
   for (size_t i = 0; i < 256; i++) {
     int32_t val = NS_lround(aSlope * i + 255 * aIntercept);
     aTable[i] = std::clamp(val, 0, 255);
   }
+  return true;
 }
 
 FilterNodeGammaTransferSoftware::FilterNodeGammaTransferSoftware()
@@ -2156,28 +2145,24 @@ void FilterNodeGammaTransferSoftware::SetAttribute(uint32_t aIndex,
   Invalidate();
 }
 
-void FilterNodeGammaTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
+bool FilterNodeGammaTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
                                                       uint8_t aTable[256]) {
   switch (aComponent) {
     case B8G8R8A8_COMPONENT_BYTEOFFSET_R:
-      FillLookupTableImpl(mAmplitudeR, mExponentR, mOffsetR, aTable);
-      break;
+      return FillLookupTableImpl(mAmplitudeR, mExponentR, mOffsetR, aTable);
     case B8G8R8A8_COMPONENT_BYTEOFFSET_G:
-      FillLookupTableImpl(mAmplitudeG, mExponentG, mOffsetG, aTable);
-      break;
+      return FillLookupTableImpl(mAmplitudeG, mExponentG, mOffsetG, aTable);
     case B8G8R8A8_COMPONENT_BYTEOFFSET_B:
-      FillLookupTableImpl(mAmplitudeB, mExponentB, mOffsetB, aTable);
-      break;
+      return FillLookupTableImpl(mAmplitudeB, mExponentB, mOffsetB, aTable);
     case B8G8R8A8_COMPONENT_BYTEOFFSET_A:
-      FillLookupTableImpl(mAmplitudeA, mExponentA, mOffsetA, aTable);
-      break;
+      return FillLookupTableImpl(mAmplitudeA, mExponentA, mOffsetA, aTable);
     default:
       MOZ_ASSERT(false, "unknown component");
-      break;
+      return false;
   }
 }
 
-void FilterNodeGammaTransferSoftware::FillLookupTableImpl(Float aAmplitude,
+bool FilterNodeGammaTransferSoftware::FillLookupTableImpl(Float aAmplitude,
                                                           Float aExponent,
                                                           Float aOffset,
                                                           uint8_t aTable[256]) {
@@ -2186,12 +2171,14 @@ void FilterNodeGammaTransferSoftware::FillLookupTableImpl(Float aAmplitude,
         NS_lround(255 * (aAmplitude * pow(i / 255.0f, aExponent) + aOffset));
     aTable[i] = std::clamp(val, 0, 255);
   }
+  return true;
 }
 
 FilterNodeConvolveMatrixSoftware::FilterNodeConvolveMatrixSoftware()
     : mDivisor(0),
       mBias(0),
       mEdgeMode(EDGE_MODE_DUPLICATE),
+      mKernelUnitLength(1.0f, 1.0f),
       mPreserveAlpha(false) {}
 
 int32_t FilterNodeConvolveMatrixSoftware::InputIndex(uint32_t aInputEnumIndex) {
@@ -2237,7 +2224,21 @@ void FilterNodeConvolveMatrixSoftware::SetAttribute(
     uint32_t aIndex, const Size& aKernelUnitLength) {
   switch (aIndex) {
     case ATT_CONVOLVE_MATRIX_KERNEL_UNIT_LENGTH:
+      // Spec for feConvolveMatrix:
+      // If the attribute (kernelUnitLength) is not specified, the default value
+      // is one pixel in the offscreen bitmap. If a negative or zero value is
+      // specified the default value will be used instead. The first number is
+      // the x value. The second number is the y value. If the value is not
+      // specified, it defaults to the same value as x.
       mKernelUnitLength = aKernelUnitLength;
+      if (mKernelUnitLength.width <= 0.0f ||
+          !std::isfinite(mKernelUnitLength.width)) {
+        mKernelUnitLength.width = 1.0f;
+      }
+      if (mKernelUnitLength.height <= 0.0f ||
+          !std::isfinite(mKernelUnitLength.height)) {
+        mKernelUnitLength.height = mKernelUnitLength.width;
+      }
       break;
     default:
       MOZ_CRASH("GFX: FilterNodeConvolveMatrixSoftware::SetAttribute");
@@ -2438,20 +2439,26 @@ template <typename CoordType>
 already_AddRefed<DataSourceSurface> FilterNodeConvolveMatrixSoftware::DoRender(
     const IntRect& aRect, CoordType aKernelUnitLengthX,
     CoordType aKernelUnitLengthY) {
+  // Ensure multiply fits in an int32_t so convolve math won't overflow.
+  auto kernelArea = CheckedInt32(mKernelSize.width) * mKernelSize.height;
   if (mKernelSize.width <= 0 || mKernelSize.height <= 0 ||
-      mKernelMatrix.size() !=
-          uint32_t(mKernelSize.width * mKernelSize.height) ||
+      !kernelArea.isValid() ||
+      mKernelMatrix.size() != size_t(kernelArea.value()) ||
       !IntRect(IntPoint(0, 0), mKernelSize).Contains(mTarget) ||
       mDivisor == 0) {
     return Factory::CreateDataSourceSurface(aRect.Size(),
                                             SurfaceFormat::B8G8R8A8, true);
   }
 
-  IntRect srcRect = InflatedSourceRect(aRect);
-
+  RectDouble srcRectD(aRect);
+  srcRectD.Inflate(GetInflateSourceMargin());
   // Inflate the source rect by another pixel because the bilinear filtering in
   // ColorComponentAtPoint may want to access the margins.
-  srcRect.Inflate(1);
+  srcRectD.Inflate(1);
+  if (!RectIsInt32Safe(srcRectD)) {
+    return nullptr;
+  }
+  IntRect srcRect = TruncatedToInt(srcRectD);
 
   RefPtr<DataSourceSurface> input =
       GetInputDataSourceSurface(IN_CONVOLVE_MATRIX_IN, srcRect,
@@ -2530,23 +2537,26 @@ IntRect FilterNodeConvolveMatrixSoftware::MapRectToSource(
                               aMax, aSourceNode);
 }
 
+MarginDouble FilterNodeConvolveMatrixSoftware::GetInflateSourceMargin() const {
+  double kulX = double(mKernelUnitLength.width);
+  double kulY = double(mKernelUnitLength.height);
+  MarginDouble margin;
+  margin.left = ceil(mTarget.x * kulX);
+  margin.top = ceil(mTarget.y * kulY);
+  margin.right = ceil((mKernelSize.width - mTarget.x - 1) * kulX);
+  margin.bottom = ceil((mKernelSize.height - mTarget.y - 1) * kulY);
+  return margin;
+}
+
 IntRect FilterNodeConvolveMatrixSoftware::InflatedSourceRect(
     const IntRect& aDestRect) {
   if (aDestRect.IsEmpty()) {
     return IntRect();
   }
 
-  IntMargin margin;
-  margin.left = static_cast<int32_t>(ceil(mTarget.x * mKernelUnitLength.width));
-  margin.top = static_cast<int32_t>(ceil(mTarget.y * mKernelUnitLength.height));
-  margin.right = static_cast<int32_t>(
-      ceil((mKernelSize.width - mTarget.x - 1) * mKernelUnitLength.width));
-  margin.bottom = static_cast<int32_t>(
-      ceil((mKernelSize.height - mTarget.y - 1) * mKernelUnitLength.height));
-
-  IntRect srcRect = aDestRect;
-  srcRect.Inflate(margin);
-  return srcRect;
+  RectDouble srcRect(aDestRect);
+  srcRect.Inflate(GetInflateSourceMargin());
+  return RectIsInt32Safe(srcRect) ? TruncatedToInt(srcRect) : aDestRect;
 }
 
 IntRect FilterNodeConvolveMatrixSoftware::InflatedDestRect(
@@ -2555,19 +2565,12 @@ IntRect FilterNodeConvolveMatrixSoftware::InflatedDestRect(
     return IntRect();
   }
 
-  IntMargin margin;
-  margin.left = static_cast<int32_t>(
-      ceil((mKernelSize.width - mTarget.x - 1) * mKernelUnitLength.width));
-  margin.top = static_cast<int32_t>(
-      ceil((mKernelSize.height - mTarget.y - 1) * mKernelUnitLength.height));
-  margin.right =
-      static_cast<int32_t>(ceil(mTarget.x * mKernelUnitLength.width));
-  margin.bottom =
-      static_cast<int32_t>(ceil(mTarget.y * mKernelUnitLength.height));
-
-  IntRect destRect = aSourceRect;
+  RectDouble destRect(aSourceRect);
+  MarginDouble margin = GetInflateSourceMargin();
+  std::swap(margin.left, margin.right);
+  std::swap(margin.top, margin.bottom);
   destRect.Inflate(margin);
-  return destRect;
+  return RectIsInt32Safe(destRect) ? TruncatedToInt(destRect) : aSourceRect;
 }
 
 IntRect FilterNodeConvolveMatrixSoftware::GetOutputRectInRect(
@@ -2605,6 +2608,11 @@ void FilterNodeDisplacementMapSoftware::SetAttribute(uint32_t aIndex,
 
 void FilterNodeDisplacementMapSoftware::SetAttribute(uint32_t aIndex,
                                                      uint32_t aValue) {
+  // Refuse channel values that exceed channel maximum.
+  if (aValue > ColorChannel::COLOR_CHANNEL_MAX) {
+    return;
+  }
+
   switch (aIndex) {
     case ATT_DISPLACEMENT_MAP_X_CHANNEL:
       mChannelX = static_cast<ColorChannel>(aValue);
@@ -2651,7 +2659,7 @@ already_AddRefed<DataSourceSurface> FilterNodeDisplacementMapSoftware::Render(
   uint8_t* targetData = targetMap.GetData();
   int32_t targetStride = targetMap.GetStride();
 
-  static const ptrdiff_t channelMap[4] = {
+  static const ptrdiff_t channelMap[COLOR_CHANNEL_MAX + 1] = {
       B8G8R8A8_COMPONENT_BYTEOFFSET_R, B8G8R8A8_COMPONENT_BYTEOFFSET_G,
       B8G8R8A8_COMPONENT_BYTEOFFSET_B, B8G8R8A8_COMPONENT_BYTEOFFSET_A};
   uint16_t xChannel = channelMap[mChannelX];
@@ -3307,7 +3315,8 @@ static inline Point3D Normalized(const Point3D& vec) {
 template <typename LightType, typename LightingType>
 FilterNodeLightingSoftware<LightType, LightingType>::FilterNodeLightingSoftware(
     const char* aTypeName)
-    : mSurfaceScale(0)
+    : mSurfaceScale(0),
+      mKernelUnitLength(1.0f, 1.0f)
 #if defined(MOZILLA_INTERNAL_API) && defined(NS_BUILD_REFCNT_LOGGING)
       ,
       mTypeName(aTypeName)
@@ -3360,6 +3369,23 @@ void FilterNodeLightingSoftware<LightType, LightingType>::SetAttribute(
   switch (aIndex) {
     case ATT_LIGHTING_KERNEL_UNIT_LENGTH:
       mKernelUnitLength = aKernelUnitLength;
+      // Spec for fe*Lighting:
+      // The first number is the <dx> value. The second number is the <dy>
+      // value. If the <dy> value is not specified, it defaults to the same
+      // value as <dx>. If kernelUnitLength is not specified, the dx and dy
+      // values should represent very small deltas relative to a given (x,y)
+      // position, which might be implemented in some cases as one pixel in the
+      // intermediate image offscreen bitmap, which is a pixel-based coordinate
+      // system, and thus potentially not scalable. If a negative or zero value
+      // is specified the default value will be used instead.
+      if (mKernelUnitLength.width <= 0.0f ||
+          !std::isfinite(mKernelUnitLength.width)) {
+        mKernelUnitLength.width = 1.0f;
+      }
+      if (mKernelUnitLength.height <= 0.0f ||
+          !std::isfinite(mKernelUnitLength.height)) {
+        mKernelUnitLength.height = mKernelUnitLength.width;
+      }
       break;
     default:
       MOZ_CRASH("GFX: FilterNodeLightingSoftware::SetAttribute size");
@@ -3517,21 +3543,32 @@ FilterNodeLightingSoftware<LightType, LightingType>::Render(
 }
 
 template <typename LightType, typename LightingType>
+MarginDouble FilterNodeLightingSoftware<
+    LightType, LightingType>::GetInflateSourceMargin() const {
+  double kulX = ceil(double(mKernelUnitLength.width));
+  double kulY = ceil(double(mKernelUnitLength.height));
+  return MarginDouble(kulY, kulX, kulY, kulX);
+}
+
+template <typename LightType, typename LightingType>
+IntRect FilterNodeLightingSoftware<LightType, LightingType>::InflatedSourceRect(
+    const IntRect& aDestRect) {
+  RectDouble srcRect(aDestRect);
+  srcRect.Inflate(GetInflateSourceMargin());
+  return RectIsInt32Safe(srcRect) ? TruncatedToInt(srcRect) : aDestRect;
+}
+
+template <typename LightType, typename LightingType>
 void FilterNodeLightingSoftware<
     LightType, LightingType>::RequestFromInputsForRect(const IntRect& aRect) {
-  IntRect srcRect = aRect;
-  srcRect.Inflate(ceil(mKernelUnitLength.width),
-                  ceil(mKernelUnitLength.height));
-  RequestInputRect(IN_LIGHTING_IN, srcRect);
+  RequestInputRect(IN_LIGHTING_IN, InflatedSourceRect(aRect));
 }
 
 template <typename LightType, typename LightingType>
 IntRect FilterNodeLightingSoftware<LightType, LightingType>::MapRectToSource(
     const IntRect& aRect, const IntRect& aMax, FilterNode* aSourceNode) {
-  IntRect srcRect = aRect;
-  srcRect.Inflate(ceil(mKernelUnitLength.width),
-                  ceil(mKernelUnitLength.height));
-  return MapInputRectToSource(IN_LIGHTING_IN, srcRect, aMax, aSourceNode);
+  return MapInputRectToSource(IN_LIGHTING_IN, InflatedSourceRect(aRect), aMax,
+                              aSourceNode);
 }
 
 template <typename LightType, typename LightingType>
@@ -3545,14 +3582,17 @@ FilterNodeLightingSoftware<LightType, LightingType>::DoRender(
   MOZ_ASSERT(aKernelUnitLengthY > 0,
              "aKernelUnitLengthY can be a negative or zero value");
 
-  IntRect srcRect = aRect;
-  IntSize size = aRect.Size();
-  srcRect.Inflate(ceil(float(aKernelUnitLengthX)),
-                  ceil(float(aKernelUnitLengthY)));
-
+  RectDouble srcRectD(aRect);
+  srcRectD.Inflate(GetInflateSourceMargin());
   // Inflate the source rect by another pixel because the bilinear filtering in
   // ColorComponentAtPoint may want to access the margins.
-  srcRect.Inflate(1);
+  srcRectD.Inflate(1);
+  if (!RectIsInt32Safe(srcRectD)) {
+    return nullptr;
+  }
+  IntRect srcRect = TruncatedToInt(srcRectD);
+
+  IntSize size = aRect.Size();
 
   IntRect srcRectInRenderRect = srcRect.Intersect(mRenderRect);
 

@@ -818,6 +818,25 @@ pwmgr:
     unit: passwords
     telemetry_mirror: PWMGR_POTENTIALLY_BREACHED_PASSWORDS
 
+  breach_alert_link_clicked:
+    type: event
+    description: >
+      Recorded when a user clicks on a breach alert link in about:logins.
+      This tracks user engagement with breach notifications, specifically
+      when they click to visit the breached website.
+    bugs:
+      - https://bugzil.la/TBD
+    data_reviews:
+      - https://bugzil.la/TBD
+    notification_emails:
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      breach_name:
+        description: >
+          The name of the breach that was clicked.
+        type: string
+
   num_saved_passwords:
     type: quantity
     unit: passwords
@@ -958,6 +977,10 @@ pwmgr:
         description: >
           Whether the login to add/modify/remove has a punycode form_action_origin
         type: boolean
+      has_ftp_origin:
+        description: >
+          Whether the login origin string contains indications of an FTP scheme
+        type: boolean
       has_empty_password:
         description: >
           Whether the login to add/modify/remove has an empty password
@@ -974,6 +997,14 @@ pwmgr:
         description: >
           Whether the login to add/modify/remove is a deletion stub
         type: boolean
+      time_created:
+        description: >
+          Time when login was created (rounded to month)
+        type: string
+      time_last_used:
+        description: >
+          Time when login was last used (rounded to month)
+        type: string
 
   saving_enabled:
     type: boolean
@@ -1009,15 +1040,17 @@ pwmgr:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1777397
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1850888
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1978988
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010472
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1688653
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1749882
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1777397
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1850888
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1978988
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010472
     notification_emails:
       - passwords-dev@mozilla.org
-    expires: 150
+    expires: 160
     telemetry_mirror: h#PWMGR_IMPORT_LOGINS_FROM_FILE_CATEGORICAL
 
   login_page_safety:
@@ -1163,42 +1196,6 @@ pwmgr:
       - passwords-dev@mozilla.org
     expires: never
     telemetry_mirror: PWMGR_SIGNUP_FORM_DETECTION_MS
-
-  migration:
-    type: event
-    description: >
-      Emitted multiple times during the desktop login migration triggered by the
-      signon.reencryptionNeeded pref.
-    bugs:
-      - https://bugzilla.mozilla.org/1977171
-      - https://bugzilla.mozilla.org/2005389
-    data_reviews:
-      - https://bugzilla.mozilla.org/1977171
-      - https://bugzilla.mozilla.org/2005389
-    notification_emails:
-      - seceng-telemetry@mozilla.com
-    expires: 155
-    extra_keys:
-      value:
-        description: >
-          The event value. This is either "started", "success",
-          "decryptionError" or "encryptionError".
-
-          "started"         gets emitted at the start of the migration
-          "success"         gets emitted at the end of the migration
-          "decryptionError" gets emitted if an error is thrown during the
-                            decryption
-          "encryptionError" gets emitted if an error is thrown during the
-                            (re)encryption
-
-          Each user is expected to only send a single "started" and "success"
-          event.
-        type: string
-      error:
-        description: >
-          If the event value is "decryptionError" or "encryptionError", this
-          contains the thrown error name (for example "NS_ERROR_ILLEGAL_VALUE").
-        type: string
 
 form_autocomplete:
   show_logins:

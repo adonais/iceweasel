@@ -419,8 +419,9 @@ class WebPlatformTest(TestingMixin, MercurialScript, CodeCoverageMixin, AndroidM
 
         cmd += ["--no-install-fonts"]
 
-        for test_type in test_types:
-            cmd.append("--test-type=%s" % test_type)
+        if test_types:
+            cmd.append("--test-type")
+            cmd.extend(test_types)
 
         if c["extra_prefs"]:
             cmd.extend([f"--setpref={p}" for p in c["extra_prefs"]])

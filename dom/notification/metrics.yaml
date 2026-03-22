@@ -67,3 +67,18 @@ web_notification:
     notification_emails:
       - krosylight@mozilla.com
     expires: never
+  show_safe_browsing_block:
+    type: rate
+    description: >
+      The rate of notification show attempts that are blocked because the
+      origin is on the Safe Browsing blocklist (phishing, malware, etc.).
+      The numerator is the number of blocked attempts, and the denominator
+      is the total number of show attempts that passed the initial
+      permission check.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1986300
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1986300
+    notification_emails:
+      - emz@mozilla.com
+    expires: 155

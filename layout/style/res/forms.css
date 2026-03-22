@@ -238,6 +238,30 @@ select {
   -moz-default-appearance: menulist;
 }
 
+select::-moz-select-content {
+  display: inline-block;
+  overflow: clip;
+  pointer-events: none;
+  cursor: unset;
+  /* Required for making nsIFrame::PeekOffset treat anonymous content in
+   * <select> as not selectable. */
+  user-select: none;
+}
+
+select::-moz-select-picker-icon {
+  display: inline-block;
+  appearance: auto;
+  -moz-default-appearance: -moz-menulist-arrow-button;
+  pointer-events: none;
+  -webkit-text-security: none;
+  max-block-size: 100%;
+
+  /* Make sure to align properly with the display frame.  Note that we want the
+   * baseline of the combobox to match the baseline of the label, so the
+   * dropmarker is what gets the vertical-align. */
+  vertical-align: top;
+}
+
 select:-moz-select-list-box {
   overflow-inline: hidden;
   overflow-block: scroll;
@@ -251,36 +275,6 @@ select:-moz-select-list-box {
   @media (-moz-platform: macos) {
     scrollbar-width: thin;
   }
-}
-
-select > button {
-  padding: 0;
-  border: 0;
-  appearance: auto;
-  -moz-default-appearance: -moz-menulist-arrow-button;
-  pointer-events: none;
-
-  /* Draw the arrow in the select's color */
-  color: inherit;
-
-  /* We don't want the button to grow the line-height */
-  font: inherit;
-  max-block-size: 100%;
-
-  /* Make sure to align properly with the display frame.  Note that we want the
-   * baseline of the combobox to match the baseline of the label, so the
-   * dropmarker is what gets the vertical-align. */
-  vertical-align: top;
-}
-
-select > label {
-  display: inline-block;
-  overflow: clip;
-  pointer-events: none;
-  cursor: unset;
-  /* Required for making nsIFrame::PeekOffset treat anonymous content in
-   * <select> as not selectable. */
-  user-select: none;
 }
 
 option[label]::before {
@@ -362,25 +356,6 @@ optgroup:before {
   }
 }
 
-*|*::-moz-dropdown-list {
-  content: inherit;
-  z-index: 2147483647;
-  background-color: inherit;
-  user-select: none;
-  position: static !important;
-  float: none !important;
-
-  /*
-   * We can't change the padding here, because that would affect our
-   * intrinsic inline-size, since we scroll.  But at the same time, we want
-   * to make sure that our inline-start border+padding matches the inline-start
-   * border+padding of a combobox so that our scrollbar will line up
-   * with the dropmarker.  So set our inline-start border to 2px.
-   */
-  border: 1px outset black !important;
-  border-inline-start-width: 2px !important;
-}
-
 input:disabled,
 textarea:disabled,
 option:disabled,
@@ -438,6 +413,10 @@ input[type="image"]:disabled {
   box-sizing: border-box;
   border: 1px solid grey;
   display: block;
+  background-image: linear-gradient(currentColor), repeating-conic-gradient(#ccc 0 25%, white 0 50%);
+  background-size: 12px 12px;
+  /* Make sure that the background color is properly set in High Contrast Mode */
+  forced-color-adjust: none;
 }
 
 /* radio buttons */
@@ -581,7 +560,7 @@ input[type="file"] {
   padding: unset;
 }
 
-input[type="file"] > label {
+::-moz-file-content {
   display: inline-block;
   min-inline-size: 12em;
   text-align: match-parent;
@@ -614,7 +593,7 @@ input[type="file"] > label {
  */
 ::placeholder,
 ::-moz-text-control-editing-root,
-select > label,
+::-moz-select-content,
 optgroup::before {
   unicode-bidi: inherit;
   text-overflow: inherit;

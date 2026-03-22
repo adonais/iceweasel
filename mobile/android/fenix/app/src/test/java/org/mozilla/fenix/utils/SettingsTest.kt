@@ -1338,6 +1338,7 @@ class SettingsTest {
 
     @Test
     fun `GIVEN toolbar customization is disabled WHEN reading toolbarSimpleShortcut THEN NEW_TAB is returned regardless of stored key`() {
+        settings.shouldShowToolbarCustomization = false
         settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
 
         val result = settings.toolbarSimpleShortcut
@@ -1355,6 +1356,7 @@ class SettingsTest {
 
     @Test
     fun `GIVEN toolbar customization is disabled WHEN reading toolbarExpandedShortcut THEN BOOKMARK is returned regardless of stored key`() {
+        settings.shouldShowToolbarCustomization = false
         settings.toolbarExpandedShortcutKey = ShortcutType.NEW_TAB.value
 
         val result = settings.toolbarExpandedShortcut

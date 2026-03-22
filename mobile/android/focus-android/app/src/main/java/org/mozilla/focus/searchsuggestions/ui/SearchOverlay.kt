@@ -127,6 +127,9 @@ private fun SearchSuggestions(
             providers = listOf(provider),
             onSuggestionClicked = onSuggestionClicked,
             onAutoComplete = onAutoComplete,
+            onRemoveClicked = {
+                // not supported
+            },
         )
     }
 }

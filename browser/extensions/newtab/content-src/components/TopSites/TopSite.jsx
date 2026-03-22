@@ -47,11 +47,12 @@ export class TopSiteLink extends React.PureComponent {
   /*
    * Helper to determine whether the drop zone should allow a drop. We only allow
    * dropping top sites for now. We don't allow dropping on sponsored top sites
-   * as their position is fixed.
+   * or the add shortcut button as their position is fixed.
    */
   _allowDrop(e) {
     return (
-      (this.dragged || !isSponsored(this.props.link)) &&
+      (this.dragged ||
+        (!isSponsored(this.props.link) && !this.props.isAddButton)) &&
       e.dataTransfer.types.includes("text/topsite-index")
     );
   }
@@ -853,15 +854,31 @@ export class _TopSiteList extends React.PureComponent {
     topSites.length = this.props.TopSitesRows * TOP_SITES_MAX_SITES_PER_ROW;
     // if topSites do not fill an entire row add 'Add shortcut' button to array of topSites
     // (there should only be one of these)
-    let firstPlaceholder = topSites.findIndex(Object.is.bind(null, undefined));
-    // make sure placeholder exists and there already isnt a add button
-    if (firstPlaceholder && !topSites.includes(site => site.isAddButton)) {
-      topSites[firstPlaceholder] = { isAddButton: true };
-    } else if (topSites.includes(site => site.isAddButton)) {
-      topSites.push(
-        topSites.splice(topSites.indexOf({ isAddButton: true }), 1)[0]
-      );
+    const addButtonIndex = topSites.findIndex(site => site?.isAddButton);
+
+    // Find the position right after the last regular shortcut
+    let targetPosition = topSites.length - 1;
+    for (let i = topSites.length - 1; i >= 0; i--) {
+      if (topSites[i] && !topSites[i].isAddButton) {
+        targetPosition = i + 1;
+        break;
+      }
     }
+
+    if (addButtonIndex === -1) {
+      // No add button exists yet, insert it at target position if it's within bounds
+      if (targetPosition < topSites.length) {
+        topSites[targetPosition] = { isAddButton: true };
+      }
+    } else if (addButtonIndex !== targetPosition) {
+      // Add button exists but not at the end, move it
+      const [button] = topSites.splice(addButtonIndex, 1);
+      // Adjust target if we removed something before it
+      const adjustedTarget =
+        addButtonIndex < targetPosition ? targetPosition - 1 : targetPosition;
+      topSites[adjustedTarget] = button;
+    }
+
     return topSites;
   }
 
@@ -873,10 +890,12 @@ export class _TopSiteList extends React.PureComponent {
     const topSites = this._getTopSites();
     topSites[this.state.draggedIndex] = null;
     const preview = topSites.map(site =>
-      site && (site.isPinned || isSponsored(site)) ? site : null
+      site && (site.isPinned || isSponsored(site) || site.isAddButton)
+        ? site
+        : null
     );
     const unpinned = topSites.filter(
-      site => site && !site.isPinned && !isSponsored(site)
+      site => site && !site.isPinned && !isSponsored(site) && !site.isAddButton
     );
     const siteToInsert = Object.assign({}, this.state.draggedSite, {
       isPinned: true,
@@ -900,7 +919,10 @@ export class _TopSiteList extends React.PureComponent {
         index > this.state.draggedIndex ? holeIndex < index : holeIndex > index
       ) {
         let nextIndex = holeIndex + shiftingStep;
-        while (isSponsored(preview[nextIndex])) {
+        while (
+          preview[nextIndex] &&
+          (isSponsored(preview[nextIndex]) || preview[nextIndex].isAddButton)
+        ) {
           nextIndex += shiftingStep;
         }
         preview[holeIndex] = preview[nextIndex];

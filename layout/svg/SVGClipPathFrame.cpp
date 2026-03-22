@@ -179,7 +179,7 @@ void SVGClipPathFrame::PaintFrameIntoMask(nsIFrame* aFrame,
   // XXX check return value?
   if (SVGObserverUtils::GetAndObserveClipPath(aFrame,
                                               &clipPathThatClipsChild) ==
-      SVGObserverUtils::eHasRefsSomeInvalid) {
+      SVGObserverUtils::ReferenceState::HasRefsSomeInvalid) {
     return;
   }
 
@@ -300,7 +300,7 @@ bool SVGClipPathFrame::PointIsInsideClipPath(nsIFrame* aClippedFrame,
 bool SVGClipPathFrame::IsTrivial(nsIFrame** aSingleChild) {
   // If the clip path is clipped then it's non-trivial
   if (SVGObserverUtils::GetAndObserveClipPath(this, nullptr) ==
-      SVGObserverUtils::eHasRefsAllValid) {
+      SVGObserverUtils::ReferenceState::HasRefsAllValid) {
     return false;
   }
 
@@ -322,7 +322,7 @@ bool SVGClipPathFrame::IsTrivial(nsIFrame** aSingleChild) {
 
     // or where the child is itself clipped
     if (SVGObserverUtils::GetAndObserveClipPath(kid, nullptr) ==
-        SVGObserverUtils::eHasRefsAllValid) {
+        SVGObserverUtils::ReferenceState::HasRefsAllValid) {
       return false;
     }
 
@@ -336,7 +336,7 @@ bool SVGClipPathFrame::IsTrivial(nsIFrame** aSingleChild) {
 
 bool SVGClipPathFrame::IsValid() {
   if (SVGObserverUtils::GetAndObserveClipPath(this, nullptr) ==
-      SVGObserverUtils::eHasRefsSomeInvalid) {
+      SVGObserverUtils::ReferenceState::HasRefsSomeInvalid) {
     return false;
   }
 
@@ -410,7 +410,7 @@ SVGBBox SVGClipPathFrame::GetBBoxForClipPathFrame(const SVGBBox& aBBox,
   SVGClipPathFrame* clipPathThatClipsClipPath;
   if (SVGObserverUtils::GetAndObserveClipPath(this,
                                               &clipPathThatClipsClipPath) ==
-      SVGObserverUtils::eHasRefsSomeInvalid) {
+      SVGObserverUtils::ReferenceState::HasRefsSomeInvalid) {
     return SVGBBox();
   }
 
@@ -426,7 +426,7 @@ SVGBBox SVGClipPathFrame::GetBBoxForClipPathFrame(const SVGBBox& aBBox,
             gfx::ToMatrix(matrix), SVGUtils::eBBoxIncludeFillGeometry);
         SVGClipPathFrame* clipPathFrame;
         if (SVGObserverUtils::GetAndObserveClipPath(frame, &clipPathFrame) !=
-                SVGObserverUtils::eHasRefsSomeInvalid &&
+                SVGObserverUtils::ReferenceState::HasRefsSomeInvalid &&
             clipPathFrame) {
           tmpBBox =
               clipPathFrame->GetBBoxForClipPathFrame(tmpBBox, aMatrix, aFlags);

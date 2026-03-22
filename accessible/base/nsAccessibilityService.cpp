@@ -30,6 +30,7 @@
 #include "nsCRT.h"
 #include "nsEventShell.h"
 #include "nsGkAtoms.h"
+#include "nsIAccessibleAnnouncementEvent.h"
 #include "nsIFrameInlines.h"
 #include "nsServiceManagerUtils.h"
 #include "nsTextFormatter.h"
@@ -60,6 +61,7 @@
 #include "nsTreeBodyFrame.h"
 #include "nsTreeUtils.h"
 #include "mozilla/a11y/AccTypes.h"
+#include "mozilla/dom/ARIANotifyMixinBinding.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/DOMStringList.h"
 #include "mozilla/dom/EventTarget.h"
@@ -242,8 +244,7 @@ static bool MustBeAccessible(nsIContent* aContent, DocAccessible* aDocument) {
 
     // If the given ID is referred by relation attribute then create an
     // Accessible for it.
-    nsAutoString id;
-    if (nsCoreUtils::GetID(aContent, id) && !id.IsEmpty()) {
+    if (nsAtom* id = aContent->GetID()) {
       return aDocument->IsDependentID(aContent->AsElement(), id);
     }
   }
@@ -340,7 +341,7 @@ static RefPtr<LocalAccessible> MaybeCreateSVGAccessible(
 }
 
 /**
- * Used by XULMap.h to map both menupopup and popup elements
+ * Used by XULMap.inc to map both menupopup and popup elements
  */
 LocalAccessible* CreateMenupopupAccessible(Element* aElement,
                                            LocalAccessible* aContext) {
@@ -411,11 +412,11 @@ static int32_t sPlatformDisabledState = 0;
   {nsGkAtoms::atom, new_func, static_cast<a11y::role>(r), {__VA_ARGS__}},
 
 static const MarkupMapInfo sHTMLMarkupMapList[] = {
-#include "HTMLMarkupMap.h"
+#include "HTMLMarkupMap.inc"
 };
 
 static const MarkupMapInfo sMathMLMarkupMapList[] = {
-#include "MathMLMarkupMap.h"
+#include "MathMLMarkupMap.inc"
 };
 
 #undef MARKUPMAP
@@ -430,7 +431,7 @@ static const MarkupMapInfo sMathMLMarkupMapList[] = {
       })
 
 static const XULMarkupMapInfo sXULMarkupMapList[] = {
-#include "XULMap.h"
+#include "XULMap.inc"
 };
 
 #undef XULMAP_TYPE
@@ -602,13 +603,14 @@ void nsAccessibilityService::NotifyOfPossibleBoundsChange(
   if (IPCAccessibilityActive()) {
     document->QueueCacheUpdate(accessible, CacheDomain::Bounds);
   }
-  if (accessible->IsTextLeaf() &&
+  MOZ_ASSERT(!aContent->IsText() || accessible->IsTextLeaf(),
+             "A DOM Text node should only ever have a TextLeafAccessible");
+  if (aContent->IsText() && accessible->IsTextLeaf() &&
       accessible->AsTextLeaf()->Text().EqualsLiteral(" ")) {
     // This space might be becoming invisible, even though it still has a frame.
     // In this case, the frame will have 0 width. Unfortunately, we can't check
     // the frame width here because layout isn't ready yet, so we need to defer
     // this until the refresh driver tick.
-    MOZ_ASSERT(aContent->IsText());
     document->UpdateText(aContent);
   }
 }
@@ -753,6 +755,26 @@ void nsAccessibilityService::NotifyAttrElementChanged(
   }
 }
 
+void nsAccessibilityService::AriaNotify(
+    nsINode* aNode, const nsAString& aAnnouncement,
+    const mozilla::dom::AriaNotificationOptions& aOptions) {
+  Document* doc = aNode->GetUncomposedDoc();
+  if (!doc) {
+    return;
+  }
+  DocAccessible* docAcc = GetDocAccessible(doc);
+  if (!docAcc) {
+    return;
+  }
+  LocalAccessible* acc = docAcc->GetAccessible(aNode);
+  if (acc) {
+    acc->Announce(aAnnouncement,
+                  aOptions.mPriority == dom::AriaNotifyPriority::High
+                      ? nsIAccessibleAnnouncementEvent::ASSERTIVE
+                      : nsIAccessibleAnnouncementEvent::POLITE);
+  }
+}
+
 LocalAccessible* nsAccessibilityService::GetRootDocumentAccessible(
     PresShell* aPresShell, bool aCanCreate) {
   PresShell* presShell = aPresShell;
@@ -863,6 +885,19 @@ void nsAccessibilityService::TableLayoutGuessMaybeChanged(
   }
 }
 
+void nsAccessibilityService::ComboboxValueChanged(nsIContent* aSelect) {
+  DocAccessible* document =
+      GetDocAccessible(aSelect->OwnerDoc()->GetPresShell());
+  if (!document) {
+    return;
+  }
+  if (LocalAccessible* accessible = document->GetAccessible(aSelect);
+      accessible && accessible->IsCombobox()) {
+    document->FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE,
+                               accessible);
+  }
+}
+
 void nsAccessibilityService::ComboboxOptionMaybeChanged(
     PresShell* aPresShell, nsIContent* aMutatingNode) {
   DocAccessible* document = GetDocAccessible(aPresShell);
@@ -910,6 +945,18 @@ void nsAccessibilityService::RangeValueChanged(PresShell* aPresShell,
     LocalAccessible* accessible = document->GetAccessible(aContent);
     if (accessible) {
       document->FireDelayedEvent(nsIAccessibleEvent::EVENT_VALUE_CHANGE,
+                                 accessible);
+    }
+  }
+}
+
+void nsAccessibilityService::ColorValueChanged(PresShell* aPresShell,
+                                               nsIContent* aContent) {
+  DocAccessible* document = GetDocAccessible(aPresShell);
+  if (document) {
+    LocalAccessible* accessible = document->GetAccessible(aContent);
+    if (accessible) {
+      document->FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE,
                                  accessible);
     }
   }
@@ -974,7 +1021,7 @@ void nsAccessibilityService::GetStringRole(uint32_t aRole, nsAString& aString) {
     return;
 
   switch (aRole) {
-#include "RoleMap.h"
+#include "RoleMap.inc"
     default:
       aString.AssignLiteral("unknown");
       return;
@@ -1191,7 +1238,7 @@ void nsAccessibilityService::GetStringRelationType(uint32_t aRelationType,
 
   RelationType relationType = static_cast<RelationType>(aRelationType);
   switch (relationType) {
-#include "RelationTypeMap.h"
+#include "RelationTypeMap.inc"
     default:
       aString.AssignLiteral("unknown");
       return;
@@ -1469,7 +1516,9 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
   }
 
   // XUL accessibles.
-  if (!newAcc && content->IsXULElement()) {
+  // We don't support XUL in remote docs, so if this isn't the top process,
+  // don't create XUL accessible for it.
+  if (!newAcc && content->IsXULElement() && !IPCAccessibilityActive()) {
     if (content->IsXULElement(nsGkAtoms::panel)) {
       // We filter here instead of in the XUL map because
       // if we filter there and return null, we still end up

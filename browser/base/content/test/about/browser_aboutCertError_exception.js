@@ -403,16 +403,34 @@ add_task(async function checkBadStsCert_feltPrivacyToTrue() {
           ? content.document.querySelector("iframe").contentDocument
           : content.document;
 
-        const netErrorCard =
-          doc.querySelector("net-error-card").wrappedJSObject;
+        const netErrorCard = await ContentTaskUtils.waitForCondition(
+          () => doc.querySelector("net-error-card")?.wrappedJSObject
+        );
         await netErrorCard.getUpdateComplete();
 
         // Perform user button click interaction to load exception button
-        netErrorCard.advancedButton.click();
-
+        netErrorCard.advancedButton.scrollIntoView(true);
+        EventUtils.synthesizeMouseAtCenter(
+          netErrorCard.advancedButton,
+          {},
+          content
+        );
+        await netErrorCard.getUpdateComplete();
         Assert.ok(
           !netErrorCard.exceptionButton,
           "The exception button is not found in DOM."
+        );
+
+        // Check that the HSTS explanation text is present in the intro section
+        const stsExplanation = netErrorCard.badStsCertExplanation;
+        Assert.ok(
+          stsExplanation,
+          "The HSTS explanation element exists in the intro section."
+        );
+        Assert.equal(
+          stsExplanation.dataset.l10nId,
+          "certerror-what-should-i-do-bad-sts-cert-explanation",
+          "The HSTS explanation has the correct l10n ID."
         );
       }
     );
@@ -446,8 +464,9 @@ add_task(async function checkhideAddExceptionButtonViaPref_feltPrivacyToTrue() {
           ? content.document.querySelector("iframe").contentDocument
           : content.document;
 
-        const netErrorCard =
-          doc.querySelector("net-error-card").wrappedJSObject;
+        const netErrorCard = await ContentTaskUtils.waitForCondition(
+          () => doc.querySelector("net-error-card")?.wrappedJSObject
+        );
         await netErrorCard.getUpdateComplete();
 
         // Perform user button click interaction to load exception button
@@ -474,7 +493,9 @@ add_task(
 
     await SpecialPowers.spawn(browser, [], async function () {
       let doc = content.document.querySelector("iframe").contentDocument;
-      const netErrorCard = doc.querySelector("net-error-card").wrappedJSObject;
+      const netErrorCard = await ContentTaskUtils.waitForCondition(
+        () => doc.querySelector("net-error-card")?.wrappedJSObject
+      );
       await netErrorCard.getUpdateComplete();
 
       // Perform user button click interaction to load exception button

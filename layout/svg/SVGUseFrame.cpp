@@ -89,9 +89,9 @@ void SVGUseFrame::ReflowSVG() {
   // created for that purpose.
   auto* content = SVGUseElement::FromNode(GetContent());
   float x = SVGContentUtils::CoordToFloat(content, StyleSVGReset()->mX,
-                                          SVGContentUtils::X);
+                                          SVGLength::Axis::X);
   float y = SVGContentUtils::CoordToFloat(content, StyleSVGReset()->mY,
-                                          SVGContentUtils::Y);
+                                          SVGLength::Axis::Y);
   mRect.MoveTo(nsLayoutUtils::RoundGfxRectToAppRect(gfxRect(x, y, 0, 0),
                                                     AppUnitsPerCSSPixel())
                    .TopLeft());

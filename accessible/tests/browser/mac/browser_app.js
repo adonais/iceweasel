@@ -4,6 +4,9 @@
 
 "use strict";
 
+const { SearchService } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+);
 const { UrlbarTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/UrlbarTestUtils.sys.mjs"
 );
@@ -292,10 +295,10 @@ add_task(async () => {
       url: 'data:text/html,<a id="exampleLink" href="https://example.com">link</a>',
     },
     async browser => {
-      if (!Services.search.isInitialized) {
-        let aStatus = await Services.search.init();
+      if (!SearchService.isInitialized) {
+        let aStatus = await SearchService.init();
         Assert.ok(Components.isSuccessCode(aStatus));
-        Assert.ok(Services.search.isInitialized);
+        Assert.ok(SearchService.isInitialized);
       }
 
       const hasContainers =

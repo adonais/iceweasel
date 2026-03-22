@@ -375,7 +375,7 @@ class nsCocoaUtils {
   /**
    * Makes a cocoa event from a widget keyboard event.
    */
-  static NSEvent* MakeNewCococaEventFromWidgetEvent(
+  static NSEvent* MakeNewCocoaEventFromWidgetEvent(
       const mozilla::WidgetKeyboardEvent& aKeyEvent, NSInteger aWindowNumber,
       NSGraphicsContext* aContext);
 

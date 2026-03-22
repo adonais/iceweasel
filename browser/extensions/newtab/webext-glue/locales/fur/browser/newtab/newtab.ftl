@@ -330,18 +330,16 @@ newtab-custom-recent-subtitle = Une selezion di sîts e contignûts resints
 newtab-custom-weather-toggle =
     .label = Meteo
     .description = Previsions par vuê cuntune voglade
-newtab-custom-trending-search-toggle =
-    .label = Ricercjis di tindince
-    .description = Argoments popolârs e cirûts dispès
 newtab-custom-widget-weather-toggle =
     .label = Meteo
-newtab-custom-widget-trending-search-toggle =
-    .label = Ricercjis di tindince
 newtab-custom-widget-lists-toggle =
     .label = Listis
 newtab-custom-widget-timer-toggle =
     .label = Temporizadôr
 newtab-custom-widget-section-title = Widgets
+newtab-custom-widget-section-toggle =
+    .label = Widgets
+newtab-widget-manage-title = Widgets
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Siere
@@ -493,6 +491,11 @@ newtab-weather-opt-in-yes =
     .label = Sì
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Viôt lis previsions in { $provider }
+    .aria-description = { $provider } ∙ Sponsorizât
 
 ## Topic Labels
 
@@ -597,7 +600,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = I tiei preferîts a puartade di man
 newtab-shortcuts-highlight-subtitle = Zonte une scurte par mantignî i tiei sîts preferîts a puartade di clic.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Parcè stâstu segnalant cheste publicitât?
@@ -615,21 +618,13 @@ newtab-report-content-inappropriate-offensive =
     .label = Inadate o ofensive
 newtab-report-content-spam-misleading =
     .label = Spam o ingjanose
+newtab-report-content-requires-payment-subscription =
+    .label = Al domande il paiament o l'abonament
+newtab-report-content-requires-payment-subscription-learn-more = Par savê di plui
 newtab-report-cancel = Anule
 newtab-report-submit = Invie
 newtab-toast-thanks-for-reporting =
     .message = Graciis pe segnalazion.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = Mostre ricercjis di tindince
-newtab-trending-searches-hide-trending =
-    .title = Plate ricercjis di tindince
-newtab-trending-searches-learn-more = Plui informazions
-newtab-trending-searches-dismiss = Plate ricercjis di tindince
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = Ricercjis di tindince
 
 ## Strings for task / to-do list productivity widget
 
@@ -669,6 +664,17 @@ newtab-widget-lists-name-placeholder-default =
 # The placeholder value of the name field for a newly created list
 newtab-widget-lists-name-placeholder-new =
     .placeholder = Gnove liste
+newtab-widget-section-title = Widgets
+# Tooltip for hide all widgets button
+newtab-widget-section-hide-all-button =
+    .title = Plate widgets
+    .aria-label = Plate ducj i widgets
+newtab-widget-section-maximize =
+    .title = Slargje widgets
+    .aria-label = Slargje ducj i widgets ae dimension massime
+newtab-widget-section-minimize =
+    .title = Minimize widgets
+    .aria-label = Strenç ducj i widgets ae dimension compate
 
 ## Strings for timer productivity widget
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown

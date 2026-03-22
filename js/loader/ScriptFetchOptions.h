@@ -9,6 +9,7 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/CORSMode.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/RequestBinding.h"  // RequestPriority
 #include "nsCOMPtr.h"
@@ -49,8 +50,7 @@ class ScriptFetchOptions {
   ~ScriptFetchOptions();
 
  public:
-  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(ScriptFetchOptions)
-  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ScriptFetchOptions)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ScriptFetchOptions)
 
   ScriptFetchOptions(mozilla::CORSMode aCORSMode, const nsAString& aNonce,
                      mozilla::dom::RequestPriority aFetchPriority,
@@ -82,6 +82,13 @@ class ScriptFetchOptions {
     // NOTE: mParserMetadata can be ignored.
     return mCORSMode == other->mCORSMode && mNonce == other->mNonce &&
            mFetchPriority == other->mFetchPriority;
+  }
+
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
+  }
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+    return mNonce.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
   }
 
  public:

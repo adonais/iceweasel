@@ -384,6 +384,8 @@ class MockMerinoServer {
 
     this._originalEndpointURL = lazy.UrlbarPrefs.get("merino.endpointURL");
     lazy.UrlbarPrefs.set("merino.endpointURL", this.#url.toString());
+    lazy.UrlbarPrefs.set("merino.ohttpConfigURL", "");
+    lazy.UrlbarPrefs.set("merino.ohttpRelayURL", "");
 
     this.registerCleanupFunction?.(() => this.stop());
 

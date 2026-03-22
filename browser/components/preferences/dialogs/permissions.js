@@ -504,7 +504,7 @@ var gPermissionManager = {
 
     let hbox = document.createXULElement("hbox");
     let website = document.createXULElement("label");
-    website.setAttribute("disabled", disabledByPolicy);
+    website.toggleAttribute("disabled", disabledByPolicy);
     website.setAttribute("class", "website-name-value");
     website.setAttribute("value", permission.origin);
     hbox.setAttribute("class", "website-name");
@@ -515,7 +515,7 @@ var gPermissionManager = {
     if (!this._hideStatusColumn) {
       hbox = document.createXULElement("hbox");
       let capability = document.createXULElement("label");
-      capability.setAttribute("disabled", disabledByPolicy);
+      capability.toggleAttribute("disabled", disabledByPolicy);
       capability.setAttribute("class", "website-capability-value");
       document.l10n.setAttributes(
         capability,

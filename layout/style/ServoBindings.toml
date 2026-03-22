@@ -145,7 +145,7 @@ rusty-enums = [
     "mozilla::StyleTopLayer",
     "mozilla::StyleIsolation",
     "mozilla::StyleTextOrientation",
-    "mozilla::StyleMozBoxCollapse",
+    "mozilla::StyleBoxCollapse",
     "mozilla::StyleMozBoxLayout",
     "mozilla::StyleTextCombineUpright",
     "mozilla::StyleUnicodeBidi",
@@ -318,8 +318,6 @@ opaque-types = [
     "mozilla::external::AtomicRefCounted",
     "RefPtr_Proxy",
     "RefPtr_Proxy_member_function",
-    "nsAutoPtr_Proxy",
-    "nsAutoPtr_Proxy_member_function",
     "nsRegion_.*",
     "mozilla::detail::HashTable", # <- We should be able to remove this and
                                   # HashSet below once
@@ -361,6 +359,7 @@ opaque-types = [
     "mozilla::detail::ThreadLocal.*",
     "std::make_signed_t",
     "mozilla::ProfileChunkedBuffer",
+    "nsLabelsNodeList", # Wrong layout in armv7
 ]
 
 # All cbindgen-types are in mod "structs::root::mozilla".
@@ -369,14 +368,19 @@ cbindgen-types = [
     { gecko = "StyleAnimationIterationCount", servo = "crate::values::computed::AnimationIterationCount" },
     { gecko = "StyleAnimationTimeline", servo = "crate::values::computed::AnimationTimeline" },
     { gecko = "StyleTransitionBehavior", servo = "crate::values::computed::TransitionBehavior" },
+    { gecko = "StyleAlignmentBaseline", servo = "crate::values::specified::AlignmentBaseline" },
     { gecko = "StyleAppearance", servo = "crate::values::specified::Appearance" },
     { gecko = "StyleAspectRatio", servo = "crate::values::computed::position::AspectRatio" },
     { gecko = "StyleAtom", servo = "crate::Atom" },
+    { gecko = "StyleGenericBaselineShift", servo = "crate::values::generics::box_::BaselineShift" },
+    { gecko = "StyleBaselineShiftKeyword", servo = "crate::values::generics::box_::BaselineShiftKeyword" },
+    { gecko = "StyleBaselineSource", servo = "crate::values::specified::BaselineSource" },
     { gecko = "StyleCustomIdent", servo = "crate::values::CustomIdent" },
     { gecko = "StyleComputedFontStretchRange", servo = "crate::font_face::ComputedFontStretchRange" },
     { gecko = "StyleComputedFontStyleDescriptor", servo = "crate::font_face::ComputedFontStyleDescriptor" },
     { gecko = "StyleComputedFontWeightRange", servo = "crate::font_face::ComputedFontWeightRange" },
     { gecko = "StyleComputedTimingFunction", servo = "crate::values::computed::easing::TimingFunction" },
+    { gecko = "StyleDominantBaseline", servo = "crate::values::specified::DominantBaseline" },
     { gecko = "StylePrefersContrast", servo = "crate::gecko::media_features::PrefersContrast" },
     { gecko = "StyleColorGamut", servo = "crate::gecko::media_features::ColorGamut" },
     { gecko = "StyleCursorKind", servo = "crate::values::computed::ui::CursorKind" },
@@ -440,6 +444,8 @@ cbindgen-types = [
     { gecko = "StyleTextAlign", servo = "crate::values::computed::TextAlign" },
     { gecko = "StyleTextAlignLast", servo = "crate::values::computed::text::TextAlignLast" },
     { gecko = "StyleTextAutospace", servo = "crate::values::computed::text::TextAutospace" },
+    { gecko = "StyleTextBoxEdge", servo = "crate::values::computed::TextBoxEdge" },
+    { gecko = "StyleTextBoxTrim", servo = "crate::values::computed::TextBoxTrim" },
     { gecko = "StyleTextIndent", servo = "crate::values::computed::text::TextIndent" },
     { gecko = "StyleTextOverflow", servo = "crate::values::computed::TextOverflow" },
     { gecko = "StyleOverflow", servo = "crate::values::computed::Overflow" },
@@ -522,8 +528,6 @@ cbindgen-types = [
     { gecko = "StyleColorComponent", servo = "crate::color::component::ColorComponent" },
     { gecko = "StyleAbsoluteColor", servo = "crate::color::AbsoluteColor" },
     { gecko = "StyleOrigin", servo = "crate::stylesheets::Origin" },
-    { gecko = "StyleGenericVerticalAlign", servo = "crate::values::generics::box_::VerticalAlign" },
-    { gecko = "StyleVerticalAlignKeyword", servo = "crate::values::generics::box_::VerticalAlignKeyword" },
     { gecko = "StyleGenericBasicShape", servo = "crate::values::generics::basic_shape::BasicShape" },
     { gecko = "StyleBasicShape", servo = "crate::values::computed::basic_shape::BasicShape" },
     { gecko = "StyleGenericInsetRect", servo = "crate::values::generics::basic_shape::InsetRect" },
@@ -629,7 +633,6 @@ cbindgen-types = [
     { gecko = "StyleLockedMediaList", servo = "crate::gecko::arc_types::LockedMediaList" },
     { gecko = "StyleLockedImportRule", servo = "crate::gecko::arc_types::LockedImportRule" },
     { gecko = "StyleLockedFontFaceRule", servo = "crate::gecko::arc_types::LockedFontFaceRule" },
-    { gecko = "StyleBaselineSource", servo = "crate::values::computed::BaselineSource" },
     { gecko = "StyleListStyleType", servo = "crate::values::computed::ListStyleType" },
     { gecko = "StyleAu", servo = "app_units::Au" },
     { gecko = "StyleAnchorName", servo = "crate::values::computed::position::AnchorName" },
@@ -654,6 +657,9 @@ cbindgen-types = [
     { gecko = "StyleGenericAnchorSide", servo = "crate::values::generics::position::GenericAnchorSide" },
     { gecko = "StyleTypedValue", servo = "style_traits::TypedValue" },
     { gecko = "StylePropertyTypedValue", servo = "crate::properties::declaration_block::PropertyTypedValue" },
+    { gecko = "StyleAnchorNameIdent", servo = "crate::values::specified::position::AnchorNameIdent" },
+    { gecko = "StyleCascadeLevel", servo = "crate::rule_tree::level::CascadeLevel" },
+    { gecko = "StyleShadowCascadeOrder", servo = "crate::rule_tree::level::ShadowCascadeOrder" },
 ]
 
 mapped-generic-types = [
@@ -661,6 +667,7 @@ mapped-generic-types = [
     { generic = false, gecko = "ServoNodeData", servo = "atomic_refcell::AtomicRefCell<crate::data::ElementData>" },
     { generic = false, gecko = "mozilla::ServoWritingMode", servo = "crate::logical_geometry::WritingMode" },
     { generic = false, gecko = "mozilla::ServoComputedCustomProperties", servo = "crate::custom_properties::ComputedCustomProperties" },
+    { generic = false, gecko = "mozilla::ServoUsedAttributes", servo = "crate::dom::AttributeReferences" },
     { generic = false, gecko = "mozilla::ServoRuleNode", servo = "Option<crate::rule_tree::StrongRuleNode>" },
     { generic = false, gecko = "nsACString", servo = "nsstring::nsACString" },
     { generic = false, gecko = "nsAString", servo = "nsstring::nsAString" },

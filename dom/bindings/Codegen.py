@@ -3315,7 +3315,7 @@ class CGConstDefinition(CGThing):
         value = member.value.value
         if tag == IDLType.Tags.bool:
             value = toStringBool(member.value.value)
-        self.const = "static const %s %s = %s;" % (builtinNames[tag], name, value)
+        self.const = "constexpr %s %s = %s;" % (builtinNames[tag], name, value)
 
     def declare(self):
         return self.const
@@ -18771,25 +18771,6 @@ class CGRegisterWorkletBindings(CGAbstractMethod):
         )
 
 
-class CGRegisterShadowRealmBindings(CGAbstractMethod):
-    def __init__(self, config):
-        CGAbstractMethod.__init__(
-            self,
-            None,
-            "RegisterShadowRealmBindings",
-            "bool",
-            [Argument("JSContext*", "aCx"), Argument("JS::Handle<JSObject*>", "aObj")],
-        )
-        self.config = config
-
-    def definition_body(self):
-        return RegisterNonWindowBindings(
-            self.config.getDescriptors(
-                hasInterfaceObject=True, isExposedInShadowRealms=True, register=True
-            )
-        )
-
-
 def BindingNamesOffsetEnum(name):
     return CppKeywords.checkMethodName(name.replace(" ", "_"))
 
@@ -19551,6 +19532,8 @@ class CGBindingRoot(CGThing):
                     bindingHeaders["mozilla/UseCounter.h"] = True
                 if m.getExtendedAttribute("Trial"):
                     bindingHeaders["mozilla/OriginTrials.h"] = True
+            if d.interface.ctor() and d.interface.ctor().getExtendedAttribute("UseCounter"):
+                bindingHeaders["mozilla/UseCounter.h"] = True
 
         bindingHeaders["mozilla/dom/SimpleGlobalObject.h"] = any(
             CGDictionary.dictionarySafeToJSONify(d) for d in dictionaries
@@ -24237,32 +24220,6 @@ class GlobalGenRoots:
 
         # Add include guards.
         curr = CGIncludeGuard("RegisterWorkletBindings", curr)
-
-        # Done.
-        return curr
-
-    @staticmethod
-    def RegisterShadowRealmBindings(config):
-        curr = CGRegisterShadowRealmBindings(config)
-
-        # Wrap all of that in our namespaces.
-        curr = CGNamespace.build(["mozilla", "dom"], CGWrapper(curr, post="\n"))
-        curr = CGWrapper(curr, post="\n")
-
-        # Add the includes
-        defineIncludes = [
-            CGHeaders.getDeclarationFilename(desc.interface)
-            for desc in config.getDescriptors(
-                hasInterfaceObject=True, register=True, isExposedInShadowRealms=True
-            )
-        ]
-
-        curr = CGHeaders(
-            [], [], [], [], [], defineIncludes, "RegisterShadowRealmBindings", curr
-        )
-
-        # Add include guards.
-        curr = CGIncludeGuard("RegisterShadowRealmBindings", curr)
 
         # Done.
         return curr

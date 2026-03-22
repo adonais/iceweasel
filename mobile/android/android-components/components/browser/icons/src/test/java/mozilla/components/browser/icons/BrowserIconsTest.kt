@@ -10,7 +10,9 @@ import android.os.Looper.getMainLooper
 import android.widget.ImageView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.icons.generator.IconGenerator
 import mozilla.components.browser.icons.loader.MemoryInfoProvider
@@ -40,10 +42,12 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.Shadows.shadowOf
 import java.io.OutputStream
+import kotlin.coroutines.ContinuationInterceptor
 
 @RunWith(AndroidJUnit4::class)
 class BrowserIconsTest {
     private val defaultAvailMem: Long = 100000
+    private val testDispatcher = StandardTestDispatcher()
 
     class FakeMemoryInfoProvider(private val availMem: Long) : MemoryInfoProvider {
         override fun getAvailMem(): Long = availMem
@@ -69,6 +73,7 @@ class BrowserIconsTest {
             httpClient = mock(),
             generator = generator,
             memoryInfoProvider = FakeMemoryInfoProvider(defaultAvailMem),
+            mainDispatcher = testDispatcher,
         )
             .loadIcon(request)
 
@@ -147,6 +152,7 @@ class BrowserIconsTest {
                 context = testContext,
                 httpClient = HttpURLConnectionClient(),
                 memoryInfoProvider = FakeMemoryInfoProvider(defaultAvailMem),
+                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
             )
 
             val request = IconRequest(
@@ -160,6 +166,7 @@ class BrowserIconsTest {
             )
 
             val icon = icons.loadIcon(request).await()
+            testScheduler.advanceUntilIdle()
 
             assertEquals(Icon.Source.DOWNLOAD, icon.source)
             assertNotNull(icon.bitmap)
@@ -167,6 +174,7 @@ class BrowserIconsTest {
             val secondIcon = icons.loadIcon(
                 IconRequest("https://www.mozilla.org"), // Without resources!
             ).await()
+            testScheduler.advanceUntilIdle()
 
             assertEquals(Icon.Source.MEMORY, secondIcon.source)
             assertNotNull(secondIcon.bitmap)
@@ -194,6 +202,7 @@ class BrowserIconsTest {
                 context = testContext,
                 httpClient = HttpURLConnectionClient(),
                 memoryInfoProvider = FakeMemoryInfoProvider(defaultAvailMem),
+                mainDispatcher = coroutineContext[ContinuationInterceptor] as CoroutineDispatcher,
             )
 
             val request = IconRequest(
@@ -207,6 +216,7 @@ class BrowserIconsTest {
             )
 
             val icon = icons.loadIcon(request).await()
+            testScheduler.advanceUntilIdle()
 
             assertEquals(Icon.Source.DOWNLOAD, icon.source)
             assertNotNull(icon.bitmap)
@@ -216,6 +226,7 @@ class BrowserIconsTest {
             val secondIcon = icons.loadIcon(
                 IconRequest("https://www.mozilla.org"), // Without resources!
             ).await()
+            testScheduler.advanceUntilIdle()
 
             assertEquals(Icon.Source.DISK, secondIcon.source)
             assertNotNull(secondIcon.bitmap)

@@ -181,23 +181,6 @@ void GtkCompositorWidget::ConfigureX11Backend(Window aXWindow) {
 }
 #endif
 
-void GtkCompositorWidget::SetRenderingSurface(const uintptr_t aXWindow) {
-  LOG("GtkCompositorWidget::SetRenderingSurface() [%p]\n", mWidget.get());
-
-#if defined(MOZ_WAYLAND)
-  if (GdkIsWaylandDisplay()) {
-    LOG("  configure widget %p\n", mWidget.get());
-    ConfigureWaylandBackend();
-  }
-#endif
-#if defined(MOZ_X11)
-  if (GdkIsX11Display()) {
-    LOG("  configure XWindow %p\n", (void*)aXWindow);
-    ConfigureX11Backend((Window)aXWindow);
-  }
-#endif
-}
-
 #ifdef MOZ_LOGGING
 bool GtkCompositorWidget::IsPopup() {
   return mWidget ? mWidget->IsPopup() : false;

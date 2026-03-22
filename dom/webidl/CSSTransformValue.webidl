@@ -16,8 +16,7 @@ interface CSSTransformValue : CSSStyleValue {
   [Throws] constructor(sequence<CSSTransformComponent> transforms);
   iterable<CSSTransformComponent>;
   readonly attribute unsigned long length;
-  // TODO: Remove [Throws] once the getter is fully implemented
-  [Throws] getter CSSTransformComponent (unsigned long index);
+  getter CSSTransformComponent (unsigned long index);
   [Throws] setter undefined (unsigned long index, CSSTransformComponent val);
 
   readonly attribute boolean is2D;

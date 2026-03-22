@@ -308,7 +308,7 @@ skip-if = [
 
 ["test_names_sorted.html"]
 skip-if = [
-  "xorigin && opt", # Hangs
+  "opt && xorigin", # Hangs
 ]
 
 ["test_objectCursors.html"]

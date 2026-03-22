@@ -265,6 +265,16 @@ export class ContentPage {
     return this.SpecialPowers.spawn(this.browser, params, task);
   }
 
+  async reload(options = {}) {
+    await this.browserReady;
+
+    const flags = options.bypassCache
+      ? Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE
+      : Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+    this.browser.reloadWithFlags(flags);
+    return promiseBrowserLoaded(this.browser, this.browser.currentURI.spec);
+  }
+
   // Get a SpecialPowersForProcess instance associated with the content process
   // of the currently loaded page. This allows callers to spawn() tasks that
   // outlive the page (for as long as the page's process is around).

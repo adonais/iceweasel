@@ -14,11 +14,17 @@ prefs = [
   # Required for CSS positioning
   "layout.css.anchor-positioning.enabled=true",
   "accessibility.anchorPositionedAsDetails.enabled=true",
+  # Required for hint popovers
+  "dom.element.popoverhint.enabled=true",
 ]
 
 ["browser_anchor_positioning.js"]
 
+["browser_multiple_relations_crash.js"]
+
 ["browser_popover_and_command.js"]
+
+["browser_popover_hint.js"]
 
 ["browser_relations_general.js"]
 

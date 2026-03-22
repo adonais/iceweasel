@@ -789,7 +789,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D251779
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -806,7 +806,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D243790
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -823,7 +823,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D251779
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -840,7 +840,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D251779
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -858,7 +858,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D249104
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -878,7 +878,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D243790
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -901,7 +901,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D243790
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -927,7 +927,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D243790
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -971,7 +971,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D243790
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -1006,7 +1006,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D249851
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -1026,7 +1026,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D249855
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -1051,7 +1051,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D251779
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:
@@ -1074,7 +1074,7 @@ genai.linkpreview:
       - https://phabricator.services.mozilla.com/D243790
     data_sensitivity:
       - interaction
-    expires: 150
+    expires: 162
     notification_emails:
       - elee@mozilla.com
     send_in_pings:

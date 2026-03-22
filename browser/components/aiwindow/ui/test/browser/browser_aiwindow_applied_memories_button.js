@@ -46,6 +46,7 @@ add_task(async function test_applied_memories_button_basic() {
       button.addEventListener("remove-applied-memory", onRemove);
 
       removeButton.click();
+      button.appliedMemories = ["User has a cat"];
       await content.Promise.resolve();
 
       const itemsAfter = button.shadowRoot.querySelectorAll(
@@ -55,7 +56,7 @@ add_task(async function test_applied_memories_button_basic() {
 
       ok(removeEventDetail, "remove-applied-memory event fired");
       is(removeEventDetail.messageId, "msg-1", "Event includes messageId");
-      is(removeEventDetail.index, 0, "Event index is 0");
+      is(removeEventDetail.memory, "User is vegan", "Event includes memory");
 
       doc.body.click();
       await content.Promise.resolve();
@@ -65,6 +66,42 @@ add_task(async function test_applied_memories_button_basic() {
         !popover.classList.contains("open"),
         "Popover closes on outside click"
       );
+    });
+  });
+});
+
+add_task(async function test_applied_memories_button_retry_without_memories() {
+  await BrowserTestUtils.withNewTab(TEST_PAGE, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      const button = content.document.getElementById("test-button");
+
+      button.messageId = "msg-1";
+      button.appliedMemories = ["User is vegan", "User has a cat"];
+
+      await content.customElements.whenDefined("applied-memories-button");
+
+      const trigger = button.shadowRoot.querySelector(
+        "moz-button.memories-trigger"
+      );
+      trigger.click();
+      await content.Promise.resolve();
+
+      const retryWithoutMemoriesButton =
+        button.shadowRoot.querySelector(".retry-row-button");
+      ok(retryWithoutMemoriesButton, "Found retry-without-memories button");
+
+      let retryEventDetail = null;
+      function onRetry(evt) {
+        button.removeEventListener("retry-without-memories", onRetry);
+        retryEventDetail = evt.detail;
+      }
+      button.addEventListener("retry-without-memories", onRetry);
+
+      retryWithoutMemoriesButton.click();
+      await content.Promise.resolve();
+
+      ok(retryEventDetail, "retry-without-memories event fired");
+      is(retryEventDetail.messageId, "msg-1", "Event includes messageId");
     });
   });
 });

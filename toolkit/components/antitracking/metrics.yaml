@@ -131,7 +131,7 @@ contentblocking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1946406
     notification_emails:
       - seceng-telemetry@mozilla.com
-    expires: 150
+    expires: 160
     telemetry_mirror: CANVAS_FINGERPRINTING_PER_TAB
 
   canvas_fingerprinting_per_tab2:
@@ -244,7 +244,7 @@ contentblocking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1946406
     notification_emails:
       - seceng-telemetry@mozilla.com
-    expires: 150
+    expires: 160
     telemetry_mirror: h#FONT_FINGERPRINTING_PER_TAB
 
   storage_access_granted_count:

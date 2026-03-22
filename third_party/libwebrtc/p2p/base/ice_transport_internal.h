@@ -352,11 +352,9 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
   void RemoveGatheringStateCallback(const void* removal_tag);
 
   // Handles sending and receiving of candidates.
-  sigslot::signal2<IceTransportInternal*, const Candidate&>
-      SignalCandidateGathered;
   void NotifyCandidateGathered(IceTransportInternal* transport,
                                const Candidate& candidate) {
-    SignalCandidateGathered(transport, candidate);
+    candidate_gathered_callbacks_.Send(transport, candidate);
   }
   void SubscribeCandidateGathered(
       absl::AnyInvocable<void(IceTransportInternal*, const Candidate&)>
@@ -376,14 +374,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
     candidates_removed_callback_ = std::move(callback);
   }
 
-  // Deprecated by PacketTransportInternal::SignalNetworkRouteChanged.
-  // This signal occurs when there is a change in the way that packets are
-  // being routed, i.e. to a different remote location. The candidate
-  // indicates where and how we are currently sending media.
-  // TODO(zhihuang): Update the Chrome remoting to use the new
-  // SignalNetworkRouteChanged.
-  sigslot::signal2<IceTransportInternal*, const Candidate&> SignalRouteChange;
-
   void SetCandidatePairChangeCallback(
       absl::AnyInvocable<void(const CandidatePairChangeEvent&)> callback) {
     RTC_DCHECK(!candidate_pair_change_callback_);
@@ -392,7 +382,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
 
   // Invoked when there is conflict in the ICE role between local and remote
   // agents.
-  sigslot::signal1<IceTransportInternal*> SignalRoleConflict;
   void NotifyRoleConflict(IceTransportInternal* transport) {
     SignalRoleConflict(transport);
   }
@@ -400,7 +389,6 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
       absl::AnyInvocable<void(IceTransportInternal*)> callback);
 
   // Emitted whenever the new standards-compliant transport state changed.
-  sigslot::signal1<IceTransportInternal*> SignalIceTransportStateChanged;
   void NotifyIceTransportStateChanged(IceTransportInternal* transport) {
     SignalIceTransportStateChanged(transport);
   }
@@ -408,12 +396,15 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
       absl::AnyInvocable<void(IceTransportInternal*)> callback);
 
   // Invoked when the transport is being destroyed.
-  sigslot::signal1<IceTransportInternal*> SignalDestroyed;
   void NotifyDestroyed(IceTransportInternal* transport) {
     SignalDestroyed(transport);
   }
   void SubscribeDestroyed(
       absl::AnyInvocable<void(IceTransportInternal*)> callback);
+  void SubscribeDestroyed(
+      void* tag,
+      absl::AnyInvocable<void(IceTransportInternal*)> callback);
+  void UnsubscribeDestroyed(void* tag);
 
   // Invoked when remote dictionary has been updated,
   // i.e. modifications to attributes from remote ice agent has
@@ -464,9 +455,13 @@ class RTC_EXPORT IceTransportInternal : public PacketTransportInternal {
       candidate_pair_change_callback_;
 
  private:
-  SignalTrampoline<IceTransportInternal,
-                   &IceTransportInternal::SignalCandidateGathered>
-      candidate_gathered_trampoline_;
+  // Slated for replacement with CallbackList.
+  sigslot::signal1<IceTransportInternal*> SignalRoleConflict;
+  sigslot::signal1<IceTransportInternal*> SignalIceTransportStateChanged;
+  sigslot::signal1<IceTransportInternal*> SignalDestroyed;
+
+  CallbackList<IceTransportInternal*, const Candidate&>
+      candidate_gathered_callbacks_;
   SignalTrampoline<IceTransportInternal,
                    &IceTransportInternal::SignalRoleConflict>
       role_conflict_trampoline_;

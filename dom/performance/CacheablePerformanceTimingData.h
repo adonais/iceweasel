@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 
+#include "mozilla/MemoryReporting.h"
 #include "nsCOMPtr.h"
 #include "nsITimedChannel.h"
 #include "nsString.h"
@@ -31,6 +32,23 @@ class CacheablePerformanceTimingData {
 
   CacheablePerformanceTimingData(nsITimedChannel* aChannel,
                                  nsIHttpChannel* aHttpChannel);
+
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
+  }
+
+  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
+    size_t n = 0;
+    n += mContentType.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+    n += mNextHopProtocol.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+
+    n += mServerTiming.ShallowSizeOfExcludingThis(aMallocSizeOf);
+    for (const auto& timing : mServerTiming) {
+      n += timing->SizeOfIncludingThis(aMallocSizeOf);
+    }
+
+    return n;
+  }
 
  protected:
   explicit CacheablePerformanceTimingData(

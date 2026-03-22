@@ -41,7 +41,7 @@ pub struct IPCListener {
 impl IPCListener {
     pub(crate) fn new(server_addr: CString) -> Result<IPCListener, IPCListenerError> {
         let pipe = create_named_pipe(&server_addr, /* first_instance */ true)
-            .map_err(IPCListenerError::PipeCreationFailure)?;
+            .map_err(IPCListenerError::CreationError)?;
 
         Ok(IPCListener {
             server_addr,
@@ -78,12 +78,12 @@ impl IPCListener {
 
     pub(crate) fn replace_pipe(&self) -> Result<IPCConnector, IPCListenerError> {
         let new_pipe = create_named_pipe(&self.server_addr, /* first_instance */ false)
-            .map_err(IPCListenerError::PipeCreationFailure)?;
+            .map_err(IPCListenerError::AcceptError)?;
         let connected_pipe = self.handle.replace(Rc::new(new_pipe));
 
         // We can guarantee that there's only one reference to this handle at
         // this point in time.
-        Ok(IPCConnector::from_ancillary(
+        Ok(IPCConnector::from_handle(
             Rc::<OwnedHandle>::try_unwrap(connected_pipe).unwrap(),
         )?)
     }
@@ -91,17 +91,21 @@ impl IPCListener {
     /// Serialize this listener into a string that can be passed on the
     /// command-line to a child process. This only works for newly
     /// created listeners because they are explicitly created as inheritable.
-    pub fn serialize(&self) -> OsString {
+    pub fn serialize(&self) -> Result<OsString, IPCListenerError> {
         let raw_handle = self.handle.borrow().as_raw_handle() as usize;
-        OsString::from_str(raw_handle.to_string().as_ref()).unwrap()
+        OsString::from_str(raw_handle.to_string().as_ref())
+            .map_err(|_e| IPCListenerError::Serialize(PlatformError::InvalidString))
     }
 
     /// Deserialize a listener from an argument passed on the command-line.
     /// The resulting listener is ready to accept new connections.
     pub fn deserialize(string: &CStr, pid: Pid) -> Result<IPCListener, IPCListenerError> {
         let server_addr = server_addr(pid);
-        let string = string.to_str().map_err(|_e| IPCError::ParseError)?;
-        let handle = usize::from_str(string).map_err(|_e| IPCError::ParseError)?;
+        let string = string
+            .to_str()
+            .map_err(|_e| IPCError::Deserialize(PlatformError::InvalidString))?;
+        let handle = usize::from_str(string)
+            .map_err(|_e| IPCError::Deserialize(PlatformError::ParseHandle))?;
         // SAFETY: This is a handle we passed in ourselves.
         let handle = unsafe { OwnedHandle::from_raw_handle(handle as RawHandle) };
 

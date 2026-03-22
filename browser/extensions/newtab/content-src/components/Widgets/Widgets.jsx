@@ -11,11 +11,15 @@ import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWra
 import { WidgetsFeatureHighlight } from "../DiscoveryStreamComponents/FeatureHighlight/WidgetsFeatureHighlight";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 
+const CONTAINER_ACTION_TYPES = {
+  HIDE_ALL: "hide_all",
+  CHANGE_SIZE_ALL: "change_size_all",
+};
+
 const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
 const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
-const PREF_WIDGETS_WEATHER_FORECAST_ENABLED = "widgets.weatherForecast.enabled";
 const PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED =
   "widgets.system.weatherForecast.enabled";
 const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
@@ -55,22 +59,24 @@ export function resetTimerToDefaults(dispatch, timerType) {
 
 function Widgets() {
   const prefs = useSelector(state => state.Prefs.values);
+  const weatherData = useSelector(state => state.Weather);
   const { messageData } = useSelector(state => state.Messages);
   const timerType = useSelector(state => state.TimerWidget.timerType);
   const timerData = useSelector(state => state.TimerWidget);
   const isMaximized = prefs[PREF_WIDGETS_MAXIMIZED];
+  const widgetsMayBeMaximized = prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED];
   const dispatch = useDispatch();
 
   const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
   const nimbusTimerEnabled = prefs.widgetsConfig?.timerEnabled;
-  const nimbusWeatherForecastEnabled =
-    prefs.widgetsConfig?.weatherForecastEnabled;
   const nimbusListsTrainhopEnabled =
     prefs.trainhopConfig?.widgets?.listsEnabled;
   const nimbusTimerTrainhopEnabled =
     prefs.trainhopConfig?.widgets?.timerEnabled;
   const nimbusWeatherForecastTrainhopEnabled =
     prefs.trainhopConfig?.widgets?.weatherForecastEnabled;
+  const nimbusMaximizedTrainhopEnabled =
+    prefs.trainhopConfig?.widgets?.maximized;
 
   const listsEnabled =
     (nimbusListsTrainhopEnabled ||
@@ -84,11 +90,37 @@ function Widgets() {
       prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) &&
     prefs[PREF_WIDGETS_TIMER_ENABLED];
 
+  // This weather forecast widget will only show when the following are true:
+  // - The weather view is set to "detailed" (can be checked with the weather.display pref)
+  // - Weather is displayed on New Tab (system.showWeather)
+  // - The weather forecast widget is enabled (system.weatherForecast.enabled)
+  // Note that if the view is set to "detailed" but the weather forecast widget is not enabled,
+  // then the mini weather widget will display with the "detailed" view
+  const weatherForecastSystemEnabled =
+    nimbusWeatherForecastTrainhopEnabled ||
+    prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED];
+
+  const nimbusWeatherDisplay = prefs.trainhopConfig?.weather?.display;
+  const showDetailedView =
+    nimbusWeatherDisplay === "detailed" ||
+    prefs["weather.display"] === "detailed";
+
+  // Check if weather is enabled (browser.newtabpage.activity-stream.showWeather)
+  const { showWeather } = prefs;
+  const systemShowWeather = prefs["system.showWeather"];
+  const weatherExperimentEnabled = prefs.trainhopConfig?.weather?.enabled;
+  const isWeatherEnabled =
+    showWeather && (systemShowWeather || weatherExperimentEnabled);
+
   const weatherForecastEnabled =
-    (nimbusWeatherForecastTrainhopEnabled ||
-      nimbusWeatherForecastEnabled ||
-      prefs[PREF_WIDGETS_SYSTEM_WEATHER_FORECAST_ENABLED]) &&
-    prefs[PREF_WIDGETS_WEATHER_FORECAST_ENABLED];
+    weatherForecastSystemEnabled &&
+    showDetailedView &&
+    weatherData?.initialized &&
+    isWeatherEnabled;
+
+  // Widget size is "small" only when maximize feature is enabled and widgets
+  // are currently minimized. Otherwise defaults to "medium".
+  const widgetSize = widgetsMayBeMaximized && !isMaximized ? "small" : "medium";
 
   // track previous timerEnabled state to detect when it becomes disabled
   const prevTimerEnabledRef = useRef(timerEnabled);
@@ -107,35 +139,120 @@ function Widgets() {
     prevTimerEnabledRef.current = isTimerEnabled;
   }, [timerEnabled, timerData, dispatch, timerType]);
 
-  // Sends a dispatch to disable all widgets
-  function handleHideAllWidgetsClick(e) {
-    e.preventDefault();
+  // Bug 2013978 - Replace hardcoded widget list with programmatic registry
+  function hideAllWidgets() {
     batch(() => {
       dispatch(ac.SetPref(PREF_WIDGETS_LISTS_ENABLED, false));
       dispatch(ac.SetPref(PREF_WIDGETS_TIMER_ENABLED, false));
+      // If weather forecast widget is visible, turn off the weather
+      if (weatherForecastEnabled) {
+        dispatch(ac.SetPref("showWeather", false));
+      }
+
+      const telemetryData = {
+        action_type: CONTAINER_ACTION_TYPES.HIDE_ALL,
+        widget_size: widgetSize,
+      };
+
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_CONTAINER_ACTION,
+          data: telemetryData,
+        })
+      );
+
+      // Dispatch WIDGETS_ENABLED for each widget being hidden
+      if (listsEnabled) {
+        dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_ENABLED,
+            data: {
+              widget_name: "lists",
+              widget_source: "widget",
+              enabled: false,
+              widget_size: widgetSize,
+            },
+          })
+        );
+      }
+
+      if (timerEnabled) {
+        dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_ENABLED,
+            data: {
+              widget_name: "focus_timer",
+              widget_source: "widget",
+              enabled: false,
+              widget_size: widgetSize,
+            },
+          })
+        );
+      }
+
+      // Send telemetry for weather widget if it was visible when hiding all widgets
+      if (weatherForecastEnabled) {
+        dispatch(
+          ac.OnlyToMain({
+            type: at.WIDGETS_ENABLED,
+            data: {
+              widget_name: "weather",
+              widget_source: "widget",
+              enabled: false,
+              widget_size: widgetSize,
+            },
+          })
+        );
+      }
     });
+  }
+
+  function handleHideAllWidgetsClick(e) {
+    e.preventDefault();
+    hideAllWidgets();
   }
 
   function handleHideAllWidgetsKeyDown(e) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      batch(() => {
-        dispatch(ac.SetPref(PREF_WIDGETS_LISTS_ENABLED, false));
-        dispatch(ac.SetPref(PREF_WIDGETS_TIMER_ENABLED, false));
-      });
+      hideAllWidgets();
     }
   }
 
-  // Toggles the maximized state of widgets
+  function toggleMaximize() {
+    const newMaximizedState = !isMaximized;
+    const newWidgetSize =
+      widgetsMayBeMaximized && !newMaximizedState ? "small" : "medium";
+
+    batch(() => {
+      dispatch(ac.SetPref(PREF_WIDGETS_MAXIMIZED, newMaximizedState));
+
+      const telemetryData = {
+        action_type: CONTAINER_ACTION_TYPES.CHANGE_SIZE_ALL,
+        action_value: newMaximizedState
+          ? "maximize_widgets"
+          : "minimize_widgets",
+        widget_size: newWidgetSize,
+      };
+
+      dispatch(
+        ac.OnlyToMain({
+          type: at.WIDGETS_CONTAINER_ACTION,
+          data: telemetryData,
+        })
+      );
+    });
+  }
+
   function handleToggleMaximizeClick(e) {
     e.preventDefault();
-    dispatch(ac.SetPref(PREF_WIDGETS_MAXIMIZED, !isMaximized));
+    toggleMaximize();
   }
 
   function handleToggleMaximizeKeyDown(e) {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
-      dispatch(ac.SetPref(PREF_WIDGETS_MAXIMIZED, !isMaximized));
+      toggleMaximize();
     }
   }
 
@@ -156,8 +273,17 @@ function Widgets() {
     <div className="widgets-wrapper">
       <div className="widgets-section-container">
         <div className="widgets-title-container">
-          <h1 data-l10n-id="newtab-widget-section-title"></h1>
-          {prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED] && (
+          <div className="widgets-title-container-text">
+            <h1 data-l10n-id="newtab-widget-section-title"></h1>
+            {messageData?.content?.messageType === "WidgetMessage" && (
+              <MessageWrapper dispatch={dispatch}>
+                <WidgetsFeatureHighlight dispatch={dispatch} />
+              </MessageWrapper>
+            )}
+          </div>
+
+          {(nimbusMaximizedTrainhopEnabled ||
+            prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED]) && (
             <moz-button
               id="toggle-widgets-size-button"
               type="icon ghost"
@@ -165,10 +291,10 @@ function Widgets() {
               // Toggle the icon and hover text
               data-l10n-id={
                 isMaximized
-                  ? "newtab-widget-section-maximize"
-                  : "newtab-widget-section-minimize"
+                  ? "newtab-widget-section-minimize"
+                  : "newtab-widget-section-maximize"
               }
-              iconsrc={`chrome://browser/skin/${isMaximized ? "fullscreen" : "fullscreen-exit"}.svg`}
+              iconsrc={`chrome://browser/skin/${isMaximized ? "fullscreen-exit" : "fullscreen"}.svg`}
               onClick={handleToggleMaximizeClick}
               onKeyDown={handleToggleMaximizeKeyDown}
             />
@@ -184,13 +310,14 @@ function Widgets() {
           />
         </div>
         <div
-          className={`widgets-container ${isMaximized ? "is-maximized" : ""}`}
+          className={`widgets-container${isMaximized ? " is-maximized" : ""}`}
         >
           {listsEnabled && (
             <Lists
               dispatch={dispatch}
               handleUserInteraction={handleUserInteraction}
               isMaximized={isMaximized}
+              widgetsMayBeMaximized={widgetsMayBeMaximized}
             />
           )}
           {timerEnabled && (
@@ -198,6 +325,7 @@ function Widgets() {
               dispatch={dispatch}
               handleUserInteraction={handleUserInteraction}
               isMaximized={isMaximized}
+              widgetsMayBeMaximized={widgetsMayBeMaximized}
             />
           )}
           {weatherForecastEnabled && (
@@ -205,15 +333,11 @@ function Widgets() {
               dispatch={dispatch}
               handleUserInteraction={handleUserInteraction}
               isMaximized={isMaximized}
+              widgetsMayBeMaximized={widgetsMayBeMaximized}
             />
           )}
         </div>
       </div>
-      {messageData?.content?.messageType === "WidgetMessage" && (
-        <MessageWrapper dispatch={dispatch}>
-          <WidgetsFeatureHighlight dispatch={dispatch} />
-        </MessageWrapper>
-      )}
     </div>
   );
 }

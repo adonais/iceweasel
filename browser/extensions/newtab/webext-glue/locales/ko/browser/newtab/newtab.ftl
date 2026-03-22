@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = 개인화
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = 닫기
+    .aria-label = 닫기
 
 ## Search box component.
 
@@ -328,18 +331,18 @@ newtab-custom-recent-subtitle = 최근 사이트 및 콘텐츠 모음
 newtab-custom-weather-toggle =
     .label = 날씨
     .description = 오늘의 일기예보를 한눈에 보기
-newtab-custom-trending-search-toggle =
-    .label = 인기 검색어
-    .description = 인기 있고 자주 검색되는 주제
 newtab-custom-widget-weather-toggle =
     .label = 날씨
-newtab-custom-widget-trending-search-toggle =
-    .label = 인기 검색어
 newtab-custom-widget-lists-toggle =
     .label = 목록
 newtab-custom-widget-timer-toggle =
     .label = 타이머
 newtab-custom-widget-section-title = 위젯
+newtab-custom-widget-section-toggle =
+    .label = 위젯
+newtab-widget-manage-title = 위젯
+newtab-widget-manage-widget-button =
+    .label = 위젯 관리
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = 닫기
@@ -467,6 +470,8 @@ newtab-weather-change-location-search-input-placeholder =
     .placeholder = 위치 검색
     .aria-label = 위치 검색
 newtab-weather-menu-weather-display = 날씨 표시
+newtab-weather-todays-forecast = 오늘의 일기예보
+newtab-weather-see-full-forecast = 전체 일기예보 보기
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -479,6 +484,7 @@ newtab-weather-menu-temperature-option-fahrenheit = 화씨
 newtab-weather-menu-temperature-option-celsius = 섭씨
 newtab-weather-menu-change-temperature-units-fahrenheit = 화씨로 전환
 newtab-weather-menu-change-temperature-units-celsius = 섭씨로 전환
+newtab-weather-menu-hide-weather-v2 = 날씨 숨기기
 newtab-weather-menu-hide-weather = 새 탭에서 날씨 숨기기
 newtab-weather-menu-learn-more = 더 알아보기
 newtab-weather-menu-detect-my-location = 내 위치 감지
@@ -491,6 +497,11 @@ newtab-weather-opt-in-yes =
     .label = 예
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = 뉴욕
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = { $provider }의 일기예보 보기
+    .aria-description = { $provider } ∙ 스폰서
 
 ## Topic Labels
 
@@ -595,7 +606,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = 즐겨찾기를 간편하게
 newtab-shortcuts-highlight-subtitle = 바로 가기를 추가하여 한 번의 클릭으로 즐겨찾는 사이트를 이용하세요.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = 보고하는 이유?
@@ -613,21 +624,13 @@ newtab-report-content-inappropriate-offensive =
     .label = 부적절하거나 불쾌감을 주는 내용
 newtab-report-content-spam-misleading =
     .label = 스팸 또는 오해의 소지가 있는 내용
+newtab-report-content-requires-payment-subscription =
+    .label = 결제나 구독이 필요함
+newtab-report-content-requires-payment-subscription-learn-more = 더 알아보기
 newtab-report-cancel = 취소
 newtab-report-submit = 보내기
 newtab-toast-thanks-for-reporting =
     .message = 신고해 주셔서 감사합니다.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = 인기 검색어 표시
-newtab-trending-searches-hide-trending =
-    .title = 인기 검색어 숨기기
-newtab-trending-searches-learn-more = 더 알아보기
-newtab-trending-searches-dismiss = 인기 검색어 숨기기
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = 인기 검색어
 
 ## Strings for task / to-do list productivity widget
 
@@ -700,6 +703,12 @@ newtab-widget-timer-menu-notifications = 알림 끄기
 newtab-widget-timer-menu-notifications-on = 알림 켜기
 newtab-widget-timer-menu-hide = 타이머 숨기기
 newtab-widget-timer-menu-learn-more = 더 알아보기
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = 주요 헤드라인
+newtab-daily-briefing-card-menu-dismiss = 닫기
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp = { $minutes }분 전 업데이트됨
 newtab-widget-message-title = 목록과 내장 타이머로 집중하기
 # to-dos stands for "things to do".
 newtab-widget-message-copy = 빠른 알림부터 매일 할 일 목록, 집중 세션부터 스트레칭 휴식까지 — 업무에 집중하고 시간을 준수하세요.
@@ -709,3 +718,25 @@ newtab-promo-card-cta = 더 알아보기
 newtab-promo-card-dismiss-button =
     .title = 닫기
     .aria-label = 닫기
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-dismiss-button =
+    .title = 닫기
+    .aria-label = 닫기
+# "This space" refers to about:newtab. The call to action here ("make it your own")
+# is to customize newtab with a background image or colour, or by tweaking the
+# existing widgetry that appears on it.
+newtab-activation-window-message-customization-focus-header = 이 공간을 나만의 공간으로 만들기
+newtab-activation-window-message-customization-focus-message = 새로운 배경 화면을 선택하고, 즐겨찾는 사이트에 대한 바로 가기를 추가하고, 관심 있는 최신 뉴스를 받아보세요.
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = 맞춤 설정 시작
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = 이 공간은 유연하고 사용자 정의가 가능합니다
+newtab-activation-window-message-values-focus-message = { -brand-product-name }는 사용자가 원하는 방식으로 탐색할 수 있게 해주며, 온라인에서 하루를 시작하는 더 개인화된 방법을 제공합니다. 나만의 { -brand-product-name }를 만드세요.

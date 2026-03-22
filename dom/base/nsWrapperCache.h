@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsWrapperCache_h___
-#define nsWrapperCache_h___
+#ifndef nsWrapperCache_h_
+#define nsWrapperCache_h_
 
 #include <type_traits>
 
@@ -650,4 +650,4 @@ enum { WRAPPER_CACHE_FLAGS_BITS_USED = 1 };
     NS_IMPL_CYCLE_COLLECTION_TRACE_PRESERVED_WRAPPER                        \
   NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
-#endif /* nsWrapperCache_h___ */
+#endif /* nsWrapperCache_h_ */

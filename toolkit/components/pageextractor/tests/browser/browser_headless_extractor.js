@@ -24,12 +24,16 @@ add_task(async function test_headless_extraction() {
     </html>
   `);
 
-  const text = await PageExtractorParent.getHeadlessExtractor(
+  const result = await PageExtractorParent.getHeadlessExtractor(
     url,
     async pageExtractor => pageExtractor.getText()
   );
 
-  is(text, "This is a headless document", "The page's content is extracted");
+  is(
+    result.text,
+    "This is a headless document",
+    "The page's content is extracted"
+  );
 
   await serverClosed;
 });
@@ -57,13 +61,13 @@ add_task(async function test_headless_extraction_404() {
     404
   );
 
-  const text = await PageExtractorParent.getHeadlessExtractor(
+  const result = await PageExtractorParent.getHeadlessExtractor(
     url,
     async pageExtractor => pageExtractor.getText()
   );
 
   is(
-    text,
+    result.text,
     "404 page not found.",
     "The page's content is extracted even if it's a 404"
   );
@@ -81,7 +85,7 @@ add_task(async function test_headless_extraction_about_blank() {
 
   await Assert.rejects(
     PageExtractorParent.getHeadlessExtractor("about:blank", () => {}),
-    /about: pages are not supported/,
+    /Only http: and https: URLs are supported/,
     "PageExtractor fails on about: pages."
   );
 });
@@ -99,7 +103,7 @@ add_task(async function test_headless_extraction_about_blank() {
       "file:///NeverGonnaGiveYouUp.mp4",
       () => {}
     ),
-    /file: pages are not supported/,
+    /Only http: and https: URLs are supported/,
     "PageExtractor fails on file: URLs."
   );
 });

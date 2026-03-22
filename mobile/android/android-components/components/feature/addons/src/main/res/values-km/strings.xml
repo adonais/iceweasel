@@ -236,7 +236,7 @@
   <!-- The author of an add-on. -->
   <string name="mozac_feature_addons_author">អ្នកនិពន្ធ</string>
   <!-- The last date that the add-on was updated. -->
-  <string name="mozac_feature_addons_last_updated">បានធ្វើបច្ចុប្បន្នភាពចុងក្រោយ</string>
+  <string name="mozac_feature_addons_last_updated">បានអាប់ដេតចុងក្រោយ</string>
   <!-- The developer website (Homepage) of the add-on. -->
   <string name="mozac_feature_addons_home_page">ទំព័រដើម</string>
   <!-- A link where users can find more information about add-ons permissions. -->
@@ -323,8 +323,18 @@
   <string name="mozac_feature_extensions_manager_notification_restart_button">ចាប់ផ្ដើម​កម្មវិធី​បន្ថែម​ឡើងវិញ</string>
   <!-- Button in the extensions manager that opens AMO in a tab -->
   <string name="mozac_feature_addons_find_more_extensions_button_text">ស្វែងរកផ្នែកបន្ថែមបន្ថែម</string>
+  <!-- The label of the update button on the system notification shown to the user when an add-on has an update that requires the user to accept new permissions. -->
+  <string name="mozac_feature_addons_updater_notification_update_button">ធ្វើ​បច្ចុប្បន្នភាព</string>
   <!-- The label of the cancel button on a notification, this will be shown to the user when an add-on needs new permissions. Indicates the user denies the new permissions and prevents the add-on from be updated -->
   <string name="mozac_feature_addons_updater_notification_cancel_button">បោះបង់</string>
+  <!-- The title of the system notification shown to the user when an add-on has a new update that requires new permissions. %1$s is the name of the add-on. -->
+  <string name="mozac_feature_addons_updater_notification_title_2">%1$s មាន​បច្ចប្បន្នភាព</string>
+  <!-- A short explanation shown in the notification displayed when an add-on has a new update that requires new permissions. -->
+  <string name="mozac_feature_addons_updater_notification_short_intro">បោះបង់ដើម្បីរក្សាកំណែ និងការកំណត់បច្ចុប្បន្នរបស់អ្នក។</string>
+  <!-- The heading for the permissions section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of sentences. -->
+  <string name="mozac_feature_addons_updater_notification_heading_permissions">ការអនុញ្ញាតថ្មីដែលត្រូវការ៖ %1$s</string>
+  <!-- The heading for the data collection permission section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of permissions. -->
+  <string name="mozac_feature_addons_updater_notification_heading_data_collection_permissions">ការប្រមូលទិន្នន័យថ្មីដែលតម្រូវឲ្យមាន៖ អ្នកអភិវឌ្ឍន៍និយាយថាផ្នែកបន្ថែមនឹងប្រមូល %1$s។</string>
   <!-- Name of the "notification channel" used for displaying a notification for updating an extension. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_addons_updater_notification_channel_2">ការអាប់ដេតផ្នែកបន្ថែម</string>
   <!-- Name of the "notification channel" used for displaying a notification for new supported add-ons. See https://developer.android.com/training/notify-user/channels -->
@@ -368,7 +378,7 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">មិនអាចដំឡើង %1$s បានទេ ពីព្រោះវាអាចដំឡើងបានដោយអង្គការដែលប្រើគោលការណ៍សហគ្រាសប៉ុណ្ណោះ ដែលមិនត្រូវបានគាំទ្រនៅលើវេទិកានេះ។</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s បំពាន​គោលការណ៍​របស់ Mozilla ហើយ​មិន​អាច​ដំឡើង​នៅ​លើ %2$s បាន​ទេ។</string>
+  <string name="mozac_feature_addons_soft_blocked_2">%1$s ត្រូវ​បាន​រឹតត្បិត ហើយ​មិន​អាច​ដំឡើង​នៅ​លើ %2$s បាន​ទេ។</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">បរាជ័យក្នុងការបើក %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -399,6 +409,12 @@
   <string name="mozac_feature_addons_updater_dialog_last_attempt">ការប៉ុនប៉ងចុងក្រោយ៖</string>
   <!-- Displayed in the "Status" field for the updater when an add-on has been correctly updated -->
   <string name="mozac_feature_addons_updater_dialog_status">ស្ថានភាព៖</string>
+  <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_installed_dialog_title_2">%1$s ត្រូវបានបន្ថែម</string>
+  <!-- Used as text for the link in the description of the post-installation dialog. -->
+  <string name="mozac_feature_addons_installed_dialog_description_link_text">ការកំណត់ផ្នែកបន្ថែម</string>
+  <!-- Text shown in the dialog when add-on installation is completed. %1$s is replaced by an active link, using mozac_feature_addons_installed_dialog_description_link_text as text ("extension settings"). -->
+  <string name="mozac_feature_addons_installed_dialog_description_3">ធ្វើបច្ចុប្បន្នភាពការអនុញ្ញាត និងចំណូលចិត្តទិន្នន័យនៅពេលណាក៏បាននៅក្នុង %1$s។</string>
   <!-- Confirmation button text for the dialog when add-on installation is completed. -->
   <string name="mozac_feature_addons_installed_dialog_okay_button_2">យល់ព្រម</string>
   <!-- "Learn more" link displayed below an add-on status message. -->
@@ -408,9 +424,11 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">កម្មវិធីបន្ថែមនេះត្រូវបានរារាំងដោយសារតែការរំលោភលើគោលការណ៍របស់ Mozilla ហើយត្រូវបានបិទ។</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">កម្មវិធីបន្ថែមនេះត្រូវបានដាក់កម្រិតចំពោះការរំលោភលើគោលការណ៍របស់ Mozilla ហើយត្រូវបានបិទ។ អ្នកអាចបើកវាបាន ប៉ុន្តែវាអាចមានគ្រោះថ្នាក់។</string>
+  <string name="mozac_feature_addons_status_softblocked_2">ផ្នែកបន្ថែមនេះត្រូវបានដាក់កម្រិត ហើយត្រូវបានបិទ។ អ្នកអាចបើកវាបាន ប៉ុន្តែវាអាចមានគ្រោះថ្នាក់។</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">កម្មវិធីបន្ថែមនេះបំពានគោលការណ៍របស់ Mozilla។ ការប្រើប្រាស់វាអាចមានហានិភ័យ។</string>
+  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">ផ្នែកបន្ថែមនេះត្រូវបានដាក់កម្រិត។ ការប្រើប្រាស់វាអាចមានហានិភ័យ។</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">មិនអាចផ្ទៀងផ្ទាត់ %1$s ថាមានសុវត្ថិភាពបានទេ ហើយវាត្រូវបានបិទ។</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->
+  <string name="mozac_feature_addons_status_incompatible">%1$s មិន​ឆបគ្នា​ជាមួយ​កំណែ %2$s (កំណែ %3$s) របស់​អ្នក​ទេ។</string>
 </resources>

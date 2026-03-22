@@ -5,6 +5,8 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  cleanNoncanonicalUrl:
+    "moz-src:///browser/components/tabnotes/CanonicalURL.sys.mjs",
   findCandidates: "moz-src:///browser/components/tabnotes/CanonicalURL.sys.mjs",
   pickCanonicalUrl:
     "moz-src:///browser/components/tabnotes/CanonicalURL.sys.mjs",
@@ -23,6 +25,17 @@ export class CanonicalURLChild extends JSWindowActorChild {
       case "DOMContentLoaded":
       case "pageshow":
         this.#discoverCanonicalUrl();
+        break;
+      case "popstate":
+        /**
+         * `document` does not fully reflect the new state of the page when
+         * `popstate` is emitted. An immediate timeout is enough for some,
+         * but not all, web sites to update their documents.
+         *
+         * @see https://developer.mozilla.org/en-US/docs/Web/API/Window/popstate_event#the_history_stack
+         */
+        this.contentWindow.setTimeout(() => this.#discoverCanonicalUrl(), 0);
+        break;
     }
   }
 
@@ -35,6 +48,12 @@ export class CanonicalURLChild extends JSWindowActorChild {
     switch (msg.name) {
       case "CanonicalURL:Detect":
         this.#discoverCanonicalUrl();
+        break;
+      case "CanonicalURL:DetectFromPushState":
+        this.sendAsyncMessage("CanonicalURL:Identified", {
+          canonicalUrl: lazy.cleanNoncanonicalUrl(msg.data.pushStateUrl),
+          canonicalUrlSources: ["pushState"],
+        });
         break;
     }
   }

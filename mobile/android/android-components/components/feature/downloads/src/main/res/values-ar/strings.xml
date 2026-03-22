@@ -63,7 +63,7 @@
   <!-- Message that appears when the downloaded file is a specific type (%1$s) that Android doesn't support opening. -->
   <string name="mozac_feature_downloads_open_not_supported1">لا يوجد أي تطبيق لفتح ملفات %1$s</string>
   <!-- Button that pauses the download when pressed. -->
-  <string name="mozac_feature_downloads_button_pause">الإيقاف مؤقتًا</string>
+  <string name="mozac_feature_downloads_button_pause">إيقاف مؤقت</string>
   <!-- Button that resumes the download when pressed. -->
   <string name="mozac_feature_downloads_button_resume">استئناف</string>
   <!-- Button that cancels the download when pressed. -->
@@ -79,7 +79,7 @@
   <!-- Message that appears when trying to download with an external app fails. %1$s will be replaced with the name the external app. -->
   <string name="mozac_feature_downloads_unable_to_open_third_party_app">تعذر فتح %1$s</string>
   <!-- Text for the info dialog when write to storage permissions have been denied but user tries to download a file. -->
-  <string name="mozac_feature_downloads_write_external_storage_permissions_needed_message">تصريح الوصول إلى الملفات والوسائط مطلوب لتنزيل الملفات. انتقل إلى إعدادات أندرويد، وانقر ”الأذونات“ ثم انقر ”السماح“.</string>
+  <string name="mozac_feature_downloads_write_external_storage_permissions_needed_message">تصريح الوصول إلى الملفات والوسائط مطلوب لتنزيل الملفات. انتقل إلى إعدادات أندرويد، وانقر \"الأذونات\" ثم انقر \"السماح\".</string>
   <!-- Alert dialog confirmation before cancelling downloads, this is the title -->
   <string name="mozac_feature_downloads_cancel_active_downloads_warning_content_title">أتريد إلغاء التنزيلات الخاصة؟</string>
   <!-- Alert dialog confirmation before cancelling private downloads, this is the body. %1$s will be replaced with the name of the file. -->

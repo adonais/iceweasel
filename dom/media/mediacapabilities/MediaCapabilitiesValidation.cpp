@@ -206,6 +206,17 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
     return err;
   }
 
+  if (aConfig.mWidth <= 0 || aConfig.mHeight <= 0) {
+    ValidationResult err = Err(ValidationError::InvalidVideoConfiguration);
+    LOG(
+        ("[Invalid VideoConfiguration (Dimensions, %s) #1] Rejecting '%s' "
+         "(width=%u, height=%u)\n",
+         EnumValueToString(err.unwrapErr()),
+         NS_ConvertUTF16toUTF8(aConfig.mContentType).get(), aConfig.mWidth,
+         aConfig.mHeight));
+    return err;
+  }
+
   // Step 2: If an optional member is specified for a MediaDecodingType or
   // MediaEncodingType to which it’s not applicable, return false and abort
   // these steps. See applicability rules in the member definitions below.

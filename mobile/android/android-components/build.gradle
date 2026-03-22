@@ -8,14 +8,7 @@ import static org.gradle.api.tasks.testing.TestResult.ResultType
 
 buildscript {
     repositories {
-        gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
-            maven {
-                url = repository
-                if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
-                    allowInsecureProtocol = true
-                }
-            }
-        }
+        gradle.configureMavenRepositories(delegate)
     }
 
     dependencies {
@@ -24,6 +17,7 @@ buildscript {
 }
 
 plugins {
+    alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.detekt)
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
@@ -31,21 +25,6 @@ plugins {
 }
 
 allprojects {
-    repositories {
-        gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
-            maven {
-                url = repository
-                if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
-                    allowInsecureProtocol = true
-                }
-            }
-        }
-
-        maven {
-            url = "${gradle.mozconfig.topobjdir}/gradle/maven"
-        }
-    }
-
     ext {
         gleanVersion = libs.versions.glean.get()
     }
@@ -407,6 +386,16 @@ tasks.register("ktlintFormat", JavaExec) {
     args "--reporter=json,output=build/reports/ktlint/ktlintFormat.json"
     args "--reporter=plain"
     jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+}
+
+tasks.register("lint") {
+    group = "verification"
+    description = "Runs lint on all android-components subprojects."
+    subprojects.each {
+        if (it.tasks.findByName("lint") != null) {
+            dependsOn it.tasks.named("lint")
+        }
+    }
 }
 
 tasks.register("listRepositories") {

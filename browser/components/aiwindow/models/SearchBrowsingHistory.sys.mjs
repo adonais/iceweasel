@@ -125,30 +125,37 @@ async function searchBrowsingHistoryTimeRange({
   endTs,
   historyLimit,
 }) {
-  const semanticManager = lazy.getPlacesSemanticHistoryManager();
-  const conn = await semanticManager.getConnection();
+  const results = [];
+  await lazy.PlacesUtils.withConnectionWrapper(
+    "SearchBrowsingHistory:searchBrowsingHistoryTimeRange",
+    async db => {
+      const stmt = await db.executeCached(
+        `
+          SELECT id,
+                 title,
+                 url,
+                 NULL AS distance,
+                 visit_count,
+                 frecency,
+                 last_visit_date,
+                 preview_image_url
+          FROM moz_places
+          WHERE frecency <> 0
+          AND (:startTs IS NULL OR last_visit_date >= :startTs)
+          AND (:endTs IS NULL OR last_visit_date <= :endTs)
+          ORDER BY last_visit_date DESC, frecency DESC
+          LIMIT :limit
+        `,
+        {
+          startTs,
+          endTs,
+          limit: historyLimit,
+        }
+      );
 
-  const results = await conn.executeCached(
-    `
-      SELECT id,
-             title,
-             url,
-             NULL AS distance,
-             visit_count,
-             frecency,
-             last_visit_date,
-             preview_image_url
-      FROM moz_places
-      WHERE frecency <> 0
-      AND (:startTs IS NULL OR last_visit_date >= :startTs)
-      AND (:endTs IS NULL OR last_visit_date <= :endTs)
-      ORDER BY last_visit_date DESC, frecency DESC
-      LIMIT :limit
-    `,
-    {
-      startTs,
-      endTs,
-      limit: historyLimit,
+      for (let row of stmt) {
+        results.push(row);
+      }
     }
   );
 
@@ -441,6 +448,7 @@ export async function searchBrowsingHistory({
     if (rows.length === 0) {
       return JSON.stringify({
         searchTerm,
+        count: 0,
         results: [],
         message: searchTerm
           ? `No browser history found for "${searchTerm}".`
@@ -458,8 +466,9 @@ export async function searchBrowsingHistory({
     console.error("Error searching browser history:", error);
     return JSON.stringify({
       searchTerm,
-      error: `Error searching browser history: ${error.message}`,
+      count: 0,
       results: [],
+      error: `Error searching browser history: ${error.message}`,
     });
   }
 }

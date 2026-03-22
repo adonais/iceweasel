@@ -7,18 +7,23 @@
 <html xmlns="http://www.w3.org/1999/xhtml" role="document">
   <head>
     <meta charset="utf-8" />
+    <meta name="referrer" content="no-referrer" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src resource: chrome:; object-src 'none'; img-src chrome:;"
+      content="default-src resource: chrome:; object-src 'none'; img-src chrome: page-icon:;"
     />
     <meta name="color-scheme" content="light dark" />
-    <!-- TODO : Add localization preview -->
-    <title>AI Chat Content</title>
+    <title data-l10n-id="smartwindow-messages-document-title"></title>
     <link rel="stylesheet" href="chrome://global/skin/in-content/common.css" />
+    <link
+      rel="stylesheet"
+      href="chrome://browser/content/aiwindow/ai-window-shared.css"
+    />
     <link
       rel="stylesheet"
       href="chrome://browser/content/aiwindow/ai-window-content.css"
     />
+    <link rel="localization" href="preview/aiWindow.ftl" />
     <script src="chrome://browser/content/contentTheme.js"></script>
     <script
       type="module"
@@ -27,6 +32,15 @@
     <script
       type="module"
       src="chrome://browser/content/aiwindow/components/ai-chat-message.mjs"
+    ></script>
+    <link rel="localization" href="preview/aiWindowContent.ftl" />
+    <script
+      type="module"
+      src="chrome://browser/content/aiwindow/components/ai-website-chip.mjs"
+    ></script>
+    <script
+      type="module"
+      src="chrome://browser/content/aiwindow/components/smartwindow-prompts.mjs"
     ></script>
   </head>
   <body id="ai-window-wrapper">

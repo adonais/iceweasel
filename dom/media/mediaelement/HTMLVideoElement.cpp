@@ -768,9 +768,19 @@ void HTMLVideoElement::OnVisibilityChange(Visibility aNewVisibility) {
   if ((aNewVisibility == Visibility::ApproximatelyNonVisible &&
        !IsCloningElementVisually()) &&
       mCanAutoplayFlag) {
-    LOG("pause non-audible autoplay video when it's invisible");
-    PauseInternal();
-    mCanAutoplayFlag = true;
+    // Defer pausing the element to avoid changing the element state during the
+    // style refresh.
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        __func__, [self = RefPtr<HTMLMediaElement>(this), this] {
+          // https://html.spec.whatwg.org/multipage/media.html#ready-states:intersect-the-viewport-3
+          if (mVisibilityState != Visibility::ApproximatelyNonVisible ||
+              !mCanAutoplayFlag) {
+            return;
+          }
+          LOG("pause non-audible autoplay video when it's invisible");
+          PauseInternal();
+          mCanAutoplayFlag = true;
+        }));
     return;
   }
 }

@@ -343,7 +343,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">સંપાદિત</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">નકલ કરો</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">નકલ કરો</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">વહેંચો</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -377,7 +377,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s કાઢી નાખ્યું</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">પૂર્વવત્ કરો</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">પૂર્વવત્ કરો</string>
   <!--
     Site Permissions
 

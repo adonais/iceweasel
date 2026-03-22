@@ -121,7 +121,7 @@ class BrowserStoreExceptionTest {
         val store = BrowserStore()
 
         val partition = "testFeaturePartition"
-        val testGroup = TabGroup("test", tabIds = listOf("invalid"))
+        val testGroup = TabGroup("test", tabIds = setOf("invalid"))
         store.dispatch(
             TabGroupAction.AddTabGroupAction(
                 partition = partition,
@@ -132,7 +132,7 @@ class BrowserStoreExceptionTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `AddTabAction - Asserts that tab exists when adding to group`() {
-        val tabGroup = TabGroup("test1", tabIds = emptyList())
+        val tabGroup = TabGroup("test1", tabIds = emptySet())
         val tabPartition = TabPartition("testFeaturePartition", tabGroups = listOf(tabGroup))
 
         val store = BrowserStore(
@@ -148,7 +148,7 @@ class BrowserStoreExceptionTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun `AddTabsAction - Asserts that tabs exist when adding to group`() {
-        val tabGroup = TabGroup("test1", tabIds = emptyList())
+        val tabGroup = TabGroup("test1", tabIds = emptySet())
         val tabPartition = TabPartition("testFeaturePartition", tabGroups = listOf(tabGroup))
         val tab1 = createTab(id = "tab1", url = "https://firefox.com")
         val tab2 = createTab(id = "tab2", url = "https://mozilla.org")
@@ -161,7 +161,7 @@ class BrowserStoreExceptionTest {
         )
 
         store.dispatch(
-            TabGroupAction.AddTabsAction(tabPartition.id, tabGroup.id, listOf(tab1.id, tab2.id)),
+            TabGroupAction.AddTabsAction(tabPartition.id, tabGroup.id, setOf(tab1.id, tab2.id)),
         )
     }
 }

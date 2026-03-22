@@ -209,13 +209,13 @@ class SVGFELightingElement : public SVGFELightingElementBase {
   SVGAnimatedNumber mNumberAttributes[4];
   static NumberInfo sNumberInfo[4];
 
-  enum { KERNEL_UNIT_LENGTH };
-  SVGAnimatedNumberPair mNumberPairAttributes[1];
-  static NumberPairInfo sNumberPairInfo[1];
-
   enum { RESULT, IN1 };
   SVGAnimatedString mStringAttributes[2];
   static StringInfo sStringInfo[2];
+
+  enum { KERNEL_UNIT_LENGTH };
+  SVGAnimatedNumberPair mNumberPairAttributes[1];
+  static NumberPairInfo sNumberPairInfo[1];
 };
 
 using SVGFELightElementBase = SVGFilterPrimitiveChildElement;

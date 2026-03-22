@@ -31,6 +31,10 @@ const TEST_UA_ATTRIBUTION_DATA = {
   ua: "chrome",
 };
 
+const TEST_SMART_WINDOW_ATTRIBUTION_DATA = {
+  campaign: "smart_window",
+};
+
 const TEST_PROTON_CONTENT = [
   {
     id: "AW_STEP1",
@@ -209,4 +213,41 @@ add_task(async function test_ua_attribution() {
     // Unexpected selectors:
     ["main.AW_STEP1"]
   );
+});
+
+add_task(async function test_smart_window_attribution() {
+  const sandbox = sinon.createSandbox();
+
+  await AttributionCode.deleteFileAsync();
+  await ASRouter.forceAttribution(TEST_SMART_WINDOW_ATTRIBUTION_DATA);
+
+  await setAboutWelcomePref(true);
+
+  AttributionCode._clearCache();
+  const data = await AttributionCode.getAttrDataAsync();
+
+  Assert.equal(
+    data.campaign,
+    "smart_window",
+    "Attribution campaign should be set"
+  );
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:welcome",
+    true
+  );
+
+  Assert.equal(
+    Services.prefs.getBoolPref("browser.smartwindow.enabled", false),
+    true,
+    "Smart Window enabled pref is set to true"
+  );
+
+  registerCleanupFunction(async () => {
+    BrowserTestUtils.removeTab(tab);
+    await ASRouter.forceAttribution("");
+    Services.prefs.clearUserPref("browser.smartwindow.enabled");
+    sandbox.restore();
+  });
 });

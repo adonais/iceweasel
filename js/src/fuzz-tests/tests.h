@@ -8,7 +8,6 @@
 #define fuzz_tests_tests_h
 
 #include <errno.h>
-#include <string.h>
 
 #include "FuzzingInterface.h"
 

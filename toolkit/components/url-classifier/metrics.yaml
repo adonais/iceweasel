@@ -599,3 +599,123 @@ urlclassifier:
       hit:
         description: Whether the completion matched an entry in the table.
         type: boolean
+
+  global_cache_hit:
+    type: labeled_counter
+    description: >
+      Count of top-level navigations that hit the Global Cache table.
+      Keyed by ETP mode and window type.
+    labels:
+      - standard_normal
+      - standard_private
+      - strict_normal
+      - strict_private
+      - custom_normal
+      - custom_private
+      - other_normal
+      - other_private
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010020
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010020
+    notification_emails:
+      - tihuang@mozilla.com
+      - dlee@mozilla.com
+      - safebrowsing-telemetry@mozilla.org
+    expires: never
+
+  global_cache_miss:
+    type: labeled_counter
+    description: >
+      Count of top-level navigations that miss the Global Cache table.
+      Keyed by ETP mode and window type.
+    labels:
+      - standard_normal
+      - standard_private
+      - strict_normal
+      - strict_private
+      - custom_normal
+      - custom_private
+      - other_normal
+      - other_private
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010020
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010020
+    notification_emails:
+      - tihuang@mozilla.com
+      - dlee@mozilla.com
+      - safebrowsing-telemetry@mozilla.org
+    expires: never
+
+  realtime_simulation_request_count:
+    type: labeled_counter
+    description: >
+      Count of simulated real-time Safe Browsing lookup requests.
+      Keyed by ETP mode and window type.
+    labels:
+      - standard_normal
+      - standard_private
+      - strict_normal
+      - strict_private
+      - custom_normal
+      - custom_private
+      - other_normal
+      - other_private
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010023
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010023
+    notification_emails:
+      - tihuang@mozilla.com
+      - dlee@mozilla.com
+      - safebrowsing-telemetry@mozilla.org
+    expires: never
+
+  realtime_simulation_request_size:
+    type: labeled_counter
+    description: >
+      Total estimated data usage of simulated real-time Safe Browsing lookup
+      requests in bytes. Keyed by ETP mode and window type.
+    labels:
+      - standard_normal
+      - standard_private
+      - strict_normal
+      - strict_private
+      - custom_normal
+      - custom_private
+      - other_normal
+      - other_private
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010023
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010023
+    notification_emails:
+      - tihuang@mozilla.com
+      - dlee@mozilla.com
+      - safebrowsing-telemetry@mozilla.org
+    expires: never
+
+  realtime_simulation_response_size:
+    type: labeled_counter
+    description: >
+      Total estimated data usage of simulated real-time Safe Browsing lookup
+      responses in bytes. Keyed by ETP mode and window type.
+    labels:
+      - standard_normal
+      - standard_private
+      - strict_normal
+      - strict_private
+      - custom_normal
+      - custom_private
+      - other_normal
+      - other_private
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010023
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010023
+    notification_emails:
+      - tihuang@mozilla.com
+      - dlee@mozilla.com
+      - safebrowsing-telemetry@mozilla.org
+    expires: never

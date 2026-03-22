@@ -124,8 +124,6 @@ internal fun Homepage(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if (state is HomepageState.Normal) {
-                Spacer(modifier = Modifier.height(12.dp))
-
                 BannerCardSection(
                     shouldShowPrivacyNoticeBanner = state.shouldShowPrivacyNoticeBanner,
                     nimbusMessage = state.nimbusMessage,
@@ -268,12 +266,16 @@ private fun BannerCardSection(
     messageCardInteractor: MessageCardInteractor,
 ) {
     if (shouldShowPrivacyNoticeBanner) {
+        Spacer(modifier = Modifier.height(12.dp))
+
         PrivacyNoticeBanner(
             modifier = Modifier.padding(horizontal = 16.dp),
             interactor = privacyNoticeBannerInteractor,
         )
     }
     nimbusMessage?.apply {
+        Spacer(modifier = Modifier.height(12.dp))
+
         MessageCard(
             messageCardState = cardState,
             modifier = Modifier.padding(horizontal = 16.dp),

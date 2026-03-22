@@ -46,11 +46,11 @@ const CLOSE_DELAY = 750;
  * The EyeDropper allows the user to select a color of a pixel within the content page,
  * showing a magnified circle and color preview while the user hover the page.
  */
-class EyeDropper {
+class EyeDropper extends EventEmitter {
   #pageEventListenersAbortController;
   #debouncedUpdateScreenshot;
   constructor(highlighterEnv) {
-    EventEmitter.decorate(this);
+    super();
 
     this.highlighterEnv = highlighterEnv;
     this.markup = new CanvasFrameAnonymousContentHelper(

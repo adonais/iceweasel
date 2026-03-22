@@ -23,26 +23,23 @@
 #include "mozilla/gfx/gfxVars.h"  // for UseWebRender
 #include "nsIWidget.h"
 #include "nsLayoutUtils.h"
-#include "nsStaticNameTable.h"
 #include "nsString.h"
 #include "nsStyleConsts.h"  // For system widget appearance types
 
 using namespace mozilla;
 
-static StaticAutoPtr<nsStaticCaseInsensitiveNameTable> gFontDescTable;
-static StaticAutoPtr<nsStaticCaseInsensitiveNameTable> gCounterDescTable;
 static StaticAutoPtr<nsTHashMap<nsCStringHashKey, NonCustomCSSPropertyId>>
     gPropertyIDLNameTable;
 
-static constexpr const char* const kCSSRawFontDescs[] = {
-#define CSS_FONT_DESC(name_, method_) #name_,
-#include "nsCSSFontDescList.h"
+static constexpr nsLiteralCString const kCSSRawFontDescs[] = {
+#define CSS_FONT_DESC(name_, method_) #name_ ""_ns,
+#include "nsCSSFontDescList.inc"
 #undef CSS_FONT_DESC
 };
 
-static constexpr const char* const kCSSRawCounterDescs[] = {
-#define CSS_COUNTER_DESC(name_, method_) #name_,
-#include "nsCSSCounterDescList.h"
+static constexpr nsLiteralCString const kCSSRawCounterDescs[] = {
+#define CSS_COUNTER_DESC(name_, method_) #name_ ""_ns,
+#include "nsCSSCounterDescList.inc"
 #undef CSS_COUNTER_DESC
 };
 
@@ -56,19 +53,22 @@ static constexpr CSSPropFlags kFlagsTable[eCSSProperty_COUNT_with_aliases] = {
 #undef CSS_PROP_LONGHAND
 };
 
-static nsStaticCaseInsensitiveNameTable* CreateStaticTable(
-    const char* const aRawTable[], int32_t aLength) {
-  auto* table = new nsStaticCaseInsensitiveNameTable(aRawTable, aLength);
-#ifdef DEBUG
-  // Partially verify the entries.
-  for (int32_t index = 0; index < aLength; ++index) {
-    nsAutoCString temp(aRawTable[index]);
-    MOZ_ASSERT(-1 == temp.FindChar('_'),
-               "underscore char in case insensitive name table");
+template <size_t N>
+static constexpr bool DescsAreValid(const nsLiteralCString (&aDescs)[N]) {
+  for (const nsLiteralCString& desc : aDescs) {
+    for (size_t i = 0; i < desc.Length(); ++i) {
+      unsigned char c = desc.CharAt(i);
+      if (!IS_ASCII(c) || IS_ASCII_UPPER(c) || c == '_') {
+        return false;
+      }
+    }
   }
-#endif
-  return table;
+  return true;
 }
+static_assert(DescsAreValid(kCSSRawFontDescs),
+              "invalid desc in nsCSSFontDescList.inc");
+static_assert(DescsAreValid(kCSSRawCounterDescs),
+              "invalid desc in nsCSSCounterDescList.inc");
 
 void nsCSSProps::RecomputeEnabledState(const char* aPref, void*) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
@@ -92,13 +92,7 @@ void nsCSSProps::RecomputeEnabledState(const char* aPref, void*) {
 }
 
 void nsCSSProps::Init() {
-  MOZ_ASSERT(!gFontDescTable, "pre existing array!");
-  MOZ_ASSERT(!gCounterDescTable, "pre existing array!");
   MOZ_ASSERT(!gPropertyIDLNameTable, "pre existing array!");
-
-  gFontDescTable = CreateStaticTable(kCSSRawFontDescs, eCSSFontDesc_COUNT);
-  gCounterDescTable =
-      CreateStaticTable(kCSSRawCounterDescs, eCSSCounterDesc_COUNT);
 
   gPropertyIDLNameTable =
       new nsTHashMap<nsCStringHashKey, NonCustomCSSPropertyId>;
@@ -111,8 +105,6 @@ void nsCSSProps::Init() {
     }
   }
 
-  ClearOnShutdown(&gFontDescTable);
-  ClearOnShutdown(&gCounterDescTable);
   ClearOnShutdown(&gPropertyIDLNameTable);
 
   for (const PropertyPref* pref = kPropertyPrefTable;
@@ -149,26 +141,32 @@ NonCustomCSSPropertyId nsCSSProps::LookupPropertyByIDLName(
 }
 
 nsCSSFontDesc nsCSSProps::LookupFontDesc(const nsACString& aFontDesc) {
-  MOZ_ASSERT(gFontDescTable, "no lookup table, needs addref");
-  nsCSSFontDesc which = nsCSSFontDesc(gFontDescTable->Lookup(aFontDesc));
+  // NOTE: This method does chained comparisons as there are only 14 items in
+  // `nsCSSFontDescList.inc`. A more advanced table-based lookup may be
+  // warranted if this grows substantially.
+#define CSS_FONT_DESC(name_, method_)             \
+  if (aFontDesc.LowerCaseEqualsLiteral(#name_)) { \
+    return eCSSFontDesc_##method_;                \
+  }
+#include "nsCSSFontDescList.inc"
+#undef CSS_FONT_DESC
 
-  return which;
+  return eCSSFontDesc_UNKNOWN;
 }
 
 static constexpr auto sDescNullStr = ""_ns;
 
 const nsCString& nsCSSProps::GetStringValue(nsCSSFontDesc aFontDescID) {
-  MOZ_ASSERT(gFontDescTable, "no lookup table, needs addref");
-  if (gFontDescTable) {
-    return gFontDescTable->GetStringValue(int32_t(aFontDescID));
+  if (eCSSFontDesc_UNKNOWN < aFontDescID && aFontDescID < eCSSFontDesc_COUNT) {
+    return kCSSRawFontDescs[size_t(aFontDescID)];
   }
   return sDescNullStr;
 }
 
 const nsCString& nsCSSProps::GetStringValue(nsCSSCounterDesc aCounterDescID) {
-  MOZ_ASSERT(gCounterDescTable, "no lookup table, needs addref");
-  if (gCounterDescTable) {
-    return gCounterDescTable->GetStringValue(int32_t(aCounterDescID));
+  if (eCSSCounterDesc_UNKNOWN < aCounterDescID &&
+      aCounterDescID < eCSSCounterDesc_COUNT) {
+    return kCSSRawCounterDescs[size_t(aCounterDescID)];
   }
   return sDescNullStr;
 }

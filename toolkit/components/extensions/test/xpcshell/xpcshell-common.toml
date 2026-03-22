@@ -191,6 +191,8 @@ skip-if = [
 
 ["test_ext_contentscript_slow_frame.js"]
 
+["test_ext_contentscript_structured_clone.js"]
+
 ["test_ext_contentscript_teardown.js"]
 skip-if = [
   "tsan", # Bug 1683730
@@ -326,6 +328,11 @@ skip-if = [
 ]
 
 ["test_ext_downloads.js"]
+
+["test_ext_downloads_blob_url.js"]
+skip-if = [
+  "os == 'android'", # downloads API needs to be implemented in GeckoView - bug 1538348
+]
 
 ["test_ext_downloads_cookieStoreId.js"]
 skip-if = [

@@ -63,3 +63,5 @@
 ```
 ```{js:autofunction} RustViaduct.sys.initBackend
 ```
+```{js:autofunction} RustViaduct.sys.setGlobalDefaultUserAgent
+```

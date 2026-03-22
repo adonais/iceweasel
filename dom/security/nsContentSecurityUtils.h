@@ -6,8 +6,8 @@
 
 /* A namespace class for static content security utilities. */
 
-#ifndef nsContentSecurityUtils_h___
-#define nsContentSecurityUtils_h___
+#ifndef nsContentSecurityUtils_h_
+#define nsContentSecurityUtils_h_
 
 #include <utility>
 
@@ -104,4 +104,4 @@ class nsContentSecurityUtils {
   static void LogMessageToConsole(nsIHttpChannel* aChannel, const char* aMsg);
 };
 
-#endif /* nsContentSecurityUtils_h___ */
+#endif /* nsContentSecurityUtils_h_ */

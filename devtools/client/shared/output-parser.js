@@ -260,9 +260,7 @@ class OutputParser {
         functionData.push(text.substring(token.startOffset, token.endOffset));
       }
 
-      if (token.tokenType !== "WhiteSpace") {
-        tokens.push(token);
-      }
+      tokens.push(token);
     }
 
     return { tokens, functionData, sawComma: false, sawVariable, depth };
@@ -543,7 +541,7 @@ class OutputParser {
             const {
               functionData,
               sawVariable,
-              tokens: functionArgTokens,
+              tokens: functionContentTokens,
               depth,
             } = this.#parseMatchingParens(text, tokenStream, options);
 
@@ -610,7 +608,7 @@ class OutputParser {
                 // instead, we get a "Function" token with "url" function name,
                 // and later, a "QuotedString" token, which contains the actual URL.
                 let url;
-                for (const argToken of functionArgTokens) {
+                for (const argToken of functionContentTokens) {
                   if (argToken.tokenType === "QuotedString") {
                     url = argToken.value;
                     break;
@@ -632,6 +630,15 @@ class OutputParser {
                 lowerCaseFunctionName === "linear"
               ) {
                 this.#appendLinear(functionText, options);
+              } else if (
+                lowerCaseFunctionName === "attr" &&
+                typeof options.getAttributeValue === "function"
+              ) {
+                this.#appendAttr({
+                  functionText,
+                  functionContentTokens,
+                  options,
+                });
               } else if (
                 colorOK() &&
                 InspectorUtils.isValidCSSColor(functionText)
@@ -1068,6 +1075,84 @@ class OutputParser {
 
     container.appendChild(value);
     this.#append(container);
+  }
+
+  /**
+   * Append an `attr()` function to the output
+   *
+   * @param {object} dict
+   * @param {string} dict.functionText
+   *        The whole function call (e.g. `attr(foo, "bar")`)
+   * @param {object[]} dict.functionContentTokens
+   *        The parsed tokens for the function content (i.e. what's inside the parens)
+   * @param {object} dict.options
+   *        Options object. For valid options and default values see
+   *        #mergeOptions()
+   */
+  #appendAttr({ functionText, functionContentTokens, options }) {
+    // Look for the attribute name, which should be the first Ident tokens
+    const attrNameIndex = functionContentTokens.findIndex(
+      t => t.tokenType === "Ident"
+    );
+    const attrName =
+      attrNameIndex !== -1 ? functionContentTokens[attrNameIndex].value : null;
+    // We should always have an attribute name at this point, but let's be safe
+    if (!attrName) {
+      this.#appendTextNode(functionText);
+      return;
+    }
+
+    // Append text before the attribute name
+    this.#appendTextNode("attr(");
+    for (let i = 0; i < attrNameIndex; i++) {
+      this.#appendTextNode(functionContentTokens[i].text);
+    }
+
+    // Then append the attribute name, with specific style if the attribute isn't found
+    const attrValue = options.getAttributeValue(attrName);
+    this.#appendNode(
+      "span",
+      {
+        class: `inspector-attribute${attrValue === null ? " " + options.unmatchedClass : ""}`,
+        "data-attribute":
+          attrValue === null
+            ? STYLE_INSPECTOR_L10N.getFormatStr("rule.attributeUnset", attrName)
+            : `"${attrValue}"`,
+      },
+      attrName
+    );
+
+    // Handle potential fallback value
+    // Note that this might change once the attribute value can be declared in attr()
+    // (see Bug 435426)
+    let foundSeparator = false;
+    let foundFallback = false;
+    for (let i = attrNameIndex + 1; i < functionContentTokens.length; i++) {
+      const t = functionContentTokens[i];
+      // We first need to find the comma that comes after the attribute name
+      if (t.tokenType === "Comma") {
+        foundSeparator = true;
+        this.#appendTextNode(t.text);
+        continue;
+      }
+
+      // Then, once we found the comma, the next non whitespace token is the fallback
+      if (foundSeparator && !foundFallback && t.tokenType !== "WhiteSpace") {
+        foundFallback = true;
+        this.#appendNode(
+          "span",
+          {
+            class: `inspector-attr-fallback${attrValue !== null ? " " + options.unmatchedClass : ""}`,
+          },
+          t.text
+        );
+      } else {
+        this.#appendTextNode(t.text);
+      }
+    }
+
+    // Finally append the closing paren
+    this.#appendTextNode(")");
   }
 
   /**
@@ -2278,7 +2363,7 @@ class OutputParser {
    * @param {string} overrides.urlClass: The class to be used for url() links.
    * @param {string} overrides.fontFamilyClass: The class to be used for font families.
    * @param {string} overrides.unmatchedClass: The class to use for a component of
-   *        a `var(…)` that is not in use.
+   *        a `var(…)` or `attr(…)` that is not in use.
    * @param {boolean} overrides.supportsColor: Does the CSS property support colors?
    * @param {string} overrides.baseURI: A string used to resolve relative links.
    * @param {Function} overrides.getVariableData: A function taking a single argument,
@@ -2288,6 +2373,9 @@ class OutputParser {
    *          - {RegisteredPropertyResource|undefined} registeredProperty: The registered
    *            property data (syntax, initial value, inherits). Undefined if the variable
    *            is not a registered property.
+   * @param {Function} overrides.getAttributeValue: A function taking a single argument,
+   *        the name of an attribute. This should return the value of the attribute, or
+   *        null if the attribute doesn't exist.
    * @param {boolean} overrides.showJumpToVariableButton: Should we show a jump to
    *        definition for CSS variables. Defaults to true.
    * @param {boolean} overrides.isDarkColorScheme: Is the currently applied color scheme dark.
@@ -2315,6 +2403,7 @@ class OutputParser {
       fontFamilyClass: null,
       baseURI: undefined,
       getVariableData: null,
+      getAttributeValue: null,
       showJumpToVariableButton: true,
       unmatchedClass: null,
       inStartingStyleRule: false,

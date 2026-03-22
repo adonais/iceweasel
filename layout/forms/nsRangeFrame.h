@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsRangeFrame_h___
-#define nsRangeFrame_h___
+#ifndef nsRangeFrame_h_
+#define nsRangeFrame_h_
 
 #include "mozilla/Decimal.h"
 #include "mozilla/EventForwards.h"
@@ -162,10 +162,10 @@ class nsRangeFrame final : public nsContainerFrame,
   nscoord AutoCrossSize();
 
   // Helper function which reflows the anonymous div frames.
-  void ReflowAnonymousContent(nsPresContext* aPresContext,
-                              ReflowOutput& aDesiredSize,
-                              const mozilla::LogicalSize& aContentBoxSize,
-                              const ReflowInput& aReflowInput);
+  void ReflowChildFrames(nsPresContext* aPresContext,
+                         ReflowOutput& aDesiredSize,
+                         const mozilla::LogicalSize& aContentBoxSize,
+                         const ReflowInput& aReflowInput);
 
   void DoUpdateThumbPosition(nsIFrame* aThumbFrame,
                              const nsSize& aRangeContentBoxSize);

@@ -990,15 +990,6 @@ BEGIN_TEST(testRootedTuple) {
     CHECK(!IsInsideNursery(y));
   }
 
-  // Test initialization by RootedTuple.
-  {
-    Rooted<JSObject*> obj(cx, JS_NewPlainObject(cx));
-    CHECK(obj);
-    RootedTuple<JSObject*> roots(cx, obj);
-    RootedField<JSObject*> x(roots);
-    CHECK(x == obj);
-  }
-
   // Test initialization by RootedField.
   {
     Rooted<JSObject*> obj(cx, JS_NewPlainObject(cx));

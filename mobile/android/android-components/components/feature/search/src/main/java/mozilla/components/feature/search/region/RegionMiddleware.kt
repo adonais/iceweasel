@@ -13,7 +13,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.BrowserAction
-import mozilla.components.browser.state.action.InitAction
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.action.UpdateDistribution
 import mozilla.components.browser.state.search.RegionState
@@ -42,9 +41,11 @@ class RegionMiddleware(
         next: (BrowserAction) -> Unit,
         action: BrowserAction,
     ) {
-        if (action is InitAction || action is SearchAction.RefreshSearchEnginesAction) {
+        if (action is SearchAction.RefreshSearchEnginesAction) {
+            updateJob?.cancel()
             updateJob = determineRegion(store)
         } else if (action is UpdateDistribution) {
+            updateJob?.cancel()
             updateJob = determineRegion(store, action.distributionId)
         }
 

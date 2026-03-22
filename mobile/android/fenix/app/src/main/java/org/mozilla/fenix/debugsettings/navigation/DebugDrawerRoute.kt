@@ -8,9 +8,11 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.integrity.IntegrityClient
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.LoginsStorage
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.Llm
 import org.mozilla.fenix.debugsettings.addons.ui.AddonsDebugToolsScreen
 import org.mozilla.fenix.debugsettings.addresses.AddressesDebugRegionRepository
 import org.mozilla.fenix.debugsettings.addresses.AddressesTools
@@ -21,6 +23,8 @@ import org.mozilla.fenix.debugsettings.crashtools.CrashTools
 import org.mozilla.fenix.debugsettings.creditcards.CreditCardsTools
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsStore
 import org.mozilla.fenix.debugsettings.gleandebugtools.ui.GleanDebugToolsScreen
+import org.mozilla.fenix.debugsettings.integrity.IntegrityTools
+import org.mozilla.fenix.debugsettings.llm.LlmTools
 import org.mozilla.fenix.debugsettings.logins.LoginsTools
 import org.mozilla.fenix.debugsettings.region.RegionTools
 import org.mozilla.fenix.debugsettings.store.DebugDrawerAction
@@ -82,6 +86,14 @@ enum class DebugDrawerRoute(
         route = "crash_debug_tools",
         title = R.string.crash_debug_tools_title,
     ),
+    IntegrityTools(
+        route = "integrity_tools",
+        title = R.string.integrity_debug_tools_title,
+    ),
+    LlmTools(
+        route = "llm_tools",
+        title = R.string.llm_debug_tools_title,
+    ),
     ;
 
     companion object {
@@ -95,7 +107,9 @@ enum class DebugDrawerRoute(
          * @param loginsStorage [LoginsStorage] used to access logins for [LoginsScreen].
          * @param addressesDebugRegionRepository used to control storage for [AddressesTools].
          * @param creditCardsAddressesStorage used to access addresses for [AddressesTools].
+         * @param integrityClient used to test an [IntegrityClient] in [IntegrityTools].
          * @param inactiveTabsEnabled Whether the inactive tabs feature is enabled.
+         * @param llm the component group [Llm].
          */
         @Suppress("LongParameterList", "LongMethod")
         fun generateDebugDrawerDestinations(
@@ -106,7 +120,9 @@ enum class DebugDrawerRoute(
             loginsStorage: LoginsStorage,
             addressesDebugRegionRepository: AddressesDebugRegionRepository,
             creditCardsAddressesStorage: CreditCardsAddressesStorage,
+            integrityClient: IntegrityClient,
             inactiveTabsEnabled: Boolean,
+            llm: Llm,
         ): List<DebugDrawerDestination> =
             entries.map { debugDrawerRoute ->
                 var isChildDestination: Boolean = false
@@ -217,6 +233,23 @@ enum class DebugDrawerRoute(
                         }
                         content = {
                             CrashTools()
+                        }
+                    }
+                    IntegrityTools -> {
+                        onClick = {
+                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.IntegrityDebugTools)
+                        }
+                        content = {
+                            IntegrityTools(integrityClient)
+                        }
+                    }
+
+                    LlmTools -> {
+                        onClick = {
+                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.LlmDebugTools)
+                        }
+                        content = {
+                            LlmTools(llm)
                         }
                     }
                 }

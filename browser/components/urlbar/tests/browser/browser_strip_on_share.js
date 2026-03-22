@@ -187,17 +187,15 @@ async function testMenuItemDisabled({ url, prefEnabled, selection }) {
       gURLBar.selectionStart = url.indexOf("example");
       gURLBar.selectionEnd = url.indexOf("4");
     }
-    let menuitem = await promiseContextualMenuitem("strip-on-share");
-    Assert.ok(
-      !BrowserTestUtils.isVisible(menuitem),
-      "Menu item is not visible"
-    );
-    let hidePromise = BrowserTestUtils.waitForEvent(
-      menuitem.parentElement,
-      "popuphidden"
-    );
-    menuitem.parentElement.hidePopup();
-    await hidePromise;
+
+    await UrlbarTestUtils.withContextMenu(window, async popup => {
+      let mozInputBox = popup.parentNode;
+      let menuitem = mozInputBox.getMenuItem("strip-on-share");
+      Assert.ok(
+        !BrowserTestUtils.isVisible(menuitem),
+        "Menu item is not visible"
+      );
+    });
   });
 }
 
@@ -230,15 +228,15 @@ async function testMenuItemEnabled({
     let testJson = {
       global: {
         queryParams: ["utm_ad"],
-        topLevelSites: ["*"],
+        isGlobal: true,
       },
       example: {
         queryParams: ["test_2", "test_1", "TEST_5"],
-        topLevelSites: ["www.example.com"],
+        origins: ["www.example.com"],
       },
       exampleNet: {
         queryParams: ["test_3", "test_4"],
-        topLevelSites: ["www.example.net"],
+        origins: ["www.example.net"],
       },
     };
 
@@ -251,19 +249,20 @@ async function testMenuItemEnabled({
       gURLBar.select();
     }
 
-    let menuitem = await promiseContextualMenuitem("strip-on-share");
-    Assert.ok(BrowserTestUtils.isVisible(menuitem), "Menu item is visible");
-    Assert.equal(menuitem.disabled, expectedDisabled, "Menu item is disabled");
-
-    let hidePromise = BrowserTestUtils.waitForEvent(
-      menuitem.parentElement,
-      "popuphidden"
-    );
     // Make sure the clean copy of the link will be copied to the clipboard
-    await SimpleTest.promiseClipboardChange(strippedUrl, () => {
-      menuitem.closest("menupopup").activateItem(menuitem);
+    await SimpleTest.promiseClipboardChange(strippedUrl, async () => {
+      await UrlbarTestUtils.withContextMenu(window, async popup => {
+        let mozInputBox = popup.parentNode;
+        let menuitem = mozInputBox.getMenuItem("strip-on-share");
+        Assert.ok(BrowserTestUtils.isVisible(menuitem), "Menu item is visible");
+        Assert.equal(
+          menuitem.disabled,
+          expectedDisabled,
+          "Menu item is disabled"
+        );
+        menuitem.closest("menupopup").activateItem(menuitem);
+      });
     });
-    await hidePromise;
   });
 
   await SpecialPowers.popPrefEnv();

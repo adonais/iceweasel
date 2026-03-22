@@ -6,8 +6,8 @@
 
 /* rendering object for replaced elements with image data */
 
-#ifndef nsImageFrame_h___
-#define nsImageFrame_h___
+#ifndef nsImageFrame_h_
+#define nsImageFrame_h_
 
 #include "imgIContainer.h"
 #include "imgINotificationObserver.h"
@@ -488,4 +488,4 @@ class nsDisplayImage final : public nsPaintedDisplayItem {
 
 }  // namespace mozilla
 
-#endif /* nsImageFrame_h___ */
+#endif /* nsImageFrame_h_ */

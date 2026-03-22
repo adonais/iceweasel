@@ -89,7 +89,6 @@ fun WallpaperOnboarding(
 
             WallpaperThumbnails(
                 wallpapers = wallpapers,
-                defaultWallpaper = Wallpaper.Default,
                 selectedWallpaper = currentWallpaper,
                 loadWallpaperResource = { loadWallpaperResource(it) },
                 onSelectWallpaper = { onSelectWallpaper(it) },

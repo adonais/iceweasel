@@ -649,9 +649,10 @@ class DefaultAddonUpdater(
 /**
  * A implementation which uses WorkManager APIs to perform addon updates.
  */
-internal class AddonUpdaterWorker(
+internal class AddonUpdaterWorker @JvmOverloads constructor(
     context: Context,
     private val params: WorkerParameters,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : CoroutineWorker(context, params) {
     private val logger = Logger("AddonUpdaterWorker")
     internal var updateAttemptStorage = DefaultAddonUpdater.UpdateAttemptStorage(applicationContext)
@@ -660,7 +661,7 @@ internal class AddonUpdaterWorker(
     internal var attemptScope = CoroutineScope(Dispatchers.IO)
 
     @Suppress("TooGenericExceptionCaught")
-    override suspend fun doWork(): Result = withContext(Dispatchers.Main) {
+    override suspend fun doWork(): Result = withContext(mainDispatcher) {
         val extensionId = params.inputData.getString(KEY_DATA_EXTENSIONS_ID) ?: ""
         logger.info("Trying to update extension $extensionId")
         // We need to guarantee that we are not trying to update without

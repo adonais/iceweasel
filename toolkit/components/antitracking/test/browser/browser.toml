@@ -305,29 +305,6 @@ support-files = [
 
 ["browser_storageAccessWithHeuristics.js"]
 
-["browser_storageAccess_TopLevel_Arguments.js"]
-
-["browser_storageAccess_TopLevel_CookieBehavior.js"]
-
-["browser_storageAccess_TopLevel_CookiePermission.js"]
-
-["browser_storageAccess_TopLevel_CrossOriginSameSite.js"]
-
-["browser_storageAccess_TopLevel_Doorhanger.js"]
-
-["browser_storageAccess_TopLevel_Embed.js"]
-
-["browser_storageAccess_TopLevel_Enable.js"]
-
-["browser_storageAccess_TopLevel_RequireIntermediatePermission.js"]
-
-["browser_storageAccess_TopLevel_StorageAccessPermission.js"]
-
-["browser_storageAccess_TopLevel_UserActivation.js"]
-skip-if = [
-  "debug", # Bug 1700551
-]
-
 ["browser_storageAccess_cookies_on_grant.js"]
 
 ["browser_storageAccess_userActivation.js"]

@@ -3369,11 +3369,6 @@ export class TranslationsParent extends JSWindowActorParent {
     // Use Promise.all to download (or retrieve from cache) the model files in parallel.
     await Promise.all(
       records.map(async record => {
-        if (record.fileType === "qualityModel") {
-          // Do not include the quality models. We do not use them.
-          return;
-        }
-
         if (
           !lazy.TranslationsUtils.langTagsMatch(
             record.sourceLanguage,
@@ -3536,11 +3531,6 @@ export class TranslationsParent extends JSWindowActorParent {
 
     await Promise.all(
       records.map(async record => {
-        if (record.fileType === "qualityModel") {
-          // Do not include the quality models. We do not use them.
-          return;
-        }
-
         if (record.fileType === "lex" && !lazy.useLexicalShortlist) {
           // The current configuration does not use lexical shortlists.
           return;

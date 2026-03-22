@@ -85,7 +85,7 @@ static int32_t FindBestLanguage(const nsTArray<nsCString>& aAvailLangs,
       struct LangTagDelete {
         void operator()(LangTag* aLangTag) const { lang_tag_destroy(aLangTag); }
       };
-      UniquePtr<LangTag, LangTagDelete> langTag(lang_tag_new(&avail));
+      std::unique_ptr<LangTag, LangTagDelete> langTag(lang_tag_new(&avail));
       if (langTag && lang_tag_matches(langTag.get(), &req)) {
         return &avail - &aAvailLangs[0];
       }

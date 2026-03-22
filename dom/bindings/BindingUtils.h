@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_BindingUtils_h__
-#define mozilla_dom_BindingUtils_h__
+#ifndef mozilla_dom_BindingUtils_h_
+#define mozilla_dom_BindingUtils_h_
 
 #include <type_traits>
 
@@ -172,10 +172,8 @@ inline bool IsDOMObject(JSObject* obj) { return IsDOMClass(JS::GetClass(obj)); }
       obj, value, cx)
 
 // Test whether the given object is an instance of the given interface.
-#define IS_INSTANCE_OF(Interface, obj)                                       \
-  mozilla::dom::IsInstanceOf<mozilla::dom::prototypes::id::Interface,        \
-                             mozilla::dom::Interface##_Binding::NativeType>( \
-      obj)
+#define IS_INSTANCE_OF(Interface, obj) \
+  mozilla::dom::IsInstanceOf<mozilla::dom::prototypes::id::Interface>(obj)
 
 // Unwrap the given non-wrapper object.  This can be used with any obj that
 // converts to JSObject*; as long as that JSObject* is live the return value
@@ -422,11 +420,11 @@ MOZ_ALWAYS_INLINE nsresult UnwrapObjectWithCrossOriginAsserts(V&& obj,
 }
 }  // namespace binding_detail
 
-template <prototypes::ID PrototypeID, class T>
+template <prototypes::ID PrototypeID>
 MOZ_ALWAYS_INLINE bool IsInstanceOf(JSObject* obj) {
   AssertStaticUnwrapOK<PrototypeID>();
   void* ignored;
-  nsresult unwrapped = binding_detail::UnwrapObjectInternal<T, true>(
+  nsresult unwrapped = binding_detail::UnwrapObjectInternal<void, true>(
       obj, ignored, PrototypeID, PrototypeTraits<PrototypeID>::Depth, nullptr);
   return NS_SUCCEEDED(unwrapped);
 }
@@ -892,11 +890,11 @@ bool DefineLegacyUnforgeableAttributes(
 #ifdef _MSC_VER
 #  define HAS_MEMBER_CHECK(_name) \
     template <typename V>         \
-    static yes& Check##_name(char(*)[(&V::_name == 0) + 1])
+    static yes& Check##_name(char (*)[(&V::_name == 0) + 1])
 #else
 #  define HAS_MEMBER_CHECK(_name) \
     template <typename V>         \
-    static yes& Check##_name(char(*)[sizeof(&V::_name) + 1])
+    static yes& Check##_name(char (*)[sizeof(&V::_name) + 1])
 #endif
 
 #define HAS_MEMBER(_memberName, _valueName) \
@@ -3581,4 +3579,4 @@ void ClearXrayExpandoSlots(JS::RootingContext* aCx, JSObject* aObject,
 
 }  // namespace mozilla
 
-#endif /* mozilla_dom_BindingUtils_h__ */
+#endif /* mozilla_dom_BindingUtils_h_ */

@@ -9,6 +9,7 @@ import mozilla.components.lib.state.Store
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.experiments.nimbus.NimbusEventStore
 import org.mozilla.fenix.GleanMetrics.Metrics
+import org.mozilla.fenix.GleanMetrics.TabSearch
 import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.metrics.MetricsUtils.BookmarkAction.Source
@@ -68,6 +69,18 @@ class TabsTrayTelemetryMiddleware(
 
             is TabsTrayAction.ThreeDotMenuShown -> {
                 TabsTray.menuOpened.record(NoExtras())
+            }
+
+            is TabsTrayAction.TabSearchClicked -> {
+                TabSearch.tabSearchIconClicked.record(NoExtras())
+            }
+
+            is TabSearchAction.SearchResultClicked -> {
+                TabSearch.resultClicked.record(NoExtras())
+            }
+
+            is TabsTrayAction.NavigateBackInvoked -> {
+                TabSearch.navigateBackIconClicked.record(NoExtras())
             }
 
             else -> {

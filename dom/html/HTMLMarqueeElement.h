@@ -3,8 +3,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#ifndef HTMLMarqueeElement_h___
-#define HTMLMarqueeElement_h___
+#ifndef HTMLMarqueeElement_h_
+#define HTMLMarqueeElement_h_
 
 #include "nsContentUtils.h"
 #include "nsGenericHTMLElement.h"
@@ -120,4 +120,4 @@ class HTMLMarqueeElement final : public nsGenericHTMLElement {
 
 }  // namespace mozilla::dom
 
-#endif /* HTMLMarqueeElement_h___ */
+#endif /* HTMLMarqueeElement_h_ */

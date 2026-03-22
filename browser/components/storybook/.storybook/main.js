@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* eslint-env node */
 
 const path = require("path");
 const webpack = require("webpack");
@@ -42,7 +41,7 @@ module.exports = {
     // AI Window components stories
     `${projectRoot}/browser/components/aiwindow/ui/**/*.stories.mjs`,
     // Multiline editor components stories
-    `${projectRoot}/browser/components/multilineeditor/**/*.stories.mjs`,
+    `${projectRoot}/browser/components/multilineeditor/**/*.stories.@(mjs|md)`,
     // Everything else
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
     // Design system files

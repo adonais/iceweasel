@@ -72,7 +72,7 @@ class MOZ_RAII AutoChangeOrientNotifier {
   bool mDoSetAttr;
 };
 
-const unsigned short SVG_ANGLETYPE_TURN = 5;
+constexpr uint16_t SVG_ANGLETYPE_TURN = 5;
 
 static void GetAngleUnitString(nsAString& aUnit, uint16_t aUnitType) {
   switch (aUnitType) {
@@ -153,7 +153,7 @@ bool SVGAnimatedOrient::GetValueFromString(const nsAString& aString,
 }
 
 /* static */
-float SVGAnimatedOrient::GetDegreesPerUnit(uint8_t aUnit) {
+float SVGAnimatedOrient::GetDegreesPerUnit(uint16_t aUnit) {
   switch (aUnit) {
     case SVG_ANGLETYPE_UNSPECIFIED:
     case SVG_ANGLETYPE_DEG:
@@ -331,7 +331,7 @@ void SVGAnimatedOrient::GetAnimAngleValueString(
   GetAngleValueString(aValueAsString, mAnimVal, mAnimValUnit);
 }
 
-void SVGAnimatedOrient::SetBaseValue(float aValue, uint8_t aUnit,
+void SVGAnimatedOrient::SetBaseValue(float aValue, uint16_t aUnit,
                                      SVGElement* aSVGElement, bool aDoSetAttr) {
   float valueInSpecifiedUnits = aValue / GetDegreesPerUnit(aUnit);
   if (aUnit == mBaseValUnit && mBaseVal == valueInSpecifiedUnits &&
@@ -374,7 +374,7 @@ void SVGAnimatedOrient::SetBaseType(SVGEnumValue aValue,
   aRv.ThrowTypeError(err);
 }
 
-void SVGAnimatedOrient::SetAnimValue(float aValue, uint8_t aUnit,
+void SVGAnimatedOrient::SetAnimValue(float aValue, uint16_t aUnit,
                                      SVGElement* aSVGElement) {
   if (mIsAnimated && mAnimVal == aValue && mAnimValUnit == aUnit &&
       mAnimType == SVG_MARKER_ORIENT_ANGLE) {
@@ -431,9 +431,10 @@ SVGAnimatedOrient::DOMAnimatedEnum::~DOMAnimatedEnum() {
   sSVGAnimatedEnumTearoffTable.RemoveTearoff(mVal);
 }
 
-UniquePtr<SMILAttr> SVGAnimatedOrient::ToSMILAttr(SVGElement* aSVGElement) {
+std::unique_ptr<SMILAttr> SVGAnimatedOrient::ToSMILAttr(
+    SVGElement* aSVGElement) {
   if (aSVGElement->IsSVGElement(nsGkAtoms::marker)) {
-    return MakeUnique<SMILOrient>(this, aSVGElement);
+    return std::make_unique<SMILOrient>(this, aSVGElement);
   }
   // SMILOrient would not be useful for general angle attributes (also,
   // "orient" is the only animatable <angle>-valued attribute in SVG 1.1).

@@ -26,7 +26,7 @@ export class PluginChild extends JSWindowActorChild {
    * @param domElement
    *   The DOM element which contains the crashed plugin, or the crashed plugin
    *   itself.
-   * @returns bool
+   * @returns {boolean}
    *   True if the plugin is a descendant of the full screen DOM element, false otherwise.
    */
   isWithinFullScreenElement(fullScreenElement, domElement) {
@@ -35,7 +35,7 @@ export class PluginChild extends JSWindowActorChild {
      *
      * @param fullScreenIframe
      *  Target iframe to begin searching from.
-     * @returns DOM element
+     * @returns {Element}
      *  The full screen DOM element contained within the iframe (could be inner iframe), or the original iframe if no inner DOM element is found.
      */
     let getTrueFullScreenElement = fullScreenIframe => {

@@ -10,14 +10,14 @@ from pprint import pprint
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.copy import deepcopy
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from voluptuous import Extra, Optional, Required
 
 from gecko_taskgraph.transforms.l10n import parse_locales_file
 
 transforms = TransformSequence()
 
-split_by_locale_schema = Schema({
+split_by_locale_schema = LegacySchema({
     # The file to pull locale information from. This should be a json file
     # such as browser/locales/l10n-changesets.json.
     Required("locales-file"): str,

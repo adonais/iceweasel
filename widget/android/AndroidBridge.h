@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef AndroidBridge_h__
-#define AndroidBridge_h__
+#ifndef AndroidBridge_h_
+#define AndroidBridge_h_
 
 #include <unistd.h>  // for gettid
 
@@ -234,4 +234,4 @@ class nsAndroidBridge final : public nsIGeckoViewBridge {
  protected:
 };
 
-#endif /* AndroidBridge_h__ */
+#endif /* AndroidBridge_h_ */

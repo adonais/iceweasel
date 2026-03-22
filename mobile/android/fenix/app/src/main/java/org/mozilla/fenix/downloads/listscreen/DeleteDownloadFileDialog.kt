@@ -13,8 +13,8 @@ import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.TextButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 /**
 * This dialog is used to prompt the user to confirm if they want to delete
@@ -56,7 +56,7 @@ fun DeleteDownloadFileDialog(
 @FlexibleWindowPreview
 @Composable
 private fun DeleteDownloadFileDialogPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         DeleteDownloadFileDialog(

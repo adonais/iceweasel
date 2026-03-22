@@ -29,6 +29,7 @@ class NimbusComponents(private val context: Context, remoteSettingsService: Remo
      * should be mediated through a FML generated class, e.g. [FxNimbus].
      */
     val sdk: NimbusApi by lazyMonitored {
+        @org.mozilla.geckoview.ExperimentalGeckoViewApi
         createNimbus(context, BuildConfig.NIMBUS_ENDPOINT, remoteSettingsService)
     }
 

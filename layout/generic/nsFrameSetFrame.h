@@ -6,8 +6,8 @@
 
 /* rendering object for HTML <frameset> elements */
 
-#ifndef nsHTMLFrameset_h___
-#define nsHTMLFrameset_h___
+#ifndef nsHTMLFrameset_h_
+#define nsHTMLFrameset_h_
 
 #include "nsColor.h"
 #include "nsContainerFrame.h"

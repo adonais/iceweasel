@@ -327,7 +327,7 @@ class RacyFeatures {
   // True if profiler is active, and not fully paused.
   // Note that periodic sampling *could* be paused!
   // This implementation must be kept in sync with
-  // `gecko_profiler::can_accept_markers` in the Profiler Rust API.
+  // `gecko_profiler::is_active_and_unpaused` in the Profiler Rust API.
   [[nodiscard]] static bool IsActiveAndUnpaused() {
     uint32_t af = sActiveAndFeatures;  // copy it first
     return (af & Active) && !(af & Paused);
@@ -346,11 +346,15 @@ class RacyFeatures {
            (af & PerfettoTracingEnabled);
   }
 
+  // This implementation must be kept in sync with
+  // `gecko_profiler::is_etw_collecting_markers` in the Profiler Rust API.
   [[nodiscard]] static bool IsETWCollecting() {
     uint32_t af = sActiveAndFeatures;  // copy it first
     return (af & ETWCollectionEnabled);
   }
 
+  // This implementation must be kept in sync with
+  // `gecko_profiler::is_perfetto_tracing` in the Profiler Rust API.
   [[nodiscard]] static bool IsPerfettoTracing() {
     uint32_t af = sActiveAndFeatures;  // copy it first
     return (af & PerfettoTracingEnabled);

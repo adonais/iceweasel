@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env node */
-
 "use strict";
 
 const fs = require("fs");
 const path = require("path");
-const rollouts = require("./stylelint-rollouts.config");
+const rollouts = process.env.STYLELINT_SKIP_ROLLOUTS
+  ? []
+  : require("./stylelint-rollouts.config");
 
 function readFile(filePath) {
   return fs
@@ -275,8 +275,6 @@ module.exports = {
     "csstools/use-logical": null,
     "stylelint-plugin-mozilla/no-base-design-tokens": true,
     "stylelint-plugin-mozilla/use-design-tokens": true,
-    "stylelint-plugin-mozilla/no-non-semantic-token-usage": true,
-    "stylelint-plugin-mozilla/use-size-tokens": true,
   },
 
   overrides: [
@@ -440,8 +438,6 @@ module.exports = {
       ],
       rules: {
         "stylelint-plugin-mozilla/use-design-tokens": null,
-        "stylelint-plugin-mozilla/no-non-semantic-token-usage": null,
-        "stylelint-plugin-mozilla/use-size-tokens": null,
       },
     },
     {
@@ -452,8 +448,6 @@ module.exports = {
       ],
       rules: {
         "stylelint-plugin-mozilla/use-design-tokens": true,
-        "stylelint-plugin-mozilla/no-non-semantic-token-usage": true,
-        "stylelint-plugin-mozilla/use-size-tokens": true,
       },
     },
     {

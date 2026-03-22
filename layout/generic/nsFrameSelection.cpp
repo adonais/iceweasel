@@ -137,9 +137,21 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult CreateAndAddRange(
 static nsresult SelectCellElement(nsIContent* aCellElement,
                                   Selection& aNormalSelection);
 
-#ifdef XP_MACOSX
-static nsresult UpdateSelectionCacheOnRepaintSelection(Selection* aSel);
-#endif  // XP_MACOSX
+// On macOS, we need to update the selection cache when we repaint a selection.
+// This runs nsHTMLCopyEncoder to serialize the selection ranges, which is
+// really complicated especially when shadow DOM selection. Therefore, that may
+// cause some assertion failures. Unfortunately, our macOS machines in the CI
+// are always busy and we need one or two days to check the result on trysever.
+// Therefore, we should run nsHTMLCopyEncoder part in all desktop platforms if
+// it's a debug build. Thus, we can check the result on Linux machines in
+// tryserver.
+#if defined(XP_MACOSX) || (defined(DEBUG) && !defined(ANDROID))
+#  define RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
+#endif
+
+#ifdef RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
+static nsresult MaybeUpdateSelectionCacheOnRepaintSelection(Selection* aSel);
+#endif  // RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
 
 #ifdef PRINT_RANGE
 static void printRange(nsRange* aDomRange);
@@ -238,7 +250,7 @@ bool nsFrameSelection::NodeIsInLimiters(
   // the Text in it.
   if (aIndependentSelectionLimiterElement) {
     MOZ_ASSERT(aIndependentSelectionLimiterElement->GetPseudoElementType() ==
-               PseudoStyleType::mozTextControlEditingRoot);
+               PseudoStyleType::MozTextControlEditingRoot);
     MOZ_ASSERT(
         aIndependentSelectionLimiterElement->IsHTMLElement(nsGkAtoms::div));
     if (aIndependentSelectionLimiterElement == aContainerNode) {
@@ -275,13 +287,13 @@ struct MOZ_RAII AutoPrepareFocusRange {
       mUserSelect.emplace(aSelection);
     }
 
-    nsTArray<StyledRange>& ranges = aSelection->mStyledRanges.mRanges;
+    Span ranges = aSelection->mStyledRanges.Ranges();
     if (!aSelection->mUserInitiated || aMultiRangeSelection) {
       // Scripted command or the user is starting a new explicit multi-range
       // selection.
-      for (StyledRange& entry : ranges) {
-        MOZ_ASSERT(entry.mRange->IsDynamicRange());
-        entry.mRange->AsDynamicRange()->SetIsGenerated(false);
+      for (const auto& range : ranges) {
+        MOZ_ASSERT(range->IsDynamicRange());
+        range->AsDynamicRange()->SetIsGenerated(false);
       }
       return;
     }
@@ -321,48 +333,43 @@ struct MOZ_RAII AutoPrepareFocusRange {
  private:
   static nsRange* FindGeneratedRangeMostDistantFromAnchor(
       const Selection& aSelection) {
-    const nsTArray<StyledRange>& ranges = aSelection.mStyledRanges.mRanges;
-    const size_t len = ranges.Length();
-    nsRange* result{nullptr};
+    const Span ranges = aSelection.mStyledRanges.Ranges();
+    // This function is only called for selections with type == eNormal.
+    // (see MOZ_ASSERT in constructor).
+    // Therefore, all ranges must be dynamic.
     if (aSelection.GetDirection() == eDirNext) {
-      for (size_t i = 0; i < len; ++i) {
-        // This function is only called for selections with type == eNormal.
-        // (see MOZ_ASSERT in constructor).
-        // Therefore, all ranges must be dynamic.
-        if (ranges[i].mRange->AsDynamicRange()->IsGenerated()) {
-          result = ranges[i].mRange->AsDynamicRange();
-          break;
+      for (const auto& range : ranges) {
+        if (range->AsDynamicRange()->IsGenerated()) {
+          return range->AsDynamicRange();
         }
       }
     } else {
-      size_t i = len;
-      while (i--) {
-        if (ranges[i].mRange->AsDynamicRange()->IsGenerated()) {
-          result = ranges[i].mRange->AsDynamicRange();
-          break;
+      for (const auto& range : Reversed(ranges)) {
+        if (range->AsDynamicRange()->IsGenerated()) {
+          return range->AsDynamicRange();
         }
       }
     }
 
-    return result;
+    return nullptr;
   }
 
   static void RemoveGeneratedRanges(Selection& aSelection) {
     RefPtr<nsPresContext> presContext = aSelection.GetPresContext();
-    nsTArray<StyledRange>& ranges = aSelection.mStyledRanges.mRanges;
+    Span ranges = aSelection.mStyledRanges.Ranges();
     size_t i = ranges.Length();
     while (i--) {
       // This function is only called for selections with type == eNormal.
       // (see MOZ_ASSERT in constructor).
       // Therefore, all ranges must be dynamic.
-      if (!ranges[i].mRange->IsDynamicRange()) {
+      if (!ranges[i]->IsDynamicRange()) {
         continue;
       }
-      nsRange* range = ranges[i].mRange->AsDynamicRange();
+      nsRange* range = ranges[i]->AsDynamicRange();
       if (range->IsGenerated()) {
         range->UnregisterSelection(aSelection);
         aSelection.SelectFrames(presContext, *range, false);
-        ranges.RemoveElementAt(i);
+        aSelection.mStyledRanges.mRanges.RemoveElementAt(i);
       }
     }
   }
@@ -418,7 +425,7 @@ nsFrameSelection::nsFrameSelection(
 
   MOZ_ASSERT_IF(aEditorRootAnonymousDiv,
                 aEditorRootAnonymousDiv->GetPseudoElementType() ==
-                    PseudoStyleType::mozTextControlEditingRoot);
+                    PseudoStyleType::MozTextControlEditingRoot);
   MOZ_ASSERT_IF(aEditorRootAnonymousDiv,
                 aEditorRootAnonymousDiv->IsHTMLElement(nsGkAtoms::div));
   mLimiters.mIndependentSelectionRootElement = aEditorRootAnonymousDiv;
@@ -1167,9 +1174,8 @@ void nsFrameSelection::MaintainedRange::AdjustContentOffsets(
   // Adjust offsets according to maintained amount
   if (mRange && mAmount != eSelectNoAmount) {
     const Maybe<int32_t> relativePosition = nsContentUtils::ComparePoints(
-        mRange->StartRef(),
-        RawRangeBoundary(aOffsets.content, aOffsets.offset,
-                         RangeBoundaryIsMutationObserved::No));
+        mRange->StartRef(), RawRangeBoundary(aOffsets.content, aOffsets.offset,
+                                             RangeBoundarySetBy::Offset));
     if (NS_WARN_IF(!relativePosition)) {
       // Potentially handle this properly when Selection across Shadow DOM
       // boundary is implemented
@@ -1735,14 +1741,21 @@ nsresult nsFrameSelection::RepaintSelection(SelectionType aSelectionType) {
 
 // On macOS, update the selection cache to the new active selection
 // aka the current selection.
-#ifdef XP_MACOSX
+// NOTE: On Linux and Windows, we don't need to run this because this just runs
+// nsHTMLCopyEncorder without updating the selection cache.  However, we run
+// this in the debug builds on Linux and Windows. See the comment of this macro
+// definition for the detail.
+#ifdef RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
   // Check that we're in the an active window and, if this is Web content,
   // in the frontmost tab.
+  // XXX This is called when the selection blurs, see
+  // PresShell::FrameSelectionWillLoseFocus(). Cannot we skip doing this in that
+  // case?
   Document* doc = mPresShell->GetDocument();
   if (doc && IsInActiveTab(doc) && aSelectionType == SelectionType::eNormal) {
-    UpdateSelectionCacheOnRepaintSelection(sel);
+    MaybeUpdateSelectionCacheOnRepaintSelection(sel);
   }
-#endif
+#endif  // #ifdef RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
   return sel->Repaint(mPresShell->GetPresContext());
 }
 
@@ -3127,7 +3140,7 @@ void nsFrameSelection::DisconnectFromPresShell() {
   }
 }
 
-#ifdef XP_MACOSX
+#ifdef RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
 /**
  * See Bug 1288453.
  *
@@ -3147,7 +3160,7 @@ void nsFrameSelection::DisconnectFromPresShell() {
  * If the current selection is empty. The current selection cache
  * would be cleared by AutoCopyListener::OnSelectionChange().
  */
-static nsresult UpdateSelectionCacheOnRepaintSelection(Selection* aSel) {
+static nsresult MaybeUpdateSelectionCacheOnRepaintSelection(Selection* aSel) {
   PresShell* presShell = aSel->GetPresShell();
   if (!presShell) {
     return NS_OK;
@@ -3156,12 +3169,21 @@ static nsresult UpdateSelectionCacheOnRepaintSelection(Selection* aSel) {
 
   if (aDoc && aSel && !aSel->IsCollapsed()) {
     return nsCopySupport::EncodeDocumentWithContextAndPutToClipboard(
-        aSel, aDoc, nsIClipboard::kSelectionCache, false);
+        aSel, aDoc, nsIClipboard::kSelectionCache, false,
+#  ifdef XP_MACOSX
+        // Update the selection cache on macOS
+        nsCopySupport::UpdateClipboard::Yes
+#  else
+        // Do not update the clipboard on the other platforms, just run the
+        // serializer to detect assertion failures.
+        nsCopySupport::UpdateClipboard::No
+#  endif
+    );
   }
 
   return NS_OK;
 }
-#endif  // XP_MACOSX
+#endif  // RUN_MAYBE_UPDATE_SELECTION_CACHE_REPAINT_SELECTION
 
 // mozilla::AutoCopyListener
 

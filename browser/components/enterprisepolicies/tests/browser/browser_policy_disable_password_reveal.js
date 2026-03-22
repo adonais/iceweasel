@@ -40,7 +40,7 @@ add_task(async function test_hidden_reveal_password() {
   });
   BrowserTestUtils.removeTab(aboutLoginsTab);
 
-  await Services.logins.removeAllLogins();
+  await Services.logins.removeAllLoginsAsync();
 });
 
 add_task(async function test_bug_1696948() {

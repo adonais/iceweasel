@@ -2887,6 +2887,12 @@ nsresult nsStandardURL::SetQueryWithEncoding(const nsACString& input,
     queryLen = buf.Length();
   }
 
+  // Check the final length after encoding
+  if (mSpec.Length() - mQuery.mLen + queryLen >
+      StaticPrefs::network_standard_url_max_length()) {
+    return NS_ERROR_MALFORMED_URI;
+  }
+
   int32_t shift = ReplaceSegment(mQuery.mPos, mQuery.mLen, query, queryLen);
 
   if (shift) {
@@ -2955,6 +2961,12 @@ nsresult nsStandardURL::SetRef(const nsACString& input) {
   if (encoded) {
     ref = buf.get();
     refLen = buf.Length();
+  }
+
+  // Check the final length after encoding
+  if (mSpec.Length() - mRef.mLen + refLen >
+      StaticPrefs::network_standard_url_max_length()) {
+    return NS_ERROR_MALFORMED_URI;
   }
 
   int32_t shift = ReplaceSegment(mRef.mPos, mRef.mLen, ref, refLen);
@@ -3398,8 +3410,20 @@ nsresult nsStandardURL::ReadPrivate(nsIObjectInputStream* stream) {
   }
   mSupportsFileURL = supportsFileURL;
 
+  if (!IsValid()) {
+    return NS_ERROR_MALFORMED_URI;
+  }
+
   // wait until object is set up, then modify path to include the param
   if (old_param.mLen >= 0) {  // note that mLen=0 is ";"
+    // old_param is a local; IsValid() doesn't check it. Bounds-check
+    // explicitly.
+    CheckedInt<uint32_t> end = CheckedInt<uint32_t>(uint32_t(old_param.mPos)) +
+                               uint32_t(old_param.mLen);
+    if (!end.isValid() || end.value() > mSpec.Length()) {
+      return NS_ERROR_MALFORMED_URI;
+    }
+
     // If this wasn't empty, it marks characters between the end of the
     // file and start of the query - mPath should include the param,
     // query and ref already.  Bump the mFilePath and
@@ -3413,10 +3437,6 @@ nsresult nsStandardURL::ReadPrivate(nsIObjectInputStream* stream) {
   rv = CheckIfHostIsAscii();
   if (NS_FAILED(rv)) {
     return rv;
-  }
-
-  if (!IsValid()) {
-    return NS_ERROR_MALFORMED_URI;
   }
 
   clearOnExit.release();
@@ -3654,11 +3674,6 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
 
   mSupportsFileURL = params.supportsFileURL();
 
-  nsresult rv = CheckIfHostIsAscii();
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
   // Some sanity checks
   NS_ENSURE_TRUE(mScheme.mPos == 0, false);
   NS_ENSURE_TRUE(mScheme.mLen > 0, false);
@@ -3678,6 +3693,11 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
       false);
 
   if (!IsValid()) {
+    return false;
+  }
+
+  nsresult rv = CheckIfHostIsAscii();
+  if (NS_FAILED(rv)) {
     return false;
   }
 

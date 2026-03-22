@@ -459,19 +459,12 @@ add_task(async function test_topic_model() {
   await cleanup();
 });
 
-const N_TABS = [25];
-const methods = [
-  "KMEANS_ANCHOR",
-  "NEAREST_NEIGHBORS_ANCHOR",
-  "LOGISTIC_REGRESSION_ANCHOR",
-];
+const N_TABS = [5];
+const methods = ["NEAREST_NEIGHBORS_ANCHOR", "LOGISTIC_REGRESSION_ANCHOR"];
 const nTabMetrics = {};
 
 for (let method of methods) {
   for (let n of N_TABS) {
-    if (method === "KMEANS_ANCHOR" && n > 25) {
-      break;
-    }
     nTabMetrics[`${method}-${n}-TABS-latency`] = [];
   }
 }

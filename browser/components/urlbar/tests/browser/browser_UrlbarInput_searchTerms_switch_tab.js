@@ -124,7 +124,7 @@ add_task(async function test_behavior_with_navigation() {
 
   let testURL = "http://mochi.test:8888/";
 
-  let parseResult = Services.search.parseSubmissionURL(testURL);
+  let parseResult = SearchService.parseSubmissionURL(testURL);
   Assert.equal(parseResult.engine, null, "Url doesn't match an engine.");
 
   Assert.notEqual(

@@ -9,8 +9,8 @@
  * ways.
  */
 
-#ifndef nsSyncLoadService_h__
-#define nsSyncLoadService_h__
+#ifndef nsSyncLoadService_h_
+#define nsSyncLoadService_h_
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "nsIContentPolicy.h"
@@ -68,4 +68,4 @@ class nsSyncLoadService {
                                            nsIChannel* aChannel);
 };
 
-#endif  // nsSyncLoadService_h__
+#endif  // nsSyncLoadService_h_

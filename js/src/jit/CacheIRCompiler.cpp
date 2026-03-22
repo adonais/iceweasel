@@ -14,10 +14,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "jslibmath.h"
-#include "jsmath.h"
-
 #include "builtin/DataViewObject.h"
+#include "builtin/Math.h"
 #include "builtin/Object.h"
 #include "gc/GCEnum.h"
 #include "jit/BaselineCacheIRCompiler.h"
@@ -37,6 +35,7 @@
 #include "proxy/Proxy.h"
 #include "proxy/ScriptedProxyHandler.h"
 #include "util/DifferentialTesting.h"
+#include "util/PortableMath.h"
 #include "vm/ArgumentsObject.h"
 #include "vm/ArrayBufferObject.h"
 #include "vm/ArrayBufferViewObject.h"
@@ -1239,8 +1238,8 @@ ICCacheIRStub* ICCacheIRStub::clone(JSRuntime* rt, ICStubSpace& newSpace,
   uint8_t* dest = newStub->stubDataStart();
 
   // Because this can be called during sweeping when discarding JIT code, we
-  // have to lock the store buffer
-  gc::AutoLockStoreBuffer lock(rt);
+  // have to lock.
+  gc::AutoLockSweepingLock lock(rt);
 
   uint32_t field = 0;
   while (true) {
@@ -6638,32 +6637,6 @@ bool CacheIRCompiler::emitNewTypedArrayFromArrayResult(
   return true;
 }
 
-bool CacheIRCompiler::emitAddSlotAndCallAddPropHook(ObjOperandId objId,
-                                                    ValOperandId rhsId,
-                                                    uint32_t newShapeOffset) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-
-  AutoCallVM callvm(masm, this, allocator);
-
-  AutoScratchRegister scratch(allocator, masm);
-  Register obj = allocator.useRegister(masm, objId);
-  ValueOperand rhs = allocator.useValueRegister(masm, rhsId);
-
-  StubFieldOffset shapeField(newShapeOffset, StubField::Type::Shape);
-  emitLoadStubField(shapeField, scratch);
-
-  callvm.prepare();
-
-  masm.Push(scratch);
-  masm.Push(rhs);
-  masm.Push(obj);
-
-  using Fn =
-      bool (*)(JSContext*, Handle<NativeObject*>, HandleValue, Handle<Shape*>);
-  callvm.callNoResult<Fn, AddSlotAndCallAddPropHook>();
-  return true;
-}
-
 bool CacheIRCompiler::emitMathAbsInt32Result(Int32OperandId inputId) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
 
@@ -7701,7 +7674,7 @@ bool CacheIRCompiler::emitStoreTypedArrayElement(ObjOperandId objId,
 
     // Canonicalize floating point values for differential testing.
     if (js::SupportDifferentialTesting()) {
-      masm.canonicalizeDouble(floatScratch0);
+      masm.canonicalizeDoubleNaN(floatScratch0);
     }
 
     masm.storeToTypedFloatArray(elementType, floatScratch0, dest, temp,
@@ -8027,7 +8000,7 @@ bool CacheIRCompiler::emitLoadDataViewValueResult(
       FloatRegister scratchFloat32 = floatScratch0.get().asSingle();
       masm.moveGPRToFloat16(outputScratch, scratchFloat32, scratch2,
                             liveVolatileRegs());
-      masm.canonicalizeFloat(scratchFloat32);
+      masm.canonicalizeFloatNaN(scratchFloat32);
       masm.convertFloat32ToDouble(scratchFloat32, floatScratch0);
       masm.boxDouble(floatScratch0, output.valueReg(), floatScratch0);
       break;
@@ -8035,14 +8008,14 @@ bool CacheIRCompiler::emitLoadDataViewValueResult(
     case Scalar::Float32: {
       FloatRegister scratchFloat32 = floatScratch0.get().asSingle();
       masm.moveGPRToFloat32(outputScratch, scratchFloat32);
-      masm.canonicalizeFloat(scratchFloat32);
+      masm.canonicalizeFloatNaN(scratchFloat32);
       masm.convertFloat32ToDouble(scratchFloat32, floatScratch0);
       masm.boxDouble(floatScratch0, output.valueReg(), floatScratch0);
       break;
     }
     case Scalar::Float64:
       masm.moveGPR64ToDouble(outputReg64, floatScratch0);
-      masm.canonicalizeDouble(floatScratch0);
+      masm.canonicalizeDoubleNaN(floatScratch0);
       masm.boxDouble(floatScratch0, output.valueReg(), floatScratch0);
       break;
     case Scalar::BigInt64:
@@ -8221,7 +8194,7 @@ bool CacheIRCompiler::emitStoreDataViewValueResult(
 
   // Canonicalize floating point values for differential testing.
   if (Scalar::isFloatingType(elementType) && js::SupportDifferentialTesting()) {
-    masm.canonicalizeDouble(floatScratch0);
+    masm.canonicalizeDoubleNaN(floatScratch0);
   }
 
   // Load the value into a gpr register.
@@ -10386,9 +10359,6 @@ bool CacheIRCompiler::emitCallIsSuspendedGeneratorResult(ValOperandId valId) {
   masm.bind(&done);
   return true;
 }
-
-// This op generates no code. It is consumed by the transpiler.
-bool CacheIRCompiler::emitMetaScriptedThisShape(uint32_t) { return true; }
 
 bool CacheIRCompiler::emitCallNativeGetElementResult(ObjOperandId objId,
                                                      Int32OperandId indexId) {

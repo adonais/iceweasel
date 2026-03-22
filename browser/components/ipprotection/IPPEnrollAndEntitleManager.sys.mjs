@@ -5,6 +5,8 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  IPPProxyManager:
+    "moz-src:///browser/components/ipprotection/IPPProxyManager.sys.mjs",
   IPPStartupCache:
     "moz-src:///browser/components/ipprotection/IPPStartupCache.sys.mjs",
   IPProtectionService:
@@ -26,14 +28,20 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
  * This class manages the enrolling and entitlement.
  */
 class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
-  #runningPromise = null;
-
   #entitlement = null;
+
+  // Promises to queue enrolling and entitling operations.
+  #enrollingPromise = null;
+  #entitlementPromise = null;
 
   constructor() {
     super();
 
     this.handleEvent = this.#handleEvent.bind(this);
+  }
+
+  get entitlement() {
+    return this.#entitlement;
   }
 
   init() {
@@ -51,33 +59,9 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
     if (!lazy.IPPSignInWatcher.isSignedIn) {
       return;
     }
-
-    try {
-      // This bit must be async because we want to trigger the updateState at
-      // the end of the rest of the initialization.
-      lazy.IPProtectionService.guardian
-        .isLinkedToGuardian(/* only cache: */ true)
-        .then(
-          async isLinked => {
-            if (isLinked) {
-              const { status, entitlement } =
-                await lazy.IPProtectionService.guardian.fetchUserInfo();
-              if (status === 200) {
-                this.#setEntitlement(entitlement);
-                return;
-              }
-            }
-            this.#setEntitlement(null);
-          },
-          () => {
-            // In case we were using cached values, it's time to reset them.
-            this.#setEntitlement(null);
-          }
-        );
-    } catch (_) {
-      // In case we were using cached values, it's time to reset them.
-      this.#setEntitlement(null);
-    }
+    // This bit must be async because we want to trigger the updateState at
+    // the end of the rest of the initialization.
+    this.updateEntitlement();
   }
 
   uninit() {
@@ -94,83 +78,224 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
       this.#setEntitlement(null);
       return;
     }
-
-    this.maybeEnrollAndEntitle();
+    this.updateEntitlement();
   }
 
-  maybeEnrollAndEntitle(forceRefetch = false) {
-    if (this.#runningPromise) {
-      return this.#runningPromise;
+  /**
+   * Updates the entitlement status.
+   * This will run only one fetch at a time, and queue behind any ongoing enrollment.
+   *
+   * @param {boolean} forceRefetch - If true, will refetch the entitlement even when one is present.
+   * @returns {Promise<object>} status
+   * @returns {boolean} status.isEntitled - True if the user is entitled.
+   * @returns {string} [status.error] - Error message if entitlement fetch failed.
+   */
+  async updateEntitlement(forceRefetch = false) {
+    if (this.#entitlementPromise) {
+      return this.#entitlementPromise;
     }
 
-    if (this.#entitlement && !forceRefetch) {
-      return Promise.resolve({ isEnrolledAndEntitled: true });
+    // Queue behind any ongoing enrollment.
+    if (this.#enrollingPromise) {
+      await this.#enrollingPromise;
     }
 
-    const enrollAndEntitle = async () => {
-      const data =
-        await IPPEnrollAndEntitleManagerSingleton.#maybeEnrollAndEntitle();
-      if (!data.entitlement) {
-        // Unset the entitlement if not available.
-        this.#setEntitlement(null);
-        return { isEnrolledAndEntitled: false, error: data.error };
-      }
+    let deferred = Promise.withResolvers();
+    this.#entitlementPromise = deferred.promise;
 
-      this.#setEntitlement(data.entitlement);
+    const entitled = await this.#entitle(forceRefetch);
+    deferred.resolve(entitled);
+
+    if (entitled?.isEntitled) {
+      lazy.IPPProxyManager.refreshUsage();
+    }
+
+    this.#entitlementPromise = null;
+    return entitled;
+  }
+
+  /**
+   * Enrolls and entitles the current Firefox account when possible.
+   * This is a long-running request that will set isEnrolling while in progress
+   * and will only run once until it completes.
+   *
+   * @param {AbortSignal} [abortSignal=null] - a signal to indicate the process should be aborted
+   * @returns {Promise<object>} result
+   * @returns {boolean} result.isEnrolledAndEntitled - True if the user is enrolled and entitled.
+   * @returns {string} [result.error] - Error message if enrollment or entitlement failed.
+   */
+  async maybeEnrollAndEntitle(abortSignal = null) {
+    if (this.#enrollingPromise) {
+      return this.#enrollingPromise;
+    }
+
+    let deferred = Promise.withResolvers();
+    this.#enrollingPromise = deferred.promise;
+
+    const enrolledAndEntitled = await this.#enrollAndEntitle(abortSignal);
+    deferred.resolve(enrolledAndEntitled);
+    this.#enrollingPromise = null;
+
+    return enrolledAndEntitled;
+  }
+
+  /**
+   * Enroll and entitle the current Firefox account.
+   *
+   * This will attempt to enroll the user if they are not enrolled, and then fetch
+   *
+   * @param {AbortSignal} abortSignal - a signal to abort the enrollment
+   * @returns {Promise<object>} status
+   * @returns {boolean} status.isEnrolledAndEntitled - True if the user is enrolled and entitled.
+   * @returns {string} [status.error] - Error message if enrollment or entitlement failed.
+   */
+  async #enrollAndEntitle(abortSignal = null) {
+    if (this.#entitlement) {
       return { isEnrolledAndEntitled: true };
-    };
+    }
 
-    this.#runningPromise = enrollAndEntitle().finally(() => {
-      this.#runningPromise = null;
-    });
+    const { enrollment, error: enrollmentError } =
+      await IPPEnrollAndEntitleManagerSingleton.#enroll(abortSignal);
 
-    return this.#runningPromise;
+    if (enrollmentError || !enrollment) {
+      // Unset the entitlement if enrollment failed.
+      this.#setEntitlement(null);
+      return { isEnrolledAndEntitled: false, error: enrollmentError };
+    }
+
+    const { entitlement, error: entitlementError } =
+      await IPPEnrollAndEntitleManagerSingleton.#getEntitlement();
+
+    if (entitlementError || !entitlement) {
+      // Unset the entitlement if not available.
+      this.#setEntitlement(null);
+      return { isEnrolledAndEntitled: false, error: entitlementError };
+    }
+
+    this.#setEntitlement(entitlement);
+    return { isEnrolledAndEntitled: true };
   }
 
-  // This method is static because we don't want to change the internal state
-  // of the singleton.
-  static async #maybeEnrollAndEntitle() {
-    let isLinked = false;
-    try {
-      isLinked = await lazy.IPProtectionService.guardian.isLinkedToGuardian(
-        /* only cache: */ false
+  /**
+   * Fetch and update the entitlement.
+   *
+   * @param {boolean} forceRefetch - If true, will refetch the entitlement even when one is present.
+   * @returns {Promise<object>} status
+   * @returns {boolean} status.isEntitled - True if the user is entitled.
+   * @returns {string} [status.error] - Error message if entitlement fetch failed.
+   */
+  async #entitle(forceRefetch = false) {
+    if (this.#entitlement && !forceRefetch) {
+      return { isEntitled: true };
+    }
+
+    // Linked does not mean enrolled: it could be that the link comes from a
+    // previous MozillaVPN subscription.
+    let isLinked =
+      await IPPEnrollAndEntitleManagerSingleton.#isLinkedToGuardian(
+        !forceRefetch
       );
-    } catch (error) {
-      // If not linked, it's not an issue.
+
+    if (!isLinked) {
+      this.#setEntitlement(null);
+      return { isEntitled: false };
     }
 
-    if (isLinked) {
-      // Linked does not mean enrolled: it could be that the link comes from a
-      // previous MozillaVPN subscription. Let's see if `fetchUserInfo` is able
-      // to obtain the entitlement.
-      const { status, entitlement } =
-        await lazy.IPProtectionService.guardian.fetchUserInfo();
-      if (status === 200) {
-        return { entitlement };
-      }
+    // Enrolling will handle updating the entitlement.
+    if (this.#enrollingPromise) {
+      return { isEntitled: false };
     }
 
+    let { entitlement, error } =
+      await IPPEnrollAndEntitleManagerSingleton.#getEntitlement();
+
+    if (error || !entitlement) {
+      this.#setEntitlement(null);
+      return { isEntitled: false, error };
+    }
+
+    this.#setEntitlement(entitlement);
+    return { isEntitled: true };
+  }
+
+  // These methods are static because we don't want to change the internal state
+  // of the singleton.
+
+  /**
+   * Enrolls the current Firefox account with Guardian.
+   *
+   * Static to avoid changing internal state of the singleton.
+   *
+   * @param {AbortSignal} [abortSignal=null] - a signal to indicate the enrollment should be aborted
+   * @returns {Promise<object>} status
+   * @returns {boolean} status.enrollment - True if enrollment succeeded.
+   * @returns {string} [status.error] - Error message if enrollment failed.
+   */
+  static async #enroll(abortSignal = null) {
     try {
-      const enrollment = await lazy.IPProtectionService.guardian.enroll();
+      const enrollment = await lazy.IPProtectionService.guardian.enroll(
+        "alpha",
+        abortSignal
+      );
       if (!enrollment?.ok) {
-        return { entitlement: null, error: enrollment?.error };
+        return { enrollment: null, error: enrollment?.error };
       }
     } catch (error) {
       return { enrollment: null, error: error?.message };
     }
-
-    const { status, entitlement, error } =
-      await lazy.IPProtectionService.guardian.fetchUserInfo();
-    lazy.logConsole.debug("Entitlement:", { status, entitlement, error });
-
-    // If we see an error during the READY state, let's trigger an error state.
-    if (error || !entitlement || status != 200) {
-      return { entitlement: null, error: error || `Status: ${status}` };
-    }
-
-    return { entitlement };
+    return { enrollment: true };
   }
 
+  /**
+   * Checks if the current Firefox account is linked to Guardian.
+   *
+   * Static to avoid changing internal state of the singleton.
+   *
+   * @param {boolean} useCache - If true, will use cached value if available.
+   * @returns {Promise<boolean>} - True if linked, false otherwise.
+   */
+  static async #isLinkedToGuardian(useCache = true) {
+    try {
+      let isLinked = await lazy.IPProtectionService.guardian.isLinkedToGuardian(
+        /* only cache: */ useCache
+      );
+
+      return isLinked;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /**
+   * Fetches the entitlement for the current Firefox account.
+   *
+   * Static to avoid changing internal state of the singleton.
+   *
+   * @returns {Promise<object>} status
+   * @returns {object} status.entitlement - The entitlement object.
+   * @returns {string} [status.error] - Error message if fetching entitlement failed.
+   */
+  static async #getEntitlement() {
+    try {
+      const { status, entitlement, error } =
+        await lazy.IPProtectionService.guardian.fetchUserInfo();
+      lazy.logConsole.debug("Entitlement:", { status, entitlement, error });
+
+      if (error || !entitlement || status != 200) {
+        return { entitlement: null, error: error || `Status: ${status}` };
+      }
+
+      return { entitlement };
+    } catch (error) {
+      return { entitlement: null, error: error.message };
+    }
+  }
+
+  /**
+   * Sets the entitlement and updates the cache and IPProtectionService state.
+   *
+   * @param {object | null} entitlement - The entitlement object or null to unset.
+   */
   #setEntitlement(entitlement) {
     this.#entitlement = entitlement;
     lazy.IPPStartupCache.storeEntitlement(this.#entitlement);
@@ -185,6 +310,9 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
     );
   }
 
+  /**
+   * Checks if we have the entitlement
+   */
   get isEnrolledAndEntitled() {
     return !!this.#entitlement;
   }
@@ -199,20 +327,6 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
   }
 
   /**
-   * Checks if the entitlement exists and it contains a UUID
-   */
-  get hasEntitlementUid() {
-    return !!this.#entitlement?.uid;
-  }
-
-  /**
-   * Checks if we have the entitlement
-   */
-  get hasEntitlement() {
-    return !!this.#entitlement;
-  }
-
-  /**
    * Checks if we're running the Alpha variant based on
    * available features
    */
@@ -224,10 +338,30 @@ class IPPEnrollAndEntitleManagerSingleton extends EventTarget {
     );
   }
 
-  async refetchEntitlement() {
-    await this.maybeEnrollAndEntitle(true);
+  /**
+   * Checks if we are currently enrolling.
+   */
+  get isEnrolling() {
+    return !!this.#enrollingPromise;
   }
 
+  /**
+   * Waits for the current enrollment to complete, if any.
+   */
+  async waitForEnrollment() {
+    return this.#enrollingPromise;
+  }
+
+  /**
+   * Refetches the entitlement even if it is cached.
+   */
+  async refetchEntitlement() {
+    await this.updateEntitlement(true);
+  }
+
+  /**
+   * Unsets any stored entitlement.
+   */
   resetEntitlement() {
     this.#setEntitlement(null);
   }

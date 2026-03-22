@@ -667,7 +667,7 @@ gfxMatrix SVGOuterSVGFrame::GetCanvasTM() {
 
     gfxMatrix tm = content->ChildToUserSpaceTransform().PostScale(
         devPxPerCSSPx, devPxPerCSSPx);
-    mCanvasTM = MakeUnique<gfxMatrix>(tm);
+    mCanvasTM = std::make_unique<gfxMatrix>(tm);
   }
   return *mCanvasTM;
 }

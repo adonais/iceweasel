@@ -60,7 +60,19 @@ function regiisterServerNamePathHandler(server, path) {
   });
 }
 
+function verifyGleanValues(aDescription, aExpected) {
+  info(aDescription);
+
+  let metric = Glean.networking.connectionAddressType;
+  Assert.equal(metric[aExpected.metricKey].testGetValue(), aExpected.value);
+}
+
+add_setup(async function setup() {
+  Services.fog.initializeFOG();
+});
+
 add_task(async function test_dual_stack() {
+  Services.fog.testResetFOG();
   let httpserv = new HttpServer();
   let content = "ok";
   httpserv.registerPathHandler("/", function handler(metadata, response) {
@@ -76,6 +88,15 @@ add_task(async function test_dual_stack() {
   chan = makeChan(`http://[::1]:${httpserv.identity.primaryPort}/`);
   [, response] = await channelOpenPromise(chan);
   Assert.equal(response, content);
+
+  verifyGleanValues("Check HTTP/1 IPv4", {
+    metricKey: "http_1_ipv4",
+    value: 1,
+  });
+  verifyGleanValues("Check HTTP/1 IPv6", {
+    metricKey: "http_1_ipv6",
+    value: 1,
+  });
   await new Promise(resolve => httpserv.stop(resolve));
 });
 
@@ -129,6 +150,8 @@ add_task(async function test_https() {
 });
 
 add_task(async function test_http2() {
+  Services.fog.testResetFOG();
+
   let server = new NodeHTTP2Server();
   await server.start();
   registerCleanupFunction(async () => {
@@ -148,6 +171,11 @@ add_task(async function test_http2() {
   equal(req.status, Cr.NS_OK);
   equal(req.QueryInterface(Ci.nsIHttpChannel).responseStatus, 200);
   equal(req.QueryInterface(Ci.nsIHttpChannel).protocolVersion, "h2");
+
+  verifyGleanValues("Check HTTP/2 IPv4", {
+    metricKey: "http_2_ipv4",
+    value: 1,
+  });
 
   await server.stop();
 });

@@ -194,6 +194,14 @@ rsync_filter_list = """
 + /toolkit/crashreporter/tools/symbolstore.py
 + /toolkit/mozapps/installer/package-name.mk
 
++ /toolkit/components/glean/build_scripts/glean_parser_ext/**
++ /toolkit/components/glean/glean.mozbuild
++ /toolkit/components/glean/tags.yaml
+- /toolkit/components/glean/bindings/jog/**
++ /toolkit/components/glean/bindings/**
++ /toolkit/components/glean/ipc/FOGIPC.h
++ /xpcom/ds/tools/perfecthash.py
+
 + /xpcom/geckoprocesstypes_generator/**
 
 # List of prefs.

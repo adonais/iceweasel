@@ -82,7 +82,7 @@ impl TimingDistribution for LabeledTimingDistributionMetric {
                 );
             }
             // See note on TimingDistribution::start
-            if gecko_profiler::can_accept_markers() {
+            if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                 gecko_profiler::add_marker(
                     "TimingDistribution::start",
                     super::profiler_utils::TelemetryProfilerCategory,
@@ -143,7 +143,7 @@ impl TimingDistribution for LabeledTimingDistributionMetric {
                 );
             }
             // See note on TimingDistribution::start
-            if gecko_profiler::can_accept_markers() {
+            if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                 gecko_profiler::add_marker(
                     "TimingDistribution::stop",
                     super::profiler_utils::TelemetryProfilerCategory,
@@ -180,7 +180,7 @@ impl TimingDistribution for LabeledTimingDistributionMetric {
                 );
             }
             // See note on TimingDistribution::start
-            if gecko_profiler::can_accept_markers() {
+            if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                 gecko_profiler::add_marker(
                     "TimingDistribution::cancel",
                     super::profiler_utils::TelemetryProfilerCategory,
@@ -200,7 +200,7 @@ impl TimingDistribution for LabeledTimingDistributionMetric {
     pub fn accumulate_samples(&self, samples: Vec<i64>) {
         #[cfg(feature = "with_gecko")]
         {
-            if gecko_profiler::can_accept_markers() {
+            if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                 gecko_profiler::add_marker(
                     "TimingDistribution::accumulate",
                     super::profiler_utils::TelemetryProfilerCategory,
@@ -241,7 +241,7 @@ impl TimingDistribution for LabeledTimingDistributionMetric {
 
     pub fn accumulate_raw_samples_nanos(&self, samples: Vec<u64>) {
         #[cfg(feature = "with_gecko")]
-        if gecko_profiler::can_accept_markers() {
+        if gecko_profiler::current_thread_is_being_profiled_for_markers() {
             gecko_profiler::add_marker(
                 "TimingDistribution::accumulate",
                 super::profiler_utils::TelemetryProfilerCategory,
@@ -260,7 +260,7 @@ impl TimingDistribution for LabeledTimingDistributionMetric {
     pub fn accumulate_single_sample(&self, sample: i64) {
         #[cfg(feature = "with_gecko")]
         {
-            if gecko_profiler::can_accept_markers() {
+            if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                 gecko_profiler::add_marker(
                     "TimingDistribution::accumulate",
                     super::profiler_utils::TelemetryProfilerCategory,
@@ -350,7 +350,7 @@ impl TimingDistribution for LabeledTimingDistributionMetric {
                 );
             }
 
-            if gecko_profiler::can_accept_markers() {
+            if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                 gecko_profiler::add_marker(
                     "TimingDistribution::accumulate",
                     super::profiler_utils::TelemetryProfilerCategory,

@@ -9,14 +9,16 @@
 
 /**
  * @import {Query} from "UrlbarProvidersManager.sys.mjs"
+ * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
+ * @import {SmartbarInput} from "chrome://browser/content/urlbar/SmartbarInput.mjs"
  * @import {UrlbarSearchStringTokenData} from "UrlbarTokenizer.sys.mjs"
  */
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
+  AIWindow:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
   DEFAULT_FORM_HISTORY_PARAM:
@@ -26,6 +28,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SearchEngine: "moz-src:///toolkit/components/search/SearchEngine.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchSuggestionController:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
@@ -41,14 +45,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
+  parserUtils: {
+    service: "@mozilla.org/parserutils;1",
+    iid: Ci.nsIParserUtils,
+  },
 });
-
-XPCOMUtils.defineLazyServiceGetter(
-  lazy,
-  "parserUtils",
-  "@mozilla.org/parserutils;1",
-  Ci.nsIParserUtils
-);
 
 export var UrlbarUtils = {
   // Results are categorized into groups to help the muxer compose them.  See
@@ -59,10 +60,12 @@ export var UrlbarUtils = {
   // because we don't want to make downgrades unnecessarily hard.
   RESULT_GROUP: Object.freeze({
     ABOUT_PAGES: "aboutPages",
+    AI: "ai",
     GENERAL: "general",
     GENERAL_PARENT: "generalParent",
     FORM_HISTORY: "formHistory",
     HEURISTIC_AUTOFILL: "heuristicAutofill",
+    HEURISTIC_AI_CHAT: "heuristicAiChat",
     HEURISTIC_ENGINE_ALIAS: "heuristicEngineAlias",
     HEURISTIC_EXTENSION: "heuristicExtension",
     HEURISTIC_FALLBACK: "heuristicFallback",
@@ -119,6 +122,8 @@ export var UrlbarUtils = {
     DYNAMIC: 8,
     // A restrict keyword result, could be @bookmarks, @history, or @tabs.
     RESTRICT: 9,
+    // An AI chat result.
+    AI_CHAT: 10,
 
     // When you add a new type, also add its schema to
     // UrlbarUtils.RESULT_PAYLOAD_SCHEMA below.  Also consider checking if
@@ -238,7 +243,24 @@ export var UrlbarUtils = {
   // Search mode objects corresponding to the local shortcuts in the view, in
   // order they appear.  Pref names are relative to the `browser.urlbar` branch.
   get LOCAL_SEARCH_MODES() {
-    return [
+    /**
+     * @typedef {object} LocalSearchMode
+     * @property {Values<typeof this.RESULT_SOURCE>} source
+     *   The source which the search mode will search.
+     * @property {Values<typeof lazy.UrlbarTokenizer.RESTRICT>} restrict
+     *   The restrict token that is associated with the search (*, %, $ etc).
+     * @property {string} icon
+     *   The URL of the icon associated with the search mode in preferences.
+     * @property {string} pref
+     *   The suffix of the preference associated with if the mode is displayed
+     *   in the lists or not (prefix with `browser.urlbar.`).
+     * @property {string} telemetryLabel
+     *   The telemetry label for recording searches in this mode.
+     * @property {string} uiLabel
+     *   The string to use for the UI label.
+     */
+
+    return /** @type {LocalSearchMode[]} */ ([
       {
         source: this.RESULT_SOURCE.BOOKMARKS,
         restrict: lazy.UrlbarTokenizer.RESTRICT.BOOKMARK,
@@ -271,7 +293,7 @@ export var UrlbarUtils = {
         telemetryLabel: "actions",
         uiLabel: "urlbar-searchmode-actions",
       },
-    ];
+    ]);
   },
 
   /**
@@ -324,8 +346,8 @@ export var UrlbarUtils = {
       return { url, postData, mayInheritPrincipal };
     }
 
-    /** @type {nsISearchEngine} */
-    let engine = await Services.search.getEngineByAlias(keyword);
+    /** @type {SearchEngine} */
+    let engine = await lazy.SearchService.getEngineByAlias(keyword);
     if (engine) {
       let submission = engine.getSubmission(param, null);
       return {
@@ -551,6 +573,8 @@ export var UrlbarUtils = {
     }
     if (result.heuristic) {
       switch (result.providerName) {
+        case "UrlbarProviderAiChat":
+          return this.RESULT_GROUP.HEURISTIC_AI_CHAT;
         case "UrlbarProviderAliasEngines":
           return this.RESULT_GROUP.HEURISTIC_ENGINE_ALIAS;
         case "UrlbarProviderAutofill":
@@ -616,6 +640,8 @@ export var UrlbarUtils = {
         return this.RESULT_GROUP.REMOTE_TAB;
       case this.RESULT_TYPE.RESTRICT:
         return this.RESULT_GROUP.RESTRICT_SEARCH_KEYWORD;
+      case this.RESULT_TYPE.AI_CHAT:
+        return this.RESULT_GROUP.AI;
     }
     return this.RESULT_GROUP.GENERAL;
   },
@@ -647,7 +673,9 @@ export var UrlbarUtils = {
         result.payload.suggestion ||
         result.payload.query;
       if (query) {
-        const engine = Services.search.getEngineByName(result.payload.engine);
+        const engine = lazy.SearchService.getEngineByName(
+          result.payload.engine
+        );
         let [url, postData] = this.getSearchQueryUrl(engine, query);
         return { url, postData };
       }
@@ -664,7 +692,7 @@ export var UrlbarUtils = {
   /**
    * Get the url to load for the search query.
    *
-   * @param {nsISearchEngine} engine
+   * @param {SearchEngine} engine
    *   The engine to generate the query for.
    * @param {string} query
    *   The query string to search for.
@@ -749,15 +777,16 @@ export var UrlbarUtils = {
    * Note: This is not infallible, if a speculative connection cannot be
    *       initialized, it will be a no-op.
    *
-   * @param {nsISearchEngine|nsIURI|URL|string} urlOrEngine entity to initiate
-   *        a speculative connection for.
-   * @param {window} window the window from where the connection is initialized.
+   * @param {SearchEngine|nsIURI|URL|string} urlOrEngine
+   *   The entity to initiate a speculative connection for.
+   * @param {window} window
+   *   The window from where the connection is initialized.
    */
   setupSpeculativeConnection(urlOrEngine, window) {
     if (!lazy.UrlbarPrefs.get("speculativeConnect.enabled")) {
       return;
     }
-    if (urlOrEngine instanceof Ci.nsISearchEngine) {
+    if (urlOrEngine instanceof lazy.SearchEngine) {
       try {
         urlOrEngine.speculativeConnect({
           window,
@@ -888,6 +917,49 @@ export var UrlbarUtils = {
       }
     }
     return host;
+  },
+
+  /**
+   * Sanitize and process data retrieved from the clipboard
+   *
+   * @param {string} clipboardData
+   *   The original data retrieved from the clipboard.
+   * @returns {string}
+   *   The sanitized paste data, ready to use.
+   */
+  sanitizeTextFromClipboard(clipboardData) {
+    let fixedURI, keywordAsSent;
+    try {
+      ({ fixedURI, keywordAsSent } = Services.uriFixup.getFixupURIInfo(
+        clipboardData,
+        Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
+          Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP
+      ));
+    } catch (e) {}
+
+    let pasteData;
+    if (keywordAsSent) {
+      // For performance reasons, we don't want to beautify a long string.
+      if (clipboardData.length < 500) {
+        // For only keywords, replace any white spaces including line break
+        // with white space.
+        pasteData = clipboardData.replace(/\s/g, " ");
+      } else {
+        pasteData = clipboardData;
+      }
+    } else if (
+      fixedURI?.scheme == "data" &&
+      !fixedURI.spec.match(/^data:.+;base64,/)
+    ) {
+      // For data url without base64, replace line break with white space.
+      pasteData = clipboardData.replace(/[\r\n]/g, " ");
+    } else {
+      // For normal url or data url having basic64, or if fixup failed, just
+      // remove line breaks.
+      pasteData = clipboardData.replace(/[\r\n]/g, "");
+    }
+
+    return this.stripUnsafeProtocolOnPaste(pasteData);
   },
 
   /**
@@ -1338,6 +1410,9 @@ export var UrlbarUtils = {
         if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.ACTION) {
           return "restrict_keyword_actions";
         }
+        break;
+      case this.RESULT_TYPE.AI_CHAT:
+        return "ai_chat";
     }
     return "unknown";
   },
@@ -1477,6 +1552,9 @@ export var UrlbarUtils = {
       }
       case this.RESULT_GROUP.RESTRICT_SEARCH_KEYWORD: {
         return "restrict_keyword";
+      }
+      case this.RESULT_GROUP.AI: {
+        return "ai";
       }
     }
 
@@ -1630,6 +1708,9 @@ export var UrlbarUtils = {
         if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.ACTION) {
           return "restrict_keyword_actions";
         }
+        break;
+      case this.RESULT_TYPE.AI_CHAT:
+        return "ai_chat";
     }
 
     return "unknown";
@@ -1772,6 +1853,32 @@ export var UrlbarUtils = {
       }
       index = highlightIndex + highlightLength;
     }
+  },
+
+  /**
+   * Gets the URL bar element that should be focused for the given window.
+   * Returns window.gURLBar for regular browser windows, or the smartbar
+   * for AI windows in immersive view.
+   *
+   * @param {Window} window
+   *   The window to get the URL bar for.
+   * @returns {UrlbarInput | SmartbarInput }
+   *   The URL bar element that should be focused.
+   */
+  getURLBarForFocus(window) {
+    /** @type {UrlbarInput | SmartbarInput} */
+    let urlbar = window.gURLBar;
+    // Check if we're in an AI window with immersive view (no address bar visible)
+    if (
+      lazy.AIWindow.isAIWindowActive(window) &&
+      lazy.AIWindow.shouldUseImmersiveView(window.gBrowser.currentURI)
+    ) {
+      let smartbar = lazy.AIWindow.getSmartbarForWindow(window);
+      if (smartbar) {
+        urlbar = smartbar;
+      }
+    }
+    return urlbar;
   },
 
   /**
@@ -2088,6 +2195,10 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
         type: "string",
       },
       titleL10n: L10N_SCHEMA,
+      subtitle: {
+        type: "string",
+      },
+      subtitleL10n: L10N_SCHEMA,
       url: {
         type: "string",
       },
@@ -2289,6 +2400,21 @@ UrlbarUtils.RESULT_PAYLOAD_SCHEMA = {
       },
     },
   },
+  [UrlbarUtils.RESULT_TYPE.AI_CHAT]: {
+    type: "object",
+    required: ["icon", "query", "title"],
+    properties: {
+      icon: {
+        type: "string",
+      },
+      query: {
+        type: "string",
+      },
+      title: {
+        type: "string",
+      },
+    },
+  },
 };
 
 /**
@@ -2465,7 +2591,7 @@ export class UrlbarQueryContext {
   /**
    * @type {string[]}
    *   List of registered provider names. Providers can be registered through
-   *   the UrlbarProvidersManager.
+   *   the ProvidersManager.
    */
   providers;
 

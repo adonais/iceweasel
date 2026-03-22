@@ -168,6 +168,7 @@ def get_sys_argv(injected_argv=None):
 def push_to_try(
     method,
     msg,
+    metrics,
     try_task_config=None,
     stage_changes=False,
     dry_run=False,
@@ -176,6 +177,7 @@ def push_to_try(
     allow_log_capture=False,
     push_to_vcs=False,
 ):
+    metrics.mach_try.commit_prep.start()
     push = not stage_changes and not dry_run
     push_to_vcs |= MACH_TRY_PUSH_TO_VCS
     check_working_directory(push)
@@ -213,6 +215,7 @@ def push_to_try(
 
         return
 
+    metrics.mach_try.commit_prep.stop()
     try:
         if push_to_vcs:
             vcs.push_to_try(
@@ -221,7 +224,7 @@ def push_to_try(
                 allow_log_capture=allow_log_capture,
             )
         else:
-            job_id = push_to_lando_try(vcs, commit_message, changed_files)
+            job_id = push_to_lando_try(vcs, commit_message, changed_files, metrics)
             if job_id:
                 print(
                     f"Follow the progress of your build on Treeherder: "

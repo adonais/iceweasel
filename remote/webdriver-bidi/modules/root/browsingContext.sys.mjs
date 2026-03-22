@@ -144,7 +144,7 @@ const TIMEOUT_WAIT_FOR_VISIBILITY = 250;
  * @readonly
  * @enum {UserPromptType}
  */
-const UserPromptType = {
+export const UserPromptType = {
   alert: "alert",
   confirm: "confirm",
   prompt: "prompt",
@@ -1721,7 +1721,7 @@ class BrowsingContextModule extends RootBiDiModule {
           }
         );
         sessionDataItems.push({
-          category: "viewport-overrides",
+          category: "viewport-override",
           moduleName: "_configuration",
           values: [viewportOverride],
           contextDescriptor: {
@@ -1734,7 +1734,7 @@ class BrowsingContextModule extends RootBiDiModule {
     } else {
       for (const navigable of navigables) {
         sessionDataItems.push({
-          category: "viewport-overrides",
+          category: "viewport-override",
           moduleName: "_configuration",
           values: [viewportOverride],
           contextDescriptor: {
@@ -2204,14 +2204,11 @@ class BrowsingContextModule extends RootBiDiModule {
 
   #onPromptClosed = (eventName, data) => {
     if (this.#subscribedEvents.has("browsingContext.userPromptClosed")) {
-      const { contentBrowser, detail } = data;
-      // TODO: Bug 2007385. Use only browsingContext from event details when the support for Android is added.
-      const browsingContext = lazy.AppInfo.isAndroid
-        ? contentBrowser.browsingContext
-        : detail.browsingContext;
-
-      const navigableId =
-        lazy.NavigableManager.getIdForBrowsingContext(browsingContext);
+      const { detail } = data;
+      const { browsingContext } = detail;
+      const navigableId = lazy.NavigableManager.getIdForBrowsingContext(
+        detail.browsingContext
+      );
 
       if (navigableId === null) {
         return;
@@ -2240,14 +2237,8 @@ class BrowsingContextModule extends RootBiDiModule {
 
   #onPromptOpened = async (eventName, data) => {
     if (this.#subscribedEvents.has("browsingContext.userPromptOpened")) {
-      const { contentBrowser, prompt } = data;
+      const { browsingContext, prompt, promptDetails } = data;
       const type = prompt.promptType;
-
-      // TODO: Bug 2007385. We can remove this fallback
-      // when we have support for browsing context property on Android.
-      const browsingContext = lazy.AppInfo.isAndroid
-        ? contentBrowser.browsingContext
-        : data.browsingContext;
 
       prompt.getText().then(text => {
         // We need the text to identify a user prompt when it gets
@@ -2255,7 +2246,7 @@ class BrowsingContextModule extends RootBiDiModule {
         // retrieved lets delay the logging without making the handler async.
         lazy.logger.trace(
           `[${browsingContext.id}] Prompt opened (type: "${
-            prompt.promptType
+            type
           }", text: "${text}")`
         );
       });
@@ -2272,17 +2263,20 @@ class BrowsingContextModule extends RootBiDiModule {
       const session = lazy.getWebDriverSessionById(
         this.messageHandler.sessionId
       );
-      const handlerConfig = session.userPromptHandler.getPromptHandler(type);
+      const handlerConfig = session.userPromptHandler.getPromptHandler(
+        type == "beforeunload" ? "beforeUnload" : type
+      );
+      const { defaultValue, message } = promptDetails;
 
       const eventPayload = {
         context: navigableId,
         handler: handlerConfig.handler,
-        message: await prompt.getText(),
+        message,
         type,
       };
 
-      if (type === "prompt") {
-        eventPayload.defaultValue = await prompt.getInputText();
+      if (defaultValue !== null) {
+        eventPayload.defaultValue = defaultValue;
       }
 
       this.#emitContextEventForBrowsingContext(
@@ -2549,12 +2543,10 @@ class BrowsingContextModule extends RootBiDiModule {
     }
 
     if (devicePixelRatio !== undefined) {
-      if (devicePixelRatio !== null) {
-        navigable.overrideDPPX = devicePixelRatio;
-      } else {
-        // Will reset to use the global default scaling factor.
-        navigable.overrideDPPX = 0;
-      }
+      setDevicePixelRatioForBrowsingContext({
+        context: navigable,
+        value: devicePixelRatio,
+      });
     }
 
     if (targetHeight !== currentHeight || targetWidth !== currentWidth) {
@@ -2668,6 +2660,33 @@ export const getBrowsingContextInfo = (context, options = {}) => {
   }
 
   return contextInfo;
+};
+
+/**
+ * Set the device pixel ratio override to the top-level browsing context.
+ *
+ * @param {object} options
+ * @param {BrowsingContext} options.context
+ *     Top-level browsing context object which is a target
+ *     for the device pixel ratio override.
+ * @param {number|null} options.value
+ *     A value to override device pixel ratio,
+ *     or `null` to reset it to the original value.
+ */
+export const setDevicePixelRatioForBrowsingContext = options => {
+  const { context, value } = options;
+  const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
+
+  if (value !== null) {
+    context.overrideDPPX = value;
+    lazy.logger.trace(
+      `[${contextId}] Updated device pixel ratio override to: ${value}`
+    );
+  } else {
+    // Will reset to use the global default scaling factor.
+    context.overrideDPPX = 0;
+    lazy.logger.trace(`[${contextId}] Reset device pixel ratio override`);
+  }
 };
 
 export const browsingContext = BrowsingContextModule;

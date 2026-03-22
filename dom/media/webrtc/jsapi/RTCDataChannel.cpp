@@ -126,7 +126,6 @@ nsresult RTCDataChannel::Init() {
           // Also allow ourselves to be GC'ed
           UnsetWorkerNeedsUs();
           DontKeepAliveAnyMore();
-          mWorkerRef = nullptr;
         });
     if (NS_WARN_IF(!strongWorkerRef)) {
       DC_WARN(("%p: Could not get worker ref, breaking cycles", this));
@@ -693,6 +692,8 @@ nsresult RTCDataChannel::DoOnMessageAvailable(const nsACString& aData,
     return NS_OK;
   }
 
+  MOZ_ASSERT(mReadyState == RTCDataChannelState::Open);
+
   DC_VERBOSE(("%p: DoOnMessageAvailable%s\n", this,
               aBinary
                   ? ((mBinaryType == RTCDataChannelType::Blob) ? " (blob)"
@@ -861,11 +862,15 @@ void RTCDataChannel::DontKeepAliveAnyMore() {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
   mCheckMustKeepAlive = false;
 
-  mWorkerRef = nullptr;
-
   if (mSelfRef) {
     // Force an eventloop trip to avoid deleting ourselves.
     ReleaseSelf();
+  }
+
+  if (mWorkerRef) {
+    // Release this after we've released mSelfRef
+    NS_ProxyRelease("RTCDataChannel::mWorkerRef", mEventTarget,
+                    mWorkerRef.forget(), true);
   }
 }
 
@@ -873,7 +878,8 @@ void RTCDataChannel::ReleaseSelf() {
   MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
   DC_INFO(("%p: Releasing self-ref", this));
   // release our self-reference (safely) by putting it in an event (always)
-  NS_ProxyRelease("RTCDataChannel::mSelfRef", mEventTarget, mSelfRef.forget());
+  NS_ProxyRelease("RTCDataChannel::mSelfRef", mEventTarget, mSelfRef.forget(),
+                  true);
 }
 
 void RTCDataChannel::EventListenerAdded(nsAtom* aType) {

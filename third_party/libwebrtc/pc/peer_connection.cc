@@ -473,6 +473,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     std::vector<NetworkMask> vpn_list;
     PortAllocatorConfig port_allocator_config;
     std::optional<TimeDelta> pacer_burst_interval;
+    bool always_negotiate_datachannel;
   };
   static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
                 "Did you add something to RTCConfiguration and forget to "
@@ -534,7 +535,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          port_allocator_config.min_port == o.port_allocator_config.min_port &&
          port_allocator_config.max_port == o.port_allocator_config.max_port &&
          port_allocator_config.flags == o.port_allocator_config.flags &&
-         pacer_burst_interval == o.pacer_burst_interval;
+         pacer_burst_interval == o.pacer_burst_interval &&
+         always_negotiate_data_channels == o.always_negotiate_data_channels;
 }
 
 bool PeerConnectionInterface::RTCConfiguration::operator!=(
@@ -619,6 +621,10 @@ PeerConnection::PeerConnection(
   if (call_ptr_) {
     worker_thread()->BlockingCall([this, tc = transport_controller_copy_] {
       RTC_DCHECK_RUN_ON(worker_thread());
+      if (context_->is_configured_for_media()) {
+        media_engine_ref_ =
+            std::make_unique<ConnectionContext::MediaEngineReference>(context_);
+      }
       call_->SetPayloadTypeSuggester(tc);
     });
   }
@@ -712,6 +718,7 @@ PeerConnection::~PeerConnection() {
     RTC_DCHECK_RUN_ON(worker_thread());
     worker_thread_safety_->SetNotAlive();
     call_.reset();
+    media_engine_ref_.reset();
   });
 
   data_channel_controller_.PrepareForShutdown();
@@ -1716,22 +1723,26 @@ void PeerConnection::ReconfigureBandwidthEstimation(
 }
 
 void PeerConnection::SetAudioPlayout(bool playout) {
+  RTC_DCHECK(ConfiguredForMedia());
   if (!worker_thread()->IsCurrent()) {
     worker_thread()->BlockingCall(
         [this, playout] { SetAudioPlayout(playout); });
     return;
   }
-  auto audio_state = context_->media_engine()->voice().GetAudioState();
+  RTC_DCHECK_RUN_ON(worker_thread());
+  auto audio_state = media_engine()->voice().GetAudioState();
   audio_state->SetPlayout(playout);
 }
 
 void PeerConnection::SetAudioRecording(bool recording) {
+  RTC_DCHECK(ConfiguredForMedia());
   if (!worker_thread()->IsCurrent()) {
     worker_thread()->BlockingCall(
         [this, recording] { SetAudioRecording(recording); });
     return;
   }
-  auto audio_state = context_->media_engine()->voice().GetAudioState();
+  RTC_DCHECK_RUN_ON(worker_thread());
+  auto audio_state = media_engine()->voice().GetAudioState();
   audio_state->SetRecording(recording);
 }
 
@@ -1749,7 +1760,7 @@ void PeerConnection::AddAdaptationResource(scoped_refptr<Resource> resource) {
 }
 
 bool PeerConnection::ConfiguredForMedia() const {
-  return context_->media_engine();
+  return context_->is_configured_for_media();
 }
 
 bool PeerConnection::StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
@@ -2384,6 +2395,12 @@ void PeerConnection::SetSctpTransportName(std::string sctp_transport_name) {
   ClearStatsCache();
 }
 
+// RTC_RUN_ON(worker_thread())
+MediaEngineInterface* PeerConnection::media_engine() const {
+  RTC_DCHECK(media_engine_ref_);
+  return media_engine_ref_->media_engine();
+}
+
 std::optional<std::string> PeerConnection::sctp_mid() const {
   RTC_DCHECK_RUN_ON(signaling_thread());
   return sctp_mid_s_;
@@ -2592,8 +2609,9 @@ Call::Stats PeerConnection::GetCallStats() {
 }
 
 std::optional<AudioDeviceModule::Stats> PeerConnection::GetAudioDeviceStats() {
-  if (context_->media_engine()) {
-    return context_->media_engine()->voice().GetAudioDeviceStats();
+  RTC_DCHECK_RUN_ON(worker_thread());
+  if (context_->is_configured_for_media()) {
+    return media_engine()->voice().GetAudioDeviceStats();
   }
   return std::nullopt;
 }

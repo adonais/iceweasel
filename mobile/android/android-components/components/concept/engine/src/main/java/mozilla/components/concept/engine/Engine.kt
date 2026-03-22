@@ -116,6 +116,31 @@ interface Engine :
     }
 
     /**
+     * Firefox Relay feature mode for controlling the state of the integration.
+     */
+    enum class FirefoxRelayMode {
+        /**
+         * Firefox Relay is available but not yet offered to the user.
+         */
+        AVAILABLE,
+
+        /**
+         * Firefox Relay has been offered to the user.
+         */
+        OFFERED,
+
+        /**
+         * Firefox Relay is enabled.
+         */
+        ENABLED,
+
+        /**
+         * Firefox Relay is disabled.
+         */
+        DISABLED,
+    }
+
+    /**
      * Makes sure all required engine initialization logic is executed. The
      * details are specific to individual implementations, but the following must be true:
      *

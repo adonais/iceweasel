@@ -48,7 +48,8 @@ add_task(async function test_internal_post_recovery() {
     null,
     false,
     testBackupDirPath,
-    recoveredProfilePath
+    recoveredProfilePath,
+    true
   );
 
   // Intercept the telemetry that we want to check for before it gets submitted

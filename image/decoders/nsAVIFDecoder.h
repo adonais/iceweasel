@@ -119,8 +119,7 @@ struct AVIFImage {
 class AVIFParser {
  public:
   static Mp4parseStatus Create(const Mp4parseIo* aIo, ByteStream* aBuffer,
-                               UniquePtr<AVIFParser>& aParserOut,
-                               bool aAllowSequences, bool aAnimateAVIFMajor);
+                               UniquePtr<AVIFParser>& aParserOut);
 
   ~AVIFParser();
 
@@ -135,8 +134,7 @@ class AVIFParser {
  private:
   explicit AVIFParser(const Mp4parseIo* aIo);
 
-  Mp4parseStatus Init(ByteStream* aBuffer, bool aAllowSequences,
-                      bool aAnimateAVIFMajor);
+  Mp4parseStatus Init(ByteStream* aBuffer);
 
   struct FreeAvifParser {
     void operator()(Mp4parseAvifParser* aPtr) { mp4parse_avif_free(aPtr); }

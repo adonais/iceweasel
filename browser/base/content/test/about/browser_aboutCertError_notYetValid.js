@@ -52,6 +52,7 @@ add_task(async function testNotYetValidCert() {
       content.document.querySelector("net-error-card").wrappedJSObject;
     const info = Cu.cloneInto(mockErrorInfo, netErrorCard);
     netErrorCard.errorInfo = info;
+    netErrorCard.errorConfig = netErrorCard.getErrorConfig();
     await netErrorCard.getUpdateComplete();
 
     netErrorCard.advancedButton.scrollIntoView();

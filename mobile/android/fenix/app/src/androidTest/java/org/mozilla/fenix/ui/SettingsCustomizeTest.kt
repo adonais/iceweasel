@@ -175,4 +175,21 @@ class SettingsCustomizeTest : TestSetup() {
             verifyAppIconOption(composeTestRule, "Dark")
         }
     }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3333174
+    @Test
+    fun verifyTheToolbarLayoutSectionTest() {
+        homeScreen(composeTestRule) {
+        }.openThreeDotMenu {
+        }.clickSettingsButton {
+        }.openCustomizeSubMenu {
+            verifyToolbarLayout()
+            verifyToolbarLayoutPreference("Simple")
+            selectExpandedToolbarLayout()
+            clickBottomToolbarToggle()
+            verifyAddressBarPositionPreference("Bottom")
+            verifyToolbarLayout()
+            verifyToolbarLayoutPreference("Expanded")
+        }
+    }
 }

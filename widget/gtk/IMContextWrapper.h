@@ -647,6 +647,18 @@ class IMContextWrapper final : public TextEventDispatcherListener {
   bool MaybeDispatchKeyEventAsProcessedByIME(EventMessage aFollowingEvent);
 
   /**
+   * Dispatches eKeyDown and eKeyPress events for committed character.
+   * Optionally dispatches eKeyUp if aDispatchKeyUp is true (needed for
+   * Wayland text-input protocol where there's no GDK key release event).
+   *
+   * @param aKeyEvent           The keyboard event to dispatch.
+   * @param aDispatchKeyUp      If true, also dispatch eKeyUp event.
+   * @return                    Always returns true (caller should return).
+   */
+  bool DispatchKeyEventsForCommittedCharacter(WidgetKeyboardEvent& aKeyEvent,
+                                              bool aDispatchKeyUp);
+
+  /**
    * Dispatches a composition start event.
    *
    * @param aContext              A GtkIMContext which is being handled.

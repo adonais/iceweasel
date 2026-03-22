@@ -63,11 +63,11 @@ class MozPower:
 
        from mozpower import MozPower
 
-       mp = MozPower(output_file_path='dir/power-testing')
+       mp = MozPower(output_file_path="dir/power-testing")
 
        mp.initialize_power_measurements()
        # Run test...
-       mp.finalize_power_measurements(test_name='raptor-test-name')
+       mp.finalize_power_measurements(test_name="raptor-test-name")
 
        perfherder_data = mp.get_perfherder_data()
     """
@@ -284,11 +284,7 @@ class MozPower:
 
         ::
 
-           {
-               'name': 'mozpower',
-               'unit': 'mWh',
-               'type': 'power'
-           }
+           {"name": "mozpower", "unit": "mWh", "type": "power"}
 
         Subtests produced for each sub-suite (measurement type), have the naming
         pattern: <measurement_type>-<measured_name>

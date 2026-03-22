@@ -10,6 +10,7 @@ import android.content.Intent
 import androidx.core.net.toUri
 import androidx.fragment.app.FragmentManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.test.StandardTestDispatcher
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.selector.findTab
@@ -25,13 +26,11 @@ import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.support.test.any
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
-import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.anyBoolean
@@ -46,8 +45,7 @@ import org.mockito.Mockito.`when`
 @RunWith(AndroidJUnit4::class)
 class AppLinksFeatureTest {
 
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
+    private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var store: BrowserStore
     private lateinit var mockContext: Context
@@ -95,12 +93,14 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                useCases = mockUseCases,
                 dialog = mockDialog,
+                useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
+                mainDispatcher = testDispatcher,
             ),
         ).also {
             it.start()
+            testDispatcher.scheduler.advanceUntilIdle()
         }
     }
 
@@ -113,11 +113,14 @@ class AppLinksFeatureTest {
     fun `WHEN feature started THEN feature observes app intents`() {
         val tab = createTab(webUrl)
         store.dispatch(TabListAction.AddTabAction(tab))
+        testDispatcher.scheduler.advanceUntilIdle()
+
         verify(feature, never()).handleAppIntent(any(), any(), any(), any(), any())
 
         val intent: Intent = mock()
         val appIntent = AppIntentState(intentUrl, intent, null, null)
         store.dispatch(ContentAction.UpdateAppIntentAction(tab.id, appIntent))
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verify(feature).handleAppIntent(any(), any(), any(), any(), any())
 
@@ -129,13 +132,17 @@ class AppLinksFeatureTest {
     fun `WHEN feature is stopped THEN feature doesn't observes app intents`() {
         val tab = createTab(webUrl)
         store.dispatch(TabListAction.AddTabAction(tab))
+        testDispatcher.scheduler.advanceUntilIdle()
+
         verify(feature, never()).handleAppIntent(any(), any(), any(), any(), any())
 
         feature.stop()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         val intent: Intent = mock()
         val appIntent = AppIntentState(intentUrl, intent, null, null)
         store.dispatch(ContentAction.UpdateAppIntentAction(tab.id, appIntent))
+        testDispatcher.scheduler.advanceUntilIdle()
 
         verify(feature, never()).handleAppIntent(any(), any(), any(), any(), any())
     }
@@ -147,13 +154,14 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                useCases = mockUseCases,
                 dialog = mockDialog,
+                useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
-                shouldPrompt = { true },
+                mainDispatcher = testDispatcher,
             ),
         ).also {
             it.start()
+            testDispatcher.scheduler.advanceUntilIdle()
         }
 
         val tab = createTab(webUrl)
@@ -170,87 +178,19 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                useCases = mockUseCases,
                 dialog = mockDialog,
+                useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
                 shouldPrompt = { false },
+                mainDispatcher = testDispatcher,
             ),
         ).also {
             it.start()
+            testDispatcher.scheduler.advanceUntilIdle()
         }
 
         val tab = createTab(webUrl)
         feature.handleAppIntent(tab, intentUrl, mock(), null, null)
-
-        verify(mockDialog, never()).showNow(eq(mockFragmentManager), anyString())
-    }
-
-    @Test
-    fun `WHEN custom tab and caller is the same as external app THEN an external app dialog is not shown`() {
-        feature = spy(
-            AppLinksFeature(
-                context = mockContext,
-                store = store,
-                fragmentManager = mockFragmentManager,
-                useCases = mockUseCases,
-                dialog = mockDialog,
-                loadUrlUseCase = mockLoadUrlUseCase,
-                shouldPrompt = { true },
-            ),
-        ).also {
-            it.start()
-        }
-
-        val tab =
-            createCustomTab(
-                id = "c",
-                url = webUrl,
-                source = SessionState.Source.External.CustomTab(
-                    ExternalPackage("com.zxing.app", PackageCategory.PRODUCTIVITY),
-                ),
-            )
-
-        val appIntent: Intent = mock()
-        val componentName: ComponentName = mock()
-        doReturn(componentName).`when`(appIntent).component
-        doReturn("com.zxing.app").`when`(componentName).packageName
-
-        feature.handleAppIntent(tab, intentUrl, appIntent, null, null)
-
-        verify(mockDialog, never()).showNow(eq(mockFragmentManager), anyString())
-    }
-
-    @Test
-    fun `WHEN tab have action view and caller is the same as external app THEN an external app dialog is not shown`() {
-        feature = spy(
-            AppLinksFeature(
-                context = mockContext,
-                store = store,
-                fragmentManager = mockFragmentManager,
-                useCases = mockUseCases,
-                dialog = mockDialog,
-                loadUrlUseCase = mockLoadUrlUseCase,
-                shouldPrompt = { true },
-            ),
-        ).also {
-            it.start()
-        }
-
-        val tab =
-            createCustomTab(
-                id = "d",
-                url = webUrl,
-                source = SessionState.Source.External.ActionView(
-                    ExternalPackage("com.zxing.app", PackageCategory.PRODUCTIVITY),
-                ),
-            )
-
-        val appIntent: Intent = mock()
-        val componentName: ComponentName = mock()
-        doReturn(componentName).`when`(appIntent).component
-        doReturn("com.zxing.app").`when`(componentName).packageName
-
-        feature.handleAppIntent(tab, intentUrl, appIntent, null, null)
 
         verify(mockDialog, never()).showNow(eq(mockFragmentManager), anyString())
     }
@@ -262,13 +202,14 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                useCases = mockUseCases,
                 dialog = mockDialog,
+                useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
-                shouldPrompt = { true },
+                mainDispatcher = testDispatcher,
             ),
         ).also {
             it.start()
+            testDispatcher.scheduler.advanceUntilIdle()
         }
 
         val tab =
@@ -298,13 +239,14 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                useCases = mockUseCases,
                 dialog = mockDialog,
+                useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
-                shouldPrompt = { true },
+                mainDispatcher = testDispatcher,
             ),
         ).also {
             it.start()
+            testDispatcher.scheduler.advanceUntilIdle()
         }
 
         val tab =
@@ -334,13 +276,14 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                useCases = mockUseCases,
                 dialog = mockDialog,
+                useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
-                shouldPrompt = { true },
+                mainDispatcher = testDispatcher,
             ),
         ).also {
             it.start()
+            testDispatcher.scheduler.advanceUntilIdle()
         }
 
         val tab = createTab(webUrl, private = true)
@@ -357,13 +300,15 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                useCases = mockUseCases,
                 dialog = mockDialog,
+                useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
+                mainDispatcher = testDispatcher,
                 shouldPrompt = { false },
             ),
         ).also {
             it.start()
+            testDispatcher.scheduler.advanceUntilIdle()
         }
 
         val tab = createTab(webUrl, private = true)
@@ -421,13 +366,15 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                useCases = mockUseCases,
                 dialog = mockDialog,
+                useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
+                mainDispatcher = testDispatcher,
                 shouldPrompt = { false },
             ),
         ).also {
             it.start()
+            testDispatcher.scheduler.advanceUntilIdle()
         }
 
         val walletUrl = "openid4vp://credential-offer"
@@ -448,13 +395,15 @@ class AppLinksFeatureTest {
                 context = mockContext,
                 store = store,
                 fragmentManager = mockFragmentManager,
-                useCases = mockUseCases,
                 dialog = mockDialog,
+                useCases = mockUseCases,
                 loadUrlUseCase = mockLoadUrlUseCase,
+                mainDispatcher = testDispatcher,
                 shouldPrompt = { false },
             ),
         ).also {
             it.start()
+            testDispatcher.scheduler.advanceUntilIdle()
         }
 
         val nonWalletUrl = "https://example.com"
@@ -477,6 +426,7 @@ class AppLinksFeatureTest {
             store = store,
             fragmentManager = mockFragmentManager,
             useCases = mockUseCases,
+            mainDispatcher = testDispatcher,
             loadUrlUseCase = mockLoadUrlUseCase,
         )
 
@@ -499,5 +449,61 @@ class AppLinksFeatureTest {
             data = "eudi-wallet://open".toUri()
         }
         assertTrue(feature.isWalletLink("openid-credential-offer://init", appIntent))
+    }
+
+    @Test
+    fun `WHEN shouldPrompt is false regardless of private or wallet THEN shouldBypassPrompt returns true`() {
+        feature = AppLinksFeature(
+            context = mockContext,
+            store = store,
+            fragmentManager = mockFragmentManager,
+            useCases = mockUseCases,
+            mainDispatcher = testDispatcher,
+            shouldPrompt = { false },
+        )
+
+        assertTrue(
+            feature.shouldBypassPrompt(
+                isPrivate = false,
+                isWallet = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN isPrivate is true THEN shouldBypassPrompt returns false`() {
+        feature = AppLinksFeature(
+            context = mockContext,
+            store = store,
+            fragmentManager = mockFragmentManager,
+            useCases = mockUseCases,
+            mainDispatcher = testDispatcher,
+        )
+
+        assertFalse(
+            feature.shouldBypassPrompt(
+                isPrivate = true,
+                isWallet = false,
+            ),
+        )
+    }
+
+    @Test
+    fun `WHEN isWallet is true THEN shouldBypassPrompt returns false`() {
+        feature = AppLinksFeature(
+            context = mockContext,
+            store = store,
+            fragmentManager = mockFragmentManager,
+            useCases = mockUseCases,
+            mainDispatcher = testDispatcher,
+            shouldPrompt = { false },
+        )
+
+        assertFalse(
+            feature.shouldBypassPrompt(
+                isPrivate = false,
+                isWallet = true,
+            ),
+        )
     }
 }

@@ -6,7 +6,8 @@
   document is destroyed
 </title>
 <script src="/tests/SimpleTest/SimpleTest.js"></script>
- <script src="/tests/SimpleTest/paint_listener.js"></script>
+<script src="/tests/SimpleTest/EventUtils.js"></script>
+<script src="/tests/SimpleTest/paint_listener.js"></script>
 <script src="apz_test_utils.js"></script>
 <script src="apz_test_native_event_utils.js"></script>
 <style>
@@ -50,9 +51,18 @@ async function test() {
 
   // Touch on the iframe.
   // This will trigger a scheduled task to set :hover state.
-  const utils = SpecialPowers.DOMWindowUtils;
-  utils.sendTouchEvent("touchstart",
-    [0], [100], [100], [1], [1], [1], [1], [0], [0], [0], 0);
+  synthesizeTouchAtPoint(100, 100, {
+    type: "touchstart",
+    id: 0,
+    rx: 1,
+    ry: 1,
+    angle: 1,
+    force: 1,
+    tiltX: 0,
+    tiltY: 0,
+    twist: 0,
+    modifiers: 0,
+  });
   await touchstartPromise;
 
   // In JS there's no way to ensure `APZStateChange::eStartTouch` notification
@@ -73,8 +83,18 @@ async function test() {
 
   // Finish the touch block explicitely, otherwise in subsequent tests
   // new touch events won't be dispatched as expected.
-  utils.sendTouchEvent("touchend",
-    [0], [100], [100], [1], [1], [1], [1], [0], [0], [0], 0);
+  synthesizeTouchAtPoint(100, 100, {
+    type: "touchend",
+    id: 0,
+    rx: 1,
+    ry: 1,
+    angle: 1,
+    force: 1,
+    tiltX: 0,
+    tiltY: 0,
+    twist: 0,
+    modifiers: 0,
+  });
   await touchendPromise;
 
   ok(true, "There's no need to check, it's okay if there's no leak");

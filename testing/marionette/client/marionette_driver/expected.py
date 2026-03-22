@@ -29,7 +29,8 @@ class element_present:
     Or by using a function/lambda returning an element::
 
         el = Wait(marionette).until(
-            expected.element_present(lambda m: m.find_element(By.ID, "foo")))
+            expected.element_present(lambda m: m.find_element(By.ID, "foo"))
+        )
 
     :param args: locator or function returning web element
     :returns: the web element once it is located, or False
@@ -58,7 +59,8 @@ class element_not_present(element_present):
     Or by using a function/lambda returning an element::
 
         r = Wait(marionette).until(
-            expected.element_present(lambda m: m.find_element(By.ID, "foo")))
+            expected.element_present(lambda m: m.find_element(By.ID, "foo"))
+        )
 
     :param args: locator or function returning web element
     :returns: True if element is not present, or False if it is present
@@ -118,7 +120,8 @@ class elements_present:
     Or by using a function/lambda returning a list of elements::
 
         els = Wait(marionette).until(
-            expected.elements_present(lambda m: m.find_elements(By.TAG_NAME, "a")))
+            expected.elements_present(lambda m: m.find_elements(By.TAG_NAME, "a"))
+        )
 
     :param args: locator or function returning a list of web elements
     :returns: list of web elements once they are located, or False
@@ -147,7 +150,8 @@ class elements_not_present(elements_present):
     Or by using a function/lambda returning a list of elements::
 
         r = Wait(marionette).until(
-            expected.elements_not_present(lambda m: m.find_elements(By.TAG_NAME, "a")))
+            expected.elements_not_present(lambda m: m.find_elements(By.TAG_NAME, "a"))
+        )
 
     :param args: locator or function returning a list of web elements
     :returns: True if elements are missing, False if one or more are

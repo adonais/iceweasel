@@ -14,14 +14,11 @@ SimpleTest.waitForExplicitFinish();
   const { getInactiveCssDataForProperty } = require("devtools/server/actors/utils/inactive-property-helper");
   const { DocumentWalker } = require("devtools/server/actors/inspector/document-walker");
 
-  const CUSTOM_HIGHLIGHT_API = "dom.customHighlightAPI.enabled";
   const TEXT_FRAGMENTS = "dom.text_fragments.enabled";
 
-  Services.prefs.setBoolPref(CUSTOM_HIGHLIGHT_API, true);
   Services.prefs.setBoolPref(TEXT_FRAGMENTS, true);
 
   SimpleTest.registerCleanupFunction(() => {
-    Services.prefs.clearUserPref(CUSTOM_HIGHLIGHT_API);
     Services.prefs.clearUserPref(TEXT_FRAGMENTS);
   });
 
@@ -70,6 +67,7 @@ SimpleTest.waitForExplicitFinish();
     "place-items-content.mjs",
     "placeholder-pseudo-element.mjs",
     "positioned.mjs",
+    "position-area.mjs",
     "replaced-element-properties.mjs",
     "resize.mjs",
     "scroll-padding.mjs",

@@ -168,7 +168,7 @@ add_task(async function selected_result_bookmark_serp() {
       ],
     });
 
-    let defaultEngine = await Services.search.getDefault();
+    let defaultEngine = await SearchService.getDefault();
     let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
 
     await PlacesTestUtils.addVisits(serpUrl);
@@ -200,7 +200,7 @@ add_task(async function selected_result_bookmark_adaptive_serp() {
       set: [["browser.urlbar.autoFill", false]],
     });
 
-    let defaultEngine = await Services.search.getDefault();
+    let defaultEngine = await SearchService.getDefault();
     let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
 
     await PlacesUtils.bookmarks.insert({
@@ -274,7 +274,7 @@ add_task(async function selected_result_history_adaptive() {
 
 add_task(async function selected_result_history_adaptive_serp() {
   await doTest(async () => {
-    let defaultEngine = await Services.search.getDefault();
+    let defaultEngine = await SearchService.getDefault();
     let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
 
     await PlacesTestUtils.addVisits(serpUrl);
@@ -471,7 +471,7 @@ add_task(async function selected_result_tab_adaptive_serp() {
     set: [["browser.urlbar.suggest.searches", false]],
   });
 
-  let defaultEngine = await Services.search.getDefault();
+  let defaultEngine = await SearchService.getDefault();
   let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
   let tab = BrowserTestUtils.addTab(gBrowser, serpUrl);
 
@@ -513,7 +513,7 @@ add_task(async function selected_result_tab_serp() {
     set: [["browser.urlbar.suggest.searches", false]],
   });
 
-  let defaultEngine = await Services.search.getDefault();
+  let defaultEngine = await SearchService.getDefault();
   let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
   let tab = BrowserTestUtils.addTab(gBrowser, serpUrl);
 
@@ -685,9 +685,10 @@ add_task(async function selected_result_clipboard() {
   });
 
   SpecialPowers.clipboardCopyString("");
-  UrlbarProvidersManager.getProvider(
-    "UrlbarProviderClipboard"
-  ).setPreviousClipboardValue("");
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager
+    .getProvider("UrlbarProviderClipboard")
+    .setPreviousClipboardValue("");
   await SpecialPowers.popPrefEnv();
 });
 
@@ -913,7 +914,7 @@ add_task(async function selected_result_trending() {
     ],
   });
 
-  let defaultEngine = await Services.search.getDefault();
+  let defaultEngine = await SearchService.getDefault();
 
   await SearchTestUtils.updateRemoteSettingsConfig([
     {
@@ -949,11 +950,8 @@ add_task(async function selected_result_trending() {
     },
   ]);
 
-  let engine = Services.search.getEngineByName("mozengine");
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  let engine = SearchService.getEngineByName("mozengine");
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   await doTest(async () => {
     await openPopup("");
@@ -970,11 +968,11 @@ add_task(async function selected_result_trending() {
     ]);
   });
 
-  await Services.search.removeEngine(engine);
+  await SearchService.removeEngine(engine);
 
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     defaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
   let settingsWritten = SearchTestUtils.promiseSearchNotification(
     "write-settings-to-disk-complete"
@@ -997,7 +995,7 @@ add_task(async function selected_result_trending_rich() {
     ],
   });
 
-  let defaultEngine = await Services.search.getDefault();
+  let defaultEngine = await SearchService.getDefault();
 
   await SearchTestUtils.updateRemoteSettingsConfig([
     {
@@ -1039,11 +1037,8 @@ add_task(async function selected_result_trending_rich() {
     },
   ]);
 
-  let engine = Services.search.getEngineByName("mozengine");
-  await Services.search.setDefault(
-    engine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
-  );
+  let engine = SearchService.getEngineByName("mozengine");
+  await SearchService.setDefault(engine, SearchService.CHANGE_REASON.UNKNOWN);
 
   await doTest(async () => {
     await openPopup("");
@@ -1060,11 +1055,11 @@ add_task(async function selected_result_trending_rich() {
     ]);
   });
 
-  await Services.search.removeEngine(engine);
+  await SearchService.removeEngine(engine);
 
-  await Services.search.setDefault(
+  await SearchService.setDefault(
     defaultEngine,
-    Ci.nsISearchService.CHANGE_REASON_UNKNOWN
+    SearchService.CHANGE_REASON.UNKNOWN
   );
   let settingsWritten = SearchTestUtils.promiseSearchNotification(
     "write-settings-to-disk-complete"
@@ -1193,7 +1188,7 @@ add_task(async function selected_result_action() {
 
 add_task(async function selected_result_semantic() {
   const historyUrl = "https://www.example.com/semantic/";
-  let defaultEngine = await Services.search.getDefault();
+  let defaultEngine = await SearchService.getDefault();
   const searchUrl = defaultEngine.getSubmission("semantic", null).uri.spec;
   await doTestWithSemantic(
     [

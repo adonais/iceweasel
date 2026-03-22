@@ -166,13 +166,14 @@ def inject_desktop_entry_file(
 def inject_distribution_folder(source_dir, source_type, app_name):
     distribution_ini_path = mozpath.join(source_dir, source_type, "distribution.ini")
 
-    os.makedirs(
-        mozpath.join(source_dir, app_name.lower(), "distribution"), exist_ok=True
-    )
-    shutil.move(
-        distribution_ini_path,
-        mozpath.join(source_dir, app_name.lower(), "distribution"),
-    )
+    distribution_dir = mozpath.join(source_dir, app_name.lower(), "distribution")
+    os.makedirs(distribution_dir, exist_ok=True)
+
+    destination_path = mozpath.join(distribution_dir, "distribution.ini")
+    if os.path.exists(destination_path):
+        os.remove(destination_path)
+
+    shutil.move(distribution_ini_path, destination_path)
 
 
 def inject_prefs_file(source_dir, app_name, template_dir):

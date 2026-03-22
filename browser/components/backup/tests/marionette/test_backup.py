@@ -203,7 +203,7 @@ class BackupTest(MarionetteTestCase):
             const ORIGINAL_STORE_LABEL = OSKeyStore.STORE_LABEL;
             OSKeyStore.STORE_LABEL = "test-" + Math.random().toString(36).substr(2);
 
-            let newProfile = await bs.recoverFromBackupArchive(archivePath, recoveryCode, false, recoveryPath, newProfileRootPath);
+            let newProfile = await bs.recoverFromBackupArchive(archivePath, recoveryCode, false, recoveryPath, newProfileRootPath, true);
 
             if (!newProfile) {
               throw new Error("Could not create recovery profile.");

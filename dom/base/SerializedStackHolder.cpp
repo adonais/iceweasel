@@ -78,7 +78,7 @@ JSObject* SerializedStackHolder::ReadStack(JSContext* aCx) {
 
   JS::Rooted<JS::Value> stackValue(aCx);
 
-  mHolder.Read(xpc::CurrentNativeGlobal(aCx), aCx, &stackValue, IgnoreErrors());
+  mHolder.Read(aCx, &stackValue, IgnoreErrors());
 
   return stackValue.isObject() ? &stackValue.toObject() : nullptr;
 }

@@ -233,12 +233,15 @@ treeherder:
         'compose-browser-toolbar': 'awesomebar-browser-toolbar'
         'compose-engine': 'compose-engine'
         'compose-tabstray': 'compose-tabstray'
+        'concept-accelerometer': 'concept-accelerometer'
+        'concept-integrity': 'concept-integrity'
         'concept-awesomebar': 'concept-awesomebar'
         'concept-base': 'concept-base'
         'compose-base': 'compose-base'
         'compose-cfr': 'compose-cfr'
         'concept-engine': 'concept-engine'
         'concept-fetch': 'concept-fetch'
+        'concept-llm': 'concept-llm'
         'concept-menu': 'concept-menu'
         'concept-push': 'concept-push'
         'concept-storage': 'concept-storage'
@@ -273,6 +276,7 @@ treeherder:
         'feature-screendetection': 'feature-screendetection'
         'feature-share': 'feature-share'
         'feature-sitepermissions': 'feature-sitepermissions'
+        'feature-summarize': 'feature-summarize'
         'feature-syncedtabs': 'feature-syncedtabs'
         'feature-tab-collections': 'feature-tab-collections'
         'feature-tabs': 'feature-tabs'
@@ -288,6 +292,10 @@ treeherder:
         'lib-dataprotect': 'lib-dataprotect'
         'lib-fetch-okhttp': 'lib-fetch-okhttp'
         'lib-jexl': 'lib-jexl'
+        'lib-llm-gemininano': 'lib-llm-gemininano'
+        'lib-llm-mlpa': 'lib-llm-mlpa'
+        'lib-integrity-googleplay': 'lib-integrity-googleplay'
+        'lib-shake': 'lib-shake'
         'lib-publicsuffixlist': 'lib-publicsuffixlist'
         'lib-push-firebase': 'lib-push-firebase'
         'lib-state': 'lib-state'
@@ -339,12 +347,15 @@ treeherder:
         'ui-colors': 'ui-colors'
         'ui-fonts': 'ui-fonts'
         'ui-icons': 'ui-icons'
+        'ui-richtext': 'ui-richtext'
         'ui-tabcounter': 'ui-tabcounter'
         'ui-widgets': 'ui-widgets'
 
         # These ones are too long to fit in 25 chars
+        'lib-accelerometer-sensorm': 'lib-accelerometer-sensormanager'
         'lib-fetch-httpurlconnecti': 'lib-fetch-httpurlconnection'
         'feature-webcompat-reporte': 'feature-webcompat-reporter'
+        'feature-protection-dashbo': 'feature-protection-dashboard'
 
         # Groups aren't generated off buildconfig.yml:
         'samples-browser': 'samples-browser'
@@ -381,6 +392,7 @@ try:
             - 'sm-arm-sim-linux32'
             - 'sm-arm64-sim-linux64'
             - 'sm-compacting-linux64'
+            - 'sm-concurrent-linux64'
             - 'sm-rootanalysis-linux64'
             - 'sm-package-linux64'
             - 'sm-tsan-linux64'
@@ -429,11 +441,6 @@ release-promotion:
                 - release-partner-attribution
                 - release-partner-attribution-beetmover
             target-tasks-method: promote_desktop
-        promote_firefox_rc:
-            product: firefox
-            is-rc: true
-            target-tasks-method: promote_desktop
-            partial-updates: true
         push_devedition:
             product: devedition
             target-tasks-method: push_desktop
@@ -451,11 +458,6 @@ release-promotion:
             product: firefox
             target-tasks-method: ship_desktop
             version-bump: true
-            partial-updates: true
-        ship_firefox_rc:
-            product: firefox
-            is-rc: true
-            target-tasks-method: ship_desktop
             partial-updates: true
         promote_android:
             product: firefox-android
@@ -479,38 +481,38 @@ partner-urls:
             firefox:
                 by-release-type:
                     default: null
-                    beta|release.*:
+                    beta|release:
                         by-release-level:
                             production: 'git@github.com:mozilla-partners/repack-manifests.git'
-                            staging: 'git@github.com:moz-releng-automation-stage/repack-manifests.git'
+                            staging: 'git@github.com:mozilla-partners/staging-repack-manifests.git'
                     esr.*:
                         by-release-level:
                             production: 'git@github.com:mozilla-partners/esr-repack-manifests.git'
-                            staging: 'git@github.com:moz-releng-automation-stage/esr-repack-manifests.git'
+                            staging: 'git@github.com:mozilla-partners/staging-esr-repack-manifests.git'
     release-partner-attribution:
         by-release-product:
             default: null
             firefox:
                 by-release-type:
                     default: null
-                    beta|release.*:
+                    beta|release:
                         by-release-level:
                             production: 'git@github.com:mozilla-partners/repack-manifests.git'
-                            staging: 'git@github.com:moz-releng-automation-stage/repack-manifests.git'
+                            staging: 'git@github.com:mozilla-partners/staging-repack-manifests.git'
                     esr.*:
                         by-release-level:
                             production: 'git@github.com:mozilla-partners/esr-repack-manifests.git'
-                            staging: 'git@github.com:moz-releng-automation-stage/esr-repack-manifests.git'
+                            staging: 'git@github.com:mozilla-partners/staging-esr-repack-manifests.git'
     release-eme-free-repack:
         by-release-product:
             default: null
             firefox:
                 by-release-type:
                     default: null
-                    beta|release.*:
+                    beta|release:
                         by-release-level:
                             production: 'git@github.com:mozilla-partners/mozilla-EME-free-manifest.git'
-                            staging: 'git@github.com:moz-releng-automation-stage/mozilla-EME-free-manifest.git'
+                            staging: 'git@github.com:mozilla-partners/staging-mozilla-EME-free-manifest.git'
 
 
 task-priority:
@@ -878,6 +880,14 @@ mac-signing:
                 - deep: false
                   runtime: true
                   force: true
+                  entitlements: public/build/security/security-module-helper.xml
+                  globs:
+                      - "/Contents/MacOS/security-module-helper.app"
+                  only-if-milestone-is-nightly: true
+
+                - deep: false
+                  runtime: true
+                  force: true
                   # In production builds, these files are signed without
                   # entitlements files, but with hardened runtime enabled. As a
                   # result, they have the default (more restrictive)
@@ -923,6 +933,14 @@ mac-signing:
                   entitlements: public/build/security/media-plugin-helper.xml
                   globs:
                       - "/Contents/MacOS/media-plugin-helper.app"
+
+                - deep: false
+                  runtime: true
+                  force: true
+                  entitlements: public/build/security/security-module-helper.xml
+                  globs:
+                      - "/Contents/MacOS/security-module-helper.app"
+                  only-if-milestone-is-nightly: true
 
                 - deep: false
                   runtime: true

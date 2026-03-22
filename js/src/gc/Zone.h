@@ -460,9 +460,12 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   // Number of allocations since the most recent minor GC for this thread.
   uint32_t tenuredAllocsSinceMinorGC_ = 0;
 
-  // Live weakmaps in this zone.
+  // Live weakmaps in this zone, used internally by the JS engine and used to
+  // implement JS WeakMap objects respectively.
   js::MainThreadOrGCTaskData<mozilla::LinkedList<js::WeakMapBase>>
-      gcWeakMapList_;
+      gcSystemWeakMaps_;
+  js::MainThreadOrGCTaskData<mozilla::LinkedList<js::WeakMapBase>>
+      gcUserWeakMaps_;
 
   // The set of compartments in this zone.
   using CompartmentVector =
@@ -524,6 +527,11 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadData<bool> gcPreserveCode_;
   js::MainThreadData<bool> keepPropMapTables_;
   js::MainThreadData<bool> wasCollected_;
+
+  // Cached information about weak maps in the zone, to speed up finding sweep
+  // group edges.
+  js::MainThreadOrGCTaskData<bool> gcUserWeakMapsMayHaveKeyDelegates_;
+  js::MainThreadOrGCTaskData<bool> gcWeakMapsMayHaveSymbolKeys_;
 
   js::MainThreadOrIonCompileData<JSObject**> preservedWrappers_;
   js::MainThreadOrIonCompileData<size_t> preservedWrappersCount_;
@@ -640,7 +648,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
     return lastDiscardedCodeTime_;
   }
 
-  void changeGCState(GCState prev, GCState next);
+  void changeGCState(js::gc::GCRuntime* gc, GCState prev, GCState next);
 
   bool isCollecting() const {
     MOZ_ASSERT(js::CurrentThreadCanAccessRuntime(runtimeFromMainThread()));
@@ -648,7 +656,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   }
 
   inline bool isCollectingFromAnyThread() const {
-    return needsIncrementalBarrier() || wasGCStarted();
+    return needsMarkingBarrier() || wasGCStarted();
   }
 
   GCState initialMarkingState() const;
@@ -669,13 +677,13 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   bool wasCollected() const { return wasCollected_; }
   void setWasCollected(bool v) { wasCollected_ = v; }
 
-  void setNeedsIncrementalBarrier(bool needs);
-  const BarrierState* addressOfNeedsIncrementalBarrier() const {
-    return &needsIncrementalBarrier_;
+  void setNeedsMarkingBarrier(js::gc::GCRuntime* gc, bool needs);
+  const BarrierState* addressOfNeedsMarkingBarrier() const {
+    return &needsMarkingBarrier_;
   }
 
-  static constexpr size_t offsetOfNeedsIncrementalBarrier() {
-    return offsetof(Zone, needsIncrementalBarrier_);
+  static constexpr size_t offsetOfNeedsMarkingBarrier() {
+    return offsetof(Zone, needsMarkingBarrier_);
   }
   static constexpr size_t offsetOfJitZone() { return offsetof(Zone, jitZone_); }
 
@@ -773,8 +781,26 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
     return res;
   }
 
-  mozilla::LinkedList<js::WeakMapBase>& gcWeakMapList() {
-    return gcWeakMapList_.ref();
+  mozilla::LinkedList<js::WeakMapBase>& gcSystemWeakMaps() {
+    return gcSystemWeakMaps_.ref();
+  }
+  mozilla::LinkedList<js::WeakMapBase>& gcUserWeakMaps() {
+    return gcUserWeakMaps_.ref();
+  }
+
+  bool gcUserWeakMapsMayHaveKeyDelegates() const {
+    return gcUserWeakMapsMayHaveKeyDelegates_;
+  }
+  void setGCWeakMapsMayHaveKeyDelegates() {
+    gcUserWeakMapsMayHaveKeyDelegates_ = true;
+  }
+  bool gcWeakMapsMayHaveSymbolKeys() const {
+    return gcWeakMapsMayHaveSymbolKeys_;
+  }
+  void setGCWeakMapsMayHaveSymbolKeys() { gcWeakMapsMayHaveSymbolKeys_ = true; }
+  void clearGCCachedWeakMapKeyData() {
+    gcUserWeakMapsMayHaveKeyDelegates_ = false;
+    gcWeakMapsMayHaveSymbolKeys_ = false;
   }
 
   CompartmentVector& compartments() { return compartments_.ref(); }
@@ -846,7 +872,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   }
 
   void beforeClearDelegate(JSObject* wrapper, JSObject* delegate) {
-    if (needsIncrementalBarrier()) {
+    if (needsMarkingBarrier()) {
       beforeClearDelegateInternal(wrapper, delegate);
     }
   }

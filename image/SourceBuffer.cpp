@@ -349,8 +349,10 @@ nsresult SourceBuffer::ExpectLength(size_t aExpectedLength) {
 }
 
 nsresult SourceBuffer::Append(const char* aData, size_t aLength) {
+  if (aLength == 0) {
+    return NS_OK;
+  }
   MOZ_ASSERT(aData, "Should have a buffer");
-  MOZ_ASSERT(aLength > 0, "Writing a zero-sized chunk");
 
   size_t currentChunkCapacity = 0;
   size_t currentChunkLength = 0;

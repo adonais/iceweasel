@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
-import androidx.core.net.toUri
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -19,7 +18,6 @@ import org.mozilla.fenix.helpers.TestAssetHelper.secondForeignWebPageAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
-import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
 import org.mozilla.fenix.ui.robots.translationsRobot
@@ -250,9 +248,6 @@ class TranslationsTest : TestSetup() {
             verifyTheNeverTranslateThisSiteOptionIsChecked(isChecked = false)
             clickNeverTranslateThisSiteOption()
             verifyTheNeverTranslateThisSiteOptionIsChecked(isChecked = true)
-            verifyAlwaysOfferToTranslateOptionIsEnabled(isEnabled = false)
-            verifyAlwaysTranslateOptionIsEnabled(isEnabled = false)
-            verifyTheNeverTranslateLanguageOptionIsEnabled(isEnabled = false)
         }.clickTranslationSettingsButton {
             clickNeverTranslateTheseSitesButton()
             verifyNeverTranslateThisSiteRemoveButton("${firstTestPage.url.scheme}://${firstTestPage.url.authority}")
@@ -264,6 +259,7 @@ class TranslationsTest : TestSetup() {
             clickConfirmDeleteNeverTranslateThisSiteDialog()
         }.goBackToTranslationSettingsSubMenu {
         }.goBackToTranslationOptionSheet {
+            verifyAlwaysOfferToTranslateOptionIsChecked(isChecked = true)
             verifyTheNeverTranslateThisSiteOptionIsChecked(isChecked = false)
         }
     }

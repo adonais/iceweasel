@@ -55,6 +55,9 @@ class CSSScale final : public CSSTransformComponent {
 
   // end of CSSScale Web IDL declarations
 
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
+
  protected:
   virtual ~CSSScale() = default;
 };

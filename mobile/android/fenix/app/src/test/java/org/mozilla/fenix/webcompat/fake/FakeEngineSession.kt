@@ -109,4 +109,6 @@ internal class FakeEngineSession(
     override fun exitFullScreenMode() {}
 
     override fun purgeHistory() {}
+
+    override fun processBackPressed(onResult: (Boolean) -> Unit) {}
 }

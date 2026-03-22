@@ -442,7 +442,7 @@ newtab-section-mangage-topics-followed-topics = O heuliañ
 newtab-section-mangage-topics-blocked-topics = Stanket
 newtab-custom-wallpaper-cta = Esaeañ
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-cancel = Nullañ
 newtab-report-submit = Kas

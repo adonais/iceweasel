@@ -12,13 +12,13 @@ import os
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.attributes import keymatch
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.treeherder import join_symbol, split_symbol
 from voluptuous import Any, Extra, Optional, Required
 
 from gecko_taskgraph.transforms.job import job_description_schema
 
-source_test_description_schema = Schema({
+source_test_description_schema = LegacySchema({
     # most fields are passed directly through as job fields, and are not
     # repeated here
     Extra: object,

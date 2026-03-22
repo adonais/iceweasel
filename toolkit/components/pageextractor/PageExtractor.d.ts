@@ -9,4 +9,34 @@ export type GetTextOptions = Partial<{
   sufficientLength: number;
   // Just include the viewport content.
   justViewport: boolean;
+  // Skip canvases smaller than this dimension
+  minCanvasSize: number;
+  // Max canvases to collect
+  maxCanvasCount: number;
+  // Enable canvas capture
+  includeCanvasSnapshots: boolean;
+  // Max width/height for captured canvases
+  maxCanvasDimension: number;
+  // WebP quality 0-1
+  canvasQuality: number;
 }>;
+
+export type GetDOMOptions = GetTextOptions;
+
+export type CanvasSnapshot = {
+  blob: Blob;
+  width: number;
+  height: number;
+};
+
+export type DOMExtractionResult = {
+  text: string;
+  links: string[];
+  canvases: HTMLCanvasElement[];
+};
+
+export type ExtractionResult = {
+  text: string;
+  links: string[];
+  canvasSnapshots: CanvasSnapshot[];
+};

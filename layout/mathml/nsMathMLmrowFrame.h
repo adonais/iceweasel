@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsMathMLmrowFrame_h___
-#define nsMathMLmrowFrame_h___
+#ifndef nsMathMLmrowFrame_h_
+#define nsMathMLmrowFrame_h_
 
 #include "nsMathMLContainerFrame.h"
 
@@ -52,4 +52,4 @@ class nsMathMLmrowFrame final : public nsMathMLContainerFrame {
   virtual ~nsMathMLmrowFrame();
 };
 
-#endif /* nsMathMLmrowFrame_h___ */
+#endif /* nsMathMLmrowFrame_h_ */

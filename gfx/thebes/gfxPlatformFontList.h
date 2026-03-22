@@ -252,6 +252,18 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   }
 
   FontVisibility GetFontVisibility(nsCString& aFont, bool& aFound);
+
+  // Given a test string and ordered font list, determine which fonts would
+  // render each character (CSS font-fallback simulation). Returns fonts used
+  // in order of first use.
+  // Assumes x_western langGroup and normal emoji variant.
+  // aMaxVisibility filters fonts: only fonts with visibility <= aMaxVisibility
+  // are considered. Default is User which includes Base, LangPack, and User.
+  void ListFontsUsedForString(
+      const nsAString& aText, const nsTArray<nsCString>& aFontList,
+      nsTArray<nsCString>& aFontsUsed,
+      FontVisibility aMaxVisibility = FontVisibility::User);
+
   bool GetMissingFonts(nsTArray<nsCString>& aMissingFonts);
   void GetMissingFonts(nsCString& aMissingFonts);
 

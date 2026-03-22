@@ -117,3 +117,6 @@ with Files("zucchini/**"):
 
 with Files("llama.cpp"):
     BUG_COMPONENT = ("Core", "Machine Learning: On Device")
+
+with Files("application-services/**"):
+    BUG_COMPONENT = ("Application Services", "General")

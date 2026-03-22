@@ -16,6 +16,9 @@ const { AddonManager, AddonManagerPrivate } = ChromeUtils.importESModule(
 const { TelemetryEnvironment } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryEnvironment.sys.mjs"
 );
+const { SearchService } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/search/SearchService.sys.mjs"
+);
 const { SearchTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/SearchTestUtils.sys.mjs"
 );
@@ -1145,7 +1148,7 @@ add_task(
     // Session restore triggers search service init asynchronously.
     // If this completes during shutdown, it throws an exception.
     // Await the search service init to make this deterministic (bug 1885310).
-    await Services.search.promiseInitialized;
+    await SearchService.promiseInitialized;
 
     environmentData = TelemetryEnvironment.currentEnvironment;
     TelemetryEnvironmentTesting.checkEnvironmentData(environmentData);

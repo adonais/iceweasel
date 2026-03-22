@@ -258,7 +258,6 @@
     <ID>UndocumentedPublicClass:CustomTabToolbarIntegration.kt$CustomTabToolbarIntegration : ToolbarIntegration</ID>
     <ID>UndocumentedPublicClass:CustomTabsIntegration.kt$CustomTabsIntegration : LifecycleAwareFeatureUserInteractionHandler</ID>
     <ID>UndocumentedPublicClass:CustomTabsService.kt$CustomTabsService : AbstractCustomTabsService</ID>
-    <ID>UndocumentedPublicClass:DebugFenixApplication.kt$DebugFenixApplication : FenixApplication</ID>
     <ID>UndocumentedPublicClass:DefaultBrowserPreference.kt$DefaultBrowserPreference : Preference</ID>
     <ID>UndocumentedPublicClass:DefaultSyncController.kt$SyncController</ID>
     <ID>UndocumentedPublicClass:DefaultSyncInteractor.kt$SyncInteractor</ID>
@@ -421,7 +420,6 @@
     <ID>UndocumentedPublicClass:ShareTabsAdapter.kt$ShareTabsAdapter$ShareTabViewHolder : ViewHolder</ID>
     <ID>UndocumentedPublicClass:ShareToAccountDevicesView.kt$ShareToAccountDevicesView</ID>
     <ID>UndocumentedPublicClass:ShareToAppsView.kt$ShareToAppsView</ID>
-    <ID>UndocumentedPublicClass:ShareViewModel.kt$ShareViewModel : AndroidViewModel</ID>
     <ID>UndocumentedPublicClass:SignOutFragment.kt$SignOutFragment : AppCompatDialogFragment</ID>
     <ID>UndocumentedPublicClass:SitePermissionsDetailsExceptionsFragment.kt$SitePermissionsDetailsExceptionsFragment : PreferenceFragmentCompat</ID>
     <ID>UndocumentedPublicClass:SitePermissionsExceptionsFragment.kt$SitePermissionsExceptionsFragment : FragmentOnClickListener</ID>
@@ -740,7 +738,6 @@
     <ID>UndocumentedPublicFunction:ShareToAppsView.kt$ShareToAppsInteractor$fun onShareToApp(appToShareTo: AppShareOption)</ID>
     <ID>UndocumentedPublicFunction:ShareToAppsView.kt$ShareToAppsView$fun setRecentShareTargets(recentTargets: List&lt;AppShareOption&gt;)</ID>
     <ID>UndocumentedPublicFunction:ShareToAppsView.kt$ShareToAppsView$fun setShareTargets(targets: List&lt;AppShareOption&gt;)</ID>
-    <ID>UndocumentedPublicFunction:ShareViewModel.kt$ShareViewModel$@VisibleForTesting @WorkerThread fun getIntentActivities(shareIntent: Intent, context: Context): List&lt;ResolveInfo&gt;?</ID>
     <ID>UndocumentedPublicFunction:SitePermissionsManageExceptionsPhoneFeatureFragment.kt$SitePermissionsManageExceptionsPhoneFeatureFragment$fun initAutoplay(sitePermissions: SitePermissions? = null)</ID>
     <ID>UndocumentedPublicFunction:SitePermissionsManageExceptionsPhoneFeatureFragment.kt$SitePermissionsManageExceptionsPhoneFeatureFragment$fun initNormalFeature()</ID>
     <ID>UndocumentedPublicFunction:SortingStrategy.kt$SortingStrategy$abstract operator fun invoke(logins: List&lt;SavedLogin&gt;): List&lt;SavedLogin&gt;</ID>

@@ -158,7 +158,7 @@ import org.mozilla.fenix.ext.directionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.tabstray.Page
-import org.mozilla.fenix.tabstray.TabsTrayAccessPoint
+import org.mozilla.fenix.tabstray.ui.AccessPoint
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.annotation.Config
 import mozilla.components.browser.toolbar.R as toolbarR
@@ -552,7 +552,7 @@ class BrowserToolbarMiddlewareTest {
 
         verify {
             navController.navigate(
-                NavGraphDirections.actionGlobalTabsTrayFragment(page = Page.NormalTabs),
+                NavGraphDirections.actionGlobalTabManagementFragment(page = Page.NormalTabs),
                 null,
             )
         }
@@ -580,10 +580,10 @@ class BrowserToolbarMiddlewareTest {
 
         verify {
             navController.navigate(
-                NavGraphDirections.actionGlobalTabsTrayFragment(
+                NavGraphDirections.actionGlobalTabManagementFragment(
                     enterMultiselect = false,
                     page = Page.PrivateTabs,
-                    accessPoint = TabsTrayAccessPoint.None,
+                    accessPoint = AccessPoint.None,
                 ),
                 null,
             )

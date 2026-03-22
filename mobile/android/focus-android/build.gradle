@@ -7,14 +7,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
     repositories {
-        gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
-            maven {
-                url = repository
-                if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
-                    allowInsecureProtocol = true
-                }
-            }
-        }
+        gradle.configureMavenRepositories(delegate)
     }
 
     dependencies {
@@ -29,10 +22,29 @@ buildscript {
 
 plugins {
     id "mozac.ConfigPlugin"
+    alias(libs.plugins.dependency.analysis)
     alias(libs.plugins.detekt)
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.ksp)
+}
+
+dependencyAnalysis {
+    structure {
+        bundle("leakcanary") {
+            includeGroup("com.squareup.leakcanary")
+        }
+        // Ignore Android KTX dependencies. See https://developer.android.com/kotlin/ktx#modules
+        //ignoreKtx(true)
+    }
+    issues {
+        all {
+            onAny {
+                // Fail the run if any issues are found (default = 'warn')
+                //severity('fail')
+            }
+        }
+    }
 }
 
 detekt {
@@ -55,6 +67,10 @@ detekt {
 }
 
 tasks.withType(Detekt).configureEach() {
+    // Custom detekt rules should be built before.
+    // See https://detekt.dev/docs/introduction/extensions#pitfalls
+    dependsOn(":components:tooling-detekt:assemble")
+
     autoCorrect = true
 
     exclude "**/test/**"
@@ -74,21 +90,6 @@ tasks.withType(DetektCreateBaselineTask).configureEach() {
 }
 
 allprojects {
-    repositories {
-        gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
-            maven {
-                url = repository
-                if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
-                    allowInsecureProtocol = true
-                }
-            }
-        }
-
-        maven {
-            url = "${gradle.mozconfig.topobjdir}/gradle/maven"
-        }
-    }
-
     ext {
         gleanVersion = libs.versions.glean.get()
     }
@@ -185,6 +186,8 @@ configurations {
 }
 
 dependencies {
+    detektPlugins project(':components:tooling-detekt')
+
     ktlint(libs.ktlint) {
         attributes {
             attribute(Bundling.BUNDLING_ATTRIBUTE, getObjects().named(Bundling, Bundling.EXTERNAL))

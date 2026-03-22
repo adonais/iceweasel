@@ -59,6 +59,7 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode.Private
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.UseCases
+import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
 import org.mozilla.fenix.components.menu.MenuAccessPoint
@@ -170,31 +171,20 @@ class BrowserToolbarMiddleware(
                         accesspoint = MenuAccessPoint.Home,
                     ),
                 )
+                removeMenuButtonHighlight()
                 next(action)
             }
 
             is TabCounterClicked -> {
-                if (settings.tabManagerEnhancementsEnabled) {
-                    navController.nav(
-                        R.id.homeFragment,
-                        NavGraphDirections.actionGlobalTabManagementFragment(
-                            page = when (browsingModeManager.mode) {
-                                Normal -> Page.NormalTabs
-                                Private -> Page.PrivateTabs
-                            },
-                        ),
-                    )
-                } else {
-                    navController.nav(
-                        R.id.homeFragment,
-                        NavGraphDirections.actionGlobalTabsTrayFragment(
-                            page = when (browsingModeManager.mode) {
-                                Normal -> Page.NormalTabs
-                                Private -> Page.PrivateTabs
-                            },
-                        ),
-                    )
-                }
+                navController.nav(
+                    R.id.homeFragment,
+                    NavGraphDirections.actionGlobalTabManagementFragment(
+                        page = when (browsingModeManager.mode) {
+                            Normal -> Page.NormalTabs
+                            Private -> Page.PrivateTabs
+                        },
+                    ),
+                )
                 next(action)
             }
             is AddNewTab -> {
@@ -437,6 +427,15 @@ class BrowserToolbarMiddleware(
                     updateEndBrowserActions(store)
                     updateNavigationActions(store)
                 }
+        }
+    }
+
+    private fun removeMenuButtonHighlight() {
+        val notification = SupportedMenuNotifications.NotDefaultBrowser
+        if (notification in appStore.state.supportedMenuNotifications) {
+            appStore.dispatch(
+                AppAction.MenuNotification.RemoveMenuNotification(notification),
+            )
         }
     }
 

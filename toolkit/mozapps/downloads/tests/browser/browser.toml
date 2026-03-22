@@ -17,7 +17,7 @@ skip-if = [
 ["browser_unknownContentType_delayedbutton.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1747285
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && fission && tsan", # Bug 1747285
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan && fission", # Bug 1747285
 ]
 
 ["browser_unknownContentType_dialog_layout.js"]

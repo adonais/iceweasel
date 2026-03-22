@@ -437,18 +437,19 @@ bool IProtocol::SetManagerAndRegister(IRefCountedProtocol* aManager,
   SetManager(aManager);
 
   mId = aId == kNullActorId ? mToplevel->NextId() : aId;
-  while (mToplevel->mActorMap.Contains(mId)) {
-    // The ID already existing is an error case, but we want to proceed with
-    // registration so that we can tear down the actor cleanly - generate a new
-    // ID for that case.
-    NS_WARNING("Actor already exists with the selected ID!");
-    mId = mToplevel->NextId();
-    success = false;
-  }
 
   RefPtr<ActorLifecycleProxy> proxy = ActorConnected();
-  mToplevel->mActorMap.InsertOrUpdate(mId, proxy);
   MOZ_ASSERT(proxy->Get() == this);
+
+  mToplevel->mActorMap.WithEntryHandle(mId, [&](auto entry) {
+    if (aId == kNullActorId) {
+      MOZ_RELEASE_ASSERT(!entry, "Entry must not exist for new actor ID");
+    } else {
+      MOZ_RELEASE_ASSERT(entry && !entry.Data(),
+                         "Entry must be a reservation for reserved actor ID");
+    }
+    entry.InsertOrUpdate(proxy);
+  });
 
   UntypedManagedContainer* container =
       aManager->GetManagedActors(GetProtocolId());
@@ -700,10 +701,37 @@ int64_t IToplevelProtocol::NextId() {
 }
 
 IProtocol* IToplevelProtocol::Lookup(ActorId aId) {
-  if (auto entry = mActorMap.Lookup(aId)) {
+  if (auto entry = mActorMap.Lookup(aId); entry && entry.Data()) {
     return entry.Data()->Get();
   }
   return nullptr;
+}
+
+bool IToplevelProtocol::TryReserve(ActorId aId) {
+  // The ID must be coming from the other side.
+  // This logic should check for the opposite sign as NextId().
+  if (mozilla::Abs(aId) >= MSG_ROUTING_CONTROL ||
+      (GetSide() == ChildSide && aId <= kNullActorId) ||
+      (GetSide() == ParentSide && aId >= kNullActorId)) {
+    return false;
+  }
+
+  // Ensure the entry isn't already in use, and then insert it into our map.
+  return mActorMap.WithEntryHandle(aId, [&](auto entry) {
+    if (entry) {
+      return false;
+    }
+    entry.Insert(nullptr);
+    return true;
+  });
+}
+
+void IToplevelProtocol::ClearReservation(ActorId aId) {
+  auto entry = mActorMap.Lookup(aId);
+  // Only remove if it's still a placeholder.
+  if (entry && !entry.Data()) {
+    entry.Remove();
+  }
 }
 
 Shmem IToplevelProtocol::CreateSharedMemory(size_t aSize, bool aUnsafe) {

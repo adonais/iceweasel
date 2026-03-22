@@ -68,6 +68,11 @@ class ObjectBase {
   JSObject* WrapObject(JSContext* cx, JS::Handle<JSObject*> givenProto) \
       override;
 
+// Declare cycle collection support in a normal WebGPU DOM class.
+//
+// This macro is not appropriate for classes that have base classes with their
+// own cycle collection machinery: those require an `_INHERITED` variant of the
+// macro. See `mozilla::webgpu::Device` for an example.
 #define GPU_DECL_CYCLE_COLLECTION(T)                    \
   NS_DECL_CYCLE_COLLECTION_NATIVE_WRAPPERCACHE_CLASS(T) \
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(T)
@@ -77,6 +82,15 @@ class ObjectBase {
     return dom::GPU##T##_Binding::Wrap(cx, this, givenProto);                \
   }
 
+// Implement cycle collection support for a normal WebGPU DOM class.
+//
+// This macro is not appropriate for classes that have base classes with their
+// own cycle collection machinery: those require an `_INHERITED` variant of the
+// macro. See `mozilla::webgpu::Device` for an example.
+//
+// This macro is not appropriate for classes that inherit from
+// `SupportsWeakPtr`: those require a `_WEAK_PTR` variant of the macro. See
+// `mozilla::webgpu::Device` for an example.
 #define GPU_IMPL_CYCLE_COLLECTION(T, ...) \
   NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(T, __VA_ARGS__)
 

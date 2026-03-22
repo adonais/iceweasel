@@ -130,6 +130,10 @@ class FakeSocketTransportProvider : public nsISocketTransport {
     MOZ_ASSERT(false);
     return NS_OK;
   }
+  NS_IMETHOD SetIsTRRConnection(bool isTRRConnection) override {
+    MOZ_ASSERT(false);
+    return NS_OK;
+  }
   NS_IMETHOD GetTlsFlags(uint32_t* aTlsFlags) override {
     MOZ_ASSERT(false);
     return NS_OK;
@@ -198,6 +202,10 @@ class FakeSocketTransportProvider : public nsISocketTransport {
     return NS_OK;
   }
   NS_IMETHOD GetStatus(nsresult* aStatus) override {
+    MOZ_ASSERT(false);
+    return NS_OK;
+  }
+  NS_IMETHOD GetIsTRRConnection(bool* aIsTRRConnection) override {
     MOZ_ASSERT(false);
     return NS_OK;
   }

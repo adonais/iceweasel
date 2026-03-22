@@ -54,20 +54,23 @@ async def test_data_uri(
     # Checked the events have the expected isBlocked flag set to false.
     assert_before_request_sent_event(
         before_request_sent_event,
-        is_blocked=False,
-        expected_request={"url": data_url},
+        expected_event={"isBlocked": False, "request": {"url": data_url}},
     )
     assert_response_event(
         response_started_event,
-        is_blocked=False,
-        expected_request={"url": data_url},
-        expected_response={"url": data_url},
+        expected_event={
+            "isBlocked": False,
+            "request": {"url": data_url},
+            "response": {"url": data_url},
+        },
     )
     assert_response_event(
         response_completed_event,
-        is_blocked=False,
-        expected_request={"url": data_url},
-        expected_response={"url": data_url},
+        expected_event={
+            "isBlocked": False,
+            "request": {"url": data_url},
+            "response": {"url": data_url},
+        },
     )
 
 
@@ -140,25 +143,25 @@ async def test_cached_resources(
     # isBlocked flag set to false.
     assert_before_request_sent_event(
         get_next_event_for_url(beforerequestsent_events, cached_link_css_url),
-        is_blocked=False,
+        expected_event={"isBlocked": False},
     )
     assert_before_request_sent_event(
         get_next_event_for_url(beforerequestsent_events, cached_image_url),
-        is_blocked=False,
+        expected_event={"isBlocked": False},
     )
     assert_response_event(
         get_next_event_for_url(responsestarted_events, cached_link_css_url),
-        is_blocked=False,
+        expected_event={"isBlocked": False},
     )
     assert_response_event(
         get_next_event_for_url(responsestarted_events, cached_image_url),
-        is_blocked=False,
+        expected_event={"isBlocked": False},
     )
     assert_response_event(
         get_next_event_for_url(responsecompleted_events, cached_link_css_url),
-        is_blocked=False,
+        expected_event={"isBlocked": False},
     )
     assert_response_event(
         get_next_event_for_url(responsecompleted_events, cached_image_url),
-        is_blocked=False,
+        expected_event={"isBlocked": False},
     )

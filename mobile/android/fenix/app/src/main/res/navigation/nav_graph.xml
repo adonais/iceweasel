@@ -173,11 +173,6 @@
         android:id="@+id/action_global_connectionDetailsDialogFragment"
         app:destination="@id/connectionPanelDialogFragment" />
     <action
-        android:id="@+id/action_global_tabsTrayFragment"
-        app:destination="@id/tabsTrayFragment"
-        app:popUpTo="@id/tabsTrayFragment"
-        app:popUpToInclusive="true" />
-    <action
         android:id="@+id/action_global_tabManagementFragment"
         app:destination="@id/tabManagementFragment" />
     <action
@@ -211,23 +206,6 @@
         app:destination="@id/installedAddonDetailsFragment" />
 
     <dialog
-        android:id="@+id/tabsTrayFragment"
-        android:name="org.mozilla.fenix.tabstray.TabsTrayFragment">
-        <argument
-            android:name="enterMultiselect"
-            android:defaultValue="false"
-            app:argType="boolean" />
-        <argument
-            android:name="page"
-            android:defaultValue="NormalTabs"
-            app:argType="org.mozilla.fenix.tabstray.Page" />
-        <argument
-            android:name="accessPoint"
-            android:defaultValue="None"
-            app:argType="org.mozilla.fenix.tabstray.TabsTrayAccessPoint" />
-    </dialog>
-
-    <dialog
         android:id="@+id/tabManagementFragment"
         android:name="org.mozilla.fenix.tabstray.ui.TabManagementFragment">
         <argument
@@ -241,7 +219,7 @@
         <argument
             android:name="accessPoint"
             android:defaultValue="None"
-            app:argType="org.mozilla.fenix.tabstray.TabsTrayAccessPoint" />
+            app:argType="org.mozilla.fenix.tabstray.ui.AccessPoint" />
     </dialog>
 
     <fragment
@@ -520,6 +498,11 @@
     </fragment>
 
     <fragment
+        android:id="@+id/emailMasksSettingsFragment"
+        android:name="org.mozilla.fenix.settings.emailmasks.EmailMasksSettingsFragment"
+        android:label="@string/preferences_email_masks" />
+
+    <fragment
         android:id="@+id/savedLoginsAuthFragment"
         android:name="org.mozilla.fenix.settings.logins.fragment.SavedLoginsAuthFragment"
         android:label="@string/preferences_passwords_logins_and_passwords_2">
@@ -604,6 +587,13 @@
         <action
             android:id="@+id/action_settingsFragment_to_savedLoginsAuthFragment"
             app:destination="@id/savedLoginsAuthFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/slide_out_left"
+            app:popEnterAnim="@anim/slide_in_left"
+            app:popExitAnim="@anim/slide_out_right" />
+        <action
+            android:id="@+id/action_settingsFragment_to_emailMasksSettingsFragment"
+            app:destination="@id/emailMasksSettingsFragment"
             app:enterAnim="@anim/slide_in_right"
             app:exitAnim="@anim/slide_out_left"
             app:popEnterAnim="@anim/slide_in_left"
@@ -977,13 +967,6 @@
         android:id="@+id/secretSettingsPreference"
         android:name="org.mozilla.fenix.settings.SecretSettingsFragment"
         android:label="@string/preferences_debug_settings">
-        <action
-            android:id="@+id/action_secretSettingsFragment_to_sponsoredStoriesSettings"
-            app:destination="@id/sponsoredStoriesSettings"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/slide_out_left"
-            app:popEnterAnim="@anim/slide_in_left"
-            app:popExitAnim="@anim/slide_out_right" />
     </fragment>
     <fragment
         android:id="@+id/secretInfoSettingsFragment"
@@ -1024,16 +1007,6 @@
         android:id="@+id/httpsOnlyFragment"
         android:name="org.mozilla.fenix.settings.HttpsOnlyFragment"
         android:label="@string/preferences_https_only_title" />
-    <fragment
-        android:id="@+id/sponsoredStoriesSettings"
-        android:name="org.mozilla.fenix.settings.SponsoredStoriesSettingsFragment"
-        android:label="@string/preferences_debug_settings_custom_sponsored_stories_parameters" >
-        <argument
-            android:name="preference_to_scroll_to"
-            android:defaultValue="@null"
-            app:argType="string"
-            app:nullable="true" />
-    </fragment>
     <fragment
         android:id="@+id/trackingProtectionFragment"
         android:name="org.mozilla.fenix.settings.TrackingProtectionFragment">
@@ -1637,57 +1610,9 @@
             android:name="org.mozilla.fenix.settings.logins.fragment.SavedLoginsFragment"
             tools:layout="@layout/fragment_saved_logins">
             <action
-                android:id="@+id/action_savedLoginsFragment_to_loginDetailFragment"
-                app:destination="@id/loginDetailFragment" />
-            <action
-                android:id="@+id/action_savedLoginsFragment_to_addLoginFragment"
-                app:destination="@id/addLoginFragment"
-                app:popUpTo="@id/addLoginFragment"
-                app:popUpToInclusive="true" />
-            <action
                 android:id="@+id/action_savedLoginsFragment_to_browserFragment"
                 app:destination="@id/browserFragment"
                 app:popUpTo="@id/settingsFragment"
-                app:popUpToInclusive="true" />
-        </fragment>
-        <fragment
-            android:id="@+id/addLoginFragment"
-            android:name="org.mozilla.fenix.settings.logins.fragment.AddLoginFragment"
-            android:label="@string/add_login_2"
-            tools:layout="@layout/fragment_add_login">
-            <action
-                android:id="@+id/action_addLoginFragment_to_loginDetailFragment"
-                app:destination="@id/loginDetailFragment"
-                app:popUpTo="@id/savedLoginsFragment"
-                app:popUpToInclusive="false" />
-        </fragment>
-        <fragment
-            android:id="@+id/loginDetailFragment"
-            android:name="org.mozilla.fenix.settings.logins.fragment.LoginDetailFragment"
-            tools:layout="@layout/fragment_login_detail">
-            <argument
-                android:name="savedLoginId"
-                app:argType="string"
-                app:nullable="false" />
-            <action
-                android:id="@+id/action_loginDetailFragment_to_editLoginFragment"
-                app:destination="@id/editLoginFragment"
-                app:popUpTo="@id/editLoginFragment"
-                app:popUpToInclusive="true" />
-        </fragment>
-        <fragment
-            android:id="@+id/editLoginFragment"
-            android:name="org.mozilla.fenix.settings.logins.fragment.EditLoginFragment"
-            android:label="@string/edit_2"
-            tools:layout="@layout/fragment_edit_login">
-            <argument
-                android:name="savedLoginItem"
-                app:argType="org.mozilla.fenix.settings.logins.SavedLogin"
-                app:nullable="false" />
-            <action
-                android:id="@+id/action_editLoginFragment_to_loginDetailFragment"
-                app:destination="@id/loginDetailFragment"
-                app:popUpTo="@id/loginDetailFragment"
                 app:popUpToInclusive="true" />
         </fragment>
     </navigation>
@@ -1703,6 +1628,10 @@
             android:id="@+id/action_translationsDialogFragment_to_translationSettingsFragment"
             app:destination="@id/translations_settings_graph" />
     </dialog>
+
+    <dialog
+        android:id="@+id/summarizationFragment"
+        android:name="org.mozilla.fenix.summarization.SummarizationFragment" />
 
     <navigation
         android:id="@+id/translations_settings_graph"
@@ -1820,6 +1749,9 @@
             <action
                 android:id="@+id/action_menuDialogFragment_to_translationsDialogFragment"
                 app:destination="@id/translationsDialogFragment" />
+            <action
+                android:id="@+id/action_menuDialogFragment_to_summarizationFragment"
+                app:destination="@id/summarizationFragment" />
             <action
                 android:id="@+id/action_menuDialogFragment_to_createShortcutFragment"
                 app:destination="@id/createShortcutFragment" />

@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __mozilla_ProcInfo_h
-#define __mozilla_ProcInfo_h
+#ifndef _mozilla_ProcInfo_h
+#define _mozilla_ProcInfo_h
 
 #include <base/process.h>
 #include <stdint.h>

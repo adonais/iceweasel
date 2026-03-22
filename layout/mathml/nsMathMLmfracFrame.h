@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsMathMLmfracFrame_h___
-#define nsMathMLmfracFrame_h___
+#ifndef nsMathMLmfracFrame_h_
+#define nsMathMLmfracFrame_h_
 
 #include "nsMathMLContainerFrame.h"
 
@@ -103,4 +103,4 @@ class nsMathMLmfracFrame final : public nsMathMLContainerFrame {
   nscoord mLineThickness;
 };
 
-#endif /* nsMathMLmfracFrame_h___ */
+#endif /* nsMathMLmfracFrame_h_ */

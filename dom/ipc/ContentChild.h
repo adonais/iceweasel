@@ -69,7 +69,6 @@ class SharedMap;
 }
 
 class ConsoleListener;
-class ClonedMessageData;
 class BrowserChild;
 class TabContext;
 enum class CallerType : uint32_t;
@@ -78,7 +77,6 @@ class ContentChild final : public PContentChild,
                            public nsIDOMProcessChild,
                            public mozilla::ipc::IShmemAllocator,
                            public ProcessActor {
-  using ClonedMessageData = mozilla::dom::ClonedMessageData;
   using FileDescriptor = mozilla::ipc::FileDescriptor;
 
   friend class PContentChild;
@@ -116,7 +114,7 @@ class ContentChild final : public PContentChild,
             const char* aParentBuildID, bool aIsForBrowser);
 
   void InitXPCOM(XPCOMInitData&& aXPCOMInit,
-                 const mozilla::dom::ipc::StructuredCloneData& aInitialData,
+                 NotNull<StructuredCloneData*> aInitialData,
                  bool aIsReadyForBackgroundProcessing);
 
   void InitSharedUASheets(
@@ -297,7 +295,7 @@ class ContentChild final : public PContentChild,
   mozilla::ipc::IPCResult RecvLoadProcessScript(const nsString& aURL);
 
   mozilla::ipc::IPCResult RecvAsyncMessage(const nsString& aMsg,
-                                           const ClonedMessageData& aData);
+                                           NotNull<StructuredCloneData*> aData);
 
   mozilla::ipc::IPCResult RecvRegisterStringBundles(
       nsTArray<StringBundleDescriptor>&& stringBundles);
@@ -342,7 +340,12 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvRemoveAllPermissions();
 
-  mozilla::ipc::IPCResult RecvFlushMemory(const nsString& reason);
+ private:
+  void NotifyMemoryPressure(const char* aTopic, const char16_t* aReason);
+
+ public:
+  mozilla::ipc::IPCResult RecvMemoryPressure(const nsString& reason);
+  mozilla::ipc::IPCResult RecvMemoryPressureStop();
 
   mozilla::ipc::IPCResult RecvActivateA11y(uint64_t aCacheDomains);
   mozilla::ipc::IPCResult RecvShutdownA11y();
@@ -495,6 +498,7 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvDecodeImage(NotNull<nsIURI*> aURI,
                                           const ImageIntSize& aSize,
+                                          const ColorScheme& aColoScheme,
                                           DecodeImageResolver&& aResolver);
 
 #if defined(XP_WIN)
@@ -504,8 +508,7 @@ class ContentChild final : public PContentChild,
 #endif  // defined(XP_WIN)
 
   mozilla::ipc::IPCResult RecvSetXPCOMProcessAttributes(
-      XPCOMInitData&& aXPCOMInit,
-      const UniquePtr<StructuredCloneData>& aInitialData,
+      XPCOMInitData&& aXPCOMInit, NotNull<StructuredCloneData*> aInitialData,
       FullLookAndFeel&& aLookAndFeelData, SystemFontList&& aFontList,
       Maybe<mozilla::ipc::ReadOnlySharedMemoryHandle>&& aSharedUASheetHandle,
       const uintptr_t& aSharedUASheetAddress,
@@ -708,7 +711,7 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvWindowPostMessage(
       const MaybeDiscarded<BrowsingContext>& aContext,
-      const ClonedOrErrorMessageData& aMessage, const PostMessageData& aData);
+      StructuredCloneData* aMessage, const PostMessageData& aData);
 
   mozilla::ipc::IPCResult RecvCommitBrowsingContextTransaction(
       const MaybeDiscarded<BrowsingContext>& aContext,
@@ -766,9 +769,9 @@ class ContentChild final : public PContentChild,
       const MaybeDiscarded<BrowsingContext>& aContext,
       const uint32_t aStopFlags);
 
-  mozilla::ipc::IPCResult RecvRawMessage(
-      const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
-      const UniquePtr<ClonedMessageData>& aStack);
+  mozilla::ipc::IPCResult RecvRawMessage(const JSActorMessageMeta& aMeta,
+                                         JSIPCValue&& aData,
+                                         StructuredCloneData* aStack);
 
   already_AddRefed<JSActor> InitJSActor(JS::Handle<JSObject*> aMaybeActor,
                                         const nsACString& aName,

@@ -378,8 +378,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s ᱫᱚ ᱵᱚᱦᱟᱞ ᱵᱟᱭ ᱜᱟᱱᱚᱜᱼᱟ ᱪᱮᱫᱟᱜ ᱥᱮ ᱱᱚᱶᱟ ᱫᱚ ᱮᱱᱴᱟᱨᱯᱨᱟᱭᱤᱥ ᱯᱚᱞᱤᱥᱤ ᱵᱮᱵᱷᱟᱨ ᱠᱟᱛᱮ ᱢᱤᱫ ᱜᱟᱶᱛᱟ ᱦᱚᱛᱮᱛᱮ ᱵᱚᱦᱟᱞ ᱠᱟᱱᱟ, ᱡᱟᱦᱟᱸ ᱫᱚ ᱱᱚᱶᱟ ᱯᱞᱮᱴᱯᱷᱚᱨᱢ ᱨᱮ ᱵᱟᱝ ᱥᱚᱦᱚᱫ ᱢᱮᱱᱟᱜᱼᱟ ᱾</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s ᱫᱚ Mozilla ᱨᱮᱭᱟᱜ ᱯᱚᱞᱤᱥ ᱵᱟᱝ ᱢᱟᱱᱟᱶ ᱮᱫᱟᱭ ᱟᱨ %2$s ᱨᱮ ᱚᱱᱟᱛᱮ ᱵᱟᱝ ᱵᱚᱦᱟᱞ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">%1$s ᱫᱚ ᱵᱟᱱᱫᱷᱟᱣ ᱟᱠᱟᱱᱟ ᱟᱨ %2$s ᱨᱮ ᱵᱟᱝ ᱤᱱᱥᱴᱚᱞ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">%1$s ᱮᱢ ᱨᱮ ᱦᱩᱰᱟᱹᱜ</string>
@@ -426,11 +424,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">ᱱᱚᱶᱟ ᱮᱠᱥᱴᱮᱱᱥᱚᱱ ᱫᱚ Mozilla ᱨᱮᱭᱟᱜ ᱱᱤᱛᱤ ᱵᱟᱝ ᱢᱟᱱᱟᱣ ᱞᱟᱹᱜᱤᱫ ᱟᱨ ᱵᱚᱱᱫᱚ ᱟᱠᱟᱱᱟ ᱾</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">ᱱᱚᱶᱟ ᱯᱟᱥᱱᱟᱣ Mozilla’s ᱨᱮᱭᱟᱜ ᱱᱤᱛᱤ ᱵᱟᱭᱢᱟᱱᱟᱣ ᱮᱫᱟᱭ ᱚᱱᱟᱛᱮ ᱟᱠᱚᱴ ᱛᱷᱟᱲ ᱠᱟᱱᱟ ᱾ ᱟᱢ ᱱᱚᱶᱟ ᱮᱢᱪᱷᱚ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ, ᱢᱮᱱᱠᱷᱟᱱ ᱱᱚᱶᱟ ᱫᱚ ᱡᱚᱠᱷᱤᱢ ᱫᱷᱟᱨᱟ ᱦᱩᱭ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">ᱱᱚᱣᱟ ᱯᱟᱥᱱᱟᱣ ᱫᱚ ᱟᱠᱚᱴ ᱛᱷᱟᱲ ᱟᱨ ᱵᱚᱸᱫ ᱠᱟᱱᱟ ᱾ ᱟᱢ ᱱᱚᱶᱟ ᱮᱢᱪᱷᱚ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ, ᱢᱮᱱᱠᱷᱟᱱ ᱱᱚᱶᱟ ᱫᱚ ᱡᱚᱠᱷᱤᱢ ᱫᱷᱟᱨᱟ ᱦᱩᱭ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">ᱱᱚᱶᱟ ᱯᱟᱥᱱᱟᱣ ᱫᱚ Mozilla’s ᱦᱟᱜ ᱱᱤᱛᱤ ᱵᱟᱝᱵᱟᱛᱟᱣ ᱮᱫᱟᱭ ᱾ ᱱᱚᱶᱟ ᱵᱮᱵᱷᱟᱨ ᱫᱚ ᱡᱚᱠᱷᱤᱢ ᱫᱷᱟᱨᱟ ᱦᱩᱭ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">ᱱᱚᱣᱟ ᱯᱟᱥᱱᱟᱣ ᱫᱚ ᱵᱟᱱᱫᱷᱟᱣ ᱟᱠᱟᱱᱟ ᱾ ᱱᱚᱣᱟ ᱵᱮᱵᱷᱟᱨ ᱫᱚ ᱨᱤᱥᱠᱤ ᱦᱩᱭ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->

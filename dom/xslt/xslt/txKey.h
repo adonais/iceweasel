@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef txKey_h__
-#define txKey_h__
+#ifndef txKey_h_
+#define txKey_h_
 
 #include "nsTHashtable.h"
 #include "txExpandedNameMap.h"
@@ -183,4 +183,4 @@ class txKeyHash {
   RefPtr<txNodeSet> mEmptyNodeSet;
 };
 
-#endif  // txKey_h__
+#endif  // txKey_h_

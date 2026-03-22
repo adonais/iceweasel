@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _SPECIALSYSTEMDIRECTORY_H_
-#define _SPECIALSYSTEMDIRECTORY_H_
+#ifndef SPECIALSYSTEMDIRECTORY_H_
+#define SPECIALSYSTEMDIRECTORY_H_
 
 #include "nsCOMArray.h"
 #include "nscore.h"

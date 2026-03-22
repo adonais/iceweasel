@@ -1547,8 +1547,6 @@ toolkit/components/translations/bergamot-translator/thirdparty
 toolkit/components/translations/bergamot-translator/bergamot-translator.js
 toolkit/components/url-classifier/chromium/
 toolkit/components/utils/mozjexl.sys.mjs
-toolkit/components/viaduct/fetch_msg_types.pb.cc
-toolkit/components/viaduct/fetch_msg_types.pb.h
 toolkit/content/vendor/react/
 toolkit/content/widgets/vendor/
 toolkit/crashreporter/breakpad-client/
@@ -1569,7 +1567,6 @@ rlbox/rlbox_sandbox.hpp
 ##############################################################################
 
 .gradle/
-build/vs/vs2022.yaml
 browser/components/aboutwelcome/content/aboutwelcome.bundle.js
 browser/components/aboutwelcome/logs/
 browser/components/aboutwelcome/node_modules/
@@ -1666,10 +1663,13 @@ mobile/android/android-components/components/compose/browser-toolbar/lint-baseli
 mobile/android/android-components/components/compose/cfr/lint-baseline.xml
 mobile/android/android-components/components/compose/engine/lint-baseline.xml
 mobile/android/android-components/components/compose/tabstray/lint-baseline.xml
+mobile/android/android-components/components/concept/accelerometer/lint-baseline.xml
 mobile/android/android-components/components/concept/awesomebar/lint-baseline.xml
 mobile/android/android-components/components/concept/base/lint-baseline.xml
 mobile/android/android-components/components/concept/engine/lint-baseline.xml
 mobile/android/android-components/components/concept/fetch/lint-baseline.xml
+mobile/android/android-components/components/concept/integrity/lint-baseline.xml
+mobile/android/android-components/components/concept/llm/lint-baseline.xml
 mobile/android/android-components/components/concept/menu/lint-baseline.xml
 mobile/android/android-components/components/concept/push/lint-baseline.xml
 mobile/android/android-components/components/concept/storage/lint-baseline.xml
@@ -1693,6 +1693,7 @@ mobile/android/android-components/components/feature/logins/lint-baseline.xml
 mobile/android/android-components/components/feature/media/lint-baseline.xml
 mobile/android/android-components/components/feature/privatemode/lint-baseline.xml
 mobile/android/android-components/components/feature/prompts/lint-baseline.xml
+mobile/android/android-components/components/feature/protection-dashboard/lint-baseline.xml
 mobile/android/android-components/components/feature/push/lint-baseline.xml
 mobile/android/android-components/components/feature/pwa/lint-baseline.xml
 mobile/android/android-components/components/feature/qr/lint-baseline.xml
@@ -1704,6 +1705,7 @@ mobile/android/android-components/components/feature/serviceworker/lint-baseline
 mobile/android/android-components/components/feature/session/lint-baseline.xml
 mobile/android/android-components/components/feature/share/lint-baseline.xml
 mobile/android/android-components/components/feature/sitepermissions/lint-baseline.xml
+mobile/android/android-components/components/feature/summarize/lint-baseline.xml
 mobile/android/android-components/components/feature/syncedtabs/lint-baseline.xml
 mobile/android/android-components/components/feature/tab-collections/lint-baseline.xml
 mobile/android/android-components/components/feature/tabs/lint-baseline.xml
@@ -1713,15 +1715,20 @@ mobile/android/android-components/components/feature/webauthn/lint-baseline.xml
 mobile/android/android-components/components/feature/webcompat-reporter/lint-baseline.xml
 mobile/android/android-components/components/feature/webcompat/lint-baseline.xml
 mobile/android/android-components/components/feature/webnotifications/lint-baseline.xml
+mobile/android/android-components/components/lib/accelerometer-sensormanager/lint-baseline.xml
 mobile/android/android-components/components/lib/auth/lint-baseline.xml
 mobile/android/android-components/components/lib/crash-sentry/lint-baseline.xml
 mobile/android/android-components/components/lib/crash/lint-baseline.xml
 mobile/android/android-components/components/lib/dataprotect/lint-baseline.xml
 mobile/android/android-components/components/lib/fetch-httpurlconnection/lint-baseline.xml
 mobile/android/android-components/components/lib/fetch-okhttp/lint-baseline.xml
+mobile/android/android-components/components/lib/integrity-googleplay/lint-baseline.xml
 mobile/android/android-components/components/lib/jexl/lint-baseline.xml
+mobile/android/android-components/components/lib/llm-gemininano/lint-baseline.xml
+mobile/android/android-components/components/lib/llm-mlpa/lint-baseline.xml
 mobile/android/android-components/components/lib/publicsuffixlist/lint-baseline.xml
 mobile/android/android-components/components/lib/push-firebase/lint-baseline.xml
+mobile/android/android-components/components/lib/shake/lint-baseline.xml
 mobile/android/android-components/components/lib/state/lint-baseline.xml
 mobile/android/android-components/components/service/digitalassetlinks/lint-baseline.xml
 mobile/android/android-components/components/service/firefox-accounts/lint-baseline.xml
@@ -1754,6 +1761,7 @@ mobile/android/android-components/components/ui/autocomplete/lint-baseline.xml
 mobile/android/android-components/components/ui/colors/lint-baseline.xml
 mobile/android/android-components/components/ui/fonts/lint-baseline.xml
 mobile/android/android-components/components/ui/icons/lint-baseline.xml
+mobile/android/android-components/components/ui/richtext/lint-baseline.xml
 mobile/android/android-components/components/ui/tabcounter/lint-baseline.xml
 mobile/android/android-components/components/ui/widgets/lint-baseline.xml
 mobile/android/android-components/samples/browser/lint-baseline.xml
@@ -1761,6 +1769,7 @@ mobile/android/android-components/samples/compose-browser/lint-baseline.xml
 mobile/android/android-components/samples/crash/lint-baseline.xml
 mobile/android/android-components/samples/dataprotect/lint-baseline.xml
 mobile/android/android-components/samples/firefox-accounts/lint-baseline.xml
+mobile/android/android-components/samples/firefox-relay/lint-baseline.xml
 mobile/android/android-components/samples/glean/lint-baseline.xml
 mobile/android/android-components/samples/glean/samples-glean-library/lint-baseline.xml
 mobile/android/android-components/samples/sync-logins/lint-baseline.xml

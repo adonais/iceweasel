@@ -6,8 +6,8 @@
 
 /* State that is passed down to BindToTree. */
 
-#ifndef mozilla_dom_BindContext_h__
-#define mozilla_dom_BindContext_h__
+#ifndef mozilla_dom_BindContext_h_
+#define mozilla_dom_BindContext_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/Element.h"

@@ -243,6 +243,12 @@ add_task(async function test_newtab_highlights_enabled_pref() {
         "After about:newtab finishes loading"
       );
       sendTriggerMessageSpy.resetHistory();
+
+      await BrowserTestUtils.waitForCondition(
+        () => !!Glean.newtab.opened.testGetValue("newtab"),
+        "We expect the newtab open to be recorded"
+      );
+
       BrowserTestUtils.removeTab(tab);
     },
     5000 /* timeout to send the ping */

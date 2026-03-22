@@ -96,10 +96,12 @@
 #   - attribute not specified (default): no code generated
 #   - argument list: argument names and their full type signature
 #
-# num_temps
-# ========
+# num_temps, num_temp64s, and num_temp_boxes
+# ==========================================
 # Specifies the number of temporary virtual registers, LDefinitions, used by
-# this LIR op.
+# this LIR op. The temp can be either a single LDefinition, a LInt64Definition,
+# or a LBoxDefinition depending on the variant used.
+#
 #   - attribute not specified (default): number of temps is set to 0
 #   - number of LDefinition temps: sets number of temps max 15
 #
@@ -321,6 +323,12 @@
     ref: WordSized
   result_type: WordSized
   num_temps: 1
+
+- name: WasmRefCastInfallible
+  mir_op: true
+  operands:
+    ref: WordSized
+  result_type: WordSized
 
 - name: WasmNewStructObject
   mir_op: true

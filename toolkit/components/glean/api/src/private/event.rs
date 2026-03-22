@@ -34,12 +34,7 @@ impl gecko_profiler::ProfilerMarker for EventMetricMarker {
         let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
         schema.set_tooltip_label("{marker.data.id}");
         schema.set_table_label("{marker.data.id}: {marker.data.extra}");
-        schema.add_key_label_format_with_flags(
-            "id",
-            "Metric",
-            Format::UniqueString,
-            PayloadFlags::Searchable,
-        );
+        schema.add_key_label_format("id", "Metric", Format::UniqueString);
         schema.add_key_label_format("extra", "Extra", Format::String);
         schema
     }

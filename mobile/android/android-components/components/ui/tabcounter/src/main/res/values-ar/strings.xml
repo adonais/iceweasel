@@ -29,7 +29,7 @@
   <!-- Browser menu button to close tab. Closes the current session when pressed. -->
   <string name="mozac_close_tab">إغلاق التبويب</string>
   <!-- Menu option to duplicate the current tab -->
-  <string name="mozac_ui_tabcounter_duplicate_tab">تكرير التبويب</string>
+  <string name="mozac_ui_tabcounter_duplicate_tab">تبويب مُكرر</string>
   <!-- Content description of the tab counter toolbar button -->
   <string name="mozac_tab_counter_content_description">زر ”عدد التبويبات“ في شريط الأدوات.</string>
 </resources>

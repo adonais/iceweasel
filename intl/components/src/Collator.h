@@ -75,6 +75,9 @@ class Collator final {
   int32_t CompareStrings(Span<const char16_t> aSource,
                          Span<const char16_t> aTarget) const;
 
+  Result<int32_t, ICUError> CompareStrings(Span<const char> aSource,
+                                           Span<const char> aTarget) const;
+
   int32_t CompareSortKeys(Span<const uint8_t> aKey1,
                           Span<const uint8_t> aKey2) const;
 

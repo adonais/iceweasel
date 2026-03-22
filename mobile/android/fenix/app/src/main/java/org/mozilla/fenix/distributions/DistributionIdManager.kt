@@ -67,7 +67,7 @@ class DistributionIdManager(
      *
      * @return the distribution ID if one exists.
      */
-    fun getDistributionId(): String {
+    suspend fun getDistributionId(): String {
         distribution?.let { return it.id }
 
         val provider = distributionProviderChecker.queryProvider()
@@ -103,6 +103,7 @@ class DistributionIdManager(
                 setDistribution(Distribution.VIVO_001)
                 Metrics.distributionId.set(Distribution.VIVO_001.id)
             }
+
             utmParams.campaign.contains(Distribution.XIAOMI_001.id) -> {
                 setDistribution(Distribution.XIAOMI_001)
                 Metrics.distributionId.set(Distribution.XIAOMI_001.id)
@@ -115,7 +116,7 @@ class DistributionIdManager(
      *
      * @return true if the marketing consent screen can be skipped during onboarding
      */
-    fun shouldSkipMarketingConsentScreen(): Boolean {
+    suspend fun shouldSkipMarketingConsentScreen(): Boolean {
         val id = Distribution.fromId(getDistributionId())
 
         return when (id) {
@@ -125,7 +126,7 @@ class DistributionIdManager(
             Distribution.DT_002 -> true
             Distribution.DT_003 -> true
             Distribution.AURA_001 -> false
-            Distribution.XIAOMI_001 -> false
+            Distribution.XIAOMI_001 -> true
         }
     }
 
@@ -134,7 +135,7 @@ class DistributionIdManager(
      *
      * @return true if the distribution is part of a distribution deal
      */
-    fun isPartnershipDistribution(): Boolean {
+    suspend fun isPartnershipDistribution(): Boolean {
         val id = Distribution.fromId(getDistributionId())
 
         return when (id) {
@@ -153,7 +154,7 @@ class DistributionIdManager(
      * current distribution is one that should skip the marketing data sharing
      * consent screen.
      */
-    fun startAdjustIfSkippingConsentScreen() {
+    suspend fun startAdjustIfSkippingConsentScreen() {
         if (shouldSkipMarketingConsentScreen()) {
             distributionSettings.setMarketingTelemetryPreferences()
             metricController.start(MetricServiceType.Marketing)
@@ -161,7 +162,8 @@ class DistributionIdManager(
     }
 
     private fun isDeviceVivo(): Boolean {
-        return Build.MANUFACTURER?.lowercase(Locale.getDefault())?.contains(VIVO_MANUFACTURER) ?: false
+        return Build.MANUFACTURER?.lowercase(Locale.getDefault())?.contains(VIVO_MANUFACTURER)
+            ?: false
     }
 
     private fun isProviderDigitalTurbine(provider: String?): Boolean = provider == DT_PROVIDER
@@ -226,7 +228,7 @@ private fun isDtUsaInstalled(packageManager: PackageManagerWrapper): Boolean {
     return packages.any {
         val packageName = it.packageName.lowercase()
         packageName == DT_VERIZON_PACKAGE ||
-            packageName == DT_CRICKET_PACKAGE ||
-            packageName == DT_TRACFONE_PACKAGE
+                packageName == DT_CRICKET_PACKAGE ||
+                packageName == DT_TRACFONE_PACKAGE
     }
 }

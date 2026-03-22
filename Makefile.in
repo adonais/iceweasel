@@ -202,7 +202,7 @@ ifdef JS_STANDALONE
 check-%:
 	$(MAKE) -C js/src $@
 
-source-package install:
+install:
 	$(MAKE) -C js/src $@
 
 # Every export rule depends on config/export, but the rule for config/export

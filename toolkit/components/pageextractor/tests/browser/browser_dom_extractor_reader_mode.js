@@ -33,13 +33,13 @@ add_task(async function test_dom_extractor_reader_mode() {
   const text = `${title} ${article}`;
 
   is(
-    normalizeWhitespace(await getPageExtractor().getText()),
+    normalizeWhitespace((await getPageExtractor().getText()).text),
     text,
     "Normal page content supports getText"
   );
 
   is(
-    normalizeWhitespace(await getPageExtractor().getReaderModeContent()),
+    normalizeWhitespace((await getPageExtractor().getReaderModeContent()).text),
     text,
     "Normal page content supports getReaderModeContent"
   );
@@ -47,13 +47,13 @@ add_task(async function test_dom_extractor_reader_mode() {
   await toggleReaderMode();
 
   is(
-    normalizeWhitespace(await getPageExtractor().getText()),
+    normalizeWhitespace((await getPageExtractor().getText()).text),
     text,
     "about:reader is supported with getText"
   );
 
   is(
-    normalizeWhitespace(await getPageExtractor().getReaderModeContent()),
+    normalizeWhitespace((await getPageExtractor().getReaderModeContent()).text),
     text,
     "about:reader is supported with getReaderModeContent"
   );

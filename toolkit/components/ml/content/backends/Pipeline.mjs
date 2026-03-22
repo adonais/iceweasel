@@ -60,8 +60,23 @@ export async function getBackend(consumer, wasm, options) {
       factory = lazy.ONNXPipeline.initialize;
   }
 
+  let initStart = ChromeUtils.now();
+
   const BackendErrorWithName = err => new BackendError(backendName, err);
-  return await factory(consumer, wasm, pipelineOptions, BackendErrorWithName);
+  const pipeline = await factory(
+    consumer,
+    wasm,
+    pipelineOptions,
+    BackendErrorWithName
+  );
+
+  ChromeUtils.addProfilerMarker(
+    "MLEngine:Pipeline",
+    { startTime: initStart },
+    `Initialize ${backendName} backend`
+  );
+
+  return pipeline;
 }
 
 /**

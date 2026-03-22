@@ -4,11 +4,7 @@
 
 use thiserror::Error;
 
-use crate::{
-    errors::{IPCError, SystemError},
-    messages::MessageError,
-    IPCListenerError,
-};
+use crate::{errors::IPCError, messages::MessageError, platform::PlatformError, IPCListenerError};
 
 /*****************************************************************************
  * Error definitions                                                         *
@@ -17,13 +13,11 @@ use crate::{
 #[derive(Debug, Error)]
 pub enum IPCQueueError {
     #[error("Could not create queue: {0}")]
-    CreationFailure(SystemError),
+    CreationFailure(PlatformError),
     #[error("Could not register with queue: {0}")]
-    RegistrationFailure(SystemError),
-    #[error("Could not post an event on the queue: {0}")]
-    PostEventFailure(SystemError),
+    RegistrationFailure(PlatformError),
     #[error("Could not wait for events: {0}")]
-    WaitError(SystemError),
+    WaitError(PlatformError),
     #[error("Underlying IPC connector error: {0}")]
     IPCError(#[from] IPCError),
     #[error("Underlying IPC listener error: {0}")]
@@ -46,8 +40,18 @@ pub(crate) mod windows;
  * Android, macOS & Linux                                                    *
  *****************************************************************************/
 
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub use unix::IPCQueue;
 
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
+#[cfg(any(target_os = "android", target_os = "linux"))]
 pub(crate) mod unix;
+
+/*****************************************************************************
+ * macOS & iOS                                                               *
+ *****************************************************************************/
+
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+pub use mach::IPCQueue;
+
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+pub(crate) mod mach;

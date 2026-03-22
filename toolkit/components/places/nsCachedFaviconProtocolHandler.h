@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsCachedFaviconProtocolHandler_h___
-#define nsCachedFaviconProtocolHandler_h___
+#ifndef nsCachedFaviconProtocolHandler_h_
+#define nsCachedFaviconProtocolHandler_h_
 
 #include "nsCOMPtr.h"
 #include "nsIProtocolHandler.h"
@@ -47,4 +47,4 @@ class nsCachedFaviconProtocolHandler final : public nsIProtocolHandler,
                              nsILoadInfo* aLoadInfo, nsIChannel** _channel);
 };
 
-#endif /* nsCachedFaviconProtocolHandler_h___ */
+#endif /* nsCachedFaviconProtocolHandler_h_ */

@@ -275,7 +275,7 @@ void StoreBuffer::checkAccess() const {
   if (runtime_->heapState() != JS::HeapState::Idle &&
       runtime_->heapState() != JS::HeapState::MinorCollecting) {
     MOZ_ASSERT(!CurrentThreadIsGCMarking());
-    runtime_->gc.assertCurrentThreadHasLockedStoreBuffer();
+    runtime_->gc.assertCurrentThreadHasLockedSweepingLock();
   } else {
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime_));
   }
@@ -312,7 +312,7 @@ void StoreBuffer::updateSize() {
   // The entry counts for the individual buffers are scaled based on the initial
   // entryCount parameter passed to the constructor.
   MOZ_ASSERT(entryCount_ != 0);
-  MOZ_ASSERT(entryScaling_ >= 0.0);
+  MOZ_ASSERT(entryScaling_ >= 0.0 && entryScaling_ <= 1.0);
 
   // Scale the entry count linearly based on the size of the nursery. The entry
   // count parameter specifies the result at a nursery size of 16MB.
@@ -321,7 +321,7 @@ void StoreBuffer::updateSize() {
   double count =
       ((nurserySizeRatio - 1.0) * entryScaling_ + 1.0) * double(entryCount_);
   MOZ_ASSERT(count > 0.0);
-  size_t defaultEntryCount = std::max(size_t(count), size_t(1));
+  size_t defaultEntryCount = size_t(std::max(count, 1.0));
 
   size_t slotsEntryCount = std::max(defaultEntryCount / 2, size_t(1));
   size_t wholeCellEntryCount = std::max(defaultEntryCount / 10, size_t(1));

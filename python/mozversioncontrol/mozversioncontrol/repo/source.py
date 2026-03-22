@@ -5,7 +5,7 @@
 import contextlib
 import os
 from pathlib import Path
-from typing import Union
+from typing import Callable, Optional, Union
 
 from mozpack.files import FileListFinder
 
@@ -159,6 +159,11 @@ class SrcRepository(Repository):
 
     def try_commit(self, commit_message: str, changed_files=None):
         return contextlib.nullcontext()
+
+    def prepare_try_push(
+        self, commit_message: str, changed_files: Optional[dict[str, str]] = None
+    ) -> tuple[Optional[str], Callable]:
+        return "", lambda: None
 
     def get_last_modified_time_for_file(self, path: Path):
         """Return last modified in VCS time for the specified file."""

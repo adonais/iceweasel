@@ -38,6 +38,9 @@
 #include "nsTHashtable.h"
 #include "nsUnicharInputStream.h"
 
+// Undo some conflicting Windows macro definition.
+#undef small
+
 using namespace mozilla;
 using namespace mozilla::dom;
 

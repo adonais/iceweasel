@@ -164,12 +164,9 @@ export class BackupUIParent extends JSWindowActorParent {
         lazy.logConsole.error(`Failed to enable scheduled backups`, e);
         return { success: false, errorCode: e.cause || lazy.ERRORS.UNKNOWN };
       }
-      /**
-       * TODO: (Bug 1900125) we should create a backup at the specified dir path once we turn on
-       * scheduled backups. The backup folder in the chosen directory should contain
-       * the archive file, which we create using BackupService.createArchive implemented in
-       * Bug 1897498.
-       */
+
+      // Don't block the return on createBackup
+      this.#triggerCreateBackup({ reason: "first" });
       return { success: true };
     } else if (message.name == "DisableScheduledBackups") {
       await this.#bs.cleanupBackupFiles();
@@ -190,12 +187,11 @@ export class BackupUIParent extends JSWindowActorParent {
 
       if (existingBackupPath) {
         try {
-          let folder = (await IOUtils.getFile(existingBackupPath)).parent;
-          if (folder.exists()) {
-            fp.displayDirectory = folder;
-          }
+          let folder = await IOUtils.getFile(existingBackupPath);
+          // IOUtils.getFile creates the parent directory, so it should exist.
+          fp.displayDirectory = folder.parent;
         } catch (_) {
-          // If the file can not be found we will skip setting the displayDirectory.
+          // If the path isn't valid, don't bother setting the displayDirectory.
         }
       }
 
@@ -232,7 +228,7 @@ export class BackupUIParent extends JSWindowActorParent {
         await this.#bs.recoverFromBackupArchive(
           backupFile,
           backupPassword,
-          true /* shouldLaunch */
+          true /* shouldLaunchOrQuit */
         );
       } catch (e) {
         lazy.logConsole.error(`Failed to restore file: ${backupFile}`, e);

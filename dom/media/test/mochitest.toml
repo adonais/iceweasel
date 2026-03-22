@@ -683,6 +683,7 @@ support-files = [
   "test-8-7.1.opus^headers^",
   "test-stereo-phase-inversion-180.opus",
   "test-stereo-phase-inversion-180.opus^headers^",
+  "tone_1s_nosilence.mp3",
   "variable-channel.ogg",
   "variable-channel.ogg^headers^",
   "variable-channel.opus",
@@ -763,6 +764,10 @@ support-files = [
   "single-xing-header-no-content-length.mp3^headers^",
   "padding-spanning-multiple-packets.mp3",
 ]
+
+["test_captureStream_audioLoopBack.html"]
+scheme = "https"
+tags = "capturestream"
 
 ["test_capture_stream_av_sync.html"]
 skip-if = [

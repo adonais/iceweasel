@@ -5,8 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __mozilla_widget_GfxInfo_h__
-#define __mozilla_widget_GfxInfo_h__
+#ifndef _mozilla_widget_GfxInfo_h_
+#define _mozilla_widget_GfxInfo_h_
 
 #include "GfxInfoBase.h"
 #include "GfxDriverInfo.h"
@@ -80,6 +80,8 @@ class GfxInfo : public GfxInfoBase {
   virtual uint32_t OperatingSystemVersion() override;
   GfxVersionEx OperatingSystemVersionEx() override;
 
+  void ReportGLStrings(gfx::GfxInfoGLStrings&& aStrings) override;
+
  protected:
   OperatingSystem GetOperatingSystem() override {
     return OperatingSystem::Android;
@@ -113,4 +115,4 @@ class GfxInfo : public GfxInfoBase {
 }  // namespace widget
 }  // namespace mozilla
 
-#endif /* __mozilla_widget_GfxInfo_h__ */
+#endif /* _mozilla_widget_GfxInfo_h_ */

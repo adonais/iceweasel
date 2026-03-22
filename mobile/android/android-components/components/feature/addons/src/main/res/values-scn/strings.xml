@@ -373,8 +373,6 @@
   <string name="mozac_feature_addons_blocklisted_2">%1$s rumpi i pulìtichi di Mozilla e nun po èssiri nzitatu nni %2$s.</string>
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s nun potti èssiri nzitatu picchì po èssiri nzitatu sulu di n’urganizzazzioni chi usa i pulìtichi di mpria, ma sta chiattafurma nun i supporta.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s rumpi i pulìtichi di Mozilla e nun po èssiri nzitatu nni %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Mpussìbbili abbilitari a %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -419,10 +417,6 @@
   <string name="mozac_feature_addons_status_see_details">Vidi minutagghi</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Stu stinneriu è bluccatu picchì rumpi i pulìtichi di Mozilla e fu sdisabbilitatu.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Stu stinneriu è limitatu picchì rumpi i pulìtichi di Mozilla e fu sdisabbilitatu. U poi abbilitari, ma po’ èssiri un rìsicu.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Stu stinneriu rumpi i pulìtichi di Mozilla. Usallu po èssiri un rìsicu.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">%1$s nun potti èssiri virificatu comu sicuru e fu sdisabbilitatu.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

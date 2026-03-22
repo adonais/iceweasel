@@ -282,6 +282,7 @@ export default class BackupSettings extends MozLitElement {
   handleShowRestoreDialog() {
     if (this.restoreFromBackupDialogEl) {
       this.restoreFromBackupDialogEl.showModal();
+      this.restoreFromBackupEl.resizeTextarea();
     }
   }
 

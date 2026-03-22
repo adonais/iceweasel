@@ -46,9 +46,9 @@ onnxruntime-x86_64-windows-msvc:
         toolchain-artifact: public/build/onnxruntime-x86_64-windows-msvc.tar.zst
     fetches:
         toolchain:
+            - vs-toolchain
             - win64-cmake
             - win64-clang
-            - win64-vs2022
         fetch:
             - win64-ninja
 
@@ -67,9 +67,9 @@ onnxruntime-i686-windows-msvc:
         toolchain-artifact: public/build/onnxruntime-i686-windows-msvc.tar.zst
     fetches:
         toolchain:
+            - vs-toolchain
             - win64-cmake
             - win64-clang
-            - win64-vs2022
         fetch:
             - win64-ninja
 

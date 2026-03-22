@@ -929,6 +929,38 @@ bool CreateThisFromIC(JSContext* cx, HandleObject callee,
   return true;
 }
 
+bool CreateThisFromICWithAllocSite(JSContext* cx, HandleObject callee,
+                                   HandleObject newTarget, gc::AllocSite* site,
+                                   Value* argv, uint32_t argc,
+                                   MutableHandleValue rval) {
+  HandleFunction fun = callee.as<JSFunction>();
+  MOZ_ASSERT(fun->isInterpreted());
+  MOZ_ASSERT(fun->isConstructor());
+  MOZ_ASSERT(cx->realm() == fun->realm(),
+             "Realm switching happens before creating this");
+  MOZ_ASSERT(!fun->constructorNeedsUninitializedThis());
+
+  RootedExternalValueArray args(cx, NumTraceableArgsForCreateThis(fun, argc),
+                                argv);
+
+  Rooted<SharedShape*> shape(cx, ThisShapeForFunction(cx, fun, newTarget));
+  if (!shape) {
+    return false;
+  }
+
+  gc::AllocKind allocKind = gc::GetGCObjectKind(shape->numFixedSlots());
+  gc::Heap initialHeap = site->initialHeap();
+  PlainObject* obj = NativeObject::create<PlainObject>(
+      cx, allocKind, initialHeap, shape, site);
+  if (!obj) {
+    return false;
+  }
+
+  MOZ_ASSERT(fun->realm() == obj->nonCCWRealm());
+  rval.setObject(*obj);
+  return true;
+}
+
 bool CreateThisFromIon(JSContext* cx, HandleObject callee,
                        HandleObject newTarget, MutableHandleValue rval) {
   // Return JS_IS_CONSTRUCTING for cases not supported by the inline call path.
@@ -1531,27 +1563,35 @@ bool ObjectKeysLength(JSContext* cx, HandleObject obj, int32_t* length) {
 void JitValuePreWriteBarrier(JSRuntime* rt, Value* vp) {
   AutoUnsafeCallWithABI unsafe;
   MOZ_ASSERT(vp->isGCThing());
+#ifndef JS_GC_CONCURRENT_MARKING
   MOZ_ASSERT(!vp->toGCThing()->isMarkedBlack());
+#endif
   gc::ValuePreWriteBarrier(*vp);
 }
 
 void JitStringPreWriteBarrier(JSRuntime* rt, JSString** stringp) {
   AutoUnsafeCallWithABI unsafe;
   MOZ_ASSERT(*stringp);
+#ifndef JS_GC_CONCURRENT_MARKING
   MOZ_ASSERT(!(*stringp)->isMarkedBlack());
+#endif
   gc::PreWriteBarrier(*stringp);
 }
 
 void JitObjectPreWriteBarrier(JSRuntime* rt, JSObject** objp) {
   AutoUnsafeCallWithABI unsafe;
   MOZ_ASSERT(*objp);
+#ifndef JS_GC_CONCURRENT_MARKING
   MOZ_ASSERT(!(*objp)->isMarkedBlack());
+#endif
   gc::PreWriteBarrier(*objp);
 }
 
 void JitShapePreWriteBarrier(JSRuntime* rt, Shape** shapep) {
   AutoUnsafeCallWithABI unsafe;
+#ifndef JS_GC_CONCURRENT_MARKING
   MOZ_ASSERT(!(*shapep)->isMarkedBlack());
+#endif
   gc::PreWriteBarrier(*shapep);
 }
 
@@ -3340,7 +3380,7 @@ void ReadBarrier(gc::Cell* cell) {
   MOZ_ASSERT(!gc::detail::TenuredCellIsMarkedBlack(tenured));
 
   Zone* zone = tenured->zone();
-  if (zone->needsIncrementalBarrier()) {
+  if (zone->needsMarkingBarrier()) {
     gc::PerformIncrementalReadBarrier(tenured);
   } else if (!zone->isGCPreparing() &&
              gc::detail::NonBlackCellIsMarkedGray(tenured)) {

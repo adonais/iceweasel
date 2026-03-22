@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Не залишайте слідів на цьому пристрої</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s видаляє ваші файли cookie, історію і дані сайтів, коли ви закриваєте всі приватні вкладки. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -323,6 +316,8 @@
   <string name="browser_menu_save_as_pdf_2">Зберегти як PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Перекласти сторінку</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Підсумувати вміст сторінки</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Повідомити про пошкоджений сайт…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -646,6 +641,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Керувати налаштуваннями</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Попрощайтеся з моторошними елементами стеження</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Відкривайте всі посилання конфіденційно</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Ми захищаємо ваші дані й автоматично блокуємо стеження компаній за вашими діями.</string>
   <!-- "Set to default" onboarding button. -->
@@ -923,8 +920,6 @@
   <string name="preferences_search_browsing_history">Шукати в історії перегляду</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Шукати закладки</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Показати ярлики</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Шукати синхронізовані вкладки</string>
   <!-- Preference for account settings -->
@@ -971,7 +966,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">У вас немає дозволу на використання цієї теки. Повторіть спробу, вибравши іншу теку.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">У вас немає дозволу на використання цієї теки. Повторіть спробу, вибравши іншу теку.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Керування завантаженнями за допомогою іншої програми</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1032,11 +1027,7 @@
   <string name="customize_addon_collection_user_hint">Власник збірки (ID користувача)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Збірку розширень змінено. Вихід з програми для застосування змін…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Повернутися до</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Закладки</string>
@@ -1736,6 +1727,8 @@
   <string name="download_share_url">Поділитися URL-адресою</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Поділитися файлом</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Перейменувати файл</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Ви дійсно бажаєте видалити вибрані елементи?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
@@ -1748,6 +1741,11 @@
   <string name="download_rename_dialog_label">Назва</string>
   <string name="download_rename_dialog_confirm_button">Зберегти</string>
   <string name="download_rename_dialog_cancel_button">Скасувати</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">Не вдається перейменувати файл</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Цей файл неможливо перейменувати через обмеження системи або сховища.</string>
+  <string name="download_rename_error_dismiss_button">OK</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Виконується</string>
   <!--
@@ -1947,7 +1945,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Змінити</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Копіювати</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Копіювати</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Поділитися</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2003,11 +2001,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s видалено</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">ВІДНОВИТИ</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">ВІДНОВИТИ</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">%s видалено</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s видалено</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">Видалені елементи: %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Видалені елементи: %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Перейти назад</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2277,23 +2275,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Зробити Firefox типовим браузером</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Спробуйте приватний перегляд</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Спробуйте приватний перегляд</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Переглядайте без збереження файлів cookie чи історії у %1$s</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Переглядайте без збереження файлів cookie чи історії у %1$s</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Користуйтеся інтернетом, не залишаючи слідів</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Користуйтеся інтернетом, не залишаючи слідів</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Приватний перегляд у %1$s не зберігає вашу інформацію.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Приватний перегляд у %1$s не зберігає вашу інформацію.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Розпочніть свій перший пошук</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Розпочніть свій перший пошук</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Знайдіть щось поблизу. Або дізнайтеся щось цікаве.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Знайдіть щось поблизу. Або дізнайтеся щось цікаве.</string>
   <!--
     Survey
 
@@ -3684,6 +3682,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Додати до приватних вкладок</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -4034,8 +4034,6 @@
   <string name="content_description_settings_search_navigate_back">Перейти назад</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Немає недавніх пошукових запитів</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Сталася помилка</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Стерти все</string>
   <!-- Section header for recent search results -->

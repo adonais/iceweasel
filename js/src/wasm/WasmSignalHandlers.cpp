@@ -759,6 +759,14 @@ static struct sigaction sPrevSEGVHandler;
 static struct sigaction sPrevSIGBUSHandler;
 static struct sigaction sPrevWasmTrapHandler;
 
+typedef void (*sa_sigaction_t)(int, siginfo_t*, void*);
+
+// See the uses below for more context. We need to cast the SIG_DFL/SIG_IGN
+// sentinel values to check to see if they're in the sa_sigaction field (which
+// may or may not be in a union with the sa_handler field).
+#    define SIG_ACTION_DFL ((sa_sigaction_t)SIG_DFL)
+#    define SIG_ACTION_IGN ((sa_sigaction_t)SIG_IGN)
+
 static void WasmTrapHandler(int signum, siginfo_t* info, void* context) {
   if (!sAlreadyHandlingTrap.get()) {
     AutoHandlingTrap aht;
@@ -784,7 +792,7 @@ static void WasmTrapHandler(int signum, siginfo_t* info, void* context) {
   }
   MOZ_ASSERT(previousSignal);
 
-  // This signal is not for any asm.js code we expect, so we need to forward
+  // This signal is not for any wasm code we expect, so we need to forward
   // the signal to the next handler. If there is no next handler (SIG_IGN or
   // SIG_DFL), then it's time to crash. To do this, we set the signal back to
   // its original disposition and return. This will cause the faulting op to
@@ -796,7 +804,15 @@ static void WasmTrapHandler(int signum, siginfo_t* info, void* context) {
   // signal to it's original disposition and returning.
   //
   // Note: the order of these tests matter.
-  if (previousSignal->sa_flags & SA_SIGINFO) {
+  //
+  // POSIX specifies that if SA_SIGINFO is set, then sa_sigaction should be
+  // called instead of sa_handler. However, it appears that the flag can be set
+  // even when sa_sigaction is not a valid function pointer but instead one of
+  // the SIG_DFL/SIG_IGN sentinel values. In this case, we should not call the
+  // function, but fallthrough.
+  if ((previousSignal->sa_flags & SA_SIGINFO) &&
+      previousSignal->sa_sigaction != SIG_ACTION_DFL &&
+      previousSignal->sa_sigaction != SIG_ACTION_IGN) {
     previousSignal->sa_sigaction(signum, info, context);
   } else if (previousSignal->sa_handler == SIG_DFL ||
              previousSignal->sa_handler == SIG_IGN) {

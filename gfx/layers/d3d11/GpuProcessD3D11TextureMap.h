@@ -42,12 +42,12 @@ class GpuProcessD3D11TextureMap {
 
   void Register(GpuProcessTextureId aTextureId, ID3D11Texture2D* aTexture,
                 uint32_t aArrayIndex, const gfx::IntSize& aSize,
-                RefPtr<ZeroCopyUsageInfo> aUsageInfo,
+                ZeroCopyUsageInfo* aUsageInfo,
                 RefPtr<gfx::FileHandleWrapper> aSharedHandle = nullptr);
   void Register(const MonitorAutoLock& aProofOfLock,
                 GpuProcessTextureId aTextureId, ID3D11Texture2D* aTexture,
                 uint32_t aArrayIndex, const gfx::IntSize& aSize,
-                RefPtr<ZeroCopyUsageInfo> aUsageInfo,
+                ZeroCopyUsageInfo* aUsageInfo,
                 RefPtr<gfx::FileHandleWrapper> aSharedHandle);
   void Unregister(GpuProcessTextureId aTextureId);
 
@@ -69,8 +69,7 @@ class GpuProcessD3D11TextureMap {
  private:
   struct TextureHolder {
     TextureHolder(ID3D11Texture2D* aTexture, uint32_t aArrayIndex,
-                  const gfx::IntSize& aSize,
-                  RefPtr<ZeroCopyUsageInfo> aUsageInfo,
+                  const gfx::IntSize& aSize, ZeroCopyUsageInfo* aUsageInfo,
                   RefPtr<gfx::FileHandleWrapper> aSharedHandle);
     TextureHolder() = default;
 

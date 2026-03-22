@@ -9,8 +9,8 @@
  * and stdio.h/stdlib.h.
  */
 
-#ifndef TestHarness_h__
-#define TestHarness_h__
+#ifndef TestHarness_h_
+#define TestHarness_h_
 
 #include "mozilla/Attributes.h"
 
@@ -264,4 +264,4 @@ ScopedXPCOM::AddRef() { return 2; }
 NS_IMETHODIMP_(MozExternalRefCountType)
 ScopedXPCOM::Release() { return 1; }
 
-#endif  // TestHarness_h__
+#endif  // TestHarness_h_

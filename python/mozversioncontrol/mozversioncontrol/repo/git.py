@@ -14,7 +14,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 from mach.util import (
     to_optional_path,
@@ -400,6 +400,24 @@ class GitRepository(Repository):
         `changed_files` may contain a dict of file paths and their contents,
         see `stage_changes`.
         """
+        try_head, cleanup = self.prepare_try_push(commit_message, changed_files)
+        yield try_head
+        cleanup()
+
+    def prepare_try_push(
+        self, commit_message: str, changed_files: Optional[dict[str, str]] = None
+    ) -> tuple[Optional[str], Callable]:
+        """Create a temporary try commit as a context manager.
+
+        Create a new commit using `commit_message` as the commit message. The commit
+        may be empty, for example when only including try syntax.
+
+        `changed_files` may contain a dict of file paths and their contents,
+        see `stage_changes`.
+
+        This function returns a tuple of the ref of the new head and a function
+        that can be called to remove the head from the local repository.
+        """
         current_head = self.head_ref
 
         def data(content):
@@ -443,24 +461,28 @@ class GitRepository(Repository):
         )
 
         try_head = stdout.decode("ascii").strip()
-        yield try_head
 
-        # Keep trace of the temporary push in the reflog, as if we did actually commit.
-        # This does update HEAD for a small window of time.
-        # If we raced with something else that changed the HEAD after we created our
-        # commit, update-ref will fail and print an error message. Only the update in
-        # the reflog would be lost in this case.
-        self._run("update-ref", "-m", "mach try: push", "HEAD", try_head, current_head)
-        # Likewise, if we raced with something else that updated the HEAD between our
-        # two update-ref, update-ref will fail and print an error message.
-        self._run(
-            "update-ref",
-            "-m",
-            "mach try: restore",
-            "HEAD",
-            current_head,
-            try_head,
-        )
+        def cleanup():
+            # Keep trace of the temporary push in the reflog, as if we did actually commit.
+            # This does update HEAD for a small window of time.
+            # If we raced with something else that changed the HEAD after we created our
+            # commit, update-ref will fail and print an error message. Only the update in
+            # the reflog would be lost in this case.
+            self._run(
+                "update-ref", "-m", "mach try: push", "HEAD", try_head, current_head
+            )
+            # Likewise, if we raced with something else that updated the HEAD between our
+            # two update-ref, update-ref will fail and print an error message.
+            self._run(
+                "update-ref",
+                "-m",
+                "mach try: restore",
+                "HEAD",
+                current_head,
+                try_head,
+            )
+
+        return try_head, cleanup
 
     def get_last_modified_time_for_file(self, path: Path):
         """Return last modified in VCS time for the specified file."""
@@ -516,6 +538,18 @@ class GitRepository(Repository):
                         f"Please upgrade to at least version '{MINIMUM_GIT_VERSION}' to ensure "
                         "full compatibility and performance."
                     )
+
+                if not self.get_user_email():
+                    print("\nGit requires an email address to identify your commits.")
+                    email = input("Enter your email address: ").strip()
+                    if email:
+                        self.set_config_key_value("user.email", email)
+
+                if not self.get_user_name():
+                    print("\nGit requires a name to identify your commits.")
+                    name = input("Enter your name: ").strip()
+                    if name:
+                        self.set_config_key_value("user.name", name)
 
             system = platform.system()
 

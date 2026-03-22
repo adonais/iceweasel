@@ -233,6 +233,18 @@ export function LightweightThemeConsumer(aDocument) {
     () => this._update(this._lastData)
   );
 
+  XPCOMUtils.defineLazyPreferenceGetter(
+    this,
+    "_toolbarTheme",
+    "browser.theme.toolbar-theme",
+    2,
+    () => {
+      if (this._isAIWindow) {
+        this._update(this._lastData);
+      }
+    }
+  );
+
   Services.obs.addObserver(this, "lightweight-theme-styling-update");
 
   this.darkThemeMediaQuery = this._win.matchMedia("(-moz-system-dark-theme)");
@@ -266,9 +278,7 @@ LightweightThemeConsumer.prototype = {
       return;
     }
 
-    if (!this._isAIWindow) {
-      this._update(data);
-    }
+    this._update(data);
   },
 
   handleEvent(aEvent) {
@@ -296,28 +306,48 @@ LightweightThemeConsumer.prototype = {
   },
 
   _update(themeData) {
+    const manager = lazy.LightweightThemeManager;
+
+    // Store user's theme before replacing with aiThemeData.
+    this._lastData = themeData;
+
+    // Capture original theme's color scheme before replacing with aiThemeData.
+    let originalThemeColorScheme = themeData?.theme?.color_scheme;
+
     if (this._isAIWindow) {
-      const manager = lazy.LightweightThemeManager;
       if (manager.aiThemeData) {
         themeData = manager.aiThemeData;
       } else {
         manager.promiseAIThemeData().then(() => {
-          if (this._isAIWindow) {
-            this._update(manager.aiThemeData);
+          if (this._isAIWindow && this._win && !this._win.closed) {
+            this._update(this._lastData);
           }
         });
+        return;
       }
     }
-    this._lastData = themeData;
 
-    let supportsDarkTheme =
-      !!themeData.darkTheme ||
-      !themeData.theme ||
-      themeData.theme.id == DEFAULT_THEME_ID;
     let updateGlobalThemeData = true;
     const useDarkTheme = (() => {
+      let supportsDarkTheme =
+        !!themeData.darkTheme ||
+        !themeData.theme ||
+        themeData.theme.id == DEFAULT_THEME_ID;
+
       if (!supportsDarkTheme) {
         return false;
+      }
+
+      // AI windows: use color scheme from original user's theme
+      if (this._isAIWindow) {
+        switch (originalThemeColorScheme) {
+          case "dark":
+            return true;
+          case "system":
+            break;
+          default:
+            return false;
+        }
       }
 
       if (this.darkThemeMediaQuery?.matches) {

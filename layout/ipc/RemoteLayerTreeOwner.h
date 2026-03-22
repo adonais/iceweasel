@@ -45,7 +45,7 @@ class RemoteLayerTreeOwner final {
   bool Initialize(dom::BrowserParent* aBrowserParent);
   void Destroy();
 
-  void EnsureLayersConnected(CompositorOptions* aCompositorOptions);
+  void EnsureLayersConnected(Maybe<CompositorOptions>& aCompositorOptions);
   bool AttachWindowRenderer();
   void OwnerContentChanged();
 

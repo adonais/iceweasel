@@ -603,6 +603,8 @@
 }
 
 .textLayer{
+  color-scheme:only light;
+
   position:absolute;
   text-align:initial;
   inset:0;
@@ -4513,22 +4515,6 @@
       display:flex;
       flex-direction:column;
       gap:12px;
-
-      button{
-        width:fit-content;
-      }
-
-      &.download{
-        #deleteModelButton{
-          display:none;
-        }
-      }
-
-      &:not(.download){
-        #downloadModelButton{
-          display:none;
-        }
-      }
     }
 
     #automaticAltText,
@@ -4549,6 +4535,16 @@
       flex-direction:column;
       gap:16px;
     }
+  }
+}
+
+button.hasPopupMenu{
+  &[aria-expanded="true"] + menu{
+    visibility:visible;
+  }
+
+  &[aria-expanded="false"] + menu{
+    visibility:hidden;
   }
 }
 
@@ -4612,6 +4608,7 @@
   top:1px;
   margin:0;
   padding:5px;
+  box-sizing:border-box;
 
   background:var(--menu-bg);
   background-blend-mode:var(--menu-background-blend-mode);
@@ -4909,16 +4906,26 @@
   --indicator-warning-color:light-dark(#b20037, #ffa0aa);
   --header-shadow:0 0.25px 0.75px -0.75px light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)), 0 2px 6px -6px light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
   --image-outline:none;
-  --image-border-width:4px;
+  --image-border-width:6px;
   --image-border-color:light-dark(#cfcfd8, #3a3944);
-  --image-hover-border-color:light-dark(#cfcfd8, #3a3944);
+  --image-hover-border-color:#bfbfc9;
   --image-current-border-color:var(--button-focus-outline-color);
   --image-current-focused-outline-color:var(--image-hover-border-color);
   --image-page-number-bg:light-dark(#f0f0f4, #23222b);
   --image-page-number-fg:var(--text-color);
+  --image-current-page-number-bg:var(--image-current-border-color);
+  --image-current-page-number-fg:light-dark(#fff, #15141a);
   --image-shadow:0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)), 0 0 0 1px var(--image-border-color), 0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
-  --image-hover-shadow:0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)), 0 0 0 var(--image-border-width) var(--image-hover-border-color), 0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --image-hover-shadow:0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)), 0 0 0 1px light-dark(rgb(21 20 26 / 0.1), rgb(251 251 254 / 0.1)), 0 0 0 var(--image-border-width) var(--image-hover-border-color), 0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
   --image-current-shadow:0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)), 0 0 0 var(--image-border-width) var(--image-current-border-color), 0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --image-dragging-placeholder-bg:light-dark(
+    rgb(0 98 250 / 0.08),
+    rgb(0 202 219 / 0.08)
+  );
+  --multiple-dragging-bg:white;
+  --image-multiple-dragging-shadow:0 0 0 var(--image-border-width) var(--image-current-border-color), var(--image-border-width) var(--image-border-width) 0 calc(var(--image-border-width) / 2) var(--multiple-dragging-bg), var(--image-border-width) var(--image-border-width) 0 calc(3 * var(--image-border-width) / 2) var(--image-current-border-color);
+  --image-dragging-shadow:0 0 0 var(--image-border-width) var(--image-current-border-color);
+  --multiple-dragging-text-color:light-dark(#fbfbfe, #15141a);
 
   @media screen and (forced-colors: active){
     --text-color:CanvasText;
@@ -4949,6 +4956,7 @@
     --image-current-focused-outline-color:var(--image-hover-border-color);
     --image-page-number-bg:ButtonFace;
     --image-page-number-fg:CanvasText;
+    --multiple-dragging-bg:Canvas;
   }
 
   display:flex;
@@ -5189,6 +5197,7 @@
 
         #actionSelector{
           height:32px;
+          min-width:115px;
           width:auto;
           display:block;
 
@@ -5220,8 +5229,9 @@
             }
           }
 
-          > .contextMenu{
-            min-width:115px;
+          > .popupMenu{
+            width:auto;
+            z-index:1;
           }
         }
       }
@@ -5307,6 +5317,10 @@
     flex:1 1 0%;
     overflow:auto;
 
+    &:has(#thumbnailsView.isDragging){
+      overflow-x:hidden;
+    }
+
     #thumbnailsView{
       --thumbnail-width:126px;
 
@@ -5315,52 +5329,140 @@
       align-items:center;
       justify-content:space-evenly;
       padding:20px 32px;
-      gap:16px;
+      gap:20px;
       width:100%;
       box-sizing:border-box;
+      position:relative;
+
+      &.isDragging{
+        cursor:grabbing;
+
+        > .thumbnail{
+          > .thumbnailImageContainer:hover{
+            cursor:grabbing;
+
+            &:not([aria-current="page"]){
+              box-shadow:var(--image-shadow);
+            }
+          }
+
+          > input{
+            pointer-events:none;
+          }
+        }
+
+        > .dragMarker{
+          position:absolute;
+          top:0;
+          left:0;
+          border:2px solid var(--indicator-color);
+          contain:strict;
+        }
+      }
+
+      &.pasteMode{
+        > .thumbnail{
+          flex-direction:column;
+
+          > input{
+            display:none;
+          }
+
+          > .thumbnailPasteButton{
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            border-radius:16px;
+            min-height:24px;
+            padding:4px 16px;
+
+            font:menu;
+            font-size:13px;
+            font-style:normal;
+            font-weight:400;
+            line-height:normal;
+          }
+        }
+      }
+
+      &:not(.pasteMode) > .thumbnail > .thumbnailPasteButton{
+        display:none;
+      }
 
       > .thumbnail{
         display:inline-flex;
         justify-content:center;
         align-items:center;
+        flex-direction:row-reverse;
         gap:16px;
         width:auto;
         height:auto;
         position:relative;
         scroll-margin-top:20px;
 
-        > input{
-          display:none;
+        .thumbnailPasteButton{
+          padding:8px 0;
+          text-align:center;
         }
 
-        &::after{
+        &:not(.isDragging) > .thumbnailImageContainer::after{
           content:attr(page-number);
           border-radius:8px;
           background-color:var(--image-page-number-bg);
           color:var(--image-page-number-fg);
           position:absolute;
           bottom:5px;
-          right:calc(var(--thumbnail-width) / 2);
+          inset-inline-end:50%;
           min-width:32px;
           height:16px;
           text-align:center;
-          translate:50%;
+          translate:calc(var(--dir-factor) * 50%);
 
           font:menu;
           font-size:13px;
           font-style:normal;
           font-weight:400;
           line-height:normal;
+
           pointer-events:none;
+          user-select:none;
         }
 
-        > .thumbnailImage{
+        &:has([aria-current="page"]):not(.isDragging)
+          > .thumbnailImageContainer::after{
+          background-color:var(--image-current-page-number-bg);
+          color:var(--image-current-page-number-fg);
+        }
+
+        &.isDragging > input{
+          visibility:hidden;
+        }
+
+        > input{
+          margin:0;
+        }
+
+        > .thumbnailImageContainer{
+          --thumbnail-dragging-scale:1.4;
+
           width:var(--thumbnail-width);
           border:none;
           border-radius:8px;
           box-shadow:var(--image-shadow);
           box-sizing:content-box;
           outline:var(--image-outline);
+          user-select:none;
+          position:relative;
+
+          img{
+            width:100%;
+            height:100%;
+            border:inherit;
+            border-radius:inherit;
+            outline:none;
+            user-select:none;
+            pointer-events:none;
+          }
 
           &.missingThumbnailImage{
             content-visibility:hidden;
@@ -5385,6 +5487,58 @@
 
           &[aria-current="page"]{
             box-shadow:var(--image-current-shadow);
+          }
+
+          &.placeholder{
+            background-color:var(--image-dragging-placeholder-bg);
+            box-shadow:none !important;
+          }
+
+          &.draggingThumbnail{
+            position:absolute;
+            left:0;
+            top:0;
+            z-index:1;
+            transform-origin:0 0 0;
+            scale:calc(1 / var(--thumbnail-dragging-scale));
+            pointer-events:none;
+            box-shadow:var(--image-dragging-shadow);
+
+            &.multiple{
+              box-shadow:var(--image-multiple-dragging-shadow);
+
+              > .thumbnailImageContainer{
+                position:absolute;
+                top:0;
+                left:0;
+
+                width:var(--thumbnail-width);
+                border:none;
+                border-radius:8px;
+                box-sizing:content-box;
+                outline:none;
+                user-select:none;
+              }
+
+              &::after{
+                content:attr(data-multiple-count);
+                border-radius:calc(8px * var(--thumbnail-dragging-scale));
+                background-color:var(--indicator-color);
+                color:var(--multiple-dragging-text-color);
+                position:absolute;
+                inset-block-end:calc(4px * var(--thumbnail-dragging-scale));
+                inset-inline-start:calc(4px * var(--thumbnail-dragging-scale));
+                min-width:calc(32px * var(--thumbnail-dragging-scale));
+                height:calc(16px * var(--thumbnail-dragging-scale));
+                text-align:center;
+                font:menu;
+                font-size:calc(13px * var(--thumbnail-dragging-scale));
+                font-style:normal;
+                font-weight:400;
+                line-height:normal;
+                contain:strict;
+              }
+            }
           }
         }
       }
@@ -5466,6 +5620,7 @@
   min-width:var(--sidebar-min-width);
   max-width:var(--sidebar-max-width);
   backdrop-filter:var(--sidebar-backdrop-filter);
+  box-sizing:border-box;
 
   .sidebarResizer{
     width:var(--resizer-width);

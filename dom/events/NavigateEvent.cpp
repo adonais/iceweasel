@@ -547,6 +547,12 @@ Document* NavigateEvent::GetAssociatedDocument() const {
   return nullptr;
 }
 
+// https://html.spec.whatwg.org/#ongoing-navigation-tracking:dispatch-flag
+void NavigateEvent::Cancel() {
+  mEvent->mFlags.mDefaultPrevented = true;
+  mEvent->mFlags.mDefaultPreventedByContent = true;
+}
+
 }  // namespace mozilla::dom
 
 #undef LOG_FMTI

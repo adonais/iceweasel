@@ -9,8 +9,8 @@
  * attribute.
  */
 
-#ifndef nsAttrValue_h___
-#define nsAttrValue_h___
+#ifndef nsAttrValue_h_
+#define nsAttrValue_h_
 
 #include <type_traits>
 

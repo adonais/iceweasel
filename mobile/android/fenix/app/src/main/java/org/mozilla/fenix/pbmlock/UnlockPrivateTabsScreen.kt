@@ -32,8 +32,8 @@ import mozilla.components.compose.base.utils.getResolvedAttrResId
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.isLargeWindow
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 private const val FILL_WIDTH_LARGE_WINDOW = 0.5f
 private const val FILL_WIDTH_DEFAULT = 1.0f
@@ -143,7 +143,7 @@ private fun Footer(onUnlockClicked: () -> Unit, onLeaveClicked: () -> Unit, show
 @FlexibleWindowPreview
 @Composable
 private fun ScreenPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         UnlockPrivateTabsScreen(

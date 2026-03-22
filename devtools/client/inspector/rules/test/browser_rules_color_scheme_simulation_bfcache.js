@@ -7,6 +7,8 @@
 const TEST_URI = URL_ROOT_SSL + "doc_media_queries.html";
 
 add_task(async function testBfCacheNavigationWithDevTools() {
+  await pushPref("layout.css.custom-media.enabled", true);
+
   await addTab(TEST_URI);
   const { inspector, toolbox } = await openRuleView();
 

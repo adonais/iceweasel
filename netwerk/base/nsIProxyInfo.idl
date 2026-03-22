@@ -117,4 +117,10 @@ interface nsIProxyInfo : nsISupports
    * do any form of DNS lookup ourselves.
    */
   const unsigned short TRANSPARENT_PROXY_RESOLVES_HOST = 1 << 0;
+
+  /**
+   * When set, force all requests to use an HTTP CONNECT tunnel
+   * through the proxy.
+   */
+  const unsigned short ALWAYS_TUNNEL_VIA_PROXY = 1 << 1;
 };

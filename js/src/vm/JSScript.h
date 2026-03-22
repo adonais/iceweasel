@@ -54,6 +54,7 @@ namespace js {
 class Compressor;
 class FrontendContext;
 class ScriptSource;
+class SourceLocationIterator;
 
 class VarScope;
 class LexicalScope;
@@ -1379,13 +1380,8 @@ static_assert(sizeof(ScriptWarmUpData) == sizeof(uintptr_t),
 //
 // Accessing this array just requires calling the appropriate public
 // Span-computing function.
-//
-// This class doesn't use the GC barrier wrapper classes. BaseScript::swapData
-// performs a manual pre-write barrier when detaching PrivateScriptData from a
-// script.
 class alignas(uintptr_t) PrivateScriptData final
     : public TrailingArray<PrivateScriptData> {
- private:
   uint32_t ngcthings = 0;
 
   // Note: This is only defined for scripts with an enclosing scope. This
@@ -1395,7 +1391,6 @@ class alignas(uintptr_t) PrivateScriptData final
 
   // End of fields.
 
- private:
   // Layout helpers
   Offset gcThingsOffset() { return offsetOfGCThings(); }
   Offset endOffset() const {
@@ -1403,10 +1398,10 @@ class alignas(uintptr_t) PrivateScriptData final
     return offsetOfGCThings() + size;
   }
 
+ public:
   // Initialize header and PackedSpans
   explicit PrivateScriptData(uint32_t ngcthings);
 
- public:
   static constexpr size_t offsetOfGCThings() {
     return sizeof(PrivateScriptData);
   }
@@ -1703,8 +1698,10 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
 
   bool hasPrivateScriptData() const { return data_ != nullptr; }
 
-  // Update data_ pointer while also informing GC MemoryUse tracking.
-  void swapData(UniquePtr<PrivateScriptData>& other);
+  // Update data_ pointer and trigger barriers.
+  void swapData(MutableHandleBuffer<PrivateScriptData> other);
+
+  void freeData();
 
   mozilla::Span<const JS::GCCellPtr> gcthings() const {
     return data_ ? data_->gcthings() : mozilla::Span<JS::GCCellPtr>();
@@ -1748,11 +1745,10 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   static const JS::TraceKind TraceKind = JS::TraceKind::Script;
 
   void traceChildren(JSTracer* trc);
+  void traceChildrenConcurrently(JSTracer* trc, bool* skippedJitScript);
   void finalize(JS::GCContext* gcx);
 
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
-    return mallocSizeOf(data_);
-  }
+  size_t sizeOfExcludingThis();
 
   inline JSScript* asJSScript();
 
@@ -1779,6 +1775,9 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dumpStringContent(js::GenericPrinter& out) const;
 #endif
+
+ private:
+  void traceChildrenCommon(JSTracer* trc);
 };
 
 extern void SweepScriptData(JSRuntime* rt);
@@ -2141,6 +2140,8 @@ class JSScript : public js::BaseScript {
     return immutableScriptData()->notes() + numNotes();
   }
 
+  js::SourceLocationIterator sourceLocationIter() const;
+
   JSString* getString(js::GCThingIndex index) const {
     return &gcthings()[index].as<JSString>();
   }
@@ -2373,6 +2374,27 @@ extern unsigned PCToLineNumber(
     unsigned startLine, JS::LimitedColumnNumberOneOrigin startCol,
     SrcNote* notes, SrcNote* notesEnd, jsbytecode* code, jsbytecode* pc,
     JS::LimitedColumnNumberOneOrigin* columnp = nullptr);
+
+// Iterator over SrcNote array that tracks bytecode offset and line/column.
+class SourceLocationIterator {
+  SrcNoteIterator iter_;
+  ptrdiff_t offset_;
+  unsigned line_;
+  JS::LimitedColumnNumberOneOrigin column_;
+  unsigned startLine_;
+  jsbytecode* code_;
+
+ public:
+  SourceLocationIterator(unsigned startLine,
+                         JS::LimitedColumnNumberOneOrigin startCol,
+                         SrcNote* notes, SrcNote* notesEnd, jsbytecode* code);
+
+  // Advance the iterator to the given PC, updating line and column.
+  void advanceToPC(const jsbytecode* pc);
+
+  unsigned line() const { return line_; }
+  JS::LimitedColumnNumberOneOrigin column() const { return column_; }
+};
 
 /*
  * This function returns the file and line number of the script currently

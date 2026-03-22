@@ -735,9 +735,15 @@ void BaseCompiler::popI32(const Stk& v, RegI32 dest) {
       break;
     case Stk::LocalI32:
       loadLocalI32(v, dest);
+#if defined(DEBUG) && defined(JS_64BIT)
+      masm.debugAssertCanonicalInt32(dest);
+#endif
       break;
     case Stk::MemI32:
       fr.popGPR(dest);
+#if defined(DEBUG) && defined(JS_64BIT)
+      masm.debugAssertCanonicalInt32(dest);
+#endif
       break;
     case Stk::RegisterI32:
       loadRegisterI32(v, dest);

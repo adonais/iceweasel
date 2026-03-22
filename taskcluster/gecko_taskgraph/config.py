@@ -2,11 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from taskgraph.util.schema import Schema, optionally_keyed_by
+from taskgraph.util.schema import LegacySchema, optionally_keyed_by
 from voluptuous import All, Any, Extra, Optional, Required
 from voluptuous.validators import Length
 
-graph_config_schema = Schema({
+graph_config_schema = LegacySchema({
     # The trust-domain for this graph.
     # (See https://firefox-source-docs.mozilla.org/taskcluster/taskcluster/taskgraph.html#taskgraph-trust-domain)  # noqa
     Required("trust-domain"): str,
@@ -20,7 +20,12 @@ graph_config_schema = Schema({
     Required("product-dir"): str,
     Required("treeherder"): {
         # Mapping of treeherder group symbols to descriptive names
-        Required("group-names"): {str: Length(max=100)}
+        Required("group-names"): {str: Length(max=100)},
+        # Mapping of head branch name to Treeherder project
+        Optional("branch-map"): optionally_keyed_by(
+            "project",
+            {str: str},
+        ),
     },
     Required("index"): {Required("products"): [str]},
     Required("try"): {
@@ -36,7 +41,6 @@ graph_config_schema = Schema({
             str: {
                 Required("product"): str,
                 Required("target-tasks-method"): str,
-                Optional("is-rc"): bool,
                 Optional("rebuild-kinds"): [str],
                 Optional("version-bump"): bool,
                 Optional("partial-updates"): bool,
@@ -99,6 +103,7 @@ graph_config_schema = Schema({
                         "build-platform", "project", str
                     ),
                     Required("globs"): [str],
+                    Optional("only-if-milestone-is-nightly"): bool,
                 }
             ],
         ),

@@ -26,7 +26,7 @@ void MediaResult::ThrowTo(ErrorResult& aRv) const {
   case code:                     \
     aRv.Throw##name(mMessage);   \
     break;
-#include "mozilla/dom/DOMExceptionNames.h"
+#include "mozilla/dom/DOMExceptionNames.inc"
     EXTENDED_EXCEPTIONS
     default:
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
@@ -46,7 +46,7 @@ void MediaResult::RejectTo(dom::Promise* aPromise) const {
   case code:                                   \
     aPromise->MaybeRejectWith##name(mMessage); \
     break;
-#include "mozilla/dom/DOMExceptionNames.h"
+#include "mozilla/dom/DOMExceptionNames.inc"
     EXTENDED_EXCEPTIONS
     default:
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED

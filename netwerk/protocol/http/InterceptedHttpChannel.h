@@ -12,6 +12,7 @@
 #include "nsINetworkInterceptController.h"
 #include "nsIInputStream.h"
 #include "nsICacheInfoChannel.h"
+#include "nsInputStreamPump.h"
 #include "nsIThreadRetargetableRequest.h"
 #include "nsIThreadRetargetableStreamListener.h"
 

@@ -2,9 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import json
 import subprocess
 from os import path
+
+from mozfile import json
 
 from qm_try_analysis.logging import info, warning
 

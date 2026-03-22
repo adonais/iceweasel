@@ -123,7 +123,7 @@ class CompileZone {
   CompileRuntime* runtime();
   bool isAtomsZone();
 
-  const uint32_t* addressOfNeedsIncrementalBarrier();
+  const uint32_t* addressOfNeedsMarkingBarrier();
   uint32_t* addressOfTenuredAllocCount();
   gc::FreeSpan** addressOfFreeList(gc::AllocKind allocKind);
   bool allocNurseryObjects();

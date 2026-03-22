@@ -15,7 +15,7 @@ const {
 const {
   getRuleText,
   getTextAtLineColumn,
-} = require("resource://devtools/server/actors/utils/style-utils.js");
+} = require("resource://devtools/server/actors/stylesheets/style-utils.js");
 
 const {
   style: { ELEMENT_STYLE, PRES_HINTS },
@@ -59,7 +59,7 @@ loader.lazyRequireGetter(
 loader.lazyRequireGetter(
   this,
   ["UPDATE_PRESERVING_RULES", "UPDATE_GENERAL"],
-  "resource://devtools/server/actors/utils/stylesheets-manager.js",
+  "resource://devtools/server/actors/stylesheets/stylesheets-manager.js",
   true
 );
 loader.lazyRequireGetter(

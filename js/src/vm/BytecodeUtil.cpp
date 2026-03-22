@@ -1888,6 +1888,11 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
     case JSOp::DynamicImport:
       return write("import(...)");
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    case JSOp::DynamicImportSource:
+      return write("import.source(...)");
+#endif
+
     case JSOp::Typeof:
     case JSOp::TypeofExpr:
       return write("(typeof ") && decompilePCForStackOperand(pc, -1) &&

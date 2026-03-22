@@ -9,11 +9,11 @@ import mozilla.appservices.remotesettings.RemoteSettingsService
 import mozilla.components.service.nimbus.NimbusApi
 import mozilla.components.service.nimbus.NimbusAppInfo
 import mozilla.components.service.nimbus.NimbusBuilder
-import mozilla.components.service.nimbus.NimbusServerSettings
 import mozilla.components.support.base.log.logger.Logger
 import org.json.JSONObject
 import org.mozilla.experiments.nimbus.NimbusInterface
 import org.mozilla.experiments.nimbus.internal.NimbusException
+import org.mozilla.experiments.nimbus.internal.NimbusServerSettings
 import org.mozilla.focus.BuildConfig
 import org.mozilla.focus.R
 import org.mozilla.focus.ext.components
@@ -62,8 +62,8 @@ fun createNimbus(context: Context, urlString: String?, remoteSettingsService: Re
 
     val serverSettings: NimbusServerSettings? = remoteSettingsService?.let { service ->
         NimbusServerSettings(
-            remoteSettingsService = service,
-            collection = if (context.settings.shouldUseNimbusPreview) {
+            rsService = service,
+            collectionName = if (context.settings.shouldUseNimbusPreview) {
                 "nimbus-preview"
             } else {
                 "nimbus-mobile-experiments"

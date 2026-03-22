@@ -121,9 +121,9 @@ export class DSImage extends React.PureComponent {
   reformatImageURL(url, width, height) {
     const smart = this.props.smartCrop ? "smart/" : "";
     // Change the image URL to request a size tailored for the parent container width
-    // Also: force JPEG, quality 60, no upscaling, no EXIF data
+    // Also: force WebP, quality 75, no upscaling, no EXIF data
     // Uses Thumbor: https://thumbor.readthedocs.io/en/latest/usage.html
-    const formattedUrl = `https://img-getpocket.cdn.mozilla.net/${width}x${height}/${smart}filters:format(jpeg):quality(60):no_upscale():strip_exif()/${encodeURIComponent(
+    const formattedUrl = `https://img-getpocket.cdn.mozilla.net/${width}x${height}/${smart}filters:format(webp):quality(75):no_upscale():strip_exif()/${encodeURIComponent(
       url
     )}`;
     return this.secureImageURL(formattedUrl);
@@ -277,7 +277,7 @@ DSImage.defaultProps = {
   rawSource: null, // Unadulterated image URL to filter through Thumbor
   extraClassNames: null, // Additional classnames to append to component
   optimize: true, // Measure parent container to request exact sizes
-  alt_text: null,
+  alt_text: "",
   windowObj: window, // Added to support unit tests
   sizes: [],
 };

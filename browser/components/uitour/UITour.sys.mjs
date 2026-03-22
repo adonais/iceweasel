@@ -8,6 +8,8 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
+  AIWindow:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
@@ -16,6 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
 });
@@ -484,6 +487,17 @@ export var UITour = {
                 Services.scriptSecurityManager.createNullPrincipal({}),
             });
           });
+        break;
+      }
+
+      case "showFirefoxAccountsForAIWindow": {
+        lazy.AIWindow.launchWindow(browser).then(success => {
+          if (!success) {
+            lazy.log.warn(
+              "showFirefoxAccountsForAIWindow: Failed to launch Smart Window"
+            );
+          }
+        });
         break;
       }
 
@@ -1551,10 +1565,9 @@ export var UITour = {
         break;
       case "search":
       case "selectedSearchEngine":
-        Services.search
-          .getVisibleEngines()
+        lazy.SearchService.getVisibleEngines()
           .then(engines => {
-            let { defaultEngine } = Services.search;
+            let { defaultEngine } = lazy.SearchService;
             this.sendPageCallback(aBrowser, aCallbackID, {
               searchEngineIdentifier: defaultEngine.isAppProvided
                 ? defaultEngine.id
@@ -1616,7 +1629,7 @@ export var UITour = {
   async setConfiguration(aWindow, aConfiguration, _aValue) {
     switch (aConfiguration) {
       case "defaultBrowser":
-        // Ignore aValue in this case because the default browser can only
+        // Ignore _aValue in this case because the default browser can only
         // be set, not unset.
         try {
           let shell = aWindow.getShellService();
@@ -1913,13 +1926,13 @@ export var UITour = {
   },
 
   async selectSearchEngine(id) {
-    let engine = Services.search.getEngineById(id);
+    let engine = lazy.SearchService.getEngineById(id);
     if (!engine || engine.hidden) {
       throw new Error("selectSearchEngine could not find engine with given ID");
     }
-    return Services.search.setDefault(
+    return lazy.SearchService.setDefault(
       engine,
-      Ci.nsISearchService.CHANGE_REASON_UITOUR
+      lazy.SearchService.CHANGE_REASON.UITOUR
     );
   },
 

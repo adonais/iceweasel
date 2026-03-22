@@ -1,5 +1,7 @@
-Testing
-=======
+.. _urlbar-testing:
+
+Address Bar Testing
+===================
 This documentation discusses how to write a test for the address bar and the
 different test utilities that are useful when writing a test for the address
 bar.

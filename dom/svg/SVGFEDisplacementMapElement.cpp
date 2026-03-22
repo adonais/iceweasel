@@ -83,7 +83,7 @@ FilterPrimitiveDescription SVGFEDisplacementMapElement::GetPrimitiveDescription(
     return FilterPrimitiveDescription(AsVariant(std::move(atts)));
   }
 
-  float scale = aInstance->GetPrimitiveNumber(SVGContentUtils::XY,
+  float scale = aInstance->GetPrimitiveNumber(SVGLength::Axis::XY,
                                               &mNumberAttributes[SCALE]);
   uint32_t xChannel = mEnumAttributes[CHANNEL_X].GetAnimValue();
   uint32_t yChannel = mEnumAttributes[CHANNEL_Y].GetAnimValue();

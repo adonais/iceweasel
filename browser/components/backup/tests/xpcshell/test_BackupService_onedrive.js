@@ -11,11 +11,15 @@
 // for that.
 const tempDirPath = PathUtils.tempDir;
 
+const customerId = "12345";
+
 const testSuites = [
   {
     registryMap: {
       "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Personal\\UserFolder":
         tempDirPath,
+      "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Personal\\cid":
+        customerId,
     },
     personalFolder: tempDirPath,
     businessFolders: [],
@@ -32,6 +36,8 @@ const testSuites = [
     registryMap: {
       "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Personal\\UserFolder":
         tempDirPath,
+      "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Personal\\cid":
+        customerId,
       "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Business5\\UserFolder":
         "Q:\\Me\\OneDrive - Org1",
       "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Business6\\UserFolder":
@@ -74,7 +80,8 @@ let mockRegistry = {
     currentRegistryPath = "HKEY_CURRENT_USER\\" + path;
   },
   hasValue: value => {
-    Assert.equal(value, "UserFolder", "value is UserFolder");
+    const allowedKeys = new Set(["UserFolder", "cid"]);
+    Assert.ok(allowedKeys.has(value), `value is ${value}`);
     return currentRegistryPath + "\\" + value in currentRegistryContents;
   },
   readStringValue: value => {
@@ -130,6 +137,30 @@ add_task(async function runTests() {
       "BackupService.DEFAULT_PARENT_DIR_PATH reflects correct folder"
     );
   }
+
+  do_cleanup();
+});
+
+add_task(async function test_oneDriveDirNotReturnedIfUserNotLoggedIn() {
+  setupMockRegistryComponent();
+
+  mockRegistry.setRegistryContents({
+    "HKEY_CURRENT_USER\\Software\\Microsoft\\OneDrive\\Accounts\\Personal\\UserFolder":
+      tempDirPath,
+  });
+
+  Assert.equal(
+    BackupService.oneDriveFolderPath,
+    null,
+    "OneDrive directory not returned"
+  );
+
+  const docsFolder = Services.dirsvc.get("Docs", Ci.nsIFile).path;
+  Assert.equal(
+    BackupService.DEFAULT_PARENT_DIR_PATH,
+    docsFolder,
+    "DEFAULT_PARENT_DIR_PATH falls back to Documents directory"
+  );
 
   do_cleanup();
 });

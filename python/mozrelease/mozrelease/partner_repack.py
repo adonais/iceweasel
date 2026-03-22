@@ -311,9 +311,6 @@ def getBouncerProduct(partner, partner_distro):
         log.fatal("RELEASE_TYPE must be set in the environment")
         sys.exit(1)
     release_type = os.environ["RELEASE_TYPE"]
-    # For X.0 releases we get 'release-rc' but the alias should use 'release'
-    if release_type == "release-rc":
-        release_type = "release"
     return BOUNCER_PRODUCT_TEMPLATE.format(
         release_type=release_type,
         partner=partner,

@@ -46,7 +46,7 @@ static int nr_stun_client_send_request(nr_stun_client_ctx *ctx);
 static void nr_stun_client_timer_expired_cb(NR_SOCKET s, int b, void *cb_arg);
 static int nr_stun_client_get_password(void *arg, nr_stun_message *msg, Data **password);
 
-int nr_stun_client_ctx_create(char* label, nr_socket* sock,
+int nr_stun_client_ctx_create(const char* label, nr_socket* sock,
                               nr_transport_addr* peer, UINT4 RTO, int flags,
                               nr_stun_client_ctx** ctxp)
   {
@@ -56,7 +56,7 @@ int nr_stun_client_ctx_create(char* label, nr_socket* sock,
     if ((r=nr_stun_startup()))
       ABORT(r);
 
-    if(!(ctx=RCALLOC(sizeof(nr_stun_client_ctx))))
+    if(!(ctx=R_NEW(nr_stun_client_ctx)))
       ABORT(R_NO_MEMORY);
 
     ctx->state=NR_STUN_CLIENT_STATE_INITTED;
@@ -122,13 +122,14 @@ static void nr_stun_client_fire_finished_cb(nr_stun_client_ctx *ctx)
 int nr_stun_client_start(nr_stun_client_ctx *ctx, int mode, NR_async_cb finished_cb, void *cb_arg)
   {
     int r,_status;
+    int flags = 0;
 
     if (ctx->state != NR_STUN_CLIENT_STATE_INITTED)
         ABORT(R_NOT_PERMITTED);
 
     /* We allow wildcard here if this is TCP, because we don't set the
      * destination address in many cases. */
-    int flags = ctx->mapped_addr_check_mask;
+    flags = ctx->mapped_addr_check_mask;
     if (ctx->peer_addr.protocol == IPPROTO_TCP) {
       flags &= ~NR_STUN_TRANSPORT_ADDR_CHECK_WILDCARD;
     }
@@ -188,7 +189,7 @@ nr_stun_client_reset(nr_stun_client_ctx *ctx)
 static void nr_stun_client_timer_expired_cb(NR_SOCKET s, int b, void *cb_arg)
   {
     int _status;
-    nr_stun_client_ctx *ctx=cb_arg;
+    nr_stun_client_ctx *ctx=(nr_stun_client_ctx*)cb_arg;
     struct timeval now;
     INT8 ms_waited;
 
@@ -463,7 +464,7 @@ int nr_stun_client_process_response(nr_stun_client_ctx *ctx, UCHAR *msg, int len
        * want to delay the completion of gathering. */
       fail_on_error = 1;
       compute_lt_key = 1;
-      /* Fall through */
+      [[fallthrough]];
     case NR_STUN_CLIENT_MODE_BINDING_REQUEST_SHORT_TERM_AUTH:
       password = ctx->params.stun_binding_request.password;
       break;

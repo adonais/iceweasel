@@ -402,7 +402,7 @@ class KeyPairSignTest : public KeyPairTest<TYPE>, public BenchSignRunner {
     SECItem sig = {siBuffer, signature.data(),
                    static_cast<unsigned int>(signature.size())};
 
-    SECStatus rv = PK11_Verify(this->pub_key.get(), &sig, &dat, NULL);
+    SECStatus rv = PK11_Verify(this->pub_key.get(), &sig, &dat, nullptr);
     return rv == SECSuccess;
   }
 };

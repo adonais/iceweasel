@@ -11,6 +11,7 @@
 
 const flags = require("resource://devtools/shared/flags.js");
 const {
+  VIEW_NODE_ATTR_TYPE,
   VIEW_NODE_CSS_QUERY_CONTAINER,
   VIEW_NODE_CSS_SELECTOR_WARNINGS,
   VIEW_NODE_FONT_TYPE,
@@ -68,10 +69,17 @@ loader.lazyRequireGetter(
   "resource://devtools/client/shared/widgets/tooltip/css-selector-warnings-tooltip-helper.js",
   false
 );
+loader.lazyRequireGetter(
+  this,
+  "setAttrTooltip",
+  "resource://devtools/client/shared/widgets/tooltip/AttrTooltipHelper.js",
+  true
+);
 
 const PREF_IMAGE_TOOLTIP_SIZE = "devtools.inspector.imagePreviewTooltipSize";
 
 // Types of existing tooltips
+const TOOLTIP_ATTR_TYPE = "attr";
 const TOOLTIP_CSS_COMPATIBILITY = "css-compatibility";
 const TOOLTIP_CSS_QUERY_CONTAINER = "css-query-info";
 const TOOLTIP_CSS_SELECTOR_WARNINGS = "css-selector-warnings";
@@ -274,6 +282,11 @@ class TooltipsOverlay {
       tooltipType = TOOLTIP_CSS_SELECTOR_WARNINGS;
     }
 
+    // Attribute (used in `attr()`) preview tooltip
+    if (type === VIEW_NODE_ATTR_TYPE) {
+      tooltipType = TOOLTIP_ATTR_TYPE;
+    }
+
     return tooltipType;
   }
 
@@ -368,6 +381,15 @@ class TooltipsOverlay {
       });
 
       this.sendOpenScalarToTelemetry(type);
+
+      return true;
+    }
+
+    if (type === TOOLTIP_ATTR_TYPE) {
+      const { attribute } = nodeInfo.value;
+      await this._setAttrPreviewTooltip({
+        text: attribute,
+      });
 
       return true;
     }
@@ -569,6 +591,18 @@ class TooltipsOverlay {
       doc,
       tooltipParams
     );
+  }
+
+  /**
+   * Set the content of the preview tooltip to display an attr preview.
+   *
+   * @param {object} tooltipParams
+   *        See AttrTooltipHelper.js setAttrTooltip `params`.
+   * @return {Promise} A promise that resolves when the preview tooltip content is ready
+   */
+  async _setAttrPreviewTooltip(tooltipParams) {
+    const doc = this.view.inspector.panelDoc;
+    await setAttrTooltip(this.getTooltip("previewTooltip"), doc, tooltipParams);
   }
 
   _onNewSelection() {

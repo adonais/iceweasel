@@ -415,7 +415,7 @@ void ChannelMediaDecoder::DownloadProgressed() {
               })
       ->Then(
           mAbstractMainThread, __func__,
-          [=,
+          [=, this,
            self = RefPtr<ChannelMediaDecoder>(this)](MediaStatistics aStats) {
             if (IsShutdown()) {
               return;

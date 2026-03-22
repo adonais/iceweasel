@@ -4,8 +4,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef CHROME_COMMON_IPC_MESSAGE_H__
-#define CHROME_COMMON_IPC_MESSAGE_H__
+#ifndef CHROME_COMMON_IPC_MESSAGE_H_
+#define CHROME_COMMON_IPC_MESSAGE_H_
 
 #include "base/basictypes.h"
 #include "base/pickle.h"
@@ -449,4 +449,4 @@ enum SpecialRoutingIDs : IPC::Message::routeid_t {
   MSG_ROUTING_CONTROL = INT64_MAX
 };
 
-#endif  // CHROME_COMMON_IPC_MESSAGE_H__
+#endif  // CHROME_COMMON_IPC_MESSAGE_H_

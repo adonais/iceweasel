@@ -301,6 +301,7 @@ export const NimbusTelemetry = {
 
       case UnenrollReason.INDIVIDUAL_OPT_OUT:
       case UnenrollReason.LABS_OPT_OUT:
+      case UnenrollReason.ROLLOUTS_OPT_OUT:
       case UnenrollReason.STUDIES_OPT_OUT:
         enrollmentStatus.status = EnrollmentStatus.DISQUALIFIED;
         enrollmentStatus.reason = EnrollmentStatusReason.OPT_OUT;

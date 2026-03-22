@@ -323,7 +323,7 @@ class EmulationModule extends RootBiDiModule {
 
     await this.#applyOverride({
       async: true,
-      callback: this._setLocaleForBrowsingContext.bind(this),
+      callback: this.#setLocaleForBrowsingContext.bind(this),
       category: "locale-override",
       contextIds,
       navigables,
@@ -432,7 +432,7 @@ class EmulationModule extends RootBiDiModule {
     }
 
     this.#applyOverride({
-      callback: this._setEmulatedScreenOrientation,
+      callback: setScreenOrientationOverrideForBrowsingContext,
       category: "screen-orientation-override",
       contextIds,
       navigables,
@@ -522,7 +522,7 @@ class EmulationModule extends RootBiDiModule {
     }
 
     this.#applyOverride({
-      callback: this._setScreenSettingsOverride,
+      callback: setScreenSettingsOverrideForBrowsingContext,
       category: "screen-settings-override",
       contextIds,
       navigables,
@@ -611,7 +611,7 @@ class EmulationModule extends RootBiDiModule {
 
     await this.#applyOverride({
       async: true,
-      callback: this._setTimezoneOverride.bind(this),
+      callback: this.#setTimezoneOverrideForBrowsingContext.bind(this),
       category: "timezone-override",
       contextIds,
       navigables,
@@ -746,149 +746,13 @@ class EmulationModule extends RootBiDiModule {
     }
 
     this.#applyOverride({
-      callback: this._setUserAgentOverride,
+      callback: setUserAgentOverrideForBrowsingContext,
       category: "user-agent-override",
       contextIds,
       navigables,
       userContextIds,
       value: userAgent,
     });
-  }
-
-  /**
-   * Set the screen orientation override to the top-level browsing context.
-   *
-   * @param {object} options
-   * @param {BrowsingContext} options.context
-   *     Top-level browsing context object which is a target
-   *     for the screen orientation override.
-   * @param {(object|null)} options.value
-   *     Screen orientation object which have to override
-   *     screen settings.
-   *     Null value resets the override.
-   */
-  _setEmulatedScreenOrientation(options) {
-    const { context, value } = options;
-    if (value) {
-      const { angle, type } = value;
-      context.setOrientationOverride(type, angle);
-    } else {
-      context.resetOrientationOverride();
-    }
-  }
-
-  /**
-   * Set the locale override to the top-level browsing context.
-   *
-   * @param {object} options
-   * @param {BrowsingContext} options.context
-   *     Top-level browsing context object which is a target
-   *     for the locale override.
-   * @param {(string|null)} options.value
-   *     Locale string which have to override
-   *     the return result of JavaScript Intl APIs.
-   *     Null value resets the override.
-   */
-  async _setLocaleForBrowsingContext(options) {
-    const { context, value } = options;
-
-    context.languageOverride = value;
-
-    await this.messageHandler.handleCommand({
-      moduleName: "emulation",
-      commandName: "_setLocaleOverrideToSandboxes",
-      destination: {
-        type: lazy.WindowGlobalMessageHandler.type,
-        contextDescriptor: {
-          type: lazy.ContextDescriptorType.TopBrowsingContext,
-          id: context.browserId,
-        },
-      },
-      params: {
-        locale: value,
-      },
-    });
-  }
-
-  /**
-   * Set the screen settings override to the top-level browsing context.
-   *
-   * @param {object} options
-   * @param {BrowsingContext} options.context
-   *     Top-level browsing context object which is a target
-   *     for the locale override.
-   * @param {(ScreenArea|null)} options.value
-   *     An object which has to override
-   *     the return result of JavaScript APIs which return
-   *     screen dimensions. Null value resets the override.
-   */
-  _setScreenSettingsOverride(options) {
-    const { context, value } = options;
-
-    if (value === null) {
-      context.resetScreenAreaOverride();
-    } else {
-      const { height, width } = value;
-      context.setScreenAreaOverride(width, height);
-    }
-  }
-
-  /**
-   * Set the timezone override to the top-level browsing context.
-   *
-   * @param {object} options
-   * @param {BrowsingContext} options.context
-   *     Top-level browsing context object which is a target
-   *     for the locale override.
-   * @param {(string|null)} options.value
-   *     Timezone string which has to override
-   *     the return result of JavaScript Intl/Date APIs.
-   *     Null value resets the override.
-   */
-  async _setTimezoneOverride(options) {
-    const { context, value } = options;
-
-    context.timezoneOverride = value;
-
-    await this.messageHandler.handleCommand({
-      moduleName: "emulation",
-      commandName: "_setTimezoneOverrideToSandboxes",
-      destination: {
-        type: lazy.WindowGlobalMessageHandler.type,
-        contextDescriptor: {
-          type: lazy.ContextDescriptorType.TopBrowsingContext,
-          id: context.browserId,
-        },
-      },
-      params: {
-        timezone: value,
-      },
-    });
-  }
-
-  /**
-   * Set the user agent override to the top-level browsing context.
-   *
-   * @param {object} options
-   * @param {BrowsingContext} options.context
-   *     Top-level browsing context object which is a target
-   *     for the locale override.
-   * @param {string} options.value
-   *     User agent string which has to override
-   *     the browser user agent.
-   */
-  _setUserAgentOverride(options) {
-    const { context, value } = options;
-
-    try {
-      context.customUserAgent = value;
-    } catch (e) {
-      const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
-
-      lazy.logger.warn(
-        `Failed to override user agent for context with id: ${contextId} (${e.message})`
-      );
-    }
   }
 
   /**
@@ -1209,6 +1073,202 @@ class EmulationModule extends RootBiDiModule {
     // Random date string is added to validate an offset string.
     return ChromeUtils.isISOStyleDate(`2011-10-05T00:00${string}`);
   }
+
+  /**
+   * Set the locale override to the top-level browsing context.
+   *
+   * @param {object} options
+   * @param {BrowsingContext} options.context
+   *     Top-level browsing context object which is a target
+   *     for the locale override.
+   * @param {string} options.value
+   *     Locale string which have to override
+   *     the return result of JavaScript Intl APIs.
+   *     Empty string resets the override.
+   */
+  async #setLocaleForBrowsingContext(options) {
+    const { context, value } = options;
+
+    setLocaleOverrideForBrowsingContext(options);
+
+    await this.messageHandler.handleCommand({
+      moduleName: "emulation",
+      commandName: "_setLocaleOverrideToSandboxes",
+      destination: {
+        type: lazy.WindowGlobalMessageHandler.type,
+        contextDescriptor: {
+          type: lazy.ContextDescriptorType.TopBrowsingContext,
+          id: context.browserId,
+        },
+      },
+      params: {
+        locale: value,
+      },
+    });
+  }
+
+  /**
+   * Set the timezone override to the top-level browsing context.
+   *
+   * @param {object} options
+   * @param {BrowsingContext} options.context
+   *     Top-level browsing context object which is a target
+   *     for the locale override.
+   * @param {string} options.value
+   *     Timezone string which has to override
+   *     the return result of JavaScript Intl/Date APIs.
+   *     Empty string value resets the override.
+   */
+  async #setTimezoneOverrideForBrowsingContext(options) {
+    const { context, value } = options;
+
+    setTimezoneOverrideForBrowsingContext(options);
+
+    await this.messageHandler.handleCommand({
+      moduleName: "emulation",
+      commandName: "_setTimezoneOverrideToSandboxes",
+      destination: {
+        type: lazy.WindowGlobalMessageHandler.type,
+        contextDescriptor: {
+          type: lazy.ContextDescriptorType.TopBrowsingContext,
+          id: context.browserId,
+        },
+      },
+      params: {
+        timezone: value,
+      },
+    });
+  }
 }
+
+/**
+ * Set the locale override to the top-level browsing context.
+ *
+ * @param {object} options
+ * @param {BrowsingContext} options.context
+ *     Top-level browsing context object which is a target
+ *     for the locale override.
+ * @param {string} options.value
+ *     Locale string which have to override
+ *     the return result of JavaScript Intl APIs.
+ *     Empty string resets the override.
+ */
+export const setLocaleOverrideForBrowsingContext = options => {
+  const { context, value } = options;
+
+  context.languageOverride = value;
+
+  const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
+  lazy.logger.trace(`[${contextId}] Updated locale override to: ${value}`);
+};
+
+/**
+ * Set the screen orientation override to the top-level browsing context.
+ *
+ * @param {object} options
+ * @param {BrowsingContext} options.context
+ *     Top-level browsing context object which is a target
+ *     for the screen orientation override.
+ * @param {(object|null)} options.value
+ *     Screen orientation object which have to override
+ *     screen settings.
+ *     Null value resets the override.
+ */
+export const setScreenOrientationOverrideForBrowsingContext = options => {
+  const { context, value } = options;
+  const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
+
+  if (value) {
+    const { angle, type } = value;
+    context.setOrientationOverride(type, angle);
+
+    lazy.logger.trace(
+      `[${contextId}] Updated screen orientation override to: ${JSON.stringify(value)}`
+    );
+  } else {
+    context.resetOrientationOverride();
+
+    lazy.logger.trace(`[${contextId}] Reset screen orientation override`);
+  }
+};
+
+/**
+ * Set the screen settings override to the top-level browsing context.
+ *
+ * @param {object} options
+ * @param {BrowsingContext} options.context
+ *     Top-level browsing context object which is a target
+ *     for the locale override.
+ * @param {(ScreenArea|null)} options.value
+ *     An object which has to override
+ *     the return result of JavaScript APIs which return
+ *     screen dimensions. Null value resets the override.
+ */
+export const setScreenSettingsOverrideForBrowsingContext = options => {
+  const { context, value } = options;
+  const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
+
+  if (value === null) {
+    context.resetScreenAreaOverride();
+
+    lazy.logger.trace(`[${contextId}] Reset screen settings override`);
+  } else {
+    const { height, width } = value;
+    context.setScreenAreaOverride(width, height);
+
+    lazy.logger.trace(
+      `[${contextId}] Updated screen settings override to: ${JSON.stringify(value)}`
+    );
+  }
+};
+
+/**
+ * Set the timezone override to the top-level browsing context.
+ *
+ * @param {object} options
+ * @param {BrowsingContext} options.context
+ *     Top-level browsing context object which is a target
+ *     for the timezone override.
+ * @param {string} options.value
+ *     Timezone string which has to override
+ *     the return result of JavaScript Intl/Date APIs.
+ *     Empty string value resets the override.
+ */
+export const setTimezoneOverrideForBrowsingContext = options => {
+  const { context, value } = options;
+
+  context.timezoneOverride = value;
+
+  const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
+  lazy.logger.trace(`[${contextId}] Updated timezone override to: ${value}`);
+};
+
+/**
+ * Set the user agent override to the top-level browsing context.
+ *
+ * @param {object} options
+ * @param {BrowsingContext} options.context
+ *     Top-level browsing context object which is a target
+ *     for the user agent override.
+ * @param {string} options.value
+ *     User agent string which has to override
+ *     the browser user agent.
+ */
+export const setUserAgentOverrideForBrowsingContext = options => {
+  const { context, value } = options;
+  const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
+
+  try {
+    context.customUserAgent = value;
+
+    lazy.logger.trace(
+      `[${contextId}] Updated user agent override to: ${value}`
+    );
+  } catch (e) {
+    lazy.logger.warn(
+      `Failed to override user agent for context with id: ${contextId} (${e.message})`
+    );
+  }
+};
 
 export const emulation = EmulationModule;

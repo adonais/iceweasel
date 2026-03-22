@@ -223,7 +223,6 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
              "::-moz-{scrolled-,}canvas doesn't have native appearance");
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
-    DisplayPushedAbsoluteFrames(aBuilder, aLists);
   }
 
   // Force a background to be shown. We may have a background propagated to us,
@@ -401,6 +400,10 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
 #endif
     BuildDisplayListForChild(aBuilder, kid, aLists);
+  }
+
+  if (GetPrevInFlow()) {
+    DisplayPushedAbsoluteFrames(aBuilder, aLists);
   }
 
   if (!canvasBg.mCSSSpecified && backgroundColorItem &&

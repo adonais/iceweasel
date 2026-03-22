@@ -290,27 +290,15 @@ class BrowserToolbarMiddleware(
             is TabCounterClicked -> {
                 thumbnailsFeature()?.requestScreenshot()
 
-                if (settings.tabManagerEnhancementsEnabled) {
-                    navController.nav(
-                        R.id.browserFragment,
-                        BrowserFragmentDirections.actionGlobalTabManagementFragment(
-                            page = when (browsingModeManager.mode) {
-                                Normal -> Page.NormalTabs
-                                Private -> Page.PrivateTabs
-                            },
-                        ),
-                    )
-                } else {
-                    navController.nav(
-                        R.id.browserFragment,
-                        BrowserFragmentDirections.actionGlobalTabsTrayFragment(
-                            page = when (browsingModeManager.mode) {
-                                Normal -> Page.NormalTabs
-                                Private -> Page.PrivateTabs
-                            },
-                        ),
-                    )
-                }
+                navController.nav(
+                    R.id.browserFragment,
+                    BrowserFragmentDirections.actionGlobalTabManagementFragment(
+                        page = when (browsingModeManager.mode) {
+                            Normal -> Page.NormalTabs
+                            Private -> Page.PrivateTabs
+                        },
+                    ),
+                )
 
                 next(action)
             }

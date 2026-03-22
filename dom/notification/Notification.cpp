@@ -20,9 +20,11 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ServiceWorkerGlobalScopeBinding.h"
+#include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/glean/DomNotificationMetrics.h"
+#include "mozilla/image/FetchDecodedImage.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
@@ -279,10 +281,15 @@ already_AddRefed<Notification> Notification::Constructor(
         aNotification->Deactivate();
       },
       notification);
-  if (!notification->CreateActor() || !notification->SendShow(promise)) {
+
+  ContextInfo contextInfo = notification->GetContextInfo();
+  if (!notification->CreateActor(contextInfo)) {
     notification->Deactivate();
+    aRv.ThrowUnknownError("Failed to create actor.");
     return nullptr;
   }
+
+  notification->LoadImageAndShow(promise, std::move(contextInfo));
 
   notification->KeepAliveIfHasListenersFor(nsGkAtoms::onclick);
   notification->KeepAliveIfHasListenersFor(nsGkAtoms::onshow);
@@ -614,7 +621,7 @@ void Notification::Close() {
     return;
   }
   if (!mActor) {
-    CreateActor();
+    CreateActor(GetContextInfo());
   }
   if (mActor) {
     (void)mActor->SendClose();
@@ -721,14 +728,35 @@ already_AddRefed<Promise> Notification::ShowPersistentNotification(
     return nullptr;
   }
 
-  if (!notification->CreateActor() || !notification->SendShow(p)) {
+  ContextInfo contextInfo = notification->GetContextInfo();
+  if (!notification->CreateActor(contextInfo)) {
+    aRv.ThrowUnknownError("Failed to create actor.");
     return nullptr;
   }
+  notification->LoadImageAndShow(p, std::move(contextInfo));
 
   return p.forget();
 }
 
-bool Notification::CreateActor() {
+Notification::ContextInfo Notification::GetContextInfo() {
+  // TODO: Should get nsIGlobalObject methods for each method
+  if (WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate()) {
+    return {.mTarget = workerPrivate->HybridEventTarget(),
+            .mPrincipal = workerPrivate->GetPrincipal(),
+            .mEffectiveStoragePrincipal =
+                workerPrivate->GetEffectiveStoragePrincipal(),
+            .mIsSecureContext = workerPrivate->IsSecureContext()};
+  }
+
+  nsGlobalWindowInner* win = GetOwnerWindow();
+  return {
+      .mPrincipal = win->GetPrincipal(),
+      .mEffectiveStoragePrincipal = win->GetEffectiveStoragePrincipal(),
+      .mIsSecureContext = win->IsSecureContext(),
+  };
+}
+
+bool Notification::CreateActor(const ContextInfo& aInfo) {
   mozilla::ipc::PBackgroundChild* backgroundActor =
       mozilla::ipc::BackgroundChild::GetOrCreateForCurrentThread();
 
@@ -747,64 +775,138 @@ bool Notification::CreateActor() {
       persistent ? nullptr : this,
       window ? window->GetWindowGlobalChild() : nullptr);
 
-  nsISerialEventTarget* target = nullptr;
-  nsIPrincipal* principal;
-  nsIPrincipal* effectiveStoragePrincipal;
-  bool isSecureContext;
-
-  // TODO: Should get nsIGlobalObject methods for each method
-  if (WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate()) {
-    target = workerPrivate->HybridEventTarget();
-    principal = workerPrivate->GetPrincipal();
-    effectiveStoragePrincipal = workerPrivate->GetEffectiveStoragePrincipal();
-    isSecureContext = workerPrivate->IsSecureContext();
-  } else {
-    nsGlobalWindowInner* win = GetOwnerWindow();
-    NS_ENSURE_TRUE(win, false);
-    principal = win->GetPrincipal();
-    effectiveStoragePrincipal = win->GetEffectiveStoragePrincipal();
-    isSecureContext = win->IsSecureContext();
-  }
-
-  if (!childEndpoint.Bind(mActor, target)) {
+  if (!childEndpoint.Bind(mActor, aInfo.mTarget)) {
     return false;
   }
 
   (void)backgroundActor->SendCreateNotificationParent(
-      std::move(parentEndpoint), WrapNotNull(principal),
-      WrapNotNull(effectiveStoragePrincipal), isSecureContext, mScope,
-      mIPCNotification);
+      std::move(parentEndpoint), WrapNotNull(aInfo.mPrincipal),
+      WrapNotNull(aInfo.mEffectiveStoragePrincipal), aInfo.mIsSecureContext,
+      mScope, mIPCNotification);
 
   return true;
 }
 
-bool Notification::SendShow(Promise* aPromise) {
-  mActor->SendShow()->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [self = RefPtr{this}, promise = RefPtr(aPromise)](
-          notification::PNotificationChild::ShowPromise::ResolveOrRejectValue&&
-              aResult) {
-        if (aResult.IsReject()) {
-          promise->MaybeRejectWithUnknownError("Failed to open notification");
-          self->Deactivate();
-          return;
+void Notification::LoadImageAndShow(Promise* aPromise, ContextInfo&& aInfo) {
+  nsCOMPtr<nsIURI> uri = mIPCNotification.options().icon();
+  Maybe<ClientInfo> clientInfo = GetParentObject()->GetClientInfo();
+  if (!uri || clientInfo.isNothing()) {
+    SendShow(aPromise, Nothing());
+    return;
+  }
+
+  RefPtr<StrongWorkerRef> workerRef;
+  if (!NS_IsMainThread()) {
+    workerRef = StrongWorkerRef::Create(GetCurrentThreadWorkerPrivate(),
+                                        "Notification::LoadImageAndShow");
+    if (!workerRef) {
+      return;
+    }
+  }
+
+  using IPCImagePromise = mozilla::MozPromise<Maybe<IPCImage>, bool, true>;
+  InvokeAsync(
+      GetMainThreadSerialEventTarget(), __func__,
+      [uri, clientInfo, contextInfo = std::move(aInfo)]() {
+        // Don't load the image if we aren't even allowed to show the
+        // notification.
+        NotificationPermission permission = GetNotificationPermission(
+            contextInfo.mPrincipal, contextInfo.mEffectiveStoragePrincipal,
+            contextInfo.mIsSecureContext,
+            PermissionCheckPurpose::LoadImageForShow);
+        if (permission != NotificationPermission::Granted) {
+          return image::FetchDecodedImagePromise::CreateAndReject(
+              NS_ERROR_FAILURE, __func__);
         }
 
-        CopyableErrorResult rv = aResult.ResolveValue();
-        if (rv.Failed()) {
-          promise->MaybeReject(std::move(rv));
-          self->Deactivate();
-          return;
+        // https://notifications.spec.whatwg.org/#fetch-steps
+        // Step 1: If the notification platform supports images, fetch
+        // notification's image URL, if image URL is set.
+        //
+        // But the spec doesn't provide proper details (see
+        // https://github.com/whatwg/notifications/issues/208), so for
+        // now we pretend a Request object with:
+        // * method: "GET"
+        // * destination: "image"
+        // * mode: "no-cors"
+        nsCOMPtr<nsIChannel> channel;
+        nsresult rv = NS_NewChannel(
+            getter_AddRefs(channel), uri, contextInfo.mPrincipal,
+            clientInfo.ref(), Maybe<dom::ServiceWorkerDescriptor>(),
+            nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
+            nsIContentPolicy::TYPE_INTERNAL_IMAGE_NOTIFICATION);
+        if (NS_FAILED(rv)) {
+          return image::FetchDecodedImagePromise::CreateAndReject(rv, __func__);
         }
 
-        if (promise) {
-          promise->MaybeResolveWithUndefined();
-        } else {
-          self->DispatchTrustedEvent(u"show"_ns);
-        }
-      });
+        // This function must be called on the main thread.
+        return image::FetchDecodedImage(uri, channel, gfx::IntSize{});
+      })
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [](already_AddRefed<imgIContainer> aImage) {
+            nsCOMPtr<imgIContainer> image(std::move(aImage));
+            // The promise should only be resolved for decoded images, so
+            // using FLAG_SYNC_DECODE is just a precaution.
+            if (RefPtr<mozilla::gfx::SourceSurface> surface =
+                    image->GetFrame(imgIContainer::FRAME_FIRST,
+                                    imgIContainer::FLAG_SYNC_DECODE |
+                                        imgIContainer::FLAG_ASYNC_NOTIFY)) {
+              if (RefPtr<mozilla::gfx::DataSourceSurface> dataSurface =
+                      surface->GetDataSurface()) {
+                return IPCImagePromise::CreateAndResolve(
+                    nsContentUtils::SurfaceToIPCImage(*dataSurface), __func__);
+              }
+            }
 
-  return true;
+            return IPCImagePromise::CreateAndResolve(Nothing(), __func__);
+          },
+          [](nsresult) {
+            // Show the notification even if loading the image failed.
+            return IPCImagePromise::CreateAndResolve(Nothing(), __func__);
+          })
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [self = RefPtr{this}, promise = RefPtr{aPromise},
+           workerRef = std::move(workerRef)](Maybe<IPCImage>&& aImage) {
+            // SendShow must happen on the original (potentially Worker) thread.
+            self->SendShow(promise, std::move(aImage));
+          },
+          [](bool) {});
+}
+
+void Notification::SendShow(Promise* aPromise, Maybe<IPCImage>&& aIcon) {
+  if (mIsClosed) {
+    MOZ_ASSERT(mIPCNotification.options().icon(),
+               "Closure before SendShow can only happen with image resources");
+    return;
+  }
+
+  mActor->SendShow(std::move(aIcon))
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [self = RefPtr{this}, promise = RefPtr(aPromise)](
+                 notification::PNotificationChild::ShowPromise::
+                     ResolveOrRejectValue&& aResult) {
+               if (aResult.IsReject()) {
+                 promise->MaybeRejectWithUnknownError(
+                     "Failed to open notification");
+                 self->Deactivate();
+                 return;
+               }
+
+               CopyableErrorResult rv = aResult.ResolveValue();
+               if (rv.Failed()) {
+                 promise->MaybeReject(std::move(rv));
+                 self->Deactivate();
+                 return;
+               }
+
+               if (promise) {
+                 promise->MaybeResolveWithUndefined();
+               } else {
+                 self->DispatchTrustedEvent(u"show"_ns);
+               }
+             });
 }
 
 void Notification::Deactivate() {

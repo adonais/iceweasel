@@ -14,8 +14,8 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
-import mozilla.components.feature.downloads.fake.FakeDateTimeProvider
 import mozilla.components.support.test.mock
+import mozilla.components.support.utils.FakeDateTimeProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

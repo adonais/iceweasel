@@ -15,6 +15,7 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
+#include "mozilla/dom/InternalResponse.h"
 #include "mozilla/dom/cache/CacheTypes.h"
 #include "mozilla/dom/cache/Context.h"
 #include "mozilla/dom/cache/DBAction.h"
@@ -928,6 +929,14 @@ class Manager::CachePutAllAction final : public DBAction {
         if (e.mResponseStream) {
           // Gerenate padding size for opaque response if needed.
           if (e.mResponse.type() == ResponseType::Opaque) {
+            // Validate padding size from content process.
+            // Valid values: UNKNOWN_PADDING_SIZE (-1) or non-negative.
+            // Reject any other negative values as invalid.
+            QM_TRY(OkIf(e.mResponse.paddingSize() ==
+                            InternalResponse::UNKNOWN_PADDING_SIZE ||
+                        e.mResponse.paddingSize() >= 0),
+                   NS_ERROR_UNEXPECTED);
+
             // It'll generate padding if we've not set it yet.
             QM_TRY(MOZ_TO_RESULT(BodyMaybeUpdatePaddingSize(
                 *mDirectoryMetadata, *mDBDir, e.mResponseBodyId,

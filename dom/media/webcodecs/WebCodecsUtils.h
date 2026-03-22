@@ -35,7 +35,7 @@ class VideoDecoderConfigInternal;
 #define WEBCODECS_MARKER(codecType, desc, options, markerType, ...)    \
   do {                                                                 \
     if (profiler_is_collecting_markers()) {                            \
-      nsFmtCString marker(FMT_STRING("{}{}"), codecType, desc);        \
+      nsFmtCString marker("{}{}", codecType, desc);                    \
       PROFILER_MARKER(                                                 \
           ProfilerString8View::WrapNullTerminatedString(marker.get()), \
           MEDIA_RT, options, markerType, __VA_ARGS__);                 \

@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsEditingSession_h__
-#define nsEditingSession_h__
+#ifndef nsEditingSession_h_
+#define nsEditingSession_h_
 
 #include "nsCOMPtr.h"               // for nsCOMPtr
 #include "nsISupportsImpl.h"        // for NS_DECL_ISUPPORTS
@@ -166,4 +166,4 @@ class nsEditingSession final : public nsIEditingSession,
   nsWeakPtr mExistingEditor;
 };
 
-#endif  // nsEditingSession_h__
+#endif  // nsEditingSession_h_

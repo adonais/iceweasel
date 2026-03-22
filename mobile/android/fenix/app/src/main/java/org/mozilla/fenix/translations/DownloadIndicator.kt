@@ -32,8 +32,8 @@ import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.modifier.animateRotation
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -138,7 +138,7 @@ fun DownloadIndicator(
 @Preview
 @Composable
 private fun DownloadIconIndicatorPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         Surface {
@@ -155,7 +155,7 @@ private fun DownloadIconIndicatorPreview(
 @Preview
 @Composable
 private fun DownloadInProgressIndicatorPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         Surface {
@@ -171,7 +171,7 @@ private fun DownloadInProgressIndicatorPreview(
 @Preview
 @Composable
 private fun DownloadIndicatorPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         Surface {

@@ -25,11 +25,9 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
 import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
@@ -105,7 +103,7 @@ class TrackingProtectionPanelDialogFragment : AppCompatDialogFragment(), UserInt
             context = requireContext(),
             fragment = this,
             store = protectionsStore,
-            ioScope = viewLifecycleOwner.lifecycleScope + Dispatchers.IO,
+            scope = viewLifecycleOwner.lifecycleScope,
             cookieBannersStorage = requireComponents.core.cookieBannersStorage,
             navController = { findNavController() },
             openTrackingProtectionSettings = ::openTrackingProtectionSettings,

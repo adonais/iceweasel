@@ -896,6 +896,29 @@ class SystemResourceMonitor:
 
         SystemResourceMonitor.record_event(marker_name, timestamp, marker_data)
 
+        # Check if this is a shutdown leak failure
+        if (
+            data.get("subtest") == "Shutdown"
+            and data.get("status") == "FAIL"
+            and (test_name := data.get("test"))
+            and message
+            and "leaked" in message
+            and "until shutdown" in message
+        ):
+            # Find the corresponding test marker and mark it as failed due to leak
+            # if it hasn't already failed for another reason
+            for marker in SystemResourceMonitor.instance.markers:
+                marker_name_type, marker_start, marker_end, marker_data = marker
+                if (
+                    marker_name_type == "test"
+                    and marker_data.get("test") == test_name
+                    and marker_start <= timestamp <= marker_end
+                    and marker_data.get("status") == "PASS"
+                ):
+                    marker_data["color"] = "orange"
+                    marker_data["status"] = "FAIL"
+                    break
+
     @staticmethod
     def crash(data):
         """Record a crash event.

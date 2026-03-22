@@ -32,7 +32,7 @@ add_setup(async function () {
   useHttpServer("");
 
   SearchTestUtils.setRemoteSettingsConfig(CONFIG);
-  await Services.search.init();
+  await SearchService.init();
 
   await SearchTestUtils.installSearchExtension({
     name: "AddonEngine",
@@ -42,7 +42,7 @@ add_setup(async function () {
 });
 
 add_task(async function test_configEngineSearchform() {
-  let engine = Services.search.getEngineById(`engine_searchform`);
+  let engine = SearchService.getEngineById(`engine_searchform`);
   Assert.equal(
     engine.searchForm,
     "https://searchform.com/searchform?foo=bar",
@@ -51,7 +51,7 @@ add_task(async function test_configEngineSearchform() {
 });
 
 add_task(async function test_configEngineNoSearchform() {
-  let engine = Services.search.getEngineById(`engine_no_searchform`);
+  let engine = SearchService.getEngineById(`engine_no_searchform`);
   Assert.equal(
     engine.searchForm,
     "https://no.searchform.com",
@@ -60,7 +60,7 @@ add_task(async function test_configEngineNoSearchform() {
 });
 
 add_task(async function test_addonEngine() {
-  let engine2 = Services.search.getEngineByName(`AddonEngine`);
+  let engine2 = SearchService.getEngineByName(`AddonEngine`);
   Assert.equal(
     engine2.searchForm,
     "https://addon.com",

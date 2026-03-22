@@ -1310,11 +1310,11 @@ class BuildReader:
         is relevant to that path. Let's say we have the following files on disk::
 
            moz.build
-           foo/moz.build
-           foo/baz/moz.build
-           foo/baz/file1
-           other/moz.build
-           other/file2
+           foo / moz.build
+           foo / baz / moz.build
+           foo / baz / file1
+           other / moz.build
+           other / file2
 
         If ``foo/baz/file1`` is passed in, the relevant moz.build files are
         ``moz.build``, ``foo/moz.build``, and ``foo/baz/moz.build``. For

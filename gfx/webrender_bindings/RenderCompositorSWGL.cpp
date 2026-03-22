@@ -78,10 +78,8 @@ bool RenderCompositorSWGL::AllocateMappedBuffer(
   MOZ_ASSERT(!mDT);
   mDT = mWidget->StartRemoteDrawingInRegion(mDirtyRegion);
   if (!mDT) {
-#if !defined(MOZ_WAYLAND)
     gfxCriticalNoteOnce
         << "RenderCompositorSWGL failed mapping default framebuffer, no dt";
-#endif
     return false;
   }
   // Attempt to lock the underlying buffer directly from the draw target.

@@ -183,7 +183,7 @@ class Command:
 
     .. code-block:: python
 
-        @Command('foo', category='misc', description='Run the foo action')
+        @Command("foo", category="misc", description="Run the foo action")
         def foo(self, command_context):
             pass
     """
@@ -263,9 +263,10 @@ class CommandArgument:
 
     .. code-block:: python
 
-        @Command('foo', help='Run the foo action')
-        @CommandArgument('-b', '--bar', action='store_true', default=False,
-            help='Enable bar mode.')
+        @Command("foo", help="Run the foo action")
+        @CommandArgument(
+            "-b", "--bar", action="store_true", default=False, help="Enable bar mode."
+        )
         def foo(self, command_context):
             pass
     """

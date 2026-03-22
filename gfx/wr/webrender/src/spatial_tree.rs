@@ -6,7 +6,7 @@ use api::{ExternalScrollId, PropertyBinding, ReferenceFrameKind, TransformStyle,
 use api::{APZScrollGeneration, HasScrollLinkedEffect, PipelineId, SampledScrollOffset, SpatialTreeItemKey};
 use api::units::*;
 use euclid::Transform3D;
-use crate::gpu_types::TransformPalette;
+use crate::transform::TransformPalette;
 use crate::internal_types::{FastHashMap, FastHashSet, FrameMemory, PipelineInstanceId};
 use crate::print_tree::{PrintableTree, PrintTree, PrintTreePrinter};
 use crate::scene::SceneProperties;
@@ -24,10 +24,16 @@ use peek_poke::PeekPoke;
 /// coordinate system has an id and those ids will be shared when the coordinates
 /// system are the same or are in the same axis-aligned space. This allows
 /// for optimizing mask generation.
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct CoordinateSystemId(pub u32);
+
+impl std::fmt::Debug for CoordinateSystemId {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "#{}", self.0)
+    }
+}
 
 /// A node in the hierarchy of coordinate system
 /// transforms.
@@ -52,7 +58,7 @@ impl CoordinateSystem {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, Hash, MallocSizeOf, PartialEq, PeekPoke, Default)]
+#[derive(Copy, Clone, Eq, Hash, MallocSizeOf, PartialEq, PeekPoke, Default)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SpatialNodeIndex(pub u32);
@@ -66,6 +72,18 @@ impl SpatialNodeIndex {
     /// make this type-safe with a wrapper type to ensure we know when a spatial
     /// node index may have an unknown value.
     pub const UNKNOWN: SpatialNodeIndex = SpatialNodeIndex(u32::MAX - 1);
+}
+
+impl std::fmt::Debug for SpatialNodeIndex {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if *self == Self::INVALID {
+            write!(f, "<invalid>")
+        } else if *self == Self::UNKNOWN {
+            write!(f, "<unknown>")
+        } else {
+            write!(f, "#{}", self.0)
+        }
+    }
 }
 
 // In some cases, the conversion from CSS pixels to device pixels can result in small

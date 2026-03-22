@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef ContentRange_h__
-#define ContentRange_h__
+#ifndef ContentRange_h_
+#define ContentRange_h_
 
 #include "nsString.h"
 #include "nsISupportsImpl.h"
@@ -41,4 +41,4 @@ class ContentRange {
 
 }  // namespace mozilla::net
 
-#endif  // ContentRange_h__
+#endif  // ContentRange_h_

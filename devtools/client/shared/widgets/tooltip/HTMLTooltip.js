@@ -312,7 +312,7 @@ const getRelativeRect = function (node, relativeTo) {
 /**
  * The HTMLTooltip can display HTML content in a tooltip popup.
  */
-class HTMLTooltip {
+class HTMLTooltip extends EventEmitter {
   /**
    * @param {Document} toolboxDoc
    *        The toolbox document to attach the HTMLTooltip popup.
@@ -352,7 +352,7 @@ class HTMLTooltip {
       noAutoHide = false,
     } = {}
   ) {
-    EventEmitter.decorate(this);
+    super();
 
     this.doc = toolboxDoc;
     this.id = id;

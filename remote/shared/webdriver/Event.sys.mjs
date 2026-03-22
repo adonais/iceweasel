@@ -153,20 +153,18 @@ event.synthesizeWheelAtPoint = function (left, top, event, win) {
 
 event.synthesizeMultiTouch = function (opts, win) {
   const modifiers = _getEventUtils(win)._parseModifiers(opts);
-  win.windowUtils.sendTouchEvent(
-    opts.type,
-    opts.id,
-    opts.x,
-    opts.y,
-    opts.rx,
-    opts.ry,
-    opts.angle,
-    opts.force,
-    opts.tiltx,
-    opts.tilty,
-    opts.twist,
-    modifiers
-  );
+  _getEventUtils(win).synthesizeTouchAtPoint(opts.x, opts.y, {
+    type: opts.type,
+    id: opts.id,
+    rx: opts.rx,
+    ry: opts.ry,
+    angle: opts.angle,
+    force: opts.force,
+    tiltX: opts.tiltx,
+    tiltY: opts.tilty,
+    twist: opts.twist,
+    modifiers,
+  });
 };
 
 /**

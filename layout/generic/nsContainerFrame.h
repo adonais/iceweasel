@@ -6,8 +6,8 @@
 
 /* base class #1 for rendering objects that have child lists */
 
-#ifndef nsContainerFrame_h___
-#define nsContainerFrame_h___
+#ifndef nsContainerFrame_h_
+#define nsContainerFrame_h_
 
 #include "LayoutConstants.h"
 #include "mozilla/Attributes.h"
@@ -85,8 +85,7 @@ class nsContainerFrame : public nsSplittableFrame {
    * @param   aListID the child list identifier.
    * @param   aChildList list of child frames. Each of the frames has its
    *            NS_FRAME_IS_DIRTY bit set.  Must not be empty.
-   *            This method cannot handle the child list returned by
-   *            GetAbsoluteListID().
+   *            This method cannot handle ChildListID::Absolute frames.
    * @see     #Init()
    */
   virtual void SetInitialChildList(ChildListID aListID,
@@ -1098,4 +1097,4 @@ class nsOverflowContinuationTracker {
   bool mWalkOOFFrames;
 };
 
-#endif /* nsContainerFrame_h___ */
+#endif /* nsContainerFrame_h_ */

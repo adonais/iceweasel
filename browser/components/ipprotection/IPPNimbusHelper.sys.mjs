@@ -33,21 +33,22 @@ class IPPNimbusHelperSingleton {
   }
 
   /**
-   * Check if this device is in the experiment with a variant branch.
+   * Check that this device is not in the control branch of an experiment.
    *
    * @returns {boolean}
    */
   get isEligible() {
     let inExperiment = lazy.NimbusFeatures.ipProtection.getEnrollmentMetadata();
-    let isEligible = inExperiment?.branch && inExperiment.branch !== "control";
 
     if (inExperiment) {
       lazy.NimbusFeatures.ipProtection.recordExposureEvent({
         once: true,
       });
+
+      return inExperiment.branch !== "control";
     }
 
-    return isEligible;
+    return true;
   }
 }
 

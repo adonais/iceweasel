@@ -189,6 +189,14 @@ class MIRGenerator final {
   void spewPass(const char* name, BacktrackingAllocator* ra = nullptr);
   void spewEndFunction();
 
+  // Explicitly reset compilation dependencies and perf spewer debug info.
+  // This must be called to correctly free compilation dependencies, which may
+  // have virtual destructors.
+  void cleanup() {
+    tracker.reset();
+    perfSpewer().reset();
+  }
+
   CompilationDependencyTracker tracker;
 };
 

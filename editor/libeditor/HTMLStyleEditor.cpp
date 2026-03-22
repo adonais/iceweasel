@@ -64,9 +64,7 @@ using namespace dom;
 using EditablePointOption = HTMLEditUtils::EditablePointOption;
 using EditablePointOptions = HTMLEditUtils::EditablePointOptions;
 using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
-using LeafNodeType = HTMLEditUtils::LeafNodeType;
-using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
-using WalkTreeOption = HTMLEditUtils::WalkTreeOption;
+using LeafNodeOption = HTMLEditUtils::LeafNodeOption;
 
 template nsresult HTMLEditor::SetInlinePropertiesAsSubAction(
     const AutoTArray<EditorInlineStyleAndValue, 1>& aStylesToSet,
@@ -454,7 +452,7 @@ nsresult HTMLEditor::SetInlinePropertiesAroundRanges(
           }
         }
         // Otherwise, use the range computed with the tracking original range.
-        trackRange.FlushAndStopTracking();
+        trackRange.Flush(StopTracking::Yes);
         domRange->SetStartAndEnd(range.StartRef().ToRawRangeBoundary(),
                                  range.EndRef().ToRawRangeBoundary());
       };
@@ -952,7 +950,8 @@ HTMLEditor::AutoInlineStyleSetter::SplitTextNodeAndApplyStyleToMiddleNode(
   if (mAttribute) {
     // Look for siblings that are correct type of node
     nsIContent* sibling = HTMLEditUtils::GetPreviousSibling(
-        *middleTextNode, {WalkTreeOption::IgnoreNonEditableNode});
+        *middleTextNode, {LeafNodeOption::IgnoreNonEditableNode},
+        BlockInlineCheck::UseComputedDisplayOutsideStyle);
     if (sibling && sibling->IsElement()) {
       OwningNonNull<Element> element(*sibling->AsElement());
       Result<bool, nsresult> result =
@@ -981,7 +980,8 @@ HTMLEditor::AutoInlineStyleSetter::SplitTextNodeAndApplyStyleToMiddleNode(
       }
     }
     sibling = HTMLEditUtils::GetNextSibling(
-        *middleTextNode, {WalkTreeOption::IgnoreNonEditableNode});
+        *middleTextNode, {LeafNodeOption::IgnoreNonEditableNode},
+        BlockInlineCheck::UseComputedDisplayOutsideStyle);
     if (sibling && sibling->IsElement()) {
       OwningNonNull<Element> element(*sibling->AsElement());
       Result<bool, nsresult> result =
@@ -1062,10 +1062,13 @@ Result<CaretPoint, nsresult> HTMLEditor::AutoInlineStyleSetter::ApplyStyle(
   }
 
   // First check if there's an adjacent sibling we can put our node into.
-  nsCOMPtr<nsIContent> previousSibling = HTMLEditUtils::GetPreviousSibling(
-      aContent, {WalkTreeOption::IgnoreNonEditableNode});
-  nsCOMPtr<nsIContent> nextSibling = HTMLEditUtils::GetNextSibling(
-      aContent, {WalkTreeOption::IgnoreNonEditableNode});
+  const nsCOMPtr<nsIContent> previousSibling =
+      HTMLEditUtils::GetPreviousSibling(
+          aContent, {LeafNodeOption::IgnoreNonEditableNode},
+          BlockInlineCheck::UseComputedDisplayOutsideStyle);
+  const nsCOMPtr<nsIContent> nextSibling = HTMLEditUtils::GetNextSibling(
+      aContent, {LeafNodeOption::IgnoreNonEditableNode},
+      BlockInlineCheck::UseComputedDisplayOutsideStyle);
   if (RefPtr<Element> previousElement =
           Element::FromNodeOrNull(previousSibling)) {
     Result<bool, nsresult> canMoveIntoPreviousSibling =
@@ -2067,7 +2070,7 @@ HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
       NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
       return result;
     }
-    tracker.FlushAndStopTracking();
+    tracker.Flush(StopTracking::Yes);
     if (result.inspect().Handled()) {
       auto startOfRange = result.inspect().AtSplitPoint<EditorDOMPoint>();
       if (!startOfRange.IsSet()) {
@@ -2102,7 +2105,7 @@ HTMLEditor::SplitAncestorStyledInlineElementsAtRangeEdges(
       NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
       return result;
     }
-    tracker.FlushAndStopTracking();
+    tracker.Flush(StopTracking::Yes);
     if (result.inspect().Handled()) {
       auto endOfRange = result.inspect().AtSplitPoint<EditorDOMPoint>();
       if (!endOfRange.IsSet()) {
@@ -2291,7 +2294,7 @@ HTMLEditor::SplitAncestorStyledInlineElementsAt(
       return splitNodeResult;
     }
     SplitNodeResult unwrappedSplitNodeResult = splitNodeResult.unwrap();
-    trackPointToPutCaret.FlushAndStopTracking();
+    trackPointToPutCaret.Flush(StopTracking::Yes);
     unwrappedSplitNodeResult.MoveCaretPointTo(
         pointToPutCaret, {SuggestCaret::OnlyIfHasSuggestion});
 
@@ -2340,7 +2343,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
     NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
     return splitNodeResult.propagateErr();
   }
-  trackPointToPutCaret.FlushAndStopTracking();
+  trackPointToPutCaret.Flush(StopTracking::Yes);
   SplitNodeResult unwrappedSplitNodeResult = splitNodeResult.unwrap();
   unwrappedSplitNodeResult.MoveCaretPointTo(
       pointToPutCaret, *this,
@@ -2394,7 +2397,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
   // `<p><b><i>a</i></b><b><i></i></b><b><i>bc</i></b></p>`.
   //                    ^^^^^^^^^^^^^^
   nsIContent* firstLeafChildOfNextNode = HTMLEditUtils::GetFirstLeafContent(
-      *unwrappedSplitNodeResult.GetNextContent(), {LeafNodeType::OnlyLeafNode});
+      *unwrappedSplitNodeResult.GetNextContent(), {});
   EditorDOMPoint atStartOfNextNode(
       firstLeafChildOfNextNode ? firstLeafChildOfNextNode
                                : unwrappedSplitNodeResult.GetNextContent(),
@@ -2426,7 +2429,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
     NS_WARNING("HTMLEditor::SplitAncestorStyledInlineElementsAt() failed");
     return splitResultAtStartOfNextNode.propagateErr();
   }
-  trackPointToPutCaret2.FlushAndStopTracking();
+  trackPointToPutCaret2.Flush(StopTracking::Yes);
   SplitNodeResult unwrappedSplitResultAtStartOfNextNode =
       splitResultAtStartOfNextNode.unwrap();
   unwrappedSplitResultAtStartOfNextNode.MoveCaretPointTo(
@@ -2484,8 +2487,7 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::ClearStyleAt(
   // it was in next node of the first split.
   // E.g., `<p><b><i>a</i></b><b><i><br></i></b><b><i>bc</i></b></p>`
   nsIContent* firstLeafChildOfPreviousNode = HTMLEditUtils::GetFirstLeafContent(
-      *unwrappedSplitResultAtStartOfNextNode.GetPreviousContent(),
-      {LeafNodeType::OnlyLeafNode});
+      *unwrappedSplitResultAtStartOfNextNode.GetPreviousContent(), {});
   pointToPutCaret.Set(
       firstLeafChildOfPreviousNode
           ? firstLeafChildOfPreviousNode
@@ -3588,7 +3590,7 @@ nsresult HTMLEditor::RemoveInlinePropertiesAsSubAction(
 
       auto FlushAndStopTrackingAndShrinkSelectionRange =
           [&]() MOZ_CAN_RUN_SCRIPT {
-            trackSelectionRange.FlushAndStopTracking();
+            trackSelectionRange.Flush(StopTracking::Yes);
             if (NS_WARN_IF(!selectionRange->IsPositioned())) {
               return;
             }
@@ -4175,7 +4177,8 @@ Result<CreateElementResult, nsresult> HTMLEditor::SetFontSizeOnTextNode(
       aIncrementOrDecrement == FontSize::incr ? nsGkAtoms::big
                                               : nsGkAtoms::small;
   nsCOMPtr<nsIContent> sibling = HTMLEditUtils::GetPreviousSibling(
-      *textNodeForTheRange, {WalkTreeOption::IgnoreNonEditableNode});
+      *textNodeForTheRange, {LeafNodeOption::IgnoreNonEditableNode},
+      BlockInlineCheck::UseComputedDisplayOutsideStyle);
   if (sibling && sibling->IsHTMLElement(bigOrSmallTagName)) {
     // Previous sib is already right kind of inline node; slide this over
     Result<MoveNodeResult, nsresult> moveTextNodeResult =
@@ -4191,7 +4194,8 @@ Result<CreateElementResult, nsresult> HTMLEditor::SetFontSizeOnTextNode(
     return CreateElementResult::NotHandled(std::move(pointToPutCaret));
   }
   sibling = HTMLEditUtils::GetNextSibling(
-      *textNodeForTheRange, {WalkTreeOption::IgnoreNonEditableNode});
+      *textNodeForTheRange, {LeafNodeOption::IgnoreNonEditableNode},
+      BlockInlineCheck::UseComputedDisplayOutsideStyle);
   if (sibling && sibling->IsHTMLElement(bigOrSmallTagName)) {
     // Following sib is already right kind of inline node; slide this over
     Result<MoveNodeResult, nsresult> moveTextNodeResult =
@@ -4325,7 +4329,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetFontSizeWithBigOrSmallElement(
 
     // Next, if next or previous is <big> or <small>, move aContent into it.
     nsCOMPtr<nsIContent> sibling = HTMLEditUtils::GetPreviousSibling(
-        aContent, {WalkTreeOption::IgnoreNonEditableNode});
+        aContent, {LeafNodeOption::IgnoreNonEditableNode},
+        BlockInlineCheck::UseComputedDisplayOutsideStyle);
     if (sibling && sibling->IsHTMLElement(bigOrSmallTagName)) {
       Result<MoveNodeResult, nsresult> moveNodeResult =
           MoveNodeToEndWithTransaction(aContent, *sibling);
@@ -4340,7 +4345,8 @@ Result<EditorDOMPoint, nsresult> HTMLEditor::SetFontSizeWithBigOrSmallElement(
     }
 
     sibling = HTMLEditUtils::GetNextSibling(
-        aContent, {WalkTreeOption::IgnoreNonEditableNode});
+        aContent, {LeafNodeOption::IgnoreNonEditableNode},
+        BlockInlineCheck::UseComputedDisplayOutsideStyle);
     if (sibling && sibling->IsHTMLElement(bigOrSmallTagName)) {
       Result<MoveNodeResult, nsresult> moveNodeResult =
           MoveNodeWithTransaction(aContent, EditorDOMPoint(sibling, 0u));

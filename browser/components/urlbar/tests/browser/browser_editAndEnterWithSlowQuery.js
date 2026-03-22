@@ -5,8 +5,7 @@
 
 "use strict";
 
-const ORIGINAL_CHUNK_RESULTS_DELAY =
-  UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS;
+const ORIGINAL_CHUNK_RESULTS_DELAY = ProvidersManager.chunkResultsDelayMs;
 
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
@@ -22,11 +21,10 @@ add_setup(async function setup() {
     },
     { setAsDefault: true }
   );
-  await Services.search.moveEngine(suggestionsEngine, 0);
+  await SearchService.moveEngine(suggestionsEngine, 0);
 
   registerCleanupFunction(async () => {
-    UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS =
-      ORIGINAL_CHUNK_RESULTS_DELAY;
+    ProvidersManager.chunkResultsDelayMs = ORIGINAL_CHUNK_RESULTS_DELAY;
     UrlbarPrefs.clear("delay");
   });
 
@@ -77,7 +75,7 @@ add_task(async function test_url_type() {
 
     info("Change the delay time to avoid updating results");
     const DELAY = 10000;
-    UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = DELAY;
+    ProvidersManager.chunkResultsDelayMs = DELAY;
     UrlbarPrefs.set("delay", DELAY);
 
     info("Edit text on the URL bar");
@@ -104,8 +102,7 @@ add_task(async function test_url_type() {
 
     info("Clean up");
     await PlacesUtils.history.clear();
-    UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS =
-      ORIGINAL_CHUNK_RESULTS_DELAY;
+    ProvidersManager.chunkResultsDelayMs = ORIGINAL_CHUNK_RESULTS_DELAY;
     UrlbarPrefs.clear("delay");
     await SpecialPowers.popPrefEnv();
   }
@@ -133,7 +130,7 @@ add_task(async function test_search_type() {
 
   info("Change the delay time to avoid updating results");
   const DELAY = 10000;
-  UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = DELAY;
+  ProvidersManager.chunkResultsDelayMs = DELAY;
   UrlbarPrefs.set("delay", DELAY);
 
   info("Edit text on the URL bar");
@@ -160,7 +157,7 @@ add_task(async function test_search_type() {
 
   info("Clean up");
   await PlacesUtils.history.clear();
-  UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = ORIGINAL_CHUNK_RESULTS_DELAY;
+  ProvidersManager.chunkResultsDelayMs = ORIGINAL_CHUNK_RESULTS_DELAY;
   UrlbarPrefs.clear("delay");
 });
 
@@ -191,7 +188,7 @@ add_task(async function test_keyword_type() {
 
   info("Change the delay time to avoid updating results");
   const DELAY = 10000;
-  UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = DELAY;
+  ProvidersManager.chunkResultsDelayMs = DELAY;
   UrlbarPrefs.set("delay", DELAY);
 
   info("Edit text on the URL bar");
@@ -219,7 +216,7 @@ add_task(async function test_keyword_type() {
   info("Clean up");
   await PlacesUtils.history.clear();
   await PlacesUtils.keywords.remove("keyword");
-  UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = ORIGINAL_CHUNK_RESULTS_DELAY;
+  ProvidersManager.chunkResultsDelayMs = ORIGINAL_CHUNK_RESULTS_DELAY;
   UrlbarPrefs.clear("delay");
 });
 
@@ -247,7 +244,7 @@ add_task(async function test_dynamic_type() {
 
   info("Change the delay time to avoid updating results");
   const DELAY = 10000;
-  UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = DELAY;
+  ProvidersManager.chunkResultsDelayMs = DELAY;
   UrlbarPrefs.set("delay", DELAY);
 
   info("Edit text on the URL bar");
@@ -276,7 +273,7 @@ add_task(async function test_dynamic_type() {
   info("Clean up");
   await PlacesUtils.history.clear();
   await SpecialPowers.popPrefEnv();
-  UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = ORIGINAL_CHUNK_RESULTS_DELAY;
+  ProvidersManager.chunkResultsDelayMs = ORIGINAL_CHUNK_RESULTS_DELAY;
   UrlbarPrefs.clear("delay");
 });
 
@@ -322,7 +319,7 @@ add_task(async function test_omnibox_type() {
 
   info("Change the delay time to avoid updating results");
   const DELAY = 10000;
-  UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = DELAY;
+  ProvidersManager.chunkResultsDelayMs = DELAY;
   UrlbarPrefs.set("delay", DELAY);
 
   info("Edit text on the URL bar");
@@ -352,7 +349,7 @@ add_task(async function test_omnibox_type() {
   info("Clean up");
   await PlacesUtils.history.clear();
   await extension.unload();
-  UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = ORIGINAL_CHUNK_RESULTS_DELAY;
+  ProvidersManager.chunkResultsDelayMs = ORIGINAL_CHUNK_RESULTS_DELAY;
   UrlbarPrefs.clear("delay");
 });
 
@@ -386,7 +383,7 @@ add_task(async function test_heuristic() {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         heuristic: true,
         payload: {
-          engine: Services.search.defaultEngine.name,
+          engine: SearchService.defaultEngine.name,
           query: "heuristic_search",
         },
       }),
@@ -402,7 +399,8 @@ add_task(async function test_heuristic() {
       name: "TestProviderHeuristic",
       priority: Infinity,
     });
-    UrlbarProvidersManager.registerProvider(provider);
+    let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+    providersManager.registerProvider(provider);
 
     info("Show results");
     await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -418,7 +416,7 @@ add_task(async function test_heuristic() {
 
     info("Change the delay time to avoid updating results");
     const DELAY = 10000;
-    UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = DELAY;
+    ProvidersManager.chunkResultsDelayMs = DELAY;
     UrlbarPrefs.set("delay", DELAY);
 
     info("Edit text on the URL bar");
@@ -450,9 +448,8 @@ add_task(async function test_heuristic() {
     Assert.ok(!spy.called, "getHeuristicResultFor should not be called");
 
     info("Clean up");
-    UrlbarProvidersManager.unregisterProvider(provider);
-    UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS =
-      ORIGINAL_CHUNK_RESULTS_DELAY;
+    providersManager.unregisterProvider(provider);
+    ProvidersManager.chunkResultsDelayMs = ORIGINAL_CHUNK_RESULTS_DELAY;
     UrlbarPrefs.clear("delay");
   }
 });

@@ -138,7 +138,7 @@ void SVGAnimatedViewBox::SetAnimValue(const SVGViewBox& aRect,
                                       SVGElement* aSVGElement) {
   if (!mAnimVal) {
     // it's okay if allocation fails - and no point in reporting that
-    mAnimVal = MakeUnique<SVGViewBox>(aRect);
+    mAnimVal = std::make_unique<SVGViewBox>(aRect);
   } else {
     if (aRect == *mAnimVal) {
       return;
@@ -254,8 +254,9 @@ already_AddRefed<SVGRect> SVGAnimatedViewBox::ToDOMAnimVal(
   return domAnimVal.forget();
 }
 
-UniquePtr<SMILAttr> SVGAnimatedViewBox::ToSMILAttr(SVGElement* aSVGElement) {
-  return MakeUnique<SMILViewBox>(this, aSVGElement);
+std::unique_ptr<SMILAttr> SVGAnimatedViewBox::ToSMILAttr(
+    SVGElement* aSVGElement) {
+  return std::make_unique<SMILViewBox>(this, aSVGElement);
 }
 
 nsresult SVGAnimatedViewBox::SMILViewBox ::ValueFromString(

@@ -22,6 +22,8 @@ skip-if = [
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1684513
 ]
 
+["browser_breachAlertLinkTelemetry.js"]
+
 ["browser_breachAlertShowingForAddedLogin.js"]
 
 ["browser_confirmDeleteDialog.js"]

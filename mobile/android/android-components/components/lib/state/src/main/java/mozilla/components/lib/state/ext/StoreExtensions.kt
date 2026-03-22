@@ -12,7 +12,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -178,30 +177,6 @@ fun <S : State, A : Action> Store<S, A>.flow(
             subscription.unsubscribe()
         }
     }.buffer(Channel.CONFLATED)
-}
-
-/**
- * Launches a coroutine in a new [MainScope] and creates a [Flow] for observing [State] changes in
- * the [Store] in that scope. Invokes [block] inside that scope and passes the [Flow] to it.
- *
- * @param owner An optional [LifecycleOwner] that will be used to determine when to pause and resume
- * the store subscription. When the [Lifecycle] is in STOPPED state then no [State] will be received.
- * Once the [Lifecycle] switches back to at least STARTED state then the latest [State] and further
- * updates will be emitted.
- * @param coroutineScope The [CoroutineScope] the flow will be collected in. Defaults to [MainScope].
- * @return The [CoroutineScope] [block] is getting executed in.
- */
-@MainThread
-fun <S : State, A : Action> Store<S, A>.flowScoped(
-    owner: LifecycleOwner? = null,
-    coroutineScope: CoroutineScope = MainScope(),
-    block: suspend (Flow<S>) -> Unit,
-): CoroutineScope {
-    return coroutineScope.apply {
-        launch {
-            block(flow(owner))
-        }
-    }
 }
 
 /**

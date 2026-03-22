@@ -31,7 +31,7 @@ SVGElement::EnumInfo SVGTextContentElement::sEnumInfo[1] = {
 
 SVGElement::LengthInfo SVGTextContentElement::sLengthInfo[1] = {
     {nsGkAtoms::textLength, 0, SVGLength_Binding::SVG_LENGTHTYPE_NUMBER,
-     SVGContentUtils::XY}};
+     SVGLength::Axis::XY}};
 
 SVGTextFrame* SVGTextContentElement::GetSVGTextFrame() {
   nsIFrame* frame = GetPrimaryFrame(FlushType::Layout);

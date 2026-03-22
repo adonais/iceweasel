@@ -870,16 +870,12 @@ void CompilerEnvironment::computeParameters(const ModuleMetadata& moduleMeta) {
   // Various constraints in various places should prevent failure here.
   MOZ_RELEASE_ASSERT(baselineEnabled || ionEnabled);
 
-  bool isGcModule = moduleMeta.codeMeta->types->hasGcType();
   uint32_t codeSectionSize = moduleMeta.codeMeta->codeSectionSize();
 
-  // We use lazy tiering if the 'for-all' pref is enabled, or the 'gc-only'
-  // pref is enabled and we're compiling a GC module.  However, forcing
-  // serialization-testing disables lazy tiering.
+  // We use lazy tiering if the pref is enabled and we're not doing
+  // serialization-testing.
   bool testSerialization = args_->features.testSerialization;
-  bool lazyTiering = (JS::Prefs::wasm_lazy_tiering() ||
-                      (JS::Prefs::wasm_lazy_tiering_for_gc() && isGcModule)) &&
-                     !testSerialization;
+  bool lazyTiering = JS::Prefs::wasm_lazy_tiering() && !testSerialization;
 
   if (baselineEnabled && hasSecondTier &&
       (TieringBeneficial(lazyTiering, codeSectionSize) || forceTiering) &&

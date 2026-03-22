@@ -93,7 +93,7 @@ namespace dom {
     JS::Handle<JSObject*> GetConstructorObjectHandle(JSContext*); \
   }
 #define HTML_OTHER(_tag)
-#include "nsHTMLTagList.h"
+#include "nsHTMLTagList.inc"
 #undef HTML_TAG
 #undef HTML_OTHER
 
@@ -107,7 +107,7 @@ using constructorGetterCallback = JS::Handle<JSObject*> (*)(JSContext*);
 // to index into this array.
 static const constructorGetterCallback sConstructorGetterCallback[] = {
     HTMLUnknownElement_Binding::GetConstructorObjectHandle,
-#include "nsHTMLTagList.h"
+#include "nsHTMLTagList.inc"
 #undef HTML_TAG
 #undef HTML_OTHER
 };
@@ -250,39 +250,6 @@ nsTArray<nsCString>& TErrorResult<CleanupPolicy>::CreateErrorMessageHelper(
 }
 
 template <typename CleanupPolicy>
-void TErrorResult<CleanupPolicy>::SerializeMessage(
-    IPC::MessageWriter* aWriter) const {
-  using namespace IPC;
-  AssertInOwningThread();
-  MOZ_ASSERT(mUnionState == HasMessage);
-  MOZ_ASSERT(mExtra.mMessage);
-  WriteParam(aWriter, mExtra.mMessage->mArgs);
-  WriteParam(aWriter, mExtra.mMessage->mErrorNumber);
-}
-
-template <typename CleanupPolicy>
-bool TErrorResult<CleanupPolicy>::DeserializeMessage(
-    IPC::MessageReader* aReader) {
-  using namespace IPC;
-  AssertInOwningThread();
-  auto readMessage = MakeUnique<Message>();
-  if (!ReadParam(aReader, &readMessage->mArgs) ||
-      !ReadParam(aReader, &readMessage->mErrorNumber)) {
-    return false;
-  }
-  if (!readMessage->HasCorrectNumberOfArguments()) {
-    return false;
-  }
-
-  MOZ_ASSERT(mUnionState == HasNothing);
-  InitMessage(readMessage.release());
-#ifdef DEBUG
-  mUnionState = HasMessage;
-#endif  // DEBUG
-  return true;
-}
-
-template <typename CleanupPolicy>
 void TErrorResult<CleanupPolicy>::SetPendingExceptionWithMessage(
     JSContext* aCx, const char* context) {
   AssertInOwningThread();
@@ -391,34 +358,106 @@ struct TErrorResult<CleanupPolicy>::DOMExceptionInfo {
 };
 
 template <typename CleanupPolicy>
-void TErrorResult<CleanupPolicy>::SerializeDOMExceptionInfo(
+void TErrorResult<CleanupPolicy>::SerializeErrorResult(
     IPC::MessageWriter* aWriter) const {
   using namespace IPC;
   AssertInOwningThread();
-  MOZ_ASSERT(mUnionState == HasDOMExceptionInfo);
-  MOZ_ASSERT(mExtra.mDOMExceptionInfo);
-  WriteParam(aWriter, mExtra.mDOMExceptionInfo->mMessage);
-  WriteParam(aWriter, mExtra.mDOMExceptionInfo->mRv);
+
+  // It should be the case that mMightHaveUnreportedJSException can only be
+  // true when we're expecting a JS exception.  We cannot send such messages
+  // over the IPC channel since there is no sane way of transferring the JS
+  // value over to the other side.  Callers should never do that.
+  MOZ_ASSERT(!mMightHaveUnreportedJSException);
+  if (IsJSException() || IsJSContextException()) {
+    MOZ_CRASH(
+        "Cannot serialize an ErrorResult representing a Javascript exception");
+  }
+
+  WriteParam(aWriter, mResult);
+  if (IsErrorWithMessage()) {
+    MOZ_ASSERT(mResult == NS_ERROR_INTERNAL_ERRORRESULT_TYPEERROR ||
+               mResult == NS_ERROR_INTERNAL_ERRORRESULT_RANGEERROR);
+    MOZ_ASSERT(mUnionState == HasMessage);
+    MOZ_ASSERT(mExtra.mMessage);
+
+    WriteParam(aWriter, mExtra.mMessage->mArgs);
+    WriteParam(aWriter, mExtra.mMessage->mErrorNumber);
+  } else if (IsDOMException()) {
+    MOZ_ASSERT(mResult == NS_ERROR_INTERNAL_ERRORRESULT_DOMEXCEPTION);
+    MOZ_ASSERT(mUnionState == HasDOMExceptionInfo);
+    MOZ_ASSERT(mExtra.mDOMExceptionInfo);
+
+    WriteParam(aWriter, mExtra.mDOMExceptionInfo->mMessage);
+    WriteParam(aWriter, mExtra.mDOMExceptionInfo->mRv);
+  } else {
+    MOZ_ASSERT(mUnionState == HasNothing);
+  }
 }
 
 template <typename CleanupPolicy>
-bool TErrorResult<CleanupPolicy>::DeserializeDOMExceptionInfo(
+bool TErrorResult<CleanupPolicy>::DeserializeErrorResult(
     IPC::MessageReader* aReader) {
   using namespace IPC;
   AssertInOwningThread();
-  nsCString message;
-  nsresult rv;
-  if (!ReadParam(aReader, &message) || !ReadParam(aReader, &rv)) {
+
+  nsresult result;
+  if (!ReadParam(aReader, &result)) {
     return false;
   }
 
-  MOZ_ASSERT(mUnionState == HasNothing);
-  MOZ_ASSERT(IsDOMException());
-  InitDOMExceptionInfo(new DOMExceptionInfo(rv, message));
+  switch (result) {
+    case NS_ERROR_INTERNAL_ERRORRESULT_JS_EXCEPTION:
+    case NS_ERROR_INTERNAL_ERRORRESULT_EXCEPTION_ON_JSCONTEXT:
+      // JS exceptions can not be serialized.
+      return false;
+
+    case NS_ERROR_INTERNAL_ERRORRESULT_TYPEERROR:
+    case NS_ERROR_INTERNAL_ERRORRESULT_RANGEERROR: {
+      nsTArray<nsCString> args;
+      dom::ErrNum errorNumber;
+      if (!ReadParam(aReader, &args) || !ReadParam(aReader, &errorNumber)) {
+        return false;
+      }
+
+      if (GetErrorArgCount(errorNumber) != args.Length()) {
+        return false;
+      }
+
+      for (nsCString& arg : args) {
+        if (Utf8ValidUpTo(arg) != arg.Length()) {
+          return false;
+        }
+      }
+
+      ClearUnionData();
+
+      nsTArray<nsCString>& messageArgsArray =
+          CreateErrorMessageHelper(errorNumber, result);
+      messageArgsArray = std::move(args);
+      MOZ_ASSERT(mExtra.mMessage->HasCorrectNumberOfArguments(),
+                 "validated earlier");
 #ifdef DEBUG
-  mUnionState = HasDOMExceptionInfo;
-#endif  // DEBUG
-  return true;
+      mUnionState = HasMessage;
+#endif
+      return true;
+    }
+
+    case NS_ERROR_INTERNAL_ERRORRESULT_DOMEXCEPTION: {
+      nsCString message;
+      nsresult rv;
+      if (!ReadParam(aReader, &message) || !ReadParam(aReader, &rv)) {
+        return false;
+      }
+
+      ThrowDOMException(rv, message);
+      return true;
+    }
+
+    default:
+      ClearUnionData();
+      AssignErrorCode(result);
+      return true;
+  }
 }
 
 template <typename CleanupPolicy>
@@ -2826,8 +2865,7 @@ bool IsGlobalInExposureSet(JSContext* aCx, JSObject* aGlobal,
                 GlobalNames::ServiceWorkerGlobalScope |
                 GlobalNames::WorkerDebuggerGlobalScope |
                 GlobalNames::AudioWorkletGlobalScope |
-                GlobalNames::PaintWorkletGlobalScope |
-                GlobalNames::ShadowRealmGlobalScope)) == 0,
+                GlobalNames::PaintWorkletGlobalScope)) == 0,
              "Unknown global type");
 
   const char* name = JS::GetClass(aGlobal)->name;
@@ -2864,11 +2902,6 @@ bool IsGlobalInExposureSet(JSContext* aCx, JSObject* aGlobal,
 
   if ((aGlobalSet & GlobalNames::PaintWorkletGlobalScope) &&
       !strcmp(name, "PaintWorkletGlobalScope")) {
-    return true;
-  }
-
-  if ((aGlobalSet & GlobalNames::ShadowRealmGlobalScope) &&
-      !strcmp(name, "ShadowRealmGlobalScope")) {
     return true;
   }
 
@@ -3286,12 +3319,15 @@ bool GenericMethod(JSContext* cx, unsigned argc, JS::Value* vp) {
     bool ok = ThisPolicy::HandleInvalidThis(cx, args, false, protoID);
     return ExceptionPolicy::HandleException(cx, args, info, ok);
   }
-  JS::Rooted<JSObject*> obj(cx, ThisPolicy::ExtractThisObject(args));
+
+  JS::RootedTuple<JSObject*, JSObject*> roots(cx);
+  JS::RootedField<JSObject*, 0> obj(roots, ThisPolicy::ExtractThisObject(args));
 
   // NOTE: we want to leave obj in its initial compartment, so don't want to
   // pass it to UnwrapObjectInternal.  Also, the thing we pass to
   // UnwrapObjectInternal may be affected by our ThisPolicy.
-  JS::Rooted<JSObject*> rootSelf(cx, ThisPolicy::MaybeUnwrapThisObject(obj));
+  JS::RootedField<JSObject*, 1> rootSelf(
+      roots, ThisPolicy::MaybeUnwrapThisObject(obj));
   void* self;
   {
     nsresult rv =
@@ -3515,7 +3551,8 @@ static bool GetBackingObject(JSContext* aCx, JS::Handle<JSObject*> aObj,
                              size_t aSlotIndex,
                              JS::MutableHandle<JSObject*> aBackingObj,
                              bool* aBackingObjCreated, Args... aArgs) {
-  JS::Rooted<JSObject*> reflector(aCx);
+  JS::RootedTuple<JSObject*, JS::Value, JSObject*> roots(aCx);
+  JS::RootedField<JSObject*, 0> reflector(roots);
   reflector = IsDOMObject(aObj)
                   ? aObj
                   : js::UncheckedUnwrap(aObj,
@@ -3523,14 +3560,14 @@ static bool GetBackingObject(JSContext* aCx, JS::Handle<JSObject*> aObj,
 
   // Retrieve the backing object from the reserved slot on the maplike/setlike
   // object. If it doesn't exist yet, create it.
-  JS::Rooted<JS::Value> slotValue(aCx);
+  JS::RootedField<JS::Value, 1> slotValue(roots);
   slotValue = JS::GetReservedSlot(reflector, aSlotIndex);
   if (slotValue.isUndefined()) {
     // Since backing object access can happen in non-originating realms,
     // make sure to create the backing object in reflector realm.
     {
       JSAutoRealm ar(aCx, reflector);
-      JS::Rooted<JSObject*> newBackingObj(aCx);
+      JS::RootedField<JSObject*, 2> newBackingObj(roots);
       newBackingObj.set(Method(aCx, aArgs...));
       if (NS_WARN_IF(!newBackingObj)) {
         return false;
@@ -4094,7 +4131,7 @@ namespace {
 
 #define DEPRECATED_OPERATION(_op) #_op,
 static const char* kDeprecatedOperations[] = {
-#include "nsDeprecatedOperationList.h"
+#include "nsDeprecatedOperationList.inc"
     nullptr};
 #undef DEPRECATED_OPERATION
 

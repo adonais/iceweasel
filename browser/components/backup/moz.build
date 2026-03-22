@@ -39,6 +39,7 @@ EXTRA_JS_MODULES.backup += [
     "resources/MiscDataBackupResource.sys.mjs",
     "resources/PlacesBackupResource.sys.mjs",
     "resources/PreferencesBackupResource.sys.mjs",
+    "resources/SelectableProfileBackupResource.sys.mjs",
     "resources/SessionStoreBackupResource.sys.mjs",
     "resources/SiteSettingsBackupResource.sys.mjs",
 ]

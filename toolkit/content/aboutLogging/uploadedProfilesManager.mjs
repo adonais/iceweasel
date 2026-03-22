@@ -146,9 +146,8 @@ export class UploadedProfilesManager {
   async refresh() {
     try {
       this.#hideError();
-      const { getAllUploadedProfiles } = await import(
-        "chrome://global/content/aboutLogging/profileStorage.mjs"
-      );
+      const { getAllUploadedProfiles } =
+        await import("chrome://global/content/aboutLogging/profileStorage.mjs");
 
       const profiles = await getAllUploadedProfiles();
       this.#renderProfiles(profiles);
@@ -262,9 +261,8 @@ export class UploadedProfilesManager {
       document.l10n.setAttributes(button, "about-logging-deleting-profile");
 
       // Get the profile info to get the JWT token
-      const { getUploadedProfile, deleteUploadedProfile } = await import(
-        "chrome://global/content/aboutLogging/profileStorage.mjs"
-      );
+      const { getUploadedProfile, deleteUploadedProfile } =
+        await import("chrome://global/content/aboutLogging/profileStorage.mjs");
 
       const profile = await getUploadedProfile(profileId);
       if (!profile) {

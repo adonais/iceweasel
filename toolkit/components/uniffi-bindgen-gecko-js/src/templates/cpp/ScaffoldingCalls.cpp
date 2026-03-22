@@ -31,11 +31,7 @@ public:
     }
     {%- endif %}
     {%- for arg in scaffolding_call.arguments %}
-    {%- if arg.receiver %}
-    {{ arg.field_name }}.LowerReciever(aArgs[{{ loop.index0 }}], aError);
-    {%- else %}
     {{ arg.field_name }}.Lower(aArgs[{{ loop.index0 }}], aError);
-    {%- endif %}
     if (aError.Failed()) {
       return;
     }
@@ -94,11 +90,7 @@ protected:
   void LowerArgsAndMakeRustCall(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
     {%- for arg in scaffolding_call.arguments %}
     {{ arg.ffi_value_class }} {{ arg.field_name }}{};
-    {%- if arg.receiver %}
-    {{ arg.field_name }}.LowerReciever(aArgs[{{ loop.index0 }}], aError);
-    {%- else %}
     {{ arg.field_name }}.Lower(aArgs[{{ loop.index0 }}], aError);
-    {%- endif %}
     if (aError.Failed()) {
       return;
     }

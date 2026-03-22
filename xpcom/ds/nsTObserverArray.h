@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsTObserverArray_h___
-#define nsTObserverArray_h___
+#ifndef nsTObserverArray_h_
+#define nsTObserverArray_h_
 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ReverseIterator.h"
@@ -581,4 +581,4 @@ inline void ImplCycleCollectionTraverse(
     }                                                              \
   } while (0)
 
-#endif  // nsTObserverArray_h___
+#endif  // nsTObserverArray_h_

@@ -12,7 +12,6 @@
 // values defined here may be determined at runtime.
 
 #include "mozilla/Literals.h"
-#include "mozilla/MathAlgorithms.h"
 
 #include "Constants.h"
 // Chunk.h is required for sizeof(arena_chunk_t), but it's inconvenient that
@@ -73,7 +72,7 @@ static const size_t gRealPageSize = 16_KiB;
 #  else
 static const size_t gRealPageSize = 4_KiB;
 #  endif
-static const size_t gPageSize = gRealPageSize;
+static const size_t gPageSize = 4_KiB;
 #else
 // When MALLOC_OPTIONS contains one or several `P`s, gPageSize will be
 // doubled for each `P`.  Likewise each 'p' will halve gPageSize.
@@ -98,7 +97,7 @@ extern size_t gPageSize;
     MOZ_PASTE_PREFIX_AND_ARG_COUNT(GLOBAL_ASSERT_HELPER, __VA_ARGS__) \
     (__VA_ARGS__)
 #  define GLOBAL_CONSTEXPR constexpr
-#  include "Globals_inc.h"
+#  include "Globals.inc"
 #  undef GLOBAL_CONSTEXPR
 #  undef GLOBAL_ASSERT
 #  undef GLOBAL_ASSERT_HELPER1
@@ -109,7 +108,7 @@ extern size_t gPageSize;
 // We declare the globals here and initialise them in DefineGlobals()
 #  define GLOBAL(type, name, value) extern type name;
 #  define GLOBAL_ASSERT(...)
-#  include "Globals_inc.h"
+#  include "Globals.inc"
 #  undef GLOBAL_ASSERT
 #  undef GLOBAL
 
@@ -117,8 +116,7 @@ void DefineGlobals();
 #endif
 
 // Max size class for bins.
-#define gMaxBinClass \
-  (gMaxSubPageClass ? gMaxSubPageClass : kMaxQuantumWideClass)
+#define gMaxBinClass (kMaxQuantumWideClass)
 
 // Return the smallest chunk multiple that is >= s.
 #define CHUNK_CEILING(s) (((s) + kChunkSizeMask) & ~kChunkSizeMask)
@@ -132,12 +130,8 @@ void DefineGlobals();
 #define QUANTUM_WIDE_CEILING(a) \
   (((a) + (kQuantumWideMask)) & ~(kQuantumWideMask))
 
-// Return the smallest sub page-size  that is >= a.
-#define SUBPAGE_CEILING(a) (RoundUpPow2(a))
-
 // Number of all the small-allocated classes
-#define NUM_SMALL_CLASSES \
-  (kNumQuantumClasses + kNumQuantumWideClasses + gNumSubPageClasses)
+#define NUM_SMALL_CLASSES (kNumQuantumClasses + kNumQuantumWideClasses)
 
 // Return the chunk address for allocation address a.
 static inline arena_chunk_t* GetChunkForPtr(const void* aPtr) {

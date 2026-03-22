@@ -440,8 +440,7 @@ static Result<Ok, nsCString> IsSupported(
   if (aFactory.mProvider != MFTEncoder::Factory::Provider::SW &&
       isH264HighProfile && isFrameSizeGreaterThan4K) {
     return Err(nsFmtCString(
-        FMT_STRING(
-            "{} encoder {} does not support H.264 high profile for 4K+ video"),
+        "{} encoder {} does not support H.264 high profile for 4K+ video",
         MFTEncoder::Factory::EnumValueToString(aFactory.mProvider),
         aFactory.mName.get()));
   }

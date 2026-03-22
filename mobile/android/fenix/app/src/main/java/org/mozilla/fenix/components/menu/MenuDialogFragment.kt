@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +49,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -56,7 +58,6 @@ import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.concept.engine.translate.TranslationSupport
 import mozilla.components.concept.engine.translate.findLanguage
 import mozilla.components.feature.addons.Addon
-import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.util.dpToPx
@@ -311,7 +312,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 addPinnedSiteUseCase = components.useCases.topSitesUseCase.addPinnedSites,
                                 removePinnedSitesUseCase = components.useCases.topSitesUseCase.removeTopSites,
                                 requestDesktopSiteUseCase = components.useCases.sessionUseCases.requestDesktopSite,
-                                tabsUseCases = components.useCases.tabsUseCases,
                                 materialAlertDialogBuilder = MaterialAlertDialogBuilder(context),
                                 topSitesMaxLimit = components.settings.topSitesMaxLimit,
                                 onDeleteAndQuit = {
@@ -329,7 +329,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     }
                                 },
                                 onSendPendingIntentWithUrl = ::sendPendingIntentWithUrl,
-                                scope = coroutineScope,
+                                mainDispatcher = Dispatchers.Main,
                                 lastSavedFolderCache = context.settings().lastSavedFolderCache,
                             ),
                             MenuNavigationMiddleware(
@@ -406,19 +406,18 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                         isTranslationEngineSupported &&
                             FxNimbus.features.translations.value().mainFlowBrowserMenuEnabled
                     val isPdf = selectedTab?.content?.isPdf ?: false
-                    val isWebCompatEnabled by store.observeAsState(store.state.isWebCompatEnabled) {
-                        it.isWebCompatEnabled
-                    }
+                    val isWebCompatEnabled by remember {
+                        store.stateFlow.map { it.isWebCompatEnabled }
+                    }.collectAsState(initial = store.state.isWebCompatEnabled)
                     val supportedLanguages = components.core.store.state.translationEngine.supportedLanguages
                     val translateLanguageCode = selectedTab?.translationsState?.translationEngineState
                         ?.requestedTranslationPair?.toLanguage
                     val isExtensionsProcessDisabled = browserStore.state.extensionsProcessDisabled
                     val isWebCompatReporterSupported =
                         FxNimbus.features.menuRedesign.value().reportSiteIssue
-
-                    val isDesktopMode by store.observeAsState(initialValue = false) { state ->
-                        state.isDesktopMode
-                    }
+                    val isDesktopMode by remember {
+                        store.stateFlow.map { state -> state.isDesktopMode }
+                    }.collectAsState(initial = false)
 
                     webExtensionsMenuBinding.set(
                         feature = WebExtensionsMenuBinding(
@@ -432,39 +431,59 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                         view = this,
                     )
 
-                    val recommendedAddons by store.observeAsState(initialValue = emptyList()) { state ->
-                        state.extensionMenuState.recommendedAddons
-                    }
-                    val isBookmarked by store.observeAsState(initialValue = false) { state ->
-                        state.browserMenuState != null && state.browserMenuState.bookmarkState.isBookmarked
-                    }
-                    val isPinned by store.observeAsState(initialValue = false) { state ->
-                        state.browserMenuState != null && state.browserMenuState.isPinned
-                    }
+                    val recommendedAddons by remember {
+                        store.stateFlow
+                            .map { state ->
+                                state.extensionMenuState.recommendedAddons
+                            }
+                    }.collectAsState(initial = emptyList())
 
-                    val isReaderViewActive by store.observeAsState(initialValue = false) { state ->
-                        state.browserMenuState != null && state.browserMenuState.selectedTab.readerState.active
-                    }
+                    val isBookmarked by remember {
+                        store.stateFlow
+                            .map { state ->
+                                state.browserMenuState != null &&
+                                    state.browserMenuState.bookmarkState.isBookmarked
+                            }
+                    }.collectAsState(initial = false)
 
-                    val addonInstallationInProgress by store.observeAsState(initialValue = null) { state ->
-                        state.extensionMenuState.addonInstallationInProgress
-                    }
+                    val isPinned by remember {
+                        store.stateFlow
+                            .map { state ->
+                                state.browserMenuState != null &&
+                                    state.browserMenuState.isPinned
+                            }
+                    }.collectAsState(initial = false)
 
-                    val browserWebExtensionMenuItem by store.observeAsState(initialValue = emptyList()) { state ->
-                        state.extensionMenuState.browserWebExtensionMenuItem
-                    }
+                    val isReaderViewActive by remember {
+                        store.stateFlow
+                            .map { state ->
+                                state.browserMenuState != null &&
+                                    state.browserMenuState.selectedTab.readerState.active
+                            }
+                    }.collectAsState(initial = false)
 
-                    val availableAddons by store.observeAsState(initialValue = emptyList()) { state ->
-                        state.extensionMenuState.availableAddons
-                    }
+                    val addonInstallationInProgress by remember {
+                        store.stateFlow
+                            .map { state -> state.extensionMenuState.addonInstallationInProgress }
+                    }.collectAsState(initial = null)
 
-                    val webExtensionsCount by store.observeAsState(initialValue = 0) { state ->
-                        state.extensionMenuState.webExtensionsCount
-                    }
+                    val browserWebExtensionMenuItem by remember {
+                        store.stateFlow
+                            .map { state -> state.extensionMenuState.browserWebExtensionMenuItem }
+                    }.collectAsState(initial = emptyList())
 
-                    val isAllWebExtensionsDisabled by store.observeAsState(initialValue = false) { state ->
-                        state.extensionMenuState.allWebExtensionsDisabled
-                    }
+                    val availableAddons by remember {
+                        store.stateFlow.map { state -> state.extensionMenuState.availableAddons }
+                    }.collectAsState(initial = emptyList())
+
+                    val webExtensionsCount by remember {
+                        store.stateFlow.map { state -> state.extensionMenuState.webExtensionsCount }
+                    }.collectAsState(initial = 0)
+
+                    val isAllWebExtensionsDisabled by remember {
+                        store.stateFlow
+                            .map { state -> state.extensionMenuState.allWebExtensionsDisabled }
+                    }.collectAsState(initial = false)
 
                     val initRoute = when (args.accesspoint) {
                         MenuAccessPoint.Browser,
@@ -559,13 +578,18 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                             Route.MainMenu -> {
                                 handlebarContentDescription = descMain
 
-                                val account by syncStore.observeAsState(initialValue = null) { state -> state.account }
-                                val accountState by syncStore.observeAsState(initialValue = NotAuthenticated) { state ->
-                                    state.accountState
-                                }
-                                val isSiteLoading by browserStore.observeAsState(initialValue = false) { state ->
-                                    state.selectedTab?.content?.loading == true
-                                }
+                                val account by remember {
+                                    syncStore.stateFlow
+                                        .map { state -> state.account }
+                                }.collectAsState(initial = null)
+                                val accountState by remember {
+                                    syncStore.stateFlow
+                                        .map { state -> state.accountState }
+                                }.collectAsState(initial = NotAuthenticated)
+                                val isSiteLoading by remember {
+                                    browserStore.stateFlow
+                                        .map { state -> state.selectedTab?.content?.loading == true }
+                                }.collectAsState(initial = false)
 
                                 val appLinksRedirect = if (selectedTab?.content?.url != null) {
                                     appLinksUseCases.appLinkRedirect(selectedTab.content.url)
@@ -573,17 +597,22 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     null
                                 }
 
-                                val isDownloadHighlighted by appStore.observeAsState(
-                                    initialValue = false,
-                                ) { state ->
-                                    state.supportedMenuNotifications.contains(SupportedMenuNotifications.Downloads)
-                                }
-
-                                val isOpenInAppMenuHighlighted by appStore.observeAsState(
-                                    initialValue = false,
-                                ) { state ->
-                                    state.supportedMenuNotifications.contains(SupportedMenuNotifications.OpenInApp)
-                                }
+                                val isDownloadHighlighted by remember {
+                                    appStore.stateFlow
+                                        .map { state ->
+                                            state.supportedMenuNotifications.contains(
+                                                SupportedMenuNotifications.Downloads,
+                                            )
+                                        }
+                                }.collectAsState(initial = false)
+                                val isOpenInAppMenuHighlighted by remember {
+                                    appStore.stateFlow
+                                        .map { state ->
+                                            state.supportedMenuNotifications.contains(
+                                                SupportedMenuNotifications.OpenInApp,
+                                            )
+                                        }
+                                }.collectAsState(initial = false)
 
                                 MainMenu(
                                     accessPoint = args.accesspoint,
@@ -709,8 +738,12 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                             translationInfo = translationInfo,
                                             showShortcuts = settings.showTopSitesFeature,
                                             isAndroidAutomotiveAvailable = context.isAndroidAutomotiveAvailable(),
+                                            showSummarization = settings.shakeToSummarizeFeatureEnabled,
                                             onWebCompatReporterClick = {
                                                 store.dispatch(MenuAction.Navigate.WebCompatReporter)
+                                            },
+                                            onSummarizePageClick = {
+                                                store.dispatch(MenuAction.Navigate.Summarizer)
                                             },
                                             onShortcutsMenuClick = {
                                                 if (!isPinned) {
@@ -788,9 +821,15 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                             }
 
                             Route.CustomTabMenu -> {
-                                val isSiteLoading by browserStore.observeAsState(false) { state ->
-                                    args.customTabSessionId?.let { state.findCustomTab(it)?.content?.loading } ?: false
-                                }
+                                val isSiteLoading by remember {
+                                    browserStore.stateFlow.map { state ->
+                                        args.customTabSessionId
+                                            ?.let {
+                                                state.findCustomTab(it)?.content?.loading
+                                            }
+                                            ?: false
+                                    }
+                                }.collectAsState(false)
                                 handlebarContentDescription = descCustom
 
                                 CustomTabMenu(

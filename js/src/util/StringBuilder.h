@@ -223,7 +223,7 @@ class StringBuilder {
 
   [[nodiscard]] bool reserve(size_t len) {
     auto lenWithHeader = mozilla::CheckedInt<size_t>(len) + numHeaderChars_;
-    if (MOZ_UNLIKELY(!lenWithHeader.isValid())) {
+    if (MOZ_UNLIKELY(!lenWithHeader.isValid() || len > JSString::MAX_LENGTH)) {
       ReportAllocationOverflow(maybeCx_);
       return false;
     }

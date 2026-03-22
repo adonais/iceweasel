@@ -11,6 +11,7 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.OptIn;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -20,6 +21,7 @@ import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
+import org.mozilla.gecko.util.ThreadUtils;
 
 /**
  * The Autocomplete API provides a way to leverage Gecko's input form handling for autocompletion.
@@ -672,9 +674,10 @@ public class Autocomplete {
      * @param countryCode The country you want an address structure for.
      * @return a GeckoResult with a list of Fields for the given country or an exception.
      */
-    @AnyThread
+    @HandlerThread
     public static @NonNull GeckoResult<List<Field>> getAddressStructure(
         @NonNull final String countryCode) {
+      ThreadUtils.assertOnHandlerThread();
       final GeckoBundle param = new GeckoBundle();
       param.putString("country", countryCode);
       return EventDispatcher.getInstance()
@@ -1271,6 +1274,7 @@ public class Autocomplete {
   public abstract static class SelectOption<T> extends Option<T> {
     /** Select option hint definitions. */
     @Retention(RetentionPolicy.SOURCE)
+    @OptIn(markerClass = ExperimentalGeckoViewApi.class)
     @IntDef(
         flag = true,
         value = {
@@ -1278,7 +1282,8 @@ public class Autocomplete {
           Hint.GENERATED,
           Hint.INSECURE_FORM,
           Hint.DUPLICATE_USERNAME,
-          Hint.MATCHING_ORIGIN
+          Hint.MATCHING_ORIGIN,
+          Hint.FIREFOX_RELAY
         })
     public @interface SelectOptionHint {}
 
@@ -1311,6 +1316,13 @@ public class Autocomplete {
        * origin it is being requested for, rather than for a subdomain.
        */
       public static final int MATCHING_ORIGIN = 1 << 3;
+
+      /**
+       * This synthetic entry indicates that the Gecko autocomplete system thinks that Firefox Relay
+       * features should be offered. This is marked experimental since the heuristics are still
+       * implementation details and subject to change.
+       */
+      @ExperimentalGeckoViewApi public static final int FIREFOX_RELAY = 1 << 4;
     }
 
     /**

@@ -14,6 +14,10 @@
 #include "nsGkAtoms.h"
 #include "nsIFormControl.h"
 
+#ifdef ACCESSIBILITY
+#  include "nsAccessibilityService.h"
+#endif
+
 using namespace mozilla;
 using mozilla::dom::CallerType;
 using mozilla::dom::HTMLInputElement;
@@ -32,6 +36,7 @@ NS_IMPL_FRAMEARENA_HELPERS(nsColorControlFrame)
 
 NS_QUERYFRAME_HEAD(nsColorControlFrame)
   NS_QUERYFRAME_ENTRY(nsColorControlFrame)
+  NS_QUERYFRAME_ENTRY(nsIAnonymousContentCreator)
 NS_QUERYFRAME_TAIL_INHERITING(ButtonControlFrame)
 
 void nsColorControlFrame::Destroy(DestroyContext& aContext) {
@@ -44,7 +49,7 @@ void nsColorControlFrame::Destroy(DestroyContext& aContext) {
 nsresult nsColorControlFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
   mColorContent = mContent->OwnerDoc()->CreateHTMLElement(nsGkAtoms::div);
-  mColorContent->SetPseudoElementType(PseudoStyleType::mozColorSwatch);
+  mColorContent->SetPseudoElementType(PseudoStyleType::MozColorSwatch);
   // Mark the element to be native anonymous before setting any attributes.
   mColorContent->SetIsNativeAnonymousRoot();
   UpdateColor();
@@ -82,9 +87,9 @@ void nsColorControlFrame::UpdateColor() {
     return;
   }
 
-  // Set the background-color CSS property of the swatch element to this color.
+  // Set the color CSS property of the swatch element to this color.
   mColorContent->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
-                         u"background-color:"_ns + color,
+                         u"color:"_ns + color,
                          /* aNotify */ true);
 }
 
@@ -100,6 +105,11 @@ nsresult nsColorControlFrame::AttributeChanged(int32_t aNameSpaceID,
           FormControlType::InputColor &&
       aNameSpaceID == kNameSpaceID_None && nsGkAtoms::value == aAttribute) {
     UpdateColor();
+#ifdef ACCESSIBILITY
+    if (nsAccessibilityService* accService = GetAccService()) {
+      accService->ColorValueChanged(PresShell(), mContent);
+    }
+#endif
   }
   return ButtonControlFrame::AttributeChanged(aNameSpaceID, aAttribute,
                                               aModType);

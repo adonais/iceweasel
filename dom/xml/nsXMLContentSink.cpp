@@ -11,7 +11,6 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/Logging.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/UseCounter.h"
 #include "mozilla/css/Loader.h"
@@ -86,18 +85,7 @@ nsresult NS_NewXMLContentSink(nsIXMLContentSink** aResult, Document* aDoc,
   return NS_OK;
 }
 
-nsXMLContentSink::nsXMLContentSink()
-    : mState(eXMLContentSinkState_InProlog),
-      mTextLength(0),
-      mNotifyLevel(0),
-      mPrettyPrintXML(true),
-      mPrettyPrintHasSpecialRoot(0),
-      mPrettyPrintHasFactoredElements(0),
-      mPrettyPrinting(0),
-      mPreventScriptExecution(0) {
-  PodArrayZero(mText);
-}
-
+nsXMLContentSink::nsXMLContentSink() = default;
 nsXMLContentSink::~nsXMLContentSink() = default;
 
 nsresult nsXMLContentSink::Init(Document* aDoc, nsIURI* aURI,
@@ -628,9 +616,9 @@ nsresult nsXMLContentSink::CloseElement(nsIContent* aContent) {
     // Always check the clock in nsContentSink right after a script
     StopDeflecting();
 
-    // Flush any previously parsed elements before executing a script, in order
-    // to prevent a script that adds a mutation observer from observing that
-    // script element being adding to the tree.
+    // Flush any previously parsed elements before executing a script, in
+    // order to prevent a script that adds a mutation observer from observing
+    // that script element being adding to the tree.
     FlushTags();
 
     // https://html.spec.whatwg.org/#parsing-xhtml-documents
@@ -649,25 +637,23 @@ nsresult nsXMLContentSink::CloseElement(nsIContent* aContent) {
     if (mParser && !mParser->IsParserEnabled()) {
       block = true;
     }
-
     return block ? NS_ERROR_HTMLPARSER_BLOCK : NS_OK;
   }
 
-  nsresult rv = NS_OK;
   if (auto* linkStyle = LinkStyle::FromNode(*aContent)) {
     auto updateOrError = linkStyle->EnableUpdatesAndUpdateStyleSheet(
         mRunsToCompletion ? nullptr : this);
     if (updateOrError.isErr()) {
-      rv = updateOrError.unwrapErr();
-    } else if (updateOrError.unwrap().ShouldBlock() && !mRunsToCompletion) {
+      return updateOrError.unwrapErr();
+    }
+    if (updateOrError.unwrap().ShouldBlock() && !mRunsToCompletion) {
       ++mPendingSheetCount;
       if (mScriptLoader) {
         mScriptLoader->AddParserBlockingScriptExecutionBlocker();
       }
     }
   }
-
-  return rv;
+  return NS_OK;
 }
 
 nsresult nsXMLContentSink::AddContentAsLeaf(nsIContent* aContent) {

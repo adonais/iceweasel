@@ -7,7 +7,10 @@
  */
 async function setup() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.shell.checkDefaultBrowser", false]],
+    set: [
+      ["browser.shell.checkDefaultBrowser", false],
+      ["browser.settings-redesign.enabled", true],
+    ],
   });
   await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:preferences");
 }
@@ -116,6 +119,74 @@ add_task(
       Services.prefs.getBoolPref("browser.shell.checkDefaultBrowser"),
       "checkDefaultBrowser pref is now enabled"
     );
+    teardown();
+  }
+);
+
+add_task(
+  /**
+   * Tests when clicking 'Make default' button in Sync pane, setting browser
+   * to default, and the side effects of the 'Always check' checkbox.
+   */
+  async function clicking_make_default_sync_checks_alwaysCheck_checkbox() {
+    await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      "about:preferences#sync"
+    );
+    await setupInitialBrowserDefaultSetting({ isDefault: false });
+
+    let defaultBrowserSync = content.document.querySelector(
+      `[groupid="defaultBrowserSync"]`
+    );
+
+    await TestUtils.waitForCondition(
+      () => defaultBrowserSync.querySelector("#isNotDefaultPane"),
+      "Wait for defaultBrowserSync group to be initialized"
+    );
+
+    let isNotDefaultPaneSync =
+      defaultBrowserSync.querySelector("#isNotDefaultPane");
+
+    Assert.ok(
+      !BrowserTestUtils.isHidden(isNotDefaultPaneSync.control),
+      "The 'make default' pane should be visible when browser is not default"
+    );
+
+    const setDefaultButton =
+      defaultBrowserSync.querySelector("#setDefaultButton");
+    /**
+     * Click 'Make default' button to trigger shell service that sets the browser to default.
+     */
+    setDefaultButton.click();
+    /**
+     * Wait for the pref to be set and the UI to update.
+     */
+    await TestUtils.waitForCondition(
+      () => Services.prefs.getBoolPref("browser.shell.checkDefaultBrowser"),
+      "'Always Check' checkbox should get checked after clicking the 'Set Default' button"
+    );
+
+    /**
+     * Wait for the UI to update and hide the 'make default' pane.
+     */
+    await TestUtils.waitForCondition(() => {
+      const updatedIsNotDefaultPaneSync =
+        defaultBrowserSync.querySelector("#isNotDefaultPane");
+      return (
+        updatedIsNotDefaultPaneSync &&
+        BrowserTestUtils.isHidden(isNotDefaultPaneSync.control)
+      );
+    }, "The 'make default' pane should be hidden after setting browser as default");
+
+    Assert.ok(
+      BrowserTestUtils.isHidden(isNotDefaultPaneSync.control),
+      "The 'make default' pane should be hidden when browser is default"
+    );
+    Assert.ok(
+      Services.prefs.getBoolPref("browser.shell.checkDefaultBrowser"),
+      "checkDefaultBrowser pref is now enabled"
+    );
+
     teardown();
   }
 );

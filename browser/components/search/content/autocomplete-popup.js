@@ -12,13 +12,20 @@
       "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
     BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
     SearchOneOffs: "moz-src:///browser/components/search/SearchOneOffs.sys.mjs",
+    SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   });
+
+  /**
+   * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
+   */
 
   /**
    * A richlistbox popup custom element for for a browser search autocomplete
    * widget.
    */
-  class MozSearchAutocompleteRichlistboxPopup extends MozElements.MozAutocompleteRichlistboxPopup {
+  class MozSearchAutocompleteRichlistboxPopup
+    extends MozElements.MozAutocompleteRichlistboxPopup
+  {
     constructor() {
       super();
 
@@ -241,15 +248,15 @@
     /**
      * Updates the header of the pop-up with the search engine name and icon.
      *
-     * @param {nsISearchEngine} [engine]
+     * @param {SearchEngine} [engine]
      *   The engine to use, if not specified falls back to the default engine.
      */
     async updateHeader(engine) {
       if (!engine) {
         if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-          engine = await Services.search.getDefaultPrivate();
+          engine = await lazy.SearchService.getDefaultPrivate();
         } else {
-          engine = await Services.search.getDefault();
+          engine = await lazy.SearchService.getDefault();
         }
       }
       this.#currentEngineName = engine.name;
@@ -285,7 +292,7 @@
      *
      * @param {Event} event
      *   The event that triggered the search.
-     * @param {nsISearchEngine} engine
+     * @param {SearchEngine} engine
      *   The search engine being used for the search.
      * @param {string} where
      *   Where the search should be opened (current tab, new tab, window etc).

@@ -131,20 +131,19 @@ sealed class SettingsSearchState(
      * @property searchQuery Current search query [String].
      * @property searchResults List of [SettingsSearchItem]s that match the current search query.
      * @property recentSearches List of recently searched [SettingsSearchItem]s.
-     * @property groupedResults searchResults grouped by category header.
      */
     data class SearchInProgress(
         override val searchQuery: String,
         override val searchResults: List<SettingsSearchItem>,
         override val recentSearches: List<SettingsSearchItem>,
-        override val groupedResults: Map<String, List<SettingsSearchItem>> =
-            searchResults.groupBy { it.categoryHeader }.toSortedMap(),
     ) : SettingsSearchState(
         searchQuery,
         searchResults,
         recentSearches,
-        groupedResults,
     ) {
+        override val groupedResults: Map<String, List<SettingsSearchItem>> by lazy {
+            searchResults.groupBy { it.categoryHeader }.toSortedMap()
+        }
         override fun copyWith(
             searchQuery: String,
             searchResults: List<SettingsSearchItem>,
@@ -155,7 +154,6 @@ sealed class SettingsSearchState(
                 searchQuery = searchQuery,
                 searchResults = searchResults,
                 recentSearches = recentSearches,
-                groupedResults = groupedResults,
             )
         }
     }

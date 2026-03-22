@@ -58,7 +58,7 @@ function expectedImageAcceptHeader() {
     // AVIF not registered, skip it
   }
 
-  if (Services.prefs.getBoolPref("image.jxl.enabled")) {
+  if (Services.prefs.getBoolPref("image.jxl.enabled", false)) {
     header += "image/jxl,";
   }
 

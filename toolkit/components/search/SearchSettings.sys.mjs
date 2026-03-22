@@ -16,6 +16,10 @@ const lazy = XPCOMUtils.declareLazy({
     }),
 });
 
+/**
+ * @import {SearchEngine} from "./SearchEngine.sys.mjs"
+ */
+
 const SETTINGS_FILENAME = "search.json.mozlz4";
 
 /**
@@ -548,7 +552,7 @@ export class SearchSettings {
   }
 
   // nsIObserver
-  observe(engine, topic, verb) {
+  observe(subject, topic, verb) {
     switch (topic) {
       case lazy.SearchUtils.TOPIC_ENGINE_MODIFIED:
         switch (verb) {
@@ -560,7 +564,7 @@ export class SearchSettings {
           case lazy.SearchUtils.MODIFIED_TYPE.ICON_CHANGED:
             // Config Search Engines have their icons stored in Remote
             // Settings, so we don't need to update the saved settings.
-            if (!engine?.isConfigEngine) {
+            if (!subject.wrappedJSObject.isConfigEngine) {
               this._delayedWrite();
             }
             break;
@@ -695,7 +699,7 @@ export class SearchSettings {
    *
    * @param {string} engineName
    *   The name of the engine.
-   * @returns {?nsISearchEngine}
+   * @returns {?SearchEngine}
    *   The associated engine if found, null otherwise.
    */
   #getEngineByName(engineName) {

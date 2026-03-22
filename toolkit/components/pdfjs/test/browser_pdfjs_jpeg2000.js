@@ -18,9 +18,8 @@ async function getPixels(browser) {
     Assert.ok(!!canvas, "We must have a canvas");
 
     return new Uint32Array(
-      canvas
-        .getContext("2d")
-        .getImageData(0, 0, canvas.width, canvas.height).data.buffer
+      canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height)
+        .data.buffer
     );
   });
 }

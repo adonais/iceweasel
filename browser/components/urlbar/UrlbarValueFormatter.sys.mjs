@@ -7,6 +7,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = XPCOMUtils.declareLazy({
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
@@ -42,9 +43,9 @@ export class UrlbarValueFormatter {
         return;
       }
     }
-    if (!Services.search.isInitialized) {
+    if (!lazy.SearchService.isInitialized) {
       try {
-        await Services.search.init();
+        await lazy.SearchService.init();
       } catch {}
 
       if (this.#updateInstance != instance) {

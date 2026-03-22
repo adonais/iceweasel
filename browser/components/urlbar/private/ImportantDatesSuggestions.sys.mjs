@@ -215,7 +215,6 @@ export class ImportantDatesSuggestions extends SuggestProvider {
       type: lazy.UrlbarUtils.RESULT_TYPE.SEARCH,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
       isBestMatch: true,
-      hideRowLabel: true,
       richSuggestionIconSize: 24,
       payload: {
         title: dateString,

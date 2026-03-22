@@ -12,7 +12,7 @@ from taskgraph.util import json
 from taskgraph.util.attributes import keymatch
 from taskgraph.util.keyed_by import evaluate_keyed_by
 from taskgraph.util.readonlydict import ReadOnlyDict
-from taskgraph.util.schema import Schema, resolve_keyed_by
+from taskgraph.util.schema import LegacySchema, resolve_keyed_by
 from taskgraph.util.taskcluster import get_artifact_path
 from taskgraph.util.templates import merge
 from voluptuous import Any, Optional, Required
@@ -200,14 +200,7 @@ def set_treeherder_machine_platform(config, tasks):
         elif "android-hw" in task["test-platform"]:
             task["treeherder-machine-platform"] = task["test-platform"]
 
-        # Bug 1602863 - must separately define linux64/asan and linux1804-64/asan
-        # otherwise causes an exception during taskgraph generation about
-        # duplicate treeherder platform/symbol.
-        elif "linux64-asan/opt" in task["test-platform"]:
-            task["treeherder-machine-platform"] = "linux64/asan"
-        elif "linux1804-asan/opt" in task["test-platform"]:
-            task["treeherder-machine-platform"] = "linux1804-64/asan"
-        elif "-qr" in task["test-platform"]:
+        if "-qr" in task["test-platform"]:
             task["treeherder-machine-platform"] = task["test-platform"]
         else:
             task["treeherder-machine-platform"] = translation.get(
@@ -557,6 +550,8 @@ def enable_code_coverage(config, tasks):
     """Enable code coverage for the ccov build-platforms"""
     for task in tasks:
         if "ccov" in task["build-platform"]:
+            task.setdefault("attributes", {})["ccov"] = True
+
             # Do not run tests on fuzzing builds
             if "fuzzing" in task["build-platform"]:
                 task["run-on-projects"] = []
@@ -608,20 +603,6 @@ def enable_code_coverage(config, tasks):
 
             task["fetches"]["build"].append({"artifact": "target.mozinfo.json"})
 
-            if "talos" in task["test-name"]:
-                task["max-run-time"] = 7200
-                if "linux" in task["build-platform"]:
-                    task["docker-image"] = {"in-tree": "ubuntu1804-test"}
-                task["mozharness"]["extra-options"].append("--add-option")
-                task["mozharness"]["extra-options"].append("--cycles,1")
-                task["mozharness"]["extra-options"].append("--add-option")
-                task["mozharness"]["extra-options"].append("--tppagecycles,1")
-                task["mozharness"]["extra-options"].append("--add-option")
-                task["mozharness"]["extra-options"].append("--no-upload-results")
-                task["mozharness"]["extra-options"].append("--add-option")
-                task["mozharness"]["extra-options"].append("--tptimeout,15000")
-            if "raptor" in task["test-name"]:
-                task["max-run-time"] = 1800
         yield task
 
 
@@ -676,15 +657,6 @@ def handle_tier(config, tasks):
                 "linux64-qr/opt",
                 "linux64-qr/debug",
                 "linux64-shippable-qr/opt",
-                "linux1804-64/opt",
-                "linux1804-64/debug",
-                "linux1804-64-shippable/opt",
-                "linux1804-64-devedition/opt",
-                "linux1804-64-qr/opt",
-                "linux1804-64-qr/debug",
-                "linux1804-64-shippable-qr/opt",
-                "linux1804-64-asan-qr/opt",
-                "linux1804-64-tsan-qr/opt",
                 "linux2204-64-wayland/debug",
                 "linux2204-64-wayland/opt",
                 "linux2204-64-wayland-shippable/opt",
@@ -796,7 +768,7 @@ def ensure_spi_disabled_on_all_but_spi(config, tasks):
         yield task
 
 
-test_setting_description_schema = Schema(
+test_setting_description_schema = LegacySchema(
     {
         Required("_hash"): str,
         "platform": {

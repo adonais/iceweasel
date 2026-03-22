@@ -296,10 +296,8 @@ function assert_malformed(thunk, message) {
     throw new Error(`got no error`);
   } catch (err) {
     if (
-      err instanceof TypeError ||
       err instanceof SyntaxError ||
-      err instanceof WebAssembly.CompileError ||
-      err instanceof WebAssembly.LinkError
+      err instanceof WebAssembly.CompileError
     ) {
       return;
     }
@@ -351,10 +349,8 @@ function formatResult(result) {
 
 function formatExpected(expected) {
   if (
-    expected === `f32_canonical_nan` ||
-    expected === `f32_arithmetic_nan` ||
-    expected === `f64_canonical_nan` ||
-    expected === `f64_arithmetic_nan`
+    expected === `canonical_nan` ||
+    expected === `arithmetic_nan`
   ) {
     return expected;
   } else if (expected instanceof F32x4Pattern) {

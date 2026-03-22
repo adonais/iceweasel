@@ -14,9 +14,10 @@ use crate::{
         Device, Texture, TextureFilter, TextureUploader, UploadPBOPool, VertexUsageHint, VAO,
     },
     frame_builder::Frame,
-    gpu_types::{PrimitiveHeaderI, PrimitiveHeaderF, TransformData},
+    gpu_types::{PrimitiveHeaderI, PrimitiveHeaderF},
     internal_types::Swizzle,
     render_task::RenderTaskData,
+    transform::TransformData,
 };
 
 use crate::internal_types::FrameVec;

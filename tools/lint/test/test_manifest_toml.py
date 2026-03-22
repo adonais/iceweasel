@@ -71,10 +71,12 @@ def test_non_double_quote_sections_fix(lint, paths, create_temp_file):
     path = create_temp_file(original, f"{basename}.toml")
     results = lint([path], fix=True)
     assert len(results) == 2
-    assert results[0].message == "The section name must be double quoted: ['bbb.js']"
+    assert results[0].message == "The section name must be double quoted: [aaa.js]"
     assert results[0].level == WARNING
-    assert results[1].message == "The section name must be double quoted: [aaa.js]"
+    assert results[0].lineno == 3
+    assert results[1].message == "The section name must be double quoted: ['bbb.js']"
     assert results[1].level == WARNING
+    assert results[1].lineno == 6
     assert Path(path).read_text() == expected
 
 
@@ -87,14 +89,33 @@ def test_unsorted_fix(lint, paths, create_temp_file):
     expected = Path(fix).read_text()
     path = create_temp_file(original, f"{basename}.toml")
     results = lint([path], fix=True)
-    assert len(results) == 2
-    assert results[0].message == "The manifest sections are not in alphabetical order."
-    assert results[0].level == WARNING
+    assert len(results) == 5
+    i: int = 0
+    assert results[i].message == "The manifest sections are not in alphabetical order."
+    assert results[i].level == WARNING
+    i += 1
     assert (
-        results[1].message
+        results[i].message == "linux condition requires display == 'x11' or 'wayland'"
+    )
+    assert results[i].level == WARNING
+    i += 1
+    assert (
+        results[i].message
         == 'instead of "!debug" use three conditions: "asan", "opt", "tsan"'
     )
-    assert results[1].level == WARNING
+    assert results[i].level == WARNING
+    i += 1
+    assert (
+        results[i].message == "linux condition requires display == 'x11' or 'wayland'"
+    )
+    assert results[i].level == WARNING
+    i += 1
+    assert (
+        results[i].message
+        == "non canonical condition: variable os (rank 1) should appear before variable ccov (rank 7) in condition: ccov && os == 'linux' && os_version == '22.04'"
+    )
+    assert results[i].level == ERROR
+    i += 1
     assert Path(path).read_text() == expected
 
 
@@ -116,6 +137,7 @@ def test_skip_if_not_array(lint, paths):
     assert len(results) == 1
     assert results[0].message.startswith("Value for conditional must be an array:")
     assert results[0].level == ERROR
+    assert results[0].lineno == 3
 
 
 def test_skip_if_explicit_or(lint, paths):
@@ -127,6 +149,7 @@ def test_skip_if_explicit_or(lint, paths):
         "Value for conditional must not include explicit ||, instead put on multiple lines:"
     )
     assert results[0].level == ERROR
+    assert results[0].lineno == 4
 
 
 def test_missing_include(lint, paths):
@@ -147,33 +170,41 @@ def test_non_idiomatic_fix(lint, paths, create_temp_file):
     expected = Path(fix).read_text()
     path = create_temp_file(original, f"{basename}.toml")
     results = lint([path], fix=True)
-    assert len(results) == 16
+    assert len(results) == 15
     i: int = 0
     assert (
         results[i].message
-        == 'instead of "!debug" use three conditions: "asan", "opt", "tsan"'
+        == "non canonical condition: unknown var 'bits' in comparison: bits == 64"
+    )
+    assert results[i].level == ERROR
+    i += 1
+    assert results[i].message == "using 'bits' is not idiomatic, use 'arch' instead"
+    assert results[i].level == WARNING
+    i += 1
+    assert (
+        results[i].message
+        == "non canonical condition: unknown var 'processor' in comparison: processor == 'aarch64'"
+    )
+    assert results[i].level == ERROR
+    i += 1
+    assert results[i].message == "using 'bits' is not idiomatic, use 'arch' instead"
+    assert results[i].level == WARNING
+    i += 1
+    assert (
+        results[i].message == "using 'processor' is not idiomatic, use 'arch' instead"
     )
     assert results[i].level == WARNING
     i += 1
     assert (
         results[i].message
-        == "instead of 'apple_catalina' please use os == 'mac' && os_version == '10.15' && arch == 'x86_64'"
+        == "non canonical condition: unknown var 'android_version' in comparison: android_version == '36'"
     )
-    assert results[i].level == WARNING
+    assert results[i].level == ERROR
     i += 1
     assert (
         results[i].message
-        == "instead of 'apple_silicon' please use os == 'mac' && os_version == '15.30' && arch == 'aarch64'"
+        == "using 'android_version' is not idiomatic, use 'os_version' instead (see testing/mozbase/mozinfo/mozinfo/platforminfo.py)"
     )
-    assert results[i].level == WARNING
-    i += 1
-    assert (
-        results[i].message
-        == "instead of win10_2009 please use os == 'win' && os_version == '10.2009' && arch == 'x86_64'"
-    )
-    assert results[i].level == WARNING
-    i += 1
-    assert results[i].message == "linux os_version == '18.04' is no longer used"
     assert results[i].level == WARNING
     i += 1
     assert (
@@ -182,7 +213,31 @@ def test_non_idiomatic_fix(lint, paths, create_temp_file):
     )
     assert results[i].level == WARNING
     i += 1
-    assert results[i].message == "mac os_version == '11.20' is no longer used"
+    assert (
+        results[i].message
+        == "non canonical condition: unknown var 'processor' in comparison: processor == 'x86_64'"
+    )
+    assert results[i].level == ERROR
+    i += 1
+    assert (
+        results[i].message == "using 'processor' is not idiomatic, use 'arch' instead"
+    )
+    assert results[i].level == WARNING
+    i += 1
+    assert (
+        results[i].message == "linux condition requires display == 'x11' or 'wayland'"
+    )
+    assert results[i].level == WARNING
+    i += 1
+    assert (
+        results[i].message
+        == 'instead of "!debug" use three conditions: "asan", "opt", "tsan"'
+    )
+    assert results[i].level == WARNING
+    i += 1
+    assert (
+        results[i].message == "linux condition requires display == 'x11' or 'wayland'"
+    )
     assert results[i].level == WARNING
     i += 1
     assert (
@@ -197,33 +252,10 @@ def test_non_idiomatic_fix(lint, paths, create_temp_file):
     )
     assert results[i].level == WARNING
     i += 1
-    assert (
-        results[i].message
-        == "using 'android_version' is not idiomatic, use 'os_version' instead (see testing/mozbase/mozinfo/mozinfo/platforminfo.py)"
-    )
-    assert results[i].level == WARNING
-    i += 1
-    assert results[i].message == "using 'bits' is not idiomatic, use 'arch' instead"
-    assert results[i].level == WARNING
-    i += 1
-    assert results[i].message == "using 'bits' is not idiomatic, use 'arch' instead"
-    assert results[i].level == WARNING
-    i += 1
-    assert (
-        results[i].message == "using 'processor' is not idiomatic, use 'arch' instead"
-    )
-    assert results[i].level == WARNING
-    i += 1
-    assert (
-        results[i].message == "using 'processor' is not idiomatic, use 'arch' instead"
-    )
-    assert results[i].level == WARNING
-    i += 1
-    assert results[i].message == "win os_version == '11.2009' is no longer used"
-    assert results[i].level == WARNING
-    i += 1
-    assert results[i].message == "win11_2009 is no longer used"
-    assert results[i].level == WARNING
+    # wait to disable 18.04 until the Thunderbird migration is complete
+    # assert results[i].message == "linux os_version == '18.04' is no longer used"
+    # assert results[i].level == WARNING
+    # i += 1
     assert Path(path).read_text() == expected
 
 
@@ -250,6 +282,34 @@ def test_unknown_android_version(lint, paths, create_temp_file):
         str(e.value)
         == "Unknown Android API version '37'. Supported versions are dict_values(['24', '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36'])."
     )
+
+
+def test_invalid_combinations(lint, paths, create_temp_file):
+    """Test invalid combinations of platforms and build-types"""
+
+    skip_if = "os == 'win' && os_version == '11.26100' && arch == 'x86' && tsan"
+    contents = f'[DEFAULT]\nskip-if = ["{skip_if}"]'
+    path = create_temp_file(contents, "combination.toml")
+    results = lint([path], fix=True)
+    assert len(results) == 1
+    assert results[0].message == "tsan build-type is not tested on Windows"
+    assert results[0].level == ERROR
+
+    skip_if = "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && asan"
+    contents = f'[DEFAULT]\nskip-if = ["{skip_if}"]'
+    path = create_temp_file(contents, "combination.toml")
+    results = lint([path], fix=True)
+    assert len(results) == 1
+    assert results[0].message == "asan build-type is not tested on Linux 22.04"
+    assert results[0].level == ERROR
+
+    skip_if = "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && tsan"
+    contents = f'[DEFAULT]\nskip-if = ["{skip_if}"]'
+    path = create_temp_file(contents, "combination.toml")
+    results = lint([path], fix=True)
+    assert len(results) == 1
+    assert results[0].message == "tsan build-type is not tested on Linux 22.04"
+    assert results[0].level == ERROR
 
 
 if __name__ == "__main__":

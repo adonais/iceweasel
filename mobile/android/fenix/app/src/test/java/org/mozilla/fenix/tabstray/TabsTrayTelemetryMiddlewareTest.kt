@@ -5,6 +5,8 @@
 package org.mozilla.fenix.tabstray
 
 import io.mockk.mockk
+import junit.framework.TestCase
+import mozilla.components.browser.state.state.createTab
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -14,6 +16,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Metrics
+import org.mozilla.fenix.GleanMetrics.TabSearch
 import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.nimbus.FakeNimbusEventStore
@@ -153,5 +156,65 @@ class TabsTrayTelemetryMiddlewareTest {
         store.dispatch(TabsTrayAction.ThreeDotMenuShown)
 
         assertNotNull(TabsTray.menuOpened.testGetValue())
+    }
+
+    /**
+     *  [TabSearch.tabSearchIconClicked] coverage
+     */
+
+    @Test
+    fun `WHEN tab search icon is clicked THEN record tab search icon clicked telemetry`() {
+        TestCase.assertNull(TabSearch.tabSearchIconClicked.testGetValue())
+
+        store.dispatch(TabsTrayAction.TabSearchClicked)
+
+        TestCase.assertNotNull(TabSearch.tabSearchIconClicked.testGetValue())
+
+        val snapshot = TabSearch.tabSearchIconClicked.testGetValue()!!
+        assertEquals(1, snapshot.size)
+
+        assertEquals("tab_search_icon_clicked", snapshot.single().name)
+    }
+
+    /**
+     *  [TabSearch.resultClicked] coverage
+     */
+
+    @Test
+    fun `WHEN a tab search result is clicked THEN record result clicked telemetry`() {
+        TestCase.assertNull(TabSearch.resultClicked.testGetValue())
+
+        val tabs = listOf(
+            createTab(url = "mozilla.com"),
+            createTab(url = "developer.mozilla.org"),
+        )
+        store.dispatch(TabSearchAction.SearchResultsUpdated(results = tabs))
+
+        store.dispatch(TabSearchAction.SearchResultClicked(tabs[1]))
+
+        TestCase.assertNotNull(TabSearch.resultClicked.testGetValue())
+
+        val snapshot = TabSearch.resultClicked.testGetValue()!!
+        assertEquals(1, snapshot.size)
+
+        assertEquals("result_clicked", snapshot.single().name)
+    }
+
+    /**
+     *  [TabSearch.navigateBackIconClicked] coverage
+     */
+
+    @Test
+    fun `WHEN the navigation back icon is clicked THEN record navigate back icon clicked telemetry`() {
+        TestCase.assertNull(TabSearch.navigateBackIconClicked.testGetValue())
+
+        store.dispatch(TabsTrayAction.NavigateBackInvoked)
+
+        TestCase.assertNotNull(TabSearch.navigateBackIconClicked.testGetValue())
+
+        val snapshot = TabSearch.navigateBackIconClicked.testGetValue()!!
+        assertEquals(1, snapshot.size)
+
+        assertEquals("navigate_back_icon_clicked", snapshot.single().name)
     }
 }

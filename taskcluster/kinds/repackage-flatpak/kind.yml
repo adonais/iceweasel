@@ -52,7 +52,7 @@ tasks:
             name: org.mozilla.firefox
             branch:
                 by-release-type:
-                    release.*: stable
+                    release: stable
                     beta: beta
                     nightly: nightly
                     default: default

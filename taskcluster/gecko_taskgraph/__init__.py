@@ -10,7 +10,7 @@ from taskgraph import config as taskgraph_config
 from taskgraph import generator
 from taskgraph import morph as taskgraph_morph
 from taskgraph.transforms.task import payload_builders
-from taskgraph.util import schema
+from taskgraph.util import docker, schema
 from taskgraph.util import taskcluster as tc_util
 
 from gecko_taskgraph.config import graph_config_schema
@@ -20,6 +20,20 @@ TEST_CONFIGS = os.path.join(GECKO, "taskcluster", "test_configs")
 
 # Overwrite Taskgraph's default graph_config_schema with a custom one.
 taskgraph_config.graph_config_schema = graph_config_schema
+
+# Overwrite Taskgraph's RUN_TASK_SNIPPET to place the binaries in Gecko
+# specific locations.
+docker.RUN_TASK_FILES = {
+    f"run-task/{path}": os.path.join(docker.RUN_TASK_ROOT, path)
+    for path in [
+        "run-task",
+        "fetch-content",
+    ]
+}
+docker.RUN_TASK_SNIPPET = [
+    "COPY run-task/run-task /builds/worker/bin/run-task-git\n",
+    "COPY run-task/fetch-content /builds/worker/bin/fetch-content\n",
+]
 
 # Don't use any of the upstream morphs.
 # TODO Investigate merging our morphs with upstream.

@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_indexeddb_key_h__
-#define mozilla_dom_indexeddb_key_h__
+#ifndef mozilla_dom_indexeddb_key_h_
+#define mozilla_dom_indexeddb_key_h_
 
 #include "mozilla/dom/indexedDB/IDBResult.h"
 
@@ -204,6 +204,9 @@ class Key {
   // Encoding helper. Trims trailing zeros off of mBuffer as a post-processing
   // step.
   void TrimBuffer() {
+    if (mBuffer.IsEmpty()) {
+      return;
+    }
     const char* end = mBuffer.EndReading() - 1;
     while (!*end) {
       --end;
@@ -294,4 +297,4 @@ class Key {
 
 }  // namespace mozilla::dom::indexedDB
 
-#endif  // mozilla_dom_indexeddb_key_h__
+#endif  // mozilla_dom_indexeddb_key_h_

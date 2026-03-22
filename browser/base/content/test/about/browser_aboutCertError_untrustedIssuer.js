@@ -52,6 +52,7 @@ add_task(async function checkUntrustedCertIssuerCopy() {
     const info = Cu.cloneInto(mockErrorInfo, netErrorCard);
     netErrorCard.errorInfo = info;
     netErrorCard.hideExceptionButton = netErrorCard.shouldHideExceptionButton();
+    netErrorCard.errorConfig = netErrorCard.getErrorConfig();
     await netErrorCard.getUpdateComplete();
 
     netErrorCard.advancedButton.scrollIntoView();

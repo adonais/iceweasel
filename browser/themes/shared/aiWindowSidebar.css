@@ -6,6 +6,14 @@
   --ai-window-sidebar-width-default: 412px;
 }
 
+/* Hide AI window sidebar on about:newtab, about:home, firstrun, and AI Window URL */
+:root[hide-ai-sidebar] {
+  #ai-window-box,
+  #ai-window-splitter {
+    display: none;
+  }
+}
+
 .ai-window-right-sidebar {
   width: var(--ai-window-sidebar-width-default);
 }

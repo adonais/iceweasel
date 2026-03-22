@@ -37,7 +37,7 @@ StaticAutoPtr<TagAtomTable> sTagAtomTable;
 
 #define SVG_FROM_PARSER_TAG(_tag, _classname)
 
-#include "SVGTagList.h"
+#include "SVGTagList.inc"
 #undef SVG_TAG
 #undef SVG_FROM_PARSER_TAG
 
@@ -47,7 +47,7 @@ nsresult NS_NewSVGElement(Element** aResult,
 enum SVGTag {
 #define SVG_TAG(_tag, _classname) eSVGTag_##_tag,
 #define SVG_FROM_PARSER_TAG(_tag, _classname) eSVGTag_##_tag,
-#include "SVGTagList.h"
+#include "SVGTagList.inc"
 #undef SVG_TAG
 #undef SVG_FROM_PARSER_TAG
   eSVGTag_Count
@@ -64,7 +64,7 @@ void SVGElementFactory::Init() {
   sTagAtomTable->InsertOrUpdate(              \
       nsGkAtoms::_tag,                        \
       SVGContentCreatorFunction(NS_NewSVG##_classname##Element));
-#include "SVGTagList.h"
+#include "SVGTagList.inc"
 #undef SVG_TAG
 #undef SVG_FROM_PARSER_TAG
 }

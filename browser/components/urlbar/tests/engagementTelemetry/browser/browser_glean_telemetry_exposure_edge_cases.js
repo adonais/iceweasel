@@ -6,7 +6,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  UrlbarProvidersManager:
+  ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
@@ -37,7 +37,8 @@ add_setup(async function () {
   Services.fog.testResetFOG();
 
   gProvider = new TestProvider();
-  UrlbarProvidersManager.registerProvider(gProvider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(gProvider);
 
   // This test specifically checks the view's behavior before and after it
   // removes stale rows, so it needs to control when that occurs. There are two
@@ -50,7 +51,7 @@ add_setup(async function () {
 
   registerCleanupFunction(() => {
     UrlbarView.removeStaleRowsTimeout = originalRemoveStaleRowsTimeout;
-    UrlbarProvidersManager.unregisterProvider(gProvider);
+    providersManager.unregisterProvider(gProvider);
   });
 });
 
@@ -90,7 +91,7 @@ async function do_noExposure(showExposureResults) {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         payload: {
           suggestion: "suggestion " + i,
-          engine: Services.search.defaultEngine.name,
+          engine: SearchService.defaultEngine.name,
         },
       })
     );
@@ -298,7 +299,7 @@ async function do_exposure_append_underfilled({
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       payload: {
         suggestion: newSuggestion,
-        engine: Services.search.defaultEngine.name,
+        engine: SearchService.defaultEngine.name,
       },
     }),
     new UrlbarResult({
@@ -415,7 +416,7 @@ async function do_exposure_replace({ showExposureResults, cancelSecondQuery }) {
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       payload: {
         suggestion: "suggestion",
-        engine: Services.search.defaultEngine.name,
+        engine: SearchService.defaultEngine.name,
       },
     }),
   ];
@@ -451,7 +452,7 @@ async function do_exposure_replace({ showExposureResults, cancelSecondQuery }) {
       source: UrlbarUtils.RESULT_SOURCE.SEARCH,
       payload: {
         suggestion: newSuggestion,
-        engine: Services.search.defaultEngine.name,
+        engine: SearchService.defaultEngine.name,
       },
     }),
     new UrlbarResult({
@@ -574,7 +575,7 @@ async function do_exposure_append_full(showExposureResults) {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         payload: {
           suggestion: "suggestion " + i,
-          engine: Services.search.defaultEngine.name,
+          engine: SearchService.defaultEngine.name,
         },
       })
     );
@@ -800,7 +801,7 @@ async function do_exposure_append_full_twice(showExposureResults) {
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         payload: {
           suggestion: "suggestion " + i,
-          engine: Services.search.defaultEngine.name,
+          engine: SearchService.defaultEngine.name,
         },
       })
     );

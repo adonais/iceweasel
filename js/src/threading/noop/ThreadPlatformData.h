@@ -7,8 +7,6 @@
 #ifndef threading_noop_ThreadPlatformData_h
 #define threading_noop_ThreadPlatformData_h
 
-#include <string.h>
-
 #include "threading/Thread.h"
 
 namespace js {

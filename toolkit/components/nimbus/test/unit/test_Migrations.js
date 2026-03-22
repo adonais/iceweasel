@@ -80,13 +80,12 @@ async function setupTest({
     );
   }
 
-  const { initExperimentAPI, ...ctx } = await NimbusTestUtils.setupTest({
+  const ctx = await NimbusTestUtils.setupTest({
     init: false,
     clearTelemetry: true,
+    migrationState: NimbusTestUtils.migrationState.UNMIGRATED,
     ...args,
   });
-
-  const { sandbox } = ctx;
 
   if (typeof legacyMigrationState !== "undefined") {
     Services.prefs.setIntPref(
@@ -105,13 +104,11 @@ async function setupTest({
       migrations
     );
 
-    sandbox.stub(NimbusMigrations, "MIGRATIONS").get(() => migrationsStub);
+    ctx.sandbox.stub(NimbusMigrations, "MIGRATIONS").get(() => migrationsStub);
   }
 
   if (init) {
-    await initExperimentAPI();
-  } else {
-    ctx.initExperimentAPI = initExperimentAPI;
+    await ExperimentAPI.init();
   }
 
   return ctx;
@@ -1649,46 +1646,47 @@ add_task(async function testGraduateFirefoxLabsAutoPip() {
 
   Services.prefs.setBoolPref(ENABLED_PREF, true);
 
-  const { cleanup, initExperimentAPI, manager } =
-    await NimbusTestUtils.setupTest({
-      clearTelemetry: true,
-      init: false,
-      storePath: await NimbusTestUtils.createStoreWith(store => {
-        NimbusTestUtils.addEnrollmentForRecipe(recipe, {
-          store,
-          extra: {
-            prefs: [
-              {
-                name: ENABLED_PREF,
-                featureId: "auto-pip",
-                variable: "enabled",
-                branch: "user",
-                originalValue: false,
-              },
-            ],
-          },
-        });
-      }),
-      migrationState:
-        NimbusTestUtils.migrationState.IMPORTED_ENROLLMENTS_TO_SQL,
-    });
-
-  await GleanPings.nimbusTargetingContext.testSubmission(() => {
-    Assert.deepEqual(
-      Glean.nimbusEvents.enrollmentStatus
-        .testGetValue("nimbus-targeting-context")
-        .map(event => event.extra),
-      [
-        {
-          slug: "firefox-labs-auto-pip",
-          branch: "control",
-          status: "WasEnrolled",
-          reason: "Migration",
-          migration: "graduate-firefox-labs-auto-pip",
+  const { cleanup, manager } = await NimbusTestUtils.setupTest({
+    clearTelemetry: true,
+    init: false,
+    storePath: await NimbusTestUtils.createStoreWith(store => {
+      NimbusTestUtils.addEnrollmentForRecipe(recipe, {
+        store,
+        extra: {
+          prefs: [
+            {
+              name: ENABLED_PREF,
+              featureId: "auto-pip",
+              variable: "enabled",
+              branch: "user",
+              originalValue: false,
+            },
+          ],
         },
-      ]
-    );
-  }, initExperimentAPI);
+      });
+    }),
+    migrationState: NimbusTestUtils.migrationState.IMPORTED_ENROLLMENTS_TO_SQL,
+  });
+
+  await GleanPings.nimbusTargetingContext.testSubmission(
+    () => {
+      Assert.deepEqual(
+        Glean.nimbusEvents.enrollmentStatus
+          .testGetValue("nimbus-targeting-context")
+          .map(event => event.extra),
+        [
+          {
+            slug: "firefox-labs-auto-pip",
+            branch: "control",
+            status: "WasEnrolled",
+            reason: "Migration",
+            migration: "graduate-firefox-labs-auto-pip",
+          },
+        ]
+      );
+    },
+    () => ExperimentAPI.init()
+  );
 
   const enrollment = manager.store.get(SLUG);
 

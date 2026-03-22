@@ -94,6 +94,8 @@ class AutomaticTranslationPreferenceFragment : Fragment() {
                 }
             }
         }
+
+        automaticTranslationListPreferences.sortBy { it.language.localizedDisplayName }
         return automaticTranslationListPreferences
     }
 }

@@ -135,7 +135,7 @@ static constexpr struct {
 } kBuiltInSheetInfo[] = {
 #define STYLE_SHEET(identifier_, url_, flags_) \
   {nsLiteralCString(url_), BuiltInStyleSheetFlags::flags_},
-#include "mozilla/BuiltInStyleSheetList.h"
+#include "mozilla/BuiltInStyleSheetList.inc"
 #undef STYLE_SHEET
 };
 

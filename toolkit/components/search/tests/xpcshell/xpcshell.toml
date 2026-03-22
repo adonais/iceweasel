@@ -104,6 +104,8 @@ support-files = ["settings/ignorelist.json"]
 
 ["test_migrateWebExtensionEngine.js"]
 
+["test_move_engine.js"]
+
 ["test_no_excess_default_engine_changed_notifications.js"]
 
 ["test_nodb_pluschanges.js"]

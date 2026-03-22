@@ -463,10 +463,9 @@ async function doTest({
       );
     }
   };
-  UrlbarProvidersManager.registerProvider(provider);
-  registerCleanupFunction(() =>
-    UrlbarProvidersManager.unregisterProvider(provider)
-  );
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
+  registerCleanupFunction(() => providersManager.unregisterProvider(provider));
 
   // Set up the prefs/Nimbus.
   let nimbusCleanup;
@@ -521,7 +520,7 @@ async function doTest({
     await SpecialPowers.popPrefEnv();
   }
   Services.fog.testResetFOG();
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 
   Assert.deepEqual(
     [...UrlbarPrefs.get("exposureResults").values()],

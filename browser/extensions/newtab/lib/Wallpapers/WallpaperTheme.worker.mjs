@@ -2,7 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env webworker */
 // eslint-disable-next-line mozilla/reject-import-system-module-from-non-system
 import { Color } from "resource://gre/modules/Color.sys.mjs";
 import { PromiseWorker } from "resource://gre/modules/workers/PromiseWorker.mjs";

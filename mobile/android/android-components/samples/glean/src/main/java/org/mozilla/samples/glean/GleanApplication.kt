@@ -12,7 +12,6 @@ import mozilla.components.service.glean.net.ConceptFetchHttpUploader
 import mozilla.components.service.nimbus.Nimbus
 import mozilla.components.service.nimbus.NimbusApi
 import mozilla.components.service.nimbus.NimbusAppInfo
-import mozilla.components.service.nimbus.NimbusServerSettings
 import mozilla.components.support.base.log.Log
 import mozilla.components.support.base.log.sink.AndroidLogSink
 import mozilla.components.support.rusthttp.RustHttpConfig
@@ -86,7 +85,7 @@ class GleanApplication : Application() {
         nimbus = Nimbus(
             context = this,
             appInfo = appInfo,
-            server = NimbusServerSettings(remoteSettingsService = null),
+            server = null,
             recordedContext = null,
         ).also { nimbus ->
             if (isFirstRun) {

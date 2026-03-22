@@ -6,7 +6,7 @@
 
 /*
  * This file contains common code that is loaded before each test file(s).
- * See https://developer.mozilla.org/en-US/docs/Mozilla/QA/Writing_xpcshell-based_unit_tests
+ * See https://firefox-source-docs.mozilla.org/testing/xpcshell/index.html
  * for more information.
  */
 

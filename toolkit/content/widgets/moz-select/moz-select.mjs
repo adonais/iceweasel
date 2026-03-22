@@ -178,6 +178,17 @@ export default class MozSelect extends MozBaseInputElement {
   }
 
   /**
+   * Prevents mousedown on the trigger from propagating to panel-list's document
+   * listener, which would close the panel before the click handler can toggle
+   * it.
+   *
+   * @param {MouseEvent} event - The mousedown event.
+   */
+  handlePanelMousedown(event) {
+    event.stopPropagation();
+  }
+
+  /**
    * Handles keyboard events on the panel trigger button.
    * Arrow keys change selection (Windows/Linux) or open the panel (Mac).
    * Space opens the panel. Enter is prevented to match native select behavior.
@@ -309,6 +320,7 @@ export default class MozSelect extends MozBaseInputElement {
       aria-expanded=${this.panelList?.open ? "true" : "false"}
       @click=${this.togglePanel}
       @keydown=${this.handlePanelKeydown}
+      @mousedown=${this.handlePanelMousedown}
       ?disabled=${this.disabled || this.parentDisabled}
     >
       ${this.selectedOption?.label}

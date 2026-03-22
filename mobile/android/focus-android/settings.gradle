@@ -7,19 +7,14 @@ pluginManagement {
         apply from: file('../gradle/mozconfig.gradle')
     } else {
         gradle.ext.mozconfig = gradle.root.mozconfig
+        gradle.ext.configureMavenRepositories = gradle.root.ext.configureMavenRepositories
     }
 
     repositories {
-        gradle.mozconfig.substs.GRADLE_MAVEN_REPOSITORIES.each { repository ->
-            maven {
-                url = repository
-                if (gradle.mozconfig.substs.ALLOW_INSECURE_GRADLE_REPOSITORIES) {
-                    allowInsecureProtocol = true
-                }
-            }
-        }
+        gradle.configureMavenRepositories(delegate)
     }
 
+    includeBuild("../gradle/plugins/conventions")
     includeBuild("../android-components/plugins/publicsuffixlist")
     includeBuild("../android-components/plugins/dependencies")
     includeBuild("../android-components/plugins/config")
@@ -27,6 +22,7 @@ pluginManagement {
 }
 
 plugins {
+    id 'org.mozilla.conventions.settings'
     id 'mozac.DependenciesPlugin'
 }
 

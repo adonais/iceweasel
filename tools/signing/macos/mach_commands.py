@@ -459,6 +459,16 @@ def auto_detect_channel(ctx, app):
         sys.exit(1)
 
 
+# Simulate the resolution of the 'only-if-milestone-is-nightly' attribute in
+# 'hardened-sign-config' by taskgraph.
+def should_skip_on_channel(signing_group, channel):
+    if "only-if-milestone-is-nightly" not in signing_group:
+        return False
+    if not isinstance(signing_group["only-if-milestone-is-nightly"], bool):
+        raise ("Unexpected type for 'only-if-milestone-is-nightly'")
+    return signing_group["only-if-milestone-is-nightly"] and channel != "nightly"
+
+
 def sign_with_codesign(
     ctx,
     verbose_arg,
@@ -476,6 +486,9 @@ def sign_with_codesign(
     ctx.log(logging.INFO, "macos-sign", {}, "Signing with codesign")
 
     for signing_group in signing_groups:
+        if should_skip_on_channel(signing_group, channel):
+            continue
+
         cs_cmd = ["codesign"]
         cs_cmd.append("--sign")
         cs_cmd.append(signing_identity)
@@ -625,6 +638,9 @@ def sign_with_rcodesign(
     temp_files_to_cleanup = []
 
     for signing_group in signing_groups:
+        if should_skip_on_channel(signing_group, channel):
+            continue
+
         # Ignore the 'deep' and 'force' setting for rcodesign
         group_runtime = "runtime" in signing_group and signing_group["runtime"]
 

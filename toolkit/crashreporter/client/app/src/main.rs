@@ -33,6 +33,8 @@
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
 use crate::std::sync::Arc;
+#[cfg(not(test))]
+use anyhow::Context;
 use config::Config;
 
 // A few macros are defined here to allow use in all submodules via textual scope lookup.
@@ -68,6 +70,7 @@ mod logic;
 mod memory_test;
 mod net;
 mod process;
+mod send_ping;
 mod settings;
 mod std;
 mod thread_bound;
@@ -83,6 +86,7 @@ fn main() {
     match ::std::env::args_os().nth(1) {
         Some(s) if s == "--analyze" => analyze::main(),
         Some(s) if s == "--memtest" => memory_test::main(),
+        Some(s) if s == "--send-ping" => send_ping::main(),
         _ => report_main(),
     }
 }
@@ -264,7 +268,9 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
         //
         // When we are testing, glean will already be initialized (if needed).
         #[cfg(not(test))]
-        glean::init(&config);
+        let _glean_handle = glean::InitOptions::from_config(&config)
+            .init()
+            .context("failed to acquire Glean store")?;
 
         logic::ReportCrash::new(config.clone(), extra)?.run()
     }
@@ -340,4 +346,8 @@ mod fd_cleanup {
 // have to link it.
 #[cfg(all(target_os = "windows", target_env = "gnu"))]
 #[link(name = "bcryptprimitives")]
+extern "C" {}
+
+#[cfg(windows)]
+#[link(name = "rpcrt4")]
 extern "C" {}

@@ -192,7 +192,21 @@ void ReportingHeader::ReportingFromChannel(nsIHttpChannel* aChannel) {
 
   if (NS_SUCCEEDED(
           aChannel->GetResponseHeader("Reporting-Endpoints"_ns, header))) {
-    client = ParseReportingEndpointsHeader(header, uri);
+    client = MakeUnique<Client>();
+    size_t parsedItems = ParseReportingEndpointsHeader(
+        header, uri, [&](const nsAString& aKey, nsCOMPtr<nsIURI> aEndpointUrl) {
+          Group* group = client->mGroups.AppendElement();
+          group->mCreationTime = TimeStamp::Now();
+          group->mTTL = std::numeric_limits<int32_t>::max();
+          group->mName = aKey;
+
+          // Use data extracted from dictionary entry to create an endpoint
+          group->mEndpoints.AppendElement(
+              Endpoint::Create(aEndpointUrl.forget(), aKey));
+        });
+    if (parsedItems == 0) {
+      client = nullptr;
+    }
   } else if (NS_SUCCEEDED(
                  aChannel->GetResponseHeader("Report-To"_ns, header))) {
     client = ParseReportToHeader(aChannel, uri, header);
@@ -209,9 +223,51 @@ void ReportingHeader::ReportingFromChannel(nsIHttpChannel* aChannel) {
 }
 
 /* static */
-UniquePtr<ReportingHeader::Client>
-ReportingHeader::ParseReportingEndpointsHeader(const nsACString& aHeaderValue,
-                                               nsIURI* aURI) {
+EndpointsList ReportingHeader::ProcessReportingEndpointsListFromResponse(
+    nsIHttpChannel* aChannel) {
+  if (!StaticPrefs::dom_reporting_enabled()) {
+    return {};
+  }
+
+  // We want to use the final URI to check if Report-To should be allowed or
+  // not.
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = aChannel->GetURI(getter_AddRefs(uri));
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return {};
+  }
+
+  // No other browsers seem to do this, even though it's defined in
+  // specification
+  if (NS_WARN_IF(!IsSecureURI(uri))) {
+    return {};
+  }
+
+  if (NS_UsePrivateBrowsing(aChannel)) {
+    return {};
+  }
+
+  nsAutoCString header;
+  EndpointsList result;
+
+  // Note: Legacy Report-To header supported by very few browsers
+  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Report-To
+  if (NS_SUCCEEDED(
+          aChannel->GetResponseHeader("Reporting-Endpoints"_ns, header))) {
+    (void)ParseReportingEndpointsHeader(
+        header, uri, [&](const nsAString& aKey, nsCOMPtr<nsIURI> aEndpointURL) {
+          result.mData.EmplaceBack(
+              Endpoint::Create(aEndpointURL.forget(), aKey));
+        });
+  }
+  return result;
+}
+
+/* static */
+size_t ReportingHeader::ParseReportingEndpointsHeader(
+    const nsACString& aHeaderValue, nsIURI* aURI,
+    std::function<void(const nsAString&, nsCOMPtr<nsIURI>)>&&
+        aOnParsedItemCallback) {
   nsCOMPtr<nsISFVService> sfv = mozilla::net::GetSFVService();
 
   nsAutoCString uriSpec;
@@ -219,21 +275,25 @@ ReportingHeader::ParseReportingEndpointsHeader(const nsACString& aHeaderValue,
 
   nsCOMPtr<nsIURI> baseURL;
   if (NS_FAILED(NS_NewURI(getter_AddRefs(baseURL), uriSpec))) {
-    return nullptr;
+    return 0;
   }
 
   nsCOMPtr<nsISFVDictionary> parsedHeader;
   if (NS_FAILED(
           sfv->ParseDictionary(aHeaderValue, getter_AddRefs(parsedHeader)))) {
-    return nullptr;
+    return 0;
   }
 
   nsTArray<nsCString> keys;
   if (NS_FAILED(parsedHeader->Keys(keys))) {
-    return nullptr;
+    return 0;
   }
 
-  UniquePtr<Client> client = MakeUnique<Client>();
+  size_t itemsParsed = 0;
+
+  if (!IsSecureURI(aURI)) {
+    return 0;
+  }
 
   for (const auto& key : keys) {
     // Extract an SFV data object from each dictionary entry
@@ -280,7 +340,6 @@ ReportingHeader::ParseReportingEndpointsHeader(const nsACString& aHeaderValue,
       continue;
     }
 
-    // Convert the URL string into a URI
     nsCOMPtr<nsIURI> endpointURL;
     nsresult rv = NS_NewURI(getter_AddRefs(endpointURL),
                             endpointURLString.get(), baseURL);
@@ -292,25 +351,11 @@ ReportingHeader::ParseReportingEndpointsHeader(const nsACString& aHeaderValue,
       continue;
     }
 
-    Group* group = client->mGroups.AppendElement();
-    group->mCreationTime = TimeStamp::Now();
-    group->mTTL = std::numeric_limits<int32_t>::max();
-    group->mName = NS_ConvertUTF8toUTF16(key);
-
-    // Use data extracted from dictionary entry to create an endpoint
-    Endpoint* ep = group->mEndpoints.AppendElement();
-    ep->mUrl = endpointURL;
-    ep->mEndpointName = key;
-    ep->mFailures = 0;
-    ep->mPriority = 1;
-    ep->mWeight = 1;
+    ++itemsParsed;
+    aOnParsedItemCallback(NS_ConvertUTF8toUTF16(key), std::move(endpointURL));
   }
 
-  if (client->mGroups.IsEmpty()) {
-    return nullptr;
-  }
-
-  return client;
+  return itemsParsed;
 }
 
 /* static */ UniquePtr<ReportingHeader::Client>
@@ -701,9 +746,9 @@ void ReportingHeader::GetEndpointForReportInternal(
 }
 
 /* static */
-void ReportingHeader::RemoveEndpoint(
-    const nsAString& aGroupName, const nsACString& aEndpointURL,
-    const mozilla::ipc::PrincipalInfo& aPrincipalInfo) {
+void ReportingHeader::RemoveEndpoint(const nsAString& aGroupName,
+                                     const nsACString& aEndpointURL,
+                                     nsIPrincipal* aPrincipal) {
   if (!gReporting) {
     return;
   }
@@ -714,13 +759,12 @@ void ReportingHeader::RemoveEndpoint(
     return;
   }
 
-  auto principalOrErr = PrincipalInfoToPrincipal(aPrincipalInfo);
-  if (NS_WARN_IF(principalOrErr.isErr())) {
+  if (NS_WARN_IF(!aPrincipal)) {
     return;
   }
 
   nsAutoCString origin;
-  rv = principalOrErr.unwrap()->GetOrigin(origin);
+  rv = aPrincipal->GetOrigin(origin);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
@@ -839,6 +883,26 @@ void ReportingHeader::RemoveOriginsForTTL() {
     if (client->mGroups.IsEmpty()) {
       iter.Remove();
     }
+  }
+}
+
+ReportingHeader::Endpoint* EndpointsList::GetEndpointWithName(
+    const nsAString& aEndpointName) {
+  for (auto& endpoint : mData) {
+    if (endpoint.mEndpointName == aEndpointName) {
+      return &endpoint;
+    }
+  }
+  return nullptr;
+}
+
+void EndpointsList::RemoveEndpoint(const nsAString& aEndpointName) {
+  const auto it = std::ranges::find_if(
+      mData, [&aEndpointName](const ReportingHeader::Endpoint& aEndpoint) {
+        return aEndpoint.mEndpointName == aEndpointName;
+      });
+  if (it != std::end(mData)) {
+    mData.RemoveElementAt(it);
   }
 }
 

@@ -255,7 +255,6 @@
  */
 #define PARAM_PROTOCOL "protocol"
 #define PARAM_MICALG "micalg"
-#define PARAM_MICALG_MD2 "rsa-md2"
 #define PARAM_MICALG_MD5 "rsa-md5"
 #define PARAM_MICALG_MD5_2 "md5"
 #define PARAM_MICALG_SHA1 "sha1"

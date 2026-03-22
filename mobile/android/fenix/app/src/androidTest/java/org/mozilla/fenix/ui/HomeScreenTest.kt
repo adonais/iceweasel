@@ -75,7 +75,6 @@ class HomeScreenTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1364362
     @SmokeTest
-    @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     fun verifyJumpBackInSectionTest() {
         composeTestRule.activityRule.applySettingsExceptions {

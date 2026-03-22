@@ -23,6 +23,7 @@ namespace dom {
 
 class BroadcastChannelChild;
 class RefMessageBodyService;
+class SharedMessageBody;
 class WorkerRef;
 
 class BroadcastChannel final : public DOMEventTargetHelper {
@@ -63,7 +64,7 @@ class BroadcastChannel final : public DOMEventTargetHelper {
 
   ~BroadcastChannel();
 
-  void MessageReceived(const MessageData& aData);
+  void MessageReceived(SharedMessageBody* aData);
 
   void MessageDelivered(const nsID& aMessageID, uint32_t aOtherBCs);
 

@@ -540,9 +540,6 @@ class IDLExposureMixins:
         workerScopes = self.parentScope.globalNameMapping["Worker"]
         return len(workerScopes.difference(self.exposureSet)) > 0
 
-    def isExposedInShadowRealms(self):
-        return "ShadowRealmGlobalScope" in self.exposureSet
-
     def getWorkerExposureSet(self):
         workerScopes = self._globalScope.globalNameMapping["Worker"]
         return workerScopes.intersection(self.exposureSet)
@@ -6580,6 +6577,7 @@ class IDLMethod(IDLInterfaceMember, IDLScope):
             if not self.underlyingAttr:
                 assert (
                     overload.returnType == BuiltinTypes[IDLBuiltinType.Types.domstring]
+                    or overload.returnType == BuiltinTypes[IDLBuiltinType.Types.utf8string]
                 )
 
     def isStatic(self):
@@ -8486,9 +8484,17 @@ class Parser(Tokenizer):
                     "stringifier has wrong number of arguments",
                     [self.getLocation(p, 2)],
                 )
-            if not returnType.isDOMString():
+            if returnType.isDOMString() and not identifier:
                 raise WebIDLError(
-                    "stringifier must have DOMString return type",
+                    "Use `stringifier;` for DOMString unnamed stringifiers",
+                    [self.getLocation(p, 2)],
+                )
+            if (
+                not returnType.isDOMString()
+                and not returnType.isUTF8String()
+            ):
+                raise WebIDLError(
+                    "stringifier must have {DOM,UTF8}String return type",
                     [self.getLocation(p, 2)],
                 )
 

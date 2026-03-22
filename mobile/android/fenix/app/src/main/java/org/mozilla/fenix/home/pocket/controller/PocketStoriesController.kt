@@ -11,11 +11,9 @@ import kotlinx.coroutines.launch
 import mozilla.components.service.pocket.PocketStory
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
-import mozilla.components.service.pocket.PocketStory.PocketSponsoredStory
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import mozilla.components.service.pocket.ext.getCurrentFlightImpressions
 import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.GleanMetrics.Pocket
 import org.mozilla.fenix.GleanMetrics.StoriesLibrary
 import org.mozilla.fenix.R
@@ -119,18 +117,6 @@ internal class DefaultPocketStoriesController(
         )
 
         when (storyShown) {
-            is PocketSponsoredStory -> {
-                Pocket.homeRecsSpocShown.record(
-                    Pocket.HomeRecsSpocShownExtra(
-                        spocId = storyShown.id.toString(),
-                        position = "${storyPosition.first}x${storyPosition.second}",
-                        timesShown = storyShown.getCurrentFlightImpressions().size.inc().toString(),
-                    ),
-                )
-                Pocket.spocShim.set(storyShown.shim.impression)
-                Pings.spoc.submit(Pings.spocReasonCodes.impression)
-            }
-
             is SponsoredContent -> {
                 Pocket.homeRecsSpocShown.record(
                     Pocket.HomeRecsSpocShownExtra(
@@ -227,18 +213,6 @@ internal class DefaultPocketStoriesController(
                 )
             }
 
-            is PocketSponsoredStory -> {
-                Pocket.homeRecsSpocClicked.record(
-                    Pocket.HomeRecsSpocClickedExtra(
-                        spocId = storyClicked.id.toString(),
-                        position = "${storyPosition.first}x${storyPosition.second}",
-                        timesShown = storyClicked.getCurrentFlightImpressions().size.inc().toString(),
-                    ),
-                )
-                Pocket.spocShim.set(storyClicked.shim.click)
-                Pings.spoc.submit(Pings.spocReasonCodes.click)
-            }
-
             is ContentRecommendation -> {
                 appStore.dispatch(
                     ContentRecommendationsAction.ContentRecommendationClicked(
@@ -259,6 +233,10 @@ internal class DefaultPocketStoriesController(
                 viewLifecycleScope.launch(Dispatchers.IO) {
                     marsUseCases.recordInteraction(storyClicked.callbacks.clickUrl)
                 }
+            }
+
+            else -> {
+                // no-op
             }
         }
     }

@@ -73,10 +73,10 @@ class InProcessBrowserChildMessageManager final
    * MessageManagerCallback methods that we override.
    */
   virtual bool DoSendBlockingMessage(
-      const nsAString& aMessage, StructuredCloneData& aData,
-      nsTArray<UniquePtr<StructuredCloneData>>* aRetVal) override;
-  virtual nsresult DoSendAsyncMessage(const nsAString& aMessage,
-                                      StructuredCloneData& aData) override;
+      const nsAString& aMessage, NotNull<StructuredCloneData*> aData,
+      nsTArray<NotNull<RefPtr<StructuredCloneData>>>* aRetVal) override;
+  virtual nsresult DoSendAsyncMessage(
+      const nsAString& aMessage, NotNull<StructuredCloneData*> aData) override;
 
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 

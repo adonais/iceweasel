@@ -88,6 +88,12 @@ async function getFileHandleFromOPFS(filePath, { create = false } = {}) {
   // Retrieve or create the file handle within the directory.
   const fileHandle = await directoryHandle.getFileHandle(fileName, { create });
 
+  ChromeUtils.addProfilerMarker(
+    "MLEngine:OPFS",
+    null,
+    `File handle: ${fileName}`
+  );
+
   return fileHandle;
 }
 

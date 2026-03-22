@@ -6,7 +6,9 @@ package org.mozilla.focus.browser.integration
 
 import android.content.Context
 import androidx.appcompat.content.res.AppCompatResources
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.selector.findCustomTabOrSelectedTab
@@ -28,6 +30,7 @@ class NavigationButtonsIntegration(
     val toolbar: BrowserToolbar,
     private val sessionUseCases: SessionUseCases,
     private val customTabId: String?,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
     private var scope: CoroutineScope? = null
 
@@ -102,7 +105,7 @@ class NavigationButtonsIntegration(
     }
 
     override fun start() {
-        scope = store.flowScoped { flow ->
+        scope = store.flowScoped(dispatcher = mainDispatcher) { flow ->
             flow.map { state -> state.findCustomTabOrSelectedTab(customTabId) }
                 .ifAnyChanged { tab ->
                     arrayOf(

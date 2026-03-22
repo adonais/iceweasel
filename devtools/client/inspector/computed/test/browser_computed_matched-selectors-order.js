@@ -43,15 +43,23 @@ add_task(async function () {
     style: `
       #order-of-appearance {
         background-color: var(--appearance-order_first);
+
+        @media (width > 1px) {
+          background-color: var(--appearance-order_second);
+        }
       }
       #order-of-appearance {
-        --appearance-order_second: var(--winning-color);
-        background-color: var(--appearance-order_second);
+        --appearance-order_third: var(--winning-color);
+        background-color: var(--appearance-order_third);
       }`,
     expectedMatchedSelectors: [
       // Last rule in stylesheet wins
       {
         selector: "#order-of-appearance",
+        value: "var(--appearance-order_third)",
+      },
+      {
+        selector: "&",
         value: "var(--appearance-order_second)",
       },
       {
@@ -841,6 +849,28 @@ add_task(async function () {
       {
         selector: "#align attributes style",
         value: "-moz-right",
+        match: false,
+      },
+    ],
+  });
+
+  await selectNode("#with-important-inherited", inspector);
+  await checkMatchedSelectorForProperty(view, {
+    property: "color",
+    expectedComputedValue: "rgb(0, 0, 255)",
+    expectedMatchedSelectors: [
+      {
+        selector: "& #with-important-inherited",
+        value: "blue",
+      },
+      {
+        selector: "#set-important-inherited",
+        value: "red",
+        match: false,
+      },
+      {
+        selector: ":root",
+        value: "canvastext",
         match: false,
       },
     ],

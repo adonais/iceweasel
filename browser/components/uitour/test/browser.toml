@@ -24,6 +24,8 @@ fail-if = [
 
 ["browser_UITour5.js"]
 
+["browser_UITour_aiwindow.js"]
+
 ["browser_UITour_annotation_size_attributes.js"]
 
 ["browser_UITour_availableTargets.js"]

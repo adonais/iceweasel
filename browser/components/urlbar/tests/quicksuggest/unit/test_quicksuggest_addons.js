@@ -511,14 +511,14 @@ add_task(async function notInterested() {
 
 // Tests the "show less frequently" behavior.
 add_task(async function showLessFrequently() {
-  await doShowLessFrequentlyTests({
+  await doShowLessFrequentlyTest({
     feature: QuickSuggest.getFeature("AddonSuggestions"),
+    keyword: "two words",
+    minKeywordLengthPref: "addons.minKeywordLength",
     showLessFrequentlyCountPref: "addons.showLessFrequentlyCount",
-    nimbusCapVariable: "addonsShowLessFrequentlyCap",
     expectedResult: makeExpectedResult({
       suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
     }),
-    keyword: "two words",
   });
 });
 

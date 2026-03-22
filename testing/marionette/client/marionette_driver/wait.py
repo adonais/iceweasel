@@ -46,8 +46,12 @@ class Wait:
 
             # Wait 30 seconds for window to open, checking for its presence once
             # every 5 seconds.
-            wait = Wait(marionette, timeout=30, interval=5,
-                        ignored_exceptions=errors.NoSuchWindowException)
+            wait = Wait(
+                marionette,
+                timeout=30,
+                interval=5,
+                ignored_exceptions=errors.NoSuchWindowException,
+            )
             window = wait.until(lambda m: m.switch_to_window(42))
 
         :param marionette: The input value to be provided to

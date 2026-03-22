@@ -47,13 +47,6 @@ ESLint
 The easiest way to integrate ESLint with VIM is using the `Syntastic plugin
 <https://github.com/vim-syntastic/syntastic>`__.
 
-In order for VIM to detect jsm files as JS you might want something like this
-in your :code:`.vimrc`:
-
-.. code::
-
-    autocmd BufRead,BufNewFile *.jsm set filetype=javascript
-
 :code:`mach eslint --setup` installs a specific ESLint version and some ESLint
 plugins into the repositories' :code:`node_modules`.
 

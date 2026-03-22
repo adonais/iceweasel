@@ -77,8 +77,6 @@
 #include "mozilla/RefCounted.h"
 #include "mozilla/RefPtr.h"
 
-#include <string.h>
-
 #if defined(MOZILLA_INTERNAL_API)
 // For thread safety checking.
 #  include "nsISupportsImpl.h"

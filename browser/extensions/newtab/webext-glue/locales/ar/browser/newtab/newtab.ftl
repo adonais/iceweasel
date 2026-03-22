@@ -311,8 +311,6 @@ newtab-custom-recent-title = أحدث الأنشطة
 newtab-custom-recent-subtitle = مختارات من المواقع والمحتويات الحديثة
 newtab-custom-widget-weather-toggle =
     .label = الطقس
-newtab-custom-widget-trending-search-toggle =
-    .label = عمليات البحث المُتداولة
 newtab-custom-widget-lists-toggle =
     .label = قوائم
 newtab-custom-widget-timer-toggle =
@@ -444,7 +442,7 @@ newtab-custom-wallpaper-cta = جربه
 # "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
 newtab-download-mobile-highlight-body-variant-a = افحص الرمز للتصفح بشكل آمن أثناء التنقل.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = لماذا تُبلِّغ عن هذا؟

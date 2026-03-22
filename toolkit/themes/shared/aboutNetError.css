@@ -181,13 +181,17 @@ button:disabled {
   net-error-card {
     width: min(100%, 720px);
     min-width: min-content;
-    margin-top: 150px;
+    margin-top: calc(150px - var(--error-page-padding, 0px));
     padding-block-end: var(--space-xxlarge);
   }
 
   .felt-privacy-container {
     display: flex;
     flex-direction: row;
+
+    > .container {
+      width: 100%;
+    }
   }
 
   .img-container > img {

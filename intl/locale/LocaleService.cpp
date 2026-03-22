@@ -34,6 +34,7 @@
 
 #define ACCEPT_LANGUAGES_PREF "intl.accept_languages"
 #define FONT_LANGUAGE_GROUP_PREF "font.language.group"
+#define URL_FIXUP_SUFFIX_PREF "browser.fixup.alternate.suffix"
 
 #define PSEUDO_LOCALE_PREF "intl.l10n.pseudo"
 #define REQUESTED_LOCALES_PREF "intl.locale.requested"
@@ -770,6 +771,26 @@ LocaleService::GetFontLanguageGroup(nsACString& aRetVal) {
     NegotiateAppLocales(mAppLocales);
   }
   ffi::locale_service_default_font_language_group(&mAppLocales[0], &aRetVal);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LocaleService::GetUrlFixupSuffix(nsACString& aRetVal) {
+  // if there is a user (or locked) value, use it
+  if (Preferences::HasUserValue(URL_FIXUP_SUFFIX_PREF) ||
+      Preferences::IsLocked(URL_FIXUP_SUFFIX_PREF)) {
+    nsresult rv = Preferences::GetCString(URL_FIXUP_SUFFIX_PREF, aRetVal);
+    if (NS_SUCCEEDED(rv)) {
+      return NS_OK;
+    }
+  }
+
+  // if we need to fetch the default value, do that instead
+  if (mAppLocales.IsEmpty()) {
+    NegotiateAppLocales(mAppLocales);
+  }
+  ffi::locale_service_default_url_fixup_suffix(&mAppLocales[0], &aRetVal);
 
   return NS_OK;
 }

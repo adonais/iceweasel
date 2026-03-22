@@ -17,6 +17,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from io import BytesIO, StringIO
 from pathlib import Path
 
@@ -37,6 +38,38 @@ else:
     system_encoding = "utf-8"
 
 
+def sanitize_shell_env(env):
+    """Return a copy of env with SHELLOPTS removed for bash subprocess calls.
+
+    SHELLOPTS being exported can cause various problems in subprocess shell
+    execution, so we remove it entirely to prevent unexpected behavior.
+    """
+    env = dict(env)
+    env.pop("SHELLOPTS", None)
+    return env
+
+
+LOG_TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"
+
+
+def get_latest_file(directory, prefix):
+    """Find the most recent file in a directory that starts with prefix, or None."""
+    log_dir = Path(directory)
+    try:
+        files = [f for f in log_dir.iterdir() if f.name.startswith(prefix)]
+    except OSError:
+        return None
+    if not files:
+        return None
+    return max(files, key=lambda f: f.stat().st_mtime)
+
+
+def construct_log_filename(prefix, suffix=".json"):
+    """Generate a timestamped log filename."""
+    timestamp = time.strftime(LOG_TIMESTAMP_FORMAT)
+    return f"{prefix}_log_{timestamp}{suffix}"
+
+
 class MissingL10nError(Exception):
     """Raised when the l10n repositories haven’t been checked out."""
 
@@ -47,6 +80,15 @@ class NotAGitRepositoryError(Exception):
     """Raised when the directory isn’t a git repository."""
 
     pass
+
+
+def is_running_under_coding_agent():
+    return bool(
+        os.environ.get("CLAUDECODE")
+        or os.environ.get("CODEX_SANDBOX")
+        or os.environ.get("GEMINI_CLI")
+        or os.environ.get("OPENCODE")
+    )
 
 
 def _open(path, mode):
@@ -673,11 +715,12 @@ def StrictOrderingOnAppendListWithFlagsFactory(flags):
     .. code-block:: python
 
         FooList = StrictOrderingOnAppendListWithFlagsFactory({
-            'foo': bool, 'bar': unicode
+            "foo": bool,
+            "bar": unicode,
         })
-        foo = FooList(['a', 'b', 'c'])
-        foo['a'].foo = True
-        foo['b'].bar = 'bar'
+        foo = FooList(["a", "b", "c"])
+        foo["a"].foo = True
+        foo["b"].bar = "bar"
     """
 
     class StrictOrderingOnAppendListWithFlagsSpecialization(
@@ -1055,9 +1098,9 @@ def group_unified_files(files, unified_prefix, unified_suffix, files_per_unified
     ``a.cpp``, ``b.cpp``, and ``c.cpp`` separately, we compile a single file
     that looks approximately like::
 
-       #include "a.cpp"
-       #include "b.cpp"
-       #include "c.cpp"
+       # include "a.cpp"
+       # include "b.cpp"
+       # include "c.cpp"
 
     This function handles the details of generating names for the unified
     files, and determining which original source files go in which unified
@@ -1376,3 +1419,61 @@ def ensure_l10n_central(command_context):
                 raise NotAGitRepositoryError(
                     f"Directory is not a git repository: {l10n_base_dir}"
                 )
+
+
+# Taskcluster API root URL (Firefox's production instance)
+TASKCLUSTER_ROOT_URL = "https://firefox-ci-tc.services.mozilla.com"
+
+
+def get_root_url(block_proxy=False):
+    if "TASKCLUSTER_PROXY_URL" in os.environ and not block_proxy:
+        return os.environ["TASKCLUSTER_PROXY_URL"].rstrip("/")
+
+    if "TASKCLUSTER_ROOT_URL" in os.environ:
+        return os.environ["TASKCLUSTER_ROOT_URL"].rstrip("/")
+
+    return TASKCLUSTER_ROOT_URL
+
+
+def get_taskcluster_client(service: str, block_proxy=False):
+    import taskcluster
+
+    if "TASKCLUSTER_PROXY_URL" in os.environ and not block_proxy:
+        options = {"rootUrl": os.environ["TASKCLUSTER_PROXY_URL"].rstrip("/")}
+    else:
+        options = taskcluster.optionsFromEnvironment({
+            "rootUrl": get_root_url(block_proxy)
+        })
+    return getattr(taskcluster, service[0].upper() + service[1:])(options)
+
+
+def find_task_from_index(index_paths):
+    """Search the Taskcluster index for an existing task.
+
+    Args:
+        index_paths: List of index paths to search
+
+    Returns:
+        str: Task ID if found and valid
+        None: If no valid task found
+    """
+    from taskcluster.exceptions import TaskclusterRestFailure
+
+    for index_path in index_paths:
+        try:
+            index = get_taskcluster_client("index")
+            task = index.findTask(index_path)
+            task_id = task["taskId"]
+
+            queue = get_taskcluster_client("queue")
+            response = queue.status(task_id)
+            status = response.get("status", {}) if response else {}
+
+            if not status or status.get("state") in ("exception", "failed"):
+                continue
+
+            return task_id
+        except (KeyError, TaskclusterRestFailure):
+            pass
+
+    return None

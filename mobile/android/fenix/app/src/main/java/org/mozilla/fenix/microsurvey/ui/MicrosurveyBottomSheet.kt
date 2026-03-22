@@ -35,8 +35,8 @@ import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.BottomSheetHandle
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 private const val BOTTOM_SHEET_HANDLE_WIDTH_PERCENT = 0.1f
@@ -136,7 +136,7 @@ fun MicrosurveyBottomSheet(
 )
 @Composable
 private fun MicrosurveyBottomSheetPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         MicrosurveyBottomSheet(

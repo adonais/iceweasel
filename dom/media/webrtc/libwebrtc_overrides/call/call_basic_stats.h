@@ -10,6 +10,9 @@
 #include <optional>
 #include <string>
 
+#include "modules/congestion_controller/rtp/congestion_controller_feedback_stats.h"
+#include "rtc_base/containers/flat_map.h"
+
 namespace webrtc {
 
 // named to avoid conflicts with video/call_stats.h
@@ -22,6 +25,8 @@ struct CallBasicStats {
   int64_t pacer_delay_ms = 0;
   int64_t rtt_ms = -1;
   std::optional<int64_t> ccfb_messages_received = std::nullopt;
+  flat_map<uint32_t, SentCongestionControllerFeedbackStats>
+      sent_ccfb_stats_per_ssrc;
 };
 
 }  // namespace webrtc

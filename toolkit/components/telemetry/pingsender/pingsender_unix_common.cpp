@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <cerrno>
-#include <cstring>
 #include <dlfcn.h>
 #include <string>
 #include <unistd.h>

@@ -54,8 +54,7 @@ class SendRunnable : public MIDIBackgroundRunnable {
 StaticMutex midirMIDIPlatformService::gOwnerThreadMutex;
 
 // static
-MOZ_RUNINIT nsCOMPtr<nsISerialEventTarget>
-    midirMIDIPlatformService::gOwnerThread;
+constinit nsCOMPtr<nsISerialEventTarget> midirMIDIPlatformService::gOwnerThread;
 
 midirMIDIPlatformService::midirMIDIPlatformService()
     : mImplementation(nullptr) {

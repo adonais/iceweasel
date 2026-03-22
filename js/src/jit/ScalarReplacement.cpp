@@ -2993,11 +2993,15 @@ class SubarrayReplacer : public MDefinitionVisitorDefaultNoop {
     return subarray_->toTypedArraySubarray();
   }
 
+  bool escapes(MArrayBufferViewElements* ins) const;
+
   void visitArrayBufferViewByteOffset(MArrayBufferViewByteOffset* ins);
   void visitArrayBufferViewElements(MArrayBufferViewElements* ins);
   void visitArrayBufferViewLength(MArrayBufferViewLength* ins);
   void visitGuardHasAttachedArrayBuffer(MGuardHasAttachedArrayBuffer* ins);
   void visitGuardShape(MGuardShape* ins);
+  void visitLoadUnboxedScalar(MLoadUnboxedScalar* ins);
+  void visitStoreUnboxedScalar(MStoreUnboxedScalar* ins);
   void visitTypedArrayElementSize(MTypedArrayElementSize* ins);
   void visitTypedArrayFill(MTypedArrayFill* ins);
   void visitTypedArraySet(MTypedArraySet* ins);
@@ -3032,6 +3036,25 @@ class SubarrayReplacer : public MDefinitionVisitorDefaultNoop {
     }
     return ins;
   }
+
+  bool isSubarrayElements(MArrayBufferViewElements* ins) const {
+    // ArrayBufferViewElements is replaced with an access to the subarray's
+    // object.
+    if (isNewInstruction(ins)) {
+      MOZ_ASSERT(ins->object() == subarray()->object());
+      return true;
+    }
+    return false;
+  }
+
+#ifdef DEBUG
+  static bool isBoundsCheck(MDefinition* ins) {
+    if (ins->isSpectreMaskIndex()) {
+      ins = ins->toSpectreMaskIndex()->index();
+    }
+    return ins->isBoundsCheck();
+  }
+#endif
 
   auto* templateObject() const {
     JSObject* obj = subarray()->templateObject();
@@ -3190,12 +3213,75 @@ void SubarrayReplacer::visitArrayBufferViewElements(
     return;
   }
 
-  auto* replacement = MArrayBufferViewElementsWithOffset::New(
-      alloc(), subarray()->object(), subarray()->start(), elementType());
+  auto* replacement =
+      MArrayBufferViewElements::New(alloc(), subarray()->object());
   ins->block()->insertBefore(ins, replacement);
 
   // Replace the elements.
   ins->replaceAllUsesWith(replacement);
+
+  // Remove original instruction.
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitLoadUnboxedScalar(MLoadUnboxedScalar* ins) {
+  // Skip other array buffer view elements.
+  if (!isSubarrayElements(ins->elements()->toArrayBufferViewElements())) {
+    return;
+  }
+  MOZ_ASSERT(isBoundsCheck(ins->index()));
+
+  // This MAdd can't overflow because `ins.index` is a bounds-checked index
+  // into the subarray and `subarray.start` is a valid index into
+  // `subarray.object`.
+  //
+  // Given non-negative `ins.index`, `subarray.start`, and `subarray.length`,
+  // the following two conditions hold:
+  // 1. `ins.index < subarray.length`
+  // 2. `subarray.start + subarray.length <= subarray.object.length`
+  //
+  // And therefore also:
+  // `ins.index + subarray.start < subarray.object.length`
+  //
+  // Which means the addition can't overflow.
+  auto* adjustedIndex =
+      MAdd::New(alloc(), ins->index(), subarray()->start(), MIRType::IntPtr);
+  ins->block()->insertBefore(ins, adjustedIndex);
+
+  auto* replacement =
+      MLoadUnboxedScalar::New(alloc(), ins->elements(), adjustedIndex,
+                              ins->storageType(), ins->requiresMemoryBarrier());
+  replacement->setResultType(ins->type());
+  replacement->setBailoutKind(ins->bailoutKind());
+  if (ins->resumePoint()) {
+    replacement->stealResumePoint(ins);
+  }
+  ins->block()->insertBefore(ins, replacement);
+
+  // Replace the load.
+  ins->replaceAllUsesWith(replacement);
+
+  // Remove original instruction.
+  ins->block()->discard(ins);
+}
+
+void SubarrayReplacer::visitStoreUnboxedScalar(MStoreUnboxedScalar* ins) {
+  // Skip other array buffer view elements.
+  if (!isSubarrayElements(ins->elements()->toArrayBufferViewElements())) {
+    return;
+  }
+  MOZ_ASSERT(isBoundsCheck(ins->index()));
+
+  // See visitLoadUnboxedScalar for why this addition can't overflow.
+  auto* adjustedIndex =
+      MAdd::New(alloc(), ins->index(), subarray()->start(), MIRType::IntPtr);
+  ins->block()->insertBefore(ins, adjustedIndex);
+
+  auto* replacement = MStoreUnboxedScalar::New(
+      alloc(), ins->elements(), adjustedIndex, ins->value(), ins->writeType(),
+      ins->requiresMemoryBarrier());
+  replacement->stealResumePoint(ins);
+  ins->block()->insertBefore(ins, replacement);
 
   // Remove original instruction.
   ins->block()->discard(ins);
@@ -3341,6 +3427,34 @@ void SubarrayReplacer::visitTypedArraySubarray(MTypedArraySubarray* ins) {
   ins->block()->discard(ins);
 }
 
+// Returns false if the subarray typed array elements do not escape.
+bool SubarrayReplacer::escapes(MArrayBufferViewElements* ins) const {
+  MOZ_ASSERT(ins->type() == MIRType::Elements);
+
+  JitSpewDef(JitSpew_Escape, "Check subarray typed array elements\n", ins);
+  JitSpewIndent spewIndent(JitSpew_Escape);
+
+  for (MUseIterator i(ins->usesBegin()); i != ins->usesEnd(); i++) {
+    // The MIRType::Elements cannot be captured in a resume point as it does
+    // not represent a value allocation.
+    MDefinition* def = (*i)->consumer()->toDefinition();
+
+    switch (def->op()) {
+      // Replacable instructions.
+      case MDefinition::Opcode::LoadUnboxedScalar:
+      case MDefinition::Opcode::StoreUnboxedScalar:
+        break;
+
+      default:
+        JitSpewDef(JitSpew_Escape, "is escaped by\n", def);
+        return true;
+    }
+  }
+
+  JitSpew(JitSpew_Escape, "Subarray typed array elements is not escaped");
+  return false;
+}
+
 // Returns false if the subarray typed array object does not escape.
 bool SubarrayReplacer::escapes(MInstruction* ins) const {
   MOZ_ASSERT(ins->type() == MIRType::Object);
@@ -3399,9 +3513,17 @@ bool SubarrayReplacer::escapes(MInstruction* ins) const {
         break;
       }
 
+      case MDefinition::Opcode::ArrayBufferViewElements: {
+        auto* elements = def->toArrayBufferViewElements();
+        if (escapes(elements)) {
+          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
+          return true;
+        }
+        break;
+      }
+
       // Replacable instructions.
       case MDefinition::Opcode::ArrayBufferViewByteOffset:
-      case MDefinition::Opcode::ArrayBufferViewElements:
       case MDefinition::Opcode::ArrayBufferViewLength:
       case MDefinition::Opcode::TypedArrayElementSize:
       case MDefinition::Opcode::TypedArrayFill:

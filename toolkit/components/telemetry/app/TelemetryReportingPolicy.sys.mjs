@@ -143,6 +143,9 @@ export var TelemetryReportingPolicy = {
   TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE: "telemetry-tou-accepted-or-ineligible",
   // Make this value accessible on TelemetryReportingPolicy
   OLDEST_ALLOWED_TOU_ACCEPTANCE_YEAR,
+
+  TOU_ACCEPTED_DATE_PREF,
+
   /**
    * Setup the policy.
    */
@@ -226,6 +229,10 @@ export var TelemetryReportingPolicy = {
    */
   testNotificationInProgress(inProgress) {
     TelemetryReportingPolicyImpl._notificationInProgress = inProgress;
+  },
+
+  get termsOfUseAcceptedDate() {
+    return TelemetryReportingPolicyImpl.termsOfUseAcceptedDate;
   },
 
   /**

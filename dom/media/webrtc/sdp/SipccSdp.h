@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _SIPCCSDP_H_
-#define _SIPCCSDP_H_
+#ifndef SIPCC_SDP_H_
+#define SIPCC_SDP_H_
 
 #include <vector>
 
@@ -77,4 +77,4 @@ class SipccSdp final : public Sdp {
 
 }  // namespace mozilla
 
-#endif  // _sdp_h_
+#endif  // SIPCC_SDP_H_

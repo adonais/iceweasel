@@ -208,14 +208,15 @@ class TextProperty {
     }
   }
 
-  setValue(value, priority, force = false) {
+  async setValue(value, priority, force = false) {
     if (value !== this.value || force) {
       this.userProperties.setProperty(this.rule.domRule, this.name, value);
     }
-    return this.rule.setPropertyValue(this, value, priority).then(() => {
-      this.updateUsedVariables();
-      this.updateEditor();
-    });
+
+    await this.rule.setPropertyValue(this, value, priority);
+
+    this.updateUsedVariables();
+    this.updateEditor();
   }
 
   /**

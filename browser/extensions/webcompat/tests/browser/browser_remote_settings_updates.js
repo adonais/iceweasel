@@ -159,7 +159,7 @@ add_task(async function test_that_updates_work() {
   let update = getUpdatePayload("9999.9999.9999.9998", "update1");
   await client.emit("sync", { data: { current: [update] } });
 
-  await WebCompatExtension.interventionsReady();
+  await WebCompatExtension.promiseUpdateReceived(update.version);
   let interventions = await WebCompatExtension.availableInterventions();
   is(interventions.length, 5, "Correct number of interventions");
   is(interventions[0].id, "intervention1update1", "Correct intervention");
@@ -176,7 +176,6 @@ add_task(async function test_that_updates_work() {
       `Intervention ${i} should not be active`
     );
   }
-  await WebCompatExtension.shimsReady();
   let shims = await WebCompatExtension.availableShims();
   is(Object.entries(shims).length, 4, "Correct number of shims");
   is(shims[0].id, "shim1update1", "Correct shim");
@@ -186,12 +185,10 @@ add_task(async function test_that_updates_work() {
     is(shims[i].enabled, false, `Shim ${i} should not be enabled`);
   }
 
-  await WebCompatExtension.interventionsReady();
-  await WebCompatExtension.shimsReady();
   update = getUpdatePayload("9999.9999.9999.9999", "update2");
   await client.emit("sync", { data: { current: [update] } });
 
-  await WebCompatExtension.interventionsReady();
+  await WebCompatExtension.promiseUpdateReceived(update.version);
   interventions = await WebCompatExtension.availableInterventions();
   is(interventions.length, 5, "Correct number of interventions");
   is(interventions[0].id, "intervention1update2", "Correct intervention");
@@ -208,7 +205,6 @@ add_task(async function test_that_updates_work() {
       `Intervention ${i} should not be active`
     );
   }
-  await WebCompatExtension.shimsReady();
   shims = await WebCompatExtension.availableShims();
   is(Object.entries(shims).length, 4, "Correct number of shims");
   is(shims[0].id, "shim1update2", "Correct shim");
@@ -219,13 +215,10 @@ add_task(async function test_that_updates_work() {
   }
 
   // check that we won't downgrade to older version numbers
-  await WebCompatExtension.interventionsReady();
-  await WebCompatExtension.shimsReady();
   update = getUpdatePayload("9998.9999.9999.9999", "update3");
   await client.emit("sync", { data: { current: [update] } });
 
-  await WebCompatExtension.interventionsReady();
-  await WebCompatExtension.shimsReady();
+  await WebCompatExtension.promiseUpdateReceived(update.version);
   is(interventions.length, 5, "Correct number of interventions");
   is(interventions[0].id, "intervention1update2", "Correct intervention");
   is(interventions[0].active, true, "Intervention should be active");

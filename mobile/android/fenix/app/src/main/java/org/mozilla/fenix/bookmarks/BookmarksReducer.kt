@@ -199,7 +199,7 @@ private fun BookmarksState.handleEditBookmarkAction(action: EditBookmarkAction):
         is EditBookmarkAction.TitleChanged -> this.copy(
             bookmarksEditBookmarkState = bookmarksEditBookmarkState?.let {
                 it.copy(
-                    bookmark = it.bookmark.copy(title = action.title),
+                    bookmark = it.bookmark.copy(title = action.title.replace("\n", " ")),
                     edited = true,
                 )
             },
@@ -234,7 +234,7 @@ private fun BookmarksState.handleAddFolderAction(action: AddFolderAction): Bookm
         )
         is AddFolderAction.TitleChanged -> this.copy(
             bookmarksAddFolderState = bookmarksAddFolderState?.copy(
-                folderBeingAddedTitle = action.updatedText,
+                folderBeingAddedTitle = action.updatedText.replace("\n", " "),
             ),
         )
     }
@@ -245,7 +245,7 @@ private fun BookmarksState.handleEditFolderAction(action: EditFolderAction): Boo
         is EditFolderAction.TitleChanged -> this.copy(
             bookmarksEditFolderState = bookmarksEditFolderState?.let {
                 it.copy(
-                    folder = it.folder.copy(title = action.updatedText),
+                    folder = it.folder.copy(title = action.updatedText.replace("\n", " ")),
                 )
             },
         )
@@ -454,12 +454,14 @@ private fun BookmarksState.handleSortMenuAction(action: BookmarksAction): Bookma
 @Suppress("CyclomaticComplexMethod")
 private fun BookmarksState.handleListMenuAction(action: BookmarksListMenuAction): BookmarksState =
     when (action) {
+        is BookmarksListMenuAction.Bookmark.SelectClicked -> toggleSelectionOf(action.bookmark)
         is BookmarksListMenuAction.Bookmark.EditClicked -> this.copy(
             bookmarksEditBookmarkState = BookmarksEditBookmarkState(
                 bookmark = action.bookmark,
                 folder = currentFolder,
             ),
         )
+        is BookmarksListMenuAction.Folder.SelectClicked -> toggleSelectionOf(action.folder)
         is BookmarksListMenuAction.Folder.EditClicked -> copy(
             bookmarksEditFolderState = BookmarksEditFolderState(
                 parent = currentFolder,

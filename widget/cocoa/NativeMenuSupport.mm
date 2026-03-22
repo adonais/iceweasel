@@ -28,9 +28,17 @@ void NativeMenuSupport::CreateNativeMenuBar(nsIWidget* aParent,
       MakeRefPtr<nsMenuBarX>(aMenuBarElement));
 }
 
-already_AddRefed<NativeMenu> NativeMenuSupport::CreateNativeContextMenu(
+already_AddRefed<NativeMenu> NativeMenuSupport::CreateNativePopupMenu(
     dom::Element* aPopup) {
   return MakeAndAddRef<NativeMenuMac>(aPopup);
+}
+
+bool NativeMenuSupport::ShouldUseNativeAnchoredMenus() {
+  return StaticPrefs::widget_macos_native_anchored_menus();
+}
+
+bool NativeMenuSupport::ShouldUseNativeAnchoredMenulists() {
+  return StaticPrefs::widget_macos_native_anchored_menulists();
 }
 
 bool NativeMenuSupport::ShouldUseNativeContextMenus() {

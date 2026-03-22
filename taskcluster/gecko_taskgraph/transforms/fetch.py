@@ -14,7 +14,7 @@ import taskgraph
 from mozpack import path as mozpath
 from mozshellutil import quote as shell_quote
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import Schema, validate_schema
+from taskgraph.util.schema import LegacySchema, validate_schema
 from taskgraph.util.treeherder import join_symbol
 from voluptuous import Any, Extra, Optional, Required
 
@@ -25,7 +25,7 @@ from ..util.cached_tasks import add_optimization
 
 CACHE_TYPE = "content.v1"
 
-FETCH_SCHEMA = Schema({
+FETCH_SCHEMA = LegacySchema({
     # Name of the task.
     Required("name"): str,
     # Relative path (from config.path) to the file the task was defined
@@ -59,12 +59,12 @@ fetch_builders = {}
 
 @attr.s(frozen=True)
 class FetchBuilder:
-    schema = attr.ib(type=Schema)
+    schema = attr.ib(type=LegacySchema)
     builder = attr.ib()
 
 
 def fetch_builder(name, schema):
-    schema = Schema({Required("type"): name}).extend(schema)
+    schema = LegacySchema({Required("type"): name}).extend(schema)
 
     def wrap(func):
         fetch_builders[name] = FetchBuilder(schema, func)

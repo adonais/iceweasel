@@ -1003,10 +1003,10 @@ def readSupplementalData(core_file):
                     # subtags are present. A single variant subtags may be present
                     # in |type|. And |i_type| definitely has a single variant subtag.
                     # Should this ever change, update this code accordingly.
-                    assert type in {
+                    assert type in (
                         (Any, None, None, None),
                         (Any, None, None, Any),
-                    }
+                    )
                     assert replacement == (Any, None, None, None)
                     assert i_type == (Any, None, None, Any)
                     assert i_replacement == (Any, None, None, None)
@@ -1091,10 +1091,10 @@ def readSupplementalData(core_file):
         if modified_rules and loop_count > 1:
             new_rules = {k for k in transitive_rules.keys() if k not in rules}
             for k in new_rules:
-                assert k in {
+                assert k in (
                     (Any, None, None, "guoyu-hakka"),
                     (Any, None, None, "guoyu-xiang"),
-                }
+                )
 
         # Merge the transitive rules.
         rules.update(transitive_rules)
@@ -3090,20 +3090,32 @@ def writeCurrencyFile(published, currencies, out):
  *
  * Spec: ISO 4217 Currency and Funds Code List.
  * http://www.currency-iso.org/en/home/tables/table-a1.html
- */"""
+ */
+
+#ifndef builtin_intl_CurrencyDataGenerated_h
+#define builtin_intl_CurrencyDataGenerated_h
+"""
         )
-        println("var currencyDigits = {")
+
+        lines = []
+        lines.append("#define CURRENCIES_WITH_NON_DEFAULT_DIGITS(MACRO)")
         for currency, entries in groupby(
             sorted(currencies, key=itemgetter(0)), itemgetter(0)
         ):
             for _, minorUnits, currencyName, countryName in entries:
-                println(f"  // {currencyName} ({countryName})")
-            println(f"  {currency}: {minorUnits},")
-        println("};")
+                lines.append(f"  /* {currencyName} ({countryName}) */")
+            lines.append(f"  MACRO({currency}, {minorUnits})")
+
+        line_length = max(len(line) for line in lines)
+
+        println(" \\\n".join(line.ljust(line_length) for line in lines).rstrip())
+
+        println("")
+        println("#endif  // builtin_intl_CurrencyDataGenerated_h")
 
 
 def updateCurrency(topsrcdir, args):
-    """Update the CurrencyDataGenerated.js file."""
+    """Update the CurrencyDataGenerated.h file."""
     import xml.etree.ElementTree as ET
     from random import randint
 
@@ -3482,33 +3494,6 @@ def writeSanctionedSimpleUnitIdentifiersFiles(all_units, sanctioned_units):
         ]
         assert result and len(result) == 1
         return result[0]
-
-    sanctioned_js_file = os.path.join(
-        js_src_builtin_intl_dir, "SanctionedSimpleUnitIdentifiersGenerated.js"
-    )
-    with open(sanctioned_js_file, mode="w", encoding="utf-8", newline="") as f:
-        println = partial(print, file=f)
-
-        sanctioned_units_object = json.dumps(
-            {unit: True for unit in sorted(sanctioned_units)},
-            sort_keys=True,
-            indent=2,
-            separators=(",", ": "),
-        )
-
-        println(generatedFileWarning)
-
-        println(
-            """
-/**
- * The list of currently supported simple unit identifiers.
- *
- * Intl.NumberFormat Unified API Proposal
- */"""
-        )
-
-        println("// prettier-ignore")
-        println(f"var sanctionedSimpleUnitIdentifiers = {sanctioned_units_object};")
 
     sanctioned_h_file = os.path.join(intl_components_src_dir, "MeasureUnitGenerated.h")
     with open(sanctioned_h_file, mode="w", encoding="utf-8", newline="") as f:
@@ -3999,7 +3984,7 @@ if __name__ == "__main__":
     )
     parser_currency.add_argument(
         "--out",
-        default=os.path.join(thisDir, "CurrencyDataGenerated.js"),
+        default=os.path.join(thisDir, "CurrencyDataGenerated.h"),
         help="Output file (default: %(default)s)",
     )
     parser_currency.add_argument(

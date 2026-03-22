@@ -5,14 +5,8 @@
 /* Mix-in classes */
 
 .spectrum-checker {
-  background-color: #eee;
-  background-image:
-    linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc),
-    linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc);
+  background-image: repeating-conic-gradient(#ccc 0 25%, white 0 50%);
   background-size: 12px 12px;
-  background-position:
-    0 0,
-    6px 6px;
   /* Make sure that the background color is properly set in High Contrast Mode */
   forced-color-adjust: none;
 }
@@ -43,29 +37,19 @@
  */
 .spectrum-color-preview {
   --overlay-color: transparent;
-  border: 1px solid transparent;
+  border: 1px solid color(srgb 0.5 0.5 0.5 / 0.5);
   border-radius: 50%;
   box-sizing: border-box;
   width: 25px;
   height: 25px;
-  background-color: #fff;
-  background-image:
-    linear-gradient(var(--overlay-color), var(--overlay-color)), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%),
-    linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%);
+  background-image: linear-gradient(var(--overlay-color)), repeating-conic-gradient(#ccc 0 25%, white 0 50%);
   background-size: 12px 12px;
-  background-position:
-    0 0,
-    6px 6px;
   /* Make sure that the background color is properly set in High Contrast Mode */
   forced-color-adjust: none;
 
   :root[forced-colors-active] & {
     border-color: CanvasText;
   }
-}
-
-.spectrum-color-preview.high-luminance {
-  border-color: #ccc;
 }
 
 .spectrum-slider-container {

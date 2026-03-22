@@ -33,8 +33,8 @@ import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import org.mozilla.fenix.wallpapers.Wallpaper
 import mozilla.components.ui.icons.R as iconsR
 
@@ -65,20 +65,17 @@ fun HomeSectionHeader(
     } else {
         val wallpaperState = components.appStore
             .observeAsComposableState { state -> state.wallpaperState }.value
-
-        val wallpaperAdaptedTextColor = wallpaperState.currentWallpaper.textColor?.let { Color(it) }
-
         val isWallpaperDefault = wallpaperState.currentWallpaper == Wallpaper.Default
 
         HomeSectionHeaderContent(
             headerText = headerText,
             modifier = modifier,
-            textColor = wallpaperAdaptedTextColor ?: MaterialTheme.colorScheme.onSurface,
+            textColor = wallpaperState.textColor,
             description = description,
             buttonColor = if (isWallpaperDefault) {
                 MaterialTheme.colorScheme.onSurface
             } else {
-                wallpaperAdaptedTextColor ?: MaterialTheme.colorScheme.onSurface
+                wallpaperState.textColor
             },
             buttonText = buttonText,
             onButtonClick = onButtonClick,
@@ -155,7 +152,7 @@ private fun HomeSectionHeaderContent(
 @Preview
 @Composable
 private fun HomeSectionsHeaderPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         Surface {

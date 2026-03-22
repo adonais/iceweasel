@@ -2,9 +2,17 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-type MozTabbrowserTab = EventTarget & { canonicalUrl: string };
+type MozTabbrowserTab = EventTarget & {
+  canonicalUrl: string;
+  hasTabNote: boolean;
+};
 
-type CanonicalURLSource = "link" | "opengraph" | "jsonLd" | "fallback";
+type CanonicalURLSource =
+  | "link"
+  | "opengraph"
+  | "jsonLd"
+  | "fallback"
+  | "pushstate";
 type CanonicalURLSourceResults = {
   [source in CanonicalURLSource]: string | null;
 };
@@ -50,6 +58,16 @@ interface TabNoteRemovedEvent extends CustomEvent {
     note: TabNoteRecord;
     telemetrySource?: TabNoteTelemetrySource;
   };
+}
+
+/**
+ * If a tab note with a long text string is displayed in truncated form, this
+ * event will be fired when the user requests to expand the text to see the
+ * full note text.
+ */
+interface TabNoteExpandEvent extends CustomEvent {
+  type: "TabNote:Expand";
+  target: MozTabbrowserTab;
 }
 
 type TabbrowserWebProgressListener<

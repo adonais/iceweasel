@@ -69,7 +69,7 @@ let dialog = {
         this._dialog.setAttribute("buttondisabledaccept", true);
       },
       enableDialog: () => {
-        this._dialog.setAttribute("buttondisabledaccept", false);
+        this._dialog.removeAttribute("buttondisabledaccept");
       },
       focusTarget: window,
     });

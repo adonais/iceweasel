@@ -27,7 +27,9 @@
 #include "nsHttp.h"
 #include "nsHttpHandler.h"
 #include "nsHttpRequestHead.h"
+#include "nsHttpTransaction.h"
 #include "nsIClassOfService.h"
+#include "nsISocketTransport.h"
 #include "prnetdb.h"
 
 namespace mozilla::net {

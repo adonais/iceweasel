@@ -18,8 +18,8 @@
  * references are released the nsNodeInfoManager deletes itself.
  */
 
-#ifndef mozilla_dom_NodeInfo_h___
-#define mozilla_dom_NodeInfo_h___
+#ifndef mozilla_dom_NodeInfo_h_
+#define mozilla_dom_NodeInfo_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
@@ -305,4 +305,4 @@ class NodeInfo final {
 
 }  // namespace mozilla::dom
 
-#endif /* mozilla_dom_NodeInfo_h___ */
+#endif /* mozilla_dom_NodeInfo_h_ */

@@ -12,7 +12,7 @@ from textwrap import dedent
 
 from mozpack import path as mozpath
 from taskgraph.util import json
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from voluptuous import Any, Optional, Required
 from voluptuous.validators import Match
 
@@ -25,7 +25,7 @@ from gecko_taskgraph.transforms.job.common import (
 )
 from gecko_taskgraph.util.attributes import is_try
 
-mozharness_run_schema = Schema({
+mozharness_run_schema = LegacySchema({
     Required("using"): "mozharness",
     # the mozharness script used to run this task, relative to the testing/
     # directory and using forward slashes even on Windows
@@ -127,9 +127,9 @@ def mozharness_on_docker_worker_setup(config, job, taskdesc):
         )
 
     # Running via mozharness assumes an image that contains build.sh:
-    # by default, debian12-amd64-build, but it could be another image (like
+    # by default, debian13-amd64-build, but it could be another image (like
     # android-build).
-    worker.setdefault("docker-image", {"in-tree": "debian12-amd64-build"})
+    worker.setdefault("docker-image", {"in-tree": "debian13-amd64-build"})
 
     worker.setdefault("artifacts", []).append({
         "name": "public/logs",

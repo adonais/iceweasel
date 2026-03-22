@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef DNSByTypeRecord_h__
-#define DNSByTypeRecord_h__
+#ifndef DNSByTypeRecord_h_
+#define DNSByTypeRecord_h_
 
 #include "mozilla/net/HTTPSSVC.h"
 #include "ipc/IPCMessageUtils.h"
@@ -191,4 +191,4 @@ struct ParamTraits<mozilla::net::SvcFieldValue> {
 
 }  // namespace IPC
 
-#endif  // DNSByTypeRecord_h__
+#endif  // DNSByTypeRecord_h_

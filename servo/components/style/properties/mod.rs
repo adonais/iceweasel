@@ -6,10 +6,12 @@
 
 pub mod cascade;
 pub mod declaration_block;
+pub mod shorthands;
 
 pub use self::cascade::*;
 pub use self::declaration_block::*;
 pub use self::generated::*;
+
 /// The CSS properties supported by the style system.
 /// Generated from the properties.mako.rs template by build.rs
 #[macro_use]
@@ -21,7 +23,7 @@ pub mod generated {
 
 use crate::custom_properties::{self, ComputedCustomProperties};
 use crate::derives::*;
-use crate::dom::AttributeProvider;
+use crate::dom::AttributeTracker;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::{CSSPropertyId, NonCustomCSSPropertyId, RefPtr};
 use crate::logical_geometry::WritingMode;
@@ -1432,7 +1434,7 @@ impl UnparsedValue {
         stylist: &Stylist,
         computed_context: &computed::Context,
         shorthand_cache: &'cache mut ShorthandsWithPropertyReferencesCache,
-        attr_provider: &dyn AttributeProvider,
+        attribute_tracker: &mut AttributeTracker,
     ) -> Cow<'cache, PropertyDeclaration> {
         let invalid_at_computed_value_time = || {
             let keyword = if longhand_id.inherited() {
@@ -1467,7 +1469,7 @@ impl UnparsedValue {
             custom_properties,
             stylist,
             computed_context,
-            attr_provider,
+            attribute_tracker,
         ) {
             Ok(css) => css,
             Err(..) => return invalid_at_computed_value_time(),
@@ -1623,6 +1625,79 @@ where
             let id = *self.iter.next()?;
             if !self.filter || id.into().enabled_for_all_content() {
                 return Some(id);
+            }
+        }
+    }
+}
+
+/// An iterator over all the properties that transition on a given style.
+pub struct TransitionPropertyIterator<'a> {
+    style: &'a ComputedValues,
+    index_range: core::ops::Range<usize>,
+    longhand_iterator: Option<NonCustomPropertyIterator<LonghandId>>,
+}
+
+impl<'a> TransitionPropertyIterator<'a> {
+    /// Create a `TransitionPropertyIterator` for the given style.
+    pub fn from_style(style: &'a ComputedValues) -> Self {
+        Self {
+            style,
+            index_range: 0..style.get_ui().transition_property_count(),
+            longhand_iterator: None,
+        }
+    }
+}
+
+/// A single iteration of the TransitionPropertyIterator.
+pub struct TransitionPropertyIteration {
+    /// The id of the longhand for this property.
+    pub property: OwnedPropertyDeclarationId,
+    /// The index of this property in the list of transition properties for this iterator's
+    /// style.
+    pub index: usize,
+}
+
+impl<'a> Iterator for TransitionPropertyIterator<'a> {
+    type Item = TransitionPropertyIteration;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        use crate::values::computed::TransitionProperty;
+        loop {
+            if let Some(ref mut longhand_iterator) = self.longhand_iterator {
+                if let Some(longhand_id) = longhand_iterator.next() {
+                    return Some(TransitionPropertyIteration {
+                        property: OwnedPropertyDeclarationId::Longhand(longhand_id),
+                        index: self.index_range.start - 1,
+                    });
+                }
+                self.longhand_iterator = None;
+            }
+
+            let index = self.index_range.next()?;
+            match self.style.get_ui().transition_property_at(index) {
+                TransitionProperty::NonCustom(id) => {
+                    match id.longhand_or_shorthand() {
+                        Ok(longhand_id) => {
+                            return Some(TransitionPropertyIteration {
+                                property: OwnedPropertyDeclarationId::Longhand(longhand_id),
+                                index,
+                            });
+                        },
+                        Err(shorthand_id) => {
+                            // In the other cases, we set up our state so that we are ready to
+                            // compute the next value of the iterator and then loop (equivalent
+                            // to calling self.next()).
+                            self.longhand_iterator = Some(shorthand_id.longhands());
+                        },
+                    }
+                },
+                TransitionProperty::Custom(name) => {
+                    return Some(TransitionPropertyIteration {
+                        property: OwnedPropertyDeclarationId::Custom(name),
+                        index,
+                    })
+                },
+                TransitionProperty::Unsupported(..) => {},
             }
         }
     }

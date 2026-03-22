@@ -38,7 +38,7 @@ export var UnitTestObjs = {
 export function allowAndroidEmulatorLoopback() {
    
 const result = UniFFIScaffolding.callSync(
-    140, // uniffi_viaduct_fn_func_allow_android_emulator_loopback
+    149, // uniffi_viaduct_fn_func_allow_android_emulator_loopback
 )
 return handleRustResult(
     result,
@@ -56,7 +56,7 @@ export function initBackend(
    
 FfiConverterTypeBackend.checkType(backend);
 const result = UniFFIScaffolding.callSync(
-    141, // uniffi_viaduct_fn_func_init_backend
+    150, // uniffi_viaduct_fn_func_init_backend
     FfiConverterTypeBackend.lower(backend),
 )
 return handleRustResult(
@@ -66,9 +66,69 @@ return handleRustResult(
 )
 }
 
+/**
+ * Set the global default user-agent
+ * 
+ * This is what's used when no user-agent is set in the `ClientSettings` and no `user-agent`
+ * header is set in the Request.
+ * @param {string} userAgent
+ */
+export function setGlobalDefaultUserAgent(
+    userAgent) {
+   
+FfiConverterString.checkType(userAgent);
+const result = UniFFIScaffolding.callSync(
+    151, // uniffi_viaduct_fn_func_set_global_default_user_agent
+    FfiConverterString.lower(userAgent),
+)
+return handleRustResult(
+    result,
+    (result) => undefined,
+    null,
+)
+}
 
 
 
+
+
+
+// Export the FFIConverter object to make external types work.
+export class FfiConverterOptionalString extends FfiConverterArrayBuffer {
+    static checkType(value) {
+        if (value !== undefined && value !== null) {
+            FfiConverterString.checkType(value)
+        }
+    }
+
+    static read(dataStream) {
+        const code = dataStream.readUint8(0);
+        switch (code) {
+            case 0:
+                return null
+            case 1:
+                return FfiConverterString.read(dataStream)
+            default:
+                throw new UniFFIError(`Unexpected code: ${code}`);
+        }
+    }
+
+    static write(dataStream, value) {
+        if (value === null || value === undefined) {
+            dataStream.writeUint8(0);
+            return;
+        }
+        dataStream.writeUint8(1);
+        FfiConverterString.write(dataStream, value)
+    }
+
+    static computeSize(value) {
+        if (value === null || value === undefined) {
+            return 1;
+        }
+        return 1 + FfiConverterString.computeSize(value)
+    }
+}
 /**
  * ClientSettings
  */
@@ -76,10 +136,12 @@ export class ClientSettings {
     constructor(
         {
             timeout= 0, 
-            redirectLimit= 10
+            redirectLimit= 10, 
+            userAgent= null
         } = {
             timeout: undefined, 
-            redirectLimit: undefined
+            redirectLimit: undefined, 
+            userAgent: undefined
         }
     ) {
         try {
@@ -98,20 +160,39 @@ export class ClientSettings {
             }
             throw e;
         }
+        try {
+            FfiConverterOptionalString.checkType(userAgent)
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart("userAgent");
+            }
+            throw e;
+        }
         /**
-         * timeout
+         * Timeout for the entire request in ms (0 indicates no timeout).
+         * @type {number}
          */
         this.timeout = timeout;
         /**
-         * redirectLimit
+         * Maximum amount of redirects to follow (0 means redirects are not allowed)
+         * @type {number}
          */
         this.redirectLimit = redirectLimit;
+        /**
+         * Client default user-agent.
+         * 
+         * This overrides the global default user-agent and is used when no `User-agent` header is set
+         * directly in the Request.
+         * @type {?string}
+         */
+        this.userAgent = userAgent;
     }
 
     equals(other) {
         return (
             this.timeout == other.timeout
             && this.redirectLimit == other.redirectLimit
+            && this.userAgent == other.userAgent
         )
     }
 }
@@ -122,17 +203,20 @@ export class FfiConverterTypeClientSettings extends FfiConverterArrayBuffer {
         return new ClientSettings({
             timeout: FfiConverterUInt32.read(dataStream),
             redirectLimit: FfiConverterUInt32.read(dataStream),
+            userAgent: FfiConverterOptionalString.read(dataStream),
         });
     }
     static write(dataStream, value) {
         FfiConverterUInt32.write(dataStream, value.timeout);
         FfiConverterUInt32.write(dataStream, value.redirectLimit);
+        FfiConverterOptionalString.write(dataStream, value.userAgent);
     }
 
     static computeSize(value) {
         let totalSize = 0;
         totalSize += FfiConverterUInt32.computeSize(value.timeout);
         totalSize += FfiConverterUInt32.computeSize(value.redirectLimit);
+        totalSize += FfiConverterOptionalString.computeSize(value.userAgent);
         return totalSize
     }
 
@@ -157,6 +241,14 @@ export class FfiConverterTypeClientSettings extends FfiConverterArrayBuffer {
             }
             throw e;
         }
+        try {
+            FfiConverterOptionalString.checkType(value.userAgent);
+        } catch (e) {
+            if (e instanceof UniFFITypeError) {
+                e.addItemDescriptionPart(".userAgent");
+            }
+            throw e;
+        }
     }
 }
 
@@ -165,7 +257,7 @@ export class FfiConverterTypeClientSettings extends FfiConverterArrayBuffer {
  * 
  * The supported methods are the limited to what's supported by android-components.
  */
-export const Method = {
+export const Method = Object.freeze({
     /**
      * GET
      */
@@ -202,8 +294,7 @@ export const Method = {
      * PATCH
      */
     PATCH: 8,
-};
-Object.freeze(Method);
+});
 
 // Export the FFIConverter object to make external types work.
 export class FfiConverterTypeMethod extends FfiConverterArrayBuffer {
@@ -287,8 +378,6 @@ export class FfiConverterTypeMethod extends FfiConverterArrayBuffer {
       }
     }
 }
-
-
 export class FfiConverterTypeViaductUrl extends FfiConverter {
     static lift(value) {
         return FfiConverterString.lift(value);
@@ -487,19 +576,19 @@ export class Request {
             throw e;
         }
         /**
-         * method
+         * @type {Method[keyof Method]}
          */
         this.method = method;
         /**
-         * url
+         * @type {ViaductUrl}
          */
         this.url = url;
         /**
-         * headers
+         * @type {Headers}
          */
         this.headers = headers;
         /**
-         * body
+         * @type {?string}
          */
         this.body = body;
     }
@@ -642,22 +731,27 @@ export class Response {
         }
         /**
          * The method used to request this response.
+         * @type {Method[keyof Method]}
          */
         this.requestMethod = requestMethod;
         /**
          * The URL of this response.
+         * @type {ViaductUrl}
          */
         this.url = url;
         /**
          * The HTTP Status code of this response.
+         * @type {number}
          */
         this.status = status;
         /**
          * The headers returned with this response.
+         * @type {Headers}
          */
         this.headers = headers;
         /**
          * The body of the response.
+         * @type {string}
          */
         this.body = body;
     }
@@ -1199,7 +1293,7 @@ export class BackendImpl extends Backend {
         FfiConverterTypeRequest.checkType(request);
         FfiConverterTypeClientSettings.checkType(settings);
         const result = await UniFFIScaffolding.callAsync(
-            142, // uniffi_viaduct_fn_method_backend_send_request
+            152, // uniffi_viaduct_fn_method_backend_send_request
             FfiConverterTypeBackend.lowerReceiver(this),
             FfiConverterTypeRequest.lower(request),
             FfiConverterTypeClientSettings.lower(settings),
@@ -1218,19 +1312,30 @@ export class BackendImpl extends Backend {
 //
 // Export the FFIConverter object to make external types work.
 export class FfiConverterTypeBackend extends FfiConverter {
-    // lift works like a regular interface
-    static lift(value) {
-        const opts = {};
-        opts[constructUniffiObject] = value;
-        return new BackendImpl(opts);
+    static lift(handle) {
+        if (handle instanceof UniFFIPointer) {
+          // Rust handle.  Construct an object from it
+          const opts = {};
+          opts[constructUniffiObject] = handle;
+          return new BackendImpl(opts);
+        } else {
+          // JS handle.  Get the JS object from the callback handler
+          return uniffiCallbackHandlerViaductBackend.takeCallbackObj(handle)
+        }
     }
 
-    // lower treats value like a callback interface
     static lower(value) {
-        if (!(value instanceof Backend)) {
-            throw new UniFFITypeError("expected 'Backend' subclass");
+        const ptr = value[uniffiObjectPtr];
+        if (ptr instanceof UniFFIPointer) {
+          // Rust-implemented interface, return the ptr.  The C++ code will clone it.
+          return ptr;
+        } else {
+          // JS-implemented interface, store the object in the handle map and return the handle
+          if (!(value instanceof Backend)) {
+              throw new UniFFITypeError("expected 'Backend' subclass");
+          }
+          return uniffiCallbackHandlerViaductBackend.storeCallbackObj(value)
         }
-        return uniffiCallbackHandlerViaductBackend.storeCallbackObj(value)
     }
 
     // lowerReceiver is used when calling methods on an interface we got from Rust, 
@@ -1244,11 +1349,16 @@ export class FfiConverterTypeBackend extends FfiConverter {
     }
 
     static read(dataStream) {
-        return this.lift(dataStream.readPointer(20));
+        return this.lift(dataStream.readHandleOrPointer(20))
     }
 
     static write(dataStream, value) {
-        dataStream.writePointer(20, this.lower(value));
+        if (value[uniffiObjectPtr] instanceof UniFFIPointer) {
+          // Rust-implemented interface, return the ptr.
+          dataStream.writePointer(20, this.lower(value));
+        } else {
+          dataStream.writeInt64(this.lower(value))
+        }
     }
 
     static computeSize(value) {

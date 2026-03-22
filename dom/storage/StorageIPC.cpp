@@ -816,7 +816,7 @@ class SyncLoadCacheHelper : public LocalStorageCacheBridge {
     *mRv = NS_ERROR_UNEXPECTED;
   }
 
-  virtual const nsCString Origin() const override {
+  virtual nsCString Origin() const override {
     return LocalStorageManager::CreateOrigin(mSuffix, mOrigin);
   }
   virtual const nsCString& OriginNoSuffix() const override { return mOrigin; }
@@ -1088,7 +1088,7 @@ class LoadRunnable : public Runnable {
 
 // StorageDBParent::CacheParentBridge
 
-const nsCString StorageDBParent::CacheParentBridge::Origin() const {
+nsCString StorageDBParent::CacheParentBridge::Origin() const {
   return LocalStorageManager::CreateOrigin(mOriginSuffix, mOriginNoSuffix);
 }
 

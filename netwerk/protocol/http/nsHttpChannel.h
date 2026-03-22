@@ -4,12 +4,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsHttpChannel_h__
-#define nsHttpChannel_h__
+#ifndef nsHttpChannel_h_
+#define nsHttpChannel_h_
 
 #include "AlternateServices.h"
 #include "AutoClose.h"
 #include "HttpBaseChannel.h"
+#include "HttpTransactionShell.h"
 #include "nsIReplacedHttpResponse.h"
 #include "TimingStruct.h"
 #include "mozilla/AtomicBitfields.h"
@@ -31,6 +32,7 @@
 #include "nsIStreamListener.h"
 #include "nsIThreadRetargetableRequest.h"
 #include "nsIThreadRetargetableStreamListener.h"
+#include "nsITransport.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsTArray.h"
 #include "nsWeakReference.h"
@@ -366,6 +368,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   [[nodiscard]] nsresult ContinueProcessResponse4(nsresult);
   [[nodiscard]] nsresult ProcessNormal();
   [[nodiscard]] nsresult ContinueProcessNormal(nsresult);
+  [[nodiscard]] nsresult ContinueProcessNormal2(nsresult);
+  [[nodiscard]] nsresult ContinueProcessNormal3();
   void ProcessAltService(nsHttpConnectionInfo* aTransConnInfo = nullptr);
   bool ShouldBypassProcessNotModified();
   [[nodiscard]] nsresult ProcessNotModified(
@@ -427,8 +431,7 @@ class nsHttpChannel final : public HttpBaseChannel,
                                                  const nsHttpAtom* aAtom);
   [[nodiscard]] nsresult FinalizeCacheEntry();
   [[nodiscard]] nsresult InstallCacheListener(int64_t offset = 0);
-  [[nodiscard]] nsresult DoInstallCacheListener(bool aIsDictionaryCompressed,
-                                                nsACString* aDictionary,
+  [[nodiscard]] nsresult DoInstallCacheListener(bool aSaveDecompressed,
                                                 int64_t offset = 0);
   void MaybeInvalidateCacheEntryForSubsequentGet();
   void AsyncOnExamineCachedResponse();
@@ -860,6 +863,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   bool mWritingToCache = false;
   bool mWaitingForProxy = false;
   bool mStaleRevalidation = false;
+  // Set if this is dictionary-compressed
+  bool mIsDictionaryCompressed = false;
   // Will be true if the onCacheEntryAvailable callback is not called by the
   // time we send the network request
   Atomic<bool> mRaceCacheWithNetwork{false};
@@ -951,4 +956,4 @@ inline nsISupports* ToSupports(mozilla::net::nsHttpChannel* aChannel) {
   return static_cast<nsIHttpChannel*>(aChannel);
 }
 
-#endif  // nsHttpChannel_h__
+#endif  // nsHttpChannel_h_

@@ -5,12 +5,12 @@
 Support for running mach tasks (via run-task)
 """
 
-from taskgraph.util.schema import Schema, taskref_or_string
+from taskgraph.util.schema import LegacySchema, taskref_or_string
 from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
 
-mach_schema = Schema({
+mach_schema = LegacySchema({
     Required("using"): "mach",
     # The mach command (omitting `./mach`) to run
     Required("mach"): taskref_or_string,

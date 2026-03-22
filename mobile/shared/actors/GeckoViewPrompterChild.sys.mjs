@@ -35,6 +35,7 @@ export class GeckoViewPrompterChild extends GeckoViewActorChild {
     this.sendAsyncMessage("RegisterPrompt", {
       id: prompt.id,
       promptType: prompt.getPromptType(),
+      owningBrowsingContext: prompt._domWin.browsingContext,
     });
     // We intentionally do not await here as we want to fire NotifyPromptShow
     // immediately rather than waiting until the user accepts/dismisses the

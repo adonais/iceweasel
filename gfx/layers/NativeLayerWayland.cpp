@@ -1034,7 +1034,7 @@ RefPtr<DrawTarget> NativeLayerWaylandRender::NextSurfaceAsDrawTarget(
   mDirtyRegion = aUpdateRegion;
 
   MOZ_DIAGNOSTIC_ASSERT(!mInProgressBuffer);
-  if (mFrontBuffer && !mFrontBuffer->IsAttached()) {
+  if (mFrontBuffer && !mFrontBuffer->IsAttached(lock)) {
     LOGVERBOSE(
         "NativeLayerWaylandRender::NextSurfaceAsDrawTarget(): use front buffer "
         "for rendering");
@@ -1045,13 +1045,13 @@ RefPtr<DrawTarget> NativeLayerWaylandRender::NextSurfaceAsDrawTarget(
         "NativeLayerWaylandRender::NextSurfaceAsDrawTarget(): use progress "
         "buffer for rendering");
     mInProgressBuffer = mSurfacePoolHandle->ObtainBufferFromPool(
-        mSize, mRootLayer->GetDRMFormat());
+        lock, mSize, mRootLayer->GetDRMFormat());
     if (mFrontBuffer) {
       LOGVERBOSE(
           "NativeLayerWaylandRender::NextSurfaceAsDrawTarget(): read-back from "
           "front buffer");
       ReadBackFrontBuffer(lock);
-      mSurfacePoolHandle->ReturnBufferToPool(mFrontBuffer);
+      mSurfacePoolHandle->ReturnBufferToPool(lock, mFrontBuffer);
       mFrontBuffer = nullptr;
     }
   }
@@ -1064,7 +1064,7 @@ RefPtr<DrawTarget> NativeLayerWaylandRender::NextSurfaceAsDrawTarget(
     return nullptr;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(!mInProgressBuffer->IsAttached(),
+  MOZ_DIAGNOSTIC_ASSERT(!mInProgressBuffer->IsAttached(lock),
                         "Reusing attached buffer!");
 
   return mInProgressBuffer->Lock();
@@ -1084,7 +1084,7 @@ Maybe<GLuint> NativeLayerWaylandRender::NextSurfaceAsFramebuffer(
   mDirtyRegion = IntRegion(aUpdateRegion);
 
   MOZ_DIAGNOSTIC_ASSERT(!mInProgressBuffer);
-  if (mFrontBuffer && !mFrontBuffer->IsAttached()) {
+  if (mFrontBuffer && !mFrontBuffer->IsAttached(lock)) {
     LOGVERBOSE(
         "NativeLayerWaylandRender::NextSurfaceAsFramebuffer(): use front "
         "buffer for rendering");
@@ -1095,7 +1095,7 @@ Maybe<GLuint> NativeLayerWaylandRender::NextSurfaceAsFramebuffer(
         "NativeLayerWaylandRender::NextSurfaceAsFramebuffer(): use progress "
         "buffer for rendering");
     mInProgressBuffer = mSurfacePoolHandle->ObtainBufferFromPool(
-        mSize, mRootLayer->GetDRMFormat());
+        lock, mSize, mRootLayer->GetDRMFormat());
   }
 
   MOZ_DIAGNOSTIC_ASSERT(mInProgressBuffer,
@@ -1104,7 +1104,7 @@ Maybe<GLuint> NativeLayerWaylandRender::NextSurfaceAsFramebuffer(
     return Nothing();
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(!mInProgressBuffer->IsAttached(),
+  MOZ_DIAGNOSTIC_ASSERT(!mInProgressBuffer->IsAttached(lock),
                         "Reusing attached buffer!");
 
   // get the framebuffer before handling partial damage so we don't accidently
@@ -1122,7 +1122,7 @@ Maybe<GLuint> NativeLayerWaylandRender::NextSurfaceAsFramebuffer(
         "NativeLayerWaylandRender::NextSurfaceAsFramebuffer(): read-back from "
         "front buffer");
     ReadBackFrontBuffer(lock);
-    mSurfacePoolHandle->ReturnBufferToPool(mFrontBuffer);
+    mSurfacePoolHandle->ReturnBufferToPool(lock, mFrontBuffer);
     mFrontBuffer = nullptr;
   }
 
@@ -1204,9 +1204,12 @@ void NativeLayerWaylandRender::NotifySurfaceReady() {
 
   WaylandSurfaceLock lock(mSurface);
 
-  MOZ_DIAGNOSTIC_ASSERT(!mFrontBuffer);
-  MOZ_DIAGNOSTIC_ASSERT(mInProgressBuffer);
+  // NotifySurfaceReady() may be called even if NextSurfaceAsDrawTarget() fails.
+  if (!mInProgressBuffer) {
+    return;
+  }
 
+  MOZ_DIAGNOSTIC_ASSERT(!mFrontBuffer);
   mFrontBuffer = std::move(mInProgressBuffer);
   if (mSurfacePoolHandle->gl()) {
     auto* buffer = mFrontBuffer->AsWaylandBufferDMABUF();
@@ -1225,12 +1228,13 @@ void NativeLayerWaylandRender::DiscardBackbuffersLocked(
       "NativeLayerWaylandRender::DiscardBackbuffersLocked() force %d progress "
       "%p front %p",
       aForce, mInProgressBuffer.get(), mFrontBuffer.get());
-  if (mInProgressBuffer && (!mInProgressBuffer->IsAttached() || aForce)) {
-    mSurfacePoolHandle->ReturnBufferToPool(mInProgressBuffer);
+  if (mInProgressBuffer &&
+      (!mInProgressBuffer->IsAttached(aProofOfLock) || aForce)) {
+    mSurfacePoolHandle->ReturnBufferToPool(aProofOfLock, mInProgressBuffer);
     mInProgressBuffer = nullptr;
   }
-  if (mFrontBuffer && (!mFrontBuffer->IsAttached() || aForce)) {
-    mSurfacePoolHandle->ReturnBufferToPool(mFrontBuffer);
+  if (mFrontBuffer && (!mFrontBuffer->IsAttached(aProofOfLock) || aForce)) {
+    mSurfacePoolHandle->ReturnBufferToPool(aProofOfLock, mFrontBuffer);
     mFrontBuffer = nullptr;
   }
 }

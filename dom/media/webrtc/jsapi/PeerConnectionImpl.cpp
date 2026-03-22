@@ -2762,7 +2762,7 @@ void PeerConnectionImpl::RecordSignalingTelemetry() const {
               }
             }
           }
-          return nsFmtCString{FMT_STRING("{}"), fmt::join(payload_names, ", ")};
+          return nsFmtCString{"{}", fmt::join(payload_names, ", ")};
         })((sending ? aTransceiver.mSendTrack : aTransceiver.mRecvTrack)
                .GetNegotiatedDetails());
     const char* direction = ([&]() {

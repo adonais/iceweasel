@@ -283,7 +283,8 @@ export class NimbusEnrollments {
       if (typeof timestamp !== "number" || isNaN(timestamp) || timestamp < 0) {
         throw new lazy.RemoteSettingsSyncError(
           collection,
-          lazy.NimbusTelemetry.RemoteSettingsSyncErrorReason.INVALID_LAST_MODIFIED
+          lazy.NimbusTelemetry.RemoteSettingsSyncErrorReason
+            .INVALID_LAST_MODIFIED
         );
       } else if (
         typeof lastTimestamp === "undefined" ||

@@ -127,6 +127,10 @@ class ScriptPreloader : public nsIObserver,
                    ProcessType processType, nsTArray<uint8_t>&& xdrData,
                    TimeStamp loadTime);
 
+  // Notes that we have received all script data of a child process with
+  // the given type. Must be called on the child preloader.
+  void NoteReceivedAllChildStencilsForProcess(ProcessType processType);
+
   // Initializes the script cache from the startup script cache file.
   Result<Ok, nsresult> InitCache(const nsAString& = u"scriptCache"_ns)
       MOZ_REQUIRES(sMainThreadCapability);
@@ -402,6 +406,11 @@ class ScriptPreloader : public nsIObserver,
   // Writes a new cache file to disk. Must not be called on the main thread.
   Result<Ok, nsresult> WriteCache() MOZ_REQUIRES(mSaveMonitor.Lock());
 
+  // Checks if everything's ready for cache writing, and calls StartCacheWrite
+  // if so. Can be called multiple times; won't do anything if a cache write has
+  // already been kicked off (or even finished).
+  void StartCacheWriteIfReady();
+
   void StartCacheWrite();
 
   // Prepares scripts for writing to the cache, serializing new scripts to
@@ -490,6 +499,9 @@ class ScriptPreloader : public nsIObserver,
   // scripts to the cache.
   bool mStartupFinished = false;
 
+  // True once the startup sequence has reached CACHE_WRITE_TOPIC.
+  bool mStartupHasAdvancedToCacheWritingStage = false;
+
   bool mCacheInitialized = false;
   bool mSaveComplete = false;
   bool mDataPrepared = false;
@@ -515,9 +527,17 @@ class ScriptPreloader : public nsIObserver,
   // The process type of the current process.
   static ProcessType sProcessType;
 
+  // The process types we expect to see at some point during startup, and whose
+  // script data we want to wait for before kicking off the cache write.
+  EnumSet<ProcessType> mRequiredChildProcessStencils;
+
   // The process types for which remote processes have been initialized, and
-  // are expected to send back script data.
-  EnumSet<ProcessType> mInitializedProcesses{};
+  // are expected to send back script data. Only used in the *child cache* in
+  // the parent process.
+  EnumSet<ProcessType> mRequestedChildProcessStencils;
+
+  // The process types from which we have received script data.
+  EnumSet<ProcessType> mReceivedChildProcessStencils;
 
   RefPtr<ScriptPreloader> mChildCache;
   ScriptCacheChild* mChildActor = nullptr;

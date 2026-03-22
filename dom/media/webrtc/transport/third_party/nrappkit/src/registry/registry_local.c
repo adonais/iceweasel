@@ -66,29 +66,29 @@ static int nr_reg_local_compare_string(const void *arg1, const void *arg2) {
    return strcasecmp(*(const char **)arg1, *(const char **)arg2);
 }
 
-static int nr_reg_insert_node(char *name, void *node);
-static int nr_reg_change_node(char *name, void *node, void *old);
-static int nr_reg_get_data(NR_registry name, nr_scalar_registry_node *node, void *out);
-static int nr_reg_set_parent_registries(char *name);
-char *nr_reg_alloc_node_data(char *name, nr_registry_node *node, int *freeit);
+static int nr_reg_insert_node(const char *name, void *node);
+static int nr_reg_change_node(const char *name, void *node, void *old);
+static int nr_reg_get_data(NR_registry_name name, nr_scalar_registry_node *node, void *out);
+static int nr_reg_set_parent_registries(const char *name);
+char *nr_reg_alloc_node_data(const char *name, nr_registry_node *node, int *freeit);
 static int nr_reg_rfree(void *ptr);
-static int nr_reg_compute_length(char *name, nr_registry_node *node, size_t *length);
-char *nr_reg_action_name(int action);
+static int nr_reg_compute_length(const char *name, nr_registry_node *node, size_t *length);
+const char *nr_reg_action_name(int action);
 
 /* the registry, containing mappings like "foo.bar.baz" to registry
  * nodes, which are either of type nr_scalar_registry_node or
  * nr_array_registry_node */
 static r_assoc     *nr_registry = 0;
 
-static int nr_reg_local_iter(NR_registry prefix, int (*action)(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node), void *ptr);
-static int nr_reg_local_iter_delete(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node);
-static int nr_reg_local_find_children(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node);
-static int nr_reg_local_count_children(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node);
+static int nr_reg_local_iter(NR_registry_name prefix, int (*action)(void *ptr, r_assoc_iterator *iter, const char *prefix, const char *name, nr_registry_node *node), void *ptr);
+static int nr_reg_local_iter_delete(void *ptr, r_assoc_iterator *iter, const char *prefix, const char *name, nr_registry_node *node);
+static int nr_reg_local_find_children(void *ptr, r_assoc_iterator *iter, const char *prefix, const char *name, nr_registry_node *node);
+static int nr_reg_local_count_children(void *ptr, r_assoc_iterator *iter, const char *prefix, const char *name, nr_registry_node *node);
 
 
 
 int
-nr_reg_local_iter(NR_registry prefix, int (*action)(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node), void *ptr)
+nr_reg_local_iter(NR_registry_name prefix, int (*action)(void *ptr, r_assoc_iterator *iter, const char *prefix, const char *name, nr_registry_node *node), void *ptr)
 {
     int r, _status;
     r_assoc_iterator iter;
@@ -106,7 +106,7 @@ nr_reg_local_iter(NR_registry prefix, int (*action)(void *ptr, r_assoc_iterator 
     prefixl = strlen(prefix);
 
     for (;;) {
-      if ((r=r_assoc_iter(&iter, (void*)&name, &namel, (void*)&node))) {
+      if ((r=r_assoc_iter(&iter, (void**)&name, &namel, (void**)&node))) {
         if (r == R_EOD)
           break;
         else
@@ -143,7 +143,7 @@ nr_reg_local_iter(NR_registry prefix, int (*action)(void *ptr, r_assoc_iterator 
 }
 
 int
-nr_reg_local_iter_delete(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node)
+nr_reg_local_iter_delete(void *ptr, r_assoc_iterator *iter, const char *prefix, const char *name, nr_registry_node *node)
 {
     int r, _status;
 
@@ -156,12 +156,12 @@ nr_reg_local_iter_delete(void *ptr, r_assoc_iterator *iter, char *prefix, char *
 }
 
 int
-nr_reg_local_find_children(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node)
+nr_reg_local_find_children(void *ptr, r_assoc_iterator *iter, const char *prefix, const char *name, nr_registry_node *node)
 {
   int _status;
   int prefixl = strlen(prefix);
-  char *dot = 0;
-  nr_reg_find_children_arg *arg = (void*)ptr;
+  const char *dot = 0;
+  nr_reg_find_children_arg *arg = (nr_reg_find_children_arg*)ptr;
 
   assert(sizeof(*(arg->children)) == sizeof(NR_registry));
 
@@ -186,10 +186,10 @@ nr_reg_local_find_children(void *ptr, r_assoc_iterator *iter, char *prefix, char
 }
 
 int
-nr_reg_local_count_children(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node)
+nr_reg_local_count_children(void *ptr, r_assoc_iterator *iter, const char *prefix, const char *name, nr_registry_node *node)
 {
   int prefixl = strlen(prefix);
-  char *dot = 0;
+  const char *dot = 0;
 
   /* only count children */
   if (name[prefixl] == '.') {
@@ -214,7 +214,7 @@ nr_reg_rfree(void *ptr)
 }
 
 int
-nr_reg_fetch_node(char *name, unsigned char type, nr_registry_node **node, int *free_node)
+nr_reg_fetch_node(const char *name, unsigned char type, nr_registry_node **node, int *free_node)
 {
     int r, _status;
 
@@ -224,7 +224,7 @@ nr_reg_fetch_node(char *name, unsigned char type, nr_registry_node **node, int *
     if ((r=nr_reg_is_valid(name)))
       ABORT(r);
 
-    if ((r=r_assoc_fetch(nr_registry, name, strlen(name)+1, (void*)node)))
+    if ((r=r_assoc_fetch(nr_registry, name, strlen(name)+1, (void**)node)))
       ABORT(r);
 
     if ((*node)->type != type)
@@ -248,7 +248,7 @@ nr_reg_fetch_node(char *name, unsigned char type, nr_registry_node **node, int *
 }
 
 int
-nr_reg_insert_node(char *name, void *node)
+nr_reg_insert_node(const char *name, void *node)
 {
     int r, _status;
 
@@ -272,11 +272,11 @@ nr_reg_insert_node(char *name, void *node)
   abort:
     if (r_logging(NR_LOG_REGISTRY, LOG_INFO)) {
       int freeit;
-      char *data = nr_reg_alloc_node_data(name, (void*)node, &freeit);
+      char *data = nr_reg_alloc_node_data(name, (nr_registry_node*)node, &freeit);
       r_log(NR_LOG_REGISTRY, LOG_INFO,
              "insert '%s' (%s) %s: %s", name,
              nr_reg_type_name(((nr_registry_node*)node)->type),
-             (_status ? "FAILED" : "succeeded"), data);
+             (_status ? "FAILED" : "succeeded"), data?data:"");
       if (freeit)
         RFREE(data);
     }
@@ -284,7 +284,7 @@ nr_reg_insert_node(char *name, void *node)
 }
 
 int
-nr_reg_change_node(char *name, void *node, void *old)
+nr_reg_change_node(const char *name, void *node, void *old)
 {
     int r, _status;
 
@@ -303,11 +303,11 @@ nr_reg_change_node(char *name, void *node, void *old)
   abort:
     if (r_logging(NR_LOG_REGISTRY, LOG_INFO)) {
       int freeit;
-      char *data = nr_reg_alloc_node_data(name, (void*)node, &freeit);
+      char *data = nr_reg_alloc_node_data(name, (nr_registry_node*)node, &freeit);
       r_log(NR_LOG_REGISTRY, LOG_INFO,
              "change '%s' (%s) %s: %s", name,
              nr_reg_type_name(((nr_registry_node*)node)->type),
-             (_status ? "FAILED" : "succeeded"), data);
+             (_status ? "FAILED" : "succeeded"), data?data:"");
       if (freeit)
         RFREE(data);
     }
@@ -315,7 +315,7 @@ nr_reg_change_node(char *name, void *node, void *old)
 }
 
 char *
-nr_reg_alloc_node_data(char *name, nr_registry_node *node, int *freeit)
+nr_reg_alloc_node_data(const char *name, nr_registry_node *node, int *freeit)
 {
     char *s = 0;
     int len;
@@ -340,9 +340,9 @@ nr_reg_alloc_node_data(char *name, nr_registry_node *node, int *freeit)
     }
 
     if (alloc > 0) {
-      s = (void*)RMALLOC(alloc);
+      s = (char*)RMALLOC(alloc);
       if (!s)
-        return "";
+        return 0;
 
       *freeit = 1;
     }
@@ -394,8 +394,11 @@ nr_reg_alloc_node_data(char *name, nr_registry_node *node, int *freeit)
       break;
     default:
       assert(0); /* bad value */
-      *freeit = 0;
-      s = "";
+      if (freeit) {
+        RFREE(s);
+        *freeit = 0;
+      }
+      s = 0;
       break;
     }
 
@@ -403,13 +406,13 @@ nr_reg_alloc_node_data(char *name, nr_registry_node *node, int *freeit)
 }
 
 int
-nr_reg_get(char *name, int type, void *out)
+nr_reg_get(const char *name, int type, void *out)
 {
     int r, _status;
     nr_scalar_registry_node *node = 0;
     int free_node = 0;
 
-    if ((r=nr_reg_fetch_node(name, type, (void*)&node, &free_node)))
+    if ((r=nr_reg_fetch_node(name, type, (nr_registry_node **)&node, &free_node)))
       ABORT(r);
 
     if ((r=nr_reg_get_data(name, node, out)))
@@ -422,7 +425,7 @@ nr_reg_get(char *name, int type, void *out)
 }
 
 int
-nr_reg_get_data(NR_registry name, nr_scalar_registry_node *node, void *out)
+nr_reg_get_data(NR_registry_name name /* mjf-unused */, nr_scalar_registry_node *node, void *out)
 {
     int _status;
 
@@ -465,13 +468,13 @@ nr_reg_get_data(NR_registry name, nr_scalar_registry_node *node, void *out)
 }
 
 int
-nr_reg_get_array(char *name, unsigned char type, unsigned char *out, size_t size, size_t *length)
+nr_reg_get_array(const char *name, unsigned char type, unsigned char *out, size_t size, size_t *length)
 {
     int r, _status;
     nr_array_registry_node *node = 0;
     int free_node = 0;
 
-    if ((r=nr_reg_fetch_node(name, type, (void*)&node, &free_node)))
+    if ((r=nr_reg_fetch_node(name, type, (nr_registry_node **)&node, &free_node)))
       ABORT(r);
 
     if (size < node->array.length)
@@ -489,7 +492,7 @@ nr_reg_get_array(char *name, unsigned char type, unsigned char *out, size_t size
 }
 
 int
-nr_reg_set(char *name, int type, void *data)
+nr_reg_set(const char *name, int type, void *data)
 {
     int r, _status;
     nr_scalar_registry_node *node = 0;
@@ -497,7 +500,7 @@ nr_reg_set(char *name, int type, void *data)
     int changed = 0;
     int free_node = 0;
 
-    if ((r=nr_reg_fetch_node(name, type, (void*)&node, &free_node)))
+    if ((r=nr_reg_fetch_node(name, type, (nr_registry_node **)&node, &free_node)))
       if (r == R_NOT_FOUND) {
         create_node = 1;
         free_node = 1;
@@ -506,7 +509,7 @@ nr_reg_set(char *name, int type, void *data)
         ABORT(r);
 
     if (create_node) {
-      if (!(node=(void*)RCALLOC(sizeof(nr_scalar_registry_node))))
+      if (!(node=R_NEW(nr_scalar_registry_node)))
         ABORT(R_NO_MEMORY);
 
       node->type = type;
@@ -567,7 +570,7 @@ nr_reg_set(char *name, int type, void *data)
 }
 
 int
-nr_reg_set_array(char *name, unsigned char type, UCHAR *data, size_t length)
+nr_reg_set_array(const char *name, unsigned char type, const UCHAR *data, size_t length)
 {
     int r, _status;
     nr_array_registry_node *old = 0;
@@ -576,7 +579,7 @@ nr_reg_set_array(char *name, unsigned char type, UCHAR *data, size_t length)
     int added = 0;
     int changed = 0;
 
-    if ((r=nr_reg_fetch_node(name, type, (void*)&old, &free_node))) {
+    if ((r=nr_reg_fetch_node(name, type, (nr_registry_node **)&old, &free_node))) {
         if (r != R_NOT_FOUND)
             ABORT(r);
     }
@@ -593,7 +596,7 @@ nr_reg_set_array(char *name, unsigned char type, UCHAR *data, size_t length)
             changed = 1;
 
             if (old->array.length < length) {
-                if (!(node=(void*)RCALLOC(sizeof(nr_array_registry_node)+length)))
+                if (!(node=(nr_array_registry_node*)RCALLOC_RAWSIZE(sizeof(nr_array_registry_node)+length)))
                     ABORT(R_NO_MEMORY);
             }
             else {
@@ -602,7 +605,7 @@ nr_reg_set_array(char *name, unsigned char type, UCHAR *data, size_t length)
         }
     }
     else {
-        if (!(node=(void*)RCALLOC(sizeof(nr_array_registry_node)+length)))
+        if (!(node=(nr_array_registry_node*)RCALLOC_RAWSIZE(sizeof(nr_array_registry_node)+length)))
             ABORT(R_NO_MEMORY);
 
         added = 1;
@@ -629,7 +632,7 @@ nr_reg_set_array(char *name, unsigned char type, UCHAR *data, size_t length)
 }
 
 int
-nr_reg_set_parent_registries(char *name)
+nr_reg_set_parent_registries(const char *name)
 {
     int r, _status;
     char *parent = 0;
@@ -657,7 +660,7 @@ nr_reg_set_parent_registries(char *name)
 /* NON-STATIC METHODS */
 
 int
-nr_reg_is_valid(NR_registry name)
+nr_reg_is_valid(NR_registry_name name)
 {
     int _status;
     unsigned int length;
@@ -694,7 +697,7 @@ nr_reg_is_valid(NR_registry name)
 
 
 int
-nr_reg_compute_length(char *name, nr_registry_node *in, size_t *length)
+nr_reg_compute_length(const char *name, nr_registry_node *in, size_t *length)
 {
     int _status;
     nr_array_registry_node *node = (nr_array_registry_node*)in;
@@ -764,7 +767,7 @@ nr_reg_local_init(void)
 }
 
 int
-nr_reg_local_get_length(NR_registry name, size_t *length)
+nr_reg_local_get_length(NR_registry_name name, size_t *length)
 {
     int r, _status;
     nr_registry_node *node = 0;
@@ -772,7 +775,7 @@ nr_reg_local_get_length(NR_registry name, size_t *length)
     if ((r=nr_reg_is_valid(name)))
       ABORT(r);
 
-    if ((r=r_assoc_fetch(nr_registry, name, strlen(name)+1, (void*)&node)))
+    if ((r=r_assoc_fetch(nr_registry, name, strlen(name)+1, (void**)&node)))
       ABORT(r);
 
     if ((r=nr_reg_compute_length(name, node, length)))
@@ -785,7 +788,7 @@ nr_reg_local_get_length(NR_registry name, size_t *length)
 
 
 int
-nr_reg_local_del(NR_registry name)
+nr_reg_local_del(NR_registry_name name)
 {
     int r, _status;
 
@@ -815,7 +818,7 @@ nr_reg_local_del(NR_registry name)
 }
 
 int
-nr_reg_local_get_child_count(NR_registry parent, size_t *count)
+nr_reg_local_get_child_count(NR_registry_name parent, size_t *count)
 {
     int r, _status;
     nr_registry_node *ignore1 = 0;
@@ -843,7 +846,7 @@ nr_reg_local_get_child_count(NR_registry parent, size_t *count)
 }
 
 int
-nr_reg_local_get_children(NR_registry parent, NR_registry *data, size_t size, size_t *length)
+nr_reg_local_get_children(NR_registry_name parent, NR_registry *data, size_t size, size_t *length)
 {
     int r, _status;
     nr_reg_find_children_arg arg;

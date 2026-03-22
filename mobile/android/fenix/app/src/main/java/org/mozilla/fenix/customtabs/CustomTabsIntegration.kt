@@ -34,17 +34,14 @@ import mozilla.components.ui.icons.R as iconsR
 
 @Suppress("LongParameterList")
 class CustomTabsIntegration(
-    private val context: Context,
     store: BrowserStore,
     useCases: CustomTabsUseCases,
     private val browserToolbar: BrowserToolbar,
     private val sessionId: String,
     private val activity: Activity,
     private val interactor: BrowserToolbarInteractor,
-    shouldReverseItems: Boolean,
     private val isSandboxCustomTab: Boolean,
     private val isPrivate: Boolean,
-    isMenuRedesignEnabled: Boolean,
 ) : LifecycleAwareFeature, UserInteractionHandler {
 
     @VisibleForTesting
@@ -72,23 +69,11 @@ class CustomTabsIntegration(
         }
     }
 
-    private val customTabToolbarMenu by lazy {
-        CustomTabToolbarMenu(
-            context,
-            store,
-            sessionId,
-            shouldReverseItems,
-            isSandboxCustomTab,
-            onItemTapped = interactor::onBrowserToolbarMenuItemTapped,
-        )
-    }
-
     private val feature = CustomTabsToolbarFeature(
         store = store,
         toolbar = browserToolbar,
         sessionId = sessionId,
         useCases = useCases,
-        menuBuilder = if (isMenuRedesignEnabled) null else customTabToolbarMenu.menuBuilder,
         menuItemIndex = START_OF_MENU_ITEMS_INDEX,
         window = activity.window,
         customTabsToolbarListeners = CustomTabsToolbarListeners(

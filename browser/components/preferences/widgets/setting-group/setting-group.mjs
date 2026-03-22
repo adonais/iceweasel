@@ -37,6 +37,8 @@ const CLICK_HANDLERS = new Set([
   "moz-box-group",
   "moz-message-bar",
 ]);
+const DISMISS_HANDLERS = new Set(["moz-message-bar"]);
+const REORDER_HANDLERS = new Set(["moz-box-group"]);
 
 /**
  * Enumish of attribute names used for changing setting-group and groupbox
@@ -101,6 +103,12 @@ export class SettingGroup extends SettingElement {
     return this;
   }
 
+  willUpdate() {
+    if (!this.srdEnabled) {
+      this.classList.toggle("subcategory", this.config?.headingLevel == 1);
+    }
+  }
+
   async handleVisibilityChange() {
     await this.updateComplete;
     let hasVisibleControls = this.childControlEls.some(el => !el.hidden);
@@ -159,6 +167,45 @@ export class SettingGroup extends SettingElement {
   }
 
   /**
+   * Notify child controls when message bar has been dismissed. When controls
+   * are nested the parent receives events for the nested controls, so this is
+   * actually easier to manage here; it also registers fewer listeners.
+   *
+   * @param {SettingControlEvent<CustomEvent>} e
+   */
+  onMessageBarDismiss(e) {
+    let inputEl = e.target;
+    if (!DISMISS_HANDLERS.has(inputEl.localName)) {
+      return;
+    }
+    inputEl.control?.onMessageBarDismiss(e);
+  }
+
+  /**
+   * Notify child controls when items have been reordered. The reorder event is
+   * a CustomEvent that bubbles from reorderable moz-box-group elements when
+   * items are reordered via drag-and-drop or keyboard shortcuts.
+   *
+   * The detail object of the reorder event contains the following properties:
+   *
+   * - `draggedElement`: The element that was reordered.
+   * - `targetElement`: The element that the dragged element was reordered relative to.
+   * - `position`: The position of the drop relative to the target element. -1
+   *   means before, 0 means after.
+   * - `draggedIndex`: The original index of the element being reordered.
+   * - `targetIndex`: The new index of the draggedElement after reordering.
+   *
+   * @param {SettingControlEvent<CustomEvent>} e
+   */
+  onReorder(e) {
+    let inputEl = e.target;
+    if (!REORDER_HANDLERS.has(inputEl.localName)) {
+      return;
+    }
+    inputEl.control?.onReorder(e);
+  }
+
+  /**
    * @param {SettingControlConfig} item
    */
   itemTemplate(item) {
@@ -193,6 +240,8 @@ export class SettingGroup extends SettingElement {
         @change=${this.onChange}
         @toggle=${this.onChange}
         @click=${this.onClick}
+        @message-bar:user-dismissed=${this.onMessageBarDismiss}
+        @reorder=${this.onReorder}
         @visibility-change=${this.handleVisibilityChange}
         ${spread(this.getCommonPropertyMapping(this.config))}
         >${this.config.items.map(item => this.itemTemplate(item))}</moz-fieldset

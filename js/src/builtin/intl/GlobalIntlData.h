@@ -11,22 +11,21 @@
 #include "js/TypeDecls.h"
 #include "vm/JSObject.h"
 #include "vm/StringType.h"
+#include "vm/SymbolType.h"
 
 class JS_PUBLIC_API JSTracer;
 
-namespace js {
-class CollatorObject;
-class DateTimeFormatObject;
-class NumberFormatObject;
-
-namespace temporal {
+namespace js::temporal {
 class TimeZoneObject;
 }
-}  // namespace js
 
 namespace js::intl {
 
 enum class DateTimeFormatKind;
+
+class CollatorObject;
+class DateTimeFormatObject;
+class NumberFormatObject;
 
 /**
  * Cached per-global Intl data. In contrast to SharedIntlData, which is
@@ -125,6 +124,14 @@ class GlobalIntlData {
    */
   GCPtr<JSObject*> dateTimeFormatToLocaleTime_;
 
+  /**
+   * The [[FallbackSymbol]] symbol of the %Intl% intrinsic object.
+   *
+   * This symbol is used to implement the legacy constructor semantics for
+   * Intl.DateTimeFormat and Intl.NumberFormat.
+   */
+  GCPtr<JS::Symbol*> fallbackSymbol_;
+
  public:
   /**
    * Returns the BCP 47 language tag for the global's current locale.
@@ -172,6 +179,12 @@ class GlobalIntlData {
   DateTimeFormatObject* getOrCreateDateTimeFormat(
       JSContext* cx, DateTimeFormatKind kind,
       JS::Handle<JSLinearString*> locale);
+
+  /**
+   * Returns the %Intl%.[[FallbackSymbol]] for legacy constructor semantics of
+   * Intl.DateTimeFormat and Intl.NumberFormat.
+   */
+  JS::Symbol* fallbackSymbol(JSContext* cx);
 
   void trace(JSTracer* trc);
 

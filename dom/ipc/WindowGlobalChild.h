@@ -161,9 +161,9 @@ class WindowGlobalChild final : public WindowGlobalActor,
   mozilla::ipc::IProtocol* AsNativeActor() override { return this; }
 
   // IPC messages
-  mozilla::ipc::IPCResult RecvRawMessage(
-      const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
-      const UniquePtr<ClonedMessageData>& aStack);
+  mozilla::ipc::IPCResult RecvRawMessage(const JSActorMessageMeta& aMeta,
+                                         JSIPCValue&& aData,
+                                         StructuredCloneData* aStack);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvMakeFrameLocal(
@@ -183,7 +183,7 @@ class WindowGlobalChild final : public WindowGlobalActor,
                                            DrawSnapshotResolver&& aResolve);
 
   mozilla::ipc::IPCResult RecvDispatchSecurityPolicyViolation(
-      const nsString& aViolationEventJSON);
+      const nsString& aViolationEventJSON, const nsString& aReportGroupName);
 
   mozilla::ipc::IPCResult RecvSaveStorageAccessPermissionGranted();
 

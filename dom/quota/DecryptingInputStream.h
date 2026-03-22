@@ -113,6 +113,7 @@ class DecryptingInputStream final : public DecryptingInputStreamBase {
                           uint32_t aCount, uint32_t* _retval) override;
 
   NS_DECL_NSITELLABLESTREAM
+  NS_IMETHOD TellInternal(int64_t* const aRetval, uint64_t const aBlockOffset);
 
   NS_IMETHOD Seek(int32_t aWhence, int64_t aOffset) override;
 
@@ -151,7 +152,6 @@ class DecryptingInputStream final : public DecryptingInputStreamBase {
 
   bool EnsureBuffers();
 
-  // This method may change the current position in the stream.
   nsresult EnsureDecryptedStreamSize();
 
   CipherStrategy mCipherStrategy;

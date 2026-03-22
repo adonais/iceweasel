@@ -11,11 +11,10 @@
  * which we can simply alias to MutationObserver.
  */
 
-/* globals exportFunction */
+if (!window.WebKitMutationObserver) {
+  console.info(
+    "WebKitMutationObserver has been shimmed for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1989241 for details."
+  );
 
-console.info(
-  "WebKitMutationObserver has been shimmed for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1989241 for details."
-);
-
-window.wrappedJSObject.WebKitMutationObserver =
-  window.wrappedJSObject.MutationObserver;
+  window.WebKitMutationObserver = window.MutationObserver;
+}

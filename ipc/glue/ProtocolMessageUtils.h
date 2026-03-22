@@ -91,7 +91,8 @@ struct ParamTraits<mozilla::ipc::ManagedEndpoint<PFooSide>> {
 
   static bool Read(IPC::MessageReader* aReader, paramType* aResult) {
     return ParamTraits<mozilla::ipc::UntypedManagedEndpoint>::Read(aReader,
-                                                                   aResult);
+                                                                   aResult) &&
+           aResult->IsForProtocol(PFooSide::kProtocolId);
   }
 };
 

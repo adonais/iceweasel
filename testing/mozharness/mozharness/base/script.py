@@ -38,8 +38,6 @@ from pathlib import Path
 from queue import Empty, Queue
 
 import mozinfo
-import six
-from six import binary_type
 
 from mozharness.base.config import BaseConfig
 from mozharness.base.log import (
@@ -1406,7 +1404,10 @@ class ScriptMixin(PlatformMixin):
             for k, v in env.items():
                 # When run locally on Windows machines, some environment
                 # variables may be unicode.
-                env[k] = six.ensure_str(v, pref_encoding)
+                if isinstance(v, bytes):
+                    env[k] = v.decode(pref_encoding)
+                else:
+                    env[k] = str(v)
         if set_self_env:
             self.env = env
         return env
@@ -1852,7 +1853,7 @@ class ScriptMixin(PlatformMixin):
                     for line in output_lines:
                         if not line or line.isspace():
                             continue
-                        if isinstance(line, binary_type):
+                        if isinstance(line, bytes):
                             line = line.decode("utf-8")
                         self.log(" %s" % line, level=log_level)
                     output = "\n".join(output_lines)
@@ -1867,7 +1868,7 @@ class ScriptMixin(PlatformMixin):
                 for line in errors.rstrip().splitlines():
                     if not line or line.isspace():
                         continue
-                    if isinstance(line, binary_type):
+                    if isinstance(line, bytes):
                         line = line.decode("utf-8")
                     self.log(" %s" % line, level=return_level)
         elif p.returncode not in success_codes and not ignore_errors:
@@ -2185,24 +2186,15 @@ class BaseScript(ScriptMixin, LogMixin):
         # access. If the property depends upon a module which has not
         # been imported at the time the BaseScript initializer is
         # executed, this property access will result in an
-        # Exception. Until Python 3's `inspect.getattr_static` is
-        # available, the simplest approach is to ignore the specific
-        # properties which are known to cause issues. Currently
-        # adb_path and device are ignored since they require the
-        # availablity of the mozdevice package which is not guaranteed
-        # when BaseScript is called.
-        property_list = set(["adb_path", "device"])
-        if six.PY2:
-            if name in property_list:
-                item = None
-            else:
-                item = getattr(self, name)
+        # Exception. With Python 3's `inspect.getattr_static`,
+        # we can check if something is a property without accessing it,
+        # avoiding issues with properties that depend on packages that
+        # may not be available when BaseScript is initialized.
+        item = inspect.getattr_static(self, name)
+        if type(item) is property:
+            item = None
         else:
-            item = inspect.getattr_static(self, name)
-            if type(item) is property:
-                item = None
-            else:
-                item = getattr(self, name)
+            item = getattr(self, name)
         return item
 
     def _dump_config_hierarchy(self, cfg_files):

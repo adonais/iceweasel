@@ -289,6 +289,7 @@ function failClipboardCheck(expectedPattern) {
  *        The value that should be displayed at this index
  * @param {boolean} options.expectedMatchedSelectors[].match
  *        Whether the selector should match the currently selected element. Defaults to true.
+ * @returns {Element[]} The list of selectors element (.rule-text)
  */
 async function checkMatchedSelectorForProperty(
   view,
@@ -336,4 +337,6 @@ async function checkMatchedSelectorForProperty(
       `Selector #${index} ("${expectedMatchedSelectors[index].selector}") element does ${expectedMatch ? "" : "not "}have a matching class`
     );
   });
+
+  return selectorsEl;
 }

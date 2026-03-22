@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.components.appstate.snackbar
 
+import com.google.android.material.snackbar.BaseTransientBottomBar.LENGTH_SHORT
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.sync.TabData
@@ -11,6 +12,8 @@ import org.mozilla.fenix.bookmarks.BookmarksGlobalResultReport
 
 /**
  * The state of the snackbar to display.
+ *
+ * 📝Note: If you don't need a specific snackbar type, consider re-using [ShowSnackbar] or updating the API accordingly.
  */
 sealed class SnackbarState {
     /**
@@ -20,6 +23,17 @@ sealed class SnackbarState {
      */
     data class None(
         val previous: SnackbarState? = null,
+    ) : SnackbarState()
+
+    /**
+     * Display a generic snackbar with a custom title.
+     *
+     * @property title The title to display in the snackbar.
+     * @property duration The length of time for the snackbar to show.
+     */
+    data class ShowSnackbar(
+        val title: String,
+        val duration: Int = LENGTH_SHORT,
     ) : SnackbarState()
 
     /**

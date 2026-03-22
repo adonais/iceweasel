@@ -91,15 +91,11 @@ var gTabsPanel = {
       document.getElementById("allTabsMenu-hiddenTabsSeparator").hidden =
         !hasHiddenTabs;
 
-      let closeDuplicateEnabled = Services.prefs.getBoolPref(
-        "browser.tabs.context.close-duplicate.enabled"
-      );
       let closeDuplicateTabsItem = document.getElementById(
         "allTabsMenu-closeDuplicateTabs"
       );
-      closeDuplicateTabsItem.hidden = !closeDuplicateEnabled;
       closeDuplicateTabsItem.disabled =
-        !closeDuplicateEnabled || !gBrowser.getAllDuplicateTabsToClose().length;
+        !gBrowser.getAllDuplicateTabsToClose().length;
 
       let syncedTabs = document.getElementById("allTabsMenu-syncedTabs");
       syncedTabs.hidden =

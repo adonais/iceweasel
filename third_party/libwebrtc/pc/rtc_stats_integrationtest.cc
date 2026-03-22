@@ -578,6 +578,12 @@ class RTCStatsReportVerifier {
         inbound_stream.packets_received_with_ect1);
     verifier.TestAttributeIsNonNegative<int64_t>(
         inbound_stream.packets_received_with_ce);
+    // TODO: bugs.webrtc.org/437303401 - test two attributes below are defined
+    // when RFC8888 CongestionControlFeedback is negotiated.
+    verifier.TestAttributeIsUndefined<int64_t>(
+        inbound_stream.packets_reported_as_lost);
+    verifier.TestAttributeIsUndefined<int64_t>(
+        inbound_stream.packets_reported_as_lost_but_recovered);
     if (inbound_stream.kind.has_value() && *inbound_stream.kind == "video") {
       verifier.TestAttributeIsNonNegative<uint64_t>(inbound_stream.qp_sum);
       verifier.TestAttributeIsDefined(inbound_stream.decoder_implementation);
@@ -929,6 +935,11 @@ class RTCStatsReportVerifier {
         remote_inbound_stream.packets_received_with_ect1);
     verifier.TestAttributeIsUndefined<int64_t>(
         remote_inbound_stream.packets_received_with_ce);
+    verifier.TestAttributeIsUndefined<int64_t>(
+        remote_inbound_stream.packets_reported_as_lost);
+    verifier.TestAttributeIsUndefined<int64_t>(
+        remote_inbound_stream.packets_reported_as_lost_but_recovered);
+
     return verifier.ExpectAllAttributesSuccessfullyTested();
   }
 
@@ -1222,7 +1233,7 @@ TEST_F(RTCStatsIntegrationTest, GetStatsContainsNoDuplicateAttributes) {
 }
 
 TEST_F(RTCStatsIntegrationTest, ExperimentalPsnrStats) {
-  StartCall("WebRTC-Video-CalculatePsnr/Enabled/");
+  StartCall("WebRTC-Video-CalculatePsnr/Enabled,sampling_interval:1000ms/");
 
   // This assumes all other stats are ok and tests the stats which should be
   // different under the field trial.
@@ -1263,7 +1274,6 @@ TEST_F(RTCStatsIntegrationTest, ExperimentalTransportCcfbStats) {
 class RTCStatsRtpLifetimeTest : public RTCStatsIntegrationTest {
  public:
   RTCStatsRtpLifetimeTest() : RTCStatsIntegrationTest() {
-    // Field trial "WebRTC-RTP-Lifetime" is enabled-by-default.
     EXPECT_TRUE(caller_->CreatePc({}, CreateBuiltinAudioEncoderFactory(),
                                   CreateBuiltinAudioDecoderFactory()));
     EXPECT_TRUE(callee_->CreatePc({}, CreateBuiltinAudioEncoderFactory(),

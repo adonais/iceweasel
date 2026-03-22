@@ -104,6 +104,7 @@ void BaseCompiler::bceCheckLocal(MemoryAccessDesc* access, AccessCheck* check,
 
 #ifdef ENABLE_WASM_CUSTOM_PAGE_SIZES
   if (codeMeta_.memories[0].pageSize() != PageSize::Standard) {
+    // We do not have guard pages, so we cannot perform this optimization.
     return;
   }
 #endif
@@ -158,10 +159,11 @@ RegI32 BaseCompiler::popConstMemoryAccess<RegI32>(MemoryAccessDesc* access,
                 UINT64_MAX - HugeOffsetGuardLimit);
 #endif
   uint64_t ea = uint64_t(addr) + uint64_t(access->offset32());
+  uint64_t finalAddress = ea + access->byteSize();
   uint64_t limit = codeMeta_.memories[access->memoryIndex()].initialLength() +
                    offsetGuardLimit;
 
-  check->omitBoundsCheck = ea < limit;
+  check->omitBoundsCheck = finalAddress < limit;
   check->omitAlignmentCheck = (ea & (access->byteSize() - 1)) == 0;
 
   // Fold the offset into the pointer if we can, as this is always
@@ -191,12 +193,14 @@ RegI64 BaseCompiler::popConstMemoryAccess<RegI64>(MemoryAccessDesc* access,
 
   mozilla::CheckedUint64 ea(addr);
   ea += access->offset64();
+  mozilla::CheckedUint64 finalAddress(ea);
+  finalAddress += access->byteSize();
   mozilla::CheckedUint64 limit(
       codeMeta_.memories[access->memoryIndex()].initialLength());
   limit += offsetGuardLimit;
 
-  if (ea.isValid() && limit.isValid()) {
-    check->omitBoundsCheck = ea.value() < limit.value();
+  if (ea.isValid() && finalAddress.isValid() && limit.isValid()) {
+    check->omitBoundsCheck = finalAddress.value() < limit.value();
     check->omitAlignmentCheck = (ea.value() & (access->byteSize() - 1)) == 0;
 
     // Fold the offset into the pointer if we can, as this is always

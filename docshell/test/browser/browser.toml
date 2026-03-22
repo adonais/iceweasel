@@ -337,7 +337,7 @@ https_first_disabled = true
 https_first_disabled = true
 
 ["browser_loadURI_forceMediaDocument.js"]
-support-files = ["file_image_header.sjs"]
+support-files = ["file_media_header.sjs"]
 
 ["browser_loadURI_postdata.js"]
 

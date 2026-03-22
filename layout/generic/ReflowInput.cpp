@@ -372,8 +372,8 @@ nscoord SizeComputationInput::ComputeISizeValue(
   const auto borderPadding = ComputedLogicalBorderPadding(wm);
   const auto margin = ComputedLogicalMargin(wm);
   const LogicalSize contentEdgeToBoxSizing =
-      aBoxSizing == StyleBoxSizing::Border ? borderPadding.Size(wm)
-                                           : LogicalSize(wm);
+      aBoxSizing == StyleBoxSizing::BorderBox ? borderPadding.Size(wm)
+                                              : LogicalSize(wm);
   const nscoord boxSizingToMarginEdgeISize = borderPadding.IStartEnd(wm) +
                                              margin.IStartEnd(wm) -
                                              contentEdgeToBoxSizing.ISize(wm);
@@ -421,7 +421,7 @@ nscoord SizeComputationInput::ComputeBSizeValue(
     const LengthPercentage& aSize) const {
   WritingMode wm = GetWritingMode();
   nscoord inside = 0;
-  if (aBoxSizing == StyleBoxSizing::Border) {
+  if (aBoxSizing == StyleBoxSizing::BorderBox) {
     inside = ComputedLogicalBorderPadding(wm).BStartEnd(wm);
   }
   return nsLayoutUtils::ComputeBSizeValue(aContainingBlockBSize, inside, aSize);
@@ -1301,7 +1301,7 @@ void ReflowInput::CalculateBorderPaddingMargin(
 
   nscoord outside = paddingStartEnd + borderStartEnd + marginStartEnd;
   nscoord inside = 0;
-  if (mStylePosition->mBoxSizing == StyleBoxSizing::Border) {
+  if (mStylePosition->mBoxSizing == StyleBoxSizing::BorderBox) {
     inside = borderStartEnd + paddingStartEnd;
   }
   outside -= inside;
@@ -2109,19 +2109,6 @@ void ReflowInput::InitConstraints(
     // If we weren't given a containing block size, then compute one.
     if (aContainingBlockSize.isNothing()) {
       cbSize = ComputeContainingBlockRectangle(aPresContext, cbri);
-    } else if (aPresContext->FragmentainerAwarePositioningEnabled() &&
-               mFrame->IsAbsolutelyPositioned(mStyleDisplay) &&
-               mFrame->GetPrevInFlow()) {
-      // AbsoluteContainingBlock always provides a containing-block size to
-      // ReflowInput. However, if the delegating frame is a continuation or an
-      // overflow container (i.e. it has zero block-size), we'll need a
-      // containing-block size (padding-box size) suitable for resolving the
-      // abspos continuation's percentage block-size.
-      //
-      // Bug 1998818 is to fix the containing-block size for resolving
-      // percentage block-size for abspos's first-in-flow.
-      cbSize = ComputeContainingBlockRectangle(aPresContext, cbri) +
-               cbri->ComputedLogicalPadding(wm).Size(wm);
     }
 
     // See if the containing block height is based on the size of its
@@ -2293,13 +2280,29 @@ void ReflowInput::InitConstraints(
     } else {
       AutoMaybeDisableFontInflation an(mFrame);
 
-      nsIFrame* const alignCB = [&] {
-        nsIFrame* cb = mFrame->GetParent();
+      auto* const alignCB = [&] {
+        auto* cb = mFrame->GetParent();
         if (cb->IsTableWrapperFrame()) {
-          nsIFrame* alignCBParent = cb->GetParent();
+          auto* alignCBParent = cb->GetParent();
           if (alignCBParent && alignCBParent->IsGridContainerFrame()) {
             return alignCBParent;
           }
+        }
+        if (cb->Style()->GetPseudoType() ==
+            PseudoStyleType::MozColumnSpanWrapper) {
+          MOZ_ASSERT(mFrame->StyleColumn()->mColumnSpan !=
+                     StyleColumnSpan::None);
+          // Note(dshin, bug 2013429): `:-moz-column-span-wrapper` is a
+          // non-inheriting anon box, so it doesn't inherit writing-mode either.
+          auto* p = cb->GetParent();
+          while (p) {
+            if (p->Style()->GetPseudoType() !=
+                PseudoStyleType::MozColumnSpanWrapper) {
+              return p;
+            }
+            p = p->GetParent();
+          }
+          MOZ_ASSERT_UNREACHABLE("No parent above :-moz-column-span-wrapper?");
         }
         return cb;
       }();
@@ -2409,13 +2412,13 @@ void ReflowInput::InitConstraints(
           return false;
         }
         const auto pseudoType = mFrame->Style()->GetPseudoType();
-        if (pseudoType == PseudoStyleType::marker &&
+        if (pseudoType == PseudoStyleType::Marker &&
             mFrame->GetParent()->StyleList()->mListStylePosition ==
                 StyleListStylePosition::Outside) {
           // Exclude outside ::markers.
           return false;
         }
-        if (pseudoType == PseudoStyleType::columnContent) {
+        if (pseudoType == PseudoStyleType::MozColumnContent) {
           // Exclude -moz-column-content since it cannot have any margin.
           return false;
         }

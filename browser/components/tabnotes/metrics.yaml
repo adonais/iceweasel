@@ -81,3 +81,24 @@ tab_notes:
           expressed as an integer (rounded to the nearest full hour).
         type: quantity
     expires: never
+  expanded:
+    type: event
+    description: >
+      Recorded when a user clicks "read more" to expand a truncated note in the tab hover preview
+    notification_emails:
+      - sthompson@mozilla.com
+    bugs:
+      - https://bugzil.la/2003707
+    data_reviews:
+      - https://bugzil.la/2003707
+    data_sensitivity:
+      - interaction
+    extra_keys:
+      note_length:
+        description: >
+          JavaScript string length (number of Unicode code units) of the note text. Note that
+          this value can be higher than the number of characters (Unicode code points) or the
+          number of graphemes (what a human perceives as a single visual character).
+          For example, 👨‍👩‍👧‍👧 would count as 11 string length, 7 characters, and 1 grapheme.
+        type: quantity
+    expires: never

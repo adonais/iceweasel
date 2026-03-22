@@ -52,7 +52,7 @@ import mozilla.components.feature.addons.R as addonsR
 class InstalledAddonDetailsFragmentTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var fragment: InstalledAddonDetailsFragment
-    private lateinit var addNewTabUseCase: TabsUseCases.AddNewTabUseCase
+    private lateinit var tabsUseCases: TabsUseCases
     private lateinit var loadUrlUseCase: SessionUseCases.DefaultLoadUrlUseCase
     private lateinit var searchUseCases: SearchUseCases
     private lateinit var homepageTitle: String
@@ -62,7 +62,7 @@ class InstalledAddonDetailsFragmentTest {
     @Before
     fun setup() {
         fragment = spyk(InstalledAddonDetailsFragment())
-        addNewTabUseCase = mockk(relaxed = true)
+        tabsUseCases = mockk(relaxed = true)
         loadUrlUseCase = mockk(relaxed = true)
         searchUseCases = mockk(relaxed = true)
         homepageTitle = testContext.getString(R.string.tab_tray_homepage_tab)
@@ -360,7 +360,7 @@ class InstalledAddonDetailsFragmentTest {
         val appStore = AppStore(initialState = AppState(mode = BrowsingMode.Normal))
         val useCases = FenixBrowserUseCases(
             appStore = appStore,
-            addNewTabUseCase = addNewTabUseCase,
+            tabsUseCases = tabsUseCases,
             loadUrlUseCase = loadUrlUseCase,
             searchUseCases = searchUseCases,
             homepageTitle = homepageTitle,
@@ -381,7 +381,7 @@ class InstalledAddonDetailsFragmentTest {
         val url = "${BuildConfig.AMO_BASE_URL}/android/blocked-addon/some-addon-id/1.2.3/"
 
         verify {
-            addNewTabUseCase.invoke(
+            tabsUseCases.addTab.invoke(
                 url = url,
                 flags = EngineSession.LoadUrlFlags.none(),
                 private = false,
@@ -412,7 +412,7 @@ class InstalledAddonDetailsFragmentTest {
         val appStore = AppStore(initialState = AppState(mode = BrowsingMode.Normal))
         val useCases = FenixBrowserUseCases(
             appStore = appStore,
-            addNewTabUseCase = addNewTabUseCase,
+            tabsUseCases = tabsUseCases,
             loadUrlUseCase = loadUrlUseCase,
             searchUseCases = searchUseCases,
             homepageTitle = homepageTitle,
@@ -434,7 +434,7 @@ class InstalledAddonDetailsFragmentTest {
         val url = SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.UNSIGNED_ADDONS)
 
         verify {
-            addNewTabUseCase.invoke(
+            tabsUseCases.addTab.invoke(
                 url = url,
                 flags = EngineSession.LoadUrlFlags.none(),
                 private = false,
@@ -465,7 +465,7 @@ class InstalledAddonDetailsFragmentTest {
         val appStore = AppStore(initialState = AppState(mode = BrowsingMode.Normal))
         val useCases = FenixBrowserUseCases(
             appStore = appStore,
-            addNewTabUseCase = addNewTabUseCase,
+            tabsUseCases = tabsUseCases,
             loadUrlUseCase = loadUrlUseCase,
             searchUseCases = searchUseCases,
             homepageTitle = homepageTitle,
@@ -485,7 +485,7 @@ class InstalledAddonDetailsFragmentTest {
         val url = "${BuildConfig.AMO_BASE_URL}/android/blocked-addon/some-addon-id/1.2.3/"
 
         verify {
-            addNewTabUseCase.invoke(
+            tabsUseCases.addTab.invoke(
                 url = url,
                 flags = EngineSession.LoadUrlFlags.none(),
                 private = false,

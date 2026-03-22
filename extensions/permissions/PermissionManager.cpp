@@ -176,9 +176,8 @@ bool IsOAForceStripPermission(const nsACString& aType) {
 // Array of permission prefixes which should be isolated only by site.
 // These site-scoped permissions are stored under their site's principal.
 // GetAllForPrincipal also needs to look for these especially.
-static constexpr std::array<nsLiteralCString, 3> kSiteScopedPermissions = {
-    {"3rdPartyStorage^"_ns, "AllowStorageAccessRequest^"_ns,
-     "3rdPartyFrameStorage^"_ns}};
+static constexpr std::array<nsLiteralCString, 2> kSiteScopedPermissions = {
+    {"3rdPartyStorage^"_ns, "3rdPartyFrameStorage^"_ns}};
 
 bool IsSiteScopedPermission(const nsACString& aType) {
   if (aType.IsEmpty()) {
@@ -197,9 +196,8 @@ bool IsSiteScopedPermission(const nsACString& aType) {
 // permission type. These permissions will not be stored in-process with the
 // secondary key, but updates to them will cause "perm-changed" notifications on
 // processes for that key.
-static constexpr std::array<nsLiteralCString, 3> kSecondaryKeyedPermissions = {
-    {"3rdPartyStorage^"_ns, "AllowStorageAccessRequest^"_ns,
-     "3rdPartyFrameStorage^"_ns}};
+static constexpr std::array<nsLiteralCString, 2> kSecondaryKeyedPermissions = {
+    {"3rdPartyStorage^"_ns, "3rdPartyFrameStorage^"_ns}};
 
 bool GetSecondaryKey(const nsACString& aType, nsACString& aSecondaryKey) {
   aSecondaryKey.Truncate();

@@ -197,7 +197,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
     }
   }
 
-  showPopupWithResults({ rect, dir, results }) {
+  showPopupWithResults({ rect, dir, results, selectedIndex }) {
     if (!results.length || this.openedPopup) {
       // We shouldn't ever be showing an empty popup, and if we
       // already have a popup open, the old one needs to close before
@@ -234,7 +234,6 @@ export class AutoCompleteParent extends JSWindowActorParent {
     AutoCompleteResultView.setResults(this, results);
 
     this.openedPopup.view = AutoCompleteResultView;
-    this.openedPopup.selectedIndex = -1;
 
     // Reset fields that were set from the last time the search popup was open
     this.openedPopup.mInput = AutoCompleteResultView;
@@ -260,6 +259,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
       false
     );
     this.openedPopup.invalidate();
+    this.openedPopup.selectedIndex = selectedIndex;
     this._maybeRecordTelemetryEvents(results);
 
     // This is a temporary solution. We should replace it with
@@ -406,8 +406,14 @@ export class AutoCompleteParent extends JSWindowActorParent {
       }
 
       case "AutoComplete:MaybeOpenPopup": {
-        let { results, rect, dir, inputElementIdentifier, formOrigin } =
-          message.data;
+        let {
+          results,
+          rect,
+          dir,
+          inputElementIdentifier,
+          formOrigin,
+          selectedIndex,
+        } = message.data;
         if (AppConstants.MOZ_GECKOVIEW) {
           lazy.GeckoViewAutocomplete.delegateSelection({
             browsingContext: this.browsingContext,
@@ -416,7 +422,12 @@ export class AutoCompleteParent extends JSWindowActorParent {
             formOrigin,
           });
         } else {
-          this.showPopupWithResults({ results, rect, dir });
+          this.showPopupWithResults({
+            results,
+            rect,
+            dir,
+            selectedIndex,
+          });
           this.notifyListeners();
 
           this.notifyAutoCompletePopupOpened(

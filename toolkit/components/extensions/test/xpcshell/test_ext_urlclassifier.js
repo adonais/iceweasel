@@ -75,6 +75,7 @@ async function runTest(message1, message2, expectGleanEvent) {
 
   const extension = ExtensionTestUtils.loadExtension({
     manifest: {
+      version: "1.2.3",
       host_permissions: ["http://example.org/"],
 
       content_scripts: [
@@ -109,31 +110,50 @@ async function runTest(message1, message2, expectGleanEvent) {
 
   await extension.startup();
 
-  const contentPage = await ExtensionTestUtils.loadContentPage(
-    "http://example.com/dummy"
+  // Sanity check.
+  Assert.equal(
+    WebExtensionPolicy.getByID(extension.id).version,
+    "1.2.3",
+    "Got the expected addon version set on the WebExtensionPolicy instance"
   );
 
-  await extension.awaitMessage(message1);
-  await extension.awaitMessage(message2);
+  const finalizeTest = async () => {
+    const contentPage = await ExtensionTestUtils.loadContentPage(
+      "http://example.com/dummy"
+    );
 
-  if (expectGleanEvent) {
-    const events = Glean.network.urlclassifierAddonBlock.testGetValue();
+    await extension.awaitMessage(message1);
+    await extension.awaitMessage(message2);
+
+    await contentPage.close();
+    await extension.unload();
+
+    Services.obs.notifyObservers(null, "idle-daily");
+  };
+
+  if (!expectGleanEvent) {
+    await finalizeTest();
+
+    const events = Glean.network.urlclassifierHarmfulAddonBlock.testGetValue();
+    Assert.equal(events, undefined, "We haven't received glean events");
+
+    return;
+  }
+
+  await GleanPings.urlClassifierHarmfulAddon.testSubmission(() => {
+    const events = Glean.network.urlclassifierHarmfulAddonBlock.testGetValue();
     Assert.greater(events.length, 1, "We have received glean events");
 
     let glean = events[0];
     Assert.greater(glean.extra.addon_id.length, 0);
+    Assert.equal(glean.extra.addon_version, "1.2.3");
     Assert.equal(glean.extra.table, "harmfuladdon-blocklist-pref");
     Assert.equal(glean.extra.etld, "example.org");
 
     glean = events[1];
     Assert.greater(glean.extra.addon_id.length, 0);
+    Assert.equal(glean.extra.addon_version, "1.2.3");
     Assert.equal(glean.extra.table, "harmfuladdon-blocklist-pref");
     Assert.equal(glean.extra.etld, "example.org");
-  } else {
-    const events = Glean.network.urlclassifierAddonBlock.testGetValue();
-    Assert.equal(events, undefined, "We haven't received glean events");
-  }
-
-  await contentPage.close();
-  await extension.unload();
+  }, finalizeTest);
 }

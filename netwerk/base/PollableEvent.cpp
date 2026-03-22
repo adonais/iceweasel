@@ -314,7 +314,7 @@ bool PollableEvent::Signal() {
   int32_t status = PR_Write(mWriteFD, "M", 1);
   SOCKET_LOG(("PollableEvent::Signal PR_Write %d\n", status));
   if (status != 1) {
-    NS_WARNING("PollableEvent::Signal Failed\n");
+    NS_WARNING("PollableEvent::Signal Failed");
     SOCKET_LOG(("PollableEvent::Signal Failed\n"));
     mSignaled = false;
     mWriteFailed = true;

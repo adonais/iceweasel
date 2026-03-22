@@ -2474,6 +2474,11 @@ void HTMLMediaElement::AbortExistingLoads() {
 
   if (mDecoder) {
     fireTimeUpdate = mDecoder->GetCurrentTime() != 0.0;
+    // When aborting during seeking, remove the seeking state since the decoder
+    // won't call SeekCompleted() or SeekAborted() after being shut down.
+    if (Seeking()) {
+      RemoveStates(ElementState::SEEKING);
+    }
     ShutdownDecoder();
   }
   if (mSrcStream) {
@@ -2526,6 +2531,7 @@ void HTMLMediaElement::AbortExistingLoads() {
     // indirectly which depends on mPaused. So we need to update mPaused first.
     if (!mPaused) {
       mPaused = true;
+      UpdatePlaybackPseudoClasses();
       PlayPromise::RejectPromises(TakePendingPlayPromises(),
                                   NS_ERROR_DOM_MEDIA_ABORT_ERR);
     }
@@ -3470,20 +3476,7 @@ void HTMLMediaElement::Seek(double aTime, SeekTarget::Type aSeekType,
     return;
   }
 
-  if (mPlayed && mCurrentPlayRangeStart != -1.0) {
-    double rangeEndTime = CurrentTime();
-    LOG(LogLevel::Debug, ("%p Adding \'played\' a range : [%f, %f]", this,
-                          mCurrentPlayRangeStart, rangeEndTime));
-    // Multiple seek without playing, or seek while playing.
-    if (mCurrentPlayRangeStart != rangeEndTime) {
-      // Don't round the left of the interval: it comes from script and needs
-      // to be exact.
-      mPlayed->Add(mCurrentPlayRangeStart, rangeEndTime);
-    }
-    // Reset the current played range start time. We'll re-set it once
-    // the seek completes.
-    mCurrentPlayRangeStart = -1.0;
-  }
+  UpdatePlayedRangesBeforeSeek(CurrentTime());
 
   if (mReadyState == HAVE_NOTHING) {
     mDefaultPlaybackStartPosition = aTime;
@@ -3554,6 +3547,7 @@ void HTMLMediaElement::Seek(double aTime, SeekTarget::Type aSeekType,
   // The media backend is responsible for dispatching the timeupdate
   // event if it changes the playback position as a result of the seek.
   LOG(LogLevel::Debug, ("%p SetCurrentTime(%f) starting seek", this, aTime));
+  AddStates(ElementState::SEEKING);
   mDecoder->Seek(aTime, aSeekType);
 
   // We changed whether we're seeking so we need to AddRemoveSelfReference.
@@ -3626,6 +3620,7 @@ void HTMLMediaElement::PauseInternal() {
   }
   bool oldPaused = mPaused;
   mPaused = true;
+  UpdatePlaybackPseudoClasses();
   // Step 1,
   // https://html.spec.whatwg.org/multipage/media.html#internal-pause-steps
   mCanAutoplayFlag = false;
@@ -3710,6 +3705,8 @@ void HTMLMediaElement::SetMutedInternal(uint32_t aMuted) {
     return;
   }
 
+  // https://html.spec.whatwg.org/multipage/semantics-other.html#selector-muted
+  SetStates(ElementState::MUTED, mMuted & MUTED_BY_CONTENT);
   SetVolumeInternal();
 }
 
@@ -3735,6 +3732,7 @@ void HTMLMediaElement::SetVolumeInternal() {
 
   NotifyAudioPlaybackChanged(
       AudioChannelService::AudibleChangedReasons::eVolumeChanged);
+  mEffectiveVolumeChangeEvent.Notify(effectiveVolume);
 }
 
 void HTMLMediaElement::SetMuted(bool aMuted) {
@@ -3802,14 +3800,16 @@ void HTMLMediaElement::AddOutputTrackSourceToOutputStream(
     // Cycle detected. This can happen since tracks are added async.
     // We avoid forwarding it to the output here or we'd get into an infloop.
     LOG(LogLevel::Warning,
-        ("NOT adding output track source %p to output stream "
+        ("%p NOT adding output track source %p to output stream "
          "%p -- cycle detected",
-         aSource, aOutputStream.mStream.get()));
+         this, aSource, aOutputStream.mStream.get()));
     return;
   }
 
-  LOG(LogLevel::Debug, ("Adding output track source %p to output stream %p",
-                        aSource, aOutputStream.mStream.get()));
+  LOG(LogLevel::Debug,
+      ("%p Adding output track source %p to output stream %p (mode=%s)", this,
+       aSource, aOutputStream.mStream.get(),
+       aMode == AddTrackMode::ASYNC ? "async" : "sync"));
 
   RefPtr<MediaStreamTrack> domTrack;
   if (aSource->Track()->mType == MediaSegment::AUDIO) {
@@ -3839,8 +3839,13 @@ void HTMLMediaElement::AddOutputTrackSourceToOutputStream(
   }
 
   LOG(LogLevel::Debug,
-      ("Created capture %s track %p",
+      ("%p Created capture %s track %p", this,
        domTrack->AsAudioStreamTrack() ? "audio" : "video", domTrack.get()));
+}
+
+bool HTMLMediaElement::ShouldHaveTrackSources() const {
+  return mTracksCaptured.Ref() && !IsPlaybackEnded() &&
+         mReadyState >= HAVE_METADATA;
 }
 
 void HTMLMediaElement::UpdateOutputTrackSources() {
@@ -3856,10 +3861,7 @@ void HTMLMediaElement::UpdateOutputTrackSources() {
   //   remove any OutputMediaStreams that have the finish-when-ended flag set
   // - Create track sources for, and add to OutputMediaStreams, the tracks in
   //   tracks-to-add
-
-  const bool shouldHaveTrackSources = mTracksCaptured.Ref() &&
-                                      !IsPlaybackEnded() &&
-                                      mReadyState >= HAVE_METADATA;
+  const bool shouldHaveTrackSources = ShouldHaveTrackSources();
 
   // Add track sources for all enabled/selected MediaTracks.
   nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
@@ -3869,13 +3871,17 @@ void HTMLMediaElement::UpdateOutputTrackSources() {
 
   if (mDecoder) {
     if (!mTracksCaptured.Ref()) {
-      mDecoder->SetOutputCaptureState(MediaDecoder::OutputCaptureState::None);
+      mDecoder->SetOutputCaptureState(MediaDecoder::OutputCaptureInfo(
+          MediaDecoder::OutputCaptureState::None));
     } else if (!AudioTracks() || !VideoTracks() || !shouldHaveTrackSources) {
       // We've been unlinked, or tracks are not yet known.
-      mDecoder->SetOutputCaptureState(MediaDecoder::OutputCaptureState::Halt);
+      mDecoder->SetOutputCaptureState(MediaDecoder::OutputCaptureInfo(
+          MediaDecoder::OutputCaptureState::Halt));
     } else {
-      mDecoder->SetOutputCaptureState(MediaDecoder::OutputCaptureState::Capture,
-                                      mTracksCaptured.Ref().get());
+      mDecoder->SetOutputCaptureState(MediaDecoder::OutputCaptureInfo(
+          MediaDecoder::OutputCaptureState::Capture,
+          mTracksCaptured.Ref().get(),
+          mAudioOutputConfig == AudioOutputConfig::Needed, mSink.second));
     }
   }
 
@@ -4071,16 +4077,22 @@ void HTMLMediaElement::UpdateOutputTrackSources() {
   }
 }
 
-bool HTMLMediaElement::CanBeCaptured(StreamCaptureType aCaptureType) {
-  // Don't bother capturing when the document has gone away
-  nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
-  if (!window) {
+bool HTMLMediaElement::CanBeCaptured(StreamCaptureType aCaptureType,
+                                     ErrorResult& aRv) {
+  // Don't bother capturing when the document has gone away. This can't surface
+  // to JS since there is no execution context without a window, so a typed
+  // DOMException is not needed here.
+  if (!OwnerDoc()->GetInnerWindow()) {
+    aRv.Throw(NS_ERROR_FAILURE);
     return false;
   }
 
-  // Prevent capturing restricted video
+  // Prevent capturing restricted video. See
+  // https://github.com/w3c/mediacapture-fromelement/issues/20
   if (aCaptureType == StreamCaptureType::CAPTURE_ALL_TRACKS &&
       ContainsRestrictedContent()) {
+    aRv.ThrowNotSupportedError(
+        "Capture of media from an EME-protected element is not supported");
     return false;
   }
   return true;
@@ -4088,17 +4100,47 @@ bool HTMLMediaElement::CanBeCaptured(StreamCaptureType aCaptureType) {
 
 already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureStreamInternal(
     StreamCaptureBehavior aFinishBehavior, StreamCaptureType aStreamCaptureType,
-    MediaTrackGraph* aGraph) {
-  MOZ_ASSERT(CanBeCaptured(aStreamCaptureType));
+    AudioOutputConfig aAudioOutputConfig, MediaTrackGraph* aGraph) {
+  IgnoredErrorResult rv;
+  MOZ_ASSERT(CanBeCaptured(aStreamCaptureType, rv));
 
   LogVisibility(CallerAPI::CAPTURE_STREAM);
   MarkAsTainted();
+
+  // Once the audio output configuration is set to NotNeeded, the state remains
+  // permanent.
+  bool shouldRemoveAudioConfig =
+      mAudioOutputConfig != aAudioOutputConfig &&
+      aAudioOutputConfig == AudioOutputConfig::NotNeeded;
+  mAudioOutputConfig = (mAudioOutputConfig == AudioOutputConfig::NotNeeded ||
+                        aAudioOutputConfig == AudioOutputConfig::NotNeeded)
+                           ? AudioOutputConfig::NotNeeded
+                           : AudioOutputConfig::Needed;
+
+  LOG(LogLevel::Debug,
+      ("%p CaptureStreamInternal, behavior=%hhu, type=%hhu, needAudioConfig=%d",
+       this, static_cast<uint8_t>(aFinishBehavior),
+       static_cast<uint8_t>(aStreamCaptureType),
+       aAudioOutputConfig == AudioOutputConfig::Needed));
 
   if (mTracksCaptured.Ref()) {
     // Already have an output stream.  Check whether the graph rate matches if
     // specified.
     if (aGraph && aGraph != mTracksCaptured.Ref()->mTrack->Graph()) {
       return nullptr;
+    }
+    // Audio output was configured already but now we need to remove it. Eg.
+    // MediaElementAudioSourceNode is connected so audio should be heard from
+    // WebAudio's graph.
+    if (shouldRemoveAudioConfig && (AudioTracks() || VideoTracks()) &&
+        ShouldHaveTrackSources() && mDecoder) {
+      MOZ_ASSERT(mAudioOutputConfig == AudioOutputConfig::NotNeeded);
+      LOG(LogLevel::Debug,
+          ("%p Update decoder capture state to remove audio output", this));
+      mDecoder->SetOutputCaptureState(MediaDecoder::OutputCaptureInfo(
+          MediaDecoder::OutputCaptureState::Capture,
+          mTracksCaptured.Ref().get(), /*aShouldConfigAudioOutput=*/false,
+          mSink.second));
     }
   } else {
     // This is the first output stream, or there are no tracks. If the former,
@@ -4152,13 +4194,6 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureStreamInternal(
   }
 
   if (aStreamCaptureType == StreamCaptureType::CAPTURE_AUDIO) {
-    if (mSrcStream) {
-      // We don't support applying volume and mute to the captured stream, when
-      // capturing a MediaStream.
-      ReportToConsole(nsIScriptError::errorFlag,
-                      "MediaElementAudioCaptureOfMediaStreamError");
-    }
-
     // mAudioCaptured tells the user that the audio played by this media element
     // is being routed to the captureStreams *instead* of being played to
     // speakers.
@@ -4187,14 +4222,17 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureAudio(
     ErrorResult& aRv, MediaTrackGraph* aGraph) {
   MOZ_RELEASE_ASSERT(aGraph);
 
-  if (!CanBeCaptured(StreamCaptureType::CAPTURE_AUDIO)) {
-    aRv.Throw(NS_ERROR_FAILURE);
+  if (!CanBeCaptured(StreamCaptureType::CAPTURE_AUDIO, aRv)) {
     return nullptr;
   }
 
-  RefPtr<DOMMediaStream> stream =
-      CaptureStreamInternal(StreamCaptureBehavior::CONTINUE_WHEN_ENDED,
-                            StreamCaptureType::CAPTURE_AUDIO, aGraph);
+  mozilla::glean::media::capture_stream_usage
+      .EnumGet(mozilla::glean::media::CaptureStreamUsageLabel::
+                   eAudiosourcenodecaptured)
+      .Add();
+  RefPtr<DOMMediaStream> stream = CaptureStreamInternal(
+      StreamCaptureBehavior::CONTINUE_WHEN_ENDED,
+      StreamCaptureType::CAPTURE_AUDIO, AudioOutputConfig::NotNeeded, aGraph);
   if (!stream) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
@@ -4217,14 +4255,27 @@ RefPtr<GenericNonExclusivePromise> HTMLMediaElement::GetAllowedToPlayPromise() {
 
 already_AddRefed<DOMMediaStream> HTMLMediaElement::MozCaptureStream(
     ErrorResult& aRv) {
-  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS)) {
-    aRv.Throw(NS_ERROR_FAILURE);
+  if (StaticPrefs::media_captureStream_enabled()) {
+    ReportToConsole(nsIScriptError::warningFlag,
+                    "MozCaptureStreamDeprecatedWarning");
+  }
+  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS, aRv)) {
     return nullptr;
   }
 
+  mozilla::glean::media::capture_stream_usage
+      .EnumGet(
+          mozilla::glean::media::CaptureStreamUsageLabel::eMozcapturestream)
+      .Add();
+  // TODO : our mozCaptureStreamXXX implementation doesn't render audio
+  // output, which is not spec compliant. A proper implementation will be
+  // implemented in CaptureStream() which will allow audio playback. We don't
+  // want to change its behavior as that might be breaking for existing
+  // sites which are already using a workaround for audio playback.
   RefPtr<DOMMediaStream> stream =
       CaptureStreamInternal(StreamCaptureBehavior::CONTINUE_WHEN_ENDED,
-                            StreamCaptureType::CAPTURE_ALL_TRACKS, nullptr);
+                            StreamCaptureType::CAPTURE_ALL_TRACKS,
+                            AudioOutputConfig::NotNeeded, nullptr);
   if (!stream) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
@@ -4235,14 +4286,50 @@ already_AddRefed<DOMMediaStream> HTMLMediaElement::MozCaptureStream(
 
 already_AddRefed<DOMMediaStream> HTMLMediaElement::MozCaptureStreamUntilEnded(
     ErrorResult& aRv) {
-  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS)) {
+  if (StaticPrefs::media_captureStream_enabled()) {
+    ReportToConsole(nsIScriptError::warningFlag,
+                    "MozCaptureStreamDeprecatedWarning");
+  }
+  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS, aRv)) {
+    return nullptr;
+  }
+
+  mozilla::glean::media::capture_stream_usage
+      .EnumGet(mozilla::glean::media::CaptureStreamUsageLabel::
+                   eMozcapturestreamuntilended)
+      .Add();
+  // TODO : our mozCaptureStreamXXX implementation doesn't render audio
+  // output, which is not spec compliant. A proper implementation will be
+  // implemented in CaptureStream() which will allow audio playback. We don't
+  // want to change its behavior as that might be breaking for existing
+  // sites which are already using a workaround for audio playback.
+  RefPtr<DOMMediaStream> stream =
+      CaptureStreamInternal(StreamCaptureBehavior::FINISH_WHEN_ENDED,
+                            StreamCaptureType::CAPTURE_ALL_TRACKS,
+                            AudioOutputConfig::NotNeeded, nullptr);
+  if (!stream) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
 
+  return stream.forget();
+}
+
+already_AddRefed<DOMMediaStream> HTMLMediaElement::CaptureStream(
+    ErrorResult& aRv) {
+  // Spec issue https://github.com/w3c/mediacapture-fromelement/issues/20
+  // We began blocking the capture of encrypted playback in bug 1071482.
+  if (!CanBeCaptured(StreamCaptureType::CAPTURE_ALL_TRACKS, aRv)) {
+    return nullptr;
+  }
+
+  mozilla::glean::media::capture_stream_usage
+      .EnumGet(mozilla::glean::media::CaptureStreamUsageLabel::eCapturestream)
+      .Add();
   RefPtr<DOMMediaStream> stream =
-      CaptureStreamInternal(StreamCaptureBehavior::FINISH_WHEN_ENDED,
-                            StreamCaptureType::CAPTURE_ALL_TRACKS, nullptr);
+      CaptureStreamInternal(StreamCaptureBehavior::CONTINUE_WHEN_ENDED,
+                            StreamCaptureType::CAPTURE_ALL_TRACKS,
+                            AudioOutputConfig::Needed, nullptr);
   if (!stream) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
@@ -4638,6 +4725,8 @@ void HTMLMediaElement::Init() {
   mWatchManager.Watch(mTracksCaptured,
                       &HTMLMediaElement::UpdateOutputTrackSources);
   mWatchManager.Watch(mReadyState, &HTMLMediaElement::UpdateOutputTrackSources);
+  mWatchManager.Watch(mReadyState,
+                      &HTMLMediaElement::UpdatePlaybackPseudoClasses);
 
   mWatchManager.Watch(mDownloadSuspendedByCache,
                       &HTMLMediaElement::UpdateReadyStateInternal);
@@ -4668,6 +4757,7 @@ void HTMLMediaElement::Init() {
 
   OwnerDoc()->SetDocTreeHadMedia();
   mShutdownObserver->Subscribe(this);
+  UpdatePlaybackPseudoClasses();
   mInitialized = true;
 }
 
@@ -4915,6 +5005,7 @@ void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
 
   const bool oldPaused = mPaused;
   mPaused = false;
+  UpdatePlaybackPseudoClasses();
   // Step 5,
   // https://html.spec.whatwg.org/multipage/media.html#internal-play-steps
   mCanAutoplayFlag = false;
@@ -5004,6 +5095,33 @@ void HTMLMediaElement::UpdateWakeLock() {
     CreateAudioWakeLockIfNeeded();
   } else {
     ReleaseAudioWakeLockIfExists();
+  }
+}
+
+void HTMLMediaElement::UpdatePlaybackPseudoClasses() {
+  MOZ_ASSERT(NS_IsMainThread());
+  LOG(LogLevel::Debug,
+      ("%p UpdatePlaybackPseudoClasses: mPaused=%d, mNetworkState=%d, "
+       "mReadyState=%d, mIsCurrentlyStalled=%d",
+       this, mPaused.Ref(), mNetworkState, mReadyState.Ref(),
+       mIsCurrentlyStalled));
+  AutoStateChangeNotifier notifier(*this, /*aNotify=*/true);
+  RemoveStatesSilently(ElementState::PAUSED | ElementState::BUFFERING |
+                       ElementState::STALLED);
+  // We don’t need to update the playing state because these states are
+  // exclusive, and the `:playing` pseudo-class is determined by checking
+  // the element's PAUSED state.
+  if (mPaused) {
+    AddStatesSilently(ElementState::PAUSED);
+    return;
+  }
+  // https://html.spec.whatwg.org/multipage/semantics-other.html#selector-buffering
+  if (mNetworkState == NETWORK_LOADING && mReadyState <= HAVE_CURRENT_DATA) {
+    AddStatesSilently(ElementState::BUFFERING);
+    // https://html.spec.whatwg.org/multipage/semantics-other.html#selector-stalled
+    if (mIsCurrentlyStalled) {
+      AddStatesSilently(ElementState::STALLED);
+    }
   }
 }
 
@@ -6063,6 +6181,22 @@ void HTMLMediaElement::UpdateSrcStreamReportPlaybackEnded() {
 
 void HTMLMediaElement::SeekStarted() { QueueEvent(u"seeking"_ns); }
 
+void HTMLMediaElement::UpdatePlayedRangesBeforeSeek(double aRangeEndTime) {
+  if (mPlayed && mCurrentPlayRangeStart != -1.0) {
+    LOG(LogLevel::Debug, ("%p Adding 'played' a range : [%f, %f]", this,
+                          mCurrentPlayRangeStart, aRangeEndTime));
+    // Multiple seek without playing, or seek while playing.
+    if (mCurrentPlayRangeStart != aRangeEndTime) {
+      // Don't round the left of the interval: it comes from script and needs
+      // to be exact.
+      mPlayed->Add(mCurrentPlayRangeStart, aRangeEndTime);
+    }
+    // Reset the current played range start time. We'll re-set it once
+    // the seek completes.
+    mCurrentPlayRangeStart = -1.0;
+  }
+}
+
 void HTMLMediaElement::SeekCompleted() {
   mPlayingBeforeSeek = false;
   SetPlayedOrSeeked(true);
@@ -6073,6 +6207,7 @@ void HTMLMediaElement::SeekCompleted() {
   // (Step 16)
   // TODO (bug 1688131): run these steps in a stable state.
   FireTimeUpdate(TimeupdateType::eMandatory);
+  RemoveStates(ElementState::SEEKING);
   QueueEvent(u"seeked"_ns);
   // We changed whether we're seeking so we need to AddRemoveSelfReference
   AddRemoveSelfReference();
@@ -6090,6 +6225,7 @@ void HTMLMediaElement::SeekCompleted() {
 }
 
 void HTMLMediaElement::SeekAborted() {
+  RemoveStates(ElementState::SEEKING);
   if (mSeekDOMPromise) {
     AbstractMainThread()->Dispatch(NS_NewRunnableFunction(
         __func__, [promise = std::move(mSeekDOMPromise)] {
@@ -6107,6 +6243,8 @@ void HTMLMediaElement::NotifySuspendedByCache(bool aSuspendedByCache) {
 
 void HTMLMediaElement::DownloadSuspended() {
   if (mNetworkState == NETWORK_LOADING) {
+    mIsCurrentlyStalled = false;
+    UpdatePlaybackPseudoClasses();
     QueueEvent(u"progress"_ns);
   }
   ChangeNetworkState(NETWORK_IDLE);
@@ -6137,6 +6275,8 @@ void HTMLMediaElement::CheckProgress(bool aHaveNewProgress) {
           : (now - mProgressTime >=
                  TimeDuration::FromMilliseconds(PROGRESS_MS) &&
              mDataTime > mProgressTime)) {
+    mIsCurrentlyStalled = false;
+    UpdatePlaybackPseudoClasses();
     QueueEvent(u"progress"_ns);
     // Going back 1ms ensures that future data will have now > mProgressTime,
     // and so will trigger another event.  mDataTime is not reset because it
@@ -6162,6 +6302,8 @@ void HTMLMediaElement::CheckProgress(bool aHaveNewProgress) {
 
   if (now - mDataTime >= TimeDuration::FromMilliseconds(STALL_MS)) {
     if (!mMediaSource) {
+      mIsCurrentlyStalled = true;
+      UpdatePlaybackPseudoClasses();
       QueueEvent(u"stalled"_ns);
     } else {
       ChangeDelayLoadStatus(false);
@@ -6514,6 +6656,7 @@ void HTMLMediaElement::ChangeNetworkState(nsMediaNetworkState aState) {
 
   nsMediaNetworkState oldState = mNetworkState;
   mNetworkState = aState;
+  UpdatePlaybackPseudoClasses();
   LOG(LogLevel::Debug,
       ("%p Network state changed to %s", this, gNetworkStateToString[aState]));
   DDLOG(DDLogCategory::Property, "network_state",
@@ -6632,6 +6775,8 @@ void HTMLMediaElement::CheckAutoplayDataReady() {
 void HTMLMediaElement::RunAutoplay() {
   mAllowedToPlayPromise.ResolveIfExists(true, __func__);
   mPaused = false;
+  UpdatePlaybackPseudoClasses();
+
   // We changed mPaused which can affect AddRemoveSelfReference
   AddRemoveSelfReference();
   UpdateSrcMediaStreamPlaying();
@@ -7581,6 +7726,16 @@ void HTMLMediaElement::ResetSetMediaKeysTempVariables() {
   mIncomingMediaKeys = nullptr;
 }
 
+bool HTMLMediaElement::MozAudioCaptured() const {
+  ReportToConsole(nsIScriptError::warningFlag,
+                  "MozAudioCapturedDeprecatedWarning");
+  mozilla::glean::media::capture_stream_usage
+      .EnumGet(
+          mozilla::glean::media::CaptureStreamUsageLabel::eMozaudiocaptured)
+      .Add();
+  return mAudioCaptured;
+}
+
 already_AddRefed<Promise> HTMLMediaElement::SetMediaKeys(
     mozilla::dom::MediaKeys* aMediaKeys, ErrorResult& aRv) {
   LOG(LogLevel::Debug, ("%p SetMediaKeys(%p) mMediaKeys=%p mDecoder=%p", this,
@@ -7842,19 +7997,25 @@ void HTMLMediaElement::AudioCaptureTrackChange(bool aCapture) {
     return;
   }
 
+  LOG(LogLevel::Debug, ("%p AudioCaptureTrackChange=%d", this, aCapture));
+
   if (aCapture && !mStreamWindowCapturer) {
     nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
     if (!window) {
       return;
     }
 
+    mozilla::glean::media::capture_stream_usage
+        .EnumGet(mozilla::glean::media::CaptureStreamUsageLabel::
+                     eWindowaudiocaptured)
+        .Add();
     MediaTrackGraph* mtg = MediaTrackGraph::GetInstance(
         MediaTrackGraph::AUDIO_THREAD_DRIVER, window,
         MediaTrackGraph::REQUEST_DEFAULT_SAMPLE_RATE,
         MediaTrackGraph::DEFAULT_OUTPUT_DEVICE);
-    RefPtr<DOMMediaStream> stream =
-        CaptureStreamInternal(StreamCaptureBehavior::CONTINUE_WHEN_ENDED,
-                              StreamCaptureType::CAPTURE_AUDIO, mtg);
+    RefPtr<DOMMediaStream> stream = CaptureStreamInternal(
+        StreamCaptureBehavior::CONTINUE_WHEN_ENDED,
+        StreamCaptureType::CAPTURE_AUDIO, AudioOutputConfig::Needed, mtg);
     mStreamWindowCapturer =
         new MediaStreamWindowCapturer(stream, window->WindowID());
     mStreamWindowCapturer->mStream->RegisterTrackListener(
@@ -7959,6 +8120,7 @@ void HTMLMediaElement::AsyncResolvePendingPlayPromises() {
 void HTMLMediaElement::AsyncRejectPendingPlayPromises(nsresult aError) {
   if (!mPaused) {
     mPaused = true;
+    UpdatePlaybackPseudoClasses();
     QueueEvent(u"pause"_ns);
   }
 
@@ -8026,6 +8188,7 @@ void HTMLMediaElement::ConstructMediaTracks(const MediaInfo* aInfo) {
 
   AudioTrackList* audioList = AudioTracks();
   if (audioList && aInfo->HasAudio()) {
+    LOG(LogLevel::Debug, ("%p ConstructMediaTracks, add an audio track", this));
     const TrackInfo& info = aInfo->mAudio;
     RefPtr<AudioTrack> track = MediaTrackList::CreateAudioTrack(
         audioList->GetOwnerGlobal(), info.mId, info.mKind, info.mLabel,
@@ -8036,6 +8199,7 @@ void HTMLMediaElement::ConstructMediaTracks(const MediaInfo* aInfo) {
 
   VideoTrackList* videoList = VideoTracks();
   if (videoList && aInfo->HasVideo()) {
+    LOG(LogLevel::Debug, ("%p ConstructMediaTracks, add a video track", this));
     const TrackInfo& info = aInfo->mVideo;
     RefPtr<VideoTrack> track = MediaTrackList::CreateVideoTrack(
         videoList->GetOwnerGlobal(), info.mId, info.mKind, info.mLabel,

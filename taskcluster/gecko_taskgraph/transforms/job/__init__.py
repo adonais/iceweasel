@@ -19,7 +19,7 @@ from taskgraph.transforms.run import rewrite_when_to_optimization
 from taskgraph.util import json
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.python_path import import_sibling_modules
-from taskgraph.util.schema import Schema, validate_schema
+from taskgraph.util.schema import LegacySchema, validate_schema
 from taskgraph.util.taskcluster import get_artifact_prefix
 from voluptuous import Any, Coerce, Exclusive, Extra, Optional, Required
 
@@ -30,7 +30,7 @@ from gecko_taskgraph.util.workertypes import worker_type_implementation
 logger = logging.getLogger(__name__)
 
 # Schema for a build description
-job_description_schema = Schema({
+job_description_schema = LegacySchema({
     # The name of the job and the job's label.  At least one must be specified,
     # and the label will be generated from the name if necessary, by prepending
     # the kind.
@@ -460,7 +460,7 @@ def run_job_using(worker_implementation, run_using, schema=None, defaults={}):
 
 
 @run_job_using(
-    "always-optimized", "always-optimized", Schema({"using": "always-optimized"})
+    "always-optimized", "always-optimized", LegacySchema({"using": "always-optimized"})
 )
 def always_optimized(config, job, taskdesc):
     pass

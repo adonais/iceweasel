@@ -49,14 +49,14 @@ static int FuzzingRunDomSC(const uint8_t* data, size_t size) {
   // during fuzzing.
   size -= size % 8;
 
-  StructuredCloneData scdata;
-  if (!scdata.CopyExternalData(reinterpret_cast<const char*>(data), size)) {
+  auto scdata = MakeRefPtr<StructuredCloneData>();
+  if (!scdata->CopyExternalData(reinterpret_cast<const char*>(data), size)) {
     return 0;
   }
 
   JS::Rooted<JS::Value> result(cx);
   ErrorResult rv;
-  scdata.Read(cx, &result, rv);
+  scdata->Read(cx, &result, rv);
 
   rv.SuppressException();
 

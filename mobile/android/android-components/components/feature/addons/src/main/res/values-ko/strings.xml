@@ -256,7 +256,7 @@
   <!-- This is displayed when the add-on is not allowed to run in private browsing. -->
   <string name="mozac_feature_addons_not_allowed_in_private_browsing">사생활 보호 창에서 허용 안 됨</string>
   <!-- Indicates the add-on is enabled. -->
-  <string name="mozac_feature_addons_enabled">사용함</string>
+  <string name="mozac_feature_addons_enabled">사용</string>
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the installed section. -->
   <string name="mozac_feature_addons_installed_section">설치됨</string>
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the recommended section. -->
@@ -378,8 +378,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s 부가 기능은 이 플랫폼에서 지원되지 않는 엔터프라이즈 정책을 사용하는 조직에서만 설치할 수 있으므로 설치할 수 없습니다.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s 확장 기능은 Mozilla 정책 위반으로 %2$s에 설치할 수 없습니다.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">%1$s 부가 기능은 제한되어 있으며 %2$s에 설치할 수 없습니다.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">%1$s 부가 기능 활성화에 실패함</string>
@@ -426,11 +424,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">이 확장 기능은 Mozilla 정책 위반으로 차단되어 비활성화되었습니다.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">이 확장 기능은 Mozilla 정책 위반으로 제한되어 비활성화되었습니다. 활성화할 수 있지만 위험할 수 있습니다.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">이 확장 기능은 제한되어 있으며 비활성화되어 있습니다. 활성화할 수는 있지만, 위험할 수 있습니다.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">이 확장 기능은 Mozilla의 정책을 위반합니다. 위험 할 수 있습니다.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">이 확장 기능은 제한되어 있습니다. 사용 시 위험할 수 있습니다.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->

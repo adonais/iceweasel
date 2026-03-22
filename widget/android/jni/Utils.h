@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_jni_Utils_h__
-#define mozilla_jni_Utils_h__
+#ifndef mozilla_jni_Utils_h_
+#define mozilla_jni_Utils_h_
 
 #include <jni.h>
 
@@ -145,4 +145,4 @@ bool IsOOMException(JNIEnv* aEnv);
 }  // namespace jni
 }  // namespace mozilla
 
-#endif  // mozilla_jni_Utils_h__
+#endif  // mozilla_jni_Utils_h_

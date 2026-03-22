@@ -5,6 +5,8 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
+  GeolocationUtils:
+    "moz-src:///browser/components/urlbar/private/GeolocationUtils.sys.mjs",
   ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
   SkippableTimer: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
@@ -406,6 +408,117 @@ export class MerinoClient {
     }
 
     return suggestions;
+  }
+
+  /**
+   * Auto complete the weather location name. This is intended to be used only
+   * in conjunction with `fetchWeather()` and causes Merino to call the location
+   * autocomplete endpoint of a third-party weather API.
+   *
+   * @param {object} options
+   *   Options object
+   * @param {string} options.source
+   *   The source that is requesting this fetch.
+   * @param {string=} options.query
+   *   The string that will be autocompleted.
+   * @param {number=} options.timeoutMs
+   *   Timeout in milliseconds. This method will return once the timeout
+   *   elapses, a response is received, or an error occurs, whichever happens
+   *   first.
+   * @returns {Promise<MerinoClientSuggestion>}
+   *   The Merino suggestions or null if there's an error or unexpected
+   *   response.
+   */
+  async autoCompleteWeatherLocation({ source, query, timeoutMs = undefined }) {
+    let response = await this.fetch({
+      providers: ["accuweather"],
+      query: query || "",
+      otherParams: {
+        request_type: "location",
+        source,
+      },
+      timeoutMs,
+    });
+    return response?.[0] ?? null;
+  }
+
+  /**
+   * Fetch weather information for a given location. There are three separate
+   * options for specifying the location, choose only one:
+   *
+   * (1) Pass `locationName`
+   * (2) Pass `city`, `region`, and `country`
+   * (3) Don't pass any of the above, in which case geolocation will be used
+   *
+   * If the `locationName` is specified, it will be choosen than other.
+   *
+   * @param {object} options
+   *   Options object
+   * @param {string} options.source
+   *   The source that is requesting this fetch.
+   * @param {string=} options.locationName
+   *   The location name that should come from autoCompleteWeatherLocation().
+   * @param {string=} options.country
+   *   The country that should be a country code.
+   * @param {string=} options.region
+   *   The region that should be a comma-separated string of administrative
+   *   region codes.
+   * @param {string=} options.city
+   *   The city that should be a city name.
+   * @param {number=} options.timeoutMs
+   *   Timeout in milliseconds. This method will return once the timeout
+   *   elapses, a response is received, or an error occurs, whichever happens
+   *   first.
+   * @returns {Promise<MerinoClientSuggestion>}
+   *   The Merino suggestions or null if there's an error or unexpected
+   *   response.
+   */
+  async fetchWeather({
+    source,
+    city = undefined,
+    country = undefined,
+    region = undefined,
+    locationName = undefined,
+    timeoutMs = undefined,
+  }) {
+    if (locationName) {
+      city = undefined;
+      country = undefined;
+      region = undefined;
+    } else if (!city && !country && !region) {
+      let geolocation = await lazy.GeolocationUtils.geolocation();
+      if (!geolocation) {
+        return null;
+      }
+
+      country = geolocation.country_code;
+      region =
+        geolocation.region_code || geolocation.region || geolocation.city;
+      city = geolocation.city || geolocation.region;
+    }
+
+    let otherParams = {
+      request_type: "weather",
+      source,
+    };
+
+    if (country) {
+      otherParams.country = country;
+    }
+    if (region) {
+      otherParams.region = region;
+    }
+    if (city) {
+      otherParams.city = city;
+    }
+
+    let response = await this.fetch({
+      providers: ["accuweather"],
+      query: locationName ?? "",
+      otherParams,
+      timeoutMs,
+    });
+    return response?.[0] ?? null;
   }
 
   /**

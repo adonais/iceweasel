@@ -81,6 +81,17 @@ export default class MozInputFolder extends MozInputText {
   }
 
   async getFolderFromPath(path) {
+    if (
+      Cu.isInAutomation &&
+      Services.appinfo.OS === "WINNT" &&
+      path.includes("/")
+    ) {
+      console.error(
+        `moz-input-folder: path contains forward slashes: "${path}"`,
+        new Error().stack
+      );
+    }
+
     let folder = null;
     try {
       folder = await IOUtils.getDirectory(path);

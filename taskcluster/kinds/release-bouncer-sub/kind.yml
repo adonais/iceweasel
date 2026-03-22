@@ -48,12 +48,3 @@ tasks:
         shipping-product: firefox
         treeherder:
             platform: firefox-release/opt
-
-    firefox-rc:
-        bouncer-platforms: ['linux64', 'linux64-aarch64', 'osx', 'win', 'win64', 'win64-aarch64']
-        bouncer-products: ['complete-mar-candidates', 'partial-mar-candidates']
-        shipping-product: firefox
-        run-on-releases: ['release-rc']
-        treeherder:
-            symbol: Rel(BncSub-RC)
-            platform: firefox-release/opt

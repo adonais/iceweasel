@@ -18,6 +18,7 @@ import mozilla.components.lib.state.State
  * @property loginsLoginDetailState State representing the login detail subscreen, if visible.
  * @property loginDeletionDialogState State representing the deletion state.
  * @property newLoginState State representing the new login to be added state.
+ * @property updateLoginState State representing the new login to be edited state.
  */
 internal data class LoginsState(
     val loginItems: List<LoginItem>,
@@ -29,6 +30,7 @@ internal data class LoginsState(
     val loginsLoginDetailState: LoginsLoginDetailState?,
     val loginDeletionDialogState: LoginDeletionDialogState,
     val newLoginState: NewLoginState?,
+    val updateLoginState: UpdateLoginState?,
 ) : State {
     companion object {
         val default: LoginsState = LoginsState(
@@ -41,6 +43,7 @@ internal data class LoginsState(
             loginsLoginDetailState = null,
             loginDeletionDialogState = LoginDeletionDialogState.None,
             newLoginState = NewLoginState.None,
+            updateLoginState = UpdateLoginState.None,
         )
     }
 }
@@ -48,6 +51,11 @@ internal data class LoginsState(
 internal sealed class NewLoginState {
     data object None : NewLoginState()
     data object Duplicate : NewLoginState()
+}
+
+internal sealed class UpdateLoginState {
+    data object None : UpdateLoginState()
+    data object Duplicate : UpdateLoginState()
 }
 
 internal sealed class LoginDeletionDialogState {

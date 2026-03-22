@@ -19,6 +19,7 @@ const L10N_IDS = {
   trackersPendingLabel: "security-privacy-status-pending-trackers-label",
   trackersLabel: "security-privacy-status-trackers-label",
   strictEnabledLabel: "security-privacy-status-strict-enabled-label",
+  customEnabledLabel: "security-privacy-status-custom-enabled-label",
   upToDateLabel: "security-privacy-status-up-to-date-label",
   updateNeededLabel: "security-privacy-status-update-needed-label",
   updateErrorLabel: "security-privacy-status-update-error-label",
@@ -53,6 +54,10 @@ export default class SecurityPrivacyCard extends MozLitElement {
     return this.setting.deps.etpStrictEnabled.value;
   }
 
+  get customEnabled() {
+    return this.setting.deps.etpCustomEnabled.value;
+  }
+
   get trackersBlocked() {
     return this.setting.deps.trackerCount.value;
   }
@@ -71,6 +76,7 @@ export default class SecurityPrivacyCard extends MozLitElement {
   get configIssueCount() {
     let filteredWarnings = [
       "etpStrictEnabled",
+      "etpCustomEnabled",
       "trackerCount",
       "appUpdateStatus",
     ];
@@ -125,13 +131,13 @@ export default class SecurityPrivacyCard extends MozLitElement {
     if (this.configIssueCount > 0) {
       return html`<img
         class="status-image"
-        src="chrome://global/skin/illustrations/kit-looking-left.svg"
+        src="chrome://global/skin/illustrations/shield-alert.svg"
         data-l10n-id="security-privacy-image-warning"
       />`;
     }
     return html`<img
       class="status-image"
-      src="chrome://global/skin/illustrations/kit-looking-forward.svg"
+      src="chrome://global/skin/illustrations/shield-check.svg"
       data-l10n-id="security-privacy-image-ok"
     />`;
   }
@@ -190,9 +196,24 @@ export default class SecurityPrivacyCard extends MozLitElement {
             <small
               data-l10n-id=${L10N_IDS.strictEnabledLabel}
               id="strictEnabled"
-              @click=${this.#scrollToTargetOnPanel("#privacy", "trackingGroup")}
+              @click=${this.#scrollToTargetOnPanel("#privacy", "etpStatusCard")}
             >
               <a data-l10n-name="strict-tracking-protection" href=""></a
+            ></small>
+          </p>
+        </div>
+      </li>`;
+    } else if (this.customEnabled) {
+      return html`<li class="status-ok">
+        <div>
+          ${trackerLabelElement}
+          <p>
+            <small
+              data-l10n-id=${L10N_IDS.customEnabledLabel}
+              id="customEnabled"
+              @click=${this.#scrollToTargetOnPanel("#privacy", "etpStatusCard")}
+            >
+              <a data-l10n-name="custom-tracking-protection" href=""></a
             ></small>
           </p>
         </div>
@@ -275,12 +296,10 @@ export default class SecurityPrivacyCard extends MozLitElement {
   render() {
     // Create l10n fields for the card's header
     let headerL10nId = L10N_IDS.okHeader;
-    let headerL10nData = { problemCount: 0 };
     let trueIssueCount =
       this.configIssueCount + (this.#okUpdateStatus() ? 0 : 1);
     if (trueIssueCount > 0) {
       headerL10nId = L10N_IDS.problemHeader;
-      headerL10nData.problemCount = trueIssueCount;
     }
 
     // And render this template!
@@ -292,11 +311,7 @@ export default class SecurityPrivacyCard extends MozLitElement {
       <moz-card aria-labelledby="heading">
         <div class="card-contents">
           <div class="status-text-container">
-            <h3
-              id="heading"
-              data-l10n-id=${headerL10nId}
-              data-l10n-args=${JSON.stringify(headerL10nData)}
-            ></h3>
+            <h3 id="heading" data-l10n-id=${headerL10nId}></h3>
             <ul>
               ${this.buildIssuesElement()} ${this.buildTrackersElement()}
               ${this.buildUpdateElement()}

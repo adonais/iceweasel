@@ -17,6 +17,7 @@
     <script src="lit-test-helpers.js"></script>
     <script>
       let html;
+      let MozLitElement;
       let testHelpers = new LitTestHelpers();
 
       async function keyboardNavigate(direction, boxGroup) {
@@ -26,8 +27,11 @@
         synthesizeKey(keyCode);
         await boxGroup.updateComplete;
       }
+
       add_setup(async function setup() {
         ({ html } = await testHelpers.setupLit());
+        ({ MozLitElement } =
+          await import("chrome://global/content/lit-utils.mjs"));
         let templateFn = () => html`
           <moz-box-group>
             <moz-box-item label="item"></moz-box-item>
@@ -593,17 +597,56 @@
       });
 
       add_task(async function testMozBoxGroupReorderable() {
-        let reorderableTemplate = html`<moz-box-group type="reorderable-list">
-          <moz-box-item label="item 1"></moz-box-item>
-          <moz-box-item label="item 2"></moz-box-item>
-          <moz-box-item label="item 3"></moz-box-item>
-          <moz-box-item label="footer" slot="footer"></moz-box-item>
-        </moz-box-group>`;
+        class TestReorderable extends MozLitElement {
+          static properties = { items: { type: Array } };
+          constructor() {
+            super();
+            this.items = [
+              html`<moz-box-item label="item 1"></moz-box-item>`,
+              html`<moz-box-item label="item 2"></moz-box-item>`,
+              html`<moz-box-item label="item 3"></moz-box-item>`,
+              html`<moz-box-item label="footer" slot="footer"></moz-box-item>`,
+            ];
+          }
+          render() {
+            return html`<moz-box-group
+              @reorder=${this.onReorder}
+              type="reorderable-list"
+            >
+              ${this.items}
+            </moz-box-group>`;
+          }
+
+          onReorder(event) {
+            const { draggedIndex, targetIndex } = event.detail;
+            const [draggedItem] = this.items.splice(draggedIndex, 1);
+            this.items.splice(targetIndex, 0, draggedItem);
+            this.requestUpdate();
+          }
+        }
+        customElements.define("test-reorderable", TestReorderable);
+        let reorderableTemplate = html`<test-reorderable></test-reorderable>`;
         let {
           children: [boxGroup],
         } = await testHelpers.renderTemplate(reorderableTemplate);
-        let boxItems = boxGroup.querySelectorAll("moz-box-item");
-        let [item1, item2, item3, footer] = boxItems;
+        let reorderableWrapper = boxGroup;
+        boxGroup = boxGroup.shadowRoot.querySelector("moz-box-group");
+
+        /**
+          Since the DOM nodes are destroyed and recreated, we need to
+          get fresh references to the newly created elements. Otherwise,
+          we will send a keydown event to an element that is no longer in
+          the DOM tree. This will cause the test to timeout.
+        */
+        function getNewRefs() {
+          let item1 = boxGroup.querySelector("[label='item 1']");
+          let item2 = boxGroup.querySelector("[label='item 2']");
+          let item3 = boxGroup.querySelector("[label='item 3']");
+          let footer = boxGroup.querySelector("[label='footer']");
+          return [item1, item2, item3, footer];
+        }
+
+        let [item1, item2, item3, footer] = getNewRefs();
 
         async function moveItem(item, direction) {
           let handle = item.handleEl;
@@ -626,52 +669,74 @@
         );
 
         is(
-          boxGroup.querySelector("moz-box-item:nth-of-type(2)"),
-          item2,
+          boxGroup.querySelector("moz-box-item:nth-of-type(2)").label,
+          item2.label,
           "item2 starts in the second position."
         );
         is(
-          boxGroup.querySelector("moz-box-item:nth-of-type(3)"),
-          item3,
+          boxGroup.querySelector("moz-box-item:nth-of-type(3)").label,
+          item3.label,
           "item3 starts after item2 in the third position."
         );
 
+        /*
+          Ensure the moz-box-items get the REORDER_PROP so that the
+          reorder event fires as expected.
+        **/
+        boxGroup.reorderableList.getItems();
+        let reordered = BrowserTestUtils.waitForEvent(boxGroup, "reorder");
         await moveItem(item3, "up");
+        await reordered;
+        await reorderableWrapper.updateComplete;
 
         is(
-          boxGroup.querySelector("moz-box-item:nth-of-type(2)"),
-          item3,
+          boxGroup.querySelector("moz-box-item:nth-of-type(2)").label,
+          item3.label,
           "item3 has been reordered to the second position."
         );
         is(
-          boxGroup.querySelector("moz-box-item:nth-of-type(3)"),
-          item2,
+          boxGroup.querySelector("moz-box-item:nth-of-type(3)").label,
+          item2.label,
           "item2 has been reordered to the third position."
         );
 
+        reordered = BrowserTestUtils.waitForEvent(boxGroup, "reorder");
         await moveItem(item1, "down");
+        await reordered;
+        await reorderableWrapper.updateComplete;
 
         is(
-          boxGroup.querySelector("moz-box-item:nth-of-type(1)"),
-          item3,
+          boxGroup.querySelector("moz-box-item:nth-of-type(1)").label,
+          item3.label,
           "item3 has been reordered to the first position."
         );
         is(
-          boxGroup.querySelector("moz-box-item:nth-of-type(2)"),
-          item1,
+          boxGroup.querySelector("moz-box-item:nth-of-type(2)").label,
+          item1.label,
           "item1 has been reordered to the second position."
         );
         is(
-          boxGroup.querySelector("moz-box-item:nth-of-type(3)"),
-          item2,
+          boxGroup.querySelector("moz-box-item:nth-of-type(3)").label,
+          item2.label,
           "item2 is still in the third position."
         );
 
+        /*
+          Since item2 was moved when item3 was moved up, item2 no longer
+          exists in our DOM. Therefore we need to get a new reference to
+          item2 before trying to move it down
+        **/
+        [item1, item2, item3, footer] = getNewRefs();
+        /*
+         Item2 is at the bottom of the list, thus trying to move it
+         down will never fire a reorder event.
+        **/
         await moveItem(item2, "down");
+        await reorderableWrapper.updateComplete;
 
         is(
-          boxGroup.querySelector("moz-box-item:nth-of-type(3)"),
-          item2,
+          boxGroup.querySelector("moz-box-item:nth-of-type(3)").label,
+          item2.label,
           "item2 is still in the third position."
         );
 
@@ -681,7 +746,12 @@
           "footer is in the forth position."
         );
 
+        /*
+          The footer element can't be reordered, so no reorder event
+          will fire in this case.
+        **/
         await moveItem(footer, "up");
+        await reorderableWrapper.updateComplete;
 
         is(
           boxGroup.querySelector("moz-box-item:nth-of-type(4)"),
@@ -759,6 +829,196 @@
         ok(
           boxGroup.contains(document.activeElement),
           "Focus should be able to move back into the box group after a list item is removed"
+        );
+      });
+
+      add_task(async function testMozBoxGroupStaticItems() {
+        let staticTemplate = html`<moz-box-group type="reorderable-list">
+          <moz-box-item label="item 1"></moz-box-item>
+          <moz-box-item label="item 2"></moz-box-item>
+          <moz-box-item label="static item 1" slot="static"></moz-box-item>
+          <moz-box-item label="static item 2" slot="static"></moz-box-item>
+        </moz-box-group>`;
+        let {
+          children: [boxGroup],
+        } = await testHelpers.renderTemplate(staticTemplate);
+        await boxGroup.updateComplete;
+
+        is(boxGroup.listItems.length, 2, "Box group has 2 regular items.");
+        is(boxGroup.staticItems.length, 2, "Box group has 2 static items.");
+
+        boxGroup.staticItems.forEach((item, i) => {
+          ok(
+            item.hasAttribute("static"),
+            `Static item ${i} has static attribute.`
+          );
+          is(
+            item.slot,
+            `static-${i}`,
+            `Static item ${i} has slot static-${i}.`
+          );
+          is(
+            item.getAttribute("position"),
+            String(2 + i),
+            `Static item ${i} positioned after regular items.`
+          );
+          ok(!item.handleEl, `Static item ${i} has no handle element.`);
+        });
+      });
+
+      add_task(async function testMozBoxGroupStaticItemsNotReorderable() {
+        class TestStaticReorderable extends MozLitElement {
+          static properties = { items: { type: Array } };
+          constructor() {
+            super();
+            this.items = [];
+          }
+          render() {
+            return html`<moz-box-group
+              @reorder=${this.onReorder}
+              type="reorderable-list"
+            >
+              ${this.items}
+            </moz-box-group>`;
+          }
+
+          onReorder(event) {
+            const { draggedIndex, targetIndex } = event.detail;
+            const regularItems = this.items.filter(
+              item => !item.values?.[0]?.slot
+            );
+            const [draggedItem] = regularItems.splice(draggedIndex, 1);
+            regularItems.splice(targetIndex, 0, draggedItem);
+            const staticItems = this.items.filter(
+              item => item.values?.[0]?.slot === "static"
+            );
+            this.items = [...regularItems, ...staticItems];
+            this.requestUpdate();
+          }
+        }
+        customElements.define("test-static-reorderable", TestStaticReorderable);
+
+        let wrapper = document.createElement("test-static-reorderable");
+        wrapper.items = [
+          html`<moz-box-item label="item 1"></moz-box-item>`,
+          html`<moz-box-item label="item 2"></moz-box-item>`,
+          html`<moz-box-item label="static item" slot="static"></moz-box-item>`,
+        ];
+        document.body.appendChild(wrapper);
+        await wrapper.updateComplete;
+
+        let boxGroup = wrapper.shadowRoot.querySelector("moz-box-group");
+        await boxGroup.updateComplete;
+
+        let staticItem = boxGroup.querySelector("[label='static item']");
+        ok(!staticItem.handleEl, "Static item has no handle element.");
+        ok(
+          staticItem.hasAttribute("static"),
+          "Static item has static attribute."
+        );
+
+        // Verify only non-static items are in the reorderable list.
+        let item1 = boxGroup.querySelector("[label='item 1']");
+        let item2 = boxGroup.querySelector("[label='item 2']");
+        ok(item1.handleEl, "Regular item 1 has handle element.");
+        ok(item2.handleEl, "Regular item 2 has handle element.");
+
+        boxGroup.reorderableList.getItems();
+        item1.handleEl.focus();
+        let reordered = BrowserTestUtils.waitForEvent(boxGroup, "reorder");
+        synthesizeKey("KEY_ArrowDown", { shiftKey: true, ctrlKey: true });
+        await reordered;
+        await wrapper.updateComplete;
+
+        is(
+          boxGroup.querySelector("moz-box-item:nth-of-type(2)").label,
+          "item 1",
+          "Regular items reordered."
+        );
+        is(
+          boxGroup.querySelector("moz-box-item:nth-of-type(3)").label,
+          "static item",
+          "Static item remains in place after reorder."
+        );
+
+        synthesizeKey("KEY_ArrowDown", { shiftKey: true, ctrlKey: true });
+        await wrapper.updateComplete;
+
+        is(
+          boxGroup.querySelector("moz-box-item:nth-of-type(2)").label,
+          "item 1",
+          "Regular items not reordered when the next item is static."
+        );
+
+        wrapper.remove();
+      });
+
+      add_task(async function testMozBoxGroupStaticItemsKeyboardNavigation() {
+        let keyboardTemplate = html`<moz-box-group type="list">
+          <moz-box-item label="item 1">
+            <moz-button slot="actions" label="action 1"></moz-button>
+          </moz-box-item>
+          <moz-box-item label="item 2">
+            <moz-button slot="actions" label="action 2"></moz-button>
+          </moz-box-item>
+          <moz-box-item label="static item 1" slot="static">
+            <moz-button slot="actions" label="static action 1"></moz-button>
+          </moz-box-item>
+          <moz-box-item label="static item 2" slot="static">
+            <moz-button slot="actions" label="static action 2"></moz-button>
+          </moz-box-item>
+        </moz-box-group>`;
+        let {
+          children: [boxGroup],
+        } = await testHelpers.renderTemplate(keyboardTemplate);
+        await boxGroup.updateComplete;
+
+        let allItems = [...boxGroup.listItems, ...boxGroup.staticItems];
+        await Promise.all(allItems.map(item => item.updateComplete));
+
+        // Focus first action button.
+        allItems[0].querySelector("moz-button").focus();
+
+        // Navigate down through all items.
+        for (let i = 1; i < allItems.length; i++) {
+          await keyboardNavigate("down", boxGroup);
+          is(
+            document.activeElement,
+            allItems[i].querySelector("moz-button"),
+            `Down navigates to item ${i}.`
+          );
+        }
+
+        // Navigate up through all items.
+        for (let i = allItems.length - 2; i >= 0; i--) {
+          await keyboardNavigate("up", boxGroup);
+          is(
+            document.activeElement,
+            allItems[i].querySelector("moz-button"),
+            `Up navigates to item ${i}.`
+          );
+        }
+      });
+
+      add_task(async function testMozBoxGroupStaticItemsFirstLastStyles() {
+        let stylesTemplate = html`<moz-box-group>
+          <moz-box-item label="item 1"></moz-box-item>
+          <moz-box-item label="item 2"></moz-box-item>
+          <moz-box-item label="static item" slot="static"></moz-box-item>
+        </moz-box-group>`;
+        let {
+          children: [boxGroup],
+        } = await testHelpers.renderTemplate(stylesTemplate);
+        await boxGroup.updateComplete;
+
+        let [item1, item2] = boxGroup.listItems;
+        let [staticItem] = boxGroup.staticItems;
+
+        ok(item1.classList.contains("first"), "First item has 'first' class.");
+        ok(!item2.classList.contains("last"), "Middle item no 'last' class.");
+        ok(
+          staticItem.classList.contains("last"),
+          "Static item has 'last' class."
         );
       });
     </script>

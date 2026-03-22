@@ -4,14 +4,15 @@
 ["aaa.js"]
 support-files = ["do_work_500ms.html"]
 skip-if = [
+  # begin
   "ccov", #            The signals for the profiler conflict with the ccov signals
+  "debug && verify",
   "os == 'win'", #     Not yet supported on windows - Bug 1867328
   # Enabling the JS feature leaks an 8-byte object. This causes failures when
   # the leak checker is enabled, and run with test-verify (i.e. with both
   # "debug" and "verify"). Having JS support for this feature is more important
   # than these tests, so we're disabling them for now. See Bug 1904897.
-  "verify && debug",
-]
+] # end
 
 ["browser_test_resolution.js"]
 skip-if = [
@@ -28,9 +29,8 @@ skip-if = [
 skip-if = [
   "ccov",
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1648862
-  "os == 'win' && asan", # bug 1605494 is more prevalent on linux, Bug 1627419
-  "os == 'win' && opt", # bug 1605494 is more prevalent on linux, Bug 1627419
-  "os == 'win' && tsan", # bug 1605494 is more prevalent on linux, Bug 1627419
+  "os == 'win' && asan", # expands win, except tsan
+  "os == 'win' && opt", # expands win, except tsan
 ]
 
 ["ccc.js"]

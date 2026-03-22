@@ -10,14 +10,14 @@ from datetime import date, timedelta
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util import json
 from taskgraph.util.copy import deepcopy
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.treeherder import join_symbol, split_symbol
 from voluptuous import Any, Extra, Optional
 
 transforms = TransformSequence()
 
 
-perftest_description_schema = Schema({
+perftest_description_schema = LegacySchema({
     # The test names and the symbols to use for them: [test-symbol, test-path]
     Optional("perftest"): [[str]],
     # Metrics to gather for the test. These will be merged
@@ -254,51 +254,78 @@ def setup_perftest_extra_options(config, jobs):
 
 
 @transforms.add
-def create_duplicate_simpleperf_jobs(config, jobs):
-    for job in jobs:
-        if (
-            "startup" in job["name"]
-            and "cold" not in job["name"]
-            and "chrome-m" not in job["name"]
-        ):
-            new_job = deepcopy(job)
-            new_job["run-on-projects"] = []
-            new_job["attributes"] = {"cron": False}
-            new_job["dependencies"] = {
-                "android-aarch64-shippable": "build-android-aarch64-shippable/opt"
-            }
-            new_job["name"] += "-profiling"
-            new_job["run"]["command"] += (
-                " --simpleperf --simpleperf-path $MOZ_FETCHES_DIR/android-simpleperf --geckoprofiler"
-            )
-            new_job["description"] = str(new_job["description"]).replace(
-                "Run", "Profile"
-            )
-            new_job["treeherder"]["symbol"] = str(
-                new_job["treeherder"]["symbol"]
-            ).replace(")", "-profile)")
-            new_job["fetches"]["toolchain"].extend([
-                "linux64-android-simpleperf-linux-repack",
-                "linux64-samply",
-                "symbolicator-cli",
-            ])
-            new_job["fetches"]["android-aarch64-shippable"] = [
-                {
-                    "artifact": "target.crashreporter-symbols.zip",
-                    "extract": False,
-                }
-            ]
-            yield new_job
-        yield job
-
-
-@transforms.add
 def pass_perftest_options(config, jobs):
     for job in jobs:
         env = job.setdefault("worker", {}).setdefault("env", {})
         env["PERFTEST_OPTIONS"] = json.dumps(
             config.params["try_task_config"].get("perftest-options")
         )
+        yield job
+
+
+@transforms.add
+def setup_gecko_profile_from_try_config(config, jobs):
+    """Apply gecko-profile settings when --gecko-profile is used with ./mach try fuzzy.
+
+    This mimics the logic from the gecko_profile action but applies it during
+    task generation instead of as a post-hoc action.
+    """
+    gecko_profile = config.params.get("try_task_config", {}).get("gecko-profile", False)
+    simpleperf_compatible_tests = ["-homeview-", "-applink-", "-restore-"]
+
+    for job in jobs:
+        # For simpleperf-compatible startup tests, add simpleperf support
+        if (
+            any(test in job["name"] for test in simpleperf_compatible_tests)
+            and gecko_profile
+        ):
+            # Append simpleperf flags directly to the command
+            # This avoids conflicts with try_task_config_env overwriting PERF_FLAGS
+            simpleperf_args = [
+                "--simpleperf",
+                "--simpleperf-path",
+                "$MOZ_FETCHES_DIR/android-simpleperf",
+                "--geckoprofiler",
+            ]
+            job["run"]["command"] += " " + " ".join(simpleperf_args)
+
+            # Add required toolchain dependencies
+            fetches = job.setdefault("fetches", {})
+            fetch_toolchains = fetches.setdefault("toolchain", [])
+
+            simpleperf_deps = [
+                "linux64-android-simpleperf-linux-repack",
+                "linux64-samply",
+                "symbolicator-cli",
+            ]
+            for dep in simpleperf_deps:
+                if dep not in fetch_toolchains:
+                    fetch_toolchains.append(dep)
+
+            # Add build dependency for symbols
+            dependencies = job.setdefault("dependencies", {})
+            if "android-aarch64-shippable" not in dependencies:
+                dependencies["android-aarch64-shippable"] = (
+                    "build-android-aarch64-shippable/opt"
+                )
+
+            # Add symbols artifact fetch
+            fetches.setdefault("android-aarch64-shippable", []).append({
+                "artifact": "target.crashreporter-symbols.zip",
+                "extract": False,
+            })
+
+            # Add scope for android-simpleperf artifact
+            scopes = job.setdefault("scopes", [])
+            simpleperf_scope = "queue:get-artifact:project/gecko/android-simpleperf/*"
+            if simpleperf_scope not in scopes:
+                scopes.append(simpleperf_scope)
+
+            # Update treeherder symbol to indicate profiling
+            job["treeherder"]["symbol"] = job["treeherder"]["symbol"].replace(
+                ")", "-p)"
+            )
+
         yield job
 
 

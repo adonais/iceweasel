@@ -16,7 +16,6 @@
 #include "mozilla/SVGTextFrame.h"
 #include "mozilla/ServoStyleSet.h"
 #include "nsBlockFrame.h"
-#include "nsCSSAnonBoxes.h"
 #include "nsDisplayList.h"
 #include "nsGkAtoms.h"
 #include "nsLayoutUtils.h"
@@ -906,7 +905,7 @@ void nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
   // ComputedStyle.
   RefPtr<ComputedStyle> newContext =
       aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-          PseudoStyleType::mozBlockInsideInlineWrapper, ourStyle);
+          PseudoStyleType::MozBlockInsideInlineWrapper, ourStyle);
 
   // We're guaranteed that newContext only differs from the old ComputedStyle on
   // the block in things they might inherit from us.  And changehint processing
@@ -919,7 +918,7 @@ void nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
                "Must be first continuation");
 
     MOZ_ASSERT(blockFrame->Style()->GetPseudoType() ==
-                   PseudoStyleType::mozBlockInsideInlineWrapper,
+                   PseudoStyleType::MozBlockInsideInlineWrapper,
                "Unexpected kind of ComputedStyle");
 
     for (nsIFrame* cont = blockFrame; cont;
@@ -954,13 +953,13 @@ void nsFirstLineFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
                             nsIFrame* aPrevInFlow) {
   nsInlineFrame::Init(aContent, aParent, aPrevInFlow);
   if (!aPrevInFlow) {
-    MOZ_ASSERT(Style()->GetPseudoType() == PseudoStyleType::firstLine);
+    MOZ_ASSERT(Style()->GetPseudoType() == PseudoStyleType::FirstLine);
     return;
   }
 
   // This frame is a continuation - fixup the computed style if aPrevInFlow
   // is the first-in-flow (the only one with a ::first-line pseudo).
-  if (aPrevInFlow->Style()->GetPseudoType() == PseudoStyleType::firstLine) {
+  if (aPrevInFlow->Style()->GetPseudoType() == PseudoStyleType::FirstLine) {
     MOZ_ASSERT(FirstInFlow() == aPrevInFlow);
     // Create a new ComputedStyle that is a child of the parent
     // ComputedStyle thus removing the ::first-line style. This way
@@ -969,12 +968,12 @@ void nsFirstLineFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     ComputedStyle* parentContext = aParent->Style();
     RefPtr<ComputedStyle> newSC =
         PresContext()->StyleSet()->ResolveInheritingAnonymousBoxStyle(
-            PseudoStyleType::mozLineFrame, parentContext);
+            PseudoStyleType::MozLineFrame, parentContext);
     SetComputedStyle(newSC);
   } else {
     MOZ_ASSERT(FirstInFlow() != aPrevInFlow);
     MOZ_ASSERT(aPrevInFlow->Style()->GetPseudoType() ==
-               PseudoStyleType::mozLineFrame);
+               PseudoStyleType::MozLineFrame);
   }
 }
 

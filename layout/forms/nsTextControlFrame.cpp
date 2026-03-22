@@ -12,6 +12,7 @@
 
 #include <algorithm>
 
+#include "PseudoStyleType.h"
 #include "gfxContext.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/PresShell.h"
@@ -27,7 +28,6 @@
 #include "mozilla/dom/Text.h"
 #include "nsAttrValueInlines.h"
 #include "nsCOMPtr.h"
-#include "nsCSSPseudoElements.h"
 #include "nsCaret.h"
 #include "nsContentUtils.h"
 #include "nsDisplayList.h"
@@ -337,13 +337,13 @@ already_AddRefed<Element> nsTextControlFrame::MakeAnonElement(
   Document* doc = PresContext()->Document();
   RefPtr<Element> element = doc->CreateHTMLElement(aTag);
   element->SetPseudoElementType(aPseudoType);
-  if (aPseudoType == PseudoStyleType::mozTextControlEditingRoot) {
+  if (aPseudoType == PseudoStyleType::MozTextControlEditingRoot) {
     // Make our root node editable
     element->SetFlags(NODE_IS_EDITABLE);
   }
 
-  if (aPseudoType == PseudoStyleType::mozNumberSpinDown ||
-      aPseudoType == PseudoStyleType::mozNumberSpinUp) {
+  if (aPseudoType == PseudoStyleType::MozNumberSpinDown ||
+      aPseudoType == PseudoStyleType::MozNumberSpinUp) {
     element->SetAttr(kNameSpaceID_None, nsGkAtoms::aria_hidden, u"true"_ns,
                      false);
   }
@@ -360,12 +360,12 @@ already_AddRefed<Element> nsTextControlFrame::MakeAnonDivWithTextNode(
   RefPtr<Element> div = MakeAnonElement(aPseudoType);
 
   // Create the text node for the anonymous <div> element.
-  nsNodeInfoManager* nim = div->OwnerDoc()->NodeInfoManager();
+  nsNodeInfoManager* nim = div->NodeInfoManager();
   RefPtr<nsTextNode> textNode = new (nim) nsTextNode(nim);
   // If the anonymous div element is not for the placeholder, we should
   // mark the text node as "maybe modified frequently" for avoiding ASCII
   // range checks at every input.
-  if (aPseudoType != PseudoStyleType::placeholder) {
+  if (aPseudoType != PseudoStyleType::Placeholder) {
     textNode->MarkAsMaybeModifiedFrequently();
     // Additionally, this is a password field, the text node needs to be
     // marked as "maybe masked" unless it's in placeholder.
@@ -383,7 +383,7 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
   MOZ_ASSERT(mContent, "We should have a content!");
 
   RefPtr<TextControlElement> textControlElement = ControlElement();
-  mRootNode = MakeAnonElement(PseudoStyleType::mozTextControlEditingRoot);
+  mRootNode = MakeAnonElement(PseudoStyleType::MozTextControlEditingRoot);
   if (NS_WARN_IF(!mRootNode)) {
     return NS_ERROR_FAILURE;
   }
@@ -425,7 +425,7 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
       IsPasswordTextControl() &&
       StyleDisplay()->EffectiveAppearance() != StyleAppearance::Textfield) {
     mButton =
-        MakeAnonElement(PseudoStyleType::mozReveal, nullptr, nsGkAtoms::button);
+        MakeAnonElement(PseudoStyleType::MozReveal, nullptr, nsGkAtoms::button);
     mButton->SetAttr(kNameSpaceID_None, nsGkAtoms::aria_hidden, u"true"_ns,
                      false);
     mButton->SetAttr(kNameSpaceID_None, nsGkAtoms::tabindex, u"-1"_ns, false);
@@ -475,7 +475,7 @@ void nsTextControlFrame::CreatePlaceholderIfNeeded() {
     return;
   }
 
-  mPlaceholderDiv = MakeAnonDivWithTextNode(PseudoStyleType::placeholder);
+  mPlaceholderDiv = MakeAnonDivWithTextNode(PseudoStyleType::Placeholder);
   UpdatePlaceholderText(placeholder, false);
 }
 
@@ -514,7 +514,7 @@ void nsTextControlFrame::CreatePreviewIfNeeded() {
   if (!ControlElement()->IsPreviewEnabled()) {
     return;
   }
-  mPreviewDiv = MakeAnonDivWithTextNode(PseudoStyleType::mozTextControlPreview);
+  mPreviewDiv = MakeAnonDivWithTextNode(PseudoStyleType::MozTextControlPreview);
 }
 
 void nsTextControlFrame::AppendAnonymousContentTo(
@@ -655,7 +655,7 @@ void nsTextControlFrame::ReflowTextControlChild(
     // Button box respects inline-end-padding, so we don't need to.
     // inline-padding is not propagated to the scroller for single-line text
     // controls.
-    overridePadding->IStart(outerWM) = overridePadding->IEnd(outerWM) = 0;
+    overridePadding->IStart(wm) = overridePadding->IEnd(wm) = 0;
   }
 
   // We want to let our button box fill the frame in the block axis, up to the
@@ -666,7 +666,7 @@ void nsTextControlFrame::ReflowTextControlChild(
 
   LogicalPoint position(wm);
   if (!isButtonBox) {
-    MOZ_ASSERT(wm == outerWM,
+    MOZ_ASSERT(wm == outerWM || aKid->IsPlaceholderFrame(),
                "Shouldn't have to care about orthogonal "
                "writing-modes and such inside the control, "
                "except for the number spin-box which forces "

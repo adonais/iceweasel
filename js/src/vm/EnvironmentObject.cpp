@@ -32,6 +32,7 @@
 
 #include "gc/Marking-inl.h"
 #include "gc/StableCellHasher-inl.h"
+#include "gc/WeakMap-inl.h"
 #include "vm/BytecodeIterator-inl.h"
 #include "vm/Stack-inl.h"
 
@@ -2686,9 +2687,9 @@ bool DebugEnvironmentProxy::isOptimizedOut() const {
     JSContext* cx, AbstractFramePtr frame, const jsbytecode* pc,
     MutableHandleObject env, MutableHandle<Scope*> scope);
 
-DebugEnvironments::DebugEnvironments(JSContext* cx, Zone* zone)
-    : zone_(zone),
-      proxiedEnvs(cx),
+DebugEnvironments::DebugEnvironments(JSContext* cx)
+    : zone_(cx->zone()),
+      proxiedEnvs(cx->zone()),
       missingEnvs(cx->zone()),
       liveEnvs(cx->zone()) {}
 
@@ -2786,7 +2787,7 @@ DebugEnvironments* DebugEnvironments::ensureRealmData(JSContext* cx) {
     return debugEnvs;
   }
 
-  auto debugEnvs = cx->make_unique<DebugEnvironments>(cx, cx->zone());
+  auto debugEnvs = cx->make_unique<DebugEnvironments>(cx);
   if (!debugEnvs) {
     return nullptr;
   }

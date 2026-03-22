@@ -40,10 +40,6 @@ for gcfile in ["devtools/rootAnalysis", "devtools/gc-ubench", "devtools/gctrace"
     with Files(gcfile):
         BUG_COMPONENT = component_gc
 
-for stlfile in ["jsdate.*", "jsnum.*"]:
-    with Files(stlfile):
-        BUG_COMPONENT = component_stl
-
 with Files("builtin/intl/*"):
     BUG_COMPONENT = component_intl
 
@@ -140,6 +136,7 @@ EXPORTS.js += [
     "../public/Initialization.h",
     "../public/Interrupt.h",
     "../public/Iterator.h",
+    "../public/JitCodeAPI.h",
     "../public/JSON.h",
     "../public/LocaleSensitive.h",
     "../public/MapAndSet.h",
@@ -175,7 +172,6 @@ EXPORTS.js += [
     "../public/SavedFrameAPI.h",
     "../public/ScalarType.h",
     "../public/ScriptPrivate.h",
-    "../public/ShadowRealmCallbacks.h",
     "../public/SharedArrayBuffer.h",
     "../public/SliceBudget.h",
     "../public/SourceText.h",
@@ -276,16 +272,13 @@ EXPORTS.js.shadow += [
 
 UNIFIED_SOURCES += [
     "jsapi.cpp",
-    "jsdate.cpp",
-    "jsexn.cpp",
     "jsfriendapi.cpp",
-    "jsnum.cpp",
 ]
 
-# jsmath.cpp cannot be built in unified mode because it needs to re-#define the
-#   RtlGenRandom declaration's calling convention in <ntsecapi.h> on Windows.
+# Must be in SOURCES so that Glean symbols from xul will take priority over the
+# no-op symbols implemented in jsglean.cpp
 SOURCES += [
-    "jsmath.cpp",
+    "jsglean.cpp",
 ]
 
 if CONFIG["MOZ_INSTRUMENTS"]:
@@ -310,6 +303,23 @@ DIRS += [
     "wasm",
     "xsum",
 ]
+
+# Glean integration
+if CONFIG["JS_STANDALONE"]:
+    # For MetricTypes.h and related headers
+    include("/toolkit/components/glean/glean.mozbuild")
+
+    glean_parser_flags = [CONFIG["MOZ_APP_VERSION"]]
+    tags_yamls = [
+        "/toolkit/components/glean/tags.yaml",
+    ]
+    GeneratedFile(
+        "JsSrcMetrics.h",
+        script="/toolkit/components/glean/build_scripts/glean_parser_ext/run_glean_parser.py",
+        flags=glean_parser_flags,
+        inputs=["metrics.yaml"] + tags_yamls,
+    )
+    EXPORTS.mozilla.glean += ["!JsSrcMetrics.h"]
 
 if CONFIG["JS_HAS_CTYPES"]:
     DIRS += ["ctypes"]

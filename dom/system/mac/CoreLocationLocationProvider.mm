@@ -94,6 +94,12 @@ static void LogLocationPermissionState() {
 
   LogLocationPermissionState();
 
+  if ([aError code] == kCLErrorLocationUnknown) {
+    // The system will keep trying to get location.  See
+    // https://developer.apple.com/documentation/corelocation/cllocationmanagerdelegate/locationmanager(_:didfailwitherror:)?language=objc#Discussion
+    return;
+  }
+
   NSString* message = [@"Failed to acquire position: "
       stringByAppendingString:[aError localizedDescription]];
 

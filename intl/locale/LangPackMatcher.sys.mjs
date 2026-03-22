@@ -277,7 +277,7 @@ function setRequestedAppLocales(locales) {
  * and any other malformed locale information provided by the system by wrapping the call
  * into a catch/try.
  *
- * @param {string} locale
+ * @param {string} localeString
  * @returns {StructuredLocale | null}
  */
 function getStructuredLocaleOrNull(localeString) {

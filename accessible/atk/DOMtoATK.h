@@ -4,6 +4,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#ifndef ACCESSIBLE_ATK_DOMTOATK_H_
+#define ACCESSIBLE_ATK_DOMTOATK_H_
+
 #include <glib.h>
 #include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "nsCharTraits.h"
@@ -149,3 +152,5 @@ inline gunichar ATKCharacter(HyperTextAccessibleBase* aAccessible,
 
 }  // namespace a11y
 }  // namespace mozilla
+
+#endif  // ACCESSIBLE_ATK_DOMTOATK_H_

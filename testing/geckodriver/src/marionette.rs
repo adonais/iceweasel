@@ -37,14 +37,12 @@ use serde::ser::{Serialize, Serializer};
 use serde_json::{Map, Value};
 use std::borrow::Cow;
 use std::collections::BTreeMap;
-use std::env;
-use std::fs;
 use std::io::prelude::*;
 use std::io::Error as IoError;
 use std::io::ErrorKind;
 use std::io::Result as IoResult;
 use std::net::{Shutdown, TcpListener, TcpStream};
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 use std::sync::Mutex;
 use std::thread;
 use std::time;
@@ -279,9 +277,13 @@ impl WebDriverHandler<GeckoExtensionRoute> for MarionetteHandler {
                 }
                 let conn = connection.as_mut().expect("Missing connection");
                 conn.send_command(&msg).map_err(|mut err| {
-                    // Shutdown the browser if no session can
-                    // be established due to errors.
-                    if let NewSession(_) = msg.command {
+                    // Shutdown the browser if no new session can be established
+                    // or the already existing session id is no longer valid.
+                    let is_new_session = matches!(msg.command, NewSession(_));
+                    let invalid_session = msg.session_id.is_some()
+                        && err.error_code() == ErrorStatus::InvalidSessionId.error_code();
+
+                    if is_new_session || invalid_session {
                         err.delete_session = true;
                     }
                     err
@@ -494,26 +496,30 @@ impl MarionetteSession {
                         "Failed to interpret script timeout duration as u64"
                     ),
                 };
-                let page_load = try_opt!(
-                    try_opt!(
-                        resp.result.get("pageLoad"),
-                        ErrorStatus::UnknownError,
-                        "Missing field: pageLoad"
-                    )
-                    .as_u64(),
+                let page_load = match try_opt!(
+                    resp.result.get("pageLoad"),
                     ErrorStatus::UnknownError,
-                    "Failed to interpret page load duration as u64"
-                );
-                let implicit = try_opt!(
-                    try_opt!(
-                        resp.result.get("implicit"),
+                    "Missing field: pageLoad"
+                ) {
+                    Value::Null => None,
+                    n => try_opt!(
+                        Some(n.as_u64()),
                         ErrorStatus::UnknownError,
-                        "Missing field: implicit"
-                    )
-                    .as_u64(),
+                        "Failed to interpret pageLoad timeout duration as u64"
+                    ),
+                };
+                let implicit = match try_opt!(
+                    resp.result.get("implicit"),
                     ErrorStatus::UnknownError,
-                    "Failed to interpret implicit search duration as u64"
-                );
+                    "Missing field: implicit"
+                ) {
+                    Value::Null => None,
+                    n => try_opt!(
+                        Some(n.as_u64()),
+                        ErrorStatus::UnknownError,
+                        "Failed to interpret implicit timeout duration as u64"
+                    ),
+                };
 
                 WebDriverResponse::Timeouts(TimeoutsResponse {
                     script,
@@ -1369,47 +1375,8 @@ impl MarionetteConnection {
     }
 
     fn close(self, wait_for_shutdown: bool) -> WebDriverResult<()> {
-        // Save minidump files of potential crashes from the profile if requested.
-        if let Ok(path) = env::var("MINIDUMP_SAVE_PATH") {
-            if let Err(e) = self.save_minidumps(&path) {
-                error!(
-                    "Failed to save minidump files to the requested location: {}",
-                    e
-                );
-            }
-        } else {
-            debug!("To store minidump files of Firefox crashes the MINIDUMP_SAVE_PATH environment variable needs to be set.");
-        }
-
         self.stream.shutdown(Shutdown::Both)?;
         self.browser.close(wait_for_shutdown)?;
-        Ok(())
-    }
-
-    fn save_minidumps(&self, save_path: &str) -> WebDriverResult<()> {
-        if !PathBuf::from(&save_path).is_dir() {
-            if let Err(e) = fs::create_dir(save_path) {
-                warn!(
-                    "The specified folder '{}' for minidumps doesn't exist and creation failed: {}",
-                    save_path, e
-                );
-
-                return Ok(());
-            }
-        }
-
-        match &self.browser {
-            Browser::Local(browser) => {
-                if let Some(profile_path) = &browser.profile_path {
-                    copy_minidumps_files(profile_path.as_path(), Path::new(&save_path))?;
-                }
-            }
-            Browser::Remote(browser) => {
-                browser.handler.copy_minidumps_files(save_path)?;
-            }
-            Browser::Existing(_) => return Ok(()),
-        }
-
         Ok(())
     }
 
@@ -1499,58 +1466,6 @@ impl MarionetteConnection {
         // TODO(jgraham): Need to handle the error here
         Ok(String::from_utf8(payload).unwrap())
     }
-}
-
-fn copy_minidumps_files(profile_path: &Path, save_path: &Path) -> WebDriverResult<()> {
-    let mut minidumps_path = profile_path.to_path_buf();
-    minidumps_path.push("minidumps");
-
-    // Check if the folder exists and not empty.
-    if !minidumps_path.exists() || minidumps_path.read_dir()?.next().is_none() {
-        return Ok(());
-    }
-
-    match std::fs::read_dir(&minidumps_path) {
-        Ok(entries) => {
-            for result_entry in entries {
-                let entry = result_entry?;
-                let file_type = entry.file_type()?;
-
-                if file_type.is_dir() {
-                    continue;
-                }
-
-                let path = entry.path();
-                let extension = path
-                    .extension()
-                    .and_then(|ext| ext.to_str())
-                    .map(|ext| ext.to_lowercase())
-                    .unwrap_or(String::from(""));
-
-                // Copy only *.dmp and *.extra files.
-                if extension == "dmp" || extension == "extra" {
-                    let dest_path = save_path.join(entry.file_name());
-                    fs::copy(path, &dest_path)?;
-
-                    debug!(
-                        "Copied minidump file {:?} to {:?}.",
-                        entry.file_name(),
-                        save_path.display()
-                    );
-                }
-            }
-        }
-        Err(_) => {
-            warn!(
-                "Couldn't read files from minidumps folder '{}'",
-                minidumps_path.display(),
-            );
-
-            return Ok(());
-        }
-    }
-
-    Ok(())
 }
 
 trait ToMarionette<T> {
@@ -1893,157 +1808,5 @@ impl ToMarionette<MarionetteWindowRect> for WindowRectParameters {
 impl ToMarionette<MarionetteGlobalPrivacyControlParameters> for GlobalPrivacyControlParameters {
     fn to_marionette(&self) -> WebDriverResult<MarionetteGlobalPrivacyControlParameters> {
         Ok(MarionetteGlobalPrivacyControlParameters { gpc: self.gpc })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::fs::File;
-    use std::path::Path;
-    use tempfile::TempDir;
-
-    fn assert_minidump_files(minidumps_path: &Path, filename: &str) {
-        let mut dmp_file_present = false;
-        let mut extra_file_present = false;
-
-        for result_entry in std::fs::read_dir(minidumps_path).unwrap() {
-            let entry = result_entry.unwrap();
-
-            let path: PathBuf = entry.path();
-            let filename_from_path = path.file_stem().unwrap().to_str().unwrap();
-            if filename == filename_from_path {
-                let extension = path.extension().and_then(|ext| ext.to_str()).unwrap();
-
-                if extension == "dmp" {
-                    dmp_file_present = true;
-                }
-
-                if extension == "extra" {
-                    extra_file_present = true;
-                }
-            }
-        }
-
-        assert!(dmp_file_present);
-        assert!(extra_file_present);
-    }
-
-    fn create_file(folder: &Path, filename: &str) {
-        let file = folder.join(filename);
-        File::create(&file).unwrap();
-    }
-
-    fn create_minidump_files(profile_path: &Path, filename: &str) {
-        let folder = create_minidump_folder(profile_path);
-
-        let mut file_extensions = [".dmp", ".extra"];
-        for file_extension in file_extensions.iter_mut() {
-            let mut filename_with_extension: String = filename.to_owned();
-            filename_with_extension.push_str(file_extension);
-
-            create_file(&folder, &filename_with_extension);
-        }
-    }
-
-    fn create_minidump_folder(profile_path: &Path) -> PathBuf {
-        let minidumps_folder = profile_path.join("minidumps");
-        if !minidumps_folder.is_dir() {
-            fs::create_dir(&minidumps_folder).unwrap();
-        }
-
-        minidumps_folder
-    }
-
-    #[test]
-    fn test_copy_minidumps() {
-        let tmp_dir_profile = TempDir::new().unwrap();
-        let profile_path = tmp_dir_profile.path();
-
-        let filename = "test";
-
-        create_minidump_files(profile_path, filename);
-
-        let tmp_dir_minidumps = TempDir::new().unwrap();
-        let minidumps_path = tmp_dir_minidumps.path();
-
-        copy_minidumps_files(profile_path, minidumps_path).unwrap();
-
-        assert_minidump_files(minidumps_path, filename);
-
-        tmp_dir_profile.close().unwrap();
-        tmp_dir_minidumps.close().unwrap();
-    }
-
-    #[test]
-    fn test_copy_multiple_minidumps() {
-        let tmp_dir_profile = TempDir::new().unwrap();
-        let profile_path = tmp_dir_profile.path();
-
-        let filename_1 = "test_1";
-        create_minidump_files(profile_path, filename_1);
-
-        let filename_2 = "test_2";
-        create_minidump_files(profile_path, filename_2);
-
-        let tmp_dir_minidumps = TempDir::new().unwrap();
-        let minidumps_path = tmp_dir_minidumps.path();
-
-        copy_minidumps_files(profile_path, minidumps_path).unwrap();
-
-        assert_minidump_files(minidumps_path, filename_1);
-        assert_minidump_files(minidumps_path, filename_1);
-
-        tmp_dir_profile.close().unwrap();
-        tmp_dir_minidumps.close().unwrap();
-    }
-
-    #[test]
-    fn test_copy_minidumps_with_non_existent_manifest_path() {
-        let tmp_dir_profile = TempDir::new().unwrap();
-        let profile_path = tmp_dir_profile.path();
-
-        create_minidump_folder(profile_path);
-
-        assert!(copy_minidumps_files(profile_path, Path::new("/non-existent")).is_ok());
-
-        tmp_dir_profile.close().unwrap();
-    }
-
-    #[test]
-    fn test_copy_minidumps_with_non_existent_profile_path() {
-        let tmp_dir_minidumps = TempDir::new().unwrap();
-        let minidumps_path = tmp_dir_minidumps.path();
-
-        assert!(copy_minidumps_files(Path::new("/non-existent"), minidumps_path).is_ok());
-
-        tmp_dir_minidumps.close().unwrap();
-    }
-
-    #[test]
-    fn test_copy_minidumps_with_non_minidumps_files() {
-        let tmp_dir_profile = TempDir::new().unwrap();
-        let profile_path = tmp_dir_profile.path();
-
-        let minidumps_folder = create_minidump_folder(profile_path);
-
-        // Create a folder.
-        let test_folder_binding = profile_path.join("test");
-        let test_folder = test_folder_binding.as_path();
-        fs::create_dir(test_folder).unwrap();
-
-        // Create a file with non minidumps extension.
-        create_file(&minidumps_folder, "test.txt");
-
-        let tmp_dir_minidumps = TempDir::new().unwrap();
-        let minidumps_path = tmp_dir_minidumps.path();
-
-        copy_minidumps_files(profile_path, minidumps_path).unwrap();
-
-        // Check that the non minidump file and the folder were not copied.
-        assert!(minidumps_path.read_dir().unwrap().next().is_none());
-
-        tmp_dir_profile.close().unwrap();
-        tmp_dir_minidumps.close().unwrap();
     }
 }

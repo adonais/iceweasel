@@ -23,5 +23,5 @@ base += ["!event-list.json"]
 GeneratedFile(
     "event-list.json",
     script="GenerateEventListFromHeaders.py",
-    inputs=["/dom/events/EventNameList.h"],
+    inputs=["/dom/events/EventNameList.inc"],
 )

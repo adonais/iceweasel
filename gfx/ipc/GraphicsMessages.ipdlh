@@ -88,5 +88,12 @@ struct GfxInfoFeatureStatus
     nsCString failureId;
 };
 
+struct GfxInfoGLStrings {
+  nsCString vendor;
+  nsCString renderer;
+  nsCString version;
+  nsCString[] extensions;
+};
+
 } // namespace gfx
 } // namespace mozilla

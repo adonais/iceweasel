@@ -8,7 +8,7 @@
  */
 add_task(async function test_actor_event_mapping() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.aiwindow.enabled", true]],
+    set: [["browser.smartwindow.enabled", true]],
   });
   await BrowserTestUtils.withNewTab("about:aichatcontent", async browser => {
     await SpecialPowers.spawn(browser, [], async () => {

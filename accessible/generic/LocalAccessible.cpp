@@ -48,8 +48,10 @@
 #include "nsINodeList.h"
 
 #include "mozilla/dom/Document.h"
-#include "mozilla/dom/HTMLFormElement.h"
 #include "mozilla/dom/HTMLAnchorElement.h"
+#include "mozilla/dom/HTMLFormElement.h"
+#include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/PopoverData.h"
 #include "mozilla/gfx/Matrix.h"
 #include "nsIContent.h"
 #include "nsIFormControl.h"
@@ -423,12 +425,31 @@ uint64_t LocalAccessible::NativeInteractiveState() const {
 
 uint64_t LocalAccessible::NativeLinkState() const { return 0; }
 
+bool LocalAccessible::IsOnlyPlainContent() const {
+  if (!IsPlainContent()) {
+    return false;
+  }
+
+  uint32_t childCount = ChildCount();
+  for (uint32_t i = 0; i < childCount; i++) {
+    LocalAccessible* child = LocalChildAt(i);
+    if (!child) {
+      continue;
+    }
+
+    if (!child->IsOnlyPlainContent()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 bool LocalAccessible::NativelyUnavailable() const {
   if (mContent->IsHTMLElement()) return mContent->AsElement()->IsDisabled();
 
-  return mContent->IsElement() && mContent->AsElement()->AttrValueIs(
-                                      kNameSpaceID_None, nsGkAtoms::disabled,
-                                      nsGkAtoms::_true, eCaseMatters);
+  return mContent->IsElement() &&
+         mContent->AsElement()->GetBoolAttr(nsGkAtoms::disabled);
 }
 
 Accessible* LocalAccessible::ChildAtPoint(int32_t aX, int32_t aY,
@@ -852,18 +873,6 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
     if (ipcDoc) {
       uint64_t id = aEvent->GetAccessible()->ID();
 
-      auto getCaretRect = [aEvent] {
-        HyperTextAccessible* ht = aEvent->GetAccessible()->AsHyperText();
-        if (ht) {
-          auto [rect, widget] = ht->GetCaretRect();
-          // Remove doc offset and reapply in parent.
-          LayoutDeviceIntRect docBounds = ht->Document()->Bounds();
-          rect.MoveBy(-docBounds.X(), -docBounds.Y());
-          return rect;
-        }
-        return LayoutDeviceIntRect();
-      };
-
       switch (aEvent->GetEventType()) {
         case nsIAccessibleEvent::EVENT_SHOW:
           ipcDoc->ShowEvent(downcast_accEvent(aEvent));
@@ -910,9 +919,12 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
         case nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED: {
           AccCaretMoveEvent* event = downcast_accEvent(aEvent);
           ipcDoc->SendCaretMoveEvent(
-              id, getCaretRect(), event->GetCaretOffset(),
-              event->IsSelectionCollapsed(), event->IsAtEndOfLine(),
-              event->GetGranularity(), event->IsFromUserInput());
+              id,
+              DocAccessibleChild::GetCaretRectForIPCEvent(
+                  aEvent->GetAccessible()),
+              event->GetCaretOffset(), event->IsSelectionCollapsed(),
+              event->IsAtEndOfLine(), event->GetGranularity(),
+              event->IsFromUserInput(), /* aSuppressEvent */ false);
           break;
         }
         case nsIAccessibleEvent::EVENT_TEXT_INSERTED:
@@ -933,7 +945,9 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
           break;
         }
         case nsIAccessibleEvent::EVENT_FOCUS:
-          ipcDoc->SendFocusEvent(id, getCaretRect());
+          ipcDoc->SendFocusEvent(id,
+                                 DocAccessibleChild::GetCaretRectForIPCEvent(
+                                     aEvent->GetAccessible()));
           break;
         case nsIAccessibleEvent::EVENT_SCROLLING_END:
         case nsIAccessibleEvent::EVENT_SCROLLING: {
@@ -944,14 +958,12 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
               scrollingEvent->MaxScrollY());
           break;
         }
-#if !defined(XP_WIN)
         case nsIAccessibleEvent::EVENT_ANNOUNCEMENT: {
           AccAnnouncementEvent* announcementEvent = downcast_accEvent(aEvent);
           ipcDoc->SendAnnouncementEvent(id, announcementEvent->Announcement(),
                                         announcementEvent->Priority());
           break;
         }
-#endif  // !defined(XP_WIN)
         case nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED: {
           AccTextSelChangeEvent* textSelChangeEvent = downcast_accEvent(aEvent);
           AutoTArray<TextRange, 1> ranges;
@@ -1070,13 +1082,13 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
           scrollingEvent->MaxScrollY());
       break;
     }
+#endif  // defined(ANDROID)
     case nsIAccessibleEvent::EVENT_ANNOUNCEMENT: {
       AccAnnouncementEvent* announcementEvent = downcast_accEvent(aEvent);
       PlatformAnnouncementEvent(target, announcementEvent->Announcement(),
                                 announcementEvent->Priority());
       break;
     }
-#endif  // defined(ANDROID)
 #if defined(MOZ_WIDGET_COCOA)
     case nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED: {
       AccTextSelChangeEvent* textSelChangeEvent = downcast_accEvent(aEvent);
@@ -1758,10 +1770,11 @@ void LocalAccessible::Value(nsString& aValue) const {
 
   const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
 
-  // Value of textbox is a textified subtree.
-  if ((roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
+  // The value of a textbox is the text content from its subtree.
+  if (IsTextField() || (roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
       (IsGeneric() && IsEditableRoot())) {
-    nsTextEquivUtils::GetTextEquivFromSubtree(this, aValue);
+    TextLeafRange::FromAccessible(const_cast<LocalAccessible*>(this))
+        .GetFlattenedText(aValue);
     return;
   }
 
@@ -1941,6 +1954,39 @@ nsIContent* LocalAccessible::GetAtomicRegion() const {
   return atomic.EqualsLiteral("true") ? loopContent : nullptr;
 }
 
+static bool IsHintPopover(nsIContent* aContent) {
+  auto* htmlEl = nsGenericHTMLElement::FromNode(aContent);
+  return htmlEl &&
+         htmlEl->GetPopoverAttributeState() == dom::PopoverAttributeState::Hint;
+}
+
+static bool IsOpenHintPopover(nsIContent* aContent) {
+  auto* htmlEl = nsGenericHTMLElement::FromNode(aContent);
+  return htmlEl && htmlEl->PopoverOpen() &&
+         htmlEl->GetPopoverAttributeState() == dom::PopoverAttributeState::Hint;
+}
+
+// Returns true if targetEl is:
+//  - a non hint popover (these should always use details, not described by).
+//  - a hint popover that is not open (no relation should be established).
+//  - a hint popover with "rich" content (for non-rich content, desdcribed by
+//    should be established instead).
+static bool ShouldHintPopoverEstablishDetailsRelation(
+    dom::Element* aTargetEl, LocalAccessible* aTargetAcc) {
+  if (!IsHintPopover(aTargetEl)) {
+    return true;
+  }
+  if (!IsOpenHintPopover(aTargetEl)) {
+    return false;
+  }
+  return !aTargetAcc->IsOnlyPlainContent();
+}
+
+static bool ShouldHintPopoverEstablishDescribedByRelation(
+    dom::Element* aTargetEl, LocalAccessible* aTargetAcc) {
+  return IsOpenHintPopover(aTargetEl) && aTargetAcc->IsOnlyPlainContent();
+}
+
 LocalAccessible* LocalAccessible::GetCommandForDetailsRelation() const {
   dom::Element* targetEl = mContent->GetEffectiveCommandForElement();
   if (!targetEl) {
@@ -1966,6 +2012,9 @@ LocalAccessible* LocalAccessible::GetCommandForDetailsRelation() const {
   if (targetAcc->NextSibling() == this || targetAcc->PrevSibling() == this) {
     return nullptr;
   }
+  if (!ShouldHintPopoverEstablishDetailsRelation(targetEl, targetAcc)) {
+    return nullptr;
+  }
   return targetAcc;
 }
 
@@ -1988,6 +2037,9 @@ LocalAccessible* LocalAccessible::GetPopoverTargetDetailsRelation() const {
     }
   }
   if (targetAcc->NextSibling() == this || targetAcc->PrevSibling() == this) {
+    return nullptr;
+  }
+  if (!ShouldHintPopoverEstablishDetailsRelation(targetEl, targetAcc)) {
     return nullptr;
   }
   return targetAcc;
@@ -2059,6 +2111,54 @@ LocalAccessible* LocalAccessible::GetAnchorPositionTargetDetailsRelation()
   return targetAcc;
 }
 
+LocalAccessible* LocalAccessible::GetPopoverTargetDescribedByRelation() const {
+  dom::Element* targetEl = mContent->GetEffectivePopoverTargetElement();
+  if (!targetEl) {
+    return nullptr;
+  }
+  LocalAccessible* targetAcc = mDoc->GetAccessible(targetEl);
+  if (!targetAcc) {
+    return nullptr;
+  }
+  if (const nsAttrValue* actionVal =
+          Elm()->GetParsedAttr(nsGkAtoms::popovertargetaction)) {
+    if (static_cast<PopoverTargetAction>(actionVal->GetEnumValue()) ==
+        PopoverTargetAction::Hide) {
+      return nullptr;
+    }
+  }
+  if (ShouldHintPopoverEstablishDescribedByRelation(targetEl, targetAcc)) {
+    return targetAcc;
+  }
+  return nullptr;
+}
+
+LocalAccessible* LocalAccessible::GetCommandForDescribedByRelation() const {
+  dom::Element* targetEl = mContent->GetEffectiveCommandForElement();
+  if (!targetEl) {
+    return nullptr;
+  }
+  LocalAccessible* targetAcc = mDoc->GetAccessible(targetEl);
+  if (!targetAcc) {
+    return nullptr;
+  }
+  if (const nsAttrValue* actionVal = Elm()->GetParsedAttr(nsGkAtoms::command)) {
+    if (actionVal && actionVal->Type() != nsAttrValue::eEnum) {
+      return nullptr;
+    }
+    auto command =
+        static_cast<dom::Element::Command>(actionVal->GetEnumValue());
+    if (command != dom::Element::Command::ShowPopover &&
+        command != dom::Element::Command::TogglePopover) {
+      return nullptr;
+    }
+  }
+  if (ShouldHintPopoverEstablishDescribedByRelation(targetEl, targetAcc)) {
+    return targetAcc;
+  }
+  return nullptr;
+}
+
 Relation LocalAccessible::RelationByType(RelationType aType) const {
   if (!HasOwnContent()) return Relation();
 
@@ -2071,7 +2171,7 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       Relation rel(new AssociatedElementsIterator(mDoc, mContent,
                                                   nsGkAtoms::aria_labelledby));
       if (mContent->IsHTMLElement()) {
-        rel.AppendIter(new HTMLLabelIterator(Document(), this));
+        rel.AppendIter(new HTMLLabelIterator(mDoc, this));
       }
       rel.AppendIter(new XULLabelIterator(Document(), mContent));
 
@@ -2095,6 +2195,12 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       if (mContent->IsXULElement()) {
         rel.AppendIter(new XULDescriptionIterator(Document(), mContent));
       }
+      if (LocalAccessible* target = GetCommandForDescribedByRelation()) {
+        rel.AppendTarget(target);
+      }
+      if (LocalAccessible* target = GetPopoverTargetDescribedByRelation()) {
+        rel.AppendTarget(target);
+      }
 
       return rel;
     }
@@ -2109,6 +2215,25 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       if (mContent->IsXULElement(nsGkAtoms::description)) {
         rel.AppendIter(
             new AssociatedElementsIterator(mDoc, mContent, nsGkAtoms::control));
+      }
+
+      RelatedAccIterator popoverInvokers(mDoc, mContent,
+                                         nsGkAtoms::popovertarget);
+      while (Accessible* invoker = popoverInvokers.Next()) {
+        if (invoker->AsLocal()->GetPopoverTargetDescribedByRelation()) {
+          MOZ_ASSERT(
+              invoker->AsLocal()->GetPopoverTargetDescribedByRelation() ==
+              this);
+          rel.AppendTarget(invoker);
+        }
+      }
+      RelatedAccIterator commandInvokers(mDoc, mContent, nsGkAtoms::commandfor);
+      while (Accessible* invoker = commandInvokers.Next()) {
+        if (invoker->AsLocal()->GetCommandForDescribedByRelation()) {
+          MOZ_ASSERT(invoker->AsLocal()->GetCommandForDescribedByRelation() ==
+                     this);
+          rel.AppendTarget(invoker);
+        }
       }
 
       return rel;
@@ -2302,7 +2427,7 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       if (mContent->IsHTMLElement()) {
         // HTML form controls implements nsIFormControl interface.
         if (auto* control = nsIFormControl::FromNode(mContent)) {
-          if (dom::HTMLFormElement* form = control->GetForm()) {
+          if (dom::HTMLFormElement* form = control->GetFormInternal()) {
             return Relation(mDoc, form->GetDefaultSubmitElement());
           }
         }
@@ -2778,6 +2903,23 @@ void LocalAccessible::BindToParent(LocalAccessible* aParent,
   if (IsTableCell()) {
     CachedTableAccessible::Invalidate(this);
   }
+
+  if (mContent && mContent->IsElement()) {
+    // If this element is an open hint popover, queue cache updates for all its
+    // invokers so they can recompute relations now that this popover and its
+    // descendants are in the accessibility tree.
+    if (IsOpenHintPopover(mContent)) {
+      mDoc->QueueCacheUpdateForPopoverInvokers(mContent->AsElement());
+    }
+
+    // If this element is being bound to a parent that is an open hint popover,
+    // queue cache updates for that popover's invokers. This handles the case
+    // where interactive descendants are added to the hint popover after it's
+    // already been shown.
+    if (aParent && aParent->Elm() && IsOpenHintPopover(aParent->Elm())) {
+      mDoc->QueueCacheUpdateForPopoverInvokers(aParent->Elm());
+    }
+  }
 }
 
 // LocalAccessible protected
@@ -2786,6 +2928,12 @@ void LocalAccessible::UnbindFromParent() {
   // We do this for subtree removal in DocAccessible::UncacheChildrenInSubtree.
   if (IsTable() || IsTableCell()) {
     CachedTableAccessible::Invalidate(this);
+  }
+
+  // If this element is a hint popover being hidden, queue cache updates for all
+  // its invokers so they can clear the relations.
+  if (mContent && mContent->IsElement() && IsHintPopover(mContent)) {
+    mDoc->QueueCacheUpdateForPopoverInvokers(mContent->AsElement());
   }
 
   mParent = nullptr;
@@ -3185,6 +3333,19 @@ bool LocalAccessible::IsActiveDescendant(LocalAccessible** aWidget) const {
 
 void LocalAccessible::Announce(const nsAString& aAnnouncement,
                                uint16_t aPriority) {
+  // Don't fire announcement events if the document is in the background (not
+  // active).
+  if (!mDoc) {
+    return;
+  }
+  dom::Document* docNode = mDoc->DocumentNode();
+  if (!docNode) {
+    return;
+  }
+  dom::BrowsingContext* bc = docNode->GetBrowsingContext();
+  if (!bc || !bc->IsActive()) {
+    return;
+  }
   RefPtr<AccAnnouncementEvent> event =
       new AccAnnouncementEvent(this, aAnnouncement, aPriority);
   nsEventShell::FireEvent(event);
@@ -3440,11 +3601,11 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
   }
 
   if (aCacheDomain & CacheDomain::Value) {
-    // We cache the text value in 3 cases:
+    // We cache the text value in 4 cases:
     // 1. Accessible is an HTML input type that holds a number.
     // 2. Accessible has a numeric value and an aria-valuetext.
-    // 3. Accessible is an HTML input type that holds text.
-    // 4. Accessible is a link, in which case value is the target URL.
+    // 3. Accessible is a link, in which case value is the target URL.
+    // 4. Accessible is an HTML input type that holds a color.
     // ... for all other cases we divine the value remotely.
     bool cacheValueText = false;
     if (HasNumericValue()) {
@@ -3456,8 +3617,10 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
                        (mContent->IsElement() &&
                         nsAccUtils::HasARIAAttr(mContent->AsElement(),
                                                 nsGkAtoms::aria_valuetext));
-    } else {
-      cacheValueText = IsTextField() || IsHTMLLink();
+    } else if (IsHTMLLink()) {
+      cacheValueText = true;
+    } else if (auto* input = dom::HTMLInputElement::FromNodeOrNull(mContent)) {
+      cacheValueText = input->IsInputColor();
     }
 
     if (cacheValueText) {
@@ -4117,6 +4280,11 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       }
     }
 
+    // Track whether aria-details/aria-describedby have targets, so that
+    // commandfor/popovertarget can respect their precedence.
+    bool hasAriaDetails = false;
+    bool hasAriaDescribedby = false;
+
     for (auto const& data : kRelationTypeAtoms) {
       nsTArray<uint64_t> ids;
       nsStaticAtom* const relAtom = data.mAtom;
@@ -4128,23 +4296,31 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       if (data.mType == RelationType::LABEL_FOR) {
         // Labels are a special case -- we need to validate that the target of
         // their `for` attribute is in fact labelable. DOM checks this when we
-        // call GetControl(). If a label contains an element we will return it
-        // here.
+        // call GetLabeledElementInternal(). If a label contains an element we
+        // will return it here.
         if (dom::HTMLLabelElement* labelEl =
                 dom::HTMLLabelElement::FromNode(mContent)) {
-          rel.AppendTarget(mDoc, labelEl->GetControl());
+          rel.AppendTarget(mDoc, labelEl->GetLabeledElementInternal());
         }
       } else if (data.mType == RelationType::DETAILS) {
         if (relAtom == nsGkAtoms::aria_details) {
           rel.AppendIter(
               new AssociatedElementsIterator(mDoc, mContent, relAtom));
         } else if (relAtom == nsGkAtoms::commandfor) {
-          if (LocalAccessible* target = GetCommandForDetailsRelation()) {
-            rel.AppendTarget(target);
+          // aria-details takes precedence; skip if it has targets.
+          if (!hasAriaDetails) {
+            if (LocalAccessible* target = GetCommandForDetailsRelation()) {
+              rel.AppendTarget(target);
+              fields->SetAttribute(CacheKey::PopoverInvokerIsDetails, true);
+            }
           }
         } else if (relAtom == nsGkAtoms::popovertarget) {
-          if (LocalAccessible* target = GetPopoverTargetDetailsRelation()) {
-            rel.AppendTarget(target);
+          // aria-details takes precedence; skip if it has targets.
+          if (!hasAriaDetails) {
+            if (LocalAccessible* target = GetPopoverTargetDetailsRelation()) {
+              rel.AppendTarget(target);
+              fields->SetAttribute(CacheKey::PopoverInvokerIsDetails, true);
+            }
           }
         } else if (relAtom == nsGkAtoms::target) {
           if (LocalAccessible* target =
@@ -4153,6 +4329,26 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
           }
         } else {
           MOZ_ASSERT_UNREACHABLE("Unknown details relAtom");
+        }
+      } else if (data.mType == RelationType::DESCRIBED_BY) {
+        if (relAtom == nsGkAtoms::aria_describedby) {
+          rel.AppendIter(
+              new AssociatedElementsIterator(mDoc, mContent, relAtom));
+        } else if (relAtom == nsGkAtoms::commandfor) {
+          // aria-describedby takes precedence; skip if it has targets.
+          if (!hasAriaDescribedby) {
+            if (LocalAccessible* target = GetCommandForDescribedByRelation()) {
+              rel.AppendTarget(target);
+            }
+          }
+        } else if (relAtom == nsGkAtoms::popovertarget) {
+          // aria-describedby takes precedence; skip if it has targets.
+          if (!hasAriaDescribedby) {
+            if (LocalAccessible* target =
+                    GetPopoverTargetDescribedByRelation()) {
+              rel.AppendTarget(target);
+            }
+          }
         }
       } else if (data.mType == RelationType::CONTROLLER_FOR) {
         // We need to use RelationByType for controls because it might include
@@ -4174,7 +4370,18 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       }
       if (ids.Length()) {
         fields->SetAttribute(relAtom, std::move(ids));
-      } else if (IsUpdatePush(CacheDomain::Relations)) {
+        // Track that aria-details/aria-describedby have targets for precedence.
+        if (relAtom == nsGkAtoms::aria_details) {
+          hasAriaDetails = true;
+        } else if (relAtom == nsGkAtoms::aria_describedby) {
+          hasAriaDescribedby = true;
+        }
+      } else if (IsUpdatePush(CacheDomain::Relations) &&
+                 !fields->HasAttribute(relAtom)) {
+        // Only send DeleteEntry if we haven't already cached a value for this
+        // atom in an earlier iteration. This handles atoms that appear multiple
+        // times in kRelationTypeAtoms (e.g., popovertarget/commandfor appear
+        // for both DETAILS and DESCRIBED_BY).
         fields->SetAttribute(relAtom, DeleteEntry());
       }
     }

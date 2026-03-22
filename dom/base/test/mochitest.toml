@@ -1236,10 +1236,6 @@ skip-if = [
 
 ["test_getElementById.html"]
 
-["test_getTranslationNodes.html"]
-
-["test_getTranslationNodes_limit.html"]
-
 ["test_gsp-qualified.html"]
 
 ["test_gsp-quirks.html"]
@@ -1597,4 +1593,7 @@ skip-if = [
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && debug", # Bug 1870499 and other bugs with crashes after this test start
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1870499 and other bugs with crashes after this test start
 ]
+
+["test_ze_srcdoc.html"]
+
 # Please keep alphabetical order.

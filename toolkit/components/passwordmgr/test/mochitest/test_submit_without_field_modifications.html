@@ -51,8 +51,8 @@ async function setupWithOneLogin(pageUrl) {
 }
 
 function resetSavedLogins() {
-  let chromeScript = runInParent(function testTeardown() {
-    Services.logins.removeAllUserFacingLogins();
+  let chromeScript = runInParent(async function testTeardown() {
+    await Services.logins.removeAllUserFacingLoginsAsync();
   });
   chromeScript.destroy();
 }

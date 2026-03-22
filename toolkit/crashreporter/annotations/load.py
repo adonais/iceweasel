@@ -20,11 +20,12 @@ def sort_annotations(annotations):
     return sorted(annotations.items(), key=lambda annotation: str.lower(annotation[0]))
 
 
-# Convert CamelCase to snake_case. Also supports CAPCamelCase.
+# Convert CamelCase to snake_case. Also supports CAPCamelCase. Numbers are
+# grouped with the prior word.
 def camel_to_snake(s):
     if s.islower():
         return s
-    lowers = [c.islower() for c in s] + [False]
+    lowers = [c.islower() or c.isnumeric() for c in s] + [False]
     words = []
     last = 0
     for i in range(1, len(s)):

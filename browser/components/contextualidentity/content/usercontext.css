@@ -145,6 +145,5 @@
 
 .menuitem-iconic[data-usercontextid] {
   --menuitem-icon: var(--identity-icon);
-  -moz-context-properties: fill;
-  fill: var(--identity-icon-color);
+  --menuitem-icon-fill: var(--identity-icon-color);
 }

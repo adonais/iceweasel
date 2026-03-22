@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __FFmpegDecoderModule_h__
-#define __FFmpegDecoderModule_h__
+#ifndef FFmpegDecoderModule_h_
+#define FFmpegDecoderModule_h_
 
 #include "FFmpegAudioDecoder.h"
 #include "FFmpegLibWrapper.h"
@@ -341,4 +341,4 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
 
 }  // namespace mozilla
 
-#endif  // __FFmpegDecoderModule_h__
+#endif  // FFmpegDecoderModule_h_

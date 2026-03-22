@@ -254,8 +254,8 @@ void nsMathMLmrootFrame::Place(DrawTarget* aDrawTarget,
     bmSqr.ascent = bmSqr.descent = 0;
   } else {
     mSqrChar.Stretch(this, aDrawTarget, fontSizeInflation,
-                     NS_STRETCH_DIRECTION_VERTICAL, contSize, radicalSize,
-                     NS_STRETCH_LARGER,
+                     StretchDirection::Vertical, contSize, radicalSize,
+                     MathMLStretchFlag::Larger,
                      StyleVisibility()->mDirection == StyleDirection::Rtl);
     // radicalSize have changed at this point, and should match with
     // the bounding metrics of the char

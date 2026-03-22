@@ -5,3 +5,13 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 JAR_MANIFESTS += ["jar.mn"]
+
+GeneratedFile(
+    "aiwindow/manifest.json",
+    script="process_tokens.py",
+    entry_point="process_tokens",
+    inputs=[
+        "aiwindow/manifest.in.json",
+        "/toolkit/themes/shared/design-system/src/design-tokens.json",
+    ],
+)

@@ -6,8 +6,8 @@
 
 /* factory functions for rendering object classes */
 
-#ifndef nsHTMLParts_h___
-#define nsHTMLParts_h___
+#ifndef nsHTMLParts_h_
+#define nsHTMLParts_h_
 
 #include "nsFrameState.h"
 #include "nsISupports.h"
@@ -167,4 +167,4 @@ nsTableCellFrame* NS_NewTableCellFrame(mozilla::PresShell* aPresShell,
                                        mozilla::ComputedStyle* aStyle,
                                        nsTableFrame* aTableFrame);
 
-#endif /* nsHTMLParts_h___ */
+#endif /* nsHTMLParts_h_ */

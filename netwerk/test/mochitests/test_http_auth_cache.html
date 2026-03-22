@@ -15,7 +15,6 @@
 
   async function clearHttpAuthCacheTest() {
     let script = SpecialPowers.loadChromeScript(function () {
-      /* eslint-env mozilla/chrome-script */
       const {addMessageListener, sendAsyncMessage} = this;
       addMessageListener("start", function () {
         try {

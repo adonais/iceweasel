@@ -342,7 +342,8 @@ var gSearchResultsPane = {
 
         if (
           !child.classList.contains("header") &&
-          !child.classList.contains("subcategory") &&
+          (!child.classList.contains("subcategory") ||
+            child.localName == "setting-group") &&
           (await this.searchWithinNode(child, this.query))
         ) {
           child.classList.remove("visually-hidden");

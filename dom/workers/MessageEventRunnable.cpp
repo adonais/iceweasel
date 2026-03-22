@@ -56,7 +56,7 @@ bool MessageEventRunnable::DispatchDOMEvent(JSContext* aCx,
     cloneDataPolicy.allowSharedMemoryObjects();
   }
 
-  Read(parent, aCx, &messageData, cloneDataPolicy, rv);
+  Read(aCx, &messageData, cloneDataPolicy, rv);
 
   if (NS_WARN_IF(rv.Failed())) {
     DispatchError(aCx, aTarget);
@@ -151,7 +151,7 @@ bool MessageEventToParentRunnable::DispatchDOMEvent(
     cloneDataPolicy.allowSharedMemoryObjects();
   }
 
-  Read(parent, aCx, &messageData, cloneDataPolicy, rv);
+  Read(aCx, &messageData, cloneDataPolicy, rv);
 
   if (NS_WARN_IF(rv.Failed())) {
     DispatchError(aCx, aTarget);

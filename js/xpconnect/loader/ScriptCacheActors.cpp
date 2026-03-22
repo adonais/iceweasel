@@ -88,6 +88,7 @@ IPCResult ScriptCacheParent::Recv__delete__(nsTArray<ScriptData>&& scripts) {
     cache.NoteStencil(script.url(), script.cachePath(), processType,
                       std::move(script.xdrData()), script.loadTime());
   }
+  cache.NoteReceivedAllChildStencilsForProcess(processType);
 
   return IPC_OK();
 }

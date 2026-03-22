@@ -267,24 +267,6 @@ add_task(async function test_switchTab() {
   AssertSwitchToTabResult(added[0], url1, privateContextId);
   Assert.ok(isUrlResult(added[1], url2), "Second result should be URL");
 
-  info("Test single container mode.");
-  Services.prefs.setBoolPref(
-    "browser.urlbar.switchTabs.searchAllContainers",
-    false
-  );
-  const singleContext = createContext("firefox", {
-    isPrivate: false,
-    userContextId: userContextId1,
-  });
-  added.length = 0;
-  await provider.startQuery(singleContext, (_provider, result) => {
-    added.push(result);
-  });
-  Assert.equal(added.length, 2, "Two results should be added");
-  AssertSwitchToTabResult(added[0], url1, userContextId1);
-  AssertSwitchToTabResult(added[1], url2, userContextId1);
-  Services.prefs.clearUserPref("browser.urlbar.switchTabs.searchAllContainers");
-
   info("Test tab groups and current page.");
   let tabGroudId1 = "group1";
   let tabGroudId2 = "group2";

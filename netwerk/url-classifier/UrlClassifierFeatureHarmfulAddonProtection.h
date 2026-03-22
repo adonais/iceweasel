@@ -39,8 +39,13 @@ class UrlClassifierFeatureHarmfulAddonProtection final
 
  private:
   UrlClassifierFeatureHarmfulAddonProtection();
+  ~UrlClassifierFeatureHarmfulAddonProtection();
 
   static void MaybeInitialize();
+
+  class PingSender;
+
+  RefPtr<PingSender> mPingSender;
 };
 
 }  // namespace net

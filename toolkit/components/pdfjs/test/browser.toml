@@ -108,6 +108,8 @@ support-files = [
 ["browser_pdfjs_response_link.js"]
 support-files = ["pdf_response_link.sjs"]
 
+["browser_pdfjs_rfp_exemption.js"]
+
 ["browser_pdfjs_saveas.js"]
 support-files = [
   "!/toolkit/content/tests/browser/common/mockTransfer.js",
@@ -124,6 +126,11 @@ support-files = [
 
 ["browser_pdfjs_stamp_telemetry.js"]
 support-files = ["moz.png"]
+
+["browser_pdfjs_tagged_telemetry.js"]
+support-files = [
+  "file_pdfjs_tagged.pdf",
+]
 
 ["browser_pdfjs_toolbar_density.js"]
 

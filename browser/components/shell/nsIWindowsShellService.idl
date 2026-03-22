@@ -317,20 +317,6 @@ interface nsIWindowsShellService : nsIShellService
     in AString aShortcutRelativePath
   );
 
-  /* This function can be used to convert compatible image formats into .ico
-   * files to be used for .lnk files (see createShortcut).
-   *
-   * @param  aFile
-   *         Output file to be written
-   * @param  aContainer
-   *         The graphics container
-   */
-  [implicit_jscontext]
-  Promise createWindowsIcon(
-    in nsIFile aFile,
-    in imgIContainer aContainer
-  );
-
   /*
    * This function is a counterpart to pinShortcutToTaskbar and allows
    * the unpinning of any shortcut, including non-Firefox executables,

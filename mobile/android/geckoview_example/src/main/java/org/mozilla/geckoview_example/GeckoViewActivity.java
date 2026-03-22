@@ -1300,12 +1300,21 @@ public class GeckoViewActivity extends AppCompatActivity
       return;
     }
 
-    if (mCanGoBack && session != null) {
-      session.goBack();
-      return;
-    }
+    session
+        .processBackPressed()
+        .accept(
+            handled -> {
+              if (handled) {
+                return;
+              }
 
-    super.onBackPressed();
+              if (mCanGoBack && session != null) {
+                session.goBack();
+                return;
+              }
+
+              super.onBackPressed();
+            });
   }
 
   @Override

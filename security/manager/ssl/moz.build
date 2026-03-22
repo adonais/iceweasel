@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-DIRS += ["abridged_certs", "qwac_trust_anchors"]
+DIRS += ["abridged_certs", "pdf_trust_anchors", "qwac_trust_anchors"]
 
 TEST_DIRS += ["tests"]
 
@@ -18,6 +18,7 @@ XPIDL_SOURCES += [
     "nsIContentSignatureVerifier.idl",
     "nsICryptoHash.idl",
     "nsIDataStorage.idl",
+    "nsIFIPSUtils.idl",
     "nsINSSComponent.idl",
     "nsINSSErrorsService.idl",
     "nsINSSVersion.idl",
@@ -100,6 +101,7 @@ UNIFIED_SOURCES += [
     "CryptoTask.cpp",
     "DataStorageManager.cpp",
     "EnterpriseRoots.cpp",
+    "FIPSUtils.cpp",
     "IPCClientCertsChild.cpp",
     "IPCClientCertsParent.cpp",
     "md4.c",
@@ -129,6 +131,7 @@ UNIFIED_SOURCES += [
     "nsTLSSocketProvider.cpp",
     "OSKeyStore.cpp",
     "PDFSignatureVerification.cpp",
+    "PDFTrustDomain.cpp",
     "PKCS11ModuleDB.cpp",
     "PSMRunnable.cpp",
     "PublicKeyPinningService.cpp",
@@ -212,6 +215,21 @@ if CONFIG["OS_ARCH"] == "WINNT":
 
     UNIFIED_SOURCES += [
         "CredentialManagerSecret.cpp",
+    ]
+
+if CONFIG["NIGHTLY_BUILD"] and not CONFIG["MOZ_NO_SMART_CARDS"]:
+    EXPORTS.mozilla.psm += [
+        "PKCS11ModuleChild.h",
+        "PKCS11ModuleParent.h",
+    ]
+
+    UNIFIED_SOURCES += [
+        "PKCS11ModuleChild.cpp",
+        "PKCS11ModuleParent.cpp",
+    ]
+
+    IPDL_SOURCES += [
+        "PPKCS11Module.ipdl",
     ]
 
 FINAL_LIBRARY = "xul"

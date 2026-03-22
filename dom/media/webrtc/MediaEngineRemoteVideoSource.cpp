@@ -945,33 +945,34 @@ bool MediaEngineRemoteVideoSource::ChooseCapability(
     }
   }
 
+  MOZ_ASSERT_IF(aOutBadConstraint, !*aOutBadConstraint);
+  FlattenedConstraints c(aConstraints);
+  const auto checkConstraint = [](const auto& aConstraint) {
+    return aConstraint.mMin <= aConstraint.mMax && aConstraint.mMax > 0;
+  };
+  if (!checkConstraint(c.mWidth)) {
+    if (aOutBadConstraint) {
+      *aOutBadConstraint = "width";
+    }
+    return false;
+  }
+  if (!checkConstraint(c.mHeight)) {
+    if (aOutBadConstraint) {
+      *aOutBadConstraint = "height";
+    }
+    return false;
+  }
+  if (!checkConstraint(c.mFrameRate)) {
+    if (aOutBadConstraint) {
+      *aOutBadConstraint = "frameRate";
+    }
+    return false;
+  }
+
   switch (mCapEngine) {
     case camera::ScreenEngine:
     case camera::WinEngine:
     case camera::BrowserEngine: {
-      MOZ_ASSERT_IF(aOutBadConstraint, !*aOutBadConstraint);
-      FlattenedConstraints c(aConstraints);
-      const auto checkConstraint = [](const auto& aConstraint) {
-        return aConstraint.mMin <= aConstraint.mMax && aConstraint.mMax > 0;
-      };
-      if (!checkConstraint(c.mWidth)) {
-        if (aOutBadConstraint) {
-          *aOutBadConstraint = "width";
-        }
-        return false;
-      }
-      if (!checkConstraint(c.mHeight)) {
-        if (aOutBadConstraint) {
-          *aOutBadConstraint = "height";
-        }
-        return false;
-      }
-      if (!checkConstraint(c.mFrameRate)) {
-        if (aOutBadConstraint) {
-          *aOutBadConstraint = "frameRate";
-        }
-        return false;
-      }
       // DesktopCaptureImpl polls for frames and so must know the framerate to
       // capture at. This is signaled through CamerasParent as the capability's
       // maxFPS. Note that DesktopCaptureImpl does not expose any capabilities.

@@ -692,6 +692,15 @@ class FullParseHandler {
                                  moduleRequest);
   }
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  BinaryNodeResult newImportSourceDeclaration(Node importedBinding,
+                                              Node moduleRequest,
+                                              const TokenPos& pos) {
+    return newResult<BinaryNode>(ParseNodeKind::ImportSourceDecl, pos,
+                                 importedBinding, moduleRequest);
+  }
+#endif
+
   BinaryNodeResult newImportSpec(Node importNameNode, Node bindingName) {
     return newBinary(ParseNodeKind::ImportSpec, importNameNode, bindingName);
   }
@@ -747,6 +756,14 @@ class FullParseHandler {
     return newResult<BinaryNode>(ParseNodeKind::CallImportExpr, importHolder,
                                  singleArg);
   }
+
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+  BinaryNodeResult newCallImportSource(NullaryNodeType importHolder,
+                                       Node singleArg) {
+    return newResult<BinaryNode>(ParseNodeKind::CallImportSourceExpr,
+                                 importHolder, singleArg);
+  }
+#endif
 
   BinaryNodeResult newCallImportSpec(Node specifierArg, Node optionalArg) {
     return newResult<BinaryNode>(ParseNodeKind::CallImportSpec, specifierArg,

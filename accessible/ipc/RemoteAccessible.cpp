@@ -23,6 +23,7 @@
 #include "nsTextEquivUtils.h"
 #include "Pivot.h"
 #include "Relation.h"
+#include "TextLeafRange.h"
 #include "mozilla/a11y/RelationType.h"
 #include "xpcAccessibleDocument.h"
 
@@ -348,10 +349,12 @@ void RemoteAccessible::Value(nsString& aValue) const {
     }
 
     const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
-    // Value of textbox is a textified subtree.
-    if ((roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
+    // The value of a textbox is the text content from its subtree.
+    if (IsTextField() ||
+        (roleMapEntry && roleMapEntry->Is(nsGkAtoms::textbox)) ||
         (IsGeneric() && IsEditableRoot())) {
-      nsTextEquivUtils::GetTextEquivFromSubtree(this, aValue);
+      TextLeafRange::FromAccessible(const_cast<RemoteAccessible*>(this))
+          .GetFlattenedText(aValue);
       return;
     }
 
@@ -1263,6 +1266,20 @@ Relation RemoteAccessible::RelationByType(RelationType aType) const {
           }
         }
 
+        // For popovertarget/commandfor, check the PopoverInvokerIsDetails flag
+        // to determine whether this should be a DETAILS or DESCRIBED_BY
+        // relation.
+        if (data.mAtom == nsGkAtoms::popovertarget ||
+            data.mAtom == nsGkAtoms::commandfor) {
+          auto isDetails = aAcc->mCachedFields->GetAttribute<bool>(
+              CacheKey::PopoverInvokerIsDetails);
+          bool isDetailsValue = isDetails.isSome() && *isDetails;
+          bool wantDetails = aRelType == RelationType::DETAILS;
+          if (isDetailsValue != wantDetails) {
+            continue;
+          }
+        }
+
         // Relations can have several cached attributes in order of precedence,
         // if one is found we use it.
         return maybeIds;
@@ -1652,13 +1669,6 @@ bool RemoteAccessible::IsEditable() const {
   return false;
 }
 
-#if !defined(XP_WIN)
-void RemoteAccessible::Announce(const nsString& aAnnouncement,
-                                uint16_t aPriority) {
-  (void)mDoc->SendAnnounce(mID, aAnnouncement, aPriority);
-}
-#endif  // !defined(XP_WIN)
-
 int32_t RemoteAccessible::ValueRegion() const {
   MOZ_ASSERT(TagName() == nsGkAtoms::meter,
              "Accessing value region on non-meter element?");
@@ -1960,9 +1970,19 @@ already_AddRefed<AccAttributes> RemoteAccessible::Attributes() {
     if (mCachedFields->HasAttribute(nsGkAtoms::aria_details)) {
       detailsFrom.AssignLiteral("aria-details");
     } else if (mCachedFields->HasAttribute(nsGkAtoms::commandfor)) {
-      detailsFrom.AssignLiteral("command-for");
+      // Only expose details_from if this is actually a DETAILS relation
+      auto isDetails =
+          mCachedFields->GetAttribute<bool>(CacheKey::PopoverInvokerIsDetails);
+      if (isDetails && *isDetails) {
+        detailsFrom.AssignLiteral("command-for");
+      }
     } else if (mCachedFields->HasAttribute(nsGkAtoms::popovertarget)) {
-      detailsFrom.AssignLiteral("popover-target");
+      // Only expose details_from if this is actually a DETAILS relation
+      auto isDetails =
+          mCachedFields->GetAttribute<bool>(CacheKey::PopoverInvokerIsDetails);
+      if (isDetails && *isDetails) {
+        detailsFrom.AssignLiteral("popover-target");
+      }
     } else if (mCachedFields->HasAttribute(nsGkAtoms::target)) {
       detailsFrom.AssignLiteral("css-anchor");
     }

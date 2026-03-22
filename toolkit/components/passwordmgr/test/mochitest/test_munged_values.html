@@ -13,8 +13,8 @@
 const DEFAULT_ORIGIN = window.location.origin;
 
 function removeAllUserFacingLoginsInParent() {
-  runInParent(function removeAllUserFacingLogins() {
-    Services.logins.removeAllUserFacingLogins();
+  runInParent(async function removeAllUserFacingLogins() {
+    await Services.logins.removeAllUserFacingLoginsAsync();
   });
 }
 

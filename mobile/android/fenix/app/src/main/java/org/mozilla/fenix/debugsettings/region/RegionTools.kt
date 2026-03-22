@@ -15,8 +15,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -27,17 +29,17 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.search.RegionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.textfield.TextField
-import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 
 private const val DEFAULT_REGION = "XX"
 private const val MAX_REGION_LENGTH = 2
@@ -54,9 +56,11 @@ private const val PREFERENCE_KEY_HOME_REGION = "region.home"
 fun RegionTools(
     browserStore: BrowserStore,
 ) {
-    val region by browserStore.observeAsState(initialValue = RegionState.Default) { state ->
-        state.search.region ?: RegionState.Default
-    }
+    val region by remember {
+        browserStore.stateFlow.map { state ->
+            state.search.region ?: RegionState.Default
+        }
+    }.collectAsState(initial = RegionState.Default)
     val viewModel: RegionToolsViewModel = viewModel()
     val homeRegion = viewModel.homeRegion
     val currentRegion = viewModel.currentRegion
@@ -186,7 +190,7 @@ class RegionToolsViewModel : ViewModel() {
 @Preview
 @Composable
 private fun RegionScreenPreview(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     FirefoxTheme(theme) {
         RegionTools(

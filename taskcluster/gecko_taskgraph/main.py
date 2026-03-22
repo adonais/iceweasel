@@ -356,7 +356,7 @@ def show_taskgraph(options):
             ].endswith(("taskgraph", "mozbuild")):
                 del sys.modules[mod]
 
-        # Ensure gecko_taskgraph is ahead of taskcluster_taskgraph in sys.path.
+        # Ensure gecko_taskgraph is ahead of upstream Taskgraph in sys.path.
         # Without this, we may end up validating some things against the wrong
         # schema.
         import gecko_taskgraph  # noqa

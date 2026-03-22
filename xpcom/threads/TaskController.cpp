@@ -89,12 +89,20 @@ struct TaskMarker : BaseMarkerType<TaskMarker> {
 
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
-      {"name", MS::InputType::CString, "Task Name", MS::Format::String,
-       MS::PayloadFlags::Searchable},
+      {
+          "name",
+          MS::InputType::CString,
+          "Task Name",
+          MS::Format::String,
+      },
       {"priority", MS::InputType::Uint32, "Priority level",
        MS::Format::Integer},
-      {"task", MS::InputType::Uint64, "Task", MS::Format::TerminatingFlow,
-       MS::PayloadFlags::Searchable},
+      {
+          "task",
+          MS::InputType::Uint64,
+          "Task",
+          MS::Format::TerminatingFlow,
+      },
       {"priorityName", MS::InputType::CString, "Priority Name"}};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
@@ -144,12 +152,20 @@ struct IncompleteTaskMarker : BaseMarkerType<IncompleteTaskMarker> {
 
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
-      {"name", MS::InputType::CString, "Task Name", MS::Format::String,
-       MS::PayloadFlags::Searchable},
+      {
+          "name",
+          MS::InputType::CString,
+          "Task Name",
+          MS::Format::String,
+      },
       {"priority", MS::InputType::Uint32, "Priority level",
        MS::Format::Integer},
-      {"task", MS::InputType::Uint64, "Task", MS::Format::Flow,
-       MS::PayloadFlags::Searchable},
+      {
+          "task",
+          MS::InputType::Uint64,
+          "Task",
+          MS::Format::Flow,
+      },
       {"priorityName", MS::InputType::CString, "Priority Name"}};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
@@ -1047,7 +1063,8 @@ struct IdlePurgeMarker : mozilla::BaseMarkerType<IdlePurgeMarker> {
   static constexpr MS::PayloadField PayloadFields[] = {
       {"num_calls", MS::InputType::Uint32, "Number of PurgeNow() calls",
        MS::Format::Integer},
-      {"next", MS::InputType::CString, "Last result", MS::Format::String}};
+      {"last_result", MS::InputType::CString, "Last result",
+       MS::Format::String}};
 
   static void StreamJSONMarkerData(
       mozilla::baseprofiler::SpliceableJSONWriter& aWriter, uint32_t aNumCalls,

@@ -1901,9 +1901,9 @@ void Nursery::requestMinorGC(JS::GCReason reason) {
     MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime()));
   } else if (heapState == JS::HeapState::MajorCollecting) {
     // The GC runs sweeping tasks that may access the storebuffer in parallel
-    // and these require taking the store buffer lock.
+    // and these require taking the sweeping lock.
     MOZ_ASSERT(!CurrentThreadIsGCMarking());
-    runtime()->gc.assertCurrentThreadHasLockedStoreBuffer();
+    runtime()->gc.assertCurrentThreadHasLockedSweepingLock();
   } else {
     MOZ_CRASH("Unexpected heap state");
   }
@@ -2616,9 +2616,9 @@ void js::Nursery::sweepWeakMaps() {
       [&](WeakMapBase* wm) { return wm->sweepAfterMinorGC(); });
 }
 
-void js::Nursery::joinSweepTask() { sweepTask->join(); }
+bool js::Nursery::joinSweepTask() { return sweepTask->join(); }
 
-void js::Nursery::joinDecommitTask() { decommitTask->join(); }
+bool js::Nursery::joinDecommitTask() { return decommitTask->join(); }
 
 #ifdef DEBUG
 bool js::Nursery::sweepTaskIsIdle() { return sweepTask->isIdle(); }

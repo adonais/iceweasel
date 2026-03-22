@@ -67,6 +67,8 @@ interface nsIWebAuthnRegisterArgs : nsISupports {
 
     readonly attribute Array<AString> hints;
 
+    readonly attribute AString json;
+
     readonly attribute boolean privateBrowsing;
 };
 
@@ -114,6 +116,8 @@ interface nsIWebAuthnSignArgs : nsISupports {
     readonly attribute unsigned long timeoutMS;
 
     readonly attribute Array<AString> hints;
+
+    readonly attribute AString json;
 
     readonly attribute boolean conditionallyMediated;
 

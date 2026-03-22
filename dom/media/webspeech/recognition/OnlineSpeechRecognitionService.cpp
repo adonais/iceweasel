@@ -7,7 +7,6 @@
 #include "OnlineSpeechRecognitionService.h"
 
 #include <json/json.h>
-#include <string.h>
 
 #include "OggWriter.h"
 #include "OpusTrackEncoder.h"

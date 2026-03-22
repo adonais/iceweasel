@@ -518,6 +518,88 @@ describe("MultiStageAboutWelcomeProton module", () => {
       );
     });
 
+    it("Additional button with disabled: hasActiveMultiSelect property", () => {
+      // All of the above should apply to AdditionalCTA as well
+      const SCREEN_PROPS = {
+        content: {
+          title: "test title",
+          tiles: {
+            type: "multiselect",
+            data: [
+              {
+                id: "checkbox-1",
+                label: "Option 1",
+              },
+              {
+                id: "checkbox-2",
+                label: "Option 2",
+              },
+            ],
+          },
+          additional_button: {
+            label: "test additional button",
+            disabled: "hasActiveMultiSelect",
+          },
+        },
+        setScreenMultiSelects: sandbox.stub(),
+        setActiveMultiSelect: sandbox.stub(),
+      };
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+      assert.isTrue(
+        wrapper.find("button.additional-cta").prop("disabled"),
+        "Button is disabled when activeMultiSelect is null"
+      );
+
+      // should be enabled when activeMultiSelect has selections
+      wrapper.setProps({
+        activeMultiSelect: { "tile-0": ["checkbox-1"] },
+      });
+      wrapper.update();
+      assert.isFalse(
+        wrapper.find("button.additional-cta").prop("disabled"),
+        "enabled when checkboxes are selected"
+      );
+    });
+
+    it("Additional button with disabled: hasTextInput property", () => {
+      const SCREEN_PROPS = {
+        content: {
+          title: "test title",
+          tiles: {
+            type: "textarea",
+            data: {
+              id: "text-input-test",
+              character_limit: 20,
+            },
+          },
+          additional_button: {
+            label: "test additional button",
+            disabled: "hasTextInput",
+          },
+        },
+        setTextInput: sandbox.stub(),
+      };
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+      assert.isTrue(
+        wrapper.find("button.additional-cta").prop("disabled"),
+        "Button is disabled when textInputs is empty"
+      );
+
+      // should be enabled when textInputs has input
+      wrapper.setProps({
+        textInputs: {
+          "text-input-test": { value: "Some input", isValid: true },
+        },
+      });
+      wrapper.update();
+      assert.isFalse(
+        wrapper.find("button.additional-cta").prop("disabled"),
+        "enabled when textInputs has input"
+      );
+    });
+
     it("should not render a progress bar if there is 1 step", () => {
       const SCREEN_PROPS = {
         content: {
@@ -1057,6 +1139,7 @@ describe("MultiStageAboutWelcomeProton module", () => {
         "AW_WELCOME_BACK",
         "RETURN_TO_AMO",
         "AW_BACKUP_RESTORE_EMBEDDED_BACKUP_FOUND",
+        "AW_BACKUP_RESTORE_EMBEDDED_MULTIPLE_BACKUPS_FOUND",
       ]);
       assert.propertyVal(
         data.screens[0].content.primary_button.action,
@@ -1068,6 +1151,7 @@ describe("MultiStageAboutWelcomeProton module", () => {
       const data = await prepConfig({}, [
         "AW_WELCOME_BACK",
         "AW_BACKUP_RESTORE_EMBEDDED_BACKUP_FOUND",
+        "AW_BACKUP_RESTORE_EMBEDDED_MULTIPLE_BACKUPS_FOUND",
       ]);
 
       assert.notProperty(data, "skipFxA");

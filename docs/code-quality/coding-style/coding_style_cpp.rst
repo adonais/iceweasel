@@ -274,6 +274,8 @@ for more information.
 XPCOM getters always return primitive values via an outparam, while
 other getters normally use a return value.
 
+.. _cpp virtual final:
+
 Method declarations must use, at most, one of the following keywords:
 ``virtual``, ``override``, or ``final``. Use ``virtual`` to declare
 virtual methods, which do not override a base class method with the same
@@ -414,6 +416,8 @@ C/C++ practices
    For parts of this rule, clang-tidy provides the ``modernize-use-using``
    check with autofixes.
 
+
+.. _header files:
 
 Header files
 ------------

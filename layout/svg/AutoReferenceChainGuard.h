@@ -58,10 +58,10 @@ namespace mozilla {
  * by the frame except when it initialize them as indicated above.
  */
 class MOZ_RAII AutoReferenceChainGuard {
-  static const int16_t sDefaultMaxChainLength = 10;  // arbitrary length
+  static constexpr int16_t sDefaultMaxChainLength = 10;  // arbitrary length
 
  public:
-  static const int16_t noChain = -2;
+  static constexpr int16_t noChain = -2;
 
   /**
    * @param aFrame The frame for an effect that may involve a reference chain.

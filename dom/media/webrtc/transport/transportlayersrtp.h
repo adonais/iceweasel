@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef transportlayersrtp_h__
-#define transportlayersrtp_h__
+#ifndef transportlayersrtp_h_
+#define transportlayersrtp_h_
 
 #include "SrtpFlow.h"
 #include "mozilla/RefPtr.h"

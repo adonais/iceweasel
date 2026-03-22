@@ -803,9 +803,15 @@ export var DownloadIntegration = {
       }
     }
 
+    // If the download has a referrer, we pass the computed referrer spec to
+    // the platform to update any file meta-data. The computedReferrerSpec is
+    // the referrer URL after all referrer sanitization and policy checks have
+    // been applied.
     let aReferrer = null;
-    if (aDownload.source.referrerInfo) {
-      aReferrer = aDownload.source.referrerInfo.originalReferrer;
+    if (aDownload.source.referrerInfo?.computedReferrerSpec) {
+      aReferrer = lazy.NetUtil.newURI(
+        aDownload.source.referrerInfo.computedReferrerSpec
+      );
     }
 
     await lazy.gDownloadPlatform.downloadDone(
@@ -1391,16 +1397,28 @@ var DownloadObserver = {
         );
         break;
       case "last-pb-context-exited": {
+        let collector;
+        try {
+          collector = aSubject?.QueryInterface(Ci.nsIPBMCleanupCollector);
+        } catch (e) {}
+        let cb = collector?.addPendingCleanup();
+
         let promise = (async function () {
           let list = await Downloads.getList(Downloads.PRIVATE);
           let downloads = await list.getAll();
 
-          // We can remove the downloads and finalize them in parallel.
-          for (let download of downloads) {
-            list.remove(download).catch(console.error);
-            download.finalize(true).catch(console.error);
-          }
+          // Remove all downloads from list immediately, then finalize async.
+          downloads.forEach(d => list.remove(d));
+          await Promise.all(
+            downloads.map(d => d.finalize(true).catch(console.error))
+          );
         })();
+
+        promise.then(
+          () => cb?.complete(Cr.NS_OK),
+          () => cb?.complete(Cr.NS_ERROR_FAILURE)
+        );
+
         // Handle test mode
         if (lazy.gCombinedDownloadIntegration._testResolveClearPrivateList) {
           lazy.gCombinedDownloadIntegration._testResolveClearPrivateList(

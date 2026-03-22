@@ -3730,7 +3730,7 @@ void MediaTrackGraph::AddTrack(MediaTrack* aTrack) {
     MOZ_DIAGNOSTIC_ASSERT(p, "Graph must not be shutting down");
   }
 #endif
-  if (graph->mMainThreadTrackCount == 0) {
+  if (graph->mMainThreadTrackCount == 0 && graph->mRealtime) {
     nsCOMPtr<nsIObserverService> observerService =
         mozilla::services::GetObserverService();
     if (observerService) {

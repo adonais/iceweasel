@@ -34,7 +34,6 @@ browser.jar:
   content/browser/asrouter/assets/desktop-to-mobile-non-eu-QR.svg        (content/assets/desktop-to-mobile-non-eu-QR.svg)
   content/browser/asrouter/assets/desktop-to-mobile-eu-QR.svg            (content/assets/desktop-to-mobile-eu-QR.svg)
   content/browser/asrouter/assets/desktop-to-mobile-banner.svg           (content/assets/desktop-to-mobile-banner.svg)
-  content/browser/asrouter/assets/fox-question-mark-icon.svg             (content/assets/fox-question-mark-icon.svg)
   content/browser/asrouter/assets/checkmark-16.svg                       (content/assets/checkmark-16.svg)
   content/browser/asrouter/assets/close-16.svg                           (content/assets/close-16.svg)
   content/browser/asrouter/assets/shield-checkmark-16.svg                (content/assets/shield-checkmark-16.svg)

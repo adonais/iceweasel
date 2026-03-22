@@ -10,21 +10,25 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
   getRecentChats:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesChatSource.sys.mjs",
-  PREF_GENERATE_MEMORIES:
-    "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs",
 });
 ChromeUtils.defineLazyGetter(lazy, "console", function () {
   return console.createInstance({
     prefix: "MemoriesConversationScheduler",
-    maxLogLevelPref: "browser.aiwindow.memoriesLogLevel",
+    maxLogLevelPref: "browser.smartwindow.memoriesLogLevel",
   });
 });
 
 // Generate memories if there have been at least 10 user messages since the last run
 const MEMORIES_SCHEDULER_MESSAGES_THRESHOLD = 10;
 
-// Memories conversation schedule every 4 hours
-const MEMORIES_SCHEDULER_INTERVAL_MS = 4 * 60 * 60 * 1000;
+// Conversation scheduler tick every 2 mins
+const MEMORIES_SCHEDULER_INTERVAL_MS = 2 * 60 * 1000;
+// Cooldown period - don't run more than once every 4 hours
+//TODO: pref only for test purposes. will be later reverted
+const MEMORIES_SCHEDULER_COOLDOWN_MS = Services.prefs.getIntPref(
+  "browser.smartwindow.memoriesSchedulerCooldownInMs",
+  4 * 60 * 60 * 1000
+);
 
 /**
  * Schedules periodic generation of conversation-based memories.
@@ -41,7 +45,7 @@ export class MemoriesConversationScheduler {
   static #instance = null;
 
   static maybeInit() {
-    if (!Services.prefs.getBoolPref(lazy.PREF_GENERATE_MEMORIES, false)) {
+    if (!lazy.MemoriesManager.shouldEnableMemoriesSchedulers()) {
       return null;
     }
     if (!this.#instance) {
@@ -89,6 +93,17 @@ export class MemoriesConversationScheduler {
       return;
     }
 
+    // Re-check gating conditions on every tick (AIWindow may have closed, prefs may have changed).
+    if (!lazy.MemoriesManager.shouldEnableMemoriesSchedulers()) {
+      lazy.console.debug(
+        "Memories schedulers no longer enabled; stopping conversation scheduler."
+      );
+      this.destroy();
+      // Also clear singleton so it can be re-initialized later when conditions become true again.
+      MemoriesConversationScheduler.#instance = null;
+      return;
+    }
+
     if (this.#running) {
       lazy.console.debug(
         "Skipping run because a previous run is still in progress."
@@ -103,6 +118,23 @@ export class MemoriesConversationScheduler {
       // Detect whether conversation memories were generated before.
       const lastMemoryTs =
         (await lazy.MemoriesManager.getLastConversationMemoryTimestamp()) ?? 0;
+
+      const now = Date.now();
+
+      // Cooldown check - don't run more than once every 4 hours.
+      if (
+        lastMemoryTs > 0 &&
+        now - lastMemoryTs < MEMORIES_SCHEDULER_COOLDOWN_MS
+      ) {
+        lazy.console.debug(
+          `Cooldown not met; last run was ${Math.floor(
+            (now - lastMemoryTs) / (60 * 1000)
+          )}m ago (<${Math.floor(
+            MEMORIES_SCHEDULER_COOLDOWN_MS / (60 * 60 * 1000)
+          )}h). Skipping.`
+        );
+        return;
+      }
 
       // Get user chat messages
       const chatMessagesSinceLastMemory =
@@ -121,7 +153,10 @@ export class MemoriesConversationScheduler {
     } catch (error) {
       lazy.console.error("Failed to generate conversation memories", error);
     } finally {
-      if (!this.#destroyed) {
+      if (
+        !this.#destroyed &&
+        lazy.MemoriesManager.shouldEnableMemoriesSchedulers()
+      ) {
         this.#startInterval();
       }
       this.#running = false;
@@ -131,6 +166,7 @@ export class MemoriesConversationScheduler {
   destroy() {
     this.#stopInterval();
     this.#destroyed = true;
+    MemoriesConversationScheduler.#instance = null;
     lazy.console.debug("Destroyed");
   }
 

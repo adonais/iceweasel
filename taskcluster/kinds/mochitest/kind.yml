@@ -137,7 +137,7 @@ tasks:
                         .*-ccov.*: []
                         .*-asan.*: []
                         .*-wayland.*: []
-                        linux2404-64(-shippable)?/opt: []
+                        linux2404-64(-shippable)?/opt: ['trunk']
                         windows11-64.*(-shippable)?(-qr)?/opt: []
                         default: []
                 xorigin:
@@ -935,8 +935,11 @@ tasks:
                     default: true
             extra-options:
                 by-test-platform:
+                    android-hw.*:
+                        - --setpref=network.socket.allowed_nonlocal_domains='www.googleapis.com'
                     android-em.*:
                         - --setpref=gfx.canvas.accelerated=false
+                        - --setpref=network.socket.allowed_nonlocal_domains='www.googleapis.com'
                     default: []
         tier:
             by-variant:

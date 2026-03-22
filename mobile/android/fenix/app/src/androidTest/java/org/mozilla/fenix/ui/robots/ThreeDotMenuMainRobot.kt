@@ -7,14 +7,13 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasContentDescription
-import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -22,7 +21,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.swipeUp
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers
 import androidx.test.espresso.matcher.ViewMatchers.Visibility
@@ -40,11 +38,11 @@ import org.mozilla.fenix.components.menu.MenuDialogTestTag.EXTENSIONS
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.EXTENSIONS_OPTION_CHEVRON
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.MORE_OPTION_CHEVRON
 import org.mozilla.fenix.helpers.Constants.LONG_CLICK_DURATION
+import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndDescription
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
@@ -423,7 +421,7 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             Log.i(TAG, "verifyAddToShortcutsButton: Verified that the \"Add to shortcuts\" button is displayed.")
         } else {
             Log.i(TAG, "verifyAddToShortcutsButton: Trying to verify that the \"Add to shortcuts\" button is not displayed.")
-            composeTestRule.addToShortcutsButton().assertIsDisplayed()
+            composeTestRule.addToShortcutsButton().assertIsNotDisplayed()
             Log.i(TAG, "verifyAddToShortcutsButton: Verified that the \"Add to shortcuts\" button is not displayed.")
         }
     }
@@ -456,13 +454,13 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             return SettingsSubMenuLoginsAndPasswordsSavedLoginsRobot.Transition(composeTestRule)
         }
 
-        fun clickSignInToSyncButton(interact: SyncSignInRobot.() -> Unit): SyncSignInRobot.Transition {
+        fun clickSignInToSyncButton(interact: SettingsSignInToSyncRobot.() -> Unit): SettingsSignInToSyncRobot.Transition {
             Log.i(TAG, "clickSignInToSyncButton: Trying to click \"Sign in\" main menu button")
             composeTestRule.onNodeWithContentDescription("Sign in Sync passwords, bookmarks, and more").performClick()
             Log.i(TAG, "clickSignInToSyncButton: Clicked \"Sign in\" main menu button")
 
-            SyncSignInRobot().interact()
-            return SyncSignInRobot.Transition(composeTestRule)
+            SettingsSignInToSyncRobot().interact()
+            return SettingsSignInToSyncRobot.Transition(composeTestRule)
         }
 
         fun clickBookmarksButton(interact: BookmarksRobot.() -> Unit): BookmarksRobot.Transition {
@@ -539,12 +537,26 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
 
         @OptIn(ExperimentalTestApi::class)
         fun clickRefreshButton(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            Log.i(TAG, "clickRefreshButton: Waiting for $waitingTimeLong until the \"Stop\" button does not exist")
-            composeTestRule.waitUntilDoesNotExist(hasText("Stop"), waitingTimeLong)
-            Log.i(TAG, "clickRefreshButton: Waited for $waitingTimeLong until the \"Stop\" button does not exist")
-            Log.i(TAG, "clickRefreshButton: Waiting for $waitingTime until the \"Refresh\" button exists")
-            composeTestRule.waitUntilAtLeastOneExists(hasText("Refresh"), waitingTime)
-            Log.i(TAG, "clickRefreshButton: Waited for $waitingTime until the \"Refresh\" button exists")
+            for (i in 1..RETRY_COUNT) {
+                Log.i(TAG, "clickRefreshButton: Started try #$i")
+                try {
+                    Log.i(TAG, "clickRefreshButton: Waiting for $waitingTimeLong until the \"Stop\" button does not exist")
+                    composeTestRule.waitUntilDoesNotExist(hasText("Stop"), waitingTimeLong)
+                    Log.i(TAG, "clickRefreshButton: Waited for $waitingTimeLong until the \"Stop\" button does not exist")
+                    Log.i(TAG, "clickRefreshButton: Waiting for $waitingTime until the \"Refresh\" button exists")
+                    composeTestRule.waitUntilAtLeastOneExists(hasText("Refresh"), waitingTime)
+                    Log.i(TAG, "clickRefreshButton: Waited for $waitingTime until the \"Refresh\" button exists")
+                } catch (e: ComposeTimeoutException) {
+                    Log.i(TAG, "clickRefreshButton: ComposeTimeoutException caught, executing fallback methods")
+                    if (i == RETRY_COUNT) {
+                        throw e
+                    } else {
+                        closeMainMenuAndExitToBrowserView {
+                        }.openThreeDotMenu {
+                        }
+                    }
+                }
+            }
             Log.i(TAG, "clickRefreshButton: Trying to click the \"Refresh\" button")
             composeTestRule.refreshButton().performClick()
             Log.i(TAG, "clickRefreshButton: Clicked the \"Refresh\" button")

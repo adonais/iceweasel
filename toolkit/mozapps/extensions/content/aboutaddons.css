@@ -5,7 +5,7 @@
 :root {
   --addon-icon-size: 32px;
   --main-margin-start: 28px;
-  --sidebar-width: var(--in-content-sidebar-width);
+  --sidebar-width: var(--size-sidebar);
   --z-index-sticky-container: 5;
   --z-index-popup: 10;
 }
@@ -14,7 +14,7 @@
   :root {
     --main-margin-start: 16px;
     /* Maintain a main margin so card shadows don't overlap the sidebar. */
-    --sidebar-width: calc(var(--in-content-sidebar-width) - var(--main-margin-start));
+    --sidebar-width: calc(var(--size-sidebar-narrow) - var(--main-margin-start));
   }
 }
 
@@ -25,7 +25,7 @@
 body {
   cursor: default;
   /* The page starts to look really bad lower than this. */
-  min-width: 500px;
+  min-width: var(--size-layout-xlarge);
 }
 
 h1 {
@@ -57,7 +57,6 @@ h2 {
     content: "";
     width: 1px;
     height: 100%;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
     background-color: var(--border-color);
     top: 0;
     inset-inline-end: 0;

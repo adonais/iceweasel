@@ -16,6 +16,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RadioGroup
+import androidx.activity.compose.LocalActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -130,6 +131,7 @@ import org.mozilla.fenix.search.FenixSearchMiddleware
 import org.mozilla.fenix.search.SearchFragmentAction.SuggestionClicked
 import org.mozilla.fenix.search.SearchFragmentAction.SuggestionSelected
 import org.mozilla.fenix.search.SearchFragmentStore
+import org.mozilla.fenix.search.awesomebar.DeleteHistoryEntryDelegate
 import org.mozilla.fenix.search.createInitialSearchFragmentState
 import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -301,7 +303,7 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler, 
             updateDeleteMenuItemView(!it.isEmpty)
         }
 
-        requireContext().components.appStore.flowScoped(viewLifecycleOwner) { flow ->
+        requireContext().components.appStore.flowScoped(viewLifecycleOwner, Dispatchers.Main) { flow ->
             flow.mapNotNull { state -> state.pendingDeletionHistoryItems }.collect { items ->
                 historyStore.dispatch(
                     HistoryFragmentAction.UpdatePendingDeletionItems(pendingDeletionItems = items),
@@ -461,6 +463,12 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler, 
                                 }
                             }
                         }
+                        val activity = LocalActivity.current
+                        val deleteHistoryDelegate = remember(activity?.getRootView(), searchStore) {
+                            activity?.getRootView()?.let {
+                                DeleteHistoryEntryDelegate(it, it.context.components, searchStore)
+                            }
+                        }
 
                         val view = LocalView.current
                         val focusManager = LocalFocusManager.current
@@ -497,12 +505,16 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler, 
                                     AwesomeBar(
                                         text = searchState.query,
                                         providers = searchState.searchSuggestionsProviders,
+                                        hiddenSuggestions = searchState.hiddenSuggestions,
                                         orientation = AwesomeBarOrientation.TOP,
                                         onSuggestionClicked = { suggestion ->
                                             searchStore.dispatch(SuggestionClicked(suggestion))
                                         },
                                         onAutoComplete = { suggestion ->
                                             searchStore.dispatch(SuggestionSelected(suggestion))
+                                        },
+                                        onRemoveClicked = { suggestion ->
+                                            deleteHistoryDelegate?.handleDeletingHistoryEntry(suggestion)
                                         },
                                         onVisibilityStateUpdated = {
                                             requireComponents.core.store.dispatch(
@@ -589,29 +601,16 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler, 
     }
 
     private fun showTabTray(openInPrivate: Boolean = false) {
-        if (requireContext().settings().tabManagerEnhancementsEnabled) {
-            findNavController().nav(
-                R.id.historyFragment,
-                HistoryFragmentDirections.actionGlobalTabManagementFragment(
-                    page = if (openInPrivate) {
-                        Page.PrivateTabs
-                    } else {
-                        Page.NormalTabs
-                    },
-                ),
-            )
-        } else {
-            findNavController().nav(
-                R.id.historyFragment,
-                HistoryFragmentDirections.actionGlobalTabsTrayFragment(
-                    page = if (openInPrivate) {
-                        Page.PrivateTabs
-                    } else {
-                        Page.NormalTabs
-                    },
-                ),
-            )
-        }
+        findNavController().nav(
+            R.id.historyFragment,
+            HistoryFragmentDirections.actionGlobalTabManagementFragment(
+                page = if (openInPrivate) {
+                    Page.PrivateTabs
+                } else {
+                    Page.NormalTabs
+                },
+            ),
+        )
     }
 
     private fun getMultiSelectSnackBarMessage(historyItems: Set<History>): String {

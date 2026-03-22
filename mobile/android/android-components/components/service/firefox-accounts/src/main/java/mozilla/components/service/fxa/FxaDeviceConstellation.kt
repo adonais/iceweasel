@@ -25,6 +25,7 @@ import mozilla.components.concept.sync.DeviceConstellation
 import mozilla.components.concept.sync.DeviceConstellationObserver
 import mozilla.components.concept.sync.DevicePushSubscription
 import mozilla.components.concept.sync.ServiceResult
+import mozilla.components.concept.sync.TabPrivacy
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.observer.Observable
 import mozilla.components.support.base.observer.ObserverRegistry
@@ -170,7 +171,8 @@ class FxaDeviceConstellation(
         val result = handleFxaExceptions(logger, "sending device command", { Result.failure(it) }) {
             val result = when (outgoingCommand) {
                 is DeviceCommandOutgoing.SendTab -> {
-                    account.sendSingleTab(targetDeviceId, outgoingCommand.title, outgoingCommand.url)
+                    val isPrivate = outgoingCommand.privacy == TabPrivacy.Private
+                    account.sendSingleTab(targetDeviceId, outgoingCommand.title, outgoingCommand.url, isPrivate)
                     Result.success(true)
                 }
                 is DeviceCommandOutgoing.CloseTab -> {

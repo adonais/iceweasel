@@ -37,9 +37,7 @@ import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.MenuStore
 import org.mozilla.fenix.components.menu.toFenixFxAEntryPoint
 import org.mozilla.fenix.ext.nav
-import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.SupportUtils.AMO_HOMEPAGE_FOR_ANDROID
-import org.mozilla.fenix.settings.SupportUtils.SumoTopic
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.webcompat.WEB_COMPAT_REPORTER_URL
 import org.mozilla.fenix.webcompat.WebCompatReporterMoreInfoSender
@@ -147,10 +145,6 @@ class MenuNavigationMiddleware(
                     MenuDialogFragmentDirections.actionMenuDialogFragmentToLoginsListFragment(),
                 )
 
-                is MenuAction.Navigate.ReleaseNotes -> openToBrowser(
-                    BrowserNavigationParams(url = SupportUtils.WHATS_NEW_URL),
-                )
-
                 is MenuAction.Navigate.EditBookmark -> {
                     currentState.browserMenuState?.bookmarkState?.guid?.let { guidToEdit ->
                         navController.nav(
@@ -254,10 +248,6 @@ class MenuNavigationMiddleware(
                     BrowserNavigationParams(url = AMO_HOMEPAGE_FOR_ANDROID),
                 )
 
-                is MenuAction.Navigate.ExtensionsLearnMore -> openToBrowser(
-                    BrowserNavigationParams(sumoTopic = SumoTopic.FIND_INSTALL_ADDONS),
-                )
-
                 is MenuAction.Navigate.AddonDetails -> navController.nav(
                     R.id.menuDialogFragment,
                     MenuDialogFragmentDirections.actionMenuDialogFragmenToAddonDetailsFragment(
@@ -292,6 +282,17 @@ class MenuNavigationMiddleware(
                             )
                         }
                     }
+                }
+
+                is MenuAction.Navigate.Summarizer -> {
+                    navController.nav(
+                        id = R.id.menuDialogFragment,
+                        directions = MenuDialogFragmentDirections
+                            .actionMenuDialogFragmentToSummarizationFragment(),
+                        navOptions = NavOptions.Builder()
+                            .setPopUpTo(R.id.browserFragment, false)
+                            .build(),
+                    )
                 }
 
                 is MenuAction.Navigate.Back -> {

@@ -177,7 +177,7 @@ export var PopupAndRedirectBlockerObserver = {
     const blockedPopupDontShowMessage = document.getElementById(
       "blockedPopupDontShowMessage"
     );
-    blockedPopupDontShowMessage.setAttribute("checked", false);
+    blockedPopupDontShowMessage.removeAttribute("checked");
 
     gBrowser.selectedBrowser.popupAndRedirectBlocker
       .getBlockedRedirect()

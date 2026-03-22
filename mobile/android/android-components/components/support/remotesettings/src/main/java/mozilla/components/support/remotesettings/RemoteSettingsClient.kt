@@ -17,6 +17,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import mozilla.appservices.errorsupport.RustComponentsErrorTelemetry
 import mozilla.appservices.remotesettings.Attachment
 import mozilla.appservices.remotesettings.RemoteSettings
 import mozilla.appservices.remotesettings.RemoteSettingsConfig
@@ -79,6 +80,7 @@ class RemoteSettingsClient(
             RemoteSettingsResult.NetworkFailure(e)
         } catch (e: UniffiInternalException) {
             Logger.error(e.toString())
+            RustComponentsErrorTelemetry.submitErrorPing("remote-settings-internal-error", e.toString())
             reportRustError("remote-settings-internal-error", e.toString())
             RemoteSettingsResult.NetworkFailure(e)
         }

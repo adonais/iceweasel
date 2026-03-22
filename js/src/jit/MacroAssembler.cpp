@@ -166,15 +166,15 @@ void MacroAssembler::loadFromTypedArray(Scalar::Type arrayType, const T& src,
       break;
     case Scalar::Float16:
       loadFloat16(src, dest.fpu(), temp1, temp2, volatileLiveRegs);
-      canonicalizeFloat(dest.fpu());
+      canonicalizeFloatNaN(dest.fpu());
       break;
     case Scalar::Float32:
       loadFloat32(src, dest.fpu());
-      canonicalizeFloat(dest.fpu());
+      canonicalizeFloatNaN(dest.fpu());
       break;
     case Scalar::Float64:
       loadDouble(src, dest.fpu());
-      canonicalizeDouble(dest.fpu());
+      canonicalizeDoubleNaN(dest.fpu());
       break;
     case Scalar::BigInt64:
     case Scalar::BigUint64:
@@ -352,7 +352,18 @@ void MacroAssembler::nurseryAllocateObject(Register result, Register temp,
             Address(result, thingSize + ObjectSlots::offsetOfMaybeUniqueId()));
     computeEffectiveAddress(
         Address(result, thingSize + ObjectSlots::offsetOfSlots()), temp);
+
     storePtr(temp, Address(result, NativeObject::offsetOfSlots()));
+
+#ifdef JS_GC_CONCURRENT_MARKING
+    // For concurrent marking we currently preinitialize all dynamic slots.
+    //
+    // TODO: This will unnecessarily initialize slots that are explicitly
+    // initialized after this call.
+    push(result);
+    fillSlotsWithUndefined(Address(temp, 0), result, 0, nDynamicSlots);
+    pop(result);
+#endif
   }
 }
 
@@ -4469,6 +4480,10 @@ void MacroAssembler::link(JitCode* code) {
   linkProfilerCallSites(code);
 }
 
+void MacroAssembler::instrumentProfilerCallSite() {
+  AutoProfilerCallInstrumentation profiler(*this);
+}
+
 MacroAssembler::AutoProfilerCallInstrumentation::
     AutoProfilerCallInstrumentation(MacroAssembler& masm) {
   if (!masm.emitProfilingInstrumentation_) {
@@ -7481,8 +7496,7 @@ void MacroAssembler::branchValueConvertsToWasmAnyRefInline(
   bind(&checkDouble);
   {
     unboxDouble(src, scratchFloat);
-    convertDoubleToInt32(scratchFloat, scratchInt, &fallthrough,
-                         /*negativeZeroCheck=*/false);
+    convertDoubleToInt32(scratchFloat, scratchInt, &fallthrough);
     branch32(Assembler::GreaterThan, scratchInt,
              Imm32(wasm::AnyRef::MaxI31Value), &fallthrough);
     branch32(Assembler::LessThan, scratchInt, Imm32(wasm::AnyRef::MinI31Value),
@@ -7511,8 +7525,7 @@ void MacroAssembler::convertValueToWasmAnyRef(ValueOperand src, Register dest,
   bind(&doubleValue);
   {
     unboxDouble(src, scratchFloat);
-    convertDoubleToInt32(scratchFloat, dest, oolConvert,
-                         /*negativeZeroCheck=*/false);
+    convertDoubleToInt32(scratchFloat, dest, oolConvert);
     branch32(Assembler::GreaterThan, dest, Imm32(wasm::AnyRef::MaxI31Value),
              oolConvert);
     branch32(Assembler::LessThan, dest, Imm32(wasm::AnyRef::MinI31Value),
@@ -7665,13 +7678,12 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
   branch32(Assembler::NotEqual, temp, Imm32(0), fail);
 #endif
 
-  // If the alloc site is long lived, immediately fall back to the OOL path,
-  // which will handle that.
+  // Don't execute the inline path if the alloc site is long lived.
   branchTestPtr(Assembler::NonZero,
                 Address(allocSite, gc::AllocSite::offsetOfScriptAndState()),
                 Imm32(gc::AllocSite::LONG_LIVED_BIT), fail);
 
-  // Ensure that the numElements is small enough to fit in inline storage.
+  // Don't execute the inline path if the data won't fit in inline storage.
   branch32(Assembler::Above, numElements,
            Imm32(WasmArrayObject::maxInlineElementsForElemSize(elemSize)),
            fail);
@@ -7688,14 +7700,12 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
   push(numElements);
 #endif
 
-  // Compute the size of the allocation in bytes. The final size must correspond
-  // to an AllocKind. See WasmArrayObject::calcStorageBytes and
+  // Compute the size of the allocation in bytes. The final size must
+  // correspond to an AllocKind. See WasmArrayObject::calcStorageBytes and
   // WasmArrayObject::allocKindForIL.
 
   // Compute the size of all array element data.
   mul32(Imm32(elemSize), numElements);
-  // Add the data header.
-  add32(Imm32(sizeof(WasmArrayObject::DataHeader)), numElements);
   // Round up to gc::CellAlignBytes to play nice with the GC and to simplify the
   // zeroing logic below.
   add32(Imm32(gc::CellAlignBytes - 1), numElements);
@@ -7718,7 +7728,7 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
   wasmBumpPointerAllocateDynamic(instance, result, allocSite,
                                  /*size=*/numElements, temp, &popAndFail);
 
-  // Initialize the shape and STV
+  // Initialize the shape and STV fields
   loadPtr(Address(instance, offsetOfTypeDefData +
                                 wasm::TypeDefInstanceData::offsetOfShape()),
           temp);
@@ -7729,12 +7739,10 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
           temp);
   storePtr(temp, Address(result, WasmArrayObject::offsetOfSuperTypeVector()));
 
-  // Store inline data header and data pointer
-  storePtr(ImmWord(WasmArrayObject::DataIsIL),
-           Address(result, WasmArrayObject::offsetOfInlineStorage()));
+  // Compute the data pointer into `temp`, and initialize `data_`
   computeEffectiveAddress(
       Address(result, WasmArrayObject::offsetOfInlineArrayData()), temp);
-  // temp now points at the base of the array data; this will be used later
+  // `temp` now points at the base of the array data; this will be used later
   storePtr(temp, Address(result, WasmArrayObject::offsetOfData()));
   // numElements will be saved to the array object later; for now we want to
   // continue using numElements as a temp.
@@ -7746,17 +7754,17 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
   static_assert(gc::CellAlignBytes % sizeof(void*) == 0);
   Label zeroed;
   if (zeroFields) {
-    // numElements currently stores the total size of the allocation. temp
+    // `numElements` currently stores the total size of the allocation. `temp`
     // points at the base of the inline array data. We will zero the memory by
-    // advancing numElements to the end of the allocation, then counting down
-    // toward temp, zeroing one word at a time. The following aliases make this
-    // clearer.
+    // advancing `numElements` to just past the end of the allocation, then
+    // count down toward `temp`, zeroing one word at a time. The following
+    // aliases make this clearer.
     Register current = numElements;
     Register inlineArrayData = temp;
 
-    // We first need to update current to actually point at the end of the
-    // allocation. We can compute this from the data pointer, since the data
-    // pointer points at a known offset within the array.
+    // We first need to update `current` to actually point just past the end of
+    // the allocation. We can compute this from the data pointer, since the
+    // data pointer points at a known offset within the array.
     //
     // It is easier to understand the code below as first subtracting the offset
     // (to get back to the start of the allocation), then adding the total size
@@ -7805,8 +7813,8 @@ void MacroAssembler::wasmNewArrayObject(Register instance, Register result,
 void MacroAssembler::wasmNewArrayObjectFixed(
     Register instance, Register result, Register allocSite, Register temp1,
     Register temp2, size_t offsetOfTypeDefData, Label* fail,
-    uint32_t numElements, uint32_t storageBytes, bool zeroFields) {
-  MOZ_ASSERT(storageBytes <= WasmArrayObject_MaxInlineBytes);
+    uint32_t numElements, uint32_t arrayDataBytes, bool zeroFields) {
+  MOZ_ASSERT(arrayDataBytes <= WasmArrayObject_MaxInlineBytes);
   MOZ_ASSERT(instance != result);
 
   // Don't execute the inline path if GC probes are built in.
@@ -7829,13 +7837,12 @@ void MacroAssembler::wasmNewArrayObjectFixed(
   branch32(Assembler::NotEqual, temp1, Imm32(0), fail);
 #endif
 
-  // If the alloc site is long lived, immediately fall back to the OOL path,
-  // which will handle that.
+  // Don't execute the inline path if the alloc site is long lived.
   branchTestPtr(Assembler::NonZero,
                 Address(allocSite, gc::AllocSite::offsetOfScriptAndState()),
                 Imm32(gc::AllocSite::LONG_LIVED_BIT), fail);
 
-  gc::AllocKind allocKind = WasmArrayObject::allocKindForIL(storageBytes);
+  gc::AllocKind allocKind = WasmArrayObject::allocKindForIL(arrayDataBytes);
   uint32_t totalSize = gc::Arena::thingSize(allocKind);
   wasmBumpPointerAllocate(instance, result, allocSite, temp1, fail, totalSize);
 
@@ -7851,23 +7858,19 @@ void MacroAssembler::wasmNewArrayObjectFixed(
   store32(Imm32(numElements),
           Address(result, WasmArrayObject::offsetOfNumElements()));
 
-  // Store inline data header and data pointer
-  storePtr(ImmWord(WasmArrayObject::DataIsIL),
-           Address(result, WasmArrayObject::offsetOfInlineStorage()));
+  // Compute the data pointer into `temp2`, and initialize `data_`
   computeEffectiveAddress(
       Address(result, WasmArrayObject::offsetOfInlineArrayData()), temp2);
   // temp2 now points at the base of the array data; this will be used later
   storePtr(temp2, Address(result, WasmArrayObject::offsetOfData()));
 
   if (zeroFields) {
-    MOZ_ASSERT(storageBytes % sizeof(void*) == 0);
+    MOZ_ASSERT(arrayDataBytes % sizeof(void*) == 0);
 
-    // Advance temp1 to the end of the allocation
+    // Advance temp1 to just past the end of the allocation
     // (note that temp2 is already past the data header)
     Label done;
-    computeEffectiveAddress(
-        Address(temp2, -sizeof(WasmArrayObject::DataHeader) + storageBytes),
-        temp1);
+    computeEffectiveAddress(Address(temp2, arrayDataBytes), temp1);
     branchPtr(Assembler::Equal, temp1, temp2, &done);
 
     // Count temp2 down toward temp1, zeroing one word at a time
@@ -8238,7 +8241,7 @@ void MacroAssembler::emitValueReadBarrierFastPath(
 
   // Otherwise, we don't need a barrier unless we're in the middle of
   // an incremental GC.
-  branchTestNeedsIncrementalBarrierAnyZone(Assembler::NonZero, barrier, temp1);
+  branchTestNeedsMarkingBarrierAnyZone(Assembler::NonZero, barrier, temp1);
   bind(&done);
 }
 
@@ -10767,7 +10770,7 @@ void MacroAssembler::touchFrameValues(Register numStackValues,
 #ifdef FUZZING_JS_FUZZILLI
 void MacroAssembler::fuzzilliHashDouble(FloatRegister src, Register result,
                                         Register temp) {
-  canonicalizeDouble(src);
+  canonicalizeDoubleNaN(src);
 
 #  ifdef JS_PUNBOX64
   Register64 r64(temp);

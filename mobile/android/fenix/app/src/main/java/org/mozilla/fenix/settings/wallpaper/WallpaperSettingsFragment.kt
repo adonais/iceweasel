@@ -60,7 +60,6 @@ class WallpaperSettingsFragment : Fragment() {
 
                     WallpaperSettings(
                         wallpaperGroups = wallpapers.groupByDisplayableCollection(),
-                        defaultWallpaper = Wallpaper.Default,
                         selectedWallpaper = currentWallpaper,
                         loadWallpaperResource = {
                             wallpaperUseCases.loadThumbnail(it)

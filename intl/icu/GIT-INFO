@@ -1,5 +1,5 @@
-commit b33869b304cff387d544eaa5e820b93a39e737bf
-Author: Fredrik Roubert <roubert@google.com>
-Date:   Fri Nov 7 11:53:21 2025 -0800
+commit f1b3db8ecd39d5b3a6eff4d5641b176c7f914dfb
+Author: Peter Edberg <pedberg@unicode.org>
+Date:   Mon Jan 5 20:16:32 2026 -0800
 
-    ICU-23261 Bugfix: Correctly propagate errors to the caller.
+    ICU-23290 Integrate CLDR 48.1 final1 to ICU maint-78, no data changes

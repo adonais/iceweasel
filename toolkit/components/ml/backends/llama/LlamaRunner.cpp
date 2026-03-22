@@ -116,9 +116,8 @@ nsresult LlamaGenerateTask::Run() {
         //  Reset for next chunk
         response = mozilla::dom::LlamaChatResponse();
       } else {
-        auto msg = nsFmtCString(
-            FMT_STRING("{}: fatal error: the message queue is full"),
-            __PRETTY_FUNCTION__);
+        nsFmtCString msg("{}: fatal error: the message queue is full",
+                         __PRETTY_FUNCTION__);
         LOGE_RUNNER("{}", msg);
         // graceful termination
         return mozilla::Err(Error{msg});
@@ -129,9 +128,8 @@ nsresult LlamaGenerateTask::Run() {
     auto out =
         response.mTokens.AppendElements(chunk.mTokens, mozilla::fallible);
     if (!out) {
-      auto msg = nsFmtCString(
-          FMT_STRING("{}: Unable to append message to the response"),
-          __PRETTY_FUNCTION__);
+      auto msg = nsFmtCString("{}: Unable to append message to the response",
+                              __PRETTY_FUNCTION__);
       LOGE_RUNNER("{}", msg);
       return mozilla::Err(Error{msg});
     }
@@ -177,10 +175,10 @@ nsresult LlamaGenerateTask::Run() {
   LOGV_RUNNER("{}: Indicating completed status", __PRETTY_FUNCTION__);
 
   if (MOZ_UNLIKELY(!PushMessage(mozilla::Nothing()))) {
-    auto msg =
-        nsFmtCString(FMT_STRING("{}: Fatal error: Unable to indicate "
-                                "completion status as the queue is full"),
-                     __PRETTY_FUNCTION__);
+    auto msg = nsFmtCString(
+        "{}: Fatal error: Unable to indicate "
+        "completion status as the queue is full",
+        __PRETTY_FUNCTION__);
     LOGE_RUNNER("{}", msg);
 
     mErrorMessage = msg;
@@ -252,9 +250,8 @@ bool LlamaGenerateTask::MaybePushMessage(
       auto numEnqueued = mMessagesQueue.Enqueue(aMessage);
       if (MOZ_UNLIKELY(!numEnqueued)) {
         auto msg = nsFmtCString(
-            FMT_STRING(
-                "{}: LlamaGenerateTask::PushMessage failed: queue is full when "
-                "it shoudn't"),
+            "{}: LlamaGenerateTask::PushMessage failed: queue is full when "
+            "it shoudn't",
             __PRETTY_FUNCTION__);
         LOGE_RUNNER("{}", msg);
 
@@ -415,9 +412,9 @@ already_AddRefed<Promise> LlamaStreamSource::PullCallbackImpl(
   // Create JS promise to signal when data becomes available
   RefPtr<Promise> promise = Promise::Create(controller->GetParentObject(), aRv);
   if (!promise) {
-    auto msg = nsFmtCString(
-        FMT_STRING("{} Unable to create promise for llama source stream"),
-        __PRETTY_FUNCTION__);
+    auto msg =
+        nsFmtCString("{} Unable to create promise for llama source stream",
+                     __PRETTY_FUNCTION__);
     LOGE_RUNNER("{}", msg);
     // Cannot continue if promise creation failed
     aRv.ThrowTypeError(msg);
@@ -442,9 +439,10 @@ already_AddRefed<Promise> LlamaStreamSource::PullCallbackImpl(
         getter_AddRefs(mGenerateThread));
 
     if (NS_FAILED(rv2)) {
-      auto msg = nsFmtCString(FMT_STRING("{} Could not initialize LlamaWorker "
-                                         "thread via nsThreadManager."),
-                              __PRETTY_FUNCTION__);
+      auto msg = nsFmtCString(
+          "{} Could not initialize LlamaWorker "
+          "thread via nsThreadManager.",
+          __PRETTY_FUNCTION__);
       LOGE_RUNNER("{}", msg);
       aRv.ThrowTypeError(msg);
       return nullptr;
@@ -470,8 +468,7 @@ already_AddRefed<Promise> LlamaStreamSource::PullCallbackImpl(
                     __PRETTY_FUNCTION__);
         mGenerateThread = nullptr;
         auto msg = nsFmtCString(
-            FMT_STRING(
-                "{} Worker is shutting down, cannot start generation task"),
+            "{} Worker is shutting down, cannot start generation task",
             __PRETTY_FUNCTION__);
         aRv.ThrowTypeError(msg);
         return nullptr;
@@ -492,7 +489,7 @@ already_AddRefed<Promise> LlamaStreamSource::PullCallbackImpl(
     if (NS_FAILED(rv)) {
       mTask = nullptr;
       auto msg = nsFmtCString(
-          FMT_STRING("{} Unable to start LlamaGenerateTask in the background "),
+          "{} Unable to start LlamaGenerateTask in the background ",
           __PRETTY_FUNCTION__);
       LOGE_RUNNER("{}", msg);
       aRv.ThrowTypeError(msg);
@@ -582,8 +579,8 @@ already_AddRefed<ReadableStream> LlamaRunner::CreateGenerationStream(
 
   AutoJSAPI jsapi;
   if (!jsapi.Init(mGlobal)) {
-    auto msg = nsFmtCString(FMT_STRING("{} Unable to initialize the JSAPI"),
-                            __PRETTY_FUNCTION__);
+    auto msg =
+        nsFmtCString("{} Unable to initialize the JSAPI", __PRETTY_FUNCTION__);
     LOGE_RUNNER("{}", msg);
     aRv.ThrowTypeError(msg);
     return nullptr;

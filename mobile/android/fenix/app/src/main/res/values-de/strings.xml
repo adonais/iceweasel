@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">Auf diesem Gerät keine Spuren hinterlassen</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s löscht Ihre Cookies, Chronik und Website-Daten, wenn Sie alle Ihre privaten Tabs schließen. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -325,6 +318,8 @@
   <string name="browser_menu_translate_page_2">Seite übersetzen</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Seite zusammenfassen</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Neu</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Problem mit Website melden…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -377,6 +372,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Seite von %1$s in %2$s übersetzt.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Schütteln Sie Ihr Gerät, um diese Seite in Sekunden zusammenzufassen. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -927,8 +924,6 @@
   <string name="preferences_search_browsing_history">Browser-Chronik durchsuchen</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">Lesezeichen durchsuchen</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">Verknüpfungen anzeigen</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">Synchronisierte Tabs durchsuchen</string>
   <!-- Preference for account settings -->
@@ -949,6 +944,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Vorschläge von %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Erhalten Sie Vorschläge aus dem Web, die sich auf Ihre Suche beziehen</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Abrufen von Vorschlägen von Mozilla beim Eintippen</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Link-Weitergabe</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -975,7 +972,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">Sie haben keine Berechtigung, diesen Ordner zu verwenden. Wählen Sie einen anderen aus.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Sie haben keine Berechtigung, diesen Ordner zu verwenden. Wählen Sie einen anderen aus.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Downloads mit einer anderen App verwalten</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1039,8 +1036,10 @@
   <!--
     Customize Home
 
-    Header text for jumping back into the recent tab in customize the home screen
+    Title for the customize home screen section with privacy report.
   -->
+  <string name="customize_toggle_privacy_report">Datenschutzbericht</string>
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Zurückspringen</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">Lesezeichen</string>
@@ -1373,7 +1372,7 @@
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Nach oben wischen, um Tabs zu öffnen</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
-  <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Adressleiste zur Seite scrollen, um Tabs zu wechseln</string>
+  <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Adressleiste zur Seite wischen, um Tabs zu wechseln</string>
   <!--
     Library
 
@@ -1599,6 +1598,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Teilen</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Zur Sammlung hinzufügen</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Zu Gruppe hinzufügen</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Ausgewählte Tabs teilen</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1639,6 +1640,27 @@
   <string name="pwa_site_controls_title_private">%1$s (Privater Modus)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Tab-Suche öffnen</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Tab-Gruppe erstellen</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Gruppe bearbeiten</string>
+  <string name="create_tab_group_save_button">Speichern</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Bearbeiten von Tab-Gruppe schließen</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Gruppe</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Gruppe %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Name</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label">Name</string>
   <!--
     History
 
@@ -1754,11 +1776,26 @@
   <string name="download_rename_dialog_label">Name</string>
   <string name="download_rename_dialog_confirm_button">Speichern</string>
   <string name="download_rename_dialog_cancel_button">Abbrechen</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Eine Datei mit dem Namen „%s“ existiert an diesem Ort bereits</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Dateinamen dürfen „/“ nicht verwenden</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Datei kann nicht umbenannt werden</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">Diese Datei kann aufgrund von System- oder Speicherbeschränkungen nicht umbenannt werden.</string>
   <string name="download_rename_error_dismiss_button">OK</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">Dateityp auf %s ändern?</string>
+  <string name="change_file_extension_description">Dies kann die Datei in einer anderen App öffnen und ist für Ihr Gerät riskant.</string>
+  <string name="change_file_extension_cancel_button">Abbrechen</string>
+  <string name="change_file_extension_confirm_button">Ja, ändern</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">In Arbeit</string>
   <!--
@@ -1958,7 +1995,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Bearbeiten</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Kopieren</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Kopieren</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Teilen</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2014,11 +2051,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s gelöscht</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">RÜCKGÄNGIG</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">RÜCKGÄNGIG</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">%s gelöscht</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s gelöscht</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">Gelöschte Elemente: %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">Gelöschte Elemente: %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Rückwärts navigieren</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2288,23 +2325,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">Machen Sie Firefox zu Ihrem Standardbrowser</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">Probieren Sie den Privaten Modus aus</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">Probieren Sie den Privaten Modus aus</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">Surfen Sie mit %1$s ohne Cookies oder eine Chronik zu speichern</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">Surfen Sie mit %1$s ohne Cookies oder eine Chronik zu speichern</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">Spurloses Surfen</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">Spurloses Surfen</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">Im privaten Modus speichert %1$s Ihre Daten nicht.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">Im privaten Modus speichert %1$s Ihre Daten nicht.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">Starten Sie Ihre erste Suche</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">Starten Sie Ihre erste Suche</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">Finden Sie etwas in der Nähe. Oder entdecken Sie etwas Lustiges.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">Finden Sie etwas in der Nähe. Oder entdecken Sie etwas Lustiges.</string>
   <!--
     Survey
 
@@ -2385,7 +2422,7 @@
   <!-- Subtitle for the cookies item in Delete browsing data -->
   <string name="preferences_delete_browsing_data_cookies_subtitle">Sie werden von den meisten Websites abgemeldet</string>
   <!-- Title for the cached images and files item in Delete browsing data -->
-  <string name="preferences_delete_browsing_data_cached_files">Zwischengespeicherte Grafiken und Dateien</string>
+  <string name="preferences_delete_browsing_data_cached_files">Cache – Grafiken und Dateien</string>
   <!-- Subtitle for the cached images and files item in Delete browsing data -->
   <string name="preferences_delete_browsing_data_cached_files_subtitle">Gibt Speicherplatz frei</string>
   <!-- Title for the site permissions item in Delete browsing data -->
@@ -2480,6 +2517,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s schützt Sie vor vielen der gängigsten Skripte, die Ihre Online-Aktivitäten verfolgen.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Weitere Informationen</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d Tracker blockiert</item>
+    <item quantity="other">%d Tracker blockiert</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Sie sind geschützt</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standard</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2876,6 +2924,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Weitere Informationen</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">E-Mail-Masken verwalten</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Sie haben Ihre 5 kostenlosen E-Mail-Masken aufgebraucht, daher haben wir eine zur Wiederverwendung ausgewählt.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">E-Mail-Masken sind derzeit nicht verfügbar. Versuchen Sie es in ein paar Minuten erneut.</string>
   <!--
     Autofill
 
@@ -2907,7 +2959,7 @@
   <!-- Preference summary for saving and filling address data -->
   <string name="preferences_addresses_save_and_autofill_addresses_summary_2">Enthält Telefonnummern und E-Mail-Adressen</string>
   <!-- Preference option for syncing addresses across devices. This is displayed when the user is not signed into sync -->
-  <string name="preferences_addresses_sync_addresses_across_devices">Synchronisieren Sie Adressen zwischen Geräten</string>
+  <string name="preferences_addresses_sync_addresses_across_devices">Adressen zwischen Geräten synchronisieren</string>
   <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
   <string name="preferences_addresses_sync_addresses">Adressen synchronisieren</string>
   <!-- Content description navigating back from autofill settings screen. -->
@@ -3646,6 +3698,13 @@
   -->
   <string name="connection_security_panel_verified_by">Verifiziert von %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Ausgestellt auf %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Qualifiziert im Sinne der Richtlinie (EU) 2024/1183.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3695,6 +3754,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">Zu privaten Tabs hinzufügen</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -3733,6 +3794,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Ich verwende die Suche in Firefox nicht</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Ich verwende kein Sync</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Er ist langsam oder fehlerhaft</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Funktionen sind schwer zu finden oder fehlen</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Er ist verwirrend oder schwer zu verwenden</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Er ist in Ordnung, aber nicht besser als andere Browser</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Ich habe vor, Firefox weiter zu verwenden</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Helfen Sie, das Drucken in Firefox zu verbessern. Das dauert nur einen Moment.</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3747,6 +3818,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Wie zufrieden sind Sie mit der Suche in Firefox?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Wie zufrieden sind Sie mit der Synchronisierung in Firefox?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Helfen Sie uns, Firefox zu verbessern. Wie lässt sich Ihr bisheriger Eindruck am besten beschreiben?</string>
   <!--
     Accessibility
 
@@ -4045,8 +4118,6 @@
   <string name="content_description_settings_search_navigate_back">Rückwärts navigieren</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Keine letzten Suchanfragen</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Ein Fehler ist aufgetreten</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Alle löschen</string>
   <!-- Section header for recent search results -->

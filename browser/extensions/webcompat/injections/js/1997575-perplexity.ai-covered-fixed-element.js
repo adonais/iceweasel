@@ -10,22 +10,27 @@
  * Dynamic toolbar in Firefox for Android is covering the input field in Perplexity.
  */
 
-/* globals exportFunction */
+if (!window.__firefoxWebCompatFixBug1756970) {
+  Object.defineProperty(window, "__firefoxWebCompatFixBug1756970", {
+    configurable: false,
+    value: true,
+  });
 
-console.info(
-  "interactive-widget is being applied for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1997575 for details."
-);
+  console.info(
+    "interactive-widget is being applied for compatibility reasons. See https://bugzilla.mozilla.org/show_bug.cgi?id=1997575 for details."
+  );
 
-document.addEventListener("DOMContentLoaded", () => {
-  let metaViewport = document.querySelector("meta[name=viewport]");
-  if (!metaViewport) {
-    return;
-  }
-  let content = metaViewport.content;
-  if (!content.includes("interactive-widget")) {
-    metaViewport.setAttribute(
-      "content",
-      content + ",interactive-widget=resizes-content"
-    );
-  }
-});
+  document.addEventListener("DOMContentLoaded", () => {
+    let metaViewport = document.querySelector("meta[name=viewport]");
+    if (!metaViewport) {
+      return;
+    }
+    let content = metaViewport.content;
+    if (!content.includes("interactive-widget")) {
+      metaViewport.setAttribute(
+        "content",
+        content + ",interactive-widget=resizes-content"
+      );
+    }
+  });
+}

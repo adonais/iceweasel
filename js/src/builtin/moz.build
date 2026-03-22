@@ -19,11 +19,14 @@ UNIFIED_SOURCES += [
     "BigInt.cpp",
     "Boolean.cpp",
     "DataViewObject.cpp",
+    "Date.cpp",
     "Eval.cpp",
     "FinalizationRegistryObject.cpp",
     "JSON.cpp",
     "MapObject.cpp",
+    "Math.cpp",
     "ModuleObject.cpp",
+    "Number.cpp",
     "Object.cpp",
     "ParseRecordObject.cpp",
     "Profilers.cpp",
@@ -31,7 +34,6 @@ UNIFIED_SOURCES += [
     "RawJSONObject.cpp",
     "Reflect.cpp",
     "ReflectParse.cpp",
-    "ShadowRealm.cpp",
     "String.cpp",
     "Symbol.cpp",
     "TestingFunctions.cpp",
@@ -39,7 +41,6 @@ UNIFIED_SOURCES += [
     "WeakMapObject.cpp",
     "WeakRefObject.cpp",
     "WeakSetObject.cpp",
-    "WrappedFunctionObject.cpp",
 ]
 
 if CONFIG["ENABLE_EXPLICIT_RESOURCE_MANAGEMENT"]:
@@ -85,19 +86,6 @@ selfhosted_inputs = [
     "WeakSet.js",
 ] + (
     [
-        "intl/NumberingSystemsGenerated.h",
-        "intl/Collator.js",
-        "intl/CommonFunctions.js",
-        "intl/CurrencyDataGenerated.js",
-        "intl/DateTimeFormat.js",
-        "intl/DisplayNames.js",
-        "intl/DurationFormat.js",
-        "intl/IntlObject.js",
-        "intl/ListFormat.js",
-        "intl/NumberFormat.js",
-        "intl/PluralRules.js",
-        "intl/RelativeTimeFormat.js",
-        "intl/SanctionedSimpleUnitIdentifiersGenerated.js",
         "intl/Segmenter.js",
     ]
     if CONFIG["JS_HAS_INTL_API"]

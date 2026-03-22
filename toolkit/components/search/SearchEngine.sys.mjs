@@ -107,10 +107,7 @@ export class QueryParameter {
    */
   constructor(name, value) {
     if (!name || value == null) {
-      throw Components.Exception(
-        "missing name or value for QueryParameter!",
-        Cr.NS_ERROR_INVALID_ARG
-      );
+      throw new TypeError("missing name or value for QueryParameter");
     }
 
     this.name = name;
@@ -266,26 +263,17 @@ export class EngineURL {
     acceptedContentTypes = null,
   }) {
     if (!type || !method || !template) {
-      throw Components.Exception(
-        "missing type, method or template for EngineURL!",
-        Cr.NS_ERROR_INVALID_ARG
-      );
+      throw new Error("Missing arguments for EngineURL");
     }
 
     this.method = method.toUpperCase();
     if (this.method != "GET" && this.method != "POST") {
-      throw Components.Exception(
-        'method passed to EngineURL must be "GET" or "POST"',
-        Cr.NS_ERROR_INVALID_ARG
-      );
+      throw new TypeError('Method must be "GET" or "POST"');
     }
 
     var templateURI = lazy.SearchUtils.makeURI(template);
     if (!templateURI) {
-      throw Components.Exception(
-        "new EngineURL: template is not a valid URI!",
-        Cr.NS_ERROR_FAILURE
-      );
+      throw new Error("template is not a valid URI");
     }
 
     switch (templateURI.scheme) {
@@ -294,10 +282,7 @@ export class EngineURL {
         this.template = template;
         break;
       default:
-        throw Components.Exception(
-          "new EngineURL: template uses invalid scheme!",
-          Cr.NS_ERROR_FAILURE
-        );
+        throw new Error("template uses an invalid scheme");
     }
 
     this.templateHost = templateURI.host;
@@ -380,7 +365,7 @@ export class EngineURL {
    *   The user's search terms.
    * @param {string} queryCharset
    *   The character set that is being used for the query.
-   * @returns {Submission}
+   * @returns {{uri: nsIURI, postData: ?nsIMIMEInputStream}}
    *   The submission data containing the URL and post data for the URL.
    */
   getSubmission(searchTerms, queryCharset) {
@@ -451,7 +436,7 @@ export class EngineURL {
       queryCharset
     );
 
-    return new Submission(templateURI.URI, postData);
+    return { uri: templateURI.URI, postData };
   }
 
   /**
@@ -538,11 +523,8 @@ export class EngineURL {
 
 /**
  * SearchEngine is the base class that all search engine classes inherit from.
- *
- * @implements {nsISearchEngine}
  */
 export class SearchEngine {
-  QueryInterface = ChromeUtils.generateQI(["nsISearchEngine"]);
   // Data set by the user.
   _metaData = {};
 
@@ -994,7 +976,7 @@ export class SearchEngine {
         this.setAttr("overriddenBy", engine.id);
         this.setAttr("overriddenByOpenSearch", engine.toJSON());
       } else {
-        this.setAttr("overriddenBy", engine._extensionID);
+        this.setAttr("overriddenBy", engine.extensionID);
       }
     } else {
       this._urls = [];
@@ -1371,7 +1353,7 @@ export class SearchEngine {
    * @param {Values<typeof lazy.SearchUtils.URL_TYPE>} [responseType]
    *   The MIME type that we'd like to receive in response
    *   to this submission.  If null, will default to "text/html".
-   * @returns {?nsISearchSubmission}
+   * @returns {?{uri: nsIURI, postData: ?nsIMIMEInputStream}}
    *   The submission data. If no appropriate submission can be determined for
    *   the request type, this may be null.
    */
@@ -1595,10 +1577,6 @@ export class SearchEngine {
     };
   }
 
-  get wrappedJSObject() {
-    return this;
-  }
-
   /**
    * Returns the icon URL for the search engine closest to the preferred width
    * or undefined if the engine has no icons.
@@ -1644,9 +1622,9 @@ export class SearchEngine {
   speculativeConnect(options) {
     if (!options || !options.window) {
       console.error(
-        "invalid options arg passed to nsISearchEngine.speculativeConnect"
+        "invalid options arg passed to SearchEngine.speculativeConnect"
       );
-      throw Components.Exception("", Cr.NS_ERROR_INVALID_ARG);
+      throw new TypeError("invalid options arguments");
     }
     let connector = Services.io.QueryInterface(Ci.nsISpeculativeConnect);
 
@@ -1719,40 +1697,5 @@ export class SearchEngine {
   #uuid() {
     let uuid = Services.uuid.generateUUID().toString();
     return uuid.slice(1, uuid.length - 1);
-  }
-}
-
-/**
- * @implements {nsISearchSubmission}.
- */
-class Submission {
-  QueryInterface = ChromeUtils.generateQI(["nsISearchSubmission"]);
-
-  /**
-   * @param {nsIURI} uri
-   *   The URI to submit a search to.
-   * @param {nsIMIMEInputStream} [postData]
-   *   The POST data associated with a search submission.
-   */
-  constructor(uri, postData = null) {
-    this._uri = uri;
-    this._postData = postData;
-  }
-
-  /**
-   * The URI to submit a search to.
-   */
-  get uri() {
-    return this._uri;
-  }
-
-  /**
-   * The POST data associated with a search submission, wrapped in a MIME
-   * input stream.
-   *
-   * The Mime Input Stream contains a nsIStringInputStream.
-   */
-  get postData() {
-    return this._postData;
   }
 }

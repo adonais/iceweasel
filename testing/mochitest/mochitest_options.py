@@ -258,25 +258,6 @@ class MochitestArguments(ArgumentContainer):
             },
         ],
         [
-            ["--chunk-by-runtime"],
-            {
-                "action": "store_true",
-                "dest": "chunkByRuntime",
-                "help": "Group tests such that each chunk has roughly the same runtime.",
-                "default": False,
-            },
-        ],
-        [
-            ["--chunk-by-dir"],
-            {
-                "type": int,
-                "dest": "chunkByDir",
-                "help": "Group tests together in the same chunk that are in the same top "
-                "chunkByDir directories.",
-                "default": 0,
-            },
-        ],
-        [
             ["--run-by-manifest"],
             {
                 "action": "store_true",
@@ -1056,9 +1037,6 @@ class MochitestArguments(ArgumentContainer):
         if options.totalChunks:
             if not 1 <= options.thisChunk <= options.totalChunks:
                 parser.error("thisChunk must be between 1 and totalChunks")
-
-        if options.chunkByDir and options.chunkByRuntime:
-            parser.error("can only use one of --chunk-by-dir or --chunk-by-runtime")
 
         if options.xrePath is None:
             # default xrePath to the app path if not provided

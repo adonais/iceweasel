@@ -54,14 +54,48 @@ assert_invalid(
 
 // ./test/core/type-rec.wast:39
 let $1 = instantiate(`(module
+  (rec (type \$ft (func)) (type (struct)))
+  (func \$f (type \$ft))
+  (global (ref \$ft) (ref.func \$f))
+)`);
+
+// ./test/core/type-rec.wast:45
+let $2 = instantiate(`(module
+  (rec (type \$ft (func)))
+  (func \$f)  ;; the implicit type of \$f is \$ft
+  (global (ref \$ft) (ref.func \$f))
+)`);
+
+// ./test/core/type-rec.wast:51
+assert_invalid(
+  () => instantiate(`(module
+    (rec (type \$ft (func)) (type (func)))
+    (func \$f)  ;; the implicit type of \$f is not \$ft
+    (global (ref \$ft) (ref.func \$f))
+  )`),
+  `type mismatch`,
+);
+
+// ./test/core/type-rec.wast:59
+assert_invalid(
+  () => instantiate(`(module
+    (rec (type (func)) (type \$ft (func)))
+    (func \$f)  ;; the implicit type of \$f is not \$ft
+    (global (ref \$ft) (ref.func \$f))
+  )`),
+  `type mismatch`,
+);
+
+// ./test/core/type-rec.wast:71
+let $3 = instantiate(`(module
   (rec (type \$f1 (func)) (type (struct (field (ref \$f1)))))
   (rec (type \$f2 (func)) (type (struct (field (ref \$f2)))))
   (func \$f (type \$f2))
   (global (ref \$f1) (ref.func \$f))
 )`);
 
-// ./test/core/type-rec.wast:46
-let $2 = instantiate(`(module
+// ./test/core/type-rec.wast:78
+let $4 = instantiate(`(module
   (rec (type \$f1 (func)) (type (struct (field (ref \$f1)))))
   (rec (type \$f2 (func)) (type (struct (field (ref \$f2)))))
   (rec
@@ -76,7 +110,7 @@ let $2 = instantiate(`(module
   (global (ref \$g1) (ref.func \$g))
 )`);
 
-// ./test/core/type-rec.wast:61
+// ./test/core/type-rec.wast:93
 assert_invalid(
   () => instantiate(`(module
     (rec (type \$f1 (func)) (type (struct (field (ref \$f1)))))
@@ -87,7 +121,7 @@ assert_invalid(
   `type mismatch`,
 );
 
-// ./test/core/type-rec.wast:71
+// ./test/core/type-rec.wast:103
 assert_invalid(
   () => instantiate(`(module
     (rec (type \$f0 (func)) (type (struct (field (ref \$f0)))))
@@ -99,7 +133,7 @@ assert_invalid(
   `type mismatch`,
 );
 
-// ./test/core/type-rec.wast:82
+// ./test/core/type-rec.wast:114
 assert_invalid(
   () => instantiate(`(module
     (rec (type \$f1 (func)) (type (struct)))
@@ -110,7 +144,7 @@ assert_invalid(
   `type mismatch`,
 );
 
-// ./test/core/type-rec.wast:92
+// ./test/core/type-rec.wast:124
 assert_invalid(
   () => instantiate(`(module
     (rec (type \$f1 (func)) (type (struct)))
@@ -121,23 +155,23 @@ assert_invalid(
   `type mismatch`,
 );
 
-// ./test/core/type-rec.wast:105
-let $3 = instantiate(`(module \$M
+// ./test/core/type-rec.wast:137
+let $5 = instantiate(`(module \$M
   (rec (type \$f1 (func)) (type (struct)))
   (func (export "f") (type \$f1))
 )`);
-let $M = $3;
+let $M = $5;
 
-// ./test/core/type-rec.wast:109
+// ./test/core/type-rec.wast:141
 register($M, `M`);
 
-// ./test/core/type-rec.wast:111
-let $4 = instantiate(`(module
+// ./test/core/type-rec.wast:143
+let $6 = instantiate(`(module
   (rec (type \$f2 (func)) (type (struct)))
   (func (import "M" "f") (type \$f2))
 )`);
 
-// ./test/core/type-rec.wast:116
+// ./test/core/type-rec.wast:148
 assert_unlinkable(
   () => instantiate(`(module
     (rec (type (struct)) (type \$f2 (func)))
@@ -146,7 +180,7 @@ assert_unlinkable(
   `incompatible import type`,
 );
 
-// ./test/core/type-rec.wast:124
+// ./test/core/type-rec.wast:156
 assert_unlinkable(
   () => instantiate(`(module
     (rec (type \$f2 (func)))
@@ -155,8 +189,8 @@ assert_unlinkable(
   `incompatible import type`,
 );
 
-// ./test/core/type-rec.wast:135
-let $5 = instantiate(`(module
+// ./test/core/type-rec.wast:167
+let $7 = instantiate(`(module
   (rec (type \$f1 (func)) (type (struct)))
   (rec (type \$f2 (func)) (type (struct)))
   (table funcref (elem \$f1))
@@ -164,11 +198,11 @@ let $5 = instantiate(`(module
   (func (export "run") (call_indirect (type \$f2) (i32.const 0)))
 )`);
 
-// ./test/core/type-rec.wast:142
-assert_return(() => invoke($5, `run`, []), []);
+// ./test/core/type-rec.wast:174
+assert_return(() => invoke($7, `run`, []), []);
 
-// ./test/core/type-rec.wast:144
-let $6 = instantiate(`(module
+// ./test/core/type-rec.wast:176
+let $8 = instantiate(`(module
   (rec (type \$f1 (func)) (type (struct)))
   (rec (type (struct)) (type \$f2 (func)))
   (table funcref (elem \$f1))
@@ -176,11 +210,11 @@ let $6 = instantiate(`(module
   (func (export "run") (call_indirect (type \$f2) (i32.const 0)))
 )`);
 
-// ./test/core/type-rec.wast:151
-assert_trap(() => invoke($6, `run`, []), `indirect call type mismatch`);
+// ./test/core/type-rec.wast:183
+assert_trap(() => invoke($8, `run`, []), `indirect call type mismatch`);
 
-// ./test/core/type-rec.wast:153
-let $7 = instantiate(`(module
+// ./test/core/type-rec.wast:185
+let $9 = instantiate(`(module
   (rec (type \$f1 (func)) (type (struct)))
   (rec (type \$f2 (func)))
   (table funcref (elem \$f1))
@@ -188,18 +222,18 @@ let $7 = instantiate(`(module
   (func (export "run") (call_indirect (type \$f2) (i32.const 0)))
 )`);
 
-// ./test/core/type-rec.wast:160
-assert_trap(() => invoke($7, `run`, []), `indirect call type mismatch`);
+// ./test/core/type-rec.wast:192
+assert_trap(() => invoke($9, `run`, []), `indirect call type mismatch`);
 
-// ./test/core/type-rec.wast:165
-let $8 = instantiate(`(module
+// ./test/core/type-rec.wast:197
+let $10 = instantiate(`(module
   (rec (type \$s (struct)))
   (rec (type \$t (func (param (ref \$s)))))
   (func \$f (param (ref \$s)))  ;; okay, type is equivalent to \$t
   (global (ref \$t) (ref.func \$f))
 )`);
 
-// ./test/core/type-rec.wast:172
+// ./test/core/type-rec.wast:204
 assert_invalid(
   () => instantiate(`(module
     (rec
@@ -212,7 +246,7 @@ assert_invalid(
   `type mismatch`,
 );
 
-// ./test/core/type-rec.wast:184
+// ./test/core/type-rec.wast:216
 assert_invalid(
   () => instantiate(`(module
     (rec

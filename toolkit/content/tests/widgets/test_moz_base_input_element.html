@@ -37,12 +37,10 @@
       }
 
       add_setup(async function setup() {
-        ({ html, ifDefined, render } = await import(
-          "chrome://global/content/vendor/lit.all.mjs"
-        ));
-        ({ MozBaseInputElement } = await import(
-          "chrome://global/content/lit-utils.mjs"
-        ));
+        ({ html, ifDefined, render } =
+          await import("chrome://global/content/vendor/lit.all.mjs"));
+        ({ MozBaseInputElement } =
+          await import("chrome://global/content/lit-utils.mjs"));
         renderTarget = document.getElementById("render");
 
         defaultTemplate = html`

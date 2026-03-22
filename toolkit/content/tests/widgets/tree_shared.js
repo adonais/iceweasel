@@ -479,9 +479,12 @@ function testtag_tree_TreeSelection(tree, testid, multiple) {
     );
 
     selection.clearRange(1, 3);
-    testtag_tree_TreeSelection_State(tree, testid + "rangedSelect augment", 3, [
-      0,
-    ]);
+    testtag_tree_TreeSelection_State(
+      tree,
+      testid + "rangedSelect augment",
+      3,
+      [0]
+    );
 
     // check that rangedSelect can take a start value higher than end
     selection.rangedSelect(3, 1, false);
@@ -509,9 +512,12 @@ function testtag_tree_TreeSelection(tree, testid, multiple) {
 
   // both values of rangedSelect may be the same
   selection.rangedSelect(2, 2, false);
-  testtag_tree_TreeSelection_State(tree, testid + "rangedSelect one row", 2, [
+  testtag_tree_TreeSelection_State(
+    tree,
+    testid + "rangedSelect one row",
     2,
-  ]);
+    [2]
+  );
   is(
     selection.shiftSelectPivot,
     2,

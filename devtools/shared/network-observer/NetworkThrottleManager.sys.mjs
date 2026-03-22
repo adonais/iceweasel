@@ -23,9 +23,13 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsIHttpActivityDistributor
 );
 
-ChromeUtils.defineESModuleGetters(lazy, {
-  setTimeout: "resource://gre/modules/Timer.sys.mjs",
-});
+ChromeUtils.defineESModuleGetters(
+  lazy,
+  {
+    setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  },
+  { global: "contextual" }
+);
 
 class NetworkThrottleListener {
   #activities;

@@ -133,11 +133,6 @@ public final class GeckoLoader {
       f = context.getCacheDir();
       putenv("CACHE_DIRECTORY=" + f.getPath());
 
-      f = context.getExternalFilesDir(null);
-      if (f != null) {
-        putenv("PUBLIC_STORAGE=" + f.getPath());
-      }
-
       final android.os.UserManager um =
           (android.os.UserManager) context.getSystemService(Context.USER_SERVICE);
       if (um != null) {
@@ -152,6 +147,13 @@ public final class GeckoLoader {
       }
 
       setupInitialPrefs(prefs);
+    }
+
+    if (!GeckoAppShell.isIsolatedProcess()) {
+      final File f = context.getExternalFilesDir(null);
+      if (f != null) {
+        putenv("PUBLIC_STORAGE=" + f.getPath());
+      }
     }
 
     // Xpcshell tests set up their own temp directory

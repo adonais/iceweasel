@@ -31,8 +31,7 @@
 #include <algorithm>
 #include <new>
 
-#include "jsmath.h"
-
+#include "builtin/Math.h"
 #include "frontend/BytecodeCompiler.h"    // CompileStandaloneFunction
 #include "frontend/FrontendContext.h"     // js::FrontendContext
 #include "frontend/FunctionSyntaxKind.h"  // FunctionSyntaxKind
@@ -1580,8 +1579,9 @@ class MOZ_STACK_CLASS ModuleValidatorShared {
     MOZ_ASSERT(type == Type::canonicalize(Type::lit(lit)));
 
     uint32_t index = codeMeta_->globals.length();
-    if (!codeMeta_->globals.emplaceBack(type.canonicalToValType(), !isConst,
-                                        index, ModuleKind::AsmJS)) {
+    if (!codeMeta_->globals.emplaceBack(
+            GlobalType(type.canonicalToValType(), !isConst), index,
+            ModuleKind::AsmJS)) {
       return false;
     }
 
@@ -1616,7 +1616,7 @@ class MOZ_STACK_CLASS ModuleValidatorShared {
 
     uint32_t index = codeMeta_->globals.length();
     ValType valType = type.canonicalToValType();
-    if (!codeMeta_->globals.emplaceBack(valType, !isConst, index,
+    if (!codeMeta_->globals.emplaceBack(GlobalType(valType, !isConst), index,
                                         ModuleKind::AsmJS)) {
       return false;
     }
@@ -2097,7 +2097,7 @@ class MOZ_STACK_CLASS ModuleValidator : public ModuleValidatorShared {
     Limits limits =
         Limits(mask + 1, Nothing(), Shareable::False, PageSize::Standard);
     codeMeta_->asmJSSigToTableIndex[sigIndex] = codeMeta_->tables.length();
-    if (!codeMeta_->tables.emplaceBack(limits, RefType::func(),
+    if (!codeMeta_->tables.emplaceBack(TableType(limits, RefType::func()),
                                        /* initExpr */ Nothing(),
                                        /*isAsmJS*/ true)) {
       return false;

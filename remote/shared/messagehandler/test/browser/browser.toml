@@ -11,6 +11,8 @@ prefs = ["remote.messagehandler.modulecache.useBrowserTestRoot=true"]
 
 ["browser_events_dispatcher.js"]
 
+["browser_events_dispatcher_related_contexts.js"]
+
 ["browser_events_handler.js"]
 
 ["browser_events_interception.js"]

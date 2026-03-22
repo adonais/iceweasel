@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_SnappyUncompressInputStream_h__
-#define mozilla_SnappyUncompressInputStream_h__
+#ifndef mozilla_SnappyUncompressInputStream_h_
+#define mozilla_SnappyUncompressInputStream_h_
 
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
@@ -85,4 +85,4 @@ class SnappyUncompressInputStream final : public nsIInputStream,
 
 }  // namespace mozilla
 
-#endif  // mozilla_SnappyUncompressInputStream_h__
+#endif  // mozilla_SnappyUncompressInputStream_h_

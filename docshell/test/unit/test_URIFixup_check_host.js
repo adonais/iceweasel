@@ -16,7 +16,6 @@ XPCOMUtils.defineLazyServiceGetter(
 
 add_task(async function setup() {
   Services.prefs.setStringPref("browser.fixup.alternate.prefix", "www.");
-  Services.prefs.setStringPref("browser.fixup.alternate.suffix", ".com");
   Services.prefs.setStringPref("browser.fixup.alternate.protocol", "https");
   Services.prefs.setBoolPref(
     "browser.urlbar.dnsResolveFullyQualifiedNames",
@@ -24,7 +23,6 @@ add_task(async function setup() {
   );
   registerCleanupFunction(function () {
     Services.prefs.clearUserPref("browser.fixup.alternate.prefix");
-    Services.prefs.clearUserPref("browser.fixup.alternate.suffix");
     Services.prefs.clearUserPref("browser.fixup.alternate.protocol");
     Services.prefs.clearUserPref(
       "browser.urlbar.dnsResolveFullyQualifiedNames"

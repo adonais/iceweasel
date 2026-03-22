@@ -1648,7 +1648,7 @@ oskeystore:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1958791
     notification_emails:
       - simon@mozilla.com
-    expires: 150
+    expires: never
     extra_keys:
       function:
         description: >

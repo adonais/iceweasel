@@ -9,5 +9,5 @@ authors = ["Eemeli Aro <eemeli@mozilla.com>"]
 nsstring = { path = "../../../../xpcom/rust/nsstring" }
 
 [dependencies.icu_locale]
-version = "~2.0.0"
+version = "~2.1.1"
 default-features = false

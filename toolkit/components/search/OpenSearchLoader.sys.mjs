@@ -11,6 +11,8 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
+  SearchEngineInstallError:
+    "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   logConsole: () =>
     console.createInstance({
@@ -108,15 +110,11 @@ export async function loadAndParseOpenSearchEngine(
   originAttributes
 ) {
   if (!sourceURI) {
-    throw Components.Exception(
-      "Must have URI when calling _install!",
-      Cr.NS_ERROR_UNEXPECTED
-    );
+    throw new TypeError("No URI");
   }
   if (!/^https?$/i.test(sourceURI.scheme)) {
-    throw Components.Exception(
-      "Invalid URI passed to SearchEngine constructor",
-      Cr.NS_ERROR_INVALID_ARG
+    throw new TypeError(
+      "Unsupported URI scheme passed to SearchEngine constructor"
     );
   }
 
@@ -134,12 +132,11 @@ export async function loadAndParseOpenSearchEngine(
     lazy.logConsole.error("parseData: Failed to init engine!", ex);
 
     if (ex.result == Cr.NS_ERROR_FILE_CORRUPTED) {
-      throw Components.Exception(
-        "",
-        Ci.nsISearchService.ERROR_ENGINE_CORRUPTED
-      );
+      throw new lazy.SearchEngineInstallError("corrupted", "", { cause: ex });
     }
-    throw Components.Exception("", Ci.nsISearchService.ERROR_DOWNLOAD_FAILURE);
+    throw new lazy.SearchEngineInstallError("download-failure", "", {
+      cause: ex,
+    });
   }
 
   engineData.installURL = sourceURI;
@@ -180,9 +177,7 @@ function loadEngineXML(sourceURI, lastModified, originAttributes = null) {
 
   let loadHandler = data => {
     if (!data) {
-      loadPromise.reject(
-        Components.Exception("", Ci.nsISearchService.ERROR_DOWNLOAD_FAILURE)
-      );
+      loadPromise.reject(new lazy.SearchEngineInstallError("download-failure"));
       return;
     }
     loadPromise.resolve(data);
@@ -212,16 +207,16 @@ function parseXML(xmlData) {
   var doc = parser.parseFromBuffer(xmlData, "text/xml");
 
   if (!doc?.documentElement) {
-    throw Components.Exception(
-      "Could not parse file",
-      Ci.nsISearchService.ERROR_ENGINE_CORRUPTED
+    throw new lazy.SearchEngineInstallError(
+      "corrupted",
+      "Could not parse file"
     );
   }
 
   if (!hasExpectedNamspeace(doc.documentElement)) {
-    throw Components.Exception(
-      "Not a valid OpenSearch xml file",
-      Ci.nsISearchService.ERROR_ENGINE_CORRUPTED
+    throw new lazy.SearchEngineInstallError(
+      "corrupted",
+      "Not a valid OpenSearch xml file"
     );
   }
   return doc.documentElement;
@@ -279,16 +274,10 @@ function processXMLDocument(xmlDocument) {
     }
   }
   if (!result.name || !result.urls.length) {
-    throw Components.Exception(
-      "_parse: No name, or missing URL!",
-      Cr.NS_ERROR_FAILURE
-    );
+    throw new Error("No name, or missing URL for search engine");
   }
   if (!result.urls.find(url => url.type == lazy.SearchUtils.URL_TYPE.SEARCH)) {
-    throw Components.Exception(
-      "_parse: No text/html result type!",
-      Cr.NS_ERROR_FAILURE
-    );
+    throw new Error("Missing text/html result type in URLs for search engine");
   }
   return result;
 }

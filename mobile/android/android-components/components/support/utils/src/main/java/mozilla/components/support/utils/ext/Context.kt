@@ -15,10 +15,10 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
+import android.os.Bundle
 import android.provider.Settings
 import android.view.Window
 import androidx.core.content.ContextCompat
-import androidx.core.os.bundleOf
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.BuildManufacturerChecker
 
@@ -54,7 +54,7 @@ fun Context.navigateToDefaultBrowserAppsSettings(buildManufacturerChecker: Build
             )
             putExtra(
                 SETTINGS_SHOW_FRAGMENT_ARGS,
-                bundleOf(SETTINGS_SELECT_OPTION_KEY to DEFAULT_BROWSER_APP_OPTION),
+                Bundle().apply { putString(SETTINGS_SELECT_OPTION_KEY, DEFAULT_BROWSER_APP_OPTION) },
             )
         }
     }

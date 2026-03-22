@@ -25,6 +25,7 @@ XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell/xpcshell.toml"]
 BROWSER_CHROME_MANIFESTS += [
     "tests/browser/browser.toml",
     "tests/browser/perftest.toml",
+    "tests/browser_eval/eval.toml",
 ]
 
 XPIDL_SOURCES += ["nsIMLUtils.idl"]

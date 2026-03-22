@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsIOService_h__
-#define nsIOService_h__
+#ifndef nsIOService_h_
+#define nsIOService_h_
 
 #include "nsStringFwd.h"
 #include "nsIIOService.h"
@@ -308,4 +308,4 @@ extern nsIOService* gIOService;
 }  // namespace net
 }  // namespace mozilla
 
-#endif  // nsIOService_h__
+#endif  // nsIOService_h_

@@ -292,6 +292,98 @@ add_task(async function test_unix_permissions() {
 });
 
 /**
+ * Tests the MacOS xattr com.apple.metadata:kMDItemWhereFroms information of the final target
+ * once the download finished. This xattr should contain both the download source URL as well
+ * as the referrer for that source, unless the referrer policy would have blocked tracking the
+ * referrer.
+ */
+add_task(async function test_macos_xattrItemWhereFroms() {
+  // This test is only executed on MacOS.
+  if (Services.appinfo.OS != "Darwin") {
+    info("Skipping test.");
+    return;
+  }
+
+  const sourceUrl = httpUrl("source.txt");
+  const xattrName = "com.apple.metadata:kMDItemWhereFroms";
+
+  let unsafeReferrerInfo = new ReferrerInfo(
+    Ci.nsIReferrerInfo.UNSAFE_URL,
+    true,
+    NetUtil.newURI(TEST_REFERRER_URL)
+  );
+  Assert.notEqual(unsafeReferrerInfo, null);
+
+  let noReferrerInfo = new ReferrerInfo(
+    Ci.nsIReferrerInfo.NO_REFERRER,
+    true,
+    NetUtil.newURI(TEST_REFERRER_URL)
+  );
+
+  let targetFile = getTempFile(TEST_TARGET_FILE_NAME);
+
+  try {
+    if (!gUseLegacySaver) {
+      let download = await Downloads.createDownload({
+        source: { url: sourceUrl, referrerInfo: unsafeReferrerInfo },
+        target: targetFile.path,
+      });
+      await download.start();
+    } else {
+      let download = await promiseStartLegacyDownload(sourceUrl, {
+        targetFile,
+        referrerInfo: unsafeReferrerInfo,
+      });
+      await promiseDownloadStopped(download);
+    }
+    await promiseVerifyContents(targetFile.path, TEST_DATA_SHORT);
+
+    // Check the ItemWhereFroms xattr
+    let plist = new TextDecoder().decode(
+      await IOUtils.getMacXAttr(targetFile.path, xattrName)
+    );
+    info(plist);
+    // Test that the download source is captured in the xattr
+    Assert.ok(plist.includes(sourceUrl));
+    // Test that the referrer is in the xattr when the Referrer-policy doesn't prohibit it
+    Assert.ok(plist.includes(TEST_REFERRER_URL));
+  } finally {
+    await IOUtils.remove(targetFile.path);
+  }
+
+  targetFile = getTempFile(TEST_TARGET_FILE_NAME);
+
+  info(targetFile.path);
+  try {
+    if (!gUseLegacySaver) {
+      let download = await Downloads.createDownload({
+        source: { url: sourceUrl, referrerInfo: noReferrerInfo },
+        target: targetFile.path,
+      });
+      await download.start();
+    } else {
+      let download = await promiseStartLegacyDownload(sourceUrl, {
+        targetFile,
+        referrerInfo: noReferrerInfo,
+      });
+      await promiseDownloadStopped(download);
+    }
+    await promiseVerifyContents(targetFile.path, TEST_DATA_SHORT);
+    // Check the ItemWhereFroms xattr
+    let plist = new TextDecoder().decode(
+      await IOUtils.getMacXAttr(targetFile.path, xattrName)
+    );
+    info(plist);
+    // Test that the download source is captured in the xattr
+    Assert.ok(plist.includes(sourceUrl));
+    // Test that the referrer is not in the xattr when the Referrer-policy prohibits it
+    Assert.ok(!plist.includes(TEST_REFERRER_URL));
+  } finally {
+    await IOUtils.remove(targetFile.path);
+  }
+});
+
+/**
  * Tests the zone information of the final target once the download finished.
  */
 add_task(async function test_windows_zoneInformation() {
@@ -310,7 +402,7 @@ add_task(async function test_windows_zoneInformation() {
     "xpcshell-download-test.txt"
   );
 
-  // The template file name lenght is more than MAX_PATH characters. The final
+  // The template file name length is more than MAX_PATH characters. The final
   // full path will be shortened to MAX_PATH length by the createUnique call.
   let longTargetFile = await IOUtils.getFile(
     Services.dirsvc.get("LocalAppData", Ci.nsIFile).path,

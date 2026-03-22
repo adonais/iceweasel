@@ -6,7 +6,7 @@
 const AUTH_ROUTE =
   "https://example.com/browser/browser/base/content/test/about/sandbox_corp_iframe.sjs";
 
-add_task(async function test_coepError() {
+add_task(async function test_coepError_legacy() {
   let browser;
   let pageLoaded;
 
@@ -55,7 +55,7 @@ add_task(async function test_coepError() {
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
-add_task(async function test_coepError_feltPrivacyToTrue() {
+add_task(async function test_coepError() {
   let browser;
   let pageLoaded;
 

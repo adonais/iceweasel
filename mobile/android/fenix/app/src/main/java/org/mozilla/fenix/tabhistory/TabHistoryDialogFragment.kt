@@ -13,6 +13,7 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.mapNotNull
 import mozilla.components.browser.state.action.EngineAction
@@ -77,7 +78,7 @@ class TabHistoryDialogFragment : BottomSheetDialogFragment() {
             )
         }
 
-        requireComponents.core.store.flowScoped(viewLifecycleOwner) { flow ->
+        requireComponents.core.store.flowScoped(viewLifecycleOwner, Dispatchers.Main) { flow ->
             flow.mapNotNull { state -> state.findCustomTabOrSelectedTab(customTabSessionId)?.content?.history }
                 .distinctUntilChanged()
                 .collect { historyState ->

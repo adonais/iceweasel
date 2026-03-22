@@ -305,15 +305,10 @@ internal fun MenuBadgeItem(
     enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
-    val state: MenuItemState
-    val badgeBackgroundColor: Color
-
-    if (checked) {
-        badgeBackgroundColor = MaterialTheme.colorScheme.primaryContainer
-        state = MenuItemState.ACTIVE
+    val state: MenuItemState = if (checked) {
+        MenuItemState.ACTIVE
     } else {
-        badgeBackgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
-        state = MenuItemState.DISABLED
+        MenuItemState.DISABLED
     }
 
     Row(
@@ -361,7 +356,6 @@ internal fun MenuBadgeItem(
         Badge(
             badgeText = badgeText,
             state = state,
-            badgeBackgroundColor = badgeBackgroundColor,
         )
     }
 }
@@ -370,14 +364,11 @@ internal fun MenuBadgeItem(
 internal fun Badge(
     badgeText: String,
     state: MenuItemState = MenuItemState.ENABLED,
-    badgeBackgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest,
 ) {
     Column(
         modifier = Modifier
             .clip(shape = RoundedCornerShape(BADGE_ROUNDED_CORNER))
-            .background(
-                color = badgeBackgroundColor,
-            )
+            .background(color = getBadgeColor(state))
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -489,6 +480,14 @@ private fun getIconTint(state: MenuItemState): Color {
     }
 }
 
+@Composable
+private fun getBadgeColor(state: MenuItemState): Color {
+    return when (state) {
+        MenuItemState.ACTIVE -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.surfaceContainerHighest
+    }
+}
+
 @PreviewLightDark
 @Composable
 private fun WebExtensionMenuItemPreview() {
@@ -499,7 +498,7 @@ private fun WebExtensionMenuItemPreview() {
         ) {
             WebExtensionMenuItem(
                 label = "label",
-                iconPainter = painterResource(iconsR.drawable.mozac_ic_web_extension_default_icon),
+                iconPainter = painterResource(iconsR.drawable.mozac_ic_extension_fill_24),
                 iconTint = MaterialTheme.colorScheme.onSurface,
                 enabled = true,
                 badgeText = "17",

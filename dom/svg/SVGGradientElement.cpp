@@ -67,10 +67,8 @@ SVGGradientElement::GradientUnits() {
 
 already_AddRefed<DOMSVGAnimatedTransformList>
 SVGGradientElement::GradientTransform() {
-  // We're creating a DOM wrapper, so we must tell GetAnimatedTransformList
-  // to allocate the DOMSVGAnimatedTransformList if it hasn't already done so:
   return DOMSVGAnimatedTransformList::GetDOMWrapper(
-      GetAnimatedTransformList(DO_ALLOCATE), this);
+      GetOrCreateAnimatedTransformList(), this);
 }
 
 already_AddRefed<DOMSVGAnimatedEnumeration> SVGGradientElement::SpreadMethod() {
@@ -93,13 +91,13 @@ JSObject* SVGLinearGradientElement::WrapNode(
 
 SVGElement::LengthInfo SVGLinearGradientElement::sLengthInfo[4] = {
     {nsGkAtoms::x1, 0, SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE,
-     SVGContentUtils::X},
+     SVGLength::Axis::X},
     {nsGkAtoms::y1, 0, SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE,
-     SVGContentUtils::Y},
+     SVGLength::Axis::Y},
     {nsGkAtoms::x2, 100, SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE,
-     SVGContentUtils::X},
+     SVGLength::Axis::X},
     {nsGkAtoms::y2, 0, SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE,
-     SVGContentUtils::Y},
+     SVGLength::Axis::Y},
 };
 
 //----------------------------------------------------------------------
@@ -135,10 +133,10 @@ already_AddRefed<DOMSVGAnimatedLength> SVGLinearGradientElement::Y2() {
 //----------------------------------------------------------------------
 // SVGElement methods
 
-SVGAnimatedTransformList* SVGGradientElement::GetAnimatedTransformList(
-    uint32_t aFlags) {
-  if (!mGradientTransform && (aFlags & DO_ALLOCATE)) {
-    mGradientTransform = MakeUnique<SVGAnimatedTransformList>();
+SVGAnimatedTransformList*
+SVGGradientElement::GetOrCreateAnimatedTransformList() {
+  if (!mGradientTransform) {
+    mGradientTransform = std::make_unique<SVGAnimatedTransformList>();
   }
   return mGradientTransform.get();
 }
@@ -157,17 +155,17 @@ JSObject* SVGRadialGradientElement::WrapNode(
 
 SVGElement::LengthInfo SVGRadialGradientElement::sLengthInfo[6] = {
     {nsGkAtoms::cx, 50, SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE,
-     SVGContentUtils::X},
+     SVGLength::Axis::X},
     {nsGkAtoms::cy, 50, SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE,
-     SVGContentUtils::Y},
+     SVGLength::Axis::Y},
     {nsGkAtoms::r, 50, SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE,
-     SVGContentUtils::XY},
+     SVGLength::Axis::XY},
     {nsGkAtoms::fx, 50, SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE,
-     SVGContentUtils::X},
+     SVGLength::Axis::X},
     {nsGkAtoms::fy, 50, SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE,
-     SVGContentUtils::Y},
+     SVGLength::Axis::Y},
     {nsGkAtoms::fr, 0, SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE,
-     SVGContentUtils::XY},
+     SVGLength::Axis::XY},
 };
 
 //----------------------------------------------------------------------

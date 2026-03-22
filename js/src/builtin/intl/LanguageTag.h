@@ -20,9 +20,7 @@ struct JS_PUBLIC_API JSContext;
 class JSLinearString;
 class JS_PUBLIC_API JSTracer;
 
-namespace js {
-
-namespace intl {
+namespace js::intl {
 
 /**
  * Parse a string Unicode BCP 47 locale identifier. If successful, store in
@@ -94,11 +92,9 @@ class UnicodeExtensionKeyword final {
     JS::HandleVector<UnicodeExtensionKeyword> keywords);
 
 JS::UniqueChars FormatLocale(
-    JSContext* cx, JS::Handle<JSObject*> internals,
+    JSContext* cx, JS::Handle<JSLinearString*> locale,
     JS::HandleVector<UnicodeExtensionKeyword> keywords);
 
-}  // namespace intl
-
-}  // namespace js
+}  // namespace js::intl
 
 #endif /* builtin_intl_LanguageTag_h */

@@ -74,6 +74,7 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.ifNullOrEmpty
 import mozilla.components.support.ktx.kotlin.sanitizeURL
 import mozilla.components.support.ktx.kotlinx.coroutines.throttleLatest
+import mozilla.components.support.utils.DownloadFileUtils
 import mozilla.components.support.utils.DownloadUtils
 import mozilla.components.support.utils.ext.registerReceiverCompat
 import mozilla.components.support.utils.ext.stopForegroundCompat
@@ -115,6 +116,8 @@ abstract class AbstractFetchDownloadService : Service() {
 
     protected abstract val fileSizeFormatter: FileSizeFormatter
     protected abstract val downloadEstimator: DownloadEstimator
+
+    protected abstract val downloadFileUtils: DownloadFileUtils
 
     // TODO Move this to browser store and make immutable:
     // https://github.com/mozilla-mobile/android-components/issues/7050
@@ -715,7 +718,11 @@ abstract class AbstractFetchDownloadService : Service() {
 
         response.body.useStream { inStream ->
             var copyInChuckStatus: CopyInChuckStatus? = null
-            val newDownloadState = download.withResponse(response.headers, inStream)
+            val newDownloadState = download.withResponse(
+                headers = response.headers,
+                downloadFileUtils = downloadFileUtils,
+                stream = inStream,
+            )
             currentDownloadJobState.state = newDownloadState
 
             useFileStream(newDownloadState, isResumingDownload) { outStream ->

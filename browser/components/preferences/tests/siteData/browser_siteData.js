@@ -94,7 +94,7 @@ add_task(async function test_ui_loading_state() {
     Assert.deepEqual(
       doc.l10n.getAttributes(totalSiteDataSizeLabel),
       {
-        id: "sitedata-total-size2",
+        id: "sitedata-total-size3",
         args: { value, unit },
       },
       "Should show the right total site data size"
@@ -141,7 +141,7 @@ add_task(async function test_ui_loading_state() {
     Assert.deepEqual(
       doc.l10n.getAttributes(totalSiteDataSizeLabel),
       {
-        id: "sitedata-total-size2",
+        id: "sitedata-total-size3",
         args: { value, unit },
       },
       "Should show the right total site data size"

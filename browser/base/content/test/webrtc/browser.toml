@@ -118,8 +118,7 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1775945
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1974591
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1974591
-  "os == 'win' && asan", # Bug 1775945
-  "os == 'win' && opt", # Bug 1775945
+  "os == 'win'", # Bug 1775945, Bug 1974591
   "verify-standalone",
 ]
 
@@ -190,9 +189,10 @@ skip-if = [
 
 ["browser_macos_indicator_hiding.js"]
 run-if = [
-  "os == 'mac' && os_version >= '14.0'",
+  "os == 'mac'",
 ]
 skip-if = [
+  "os == 'mac' && os_version == '10.15'",
   "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
 ]

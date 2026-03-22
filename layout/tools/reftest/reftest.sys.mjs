@@ -687,6 +687,7 @@ function Blur() {
 
 async function StartCurrentTest() {
   g.testLog = [];
+  g.currentTestStatus = "PASS";
 
   // make sure we don't run tests that are expected to kill the browser
   while (g.urls.length) {
@@ -1272,7 +1273,7 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
               );
             });
           }
-          FinishTestItem();
+          FinishTestItem(true);
         });
         break;
       }
@@ -1302,6 +1303,7 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
       output = outputs[expected].false;
       extra = { status_msg: output.n };
       ++g.testResults[output.n];
+      g.currentTestStatus = output.s[0];
       logger.testStatus(
         g.urls[0].identifier,
         errorMsg,
@@ -1318,6 +1320,8 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
     var anyFailed = typeSpecificResults.some(function (result) {
       return !result.passed;
     });
+    g.currentTestStatus = anyFailed ? "FAIL" : "PASS";
+
     var outputPair;
     if (anyFailed && expected == EXPECTED_FAIL) {
       // If we're marked as expected to fail, and some (but not all) tests
@@ -1452,7 +1456,8 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
         g.failedNoDisplayList ||
         g.failedDisplayList ||
         g.failedOpaqueLayer ||
-        g.failedAssignedLayer;
+        g.failedAssignedLayer ||
+        g.failedNoWRRaster;
 
       // whether the comparison result matches what is in the manifest
       var test_passed =
@@ -1513,7 +1518,11 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
               g.failedAssignedLayerMessages.join(", ")
           );
         }
+        if (g.failedNoWRRaster) {
+          failures.push("failed reftest-no-wr-raster");
+        }
         var failureString = failures.join(", ");
+        g.currentTestStatus = output.s[0];
         logger.testStatus(
           g.urls[0].identifier,
           failureString,
@@ -1565,6 +1574,7 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
         }
         extra.modifiers = g.urls[0].modifiers;
 
+        g.currentTestStatus = output.s[0];
         logger.testStatus(
           g.urls[0].identifier,
           message,
@@ -1617,6 +1627,7 @@ function LoadFailed(why) {
       "load failed with unknown reason (we should always have a reason!)"
     );
   }
+  g.currentTestStatus = why?.startsWith("timed out") ? "TIMEOUT" : "FAIL";
   logger.testStatus(
     g.urls[0].identifier,
     "load failed: " + why,
@@ -1659,6 +1670,7 @@ function FindUnexpectedCrashDumpFiles() {
         ++g.testResults.UnexpectedFail;
         foundCrashDumpFile = true;
         if (g.currentURL) {
+          g.currentTestStatus = "CRASH";
           logger.testStatus(
             g.urls[0].identifier,
             "crash-check",
@@ -1702,8 +1714,16 @@ function CleanUpCrashDumpFiles() {
   g.expectingProcessCrash = false;
 }
 
-function FinishTestItem() {
-  logger.testEnd(g.urls[0].identifier, "OK");
+function FinishTestItem(skipTestEndLogging = false) {
+  if (!skipTestEndLogging) {
+    let expectedStatus = "PASS";
+    if (g.urls[0].expected == EXPECTED_FAIL) {
+      expectedStatus = "FAIL";
+    } else if (g.urls[0].expected == EXPECTED_RANDOM) {
+      expectedStatus = g.currentTestStatus;
+    }
+    logger.testEnd(g.urls[0].identifier, g.currentTestStatus, expectedStatus);
+  }
 
   // Replace document with BLANK_URL_FOR_CLEARING in case there are
   // assertions when unloading.
@@ -1718,6 +1738,7 @@ function FinishTestItem() {
   g.failedOpaqueLayerMessages = [];
   g.failedAssignedLayer = false;
   g.failedAssignedLayerMessages = [];
+  g.failedNoWRRaster = false;
 }
 
 async function DoAssertionCheck(numAsserts) {
@@ -1864,6 +1885,12 @@ function RegisterMessageListenersAndLoadContentScript(aReload) {
     }
   );
   g.browserMessageManager.addMessageListener(
+    "reftest:FailedNoWRRaster",
+    function () {
+      RecvFailedNoWRRaster();
+    }
+  );
+  g.browserMessageManager.addMessageListener(
     "reftest:InitCanvasWithSnapshot",
     function () {
       RecvInitCanvasWithSnapshot();
@@ -1960,6 +1987,7 @@ function RecvContentReady(info) {
 function RecvException(what) {
   logger.error(g.currentURL + " | " + what);
   ++g.testResults.Exception;
+  g.currentTestStatus = "FAIL";
 }
 
 function RecvFailedLoad(why) {
@@ -1988,6 +2016,10 @@ function RecvFailedAssignedLayer(why) {
   g.failedAssignedLayerMessages.push(why);
 }
 
+function RecvFailedNoWRRaster() {
+  g.failedNoWRRaster = true;
+}
+
 async function RecvInitCanvasWithSnapshot() {
   var painted = await InitCurrentCanvasWithSnapshot();
   SendUpdateCurrentCanvasWithSnapshotDone(painted);
@@ -2004,6 +2036,7 @@ function RecvLog(type, msg) {
       "REFTEST TEST-UNEXPECTED-FAIL | " + g.currentURL + " | " + msg + "\n"
     );
     ++g.testResults.Exception;
+    g.currentTestStatus = "FAIL";
   } else {
     logger.error(
       "REFTEST TEST-UNEXPECTED-FAIL | " +
@@ -2013,6 +2046,7 @@ function RecvLog(type, msg) {
         "\n"
     );
     ++g.testResults.Exception;
+    g.currentTestStatus = "FAIL";
   }
 }
 
@@ -2070,6 +2104,7 @@ function RecvPrintResult(runtimeMs, status, fileName) {
         " | error during printing\n"
     );
     ++g.testResults.Exception;
+    g.currentTestStatus = "FAIL";
   }
   RecordResult(runtimeMs, "", fileName);
 }

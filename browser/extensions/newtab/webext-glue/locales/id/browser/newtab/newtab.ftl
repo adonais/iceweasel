@@ -329,6 +329,9 @@ newtab-custom-widget-weather-toggle =
 newtab-custom-widget-lists-toggle =
     .label = Daftar
 newtab-custom-widget-section-title = Widget
+newtab-custom-widget-section-toggle =
+    .label = Widget
+newtab-widget-manage-title = Widget
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = Tutup
@@ -468,6 +471,11 @@ newtab-weather-menu-hide-weather = Sembunyikan cuaca di Tab Baru
 newtab-weather-menu-learn-more = Pelajari lebih lanjut
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Data cuaca tidak tersedia saat ini.
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = Lihat prakiraan di { $provider }
+    .aria-description = { $provider } ∙ Bersponsor
 
 ## Topic Labels
 
@@ -564,7 +572,7 @@ newtab-download-mobile-highlight-body-variant-a = Pindai kode untuk menjelajah d
 newtab-shortcuts-highlight-title = Favorit Anda di ujung jari Anda
 newtab-shortcuts-highlight-subtitle = Tambahkan pintasan untuk menjaga situs favorit Anda dengan sekali klik.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = Mengapa Anda melaporkan ini?
@@ -580,10 +588,6 @@ newtab-report-cancel = Batal
 newtab-report-submit = Kirim
 newtab-toast-thanks-for-reporting =
     .message = Terima kasih telah melaporkan ini.
-
-## Strings for trending searches
-
-newtab-trending-searches-learn-more = Pelajari lebih lanjut
 
 ## Strings for task / to-do list productivity widget
 

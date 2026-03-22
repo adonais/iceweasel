@@ -90,7 +90,7 @@ WaylandShmPool::~WaylandShmPool() {
 
 WaylandBuffer::WaylandBuffer(const LayoutDeviceIntSize& aSize) : mSize(aSize) {}
 
-bool WaylandBuffer::IsAttached() const {
+bool WaylandBuffer::IsAttached(const WaylandSurfaceLock& aSurfaceLock) const {
   for (const auto& transaction : mBufferTransactions) {
     if (transaction->IsAttached()) {
       return true;
@@ -130,7 +130,8 @@ BufferTransaction* WaylandBuffer::GetTransaction(
   return transaction;
 }
 
-void WaylandBuffer::RemoveTransaction(RefPtr<BufferTransaction> aTransaction) {
+void WaylandBuffer::RemoveTransaction(const WaylandSurfaceLock& aSurfaceLock,
+                                      RefPtr<BufferTransaction> aTransaction) {
   LOGWAYLAND("WaylandBuffer::RemoveTransaction() [%p]", (void*)aTransaction);
   [[maybe_unused]] bool removed =
       mBufferTransactions.RemoveElement(aTransaction);
@@ -187,7 +188,7 @@ WaylandBufferSHM::WaylandBufferSHM(const LayoutDeviceIntSize& aSize)
 
 WaylandBufferSHM::~WaylandBufferSHM() {
   LOGWAYLAND("WaylandBufferSHM::~WaylandBufferSHM() [%p]\n", (void*)this);
-  MOZ_RELEASE_ASSERT(!IsAttached());
+  MOZ_RELEASE_ASSERT(mBufferTransactions.IsEmpty());
 }
 
 already_AddRefed<gfx::DrawTarget> WaylandBufferSHM::Lock() {
@@ -286,7 +287,7 @@ WaylandBufferDMABUF::WaylandBufferDMABUF(const LayoutDeviceIntSize& aSize)
 WaylandBufferDMABUF::~WaylandBufferDMABUF() {
   LOGWAYLAND("WaylandBufferDMABUF::~WaylandBufferDMABUF [%p] UID %d\n",
              (void*)this, mDMABufSurface ? mDMABufSurface->GetUID() : -1);
-  MOZ_RELEASE_ASSERT(!IsAttached());
+  MOZ_RELEASE_ASSERT(mBufferTransactions.IsEmpty());
 }
 
 #ifdef MOZ_LOGGING
@@ -471,7 +472,7 @@ void BufferTransaction::DeleteLocked(const WaylandSurfaceLock& aSurfaceLock) {
 
   // This can destroy us
   RefPtr grip{this};
-  mBuffer->RemoveTransaction(this);
+  mBuffer->RemoveTransaction(aSurfaceLock, this);
   mBuffer = nullptr;
 }
 

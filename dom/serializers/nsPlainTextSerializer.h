@@ -11,8 +11,8 @@
  * (eg for copy/paste as plaintext).
  */
 
-#ifndef nsPlainTextSerializer_h__
-#define nsPlainTextSerializer_h__
+#ifndef nsPlainTextSerializer_h_
+#define nsPlainTextSerializer_h_
 
 #include <stack>
 

@@ -9,10 +9,15 @@ import {
   DecorationSet,
   EditorState,
   EditorView,
+  MarkdownParser,
+  MarkdownSerializer,
   Plugin as PmPlugin,
+  Schema,
   TextSelection,
   baseKeymap,
   basicSchema,
+  defaultMarkdownParser,
+  defaultMarkdownSerializer,
   history as historyPlugin,
   keymap,
   redo as historyRedo,
@@ -20,11 +25,22 @@ import {
 } from "chrome://browser/content/multilineeditor/prosemirror.bundle.mjs";
 
 /**
+ * @typedef {object} MultilineEditorPlugin
+ * @property {object} [schemaExtension] - Schema extensions
+ * @property {object} [schemaExtension.nodes] - Node specs
+ * @property {object} [schemaExtension.marks] - Mark specs
+ * @property {function(MultilineEditor): PmPlugin} [createPlugin] - Create plugin
+ * @property {object} [parseMarkdown] - Markdown token specs
+ * @property {object} [toMarkdown] - Markdown serializer functions
+ */
+
+/**
  * @class MultilineEditor
  *
  * A ProseMirror-based multiline editor.
  *
  * @property {string} placeholder - Placeholder text for the editor.
+ * @property {Array<MultilineEditorPlugin>} plugins - Editor plugins.
  * @property {boolean} readOnly - Whether the editor is read-only.
  */
 export class MultilineEditor extends MozLitElement {
@@ -36,20 +52,29 @@ export class MultilineEditor extends MozLitElement {
   static properties = {
     placeholder: { type: String, reflect: true, fluent: true },
     readOnly: { type: Boolean, reflect: true, attribute: "readonly" },
+    plugins: { type: Array, attribute: false },
   };
 
-  static schema = basicSchema;
+  static schema = new Schema({
+    nodes: {
+      doc: basicSchema.spec.nodes.get("doc"),
+      paragraph: basicSchema.spec.nodes.get("paragraph"),
+      text: basicSchema.spec.nodes.get("text"),
+    },
+  });
 
   #pendingValue = "";
   #placeholderPlugin;
   #plugins;
   #suppressInputEvent = false;
   #view;
+  #markdownSerializer;
 
   constructor() {
     super();
 
     this.placeholder = "";
+    this.plugins = [];
     this.readOnly = false;
     this.#placeholderPlugin = this.#createPlaceholderPlugin();
     const plugins = [
@@ -74,6 +99,15 @@ export class MultilineEditor extends MozLitElement {
   }
 
   /**
+   * The ProseMirror view instance.
+   *
+   * @type {EditorView}
+   */
+  get view() {
+    return this.#view;
+  }
+
+  /**
    * Whether the editor is composing.
    *
    * @type {boolean}
@@ -90,6 +124,9 @@ export class MultilineEditor extends MozLitElement {
   get value() {
     if (!this.#view) {
       return this.#pendingValue;
+    }
+    if (this.#markdownSerializer) {
+      return this.#markdownSerializer.serialize(this.#view.state.doc);
     }
     return this.#view.state.doc.textBetween(
       0,
@@ -235,6 +272,7 @@ export class MultilineEditor extends MozLitElement {
    */
   select() {
     this.setSelectionRange(0, this.value.length);
+    this.focus();
   }
 
   /**
@@ -275,9 +313,99 @@ export class MultilineEditor extends MozLitElement {
    * @param {Map} changedProps
    */
   updated(changedProps) {
-    if (changedProps.has("placeholder") || changedProps.has("readOnly")) {
+    if (
+      changedProps.has("placeholder") ||
+      changedProps.has("plugins") ||
+      changedProps.has("readOnly")
+    ) {
       this.#refreshView();
     }
+  }
+
+  #buildSchema() {
+    const nodes = {};
+    const marks = {};
+
+    for (const plugin of this.plugins) {
+      Object.assign(nodes, plugin.schemaExtension?.nodes ?? {});
+      Object.assign(marks, plugin.schemaExtension?.marks ?? {});
+    }
+
+    if (Object.keys(nodes).length === 0 && Object.keys(marks).length === 0) {
+      return MultilineEditor.schema;
+    }
+
+    const baseSchemaSpec = MultilineEditor.schema.spec;
+    return new Schema({
+      nodes: baseSchemaSpec.nodes.append(nodes),
+      marks: baseSchemaSpec.marks.append(marks),
+    });
+  }
+
+  #createMarkdownClipboardPlugin(schema) {
+    const parsers = {};
+    const serializers = {};
+
+    for (const plugin of this.plugins) {
+      Object.assign(parsers, plugin.parseMarkdown ?? {});
+      Object.assign(serializers, plugin.toMarkdown ?? {});
+    }
+
+    if (
+      Object.keys(parsers).length === 0 &&
+      Object.keys(serializers).length === 0
+    ) {
+      return null;
+    }
+
+    // Filter parser tokens that reference nodes or marks not in the schema.
+    const filterParserTokens = tokens => {
+      const filtered = {};
+      for (const [key, spec] of Object.entries(tokens)) {
+        if (
+          Object.values(spec).every(
+            val =>
+              typeof val !== "string" || schema.nodes[val] || schema.marks[val]
+          )
+        ) {
+          filtered[key] = spec;
+        }
+      }
+      return filtered;
+    };
+
+    const filterBySchema = (items, schemaItems) => {
+      const filtered = {};
+      for (const [key, value] of Object.entries(items)) {
+        if (schemaItems[key]) {
+          filtered[key] = value;
+        }
+      }
+      return filtered;
+    };
+
+    const parser = new MarkdownParser(schema, defaultMarkdownParser.tokenizer, {
+      ...filterParserTokens(defaultMarkdownParser.tokens),
+      ...parsers,
+    });
+    const serializer = new MarkdownSerializer(
+      {
+        ...defaultMarkdownSerializer.nodes,
+        ...filterBySchema(serializers, schema.nodes),
+      },
+      {
+        ...defaultMarkdownSerializer.marks,
+        ...filterBySchema(serializers, schema.marks),
+      }
+    );
+    this.#markdownSerializer = serializer;
+
+    return new PmPlugin({
+      props: {
+        clipboardTextParser: text => parser.parse(text)?.content,
+        clipboardTextSerializer: slice => serializer.serialize(slice.content),
+      },
+    });
   }
 
   #createView() {
@@ -286,9 +414,19 @@ export class MultilineEditor extends MozLitElement {
       return;
     }
 
+    const schema = this.#buildSchema();
+    const markdownPlugin = this.#createMarkdownClipboardPlugin(schema);
+    const customPlugins = this.plugins
+      .map(plugin => plugin.createPlugin?.(this))
+      .filter(Boolean);
+
     const state = EditorState.create({
-      schema: MultilineEditor.schema,
-      plugins: this.#plugins,
+      schema,
+      plugins: [
+        ...this.#plugins,
+        ...(markdownPlugin ? [markdownPlugin] : []),
+        ...customPlugins,
+      ],
     });
 
     this.#view = new EditorView(mount, {
@@ -296,6 +434,10 @@ export class MultilineEditor extends MozLitElement {
       attributes: this.#viewAttributes(),
       editable: () => !this.readOnly,
       dispatchTransaction: this.#dispatchTransaction,
+      nodeViews: Object.assign(
+        {},
+        ...this.plugins.map(plugin => plugin.nodeViews).filter(Boolean)
+      ),
     });
 
     if (this.#pendingValue) {

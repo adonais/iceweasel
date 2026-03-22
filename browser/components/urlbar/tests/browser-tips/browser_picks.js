@@ -48,7 +48,8 @@ add_task(async function mouse_insideTipButNotOnButtons() {
     makeTipResult({ buttonUrl: TIP_URL, helpUrl: HELP_URL, heuristic: true }),
   ];
   let provider = new UrlbarTestUtils.TestProvider({ results, priority: 1 });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
@@ -82,7 +83,7 @@ add_task(async function mouse_insideTipButNotOnButtons() {
   );
 
   await UrlbarTestUtils.promisePopupClose(window);
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
 });
 
 /**
@@ -118,7 +119,8 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
     priority: 1,
     onEngagement: () => deferred.resolve(),
   });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   // Do a search to show our tip result.
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -143,7 +145,7 @@ async function doTest({ click, buttonUrl = undefined, helpUrl = undefined }) {
 
   // Done.
   await UrlbarTestUtils.promisePopupClose(window);
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
   if (tab) {
     BrowserTestUtils.removeTab(tab);
   }

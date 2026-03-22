@@ -75,7 +75,9 @@ export const MultiStageAboutWelcome = props => {
         .AWGetUnhandledCampaignAction?.()
         .then(action => {
           if (typeof action === "string") {
-            AboutWelcomeUtils.handleCampaignAction(action, props.message_id);
+            AboutWelcomeUtils.handleCampaignAction(action, props.message_id, {
+              writeInMicrosurvey: props.writeInMicrosurvey,
+            });
           }
         })
         .catch(error => {
@@ -96,6 +98,7 @@ export const MultiStageAboutWelcome = props => {
             screen_index: order,
             screen_id: screen.id,
             screen_initials: screenInitials,
+            writeInMicrosurvey: props.writeInMicrosurvey,
           });
 
           window.AWAddScreenImpression?.(screen);
@@ -215,6 +218,10 @@ export const MultiStageAboutWelcome = props => {
   const [activeSingleSelectSelections, setActiveSingleSelectSelections] =
     useState({});
 
+  // Save textarea inputs for each screen as an object keyed by screen id. It's
+  // structured like this: { screenId: { textareaId: { value, isValid } } }
+  const [textInputs, setTextInputs] = useState({});
+
   // Get the active theme so the rendering code can make it selected
   // by default.
   const [activeTheme, setActiveTheme] = useState(null);
@@ -319,6 +326,20 @@ export const MultiStageAboutWelcome = props => {
             });
           };
 
+          const setTextInput = (value, inputId) => {
+            setTextInputs(prevState => {
+              const currentScreenInputs = prevState[currentScreen.id] || {};
+
+              return {
+                ...prevState,
+                [currentScreen.id]: {
+                  ...currentScreenInputs,
+                  [inputId]: value,
+                },
+              };
+            });
+          };
+
           return index === order ? (
             <WelcomeScreen
               key={currentScreen.id + order}
@@ -331,7 +352,9 @@ export const MultiStageAboutWelcome = props => {
               previousOrder={previousOrder}
               content={currentScreen.content}
               navigate={handleTransition}
+              autoAdvance={currentScreen.auto_advance}
               messageId={`${props.message_id}_${order}_${currentScreen.id}`}
+              writeInMicrosurvey={props.writeInMicrosurvey}
               UTMTerm={props.utm_term}
               flowParams={flowParams}
               activeTheme={activeTheme}
@@ -342,11 +365,12 @@ export const MultiStageAboutWelcome = props => {
               setScreenMultiSelects={setScreenMultiSelects}
               activeMultiSelect={activeMultiSelects[currentScreen.id]}
               setActiveMultiSelect={setActiveMultiSelect}
-              autoAdvance={currentScreen.auto_advance}
               activeSingleSelectSelections={
                 activeSingleSelectSelections[currentScreen.id]
               }
               setActiveSingleSelectSelection={setActiveSingleSelectSelection}
+              textInputs={textInputs[currentScreen.id]}
+              setTextInput={setTextInput}
               negotiatedLanguage={negotiatedLanguage}
               langPackInstallPhase={langPackInstallPhase}
               forceHideStepsIndicator={currentScreen.force_hide_steps_indicator}
@@ -378,6 +402,7 @@ const renderSingleSecondaryCTAButton = ({
   position,
   handleAction,
   activeMultiSelect,
+  textInputs,
   isArrayItem,
   index = null,
 }) => {
@@ -412,6 +437,16 @@ const renderSingleSecondaryCTAButton = ({
       }
 
       return true;
+    }
+    if (disabledValue === "hasTextInput") {
+      // For text input, we check if the user has entered any text in the
+      // textarea(s) present on the screen.
+      if (!textInputs) {
+        return true;
+      }
+      return Object.values(textInputs).every(
+        input => !input.isValid || input.value.trim().length === 0
+      );
     }
     return disabledValue;
   };
@@ -516,6 +551,7 @@ export const SecondaryCTA = props => {
             position,
             handleAction: props.handleAction,
             activeMultiSelect: props.activeMultiSelect,
+            textInputs: props.textInputs,
             isArrayItem: true,
             index,
           })
@@ -531,6 +567,7 @@ export const SecondaryCTA = props => {
     position,
     handleAction: props.handleAction,
     activeMultiSelect: props.activeMultiSelect,
+    textInputs: props.textInputs,
     isArrayItem: false,
   });
 };
@@ -603,13 +640,17 @@ export class WelcomeScreen extends React.PureComponent {
   }
 
   logTelemetry({ value, event, source, props }) {
-    AboutWelcomeUtils.sendActionTelemetry(props.messageId, source, event.name);
+    AboutWelcomeUtils.sendActionTelemetry(props.messageId, source, event.name, {
+      writeInMicrosurvey: props.writeInMicrosurvey,
+    });
 
     // Send additional telemetry if a messaging surface like feature callout is
     // dismissed via the dismiss button. Other causes of dismissal will be
     // handled separately by the messaging surface's own code.
     if (value === "dismiss_button" && !event.name) {
-      AboutWelcomeUtils.sendDismissTelemetry(props.messageId, source);
+      AboutWelcomeUtils.sendDismissTelemetry(props.messageId, source, {
+        writeInMicrosurvey: props.writeInMicrosurvey,
+      });
     }
   }
 
@@ -620,7 +661,12 @@ export class WelcomeScreen extends React.PureComponent {
 
     if (hasMigrate(action)) {
       await window.AWWaitForMigrationClose();
-      AboutWelcomeUtils.sendActionTelemetry(props.messageId, "migrate_close");
+      AboutWelcomeUtils.sendActionTelemetry(
+        props.messageId,
+        "migrate_close",
+        "CLICK_BUTTON",
+        { writeInMicrosurvey: props.writeInMicrosurvey }
+      );
     }
   }
 
@@ -709,6 +755,10 @@ export class WelcomeScreen extends React.PureComponent {
       this.setMultiSelectActions(action);
     }
 
+    if (action.collectTextInput && Object.values(props.textInputs).length) {
+      this.setTextInputActions(action);
+    }
+
     let actionResult;
     if (["OPEN_URL", "SHOW_FIREFOX_ACCOUNTS"].includes(action.type)) {
       this.handleOpenURL(action, props.flowParams, props.UTMTerm);
@@ -721,7 +771,8 @@ export class WelcomeScreen extends React.PureComponent {
         AboutWelcomeUtils.sendActionTelemetry(
           props.messageId,
           actionResult ? "sign_in" : "sign_in_cancel",
-          "FXA_SIGNIN_FLOW"
+          "FXA_SIGNIN_FLOW",
+          { writeInMicrosurvey: props.writeInMicrosurvey }
         );
       }
 
@@ -858,9 +909,80 @@ export class WelcomeScreen extends React.PureComponent {
       AboutWelcomeUtils.sendActionTelemetry(
         props.messageId,
         value.flat(),
-        "SELECT_CHECKBOX"
+        "SELECT_CHECKBOX",
+        { writeInMicrosurvey: props.writeInMicrosurvey }
       );
     }
+  }
+
+  setTextInputActions(action) {
+    let { props } = this;
+
+    if (action.type !== "MULTI_ACTION") {
+      console.error(
+        "collectTextInput is only supported for MULTI_ACTION type actions"
+      );
+      action.type = "MULTI_ACTION";
+    }
+    if (!Array.isArray(action.data?.actions)) {
+      console.error(
+        "collectTextInput is only supported for MULTI_ACTION type actions with an array of actions"
+      );
+      action.data = { actions: [] };
+    }
+
+    const collectedActions = [];
+
+    // If there is no character_limit, we still need to limit the size of the
+    // input to avoid sending huge payloads. We'll go with 8KB.
+    const truncateToByteSize = (str, maxBytes) => {
+      const encoder = new TextEncoder();
+      const encoded = encoder.encode(str);
+      if (encoded.length <= maxBytes) {
+        return str;
+      }
+      let end = maxBytes;
+      // Step back until we find a valid UTF-8 start byte
+      while (end > 0 && (encoded[end] & 0b11000000) === 0b10000000) {
+        end--; // this is a continuation byte
+      }
+      return new TextDecoder().decode(encoded.subarray(0, end));
+    };
+
+    const processTile = (tile, tileIndex) => {
+      if (tile?.type !== "textarea" || !tile.data) {
+        return;
+      }
+
+      const inputId = tile.data.id || `tile-${tileIndex}`;
+      const inputData = props.textInputs[inputId];
+      if (inputData?.isValid && inputData.value.trim().length) {
+        if (tile.data.action) {
+          collectedActions.push(tile.data.action);
+        }
+        AboutWelcomeUtils.sendActionTelemetry(
+          props.messageId,
+          inputId,
+          "TEXT_INPUT",
+          {
+            value: truncateToByteSize(inputData.value, 8192),
+            writeInMicrosurvey: props.writeInMicrosurvey,
+          }
+        );
+      }
+    };
+
+    if (props.content?.tiles) {
+      if (Array.isArray(props.content.tiles)) {
+        for (const [index, tile] of props.content.tiles.entries()) {
+          processTile(tile, index);
+        }
+      } else {
+        processTile(props.content.tiles, 0);
+      }
+    }
+
+    action.data.actions.unshift(...collectedActions);
   }
 
   render() {
@@ -880,12 +1002,15 @@ export class WelcomeScreen extends React.PureComponent {
         setActiveSingleSelectSelection={
           this.props.setActiveSingleSelectSelection
         }
+        textInputs={this.props.textInputs}
+        setTextInput={this.props.setTextInput}
         totalNumberOfScreens={this.props.totalNumberOfScreens}
         appAndSystemLocaleInfo={this.props.appAndSystemLocaleInfo}
         negotiatedLanguage={this.props.negotiatedLanguage}
         langPackInstallPhase={this.props.langPackInstallPhase}
         handleAction={this.handleAction}
         messageId={this.props.messageId}
+        writeInMicrosurvey={this.props.writeInMicrosurvey}
         isFirstScreen={this.props.isFirstScreen}
         isLastScreen={this.props.isLastScreen}
         isSingleScreen={this.props.isSingleScreen}

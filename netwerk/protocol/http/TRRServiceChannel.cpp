@@ -15,7 +15,9 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "nsDNSPrefetch.h"
 #include "nsEscape.h"
+#include "nsHttpConnectionMgr.h"
 #include "nsHttpTransaction.h"
+#include "nsThreadUtils.h"
 #include "nsICancelable.h"
 #include "nsICachingChannel.h"
 #include "nsIProtocolProxyService2.h"
@@ -310,13 +312,15 @@ TRRServiceChannel::OnProxyAvailable(nsICancelable* request, nsIChannel* channel,
   if (!mCurrentEventTarget->IsOnCurrentThread()) {
     RefPtr<TRRServiceChannel> self = this;
     nsCOMPtr<nsIProxyInfo> info = pi;
-    return mCurrentEventTarget->Dispatch(
-        NS_NewRunnableFunction("TRRServiceChannel::OnProxyAvailable",
-                               [self, info, status]() {
-                                 self->OnProxyAvailable(nullptr, nullptr, info,
-                                                        status);
-                               }),
-        NS_DISPATCH_NORMAL);
+    nsCOMPtr<nsIRunnable> event = NS_NewRunnableFunction(
+        "TRRServiceChannel::OnProxyAvailable", [self, info, status]() {
+          self->OnProxyAvailable(nullptr, nullptr, info, status);
+        });
+    if (StaticPrefs::network_trr_high_priority_events()) {
+      event = new PrioritizableRunnable(
+          event.forget(), nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
+    }
+    return mCurrentEventTarget->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
   }
 
   MOZ_ASSERT(mCurrentEventTarget->IsOnCurrentThread());
@@ -410,7 +414,10 @@ nsresult TRRServiceChannel::BeginConnect() {
       (scheme.EqualsLiteral("http") || scheme.EqualsLiteral("https")) &&
       (mapping = gHttpHandler->GetAltServiceMapping(
            scheme, host, port, mPrivateBrowsing, OriginAttributes(),
-           http2Allowed, http3Allowed))) {
+           http2Allowed, http3Allowed,
+           StaticPrefs::network_trr_force_http3_first() ||
+               (StaticPrefs::network_trr_allow_default_http3_first() &&
+                TRRService::Get()->GetHttp3FirstForServer(host))))) {
     LOG(("TRRServiceChannel %p Alt Service Mapping Found %s://%s:%d [%s]\n",
          this, scheme.get(), mapping->AlternateHost().get(),
          mapping->AlternatePort(), mapping->HashKey().get()));
@@ -512,8 +519,10 @@ nsresult TRRServiceChannel::ContinueOnBeforeConnect() {
   if (mLoadFlags & LOAD_FRESH_CONNECTION) {
     glean::networking::trr_connection_cycle_count.Get(TRRService::ProviderKey())
         .Add(1);
-    nsresult rv =
-        gHttpHandler->ConnMgr()->DoSingleConnectionCleanup(mConnectionInfo);
+    nsresult rv = gHttpHandler->ConnMgr()->DoSingleConnectionCleanup(
+        mConnectionInfo, StaticPrefs::network_trr_high_priority_events()
+                             ? nsIRunnablePriority::PRIORITY_MEDIUMHIGH
+                             : nsIRunnablePriority::PRIORITY_NORMAL);
     LOG(
         ("TRRServiceChannel::BeginConnect "
          "DoSingleConnectionCleanup succeeded=%d %08x [this=%p]",
@@ -663,6 +672,10 @@ nsresult TRRServiceChannel::SetupTransaction() {
     return rv;
   }
 
+  if (StaticPrefs::network_trr_high_priority_events()) {
+    mTransaction->SetIsTRRTransaction();
+  }
+
   return rv;
 }
 
@@ -795,14 +808,17 @@ void TRRServiceChannel::AfterApplyContentConversions(
   if (!mCurrentEventTarget->IsOnCurrentThread()) {
     RefPtr<TRRServiceChannel> self = this;
     nsCOMPtr<nsIStreamListener> listener = aListener;
-    self->mCurrentEventTarget->Dispatch(
-        NS_NewRunnableFunction(
-            "TRRServiceChannel::AfterApplyContentConversions",
-            [self, aResult, listener]() {
-              self->Resume();
-              self->AfterApplyContentConversions(aResult, listener);
-            }),
-        NS_DISPATCH_NORMAL);
+    nsCOMPtr<nsIRunnable> event = NS_NewRunnableFunction(
+        "TRRServiceChannel::AfterApplyContentConversions",
+        [self, aResult, listener]() {
+          self->Resume();
+          self->AfterApplyContentConversions(aResult, listener);
+        });
+    if (StaticPrefs::network_trr_high_priority_events()) {
+      event = new PrioritizableRunnable(
+          event.forget(), nsIRunnablePriority::PRIORITY_MEDIUMHIGH);
+    }
+    self->mCurrentEventTarget->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
     return;
   }
 

@@ -9,8 +9,8 @@
  * values they accept
  */
 
-#ifndef nsCSSProps_h___
-#define nsCSSProps_h___
+#ifndef nsCSSProps_h_
+#define nsCSSProps_h_
 
 #include <ostream>
 
@@ -239,4 +239,4 @@ inline std::ostream& operator<<(std::ostream& aOut,
   return aOut << nsCSSProps::GetStringValue(aProperty);
 }
 
-#endif /* nsCSSProps_h___ */
+#endif /* nsCSSProps_h_ */

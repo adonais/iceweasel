@@ -2478,6 +2478,7 @@ class WalkerActor extends Actor {
     const mutation = {
       type: "shadowRootAttached",
       target: actor.actorID,
+      numChildren: actor.numChildren,
     };
     this.queueMutation(mutation);
   }

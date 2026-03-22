@@ -32,7 +32,6 @@ class PlatformCompositorWidgetDelegate : public CompositorWidgetDelegate {
   virtual GtkCompositorWidget* AsGtkCompositorWidget() { return nullptr; };
 
   virtual void CleanupResources() = 0;
-  virtual void SetRenderingSurface(const uintptr_t aXWindow) = 0;
 
   // CompositorWidgetDelegate Overrides
 
@@ -75,9 +74,6 @@ class GtkCompositorWidget : public CompositorWidget,
   // Suspend rendering of this remote widget and clear all resources.
   // Can be used when underlying window is hidden/unmapped.
   void CleanupResources() override;
-
-  // Resume rendering with to given aXWindow (X11) or nsWindow (Wayland).
-  void SetRenderingSurface(const uintptr_t aXWindow) override;
 
   // Set EGLWindow size to avoid rendering artifacts
   void SetEGLNativeWindowSize(const LayoutDeviceIntSize& aEGLWindowSize);

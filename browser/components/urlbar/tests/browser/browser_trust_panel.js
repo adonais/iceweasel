@@ -19,12 +19,15 @@ const TRACKING_PAGE =
 const ETP_ACTIVE_ICON = 'url("chrome://browser/skin/trust-icon-active.svg")';
 const ETP_DISABLED_ICON =
   'url("chrome://browser/skin/trust-icon-disabled.svg")';
+const INSECURE_ICON = 'url("chrome://browser/skin/trust-icon-insecure.svg")';
 
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.scotchBonnet.enableOverride", true],
       ["browser.urlbar.trustPanel.featureGate", true],
+      // Hover previews can block opening the trustpanel.
+      ["browser.tabs.hoverPreview.enabled", false],
     ],
   });
   registerCleanupFunction(async () => {
@@ -254,5 +257,64 @@ add_task(async function test_etld() {
     "Showing the eTLD+1"
   );
 
+  await BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_privacy_link() {
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "https://www.example.com",
+    waitForLoad: true,
+  });
+
+  await UrlbarTestUtils.openTrustPanel(window);
+
+  let popupHidden = BrowserTestUtils.waitForEvent(
+    window.document,
+    "popuphidden"
+  );
+
+  let newTabPromise = BrowserTestUtils.waitForNewTab(
+    gBrowser,
+    "about:preferences#privacy",
+    true
+  );
+
+  let privacyButton = window.document.getElementById("trustpanel-privacy-link");
+  EventUtils.synthesizeMouseAtCenter(privacyButton, {}, window);
+  let newTab = await newTabPromise;
+  await popupHidden;
+
+  Assert.ok(true, "Popup was hidden");
+
+  await BrowserTestUtils.removeTab(newTab);
+  await BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_about() {
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "about:config",
+    waitForLoad: true,
+  });
+
+  await UrlbarTestUtils.openTrustPanel(window);
+  Assert.ok(true, "The panel can be opened.");
+
+  await BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function insecure_and_etp_disabled_test() {
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    opening: "http://example.com",
+    waitForLoad: true,
+  });
+
+  await toggleETP(tab);
+  Assert.equal(urlbarIcon(window), INSECURE_ICON, "Showing url insecure icon");
+
+  await toggleETP(tab);
   await BrowserTestUtils.removeTab(tab);
 });

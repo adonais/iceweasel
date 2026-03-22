@@ -16,7 +16,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.mozilla.fenix.GleanMetrics.Onboarding
 
@@ -31,7 +30,7 @@ class PrivacyPreferencesTelemetryMiddlewareTest {
     @Before
     fun setup() {
         MockitoAnnotations.openMocks(this)
-        middleware = PrivacyPreferencesTelemetryMiddleware()
+        middleware = PrivacyPreferencesTelemetryMiddleware(installSource = "installPackage")
     }
 
     @Test

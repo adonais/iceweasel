@@ -65,17 +65,9 @@ function extractRgbaOverlayString(linearGradientStr) {
   return linearGradientStr.substring(start + 1, end + 1);
 }
 
-function testColorPreviewDisplay(
-  spectrum,
-  expectedRgbCssString,
-  expectedBorderColor
-) {
+function testColorPreviewDisplay(spectrum, expectedRgbCssString) {
   const { colorPreview } = spectrum;
   const colorPreviewStyle = window.getComputedStyle(colorPreview);
-  expectedBorderColor =
-    expectedBorderColor === "transparent"
-      ? "rgba(0, 0, 0, 0)"
-      : expectedBorderColor;
 
   spectrum.updateUI();
 
@@ -97,7 +89,7 @@ function testColorPreviewDisplay(
   const borderColorTop = colorPreviewStyle.getPropertyValue("border-top-color");
   is(
     borderColorTop,
-    expectedBorderColor,
+    "color(srgb 0.5 0.5 0.5 / 0.5)",
     "Color preview border color is correct."
   );
 }
@@ -322,19 +314,19 @@ async function testChangingColorShouldUpdateColorPreview(container) {
   const s = await createSpectrum(container, [0, 0, 1, 1]);
 
   info("Test that color preview is black.");
-  testColorPreviewDisplay(s, "rgb(0, 0, 1)", "transparent");
+  testColorPreviewDisplay(s, "rgb(0, 0, 1)");
 
   info("Test that color preview is blue.");
   s.rgb = [0, 0, 255, 1];
-  testColorPreviewDisplay(s, "rgb(0, 0, 255)", "transparent");
+  testColorPreviewDisplay(s, "rgb(0, 0, 255)");
 
   info("Test that color preview is red.");
   s.rgb = [255, 0, 0, 1];
-  testColorPreviewDisplay(s, "rgb(255, 0, 0)", "transparent");
+  testColorPreviewDisplay(s, "rgb(255, 0, 0)");
 
   info("Test that color preview is white and also has a light grey border.");
   s.rgb = cssColors.white;
-  testColorPreviewDisplay(s, "rgb(255, 255, 255)", "rgb(204, 204, 204)");
+  testColorPreviewDisplay(s, "rgb(255, 255, 255)");
 
   s.destroy();
 }

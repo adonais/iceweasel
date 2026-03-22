@@ -163,6 +163,23 @@ class MockAudioDataListener : public AudioDataListener {
               (MediaTrackGraph*, int,
                (const Result<cubeb_input_processing_params, int>&)));
 };
+
+class MockProcessedMediaTrack : public ProcessedMediaTrack {
+ public:
+  explicit MockProcessedMediaTrack(TrackRate aRate)
+      : ProcessedMediaTrack(aRate, MediaSegment::AUDIO, new AudioSegment()) {
+    ON_CALL(*this, ProcessInput)
+        .WillByDefault([segment = GetData<AudioSegment>()](
+                           GraphTime aFrom, GraphTime aTo, uint32_t aFlags) {
+          segment->AppendNullData(aTo - aFrom);
+        });
+  }
+
+  MOCK_METHOD(void, ProcessInput,
+              (GraphTime aFrom, GraphTime aTo, uint32_t aFlags), (override));
+
+  uint32_t NumberOfChannels() const override { return 2; };
+};
 }  // namespace
 
 /*
@@ -295,6 +312,21 @@ TEST(TestAudioTrackGraph, StreamName)
   // Test has finished. Destroy the track to shutdown the MTG.
   DispatchMethod(dummySource, &SourceMediaTrack::Destroy);
   WaitFor(cubeb->StreamDestroyEvent());
+}
+
+TEST(TestAudioTrackGraph, OfflineDestruction)
+{
+  RefPtr graph = static_cast<MediaTrackGraphImpl*>(
+      MediaTrackGraph::CreateNonRealtimeInstance(48000));
+  // Add and remove a dummy track to trigger graph shutdown.
+  RefPtr dummyTrack = new MockProcessedMediaTrack(graph->GraphRate());
+  graph->AddTrack(dummyTrack);
+  dummyTrack->Destroy();
+  // Wait until `graph` has the only reference to the graph.
+  SpinEventLoopUntil("TestAudioTrackGraph, OfflineDestruction"_ns, [&] {
+    graph.get()->AddRef();
+    return graph.get()->Release() == 1;
+  });
 }
 
 TEST(TestAudioTrackGraph, NotifyDeviceStarted)
@@ -3286,23 +3318,6 @@ TEST(TestAudioTrackGraph, PlatformProcessingNonNativeToNativeSwitch)
   }
 }
 
-class MockProcessedMediaTrack : public ProcessedMediaTrack {
- public:
-  explicit MockProcessedMediaTrack(TrackRate aRate)
-      : ProcessedMediaTrack(aRate, MediaSegment::AUDIO, new AudioSegment()) {
-    ON_CALL(*this, ProcessInput)
-        .WillByDefault([segment = GetData<AudioSegment>()](
-                           GraphTime aFrom, GraphTime aTo, uint32_t aFlags) {
-          segment->AppendNullData(aTo - aFrom);
-        });
-  }
-
-  MOCK_METHOD(void, ProcessInput,
-              (GraphTime aFrom, GraphTime aTo, uint32_t aFlags), (override));
-
-  uint32_t NumberOfChannels() const override { return 2; };
-};
-
 TEST(TestAudioTrackGraph, EmptyProcessingInterval)
 {
   MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
@@ -3484,6 +3499,7 @@ TEST(TestAudioTrackGraph, DefaultOutputDeviceIDTracking)
 #endif
 }
 
-#undef Invoke
+#undef InvokeAsync
 #undef DispatchFunction
 #undef DispatchMethod
+#undef ProcessEventQueue

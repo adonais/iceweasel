@@ -140,11 +140,11 @@ class Promise : public SupportsWeakPtr, public JSHolderBase {
     MaybeReject(std::move(res));                                  \
   }                                                               \
   template <int N>                                                \
-  void MaybeRejectWith##name(const char(&aMessage)[N]) {          \
+  void MaybeRejectWith##name(const char (&aMessage)[N]) {         \
     MaybeRejectWith##name(nsLiteralCString(aMessage));            \
   }
 
-#include "mozilla/dom/DOMExceptionNames.h"
+#include "mozilla/dom/DOMExceptionNames.inc"
 
 #undef DOMEXCEPTION
 

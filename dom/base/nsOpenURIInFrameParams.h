@@ -4,6 +4,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#ifndef DOM_BASE_NSOPENURIINFRAMEPARAMS_H_
+#define DOM_BASE_NSOPENURIINFRAMEPARAMS_H_
+
 #include "mozilla/BasePrincipal.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsFrameLoaderOwner.h"
@@ -39,3 +42,5 @@ class nsOpenURIInFrameParams final : public nsIOpenURIInFrameParams {
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   nsCOMPtr<nsIPolicyContainer> mPolicyContainer;
 };
+
+#endif  // DOM_BASE_NSOPENURIINFRAMEPARAMS_H_

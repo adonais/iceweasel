@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsExternalHelperAppService_h__
-#define nsExternalHelperAppService_h__
+#ifndef nsExternalHelperAppService_h_
+#define nsExternalHelperAppService_h_
 
 #include "mozilla/Logging.h"
 #include "prtime.h"
@@ -572,4 +572,4 @@ class nsExternalAppHandler final : public nsIStreamListener,
   RefPtr<nsExternalHelperAppService> mExtProtSvc;
 };
 
-#endif  // nsExternalHelperAppService_h__
+#endif  // nsExternalHelperAppService_h_

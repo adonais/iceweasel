@@ -326,7 +326,7 @@ static inline FillRule GetFillRule(SkPathFillType aFillType) {
     case SkPathFillType::kInverseWinding:
     case SkPathFillType::kInverseEvenOdd:
     default:
-      NS_WARNING("Unsupported fill type\n");
+      NS_WARNING("Unsupported fill type");
       break;
   }
 

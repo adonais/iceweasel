@@ -23,6 +23,9 @@ newtab-personalize-dialog-label =
     .aria-label = התאמה אישית
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
+newtab-card-dismiss-button =
+    .title = סגירה
+    .aria-label = סגירה
 
 ## Search box component.
 
@@ -323,18 +326,18 @@ newtab-custom-recent-subtitle = מבחר של אתרים ותכנים אחרונ
 newtab-custom-weather-toggle =
     .label = מזג אוויר
     .description = התחזית של היום
-newtab-custom-trending-search-toggle =
-    .label = חיפושים פופולריים
-    .description = נושאים נפוצים ובחיפוש תדיר
 newtab-custom-widget-weather-toggle =
     .label = מזג אוויר
-newtab-custom-widget-trending-search-toggle =
-    .label = חיפושים פופולריים
 newtab-custom-widget-lists-toggle =
     .label = רשימות
 newtab-custom-widget-timer-toggle =
     .label = שעון עצר
 newtab-custom-widget-section-title = ווידג’טים
+newtab-custom-widget-section-toggle =
+    .label = ווידג’טים
+newtab-widget-manage-title = ווידג’טים
+newtab-widget-manage-widget-button =
+    .label = ניהול ווידג’טים
 # Tooltip for close button
 newtab-custom-close-menu-button =
     .title = סגירה
@@ -462,6 +465,8 @@ newtab-weather-change-location-search-input-placeholder =
     .placeholder = חיפוש מקום
     .aria-label = חיפוש מקום
 newtab-weather-menu-weather-display = תצוגת מזג אוויר
+newtab-weather-todays-forecast = תחזית היום
+newtab-weather-see-full-forecast = הצגת תחזית מלאה
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
@@ -474,6 +479,7 @@ newtab-weather-menu-temperature-option-fahrenheit = פרנהייט
 newtab-weather-menu-temperature-option-celsius = צלזיוס
 newtab-weather-menu-change-temperature-units-fahrenheit = מעבר לפרנהייט
 newtab-weather-menu-change-temperature-units-celsius = מעבר לצלזיוס
+newtab-weather-menu-hide-weather-v2 = הסתרת מזג האוויר
 newtab-weather-menu-hide-weather = הסתרת מזג האוויר בלשונית החדשה
 newtab-weather-menu-learn-more = מידע נוסף
 newtab-weather-menu-detect-my-location = זיהוי המיקום שלי
@@ -486,6 +492,11 @@ newtab-weather-opt-in-yes =
     .label = כן
 # We'll be showing static (fake) weather data if the user has not opted in to using their location
 newtab-weather-static-city = New York City
+# Variables:
+#   $provider (string) - Service provider for weather data
+newtab-weather-see-forecast-description =
+    .title = הצגת התחזית ב־{ $provider }
+    .aria-description = ‏{ $provider } ∙ ממומן
 
 ## Topic Labels
 
@@ -590,7 +601,7 @@ newtab-download-mobile-highlight-image =
 newtab-shortcuts-highlight-title = המועדפים שלך בקצות האצבעות
 newtab-shortcuts-highlight-subtitle = ניתן להוסיף קיצור דרך כדי לשמור את האתרים המועדפים עליך במרחק קליק אחד.
 
-## Strings for reporting ads and content
+## Strings for reporting issues with ads and content
 
 newtab-report-content-why-reporting-this =
     .label = על מה הדיווח?
@@ -608,21 +619,13 @@ newtab-report-content-inappropriate-offensive =
     .label = בלתי הולם או פוגעני
 newtab-report-content-spam-misleading =
     .label = ספאם או הטעיה
+newtab-report-content-requires-payment-subscription =
+    .label = דורש תשלום או מינוי
+newtab-report-content-requires-payment-subscription-learn-more = מידע נוסף
 newtab-report-cancel = ביטול
 newtab-report-submit = שליחה
 newtab-toast-thanks-for-reporting =
     .message = תודה שדיווחת על זה.
-
-## Strings for trending searches
-
-newtab-trending-searches-show-trending =
-    .title = הצגת חיפושים פופולריים
-newtab-trending-searches-hide-trending =
-    .title = הסתרת חיפושים פופולריים
-newtab-trending-searches-learn-more = מידע נוסף
-newtab-trending-searches-dismiss = הסתרת חיפושים פופולריים
-# "Trending searches refers to popular searches from search engines
-newtab-trending-searches-title = חיפושים פופולריים
 
 ## Strings for task / to-do list productivity widget
 
@@ -695,6 +698,16 @@ newtab-widget-timer-menu-notifications = כיבוי התרעות
 newtab-widget-timer-menu-notifications-on = הפעלת התרעות
 newtab-widget-timer-menu-hide = הסתרת שעון עצר
 newtab-widget-timer-menu-learn-more = מידע נוסף
+# The title displays above a set of top news headlines.
+newtab-daily-briefing-card-title = כותרות מובילות
+newtab-daily-briefing-card-menu-dismiss = סגירה
+# Variables:
+#   $minutes (number) - Time since the feed has been refreshed
+newtab-daily-briefing-card-timestamp =
+    { $minutes ->
+        [one] עודכן לפני דקה אחת
+       *[other] עודכן לפני { $minutes } דקות
+    }
 newtab-widget-message-title = להישאר מרוכז בעזרת רשימות ושעון עצר מובנה
 # to-dos stands for "things to do".
 newtab-widget-message-copy = מתזכורות מהירות ועד למשימות יומיות, מזמני התמקדות ועד להפסקות להתמתחות - כך ניתן להספיק את המשימות בזמן.
@@ -704,3 +717,25 @@ newtab-promo-card-cta = מידע נוסף
 newtab-promo-card-dismiss-button =
     .title = סגירה
     .aria-label = סגירה
+
+## Strings for activation window message variants. In certain experiment configurations,
+## the strings from these variants may be displayed in a message below the search input
+## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
+## labels, but not all.
+
+newtab-activation-window-message-dismiss-button =
+    .title = סגירה
+    .aria-label = סגירה
+# "This space" refers to about:newtab. The call to action here ("make it your own")
+# is to customize newtab with a background image or colour, or by tweaking the
+# existing widgetry that appears on it.
+newtab-activation-window-message-customization-focus-header = התאמה אישית של הדף הזה
+newtab-activation-window-message-customization-focus-message = ניתן לבחור בטפט חדש, להוסיף קיצורי דרך לאתרים המועדפים עליך ולהישאר מעודכנים בסיפורים שמעניינים אותך.
+newtab-activation-window-message-customization-focus-primary-button =
+    .label = להתחיל להתאים אישית
+# "This space" refers to about:newtab. The sentiment of "plays by your rules" is
+# meant to evoke the idea that newtab is malleable and customizable. The call to
+# action is to customize newtab with a background image or colour, or by tweaking
+# the existing widgetry that appears on it.
+newtab-activation-window-message-values-focus-header = המרחב הזה פועל לפי הכללים שלך
+newtab-activation-window-message-values-focus-message = ‏{ -brand-product-name } מאפשר לך לגלוש בדרך שלך, עם דרך אישית יותר להתחיל את היום שלך באינטרנט. ניתן להפוך את { -brand-product-name } לשלך.

@@ -44,7 +44,7 @@ import mozilla.components.concept.fetch.Response
 import mozilla.components.lib.state.Store
 import java.security.cert.X509Certificate
 
-private const val PAGE_LOAD_COMPLETION_PROGRESS = 100
+internal const val PAGE_LOAD_COMPLETION_PROGRESS = 100
 
 /**
  * [EngineSession.Observer] implementation responsible to update the state of a [Session] from the events coming out of

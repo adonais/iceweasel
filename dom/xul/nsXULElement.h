@@ -9,8 +9,8 @@
 
 */
 
-#ifndef nsXULElement_h__
-#define nsXULElement_h__
+#ifndef nsXULElement_h_
+#define nsXULElement_h_
 
 #include <stdint.h>
 #include <stdio.h>
@@ -357,11 +357,6 @@ class nsXULElement : public nsStyledElement {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(nsXULElement, nsStyledElement)
 
-  // This doesn't work on XUL elements! You probably want
-  // GetXULBoolAttr(nsGkAtoms::disabled) or so.
-  // TODO(emilio): Maybe we should unify HTML and XUL here.
-  bool IsDisabled() const = delete;
-
   // nsINode
   void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
@@ -526,7 +521,6 @@ class nsXULElement : public nsStyledElement {
 
   bool SupportsAccessKey() const;
   void RegUnRegAccessKey(bool aDoReg) override;
-  bool BoolAttrIsTrue(nsAtom* aName) const;
 
   friend nsXULElement* NS_NewBasicXULElement(
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
@@ -547,4 +541,4 @@ class nsXULElement : public nsStyledElement {
                               nsAutoString& aCommand);
 };
 
-#endif  // nsXULElement_h__
+#endif  // nsXULElement_h_

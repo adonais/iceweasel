@@ -65,7 +65,7 @@ add_setup(async function () {
     activeUpdateFile.remove(false);
   } catch (e) {}
 
-  let defaultEngine = await Services.search.getDefault();
+  let defaultEngine = await SearchService.getDefault();
   let defaultEngineName = defaultEngine.name;
   Assert.equal(defaultEngineName, "Google", "Default engine should be Google.");
 

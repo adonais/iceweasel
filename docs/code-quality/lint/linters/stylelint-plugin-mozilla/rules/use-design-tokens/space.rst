@@ -7,6 +7,22 @@ padding, gaps, inset, etc.) use design token variables instead of hardcoded valu
 This ensures consistent spacing across the application and makes it easier to
 maintain design system consistency.
 
+This rule applies to the following properties:
+
+- ``padding`` and all of its longhand properties
+- ``margin`` and all of its longhand properties
+- ``inset`` and all of its longhand properties
+- ``gap``, ``column-gap``, ``row-gap``
+- Positioning attributes: ``left``, ``right``, ``top``, and ``bottom``.
+
+Note that the following properties accept both space and size tokens:
+
+- ``inset`` and all of its longhand properties
+- Positioning attributes: ``left``, ``right``, ``top``, and ``bottom``
+
+Use space tokens when these properties represent spacing/positioning offsets, and size tokens
+when they represent element dimensions.
+
 Examples of incorrect code for this rule:
 -----------------------------------------
 
@@ -76,6 +92,19 @@ Examples of correct token usage for this rule:
 
   .custom-button {
     margin-inline-end: var(--custom-space, --space-xlarge);
+  }
+
+.. code-block:: css
+
+  .overlay {
+    inset: var(--space-small);
+  }
+
+.. code-block:: css
+
+  .positioned-element {
+    top: var(--space-large);
+    left: var(--space-medium);
   }
 
 The rule also allows these values to be non-token values:

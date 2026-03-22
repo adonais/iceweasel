@@ -108,8 +108,7 @@ TEST(Jemalloc, PtrInfo)
 
   // For small (less than half the page size) allocations, test every position
   // within many possible sizes.
-  size_t small_max =
-      stats.subpage_max ? stats.subpage_max : stats.quantum_wide_max;
+  size_t small_max = stats.quantum_wide_max;
   for (size_t n = 0; n <= small_max; n += 8) {
     auto p = (char*)moz_arena_malloc(arenaId, n);
     size_t usable = moz_malloc_size_of(p);
@@ -225,7 +224,8 @@ TEST(Jemalloc, PtrInfo)
   UniquePtr<int> p = MakeUnique<int>();
   size_t chunksizeMask = stats.chunksize - 1;
   char* chunk = (char*)(uintptr_t(p.get()) & ~chunksizeMask);
-  size_t chunkHeaderSize = stats.chunksize - stats.large_max - stats.page_size;
+  size_t chunkHeaderSize =
+      stats.chunksize - stats.large_max - stats.real_page_size;
   for (size_t i = 0; i < chunkHeaderSize; i += 64) {
     jemalloc_ptr_info(&chunk[i], &info);
     ASSERT_TRUE(InfoEq(info, TagUnknown, nullptr, 0U, 0U));

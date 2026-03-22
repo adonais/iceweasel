@@ -67,7 +67,7 @@ tasks:
                     default:
                         by-release-type:
                             beta.*: beta
-                            release.*: official
+                            release: official
                             esr.*: official
                             default: nightly
             identity-name:
@@ -81,13 +81,13 @@ tasks:
                             msix:
                                 by-release-type:
                                     beta.*: MozillaFirefoxBeta
-                                    release.*: MozillaFirefox
+                                    release: MozillaFirefox
                                     esr.*: MozillaFirefox
                                     default: MozillaFirefoxNightly
                             msix-store:
                                 by-release-type:
                                     beta.*: FirefoxBeta
-                                    release.*: Firefox
+                                    release: Firefox
                                     esr.*: Firefox
                                     default: FirefoxNightly
             publisher:

@@ -41,7 +41,7 @@ EXPORTS += [
     "nsIReflowCallback.h",
     "nsLayoutUtils.h",
     "nsPresArena.h",
-    "nsPresArenaObjectList.h",
+    "nsPresArenaObjectList.inc",
     "nsPresContext.h",
     "nsPresContextInlines.h",
     "nsQuoteList.h",

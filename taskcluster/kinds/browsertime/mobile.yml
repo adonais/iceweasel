@@ -561,12 +561,15 @@ browsertime-trr-performance-m:
         apps: [fenix]
         run-visual-metrics: false
         subtests:
-            - trr-clou-m
-            - trr-next-m
-            - trr-natv-m
-            - trr-multm
-            - trr-w-cl-m
-            - trr-w-ne-m
+            - dns-multi
+            - dns-native
+            - dns-usatdy
+            - trr-cloudf
+            - trr-multi
+            - trr-next
+            - trr-usatdy
+            - trr-w-clou
+            - trr-w-next
 
     description: Raptor (browsertime) trr performance tests, mobile
     max-run-time: 600

@@ -38,7 +38,7 @@
     grid-template-columns: min-content auto;
   }
 
-  &[disabled="true"] {
+  &[disabled] {
     pointer-events: none;
     color: var(--text-color-disabled);
   }

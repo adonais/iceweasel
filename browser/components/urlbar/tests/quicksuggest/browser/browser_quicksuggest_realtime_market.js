@@ -115,7 +115,6 @@ add_task(async function ui_single() {
     1
   );
   Assert.ok(result.isBestMatch);
-  Assert.ok(result.hideRowLabel);
 
   Assert.ok(
     element.row.querySelector(".urlbarView-button-result-menu"),

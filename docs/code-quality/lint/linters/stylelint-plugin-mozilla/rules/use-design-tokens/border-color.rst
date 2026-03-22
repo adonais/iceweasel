@@ -154,6 +154,52 @@ The rule also allows these non-token values:
     border: 0;
   }
 
+This rule also allows base color tokens, as long as they are defined in a local custom property.
+
+.. code-block:: css
+
+  :root {
+    --my-token: var(--color-gray-20);
+  }
+
+  .my-button {
+    border-color: var(--my-token);
+  }
+
+Functions that use or modify base color tokens are also allowed
+
+.. code-block:: css
+
+  :root {
+    --my-token: light-dark(var(--color-gray-20), var(--color-gray-80));
+  }
+
+  .my-button {
+    border-color: var(--my-token);
+  }
+
+.. code-block:: css
+
+  :root {
+    --my-token: color-mix(in oklch, var(--color-blue-50) 20%, transparent);
+  }
+
+  .my-button {
+    border-color: var(--my-token);
+  }
+
+.. code-block:: css
+
+  /* use relative color syntax if modifying a base color token with an oklch function */
+
+  :root {
+    --my-token: oklch(from var(--color-blue-50) l c h / 20%);
+  }
+
+  .my-button {
+    border-color: var(--my-token);
+  }
+
 Autofix functionality
 ---------------------
 
@@ -230,4 +276,25 @@ appropriate color names. Examples of autofixable violations:
   /* After autofix */
   .a {
     border-color: black;
+  }
+
+System Colors
+-------------
+
+Using system colors, especially for forced colors or high contrast, is allowed.
+However, it may be better to use a design system token that already accounts for
+those situations and avoid needing the extra media query.
+
+.. code-block:: css
+
+  /* Good */
+  @media (prefers-contrast) {
+    .a {
+      border-color: ButtonBorder;
+    }
+  }
+
+  /* Better */
+  .a {
+    border-color: var(--button-border-color);
   }

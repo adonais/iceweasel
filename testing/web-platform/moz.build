@@ -342,9 +342,6 @@ with Files("tests/css/css-round-display/**"):
 with Files("tests/css/css-ruby/**"):
     BUG_COMPONENT = ("Core", "Layout: Ruby")
 
-with Files("tests/css/css-scoping/**"):
-    BUG_COMPONENT = ("Core", "CSS Parsing and Computation")
-
 with Files("tests/css/css-scroll-anchoring/**"):
     BUG_COMPONENT = ("Core", "Layout: Scrolling and Overflow")
 
@@ -353,9 +350,6 @@ with Files("tests/css/css-scroll-snap/**"):
 
 with Files("tests/css/css-scrollbars/**"):
     BUG_COMPONENT = ("Core", "Layout: Scrolling and Overflow")
-
-with Files("tests/css/css-shadow-parts/**"):
-    BUG_COMPONENT = ("Core", "CSS Parsing and Computation")
 
 with Files("tests/css/css-shapes/**"):
     BUG_COMPONENT = ("Core", "Layout: Floats")

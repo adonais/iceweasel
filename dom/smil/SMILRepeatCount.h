@@ -7,8 +7,6 @@
 #ifndef DOM_SMIL_SMILREPEATCOUNT_H_
 #define DOM_SMIL_SMILREPEATCOUNT_H_
 
-#include <math.h>
-
 #include "nsDebug.h"
 
 namespace mozilla {
@@ -26,10 +24,8 @@ namespace mozilla {
 //
 class SMILRepeatCount {
  public:
-  SMILRepeatCount() : mCount(kNotSet) {}
-  explicit SMILRepeatCount(double aCount) : mCount(kNotSet) {
-    SetCount(aCount);
-  }
+  SMILRepeatCount() = default;
+  explicit SMILRepeatCount(double aCount) { SetCount(aCount); }
 
   operator double() const {
     MOZ_ASSERT(IsDefinite(),
@@ -52,10 +48,10 @@ class SMILRepeatCount {
   void Unset() { mCount = kNotSet; }
 
  private:
-  static const double kNotSet;
-  static const double kIndefinite;
+  static constexpr double kNotSet = -1.0;
+  static constexpr double kIndefinite = -2.0;
 
-  double mCount;
+  double mCount = kNotSet;
 };
 
 }  // namespace mozilla

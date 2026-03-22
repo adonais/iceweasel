@@ -328,6 +328,7 @@ partial interface Window {
   [Throws, NeedsCallerType] undefined moveBy(long x, long y);
   [Throws, NeedsCallerType] undefined resizeTo(long x, long y);
   [Throws, NeedsCallerType] undefined resizeBy(long x, long y);
+  [Throws, ChromeOnly] undefined moveResize(long x, long y, long w, long h);
 
   // viewport
   [Replaceable, Throws] readonly attribute double innerWidth;
@@ -390,9 +391,13 @@ Window includes SpeechSynthesisGetter;
 #endif
 
 // Mozilla-specific stuff
-dictionary SynthesizeMouseEventData {
+dictionary SynthesizeEventData {
   // A unique identifier for the pointer causing the event, defaulting to 0.
   unsigned long identifier = 0;
+};
+
+// Mozilla-specific stuff
+dictionary SynthesizeMouseEventData : SynthesizeEventData {
   // Indicates which mouse button is pressed/released when a mouse event is triggered.
   long button = 0;
   // Indicates which mouse buttons are pressed when a mouse event is triggered.
@@ -411,19 +416,59 @@ dictionary SynthesizeMouseEventData {
 };
 
 // Mozilla-specific stuff
-dictionary SynthesizeMouseEventOptions {
-  // Indicates whether the event should ignore viewport bounds during dispatch.
-  boolean ignoreRootScrollFrame = false;
+dictionary SynthesizeTouchEventData : SynthesizeEventData {
+  // X offset in CSS pixels.
+  required long offsetX;
+  // Y offset in CSS pixels.
+  required long offsetY;
+  // X radii in CSS pixels.
+  unsigned long radiiX = 1;
+  // Y radii in CSS pixels.
+  unsigned long radiiY = 1;
+  // Rotation angle in degrees.
+  float rotationAngle = 0;
+  // Touch input pressure (0.0 -> 1.0).
+  float pressure = 1;
+  // X tilt in degrees (-90 -> 90). If altitudeAngle and azimuthAngle are
+  // specified, tiltX is ignored.
+  long tiltX = 0;
+  // Y tilt in degrees (-90 -> 90). If altitudeAngle and azimuthAngle are
+  // specified, tiltY is ignored.
+  long tiltY = 0;
+  // Twist in degrees (0 -> 360).
+  long twist = 0;
+  // Altitude angle in radians (0 -> π/2). If altitudeAngle is specified,
+  // azimuthAngle must also be specified.
+  double altitudeAngle;
+  // Azimuth angle in radians (0 -> 2π). If azimuthAngle is specified,
+  // altitudeAngle must also be specified.
+  double azimuthAngle;
+};
+
+// Mozilla-specific stuff
+dictionary SynthesizeEventOptions {
   // If true the event is dispatched to the parent process through APZ,
   // without being injected into the OS event queue.
   boolean isAsyncEnabled = false;
-  // Controls Event.isSynthesized value that helps identifying test related events.
-  boolean isDOMEventSynthesized = true;
-  // Controls WidgetMouseEvent.mReason value.
-  boolean isWidgetEventSynthesized = false;
   // Set this to true to ensure that the event is dispatched to this DOM window
   // or one of its children.
   boolean toWindow = false;
+  // Controls Event.isSynthesized value that helps identifying test related events.
+  boolean isDOMEventSynthesized = true;
+};
+
+// Mozilla-specific stuff
+dictionary SynthesizeMouseEventOptions : SynthesizeEventOptions {
+  // Indicates whether the event should ignore viewport bounds during dispatch.
+  boolean ignoreRootScrollFrame = false;
+  // Controls WidgetMouseEvent.mReason value.
+  boolean isWidgetEventSynthesized = false;
+};
+
+// Mozilla-specific stuff
+dictionary SynthesizeTouchEventOptions : SynthesizeEventOptions {
+  // If true, the event is synthesized as a pen input.
+  boolean isPen = false;
 };
 
 // Mozilla-specific stuff
@@ -617,6 +662,38 @@ partial interface Window {
   boolean synthesizeMouseEvent(DOMString type, float offsetX, float offsetY,
                                optional SynthesizeMouseEventData mouseEventData = {},
                                optional SynthesizeMouseEventOptions options = {},
+                               optional VoidFunction callback);
+
+  /**
+   * Synthesize a touch event. The event types supported are:
+   *    touchstart, touchend, touchmove, and touchcancel
+   *
+   * The event is dispatched via the toplevel window, so it could go to any
+   * window under the toplevel window, in some cases it could never reach this
+   * window at all. (Set SynthesizeTouchEventOptions.toWindow to true to ensure
+   * that the event is dispatched to this window or one of its children.)
+   *
+   * @param type       Event type.
+   * @param touches    An array of SynthesizeTouchEventData dictionaries containing
+   *                   touch event data.
+   * @param modifiers  Modifiers pressed, using constants defined as MODIFIER_*
+   *                   in nsIDOMWindowUtils.
+   * @param options    A SynthesizeTouchEventOptions dictionary containing options
+   *                   for the event dispatching.
+   * @param callback   A function to call when the synthesized touch event has
+   *                   been dispatched.
+   *                   XXX: This is currently not supported in the content process,
+   *                   simply because we don't have a use case for it yet. The same
+   *                   applies when the synthesized event might be coalesced,
+   *                   such as when `isDOMEventSynthesized = false`. In such cases,
+   *                   passing callback will throw an exception.
+   *
+   * @return true if someone called prevent default on this event.
+   */
+  [ChromeOnly, Throws]
+  boolean synthesizeTouchEvent(DOMString type, sequence<SynthesizeTouchEventData> touches,
+                               optional long modifiers = 0,
+                               optional SynthesizeTouchEventOptions options = {},
                                optional VoidFunction callback);
 
   [Pure, ChromeOnly]

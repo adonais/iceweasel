@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_Navigation_h___
-#define mozilla_dom_Navigation_h___
+#ifndef mozilla_dom_Navigation_h_
+#define mozilla_dom_Navigation_h_
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/DOMEventTargetHelper.h"
@@ -59,6 +59,8 @@ struct NavigationAPIMethodTracker final : public nsISupports {
 
   Promise* CommittedPromise() { return mCommittedPromise; }
   Promise* FinishedPromise() { return mFinishedPromise; }
+
+  bool IsHandled() const;
 
   RefPtr<Navigation> mNavigationObject;
   Maybe<nsID> mKey;
@@ -185,7 +187,7 @@ class Navigation final : public DOMEventTargetHelper {
       JSContext* aCx, JS::Handle<JS::Value> aError = JS::UndefinedHandleValue);
 
   MOZ_CAN_RUN_SCRIPT
-  void AbortNavigateEvent(JSContext* aCx, NavigateEvent* aEvent,
+  void AbortNavigateEvent(JSContext* aCx, const NavigateEvent* aEvent,
                           JS::Handle<JS::Value> aReason);
 
   MOZ_CAN_RUN_SCRIPT
@@ -337,4 +339,4 @@ struct fmt::formatter<mozilla::dom::NavigationHistoryBehavior, char>
   }
 };
 
-#endif  // mozilla_dom_Navigation_h___
+#endif  // mozilla_dom_Navigation_h_

@@ -308,7 +308,7 @@ add_setup(async function () {
     },
   ];
   SearchTestUtils.updateRemoteSettingsConfig(CONFIG_V2);
-  await Services.search.init();
+  await SearchService.init();
 });
 
 add_task(async function test_parsing_extracted_urls() {

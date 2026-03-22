@@ -95,7 +95,7 @@ When working on migration code that lives in the [Android Components repository]
 
 Add the sharedUserId to the AndroidManifest.xml of sample browser:
 
-```XML
+```text
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:sharedUserId="org.mozilla.fennec_$USERNAME.sharedID"

@@ -11,8 +11,7 @@
 
 #include <algorithm>
 
-#include "jsmath.h"
-
+#include "builtin/Math.h"
 #include "jit/CompileInfo.h"
 #include "jit/IonAnalysis.h"
 #include "jit/JitSpewer.h"
@@ -793,12 +792,23 @@ Range* Range::add(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
     e = Range::IncludesInfinityAndNaN;
   }
 
-  return new (alloc) Range(
-      l, h,
-      FractionalPartFlag(lhs->canHaveFractionalPart() ||
-                         rhs->canHaveFractionalPart()),
-      NegativeZeroFlag(lhs->canBeNegativeZero() && rhs->canBeNegativeZero()),
-      e);
+  FractionalPartFlag canHaveFractionalPart = FractionalPartFlag(
+      lhs->canHaveFractionalPart() || rhs->canHaveFractionalPart());
+
+  // Handle the case where -0 + -0 == -0.
+  NegativeZeroFlag canBeNegativeZero =
+      NegativeZeroFlag(lhs->canBeNegativeZero() && rhs->canBeNegativeZero());
+
+  // Except for operands which have a fractional part, in the corner case where
+  // denormals are disabled on the execution thread but not on the compiling
+  // thread.
+  //
+  // Example -0 + -1.11e-308 == -0 (denormals disabled)
+  if (l <= 0 && h >= 0 && canHaveFractionalPart) {
+    canBeNegativeZero = IncludesNegativeZero;
+  }
+
+  return new (alloc) Range(l, h, canHaveFractionalPart, canBeNegativeZero, e);
 }
 
 Range* Range::sub(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
@@ -824,11 +834,21 @@ Range* Range::sub(TempAllocator& alloc, const Range* lhs, const Range* rhs) {
     e = Range::IncludesInfinityAndNaN;
   }
 
-  return new (alloc)
-      Range(l, h,
-            FractionalPartFlag(lhs->canHaveFractionalPart() ||
-                               rhs->canHaveFractionalPart()),
-            NegativeZeroFlag(lhs->canBeNegativeZero() && rhs->canBeZero()), e);
+  FractionalPartFlag canHaveFractionalPart = FractionalPartFlag(
+      lhs->canHaveFractionalPart() || rhs->canHaveFractionalPart());
+
+  // Handle the case where -0 - 0 == -0.
+  NegativeZeroFlag canBeNegativeZero =
+      NegativeZeroFlag(lhs->canBeNegativeZero() && rhs->canBeZero());
+
+  // Except for operands which have a fractional part, in the corner case where
+  // denormals are disabled on the execution thread but not on the compiling
+  // thread.
+  if (l <= 0 && h >= 0 && canHaveFractionalPart) {
+    canBeNegativeZero = IncludesNegativeZero;
+  }
+
+  return new (alloc) Range(l, h, canHaveFractionalPart, canBeNegativeZero, e);
 }
 
 Range* Range::and_(TempAllocator& alloc, const Range* lhs, const Range* rhs) {

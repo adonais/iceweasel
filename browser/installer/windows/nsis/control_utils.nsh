@@ -2,6 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+!ifndef CONTROL_UTILS_NSH
+!define CONTROL_UTILS_NSH
+
 ; This is needed because NSIS's SetShellVarContext doesn't allow
 ; you to specify shell var context as a variable. C'est la vie.
 !macro SetShellVarContextToValue CTX_VALUE
@@ -31,3 +34,5 @@
     ${SetShellVarContextToValue} ${IN}
 !macroend
 !define SwapShellVarContext "!insertmacro SwapShellVarContext"
+
+!endif

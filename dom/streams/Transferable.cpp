@@ -286,6 +286,7 @@ static bool PackAndPostMessageHandlingError(
   PackAndPostMessage(aCx, aPort, aType, aValue, rv);
 
   // Step 2: If result is an abrupt completion,
+  rv.WouldReportJSException();
   if (rv.Failed()) {
     // Step 2.2: Perform ! CrossRealmTransformSendError(port, result.[[Value]]).
     MOZ_ALWAYS_TRUE(ToJSValue(aCx, std::move(rv), aError));

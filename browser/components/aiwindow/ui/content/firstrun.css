@@ -14,10 +14,15 @@
 }
 
 #multi-stage-message-root {
-  --bg-white: light-dark(#fff, #fff);
   --bg-transparent: transparent;
-  --tile-border-color: #f1e7f8;
-  --shadow-color: rgb(59 34 121);
+  --card-bg: light-dark(#fff, #191622);
+  --card-bg-translucent: light-dark(color-mix(in srgb, #fff 60%, var(--bg-transparent)), color-mix(in srgb, #191622 40%, var(--bg-transparent)));
+  --card-border-color: light-dark(#f1e7f8, #736a8a);
+  --card-border-gradient: light-dark(var(--aiwindow-input-gradient), var(--aiwindow-input-gradient-dark));
+  --card-selected-shadow: light-dark(0 3px 16px 0 color-mix(in srgb, rgb(59 34 121) 12%, var(--bg-transparent)), 0 27px 124px 0 rgba(117, 67, 227, 0.18));
+  --brand-text-color: light-dark(#210340, #e4dcf7);
+  --button-text-color: light-dark(var(--button-text-color-primary), #fbfbfe);
+  --button-gradient: light-dark(var(--aiwindow-gradient-button), var(--aiwindow-gradient-button-dark));
 
   .main-content,
   .section-main,
@@ -32,7 +37,7 @@
 
   #mainContentHeader {
     /* stylelint-disable-next-line -- using linear gradient for text effect */
-    background: linear-gradient(91deg, #7630c0 22.04%, #5c66ee 78.7%);
+    background: light-dark(linear-gradient(91deg, #7630c0 22.04%, #5c66ee 78.7%), linear-gradient(65deg, #9165ff 18.85%, #d8c9ff 78.79%));
     background-clip: text;
     /* stylelint-disable-next-line -- transparent needed for gradient text effect */
     color: var(--bg-transparent);
@@ -51,6 +56,8 @@
     p {
       letter-spacing: 0.3px;
       line-height: normal;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom brand color per Figma design */
+      color: var(--brand-text-color);
     }
 
     .welcome-text h2 {
@@ -67,16 +74,16 @@
       gap: var(--space-small);
       padding: var(--space-xsmall) var(--space-large);
       margin: 0 auto;
-      border: var(--border-width) solid var(--border-color-transparent);
       border-radius: var(--border-radius-medium);
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- gradient defined in ai-window-content.css */
-      background: var(--gradient-button);
-      color: var(--button-text-color-primary);
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom gradient per Figma design */
+      background: var(--button-gradient);
+      color: var(--button-text-color);
       text-align: center;
       font-size: var(--button-font-size);
       font-weight: var(--button-font-weight);
       letter-spacing: -0.3px;
       cursor: pointer;
+      border: none;
     }
 
     &:not(:has(.icon.selected)) button.primary {
@@ -96,7 +103,7 @@
       height: calc(var(--size-item-medium) * 11);
       padding-block: calc(var(--space-xsmall) * 9) 0;
       /* stylelint-disable-next-line -- custom border color per Figma design */
-      border: var(--border-width) solid var(--tile-border-color);
+      border: var(--border-width) solid var(--card-border-color);
       display: flex;
       flex-direction: column;
       justify-content: start;
@@ -105,8 +112,10 @@
       padding-inline: var(--space-medium);
       box-sizing: border-box;
       border-radius: var(--border-radius-large);
-      /* stylelint-disable-next-line -- using white for consistent background */
-      background: color-mix(in srgb, var(--bg-white) 60%, var(--bg-transparent));
+      /* stylelint-disable-next-line -- custom background per Figma design */
+      background: var(--card-bg-translucent);
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom brand color per Figma design */
+      color: var(--brand-text-color);
 
       .label-text {
         margin-top: calc(var(--space-xsmall) * 5);
@@ -131,8 +140,8 @@
       }
 
       &:hover:not(:has(.selected)) {
-        /* stylelint-disable-next-line -- using white for hover state */
-        background: var(--bg-white);
+        /* stylelint-disable-next-line -- custom background for hover state */
+        background: var(--card-bg);
         cursor: pointer;
       }
 
@@ -140,12 +149,10 @@
         border: calc(var(--border-width) * 2) solid var(--border-color-transparent);
         /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- gradient defined in ai-window-content.css */
         background:
-          linear-gradient(#fff, #fff) padding-box,
-          var(--gradient-selected-border) border-box;
-        /* stylelint-disable-next-line -- custom shadow color per Figma design */
-        box-shadow:
-          0 3px 16px 0 color-mix(in srgb, var(--shadow-color) 12%, var(--bg-transparent)),
-          0 1px 2px 0 color-mix(in srgb, var(--shadow-color) 20%, var(--bg-transparent));
+          linear-gradient(var(--card-bg), var(--card-bg)) padding-box,
+          var(--card-border-gradient) border-box;
+        /* stylelint-disable-next-line -- custom shadow per Figma design */
+        box-shadow: var(--card-selected-shadow);
       }
     }
   }

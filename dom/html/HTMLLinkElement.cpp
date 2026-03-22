@@ -677,11 +677,10 @@ void HTMLLinkElement::UpdatePreload(nsAtom* aName, const nsAttrValue* aValue,
     }
   } else {
     MOZ_ASSERT(aName == nsGkAtoms::media);
-    nsAutoString oldMedia;
-    if (aOldValue) {
-      aOldValue->ToString(oldMedia);
-    }
-    if (net::CheckPreloadAttrs(asAttr, mimeType, oldMedia, OwnerDoc())) {
+    // Device might have changed since we evaluated the old media query. We
+    // already checked that the new query matches. If we have mPreload,
+    // nothing changes.
+    if (mPreload) {
       oldPolicyType = asPolicyType;
     } else {
       oldPolicyType = nsIContentPolicy::TYPE_INVALID;

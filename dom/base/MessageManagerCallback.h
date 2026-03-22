@@ -4,10 +4,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef dom_base_MessageManagerCallback_h__
-#define dom_base_MessageManagerCallback_h__
+#ifndef dom_base_MessageManagerCallback_h_
+#define dom_base_MessageManagerCallback_h_
 
-#include "mozilla/UniquePtr.h"
+#include "mozilla/NotNull.h"
+#include "mozilla/RefPtr.h"
 #include "nsError.h"
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
@@ -18,7 +19,6 @@ class ErrorResult;
 
 namespace dom {
 
-class ClonedMessageData;
 class ContentChild;
 class ContentParent;
 class ProcessMessageManager;
@@ -37,13 +37,13 @@ class MessageManagerCallback {
   }
 
   virtual bool DoSendBlockingMessage(
-      const nsAString& aMessage, StructuredCloneData& aData,
-      nsTArray<UniquePtr<StructuredCloneData>>* aRetVal) {
+      const nsAString& aMessage, NotNull<ipc::StructuredCloneData*> aData,
+      nsTArray<NotNull<RefPtr<ipc::StructuredCloneData>>>* aRetVal) {
     return true;
   }
 
-  virtual nsresult DoSendAsyncMessage(const nsAString& aMessage,
-                                      StructuredCloneData& aData) {
+  virtual nsresult DoSendAsyncMessage(
+      const nsAString& aMessage, NotNull<ipc::StructuredCloneData*> aData) {
     return NS_OK;
   }
 
@@ -54,14 +54,7 @@ class MessageManagerCallback {
 
   virtual void DoGetRemoteType(nsACString& aRemoteType,
                                ErrorResult& aError) const;
-
- protected:
-  bool BuildClonedMessageData(StructuredCloneData& aData,
-                              ClonedMessageData& aClonedData);
 };
-
-void UnpackClonedMessageData(const ClonedMessageData& aClonedData,
-                             StructuredCloneData& aData);
 
 }  // namespace ipc
 }  // namespace dom

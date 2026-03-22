@@ -13,8 +13,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.ContentAction
+import mozilla.components.browser.state.action.TabGroupAction
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.TabGroup
+import mozilla.components.browser.state.state.TabPartition
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
@@ -287,6 +290,126 @@ class AutoSaveTest {
                 ContentAction.UpdateLoadingStateAction(
                     sessionId = "mozilla",
                     loading = false,
+                ),
+            )
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            autoSave.saveJob?.join()
+
+            verify(sessionStorage).save(any())
+        }
+    }
+
+    @Test
+    fun `AutoSave - when tab partition gets added`() {
+        runTest(testDispatcher) {
+            val state = BrowserState()
+            val store = BrowserStore(state)
+
+            val sessionStorage: SessionStorage = mock()
+
+            val autoSave = AutoSave(
+                store = store,
+                sessionStorage = sessionStorage,
+                minimumIntervalMs = 0,
+            ).whenSessionsChange(scope)
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertNull(autoSave.saveJob)
+            verify(sessionStorage, never()).save(any())
+
+            store.dispatch(
+                TabGroupAction.AddTabGroupAction(
+                    partition = "partition",
+                    group = TabGroup(id = "group", name = "Group", tabIds = emptySet()),
+                ),
+            )
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            autoSave.saveJob?.join()
+
+            verify(sessionStorage).save(any())
+        }
+    }
+
+    @Test
+    fun `AutoSave - when tab partition gets removed`() {
+        runTest(testDispatcher) {
+            val state = BrowserState(
+                tabPartitions = mapOf(
+                    "partition" to TabPartition(
+                        id = "partition",
+                        tabGroups = listOf(TabGroup(id = "group", name = "Group")),
+                    ),
+                ),
+            )
+            val store = BrowserStore(state)
+
+            val sessionStorage: SessionStorage = mock()
+
+            val autoSave = AutoSave(
+                store = store,
+                sessionStorage = sessionStorage,
+                minimumIntervalMs = 0,
+            ).whenSessionsChange(scope)
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertNull(autoSave.saveJob)
+            verify(sessionStorage, never()).save(any())
+
+            store.dispatch(
+                TabGroupAction.RemoveTabGroupAction(
+                    partition = "partition",
+                    group = "group",
+                ),
+            )
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            autoSave.saveJob?.join()
+
+            verify(sessionStorage).save(any())
+        }
+    }
+
+    @Test
+    fun `AutoSave - when tab group in partition gets updated`() {
+        runTest(testDispatcher) {
+            val state = BrowserState(
+                tabs = listOf(
+                    createTab("https://www.mozilla.org", id = "mozilla"),
+                ),
+                tabPartitions = mapOf(
+                    "partition" to TabPartition(
+                        id = "partition",
+                        tabGroups = listOf(TabGroup("group", "Group")),
+                    ),
+                ),
+            )
+            val store = BrowserStore(state)
+
+            val sessionStorage: SessionStorage = mock()
+
+            val autoSave = AutoSave(
+                store = store,
+                sessionStorage = sessionStorage,
+                minimumIntervalMs = 0,
+            ).whenSessionsChange(scope)
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertNull(autoSave.saveJob)
+            verify(sessionStorage, never()).save(any())
+
+            store.dispatch(
+                TabGroupAction.AddTabAction(
+                    partition = "partition",
+                    group = "group",
+                    tabId = "mozilla",
                 ),
             )
 

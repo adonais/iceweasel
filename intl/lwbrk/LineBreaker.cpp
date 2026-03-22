@@ -5,7 +5,7 @@
 
 #include "mozilla/intl/LineBreaker.h"
 
-#include "diplomat_runtime.hpp"
+#include "icu4x/diplomat_runtime.hpp"
 #include "icu4x/LineBreakIteratorLatin1.hpp"
 #include "icu4x/LineBreakIteratorUtf16.hpp"
 #include "icu4x/LineSegmenter.hpp"

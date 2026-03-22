@@ -191,3 +191,39 @@ The `moz-box-group` component supports optional header and footer content. To in
   </moz-box-group>
 </div>
 ```
+
+### Static Items
+
+The `moz-box-group` component supports static (non-reorderable) items in reorderable lists. To mark an item as static, place it in the `static` named slot. Static items are positioned after regular items and cannot be reordered.
+
+Static items are only supported in `type="reorderable-list"`. They are included in keyboard navigation, and can contain interactive elements.
+
+```html
+<moz-box-group type="reorderable-list">
+  <moz-box-item label="Reorderable item 1">
+    <moz-button label="Click me!" slot="actions"></moz-button>
+  </moz-box-item>
+  <moz-box-item label="Reorderable item 2">
+    <moz-button label="Click me!" slot="actions"></moz-button>
+  </moz-box-item>
+  <moz-box-item slot="static" label="Static item (cannot be reordered)">
+    <moz-button label="Click me!" slot="actions"></moz-button>
+  </moz-box-item>
+</moz-box-group>
+```
+
+```html story
+<div style={{ width: "500px" }}>
+  <moz-box-group type="reorderable-list">
+    <moz-box-item label="Reorderable item 1">
+      <moz-button label="Click me!" slot="actions"></moz-button>
+    </moz-box-item>
+    <moz-box-item label="Reorderable item 2">
+      <moz-button label="Click me!" slot="actions"></moz-button>
+    </moz-box-item>
+    <moz-box-item slot="static" label="Static item (cannot be reordered)">
+      <moz-button label="Click me!" slot="actions"></moz-button>
+    </moz-box-item>
+  </moz-box-group>
+</div>
+```

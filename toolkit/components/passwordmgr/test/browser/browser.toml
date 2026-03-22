@@ -160,6 +160,11 @@ skip-if = [
 
 ["browser_doorhanger_replace_dismissed_with_visible_while_opening.js"]
 
+["browser_doorhanger_reveal_password.js"]
+skip-if = [
+  "a11y_checks", # Bugs 1858041, 1854454 and 1824058 for causing intermittent crashes
+]
+
 ["browser_doorhanger_save_password.js"]
 skip-if = [
   "a11y_checks", # Bugs 1858041, 1854454 and 1824058 for causing intermittent crashes
@@ -239,7 +244,7 @@ fail-if = [
 ]
 skip-if = [
   "asan",
-  "os == 'linux' && os_version == '24.04' && arch == 'x64_64' && display == 'x11' && debug", # Bug 1840479
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1840479
   "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && debug", # Bug 1840479
   "os == 'win' && os_version == '11.26100' && debug", # Bug 1840479
   "tsan",

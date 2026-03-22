@@ -62,23 +62,16 @@ export default class TabHoverPanelSet {
       this.#win
     );
 
-    /** @type {HTMLTemplateElement} */
-    const tabPreviewTemplate = win.document.getElementById(
-      "tabPreviewPanelTemplate"
-    );
-    const importedFragment = win.document.importNode(
-      tabPreviewTemplate.content,
-      true
-    );
-    // #tabPreviewPanelTemplate is currently just the .tab-preview-add-note
-    // button element, so append it to the tab preview panel body.
-    const addNoteButton = importedFragment.firstElementChild;
     const tabPreviewPanel =
       this.#win.document.getElementById("tab-preview-panel");
-    tabPreviewPanel.append(addNoteButton);
+
     this.tabPanel = new TabPanel(tabPreviewPanel, this);
     this.tabGroupPanel = new TabGroupPanel(
       this.#win.document.getElementById("tabgroup-preview-panel"),
+      this
+    );
+    this.tabNotePanel = new TabNotePanel(
+      this.#win.document.getElementById("tab-note-preview-panel"),
       this
     );
 
@@ -111,6 +104,10 @@ export default class TabHoverPanelSet {
     }
 
     if (this.#win.gBrowser.isTab(tabOrGroup)) {
+      // Don't activate tab preview if hovering over the note icon
+      if (tabOrGroup._noteIconHover) {
+        return;
+      }
       this.#setActivePanel(this.tabPanel);
       this.tabPanel.activate(tabOrGroup);
     } else if (this.#win.gBrowser.isTabGroup(tabOrGroup)) {
@@ -126,17 +123,17 @@ export default class TabHoverPanelSet {
   }
 
   /**
-   * Deactivate the tab panel and/or the tab group panel.
+   * Deactivate the tab panel, tab group panel, and/or tab note panel.
    *
-   * If `tabOrGroup` is a tab, the tab preview will be deactivated. If
-   * `tabOrGroup` is a tab group, the group preview will be deactivated.
-   * If neither, both are deactivated.
+   * If `tabOrGroup` is a tab, the tab preview and tab note panel will be deactivated.
+   * If `tabOrGroup` is a tab group, the group preview will be deactivated.
+   * If neither, all panels are deactivated.
    *
    * Panels linger briefly to allow the mouse to travel between the anchor and
    * panel; passing `force` skips that delay.
    *
    * @param {MozTabbrowserTab|MozTabbrowserTabGroup|null} tabOrGroup - The tab or group to activate the panel on.
-   * @param {bool} [options.force] - If true, force immediate deactivation of the tab group panel.
+   * @param {bool} [options.force] - If true, force immediate deactivation of the panels.
    */
   deactivate(tabOrGroup, { force = false } = {}) {
     if (this._prefDisableAutohide) {
@@ -145,11 +142,27 @@ export default class TabHoverPanelSet {
 
     if (this.#win.gBrowser.isTab(tabOrGroup) || !tabOrGroup) {
       this.tabPanel.deactivate(tabOrGroup, { force });
+      this.tabNotePanel.deactivate(tabOrGroup, { force });
     }
 
     if (this.#win.gBrowser.isTabGroup(tabOrGroup) || !tabOrGroup) {
       this.tabGroupPanel.deactivate({ force });
     }
+  }
+
+  activateNotePanel(tab, anchorElement) {
+    if (!this.shouldActivate()) {
+      return;
+    }
+    this.#setActivePanel(this.tabNotePanel);
+    this.tabNotePanel.activate(tab, anchorElement);
+  }
+
+  deactivateNotePanel(tab) {
+    if (this._prefDisableAutohide) {
+      return;
+    }
+    this.tabNotePanel.deactivate(tab);
   }
 
   #setActivePanel(panel) {
@@ -220,8 +233,8 @@ export default class TabHoverPanelSet {
     // the first time.
 
     const initialPopups = this.#win.document.querySelectorAll(
-      `panel[panelopen=true]:not(#tab-preview-panel):not(#tabgroup-preview-panel),
-       panel[animating=true]:not(#tab-preview-panel):not(#tabgroup-preview-panel),
+      `panel[panelopen=true]:not(#tab-preview-panel):not(#tabgroup-preview-panel):not(#tab-note-preview-panel),
+       panel[animating=true]:not(#tab-preview-panel):not(#tabgroup-preview-panel):not(#tab-note-preview-panel),
        menupopup[open=true]`.trim()
     );
     this.#openPopups = new Set(initialPopups);
@@ -232,6 +245,7 @@ export default class TabHoverPanelSet {
         if (
           target !== this.tabPanel.panelElement &&
           target !== this.tabGroupPanel.panelElement &&
+          target !== this.tabNotePanel.panelElement &&
           (target.nodeName == "panel" || target.nodeName == "menupopup")
         ) {
           this.#openPopups[setMethod](target);
@@ -276,6 +290,12 @@ class TabPanel extends HoverPanel {
   /** @type {DOMElement|null} */
   #thumbnailElement;
 
+  /** @type {DOMElement|null} */
+  #interactiveArea;
+
+  /** @type {DOMElement|null} */
+  #addNoteButton;
+
   constructor(panel, panelSet) {
     super(panel, panelSet);
 
@@ -305,20 +325,35 @@ class TabPanel extends HoverPanel {
 
     this.#tab = null;
     this.#thumbnailElement = null;
+    this.#interactiveArea = this.panelElement.querySelector(
+      ".tab-preview-content-interactive"
+    );
 
-    this.panelElement
-      .querySelector(".tab-preview-add-note")
-      .addEventListener("click", () => this.#openTabNotePanel());
+    // #tabPreviewPanelTemplate is currently just the .tab-preview-add-note
+    // button element, and it needs to be added the tab preview panel body manually.
+    /** @type {HTMLTemplateElement} */
+    const tabPreviewTemplate = this.win.document.getElementById(
+      "tabPreviewPanelTemplate"
+    );
+    const importedFragment = this.win.document.importNode(
+      tabPreviewTemplate.content,
+      true
+    );
+    this.#addNoteButton = importedFragment.firstElementChild;
+
+    this.#addNoteButton.addEventListener("click", () =>
+      this.#openTabNotePanel()
+    );
   }
 
   /**
    * @param {Event} e
    */
-  handleEvent(e) {
+  async handleEvent(e) {
     switch (e.type) {
       case "popupshowing":
-        this.panelElement.addEventListener("mouseout", this);
-        this.#updatePreview();
+        await this.#updatePreview();
+        this.mouseoutTarget?.addEventListener("mouseout", this);
         break;
       case "TabAttrModified":
         this.#updatePreview(e.target);
@@ -327,7 +362,12 @@ class TabPanel extends HoverPanel {
         this.deactivate(null, { force: true });
         break;
       case "mouseout":
-        if (!this.panelElement.contains(e.relatedTarget)) {
+        // Ignore mouseouts from descendant elements of the target -- we only want to know
+        // when the user has moused out from the target itself
+        if (
+          this.mouseoutTarget &&
+          !this.mouseoutTarget.contains(e.relatedTarget)
+        ) {
           this.deactivate();
         }
         break;
@@ -397,7 +437,7 @@ class TabPanel extends HoverPanel {
 
   onBeforeHide() {
     this.panelElement.removeEventListener("popupshowing", this);
-    this.panelElement.removeEventListener("mouseout", this);
+    this.mouseoutTarget?.removeEventListener("mouseout", this);
     this.win.removeEventListener("TabSelect", this);
     this.#tab?.removeEventListener("TabAttrModified", this);
     this.#tab = null;
@@ -406,13 +446,24 @@ class TabPanel extends HoverPanel {
 
   get hoverTargets() {
     let targets = [];
-    if (this._prefUseTabNotes) {
-      targets.push(this.panelElement);
+    if (this.#interactiveArea.childNodes.length) {
+      targets.push(this.#interactiveArea);
     }
     if (this.#tab) {
       targets.push(this.#tab);
     }
     return targets;
+  }
+
+  /**
+   * If mouseoutTarget is set, the panel will register a mouseout listener on
+   * the target element, causing the panel to hide when this element has been
+   * moused out.
+   */
+  get mouseoutTarget() {
+    return this.#interactiveArea.childNodes.length
+      ? this.#interactiveArea
+      : null;
   }
 
   getPrettyURI(uri) {
@@ -524,13 +575,14 @@ class TabPanel extends HoverPanel {
    * panel.
    */
   #openTabNotePanel() {
+    Services.prefs.setBoolPref("browser.tabs.notes.newBadge.enabled", false);
     this.win.gBrowser.tabNoteMenu.openPanel(this.#tab, {
       telemetrySource: lazy.TabNotes.TELEMETRY_SOURCE.TAB_HOVER_PREVIEW_PANEL,
     });
     this.deactivate(this.#tab, { force: true });
   }
 
-  #updatePreview(tab = null) {
+  async #updatePreview(tab = null) {
     if (tab) {
       this.#tab = tab;
     }
@@ -551,20 +603,24 @@ class TabPanel extends HoverPanel {
         "";
     }
 
-    const noteTextContainer = this.panelElement.querySelector(
-      ".tab-note-text-container"
-    );
-    const addNoteButton = this.panelElement.querySelector(
-      ".tab-preview-add-note"
-    );
     if (this._prefUseTabNotes && lazy.TabNotes.isEligible(this.#tab)) {
-      lazy.TabNotes.get(this.#tab).then(note => {
-        noteTextContainer.textContent = note?.text || "";
-        addNoteButton.toggleAttribute("hidden", !!note);
-      });
+      let note = await lazy.TabNotes.get(this.#tab);
+
+      if (note) {
+        this.#addNoteButton.remove();
+      } else {
+        this.#interactiveArea.append(this.#addNoteButton);
+
+        let showNewBadge = Services.prefs.getBoolPref(
+          "browser.tabs.notes.newBadge.enabled",
+          true
+        );
+        this.#addNoteButton
+          .querySelector("moz-badge")
+          .toggleAttribute("hidden", !showNewBadge);
+      }
     } else {
-      noteTextContainer.textContent = "";
-      addNoteButton.setAttribute("hidden", "");
+      this.#addNoteButton.remove();
     }
 
     let thumbnailContainer = this.panelElement.querySelector(
@@ -588,6 +644,7 @@ class TabPanel extends HoverPanel {
         })
       );
     }
+
     this.#movePanel();
   }
 
@@ -609,7 +666,7 @@ class TabPanel extends HoverPanel {
       return {
         position: "bottomleft topleft",
         x: 0,
-        y: -2,
+        y: 0,
       };
     }
 
@@ -788,7 +845,7 @@ class TabGroupPanel extends HoverPanel {
       return {
         position: "bottomleft topleft",
         x: 0,
-        y: -2,
+        y: 0,
       };
     }
     if (!this.win.SidebarController._positionStart) {
@@ -839,6 +896,171 @@ class TabGroupPanel extends HoverPanel {
       this.popupOptions.x,
       this.popupOptions.y
     );
+  }
+}
+
+class TabNotePanel extends HoverPanel {
+  /** @type {MozTabbrowserTab|null} */
+  #tab;
+
+  /** @type {HTMLElement|null} */
+  #anchorElement;
+
+  constructor(panel, panelSet) {
+    super(panel, panelSet);
+
+    this.#tab = null;
+    this.#anchorElement = null;
+
+    this.panelElement
+      .querySelector(".tab-note-preview-expand")
+      .addEventListener("click", () => (this.#noteExpanded = true));
+  }
+
+  handleEvent(e) {
+    switch (e.type) {
+      case "popupshowing":
+        this.panelElement.addEventListener("mouseout", this);
+        this.#updatePanelContent();
+        break;
+      case "TabAttrModified":
+        this.#updatePanelContent(e.target);
+        break;
+      case "TabSelect":
+        this.deactivate(null, { force: true });
+        break;
+      case "mouseout":
+        if (!this.panelElement.contains(e.relatedTarget)) {
+          this.deactivate();
+        }
+        break;
+    }
+  }
+
+  activate(tab, anchorElement) {
+    if (this.#tab === tab && this.panelElement.state == "open") {
+      return;
+    }
+    let originalTab = this.#tab;
+    this.#tab = tab;
+    this.#anchorElement = anchorElement;
+
+    this.#movePanel();
+    this.#noteExpanded = false;
+
+    originalTab?.removeEventListener("TabAttrModified", this);
+    this.#tab.addEventListener("TabAttrModified", this);
+
+    if (
+      this.panelElement.state == "open" ||
+      this.panelElement.state == "showing"
+    ) {
+      this.#updatePanelContent();
+    } else {
+      this.panelSet.panelOpener.execute(() => {
+        if (!this.panelSet.shouldActivate()) {
+          return;
+        }
+        this.panelElement.openPopup(this.#anchorElement, this.popupOptions);
+      }, this);
+      this.win.addEventListener("TabSelect", this);
+      this.panelElement.addEventListener("popupshowing", this);
+    }
+  }
+
+  /**
+   * @param {MozTabbrowserTab} [leavingTab]
+   * @param {object} [options]
+   * @param {boolean} [options.force=false]
+   */
+  deactivate(leavingTab = null, { force = false } = {}) {
+    if (leavingTab) {
+      if (this.#tab != leavingTab) {
+        return;
+      }
+      this.win.requestAnimationFrame(() => {
+        if (this.#tab == leavingTab) {
+          this.deactivate(null, { force });
+        }
+      });
+      return;
+    }
+    super.deactivate({ force });
+  }
+
+  onBeforeHide() {
+    this.panelElement.removeEventListener("popupshowing", this);
+    this.panelElement.removeEventListener("mouseout", this);
+    this.win.removeEventListener("TabSelect", this);
+    this.#tab?.removeEventListener("TabAttrModified", this);
+    this.#tab = null;
+    this.#anchorElement = null;
+    this.panelSet.panelOpener.setZeroDelay();
+  }
+
+  async #updatePanelContent(tab = null) {
+    if (tab) {
+      this.#tab = tab;
+    }
+
+    let currentTab = this.#tab;
+    let currentUrl = currentTab?.canonicalUrl;
+
+    const noteTextContainer = this.panelElement.querySelector(
+      ".tab-note-preview-text"
+    );
+    const note = await lazy.TabNotes.get(currentTab);
+
+    // In case the tab navigated after the note fetch started, ensure we
+    // still want to show this note
+    if (this.#tab != currentTab || this.#tab?.canonicalUrl != currentUrl) {
+      return;
+    }
+
+    noteTextContainer.textContent = note?.text || "";
+
+    this.#noteOverflow =
+      noteTextContainer.scrollHeight > noteTextContainer.clientHeight;
+
+    let button = this.panelElement.querySelector(".tab-note-preview-expand");
+    noteTextContainer.style.setProperty(
+      "--tab-note-expand-toggle-width",
+      `${button.offsetWidth}px`
+    );
+
+    this.#movePanel();
+  }
+
+  #movePanel() {
+    if (this.#anchorElement) {
+      this.panelElement.moveToAnchor(
+        this.#anchorElement,
+        this.popupOptions.position,
+        this.popupOptions.x,
+        this.popupOptions.y
+      );
+    }
+  }
+
+  set #noteExpanded(val) {
+    this.panelElement.toggleAttribute("note-expanded", val);
+    if (val && this.#tab) {
+      this.#tab.dispatchEvent(
+        new CustomEvent("TabNote:Expand", { bubbles: true })
+      );
+    }
+  }
+
+  set #noteOverflow(val) {
+    this.panelElement.toggleAttribute("note-overflow", val);
+  }
+
+  get popupOptions() {
+    return {
+      position: "bottomleft topleft",
+      x: 0,
+      y: -2,
+    };
   }
 }
 

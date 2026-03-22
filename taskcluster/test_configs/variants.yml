@@ -59,6 +59,7 @@ a11y-checks:
                 ) && (
                     "mochitest-devtools-chrome" == task["try-name"]
                     || "mochitest-browser-chrome" == task["try-name"]
+                    || "mochitest-browser-chrome-thunderbird" == task["try-name"]
                 )'
     merge:
         mozharness:

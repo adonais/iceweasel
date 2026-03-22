@@ -2,8 +2,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#ifndef nsIContentSink_h___
-#define nsIContentSink_h___
+#ifndef nsIContentSink_h_
+#define nsIContentSink_h_
 
 /**
  * MODULE NOTES:
@@ -135,4 +135,4 @@ class nsIContentSink : public nsISupports {
   virtual void InitialTranslationCompleted() {}
 };
 
-#endif /* nsIContentSink_h___ */
+#endif /* nsIContentSink_h_ */

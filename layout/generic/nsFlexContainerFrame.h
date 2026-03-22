@@ -6,8 +6,8 @@
 
 /* rendering object for CSS "display: flex" and "display: -webkit-box" */
 
-#ifndef nsFlexContainerFrame_h___
-#define nsFlexContainerFrame_h___
+#ifndef nsFlexContainerFrame_h_
+#define nsFlexContainerFrame_h_
 
 #include <tuple>
 
@@ -697,4 +697,4 @@ class nsFlexContainerFrame final : public nsContainerFrame,
   nscoord mLastBaseline = NS_INTRINSIC_ISIZE_UNKNOWN;
 };
 
-#endif /* nsFlexContainerFrame_h___ */
+#endif /* nsFlexContainerFrame_h_ */

@@ -3,10 +3,6 @@
 
 "use strict";
 
-const { EnterprisePolicyTesting } = ChromeUtils.importESModule(
-  "resource://testing-common/EnterprisePolicyTesting.sys.mjs"
-);
-
 const PERMISSIONS_URL =
   "chrome://browser/content/preferences/dialogs/permissions.xhtml";
 

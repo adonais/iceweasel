@@ -9,17 +9,21 @@ interface nsIPrincipal;
 namespace mozilla {
 class TimeStamp;
 }
+#include "mozilla/MemoryReporting.h"
 #include "nsTArrayForwardDeclare.h"
 #include "nsCOMPtr.h"
 %}
 
 native TimeStamp(mozilla::TimeStamp);
+native MallocSizeOf(mozilla::MallocSizeOf);
 
-[scriptable, uuid(c2d9e95b-9cc9-4f47-9ef6-1de0cf7ebc75)]
+[scriptable, builtinclass, uuid(c2d9e95b-9cc9-4f47-9ef6-1de0cf7ebc75)]
 interface nsIServerTiming : nsISupports {
   [must_use] readonly attribute ACString name;
   [must_use] readonly attribute double duration;
   [must_use] readonly attribute ACString description;
+
+  [notxpcom, nostdcall] size_t sizeOfIncludingThis(in MallocSizeOf aMallocSizeOf);
 };
 
 [ref] native nsServerTimingArrayRef(nsTArray<nsCOMPtr<nsIServerTiming>>);

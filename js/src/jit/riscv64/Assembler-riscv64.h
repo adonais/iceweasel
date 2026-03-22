@@ -310,7 +310,7 @@ class Assembler : public AssemblerShared,
     if (MOZ_UNLIKELY(printer || JitSpewEnabled(JitSpew_Codegen))) {
       va_list va;
       va_start(va, fmt);
-      spew(fmt, va);
+      spewVA(fmt, va);
       va_end(va);
     }
   }
@@ -320,7 +320,7 @@ class Assembler : public AssemblerShared,
 #endif
 
 #ifdef JS_JITSPEW
-  MOZ_COLD void spew(const char* fmt, va_list va) MOZ_FORMAT_PRINTF(2, 0) {
+  MOZ_COLD void spewVA(const char* fmt, va_list va) MOZ_FORMAT_PRINTF(2, 0) {
     // Buffer to hold the formatted string. Note that this may contain
     // '%' characters, so do not pass it directly to printf functions.
     char buf[200];
@@ -564,6 +564,34 @@ class Assembler : public AssemblerShared,
   // so that it can be modified later.
   void li_constant(Register rd, int64_t imm);
   void li_ptr(Register rd, int64_t imm);
+
+  void SignExtendByte(Register rd, Register rs) {
+    if (HasZbbExtension()) {
+      sext_b(rd, rs);
+      return;
+    }
+    slli(rd, rs, xlen - 8);
+    srai(rd, rd, xlen - 8);
+  }
+
+  void SignExtendShort(Register rd, Register rs) {
+    if (HasZbbExtension()) {
+      sext_h(rd, rs);
+      return;
+    }
+    slli(rd, rs, xlen - 16);
+    srai(rd, rd, xlen - 16);
+  }
+
+  void SignExtendWord(Register rd, Register rs) { sext_w(rd, rs); }
+  void ZeroExtendWord(Register rd, Register rs) {
+    if (HasZbaExtension()) {
+      zext_w(rd, rs);
+      return;
+    }
+    slli(rd, rs, 32);
+    srli(rd, rd, 32);
+  }
 };
 
 class ABIArgGenerator : public ABIArgGeneratorShared {

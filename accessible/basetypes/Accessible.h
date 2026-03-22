@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _Accessible_H_
-#define _Accessible_H_
+#ifndef Accessible_H_
+#define Accessible_H_
 
 #include "mozilla/a11y/Role.h"
 #include "mozilla/a11y/AccTypes.h"
@@ -726,6 +726,30 @@ class Accessible {
     }
     const role accRole = Role();
     return accRole == role::LANDMARK || accRole == role::REGION;
+  }
+
+  /**
+   * Returns true if this accessible represents plain content without
+   * interactive or semantic meaning (text, images, generic containers).
+   */
+  bool IsPlainContent() const {
+    switch (Role()) {
+      case roles::TEXT_LEAF:
+      case roles::STATICTEXT:
+      case roles::WHITESPACE:
+      case roles::GRAPHIC:
+      case roles::IMAGE_MAP:
+      case roles::CANVAS:
+      case roles::DIAGRAM:
+      case roles::TEXT:
+      case roles::TEXT_CONTAINER:
+      case roles::SECTION:
+      case roles::NOTHING:
+      case roles::GROUPING:
+        return true;
+      default:
+        return false;
+    }
   }
 
   /**

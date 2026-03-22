@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef CacheStorageService__h__
-#define CacheStorageService__h__
+#ifndef CacheStorageService_h_
+#define CacheStorageService_h_
 
 #include "mozilla/LinkedList.h"
 #include "nsICacheStorageService.h"

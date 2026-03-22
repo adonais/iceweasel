@@ -325,11 +325,7 @@
   <string name="customize_addon_collection_hint">Rinkinio pavadinimas</string>
   <!-- Hint displayed on input field for custom collection user ID -->
   <string name="customize_addon_collection_user_hint">Rinkinio savininkas (naudotojo ID)</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Sugrįžkite</string>
   <!--
     Title for the customize home screen section with recently visited. Recently visited is
@@ -659,7 +655,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">Redaguoti</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">Kopijuoti</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">Kopijuoti</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">Dalintis</string>
   <!-- Bookmark overflow menu open in new tab button -->
@@ -693,7 +689,7 @@
   -->
   <string name="bookmark_deletion_snackbar_message">Pašalintas %1$s</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">Atšaukti</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">Atšaukti</string>
   <!--
     Site Permissions
 

@@ -123,9 +123,8 @@ class NimbusPlugin implements Plugin<Project> {
         // download this tool from taskcluster. After the move of app-services, we expect the tool to exist
         // locally having been built by `./mach build`.
         if (project.gradle.ext.mozconfig.substs.MOZ_APPSERVICES_IN_TREE) {
-            // we assume the binary has been built by mach.
-            def mozconfig = project.gradle.mozconfig
-            def fmlBinaryFile = project.layout.projectDirectory.file("${mozconfig.topobjdir}/dist/host/bin/nimbus-fml")
+            // we assume the binary has been built and `gradle.ext.mozconfig.substs.NIMBUS_FML` tells us where to find it.
+            def fmlBinaryFile = new File(project.gradle.mozconfig.substs.NIMBUS_FML)
 
             // Configure the task with proper file type
             validateTask.configure { task ->

@@ -64,6 +64,7 @@ import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.ShareTabsFai
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.ShareToAppFailed
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.SharedTabsSuccessfully
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.ShortcutAdded
+import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.ShowSnackbar
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.TranslationInProgress
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.UserAccountAuthenticated
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.WebCompatReportSent
@@ -158,6 +159,25 @@ class SnackbarBindingTest {
         assertEquals(None(Dismiss(None())), appStore.state.snackbarState)
         verify(snackbarDelegate).dismiss()
     }
+
+    @Test
+    fun `WHEN show snackbar action is dispatched with a title THEN display the snackbar with that title`() =
+        runTest(testDispatcher) {
+            val customTitle = "Custom Title"
+            val binding = buildSnackbarBinding()
+            binding.start()
+
+            appStore.dispatch(SnackbarAction.ShowSnackbar(customTitle))
+            waitForStoreToSettle()
+
+            verify(snackbarDelegate).show(
+                text = customTitle,
+                duration = LENGTH_SHORT,
+                isError = false,
+            )
+
+            assertEquals(None(ShowSnackbar(customTitle)), appStore.state.snackbarState)
+        }
 
     @Test
     fun `GIVEN bookmark's parent is a root node WHEN the bookmark added state is observed THEN display friendly title`() = runTest(testDispatcher) {
@@ -672,7 +692,7 @@ class SnackbarBindingTest {
 
     private fun buildSnackbarBinding(
         context: Context = testContext,
-        browserStore: BrowserStore = mock(),
+        browserStore: BrowserStore = BrowserStore(),
         appStore: AppStore = this.appStore,
         snackbarDelegate: FenixSnackbarDelegate = this.snackbarDelegate,
         navController: NavController = this.navController,

@@ -608,6 +608,16 @@ nsWindowWatcher::OpenWindowWithRemoteTab(
     return NS_ERROR_UNEXPECTED;
   }
 
+  if (chromeFlags & nsIWebBrowserChrome::CHROME_DOCUMENT_PIP) {
+    RefPtr<BrowserHost> newBrowserHost = BrowserHost::GetFrom(newBrowserParent);
+    RefPtr<Element> rootElement =
+        newBrowserHost->GetOwnerElement()->OwnerDoc()->GetRootElement();
+    if (aFeatures.Exists("disallow_return_to_opener")) {
+      rootElement->SetAttribute(u"disallowReturnToOpener"_ns, u""_ns,
+                                IgnoreErrors());
+    }
+  }
+
   newBrowserParent.forget(aResult);
   return NS_OK;
 #endif
@@ -1889,7 +1899,7 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForContent(
     bool aCalledFromJS, bool* aIsPopupRequested) {
   if (!aCalledFromJS &&
       aFeatures.GetBoolWithDefault("pictureinpicture", false)) {
-    return nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE;
+    return nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE_FLAGS;
   }
 
   if (aFeatures.IsEmpty() || !ShouldOpenPopup(aFeatures)) {
@@ -2661,9 +2671,7 @@ int32_t nsWindowWatcher::GetWindowOpenLocation(
     }
   }
 
-  if ((aChromeFlags &
-       nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE) ==
-      nsIWebBrowserChrome::CHROME_DOCUMENT_PICTURE_IN_PICTURE) {
+  if (aChromeFlags & nsIWebBrowserChrome::CHROME_DOCUMENT_PIP) {
     return nsIBrowserDOMWindow::OPEN_NEWWINDOW;
   }
 #endif

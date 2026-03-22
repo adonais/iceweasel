@@ -296,10 +296,8 @@ function assert_malformed(thunk, message) {
     throw new Error(`got no error`);
   } catch (err) {
     if (
-      err instanceof TypeError ||
       err instanceof SyntaxError ||
-      err instanceof WebAssembly.CompileError ||
-      err instanceof WebAssembly.LinkError
+      err instanceof WebAssembly.CompileError
     ) {
       return;
     }

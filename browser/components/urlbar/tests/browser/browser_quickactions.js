@@ -232,15 +232,9 @@ add_task(async function test_refresh() {
 });
 
 add_task(async function test_clear() {
-  let useOldClearHistoryDialog = Services.prefs.getBoolPref(
-    "privacy.sanitize.useOldClearHistoryDialog"
-  );
-  let dialogURL = useOldClearHistoryDialog
-    ? "chrome://browser/content/sanitize.xhtml"
-    : "chrome://browser/content/sanitize_v2.xhtml";
   await doAlertDialogTest({
     input: "clear",
-    dialogContentURI: dialogURL,
+    dialogContentURI: "chrome://browser/content/sanitize_v2.xhtml",
   });
 });
 

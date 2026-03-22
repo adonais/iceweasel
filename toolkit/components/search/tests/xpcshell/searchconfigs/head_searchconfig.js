@@ -31,6 +31,17 @@ const TEST_DEBUG = Services.env.get("TEST_DEBUG");
 const URLTYPE_SUGGEST_JSON = "application/x-suggestions+json";
 const URLTYPE_SEARCH_HTML = "text/html";
 
+const ENGINES_URLS = {
+  "prod-main":
+    "https://firefox.settings.services.mozilla.com/v1/buckets/main/collections/search-config/records",
+  "prod-preview":
+    "https://firefox.settings.services.mozilla.com/v1/buckets/main-preview/collections/search-config/records",
+  "stage-main":
+    "https://firefox.settings.services.allizom.org/v1/buckets/main/collections/search-config/records",
+  "stage-preview":
+    "https://firefox.settings.services.allizom.org/v1/buckets/main-preview/collections/search-config/records",
+};
+
 /**
  * This function is used to override the remote settings configuration
  * if the SEARCH_CONFIG environment variable is set. This allows testing
@@ -39,10 +50,10 @@ const URLTYPE_SEARCH_HTML = "text/html";
 async function maybeSetupConfig() {
   const SEARCH_CONFIG = Services.env.get("SEARCH_CONFIG");
   if (SEARCH_CONFIG) {
-    if (!(SEARCH_CONFIG in SearchUtils.ENGINES_URLS)) {
+    if (!(SEARCH_CONFIG in ENGINES_URLS)) {
       throw new Error(`Invalid value for SEARCH_CONFIG`);
     }
-    const url = SearchUtils.ENGINES_URLS[SEARCH_CONFIG];
+    const url = ENGINES_URLS[SEARCH_CONFIG];
     const response = await fetch(url);
     const config = await response.json();
     SearchTestUtils.setRemoteSettingsConfig(config.data);

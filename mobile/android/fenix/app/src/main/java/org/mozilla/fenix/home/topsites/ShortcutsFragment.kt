@@ -8,13 +8,16 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import mozilla.components.lib.state.ext.observeAsState
-import org.mozilla.fenix.HomeActivity
+import kotlinx.coroutines.flow.map
+import mozilla.components.feature.top.sites.presenter.DefaultTopSitesPresenter
+import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.home.topsites.controller.DefaultTopSiteController
@@ -31,6 +34,8 @@ import java.lang.ref.WeakReference
  */
 class ShortcutsFragment : Fragment() {
 
+    private val topSitesBinding = ViewBoundFeatureWrapper<TopSitesBinding>()
+
     private lateinit var interactor: TopSiteInteractor
     private lateinit var controller: TopSiteController
 
@@ -38,7 +43,7 @@ class ShortcutsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         controller = DefaultTopSiteController(
-            activityRef = WeakReference(activity as HomeActivity),
+            activityRef = WeakReference(requireActivity()),
             store = requireComponents.core.store,
             navControllerRef = WeakReference(findNavController()),
             settings = requireComponents.settings,
@@ -47,11 +52,31 @@ class ShortcutsFragment : Fragment() {
             fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
             topSitesUseCases = requireComponents.useCases.topSitesUseCase,
             marsUseCases = requireComponents.useCases.marsUseCases,
+            mozAdsUseCases = requireComponents.useCases.mozAdsUseCases,
             viewLifecycleScope = viewLifecycleOwner.lifecycleScope,
         )
 
         interactor = DefaultTopSiteInteractor(
             controller = controller,
+        )
+
+        topSitesBinding.set(
+            feature = TopSitesBinding(
+                browserStore = requireComponents.core.store,
+                presenter = DefaultTopSitesPresenter(
+                    view = DefaultTopSitesView(
+                        appStore = requireComponents.appStore,
+                        settings = requireComponents.settings,
+                    ),
+                    storage = requireComponents.core.topSitesStorage,
+                    config = getTopSitesConfig(
+                        settings = requireComponents.settings,
+                        store = requireComponents.core.store,
+                    ),
+                ),
+            ),
+            owner = viewLifecycleOwner,
+            view = view,
         )
     }
 
@@ -59,12 +84,11 @@ class ShortcutsFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View? = content {
+    ): View = content {
         FirefoxTheme {
             val appStore = components.appStore
-            val topSites by appStore.observeAsState(initialValue = emptyList()) { state ->
-                state.topSites
-            }
+            val topSites by remember { appStore.stateFlow.map { state -> state.topSites } }
+                .collectAsState(initial = emptyList())
 
             ShortcutsScreen(
                 state = ShortcutsState(topSites = topSites),

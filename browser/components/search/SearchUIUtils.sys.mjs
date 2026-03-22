@@ -8,8 +8,10 @@
 
 /**
  * @import { SearchUtils } from "moz-src:///toolkit/components/search/SearchUtils.sys.mjs"
- * @import { UrlbarInput } from "chrome://browser/content/urlbar/UrlbarInput.mjs";
+ * @import { UrlbarInput } from "chrome://browser/content/urlbar/UrlbarInput.mjs"
+ * @import { SearchEngine } from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  */
+
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import {
@@ -25,6 +27,9 @@ const lazy = XPCOMUtils.declareLazy({
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  SearchEngineInstallError:
+    "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   SearchUIUtilsL10n: () => {
     return new Localization(["browser/search.ftl", "branding/brand.ftl"]);
@@ -41,13 +46,18 @@ export var SearchUIUtils = {
     }
   },
 
-  observe(engine, topic, data) {
+  /**
+   * @param {{wrappedJSObject: SearchEngine}} subject
+   * @param {"browser-search-engine-modified"} topic
+   * @param {string} data
+   */
+  observe(subject, topic, data) {
     switch (data) {
       case "engine-default":
-        this.updatePlaceholderNamePreference(engine, false);
+        this.updatePlaceholderNamePreference(subject.wrappedJSObject, false);
         break;
       case "engine-default-private":
-        this.updatePlaceholderNamePreference(engine, true);
+        this.updatePlaceholderNamePreference(subject.wrappedJSObject, true);
         break;
     }
   },
@@ -124,11 +134,11 @@ export var SearchUIUtils = {
     // _updatePlaceholderFromDefaultEngine only updates the pref if the search service
     // hasn't finished initializing, so we explicitly update it here to be sure.
     SearchUIUtils.updatePlaceholderNamePreference(
-      await Services.search.getDefault(),
+      await lazy.SearchService.getDefault(),
       false
     );
     SearchUIUtils.updatePlaceholderNamePreference(
-      await Services.search.getDefaultPrivate(),
+      await lazy.SearchService.getDefaultPrivate(),
       true
     );
 
@@ -196,28 +206,30 @@ export var SearchUIUtils = {
    */
   async addOpenSearchEngine(locationURL, image, browsingContext) {
     try {
-      await Services.search.addOpenSearchEngine(
+      await lazy.SearchService.addOpenSearchEngine(
         locationURL,
         image,
         browsingContext?.embedderElement?.contentPrincipal?.originAttributes
       );
     } catch (ex) {
-      let titleMsgName;
-      let descMsgName;
-      switch (ex.result) {
-        case Ci.nsISearchService.ERROR_DUPLICATE_ENGINE:
-          titleMsgName = "opensearch-error-duplicate-title";
-          descMsgName = "opensearch-error-duplicate-desc";
-          break;
-        case Ci.nsISearchService.ERROR_ENGINE_CORRUPTED:
-          titleMsgName = "opensearch-error-format-title";
-          descMsgName = "opensearch-error-format-desc";
-          break;
-        default:
-          // i.e. ERROR_DOWNLOAD_FAILURE
-          titleMsgName = "opensearch-error-download-title";
-          descMsgName = "opensearch-error-download-desc";
-          break;
+      // Use a general download error message, unless we have something more
+      // specific.
+      let titleMsgName = "opensearch-error-download-title";
+      let descMsgName = "opensearch-error-download-desc";
+
+      if (ex instanceof lazy.SearchEngineInstallError) {
+        switch (ex.type) {
+          case "duplicate-title":
+            titleMsgName = "opensearch-error-duplicate-title";
+            descMsgName = "opensearch-error-duplicate-desc";
+            break;
+          case "corrupted":
+            titleMsgName = "opensearch-error-format-title";
+            descMsgName = "opensearch-error-format-desc";
+            break;
+          default:
+          // e.g. download failure, use the more general message.
+        }
       }
 
       let [title, text] = await lazy.SearchUIUtilsL10n.formatValues([
@@ -257,7 +269,7 @@ export var SearchUIUtils = {
   /**
    * Update the placeholderName preference for the default search engine.
    *
-   * @param {nsISearchEngine} engine The new default search engine.
+   * @param {SearchEngine} engine The new default search engine.
    * @param {boolean} isPrivate Whether this change applies to private windows.
    */
   updatePlaceholderNamePreference(engine, isPrivate) {
@@ -383,7 +395,7 @@ export var SearchUIUtils = {
    *   The policyContainer to use for a new window or tab.
    * @param {boolean} [options.inBackground]
    *   Set to true for the tab to be loaded in the background.
-   * @param {?nsISearchEngine} [options.engine]
+   * @param {?SearchEngine} [options.engine]
    *   The search engine to use for the search. If not supplied, this will default
    *   to the default search engine for normal or private mode, depending on
    *   ``options.usePrivateWindow``.
@@ -393,9 +405,8 @@ export var SearchUIUtils = {
    *   A `SearchUtils.URL_TYPE` value indicating the type of search that should
    *   be performed. A falsey value is equivalent to
    *   `SearchUtils.URL_TYPE.SEARCH`, which will perform a usual web search.
-   * @param {string} options.sapSource
-   *   The search access point source, see
-   *   {@link lazy.BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES}
+   * @param {keyof typeof lazy.BrowserSearchTelemetry.KNOWN_SEARCH_SOURCES} options.sapSource
+   *   The search access point source.
    */
   async loadSearch({
     window,
@@ -418,8 +429,8 @@ export var SearchUIUtils = {
 
     if (!engine) {
       engine = usePrivateWindow
-        ? await Services.search.getDefaultPrivate()
-        : await Services.search.getDefault();
+        ? await lazy.SearchService.getDefaultPrivate()
+        : await lazy.SearchService.getDefault();
     }
 
     let submission = engine.getSubmission(searchText, searchUrlType);
@@ -459,7 +470,7 @@ export var SearchUIUtils = {
    *
    * @param {object} options
    *   Options object.
-   * @param {nsISearchEngine} options.engine
+   * @param {SearchEngine} options.engine
    *   The engine to search with.
    * @param {WindowProxy} options.window
    *   The window where the search was triggered.

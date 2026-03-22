@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsMathMLmtableFrame_h___
-#define nsMathMLmtableFrame_h___
+#ifndef nsMathMLmtableFrame_h_
+#define nsMathMLmtableFrame_h_
 
 #include "mozilla/UniquePtr.h"
 #include "nsBlockFrame.h"
@@ -275,4 +275,4 @@ class nsMathMLmtdInnerFrame final : public nsBlockFrame, public nsMathMLFrame {
 
 };  // class nsMathMLmtdInnerFrame
 
-#endif /* nsMathMLmtableFrame_h___ */
+#endif /* nsMathMLmtableFrame_h_ */

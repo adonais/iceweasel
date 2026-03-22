@@ -86,7 +86,7 @@ class SVGRootRenderingObserver final : public SVGRenderingObserver {
     StopObserving();
   }
 
-  Element* GetReferencedElementWithoutObserving() final {
+  Element* GetReferencedElementWithoutObserving() const final {
     return mDocWrapper->GetSVGRootElement();
   }
 

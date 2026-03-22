@@ -1002,8 +1002,8 @@ diff --git a/js/src/jit-test/tests/wasm/spec/spec/table.wast.js b/js/src/jit-tes
 +// // ./test/core/table.wast:43
 +// assert_invalid(() => instantiate(`(table 0 0x1_0000_0000 funcref) `), `table size`);
  
- // ./test/core/table.wast:50
- let $15 = instantiate(`(module (table i64 0 funcref))`);
+ // ./test/core/table.wast:51
+ assert_invalid(() => instantiate(`(module (elem (i32.const 0)))`), `unknown table`);
 diff --git a/js/src/jit-test/tests/wasm/spec/threads/LB.wast.js b/js/src/jit-test/tests/wasm/spec/threads/LB.wast.js
 --- a/js/src/jit-test/tests/wasm/spec/threads/LB.wast.js
 +++ b/js/src/jit-test/tests/wasm/spec/threads/LB.wast.js

@@ -6,14 +6,14 @@ Transform the release-msix-push kind into an actual task description.
 """
 
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
 from voluptuous import Optional, Required
 
 from gecko_taskgraph.transforms.task import task_description_schema
 from gecko_taskgraph.util.attributes import release_level
 from gecko_taskgraph.util.scriptworker import add_scope_prefix
 
-push_msix_description_schema = Schema({
+push_msix_description_schema = LegacySchema({
     Required("name"): str,
     Required("task-from"): task_description_schema["task-from"],
     Required("dependencies"): task_description_schema["dependencies"],

@@ -123,7 +123,10 @@ add_task(async function test_tabContextMenu_prefDisabled() {
 add_task(async function test_openTabNotePanelFromContextMenu() {
   // open context menu with tab notes enabled
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.tabs.notes.enabled", true]],
+    set: [
+      ["browser.tabs.notes.enabled", true],
+      ["browser.tabs.notes.newBadge.enabled", true],
+    ],
   });
   let tab = BrowserTestUtils.addTab(gBrowser, "https://www.example.com");
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
@@ -132,6 +135,11 @@ add_task(async function test_openTabNotePanelFromContextMenu() {
   Assert.ok(
     !addNoteElement.hidden,
     "'Add Note' is visible in context menu when pref enabled"
+  );
+  Assert.equal(
+    addNoteElement.getAttribute("badge"),
+    "New",
+    "'New' badge appears when user first interacts with context menu item"
   );
   let tabNotePanel = document.getElementById("tabNotePanel");
 
@@ -146,6 +154,14 @@ add_task(async function test_openTabNotePanelFromContextMenu() {
     "Tab note panel appears after clicking context menu item"
   );
   await closeTabNoteMenu();
+
+  tabContextMenu = await getContextMenu(tab, "tabContextMenu");
+  Assert.ok(
+    !addNoteElement.getAttribute("badge"),
+    "'New' badge disappears after user interaction"
+  );
+
+  await closeContextMenu(tabContextMenu);
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
 });

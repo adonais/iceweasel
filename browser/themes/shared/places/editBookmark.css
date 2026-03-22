@@ -27,12 +27,12 @@
 }
 
 menulist.folder-icon {
+  -moz-context-properties: fill;
+  fill: currentColor;
   list-style-image: url("chrome://global/skin/icons/folder.svg") !important;
 }
 
 .folder-icon {
-  -moz-context-properties: fill;
-  fill: currentColor;
   --menuitem-icon: url("chrome://global/skin/icons/folder.svg");
 }
 

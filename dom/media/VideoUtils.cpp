@@ -245,35 +245,29 @@ bool IsValidVideoRegion(const gfx::IntSize& aFrame,
 }
 
 already_AddRefed<SharedThreadPool> GetMediaThreadPool(MediaThreadType aType) {
-  const char* name;
-  uint32_t threads = 4;
+  RefPtr<SharedThreadPool> pool;
   switch (aType) {
     case MediaThreadType::PLATFORM_DECODER:
-      name = "MediaPDecoder";
+      pool = SharedThreadPool::Get("MediaPDecoder", 4);
       break;
     case MediaThreadType::WEBRTC_CALL_THREAD:
-      name = "WebrtcCallThread";
-      threads = 1;
+      pool = SharedThreadPool::Get("WebrtcCallThread", 1);
       break;
     case MediaThreadType::WEBRTC_WORKER:
-      name = "WebrtcWorker";
+      pool = SharedThreadPool::Get("WebrtcWorker", 4);
       break;
     case MediaThreadType::MDSM:
-      name = "MediaDecoderStateMachine";
-      threads = 1;
+      pool = SharedThreadPool::Get("MediaDecoderStateMachine", 1);
       break;
     case MediaThreadType::PLATFORM_ENCODER:
-      name = "MediaPEncoder";
+      pool = SharedThreadPool::Get("MediaPEncoder", 4);
       break;
     default:
       MOZ_FALLTHROUGH_ASSERT("Unexpected MediaThreadType");
     case MediaThreadType::SUPERVISOR:
-      name = "MediaSupervisor";
+      pool = SharedThreadPool::Get("MediaSupervisor", 4);
       break;
   }
-
-  RefPtr<SharedThreadPool> pool =
-      SharedThreadPool::Get(nsDependentCString(name), threads);
 
   // Ensure a larger stack for platform decoder threads
   bool needsLargerStacks = aType == MediaThreadType::PLATFORM_DECODER;
@@ -977,7 +971,7 @@ nsresult GenerateRandomPathName(nsCString& aOutSalt, uint32_t aLength) {
   return NS_OK;
 }
 
-already_AddRefed<TaskQueue> CreateMediaDecodeTaskQueue(const char* aName) {
+already_AddRefed<TaskQueue> CreateMediaDecodeTaskQueue(StaticString aName) {
   RefPtr<TaskQueue> queue = TaskQueue::Create(
       GetMediaThreadPool(MediaThreadType::PLATFORM_DECODER), aName);
   return queue.forget();

@@ -25,8 +25,7 @@
 
 #include <algorithm>
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "jit/Disassemble.h"
 #include "jit/ExecutableAllocator.h"
 #include "jit/FlushICache.h"  // for FlushExecutionContextForAllThreads
@@ -1534,7 +1533,7 @@ void Code::disassemble(JSContext* cx, Tier tier, int kindSelection,
 // Return a map with names and associated statistics
 MetadataAnalysisHashMap Code::metadataAnalysis(JSContext* cx) const {
   MetadataAnalysisHashMap hashmap;
-  if (!hashmap.reserve(14)) {
+  if (!hashmap.reserve(16)) {
     return hashmap;
   }
 
@@ -1589,6 +1588,16 @@ MetadataAnalysisHashMap Code::metadataAnalysis(JSContext* cx) const {
         "funcExports size",
         codeBlock.funcExports.sizeOfExcludingThis(mallocSizeOf));
   }
+
+  size_t codeBytesUsedInTier1 = 0;
+  size_t codeBytesUsedInTier2 = 0;
+  {
+    auto guard = data_.readLock();
+    codeBytesUsedInTier1 = guard->tier1Stats.codeBytesUsed;
+    codeBytesUsedInTier2 = guard->tier2Stats.codeBytesUsed;
+  }
+  hashmap.putNewInfallible("tier1 code bytes used", codeBytesUsedInTier1);
+  hashmap.putNewInfallible("tier2 code bytes used", codeBytesUsedInTier2);
 
   return hashmap;
 }

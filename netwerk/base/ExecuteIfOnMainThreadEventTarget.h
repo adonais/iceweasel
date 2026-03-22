@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef ExecuteIfOnMainThreadEventTarget_h__
-#define ExecuteIfOnMainThreadEventTarget_h__
+#ifndef ExecuteIfOnMainThreadEventTarget_h_
+#define ExecuteIfOnMainThreadEventTarget_h_
 
 #include "nsISerialEventTarget.h"
 

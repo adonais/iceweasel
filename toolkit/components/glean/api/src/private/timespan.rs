@@ -37,18 +37,8 @@ impl gecko_profiler::ProfilerMarker for TimespanMetricMarker {
         schema.set_table_label(
             "{marker.data.cat}.{marker.data.id}: {marker.data.val}{marker.data.stringval}",
         );
-        schema.add_key_label_format_with_flags(
-            "cat",
-            "Category",
-            Format::UniqueString,
-            PayloadFlags::Searchable,
-        );
-        schema.add_key_label_format_with_flags(
-            "id",
-            "Metric",
-            Format::UniqueString,
-            PayloadFlags::Searchable,
-        );
+        schema.add_key_label_format("cat", "Category", Format::UniqueString);
+        schema.add_key_label_format("id", "Metric", Format::UniqueString);
         schema.add_key_label_format("val", "Value", Format::Integer);
         schema.add_key_label_format("stringval", "Value", Format::String);
         schema
@@ -121,7 +111,7 @@ impl TimespanMetric {
                 time_unit,
             } => {
                 #[cfg(feature = "with_gecko")]
-                if gecko_profiler::can_accept_markers() {
+                if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                     gecko_profiler::add_marker(
                         "TimeSpan::setRaw",
                         TelemetryProfilerCategory,
@@ -165,7 +155,7 @@ impl Timespan for TimespanMetric {
                 // While these bugs are being solved, we record instant markers so
                 // that we still have *some* information.
                 #[cfg(feature = "with_gecko")]
-                if gecko_profiler::can_accept_markers() {
+                if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                     gecko_profiler::add_marker(
                         "TimeSpan::start",
                         TelemetryProfilerCategory,
@@ -195,7 +185,7 @@ impl Timespan for TimespanMetric {
             TimespanMetric::Parent { id, inner, .. } => {
                 // See comment on Timespan::start
                 #[cfg(feature = "with_gecko")]
-                if gecko_profiler::can_accept_markers() {
+                if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                     gecko_profiler::add_marker(
                         "TimeSpan::stop",
                         TelemetryProfilerCategory,
@@ -225,7 +215,7 @@ impl Timespan for TimespanMetric {
             TimespanMetric::Parent { id, inner, .. } => {
                 // See comment on Timespan::start
                 #[cfg(feature = "with_gecko")]
-                if gecko_profiler::can_accept_markers() {
+                if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                     gecko_profiler::add_marker(
                         "TimeSpan::cancel",
                         TelemetryProfilerCategory,
@@ -255,7 +245,7 @@ impl Timespan for TimespanMetric {
             TimespanMetric::Parent { id, inner, .. } => {
                 let elapsed = elapsed.as_nanos().try_into().unwrap_or(i64::MAX);
                 #[cfg(feature = "with_gecko")]
-                if gecko_profiler::can_accept_markers() {
+                if gecko_profiler::current_thread_is_being_profiled_for_markers() {
                     gecko_profiler::add_marker(
                         "TimeSpan::setRaw",
                         TelemetryProfilerCategory,

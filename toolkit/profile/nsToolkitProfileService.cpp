@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "mozilla/Preferences.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/HelperMacros.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
@@ -12,26 +12,31 @@
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WidgetUtils.h"
 #include "nsProfileLock.h"
+#include "nsStringFwd.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
 #include <prprf.h>
 #include <prtime.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef XP_WIN
-#  include <windows.h>
-#  include <shlobj.h>
 #  include "mozilla/PolicyChecks.h"
+#  include <shlobj.h>
+#  include <windows.h>
 #endif
 #ifdef XP_UNIX
 #  include <unistd.h>
 #endif
 
-#include "nsToolkitProfileService.h"
 #include "CmdLineAndEnvUtils.h"
+#include "nsToolkitProfileService.h"
 #include "nsIFile.h"
 
 #ifdef XP_MACOSX
+#  ifdef NIGHTLY_BUILD
+#    include "AppGroupPath.h"
+#  endif
 #  include <CoreFoundation/CoreFoundation.h>
 #  include "nsILocalFileMac.h"
 #endif
@@ -43,8 +48,13 @@
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsNetCID.h"
-#include "nsXULAppAPI.h"
 #include "nsThreadUtils.h"
+#include "nsXULAppAPI.h"
+
+#ifdef MOZ_BACKGROUNDTASKS
+#  include "mozilla/BackgroundTasks.h"
+#  include "SpecialSystemDirectory.h"
+#endif
 
 #include "nsIObserverService.h"
 #include "nsIRunnable.h"
@@ -57,21 +67,24 @@
 #include "nsPrintfCString.h"
 #include "mozilla/dom/DOMMozPromiseRequestHolder.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/UniquePtr.h"
-#include "nsIToolkitShellService.h"
 #include "mozilla/glean/ToolkitProfileMetrics.h"
+#include "mozilla/Sprintf.h"
+#include "mozilla/UniquePtr.h"
+#include "nsAppRunner.h"
+#include "nsIRunnable.h"
+#include "nsIToolkitShellService.h"
+#include "nsNativeCharsetUtils.h"
+#include "nsPrintfCString.h"
 #include "nsProxyRelease.h"
+#include "nsReadableUtils.h"
 #ifdef MOZ_HAS_REMOTE
 #  include "nsRemoteService.h"
 #endif
+#include "nsString.h"
+#include "nsXREDirProvider.h"
 #include "prinrval.h"
 #include "prthread.h"
 #include "xpcpublic.h"
-#include "nsProxyRelease.h"
-#ifdef MOZ_BACKGROUNDTASKS
-#  include "mozilla/BackgroundTasks.h"
-#  include "SpecialSystemDirectory.h"
-#endif
 
 using namespace mozilla;
 
@@ -332,7 +345,7 @@ nsToolkitProfile::SetRootDir(nsIFile* aRootDir) {
 
   // Finally, set the new paths on the local object.
   mRootDir = aRootDir;
-  mLocalDir = localDir;
+  mLocalDir = std::move(localDir);
 
   return NS_OK;
 }
@@ -1344,6 +1357,17 @@ nsToolkitProfileService::GetProfileDescriptor(nsIFile* aRootDir,
   // if the profile dir is relative to appdir...
   bool isRelative;
   nsresult rv = mAppData->Contains(aRootDir, &isRelative);
+
+#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+  // relative to the app group container
+  if (NS_SUCCEEDED(rv) && !isRelative) {
+    nsCOMPtr<nsIFile> agBase;
+    if (NS_SUCCEEDED(GetAppGroupContainerBase(getter_AddRefs(agBase))) &&
+        agBase) {
+      agBase->Contains(aRootDir, &isRelative);
+    }
+  }
+#endif
 
   nsCString profilePath;
   if (NS_SUCCEEDED(rv) && isRelative) {
@@ -2750,8 +2774,41 @@ nsToolkitProfileService::GetLocalDirFromRootDir(nsIFile* aRootDir,
       aRootDir, &isRelative, path);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsIFile> localDir;
+  nsCOMPtr<nsIFile> baseDir;
+  nsCString relDesc;
+
+#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
   if (isRelative) {
+    nsCOMPtr<nsIFile> agBase;
+    if (NS_SUCCEEDED(GetAppGroupContainerBase(getter_AddRefs(agBase))) &&
+        agBase) {
+      bool underAG = false;
+      rv = agBase->Contains(aRootDir, &underAG);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      if (underAG) {
+        rv = aRootDir->GetRelativeDescriptor(agBase, relDesc);
+        NS_ENSURE_SUCCESS(rv, rv);
+        const nsCString kProfiles = "Profiles/"_ns;
+        int32_t idx = relDesc.Find(kProfiles);
+        if (idx != kNotFound) {
+          relDesc = Substring(relDesc, idx);
+        }
+        rv = agBase->AppendNative("Library"_ns);
+        NS_ENSURE_SUCCESS(rv, rv);
+        rv = agBase->AppendNative("Caches"_ns);
+        NS_ENSURE_SUCCESS(rv, rv);
+        baseDir = agBase;
+      }
+    }
+  }
+#endif
+  nsCOMPtr<nsIFile> localDir;
+  if (baseDir) {
+    rv = NS_NewLocalFileWithRelativeDescriptor(baseDir, relDesc,
+                                               getter_AddRefs(localDir));
+    NS_ENSURE_SUCCESS(rv, rv);
+  } else if (isRelative) {
     rv = NS_NewLocalFileWithRelativeDescriptor(
         nsToolkitProfileService::gService->mTempData, path,
         getter_AddRefs(localDir));

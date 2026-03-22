@@ -46,6 +46,9 @@ const PREF_WEBAPI_TESTING = "extensions.webapi.testing";
 const PREF_EM_POSTDOWNLOAD_THIRD_PARTY =
   "extensions.postDownloadThirdPartyPrompt";
 
+const PREF_ALLOW_EXECUTESCRIPT_IN_MOZEXTENSION =
+  "extensions.webextensions.allow_executeScript_in_moz_extension";
+
 const UPDATE_REQUEST_VERSION = 2;
 
 const BRANCH_REGEXP = /^([^\.]+\.[0-9]+[a-z]*).*/gi;
@@ -136,6 +139,17 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "GLEAN_PING_ADDONS_UPDATED_TESTING",
   PREF_GLEAN_PING_ADDONS_UPDATED_TESTING,
   false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "ALLOW_EXECUTESCRIPT_IN_MOZEXTENSION",
+  PREF_ALLOW_EXECUTESCRIPT_IN_MOZEXTENSION,
+  false,
+  // onUpdate callback.
+  (_pref, _oldValue, newValue) => {
+    Glean.extensions.allowExecuteScriptInMozExtension.set(newValue);
+  }
 );
 
 // Initialize the WebExtension process script service as early as possible,
@@ -844,6 +858,10 @@ var AddonManagerInternal = {
       Services.prefs.getBoolPref(PREF_USE_REMOTE)
     );
     Services.prefs.addObserver(PREF_USE_REMOTE, this);
+
+    Glean.extensions.allowExecuteScriptInMozExtension.set(
+      lazy.ALLOW_EXECUTESCRIPT_IN_MOZEXTENSION
+    );
 
     logger.debug("Completed startup sequence");
     this.callManagerListeners("onStartup");

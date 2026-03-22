@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef __nsIRollupListener_h__
-#define __nsIRollupListener_h__
+#ifndef _nsIRollupListener_h_
+#define _nsIRollupListener_h_
 
 #include "nsTArray.h"
 #include "nsPoint.h"
@@ -75,4 +75,4 @@ class nsIRollupListener {
   virtual bool RollupNativeMenu() { return false; }
 };
 
-#endif /* __nsIRollupListener_h__ */
+#endif /* _nsIRollupListener_h_ */

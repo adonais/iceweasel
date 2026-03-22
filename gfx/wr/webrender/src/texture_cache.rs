@@ -1577,6 +1577,10 @@ impl TextureCache {
     pub fn report_memory(&self, ops: &mut MallocSizeOfOps) -> usize {
         self.lru_cache.size_of(ops)
     }
+
+    pub fn allocated_color_bytes(&self) -> usize {
+        self.bytes_allocated[BudgetType::SharedColor8Linear as usize]
+    }
 }
 
 #[cfg_attr(feature = "capture", derive(Serialize))]

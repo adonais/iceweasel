@@ -5,8 +5,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "nsPK11TokenDB.h"
 
-#include <string.h>
-
 #include "ScopedNSSTypes.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Logging.h"

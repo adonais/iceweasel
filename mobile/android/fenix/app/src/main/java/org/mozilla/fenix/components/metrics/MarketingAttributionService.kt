@@ -9,6 +9,9 @@ import android.os.RemoteException
 import androidx.annotation.VisibleForTesting
 import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerStateListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.ext.components
@@ -57,17 +60,22 @@ class MarketingAttributionService(private val context: Context) {
 
                             if (!installReferrerResponse.isNullOrBlank()) {
                                 response = installReferrerResponse
-                                val utmParams = UTMParams.parseUTMParameters(installReferrerResponse)
+                                val utmParams =
+                                    UTMParams.parseUTMParameters(installReferrerResponse)
 
                                 distributionIdManager.updateDistributionIdFromUtmParams(utmParams)
-                                distributionIdManager.startAdjustIfSkippingConsentScreen()
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    distributionIdManager.startAdjustIfSkippingConsentScreen()
+                                }
                             }
 
-                            context.settings().shouldShowMarketingOnboarding =
-                                shouldShowMarketingOnboarding(
-                                    installReferrerResponse,
-                                    distributionIdManager,
-                                )
+                            CoroutineScope(Dispatchers.IO).launch {
+                                context.settings().shouldShowMarketingOnboarding =
+                                    shouldShowMarketingOnboarding(
+                                        installReferrerResponse,
+                                        distributionIdManager,
+                                    )
+                            }
 
                             return
                         }
@@ -110,7 +118,7 @@ class MarketingAttributionService(private val context: Context) {
         var response: String? = null
 
         @VisibleForTesting
-        internal fun shouldShowMarketingOnboarding(
+        internal suspend fun shouldShowMarketingOnboarding(
             installReferrerResponse: String?,
             distributionIdManager: DistributionIdManager,
         ): Boolean {

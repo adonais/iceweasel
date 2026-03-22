@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@import url("chrome://global/skin/design-system/panel.css");
+
 :root {
   --panelui-subview-transition-duration: 150ms;
 
@@ -15,28 +17,25 @@
   --menu-panel-width: 22.35em;
   --menu-panel-width-wide: 29em;
 
-  --arrowpanel-header-info-icon-padding: 4px;
-  --arrowpanel-header-info-icon-full-width: calc(16px + (2 * var(--arrowpanel-header-info-icon-padding)));
-  --panel-separator-padding-vertical: 4px;
-  --panel-separator-padding-horizontal: 8px;
+  --panel-separator-padding-vertical: var(--dimension-4);
+  --panel-separator-padding-horizontal: var(--dimension-8);
   --panel-separator-padding: var(--panel-separator-padding-vertical) var(--panel-separator-padding-horizontal);
-  --panel-subview-body-padding-block: 8px;
-  --panel-subview-body-padding-inline: 0;
+
+  --panel-subview-body-padding-block: var(--dimension-8);
+  --panel-subview-body-padding-inline: 0px;
   --panel-subview-body-padding: var(--panel-subview-body-padding-block) var(--panel-subview-body-padding-inline);
 
-  --panel-and-palette-icon-size: 16px;
+  --panel-and-palette-icon-size: var(--icon-size-small);
 
   &:not([lwtheme]) {
     --panel-separator-zap-gradient: linear-gradient(90deg, #9059ff 0%, #ff4aa2 52.08%, #ffbd4f 100%);
   }
 
   &[uidensity="compact"] {
-    --arrowpanel-menuitem-margin-inline: 4px;
-    --arrowpanel-menuitem-padding-block: 4px;
-    --panel-separator-padding-horizontal: 4px;
-    --panel-subview-body-padding-block: 4px;
+    --panel-separator-padding-horizontal: var(--dimension-4);
+    --panel-subview-body-padding-block: var(--dimension-4);
     :is(panel, menupopup):not([touchmode]) {
-      --arrowpanel-header-back-icon-padding: 4px;
+      --arrowpanel-header-back-icon-padding: var(--dimension-4);
     }
   }
 }
@@ -231,9 +230,11 @@ panelview {
 }
 
 .panel-subview-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  flex: 1;
   padding: var(--panel-subview-body-padding);
 
   &:not(:last-child) {
@@ -258,7 +259,7 @@ panelview {
   border-radius: var(--button-border-radius);
   flex-shrink: 0;
 
-  &[disabled="true"] {
+  &[disabled] {
     visibility: hidden;
   }
 
@@ -1231,7 +1232,7 @@ panelview .toolbarbutton-1,
     margin-inline-start: 10px;
   }
 
-  &[checked="true"] {
+  &[checked] {
     list-style-image: url(chrome://global/skin/icons/check.svg);
     -moz-context-properties: fill;
     fill: currentColor;
@@ -1257,7 +1258,7 @@ panelview .toolbarbutton-1,
 .subviewbutton[image] > .toolbarbutton-text,
 .subviewbutton[targetURI] > .toolbarbutton-text,
 .subviewbutton.bookmark-item > .toolbarbutton-text,
-.subviewbutton[checked="true"] > .toolbarbutton-text {
+.subviewbutton[checked] > .toolbarbutton-text {
   padding-inline-start: 8px;
 }
 
@@ -1376,7 +1377,8 @@ panelview .toolbarbutton-1,
 
 #protections-popup-mainView .subviewbutton-nav:not(.notFound),
 .widget-overflow-list .subviewbutton-nav,
-.PanelUI-subView .subviewbutton-nav {
+.PanelUI-subView .subviewbutton-nav,
+.tab-preview-add-note.subviewbutton-nav {
   &::after {
     -moz-context-properties: fill, fill-opacity;
     content: url(chrome://global/skin/icons/arrow-right.svg);
@@ -1540,7 +1542,7 @@ panelview .toolbarbutton-1 {
     min-width: 0;
     display: flex;
 
-    &[disabled="true"] {
+    &[disabled] {
       pointer-events: none;
     }
   }
@@ -1800,6 +1802,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
   align-items: center;
   justify-content: center;
   text-align: center;
+  box-sizing: border-box;
   /* Set the header's padding according to menuitems horizontal padding
      to make sure they are even from all sides and aligned according to that padding. */
   padding: var(--arrowpanel-menuitem-margin-inline);
@@ -2013,7 +2016,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 #PanelUI-profiler-presets {
   margin: 8px 0;
 
-  &[disabled="true"]::part(label-box) {
+  &[disabled]::part(label-box) {
     opacity: 0.5;
   }
 }
@@ -2443,13 +2446,37 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 /* ----- IP Protection panel ----- */
 #PanelUI-ipprotection {
   width: 400px;
+  padding: var(--space-small);
+
+  > .panel-header {
+    margin: 0;
+  }
+
+  > .panel-subview-body {
+    padding: 0;
+  }
+
+  > toolbarseparator {
+    display: none;
+  }
 }
 
 #ipprotection-experiment-badge {
   margin-inline-start: var(--space-xsmall);
   display: inline-block;
+  color: var(--text-color-deemphasized);
 }
 
 #ipprotection-header-button {
   list-style-image: url(chrome://global/skin/icons/help.svg);
+}
+
+#confirmation-hint[data-message-id="confirmation-hint-ipprotection-navigated-to-excluded-site"] {
+  #confirmation-hint-checkmark-animation-container {
+    display: none;
+  }
+
+  #confirmation-hint-message {
+    margin-inline-start: 0;
+  }
 }

@@ -70,6 +70,11 @@ class SimpleRedirectDialogFragment(
                 )
                 id = VIEW_ID
                 setText(checkboxText)
+                val verticalPadding =
+                    resources.getDimensionPixelSize(
+                        R.dimen.mozac_feature_applinks_confirm_dialog_checkbox_vertical_padding,
+                    )
+                setPadding(0, verticalPadding, 0, verticalPadding)
             }
 
             val dialog = getBuilder(themeResId).apply {

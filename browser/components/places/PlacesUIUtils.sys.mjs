@@ -22,6 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   Weave: "resource://services-sync/main.sys.mjs",
+  WebNavigationManager: "resource://gre/modules/WebNavigation.sys.mjs",
 });
 
 const ITEM_CHANGED_BATCH_NOTIFICATION_THRESHOLD = 10;
@@ -809,11 +810,21 @@ export var PlacesUIUtils = {
     // For consistency, we want all the bookmarks to open in new tabs, instead
     // of having one of them replace the currently focused tab.  Hence we call
     // loadTabs with aReplace set to false.
-    browserWindow.gBrowser.loadTabs(urls, {
+    let tabs = browserWindow.gBrowser.loadTabs(urls, {
       inBackground: loadInBackground,
       replace: false,
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
+
+    for (const [i, tab] of tabs.entries()) {
+      let item = aItemsToOpen[i];
+      if (item.isBookmark && !item.uri.startsWith("javascript:")) {
+        lazy.WebNavigationManager.setRecentTabTransitionData(
+          { auto_bookmark: true },
+          tab.linkedBrowser
+        );
+      }
+    }
   },
 
   /**
@@ -928,12 +939,22 @@ export var PlacesUIUtils = {
       }
 
       const isJavaScriptURL = aNode.uri.startsWith("javascript:");
+      let resolveOnContentBrowserCreated;
+      if (isBookmark && !isJavaScriptURL) {
+        resolveOnContentBrowserCreated = browser => {
+          lazy.WebNavigationManager.setRecentTabTransitionData(
+            { auto_bookmark: true },
+            browser
+          );
+        };
+      }
       aWindow.openTrustedLinkIn(aNode.uri, aWhere, {
         allowPopups: isJavaScriptURL,
         inBackground: this.loadBookmarksInBackground,
         allowInheritPrincipal: isJavaScriptURL,
         private: aPrivate,
         userContextId,
+        resolveOnContentBrowserCreated,
       });
       if (aWindow.updateTelemetry) {
         aWindow.updateTelemetry([aNode]);

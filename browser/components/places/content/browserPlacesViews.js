@@ -413,6 +413,7 @@ class PlacesViewBase {
 
         if (!this._nativeView) {
           popup.setAttribute("placespopup", "true");
+          popup.setAttribute("native", "false");
         }
 
         element.appendChild(popup);
@@ -1109,6 +1110,7 @@ class PlacesToolbar extends PlacesViewBase {
           is: "places-popup",
         });
         popup.setAttribute("placespopup", "true");
+        popup.setAttribute("native", "false");
         popup.classList.add("toolbar-menupopup");
         button.appendChild(popup);
         popup._placesNode = PlacesUtils.asContainer(aChild);
@@ -1819,6 +1821,34 @@ class PlacesToolbar extends PlacesViewBase {
     aEvent.stopPropagation();
   }
 
+  /**
+   * Finds the last visible toolbar widget before the PlacesToolbar container.
+   *
+   * @returns {Element|null}
+   *   The last visible widget element, or null if none found.
+   */
+  #findPrecedingToolbarWidget() {
+    let toolbar = this._rootElt.closest("toolbar");
+    if (!toolbar) {
+      return null;
+    }
+    let placesContainer = this._rootElt.closest("toolbaritem");
+    let lastWidget = null;
+    for (let child of toolbar.children) {
+      if (child == placesContainer) {
+        break;
+      }
+      if (
+        !child.hidden &&
+        !child.collapsed &&
+        child.getBoundingClientRect().width > 0
+      ) {
+        lastWidget = child;
+      }
+    }
+    return lastWidget;
+  }
+
   _onDragOver(aEvent) {
     // Cache the dataTransfer
     PlacesControllerDragHelper.currentDropTarget = aEvent.target;
@@ -1856,6 +1886,7 @@ class PlacesToolbar extends PlacesViewBase {
       ind.parentNode.collapsed = false;
       let halfInd = ind.clientWidth / 2;
       let translateX;
+
       if (this.isRTL) {
         halfInd = Math.ceil(halfInd);
         translateX = 0 - this._rootElt.getBoundingClientRect().right - halfInd;
@@ -1868,6 +1899,14 @@ class PlacesToolbar extends PlacesViewBase {
               this._rootElt.children[
                 dropPoint.beforeIndex
               ].getBoundingClientRect().right;
+          }
+        } else {
+          // When there are no bookmark items, position the indicator at the
+          // edge of any preceding toolbar widgets (e.g., import-bookmarks button)
+          // which appear on the right in RTL layout.
+          let prevWidget = this.#findPrecedingToolbarWidget();
+          if (prevWidget) {
+            translateX += prevWidget.getBoundingClientRect().left;
           }
         }
       } else {
@@ -1882,6 +1921,13 @@ class PlacesToolbar extends PlacesViewBase {
               this._rootElt.children[
                 dropPoint.beforeIndex
               ].getBoundingClientRect().left;
+          }
+        } else {
+          // When there are no bookmark items, position the indicator at the
+          // edge of any preceding toolbar widgets (e.g., import-bookmarks button).
+          let prevWidget = this.#findPrecedingToolbarWidget();
+          if (prevWidget) {
+            translateX += prevWidget.getBoundingClientRect().right;
           }
         }
       }

@@ -24,7 +24,7 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
 
 @end
 
-@interface NSCursor (CreateWithImageNamed)
+@interface NSCursor (CreateWithImageName)
 + (NSCursor*)cursorWithImageNamed:(NSString*)imageName hotSpot:(NSPoint)aPoint;
 @end
 
@@ -223,8 +223,9 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
   uint32_t hotspotY =
       aCursor.mHotspotY > (uint32_t(size.height) - 1) ? 0 : aCursor.mHotspotY;
   NSPoint hotSpot = ::NSMakePoint(hotspotX, hotspotY);
-  [self setCursor:[[NSCursor alloc] initWithImage:cursorImage hotSpot:hotSpot]
-             type:kCustomCursor];
+  NSCursor* newCursor = [[[NSCursor alloc] initWithImage:cursorImage
+                                                 hotSpot:hotSpot] autorelease];
+  [self setCursor:newCursor type:kCustomCursor];
   [cursorImage release];
   return NS_OK;
 }
@@ -263,15 +264,26 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
   NSImage *cursorImage, *hiDpiCursorImage;
 
   nsresult rv = NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(resDir));
-  if (NS_FAILED(rv)) goto INIT_FAILURE;
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Problem getting GRE directory for cursor.");
+    return nil;
+  }
+
   resDir->AppendNative("res"_ns);
   resDir->AppendNative("cursors"_ns);
 
   rv = resDir->GetNativePath(resPath);
-  if (NS_FAILED(rv)) goto INIT_FAILURE;
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Problem getting cursor directory.");
+    return nil;
+  }
 
   pathToImage = [NSString stringWithUTF8String:(const char*)resPath.get()];
-  if (!pathToImage) goto INIT_FAILURE;
+  if (!pathToImage) {
+    NS_WARNING("Problem converting cursor directory path to NSString.");
+    return nil;
+  }
+
   pathToImage = [pathToImage stringByAppendingPathComponent:imageName];
   pathToHiDpiImage = [pathToImage stringByAppendingString:@"@2x"];
   // Add same extension to both image paths.
@@ -280,7 +292,10 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
 
   cursorImage =
       [[[NSImage alloc] initWithContentsOfFile:pathToImage] autorelease];
-  if (!cursorImage) goto INIT_FAILURE;
+  if (!cursorImage) {
+    NS_WARNING("Problem loading cursor image.");
+    return nil;
+  }
 
   // Note 1: There are a few different ways to get a hidpi image via
   // initWithContentsOfFile. We let the OS handle this here: when the
@@ -298,11 +313,6 @@ static constexpr nsCursor kCustomCursor = eCursorCount;
   }
   return [[[NSCursor alloc] initWithImage:cursorImage
                                   hotSpot:aPoint] autorelease];
-
-INIT_FAILURE:
-  NS_WARNING("Problem getting path to cursor image file!");
-  [self release];
-  return nil;
 }
 
 @end

@@ -577,16 +577,6 @@ def fetch_artifacts():
     print_line(b"fetches", b"fetching artifacts\n")
 
     fetch_content = shutil.which("fetch-content")
-    if not fetch_content and os.environ.get("GECKO_PATH"):
-        fetch_content = os.path.join(
-            os.environ["GECKO_PATH"],
-            "third_party",
-            "python",
-            "taskcluster_taskgraph",
-            "taskgraph",
-            "run-task",
-            "fetch-content",
-        )
 
     if not fetch_content or not os.path.isfile(fetch_content):
         fetch_content = os.path.join(os.path.dirname(__file__), "fetch-content")

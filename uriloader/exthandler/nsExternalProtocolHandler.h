@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsExternalProtocolHandler_h___
-#define nsExternalProtocolHandler_h___
+#ifndef nsExternalProtocolHandler_h_
+#define nsExternalProtocolHandler_h_
 
 #include "nsIExternalProtocolHandler.h"
 #include "nsCOMPtr.h"
@@ -32,4 +32,4 @@ class nsExternalProtocolHandler final : public nsIExternalProtocolHandler,
   nsCString m_schemeName;
 };
 
-#endif  // nsExternalProtocolHandler_h___
+#endif  // nsExternalProtocolHandler_h_

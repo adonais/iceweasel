@@ -148,7 +148,8 @@ add_task(async function test_2_qwac() {
 // Also check that there are conditions where this isn't shown.
 add_task(async function test_non_qwac() {
   let uris = [
-    "https://example.com",
+    // eslint-disable-next-line @microsoft/sdl/no-insecure-url
+    "http://example.com",
     "https://example.com",
     "data:,Hello%2C World!",
   ];

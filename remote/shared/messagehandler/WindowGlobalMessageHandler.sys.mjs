@@ -245,7 +245,7 @@ export class WindowGlobalMessageHandler extends MessageHandler {
    *     false otherwise.
    */
   matchesContext(contextDescriptor) {
-    return this.contextMatchesDescriptor(this.context, contextDescriptor);
+    return this.contextsMatchDescriptor([this.context], contextDescriptor);
   }
 
   /**

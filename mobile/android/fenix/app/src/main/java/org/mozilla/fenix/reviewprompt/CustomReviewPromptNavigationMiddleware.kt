@@ -48,14 +48,22 @@ class CustomReviewPromptNavigationMiddleware(
     }
 }
 
-/** Events to emit to the fragment to handle navigation side-effects. */
+/**
+ * Events to emit to the fragment to handle navigation side-effects.
+ */
 sealed class CustomReviewPromptNavigationEvent {
-    /** Dismiss the custom review prompt bottom sheet. */
+    /**
+     * Dismiss the custom review prompt bottom sheet.
+     */
     data object Dismiss : CustomReviewPromptNavigationEvent()
 
-    /** Call the Play In-App Review API to show the review prompt. */
+    /**
+     * Call the Play In-App Review API to show the review prompt.
+     */
     data object OpenPlayStoreReviewPrompt : CustomReviewPromptNavigationEvent()
 
-    /** Open the given [url] in a new tab. */
+    /**
+     * Open the given [url] in a new tab.
+     */
     data class OpenNewTab(val url: String) : CustomReviewPromptNavigationEvent()
 }

@@ -53,7 +53,6 @@ namespace jit {
   IF_EXPLICIT_RESOURCE_MANAGEMENT(_(AddDisposableResourceToCapability,         \
                                     js::AddDisposableResourceToCapability))    \
   _(AddOrUpdateSparseElementHelper, js::AddOrUpdateSparseElementHelper)        \
-  _(AddSlotAndCallAddPropHook, js::AddSlotAndCallAddPropHook)                  \
   _(ArgumentsObjectCreateForInlinedIon,                                        \
     js::ArgumentsObject::createForInlinedIon)                                  \
   _(ArgumentsObjectCreateForIon, js::ArgumentsObject::createForIon)            \
@@ -140,6 +139,7 @@ namespace jit {
   IF_EXPLICIT_RESOURCE_MANAGEMENT(                                             \
       _(CreateSuppressedError, js::CreateSuppressedError))                     \
   _(CreateThisFromIC, js::jit::CreateThisFromIC)                               \
+  _(CreateThisFromICWithAllocSite, js::jit::CreateThisFromICWithAllocSite)     \
   _(CreateThisFromIon, js::jit::CreateThisFromIon)                             \
   _(DebugAfterYield, js::jit::DebugAfterYield)                                 \
   _(DebugEpilogueOnBaselineReturn, js::jit::DebugEpilogueOnBaselineReturn)     \
@@ -328,6 +328,8 @@ namespace jit {
   _(SetPropertyMegamorphicYesCache, js::jit::SetPropertyMegamorphic<true>)     \
   _(SetPropertySuper, js::SetPropertySuper)                                    \
   _(StartDynamicModuleImport, js::StartDynamicModuleImport)                    \
+  IF_SOURCE_PHASE_IMPORTS(                                                     \
+      _(StartDynamicModuleImportSource, js::StartDynamicModuleImportSource))   \
   _(StringBigIntGreaterThanOrEqual,                                            \
     js::jit::StringBigIntCompare<js::jit::ComparisonKind::GreaterThanOrEqual>) \
   _(StringBigIntLessThan,                                                      \

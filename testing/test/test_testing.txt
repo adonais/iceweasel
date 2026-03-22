@@ -1029,9 +1029,9 @@ tabulate==0.9.0 \
     --hash=sha256:0095b12bf5966de529c0feb1fa08671671b3368eec77d7ef7ab114be2c068b3c \
     --hash=sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f
     # via mozci
-taskcluster==91.1.0 \
-    --hash=sha256:87cad1b7c54689c5d635a9422c59554cf648014d67af3cb3a30af20bb6f81879 \
-    --hash=sha256:e58fbcdcd33ba9c4a4dbd5a71cb7cbe2dc7f4918cd92025dd53d590ab85f472b
+taskcluster==93.1.5 \
+    --hash=sha256:1b7ed171f5c22a5fdae60618f81a12b0ec27e3f6347539d0d823f26ff41a1d7b \
+    --hash=sha256:e16606e13ad4881211fdc52ebaab8b05df7a56681ecbb236897f1c56e1149779
     # via
     #   -r testing/test/test_testing.in
     #   mozci

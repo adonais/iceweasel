@@ -8,9 +8,12 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "gtest/gtest-spi.h"
+#include "nsThreadPool.h"
+#include "nsThread.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/TaskQueue.h"
+#include "mozilla/ThrottledEventQueue.h"
 #include "nsITargetShutdownTask.h"
 #include "VideoUtils.h"
 
@@ -408,6 +411,139 @@ TEST(AbstractThread, DirectTaskGetCurrentSerialEventTarget)
 
   // Spin the event loop.
   NS_ProcessPendingEvents(nullptr);
+}
+
+namespace {
+
+template <typename ShutdownFn>
+void TestShutdownOnEventTargetShutdown(StaticString aTestName,
+                                       nsCOMPtr<nsIEventTarget>&& aEventTarget,
+                                       ShutdownFn&& aShutdownFn) {
+  ASSERT_TRUE(aEventTarget);
+
+  nsIEventTarget::FeatureFlags features = aEventTarget->GetFeatures();
+  bool expectShutdownTaskToRun =
+      features & nsIEventTarget::SUPPORTS_SHUTDOWN_TASKS &&
+      features & nsIEventTarget::SUPPORTS_SHUTDOWN_TASK_DISPATCH;
+
+  RefPtr<TaskQueue> tq = TaskQueue::Create(aEventTarget.forget(), aTestName);
+
+  Atomic<bool> shutdownTaskRun(false);
+  nsCOMPtr<nsITargetShutdownTask> shutdownTask =
+      new TestShutdownTask([&] { shutdownTaskRun = true; });
+  MOZ_ALWAYS_SUCCEEDS(tq->RegisterShutdownTask(shutdownTask));
+
+  RefPtr<mozilla::SyncRunnable> syncWithThread =
+      new mozilla::SyncRunnable(NS_NewRunnableFunction("dummy", [] {}));
+  MOZ_ALWAYS_SUCCEEDS(syncWithThread->DispatchToThread(tq));
+
+  aShutdownFn();
+
+  if (expectShutdownTaskToRun) {
+    ASSERT_TRUE(shutdownTaskRun);
+  } else {
+    ASSERT_FALSE(shutdownTaskRun);
+    MOZ_ALWAYS_SUCCEEDS(tq->UnregisterShutdownTask(shutdownTask));
+  }
+}
+
+}  // namespace
+
+TEST(TaskQueue, ShutdownOnThreadPoolShutdown)
+{
+  RefPtr<nsThreadPool> threadPool = new nsThreadPool();
+  ASSERT_TRUE(threadPool);
+  threadPool->SetName("TaskQueue ThreadPool Shutdown Test"_ns);
+  threadPool->SetThreadLimit(4);
+
+  RefPtr<nsIEventTarget> eventTarget(threadPool);
+  TestShutdownOnEventTargetShutdown("TaskQueue on ThreadPool",
+                                    std::move(eventTarget),
+                                    [threadPool] { threadPool->Shutdown(); });
+}
+
+TEST(TaskQueue, ShutdownOnSharedThreadPoolShutdown)
+{
+  RefPtr<SharedThreadPool> sharedThreadPool =
+      SharedThreadPool::Get("TaskQueue SharedThreadPool Shutdown Test", 4);
+
+  RefPtr<nsIEventTarget> eventTarget(sharedThreadPool);
+  TestShutdownOnEventTargetShutdown(
+      "TaskQueue on SharedThreadPool", std::move(eventTarget),
+      [sharedThreadPool] { sharedThreadPool->Shutdown(); });
+}
+
+TEST(TaskQueue, ShutdownOnNsThreadShutdown)
+{
+  RefPtr<nsIThread> thread;
+  nsresult rv = NS_NewNamedThread("TQ nsThread", getter_AddRefs(thread));
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_TRUE(thread);
+
+  RefPtr<nsIEventTarget> eventTarget(thread);
+  TestShutdownOnEventTargetShutdown("TaskQueue on nsThread",
+                                    std::move(eventTarget),
+                                    [thread] { thread->Shutdown(); });
+}
+
+TEST(TaskQueue, ShutdownOnThrottledEventQueueShutdown)
+{
+  RefPtr<nsIThread> thread;
+  nsresult rv = NS_NewNamedThread("TQ nsThread", getter_AddRefs(thread));
+  ASSERT_TRUE(NS_SUCCEEDED(rv));
+  ASSERT_TRUE(thread);
+
+  nsISerialEventTarget* baseTarget(thread);
+  RefPtr<ThrottledEventQueue> throttledQueue =
+      ThrottledEventQueue::Create(baseTarget, "TestThrottledQueue");
+  ASSERT_TRUE(throttledQueue);
+
+  RefPtr<nsIEventTarget> eventTarget(throttledQueue);
+  TestShutdownOnEventTargetShutdown("TaskQueue on ThrottledEventQueue",
+                                    std::move(eventTarget),
+                                    [thread] { thread->Shutdown(); });
+}
+
+TEST(TaskQueue, ShutdownOnNestedTaskQueuePoolShutdown)
+{
+  RefPtr<nsThreadPool> threadPool = new nsThreadPool();
+  ASSERT_TRUE(threadPool);
+  threadPool->SetName("TaskQueue Nested Pool Test"_ns);
+  threadPool->SetThreadLimit(1);
+
+  RefPtr<nsIEventTarget> poolTarget(threadPool);
+  RefPtr<TaskQueue> baseTaskQueue =
+      TaskQueue::Create(poolTarget.forget(), "BaseTaskQueue");
+  ASSERT_TRUE(baseTaskQueue);
+
+  RefPtr<nsIEventTarget> eventTarget(baseTaskQueue);
+  TestShutdownOnEventTargetShutdown(
+      "TaskQueue on TaskQueue (pool shutdown)", std::move(eventTarget),
+      [threadPool, baseTaskQueue] { threadPool->Shutdown(); });
+}
+
+TEST(TaskQueue, ShutdownOnNestedTaskQueueBaseShutdown)
+{
+  RefPtr<nsThreadPool> threadPool = new nsThreadPool();
+  ASSERT_TRUE(threadPool);
+  threadPool->SetName("TaskQueue Nested Base Test"_ns);
+  threadPool->SetThreadLimit(1);
+
+  RefPtr<nsIEventTarget> poolTarget(threadPool);
+  RefPtr<TaskQueue> baseTaskQueue =
+      TaskQueue::Create(poolTarget.forget(), "BaseTaskQueue");
+  ASSERT_TRUE(baseTaskQueue);
+
+  RefPtr<nsIEventTarget> eventTarget(baseTaskQueue);
+  TestShutdownOnEventTargetShutdown("TaskQueue on TaskQueue (base shutdown)",
+                                    std::move(eventTarget),
+                                    [threadPool, baseTaskQueue] {
+                                      baseTaskQueue->BeginShutdown();
+                                      baseTaskQueue->AwaitShutdownAndIdle();
+                                    });
+
+  // Cleanup.
+  threadPool->Shutdown();
 }
 
 }  // namespace TestTaskQueue

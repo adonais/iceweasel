@@ -21,9 +21,12 @@ class FlowMarker : public mozilla::BaseMarkerType<FlowMarker> {
   static constexpr const char* Name = "FlowMarker";
 
   using MS = mozilla::MarkerSchema;
-  static constexpr MS::PayloadField PayloadFields[] = {
-      {"flow", MS::InputType::Uint64, "Flow", MS::Format::Flow,
-       MS::PayloadFlags::Searchable}};
+  static constexpr MS::PayloadField PayloadFields[] = {{
+      "flow",
+      MS::InputType::Uint64,
+      "Flow",
+      MS::Format::Flow,
+  }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
@@ -44,9 +47,12 @@ class TerminatingFlowMarker
   static constexpr const char* Name = "TerminatingFlowMarker";
 
   using MS = mozilla::MarkerSchema;
-  static constexpr MS::PayloadField PayloadFields[] = {
-      {"terminatingFlow", MS::InputType::Uint64, "Terminating Flow",
-       MS::Format::TerminatingFlow, MS::PayloadFlags::Searchable}};
+  static constexpr MS::PayloadField PayloadFields[] = {{
+      "terminatingFlow",
+      MS::InputType::Uint64,
+      "Terminating Flow",
+      MS::Format::TerminatingFlow,
+  }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
@@ -68,9 +74,12 @@ class FlowStackMarker : public BaseMarkerType<FlowStackMarker> {
   static constexpr const char* Name = "FlowStackMarker";
 
   using MS = MarkerSchema;
-  static constexpr MS::PayloadField PayloadFields[] = {
-      {"flow", MS::InputType::Uint64, "Flow", MS::Format::Flow,
-       MS::PayloadFlags::Searchable}};
+  static constexpr MS::PayloadField PayloadFields[] = {{
+      "flow",
+      MS::InputType::Uint64,
+      "Flow",
+      MS::Format::Flow,
+  }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
@@ -93,9 +102,12 @@ class TerminatingFlowStackMarker
   static constexpr const char* Name = "TerminatingFlowStackMarker";
 
   using MS = MarkerSchema;
-  static constexpr MS::PayloadField PayloadFields[] = {
-      {"flow", MS::InputType::Uint64, "Flow", MS::Format::TerminatingFlow,
-       MS::PayloadFlags::Searchable}};
+  static constexpr MS::PayloadField PayloadFields[] = {{
+      "flow",
+      MS::InputType::Uint64,
+      "Flow",
+      MS::Format::TerminatingFlow,
+  }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
@@ -118,10 +130,18 @@ class FlowTextMarker : public BaseMarkerType<FlowTextMarker> {
 
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
-      {"name", MS::InputType::CString, "Details", MS::Format::String,
-       MS::PayloadFlags::Searchable},
-      {"flow", MS::InputType::Uint64, "Flow", MS::Format::Flow,
-       MS::PayloadFlags::Searchable}};
+      {
+          "name",
+          MS::InputType::CString,
+          "Details",
+          MS::Format::String,
+      },
+      {
+          "flow",
+          MS::InputType::Uint64,
+          "Flow",
+          MS::Format::Flow,
+      }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
@@ -146,10 +166,18 @@ class FlowStackTextMarker : public BaseMarkerType<FlowStackTextMarker> {
 
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
-      {"name", MS::InputType::CString, "Details", MS::Format::String,
-       MS::PayloadFlags::Searchable},
-      {"flow", MS::InputType::Uint64, "Flow", MS::Format::Flow,
-       MS::PayloadFlags::Searchable}};
+      {
+          "name",
+          MS::InputType::CString,
+          "Details",
+          MS::Format::String,
+      },
+      {
+          "flow",
+          MS::InputType::Uint64,
+          "Flow",
+          MS::Format::Flow,
+      }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
@@ -178,10 +206,18 @@ class TerminatingFlowTextMarker
 
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] = {
-      {"name", MS::InputType::CString, "Details", MS::Format::String,
-       MS::PayloadFlags::Searchable},
-      {"terminatingFlow", MS::InputType::Uint64, "Terminating Flow",
-       MS::Format::TerminatingFlow, MS::PayloadFlags::Searchable}};
+      {
+          "name",
+          MS::InputType::CString,
+          "Details",
+          MS::Format::String,
+      },
+      {
+          "terminatingFlow",
+          MS::InputType::Uint64,
+          "Terminating Flow",
+          MS::Format::TerminatingFlow,
+      }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};

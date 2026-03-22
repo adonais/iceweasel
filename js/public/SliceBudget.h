@@ -92,16 +92,17 @@ class JS_PUBLIC_API SliceBudget {
   bool keepGoing = false;
 
  private:
-  explicit SliceBudget(InterruptRequestFlag* irqPtr)
-      : counter(irqPtr ? StepsPerExpensiveCheck : UnlimitedCounter),
-        interruptRequested(irqPtr),
-        budget(UnlimitedBudget()) {}
-
   bool checkOverBudget();
 
  public:
   // Use to create an unlimited budget.
-  static SliceBudget unlimited() { return SliceBudget(nullptr); }
+  static SliceBudget unlimited() { return SliceBudget(UnlimitedBudget()); }
+
+  explicit SliceBudget(UnlimitedBudget unlimited,
+                       InterruptRequestFlag* irqPtr = nullptr)
+      : counter(irqPtr ? StepsPerExpensiveCheck : UnlimitedCounter),
+        interruptRequested(irqPtr),
+        budget(unlimited) {}
 
   // Instantiate as SliceBudget(TimeBudget(n)).
   explicit SliceBudget(TimeBudget time,
@@ -158,6 +159,15 @@ class JS_PUBLIC_API SliceBudget {
 
   mozilla::TimeStamp deadline() const {
     return budget.as<TimeBudget>().deadline;
+  }
+
+  int64_t workRemaining() const {
+    MOZ_ASSERT(isWorkBudget());
+    return std::max(counter, int64_t(0));
+  }
+
+  InterruptRequestFlag* interruptRequestFlag() const {
+    return interruptRequested;
   }
 
   int describe(char* buffer, size_t maxlen) const;

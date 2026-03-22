@@ -35,6 +35,29 @@ const ValidIssueList = [
   "user-interface-frustration",
 ];
 
+const ValidResourceTypes = [
+  "main_frame",
+  "sub_frame",
+  "stylesheet",
+  "script",
+  "image",
+  "object",
+  "xmlhttprequest",
+  "xslt",
+  "ping",
+  "beacon",
+  "xml_dtd",
+  "font",
+  "media",
+  "websocket",
+  "csp_report",
+  "imageset",
+  "web_manifest",
+  "speculative",
+  "json",
+  "other",
+];
+
 function addon_url(path) {
   const uuid = WebExtensionPolicy.getByID(
     "webcompat@mozilla.org"
@@ -58,6 +81,34 @@ function check_valid_array(a, key, id) {
   const valid = Array.isArray(a);
   ok(valid, `if defined, ${key} is an array for id ${id}`);
   return valid;
+}
+
+function validate_match_info(id, key, matches) {
+  ok(
+    Array.isArray(matches) && matches.length,
+    `${key} key exists and is an array with items for id ${id}`
+  );
+
+  for (const match of matches) {
+    try {
+      new MatchPattern(match.url ?? match);
+    } catch (e) {
+      ok(false, `invalid match-pattern for id ${id}: ${match.url ?? match}`);
+    }
+
+    if (match.url) {
+      ok(
+        Array.isArray(match.types) && match.types.length,
+        `types sub-key missing for match.url ${match.url} for id ${id}`
+      );
+      for (const type of match.types) {
+        ok(
+          ValidResourceTypes.includes(type),
+          `invalid type "${type}" for match.url ${match.url} for id ${id}`
+        );
+      }
+    }
+  }
 }
 
 // eslint-disable-next-line complexity
@@ -122,6 +173,7 @@ add_task(async function test_json_data() {
       typeof bugs === "object" && Object.keys(bugs).length,
       `bugs key exists and has entries for id ${id}`
     );
+    let hasBlocks = false;
     for (const [bug, { issue, blocks, matches }] of Object.entries(bugs)) {
       ok(
         typeof bug === "string" && bug == String(parseInt(bug)),
@@ -138,22 +190,17 @@ add_task(async function test_json_data() {
           (!!matches && Array.isArray(matches) && matches.length),
         `matches key exists and is an array with items for id ${id}`
       );
-      try {
-        new MatchPatternSet(matches);
-      } catch (e) {
-        ok(false, `invalid matches entries for id ${id}: ${e}`);
+
+      if (!matches && !blocks) {
+        ok(false, `no matches or blocks entries for id ${id}`);
       }
 
+      if (matches) {
+        validate_match_info(id, "matches", matches);
+      }
       if (blocks) {
-        ok(
-          Array.isArray(blocks) && matches.length,
-          `matches key exists and is an array with items for id ${id}`
-        );
-        try {
-          new MatchPatternSet(blocks);
-        } catch (e) {
-          ok(false, `invalid blocks entries for id ${id}: ${e}`);
-        }
+        hasBlocks = true;
+        validate_match_info(id, "blocks", blocks);
       }
     }
 
@@ -276,8 +323,8 @@ add_task(async function test_json_data() {
         }
       }
       ok(
-        content_scripts || ua_string || custom_found,
-        `Interventions are defined for id ${id}`
+        content_scripts || ua_string || custom_found || hasBlocks,
+        `Interventions or blocks are defined for id ${id}`
       );
       ok(
         pref_check === undefined || typeof pref_check === "object",
@@ -319,6 +366,13 @@ add_task(async function test_json_data() {
           ok(
             all === false || all === true,
             `all_frames key is true or false for content_scripts for id ${id}`
+          );
+        }
+        if ("isolated" in content_scripts) {
+          const isolated = content_scripts.isolated;
+          ok(
+            isolated === false || isolated === true,
+            `isolated key is true or false for content_scripts for id ${id}`
           );
         }
         for (const type of ["css", "js"]) {

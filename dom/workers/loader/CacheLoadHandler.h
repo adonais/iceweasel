@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_workers_CacheLoadHandler_h__
-#define mozilla_dom_workers_CacheLoadHandler_h__
+#ifndef mozilla_dom_workers_CacheLoadHandler_h_
+#define mozilla_dom_workers_CacheLoadHandler_h_
 
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/dom/CacheBinding.h"
@@ -97,12 +97,14 @@ class CacheLoadHandler final : public PromiseNativeHandler,
  private:
   ~CacheLoadHandler() { AssertIsOnMainThread(); }
 
-  nsresult DataReceivedFromCache(const uint8_t* aString, uint32_t aStringLen,
-                                 const mozilla::dom::ChannelInfo& aChannelInfo,
-                                 UniquePtr<PrincipalInfo> aPrincipalInfo,
-                                 const nsACString& aCSPHeaderValue,
-                                 const nsACString& aCSPReportOnlyHeaderValue,
-                                 const nsACString& aReferrerPolicyHeaderValue);
+  nsresult DataReceivedFromCache(
+      const uint8_t* aString, uint32_t aStringLen,
+      const mozilla::dom::ChannelInfo& aChannelInfo,
+      UniquePtr<PrincipalInfo> aPrincipalInfo,
+      const nsACString& aCSPHeaderValue,
+      const nsACString& aCSPReportOnlyHeaderValue,
+      const nsACString& aReferrerPolicyHeaderValue,
+      const nsACString& aReportingEndpointsHeaderValue);
   nsresult DataReceived();
 
   RefPtr<ThreadSafeRequestHandle> mRequestHandle;
@@ -119,6 +121,7 @@ class CacheLoadHandler final : public PromiseNativeHandler,
   nsCString mCSPHeaderValue;
   nsCString mCSPReportOnlyHeaderValue;
   nsCString mReferrerPolicyHeaderValue;
+  nsCString mReportingEndpointsHeaderValue;
   nsCOMPtr<nsISerialEventTarget> mMainThreadEventTarget;
 };
 
@@ -216,4 +219,4 @@ class CachePromiseHandler final : public PromiseNativeHandler {
 }  // namespace workerinternals::loader
 }  // namespace mozilla::dom
 
-#endif /* mozilla_dom_workers_CacheLoadHandler_h__ */
+#endif /* mozilla_dom_workers_CacheLoadHandler_h_ */

@@ -7,7 +7,7 @@ Transform the `release-generate-checksums-beetmover` task to also append `build`
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema
+from taskgraph.util.schema import LegacySchema
 from voluptuous import Optional
 
 from gecko_taskgraph.transforms.beetmover import craft_release_properties
@@ -23,7 +23,7 @@ from gecko_taskgraph.util.scriptworker import (
 transforms = TransformSequence()
 
 
-release_generate_checksums_beetmover_schema = Schema({
+release_generate_checksums_beetmover_schema = LegacySchema({
     # unique label to describe this beetmover task, defaults to {dep.label}-beetmover
     Optional("label"): str,
     # treeherder is allowed here to override any defaults we use for beetmover.  See

@@ -11,7 +11,8 @@
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#include "jsnum.h"
+
+#include "builtin/Number.h"
 #include "js/CallArgs.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
 #include "js/Wrapper.h"

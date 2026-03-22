@@ -216,6 +216,7 @@ nsDOMCSSDeclaration::GetParsingEnvironmentForRule(const css::Rule* aRule,
   }
 
   MOZ_ASSERT(aRule->Type() == aRuleType);
+  MOZ_ASSERT(aRuleType != StyleCssRuleType::NestedDeclarations);
 
   StyleSheet* sheet = aRule->GetStyleSheet();
   if (!sheet) {

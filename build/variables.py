@@ -75,7 +75,10 @@ def get_info_from_sourcestamp(sourcestamp_path):
         return None, None
 
     # Return the repo and the changeset.
-    return lines[1].split("/rev/")
+    for separator in ["/rev/", "/commit/"]:
+        if separator in lines[1]:
+            return lines[1].split(separator)
+    return None, None
 
 
 def source_repo_header(output):
@@ -104,7 +107,8 @@ def source_repo_header(output):
         output.write("#define MOZ_SOURCE_STAMP %s\n" % changeset)
 
     if repo and buildconfig.substs.get("MOZ_INCLUDE_SOURCE_INFO"):
-        source = "%s/rev/%s" % (repo, changeset)
+        rev_path = "/rev/" if "hg.mozilla.org" in repo else "/commit/"
+        source = f"{repo}{rev_path}{changeset}"
         output.write("#define MOZ_SOURCE_REPO %s\n" % repo)
         output.write("#define MOZ_SOURCE_URL %s\n" % source)
 

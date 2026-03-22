@@ -11,6 +11,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.compose.content
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
+import org.mozilla.fenix.components.metrics.installSourcePackage
+import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.onboarding.ManagePrivacyPreferencesDialog
 import org.mozilla.fenix.onboarding.store.DefaultPrivacyPreferencesRepository
@@ -48,7 +50,12 @@ class ManagePrivacyPreferencesDialogFragment : DialogFragment() {
                 initialState = it,
                 middlewares = listOf(
                     PrivacyPreferencesMiddleware(repository),
-                    PrivacyPreferencesTelemetryMiddleware(),
+                    PrivacyPreferencesTelemetryMiddleware(
+                        installSource = installSourcePackage(
+                            packageManager = requireContext().application.packageManager,
+                            packageName = requireContext().application.packageName,
+                        ),
+                    ),
                 ),
             )
         }

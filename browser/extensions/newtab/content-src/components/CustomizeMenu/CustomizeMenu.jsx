@@ -39,6 +39,12 @@ export class _CustomizeMenu extends React.PureComponent {
   }
 
   render() {
+    const activationWindowVariant =
+      this.props.Prefs.values["activationWindow.variant"];
+    const activationWindowClass = activationWindowVariant
+      ? `activation-window-variant-${activationWindowVariant}`
+      : "";
+
     return (
       <span>
         <CSSTransition
@@ -48,7 +54,7 @@ export class _CustomizeMenu extends React.PureComponent {
           appear={true}
         >
           <button
-            className="personalize-button"
+            className={`${activationWindowClass} personalize-button`}
             data-l10n-id="newtab-customize-panel-icon-button"
             onClick={() => this.props.onOpen()}
             onKeyDown={e => {
@@ -107,6 +113,8 @@ export class _CustomizeMenu extends React.PureComponent {
                 }
                 mayHaveWeather={this.props.mayHaveWeather}
                 mayHaveWidgets={this.props.mayHaveWidgets}
+                mayHaveWeatherForecast={this.props.mayHaveWeatherForecast}
+                weatherDisplay={this.props.weatherDisplay}
                 mayHaveTimerWidget={this.props.mayHaveTimerWidget}
                 mayHaveListsWidget={this.props.mayHaveListsWidget}
                 dispatch={this.props.dispatch}
@@ -125,4 +133,5 @@ export class _CustomizeMenu extends React.PureComponent {
 
 export const CustomizeMenu = connect(state => ({
   DiscoveryStream: state.DiscoveryStream,
+  Prefs: state.Prefs,
 }))(_CustomizeMenu);

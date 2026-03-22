@@ -18,7 +18,7 @@ export const INITIAL_MEMORIES_SCHEMA = {
       "intent",
       "memory_summary",
       "score",
-      "why",
+      "reasoning",
       "evidence",
     ],
     properties: {
@@ -33,7 +33,7 @@ export const INITIAL_MEMORIES_SCHEMA = {
       memory_summary: { type: ["string", "null"] },
       score: { type: "integer" },
 
-      why: { type: "string", minLength: 12, maxLength: 200 },
+      reasoning: { type: "string", minLength: 12, maxLength: 200 },
 
       evidence: {
         type: "array",

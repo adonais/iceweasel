@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -929,12 +930,14 @@ private fun ListItemContent(
     enabled: Boolean = true,
     belowListItemContent: @Composable ColumnScope.() -> Unit = {},
 ) {
+    val locale = remember(LocalConfiguration.current) { Locale.getDefault() }
+
     Column(
         modifier = modifier,
     ) {
         overline?.let {
             Text(
-                text = it.uppercase(Locale.getDefault()),
+                text = it.uppercase(locale),
                 color = colors.overlineColor,
                 style = FirefoxTheme.typography.overline.copy(hyphens = Hyphens.Auto),
                 maxLines = 1,

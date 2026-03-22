@@ -82,9 +82,8 @@ add_task(async function basic() {
   );
   let [actionTabToSearch] = await document.l10n.formatValues([
     {
-      id: Services.search.getEngineByName(
-        tabToSearchDetails.searchParams.engine
-      ).isGeneralPurposeEngine
+      id: SearchService.getEngineByName(tabToSearchDetails.searchParams.engine)
+        .isGeneralPurposeEngine
         ? "urlbar-result-action-tabtosearch-web"
         : "urlbar-result-action-tabtosearch-other-engine",
       args: { engine: tabToSearchDetails.searchParams.engine },
@@ -273,7 +272,7 @@ add_task(async function tab_key_race() {
      * A no-op test provider.
      * We use this to wait for the query to start, because otherwise TAB will
      * move to the next widget since the panel is closed and there's no running
-     * query. This means waiting for the UrlbarProvidersManager to at least
+     * query. This means waiting for the ProvidersManager to at least
      * evaluate the isActive status of providers.
      * In the future we should try to reduce this latency, to defer user events
      * even more efficiently.
@@ -300,9 +299,10 @@ add_task(async function tab_key_race() {
       }
     }
     let provider = new ListeningTestProvider();
-    UrlbarProvidersManager.registerProvider(provider);
+    let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+    providersManager.registerProvider(provider);
     registerCleanupFunction(async function () {
-      UrlbarProvidersManager.unregisterProvider(provider);
+      providersManager.unregisterProvider(provider);
     });
   });
   gURLBar.focus();
@@ -383,7 +383,7 @@ add_task(async function onboard() {
         },
       },
       {
-        id: Services.search.getEngineByName(
+        id: SearchService.getEngineByName(
           onboardingElement.result.payload.engine
         ).isGeneralPurposeEngine
           ? "urlbar-result-action-tabtosearch-web"

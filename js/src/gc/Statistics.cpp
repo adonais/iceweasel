@@ -1253,6 +1253,11 @@ void Statistics::endSlice() {
       printStats();
     }
 
+    if (enableBufferAllocStats_ && gc->rt->isMainRuntime()) {
+      maybePrintProfileHeaders();
+      BufferAllocator::printStats(gc, creationTime(), true, profileFile());
+    }
+
     if (!aborted) {
       endGC();
     }
@@ -1262,11 +1267,6 @@ void Statistics::endSlice() {
     if (ShouldPrintProfile(gc->rt, enableProfiling_, profileWorkers_,
                            profileThreshold_, slices_.back().duration())) {
       printSliceProfile();
-    }
-
-    if (enableBufferAllocStats_ && gc->rt->isMainRuntime()) {
-      maybePrintProfileHeaders();
-      BufferAllocator::printStats(gc, creationTime(), true, profileFile());
     }
 
     // Slice callbacks should only fire for the outermost level.

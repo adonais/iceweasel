@@ -23,8 +23,8 @@ function createFakeBrowser(url, hasBrowsingContext = true) {
     browser.browsingContext = {
       currentWindowContext: {
         getActor: sinon.stub().resolves({
-          getText: sinon.stub().resolves("Sample page content"),
-          getReaderModeContent: sinon.stub().resolves(""),
+          getText: sinon.stub().resolves({ text: "Sample page content" }),
+          getReaderModeContent: sinon.stub().resolves({ text: "" }),
         }),
       },
     };
@@ -84,11 +84,14 @@ add_task(async function test_getPageContent_exact_url_match() {
 
     setupBrowserWindowTracker(sb, createFakeWindow(tabs));
 
-    const result = await GetPageContent.getPageContent(
-      { url: targetUrl },
+    const result_array = await GetPageContent.getPageContent(
+      { url_list: [targetUrl] },
       new Set([targetUrl])
     );
 
+    const result = result_array[0];
+
+    Assert.ok(result, "Result should have text property");
     Assert.ok(result.includes("Example Page"), "Should include page title");
     Assert.ok(
       result.includes("Sample page content"),
@@ -114,10 +117,12 @@ add_task(async function test_getPageContent_hostname_match() {
 
     setupBrowserWindowTracker(sb, createFakeWindow(tabs));
 
-    const result = await GetPageContent.getPageContent(
-      { url: "http://example.com/different" },
+    const result_array = await GetPageContent.getPageContent(
+      { url_list: ["http://example.com/different"] },
       new Set(["http://example.com/different"])
     );
+
+    const result = result_array[0];
 
     Assert.ok(
       result.includes("Example Page"),
@@ -145,10 +150,12 @@ add_task(async function test_getPageContent_tab_not_found_with_allowed_url() {
     setupBrowserWindowTracker(sb, createFakeWindow(tabs));
 
     const allowedUrls = new Set([targetUrl]);
-    const result = await GetPageContent.getPageContent(
-      { url: targetUrl },
+    const result_array = await GetPageContent.getPageContent(
+      { url_list: [targetUrl] },
       allowedUrls
     );
+
+    const result = result_array[0];
 
     // Headless extraction doesn't work in xpcshell environment
     // In real usage, this would attempt headless extraction for allowed URLs
@@ -183,7 +190,10 @@ add_task(
       // This doesn't work in xpcshell, so we expect an error
       let errorThrown = false;
       try {
-        await GetPageContent.getPageContent({ url: targetUrl }, allowedUrls);
+        await GetPageContent.getPageContent(
+          { url_list: [targetUrl] },
+          allowedUrls
+        );
       } catch (error) {
         errorThrown = true;
         Assert.ok(
@@ -211,10 +221,11 @@ add_task(async function test_getPageContent_no_browsing_context() {
 
     setupBrowserWindowTracker(sb, createFakeWindow(tabs));
 
-    const result = await GetPageContent.getPageContent(
-      { url: targetUrl },
+    const result_array = await GetPageContent.getPageContent(
+      { url_list: [targetUrl] },
       new Set([targetUrl])
     );
+    const result = result_array[0];
 
     Assert.ok(
       result.includes("Cannot access content"),
@@ -241,8 +252,8 @@ add_task(async function test_getPageContent_successful_extraction() {
     const pageContent = "This is a well-written article with lots of content.";
 
     const mockExtractor = {
-      getText: sinon.stub().resolves(pageContent),
-      getReaderModeContent: sinon.stub().resolves(""),
+      getText: sinon.stub().resolves({ text: pageContent }),
+      getReaderModeContent: sinon.stub().resolves({ text: "" }),
     };
 
     const tab = createFakeTab(targetUrl, "Article");
@@ -252,10 +263,12 @@ add_task(async function test_getPageContent_successful_extraction() {
 
     setupBrowserWindowTracker(sb, createFakeWindow([tab]));
 
-    const result = await GetPageContent.getPageContent(
-      { url: targetUrl },
+    const result_array = await GetPageContent.getPageContent(
+      { url_list: [targetUrl] },
       new Set([targetUrl])
     );
+
+    const result = result_array[0];
 
     Assert.ok(result.includes("Content (full page)"), "Should indicate mode");
     Assert.ok(result.includes("Article"), "Should include tab title");
@@ -274,8 +287,8 @@ add_task(async function test_getPageContent_content_truncation() {
     const longContent = "A".repeat(15000);
 
     const mockExtractor = {
-      getText: sinon.stub().resolves(longContent),
-      getReaderModeContent: sinon.stub().resolves(""),
+      getText: sinon.stub().resolves({ text: longContent }),
+      getReaderModeContent: sinon.stub().resolves({ text: "" }),
     };
 
     const tab = createFakeTab(targetUrl, "Long Page");
@@ -285,10 +298,11 @@ add_task(async function test_getPageContent_content_truncation() {
 
     setupBrowserWindowTracker(sb, createFakeWindow([tab]));
 
-    const result = await GetPageContent.getPageContent(
-      { url: targetUrl },
+    const result_array = await GetPageContent.getPageContent(
+      { url_list: [targetUrl] },
       new Set([targetUrl])
     );
+    const result = result_array[0];
 
     const contentMatch = result.match(/Content \(full page\) from.*:\s*(.*)/s);
     Assert.ok(contentMatch, "Should match content pattern");
@@ -315,8 +329,8 @@ add_task(async function test_getPageContent_empty_content() {
     const targetUrl = "https://example.com/empty";
 
     const mockExtractor = {
-      getText: sinon.stub().resolves("   \n  \n   "),
-      getReaderModeContent: sinon.stub().resolves(""),
+      getText: sinon.stub().resolves({ text: "   \n  \n   " }),
+      getReaderModeContent: sinon.stub().resolves({ text: "" }),
     };
 
     const tab = createFakeTab(targetUrl, "Empty Page");
@@ -326,10 +340,12 @@ add_task(async function test_getPageContent_empty_content() {
 
     setupBrowserWindowTracker(sb, createFakeWindow([tab]));
 
-    const result = await GetPageContent.getPageContent(
-      { url: targetUrl },
+    const result_array = await GetPageContent.getPageContent(
+      { url_list: [targetUrl] },
       new Set([targetUrl])
     );
+
+    const result = result_array[0];
 
     // Whitespace content is normalized but still returns success
     Assert.ok(
@@ -355,7 +371,7 @@ add_task(async function test_getPageContent_extraction_error() {
 
     const mockExtractor = {
       getText: sinon.stub().rejects(new Error("Extraction failed")),
-      getReaderModeContent: sinon.stub().resolves(""),
+      getReaderModeContent: sinon.stub().resolves({ text: "" }),
     };
 
     const tab = createFakeTab(targetUrl, "Error Page");
@@ -365,10 +381,12 @@ add_task(async function test_getPageContent_extraction_error() {
 
     setupBrowserWindowTracker(sb, createFakeWindow([tab]));
 
-    const result = await GetPageContent.getPageContent(
-      { url: targetUrl },
+    const result_array = await GetPageContent.getPageContent(
+      { url_list: [targetUrl] },
       new Set([targetUrl])
     );
+
+    const result = result_array[0];
 
     Assert.ok(
       result.includes("returned no content"),
@@ -388,8 +406,8 @@ add_task(async function test_getPageContent_reader_mode_string() {
     const readerContent = "Clean reader mode text";
 
     const mockExtractor = {
-      getText: sinon.stub().resolves("Full content"),
-      getReaderModeContent: sinon.stub().resolves(readerContent),
+      getText: sinon.stub().resolves({ text: "Full content" }),
+      getReaderModeContent: sinon.stub().resolves({ text: readerContent }),
     };
 
     const tab = createFakeTab(targetUrl, "Reader Test");
@@ -399,10 +417,12 @@ add_task(async function test_getPageContent_reader_mode_string() {
 
     setupBrowserWindowTracker(sb, createFakeWindow([tab]));
 
-    const result = await GetPageContent.getPageContent(
-      { url: targetUrl },
+    const result_array = await GetPageContent.getPageContent(
+      { url_list: [targetUrl] },
       new Set([targetUrl])
     );
+
+    const result = result_array[0];
 
     Assert.ok(
       result.includes("Content (reader mode)"),
@@ -427,10 +447,11 @@ add_task(async function test_getPageContent_invalid_url_format() {
     setupBrowserWindowTracker(sb, createFakeWindow(tabs));
 
     // Add URL to allowed list so it searches tabs instead of trying headless
-    const result = await GetPageContent.getPageContent(
-      { url: targetUrl },
+    const result_array = await GetPageContent.getPageContent(
+      { url_list: [targetUrl] },
       new Set([targetUrl])
     );
+    const result = result_array[0];
 
     Assert.ok(
       result.includes("Cannot find URL"),

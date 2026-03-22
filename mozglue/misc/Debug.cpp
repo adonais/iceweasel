@@ -98,6 +98,14 @@ MFBT_API void fprintf_stderr(FILE* aFile, const char* aFmt, ...) {
   va_end(args);
 }
 
+MFBT_API void print_stderr(const std::string& aStr) {
+  printf_stderr("%s", aStr.c_str());
+}
+
+MFBT_API void fprint_stderr(FILE* aFile, const std::string& aStr) {
+  fprintf_stderr(aFile, "%s", aStr.c_str());
+}
+
 MFBT_API void print_stderr(std::stringstream& aStr) {
 #if defined(ANDROID)
   // On Android logcat output is truncated to 1024 chars per line, and
@@ -109,7 +117,7 @@ MFBT_API void print_stderr(std::stringstream& aStr) {
     printf_stderr("%s\n", line.c_str());
   }
 #else
-  printf_stderr("%s", aStr.str().c_str());
+  print_stderr(aStr.str());
 #endif
 }
 
@@ -117,6 +125,6 @@ MFBT_API void fprint_stderr(FILE* aFile, std::stringstream& aStr) {
   if (aFile == stderr) {
     print_stderr(aStr);
   } else {
-    fprintf_stderr(aFile, "%s", aStr.str().c_str());
+    fprint_stderr(aFile, aStr.str());
   }
 }

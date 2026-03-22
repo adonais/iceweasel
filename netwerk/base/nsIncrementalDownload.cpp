@@ -294,7 +294,7 @@ nsresult nsIncrementalDownload::ProcessTimeout() {
   // important because we don't want to introduce a reference cycle between
   // mChannel and this until we know for a fact that AsyncOpen has succeeded,
   // thus ensuring that our stream listener methods will be invoked.
-  mChannel = channel;
+  mChannel = std::move(channel);
   return NS_OK;
 }
 

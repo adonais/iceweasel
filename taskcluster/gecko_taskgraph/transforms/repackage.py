@@ -8,7 +8,7 @@ Transform the repackage task into an actual task description.
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.taskcluster import get_artifact_prefix
 from voluptuous import Any, Extra, Optional, Required
 
@@ -17,7 +17,7 @@ from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.platforms import architecture, archive_format
 from gecko_taskgraph.util.workertypes import worker_type_implementation
 
-packaging_description_schema = Schema({
+packaging_description_schema = LegacySchema({
     # unique label to describe this repackaging task
     Optional("label"): str,
     Optional("worker-type"): str,
@@ -554,6 +554,7 @@ def make_job_description(config, jobs):
                 package=config.kind.split("-")[1],
             )
 
+        langpack_locales = []
         if config.kind in ("repackage-flatpak", "repackage-rpm"):
             assert not locale
 
@@ -583,9 +584,10 @@ def make_job_description(config, jobs):
                 if t.attributes["build_type"] != "opt":
                     continue
 
-                locales = t.attributes.get(
+                chunk_locales = t.attributes.get(
                     "chunk_locales", t.attributes.get("all_locales")
                 )
+                langpack_locales.extend(chunk_locales)
 
                 dependencies.update({t.label: t.label})
 
@@ -597,7 +599,7 @@ def make_job_description(config, jobs):
                             # Otherwise we can't disambiguate locales!
                             "dest": f"extensions/{loc}",
                         }
-                        for loc in locales
+                        for loc in chunk_locales
                     ]
                 })
 
@@ -704,6 +706,12 @@ def make_job_description(config, jobs):
         attributes["release_artifacts"] = [
             artifact["name"] for artifact in worker["artifacts"]
         ]
+        if config.kind == "repackage-rpm":
+            artifact_prefix = get_artifact_prefix(dep_job)
+            for loc in langpack_locales:
+                attributes["release_artifacts"].append(
+                    f"{artifact_prefix}/langpack-{loc}.noarch.rpm"
+                )
 
         task = {
             "label": job["label"],

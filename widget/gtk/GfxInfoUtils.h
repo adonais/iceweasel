@@ -5,8 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef WIDGET_GTK_GFXINFO_UTILS_h__
-#define WIDGET_GTK_GFXINFO_UTILS_h__
+#ifndef WIDGET_GTK_GFXINFO_UTILS_h_
+#define WIDGET_GTK_GFXINFO_UTILS_h_
 
 #define LOG_PIPE 2
 
@@ -88,4 +88,4 @@ static void record_flush() {
   test_buf = nullptr;
 }
 
-#endif /* WIDGET_GTK_GFXINFO_h__ */
+#endif /* WIDGET_GTK_GFXINFO_h_ */

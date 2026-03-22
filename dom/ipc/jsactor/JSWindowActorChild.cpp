@@ -41,9 +41,10 @@ void JSWindowActorChild::Init(const nsACString& aName,
   JSActor::Init(aName, sendTyped);
 }
 
-void JSWindowActorChild::SendRawMessage(
-    const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
-    UniquePtr<ipc::StructuredCloneData> aStack, ErrorResult& aRv) {
+void JSWindowActorChild::SendRawMessage(const JSActorMessageMeta& aMeta,
+                                        JSIPCValue&& aData,
+                                        ipc::StructuredCloneData* aStack,
+                                        ErrorResult& aRv) {
   if (!CanSend() || !mManager || !mManager->CanSend()) {
     aRv.ThrowInvalidStateError("JSWindowActorChild cannot send at the moment");
     return;
@@ -56,25 +57,7 @@ void JSWindowActorChild::SendRawMessage(
     return;
   }
 
-  // Cross-process case - send data over WindowGlobalChild to other side.
-  JSIPCValueUtils::SCDHolder holder;
-  if (!JSIPCValueUtils::PrepareForSending(holder, aData)) {
-    aRv.ThrowDataCloneError(
-        nsPrintfCString("JSWindowActorChild serialization error: cannot "
-                        "clone, in actor '%s'",
-                        PromiseFlatCString(aMeta.actorName()).get()));
-    return;
-  }
-
-  UniquePtr<ClonedMessageData> stackData;
-  if (aStack) {
-    stackData = MakeUnique<ClonedMessageData>();
-    if (!aStack->BuildClonedMessageData(*stackData)) {
-      stackData.reset();
-    }
-  }
-
-  if (!mManager->SendRawMessage(aMeta, aData, stackData)) {
+  if (!mManager->SendRawMessage(aMeta, aData, aStack)) {
     aRv.ThrowOperationError(
         nsPrintfCString("JSWindowActorChild send error in actor '%s'",
                         PromiseFlatCString(aMeta.actorName()).get()));

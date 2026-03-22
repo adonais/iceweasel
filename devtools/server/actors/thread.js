@@ -2158,7 +2158,7 @@ class ThreadActor extends Actor {
     }
 
     // Preloaded WebExtension content scripts may be cached internally by
-    // ExtensionContent.jsm and ThreadActor would ignore them on a page reload
+    // ExtensionContent.sys.mjs and ThreadActor would ignore them on a page reload
     // because it finds them in the _debuggerSourcesSeen WeakSet,
     // and so we also need to be sure that there is still a source actor for the source.
     let sourceActor;

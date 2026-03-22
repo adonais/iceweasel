@@ -20,11 +20,11 @@
 #include <string.h>
 
 #include "jsapi.h"
-#include "jsnum.h"
 
 #include "builtin/Array.h"
 #include "builtin/Eval.h"
 #include "builtin/ModuleObject.h"
+#include "builtin/Number.h"
 #include "builtin/Object.h"
 #include "builtin/Promise.h"
 #include "gc/GC.h"
@@ -4389,6 +4389,19 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
     }
     END_CASE(DynamicImport)
 
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+    CASE(DynamicImportSource) {
+      ReservedRooted<Value> specifier(&rootValue0);
+      POP_COPY_TO(specifier);
+
+      JSObject* promise = StartDynamicModuleImportSource(cx, script, specifier);
+      if (!promise) goto error;
+
+      PUSH_OBJECT(*promise);
+    }
+    END_CASE(DynamicImportSource)
+#endif
+
     CASE(EnvCallee) {
       uint16_t numHops = GET_ENVCOORD_HOPS(REGS.pc);
       JSObject* env = &REGS.fp()->environmentChain()->as<EnvironmentObject>();
@@ -5042,9 +5055,9 @@ bool js::SpreadCallOperation(JSContext* cx, HandleScript script, jsbytecode* pc,
   return true;
 }
 
-static bool OptimizeArrayIteration(JSObject* obj, JSContext* cx) {
-  // Optimize spread call by skipping spread operation when following
-  // conditions are met:
+static bool OptimizeGetIteratorForArray(JSObject* obj, JSContext* cx) {
+  // Implementation of JSOp::OptimizeSpreadCall and JSOp::GetIterator for packed
+  // arrays. Ensures the following conditions are met:
   //   * the argument is an array
   //   * the array has no hole
   //   * array[@@iterator] is not modified
@@ -5053,7 +5066,12 @@ static bool OptimizeArrayIteration(JSObject* obj, JSContext* cx) {
   //   * %ArrayIteratorPrototype%.next is not modified
   //   * %ArrayIteratorPrototype%.return is not defined
   //   * return is nowhere on the proto chain
-  return IsArrayWithDefaultIterator<MustBePacked::Yes>(obj, cx);
+  if (!IsArrayWithDefaultIterator<MustBePacked::Yes>(obj, cx)) {
+    return false;
+  }
+  // Also check optimizeGetIteratorBytecodeFuse for the current realm. See the
+  // OptimizeGetIteratorBytecodeFuse comment for why this is necessary.
+  return cx->realm()->realmFuses.optimizeGetIteratorBytecodeFuse.intact();
 }
 
 static bool OptimizeArgumentsSpreadCall(JSContext* cx, HandleObject obj,
@@ -5107,7 +5125,7 @@ bool js::OptimizeSpreadCall(JSContext* cx, HandleValue arg,
   }
 
   RootedObject obj(cx, &arg.toObject());
-  if (OptimizeArrayIteration(obj, cx)) {
+  if (OptimizeGetIteratorForArray(obj, cx)) {
     result.setObject(*obj);
     return true;
   }
@@ -5127,7 +5145,7 @@ bool js::OptimizeGetIterator(Value arg, JSContext* cx) {
   if (!arg.isObject()) {
     return false;
   }
-  return OptimizeArrayIteration(&arg.toObject(), cx);
+  return OptimizeGetIteratorForArray(&arg.toObject(), cx);
 }
 
 ArrayObject* js::ArrayFromArgumentsObject(JSContext* cx,

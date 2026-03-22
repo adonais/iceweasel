@@ -42,11 +42,20 @@ const EVENTS = {
  * render Accessibility Tree of the current debugger target and the sidebar that
  * displays current relevant accessible details.
  */
-class AccessibilityPanel {
+class AccessibilityPanel extends EventEmitter {
+  #toolbox;
+  #commands;
+  #opening;
+  #telemetry;
+  #timerID;
+  #destroyed;
+
   constructor(iframeWindow, toolbox, commands) {
+    super();
+
     this.panelWin = iframeWindow;
-    this._toolbox = toolbox;
-    this._commands = commands;
+    this.#toolbox = toolbox;
+    this.#commands = commands;
 
     this.onPanelVisibilityChange = this.onPanelVisibilityChange.bind(this);
     this.onNewAccessibleFrontSelected =
@@ -57,21 +66,19 @@ class AccessibilityPanel {
       this.updateA11YServiceDurationTimer.bind(this);
     this.forceUpdatePickerButton = this.forceUpdatePickerButton.bind(this);
     this.onLifecycleEvent = this.onLifecycleEvent.bind(this);
-
-    EventEmitter.decorate(this);
   }
   /**
    * Open is effectively an asynchronous constructor.
    */
   async open() {
-    if (this._opening) {
-      await this._opening;
-      return this._opening;
+    if (this.#opening) {
+      await this.#opening;
+      return this.#opening;
     }
 
     // This first promise includes initialization of proxy *and* the call to forceRefresh
     let resolver;
-    this._opening = new Promise(resolve => {
+    this.#opening = new Promise(resolve => {
       resolver = resolve;
     });
 
@@ -80,10 +87,10 @@ class AccessibilityPanel {
     const { promise, resolve } = Promise.withResolvers();
     this.initializedPromise = promise;
 
-    this._telemetry = this._toolbox.telemetry;
-    this.panelWin.gTelemetry = this._telemetry;
+    this.#telemetry = this.#toolbox.telemetry;
+    this.panelWin.gTelemetry = this.#telemetry;
 
-    this._toolbox.on("select", this.onPanelVisibilityChange);
+    this.#toolbox.on("select", this.onPanelVisibilityChange);
 
     this.panelWin.EVENTS = EVENTS;
     EventEmitter.decorate(this.panelWin);
@@ -99,7 +106,7 @@ class AccessibilityPanel {
     this.picker = new Picker(this);
     this.fluentBundles = await this.createFluentBundles();
 
-    this.accessibilityProxy = new AccessibilityProxy(this._commands, this);
+    this.accessibilityProxy = new AccessibilityProxy(this.#commands, this);
 
     await this.accessibilityProxy.initialize();
 
@@ -118,7 +125,7 @@ class AccessibilityPanel {
     await this.forceRefresh();
 
     resolver(this);
-    return this._opening;
+    return this.#opening;
   }
 
   /**
@@ -175,7 +182,7 @@ class AccessibilityPanel {
    * Make sure the panel is refreshed (if needed) when it's selected.
    */
   onPanelVisibilityChange() {
-    this._opening.then(() => this.refresh());
+    this.#opening.then(() => this.refresh());
   }
 
   refresh() {
@@ -211,7 +218,7 @@ class AccessibilityPanel {
     } = this.accessibilityProxy;
     this.postContentMessage("initialize", {
       fluentBundles: this.fluentBundles,
-      toolbox: this._toolbox,
+      toolbox: this.#toolbox,
       supports,
       getAccessibilityTreeRoot,
       startListeningForAccessibilityEvents,
@@ -232,12 +239,12 @@ class AccessibilityPanel {
 
   updateA11YServiceDurationTimer() {
     if (this.accessibilityProxy.enabled) {
-      this._timerID = Glean.devtools.accessibilityServiceTimeActive.start();
-    } else if (this._timerID) {
+      this.#timerID = Glean.devtools.accessibilityServiceTimeActive.start();
+    } else if (this.#timerID) {
       Glean.devtools.accessibilityServiceTimeActive.stopAndAccumulate(
-        this._timerID
+        this.#timerID
       );
-      this._timerID = null;
+      this.#timerID = null;
     }
   }
 
@@ -279,7 +286,7 @@ class AccessibilityPanel {
 
     this.updatePickerButton();
     // Calling setToolboxButtons to make sure toolbar is forced to re-render.
-    this._toolbox.component.setToolboxButtons(this._toolbox.toolbarButtons);
+    this.#toolbox.component.setToolboxButtons(this.#toolbox.toolbarButtons);
   }
 
   togglePicker() {
@@ -298,14 +305,18 @@ class AccessibilityPanel {
    * Return true if the Accessibility panel is currently selected.
    */
   get isVisible() {
-    return this._toolbox.currentToolId === "accessibility";
+    return this.#toolbox.currentToolId === "accessibility";
+  }
+
+  get toolbox() {
+    return this.#toolbox;
   }
 
   destroy() {
-    if (this._destroyed) {
+    if (this.#destroyed) {
       return;
     }
-    this._destroyed = true;
+    this.#destroyed = true;
 
     this.postContentMessage("destroy");
 
@@ -319,7 +330,7 @@ class AccessibilityPanel {
       this.initializedPromise = null;
     }
 
-    this._toolbox.off("select", this.onPanelVisibilityChange);
+    this.#toolbox.off("select", this.onPanelVisibilityChange);
 
     this.panelWin.off(
       EVENTS.NEW_ACCESSIBLE_FRONT_SELECTED,
@@ -336,7 +347,7 @@ class AccessibilityPanel {
       this.picker = null;
     }
 
-    this._telemetry = null;
+    this.#telemetry = null;
     this.panelWin.gTelemetry = null;
 
     this.emit("destroyed");

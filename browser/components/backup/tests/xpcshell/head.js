@@ -16,20 +16,18 @@ ChromeUtils.defineESModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
+  SelectableProfileService:
+    "resource:///modules/profiles/SelectableProfileService.sys.mjs",
 });
 
 const HISTORY_ENABLED_PREF = "places.history.enabled";
 const SANITIZE_ON_SHUTDOWN_PREF = "privacy.sanitize.sanitizeOnShutdown";
-const USE_OLD_CLEAR_HISTORY_DIALOG_PREF =
-  "privacy.sanitize.useOldClearHistoryDialog";
 const FORM_HISTORY_CLEARED_ON_SHUTDOWN_PREF =
   "privacy.clearOnShutdown_v2.formdata";
 const HISTORY_CLEARED_ON_SHUTDOWN_PREF =
   "privacy.clearOnShutdown_v2.browsingHistoryAndDownloads";
 const SITE_SETTINGS_CLEARED_ON_SHUTDOWN_PREF =
   "privacy.clearOnShutdown_v2.siteSettings";
-const SITE_SETTINGS_CLEARED_ON_SHUTDOWN_OLD_PREF =
-  "privacy.clearOnShutdown.siteSettings";
 
 let gFakeOSKeyStore;
 

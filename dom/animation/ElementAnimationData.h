@@ -7,7 +7,7 @@
 #ifndef mozilla_ElementAnimationData_h
 #define mozilla_ElementAnimationData_h
 
-#include "mozilla/PseudoStyleType.h"
+#include "mozilla/PseudoStyleRequest.h"
 #include "mozilla/UniquePtr.h"
 #include "nsTHashMap.h"
 

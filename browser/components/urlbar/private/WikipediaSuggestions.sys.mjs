@@ -48,28 +48,45 @@ export class WikipediaSuggestions extends SuggestProvider {
   }
 
   makeResult(queryContext, suggestion) {
-    let { value: title, highlights: titleHighlights } =
-      lazy.QuickSuggest.getFullKeywordTitleAndHighlights({
-        tokens: queryContext.tokens,
-        highlightType: lazy.UrlbarUtils.HIGHLIGHT.SUGGESTED,
-        // Merino uses snake_case, so this will be `full_keyword` for it.
-        fullKeyword: suggestion.fullKeyword ?? suggestion.full_keyword,
-        title: suggestion.title,
-      });
-
+    // Note that Rust uses camelCase, Merino uses snake_case.
     return new lazy.UrlbarResult({
       type: lazy.UrlbarUtils.RESULT_TYPE.URL,
       source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      isNovaSuggestion: true,
+      richSuggestionIconSize: 16,
       payload: {
         url: suggestion.url,
-        title,
-        isBlockable: true,
-        isManageable: true,
-      },
-      highlights: {
-        title: titleHighlights,
+        title: suggestion.fullKeyword ?? suggestion.full_keyword,
+        subtitle: suggestion.title,
+        bottomTextL10n: {
+          id: "urlbar-result-suggestion-recommended",
+        },
       },
     });
+  }
+
+  /**
+   * Gets the list of commands that should be shown in the result menu for a
+   * given result from the provider. All commands returned by this method should
+   * be handled by implementing `onEngagement()` with the possible exception of
+   * commands automatically handled by the urlbar, like "help".
+   */
+  getResultCommands() {
+    return [
+      {
+        name: "dismiss",
+        l10n: {
+          id: "urlbar-result-menu-dismiss-suggestion",
+        },
+      },
+      { name: "separator" },
+      {
+        name: "manage",
+        l10n: {
+          id: "urlbar-result-menu-manage-firefox-suggest",
+        },
+      },
+    ];
   }
 
   onEngagement(queryContext, controller, details, _searchString) {

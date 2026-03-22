@@ -123,8 +123,8 @@ struct PointerInfo final {
     // FIXME: DragEvent may not be initialized with the proper state.  So,
     // ignore the details of drag events for now.
     if (aMouseOrPointerEvent.mClass != eDragEventClass) {
-      mLastTiltX = aMouseOrPointerEvent.tiltX;
-      mLastTiltY = aMouseOrPointerEvent.tiltY;
+      mLastTiltX = aMouseOrPointerEvent.ComputeTiltX();
+      mLastTiltY = aMouseOrPointerEvent.ComputeTiltY();
       mLastButtons = aMouseOrPointerEvent.mButtons;
       mLastPressure = aMouseOrPointerEvent.mPressure;
     }
@@ -479,7 +479,8 @@ class PointerEventHandler final {
    * content preventDefault on pointerdown
    */
   static void PostHandlePointerEventsPreventDefault(
-      WidgetPointerEvent* aPointerEvent, WidgetGUIEvent* aMouseOrTouchEvent);
+      PresShell* aPresShell, WidgetPointerEvent* aPointerEvent,
+      WidgetGUIEvent* aMouseOrTouchEvent);
 
   /**
    * Dispatch a pointer event for aMouseOrTouchEvent to aEventTargetContent.

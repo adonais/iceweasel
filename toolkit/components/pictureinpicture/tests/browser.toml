@@ -151,6 +151,8 @@ support-files = ["test-page-with-nan-video-duration.html"]
 
 ["browser_privateWindow.js"]
 
+["browser_reconnectPiPAfterVideoReparented.js"]
+
 ["browser_removeVideoElement.js"]
 
 ["browser_resizeVideo.js"]

@@ -118,8 +118,9 @@ class RemoteWorkerCSPEventListener final : public nsICSPEventListener {
   explicit RemoteWorkerCSPEventListener(RemoteWorkerChild* aActor)
       : mActor(aActor) {};
 
-  NS_IMETHOD OnCSPViolationEvent(const nsAString& aJSON) override {
-    mActor->CSPViolationPropagationOnMainThread(aJSON);
+  NS_IMETHOD OnCSPViolationEvent(const nsAString& aJSON,
+                                 const nsAString& aReportGroupName) override {
+    mActor->CSPViolationPropagationOnMainThread(aJSON, aReportGroupName);
     return NS_OK;
   }
 
@@ -594,7 +595,7 @@ void RemoteWorkerChild::ErrorPropagationOnMainThread(
 }
 
 void RemoteWorkerChild::CSPViolationPropagationOnMainThread(
-    const nsAString& aJSON) {
+    const nsAString& aJSON, const nsAString& aReportGroupName) {
   AssertIsOnMainThread();
 
   RefPtr<RemoteWorkerChild> self = this;

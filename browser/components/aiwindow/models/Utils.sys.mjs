@@ -14,7 +14,8 @@ import { createEngine } from "chrome://global/content/ml/EngineProcess.sys.mjs";
 import { getFxAccountsSingleton } from "resource://gre/modules/FxAccounts.sys.mjs";
 import {
   OAUTH_CLIENT_ID,
-  SCOPE_PROFILE,
+  SCOPE_PROFILE_UID,
+  SCOPE_SMART_WINDOW,
 } from "resource://gre/modules/FxAccountsCommon.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
@@ -22,7 +23,10 @@ const lazy = XPCOMUtils.declareLazy({
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
 });
 
-const MODEL_PREF = "browser.aiwindow.model";
+const APIKEY_PREF = "browser.smartwindow.apiKey";
+const MODEL_PREF = "browser.smartwindow.model";
+const ENDPOINT_PREF = "browser.smartwindow.endpoint";
+const MODEL_CHOICE_PREF = "browser.smartwindow.firstrun.modelChoice";
 
 /**
  * Default engine ID used for all AI Window features
@@ -67,8 +71,22 @@ export const MODEL_FEATURES = Object.freeze({
   CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS:
     "conversation-suggestions-assistant-limitations",
   CONVERSATION_SUGGESTIONS_MEMORIES: "conversation-suggestions-memories",
-  // TODO: update with actual memories prompts identifiers
-  MEMORIES: "memories",
+  // memories generation features
+  MEMORIES_INITIAL_GENERATION_SYSTEM: "memories-initial-generation-system",
+  MEMORIES_INITIAL_GENERATION_USER: "memories-initial-generation-user",
+  MEMORIES_DEDUPLICATION_SYSTEM: "memories-deduplication-system",
+  MEMORIES_DEDUPLICATION_USER: "memories-deduplication-user",
+  MEMORIES_SENSITIVITY_FILTER_SYSTEM: "memories-sensitivity-filter-system",
+  MEMORIES_SENSITIVITY_FILTER_USER: "memories-sensitivity-filter-user",
+  // memories usage features
+  MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM:
+    "memories-message-classification-system",
+  MEMORIES_MESSAGE_CLASSIFICATION_USER: "memories-message-classification-user",
+  // real time context
+  REAL_TIME_CONTEXT_DATE: "real-time-context-date",
+  REAL_TIME_CONTEXT_TAB: "real-time-context-tab",
+  REAL_TIME_CONTEXT_MENTIONS: "real-time-context-mentions",
+  MEMORIES_RELEVANT_CONTEXT: "memories-relevant-context",
 });
 
 /**
@@ -87,8 +105,20 @@ export const DEFAULT_MODEL = Object.freeze({
     "qwen3-235b-a22b-instruct-2507-maas",
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_INSIGHTS]:
     "qwen3-235b-a22b-instruct-2507-maas",
-  // TODO: update with actual memories default model
-  [MODEL_FEATURES.MEMORIES]: "qwen3-235b-a22b-instruct-2507-maas",
+  // memories generation flow
+  [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM]: "gemini-2.5-flash-lite",
+  [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_USER]: "gemini-2.5-flash-lite",
+  [MODEL_FEATURES.MEMORIES_DEDUPLICATION_SYSTEM]: "gemini-2.5-flash-lite",
+  [MODEL_FEATURES.MEMORIES_DEDUPLICATION_USER]: "gemini-2.5-flash-lite",
+  [MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_SYSTEM]: "gemini-2.5-flash-lite",
+  [MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_USER]: "gemini-2.5-flash-lite",
+  // memories usage flow
+  [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM]:
+    "qwen3-235b-a22b-instruct-2507-maas",
+  [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_USER]:
+    "qwen3-235b-a22b-instruct-2507-maas",
+  [MODEL_FEATURES.MEMORIES_RELEVANT_CONTEXT]:
+    "qwen3-235b-a22b-instruct-2507-maas",
 });
 
 /**
@@ -99,13 +129,23 @@ export const DEFAULT_MODEL = Object.freeze({
  * - Old clients will continue using old major version
  */
 export const FEATURE_MAJOR_VERSIONS = Object.freeze({
-  [MODEL_FEATURES.CHAT]: 1,
+  [MODEL_FEATURES.CHAT]: 2,
   [MODEL_FEATURES.TITLE_GENERATION]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_INSIGHTS]: 1,
-  // TODO: add major version for memories prompts
+  // memories generation feature versions
+  [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM]: 1,
+  [MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_USER]: 1,
+  [MODEL_FEATURES.MEMORIES_DEDUPLICATION_SYSTEM]: 1,
+  [MODEL_FEATURES.MEMORIES_DEDUPLICATION_USER]: 1,
+  [MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_SYSTEM]: 1,
+  [MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_USER]: 1,
+  // memories usage feature versions
+  [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM]: 1,
+  [MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_USER]: 1,
+  [MODEL_FEATURES.MEMORIES_RELEVANT_CONTEXT]: 2,
 });
 
 /**
@@ -122,13 +162,13 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
  */
 
 /**
- * Parses a version string in the format "v{major}.{minor}".
+ * Parses a version string in the format "{major}.{minor}".
  *
- * @param {string} versionString - Version string to parse (e.g., "v1.2")
+ * @param {string} versionString - Version string to parse (e.g., "1.2")
  * @returns {object|null} Parsed version with major and minor numbers, or null if invalid
  */
-function parseVersion(versionString) {
-  const match = /^v(\d+)\.(\d+)$/.exec(versionString || "");
+export function parseVersion(versionString) {
+  const match = /^v?(\d+)\.(\d+)$/.exec(versionString || "");
   if (!match) {
     return null;
   }
@@ -153,9 +193,14 @@ function parseVersion(versionString) {
  * @param {object} options - Selection options
  * @param {number} options.majorVersion - Required major version for the feature
  * @param {string} options.userModel - User's preferred model (empty string if none)
+ * @param {string} options.modelChoiceId
+ * @param {string} options.feature
  * @returns {object|null} Selected config or null if no match
  */
-function selectMainConfig(featureConfigs, { majorVersion, userModel }) {
+function selectMainConfig(
+  featureConfigs,
+  { majorVersion, userModel, modelChoiceId, feature }
+) {
   // Filter to configs matching the required major version
   const sameMajor = featureConfigs.filter(config => {
     const parsed = parseVersion(config.version);
@@ -163,21 +208,40 @@ function selectMainConfig(featureConfigs, { majorVersion, userModel }) {
   });
 
   if (sameMajor.length === 0) {
+    console.warn(`Missing featureConfigs for major version ${majorVersion}`);
     return null;
   }
 
-  // If user specified a model preference, find that model's config
-  if (userModel) {
-    const userModelConfig = sameMajor.find(
-      config => config.model === userModel
-    );
-    if (userModelConfig) {
-      return userModelConfig;
+  // We only allow customization of main assistant model unless user is
+  //  using custom endpoint (which is handled by _applyCustomEndpointModel)
+  if (feature === MODEL_FEATURES.CHAT) {
+    // If user specified a model preference, find that model's config
+    if (userModel) {
+      const userModelConfig = sameMajor.find(
+        config => config.model === userModel
+      );
+      if (userModelConfig) {
+        return userModelConfig;
+      }
+      // User's model not found in this major version - fall through to defaults
+      console.warn(
+        `User model "${userModel}" not found for major version ${majorVersion} for feature '${feature}', using modelChoice ${modelChoiceId}`
+      );
     }
-    // User's model not found in this major version - fall through to defaults
-    console.warn(
-      `User model "${userModel}" not found for major version ${majorVersion}, using default`
-    );
+
+    // If user specified a model preference, find that model's config
+    if (modelChoiceId) {
+      const userModelConfig = sameMajor.find(
+        config => config.model_choice_id == modelChoiceId
+      );
+      if (userModelConfig) {
+        return userModelConfig;
+      }
+      // User's model not found in this major version - fall through to defaults
+      console.warn(
+        `User model choice "${modelChoiceId}" not found for major version ${majorVersion} for feature '${feature}', using default`
+      );
+    }
   }
 
   // No user model pref OR user's model not found: use default
@@ -237,6 +301,20 @@ export class openAIEngine {
   model = null;
 
   /**
+   * Engine ID used for creating the engine instance
+   *
+   * @type {string | null}
+   */
+  #engineId = null;
+
+  /**
+   * Service type used for creating the engine instance
+   *
+   * @type {string | null}
+   */
+  #serviceType = null;
+
+  /**
    * Gets the Remote Settings client for AI window configurations.
    *
    * @returns {RemoteSettingsClient}
@@ -255,6 +333,22 @@ export class openAIEngine {
   }
 
   /**
+   * Overrides the model when using a custom endpoint.
+   * Only called after Remote Settings config has been loaded.
+   *
+   * @private
+   */
+  _applyCustomEndpointModel() {
+    const userModel = Services.prefs.getStringPref(MODEL_PREF, "");
+    if (userModel) {
+      console.warn(
+        `Using custom model "${userModel}" for feature: ${this.feature}`
+      );
+      this.model = userModel;
+    }
+  }
+
+  /**
    * Applies default configuration fallback when Remote Settings selection fails
    *
    * @param {string} feature - The feature identifier
@@ -267,31 +361,20 @@ export class openAIEngine {
   }
 
   /**
-   * Loads configuration from Remote Settings with version-aware selection.
+   * Applies configuration from Remote Settings with version-aware selection.
    *
-   * Selection logic:
-   * 1. Filters configs by feature and major version compatibility
-   * 2. If user has model preference, finds latest minor for that model
-   * 3. Otherwise, finds latest minor among default configs
-   * 4. Falls back to latest minor overall if no defaults
-   * 5. Falls back to local defaults if no matching major version
-   *
-   * @param {string} feature - The feature identifier from MODEL_FEATURES
-   * @returns {Promise<void>}
-   *   Sets this.feature to the feature name
-   *   Sets this.model to the selected model ID
-   *   Sets this.#configs to contain feature's and additional_components' configs
+   * @param {string} feature - The feature identifier
+   * @param {Array} allRecords - All Remote Settings records
+   * @param {Array} featureConfigs - Remote Settings configs for this feature
+   * @param {number} majorVersion - Required major version
+   * @private
    */
-  async loadConfig(feature) {
-    const client = openAIEngine.getRemoteClient();
-    const allRecords = await client.get();
-
-    // Filter to configs for this feature
-    const featureConfigs = allRecords.filter(
-      record => record.feature === feature
-    );
-
-    // Fallback to default if no remote settings records for given feature
+  _applyRemoteSettingsConfig(
+    feature,
+    allRecords,
+    featureConfigs,
+    majorVersion
+  ) {
     if (!featureConfigs.length) {
       console.warn(
         `No Remote Settings records found for feature: ${feature}, using default`
@@ -300,13 +383,15 @@ export class openAIEngine {
       return;
     }
 
-    const majorVersion = FEATURE_MAJOR_VERSIONS[feature];
     const userModel = Services.prefs.getStringPref(MODEL_PREF, "");
+    const hasCustomModel = Services.prefs.prefHasUserValue(MODEL_PREF);
+    const modelChoiceId = Services.prefs.getStringPref(MODEL_CHOICE_PREF, "");
 
-    // Find matching config with version and provided userModel pref
     const mainConfig = selectMainConfig(featureConfigs, {
       majorVersion,
-      userModel,
+      userModel: hasCustomModel ? userModel : "",
+      modelChoiceId,
+      feature,
     });
 
     if (!mainConfig) {
@@ -317,9 +402,41 @@ export class openAIEngine {
       return;
     }
 
-    // Store the selected configuration
     this.feature = feature;
     this.model = mainConfig.model;
+
+    // Parse JSON string fields if needed
+    if (typeof mainConfig.additional_components === "string") {
+      try {
+        mainConfig.additional_components = JSON.parse(
+          mainConfig.additional_components
+        );
+      } catch (e) {
+        // Fallback: parse malformed array string like "[item1, item2, item3]"
+        const match = /^\[([^\]]*)\]$/.exec(
+          mainConfig.additional_components.trim()
+        );
+        if (match) {
+          mainConfig.additional_components = match[1]
+            .split(",")
+            .map(s => s.trim())
+            .filter(s => !!s.length);
+        } else {
+          console.warn(
+            `Failed to parse additional_components for ${feature}, setting to empty array`
+          );
+          mainConfig.additional_components = [];
+        }
+      }
+    }
+    if (typeof mainConfig.parameters === "string") {
+      try {
+        mainConfig.parameters = JSON.parse(mainConfig.parameters);
+      } catch (e) {
+        console.warn(`Failed to parse parameters for ${feature}:`, e);
+        mainConfig.parameters = {};
+      }
+    }
 
     // Build configsMap for looking up additional_components
     const configsMap = new Map(allRecords.map(r => [r.feature, r]));
@@ -342,6 +459,48 @@ export class openAIEngine {
           );
         }
       }
+    }
+  }
+
+  /**
+   * Loads configuration from Remote Settings with version-aware selection.
+   *
+   * Selection logic:
+   * 1. Filter configs by feature and major version compatibility
+   * 2. If user has model preference, find latest minor for that model
+   * 3. Otherwise, find latest minor among default configs
+   * 4. Fall back to latest minor overall if no defaults
+   * 5. Fall back to local defaults if no matching major version
+   * 6. If custom endpoint is set, override model with pref value
+   *
+   * @param {string} feature - The feature identifier from MODEL_FEATURES
+   * @param {number} majorVersionOverride - Used to override hardcoded major version
+   * @returns {Promise<void>}
+   *   Sets this.feature to the feature name
+   *   Sets this.model to the selected model ID
+   *   Sets this.#configs to contain feature's and additional_components' configs
+   */
+  async loadConfig(feature, majorVersionOverride = null) {
+    const client = openAIEngine.getRemoteClient();
+    const allRecords = await client.get();
+
+    const featureConfigs = allRecords.filter(
+      record => record.feature === feature
+    );
+
+    const majorVersion =
+      majorVersionOverride ?? FEATURE_MAJOR_VERSIONS[feature];
+
+    this._applyRemoteSettingsConfig(
+      feature,
+      allRecords,
+      featureConfigs,
+      majorVersion
+    );
+
+    const hasCustomEndpoint = Services.prefs.prefHasUserValue(ENDPOINT_PREF);
+    if (hasCustomEndpoint) {
+      this._applyCustomEndpointModel();
     }
   }
 
@@ -391,42 +550,102 @@ export class openAIEngine {
   async #loadLocalPrompt(feature) {
     switch (feature) {
       case MODEL_FEATURES.CHAT: {
-        const { assistantPrompt } = await import(
-          "moz-src:///browser/components/aiwindow/models/prompts/AssistantPrompts.sys.mjs"
-        );
+        const { assistantPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/AssistantPrompts.sys.mjs");
         return assistantPrompt;
       }
       case MODEL_FEATURES.TITLE_GENERATION: {
-        const { titleGenerationPrompt } = await import(
-          "moz-src:///browser/components/aiwindow/models/prompts/TitleGenerationPrompts.sys.mjs"
-        );
+        const { titleGenerationPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/TitleGenerationPrompts.sys.mjs");
         return titleGenerationPrompt;
       }
       case MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER: {
-        const { conversationStarterPrompt } = await import(
-          "moz-src:///browser/components/aiwindow/models/prompts/ConversationSuggestionsPrompts.sys.mjs"
-        );
+        const { conversationStarterPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/ConversationSuggestionsPrompts.sys.mjs");
         return conversationStarterPrompt;
       }
       case MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP: {
-        const { conversationFollowupPrompt } = await import(
-          "moz-src:///browser/components/aiwindow/models/prompts/ConversationSuggestionsPrompts.sys.mjs"
-        );
+        const { conversationFollowupPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/ConversationSuggestionsPrompts.sys.mjs");
         return conversationFollowupPrompt;
       }
       case MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS: {
-        const { assistantLimitations } = await import(
-          "moz-src:///browser/components/aiwindow/models/prompts/ConversationSuggestionsPrompts.sys.mjs"
-        );
+        const { assistantLimitations } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/ConversationSuggestionsPrompts.sys.mjs");
         return assistantLimitations;
       }
       case MODEL_FEATURES.CONVERSATION_SUGGESTIONS_MEMORIES: {
-        const { conversationMemoriesPrompt } = await import(
-          "moz-src:///browser/components/aiwindow/models/prompts/ConversationSuggestionsPrompts.sys.mjs"
-        );
+        const { conversationMemoriesPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/ConversationSuggestionsPrompts.sys.mjs");
         return conversationMemoriesPrompt;
       }
-      // TODO: add local memories prompts imports for each feature
+
+      // Memories generation flow
+      case MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM: {
+        const { initialMemoriesGenerationSystemPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/MemoriesPrompts.sys.mjs");
+        return initialMemoriesGenerationSystemPrompt;
+      }
+      case MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_USER: {
+        const { initialMemoriesGenerationPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/MemoriesPrompts.sys.mjs");
+        return initialMemoriesGenerationPrompt;
+      }
+      case MODEL_FEATURES.MEMORIES_DEDUPLICATION_SYSTEM: {
+        const { memoriesDeduplicationSystemPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/MemoriesPrompts.sys.mjs");
+        return memoriesDeduplicationSystemPrompt;
+      }
+      case MODEL_FEATURES.MEMORIES_DEDUPLICATION_USER: {
+        const { memoriesDeduplicationPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/MemoriesPrompts.sys.mjs");
+        return memoriesDeduplicationPrompt;
+      }
+      case MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_SYSTEM: {
+        const { memoriesSensitivityFilterSystemPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/MemoriesPrompts.sys.mjs");
+        return memoriesSensitivityFilterSystemPrompt;
+      }
+      case MODEL_FEATURES.MEMORIES_SENSITIVITY_FILTER_USER: {
+        const { memoriesSensitivityFilterPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/MemoriesPrompts.sys.mjs");
+        return memoriesSensitivityFilterPrompt;
+      }
+
+      // memories usage flow
+      case MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_SYSTEM: {
+        const { messageMemoryClassificationSystemPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/MemoriesPrompts.sys.mjs");
+        return messageMemoryClassificationSystemPrompt;
+      }
+      case MODEL_FEATURES.MEMORIES_MESSAGE_CLASSIFICATION_USER: {
+        const { messageMemoryClassificationPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/MemoriesPrompts.sys.mjs");
+        return messageMemoryClassificationPrompt;
+      }
+      case MODEL_FEATURES.MEMORIES_RELEVANT_CONTEXT: {
+        const { relevantMemoriesContextPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/MemoriesPrompts.sys.mjs");
+        return relevantMemoriesContextPrompt;
+      }
+
+      // real time context
+      case MODEL_FEATURES.REAL_TIME_CONTEXT_DATE: {
+        const { realTimeContextDatePrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/ContextPrompts.sys.mjs");
+        return realTimeContextDatePrompt;
+      }
+      case MODEL_FEATURES.REAL_TIME_CONTEXT_TAB: {
+        const { realTimeContextTabPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/ContextPrompts.sys.mjs");
+        return realTimeContextTabPrompt;
+      }
+      case MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS: {
+        const { realTimeContextMentionsPrompt } =
+          await import("moz-src:///browser/components/aiwindow/models/prompts/ContextPrompts.sys.mjs");
+        return realTimeContextMentionsPrompt;
+      }
+
       default:
         throw new Error(`No local prompt found for feature: ${feature}`);
     }
@@ -454,6 +673,9 @@ export class openAIEngine {
 
     await engine.loadConfig(feature);
 
+    engine.#engineId = engineId;
+    engine.#serviceType = serviceType;
+
     engine.engineInstance = await openAIEngine.#createOpenAIEngine(
       engineId,
       serviceType,
@@ -472,8 +694,7 @@ export class openAIEngine {
     try {
       const fxAccounts = getFxAccountsSingleton();
       return await fxAccounts.getOAuthToken({
-        // Scope needs to be updated in accordance with https://bugzilla.mozilla.org/show_bug.cgi?id=2005290
-        scope: SCOPE_PROFILE,
+        scope: [SCOPE_SMART_WINDOW, SCOPE_PROFILE_UID],
         client_id: OAUTH_CLIENT_ID,
       });
     } catch (error) {
@@ -492,7 +713,7 @@ export class openAIEngine {
    */
   static async #createOpenAIEngine(engineId, serviceType, modelId = null) {
     const extraHeadersPref = Services.prefs.getStringPref(
-      "browser.aiwindow.extraHeaders",
+      "browser.smartwindow.extraHeaders",
       "{}"
     );
     let extraHeaders = {};
@@ -500,14 +721,14 @@ export class openAIEngine {
       extraHeaders = JSON.parse(extraHeadersPref);
     } catch (e) {
       console.error("Failed to parse extra headers from prefs:", e);
-      Services.prefs.clearUserPref("browser.aiwindow.extraHeaders");
+      Services.prefs.clearUserPref("browser.smartwindow.extraHeaders");
     }
 
     try {
       const engineInstance = await openAIEngine._createEngine({
-        apiKey: Services.prefs.getStringPref("browser.aiwindow.apiKey", ""),
+        apiKey: Services.prefs.getStringPref(APIKEY_PREF, ""),
         backend: "openai",
-        baseURL: Services.prefs.getStringPref("browser.aiwindow.endpoint", ""),
+        baseURL: Services.prefs.getStringPref(ENDPOINT_PREF, ""),
         engineId,
         modelId,
         modelRevision: "main",
@@ -530,7 +751,145 @@ export class openAIEngine {
    * @returns {object}                  LLM response
    */
   async run(content) {
-    return await this.engineInstance.run(content);
+    return await this._runWithAuth(content);
+  }
+
+  /**
+   * Helper method to handle 401 authentication errors and retry with new token.
+   *
+   * @param {Map<string, any>} content  OpenAI formatted messages to be sent to the LLM
+   * @returns {object}                  LLM response
+   */
+  async _runWithAuth(content) {
+    try {
+      return await this.engineInstance.run(content);
+    } catch (ex) {
+      if (!this._is401Error(ex)) {
+        throw ex;
+      }
+
+      console.warn(
+        "LLM request returned a 401 - revoking our token and retrying"
+      );
+
+      const fxAccounts = getFxAccountsSingleton();
+      const oldToken = content.fxAccountToken;
+      if (oldToken) {
+        await fxAccounts.removeCachedOAuthToken({ token: oldToken });
+      }
+
+      await this._recreateEngine();
+
+      const newToken = await openAIEngine.getFxAccountToken();
+      const updatedContent = { ...content, fxAccountToken: newToken };
+
+      try {
+        return await this.engineInstance.run(updatedContent);
+      } catch (retryEx) {
+        if (!this._is401Error(retryEx)) {
+          throw retryEx;
+        }
+
+        console.warn(
+          "Retry LLM request still returned a 401 - revoking our token and failing"
+        );
+
+        if (newToken) {
+          await fxAccounts.removeCachedOAuthToken({ token: newToken });
+        }
+
+        throw retryEx;
+      }
+    }
+  }
+
+  /**
+   * Recreates the engine instance with current configuration.
+   *
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _recreateEngine() {
+    if (!this.#engineId || !this.#serviceType) {
+      console.warn("Cannot recreate engine: missing engineId or serviceType");
+      return;
+    }
+
+    this.engineInstance = await openAIEngine.#createOpenAIEngine(
+      this.#engineId,
+      this.#serviceType,
+      this.model
+    );
+  }
+
+  /**
+   * Checks if an error is a 401 authentication error.
+   *
+   * @param {Error} error  The error to check
+   * @returns {boolean}    True if the error is a 401 error
+   * @private
+   */
+  _is401Error(error) {
+    if (!error) {
+      return false;
+    }
+
+    return error.status === 401 || error.message?.includes("401 status code");
+  }
+
+  /**
+   * Helper async generator to handle 401 authentication errors and retry with new token for streaming requests.
+   *
+   * @param {Map<string, any>} options  OpenAI formatted messages with streaming and tooling options to be sent to the LLM
+   * @yields {object}                   LLM streaming response chunks
+   */
+  async *_runWithGeneratorAuth(options) {
+    try {
+      const generator = this.engineInstance.runWithGenerator(options);
+      for await (const chunk of generator) {
+        yield chunk;
+      }
+    } catch (ex) {
+      if (!this._is401Error(ex)) {
+        throw ex;
+      }
+
+      console.warn(
+        "LLM streaming request returned a 401 - revoking our token and retrying"
+      );
+
+      const fxAccounts = getFxAccountsSingleton();
+      const oldToken = options.fxAccountToken;
+      if (oldToken) {
+        await fxAccounts.removeCachedOAuthToken({ token: oldToken });
+      }
+
+      await this._recreateEngine();
+
+      const newToken = await openAIEngine.getFxAccountToken();
+      const updatedOptions = { ...options, fxAccountToken: newToken };
+
+      try {
+        const generator = this.engineInstance.runWithGenerator(updatedOptions);
+        for await (const chunk of generator) {
+          yield chunk;
+        }
+      } catch (retryEx) {
+        if (!this._is401Error(retryEx)) {
+          throw retryEx;
+        }
+
+        console.warn(
+          "Retry LLM streaming request still returned a 401 - revoking our token and failing"
+        );
+
+        if (newToken) {
+          await fxAccounts.removeCachedOAuthToken({ token: newToken });
+        }
+
+        throw retryEx;
+      }
+    }
   }
 
   /**
@@ -538,10 +897,10 @@ export class openAIEngine {
    * Will eventually use `usage` from the LiteLLM API response for token telemetry
    *
    * @param {Map<string, any>} options  OpenAI formatted messages with streaming and tooling options to be sent to the LLM
-   * @returns {object}                  LLM response
+   * @returns {AsyncGenerator}          LLM streaming response
    */
   runWithGenerator(options) {
-    return this.engineInstance.runWithGenerator(options);
+    return this._runWithGeneratorAuth(options);
   }
 }
 
@@ -552,12 +911,12 @@ export class openAIEngine {
  * @param {Map<string, string>} stringsToReplace  A map of placeholder strings to their replacements
  * @returns {Promise<string>}                     The rendered prompt
  */
-export async function renderPrompt(rawPromptContent, stringsToReplace = {}) {
+export function renderPrompt(rawPromptContent, stringsToReplace = {}) {
   let finalPromptContent = rawPromptContent;
 
   for (const [orig, repl] of Object.entries(stringsToReplace)) {
     const regex = new RegExp(`{${orig}}`, "g");
-    finalPromptContent = finalPromptContent.replace(regex, repl);
+    finalPromptContent = finalPromptContent.replace(regex, () => repl);
   }
 
   return finalPromptContent;

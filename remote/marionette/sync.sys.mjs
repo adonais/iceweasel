@@ -335,6 +335,9 @@ export function waitForMessage(
  *     if the notification is the expected one, or false if it should be
  *     ignored and listening should continue. If not specified, the first
  *     notification for the specified topic resolves the returned promise.
+ * @param {boolean=} options.logging
+ *     Flag indicating whether the observer notification should be logged
+ *     when received. Defaults to `true`.
  * @param {number=} options.timeout
  *     Timeout duration in milliseconds, if provided.
  *     If specified, then the returned promise will be rejected with
@@ -350,16 +353,19 @@ export function waitForMessage(
  * @throws {RangeError}
  */
 export function waitForObserverTopic(topic, options = {}) {
-  const { checkFn = null, timeout = null } = options;
+  const { checkFn = null, logging = true, timeout = null } = options;
+
   if (typeof topic != "string") {
     throw new TypeError();
   }
+
   if (
     (checkFn != null && typeof checkFn != "function") ||
     (timeout !== null && typeof timeout != "number")
   ) {
     throw new TypeError();
   }
+
   if (timeout && (!Number.isInteger(timeout) || timeout < 0)) {
     throw new RangeError();
   }
@@ -373,7 +379,10 @@ export function waitForObserverTopic(topic, options = {}) {
     }
 
     function observer(subject, _topic, data) {
-      lazy.logger.trace(`Received observer notification ${_topic}`);
+      if (logging) {
+        lazy.logger.trace(`Received observer notification ${_topic}`);
+      }
+
       try {
         if (checkFn && !checkFn(subject, data)) {
           return;

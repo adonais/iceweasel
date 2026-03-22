@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsSimpleURI_h__
-#define nsSimpleURI_h__
+#ifndef nsSimpleURI_h_
+#define nsSimpleURI_h_
 
 #include "nsIURI.h"
 #include "nsISerializable.h"
@@ -212,4 +212,4 @@ inline size_t nsSimpleURI::RefEnd() const {
 }  // namespace net
 }  // namespace mozilla
 
-#endif  // nsSimpleURI_h__
+#endif  // nsSimpleURI_h_

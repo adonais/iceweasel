@@ -33,6 +33,11 @@ bool FuzzyEqualsCoordinate(CSSCoord aValue1, CSSCoord aValue2) {
          FuzzyEqualsMultiplicative(aValue1, aValue2);
 }
 
+bool FuzzyEqualsPoint(const CSSPoint& aValue1, const CSSPoint& aValue2) {
+  return FuzzyEqualsCoordinate(aValue1.x, aValue2.x) &&
+         FuzzyEqualsCoordinate(aValue1.y, aValue2.y);
+}
+
 Axis::Axis(AsyncPanZoomController* aAsyncPanZoomController)
     : mPos(0),
       mVelocity(0.0f, "Axis::mVelocity"),

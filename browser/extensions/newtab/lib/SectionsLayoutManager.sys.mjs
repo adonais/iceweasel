@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-export const DEFAULT_SECTION_LAYOUT = [
-  {
+const SECTION_CONFIGS = {
+  "7-double-row-2-ad": {
     name: "7-double-row-2-ad",
     responsiveLayouts: [
       {
@@ -196,6 +196,202 @@ export const DEFAULT_SECTION_LAYOUT = [
       },
     ],
   },
+  "daily-briefing": {
+    name: "daily-briefing",
+    responsiveLayouts: [
+      {
+        columnCount: 4,
+        tiles: [
+          {
+            size: "medium",
+            position: 0,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: true,
+          },
+          {
+            size: "small",
+            position: 1,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "small",
+            position: 2,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "medium",
+            position: 3,
+            hasAd: true,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "small",
+            position: 4,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "small",
+            position: 5,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+        ],
+      },
+      {
+        columnCount: 3,
+        tiles: [
+          {
+            size: "medium",
+            position: 0,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: true,
+          },
+          {
+            size: "small",
+            position: 1,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "medium",
+            position: 3,
+            hasAd: true,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "small",
+            position: 2,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "large",
+            position: 4,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "medium",
+            position: 5,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+        ],
+      },
+      {
+        columnCount: 2,
+        tiles: [
+          {
+            size: "medium",
+            position: 0,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: true,
+          },
+          {
+            size: "medium",
+            position: 3,
+            hasAd: true,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "small",
+            position: 1,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "small",
+            position: 2,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "small",
+            position: 4,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "small",
+            position: 5,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+        ],
+      },
+      {
+        columnCount: 1,
+        tiles: [
+          {
+            size: "medium",
+            position: 0,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: true,
+          },
+          {
+            size: "medium",
+            position: 3,
+            hasAd: true,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "small",
+            position: 1,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "small",
+            position: 2,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "small",
+            position: 4,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+          {
+            size: "small",
+            position: 5,
+            hasAd: false,
+            hasExcerpt: false,
+            allowsWidget: false,
+          },
+        ],
+      },
+    ],
+  },
+};
+
+const DEFAULT_SECTION_LAYOUT = [
   {
     name: "6-small-medium-1-ad",
     responsiveLayouts: [
@@ -603,3 +799,8 @@ export const DEFAULT_SECTION_LAYOUT = [
     ],
   },
 ];
+
+export const SectionsLayoutManager = {
+  SECTION_CONFIGS,
+  DEFAULT_SECTION_LAYOUT,
+};

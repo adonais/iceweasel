@@ -264,6 +264,163 @@ describe("MultiStageAboutWelcome module", () => {
       stub.restore();
     });
 
+    it("should send telemetry ping on collectTextInput", () => {
+      const screens = [
+        {
+          id: "TEXT_INPUT_TEST",
+          content: {
+            tiles: {
+              type: "textarea",
+              data: {
+                id: "text-input-test",
+              },
+            },
+            primary_button: {
+              label: "Test Button",
+              action: {
+                collectTextInput: true,
+              },
+            },
+          },
+        },
+      ];
+      const COMPONENT_PROPS = {
+        defaultScreens: screens,
+        message_id: "DEFAULT_ABOUTWELCOME",
+        startScreen: 0,
+      };
+      const stub = sinon.stub(AboutWelcomeUtils, "sendActionTelemetry");
+      let wrapper = mount(<MultiStageAboutWelcome {...COMPONENT_PROPS} />);
+      wrapper.update();
+
+      let welcomeScreenWrapper = wrapper.find(WelcomeScreen);
+      // Set some text in the text area to simulate user input
+      const textArea = welcomeScreenWrapper.find("textarea.textarea-input");
+      textArea.simulate("change", {
+        target: { value: "Some user input text" },
+      });
+      wrapper.update();
+      welcomeScreenWrapper = wrapper.find(WelcomeScreen);
+
+      const btnPrimary = welcomeScreenWrapper.find(".primary");
+      btnPrimary.simulate("click");
+      assert.calledTwice(stub);
+      assert.equal(
+        stub.firstCall.args[0],
+        welcomeScreenWrapper.props().messageId
+      );
+      assert.equal(stub.firstCall.args[1], "primary_button");
+      assert.equal(
+        stub.lastCall.args[0],
+        welcomeScreenWrapper.props().messageId
+      );
+      assert.ok(stub.lastCall.args[1].includes("text-input-test"));
+      assert.equal(stub.lastCall.args[2], "TEXT_INPUT");
+      assert.equal(stub.lastCall.args[3].value, "Some user input text");
+      stub.restore();
+    });
+
+    it("should apply character limit to textarea tile", () => {
+      const screens = [
+        {
+          id: "TEXT_INPUT_TEST",
+          content: {
+            tiles: {
+              type: "textarea",
+              data: {
+                id: "text-input-test",
+                character_limit: 20,
+              },
+            },
+            primary_button: {
+              label: "Test Button",
+              action: {
+                collectTextInput: true,
+              },
+              disabled: "hasTextInput",
+            },
+          },
+        },
+      ];
+      const COMPONENT_PROPS = {
+        defaultScreens: screens,
+        message_id: "DEFAULT_ABOUTWELCOME",
+        startScreen: 0,
+      };
+      let wrapper = mount(<MultiStageAboutWelcome {...COMPONENT_PROPS} />);
+      wrapper.update();
+
+      // Input a 10,000 character long string to exceed the character limit
+      const textArea = wrapper.find("textarea.textarea-input");
+      const value = "A".repeat(21);
+      textArea.simulate("change", { target: { value } });
+      wrapper.update();
+
+      // Check the char counter, it should show a negative value and be invalid
+      const charCounter = wrapper.find(".textarea-char-counter");
+      assert.equal(charCounter.text(), "-1");
+      assert.ok(charCounter.hasClass("invalid"));
+
+      // The primary button should be disabled due to hasTextInput rule
+      const btnPrimary = wrapper.find(".primary");
+      assert.ok(btnPrimary.props().disabled);
+    });
+
+    it("should truncate long text input values in telemetry ping on collectTextInput", () => {
+      const screens = [
+        {
+          id: "TEXT_INPUT_TEST",
+          content: {
+            tiles: {
+              type: "textarea",
+              data: {},
+            },
+            primary_button: {
+              label: "Test Button",
+              action: {
+                collectTextInput: true,
+              },
+            },
+          },
+        },
+      ];
+      const COMPONENT_PROPS = {
+        defaultScreens: screens,
+        message_id: "DEFAULT_ABOUTWELCOME",
+        startScreen: 0,
+      };
+      const stub = sinon.stub(AboutWelcomeUtils, "sendActionTelemetry");
+      let wrapper = mount(<MultiStageAboutWelcome {...COMPONENT_PROPS} />);
+      wrapper.update();
+
+      let welcomeScreenWrapper = wrapper.find(WelcomeScreen);
+      // Input a 10,000 character long string to exceed the 8KB limit
+      const textArea = welcomeScreenWrapper.find("textarea.textarea-input");
+      const value = "A".repeat(10_000);
+      textArea.simulate("change", { target: { value } });
+      wrapper.update();
+      welcomeScreenWrapper = wrapper.find(WelcomeScreen);
+
+      // Record telemetry - this is where the value should be truncated
+      const btnPrimary = welcomeScreenWrapper.find(".primary");
+      btnPrimary.simulate("click");
+      assert.calledTwice(stub);
+      assert.equal(
+        stub.firstCall.args[0],
+        welcomeScreenWrapper.props().messageId
+      );
+      assert.equal(stub.firstCall.args[1], "primary_button");
+      assert.equal(
+        stub.lastCall.args[0],
+        welcomeScreenWrapper.props().messageId
+      );
+      // Should generate a tile id automatically if omitted
+      assert.ok(stub.lastCall.args[1].includes("tile-0"));
+      assert.equal(stub.lastCall.args[2], "TEXT_INPUT");
+      assert.equal(stub.lastCall.args[3].value.length, 8192);
+      stub.restore();
+    });
+
     it("does not render anything until targeting/filtering resolves (gated first paint)", async () => {
       let resolveTargeting;
       const targetingPromise = new Promise(r => (resolveTargeting = r));

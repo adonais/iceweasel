@@ -26,6 +26,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -229,7 +230,7 @@ class BrowserFragment :
             CookieBannerReducerState(),
             listOf(
                 CookieBannerReducerMiddleware(
-                    ioScope = this.lifecycleScope + Dispatchers.IO,
+                    scope = viewLifecycleOwner.lifecycleScope,
                     cookieBannersStorage = requireContext().components.cookieBannerStorage,
                     appContext = requireContext(),
                     currentTab = tab,
@@ -242,8 +243,8 @@ class BrowserFragment :
         updateCookieBannerSiteToReportSnackBar()
     }
 
-    private fun updateCookieBannerSiteToReportSnackBar() {
-        siteNotSupportedSnackBarScope = cookieBannerReducerStore.flowScoped { flow ->
+    private fun updateCookieBannerSiteToReportSnackBar(dispatcher: CoroutineDispatcher = Dispatchers.Main) {
+        siteNotSupportedSnackBarScope = cookieBannerReducerStore.flowScoped(dispatcher = dispatcher) { flow ->
             flow.mapNotNull { state -> state.showSnackBarForSiteToReport }
                 .distinctUntilChanged()
                 .collect { showSnackBarForSiteToReport ->
@@ -1009,16 +1010,19 @@ class BrowserFragment :
         activity?.finishAndRemoveTask()
     }
 
-    internal fun edit() {
+    internal fun edit(tabId: String = tab.id) {
         requireComponents.appStore.dispatch(
-            AppAction.EditAction(tab.id),
+            AppAction.EditAction(tabId),
         )
     }
 
     private fun tabCounterListener() {
         val openedTabs = requireComponents.store.state.tabs.size
 
-        tabsPopup = TabsPopup(binding.browserToolbar, requireComponents).also { currentTabsPopup ->
+        tabsPopup = TabsPopup(
+            binding.browserToolbar,
+            requireComponents,
+        ).also { currentTabsPopup ->
             currentTabsPopup.showAsDropDown(
                 binding.browserToolbar,
                 0,

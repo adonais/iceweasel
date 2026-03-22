@@ -197,7 +197,7 @@ skip-if = [
 skip-if = [
   "os == 'android'", # Window sizes cannot be controled on android; Windows
   "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Decorations arrive async and mess up the resize intermittently on automation.
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64'", # Bug 1604152, 1974454
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1604152, 1974454
 ]
 
 ["test_resource_timing.html"]

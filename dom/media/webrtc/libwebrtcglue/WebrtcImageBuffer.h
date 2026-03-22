@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef WebrtcImageBuffer_h__
-#define WebrtcImageBuffer_h__
+#ifndef WebrtcImageBuffer_h_
+#define WebrtcImageBuffer_h_
 
 #include "ImageContainer.h"
 #include "common_video/include/video_frame_buffer.h"
@@ -52,4 +52,4 @@ class ImageBuffer : public webrtc::VideoFrameBuffer {
 
 }  // namespace mozilla
 
-#endif  // WebrtcImageBuffer_h__
+#endif  // WebrtcImageBuffer_h_

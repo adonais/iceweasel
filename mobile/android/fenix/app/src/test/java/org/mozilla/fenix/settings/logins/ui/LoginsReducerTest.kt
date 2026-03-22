@@ -455,4 +455,91 @@ class LoginsReducerTest {
 
         assertEquals(resultListStateAfterBackClick, expectedListStateAfterSaveClick)
     }
+
+    @Test
+    fun `GIVEN we are on the edit login screen WHEN we want to save a login without changing the username THEN this is not a duplicate`() {
+        val loginItem = LoginItem(
+            guid = "guid1234",
+            url = "https://www.yahoo.com",
+            username = "user1234",
+            password = "pass1234",
+        )
+
+        val state = LoginsState.default.copy(
+            loginItems = listOf(
+                loginItem,
+            ),
+            loginsEditLoginState = LoginsEditLoginState(
+                login = loginItem,
+                newUsername = "user1234",
+                newPassword = "password1234",
+                isPasswordVisible = false,
+            ),
+            updateLoginState = UpdateLoginState.None,
+        )
+
+        val resultEditStateForDuplicateLogin =
+            loginsReducer(state, EditLoginAction.UsernameChanged(usernameChanged = "user1234"))
+
+        val expectedEditStateForDuplicateLogin = state.copy(
+            loginsEditLoginState = LoginsEditLoginState(
+                login = loginItem,
+                newUsername = "user1234",
+                newPassword = "password1234",
+                isPasswordVisible = false,
+            ),
+            updateLoginState = UpdateLoginState.None,
+        )
+
+        assertEquals(
+            resultEditStateForDuplicateLogin.updateLoginState,
+            expectedEditStateForDuplicateLogin.updateLoginState,
+        )
+    }
+
+    @Test
+    fun `GIVEN we are on the edit login screen WHEN we want to save a duplicate login THEN this is reflected in the state`() {
+        val loginItem1 = LoginItem(
+            guid = "guid1",
+            url = "https://www.yahoo.com",
+            username = "user1",
+            password = "pass1",
+        )
+
+        val loginItem2 = LoginItem(
+            guid = "guid2",
+            url = "https://www.yahoo.com",
+            username = "user2",
+            password = "pass2",
+        )
+
+        val state = LoginsState.default.copy(
+            loginItems = listOf(loginItem1, loginItem2),
+            loginsEditLoginState = LoginsEditLoginState(
+                login = loginItem1,
+                newUsername = "user2",
+                newPassword = "password1",
+                isPasswordVisible = false,
+            ),
+            updateLoginState = UpdateLoginState.None,
+        )
+
+        val resultEditStateForDuplicateLogin =
+            loginsReducer(state, EditLoginAction.UsernameChanged(usernameChanged = "user2"))
+
+        val expectedEditStateForDuplicateLogin = state.copy(
+            loginsEditLoginState = LoginsEditLoginState(
+                login = loginItem1,
+                newUsername = "user2",
+                newPassword = "password1",
+                isPasswordVisible = false,
+            ),
+            updateLoginState = UpdateLoginState.Duplicate,
+        )
+
+        assertEquals(
+            resultEditStateForDuplicateLogin.updateLoginState,
+            expectedEditStateForDuplicateLogin.updateLoginState,
+        )
+    }
 }

@@ -21,46 +21,6 @@ namespace mozilla {
 
 namespace detail {
 
-template <typename T>
-struct AllowDeprecatedAbsFixed : std::false_type {};
-
-template <>
-struct AllowDeprecatedAbsFixed<int32_t> : std::true_type {};
-template <>
-struct AllowDeprecatedAbsFixed<int64_t> : std::true_type {};
-
-template <typename T>
-struct AllowDeprecatedAbs : AllowDeprecatedAbsFixed<T> {};
-
-template <>
-struct AllowDeprecatedAbs<int> : std::true_type {};
-template <>
-struct AllowDeprecatedAbs<long> : std::true_type {};
-
-}  // namespace detail
-
-// DO NOT USE DeprecatedAbs.  It exists only until its callers can be converted
-// to Abs below, and it will be removed when all callers have been changed.
-template <typename T>
-inline std::enable_if_t<detail::AllowDeprecatedAbs<T>::value, T> DeprecatedAbs(
-    const T aValue) {
-  // The absolute value of the smallest possible value of a signed-integer type
-  // won't fit in that type (on twos-complement systems -- and we're blithely
-  // assuming we're on such systems, for the non-<stdint.h> types listed above),
-  // so assert that the input isn't that value.
-  //
-  // This is the case if: the value is non-negative; or if adding one (giving a
-  // value in the range [-maxvalue, 0]), then negating (giving a value in the
-  // range [0, maxvalue]), doesn't produce maxvalue (because in twos-complement,
-  // (minvalue + 1) == -maxvalue).
-  MOZ_ASSERT(aValue >= 0 ||
-                 -(aValue + 1) != T((1ULL << (CHAR_BIT * sizeof(T) - 1)) - 1),
-             "You can't negate the smallest possible negative integer!");
-  return aValue >= 0 ? aValue : -aValue;
-}
-
-namespace detail {
-
 template <typename T, typename = void>
 struct AbsReturnType;
 

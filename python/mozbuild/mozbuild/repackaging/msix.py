@@ -411,7 +411,7 @@ def repackage_msix(
 
     first = next(values)
     if not displayname:
-        displayname = f"Mozilla {first}"
+        displayname = first
 
         # Release (official) and Beta share branding.  Differentiate Beta a little bit.
         if channel == "beta":

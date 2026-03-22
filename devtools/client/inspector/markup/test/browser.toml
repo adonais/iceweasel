@@ -117,6 +117,8 @@ fail-if = [
 
 ["browser_markup_dragdrop_tooltip.js"]
 
+["browser_markup_empty_attributes.js"]
+
 ["browser_markup_flex_display_badge.js"]
 
 ["browser_markup_flex_display_badge_telemetry.js"]

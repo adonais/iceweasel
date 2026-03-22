@@ -111,7 +111,7 @@ class SimpleperfController:
             stderr=subprocess.PIPE,
         )
 
-        # Sleep for 1s to let simpleperf settle and begin profiling.
+        # Profiles are streamed directly from device and ready to use
         time.sleep(1)
 
     def stop(self, output_path, index):
@@ -306,10 +306,12 @@ class SimpleperfProfiler(Layer):
         for file_path in perf_data:
             filename = file_path.stem
             number = filename.split("-")[-1]
-            output_path = Path(
-                work_dir if work_dir else self.output_dir,
-                f"profile-{number}-unsymbolicated.json",
-            )
+
+            # Preserve parent folder structure for cleaner archive output.
+            parent_folder = file_path.parent.name
+            output_dir = Path(work_dir if work_dir else self.output_dir) / parent_folder
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_path = output_dir / f"profile-{number}-unsymbolicated.json"
 
             # Run samply import as a blocking command to ensure perf.data
             # is processed to profile.json before proceeding
@@ -332,8 +334,6 @@ class SimpleperfProfiler(Layer):
                     self.info(f"samply {line.strip()}")
 
             unsymbolicated_profiles.append(output_path)
-
-        unsymbolicated_profiles.sort()
 
         return unsymbolicated_profiles
 
@@ -390,9 +390,7 @@ class SimpleperfProfiler(Layer):
             # Symbolicate profiles with a blocking symbolicator-cli call
             input_profile_path = file_path
             filename = file_path.stem.replace("-unsymbolicated", "")
-            output_profile_path = Path(
-                work_dir if work_dir else self.output_dir, f"{filename}.json"
-            )
+            output_profile_path = file_path.parent / f"{filename}.json"
             with subprocess.Popen(
                 [
                     str(self.node_path),
@@ -421,20 +419,21 @@ class SimpleperfProfiler(Layer):
 
         return symbolicated_profiles
 
-    def _archive_profiles(self, symbolicated_profiles):
+    def _archive_profiles(self, symbolicated_profiles, base_dir):
         """Archive all symbolicated profiles into a compressed .zip file
 
         :param symbolicated_profiles list[pathlib.Path]: List of paths to symbolicated
             profile.json files to be archived.
+        :param base_dir pathlib.Path: Base directory to preserve relative paths in archive.
         """
 
         # Archive and export symbolicated profiles
-        symbolicated_profiles.sort()
         archive_files(
             symbolicated_profiles,
             self.output_dir,
             f"profile_{self.test_name}",
-            prefix="simpleperf",
+            sort_key=lambda p: (p.parent.name, int(p.stem.split("-")[-1])),
+            base_dir=base_dir,
         )
 
     def _symbolicate(self):
@@ -453,7 +452,7 @@ class SimpleperfProfiler(Layer):
             self._prepare_symbolication_environment()
 
             self.info("Obtaining perf.data files")
-            perf_data, work_dir = extract_tgz_and_find_files(
+            perf_data, search_dir, work_dir = extract_tgz_and_find_files(
                 self.output_dir, self.test_name, ["*.data"]
             )
 
@@ -468,7 +467,7 @@ class SimpleperfProfiler(Layer):
             )
 
             self.info("Archiving symbolicated profile.json files")
-            self._archive_profiles(symbolicated_profiles)
+            self._archive_profiles(symbolicated_profiles, search_dir)
         except SimpleperfSymbolicationError as e:
             # If flags are not provided / invalid, skip this symbolication step completely
             self.warning(

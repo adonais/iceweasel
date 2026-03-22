@@ -64,7 +64,9 @@ let patterns: string[];
 - [`sidebarToolOpened`](#sidebartoolopened)
 - [`elementClicked`](#elementclicked)
 - [`ipProtectionReady`](#ipprotectionready)
+- [`ipProtectionPanelClosed`](#ipprotectionpanelclosed)
 - [`selectableProfilesUpdated`](#selectableprofilesupdated)
+- [`smartWindowNewTab`](#smartwindownewtab)
 
 ### `openArticleURL`
 
@@ -441,6 +443,19 @@ Targets users with the `browser.ipProtection.enabled` pref set to true, along wi
 }
 ```
 
+### `ipProtectionPanelClosed`
+
+Fires on close of the IP Protection Panel. Can be used to trigger messages or actions after the user closes the IP protection panel.
+
+The `hasUsedSiteExceptions` boolean context variable is available in targeting, and will evaluate to true if the user has added a site to their exceptions list either in-panel or at about:settings.
+
+```js
+{
+  trigger: { id: "ipProtectionPanelClosed" },
+  targeting: "!hasUsedSiteExceptions",
+}
+```
+
 ### `selectableProfilesUpdated`
 
 Fires to keep multi-profile feature users informed of changes to data collection settings. Within a profile group, any update to these shared profile settings triggers this event for all other running remote profile instances.
@@ -450,5 +465,28 @@ Fires to keep multi-profile feature users informed of changes to data collection
   trigger: { id: "selectableProfilesUpdated" },
   template: "infobar",
   frequency: { lifetime: 1 }
+}
+```
+
+### `tabSwitch`
+
+Fires when the user switches between two tabs 2 times within one minute.
+A currentTabsOpen context variable is included to be used in the targeting
+
+```js
+{
+  trigger: { id: "tabSwitch" },
+  targeting: `!'browser.tab.splitview.hasUsed'|preferenceValue && currentTabsOpen >=5`
+}
+```
+
+### `smartWindowNewTab`
+
+Occurs every time a user opens a new Smart Window tab.
+
+```js
+{
+  trigger: { id: "smartWindowNewTab" },
+  targeting: "isAIWindow && 'browser.smartwindow.firstrun.hasCompleted' | preferenceValue",
 }
 ```

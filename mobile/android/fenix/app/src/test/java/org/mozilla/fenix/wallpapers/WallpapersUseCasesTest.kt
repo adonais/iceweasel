@@ -20,7 +20,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.utils.Settings
@@ -35,6 +37,9 @@ import java.util.Date
 import kotlin.random.Random
 
 class WallpapersUseCasesTest {
+
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
 
     // initialize this once, so it can be shared throughout tests
     private val baseFakeDate = Date()
@@ -63,7 +68,7 @@ class WallpapersUseCasesTest {
         coEvery { clean(any(), any()) } returns mockk()
     }
 
-    private val mockFolder: File = mockk()
+    private val mockFolder: File by lazy { temporaryFolder.newFolder() }
     private val downloadWallpaper: (Wallpaper) -> Wallpaper.ImageFileState = mockk(relaxed = true)
 
     @Before
@@ -247,8 +252,10 @@ class WallpapersUseCasesTest {
             locale,
         ).invoke()
 
-        assertEquals(1, appStore.state.wallpaperState.availableWallpapers.size)
-        assertEquals(Wallpaper.Default, appStore.state.wallpaperState.availableWallpapers[0])
+        assertEquals(
+            listOf(Wallpaper.EdgeToEdge, Wallpaper.Default),
+            appStore.state.wallpaperState.availableWallpapers,
+        )
     }
 
     @Test
@@ -377,7 +384,7 @@ class WallpapersUseCasesTest {
             "en-US",
         ).invoke()
 
-        val expectedWallpapers = (listOf(Wallpaper.Default) + possibleWallpapers).map {
+        val expectedWallpapers = (listOf(Wallpaper.EdgeToEdge, Wallpaper.Default) + possibleWallpapers).map {
             it.copy(thumbnailFileState = Wallpaper.ImageFileState.Downloaded)
         }
         assertEquals(selectedWallpaper, appStore.state.wallpaperState.currentWallpaper)

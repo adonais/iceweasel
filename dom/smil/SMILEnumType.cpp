@@ -6,8 +6,6 @@
 
 #include "SMILEnumType.h"
 
-#include <math.h>
-
 #include "mozilla/SMILValue.h"
 #include "nsDebug.h"
 

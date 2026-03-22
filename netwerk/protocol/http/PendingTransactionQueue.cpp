@@ -235,6 +235,15 @@ size_t PendingTransactionQueue::PendingQueueLength() const {
   return length;
 }
 
+bool PendingTransactionQueue::PendingQueueIsEmpty() const {
+  for (const auto& data : mPendingTransactionTable.Values()) {
+    if (!data->IsEmpty()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 size_t PendingTransactionQueue::PendingQueueLengthForWindow(
     uint64_t windowId) const {
   auto* pendingQ = mPendingTransactionTable.Get(windowId);
@@ -243,6 +252,10 @@ size_t PendingTransactionQueue::PendingQueueLengthForWindow(
 
 size_t PendingTransactionQueue::UrgentStartQueueLength() {
   return mUrgentStartQ.Length();
+}
+
+bool PendingTransactionQueue::UrgentStartQueueIsEmpty() const {
+  return mUrgentStartQ.IsEmpty();
 }
 
 void PendingTransactionQueue::PrintPendingQ() {

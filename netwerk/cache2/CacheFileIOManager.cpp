@@ -1295,8 +1295,6 @@ nsresult CacheFileIOManager::Shutdown() {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  auto shutdownTimer = glean::network::disk_cache_shutdown_v2.Measure();
-
   CacheIndex::PreShutdown();
 
   ShutdownMetadataWriteScheduling();
@@ -3929,7 +3927,7 @@ nsresult CacheFileIOManager::FindTrashDirToRemove() {
     LOG(("CacheFileIOManager::FindTrashDirToRemove() - Returning directory %s",
          leafName.get()));
 
-    mTrashDir = file;
+    mTrashDir = std::move(file);
     return NS_OK;
   }
 

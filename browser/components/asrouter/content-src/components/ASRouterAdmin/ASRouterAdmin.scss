@@ -237,8 +237,8 @@
     border-radius: 3px;
 
     &.isDisabled {
-      background: rgba(215, 0, 34, 30%);
-      color: var(--dialog-warning-text-color);
+      background: var(--background-color-critical);
+      color: var(--text-color);
     }
   }
 

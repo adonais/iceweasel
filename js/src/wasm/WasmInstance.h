@@ -124,10 +124,10 @@ class alignas(16) Instance {
   // Set to 1 when wasm should call CheckForInterrupt.
   mozilla::Atomic<uint32_t, mozilla::Relaxed> interrupt_;
 
-  // The address of the realm()->zone()->needsIncrementalBarrier(). This is
+  // The address of the realm()->zone()->needsMarkingBarrier(). This is
   // specific to this instance and not a process wide field, and so it cannot
   // be linked into code.
-  const JS::shadow::Zone::BarrierState* addressOfNeedsIncrementalBarrier_;
+  const JS::shadow::Zone::BarrierState* addressOfNeedsMarkingBarrier_;
 
   // An array of AllocSites allocated for Wasm GC operations such as struct.new,
   // array.new, etc.
@@ -322,8 +322,8 @@ class alignas(16) Instance {
   static constexpr size_t offsetOfAddressOfLastBufferedWholeCell() {
     return offsetof(Instance, addressOfLastBufferedWholeCell_);
   }
-  static constexpr size_t offsetOfAddressOfNeedsIncrementalBarrier() {
-    return offsetof(Instance, addressOfNeedsIncrementalBarrier_);
+  static constexpr size_t offsetOfAddressOfNeedsMarkingBarrier() {
+    return offsetof(Instance, addressOfNeedsMarkingBarrier_);
   }
   static constexpr size_t offsetOfJumpTable() {
     return offsetof(Instance, jumpTable_);

@@ -7,8 +7,8 @@
 
 /* arena allocation for the frame tree and closely-related objects */
 
-#ifndef nsPresArena_h___
-#define nsPresArena_h___
+#ifndef nsPresArena_h_
+#define nsPresArena_h_
 
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/ArenaObjectID.h"

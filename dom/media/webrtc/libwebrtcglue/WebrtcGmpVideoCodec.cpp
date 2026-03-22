@@ -104,7 +104,7 @@ static webrtc::ScalabilityMode GmpCodecParamsToScalabilityMode(
     case 3:
       return webrtc::ScalabilityMode::kL1T3;
     default:
-      NS_WARNING(nsPrintfCString("Expected 1-3 temporal layers but got %d.\n",
+      NS_WARNING(nsPrintfCString("Expected 1-3 temporal layers but got %d.",
                                  aParams.mTemporalLayerNum)
                      .get());
       MOZ_CRASH("Unexpected number of temporal layers");

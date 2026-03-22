@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -74,11 +76,20 @@ export const NIMBUS_MIGRATION_PREFS = Object.fromEntries(
   Object.entries(Phase).map(([, v]) => [v, `nimbus.migrations.${v}`])
 );
 
-export const LABS_MIGRATION_FEATURE_MAP = Object.freeze({
-  "auto-pip": "firefox-labs-auto-pip",
-  "urlbar-ime-search": "firefox-labs-urlbar-ime-search",
-  "jpeg-xl": "firefox-labs-jpeg-xl",
-});
+export const LABS_MIGRATION_FEATURE_MAP = (function () {
+  const featureMap = {
+    "auto-pip": "firefox-labs-auto-pip",
+    "urlbar-ime-search": "firefox-labs-urlbar-ime-search",
+  };
+
+  // The jpeg-xl feature is Nightly-only and the relevant prefs do not exist
+  // outside Nightly.
+  if (AppConstants.MOZ_JXL) {
+    featureMap["jpeg-xl"] = "firefox-labs-jpeg-xl";
+  }
+
+  return Object.freeze(featureMap);
+})();
 
 /**
  * Migrate from the legacy migration state to multi-phase migration state.

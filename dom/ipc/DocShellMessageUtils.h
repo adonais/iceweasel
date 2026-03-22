@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef mozilla_dom_docshell_message_utils_h__
-#define mozilla_dom_docshell_message_utils_h__
+#ifndef mozilla_dom_docshell_message_utils_h_
+#define mozilla_dom_docshell_message_utils_h_
 
 #include "ipc/EnumSerializer.h"
 #include "mozilla/ScrollbarPreferences.h"
@@ -51,4 +51,4 @@ struct ParamTraits<mozilla::dom::ForceMediaDocument>
 
 }  // namespace IPC
 
-#endif  // mozilla_dom_docshell_message_utils_h__
+#endif  // mozilla_dom_docshell_message_utils_h_

@@ -89,6 +89,7 @@ partial interface PublicKeyCredential {
     [Throws, Pref="security.webauthn.enable_json_serialization_methods"] static PublicKeyCredentialCreationOptions parseCreationOptionsFromJSON(PublicKeyCredentialCreationOptionsJSON options);
 };
 
+[GenerateConversionToJS]
 dictionary PublicKeyCredentialCreationOptionsJSON {
     required PublicKeyCredentialRpEntity                    rp;
     required PublicKeyCredentialUserEntityJSON              user;
@@ -99,7 +100,6 @@ dictionary PublicKeyCredentialCreationOptionsJSON {
     AuthenticatorSelectionCriteria                          authenticatorSelection;
     sequence<DOMString>                                     hints = [];
     DOMString                                               attestation = "none";
-    sequence<DOMString>                                     attestationFormats = [];
     AuthenticationExtensionsClientInputsJSON                extensions;
 };
 
@@ -123,6 +123,7 @@ partial interface PublicKeyCredential {
     [Throws, Pref="security.webauthn.enable_json_serialization_methods"] static PublicKeyCredentialRequestOptions parseRequestOptionsFromJSON(PublicKeyCredentialRequestOptionsJSON options);
 };
 
+[GenerateConversionToJS]
 dictionary PublicKeyCredentialRequestOptionsJSON {
     required Base64URLString                                challenge;
     unsigned long                                           timeout;

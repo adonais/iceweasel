@@ -47,7 +47,8 @@ add_task(async function oneTip() {
   );
 
   let provider = new UrlbarTestUtils.TestProvider({ results, priority: 1 });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   let context = await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
@@ -56,7 +57,7 @@ add_task(async function oneTip() {
 
   checkResults(context.results, expectedResults);
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
   gURLBar.view.close();
 });
 
@@ -82,7 +83,8 @@ add_task(async function threeTips() {
   );
 
   let provider = new UrlbarTestUtils.TestProvider({ results, priority: 1 });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   let context = await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
@@ -91,7 +93,7 @@ add_task(async function threeTips() {
 
   checkResults(context.results, expectedResults);
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
   gURLBar.view.close();
 });
 
@@ -115,7 +117,7 @@ add_task(async function oneTip_nonRestricting() {
     type: UrlbarUtils.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     payload: {
-      engine: Services.search.defaultEngine.name,
+      engine: SearchService.defaultEngine.name,
       query: "test",
     },
   });
@@ -123,7 +125,8 @@ add_task(async function oneTip_nonRestricting() {
   expectedResults = expectedResults.slice(0, MAX_RESULTS - TIP_SPAN + 1);
 
   let provider = new UrlbarTestUtils.TestProvider({ results });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   let context = await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
@@ -132,7 +135,7 @@ add_task(async function oneTip_nonRestricting() {
 
   checkResults(context.results, expectedResults);
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
   gURLBar.view.close();
 });
 
@@ -159,7 +162,7 @@ add_task(async function threeTips_nonRestricting() {
     type: UrlbarUtils.RESULT_TYPE.SEARCH,
     source: UrlbarUtils.RESULT_SOURCE.SEARCH,
     payload: {
-      engine: Services.search.defaultEngine.name,
+      engine: SearchService.defaultEngine.name,
       query: "test",
     },
   });
@@ -167,7 +170,8 @@ add_task(async function threeTips_nonRestricting() {
   expectedResults = expectedResults.slice(0, MAX_RESULTS - 3 * (TIP_SPAN - 1));
 
   let provider = new UrlbarTestUtils.TestProvider({ results });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   let context = await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
@@ -176,7 +180,7 @@ add_task(async function threeTips_nonRestricting() {
 
   checkResults(context.results, expectedResults);
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
   gURLBar.view.close();
 });
 
@@ -197,7 +201,8 @@ add_task(async function customValue() {
   expectedResults = expectedResults.slice(0, 6);
 
   let provider = new UrlbarTestUtils.TestProvider({ results });
-  UrlbarProvidersManager.registerProvider(provider);
+  let providersManager = ProvidersManager.getInstanceForSap("urlbar");
+  providersManager.registerProvider(provider);
 
   let context = await UrlbarTestUtils.promiseAutocompleteResultPopup({
     value: "test",
@@ -206,7 +211,7 @@ add_task(async function customValue() {
 
   checkResults(context.results, expectedResults);
 
-  UrlbarProvidersManager.unregisterProvider(provider);
+  providersManager.unregisterProvider(provider);
   gURLBar.view.close();
 });
 

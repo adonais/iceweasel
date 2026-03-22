@@ -534,6 +534,15 @@ class TabBase {
   }
 
   /**
+   * @property {integer} splitViewId
+   *        @readonly
+   *        @abstract
+   */
+  get splitViewId() {
+    throw new Error("Not implemented");
+  }
+
+  /**
    * Returns true if this tab matches the the given query info object. Omitted
    * or null have no effect on the match.
    *
@@ -576,6 +585,8 @@ class TabBase {
    *        Requires the tab's URL to match the given MatchPattern object.
    * @param {integer} [queryInfo.groupId]
    *        Matches against the exact value of the tab's `groupId` attribute.
+   * @param {integer} [queryInfo.splitViewId]
+   *        Matches against the exact value of the tab's `splitViewId` attribute.
    *
    * @returns {boolean}
    *        True if the tab matches the query.
@@ -593,6 +604,7 @@ class TabBase {
       "pinned",
       "status",
       "groupId",
+      "splitViewId",
     ];
 
     function checkProperty(prop, obj) {
@@ -678,6 +690,7 @@ class TabBase {
       sharingState: this.sharingState,
       successorTabId: this.successorTabId,
       groupId: this.groupId,
+      splitViewId: this.splitViewId,
       cookieStoreId: this.cookieStoreId,
     };
 

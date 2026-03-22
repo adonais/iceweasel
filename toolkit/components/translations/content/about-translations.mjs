@@ -239,6 +239,7 @@ class AboutTranslations {
     this.#maybeRequestTranslation();
 
     document.body.style.visibility = "visible";
+    this.#setInitialFocus();
   }
 
   /**
@@ -392,7 +393,6 @@ class AboutTranslations {
     this.#showMainUserInterface();
     this.#updateSourceSectionClearButtonVisibility();
     this.#requestSectionHeightsUpdate({ scheduleCallback: false });
-    this.#setInitialFocus();
   }
 
   /**

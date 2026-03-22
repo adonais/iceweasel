@@ -73,7 +73,7 @@ else
   hg revert -C third_party/libwebrtc/README.mozilla.last-vendor &> /dev/null
 fi
 
-# check for a resume situation from fast-forward-libwebrtc.sh
+# check for a resume situation from fast_forward_libwebrtc.py
 RESUME_FILE=$STATE_DIR/fast_forward.resume
 RESUME=""
 if [ -f $RESUME_FILE ]; then
@@ -114,7 +114,7 @@ in bash:
 You may resume running this script with the following command:
     bash $SCRIPT_DIR/loop-ff.sh
 "
-# if we're not in the resume situation from fast-forward-libwebrtc.sh
+# if we're not in the resume situation from fast_forward_libwebrtc.py
 if [ "x$RESUME" = "x" ]; then
   # start off by verifying the vendoring process to make sure no changes have
   # been added to elm to fix bugs.
@@ -166,7 +166,17 @@ if [ -f $STATE_DIR/$MOZ_LIBWEBRTC_NEXT_BASE.no-op-cherry-pick-msg ]; then
 fi
 
 echo_log "Moving from moz-libwebrtc commit $MOZ_LIBWEBRTC_BASE to $MOZ_LIBWEBRTC_NEXT_BASE"
-bash $SCRIPT_DIR/fast-forward-libwebrtc.sh 2>&1| tee -a $LOOP_OUTPUT_LOG
+./mach python $SCRIPT_DIR/fast_forward_libwebrtc.py \
+    --commit-bug-number $MOZ_FASTFORWARD_BUG \
+    --branch $MOZ_LIBWEBRTC_BRANCH \
+    --log-path $LOG_DIR \
+    --target-branch-head $MOZ_TARGET_UPSTREAM_BRANCH_HEAD \
+    --repo-path $MOZ_LIBWEBRTC_SRC \
+    --state-path $STATE_DIR \
+    --tmp-path $TMP_DIR \
+    --script-path $SCRIPT_DIR \
+    --target-path third_party/libwebrtc 2>&1| tee -a $LOOP_OUTPUT_LOG
+
 
 if [ "x$MOZ_REPO" == "xgit" ]; then
   MOZ_CHANGED=`git show --format='' --name-status \

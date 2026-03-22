@@ -139,7 +139,7 @@ function initPage() {
         "safeb-blocked-addon-page-error-desc3-override",
         "safeb-blocked-addon-page-error-desc4-override",
       ],
-      learnMore: "safeb-blocked-addon-page-learn-more",
+      learnMore: "safeb-blocked-addon-page-learn-more3",
     },
   };
 

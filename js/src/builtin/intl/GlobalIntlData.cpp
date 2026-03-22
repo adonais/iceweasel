@@ -27,6 +27,7 @@
 #include "vm/JSObject-inl.h"
 
 using namespace js;
+using namespace js::intl;
 
 void js::intl::GlobalIntlData::resetCollator() {
   collatorLocale_ = nullptr;
@@ -297,6 +298,15 @@ temporal::TimeZoneObject* js::intl::GlobalIntlData::getOrCreateTimeZone(
   return &timeZone->as<temporal::TimeZoneObject>();
 }
 
+JS::Symbol* js::intl::GlobalIntlData::fallbackSymbol(JSContext* cx) {
+  if (!fallbackSymbol_) {
+    Handle<PropertyName*> description = cx->names().IntlLegacyConstructedSymbol;
+    fallbackSymbol_ =
+        JS::Symbol::new_(cx, JS::SymbolCode::UniqueSymbol, description);
+  }
+  return fallbackSymbol_;
+}
+
 void js::intl::GlobalIntlData::trace(JSTracer* trc) {
   TraceNullableEdge(trc, &realmLocale_, "GlobalIntlData::realmLocale_");
   TraceNullableEdge(trc, &defaultLocale_, "GlobalIntlData::defaultLocale_");
@@ -322,4 +332,6 @@ void js::intl::GlobalIntlData::trace(JSTracer* trc) {
                     "GlobalIntlData::dateTimeFormatToLocaleDate_");
   TraceNullableEdge(trc, &dateTimeFormatToLocaleTime_,
                     "GlobalIntlData::dateTimeFormatToLocaleTime_");
+
+  TraceNullableEdge(trc, &fallbackSymbol_, "GlobalIntlData::fallbackSymbol_");
 }

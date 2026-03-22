@@ -42,7 +42,7 @@ class DefaultDeleteBrowsingDataControllerTest {
     private val removeAllDownloads: DownloadsUseCases.RemoveAllDownloadsUseCase = mockk(relaxed = true)
     private val historyStorage: HistoryStorage = mockk(relaxed = true)
     private val permissionStorage: PermissionStorage = mockk(relaxed = true)
-    private val store: BrowserStore = mockk(relaxed = true)
+    private val store = BrowserStore()
     private val engine: Engine = mockk(relaxed = true)
     private val appStore: AppStore = mockk(relaxed = true)
     private val settings: Settings = mockk(relaxed = true)

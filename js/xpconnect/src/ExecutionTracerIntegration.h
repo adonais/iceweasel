@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef ExecutionTracerIntegration_h__
-#define ExecutionTracerIntegration_h__
+#ifndef ExecutionTracerIntegration_h_
+#define ExecutionTracerIntegration_h_
 
 #ifdef MOZ_EXECUTION_TRACING
 
@@ -107,4 +107,4 @@ class ExecutionTracerIntegration {
 };
 }  // namespace mozilla
 #endif
-#endif /* ExecutionTracerIntegration_h__ */
+#endif /* ExecutionTracerIntegration_h_ */

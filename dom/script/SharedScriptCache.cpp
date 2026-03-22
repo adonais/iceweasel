@@ -112,7 +112,7 @@ ScriptLoadData::ScriptLoadData(ScriptLoader* aLoader,
       mLoadedScript(aLoadedScript),
       mNetworkMetadata(aRequest->mNetworkMetadata) {}
 
-NS_IMPL_ISUPPORTS(SharedScriptCache, nsIMemoryReporter)
+NS_IMPL_ISUPPORTS(SharedScriptCache, nsIMemoryReporter, nsIObserver)
 
 MOZ_DEFINE_MALLOC_SIZE_OF(SharedScriptCacheMallocSizeOf)
 
@@ -133,6 +133,13 @@ void SharedScriptCache::Init() {
 }
 
 SharedScriptCache::~SharedScriptCache() { UnregisterWeakMemoryReporter(this); }
+
+bool SharedScriptCache::ShouldIgnoreMemoryPressure() {
+  // During the automated testing, we need to ignore the memory pressure,
+  // in order to get the deterministic result.
+  return !StaticPrefs::
+      dom_script_loader_experimental_navigation_cache_check_memory_pressure();
+}
 
 void SharedScriptCache::LoadCompleted(SharedScriptCache* aCache,
                                       ScriptLoadData& aData) {}

@@ -14,6 +14,7 @@ include "mozilla/ipc/URIUtils.h";
 include protocol PBrowser;
 include protocol PInProcess;
 include protocol PBrowserBridge;
+include protocol PDigitalCredential;
 include protocol PWebAuthnTransaction;
 include protocol PWebIdentity;
 
@@ -67,6 +68,7 @@ struct IPCWebShareData
 async protocol PWindowGlobal
 {
   manager PBrowser or PInProcess;
+  manages PDigitalCredential;
   manages PWebAuthnTransaction;
   manages PWebIdentity;
 
@@ -82,7 +84,8 @@ child:
   async DrawSnapshot(IntRect? aRect, float aScale, nscolor aBackgroundColor,
                      uint32_t aFlags) returns (PaintFragment retval);
 
-  async DispatchSecurityPolicyViolation(nsString aViolationEventJSON);
+  async DispatchSecurityPolicyViolation(nsString aViolationEventJSON,
+                                        nsString aReportGroupName);
 
   async SaveStorageAccessPermissionGranted();
 
@@ -100,7 +103,7 @@ child:
 
 both:
   async RawMessage(JSActorMessageMeta aMetadata, JSIPCValue aData,
-                   UniquePtr<ClonedMessageData> aStack);
+                   nullable StructuredCloneData aStack);
 
 parent:
   // Load the given URI load state into the current owner process of the given
@@ -225,6 +228,7 @@ parent:
   // User activation notifications for BounceTrackingProtection.
   async RecordUserActivationForBTP();
 
+  async PDigitalCredential();
   async PWebAuthnTransaction();
   async PWebIdentity();
 

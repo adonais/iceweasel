@@ -148,8 +148,12 @@ struct TextMarker : public BaseMarkerType<TextMarker> {
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] =
       // XXX - This is confusingly labeled 'name'. We probably want to fix that.
-      {{"name", MS::InputType::CString, "Details", MS::Format::String,
-        MS::PayloadFlags::Searchable}};
+      {{
+          "name",
+          MS::InputType::CString,
+          "Details",
+          MS::Format::String,
+      }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
@@ -175,8 +179,12 @@ struct TextStackMarker : public BaseMarkerType<TextStackMarker> {
   using MS = MarkerSchema;
   static constexpr MS::PayloadField PayloadFields[] =
       // XXX - This is confusingly labeled 'name'. We probably want to fix that.
-      {{"name", MS::InputType::CString, "Details", MS::Format::String,
-        MS::PayloadFlags::Searchable}};
+      {{
+          "name",
+          MS::InputType::CString,
+          "Details",
+          MS::Format::String,
+      }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
@@ -204,9 +212,12 @@ struct Tracing : public BaseMarkerType<Tracing> {
   static constexpr bool StoreName = true;
 
   using MS = MarkerSchema;
-  static constexpr MS::PayloadField PayloadFields[] = {
-      {"category", MS::InputType::CString, "Type", MS::Format::String,
-       MS::PayloadFlags::Searchable}};
+  static constexpr MS::PayloadField PayloadFields[] = {{
+      "category",
+      MS::InputType::CString,
+      "Type",
+      MS::Format::String,
+  }};
 
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable,

@@ -11,6 +11,7 @@
 #include "mozilla/dom/KeyframeAnimationOptionsBinding.h"
 // For UnrestrictedDoubleOrKeyframeAnimationOptions;
 #include "NonCustomCSSPropertyId.h"
+#include "PseudoStyleType.h"  // For PseudoStyleType
 #include "WindowRenderer.h"
 #include "js/PropertyAndElement.h"  // JS_DefineProperty
 #include "mozilla/AnimationUtils.h"
@@ -32,9 +33,8 @@
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/layers/AnimationInfo.h"
 #include "nsCSSPropertyIDSet.h"
-#include "nsCSSProps.h"           // For nsCSSProps::PropHasFlags
-#include "nsCSSPseudoElements.h"  // For PseudoStyleType
-#include "nsComputedDOMStyle.h"   // nsComputedDOMStyle::GetComputedStyle
+#include "nsCSSProps.h"          // For nsCSSProps::PropHasFlags
+#include "nsComputedDOMStyle.h"  // nsComputedDOMStyle::GetComputedStyle
 #include "nsContentUtils.h"
 #include "nsDOMMutationObserver.h"  // For nsAutoAnimationMutationBatch
 #include "nsIFrame.h"
@@ -795,7 +795,7 @@ static KeyframeEffectParams KeyframeEffectParamsFromUnion(
   }
 
   Maybe<PseudoStyleRequest> pseudoRequest =
-      nsCSSPseudoElements::ParsePseudoElement(options.mPseudoElement);
+      PseudoStyleRequest::Parse(options.mPseudoElement);
   if (!pseudoRequest) {
     // Per the spec, we throw SyntaxError for syntactically invalid pseudos.
     aRv.ThrowSyntaxError(
@@ -1103,7 +1103,7 @@ void KeyframeEffect::SetPseudoElement(const nsAString& aPseudoElement,
   // Note: ParsePseudoELement() returns Some(NotPseudo) for the null string,
   // so we handle null case before this.
   Maybe<PseudoStyleRequest> pseudoRequest =
-      nsCSSPseudoElements::ParsePseudoElement(aPseudoElement);
+      PseudoStyleRequest::Parse(aPseudoElement);
   if (!pseudoRequest || pseudoRequest->IsNotPseudo()) {
     // Per the spec, we throw SyntaxError for syntactically invalid pseudos.
     aRv.ThrowSyntaxError(
@@ -1559,23 +1559,23 @@ nsIFrame* KeyframeEffect::GetPrimaryFrame() const {
   }
 
   switch (mTarget.mPseudoRequest.mType) {
-    case PseudoStyleType::before:
+    case PseudoStyleType::Before:
       frame = nsLayoutUtils::GetBeforeFrame(mTarget.mElement);
       break;
-    case PseudoStyleType::after:
+    case PseudoStyleType::After:
       frame = nsLayoutUtils::GetAfterFrame(mTarget.mElement);
       break;
-    case PseudoStyleType::marker:
+    case PseudoStyleType::Marker:
       frame = nsLayoutUtils::GetMarkerFrame(mTarget.mElement);
       break;
-    case PseudoStyleType::backdrop:
+    case PseudoStyleType::Backdrop:
       frame = nsLayoutUtils::GetBackdropFrame(mTarget.mElement);
       break;
-    case PseudoStyleType::viewTransition:
-    case PseudoStyleType::viewTransitionGroup:
-    case PseudoStyleType::viewTransitionImagePair:
-    case PseudoStyleType::viewTransitionOld:
-    case PseudoStyleType::viewTransitionNew:
+    case PseudoStyleType::ViewTransition:
+    case PseudoStyleType::ViewTransitionGroup:
+    case PseudoStyleType::ViewTransitionImagePair:
+    case PseudoStyleType::ViewTransitionOld:
+    case PseudoStyleType::ViewTransitionNew:
       if (Element* pseudoElement =
               mTarget.mElement->GetPseudoElement(mTarget.mPseudoRequest)) {
         frame = pseudoElement->GetPrimaryFrame();
@@ -2040,6 +2040,17 @@ KeyframeEffect::MatchForCompositor KeyframeEffect::IsMatchForCompositor(
 
   return mAnimation->IsPlaying() ? KeyframeEffect::MatchForCompositor::Yes
                                  : KeyframeEffect::MatchForCompositor::IfNeeded;
+}
+
+double KeyframeEffect::AnimationsPlayBackRateMultiplier() const {
+  if (!mTarget) {
+    return 1.0;
+  }
+  if (nsPresContext* presContext =
+          nsContentUtils::GetContextForContent(mTarget.mElement)) {
+    return presContext->AnimationsPlayBackRateMultiplier();
+  }
+  return 1.0;
 }
 
 }  // namespace dom

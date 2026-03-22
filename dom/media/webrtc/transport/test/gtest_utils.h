@@ -36,8 +36,8 @@
  */
 
 // Original author: ekr@rtfm.com
-#ifndef gtest_utils__h__
-#define gtest_utils__h__
+#ifndef gtest_utils_h_
+#define gtest_utils_h_
 
 #include <iostream>
 

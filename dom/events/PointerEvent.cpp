@@ -30,10 +30,16 @@ PointerEvent::PointerEvent(EventTarget* aOwner, nsPresContext* aPresContext,
   WidgetMouseEvent* mouseEvent = mEvent->AsMouseEvent();
   if (aEvent) {
     mEventIsInternal = false;
-    mTiltX.emplace(aEvent->tiltX);
-    mTiltY.emplace(aEvent->tiltY);
-    // mAltitudeAngle and mAzimuthAngle should be computed when they are
-    // requested by JS.
+    if (aEvent->mTilt) {
+      mTiltX.emplace(aEvent->mTilt->mX);
+      mTiltY.emplace(aEvent->mTilt->mY);
+    }
+    // If mAltitudeAngle and mAzimuthAngle are Nothing(), they should be
+    // computed by mTiltX and mTiltY when they are requested by JS.
+    if (aEvent->mAngle) {
+      mAltitudeAngle.emplace(aEvent->mAngle->mAltitude);
+      mAzimuthAngle.emplace(aEvent->mAngle->mAzimuth);
+    }
   } else {
     mEventIsInternal = true;
     mEvent->mRefPoint = LayoutDeviceIntPoint(0, 0);
@@ -328,25 +334,33 @@ float PointerEvent::TangentialPressure(CallerType aCallerType) const {
 
 int32_t PointerEvent::TiltX(CallerType aCallerType) {
   if (ShouldResistFingerprinting(aCallerType)) {
-    return 0;
+    return WidgetPointerHelper::GetDefaultTiltX();
   }
   if (mTiltX.isSome()) {
     return *mTiltX;
   }
-  mTiltX.emplace(
-      WidgetPointerHelper::ComputeTiltX(*mAltitudeAngle, *mAzimuthAngle));
+  if (mAltitudeAngle.isSome() && mAzimuthAngle.isSome()) {
+    mTiltX.emplace(
+        WidgetPointerHelper::ComputeTiltX(*mAltitudeAngle, *mAzimuthAngle));
+    return *mTiltX;
+  }
+  mTiltX.emplace(WidgetPointerHelper::GetDefaultTiltX());
   return *mTiltX;
 }
 
 int32_t PointerEvent::TiltY(CallerType aCallerType) {
   if (ShouldResistFingerprinting(aCallerType)) {
-    return 0;
+    return WidgetPointerHelper::GetDefaultTiltY();
   }
   if (mTiltY.isSome()) {
     return *mTiltY;
   }
-  mTiltY.emplace(
-      WidgetPointerHelper::ComputeTiltY(*mAltitudeAngle, *mAzimuthAngle));
+  if (mAltitudeAngle.isSome() && mAzimuthAngle.isSome()) {
+    mTiltY.emplace(
+        WidgetPointerHelper::ComputeTiltY(*mAltitudeAngle, *mAzimuthAngle));
+    return *mTiltY;
+  }
+  mTiltY.emplace(WidgetPointerHelper::GetDefaultTiltY());
   return *mTiltY;
 }
 
@@ -363,8 +377,12 @@ double PointerEvent::AltitudeAngle(CallerType aCallerType) {
   if (mAltitudeAngle.isSome()) {
     return *mAltitudeAngle;
   }
-  mAltitudeAngle.emplace(
-      WidgetPointerHelper::ComputeAltitudeAngle(*mTiltX, *mTiltY));
+  if (mTiltX.isSome() && mTiltY.isSome()) {
+    mAltitudeAngle.emplace(
+        WidgetPointerHelper::ComputeAltitudeAngle(*mTiltX, *mTiltY));
+    return *mAltitudeAngle;
+  }
+  mAltitudeAngle.emplace(WidgetPointerHelper::GetDefaultAltitudeAngle());
   return *mAltitudeAngle;
 }
 
@@ -375,8 +393,12 @@ double PointerEvent::AzimuthAngle(CallerType aCallerType) {
   if (mAzimuthAngle.isSome()) {
     return *mAzimuthAngle;
   }
-  mAzimuthAngle.emplace(
-      WidgetPointerHelper::ComputeAzimuthAngle(*mTiltX, *mTiltY));
+  if (mTiltX.isSome() && mTiltY.isSome()) {
+    mAzimuthAngle.emplace(
+        WidgetPointerHelper::ComputeAzimuthAngle(*mTiltX, *mTiltY));
+    return *mAzimuthAngle;
+  }
+  mAzimuthAngle.emplace(WidgetPointerHelper::GetDefaultAzimuthAngle());
   return *mAzimuthAngle;
 }
 
@@ -409,12 +431,6 @@ int32_t PointerEvent::PersistentDeviceId(CallerType aCallerType) {
   }
 
   return mPersistentDeviceId.value();
-}
-
-bool PointerEvent::EnableGetCoalescedEvents(JSContext* aCx, JSObject* aGlobal) {
-  return !StaticPrefs::
-             dom_w3c_pointer_events_getcoalescedevents_only_in_securecontext() ||
-         nsContentUtils::IsSecureContextOrWebExtension(aCx, aGlobal);
 }
 
 void PointerEvent::GetCoalescedEvents(

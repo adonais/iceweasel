@@ -67,6 +67,12 @@ skip-if = [
 
 ["test_ext_contexts.js"]
 
+["test_ext_dnr_cache.js"]
+requesttimeoutfactor = 2 # Test has multiple long wait to absorb slow execution
+prefs = [
+  "dom.script_loader.experimental.navigation_cache.check_memory_pressure=false",
+]
+
 ["test_ext_experiments_glean.js"]
 
 ["test_ext_geckoProfiler_schema.js"]
@@ -141,6 +147,9 @@ skip-if = [
 ["test_ext_unknown_permissions.js"]
 
 ["test_ext_urlclassifier.js"]
+skip-if = [
+  "artifact", # Bug 2012613 - known limitation of FOG ping testing APIs
+]
 
 ["test_ext_webRequest_handlerBehaviorChanged.js"]
 

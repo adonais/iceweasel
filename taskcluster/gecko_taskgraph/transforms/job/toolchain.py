@@ -9,7 +9,7 @@ import os
 
 import taskgraph
 from mozshellutil import quote as shell_quote
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import LegacySchema, optionally_keyed_by, resolve_keyed_by
 from voluptuous import Any, Optional, Required
 
 from gecko_taskgraph import GECKO
@@ -23,7 +23,7 @@ from gecko_taskgraph.util.hash import hash_paths
 
 CACHE_TYPE = "toolchains.v3"
 
-toolchain_run_schema = Schema({
+toolchain_run_schema = LegacySchema({
     Required("using"): "toolchain-script",
     # The script (in taskcluster/scripts/misc) to run.
     # Python scripts are invoked with `mach python` so vendored libraries

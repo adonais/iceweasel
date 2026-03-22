@@ -38,6 +38,7 @@ export var PlacesDBUtils = {
       this.checkCoherence,
       this._refreshUI,
       this.incrementalVacuum,
+      this.optimize,
       this.removeOldCorruptDBs,
       this.deleteOrphanPreviews,
     ];
@@ -218,6 +219,30 @@ export var PlacesDBUtils = {
       throw new Error("Unable to delete orphan previews " + ex);
     }
     return logs;
+  },
+
+  /**
+   * Run PRAGMA optimize to update query planner statistics.
+   *
+   * @returns {Promise<string[]>}
+   *   Resolves with the logs when done.
+   */
+  async optimize() {
+    let logs = [];
+    return lazy.PlacesUtils.withConnectionWrapper(
+      "PlacesDBUtils: optimize",
+      async db => {
+        // 0x10012: run ANALYZE on tables that might benefit (0x02), with a row
+        // limit to keep runtime bounded (0x10), including tables not queried
+        // during this connection (0x10000).
+        await db.execute("PRAGMA optimize(0x10012)");
+        logs.push("The database has been optimized.");
+        return logs;
+      }
+    ).catch(ex => {
+      PlacesDBUtils.clearPendingTasks();
+      throw new Error("Unable to optimize the database " + ex);
+    });
   },
 
   async _getCoherenceStatements() {

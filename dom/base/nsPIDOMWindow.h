@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsPIDOMWindow_h__
-#define nsPIDOMWindow_h__
+#ifndef nsPIDOMWindow_h_
+#define nsPIDOMWindow_h_
 
 #include "Units.h"
 #include "js/TypeDecls.h"
@@ -1167,4 +1167,4 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 #include "nsPIDOMWindowInlines.h"
 
-#endif  // nsPIDOMWindow_h__
+#endif  // nsPIDOMWindow_h_

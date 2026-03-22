@@ -527,14 +527,6 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::GetElem:
       case JSOp::SetProp:
       case JSOp::StrictSetProp:
-      case JSOp::Call:
-      case JSOp::CallContent:
-      case JSOp::CallIgnoresRv:
-      case JSOp::CallIter:
-      case JSOp::CallContentIter:
-      case JSOp::New:
-      case JSOp::NewContent:
-      case JSOp::SuperCall:
       case JSOp::SpreadCall:
       case JSOp::SpreadNew:
       case JSOp::SpreadSuperCall:
@@ -604,7 +596,19 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::OptimizeGetIterator:
         MOZ_TRY(maybeInlineIC(opSnapshots, loc));
         break;
-
+      case JSOp::Call:
+      case JSOp::CallContent:
+      case JSOp::CallIgnoresRv:
+      case JSOp::CallIter:
+      case JSOp::CallContentIter:
+      case JSOp::New:
+      case JSOp::NewContent:
+      case JSOp::SuperCall:
+        if (MOZ_UNLIKELY(loc.getCallArgc() > JIT_ARGS_LENGTH_MAX)) {
+          return abort(AbortReason::Disable, "Call with too many arguments");
+        }
+        MOZ_TRY(maybeInlineIC(opSnapshots, loc));
+        break;
       case JSOp::Nop:
       case JSOp::NopDestructuring:
       case JSOp::NopIsAssignOp:
@@ -652,6 +656,9 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::Goto:
       case JSOp::DebugCheckSelfHosted:
       case JSOp::DynamicImport:
+#ifdef ENABLE_SOURCE_PHASE_IMPORTS
+      case JSOp::DynamicImportSource:
+#endif
       case JSOp::ToString:
       case JSOp::GlobalOrEvalDeclInstantiation:
       case JSOp::BindVar:
@@ -840,10 +847,10 @@ bool WarpOracle::addFuseDependency(RealmFuses::FuseIndex fuseIndex,
   // Register a compilation dependency for all invalidating fuses that are still
   // valid.
   switch (fuseIndex) {
-    case RealmFuses::FuseIndex::OptimizeGetIteratorFuse: {
+    case RealmFuses::FuseIndex::OptimizeGetIteratorBytecodeFuse: {
       using Dependency =
-          RealmFuseDependency<&RealmFuses::optimizeGetIteratorFuse,
-                              CompilationDependency::Type::GetIterator>;
+          RealmFuseDependency<&RealmFuses::optimizeGetIteratorBytecodeFuse,
+                              CompilationDependency::Type::GetIteratorBytecode>;
       return addIfStillValid(Dependency());
     }
     case RealmFuses::FuseIndex::OptimizeArraySpeciesFuse: {
@@ -1397,7 +1404,7 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
 
   // Read barrier for weak stub data copied into the snapshot.
   Zone* zone = jitCode->zone();
-  if (zone->needsIncrementalBarrier()) {
+  if (zone->needsMarkingBarrier()) {
     TraceWeakCacheIRStub(zone->barrierTracer(), stub, stub->stubInfo());
   }
 

@@ -4,8 +4,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef nsDocShell_h__
-#define nsDocShell_h__
+#ifndef nsDocShell_h_
+#define nsDocShell_h_
 
 #include "Units.h"
 #include "mozilla/Encoding.h"
@@ -190,8 +190,8 @@ class nsDocShell final : public nsDocLoader,
       mozilla::dom::BrowsingContext* aBrowsingContext,
       uint64_t aContentWindowID = 0);
 
-  bool Initialize(nsIOpenWindowInfo* aOpenWindowInfo,
-                  mozilla::dom::WindowGlobalChild* aWindowActor);
+  nsresult Initialize(nsIOpenWindowInfo* aOpenWindowInfo,
+                      mozilla::dom::WindowGlobalChild* aWindowActor);
 
   nsresult InitWindow(nsIWidget* aParentWidget, int32_t aX, int32_t aY,
                       int32_t aWidth, int32_t aHeight,
@@ -1489,4 +1489,4 @@ inline nsISupports* ToSupports(nsDocShell* aDocShell) {
   return static_cast<nsIDocumentLoader*>(aDocShell);
 }
 
-#endif /* nsDocShell_h__ */
+#endif /* nsDocShell_h_ */

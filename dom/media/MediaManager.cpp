@@ -4540,30 +4540,30 @@ already_AddRefed<DeviceListener> DeviceListener::Clone() const {
         return GenericPromise::CreateAndReject(
             rv, "DeviceListener::Clone failure #2");
       })
-      ->Then(GetMainThreadSerialEventTarget(), __func__,
-             [listener, device,
-              trackSource](GenericPromise::ResolveOrRejectValue&& aValue) {
-               if (aValue.IsReject()) {
-                 // Allocating/initializing failed. Stopping the device listener
-                 // will destroy the MediaStreamTrackSource's MediaTrack, which
-                 // will make the MediaStreamTrack's mTrack MediaTrack auto-end
-                 // due to lack of inputs. This makes the MediaStreamTrack's
-                 // readyState transition to "ended" as expected.
-                 LOG("Allocating clone device %p failed. Stopping.",
-                     device.get());
-                 listener->Stop();
-                 return;
-               }
-               listener->mDeviceState->mAllocated = true;
-               if (listener->mDeviceState->mStopped) {
-                 MediaManager::Dispatch(NS_NewRunnableFunction(
-                     "DeviceListener::Clone::Stop",
-                     [device = listener->mDeviceState->mDevice]() {
-                       device->Stop();
-                       device->Deallocate();
-                     }));
-               }
-             });
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [listener, device,
+           trackSource](GenericPromise::ResolveOrRejectValue&& aValue) {
+            if (aValue.IsReject()) {
+              // Allocating/initializing failed. Stopping the device listener
+              // will destroy the MediaStreamTrackSource's MediaTrack, which
+              // will make the MediaStreamTrack's mTrack MediaTrack auto-end
+              // due to lack of inputs. This makes the MediaStreamTrack's
+              // readyState transition to "ended" as expected.
+              LOG("Allocating clone device %p failed. Stopping.", device.get());
+              listener->Stop();
+              return;
+            }
+            listener->mDeviceState->mAllocated = true;
+            if (listener->mDeviceState->mStopped && !sHasMainThreadShutdown) {
+              MediaManager::Dispatch(NS_NewRunnableFunction(
+                  "DeviceListener::Clone::Stop",
+                  [device = listener->mDeviceState->mDevice]() {
+                    device->Stop();
+                    device->Deallocate();
+                  }));
+            }
+          });
 
   return listener.forget();
 }

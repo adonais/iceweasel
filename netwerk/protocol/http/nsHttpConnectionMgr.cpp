@@ -75,8 +75,10 @@ struct UrlMarker {
     using MS = MarkerSchema;
     MS schema(MS::Location::MarkerChart, MS::Location::MarkerTable);
     schema.SetTableLabel("{marker.data.url}");
-    schema.AddKeyFormat("url", MS::Format::Url, MS::PayloadFlags::Searchable);
+    schema.AddKeyFormat("url", MS::Format::Url);
     schema.AddKeyLabelFormat("duration", "Duration", MS::Format::Duration);
+    // Bug 1618687 - Use channelId to segment "Waiting for Socket Thread".
+    schema.AddKeyFormat("channelId", MS::Format::Integer);
     return schema;
   }
 };
@@ -195,15 +197,19 @@ nsresult nsHttpConnectionMgr::Shutdown() {
   return NS_OK;
 }
 
-class ConnEvent : public Runnable {
+class ConnEvent : public Runnable, public nsIRunnablePriority {
  public:
   ConnEvent(nsHttpConnectionMgr* mgr, nsConnEventHandler handler,
-            int32_t iparam, ARefBase* vparam)
+            int32_t iparam, ARefBase* vparam, uint32_t priority)
       : Runnable("net::ConnEvent"),
         mMgr(mgr),
         mHandler(handler),
         mIParam(iparam),
-        mVParam(vparam) {}
+        mVParam(vparam),
+        mPriority(priority) {}
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIRUNNABLEPRIORITY
 
   NS_IMETHOD Run() override {
     (mMgr->*mHandler)(mIParam, mVParam);
@@ -217,10 +223,20 @@ class ConnEvent : public Runnable {
   nsConnEventHandler mHandler;
   int32_t mIParam;
   RefPtr<ARefBase> mVParam;
+  uint32_t mPriority;
 };
 
+NS_IMPL_ISUPPORTS_INHERITED(ConnEvent, Runnable, nsIRunnablePriority)
+
+NS_IMETHODIMP
+ConnEvent::GetPriority(uint32_t* aPriority) {
+  *aPriority = mPriority;
+  return NS_OK;
+}
+
 nsresult nsHttpConnectionMgr::PostEvent(nsConnEventHandler handler,
-                                        int32_t iparam, ARefBase* vparam) {
+                                        int32_t iparam, ARefBase* vparam,
+                                        uint32_t priority) {
   (void)EnsureSocketThreadTarget();
 
   nsCOMPtr<nsIEventTarget> target;
@@ -234,7 +250,8 @@ nsresult nsHttpConnectionMgr::PostEvent(nsConnEventHandler handler,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  nsCOMPtr<nsIRunnable> event = new ConnEvent(this, handler, iparam, vparam);
+  nsCOMPtr<nsIRunnable> event =
+      new ConnEvent(this, handler, iparam, vparam, priority);
   return target->Dispatch(event, NS_DISPATCH_NORMAL);
 }
 
@@ -335,8 +352,13 @@ nsresult nsHttpConnectionMgr::AddTransaction(HttpTransactionShell* trans,
   LOG(("nsHttpConnectionMgr::AddTransaction [trans=%p %d]\n", trans, priority));
   // Make sure a transaction is not in a pending queue.
   CheckTransInPendingQueue(trans->AsHttpTransaction());
+  uint32_t runnablePriority = nsIRunnablePriority::PRIORITY_NORMAL;
+  nsHttpTransaction* httpTrans = trans->AsHttpTransaction();
+  if (httpTrans && httpTrans->IsTRRTransaction()) {
+    runnablePriority = nsIRunnablePriority::PRIORITY_MEDIUMHIGH;
+  }
   return PostEvent(&nsHttpConnectionMgr::OnMsgNewTransaction, priority,
-                   trans->AsHttpTransaction());
+                   trans->AsHttpTransaction(), runnablePriority);
 }
 
 class NewTransactionData : public ARefBase {
@@ -370,16 +392,26 @@ nsresult nsHttpConnectionMgr::AddTransactionWithStickyConn(
   RefPtr<NewTransactionData> data =
       new NewTransactionData(trans->AsHttpTransaction(), priority,
                              transWithStickyConn->AsHttpTransaction());
+  uint32_t runnablePriority = nsIRunnablePriority::PRIORITY_NORMAL;
+  nsHttpTransaction* httpTrans = trans->AsHttpTransaction();
+  if (httpTrans && httpTrans->IsTRRTransaction()) {
+    runnablePriority = nsIRunnablePriority::PRIORITY_MEDIUMHIGH;
+  }
   return PostEvent(&nsHttpConnectionMgr::OnMsgNewTransactionWithStickyConn, 0,
-                   data);
+                   data, runnablePriority);
 }
 
 nsresult nsHttpConnectionMgr::RescheduleTransaction(HttpTransactionShell* trans,
                                                     int32_t priority) {
   LOG(("nsHttpConnectionMgr::RescheduleTransaction [trans=%p %d]\n", trans,
        priority));
+  uint32_t runnablePriority = nsIRunnablePriority::PRIORITY_NORMAL;
+  nsHttpTransaction* httpTrans = trans->AsHttpTransaction();
+  if (httpTrans && httpTrans->IsTRRTransaction()) {
+    runnablePriority = nsIRunnablePriority::PRIORITY_MEDIUMHIGH;
+  }
   return PostEvent(&nsHttpConnectionMgr::OnMsgReschedTransaction, priority,
-                   trans->AsHttpTransaction());
+                   trans->AsHttpTransaction(), runnablePriority);
 }
 
 void nsHttpConnectionMgr::UpdateClassOfServiceOnTransaction(
@@ -455,13 +487,14 @@ nsresult nsHttpConnectionMgr::DoShiftReloadConnectionCleanupWithConnInfo(
 }
 
 nsresult nsHttpConnectionMgr::DoSingleConnectionCleanup(
-    nsHttpConnectionInfo* aCI) {
+    nsHttpConnectionInfo* aCI, uint32_t aPriority) {
   if (!aCI) {
     return NS_ERROR_INVALID_ARG;
   }
 
   RefPtr<nsHttpConnectionInfo> ci = aCI->Clone();
-  return PostEvent(&nsHttpConnectionMgr::OnMsgDoSingleConnectionCleanup, 0, ci);
+  return PostEvent(&nsHttpConnectionMgr::OnMsgDoSingleConnectionCleanup, 0, ci,
+                   aPriority);
 }
 
 class SpeculativeConnectArgs : public ARefBase {
@@ -656,7 +689,7 @@ void nsHttpConnectionMgr::OnMsgClearConnectionHistory(int32_t,
     RefPtr<ConnectionEntry> ent = iter.Data();
     if (ent->IdleConnectionsLength() == 0 && ent->ActiveConnsLength() == 0 &&
         ent->DnsAndConnectSocketsLength() == 0 &&
-        ent->UrgentStartQueueLength() == 0 && ent->PendingQueueLength() == 0 &&
+        ent->UrgentStartQueueIsEmpty() && ent->PendingQueueIsEmpty() &&
         !ent->mDoNotDestroy) {
       iter.Remove();
     }
@@ -1161,14 +1194,14 @@ bool nsHttpConnectionMgr::ProcessPendingQForEntry(ConnectionEntry* ent,
     ent->LogConnections();
   }
 
-  if (!ent->PendingQueueLength() && !ent->UrgentStartQueueLength()) {
+  if (ent->PendingQueueIsEmpty() && ent->UrgentStartQueueIsEmpty()) {
     return false;
   }
   ProcessSpdyPendingQ(ent);
 
   bool dispatchedSuccessfully = false;
 
-  if (ent->UrgentStartQueueLength()) {
+  if (!ent->UrgentStartQueueIsEmpty()) {
     nsTArray<RefPtr<PendingTransactionInfo>> pendingQ;
     ent->AppendPendingUrgentStartQ(pendingQ);
     dispatchedSuccessfully = DispatchPendingQ(pendingQ, ent, considerAll);
@@ -2205,9 +2238,17 @@ void nsHttpConnectionMgr::OnMsgShutdown(int32_t, ARefBase* param) {
 
   mCoalescingHash.Clear();
 
+  uint32_t priority = nsIRunnablePriority::PRIORITY_NORMAL;
+  if (StaticPrefs::network_trr_high_priority_events()) {
+    // This doesn't technically need to be under the TRR pref
+    // but it's safer to be under some pref in case the reordering
+    // causes any regressions. Can be removed after a few months on release.
+    priority = nsIRunnablePriority::PRIORITY_MEDIUMHIGH;
+  }
+
   // signal shutdown complete
-  nsCOMPtr<nsIRunnable> runnable =
-      new ConnEvent(this, &nsHttpConnectionMgr::OnMsgShutdownConfirm, 0, param);
+  nsCOMPtr<nsIRunnable> runnable = new ConnEvent(
+      this, &nsHttpConnectionMgr::OnMsgShutdownConfirm, 0, param, priority);
   NS_DispatchToMainThread(runnable);
 }
 
@@ -2437,9 +2478,8 @@ void nsHttpConnectionMgr::OnMsgPruneDeadConnections(int32_t, ARefBase*) {
       if (mCT.Count() > 125 && ent->IdleConnectionsLength() == 0 &&
           ent->ActiveConnsLength() == 0 &&
           ent->DnsAndConnectSocketsLength() == 0 &&
-          ent->PendingQueueLength() == 0 &&
-          ent->UrgentStartQueueLength() == 0 && !ent->mDoNotDestroy &&
-          (!ent->mUsingSpdy || mCT.Count() > 300)) {
+          ent->PendingQueueIsEmpty() && ent->UrgentStartQueueIsEmpty() &&
+          !ent->mDoNotDestroy && (!ent->mUsingSpdy || mCT.Count() > 300)) {
         LOG(("    removing empty connection entry\n"));
         iter.Remove();
         continue;
@@ -3085,7 +3125,7 @@ bool nsHttpConnectionMgr::ShouldThrottle(nsHttpTransaction* aTrans) {
   bool forActiveTab = tabId == mCurrentBrowserId;
   bool throttled = aTrans->EligibleForThrottling();
 
-  bool stop = [=]() {
+  bool stop = [&]() {
     if (mActiveTabTransactionsExist) {
       if (!tabId) {
         // Chrome initiated and unidentified transactions just respect

@@ -27,7 +27,6 @@ import org.mozilla.fenix.GleanMetrics.RecentTabs
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.helpers.FenixGleanTestRule
-import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
@@ -39,7 +38,6 @@ class RecentTabControllerTest {
     private val navController: NavController = mockk(relaxed = true)
     private val selectTabUseCase: TabsUseCases = mockk(relaxed = true)
     private val appStore: AppStore = mockk()
-    private val settings: Settings = mockk(relaxed = true)
 
     private lateinit var store: BrowserStore
 
@@ -55,7 +53,6 @@ class RecentTabControllerTest {
                 selectTabUseCase = selectTabUseCase.selectTab,
                 navController = navController,
                 appStore = appStore,
-                settings = settings,
             ),
         )
     }
@@ -118,7 +115,7 @@ class RecentTabControllerTest {
 
         verify {
             navController.navigate(
-                match<NavDirections> { it.actionId == R.id.action_global_tabsTrayFragment },
+                match<NavDirections> { it.actionId == R.id.action_global_tabManagementFragment },
             )
         }
 
@@ -133,7 +130,7 @@ class RecentTabControllerTest {
 
         verify {
             navController.navigate(
-                match<NavDirections> { it.actionId == R.id.action_global_tabsTrayFragment },
+                match<NavDirections> { it.actionId == R.id.action_global_tabManagementFragment },
             )
         }
 

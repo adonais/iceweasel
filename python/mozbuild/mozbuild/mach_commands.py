@@ -44,6 +44,7 @@ from mozbuild.util import (
     MOZBUILD_METRICS_PATH,
     ForwardingArgumentParser,
     ensure_l10n_central,
+    get_latest_file,
 )
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -639,8 +640,28 @@ def show_log(command_context, log_file=None):
     (https://man7.org/linux/man-pages/man1/less.1.html)
     """
     if not log_file:
-        path = command_context._get_state_filename("last_log.json")
-        log_file = open(path, "rb")
+        latest_file = Path(command_context._get_state_filename("latest-command"))
+        if not latest_file.exists():
+            command_context.log(
+                logging.WARNING,
+                "show_log",
+                {},
+                "Could not locate latest log file. You may need to run a command first.",
+            )
+            return
+        command_name = latest_file.read_text().strip()
+        subdir = f"logs/{command_name}"
+        log_dir = Path(command_context._get_state_filename("", subdir=subdir))
+        log_path = get_latest_file(log_dir, command_name)
+        if not log_path:
+            command_context.log(
+                logging.WARNING,
+                "show_log",
+                {},
+                f"No log files found for latest '{command_name}' command. They may have been deleted.",
+            )
+            return
+        log_file = log_path.open("rb")
 
     if os.isatty(sys.stdout.fileno()):
         env = dict(os.environ)
@@ -711,7 +732,7 @@ def show_log(command_context, log_file=None):
 def handle_log_file(command_context, log_file):
     start_time = 0
     for line in log_file:
-        created, action, params = json.loads(line)
+        created, action, params, msg = json.loads(line)
         if not start_time:
             start_time = created
             command_context.log_manager.terminal_handler.formatter.start_time = created
@@ -720,7 +741,7 @@ def handle_log_file(command_context, log_file):
                 "created": created,
                 "name": command_context._logger.name,
                 "levelno": logging.INFO,
-                "msg": "{line}",
+                "msg": msg,
                 "params": params,
                 "action": action,
             })
@@ -731,7 +752,7 @@ def handle_log_file(command_context, log_file):
 
 
 def database_path(command_context):
-    return command_context._get_state_filename("warnings.json")
+    return get_latest_file(command_context._build_log_dir(), "warnings")
 
 
 def get_warnings_database(command_context):
@@ -741,8 +762,8 @@ def get_warnings_database(command_context):
 
     database = WarningsDatabase()
 
-    if os.path.exists(path):
-        database.load_from_file(path)
+    if path and path.exists():
+        database.load_from_file(str(path))
 
     return database
 
@@ -1373,6 +1394,33 @@ def android_gtest(
     tester.cleanup()
 
     return exit_code
+
+
+@Command(
+    "source-package",
+    category="misc",
+    description="Package source for distribution.",
+)
+def source_package(command_context, verbose=False):
+    if conditions.is_jsshell(command_context):
+        js_src = os.path.join(command_context.topsrcdir, "js", "src")
+        command_context.run_process(
+            [sys.executable, os.path.join(js_src, "make-source-package.py")],
+            cwd=js_src,
+            append_env={
+                "DIST": command_context.substs["DIST"],
+                "MOZJS_MAJOR_VERSION": command_context.substs["MOZJS_MAJOR_VERSION"],
+                "MOZJS_MINOR_VERSION": command_context.substs["MOZJS_MINOR_VERSION"],
+                "MOZJS_PATCH_VERSION": command_context.substs["MOZJS_PATCH_VERSION"],
+                "MOZJS_ALPHA": command_context.substs["MOZJS_ALPHA"],
+            },
+            ensure_exit_code=0,
+        )
+    else:
+        command_context._run_make(
+            directory=".", target="source-package", ensure_exit_code=True
+        )
+    command_context.notify("Packaging complete")
 
 
 @Command(

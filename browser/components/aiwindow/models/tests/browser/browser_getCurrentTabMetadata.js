@@ -147,18 +147,12 @@ add_task(async function test_getCurrentTabMetadata_with_cached_data() {
     PageDataService.pageDataDiscovered({
       url,
       date: Date.now(),
-      description: "Test cached description",
     });
 
     const metadata = await getCurrentTabMetadata();
 
     is(metadata.url, url, "Should return the correct URL");
     is(metadata.title, "Cached Test Page", "Should return the correct title");
-    is(
-      metadata.description,
-      "Test cached description",
-      "Should return cached description"
-    );
 
     // Unlock the entry in cleanup
     PageDataService.unlockEntry(browser, url);

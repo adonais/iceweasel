@@ -7,6 +7,7 @@ import {
   OptInFeature,
   ParentAutocompleteOption,
 } from "resource://gre/modules/LoginHelper.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { TelemetryUtils } from "resource://gre/modules/TelemetryUtils.sys.mjs";
 import { showConfirmation } from "resource://gre/modules/FillHelpers.sys.mjs";
 
@@ -986,18 +987,28 @@ class RelayEnabled {
   async *autocompleteItemsAsync(origin, scenarioName, hasInput) {
     const originOnDenyList = await shouldNotShowRelay(origin);
     if (!hasInput && isSignup(scenarioName) && !originOnDenyList) {
-      const hasFxA = await hasFirefoxAccountAsync();
-      const [title] = await formatMessages("firefox-relay-use-mask-title-1");
-
-      yield new ParentAutocompleteOption(
-        "chrome://browser/content/asrouter/assets/glyph-mail-mask-16.svg",
-        title,
-        "", // no subtitle when enabled
-        hasFxA
-          ? "PasswordManager:generateRelayUsername"
-          : "PasswordManager:offerRelayIntegration",
-        { telemetry: { flowId: gFlowId } }
-      );
+      if (AppConstants.MOZ_GECKOVIEW) {
+        // GeckoView manages FxA and rendering details.
+        yield new ParentAutocompleteOption(
+          null,
+          "",
+          "",
+          "PasswordManager:firefoxRelay",
+          { telemetry: { flowId: gFlowId } }
+        );
+      } else {
+        const hasFxA = await hasFirefoxAccountAsync();
+        const [title] = await formatMessages("firefox-relay-use-mask-title-1");
+        yield new ParentAutocompleteOption(
+          "chrome://browser/content/asrouter/assets/glyph-mail-mask-16.svg",
+          title,
+          "", // no subtitle when enabled
+          hasFxA
+            ? "PasswordManager:generateRelayUsername"
+            : "PasswordManager:offerRelayIntegration",
+          { telemetry: { flowId: gFlowId } }
+        );
+      }
       Glean.relayIntegration.shownFillUsername.record({
         value: gFlowId,
         error_code: 0,

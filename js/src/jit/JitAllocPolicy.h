@@ -74,7 +74,7 @@ class TempAllocator {
   }
 };
 
-class JitAllocPolicy {
+class JitAllocPolicy : public AllocPolicyBase {
   TempAllocator& alloc_;
 
  public:
@@ -124,10 +124,6 @@ class JitAllocPolicy {
   }
   template <typename T>
   void free_(T* p, size_t numElems = 0) {}
-  void reportAllocOverflow() const {}
-  [[nodiscard]] bool checkSimulatedOOM() const {
-    return !js::oom::ShouldFailWithOOM();
-  }
 };
 
 struct TempObject {

@@ -27,6 +27,7 @@
 #include "mozilla/a11y/PDocAccessible.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "OuterDocAccessible.h"
+#include "nsIAccessibleAnnouncementEvent.h"
 #include "nsChildView.h"
 #include "TextLeafRange.h"
 #include "xpcAccessibleMacInterface.h"
@@ -314,7 +315,7 @@ using namespace mozilla::a11y;
     return macRole;
 
   switch (mRole) {
-#include "RoleMap.h"
+#include "RoleMap.inc"
     default:
       MOZ_ASSERT_UNREACHABLE("Unknown role.");
       return NSAccessibilityUnknownRole;
@@ -390,7 +391,7 @@ using namespace mozilla::a11y;
     }
 
   switch (mRole) {
-#include "RoleMap.h"
+#include "RoleMap.inc"
   }
 
   // These are special. They map to roles::NOTHING
@@ -1157,6 +1158,7 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 }
 
 - (void)maybePostValidationErrorChanged {
+  CacheDomainActivationBlocker cacheBlocker;
   NSArray* relations =
       [self getRelationsByType:(mozilla::a11y::RelationType::ERRORMSG_FOR)];
   if ([relations count] > 0) {
@@ -1170,6 +1172,19 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
       }
     }
   }
+}
+
+- (void)handleAnnouncementEvent:(NSString*)announcement
+                       priority:(uint16_t)priority {
+  NSDictionary* info = @{
+    NSAccessibilityAnnouncementKey : announcement,
+    NSAccessibilityPriorityKey :
+                priority == nsIAccessibleAnnouncementEvent::ASSERTIVE
+        ? @(NSAccessibilityPriorityHigh)
+        : @(NSAccessibilityPriorityMedium)
+  };
+  [self moxPostNotification:NSAccessibilityAnnouncementRequestedNotification
+               withUserInfo:info];
 }
 
 - (void)expire {

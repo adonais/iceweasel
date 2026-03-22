@@ -8,8 +8,7 @@
 
 #include <new>
 
-#include "jsnum.h"
-
+#include "builtin/Number.h"
 #include "frontend/CompilationStencil.h"  // ScopeStencilRef, CompilationStencil, CompilationState, CompilationAtomCache
 #include "frontend/ParserAtom.h"  // frontend::ParserAtomsTable, frontend::ParserAtom
 #include "frontend/ScriptIndex.h"  // ScriptIndex
@@ -21,6 +20,7 @@
 #include "wasm/WasmDebug.h"
 #include "wasm/WasmInstance.h"
 
+#include "gc/Allocator-inl.h"
 #include "gc/BufferAllocator-inl.h"
 #include "gc/GCContext-inl.h"
 #include "gc/ObjectKind-inl.h"
@@ -250,7 +250,7 @@ static typename ConcreteScope::RuntimeData* NewEmptyScopeData(
   using Data = typename ConcreteScope::RuntimeData;
 
   size_t dataSize = SizeOfScopeData<Data>(length);
-  Data* data = gc::NewBuffer<Data>(cx->zone(), dataSize, false, length);
+  Data* data = gc::NewSizedBuffer<Data>(cx->zone(), dataSize, false, length);
   if (!data) {
     ReportOutOfMemory(cx);
     return nullptr;

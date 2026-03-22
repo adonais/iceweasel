@@ -249,8 +249,8 @@ add_setup(async function () {
     },
     { setAsDefault: true }
   );
-  let engine = Services.search.getEngineByName(TEST_DEFAULT_ENGINE_NAME);
-  await Services.search.moveEngine(engine, 0);
+  let engine = SearchService.getEngineByName(TEST_DEFAULT_ENGINE_NAME);
+  await SearchService.moveEngine(engine, 0);
 
   for (let i = 0; i < 5; i++) {
     await PlacesTestUtils.addVisits(HISTORY_URL);

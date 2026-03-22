@@ -24,11 +24,11 @@ const lazy = XPCOMUtils.declareLazy({
  * Features that support on-device AI models.
  */
 const OnDeviceModelFeatures = Object.freeze({
-  TabGroups: "tabgroups",
-  KeyPoints: "keypoints",
-  PdfAltText: "pdfalttext",
+  TabGroups: "smartTabGroups",
+  KeyPoints: "linkPreviewKeyPoints",
+  PdfAltText: "pdfjsAltText",
   Translations: "translations",
-  SidebarChatbot: "sidebarchatbot",
+  SidebarChatbot: "sidebarChatbot",
 });
 
 /** @type {Record<OnDeviceModelFeaturesEnum, string[]>} */

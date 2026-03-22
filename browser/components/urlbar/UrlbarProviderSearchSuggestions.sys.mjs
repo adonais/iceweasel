@@ -32,6 +32,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 /**
+ * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
  * @import {SearchSuggestionController} from "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs"
  */
 
@@ -341,7 +342,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
         },
         {
           name: RESULT_MENU_COMMANDS.TRENDING_HELP,
-          l10n: { id: "urlbar-result-menu-trending-why" },
+          l10n: { id: "urlbar-result-menu-learn-more" },
         },
       ]);
     }
@@ -421,6 +422,11 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
       }
     }
 
+    // Show local results of all engines in search bar.
+    let restrictToEngine =
+      queryContext.sapName != "searchbar" &&
+      this._isTokenOrRestrictionPresent(queryContext);
+
     // See `SearchSuggestionsController.fetch` documentation for a description
     // of `fetchData`.
     let fetchData = await this.#suggestionsController.fetch({
@@ -428,7 +434,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
       inPrivateBrowsing: queryContext.isPrivate,
       engine,
       userContextId: queryContext.userContextId,
-      restrictToEngine: this._isTokenOrRestrictionPresent(queryContext),
+      restrictToEngine,
       dedupeRemoteAndLocal: false,
       fetchTrending: this.#shouldFetchTrending(queryContext),
       maxLocalResults,
@@ -544,7 +550,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
   /**
    * @typedef {object} EngineAlias
    *
-   * @property {nsISearchEngine} engine
+   * @property {SearchEngine} engine
    *   The search engine
    * @property {string} alias
    *   The search engine's alias

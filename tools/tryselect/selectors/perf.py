@@ -1217,6 +1217,7 @@ class PerfParser(CompareParser):
         comparator_args,
         alert_summary_id,
         push_to_vcs,
+        metrics,
     ):
         """Perf-specific push to try method.
 
@@ -1297,6 +1298,7 @@ class PerfParser(CompareParser):
                     lando_commit_id = push_to_try(
                         "perf-again",
                         f"{base_commit_message}",
+                        metrics,
                         try_task_config=generate_try_task_config(
                             "fuzzy", selected_tasks, params=base_try_config_params
                         ),
@@ -1315,6 +1317,7 @@ class PerfParser(CompareParser):
                         push_to_try(
                             "perf-again",
                             f"{base_commit_message}",
+                            metrics,
                             try_task_config=generate_try_task_config(
                                 "fuzzy", selected_tasks, params=base_try_config_params
                             ),
@@ -1346,6 +1349,7 @@ class PerfParser(CompareParser):
                 lando_commit_id = push_to_try(
                     "perf",
                     f"{new_commit_message}",
+                    metrics,
                     # XXX Figure out if changing `fuzzy` to `perf` will break something
                     try_task_config=generate_try_task_config(
                         "fuzzy", selected_tasks, params=try_config_params
@@ -1364,6 +1368,7 @@ class PerfParser(CompareParser):
                     push_to_try(
                         "perf",
                         f"{new_commit_message}",
+                        metrics,
                         # XXX Figure out if changing `fuzzy` to `perf` will break something
                         try_task_config=generate_try_task_config(
                             "fuzzy", selected_tasks, params=try_config_params
@@ -1493,6 +1498,7 @@ class PerfParser(CompareParser):
             kwargs.get("comparator_args", []),
             alert_summary_id,
             push_to_vcs,
+            kwargs.get("metrics"),
         )
 
     def run_category_checks():

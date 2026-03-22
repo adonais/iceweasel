@@ -47,7 +47,7 @@ GpuProcessD3D11TextureMap::~GpuProcessD3D11TextureMap() {}
 void GpuProcessD3D11TextureMap::Register(
     GpuProcessTextureId aTextureId, ID3D11Texture2D* aTexture,
     uint32_t aArrayIndex, const gfx::IntSize& aSize,
-    RefPtr<ZeroCopyUsageInfo> aUsageInfo,
+    ZeroCopyUsageInfo* aUsageInfo,
     RefPtr<gfx::FileHandleWrapper> aSharedHandle) {
   MonitorAutoLock lock(mMonitor);
   Register(lock, aTextureId, aTexture, aArrayIndex, aSize, aUsageInfo,
@@ -56,7 +56,7 @@ void GpuProcessD3D11TextureMap::Register(
 void GpuProcessD3D11TextureMap::Register(
     const MonitorAutoLock& aProofOfLock, GpuProcessTextureId aTextureId,
     ID3D11Texture2D* aTexture, uint32_t aArrayIndex, const gfx::IntSize& aSize,
-    RefPtr<ZeroCopyUsageInfo> aUsageInfo,
+    ZeroCopyUsageInfo* aUsageInfo,
     RefPtr<gfx::FileHandleWrapper> aSharedHandle) {
   MOZ_RELEASE_ASSERT(aTexture);
 
@@ -412,8 +412,7 @@ RefPtr<ID3D11Texture2D> GpuProcessD3D11TextureMap::UpdateTextureData(
 
 GpuProcessD3D11TextureMap::TextureHolder::TextureHolder(
     ID3D11Texture2D* aTexture, uint32_t aArrayIndex, const gfx::IntSize& aSize,
-    RefPtr<ZeroCopyUsageInfo> aUsageInfo,
-    RefPtr<gfx::FileHandleWrapper> aSharedHandle)
+    ZeroCopyUsageInfo* aUsageInfo, RefPtr<gfx::FileHandleWrapper> aSharedHandle)
     : mTexture(aTexture),
       mArrayIndex(aArrayIndex),
       mSize(aSize),

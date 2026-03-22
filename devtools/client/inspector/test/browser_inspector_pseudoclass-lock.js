@@ -24,7 +24,7 @@ add_task(async function () {
     await openInspectorForURL(TEST_URL);
 
   info("Selecting the ruleview sidebar");
-  inspector.sidebar.select("ruleview");
+  await inspector.sidebar.select("ruleview");
 
   const view = inspector.getPanel("ruleview").view;
 

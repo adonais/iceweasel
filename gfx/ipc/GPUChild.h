@@ -97,6 +97,7 @@ class GPUChild final : public mozilla::ipc::CrashReporterHelper<GPUChild>,
   mozilla::ipc::IPCResult RecvUpdateMediaCodecsSupported(
       const media::MediaCodecsSupported& aSupported);
   mozilla::ipc::IPCResult RecvFOGData(ByteBuf&& aBuf);
+  mozilla::ipc::IPCResult RecvReportGLStrings(GfxInfoGLStrings&& aStrings);
 
   bool SendRequestMemoryReport(const uint32_t& aGeneration,
                                const bool& aAnonymize,

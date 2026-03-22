@@ -1100,9 +1100,10 @@ TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
     // that code into TextLeafPoint, but existing code depends on it being based
     // on HyperTextAccessible (including caret events).
     int32_t htOffset = -1;
-    // Try the cached caret.
+    // Try the cached caret. It is only useful here if it belongs to the same
+    // document.
     HyperTextAccessible* ht = SelectionMgr()->AccessibleWithCaret(&htOffset);
-    if (ht) {
+    if (ht && ht->Document() == localAcc->Document()) {
       MOZ_ASSERT(htOffset != -1);
     } else {
       // There is no cached caret, but there might still be a caret; see bug
@@ -2638,6 +2639,16 @@ bool TextLeafRange::WalkLineRects(LineRectCallback aCallback) const {
     currPoint = nextLineStartPoint;
   }
   return true;
+}
+
+void TextLeafRange::GetFlattenedText(nsAString& aText) const {
+  for (TextLeafRange segment : *this) {
+    if (segment.mStart.mAcc->IsText()) {
+      segment.mStart.mAcc->AppendTextTo(
+          aText, segment.mStart.mOffset,
+          segment.mEnd.mOffset - segment.mStart.mOffset);
+    }
+  }
 }
 
 TextLeafRange::Iterator TextLeafRange::Iterator::BeginIterator(

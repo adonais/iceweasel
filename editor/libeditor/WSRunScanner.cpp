@@ -36,6 +36,7 @@ void WSScanResult::AssertIfInvalidData(const WSRunScanner& aScanner) const {
              mReason == WSType::CollapsibleWhiteSpaces ||
              mReason == WSType::BRElement ||
              mReason == WSType::PreformattedLineBreak ||
+             mReason == WSType::EmptyInlineContainerElement ||
              mReason == WSType::SpecialContent ||
              mReason == WSType::CurrentBlockBoundary ||
              mReason == WSType::OtherBlockBoundary ||
@@ -72,15 +73,29 @@ void WSScanResult::AssertIfInvalidData(const WSRunScanner& aScanner) const {
                 mContent->IsHTMLElement(nsGkAtoms::br));
   MOZ_ASSERT_IF(mReason == WSType::PreformattedLineBreak,
                 EditorUtils::IsNewLinePreformatted(*mContent));
+  auto MaybeNonVoidEmptyInlineContainerElement = [&]() {
+    return HTMLEditUtils::IsInlineContent(
+               *mContent,
+               aScanner.ReferredHTMLDefaultStyle()
+                   ? BlockInlineCheck::UseHTMLDefaultStyle
+                   : BlockInlineCheck::UseComputedDisplayOutsideStyle) &&
+           HTMLEditUtils::IsContainerNode(*mContent) &&
+           !HTMLEditUtils::IsReplacedElement(*mContent->AsElement());
+  };
+  MOZ_ASSERT_IF(mReason == WSType::EmptyInlineContainerElement,
+                MaybeNonVoidEmptyInlineContainerElement());
   MOZ_ASSERT_IF(
       mReason == WSType::SpecialContent,
-      (mContent->IsText() && !mContent->IsEditable()) ||
-          (!mContent->IsHTMLElement(nsGkAtoms::br) &&
+      (mContent->IsComment() || mContent->IsProcessingInstruction()) ||
+          (mContent->IsText() && !mContent->IsEditable()) ||
+          (mContent->IsElement() && !mContent->IsHTMLElement(nsGkAtoms::br) &&
            !HTMLEditUtils::IsBlockElement(
                *mContent,
                aScanner.ReferredHTMLDefaultStyle()
                    ? BlockInlineCheck::UseHTMLDefaultStyle
-                   : BlockInlineCheck::UseComputedDisplayOutsideStyle)));
+                   : BlockInlineCheck::UseComputedDisplayOutsideStyle) &&
+           !(mContent->IsEditable() &&
+             MaybeNonVoidEmptyInlineContainerElement())));
   MOZ_ASSERT_IF(
       mReason == WSType::OtherBlockBoundary,
       HTMLEditUtils::IsBlockElement(
@@ -1030,6 +1045,7 @@ WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
     if (textFragmentDataAtStart.EndsByVisibleBRElement()) {
       startContent = textFragmentDataAtStart.EndReasonBRElementPtr();
     } else if (textFragmentDataAtStart.EndsBySpecialContent() ||
+               textFragmentDataAtStart.EndsByEmptyInlineContainerElement() ||
                (textFragmentDataAtStart.EndsByOtherBlockElement() &&
                 !HTMLEditUtils::IsContainerNode(
                     *textFragmentDataAtStart
@@ -1052,6 +1068,7 @@ WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
     if (textFragmentDataAtEnd.StartsFromVisibleBRElement()) {
       endContent = textFragmentDataAtEnd.StartReasonBRElementPtr();
     } else if (textFragmentDataAtEnd.StartsFromSpecialContent() ||
+               textFragmentDataAtEnd.EndsByEmptyInlineContainerElement() ||
                (textFragmentDataAtEnd.StartsFromOtherBlockElement() &&
                 !HTMLEditUtils::IsContainerNode(
                     *textFragmentDataAtEnd
@@ -1065,13 +1082,9 @@ WSRunScanner::ShrinkRangeIfStartsFromOrEndsAfterAtomicContent(
   }
 
   nsresult rv = aRange.SetStartAndEnd(
-      startContent ? RangeBoundary(
-                         startContent->GetParentNode(),
-                         startContent->GetPreviousSibling())  // at startContent
+      startContent ? RangeBoundary::FromChild(*startContent)
                    : aRange.StartRef(),
-      endContent ? RangeBoundary(endContent->GetParentNode(),
-                                 endContent)  // after endContent
-                 : aRange.EndRef());
+      endContent ? RangeBoundary::After(*endContent) : aRange.EndRef());
   if (NS_FAILED(rv)) {
     NS_WARNING("nsRange::SetStartAndEnd() failed");
     return Err(rv);

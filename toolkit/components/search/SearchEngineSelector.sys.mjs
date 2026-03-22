@@ -100,10 +100,7 @@ export class SearchEngineSelector {
     this.#getConfigurationPromise = null;
 
     if (!this.#configuration?.length) {
-      throw Components.Exception(
-        "Failed to get engine data from Remote Settings",
-        Cr.NS_ERROR_UNEXPECTED
-      );
+      throw new Error("Failed to get engine data from Remote Settings");
     }
 
     /**

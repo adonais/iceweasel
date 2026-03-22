@@ -1523,10 +1523,6 @@ class ConnectionPool final {
 
   static void IdleTimerCallback(nsITimer* aTimer, void* aClosure);
 
-  static uint32_t SerialNumber() { return ++sSerialNumber; }
-
-  static uint32_t sSerialNumber;
-
   void Cleanup();
 
   void AdjustIdleTimer();
@@ -8228,14 +8224,9 @@ bool ConnectionPool::ScheduleTransaction(TransactionInfo& aTransactionInfo,
   }
 
   if (!dbInfo.mEventTarget) {
-    const uint32_t serialNumber = SerialNumber();
-    const nsCString serialName =
-        nsPrintfCString("IndexedDB #%" PRIu32, serialNumber);
-
-    dbInfo.mEventTarget =
-        TaskQueue::Create(do_AddRef(mIOTarget), serialName.get());
+    dbInfo.mEventTarget = TaskQueue::Create(do_AddRef(mIOTarget), "IndexedDB");
     MOZ_ASSERT(dbInfo.mEventTarget);
-    IDB_DEBUG_LOG(("ConnectionPool created task queue %" PRIu32, serialNumber));
+    IDB_DEBUG_LOG(("ConnectionPool created task queue IndexedDB"));
   }
 
   // The number of active operations equals the number of databases minus idle
@@ -8732,8 +8723,6 @@ nsresult ConnectionPool::FinishCallbackWrapper::Run() {
 
   return NS_OK;
 }
-
-uint32_t ConnectionPool::sSerialNumber = 0u;
 
 #ifdef DEBUG
 
@@ -15088,6 +15077,12 @@ nsresult FactoryOp::DirectoryWorkDone() {
   MOZ_ASSERT(gFactoryOps);
 
   // See if this FactoryOp needs to wait.
+  // FactoryOps are stored in gFactoryOps in the order they are created,
+  // and currently there are three different FactoryOps that gets stored
+  // i.e. OpenDatabaseOp, DeleteDatabaseOp, and GetDatabasesOp.
+  // We iterate over the gFactoryOps list here and put this operation
+  // into a waiting state if there is any existing operation that it needs
+  // to wait for as done by MustWaitFor().
   const bool blocked = [&self = *this] {
     bool foundThis = false;
     bool blocked = false;
@@ -15261,13 +15256,15 @@ bool FactoryOp::MustWaitFor(const FactoryOp& aExistingOp) {
     return false;
   }
 
-  // If the database ids don't overlap, the op can proceed.
-  if (!aExistingOp.mDatabaseId.isNothing() && !mDatabaseId.isNothing() &&
+  // If the database ids don't overlap, the op doesn't need to wait.
+  if (aExistingOp.mDatabaseId.isSome() && mDatabaseId.isSome() &&
       aExistingOp.mDatabaseId.ref() != mDatabaseId.ref()) {
     return false;
   }
 
-  return true;
+  // mDatabaseId being nothing means that this is GetDatabasesOp which
+  // must be serialized with other GetDatabaseOps.
+  return aExistingOp.mDatabaseId.isNothing() == mDatabaseId.isNothing();
 }
 
 // Run() assumes that the caller holds a strong reference to the object that
@@ -18893,6 +18890,14 @@ void NormalTransactionOp::ActorDestroy(ActorDestroyReason aWhy) {
 mozilla::ipc::IPCResult NormalTransactionOp::RecvContinue(
     const PreprocessResponse& aResponse) {
   AssertIsOnOwningThread();
+
+  // mWaitingForContinue is only touched on the owning thread. If it is not
+  // set, either we never sent Preprocess (child is misbehaving) or the op is
+  // still running on the connection thread. Calling NoteContinueReceived()
+  // in either case would race Cleanup() with DoDatabaseWork().
+  if (NS_WARN_IF(!IsWaitingForContinue())) {
+    return IPC_FAIL(this, "Continue received when not waiting for continue");
+  }
 
   switch (aResponse.type()) {
     case PreprocessResponse::Tnsresult:

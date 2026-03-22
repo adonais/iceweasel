@@ -18,20 +18,12 @@ const IMG_FILE =
 const CONTENT_BLOCKED_BY_ETP_URL = TRACKER_URL + IMG_FILE;
 const WARNING_GROUP_PREF = "devtools.webconsole.groupSimilarMessages";
 
-const { UrlClassifierTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/UrlClassifierTestUtils.sys.mjs"
-);
-UrlClassifierTestUtils.addTestTrackers();
-registerCleanupFunction(function () {
-  UrlClassifierTestUtils.cleanupTestTrackers();
-});
-
-pushPref("privacy.trackingprotection.enabled", true);
-
 const ENHANCED_TRACKING_PROTECTION_GROUP_LABEL =
   "The resource at “<URL>” was blocked because Enhanced Tracking Protection is enabled.";
 
 add_task(async function testContentBlockingMessage() {
+  await setupUrlClassifierTest();
+
   // Enable persist log
   await pushPref("devtools.webconsole.persistlog", true);
 

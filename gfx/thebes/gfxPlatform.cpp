@@ -2303,6 +2303,7 @@ mozilla::LogModule* gfxPlatform::GetLog(eGfxLog aWhichLog) {
   static LazyLogModule sTextrunuiLog("textrunui");
   static LazyLogModule sCmapDataLog("cmapdata");
   static LazyLogModule sTextPerfLog("textperf");
+  static LazyLogModule sFontQueryLog("fontquery");
 
   switch (aWhichLog) {
     case eGfxLog_fontlist:
@@ -2317,6 +2318,8 @@ mozilla::LogModule* gfxPlatform::GetLog(eGfxLog aWhichLog) {
       return sCmapDataLog;
     case eGfxLog_textperf:
       return sTextPerfLog;
+    case eGfxLog_fontquery:
+      return sFontQueryLog;
   }
 
   MOZ_ASSERT_UNREACHABLE("Unexpected log type");

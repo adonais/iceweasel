@@ -568,8 +568,9 @@ static bool BlockIsSingleTest(MBasicBlock* phiBlock, MBasicBlock* testBlock,
   *ptest = nullptr;
 
   if (phiBlock != testBlock) {
-    MOZ_ASSERT(phiBlock->numSuccessors() == 1 &&
-               phiBlock->getSuccessor(0) == testBlock);
+    MOZ_RELEASE_ASSERT(phiBlock->lastIns()->isGoto());
+    MOZ_RELEASE_ASSERT(phiBlock->lastIns()->toGoto()->target() == testBlock);
+    MOZ_RELEASE_ASSERT(testBlock->numPredecessors() == 1);
     if (!phiBlock->begin()->isGoto()) {
       return false;
     }
@@ -686,7 +687,7 @@ static bool IsTestInputMaybeToBool(MTest* test, MDefinition* value) {
   blockResult->setImplicitlyUsedUnchecked();
 
   MInstruction* ins = block->lastIns();
-  MOZ_ASSERT(ins->isGoto());
+  MOZ_RELEASE_ASSERT(ins->isGoto());
   ins->toGoto()->target()->removePredecessor(block);
   block->discardLastIns();
 
@@ -707,15 +708,14 @@ static bool IsTestInputMaybeToBool(MTest* test, MDefinition* value) {
   MInstruction* ins = block->lastIns();
   if (ins->isTest()) {
     MTest* test = ins->toTest();
-    MOZ_ASSERT(test->input() == value);
+    MOZ_RELEASE_ASSERT(test->input() == value);
 
     if (ifTrue != test->ifTrue()) {
       test->ifTrue()->removePredecessor(block);
       if (!ifTrue->addPredecessorSameInputsAs(block, existingPred)) {
         return false;
       }
-      MOZ_ASSERT(test->ifTrue() == test->getSuccessor(0));
-      test->replaceSuccessor(0, ifTrue);
+      test->replaceSuccessor(MTest::TrueBranchIndex, ifTrue);
     }
 
     if (ifFalse != test->ifFalse()) {
@@ -723,14 +723,13 @@ static bool IsTestInputMaybeToBool(MTest* test, MDefinition* value) {
       if (!ifFalse->addPredecessorSameInputsAs(block, existingPred)) {
         return false;
       }
-      MOZ_ASSERT(test->ifFalse() == test->getSuccessor(1));
-      test->replaceSuccessor(1, ifFalse);
+      test->replaceSuccessor(MTest::FalseBranchIndex, ifFalse);
     }
 
     return true;
   }
 
-  MOZ_ASSERT(ins->isGoto());
+  MOZ_RELEASE_ASSERT(ins->isGoto());
   ins->toGoto()->target()->removePredecessor(block);
   block->discardLastIns();
 
@@ -775,8 +774,8 @@ static bool IsDiamondPattern(MBasicBlock* initialBlock) {
     return false;
   }
 
-  MBasicBlock* phiBlock = trueBranch->getSuccessor(0);
-  if (phiBlock != falseBranch->getSuccessor(0)) {
+  MBasicBlock* phiBlock = trueBranch->lastIns()->toGoto()->target();
+  if (phiBlock != falseBranch->lastIns()->toGoto()->target()) {
     return false;
   }
   if (phiBlock->numPredecessors() != 2) {
@@ -820,13 +819,13 @@ static bool IsDiamondPattern(MBasicBlock* initialBlock) {
     return true;
   }
 
-  MBasicBlock* phiBlock = trueBranch->getSuccessor(0);
+  MBasicBlock* phiBlock = trueBranch->lastIns()->toGoto()->target();
   MBasicBlock* testBlock = phiBlock;
-  if (testBlock->numSuccessors() == 1) {
+  if (testBlock->lastIns()->isGoto()) {
     if (testBlock->isLoopBackedge()) {
       return true;
     }
-    testBlock = testBlock->getSuccessor(0);
+    testBlock = testBlock->lastIns()->toGoto()->target();
     if (testBlock->numPredecessors() != 1) {
       return true;
     }
@@ -838,7 +837,7 @@ static bool IsDiamondPattern(MBasicBlock* initialBlock) {
     return true;
   }
 
-  MOZ_ASSERT(phi->numOperands() == 2);
+  MOZ_RELEASE_ASSERT(phi->numOperands() == 2);
 
   // Make sure the test block does not have any outgoing loop backedges.
   if (!SplitCriticalEdgesForBlock(graph, testBlock)) {
@@ -929,8 +928,8 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
   MBasicBlock* trueBranch = initialTest->ifTrue();
   MBasicBlock* falseBranch = initialTest->ifFalse();
 
-  if (trueBranch->numSuccessors() == 1 &&
-      trueBranch->getSuccessor(0) == falseBranch) {
+  if (trueBranch->lastIns()->isGoto() &&
+      trueBranch->lastIns()->toGoto()->target() == falseBranch) {
     if (trueBranch->numPredecessors() != 1) {
       return false;
     }
@@ -940,8 +939,8 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
     return true;
   }
 
-  if (falseBranch->numSuccessors() == 1 &&
-      falseBranch->getSuccessor(0) == trueBranch) {
+  if (falseBranch->lastIns()->isGoto() &&
+      falseBranch->lastIns()->toGoto()->target() == trueBranch) {
     if (trueBranch->numPredecessors() != 2) {
       return false;
     }
@@ -999,19 +998,19 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
   }
 
   MBasicBlock* phiBlock;
-  if (trueBranch->numSuccessors() == 1 &&
-      trueBranch->getSuccessor(0) == falseBranch) {
+  if (trueBranch->lastIns()->isGoto() &&
+      trueBranch->lastIns()->toGoto()->target() == falseBranch) {
     phiBlock = falseBranch;
   } else {
-    MOZ_ASSERT(falseBranch->getSuccessor(0) == trueBranch);
+    MOZ_ASSERT(falseBranch->lastIns()->toGoto()->target() == trueBranch);
     phiBlock = trueBranch;
   }
 
   MBasicBlock* testBlock = phiBlock;
-  if (testBlock->numSuccessors() == 1) {
-    MOZ_ASSERT(!testBlock->isLoopBackedge());
+  if (testBlock->lastIns()->isGoto()) {
+    MOZ_RELEASE_ASSERT(!testBlock->isLoopBackedge());
 
-    testBlock = testBlock->getSuccessor(0);
+    testBlock = testBlock->lastIns()->toGoto()->target();
     if (testBlock->numPredecessors() != 1) {
       return true;
     }
@@ -1023,7 +1022,7 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
     return true;
   }
 
-  MOZ_ASSERT(phi->numOperands() == 2);
+  MOZ_RELEASE_ASSERT(phi->numOperands() == 2);
 
   // If the phi-operand doesn't match the initial input, we can't fold the test.
   auto* phiInputForInitialBlock =
@@ -1194,17 +1193,17 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
   }
 
   MBasicBlock* testBlock = phiBlock;
-  if (testBlock->numSuccessors() == 1) {
+  if (testBlock->lastIns()->isGoto()) {
     if (testBlock->isLoopBackedge()) {
       return true;
     }
-    testBlock = testBlock->getSuccessor(0);
+    testBlock = testBlock->lastIns()->toGoto()->target();
     if (testBlock->numPredecessors() != 1) {
       return true;
     }
   }
 
-  MOZ_ASSERT(!phiBlock->isLoopBackedge());
+  MOZ_RELEASE_ASSERT(!phiBlock->isLoopBackedge());
 
   MPhi* phi = nullptr;
   MTest* finalTest = nullptr;
@@ -1212,7 +1211,7 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
     return true;
   }
 
-  MOZ_ASSERT(phiBlock->numPredecessors() == phi->numOperands());
+  MOZ_RELEASE_ASSERT(phiBlock->numPredecessors() == phi->numOperands());
 
   // If the phi-operand doesn't match the initial input, we can't fold the test.
   auto* phiInputForInitialBlock =
@@ -1243,7 +1242,7 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
       return true;
     }
 
-    MOZ_ASSERT(!pred->isLoopBackedge());
+    MOZ_RELEASE_ASSERT(!pred->isLoopBackedge());
   }
 
   // Ensure we found the single goto block.
@@ -1270,7 +1269,7 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
 
   // Update all test instructions to point to the final target.
   while (phiBlock->numPredecessors()) {
-    mozilla::DebugOnly<size_t> oldNumPred = phiBlock->numPredecessors();
+    size_t oldNumPred = phiBlock->numPredecessors();
 
     auto* pred = phiBlock->getPredecessor(0);
     auto* test = pred->lastIns()->toTest();
@@ -1281,7 +1280,7 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
         return false;
       }
     } else {
-      MOZ_ASSERT(test->ifFalse() == phiBlock);
+      MOZ_RELEASE_ASSERT(test->ifFalse() == phiBlock);
       if (!UpdateTestSuccessors(graph.alloc(), pred, test->input(),
                                 test->ifTrue(), finalTest->ifFalse(),
                                 testBlock)) {
@@ -1290,7 +1289,7 @@ static bool IsTrianglePattern(MBasicBlock* initialBlock) {
     }
 
     // Ensure we've made progress.
-    MOZ_ASSERT(phiBlock->numPredecessors() + 1 == oldNumPred);
+    MOZ_RELEASE_ASSERT(phiBlock->numPredecessors() + 1 == oldNumPred);
   }
 
   // Remove phiBlock, if different from testBlock.
@@ -3715,6 +3714,8 @@ SimpleLinearSum jit::ExtractLinearSum(MDefinition* ins, MathSpace space,
   }
   MOZ_ASSERT(space == MathSpace::Modulo || space == MathSpace::Infinite);
 
+  // Note: support for the Modulo math space is currently disabled due to
+  // security bugs. See bug 1966614.
   if (space == MathSpace::Modulo) {
     return SimpleLinearSum(ins, 0);
   }
@@ -4302,20 +4303,10 @@ bool jit::MarkLoadsUsedAsPropertyKeys(MIRGraph& graph) {
   return true;
 }
 
-// Updates the wasm ref type of a node and verifies that in this pass we only
-// narrow types, and never widen.
+// Updates the wasm ref type of a node.
 static bool UpdateWasmRefType(MDefinition* def) {
   wasm::MaybeRefType newRefType = def->computeWasmRefType();
   bool changed = newRefType != def->wasmRefType();
-
-  // Ensure that we do not regress from Some to Nothing.
-  MOZ_ASSERT(!(def->wasmRefType().isSome() && newRefType.isNothing()));
-  // Ensure that the new ref type is a subtype of the previous one (i.e. we
-  // only narrow ref types).
-  MOZ_ASSERT_IF(def->wasmRefType().isSome(),
-                wasm::RefType::isSubTypeOf(newRefType.value(),
-                                           def->wasmRefType().value()));
-
   def->setWasmRefType(newRefType);
   return changed;
 }
@@ -4392,6 +4383,212 @@ bool jit::TrackWasmRefTypes(MIRGraph& graph) {
   return true;
 }
 
+static bool IsWasmRefTest(MDefinition* def) {
+  return def->isWasmRefTestAbstract() || def->isWasmRefTestConcrete();
+}
+
+static bool IsWasmRefCast(MDefinition* def) {
+  return def->isWasmRefCastAbstract() || def->isWasmRefCastConcrete() ||
+         def->isWasmRefCastInfallible();
+}
+
+static MDefinition* WasmRefCastOrTestSourceRef(MDefinition* refTestOrCast) {
+  switch (refTestOrCast->op()) {
+    case MDefinition::Opcode::WasmRefCastAbstract:
+      return refTestOrCast->toWasmRefCastAbstract()->ref();
+    case MDefinition::Opcode::WasmRefCastConcrete:
+      return refTestOrCast->toWasmRefCastConcrete()->ref();
+    case MDefinition::Opcode::WasmRefCastInfallible:
+      return refTestOrCast->toWasmRefCastInfallible()->ref();
+    case MDefinition::Opcode::WasmRefTestAbstract:
+      return refTestOrCast->toWasmRefTestAbstract()->ref();
+    case MDefinition::Opcode::WasmRefTestConcrete:
+      return refTestOrCast->toWasmRefTestConcrete()->ref();
+    default:
+      MOZ_CRASH();
+  }
+}
+
+static wasm::RefType WasmRefTestOrCastDestType(MDefinition* refTestOrCast) {
+  switch (refTestOrCast->op()) {
+    case MDefinition::Opcode::WasmRefCastAbstract:
+      return refTestOrCast->toWasmRefCastAbstract()->destType();
+    case MDefinition::Opcode::WasmRefCastConcrete:
+      return refTestOrCast->toWasmRefCastConcrete()->destType();
+    case MDefinition::Opcode::WasmRefCastInfallible:
+      return refTestOrCast->toWasmRefCastInfallible()->destType();
+    case MDefinition::Opcode::WasmRefTestAbstract:
+      return refTestOrCast->toWasmRefTestAbstract()->destType();
+    case MDefinition::Opcode::WasmRefTestConcrete:
+      return refTestOrCast->toWasmRefTestConcrete()->destType();
+    default:
+      MOZ_CRASH();
+  }
+}
+
+static void TryOptimizeWasmCast(MDefinition* cast, MIRGraph& graph) {
+  // Find all uses of the ref we are casting
+  MDefinition* ref = WasmRefCastOrTestSourceRef(cast);
+  for (MUseIterator refUse(ref->usesBegin()); refUse != ref->usesEnd();
+       refUse++) {
+    // If the ref we are casting is used in a ref.test instruction...
+    if (IsWasmRefTest(refUse->consumer()->toDefinition())) {
+      MDefinition* refTest = refUse->consumer()->toDefinition();
+      // And that ref.test instruction is used in an MTest instruction...
+      for (MUseIterator testUse(refTest->usesBegin());
+           testUse != refTest->usesEnd(); testUse++) {
+        if (testUse->consumer()->toDefinition()->isTest()) {
+          // And the MTest instruction true block dominates the block of
+          // the cast...
+          MTest* test = testUse->consumer()->toDefinition()->toTest();
+          if (test->ifTrue()->dominates(cast->block())) {
+            // And the type of the dominating ref.test is <: the type of
+            // the current cast...
+            wasm::RefType refTestDestType = WasmRefTestOrCastDestType(refTest);
+            wasm::RefType refCastDestType = WasmRefTestOrCastDestType(cast);
+            if (wasm::RefType::isSubTypeOf(refTestDestType, refCastDestType)) {
+              // Then the cast is redundant because it is dominated by a
+              // tighter ref.test. Replace it with a dummy cast at the top of
+              // the MTest's true block.
+              if (!graph.alloc().ensureBallast()) {
+                return;
+              }
+              auto* dummy = MWasmRefCastInfallible::New(graph.alloc(), ref,
+                                                        refCastDestType);
+              cast->replaceAllUsesWith(dummy);
+              test->ifTrue()->insertBefore(test->ifTrue()->safeInsertTop(),
+                                           dummy->toInstruction());
+              cast->block()->discard(cast->toInstruction());
+              return;
+            }
+          }
+        }
+      }
+    }
+
+    // If the ref we are casting is used in a different ref.cast instruction...
+    if (IsWasmRefCast(refUse->consumer()->toDefinition()) &&
+        refUse->consumer() != cast) {
+      MDefinition* otherCast = refUse->consumer()->toDefinition();
+      // And that ref.cast instruction dominates us...
+      if (otherCast->dominates(cast)) {
+        // And the type of the dominating ref.cast is <: the type of the
+        // current cast...
+        wasm::RefType dominatingDestType = WasmRefTestOrCastDestType(otherCast);
+        wasm::RefType currentDestType = WasmRefTestOrCastDestType(cast);
+        if (wasm::RefType::isSubTypeOf(dominatingDestType, currentDestType)) {
+          // Then the cast is redundant because it is dominated by a tighter
+          // ref.cast. Discard the cast and fall back on the other.
+          cast->replaceAllUsesWith(otherCast);
+          cast->block()->discard(cast->toInstruction());
+          return;
+        }
+      }
+    }
+  }
+}
+
+static void TryOptimizeWasmTest(MDefinition* refTest, MIRGraph& graph) {
+  // Find all uses of the ref we are testing
+  MDefinition* ref = WasmRefCastOrTestSourceRef(refTest);
+  for (MUseIterator refUse(ref->usesBegin()); refUse != ref->usesEnd();
+       refUse++) {
+    // If the ref we are testing is used in a different ref.test instruction...
+    if (IsWasmRefTest(refUse->consumer()->toDefinition()) &&
+        refUse->consumer() != refTest) {
+      MDefinition* otherRefTest = refUse->consumer()->toDefinition();
+      // And that ref.test instruction is used in an MTest instruction...
+      for (MUseIterator testUse(otherRefTest->usesBegin());
+           testUse != otherRefTest->usesEnd(); testUse++) {
+        if (testUse->consumer()->toDefinition()->isTest()) {
+          MTest* test = testUse->consumer()->toDefinition()->toTest();
+
+          wasm::RefType otherDestType = WasmRefTestOrCastDestType(otherRefTest);
+          wasm::RefType currentDestType = WasmRefTestOrCastDestType(refTest);
+
+          MInstruction* replacement = nullptr;
+
+          if (!graph.alloc().ensureBallast()) {
+            return;
+          }
+
+          // And the MTest instruction true block dominates the block of the
+          // current test...
+          if (test->ifTrue()->dominates(refTest->block())) {
+            // And the type of the DOMINATING ref.test is <: the type of the
+            // CURRENT ref.test...
+            if (wasm::RefType::isSubTypeOf(otherDestType, currentDestType)) {
+              // Then the ref.test is redundant because it is dominated by the
+              // success of a tighter ref.test. Replace it with a constant 1.
+              replacement = MConstant::NewInt32(graph.alloc(), 1);
+            }
+          }
+
+          // Or the MTest instruction false block dominates the block of the
+          // current test...
+          if (test->ifFalse()->dominates(refTest->block())) {
+            // And the type of the CURRENT ref.test is <: the type of the
+            // DOMINATING ref.test...
+            if (wasm::RefType::isSubTypeOf(currentDestType, otherDestType)) {
+              // Then the ref.test is redundant because it is dominated by the
+              // failure of a looser ref.test. Replace it with a constant 0.
+              replacement = MConstant::NewInt32(graph.alloc(), 0);
+            }
+          }
+
+          if (replacement) {
+            refTest->block()->insertBefore(refTest->toInstruction(),
+                                           replacement);
+            refTest->replaceAllUsesWith(replacement);
+            refTest->block()->discard(refTest->toInstruction());
+            return;
+          }
+        }
+      }
+    }
+
+    // If the ref we are testing is used in a ref.cast instruction...
+    if (IsWasmRefCast(refUse->consumer()->toDefinition())) {
+      MDefinition* refCast = refUse->consumer()->toDefinition();
+      // And that ref.cast instruction dominates us...
+      if (refCast->dominates(refTest)) {
+        // And the type of the dominating ref.cast is <: the type of the
+        // current ref.test...
+        wasm::RefType dominatingDestType = WasmRefTestOrCastDestType(refCast);
+        wasm::RefType currentDestType = WasmRefTestOrCastDestType(refTest);
+        if (wasm::RefType::isSubTypeOf(dominatingDestType, currentDestType)) {
+          // Then the ref.test is redundant because it is dominated by a
+          // tighter ref.cast. Replace with a constant 1.
+          auto* replacement = MConstant::NewInt32(graph.alloc(), 1);
+          refTest->block()->insertBefore(refTest->toInstruction(), replacement);
+          refTest->replaceAllUsesWith(replacement);
+          refTest->block()->discard(refTest->toInstruction());
+          return;
+        }
+      }
+    }
+  }
+}
+
+bool jit::OptimizeWasmCasts(MIRGraph& graph) {
+  for (ReversePostorderIterator blockIter = graph.rpoBegin();
+       blockIter != graph.rpoEnd(); blockIter++) {
+    MBasicBlock* block = *blockIter;
+    for (MDefinitionIterator def(block); def;) {
+      MDefinition* castOrTest = *def;
+      def++;
+
+      if (IsWasmRefCast(castOrTest)) {
+        TryOptimizeWasmCast(castOrTest, graph);
+      } else if (IsWasmRefTest(castOrTest)) {
+        TryOptimizeWasmTest(castOrTest, graph);
+      }
+    }
+  }
+
+  return true;
+}
+
 static bool NeedsKeepAlive(MInstruction* slotsOrElements, MInstruction* use) {
   MOZ_ASSERT(slotsOrElements->type() == MIRType::Elements ||
              slotsOrElements->type() == MIRType::Slots);
@@ -4439,6 +4636,7 @@ static bool NeedsKeepAlive(MInstruction* slotsOrElements, MInstruction* use) {
       case MDefinition::Opcode::GuardElementsArePacked:
       case MDefinition::Opcode::InArray:
       case MDefinition::Opcode::SpectreMaskIndex:
+      case MDefinition::Opcode::Add:
       case MDefinition::Opcode::DebugEnterGCUnsafeRegion:
       case MDefinition::Opcode::DebugLeaveGCUnsafeRegion:
         break;
@@ -4481,10 +4679,6 @@ bool jit::AddKeepAliveInstructions(MIRGraph& graph) {
         case MDefinition::Opcode::Elements:
         case MDefinition::Opcode::ArrayBufferViewElements:
           MOZ_ASSERT(ins->numOperands() == 1);
-          ownerObject = ins->getOperand(0);
-          break;
-        case MDefinition::Opcode::ArrayBufferViewElementsWithOffset:
-          MOZ_ASSERT(ins->numOperands() == 2);
           ownerObject = ins->getOperand(0);
           break;
         case MDefinition::Opcode::Slots:

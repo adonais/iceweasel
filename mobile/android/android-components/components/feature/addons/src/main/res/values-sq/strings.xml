@@ -378,8 +378,6 @@
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
   <string name="mozac_feature_addons_admin_install_only">%1$s s’u instalua dot, ngaqë mund të instalohet vetëm nga një ent që përdor rregulla ndërmarrjeje, çka nuk mbulohet në këtë platformë.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
-  <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s cenon rregullat e Mozilla-s dhe s’mund të instalohet në %2$s.</string>
-  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">%1$s është e kufizua dhe s’mund të instalohet në %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">S’u arrit të aktivizohet %1$s</string>
@@ -426,11 +424,7 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_blocklisted_1">Ky zgjerim është bllokuar ngaqë cenon rregullat e Mozilla-s dhe është çaktivizuar.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Ky zgjerim është kufizuar ngaqë cenon rregullat e Mozilla-s dhe është çaktivizuar. Mund ta aktivizoni, por kjo mund të jetë e rrezikshme.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_2">Ky zgjerim është i kufizuar dhe është çaktivizuar. Mund ta aktivizoni, por kjo mund të jetë e rrezikshme.</string>
-  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Ky zgjerim cenon rregullat e Mozilla-s. Përdorimi i tij mund të jetë me rrezik.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Ky zgjerim është i kufizuar. Përdorim i tij mund të jetë i rrezikshëm.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->

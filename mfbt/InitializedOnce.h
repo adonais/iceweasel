@@ -6,8 +6,8 @@
 
 // Class template for objects that can only be initialized once.
 
-#ifndef mozilla_mfbt_initializedonce_h__
-#define mozilla_mfbt_initializedonce_h__
+#ifndef mozilla_mfbt_initializedonce_h_
+#define mozilla_mfbt_initializedonce_h_
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"

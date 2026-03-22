@@ -28,8 +28,11 @@ import {
   COMMAND_PAIR_COMPLETE,
   COMMAND_PAIR_PREFERENCES,
   COMMAND_FIREFOX_VIEW,
+  COMMAND_OAUTH_FLOW_IS_ACTIVE,
+  COMMAND_OAUTH_FLOW_BEGIN,
   OAUTH_CLIENT_ID,
   ON_PROFILE_CHANGE_NOTIFICATION,
+  ON_SERVICE_ENABLED_NOTIFICATION,
   PREF_LAST_FXA_USER_UID,
   PREF_LAST_FXA_USER_EMAIL,
   WEBCHANNEL_ID,
@@ -289,6 +292,22 @@ FxAccountsWebChannel.prototype = {
           sendingContext
         );
         break;
+      case COMMAND_OAUTH_FLOW_IS_ACTIVE: {
+        const isActive = this._helpers.oauthFlowIsActive();
+        await this._channel.send(
+          { command, messageId: message.messageId, data: { isActive } },
+          sendingContext
+        );
+        break;
+      }
+      case COMMAND_OAUTH_FLOW_BEGIN: {
+        let params = await this._helpers.oauthBegin(data.scopes);
+        await this._channel.send(
+          { command, messageId: message.messageId, data: params },
+          sendingContext
+        );
+        break;
+      }
       case COMMAND_LOGOUT:
       case COMMAND_DELETE:
         await this._helpers.logout(data.uid);
@@ -595,13 +614,21 @@ FxAccountsWebChannelHelpers.prototype = {
       );
       return;
     }
-    log.debug(`services requested are ${Object.keys(requestedServices)}`);
+    let services = Object.keys(requestedServices);
+    log.debug(`services requested are ${services}`);
     if (requestedServices.sync) {
       const xps = await this._initializeSync();
       const { offeredEngines, declinedEngines } = requestedServices.sync;
       this._setEnabledEngines(offeredEngines, declinedEngines);
       log.debug("Webchannel is enabling sync");
       await xps.Weave.Service.configure();
+    }
+    for (let service of services) {
+      Services.obs.notifyObservers(
+        null,
+        ON_SERVICE_ENABLED_NOTIFICATION,
+        service
+      );
     }
   },
 
@@ -734,6 +761,27 @@ FxAccountsWebChannelHelpers.prototype = {
     // This will kick off Sync or other services we configured.
     await this._fxAccounts._internal.setUserVerified();
     log.debug("Webchannel completed oauth flows");
+  },
+
+  /**
+   * Starts a new oauth flow but DOES NOT open any UI for the flow.
+   *
+   * A browser-driven login takes 2 steps - it begins an oauth flow, then opens a login URL specifying a number of query-params
+   * derived from the oauth flow just started. This webchannel message starts a new flow and returns just the query params back over
+   * the web channel - it is the responsibility of FxA itself to start a new UI flow using these params.
+   *
+   * @param [String] scopes: An array of strings.
+   */
+  async oauthBegin(scopes) {
+    log.debug(`Webchannel is starting a new oauth flow for scopes ${scopes}`);
+    return await this._fxAccounts._internal.oauth.beginOAuthFlow(scopes);
+  },
+
+  /**
+   * Returns a boolean to indicate whether an oauth flow is in progress.
+   */
+  oauthFlowIsActive() {
+    return this._fxAccounts._internal.oauth.numOfFlows() != 0;
   },
 
   /**

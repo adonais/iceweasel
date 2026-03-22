@@ -611,6 +611,16 @@ LInt64Definition LIRGeneratorShared::tempInt64(LDefinition::Policy policy) {
 #endif
 }
 
+LBoxDefinition LIRGeneratorShared::tempBox() {
+#ifdef JS_NUNBOX32
+  LDefinition type = temp(LDefinition::GENERAL);
+  LDefinition payload = temp(LDefinition::GENERAL);
+  return LBoxDefinition(type, payload);
+#else
+  return LBoxDefinition(temp(LDefinition::GENERAL));
+#endif
+}
+
 LDefinition LIRGeneratorShared::tempFixed(Register reg) {
   LDefinition t = temp(LDefinition::GENERAL);
   t.setOutput(LGeneralReg(reg));

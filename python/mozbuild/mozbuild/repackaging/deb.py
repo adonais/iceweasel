@@ -92,6 +92,12 @@ def repackage_deb(
     source_dir = os.path.join(tmpdir, "source")
     try:
         mozfile.extract_tarball(infile, source_dir)
+        extracted = os.listdir(source_dir)
+        if len(extracted) != 1:
+            raise Exception(
+                f"Input file {infile} didn't extract to a single directory."
+            )
+        app_name = extracted[0]
         application_ini_data = application_ini_data_from_tar(infile)
         pkg_version = _get_deb_pkg_version(
             version, application_ini_data["build_id"], build_number
@@ -117,10 +123,7 @@ def repackage_deb(
             exclude_file_names=["package-prefs.js"],
         )
 
-        app_name = application_ini_data["name"]
-        with open(
-            mozpath.join(source_dir, app_name.lower(), "is-packaged-app"), "w"
-        ) as f:
+        with open(mozpath.join(source_dir, app_name, "is-packaged-app"), "w") as f:
             f.write("This is a packaged app.\n")
 
         inject_distribution_folder(source_dir, "debian", app_name)

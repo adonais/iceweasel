@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -9,25 +11,37 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
+  TelemetryReportingPolicy:
+    "resource://gre/modules/TelemetryReportingPolicy.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 // See the `QuickSuggest.SETTINGS_UI` jsdoc below.
 const SETTINGS_UI = Object.freeze({
+  // Settings relevant to both offline and online will be shown.
   FULL: 0,
+  // Settings relevant to both offline and online will be hidden.
   NONE: 1,
   // Only settings relevant to offline will be shown. Settings that pertain to
   // online will be hidden.
   OFFLINE_ONLY: 2,
 });
 
+// Timestamp in ms since epoch of the Firefox Terms of Use (ToU) pertaining to
+// Suggest. Keep this value in sync with Nimbus targeting in `constants.py` in
+// the `experimenter` repo.
+//
+// Privacy Notification Published date of 12:00 PM UTC on Dec 15, 2025
+const SUGGEST_TOU_TIMESTAMP = 1765800000000;
+
 const EN_LOCALES = ["en-CA", "en-GB", "en-US", "en-ZA"];
 
 /**
- * @typedef {[string[], boolean|number]} RegionLocaleDefault
- *   The first element is an array of locales (e.g. "en-US"), the second is the
- *   value of the preference.
+ * @typedef {[string[], boolean|number|Function]} RegionLocaleDefault
+ *   The first element is an array of locales, e.g. `["en-US", "en-CA"]`. The
+ *   second element is either the value of the preference or a function that
+ *   should return the value of the preference.
  */
 
 /**
@@ -72,13 +86,25 @@ const SUGGEST_PREFS = Object.freeze({
       US: [EN_LOCALES, true],
     },
   },
+  "quicksuggest.online.available": {
+    defaultValues: {
+      US: [EN_LOCALES, shouldOnlineBeAvailable],
+    },
+  },
   "quicksuggest.settingsUi": {
     defaultValues: {
       DE: [["de"], SETTINGS_UI.OFFLINE_ONLY],
       FR: [["fr"], SETTINGS_UI.OFFLINE_ONLY],
       GB: [EN_LOCALES, SETTINGS_UI.OFFLINE_ONLY],
       IT: [["it"], SETTINGS_UI.OFFLINE_ONLY],
-      US: [EN_LOCALES, SETTINGS_UI.OFFLINE_ONLY],
+      US: [
+        EN_LOCALES,
+        () => {
+          return shouldOnlineBeAvailable()
+            ? SETTINGS_UI.FULL
+            : SETTINGS_UI.OFFLINE_ONLY;
+        },
+      ],
     },
   },
   "suggest.quicksuggest.all": {
@@ -115,6 +141,11 @@ const SUGGEST_PREFS = Object.freeze({
       US: [EN_LOCALES, true],
     },
   },
+  "flightStatus.featureGate": {
+    defaultValues: {
+      US: [EN_LOCALES, shouldOnlineBeAvailable],
+    },
+  },
   "importantDates.featureGate": {
     defaultValues: {
       DE: [["de", ...EN_LOCALES], true],
@@ -124,9 +155,19 @@ const SUGGEST_PREFS = Object.freeze({
       US: [EN_LOCALES, true],
     },
   },
+  "market.featureGate": {
+    defaultValues: {
+      US: [EN_LOCALES, shouldOnlineBeAvailable],
+    },
+  },
   "mdn.featureGate": {
     defaultValues: {
       US: [EN_LOCALES, true],
+    },
+  },
+  "sports.featureGate": {
+    defaultValues: {
+      US: [EN_LOCALES, shouldOnlineBeAvailable],
     },
   },
   "weather.featureGate": {
@@ -233,6 +274,15 @@ class _QuickSuggest {
    */
   get SETTINGS_UI() {
     return SETTINGS_UI;
+  }
+
+  /**
+   * @returns {number}
+   *   The Firefox Terms of Use (ToU) timestamp in ms since epoch pertaining to
+   *   Suggest.
+   */
+  get SUGGEST_TOU_TIMESTAMP() {
+    return SUGGEST_TOU_TIMESTAMP;
   }
 
   /**
@@ -622,6 +672,9 @@ class _QuickSuggest {
           if (defaultValues?.hasOwnProperty(region)) {
             let [enablingLocales, prefValue] = defaultValues[region];
             if (enablingLocales.includes(locale)) {
+              if (typeof prefValue == "function") {
+                prefValue = prefValue();
+              }
               return [prefName, prefValue];
             }
           }
@@ -642,6 +695,12 @@ class _QuickSuggest {
    *   The name of the pref relative to `browser.urlbar`.
    */
   onPrefChanged(pref) {
+    // If the Terms of Use (ToU) pref changed, recalculate pref defaults since
+    // some prefs depend on it.
+    if (pref == lazy.TelemetryReportingPolicy.TOU_ACCEPTED_DATE_PREF) {
+      this.#initPrefs();
+    }
+
     // If any feature's enabling preferences changed, update it now.
     let features = this.#featuresByEnablingPrefs.get(pref);
     if (!features) {
@@ -926,7 +985,7 @@ class _QuickSuggest {
    * @returns {number}
    */
   get MIGRATION_VERSION() {
-    return 6;
+    return 7;
   }
 
   /**
@@ -1094,6 +1153,37 @@ class _QuickSuggest {
     }
   }
 
+  _migrateUserPrefsTo_7(userBranch) {
+    // Firefox 149: Make the "Show less frequently" behavior of addon
+    // suggestions consistent with other suggestion types. This reverts the fix
+    // to bug 1836582 and goes back to using `addons.minKeywordLength`.
+    if (
+      userBranch.prefHasUserValue("addons.minKeywordLength") &&
+      !userBranch.prefHasUserValue("addons.showLessFrequentlyCount")
+    ) {
+      // The user clicked "Show less frequently" before bug 1836582 was fixed
+      // since `minKeywordLength` has a user value, but they haven't clicked it
+      // again since `showLessFrequentlyCount` does not have a user value. Set
+      // `showLessFrequentlyCount` to 1 and keep `minKeywordLength` the same.
+      userBranch.setIntPref("addons.showLessFrequentlyCount", 1);
+    } else if (
+      !userBranch.prefHasUserValue("addons.minKeywordLength") &&
+      userBranch.prefHasUserValue("addons.showLessFrequentlyCount")
+    ) {
+      // The user clicked "Show less frequently" after bug 1836582 was fixed but
+      // not before. We need to set `minKeywordLength` to something but we can't
+      // know what. Err on the side of not bothering the user by using the max
+      // keyword length as of 149. This will effectively disable addon
+      // suggestions unless/until longer keywords are added.
+      userBranch.setIntPref("addons.minKeywordLength", 20);
+    }
+  }
+
+  // Lets tests easily mock whether the build is a Nightly build.
+  get _isNightlyBuild() {
+    return AppConstants.NIGHTLY_BUILD;
+  }
+
   async _test_reset(testOverrides = null) {
     if (this.#initStarted) {
       await this.initPromise;
@@ -1141,6 +1231,30 @@ class _QuickSuggest {
   // A plain JS object that maps pref names relative to `browser.urlbar.` to
   // their original unmodified values as defined in `firefox.js`.
   #unmodifiedDefaultPrefs;
+}
+
+/**
+ * Returns whether the user has accepted the Firefox Terms of Use (ToU)
+ * pertaining to Suggest.
+ *
+ * @returns {boolean}
+ *   Whether the user accepted the ToU.
+ */
+function userAcceptedSuggestToU() {
+  let date = lazy.TelemetryReportingPolicy.termsOfUseAcceptedDate;
+  return !!date && SUGGEST_TOU_TIMESTAMP <= date.getTime();
+}
+
+/**
+ * Returns whether online Suggest should be available to the user *excluding
+ * consideration of the user's region and locale*.
+ *
+ * @returns {boolean}
+ *   Whether online Suggest should be available, excluding region and locale
+ *   checks.
+ */
+function shouldOnlineBeAvailable() {
+  return QuickSuggest._isNightlyBuild && userAcceptedSuggestToU();
 }
 
 function getDismissalKey(result) {

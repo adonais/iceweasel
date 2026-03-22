@@ -20,8 +20,7 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(StorageAccessPermissionRequest,
                                                ContentPermissionRequestBase)
 
 StorageAccessPermissionRequest::StorageAccessPermissionRequest(
-    nsPIDOMWindowInner* aWindow, nsIPrincipal* aNodePrincipal,
-    const Maybe<nsCString>& aTopLevelBaseDomain, bool aFrameOnly,
+    nsPIDOMWindowInner* aWindow, nsIPrincipal* aNodePrincipal, bool aFrameOnly,
     AllowCallback&& aAllowCallback, CancelCallback&& aCancelCallback)
     : ContentPermissionRequestBase(aNodePrincipal, aWindow,
                                    "dom.storage_access"_ns,
@@ -30,10 +29,7 @@ StorageAccessPermissionRequest::StorageAccessPermissionRequest(
       mCancelCallback(std::move(aCancelCallback)),
       mCallbackCalled(false) {
   mOptions.SetLength(2);
-  if (aTopLevelBaseDomain.isSome()) {
-    nsCString option = aTopLevelBaseDomain.value();
-    mOptions.ElementAt(0) = NS_ConvertUTF8toUTF16(option);
-  }
+  // Location 0 is no longer sent
   if (aFrameOnly) {
     mOptions.ElementAt(1) = u"1"_ns;
   }
@@ -126,15 +122,16 @@ StorageAccessPermissionRequest::Create(nsPIDOMWindowInner* aWindow,
                                        nsIPrincipal* aPrincipal,
                                        AllowCallback&& aAllowCallback,
                                        CancelCallback&& aCancelCallback) {
-  return Create(aWindow, aPrincipal, Nothing(), true, std::move(aAllowCallback),
+  return Create(aWindow, aPrincipal, true, std::move(aAllowCallback),
                 std::move(aCancelCallback));
 }
 
 already_AddRefed<StorageAccessPermissionRequest>
-StorageAccessPermissionRequest::Create(
-    nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal,
-    const Maybe<nsCString>& aTopLevelBaseDomain, bool aFrameOnly,
-    AllowCallback&& aAllowCallback, CancelCallback&& aCancelCallback) {
+StorageAccessPermissionRequest::Create(nsPIDOMWindowInner* aWindow,
+                                       nsIPrincipal* aPrincipal,
+                                       bool aFrameOnly,
+                                       AllowCallback&& aAllowCallback,
+                                       CancelCallback&& aCancelCallback) {
   if (!aWindow) {
     return nullptr;
   }
@@ -144,9 +141,9 @@ StorageAccessPermissionRequest::Create(
   }
 
   RefPtr<StorageAccessPermissionRequest> request =
-      new StorageAccessPermissionRequest(
-          aWindow, aPrincipal, aTopLevelBaseDomain, aFrameOnly,
-          std::move(aAllowCallback), std::move(aCancelCallback));
+      new StorageAccessPermissionRequest(aWindow, aPrincipal, aFrameOnly,
+                                         std::move(aAllowCallback),
+                                         std::move(aCancelCallback));
   return request.forget();
 }
 

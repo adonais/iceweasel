@@ -1169,6 +1169,149 @@ newtab:
     send_in_pings:
       - newtab
 
+  widgets_impression:
+    type: event
+    description: >
+      Recorded when any widget is viewable on a user's screen.
+      This metric replaces widgets_lists_impression, widgets_timer_impression,
+      and weather_impression.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mcrawford@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      widget_name: &widget_name
+        description: >
+          Name of the widget that emits the event (e.g., lists, focus_timer, weather).
+        type: string
+      widget_size: &widget_size
+        description: >
+          Size of widget (e.g., mini, small, medium).
+        type: string
+    send_in_pings:
+      - newtab
+
+  widgets_user_event:
+    type: event
+    description: >
+      Recorded when user interacts with any widget.
+      This metric replaces widgets_lists_user_event, widgets_timer_user_event,
+      weather_detect_location, weather_opt_in_selection, weather_location_selected,
+      weather_open_provider_url and weather_change_display.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mcrawford@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      widget_name: *widget_name
+      widget_source: &widget_source
+        description: >
+          Where the event originated (e.g., widget, context_menu, customize_panel).
+        type: string
+      widget_size: *widget_size
+      user_action:
+        description: >
+          Specific action taken by different widgets (e.g., list_copy, list_create,
+          timer_set, timer_play, timer_pause, change_location, detect_location).
+        type: string
+      action_value:
+        description: >
+          Optional value associated with action (string representation).
+        type: string
+    send_in_pings:
+      - newtab
+
+  widgets_enabled:
+    type: event
+    description: >
+      Recorded when a widget is enabled or disabled.
+      This metric replaces widgets_lists_change_display, widgets_timer_change_display,
+      and weather_enabled.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - mcrawford@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      widget_name: *widget_name
+      widget_source: *widget_source
+      widget_size: *widget_size
+      enabled:
+        description: >
+          Whether widget is now enabled (true) or disabled (false).
+        type: boolean
+    send_in_pings:
+      - newtab
+
+  widgets_error:
+    type: event
+    description: >
+      Recorded when a widget encounters an error state (e.g., failed to load data).
+      This metric replaces weather_load_error.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2010597
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - mcrawford@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      widget_name: *widget_name
+      widget_size: *widget_size
+      error_type:
+        description: >
+          Type of error encountered (e.g., load_error, network_error, timeout).
+        type: string
+    send_in_pings:
+      - newtab
+
+  widgets_container_action:
+    type: event
+    description: >
+      Recorded when user interacts with widget container controls.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2012821
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2012821
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - mcrawford@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+      widget_size: *widget_size
+      action_type:
+        description: >
+          Type of container action. (hide_all, toggle_maximize)
+        type: string
+      action_value:
+        description: >
+          Optional value for the action.
+        type: string
+    send_in_pings:
+      - newtab
+
   spons_nav_traffic_sent:
     type: memory_distribution
     memory_unit: kilobyte

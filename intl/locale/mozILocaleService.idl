@@ -203,4 +203,10 @@ interface mozILocaleService : nsISupports
    * https://searchfox.org/firefox-main/source/browser/components/preferences/dialogs/fonts.xhtml
    */
   readonly attribute ACString fontLanguageGroup;
+
+  /**
+   * The suffix appended prior to navigating when using `ctrl` or `command`
+   * when hitting return/enter in the URL bar.
+   */
+  readonly attribute ACString urlFixupSuffix;
 };

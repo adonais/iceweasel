@@ -3,8 +3,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#ifndef nsILineIterator_h___
-#define nsILineIterator_h___
+#ifndef nsILineIterator_h_
+#define nsILineIterator_h_
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Result.h"
@@ -137,4 +137,4 @@ class MOZ_RAII AutoAssertNoDomMutations final {
   ~AutoAssertNoDomMutations() { MOZ_DIAGNOSTIC_ASSERT(!mGuard.Mutated(0)); }
 };
 
-#endif /* nsILineIterator_h___ */
+#endif /* nsILineIterator_h_ */

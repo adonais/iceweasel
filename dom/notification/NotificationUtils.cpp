@@ -45,6 +45,10 @@ static void ReportTelemetry(GleanLabel aLabel,
     case PermissionCheckPurpose::NotificationShow:
       glean::web_notification::show_origin.EnumGet(aLabel).Add();
       return;
+    case PermissionCheckPurpose::LoadImageForShow:
+      // This will always be followed by a NotificationShow permissions check
+      // anyway.
+      return;
     default:
       MOZ_CRASH("Unknown permission checker");
       return;

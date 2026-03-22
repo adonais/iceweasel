@@ -201,9 +201,12 @@ AndroidWebAuthnService::MakeCredential(uint64_t aTransactionId,
                                            : java::sdk::Boolean::FALSE());
         GECKOBUNDLE_FINISH(extensionsBundle);
 
+        nsString json;
+        (void)aArgs->GetJson(json);
+
         auto result = java::WebAuthnTokenManager::WebAuthnMakeCredential(
             credentialBundle, uid, challenge, idList, transportList,
-            authSelBundle, extensionsBundle, algs, hash);
+            authSelBundle, extensionsBundle, algs, hash, json);
 
         auto geckoResult = java::GeckoResult::LocalRef(std::move(result));
 
@@ -317,9 +320,12 @@ AndroidWebAuthnService::GetAssertion(uint64_t aTransactionId,
 
         GECKOBUNDLE_FINISH(extensionsBundle);
 
+        nsString json;
+        (void)aArgs->GetJson(json);
+
         auto result = java::WebAuthnTokenManager::WebAuthnGetAssertion(
             challenge, idList, transportList, assertionBundle, extensionsBundle,
-            hash);
+            hash, json);
         auto geckoResult = java::GeckoResult::LocalRef(std::move(result));
         MozPromise<RefPtr<WebAuthnSignResult>, AndroidWebAuthnError,
                    true>::FromGeckoResult(geckoResult)

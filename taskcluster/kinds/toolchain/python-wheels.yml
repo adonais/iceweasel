@@ -15,19 +15,6 @@ task-defaults:
         resources:
             - 'build/wheel_requirements.txt'
 
-linux64-1804-dbus-python:
-    treeherder:
-        symbol: TL(py3.9-dbus-python)
-    fetches:
-        fetch:
-            - dbus-python-1.2.18
-        toolchain:
-            - linux64-python-3.9
-    run:
-        toolchain-artifact: public/build/dbus_python-1.2.18-cp39-cp39-linux_x86_64.whl
-    worker:
-        docker-image: {in-tree: ubuntu1804-build-python-wheels}
-
 linux64-2204-dbus-python:
     treeherder:
         symbol: TL(py3.10-dbus-python)

@@ -26,6 +26,7 @@ class TestTargetTasks(unittest.TestCase):
                 "project": project,
                 "repository_type": "hg",
                 "hg_branch": "default",
+                "level": "3",
             },
         )
 

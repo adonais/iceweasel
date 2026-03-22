@@ -879,8 +879,9 @@ class PromiseWorkerProxyRunnable final : public WorkerThreadRunnable {
 
     // Here we convert the buffer to a JS::Value.
     JS::Rooted<JS::Value> value(aCx);
-    if (!mPromiseWorkerProxy->Read(aCx, &value)) {
-      JS_ClearPendingException(aCx);
+    IgnoredErrorResult rv;
+    mPromiseWorkerProxy->Read(aCx, &value, rv);
+    if (rv.Failed()) {
       return false;
     }
 
@@ -982,8 +983,9 @@ void PromiseWorkerProxy::RunCallback(JSContext* aCx,
   }
 
   // The |aValue| is written into the StructuredCloneHolderBase.
-  if (!Write(aCx, aValue)) {
-    JS_ClearPendingException(aCx);
+  IgnoredErrorResult rv;
+  Write(aCx, aValue, rv);
+  if (rv.Failed()) {
     MOZ_ASSERT(false,
                "cannot serialize the value with the StructuredCloneAlgorithm!");
   }

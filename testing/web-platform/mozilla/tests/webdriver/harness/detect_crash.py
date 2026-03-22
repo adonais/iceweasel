@@ -13,8 +13,9 @@ def test_content_process(configuration, geckodriver):
         # The crash is delayed and happens after this command finished.
         driver.session.url = "about:crashcontent"
 
-        # Bug 1943038: geckodriver fails to detect minidump files for content
-        # crashes when the next command is sent immediately.
+        # A content crash will cause the application to shutdown. But because
+        # it doesn't happen immediately try to reduce the race condition by
+        # waiting a little bit so we can be sure no command can be send anymore.
         time.sleep(1)
 
         # Send another command that should fail

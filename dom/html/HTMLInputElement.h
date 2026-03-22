@@ -40,6 +40,7 @@ namespace mozilla {
 
 class EventChainPostVisitor;
 class EventChainPreVisitor;
+enum class StyleColorSpace : uint8_t;
 
 namespace dom {
 
@@ -116,8 +117,8 @@ class HTMLInputElement final : public TextControlElement,
 
  public:
   using ConstraintValidation::GetValidationMessage;
-  using nsGenericHTMLFormControlElementWithState::GetForm;
   using nsGenericHTMLFormControlElementWithState::GetFormAction;
+  using nsGenericHTMLFormControlElementWithState::GetFormForBindings;
   using ValueSetterOption = TextControlState::ValueSetterOption;
   using ValueSetterOptions = TextControlState::ValueSetterOptions;
 
@@ -451,6 +452,11 @@ class HTMLInputElement final : public TextControlElement,
     SetHTMLAttr(nsGkAtoms::accept, aValue, aRv);
   }
 
+  bool Alpha() const;
+  void SetAlpha(bool aValue, ErrorResult& aRv) {
+    SetHTMLBoolAttr(nsGkAtoms::alpha, aValue, aRv);
+  }
+
   void GetAlt(nsAString& aValue) { GetHTMLAttr(nsGkAtoms::alt, aValue); }
   void SetAlt(const nsAString& aValue, ErrorResult& aRv) {
     SetHTMLAttr(nsGkAtoms::alt, aValue, aRv);
@@ -476,6 +482,12 @@ class HTMLInputElement final : public TextControlElement,
 
   bool Checked() const { return mChecked; }
   void SetChecked(bool aChecked);
+
+  void GetColorSpace(nsAString& aValue) const;
+  StyleColorSpace GetColorSpaceEnum() const;
+  void SetColorSpace(const nsAString& aValue, ErrorResult& aRv) {
+    SetHTMLAttr(nsGkAtoms::colorspace, aValue, aRv);
+  }
 
   bool IsRadioOrCheckbox() const {
     return mType == FormControlType::InputCheckbox ||
@@ -531,7 +543,8 @@ class HTMLInputElement final : public TextControlElement,
   bool IsDraggingRange() const { return mIsDraggingRange; }
   void SetIndeterminate(bool aValue);
 
-  HTMLDataListElement* GetList() const;
+  Element* GetListForBindings() const;
+  HTMLDataListElement* GetListInternal() const;
 
   void GetMax(nsAString& aValue) { GetHTMLAttr(nsGkAtoms::max, aValue); }
   void SetMax(const nsAString& aValue, ErrorResult& aRv) {
@@ -692,7 +705,8 @@ class HTMLInputElement final : public TextControlElement,
   // <input> element.
   bool StepsInputValue(const WidgetKeyboardEvent&) const;
 
-  already_AddRefed<nsINodeList> GetLabels();
+  already_AddRefed<nsINodeList> GetLabelsForBindings();
+  already_AddRefed<nsINodeList> GetLabelsInternal();
 
   MOZ_CAN_RUN_SCRIPT void Select();
 
@@ -817,6 +831,11 @@ class HTMLInputElement final : public TextControlElement,
    * Return the current value as InputPickerColor.
    */
   void GetColor(InputPickerColor& aValue);
+
+  /**
+   * Update color value when alpha or colorspace is changed.
+   */
+  void UpdateColor();
 
   /**
    * Converts the InputPickerColor into a string and set it as user input.

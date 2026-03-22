@@ -37,8 +37,8 @@ import mozilla.components.compose.browser.toolbar.store.DisplayState
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
-import org.mozilla.fenix.theme.ThemeProvider
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -150,7 +150,7 @@ private fun initialActions(): List<Action> {
 }
 
 @Composable
-private fun SimpleBrowserToolbarPreview(actions: List<Action>, theme: Theme = Theme.getTheme()) {
+private fun SimpleBrowserToolbarPreview(actions: List<Action>, theme: Theme) {
     val store = BrowserToolbarStore(
         initialState = BrowserToolbarState(
             displayState = DisplayState(browserActionsEnd = actions),
@@ -166,7 +166,7 @@ private fun SimpleBrowserToolbarPreview(actions: List<Action>, theme: Theme = Th
 @Preview
 @Composable
 private fun BrowserSimpleToolbarPreview_Edit(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     SimpleBrowserToolbarPreview(editEndActions(), theme = theme)
 }
@@ -174,7 +174,7 @@ private fun BrowserSimpleToolbarPreview_Edit(
 @Preview
 @Composable
 private fun BrowserSimpleToolbarPreview_Initial(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     SimpleBrowserToolbarPreview(initialActions(), theme = theme)
 }
@@ -182,7 +182,7 @@ private fun BrowserSimpleToolbarPreview_Initial(
 @Preview
 @Composable
 private fun BrowserSimpleToolbarPreview_Search(
-    @PreviewParameter(ThemeProvider::class) theme: Theme,
+    @PreviewParameter(PreviewThemeProvider::class) theme: Theme,
 ) {
     SimpleBrowserToolbarPreview(searchEndActions(), theme = theme)
 }

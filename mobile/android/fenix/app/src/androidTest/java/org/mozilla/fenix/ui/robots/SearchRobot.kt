@@ -313,7 +313,11 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifySearchSelectorButton: Verified that the search selector button is displayed")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun clickSearchSelectorButton() {
+        Log.i(TAG, "clickSearchSelectorButton: Waiting for $waitingTime until the search selector button exists")
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag(SEARCH_SELECTOR), waitingTime)
+        Log.i(TAG, "clickSearchSelectorButton: Waited for $waitingTime until the search selector button exists")
         Log.i(TAG, "clickSearchSelectorButton: Trying to click the search selector button")
         composeTestRule.onNodeWithTag(SEARCH_SELECTOR).performClick()
         Log.i(TAG, "clickSearchSelectorButton: Clicked the search selector button")
@@ -334,23 +338,31 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifySearchBarPlaceholder: Verification successful")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun verifySearchShortcutList(vararg searchEngineNames: String, isSearchEngineDisplayed: Boolean) {
         for (searchEngineName in searchEngineNames) {
             if (isSearchEngineDisplayed) {
+                Log.i(TAG, "verifySearchShortcutList: Waiting for $waitingTime until search selector: $searchEngineName exists")
+                composeTestRule.waitUntilAtLeastOneExists(hasContentDescription(searchEngineName), waitingTime)
+                Log.i(TAG, "verifySearchShortcutList: Waited for $waitingTime until search selector: $searchEngineName exists")
                 Log.i(TAG, "verifySearchShortcutList: Trying to verify the $searchEngineName search shortcut is displayed")
-                this@SearchRobot.composeTestRule.onNodeWithContentDescription(searchEngineName)
+                composeTestRule.onNodeWithContentDescription(searchEngineName)
                     .assertIsDisplayed()
                 Log.i(TAG, "verifySearchShortcutList: Verified the $searchEngineName search shortcut is displayed")
             } else {
                 Log.i(TAG, "verifySearchShortcutList: Trying to verify the $searchEngineName search shortcut is not displayed")
-                this@SearchRobot.composeTestRule.onNodeWithContentDescription(searchEngineName)
+                composeTestRule.onNodeWithContentDescription(searchEngineName)
                     .assertIsNotDisplayed()
                 Log.i(TAG, "verifySearchShortcutList: Verified the $searchEngineName search shortcut is not displayed")
             }
         }
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun selectTemporarySearchMethod(searchEngineName: String) {
+        Log.i(TAG, "verifySearchShortcutList: Waiting for $waitingTime until search shortcut: $searchEngineName exists")
+        composeTestRule.waitUntilAtLeastOneExists(hasContentDescription(searchEngineName), waitingTime)
+        Log.i(TAG, "verifySearchShortcutList: Waited for $waitingTime until search shortcut: $searchEngineName exists")
         Log.i(TAG, "selectTemporarySearchMethod: Trying to click the $searchEngineName search shortcut")
         composeTestRule.onNodeWithContentDescription(searchEngineName).performClick()
         Log.i(TAG, "selectTemporarySearchMethod: Clicked the $searchEngineName search shortcut")
@@ -394,9 +406,20 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun typeSearch(searchTerm: String) {
-        Log.i(TAG, "typeSearch: Trying to set the edit mode toolbar text to $searchTerm")
-        this@SearchRobot.composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performTextReplacement(searchTerm)
-        Log.i(TAG, "typeSearch: Edit mode toolbar text was set to $searchTerm")
+        Log.i(TAG, "typeSearch: Waiting for search box to appear")
+        composeTestRule.waitUntil(waitingTime) {
+            composeTestRule.onAllNodesWithTag(ADDRESSBAR_SEARCH_BOX)
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        Log.i(TAG, "typeSearch: Search box is ready")
+
+        Log.i(TAG, "typeSearch: Performing text replacement with '$searchTerm'")
+        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performTextReplacement(searchTerm)
+        Log.i(TAG, "typeSearch: Text replacement done")
+
+        Log.i(TAG, "typeSearch: Waiting for Compose to be idle")
+        composeTestRule.waitForIdle()
+        Log.i(TAG, "typeSearch: Compose is now idle")
     }
 
     fun clickClearButton() {
@@ -510,7 +533,7 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
             Log.i(TAG, "dismissSearchBar: Trying to click device back button")
             mDevice.pressBack()
             Log.i(TAG, "dismissSearchBar: Clicked device back button")
-            waitForAppWindowToBeUpdated()
+            composeTestRule.waitForIdle()
 
             HomeScreenRobot(composeTestRule).interact()
             return HomeScreenRobot.Transition(composeTestRule)
@@ -518,18 +541,25 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
 
         fun submitQuery(query: String, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             Log.i(TAG, "submitQuery: Trying to set toolbar text to: $query and pressing IME action")
-
             composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).apply {
                 performTextReplacement(query)
                 performImeAction()
             }
             Log.i(TAG, "submitQuery: Toolbar text was set to: $query and IME action performed")
 
+            Log.i(TAG, "submitQuery: Waiting for compose test rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "submitQuery: Waiting for compose test rule to be idle")
+
             BrowserRobot(composeTestRule).interact()
             return BrowserRobot.Transition(composeTestRule)
         }
 
+        @OptIn(ExperimentalTestApi::class)
         fun clickSearchEngineSettings(interact: SettingsSubMenuSearchRobot.() -> Unit): SettingsSubMenuSearchRobot.Transition {
+            Log.i(TAG, "clickSearchEngineSettings: Waiting for $waitingTime until the \"Search settings\" button exists")
+            composeTestRule.waitUntilAtLeastOneExists(hasContentDescription(getStringResource(R.string.search_settings_menu_item)), waitingTime)
+            Log.i(TAG, "clickSearchEngineSettings: Waited for $waitingTime until the \"Search settings\" button exists")
             Log.i(TAG, "clickSearchEngineSettings: Trying to click the \"Search settings\" button")
             composeTestRule.onNodeWithContentDescription(getStringResource(R.string.search_settings_menu_item)).performClick()
             Log.i(TAG, "clickSearchEngineSettings: Clicked the \"Search settings\" button")

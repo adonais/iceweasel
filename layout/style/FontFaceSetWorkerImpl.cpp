@@ -356,7 +356,7 @@ nsresult FontFaceSetWorkerImpl::CreateChannelForSyncLoadFontData(
 FontVisibilityProvider* FontFaceSetWorkerImpl::GetFontVisibilityProvider()
     const {
   RecursiveMutexAutoLock lock(mMutex);
-  return mWorkerRef->Private();
+  return mWorkerRef ? mWorkerRef->Private() : nullptr;
 }
 
 TimeStamp FontFaceSetWorkerImpl::GetNavigationStartTimeStamp() {

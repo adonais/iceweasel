@@ -11,6 +11,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   // eslint-disable-next-line mozilla/use-console-createInstance
   Log: "resource://gre/modules/Log.sys.mjs",
 });
@@ -120,8 +121,6 @@ class CallbackList {
 
 /** A singleton uniffi callback interface. */
 class TracingEventHandler extends EventSink {
-  static OBSERVER_NAME = "xpcom-will-shutdown";
-
   constructor() {
     super();
     // Map targets to CallbackLists
@@ -129,7 +128,22 @@ class TracingEventHandler extends EventSink {
     // CallbackList for callbacks registered with registerMinLevelEventSink
     this.minLevelCallbackList = new CallbackList();
 
-    Services.obs.addObserver(this, TracingEventHandler.OBSERVER_NAME);
+    // Choose `profileBeforeChange` to call `#close()` and deregister our callbacks.
+    //
+    // Most other components will shutdown during the `profileChangeTeardown` phase, since that's
+    // the last opportunity to write to the profile directory.  By choosing the next one, we ensure
+    // we can forward any logging that happens when those components shutdown.
+    if (lazy.AsyncShutdown.profileBeforeChange.isClosed) {
+      // Corner case, where we're already in the shutdown phase while being constructed.  In this
+      // case, uninitialize immediately.
+      this.#close();
+    } else {
+      // If we're not in the above corner case, then register a shutdown blocker to uninitialize.
+      lazy.AsyncShutdown.profileBeforeChange.addBlocker(
+        "TracingEventHandler: deregister callbacks",
+        () => this.#close()
+      );
+    }
   }
 
   register(target, level, callback) {
@@ -225,15 +239,13 @@ class TracingEventHandler extends EventSink {
     this.minLevelCallbackList.processEvent(event);
   }
 
-  observe(_aSubject, aTopic, _aData) {
-    if (aTopic == TracingEventHandler.OBSERVER_NAME) {
-      for (let target of this.targetCallbackLists.keys()) {
-        unregisterEventSink(target);
-      }
-      unregisterMinLevelEventSink();
-      this.targetCallbackLists = null;
-      this.minLevelCallbackList = null;
+  #close() {
+    for (let target of this.targetCallbackLists.keys()) {
+      unregisterEventSink(target);
     }
+    unregisterMinLevelEventSink();
+    this.targetCallbackLists = null;
+    this.minLevelCallbackList = null;
   }
 }
 

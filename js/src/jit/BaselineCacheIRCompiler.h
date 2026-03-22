@@ -47,9 +47,19 @@ ICAttachResult AttachBaselineCacheIRStub(JSContext* cx,
 
 // BaselineCacheIRCompiler compiles CacheIR to BaselineIC native code.
 class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
+  struct CreateThisData {
+    uint32_t numFixedSlots;
+    uint32_t numDynamicSlots;
+    gc::AllocKind allocKind;
+    uint32_t thisShapeOffset;
+    uint32_t allocSiteOffset;
+  };
+
   bool makesGCCalls_;
   uint8_t localTracingSlots_ = 0;
   Register baselineFrameReg_ = FramePointer;
+
+  mozilla::Maybe<CreateThisData> createThisData_;
 
   // This register points to the baseline frame of the caller. It should only
   // be used before we enter a stub frame. This is normally the frame pointer
@@ -73,8 +83,8 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
   void loadStackObject(ArgumentKind kind, CallFlags flags, Register argcReg,
                        Register dest, uint32_t extraArgs = 0);
   void pushArguments(Register argcReg, Register calleeReg, Register scratch,
-                     Register scratch2, CallFlags flags, uint32_t argcFixed,
-                     bool isJitCall);
+                     Register scratch2, Register scratch3, CallFlags flags,
+                     uint32_t argcFixed, bool isJitCall);
   void prepareForArguments(Register argcReg, Register calleeReg,
                            Register scratch, Register scratch2, CallFlags flags,
                            uint32_t argcFixed);
@@ -95,7 +105,7 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
                                   CallFlags flags, uint32_t numBoundArgs,
                                   bool isJitCall);
   void createThis(Register argcReg, Register calleeReg, Register scratch,
-                  Register scratch2, CallFlags flags,
+                  Register scratch2, Register scratch3, CallFlags flags,
                   mozilla::Maybe<uint32_t> numBoundArgs = mozilla::Nothing());
   void updateReturnValue();
 

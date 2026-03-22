@@ -647,9 +647,11 @@ class VideoStreamEncoder::DegradationPreferenceManager
  public:
   explicit DegradationPreferenceManager(
       VideoStreamAdapter* video_stream_adapter)
-      : degradation_preference_(DegradationPreference::DISABLED),
+      : degradation_preference_(
+            DegradationPreference::MAINTAIN_FRAMERATE_AND_RESOLUTION),
         is_screenshare_(false),
-        effective_degradation_preference_(DegradationPreference::DISABLED),
+        effective_degradation_preference_(
+            DegradationPreference::MAINTAIN_FRAMERATE_AND_RESOLUTION),
         video_stream_adapter_(video_stream_adapter) {
     RTC_DCHECK(video_stream_adapter_);
     sequence_checker_.Detach();
@@ -756,6 +758,7 @@ VideoStreamEncoder::VideoStreamEncoder(
           ParseVp9LowTierCoreCountThreshold(env_.field_trials())),
       experimental_encoder_thread_limit_(
           ParseEncoderThreadLimit(env_.field_trials())),
+      speed_experiment_(env_.field_trials()),
       encoder_queue_(std::move(encoder_queue)),
       prepared_frames_processor_(
           make_ref_counted<PreparedFramesProcessor>(this)) {
@@ -1360,9 +1363,19 @@ void VideoStreamEncoder::ReconfigureEncoder() {
         send_codec_, codec, was_encode_called_since_last_initialization_);
   }
 
-  if (codec.codecType == VideoCodecType::kVideoCodecVP9 &&
-      number_of_cores_ <= vp9_low_tier_core_threshold_.value_or(0)) {
+  // GetComplexity() will return kComplexityNormal if nothing configured via
+  // field trials.
+  VideoCodecComplexity complexity = speed_experiment_.GetComplexity(
+      codec.codecType, codec.mode == VideoCodecMode::kScreensharing);
+  if (!speed_experiment_.IsDynamicSpeedEnabled() &&
+      codec.codecType == VideoCodecType::kVideoCodecVP9 &&
+      number_of_cores_ <= vp9_low_tier_core_threshold_.value_or(0) &&
+      complexity == VideoCodecComplexity::kComplexityNormal) {
+    // Default "normal" speed with no dynamic speed control, and the "low
+    // complexity vp9 on low tier" flag present => use low complexity.
     codec.SetVideoEncoderComplexity(VideoCodecComplexity::kComplexityLow);
+  } else {
+    codec.SetVideoEncoderComplexity(complexity);
   }
 
   quality_convergence_controller_.Initialize(
@@ -2337,7 +2350,8 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
         // webrtc qp scaler (in the no-svc case or if only a single spatial
         // layer is encoded). It has to be explicitly detected and reported to
         // adaptation metrics.
-        if (codec_type == VideoCodecType::kVideoCodecVP9 &&
+        if (!send_codec_.IsMixedCodec() &&
+            codec_type == VideoCodecType::kVideoCodecVP9 &&
             send_codec_.VP9()->automaticResizeOn) {
           unsigned int expected_width = send_codec_.width;
           unsigned int expected_height = send_codec_.height;

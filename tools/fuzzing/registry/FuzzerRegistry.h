@@ -3,8 +3,8 @@
  * * License, v. 2.0. If a copy of the MPL was not distributed with this
  * * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _FuzzerRegistry_h__
-#define _FuzzerRegistry_h__
+#ifndef FuzzerRegistry_h_
+#define FuzzerRegistry_h_
 
 #include <cstdint>
 #include <map>
@@ -41,4 +41,4 @@ class FuzzerRegistry {
 
 }  // namespace mozilla
 
-#endif  // _FuzzerRegistry_h__
+#endif  // FuzzerRegistry_h_

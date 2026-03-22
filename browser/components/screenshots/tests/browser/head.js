@@ -29,7 +29,7 @@ const { MAX_CAPTURE_DIMENSION, MAX_CAPTURE_AREA } = ChromeUtils.importESModule(
 );
 
 const gScreenshotUISelectors = {
-  panel: "#screenshotsPagePanel",
+  panel: ".screenshotsPagePanel",
   fullPageButton: "button#full-page",
   visiblePageButton: "button#visible-page",
   copyButton: "button.#copy",
@@ -1001,6 +1001,18 @@ class ScreenshotsHelper {
       }
     );
   }
+}
+
+/**
+ * Create a new tab in the current window and wait for its browser to be loaded
+ *
+ * @param {string} [url] Optional url to load, defaults to value of TEST_PAGE
+ * @returns The tab
+ */
+async function addTabAndLoadBrowser(url = TEST_PAGE) {
+  const tab = BrowserTestUtils.addTab(gBrowser, url);
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  return tab;
 }
 
 /**

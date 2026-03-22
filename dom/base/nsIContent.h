@@ -3,8 +3,8 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-#ifndef nsIContent_h___
-#define nsIContent_h___
+#ifndef nsIContent_h_
+#define nsIContent_h_
 
 #include "mozilla/FlushType.h"
 #include "nsINode.h"
@@ -307,7 +307,7 @@ class nsIContent : public nsINode {
    */
   mozilla::dom::ShadowRoot* GetContainingShadow() const {
     const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
-    return slots ? slots->mContainingShadow.get() : nullptr;
+    return slots ? slots->mContainingShadow : nullptr;
   }
 
   /**
@@ -648,8 +648,9 @@ class nsIContent : public nsINode {
 
     /**
      * @see nsIContent::GetContainingShadow
+     * This is a weak pointer maintained by BindToTree() / UnbindFromTree().
      */
-    RefPtr<mozilla::dom::ShadowRoot> mContainingShadow;
+    mozilla::dom::ShadowRoot* mContainingShadow = nullptr;
 
     /**
      * @see nsIContent::GetAssignedSlot
@@ -665,7 +666,11 @@ class nsIContent : public nsINode {
 
     ~nsContentSlots() {
       if (!(mExtendedSlots & sNonOwningExtendedSlotsFlag)) {
-        delete GetExtendedContentSlots();
+        nsExtendedContentSlots* extSlots = GetExtendedContentSlots();
+        if (extSlots) {
+          extSlots->~nsExtendedContentSlots();
+          free(extSlots);
+        }
       }
     }
 
@@ -708,7 +713,7 @@ class nsIContent : public nsINode {
   };
 
   // Override from nsINode
-  nsContentSlots* CreateSlots() override { return new nsContentSlots(); }
+  nsContentSlots* CreateSlots() override;
 
   nsContentSlots* ContentSlots() {
     return static_cast<nsContentSlots*>(Slots());
@@ -722,9 +727,7 @@ class nsIContent : public nsINode {
     return static_cast<nsContentSlots*>(GetExistingSlots());
   }
 
-  virtual nsExtendedContentSlots* CreateExtendedSlots() {
-    return new nsExtendedContentSlots();
-  }
+  virtual nsExtendedContentSlots* CreateExtendedSlots();
 
   const nsExtendedContentSlots* GetExistingExtendedContentSlots() const {
     const nsContentSlots* slots = GetExistingContentSlots();
@@ -782,4 +785,4 @@ class nsIContent : public nsINode {
 
 NON_VIRTUAL_ADDREF_RELEASE(nsIContent)
 
-#endif /* nsIContent_h___ */
+#endif /* nsIContent_h_ */

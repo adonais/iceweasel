@@ -344,6 +344,11 @@ skip-if = [
 
 ["test_tearoffs.js"]
 
+["test_telemetry.js"]
+prefs = [
+  "javascript.options.experimental.self_hosted_cache=true",
+]
+
 ["test_textDecoder.js"]
 
 ["test_uawidget_scope.js"]

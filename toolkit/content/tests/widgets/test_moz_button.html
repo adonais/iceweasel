@@ -28,6 +28,7 @@
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16' fill='context-fill' fill-opacity='context-fill-opacity'%3E%3Cpath d='M3 7 1.5 7l-.5.5L1 9l.5.5 1.5 0 .5-.5 0-1.5z'/%3E%3Cpath d='m8.75 7-1.5 0-.5.5 0 1.5.5.5 1.5 0 .5-.5 0-1.5z'/%3E%3Cpath d='M14.5 7 13 7l-.5.5 0 1.5.5.5 1.5 0L15 9l0-1.5z'/%3E%3C/svg%3E");
       }
     </style>
+    <div id="target"></div>
     <script>
       const { AddonManager } = ChromeUtils.importESModule(
         "resource://gre/modules/AddonManager.sys.mjs"
@@ -83,6 +84,12 @@
         }
       }
 
+      function normalizeBackgroundSize(val) {
+        const el = document.querySelector("#target");
+        el.style.backgroundSize = val;
+        return el.style.backgroundSize;
+      }
+
       function assertButtonPropertiesMatch(el, propertyToCssVar) {
         let elStyles = el.backgroundEl
           ? getComputedStyle(el.backgroundEl)
@@ -100,6 +107,9 @@
           ) {
             propertyVal = normalizeColor(propertyVal, elStyles);
             cssVarVal = normalizeColor(cssVarVal, elStyles);
+          }
+          if (property === "backgroundSize") {
+            cssVarVal = normalizeBackgroundSize(propertyVal);
           }
           info(`${propertyVal} == ${cssVarVal}`);
           is(propertyVal, cssVarVal, `${property} should be ${cssVar}`);

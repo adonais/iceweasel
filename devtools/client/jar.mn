@@ -159,6 +159,7 @@ devtools.jar:
     skin/images/filter-swatch.svg (themes/images/filter-swatch.svg)
     skin/images/application-debug.svg (themes/images/application-debug.svg)
     skin/images/application-manifest.svg (themes/images/application-manifest.svg)
+    skin/images/application-session-history.svg (themes/images/application-session-history.svg)
     skin/images/fox-smiling.svg (themes/images/fox-smiling.svg)
     skin/images/grid.svg (themes/images/grid.svg)
     skin/images/angle-swatch.svg (themes/images/angle-swatch.svg)
@@ -458,6 +459,7 @@ devtools.jar:
     content/application/src/components/service-workers/RegistrationList.css (application/src/components/service-workers/RegistrationList.css)
     content/application/src/components/service-workers/Worker.css (application/src/components/service-workers/Worker.css)
     content/application/src/components/ui/UIButton.css (application/src/components/ui/UIButton.css)
+    content/application/src/components/session-history/SessionHistory.css (application/src/components/session-history/SessionHistory.css)
 
     # Anti tracking panel
     content/anti-tracking/index.html (anti-tracking/index.html)

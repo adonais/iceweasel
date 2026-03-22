@@ -86,13 +86,6 @@
   -->
   <string name="felt_privacy_desc_card_title">هیچ توری ری ای دسگا نهلی و جا</string>
   <!--
-    Explanation for private browsing displayed to users on home view when they first enable
-    private mode in our new Total Private Browsing mode.
-    %1$s is the name of the app (for example "Firefox").
-    %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
-  -->
-  <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s کۊکیا، ویرگار وو داده یل وبگه ایسا ن هر سا ک پوی بلگه یل سیخومی خوتووݩ ن بووندین، پاک اکونه. %2$s</string>
-  <!--
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
@@ -325,6 +318,8 @@
   <string name="browser_menu_translate_page_2">ولرنیڌن بلگه</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">خولاسه بلگه</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">نۊ</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">گوزارش خراوی وبگه…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -451,7 +446,7 @@
 
     Description for learning more about our privacy notice.
   -->
-  <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">نوکات زفت مهرموویی Firefox</string>
+  <string name="juno_onboarding_privacy_notice_text" tools:ignore="BrandUsage">نوکات زفت مهرمووه ای Firefox</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_title_nimbus_2">ایما عاشوق زفت کردن ٱمنیت ایسانیم</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
@@ -522,7 +517,7 @@
   <string name="startup_crash_restart">گۊشیڌن دووارته %s</string>
   <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_usage_data_title">فشناڌن داده یل فنی وو تعامولا و Mozilla</string>
-  <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">دووسمندیا زبار دسگا ایسا، سامووا سخت ٱفزار وو بارت و کار گرؽڌن ایسا ز Firefox و بؽڌر وابیڌن ویژیی یل، عملکرد وو پایداری پوی هیاری اده.</string>
+  <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">دووسمندیا زبار دسگا ایسا، سامووا سخت ٱفزار وو بارت و کار گرؽڌن ایسا ز Firefox و بؽڌر وابیڌن ویژیی یل، کارایی وو پایداری پوی هیاری اده.</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">قلوه دووسته بۊین</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">ٱنجوم وابی</string>
@@ -539,7 +534,7 @@
   <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
   <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">Firefox و هریم سیخومی ایسا ٱهمیت اده. قلوه زس من %1$s دووسته بۊین.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
-  <string name="onboarding_term_of_service_line_two_link_text">نوکات زفت مهرموویی</string>
+  <string name="onboarding_term_of_service_line_two_link_text">نوکات زفت مهرمووه ای</string>
   <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$s is replaced by an active link using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
   <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">سی هیاری و بؽڌر وابیڌن گشت گر، Firefox داده یل تشخیسی وو تعامولا ن و Mozilla افشنه. %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
@@ -565,7 +560,7 @@
   -->
   <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">Firefox و هریم سیخومی ایسا ٱهمیت اده. قلوه زس من %1$s دووسته بۊین.</string>
   <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
-  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">نوکات زفت مهرموویی</string>
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">نوکات زفت مهرمووه ای</string>
   <!--
     Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
@@ -638,7 +633,7 @@
   -->
   <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefox و هریم سیخومی ایسا ٱهمیت اده. قلوه زس من %1$s دووسته بۊین.</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
-  <string name="nova_onboarding_tou_body_line_2_link_text">نوکات زفت مهرموویی</string>
+  <string name="nova_onboarding_tou_body_line_2_link_text">نوکات زفت مهرمووه ای</string>
   <!--
     Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
@@ -927,8 +922,6 @@
   <string name="preferences_search_browsing_history">پیتینیڌن ویرگار گشتن</string>
   <!-- Preference title for switch preference to suggest bookmarks when searching -->
   <string name="preferences_search_bookmarks">پیتینیڌن نشووکا</string>
-  <!-- Preference title for switch preference to show shortcuts when searching -->
-  <string name="preferences_show_shortcuts" tools:ignore="UnusedResources" moz:removedIn="147">نشووݩ داڌن ره نهنگا</string>
   <!-- Preference title for switch preference to suggest synced tabs when searching -->
   <string name="preferences_search_synced_tabs">پیتینیڌن من بلگه یل هوم گوم وابیڌه</string>
   <!-- Preference for account settings -->
@@ -975,7 +968,7 @@
     Message shown as the summary of the download location preference when the
     app has lost the permission to access a previously selected custom folder.
   -->
-  <string name="preference_downloads_folder_permission_lost">ایسا نترین ای دوبلگه ن و کار گیرین. ی دوبلگه دی ن و کار بیگیرین.</string>
+  <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">ایسا نترین ای دوبلگه ن و کار گیرین. ی دوبلگه دی ن و کار بیگیرین.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">دؽوۉداری دانلودا وا برنومه ای دی</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1036,11 +1029,7 @@
   <string name="customize_addon_collection_user_hint">ساهاو کتن (شناسه منتوری)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">کتن وردنی یل آلشت وابیڌه. سی ائمال آلشتکاریا برنومه ن بووندین…</string>
-  <!--
-    Customize Home
-
-    Header text for jumping back into the recent tab in customize the home screen
-  -->
+  <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">وورگرتین و من</string>
   <!-- Title for the customize home screen section with bookmarks. -->
   <string name="customize_toggle_bookmarks">نشووکا</string>
@@ -1266,7 +1255,7 @@
   <!-- Preference switch for usage and technical learn more link in new compose -->
   <string name="preference_usage_data_learn_more_2">زبار داده یل فنی قلوه دووسته بۊین</string>
   <!-- Preference description for marketing data collection. Note: The words "Firefox" should NOT be translated -->
-  <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage">دووسمندیا زبار دسگا ایسا، سامووا سخت ٱفزار وو بارت و کار گرؽڌن ایسا و ایما هیاری اده تا ویژیی یل، عملکرد وو پایداری Firefox ن بؽڌر کۊنیم.</string>
+  <string name="preferences_usage_data_description_1" tools:ignore="BrandUsage">دووسمندیا زبار دسگا ایسا، سامووا سخت ٱفزار وو بارت و کار گرؽڌن ایسا و ایما هیاری اده تا ویژیی یل، کارایی وو پایداری Firefox ن بؽڌر کۊنیم.</string>
   <!-- Preference switch for daily usage ping data collection -->
   <string name="preferences_daily_usage_ping_title">پینگ و کار گرؽڌن رۊزووه</string>
   <string name="preferences_daily_usage_ping_description">یو Mozilla ن هیاری اده تا منتورا رۊزووه ن بشماره.</string>
@@ -1523,7 +1512,7 @@
   -->
   <string name="remote_improvements_title">امکووݩ بؽڌر وابیڌن ز ره دیر</string>
   <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
-  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox ویژیی یل، عملکرد وو پایداری ن منجا ورۊ رسۊویا بؽڌر اکونه، آلشتکاریا ز ره دیر ائمال ابۊن.</string>
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox ویژیی یل، کارایی وو پایداری ن منجا ورۊ رسۊویا بؽڌر اکونه، آلشتکاریا ز ره دیر ائمال ابۊن.</string>
   <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
   <string name="remote_improvements_learn_more">قلوه دووسته بۊین</string>
   <!-- Title for remote improvements preference in Advanced settings -->
@@ -1640,6 +1629,18 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">گۊشیڌن بلگه پیتینیڌن</string>
   <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">وورکل بونکۊ بلگه</string>
+  <string name="create_tab_group_save_button">زفت</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">بستن بونکۊ بلگه آلشت</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">بونکۊ</string>
+  <!-- Label for the tab group name field in the bottom sheet to create a new tab group. -->
+  <string name="create_tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">نوم</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -1754,11 +1755,26 @@
   <string name="download_rename_dialog_label">نوم</string>
   <string name="download_rename_dialog_confirm_button">زفت</string>
   <string name="download_rename_dialog_cancel_button">لقو</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">فایلی وا نوم «%s» ز زیتر منه ای جاگه بیڌسه.</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">نوم فایلا نتره «/» ن و کار گره</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">نتره نوم فایل ن آلشت کونه</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_description">سی دل مئدۊدیتا سیستوم یا جاگه زفت کردن، آلشت نوم ای فایل ٱنجوم نؽگره.</string>
   <string name="download_rename_error_dismiss_button">خا</string>
+  <!--
+    Title for the alert dialog to change file extension.
+    %s is the file type to change to.
+  -->
+  <string name="change_file_extension_title">نوع فایل و %s آلشت داڌه بۊ؟</string>
+  <string name="change_file_extension_description">یو گاشڌ فایل ن من برنومه دیری بوگوشه وو سی دسگا ایسا خترناک بۊ.</string>
+  <string name="change_file_extension_cancel_button">لقو</string>
+  <string name="change_file_extension_confirm_button">هری، آلشتس کوݩ</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">هونی پؽش اروه</string>
   <!--
@@ -1958,7 +1974,7 @@
   <!-- Bookmark overflow menu edit button -->
   <string name="bookmark_menu_edit_button">آلشت</string>
   <!-- Bookmark overflow menu copy button -->
-  <string name="bookmark_menu_copy_button">لف گیری</string>
+  <string name="bookmark_menu_copy_button" tools:ignore="UnusedResources" moz:removedIn="150">لف گیری</string>
   <!-- Bookmark overflow menu share button -->
   <string name="bookmark_menu_share_button">یک رسۊوی</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -2014,11 +2030,11 @@
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s پاک وابی</string>
   <!-- Bookmark undo button for deletion snackbar action -->
-  <string name="bookmark_undo_deletion">وورگندن</string>
+  <string name="bookmark_undo_deletion" tools:ignore="UnusedResources" moz:removedIn="150">وورگندن</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
-  <string name="bookmark_delete_single_item">%s پاک وابی</string>
+  <string name="bookmark_delete_single_item" tools:ignore="UnusedResources" moz:removedIn="150">%s پاک وابی</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
-  <string name="bookmark_delete_multiple_items">مووردا پاک وابیڌه: %s</string>
+  <string name="bookmark_delete_multiple_items" tools:ignore="UnusedResources" moz:removedIn="150">مووردا پاک وابیڌه: %s</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">وورگشتن و عقب</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2288,23 +2304,23 @@
   -->
   <string name="nimbus_notification_default_browser_text" tools:ignore="BrandUsage,UnusedResources">‏Firefox ن گشت گر پؽش فرزتووݩ بۊکۊنین</string>
   <!-- Title shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_title">گشت سیخومی ن ویر بگیرین</string>
+  <string name="notification_re_engagement_title" tools:ignore="UnusedResources" moz:removedIn="150">گشت سیخومی ن ویر بگیرین</string>
   <!--
     Text shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_text">من %1$s بؽ هیچ کۊکی یا ویرگار زفت وابیڌه ای بگردین</string>
+  <string name="notification_re_engagement_text" tools:ignore="UnusedResources" moz:removedIn="150">من %1$s بؽ هیچ کۊکی یا ویرگار زفت وابیڌه ای بگردین</string>
   <!-- Title A shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_A_title">بؽ رڌجۊری کردن گشت بزنین</string>
+  <string name="notification_re_engagement_A_title" tools:ignore="UnusedResources" moz:removedIn="150">بؽ رڌجۊری کردن گشت بزنین</string>
   <!--
     Text A shown in the notification that pops up to re-engage the user.
     %1$s is a placeholder that will be replaced by the app name.
   -->
-  <string name="notification_re_engagement_A_text">گشت سیخومی من %1$s دووسمندیا ایسا ن زفت نؽکونه.</string>
+  <string name="notification_re_engagement_A_text" tools:ignore="UnusedResources" moz:removedIn="150">گشت سیخومی من %1$s دووسمندیا ایسا ن زفت نؽکونه.</string>
   <!-- Title B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_title">بنه پا پیتینیڌن ٱولیت</string>
+  <string name="notification_re_engagement_B_title" tools:ignore="UnusedResources" moz:removedIn="150">بنه پا پیتینیڌن ٱولیت</string>
   <!-- Text B shown in the notification that pops up to re-engage the user -->
-  <string name="notification_re_engagement_B_text">ی چی و هیم نهنگا ن بپیتینین. یا ی چی جالو ن بجۊرین.</string>
+  <string name="notification_re_engagement_B_text" tools:ignore="UnusedResources" moz:removedIn="150">ی چی و هیم نهنگا ن بپیتینین. یا ی چی جالو ن بجۊرین.</string>
   <!--
     Survey
 
@@ -2459,7 +2475,7 @@
   <!-- Text shown for settings option for create new account text.'Firefox' intentionally hardcoded here. -->
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[هساوی نڌارین؟ سی هوم گوم وابیڌن منجا دسگایل خوت <u>یکی وورکل کوݩ</u>.]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
-  <string name="sign_out_confirmation_message_2">%s هوم گوم وابیڌن وا هساو ایسا ن اواڌارنه، ولی هیچ کویکی ز داده یل ایسا ری ای گشت گر پاک نؽبۊن.</string>
+  <string name="sign_out_confirmation_message_2">%s هوم گوم وابیڌن وا هساو ایسا ن اواڌارنه، ولی هیچ کویکی ز داده یل گشتن ایسا ری ای دسگا پاک نؽبۊن.</string>
   <!-- Option to continue signing out of account shown in confirmation dialog to sign out of account -->
   <string name="sign_out_disconnect">قت کردن منپیز</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
@@ -2549,7 +2565,7 @@
   <!-- Option for enhanced tracking protection for the custom protection settings for tracking content -->
   <string name="preference_enhanced_tracking_protection_custom_tracking_content_2">تینا من بلگه یل سیخومی بوگوش</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
-  <string name="preference_enhanced_tracking_protection_custom_cryptominers">ودر کونا رزم ٱرزا</string>
+  <string name="preference_enhanced_tracking_protection_custom_cryptominers">و در کونا رزم ٱرزا</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
   <string name="preference_enhanced_tracking_protection_custom_known_fingerprinters">جا کلکا اشناخته وابیڌه</string>
   <!-- Button label for navigating to the Enhanced Tracking Protection details -->
@@ -2571,7 +2587,7 @@
   <!-- Description of cross-site tracking cookies that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_cookies_description_2">زفت وابیڌن کامل ری و ری کۊکیا، کۊکیا ن من وبگه یلی ک منسووݩ هڌین، سوا اکونه، پ رڌجۊرایی جۊر شبکه یل تبلیقاتی نترن سی و دین کردن ایسا منجا وبگه یل و کار سووݩ گرن.</string>
   <!-- Category of trackers (cryptominers) that can be blocked by Enhanced Tracking Protection -->
-  <string name="etp_cryptominers_title">ودر کونا رزم ٱرزا</string>
+  <string name="etp_cryptominers_title">و در کونا رزم ٱرزا</string>
   <!-- Description of cryptominers that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_cryptominers_description">ز دسرسی اسکریپتا خراوکار سی دسرسی و دسگا ایسا و ارز دیجیتال جلاوگری اکونه.</string>
   <!-- Description of fingerprinters that can be blocked by Enhanced Tracking Protection -->
@@ -2711,7 +2727,7 @@
   <!-- About page link text to list of past crashes (like about:crashes on desktop) -->
   <string name="about_crashes">خراوی یل</string>
   <!-- About page link text to open privacy notice link -->
-  <string name="about_privacy_notice">نوکات زفت مهرموویی</string>
+  <string name="about_privacy_notice">نوکات زفت مهرمووه ای</string>
   <!-- About page link text to open know your rights link -->
   <string name="about_know_your_rights">هق خوتووݩ ن دووسته بۊین</string>
   <!-- About page link text to open terms of use link -->
@@ -2733,7 +2749,7 @@
   -->
   <string name="browser_toolbar_long_press_popup_copy">لف گیری</string>
   <!-- Paste & go the text in the clipboard. '&amp;' is replaced with the ampersand symbol: & -->
-  <string name="browser_toolbar_long_press_popup_paste_and_go">جا وندن وو زفت</string>
+  <string name="browser_toolbar_long_press_popup_paste_and_go">جا وندن وو رئڌن</string>
   <!-- Paste the text in the clipboard -->
   <string name="browser_toolbar_long_press_popup_paste">جا وندن</string>
   <!-- Snackbar message shown after an URL has been copied to clipboard. -->
@@ -2867,15 +2883,19 @@
 
     Title for the Email Masks in the settings menu
   -->
-  <string name="preferences_email_masks">بؽڌار کونا ایمیل</string>
+  <string name="preferences_email_masks">ماسکا ایمیل</string>
   <!-- Title for the Suggest Email Masks toggle -->
-  <string name="preferences_email_masks_suggest_title">پؽشنهاڌ بؽڌار کونا ایمیل</string>
+  <string name="preferences_email_masks_suggest_title">پؽشنهاڌ ماسکا ایمیل</string>
   <!-- Summary for the Suggest Email Masks toggle. -->
-  <string name="preferences_email_masks_suggest_summary">ایمیل واقعی خوته بؽڌار کوݩ تا ز سندوق وۊرۊدی جلاو هرزنومه یل زفتت کونه. ی قرد ز وبگه یل ز بؽڌار کونا ایمیل لادراری نؽکونن.</string>
+  <string name="preferences_email_masks_suggest_summary">ایمیل واقعی خوته بؽڌار کوݩ تا سندوق وۊرۊدی خوتووݩ ن ز هرزنومه یل زفت کۊنین. ی قرد ز وبگه یل ز ماسکا ایمیل لادراری نؽکونن.</string>
   <!-- Text that links to additional information about the Email Masks -->
   <string name="preferences_email_masks_suggest_learn_more">قلوه دووسته بۊین</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
-  <string name="preferences_email_masks_manage_title">دؽوۉداری بؽڌار کونا ایمیل</string>
+  <string name="preferences_email_masks_manage_title">دؽوۉداری ماسکا ایمیل</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">ایسا ز 5 ماسک ایمیل خوتووݩ استفاڌه کردینه، سی دل هیمو ایما یکی ن سی و کار گرؽڌن دووارته سی ایسا پسند کردیمه.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">ماسکا ایمیل سکو من دسرس نؽڌن.\nچن دیقه دی دووارته امتهووݩ کۊنین.</string>
   <!--
     Autofill
 
@@ -3646,6 +3666,13 @@
   -->
   <string name="connection_security_panel_verified_by">تاییڌ وابیڌه و دست %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">و در تیجنیڌه وابیڌه و %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">ز ری موقررات (EU) 2024/1183 واجد شرایت هڌ.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3695,6 +3722,8 @@
   <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">ٱووردن و بلگه یل سیخومی</string>
   <!--
     Microsurvey
+    Note: Some strings are marked as unused as they are referenced via the Nimbus experimentation
+    platform and have no persistent reference in code
 
     Prompt view
 
@@ -3710,7 +3739,7 @@
   -->
   <string name="micro_survey_survey_header_2">منشڌسنجی ن کامل کۊنین</string>
   <!-- The privacy notice link -->
-  <string name="micro_survey_privacy_notice_2">نوکات زفت مهرموویی</string>
+  <string name="micro_survey_privacy_notice_2">نوکات زفت مهرمووه ای</string>
   <!-- The submit button label text -->
   <string name="micro_survey_submit_button_label">فشناڌن</string>
   <!-- The survey completion header -->
@@ -4045,8 +4074,6 @@
   <string name="content_description_settings_search_navigate_back">وورگشتن و عقب</string>
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">بؽ پیتینیڌن دیندایی</string>
-  <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">ختایی پؽش ٱووڌه</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">روفتن پوی</string>
   <!-- Section header for recent search results -->
@@ -4076,7 +4103,7 @@
   <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
   <string name="terms_of_use_prompt_link_terms_of_use">شرتا و کار گرؽڌن</string>
   <!-- Privacy notice link in the pop up prompt message that links to the privacy notice -->
-  <string name="terms_of_use_prompt_link_privacy_notice">نوکات زفت مهرموویی</string>
+  <string name="terms_of_use_prompt_link_privacy_notice">نوکات زفت مهرمووه ای</string>
   <!-- Learn more link in the pop up prompt message that links to a site with more information about the terms of use -->
   <string name="terms_of_use_prompt_link_learn_more">قلوه دووسته بۊین</string>
   <!-- Label for a button to accept the terms of use -->
@@ -4110,7 +4137,7 @@
   -->
   <string name="privacy_notice_updated_homepage_message" tools:ignore="BrandUsage,UnusedResources">ایما %1$s خومووݩ ن ورۊ رسۊوی کردیم تا ویژیی یل نۊ فایرفاکس ن من خوس جا بڌه. %2$s</string>
   <!-- The first active link used in privacy_notice_updated_homepage_message -->
-  <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">نوکات زفت مهرموویی</string>
+  <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">نوکات زفت مهرمووه ای</string>
   <!-- The second active link used in privacy_notice_updated_homepage_message -->
   <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">قلوه دووسته بۊین</string>
 </resources>

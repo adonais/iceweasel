@@ -36,7 +36,7 @@
                           "properties": {
                             "where": {
                               "type": "string",
-                              "description": "Where to open—e.g. 'tab', 'window', etc."
+                              "description": "Where to open - e.g. 'tab', 'window', etc."
                             }
                           },
                           "additionalProperties": false
@@ -188,7 +188,7 @@
               "data": { "type": "object" },
               "dismiss": {
                 "type": "boolean",
-                "description": "If true, dismiss the infobar after handling this link’s action. Defaults to false."
+                "description": "If true, dismiss the infobar after handling this link's action. Defaults to false."
               }
             },
             "required": ["type"]

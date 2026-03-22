@@ -64,6 +64,7 @@ class ProcessExecutionMixin(LoggingMixin):
         log_name=None,
         log_level=logging.INFO,
         line_handler=None,
+        stderr_line_handler=None,
         require_unix_environment=False,
         ensure_exit_code=0,
         ignore_children=False,
@@ -131,6 +132,21 @@ class ProcessExecutionMixin(LoggingMixin):
 
             self.log(log_level, log_name, {"line": line.rstrip()}, "{line}")
 
+        def handleStderrLine(line):
+            if isinstance(line, bytes):
+                line = line.decode(sys.stdout.encoding or "utf-8", "replace")
+
+            if stderr_line_handler:
+                try:
+                    stderr_line_handler(line)
+                except LineHandlingEarlyReturn:
+                    return
+
+            if not log_name:
+                return
+
+            self.log(log_level, log_name, {"line": line.rstrip()}, "{line}")
+
         use_env = {}
         if explicit_env:
             use_env = explicit_env
@@ -158,14 +174,16 @@ class ProcessExecutionMixin(LoggingMixin):
                 except KeyboardInterrupt:
                     pass
         else:
-            p = ProcessHandlerMixin(
-                args,
-                cwd=cwd,
-                env=use_env,
-                processOutputLine=[handleLine],
-                universal_newlines=True,
-                ignore_children=ignore_children,
-            )
+            kwargs = {
+                "cwd": cwd,
+                "env": use_env,
+                "processOutputLine": [handleLine],
+                "universal_newlines": True,
+                "ignore_children": ignore_children,
+            }
+            if stderr_line_handler:
+                kwargs["processStderrLine"] = [handleStderrLine]
+            p = ProcessHandlerMixin(args, **kwargs)
             p.run()
             p.processOutput()
             status = None

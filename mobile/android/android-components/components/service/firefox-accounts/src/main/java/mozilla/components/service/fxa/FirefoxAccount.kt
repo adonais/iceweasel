@@ -202,6 +202,15 @@ class FirefoxAccount internal constructor(
         }
     }
 
+    /**
+     * See [OAuthAccount.getAttachedClient].
+     */
+    override suspend fun getAttachedClient() = withContext(scope.coroutineContext) {
+        handleFxaExceptions(logger, "get attached client", { emptyList() }) {
+            inner.getAttachedClients().map { it.into() }
+        }
+    }
+
     override fun authErrorDetected() {
         // fxalib maintains some internal token caches that need to be cleared whenever we
         // hit an auth problem. Call below makes that clean-up happen.

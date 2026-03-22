@@ -106,6 +106,7 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
+  SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
@@ -165,7 +166,6 @@ function makeMapKeyForResult(url, match) {
   return UrlbarUtils.tupleString(
     url,
     action?.type == "switchtab" &&
-      lazy.UrlbarPrefs.get("switchTabs.searchAllContainers") &&
       lazy.UrlbarProviderOpenTabs.isNonPrivateUserContextId(match.userContextId)
       ? match.userContextId
       : undefined
@@ -342,8 +342,7 @@ function makeUrlbarResult(queryContext, info) {
           source: UrlbarUtils.RESULT_SOURCE.TABS,
           payload: {
             url: action.params.url,
-            title:
-              info.title || UrlbarUtils.prepareUrlForDisplay(action.params.url),
+            title: info.title,
             icon: info.icon,
             userContextId: info.userContextId,
             lastVisit: info.lastVisit,
@@ -408,16 +407,6 @@ function makeUrlbarResult(queryContext, info) {
         lowerCaseTag.includes(token.lowerCaseValue)
       );
     });
-  }
-
-  if (!title && info.url) {
-    try {
-      // If there's no title, show the domain as the title. Not all valid URLs
-      // have a domain.
-      title = new URL(info.url).URI.displayHostPort;
-    } catch (e) {
-      title = UrlbarUtils.prepareUrlForDisplay(info.url);
-    }
   }
 
   return new lazy.UrlbarResult({
@@ -495,7 +484,7 @@ class Search {
     this.#searchModeEngine = queryContext.searchMode?.engineName;
     if (this.#searchModeEngine) {
       // Filter Places results on host.
-      let engine = Services.search.getEngineByName(this.#searchModeEngine);
+      let engine = lazy.SearchService.getEngineByName(this.#searchModeEngine);
       this.#filterOnHost = engine.searchUrlDomain;
     }
 
@@ -730,6 +719,13 @@ class Search {
     // "openpage" behavior is supported by the default query.
     // #switchToTabQuery instead returns only pages not supported by history.
     if (this.hasBehavior("openpage")) {
+      // Wait for open tabs to be fully populated in moz_openpages_temp.
+      // The table is populated asynchronously when the connection is first
+      // created, and querying before it's ready returns incomplete results.
+      await lazy.UrlbarProviderOpenTabs.promiseDBPopulated;
+      if (!this.pending) {
+        return;
+      }
       queries.push(this.#switchToTabQuery);
     }
     queries.push(this.#searchQuery);
@@ -874,7 +870,7 @@ class Search {
   #maybeRestyleSearchMatch(match) {
     // Return if the URL does not represent a search result.
     let historyUrl = match.value;
-    let parseResult = Services.search.parseSubmissionURL(historyUrl);
+    let parseResult = lazy.SearchService.parseSubmissionURL(historyUrl);
     if (!parseResult?.engine) {
       return false;
     }
@@ -1212,8 +1208,7 @@ class Search {
     if (openPageCount > 0 && this.hasBehavior("openpage")) {
       if (
         this.#currentPage == match.value &&
-        (!lazy.UrlbarPrefs.get("switchTabs.searchAllContainers") ||
-          this.#userContextId == match.userContextId)
+        this.#userContextId == match.userContextId
       ) {
         // Don't suggest switching to the current tab.
         return;
@@ -1369,14 +1364,11 @@ class Search {
       maxResults: this.#maxResults,
       switchTabsEnabled: this.hasBehavior("openpage"),
     };
-    params.userContextId = lazy.UrlbarPrefs.get(
-      "switchTabs.searchAllContainers"
-    )
-      ? lazy.UrlbarProviderOpenTabs.getUserContextIdForOpenPagesTable(
-          null,
-          this.#inPrivateWindow
-        )
-      : this.#userContextId;
+    params.userContextId =
+      lazy.UrlbarProviderOpenTabs.getUserContextIdForOpenPagesTable(
+        null,
+        this.#inPrivateWindow
+      );
 
     if (this.#filterOnHost) {
       params.host = this.#filterOnHost;
@@ -1400,12 +1392,11 @@ class Search {
         // We only want to search the tokens that we are left with - not the
         // original search string.
         searchString: this.#keywordFilteredSearchString,
-        userContextId: lazy.UrlbarPrefs.get("switchTabs.searchAllContainers")
-          ? lazy.UrlbarProviderOpenTabs.getUserContextIdForOpenPagesTable(
-              null,
-              this.#inPrivateWindow
-            )
-          : this.#userContextId,
+        userContextId:
+          lazy.UrlbarProviderOpenTabs.getUserContextIdForOpenPagesTable(
+            null,
+            this.#inPrivateWindow
+          ),
         maxResults: this.#maxResults,
       },
     ];

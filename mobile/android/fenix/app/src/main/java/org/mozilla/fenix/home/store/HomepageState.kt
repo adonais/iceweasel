@@ -226,8 +226,7 @@ internal sealed class HomepageState {
                 syncedTab = when (recentSyncedTabState) {
                     RecentSyncedTabState.None,
                     RecentSyncedTabState.Loading,
-                        -> null
-
+                    -> null
                     is RecentSyncedTabState.Success -> recentSyncedTabState.tabs.firstOrNull()
                 },
                 bookmarks = bookmarks,
@@ -244,22 +243,17 @@ internal sealed class HomepageState {
                 showRecentSyncedTab = shouldShowRecentSyncedTabs() && settings.showSyncedTabs,
                 showRecentlyVisited = settings.historyMetadataUIFeature && recentHistory.isNotEmpty(),
                 showPocketStories = settings.showPocketRecommendationsFeature &&
-                        recommendationState.pocketStories.isNotEmpty(),
+                    recommendationState.pocketStories.isNotEmpty(),
                 showCollections = settings.collections,
                 headerState = HeaderState(
                     showHeader = settings.showHomepageHeader,
-                    wordmarkTextColor = wallpaperState.currentWallpaper.textColor?.let { Color(it) },
-                    privateBrowsingButtonColor = wallpaperState.currentWallpaper.textColor
-                        ?.let { Color(it) } ?: colorResource(
-                        getAttr(
-                            R.attr.mozac_ic_private_mode_circle_fill_icon_color,
-                        ),
-                    ),
+                    wordmarkTextColor = wallpaperState.textColor,
+                    privateBrowsingButtonColor = wallpaperState.iconColor,
                 ),
                 searchBarVisible = shouldShowSearchBar(appState = appState),
                 searchBarEnabled = settings.enableHomepageSearchBar &&
-                        settings.toolbarPosition == ToolbarPosition.TOP &&
-                        LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT,
+                    settings.toolbarPosition == ToolbarPosition.TOP &&
+                    LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT,
                 firstFrameDrawn = firstFrameDrawn,
                 setupChecklistState = setupChecklistState,
                 topSiteColors = TopSiteColors.colors(wallpaperState = wallpaperState),

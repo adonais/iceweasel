@@ -30,6 +30,13 @@ impl<T> FfiOption<T> {
             Self::None => None,
         }
     }
+
+    pub fn as_ref(&self) -> std::option::Option<&T> {
+        match *self {
+            Self::Some(ref value) => Some(value),
+            Self::None => None,
+        }
+    }
 }
 
 /// FFI-safe analogue of [`wgc::command::RenderPassColorAttachment`].

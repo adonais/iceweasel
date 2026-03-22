@@ -39,6 +39,7 @@
 #include "test/create_test_environment.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/near_matcher.h"
 #include "test/wait_until.h"
 
 #define MAYBE_SKIP_IPV6                        \
@@ -48,10 +49,6 @@
   }
 
 namespace webrtc {
-
-MATCHER_P2(Near, expected, max_error, "") {
-  return expected - max_error < arg && arg < expected + max_error;
-}
 
 using testing::SSE_CLOSE;
 using testing::SSE_ERROR;
@@ -682,7 +679,9 @@ void SocketTest::CloseInClosedCallbackInternal(const IPAddress& loopback) {
   std::unique_ptr<Socket> client =
       socket_factory_->Create(loopback.family(), SOCK_STREAM);
   sink.Monitor(client.get());
-  client->SignalCloseEvent.connect(&closer, &SocketCloser::OnClose);
+  client->SubscribeCloseEvent([&closer](webrtc::Socket* socket, int error) {
+    closer.OnClose(socket, error);
+  });
 
   // Create server and listen.
   std::unique_ptr<Socket> server =

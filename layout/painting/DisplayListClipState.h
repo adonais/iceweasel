@@ -62,7 +62,6 @@ class DisplayListClipState {
     mClipChainContainingBlockDescendants = nullptr;
     mCurrentCombinedClipChain = nullptr;
     mCurrentCombinedClipChainIsValid = false;
-    mClippedToDisplayPort = false;
   }
 
   void SetClipChainForContainingBlockDescendants(
@@ -130,11 +129,6 @@ class DisplayListClipState {
    */
   const DisplayItemClipChain* mCurrentCombinedClipChain;
   bool mCurrentCombinedClipChainIsValid;
-  /**
-   * A flag that is used by sticky positioned items to know if the clip applied
-   * to them is just the displayport clip or if there is additional clipping.
-   */
-  bool mClippedToDisplayPort;
 };
 
 /**

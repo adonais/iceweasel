@@ -689,7 +689,7 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
   }
 
   // Only call -[NSApp sendEvent:] (and indirectly send user-input events to
-  // Gecko) if aMayWait is true.  Tbis ensures most calls to -[NSApp
+  // Gecko) if aMayWait is true.  This ensures most calls to -[NSApp
   // sendEvent:] happen under nsAppShell::Run(), at the lowest level of
   // recursion -- thereby making it less likely Gecko will process user-input
   // events in the wrong order or skip some of them.  It also avoids eating

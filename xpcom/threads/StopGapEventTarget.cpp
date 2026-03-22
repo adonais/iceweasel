@@ -67,6 +67,10 @@ NS_IMETHODIMP StopGapEventTarget::UnregisterShutdownTask(
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+nsIEventTarget::FeatureFlags StopGapEventTarget::GetFeatures() {
+  return SUPPORTS_BASE;
+}
+
 nsresult StopGapEventTarget::SetRealEventTarget(
     nsISerialEventTarget* aRealEventTarget) {
   nsTArray<TaskStruct> tasks;

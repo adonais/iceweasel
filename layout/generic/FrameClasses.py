@@ -35,11 +35,6 @@ INLINE = LINE_PARTICIPANT | {"BidiInlineContainer"}
 RUBY_CONTENT = LINE_PARTICIPANT
 # FIXME(bug 713387): Shouldn't be Replaced, probably.
 TEXT = COMMON | LINE_PARTICIPANT | {"Replaced"} | LEAF
-# ::backdrop should be created by any top layer element. However, some frames
-# don't deal super well with having a placeholder thrown around inside.
-# Use this flag to exempt them from this.
-# FIXME(emilio): Generally this list should be kept small / go away entirely.
-BACKDROP_UNSUPPORTED = {"BackdropUnsupported"}
 
 # See FrameClass.py and GenerateFrameLists.py for implementation details.
 # The following is a list of all the frame classes, followed by the frame type,
@@ -55,14 +50,12 @@ FRAME_CLASSES = [
     Frame("nsBCTableCellFrame", "TableCell", TABLE_CELL),
     Frame("nsBlockFrame", "Block", BLOCK),
     Frame("nsCanvasFrame", "Canvas", BLOCK),
-    Frame(
-        "nsCheckboxRadioFrame", "CheckboxRadio", REPLACED | LEAF | BACKDROP_UNSUPPORTED
-    ),
+    Frame("nsCheckboxRadioFrame", "CheckboxRadio", REPLACED | LEAF),
     Frame("InputButtonControlFrame", "InputButtonControl", REPLACED | LEAF),
     Frame("nsColorControlFrame", "ColorControl", REPLACED | LEAF),
     Frame("nsColumnSetFrame", "ColumnSet", COMMON),
     Frame("ColumnSetWrapperFrame", "ColumnSetWrapper", BLOCK | BFC),
-    Frame("nsComboboxControlFrame", "ComboboxControl", REPLACED | LEAF),
+    Frame("nsComboboxControlFrame", "ComboboxControl", REPLACED),
     Frame("ComboboxLabelFrame", "Block", BLOCK),
     Frame("nsContinuingTextFrame", "Text", TEXT),
     Frame("nsDateTimeControlFrame", "DateTimeControl", REPLACED),
@@ -78,7 +71,7 @@ FRAME_CLASSES = [
     Frame("nsHTMLCanvasFrame", "HTMLCanvas", REPLACED_SIZING),
     Frame("nsHTMLFramesetBlankFrame", "None", COMMON | LEAF),
     Frame("nsHTMLFramesetBorderFrame", "None", COMMON | LEAF),
-    Frame("nsHTMLFramesetFrame", "FrameSet", COMMON | LEAF | BACKDROP_UNSUPPORTED),
+    Frame("nsHTMLFramesetFrame", "FrameSet", COMMON | LEAF),
     Frame("nsImageControlFrame", "ImageControl", REPLACED_SIZING | LEAF),
     Frame("nsImageFrame", "Image", REPLACED_SIZING | {"LeafDynamic"}),
     Frame("nsInlineFrame", "Inline", INLINE),
@@ -101,13 +94,13 @@ FRAME_CLASSES = [
     Frame("nsMathMLmunderoverFrame", "None", MATHML_CONTAINER),
     Frame("nsMathMLTokenFrame", "None", MATHML_CONTAINER),
     Frame("nsMenuPopupFrame", "MenuPopup", BLOCK),
-    Frame("nsNumberControlFrame", "TextInput", REPLACED | LEAF | BACKDROP_UNSUPPORTED),
+    Frame("nsNumberControlFrame", "TextInput", REPLACED | LEAF),
     Frame("nsPageBreakFrame", "PageBreak", COMMON | LEAF),
     Frame("nsPageContentFrame", "PageContent", BLOCK),
     Frame("nsPageFrame", "Page", COMMON),
     Frame("nsPlaceholderFrame", "Placeholder", COMMON | LEAF),
-    Frame("nsProgressFrame", "Progress", REPLACED | LEAF | BACKDROP_UNSUPPORTED),
-    Frame("nsRangeFrame", "Range", REPLACED | LEAF | BACKDROP_UNSUPPORTED),
+    Frame("nsProgressFrame", "Progress", REPLACED | LEAF),
+    Frame("nsRangeFrame", "Range", REPLACED | LEAF),
     Frame("nsRubyBaseContainerFrame", "RubyBaseContainer", RUBY_CONTENT),
     Frame("nsRubyBaseFrame", "RubyBase", RUBY_CONTENT),
     Frame("nsRubyFrame", "Ruby", RUBY_CONTENT),
@@ -117,7 +110,7 @@ FRAME_CLASSES = [
     Frame("SimpleXULLeafFrame", "SimpleXULLeaf", COMMON | LEAF),
     Frame("nsScrollbarButtonFrame", "SimpleXULLeaf", COMMON | LEAF),
     Frame("nsScrollbarFrame", "Scrollbar", COMMON),
-    Frame("nsSearchControlFrame", "TextInput", REPLACED | LEAF | BACKDROP_UNSUPPORTED),
+    Frame("nsSearchControlFrame", "TextInput", REPLACED | LEAF),
     Frame("nsSelectsAreaFrame", "Block", BLOCK | BFC),
     Frame("nsPageSequenceFrame", "PageSequence", COMMON),
     Frame("nsSliderFrame", "Slider", COMMON),
@@ -172,7 +165,7 @@ FRAME_CLASSES = [
     Frame("nsTableWrapperFrame", "TableWrapper", BLOCK),
     Frame("nsTableRowFrame", "TableRow", TABLE_PART),
     Frame("nsTableRowGroupFrame", "TableRowGroup", TABLE_PART),
-    Frame("nsTextControlFrame", "TextInput", REPLACED | LEAF | BACKDROP_UNSUPPORTED),
+    Frame("nsTextControlFrame", "TextInput", REPLACED | LEAF),
     Frame("nsTextFrame", "Text", TEXT),
     Frame("nsTreeBodyFrame", "SimpleXULLeaf", COMMON | LEAF),
     Frame("nsVideoFrame", "HTMLVideo", REPLACED_SIZING),
@@ -197,7 +190,6 @@ FRAME_CLASSES = [
     AbstractFrame("nsIPercentBSizeObserver"),
     AbstractFrame("nsIPopupContainer"),
     AbstractFrame("nsIScrollbarMediator"),
-    AbstractFrame("nsISelectControlFrame"),
     AbstractFrame("nsIStatefulFrame"),
     AbstractFrame("ISVGDisplayableFrame"),
     AbstractFrame("ISVGSVGFrame"),

@@ -7,7 +7,8 @@ package org.mozilla.fenix.search
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
@@ -17,11 +18,9 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.lib.state.Middleware
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
-import mozilla.components.support.test.rule.MainLooperTestRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
@@ -32,9 +31,9 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class BrowserToolbarToFenixSearchMapperMiddlewareTest {
-    @get:Rule
-    val mainLooperRule = MainLooperTestRule()
 
+    private val testDispatcher = StandardTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
     val toolbarStore = BrowserToolbarStore()
     private val browsingModeManager: BrowsingModeManager = mockk {
         every { mode } returns BrowsingMode.Private
@@ -47,7 +46,7 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
         val searchStore = buildSearchStore(listOf(searchStatusMapperMiddleware, captorMiddleware))
 
         toolbarStore.dispatch(EnterEditMode(false))
-        mainLooperRule.idle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         captorMiddleware.assertLastAction(SearchStarted::class) {
             assertNull(it.selectedSearchEngine)
@@ -61,22 +60,22 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
         toolbarStore.dispatch(EnterEditMode(false))
 
         searchStore.dispatch(SearchStarted(mockk(), false, false, searchStartedForCurrentUrl = false))
-        mainLooperRule.idle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("t")))
-        mainLooperRule.idle()
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals("t", searchStore.state.query)
 
         toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("te")))
-        mainLooperRule.idle()
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals("te", searchStore.state.query)
 
         toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("tes")))
-        mainLooperRule.idle()
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals("tes", searchStore.state.query)
 
         toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("test")))
-        mainLooperRule.idle()
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals("test", searchStore.state.query)
     }
 
@@ -96,15 +95,15 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
             SearchQueryUpdated(BrowserToolbarQuery("https://mozilla.org"), isQueryPrefilled = true),
         )
         searchStore.dispatch(SearchStarted(mockk(), false, false, searchStartedForCurrentUrl = true))
-        mainLooperRule.idle()
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals("", searchStore.state.query)
 
         toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("t")))
-        mainLooperRule.idle()
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals("t", searchStore.state.query)
 
         toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("https://mozilla.org")))
-        mainLooperRule.idle()
+        testDispatcher.scheduler.advanceUntilIdle()
         assertEquals("https://mozilla.org", searchStore.state.query)
     }
 
@@ -118,7 +117,7 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
     private fun buildMiddleware(
         toolbarStore: BrowserToolbarStore = this.toolbarStore,
         browsingModeManager: BrowsingModeManager = this.browsingModeManager,
-        scope: CoroutineScope = MainScope(),
+        scope: CoroutineScope = testScope,
         browserStore: BrowserStore? = null,
     ) = BrowserToolbarToFenixSearchMapperMiddleware(toolbarStore, browsingModeManager, scope, browserStore)
 

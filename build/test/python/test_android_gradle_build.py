@@ -46,7 +46,7 @@ def mozconfig(test_dir, objdir):
                 ac_add_options --enable-artifact-builds
                 ac_add_options --target=arm
                 mk_add_options MOZ_OBJDIR="{objdir}"
-                export GRADLE_FLAGS="-PbuildMetrics -PbuildMetricsFileSuffix=test"
+                export GRADLE_FLAGS="-PbuildMetrics -PbuildMetricsOutputDir={objdir}/gradle/build/metrics -PbuildMetricsFileSuffix=test"
             """
         )
     )

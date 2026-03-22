@@ -482,13 +482,8 @@ function remoteSettingsFunction() {
       throw new Error(`Polling for changes failed: ${e.message}.`);
     }
 
-    const {
-      serverTimeMillis,
-      changes,
-      currentEtag,
-      backoffSeconds,
-      ageSeconds,
-    } = pollResult;
+    const { serverTimeMillis, changes, timestamp, backoffSeconds, ageSeconds } =
+      pollResult;
 
     // Report age of server data in Telemetry.
     pollTelemetryArgs = { age: ageSeconds, ...pollTelemetryArgs };
@@ -565,7 +560,7 @@ function remoteSettingsFunction() {
     const syncTelemetryArgs = {
       source: TELEMETRY_SOURCE_SYNC,
       duration: durationMilliseconds,
-      timestamp: `${currentEtag}`,
+      timestamp,
       trigger,
     };
 
@@ -579,7 +574,7 @@ function remoteSettingsFunction() {
       );
       // Keep track of sync failure in history.
       await lazy.gSyncHistory
-        .store(currentEtag, status, {
+        .store(timestamp, status, {
           expectedTimestamp,
           errorName: firstError.name,
         })
@@ -611,7 +606,7 @@ function remoteSettingsFunction() {
     }
 
     // Save current Etag for next poll.
-    lazy.gPrefs.setStringPref(PREF_SETTINGS_LAST_ETAG, currentEtag);
+    lazy.gPrefs.setStringPref(PREF_SETTINGS_LAST_ETAG, timestamp);
 
     // Report the global synchronization success.
     const status = lazy.UptakeTelemetry.STATUS.SUCCESS;
@@ -622,7 +617,7 @@ function remoteSettingsFunction() {
     );
     // Keep track of sync success in history.
     await lazy.gSyncHistory
-      .store(currentEtag, status)
+      .store(timestamp, status)
       .catch(error => console.error(error));
 
     lazy.console.info(
@@ -662,7 +657,7 @@ function remoteSettingsFunction() {
     if (!localOnly) {
       // Make sure we fetch the latest server info, use a random cache bust value.
       const randomCacheBust = 99990000 + Math.floor(Math.random() * 9999);
-      ({ changes, currentEtag: serverTimestamp } =
+      ({ changes, timestamp: serverTimestamp } =
         await lazy.Utils.fetchLatestChanges(lazy.Utils.SERVER_URL, {
           expected: randomCacheBust,
         }));
@@ -795,7 +790,7 @@ export var remoteSettingsBroadcastHandler = {
     );
 
     return RemoteSettings.pollChanges({
-      expectedTimestamp: version.replace('"', ""),
+      expectedTimestamp: version.replaceAll('"', ""),
       trigger: isStartup ? "startup" : "broadcast",
     });
   },

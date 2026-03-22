@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#ifndef _MTRANSPORTHANDLER_PARENT_H__
-#define _MTRANSPORTHANDLER_PARENT_H__
+#ifndef MTRANSPORTHANDLER_PARENT_H_
+#define MTRANSPORTHANDLER_PARENT_H_
 
 #include <memory>
 
@@ -68,4 +68,4 @@ class MediaTransportParent : public dom::PMediaTransportParent {
 #endif  // MOZ_WEBRTC
 };
 }  // namespace mozilla
-#endif  //_MTRANSPORTHANDLER_PARENT_H__
+#endif  // MTRANSPORTHANDLER_PARENT_H_

@@ -32,7 +32,7 @@ EXPORTS.mozilla.dom += [
     "CallbackFunction.h",
     "CallbackInterface.h",
     "CallbackObject.h",
-    "DOMExceptionNames.h",
+    "DOMExceptionNames.inc",
     "DOMJSClass.h",
     "DOMJSProxyHandler.h",
     "DOMString.h",
@@ -197,21 +197,18 @@ if CONFIG["CC_TYPE"] == "gcc":
 if CONFIG["COMPILE_ENVIRONMENT"]:
     GeneratedFile(
         "CSSStyleProperties.webidl",
-        script="GenerateCSSPropListWebIDL.py",
-        entry_point="generateCSSStyleProperties",
-        inputs=["!/layout/style/ServoCSSPropList.py"],
+        script="/layout/style/GenerateCSSProperties.py",
+        entry_point="gen_style_properties_webidl",
     )
     GeneratedFile(
         "CSSPageDescriptors.webidl",
-        script="GenerateCSSPropListWebIDL.py",
-        entry_point="generateCSSPageDescriptors",
-        inputs=["!/layout/style/ServoCSSPropList.py"],
+        script="/layout/style/GenerateCSSProperties.py",
+        entry_point="gen_page_descriptors_webidl",
     )
     GeneratedFile(
         "CSSPositionTryDescriptors.webidl",
-        script="GenerateCSSPropListWebIDL.py",
-        entry_point="generateCSSPositionTryDescriptors",
-        inputs=["!/layout/style/ServoCSSPropList.py"],
+        script="/layout/style/GenerateCSSProperties.py",
+        entry_point="gen_position_try_descriptors_webidl",
     )
 
 # Old versions of GCC issue false-positive warnings about buffer overflow.
