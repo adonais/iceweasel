@@ -194,7 +194,7 @@ jobs:
         echo MY_DIST64=$dist_dir>>$GITHUB_ENV
       shell: bash
 
-    - uses: yxl0756/upload-artifact@v4
+    - uses: yxl0756/upload-artifact@v7
       with:
         path: ${{ env.MY_DIST64 }}/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS64 }}.7z
         name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS64 }}
