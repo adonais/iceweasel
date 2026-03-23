@@ -30,13 +30,18 @@ Preferences.addAll([
   { id: "toolkit.legacyUserProfileCustomizations.stylesheets", type: "bool" },
 ]);
 
-var gIceweaselPane = {
+const gIceweaselPane = {
   _pane: null,
+  inited: false,
+  _observerAdded: false,
 
   // called when the document is first parsed
-  init() {
+  async init() {
+    if (this.inited) {
+      return;
+    }
+    this.inited = true;
     this._pane = document.getElementById("paneIceweasel");
-
     // Set all event listeners on checkboxes
     setBoolSyncListeners(
       "iceweasel-extension-update-checkbox",
@@ -104,9 +109,20 @@ var gIceweaselPane = {
     // Set event listener on restart
     setEventListener("iceweasel-restart-profile", "click", openRestart);
 
+    window.addEventListener("unload", () => this._removeObservers());
+
     // Notify observers that the UI is now ready
-    Services.obs.notifyObservers(window, "iceweasel-pane-loaded");
+    Services.obs.addObserver(this, "iceweasel-pane-loaded");
+    this._observerAdded = true;
   },
+
+  _removeObservers() {
+    if (this._observerAdded) {
+      Services.obs.removeObserver(this, "iceweasel-pane-loaded");
+      this._observerAdded = false;
+    }
+  },
+
 };
 
 function iniSafeGet(ini, section, key) {
@@ -117,9 +133,8 @@ function iniSafeGet(ini, section, key) {
   }
 }
 
-function optionlibportable(msg, checkboxid) {
+function optionlibportable(msg, value) {
   const upck = AppConstants.platform === "win" ? "upcheck.exe" : "upcheck";
-  let value = document.getElementById(checkboxid).checked;
   let exe = Services.dirsvc.get("GreBinD", Ci.nsIFile);
   exe.append(upck);
   if (exe.exists()) {
@@ -139,25 +154,16 @@ function optionlibportable(msg, checkboxid) {
 function setUpcheckSyncListeners(checkboxid) {
   const element = document.getElementById(checkboxid);
   if (element) {
-    let value = element.checked;
-    // Get the app directory.
-    let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
-    target.append("portable.ini");
-    if (target.exists()) {
-      let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
-      let ini = factory.createINIParser(target);
-      if (ini != null) {
-        let ontabs = iniSafeGet(ini, "General", "Update");
-        if (ontabs == "1") {
-          if (!value) {
-            makeMasterCheckboxesReactive(checkboxid, () => {return true;});
-          }
-          
-        } else if (value) {
-          makeMasterCheckboxesReactive(checkboxid, () => {return false;});
+    let up = iniRead("General", "Update");
+    if (up != null) {
+      if (parseInt(up) > 0) {
+        if (!element.checked) {
+          element.checked = true;
         }
-        setEventListener(checkboxid, "click", onUpcheckSyncListeners);
+      } else {
+        element.checked = false;
       }
+      setEventListener(checkboxid, "click", onUpcheckSyncListeners);
     }
   }
 }
@@ -170,91 +176,90 @@ function setUboSyncListeners(checkboxid) {
       uboCheckbox.style.display = 'none';
       document.getElementById("ubo_help").style.display = 'none';
     } else {
-      let value = uboCheckbox.checked;
-      let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
-      target.append("portable.ini");
-      if (target.exists()) {
-        let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
-        let ini = factory.createINIParser(target);
-        if (ini != null) {
-          let ubos = iniSafeGet(ini, "General", "EnableUBO");
-          if (ubos == "1") {
-            if (!value) {
-              makeMasterCheckboxesReactive(checkboxid, () => {return true;});
-            }
-          } else if (value) {
-            makeMasterCheckboxesReactive(checkboxid, () => {return false;});
+      let ubos = iniRead("General", "EnableUBO");
+      if (ubos != null) {
+        if (parseInt(ubos) > 0) {
+          if (!uboCheckbox.checked) {
+            uboCheckbox.checked = true;
           }
-          setEventListener(checkboxid, "click", onUboSyncListeners);
+        } else {
+          uboCheckbox.checked = false;
         }
+        setEventListener(checkboxid, "click", onUboSyncListeners);
       }
     }
   }
 }
 
 function setChromeSyncListeners(checkboxid) {
-  // Get the app directory.
-  let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
-  let bin = target.clone();
-  if (AppConstants.platform === "win") {
-    target.append("upcheck.exe");
-  } else {
-    target.append("upcheck");
-  }
-  if (target.exists()) {
-    let exitValue = 1;
-    let process = Cc["@mozilla.org/process/util;1"]
-                   .createInstance(Ci.nsIProcess);
-    let prof = Services.dirsvc.get("ProfD", Ci.nsIFile);
-    process.init(target);
-    process.startHidden = true;
-    process.noShell = true;
-    try {
-      process.runw(true, ["-chrome-check", bin.path, prof.path], 3);
-      exitValue = process.exitValue;
-    } catch (e) {
-      console.log("On Windows negative return value throws an exception");
-      exitValue = -1;
-    }
-    if (exitValue > 0) {
-      makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+  const chromebox = document.getElementById(checkboxid);
+  if (chromebox) {
+    // Get the app directory.
+    let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+    let bin = target.clone();
+    if (AppConstants.platform === "win") {
+      target.append("upcheck.exe");
     } else {
-      makeMasterCheckboxesReactive(checkboxid, () => {return false;}); 
+      target.append("upcheck");
     }
-    setEventListener(checkboxid, "click", onChromeSyncListeners);
+    if (target.exists()) {
+      let exitValue = 1;
+      let process = Cc["@mozilla.org/process/util;1"]
+                     .createInstance(Ci.nsIProcess);
+      let prof = Services.dirsvc.get("ProfD", Ci.nsIFile);
+      process.init(target);
+      process.startHidden = true;
+      process.noShell = true;
+      try {
+        process.runw(true, ["-chrome-check", bin.path, prof.path], 3);
+        exitValue = process.exitValue;
+      } catch (e) {
+        console.log("On Windows negative return value throws an exception");
+        exitValue = -1;
+      }
+      if (exitValue > 0) {
+        makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+      } else {
+        makeMasterCheckboxesReactive(checkboxid, () => {return false;}); 
+      }
+      setEventListener(checkboxid, "click", e => {setTimeout(onChromeSyncListeners, 1000);});
+    }
   }
 }
 
 function setDownloadSyncListeners(checkboxid) {
-  // Get the app directory.
-  let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
-  let bin = target.clone();
-  if (AppConstants.platform === "win") {
-    target.append("upcheck.exe");
-  } else {
-    target.append("upcheck");
-  }
-  if (target.exists()) {
-    let exitValue = 1;
-    let process = Cc["@mozilla.org/process/util;1"]
-                   .createInstance(Ci.nsIProcess);
-    let prof = Services.dirsvc.get("ProfD", Ci.nsIFile);
-    process.init(target);
-    process.startHidden = true;
-    process.noShell = true;
-    try {
-      process.runw(true, ["-integration-check", bin.path, prof.path], 3);
-      exitValue = process.exitValue;
-    } catch (e) {
-      console.log("On Windows negative return value throws an exception");
-      exitValue = -1;
-    }
-    if (exitValue > 0) {
-      makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+  const downbox = document.getElementById(checkboxid);
+  if (downbox) {
+    // Get the app directory.
+    let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+    let bin = target.clone();
+    if (AppConstants.platform === "win") {
+      target.append("upcheck.exe");
     } else {
-      makeMasterCheckboxesReactive(checkboxid, () => {return false;}); 
+      target.append("upcheck");
     }
-    setEventListener(checkboxid, "click", onDownloadSyncListeners);
+    if (target.exists()) {
+      let exitValue = 1;
+      let process = Cc["@mozilla.org/process/util;1"]
+                     .createInstance(Ci.nsIProcess);
+      let prof = Services.dirsvc.get("ProfD", Ci.nsIFile);
+      process.init(target);
+      process.startHidden = true;
+      process.noShell = true;
+      try {
+        process.runw(true, ["-integration-check", bin.path, prof.path], 3);
+        exitValue = process.exitValue;
+      } catch (e) {
+        console.log("On Windows negative return value throws an exception");
+        exitValue = -1;
+      }
+      if (exitValue > 0) {
+        makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+      } else {
+        makeMasterCheckboxesReactive(checkboxid, () => {return false;}); 
+      }
+      setEventListener(checkboxid, "click", e => {setTimeout(onDownloadSyncListeners, 1000);});
+    }
   }
 }
 
@@ -283,64 +288,72 @@ function setBosskeySyncListeners(checkboxid) {
   }
 }
 
-function tabChildboxChk(ini, boxid, value, enabled) {
-  let child = enabled ? iniSafeGet(ini, "tabs", value) : "0";
-  if (parseInt(child) > 0) {
-    makeMasterCheckboxesReactive(boxid, () => {return true;});
-  } else {
-    makeMasterCheckboxesReactive(boxid, () => {return false;});
+function iniRead(sec, key) {
+  let vaule = null;
+  let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+  target.append("portable.ini");
+  if (target.exists()) {
+    let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
+    let ini = factory ? factory.createINIParser(target) : null;
+    if (ini != null) {
+      vaule = iniSafeGet(ini, sec, key);
+    }
+  }
+  return vaule;
+}
+
+function tabChildboxChk(boxid, value, enabled) {
+  let child = enabled ? iniRead("tabs", value) : "0";
+  if (child != null) {
+    if (parseInt(child) > 0) {
+      makeMasterCheckboxesReactive(boxid, () => {return true;});
+    } else {
+      makeMasterCheckboxesReactive(boxid, () => {return false;});
+    }
   }
 }
 
 function setOntabSyncListeners(checkboxid) {
   const element = document.getElementById(checkboxid);
   if (element) {
-    let value = document.getElementById(checkboxid).checked;
-    // Get the app directory.
-    let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
-    target.append("portable.ini");
-    if (target.exists()) {
-      let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
-      let ini = factory.createINIParser(target);
-      if (ini != null) {
-        let boxid1 = "iceweasel-hover-activate";
-        let boxid2 = "iceweasel-double-click-close";
-        let boxid3 = "iceweasel-double-click-new";
-        let boxid4 = "iceweasel-mouse-hover-close";
-        let boxid5 = "iceweasel-mouse-hover-new";
-        let boxid6 = "iceweasel-right-click-close";
-        let boxid7 = "iceweasel-right-click-recover";
-        let ontabs = iniSafeGet(ini, "General", "OnTabs");
-        if (ontabs == "1") {
-          if (!value) {
-            makeMasterCheckboxesReactive(checkboxid, () => {return true;});
-          }
-          tabChildboxChk(ini, boxid1, "mouse_time", true);
-          tabChildboxChk(ini, boxid2, "double_click_close", true);
-          tabChildboxChk(ini, boxid3, "double_click_new", true);
-          tabChildboxChk(ini, boxid4, "mouse_hover_close", true);
-          tabChildboxChk(ini, boxid5, "mouse_hover_new", true);
-          tabChildboxChk(ini, boxid6, "right_click_close", true);
-          tabChildboxChk(ini, boxid7, "right_click_recover", true);
-        } else if (value) {
-          makeMasterCheckboxesReactive(checkboxid, () => {return false;});
-          tabChildboxChk(ini, boxid1, "mouse_time", false);
-          tabChildboxChk(ini, boxid2, "double_click_close", false);
-          tabChildboxChk(ini, boxid3, "double_click_new", false);
-          tabChildboxChk(ini, boxid4, "mouse_hover_close", false);
-          tabChildboxChk(ini, boxid5, "mouse_hover_new", false);
-          tabChildboxChk(ini, boxid6, "right_click_close", false);
-          tabChildboxChk(ini, boxid7, "right_click_recover", false);
+    let value = iniRead("General", "OnTabs");
+    if (value != null) {
+      let boxid1 = "iceweasel-hover-activate";
+      let boxid2 = "iceweasel-double-click-close";
+      let boxid3 = "iceweasel-double-click-new";
+      let boxid4 = "iceweasel-mouse-hover-close";
+      let boxid5 = "iceweasel-mouse-hover-new";
+      let boxid6 = "iceweasel-right-click-close";
+      let boxid7 = "iceweasel-right-click-recover";
+      if (parseInt(value) > 0) {
+        if (!element.checked) {
+          element.checked = true;
         }
-        setEventListener(checkboxid, "click", onTabSyncListeners);
-        setEventListener(boxid1, "click", onTabSyncid1);
-        setEventListener(boxid2, "click", onTabSyncid2);
-        setEventListener(boxid3, "click", onTabSyncid3);
-        setEventListener(boxid4, "click", onTabSyncid4);
-        setEventListener(boxid5, "click", onTabSyncid5);
-        setEventListener(boxid6, "click", onTabSyncid6);
-        setEventListener(boxid7, "click", onTabSyncid7);
+        tabChildboxChk(boxid1, "mouse_time", true);
+        tabChildboxChk(boxid2, "double_click_close", true);
+        tabChildboxChk(boxid3, "double_click_new", true);
+        tabChildboxChk(boxid4, "mouse_hover_close", true);
+        tabChildboxChk(boxid5, "mouse_hover_new", true);
+        tabChildboxChk(boxid6, "right_click_close", true);
+        tabChildboxChk(boxid7, "right_click_recover", true);
+      } else {
+        element.checked = false;
+        document.getElementById(boxid1).disabled = true;
+        document.getElementById(boxid2).disabled = true;
+        document.getElementById(boxid3).disabled = true;
+        document.getElementById(boxid4).disabled = true;
+        document.getElementById(boxid5).disabled = true;
+        document.getElementById(boxid6).disabled = true;
+        document.getElementById(boxid7).disabled = true;
       }
+      element.addEventListener("click", onTabSyncListeners);
+      setEventListener(boxid1, "click", onTabSyncid1);
+      setEventListener(boxid2, "click", onTabSyncid2);
+      setEventListener(boxid3, "click", onTabSyncid3);
+      setEventListener(boxid4, "click", onTabSyncid4);
+      setEventListener(boxid5, "click", onTabSyncid5);
+      setEventListener(boxid6, "click", onTabSyncid6);
+      setEventListener(boxid7, "click", onTabSyncid7);
     }
   }
 }
@@ -349,7 +362,6 @@ function openProfileDirectory() {
   // Get the profile directory.
   let currProfD = Services.dirsvc.get("ProfD", Ci.nsIFile);
   let profileDir = currProfD.path;
-
   // Show the profile directory.
   let nsLocalFile = Components.Constructor(
     "@mozilla.org/file/local;1",
@@ -395,11 +407,11 @@ function showIceMessage(n) {
 }
 
 function onUpcheckSyncListeners() {
-  optionlibportable(0x5220, "iceweasel-libportable-upcheck-checkbox");
+  optionlibportable(0x5220, !parseInt(iniRead("General", "Update")));
 }
 
 function onUboSyncListeners() {
-  optionlibportable(0x5230, "iceweasel-libportable-ubo-checkbox");
+  optionlibportable(0x5230, !parseInt(iniRead("General", "EnableUBO")));
 }
 
 function onChromeSyncListeners() {
@@ -424,7 +436,7 @@ function onChromeSyncListeners() {
             showIceMessage(0);
           } else {
             console.log("The process launch failed!");
-            document.getElementById("iceweasel-libportable-chrome-checkbox").checked = false;
+            element.checked = false;
           }
         },
         QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
@@ -467,7 +479,7 @@ function onDownloadSyncListeners() {
           } else {
             console.log("The process return false");
             showIceMessage(2);
-            document.getElementById("iceweasel-libportable-download-checkbox").checked = false;
+            element.checked = false;
           }
         },
       };
@@ -488,80 +500,74 @@ function onDownloadSyncListeners() {
 }
 
 function onBosskeySyncListeners() {
-  optionlibportable(0x5221, "iceweasel-libportable-bosskey-checkbox");
+  optionlibportable(0x5221, !parseInt(iniRead("General", "Bosskey")));
 }
 
 function onTabSyncListeners() {
-  let onid = "iceweasel-libportable-ontabs-checkbox"
-  let boxid1 = "iceweasel-hover-activate";
-  let boxid2 = "iceweasel-double-click-close";
-  let boxid3 = "iceweasel-double-click-new";
-  let boxid4 = "iceweasel-mouse-hover-close";
-  let boxid5 = "iceweasel-mouse-hover-new";
-  let boxid6 = "iceweasel-right-click-close";
-  let boxid7 = "iceweasel-right-click-recover";
-  let value = document.getElementById(onid).checked;
-  if (!value) {
-    document.getElementById(boxid1).disabled = true;
-    document.getElementById(boxid2).disabled = true;
-    document.getElementById(boxid3).disabled = true;
-    document.getElementById(boxid4).disabled = true;
-    document.getElementById(boxid5).disabled = true;
-    document.getElementById(boxid6).disabled = true;
-    document.getElementById(boxid7).disabled = true;
-  } else {
-    document.getElementById(boxid1).disabled = false;
-    document.getElementById(boxid2).disabled = false;
-    document.getElementById(boxid3).disabled = false;
-    document.getElementById(boxid4).disabled = false;
-    document.getElementById(boxid5).disabled = false;
-    document.getElementById(boxid6).disabled = false;
-    document.getElementById(boxid7).disabled = false;
-    let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
-    target.append("portable.ini");
-    if (target.exists()) {
-      let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
-      let ini = factory.createINIParser(target);
-      if (ini != null) {
-        tabChildboxChk(ini, boxid1, "mouse_time", true);
-        tabChildboxChk(ini, boxid2, "double_click_close", true);
-        tabChildboxChk(ini, boxid3, "double_click_new", true);
-        tabChildboxChk(ini, boxid4, "mouse_hover_close", true);
-        tabChildboxChk(ini, boxid5, "mouse_hover_new", true);
-        tabChildboxChk(ini, boxid6, "right_click_close", true);
-        tabChildboxChk(ini, boxid7, "right_click_recover", true);
-      }
+  let status = iniRead("General", "OnTabs");
+  if (status != null) {
+    let value = !parseInt(status);
+    let boxid1 = "iceweasel-hover-activate";
+    let boxid2 = "iceweasel-double-click-close";
+    let boxid3 = "iceweasel-double-click-new";
+    let boxid4 = "iceweasel-mouse-hover-close";
+    let boxid5 = "iceweasel-mouse-hover-new";
+    let boxid6 = "iceweasel-right-click-close";
+    let boxid7 = "iceweasel-right-click-recover";
+    if (!value) {
+      document.getElementById(boxid1).disabled = true;
+      document.getElementById(boxid2).disabled = true;
+      document.getElementById(boxid3).disabled = true;
+      document.getElementById(boxid4).disabled = true;
+      document.getElementById(boxid5).disabled = true;
+      document.getElementById(boxid6).disabled = true;
+      document.getElementById(boxid7).disabled = true;
+    } else {
+      document.getElementById(boxid1).disabled = false;
+      document.getElementById(boxid2).disabled = false;
+      document.getElementById(boxid3).disabled = false;
+      document.getElementById(boxid4).disabled = false;
+      document.getElementById(boxid5).disabled = false;
+      document.getElementById(boxid6).disabled = false;
+      document.getElementById(boxid7).disabled = false;
+      tabChildboxChk(boxid1, "mouse_time", true);
+      tabChildboxChk(boxid2, "double_click_close", true);
+      tabChildboxChk(boxid3, "double_click_new", true);
+      tabChildboxChk(boxid4, "mouse_hover_close", true);
+      tabChildboxChk(boxid5, "mouse_hover_new", true);
+      tabChildboxChk(boxid6, "right_click_close", true);
+      tabChildboxChk(boxid7, "right_click_recover", true);
     }
+    optionlibportable(0x5222, value);
   }
-  optionlibportable(0x5222, onid);
 }
 
 function onTabSyncid1() {
-  optionlibportable(0x5223, "iceweasel-hover-activate");
+  optionlibportable(0x5223, !parseInt(iniRead("tabs", "mouse_time")));
 }
 
 function onTabSyncid2() {
-  optionlibportable(0x5224, "iceweasel-double-click-close");
+  optionlibportable(0x5224, !parseInt(iniRead("tabs", "double_click_close")));
 }
 
 function onTabSyncid3() {
-  optionlibportable(0x5225, "iceweasel-double-click-new");
+  optionlibportable(0x5225, !parseInt(iniRead("tabs", "double_click_new")));
 }
 
 function onTabSyncid4() {
-  optionlibportable(0x5226, "iceweasel-mouse-hover-close");
+  optionlibportable(0x5226, !parseInt(iniRead("tabs", "mouse_hover_close")));
 }
 
 function onTabSyncid5() {
-  optionlibportable(0x5227, "iceweasel-mouse-hover-new");
+  optionlibportable(0x5227, !parseInt(iniRead("tabs", "mouse_hover_new")));
 }
 
 function onTabSyncid6() {
-  optionlibportable(0x5228, "iceweasel-right-click-close");
+  optionlibportable(0x5228, !parseInt(iniRead("tabs", "right_click_close")));
 }
 
 function onTabSyncid7() {
-  optionlibportable(0x5229, "iceweasel-right-click-recover");
+  optionlibportable(0x5229, !parseInt(iniRead("tabs", "right_click_recover")));
 }
 
 function makeMasterCheckboxesReactive(checkboxid, func) {
