@@ -28,9 +28,18 @@
 
 namespace webrtc {
 
+#if defined(__GNUC__) && defined(WEBRTC_MOZILLA_BUILD)
+// Mozilla linux builds are using -std=gnu++20, which doesn't approve
+// of using std::string in a constexpr.  PipewireVersion now contains
+// std::string as of libwebrtc commit d167fe9296.
+static const PipeWireVersion kReentrantDeinitMinVersion = {.major = 0,
+                                                           .minor = 3,
+                                                           .micro = 49};
+#else
 constexpr PipeWireVersion kReentrantDeinitMinVersion = {.major = 0,
                                                         .minor = 3,
                                                         .micro = 49};
+#endif
 
 PipeWireVersion PipeWireVersion::Parse(const std::string_view& version) {
   std::vector<std::string_view> parsed_version = split(version, '.');
