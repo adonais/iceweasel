@@ -138,7 +138,7 @@ export const AIWindowUI = {
 
     if (!this.isSidebarOpen(win)) {
       this._showSidebarElements(box, splitter);
-      this._setAskButtonStyle(win, true);
+      this._updateAskButtonChecked(win, true);
     }
 
     Glean.smartWindow.sidebarOpen.record({
@@ -209,7 +209,7 @@ export const AIWindowUI = {
 
     box.collapsed = true;
     splitter.collapsed = true;
-    this._setAskButtonStyle(win, false);
+    this._updateAskButtonChecked(win, false);
 
     // Dispatch event to notify tab state manager that sidebar was toggled
     win.dispatchEvent(
@@ -244,7 +244,7 @@ export const AIWindowUI = {
     if (!box.collapsed) {
       box.collapsed = true;
       splitter.collapsed = true;
-      this._setAskButtonStyle(win, false);
+      this._updateAskButtonChecked(win, false);
 
       // Dispatch event to notify tab state manager that sidebar was toggled
       win.dispatchEvent(
@@ -268,7 +268,7 @@ export const AIWindowUI = {
 
     this.ensureBrowserIsAppended(chromeDoc, box);
     this._showSidebarElements(box, splitter);
-    this._setAskButtonStyle(win, true);
+    this._updateAskButtonChecked(win, true);
 
     // Dispatch event to notify tab state manager that sidebar was toggled
     win.dispatchEvent(
@@ -311,12 +311,13 @@ export const AIWindowUI = {
    * @param {Window} win
    * @param {boolean} sidebarIsOpen
    */
-  _setAskButtonStyle(win, sidebarIsOpen) {
+  _updateAskButtonChecked(win, sidebarIsOpen) {
     const askBtn = win.document.querySelector("#smartwindow-ask-button-inner");
     if (!askBtn) {
       return;
     }
-    askBtn.classList.toggle("sidebar-is-open", sidebarIsOpen);
+    askBtn.checked = sidebarIsOpen;
+    askBtn.setAttribute("aria-expanded", String(sidebarIsOpen));
   },
 
   /**

@@ -41,18 +41,16 @@
     rgba(245, 196, 81, 0.3) 109.44%
   );
   --smartwindow-ask-btn-gradient-dark: linear-gradient(83deg, #5119dc 0.73%, var(--color-violet-30) 98.05%);
-  --smartwindow-ask-btn-bg-opened: transparent;
-  --smartwindow-ask-btn-bg-opened-dark: #321342; /* color of the chrome to simulate a transparent background - needed due to gradient borders */
-  --smartwindow-ask-btn-bg-opened-hover: var(--color-violet-20);
-  --smartwindow-ask-btn-bg-opened-hover-dark: linear-gradient(
-    color-mix(in srgb, var(--smartwindow-ask-btn-bg-opened-dark) 85%, white),
-    color-mix(in srgb, var(--smartwindow-ask-btn-bg-opened-dark) 85%, white)
-  );
+  --smartwindow-ask-btn-bg-image: var(--smartwindow-ask-btn-gradient);
   --smartwindow-ask-btn-text-color: light-dark(var(--color-violet-80), var(--color-white));
   --smartwindow-ask-btn-text-color-opened: light-dark(var(--color-violet-80), var(--color-violet-10));
   --smartwindow-ask-btn-border-color: light-dark(var(--color-white), transparent);
   --smartwindow-ask-btn-border-color-opened: light-dark(var(--color-violet-80), transparent);
   --smartwindow-ask-btn-border-color-hover: light-dark(var(--color-violet-80), var(--color-white));
+  --smartwindow-ask-btn-checked-bg-image: none;
+  --smartwindow-ask-btn-checked-bg-clip: border-box;
+  --smartwindow-ask-btn-checked-hover-bg-color: var(--color-violet-20);
+  --smartwindow-ask-btn-checked-hover-bg-image: none;
   --smartwindow-ask-btn-icon-stroke-color: light-dark(#ecbcea, var(--color-violet-40));
   --smartwindow-ask-btn-icon-height: var(--size-item-small);
   --smartwindow-ask-btn-icon-width: var(--size-item-small);
@@ -60,6 +58,16 @@
     color-mix(in srgb, var(--color-violet-60) 20%, transparent),
     color-mix(in srgb, var(--color-violet-40) 20%, transparent)
   );
+
+  @media (prefers-color-scheme: dark) {
+    --smartwindow-ask-btn-bg-image: var(--smartwindow-ask-btn-gradient-dark);
+    /* Gradient border: inner bg clips to padding, outer gradient to border */
+    --smartwindow-ask-btn-checked-bg-image: linear-gradient(#321342, #321342), var(--smartwindow-ask-btn-gradient-dark);
+    --smartwindow-ask-btn-checked-bg-clip: padding-box, border-box;
+    --smartwindow-ask-btn-checked-hover-bg-color: transparent;
+    --smartwindow-ask-btn-checked-hover-bg-image:
+      linear-gradient(color-mix(in srgb, #321342 85%, white), color-mix(in srgb, #321342 85%, white)), var(--smartwindow-ask-btn-gradient-dark);
+  }
 }
 
 #TabsToolbar {
@@ -693,7 +701,7 @@ toolbarpaletteitem[place="palette"] > #ipprotection-button > .toolbarbutton-icon
 
 #smartwindow-ask-button-inner {
   align-self: center;
-  background-image: var(--smartwindow-ask-btn-gradient);
+  background-image: var(--smartwindow-ask-btn-bg-image);
   background-origin: border-box;
   border: 1px solid var(--smartwindow-ask-btn-border-color);
   border-radius: var(--border-radius-circle);
@@ -704,10 +712,7 @@ toolbarpaletteitem[place="palette"] > #ipprotection-button > .toolbarbutton-icon
   --toolbarbutton-outer-padding: var(--space-small);
   --toolbarbutton-hover-outline-color: none;
   --toolbarbutton-hover-background: transparent;
-
-  @media (prefers-color-scheme: dark) {
-    background-image: var(--smartwindow-ask-btn-gradient-dark);
-  }
+  --toolbarbutton-active-background: transparent;
 
   #smartwindow-ask-button:hover > & {
     --smartwindow-ask-btn-border-color: var(--smartwindow-ask-btn-border-color-hover);
@@ -729,7 +734,7 @@ toolbarpaletteitem[place="palette"] > #ipprotection-button > .toolbarbutton-icon
     --toolbarbutton-inner-padding: 0;
     --focus-outline: none;
 
-    .sidebar-is-open > & {
+    [checked] > & {
       padding: var(--space-xxsmall);
     }
   }
@@ -741,25 +746,24 @@ toolbarpaletteitem[place="palette"] > #ipprotection-button > .toolbarbutton-icon
     --toolbarbutton-inner-padding: 0;
   }
 
-  &.sidebar-is-open {
-    background-image: linear-gradient(var(--smartwindow-ask-btn-bg-opened), var(--smartwindow-ask-btn-bg-opened));
+  &[checked],
+  #smartwindow-ask-button:hover > &:active:not([checked]) {
+    background-clip: var(--smartwindow-ask-btn-checked-bg-clip);
+    background-image: var(--smartwindow-ask-btn-checked-bg-image);
     --smartwindow-ask-btn-text-color: var(--smartwindow-ask-btn-text-color-opened);
     --smartwindow-ask-btn-border-color: var(--smartwindow-ask-btn-border-color-opened);
+  }
 
+  &[checked] {
     #smartwindow-ask-button:hover > & {
-      background-color: var(--smartwindow-ask-btn-bg-opened-hover);
-      background-image: none;
-    }
+      background-color: var(--smartwindow-ask-btn-checked-hover-bg-color);
+      background-image: var(--smartwindow-ask-btn-checked-hover-bg-image);
 
-    @media (prefers-color-scheme: dark) {
-      background-color: transparent;
-      background-clip: padding-box, border-box;
-      background-image:
-        linear-gradient(var(--smartwindow-ask-btn-bg-opened-dark), var(--smartwindow-ask-btn-bg-opened-dark)), var(--smartwindow-ask-btn-gradient-dark);
-      border-color: transparent;
-
-      #smartwindow-ask-button:hover > & {
-        background-image: var(--smartwindow-ask-btn-bg-opened-hover-dark), var(--smartwindow-ask-btn-gradient-dark);
+      &:active {
+        background-clip: border-box;
+        background-image: var(--smartwindow-ask-btn-bg-image);
+        --smartwindow-ask-btn-text-color: inherit;
+        --smartwindow-ask-btn-border-color: var(--smartwindow-ask-btn-border-color-hover);
       }
     }
   }

@@ -100,12 +100,17 @@ add_task(async function test_ask_button() {
 
     await BrowserTestUtils.waitForMutationCondition(
       askButton,
-      { attributes: true, attributeFilter: ["class"] },
-      () => askButton.classList.contains("sidebar-is-open")
+      { attributes: true, attributeFilter: ["checked"] },
+      () => askButton.hasAttribute("checked")
     );
     Assert.ok(
-      askButton.classList.contains("sidebar-is-open"),
-      "Ask button has the class sidebar-is-open after click"
+      askButton.hasAttribute("checked"),
+      "Ask button has the checked attribute after click"
+    );
+    Assert.equal(
+      askButton.getAttribute("aria-expanded"),
+      "true",
+      "Ask button has aria-expanded=true after click"
     );
 
     const sidebar = win.document.getElementById("ai-window-box");
@@ -113,9 +118,20 @@ add_task(async function test_ask_button() {
       Assert.ok(!sidebar.collapsed, "AI Sidebar exists and is not hidden");
     }
     EventUtils.synthesizeMouseAtCenter(askButton, {}, win);
+
+    await BrowserTestUtils.waitForMutationCondition(
+      askButton,
+      { attributes: true, attributeFilter: ["checked"] },
+      () => !askButton.hasAttribute("checked")
+    );
     Assert.ok(
-      !askButton.classList.contains("sidebar-is-open"),
-      "Ask button removed the sidebar-is-open class after second click"
+      !askButton.hasAttribute("checked"),
+      "Ask button removed the checked attribute after second click"
+    );
+    Assert.equal(
+      askButton.getAttribute("aria-expanded"),
+      "false",
+      "Ask button has aria-expanded=false after second click"
     );
     Assert.ok(sidebar.collapsed, "AI Sidebar is hidden after second click");
 
@@ -126,19 +142,35 @@ add_task(async function test_ask_button() {
 
     await BrowserTestUtils.waitForMutationCondition(
       askButton,
-      { attributes: true, attributeFilter: ["class"] },
-      () => askButton.classList.contains("sidebar-is-open")
+      { attributes: true, attributeFilter: ["checked"] },
+      () => askButton.hasAttribute("checked")
     );
     Assert.ok(
-      askButton.classList.contains("sidebar-is-open"),
-      "Ask button has the class sidebar-is-open after tab enter"
+      askButton.hasAttribute("checked"),
+      "Ask button has the checked attribute after tab enter"
+    );
+    Assert.equal(
+      askButton.getAttribute("aria-expanded"),
+      "true",
+      "Ask button has aria-expanded=true after tab enter"
     );
     Assert.ok(!sidebar.hidden, "AI Sidebar is not hidden after tab enter");
 
     EventUtils.synthesizeKey("KEY_Enter", {}, win);
+
+    await BrowserTestUtils.waitForMutationCondition(
+      askButton,
+      { attributes: true, attributeFilter: ["checked"] },
+      () => !askButton.hasAttribute("checked")
+    );
     Assert.ok(
-      !askButton.classList.contains("sidebar-is-open"),
-      "Ask button removed the sidebar-is-open class after second tab enter"
+      !askButton.hasAttribute("checked"),
+      "Ask button removed the checked attribute after second tab enter"
+    );
+    Assert.equal(
+      askButton.getAttribute("aria-expanded"),
+      "false",
+      "Ask button has aria-expanded=false after second tab enter"
     );
     Assert.ok(sidebar.collapsed, "AI Sidebar is hidden after second tab enter");
     askButton.removeAttribute("tabindex");
