@@ -584,6 +584,21 @@
   <string name="security_popup_security_verified">Sannvottað af: %1$s</string>
   <!-- Content Description of Security Icon in toolbar -->
   <string name="site_security_icon_content_description">Öryggi vefsvæðis</string>
+  <!--
+    %1$s will be replaced with the organization for which the certificate
+    used by the site was issued. For example, the certificate in use by
+    the site https://eidas.ec.europa.eu/ was issued to "The European
+    Commission".
+  -->
+  <string name="qualified_identity">Skilríki útgefið til %1$s</string>
+  <!--
+    The European Union eIDAS Regulation specifies a type of certificate
+    called a "qualified website authentication certificate" (QWAC) and
+    requires that browsers identify and indicate such certificates. This
+    text was paraphrased from ETSI TS 119 411-5 V2.1.1 section 6.3 and
+    indicates that the website uses a QWAC.
+  -->
+  <string name="qualified_text">Hæfni samkvæmt reglugerð (ESB) 2024/1183.</string>
   <string name="preference_autocomplete_duplicate_url_error">Slóð þegar til</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">Finna á síðu</string>

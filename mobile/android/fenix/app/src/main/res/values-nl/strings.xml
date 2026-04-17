@@ -391,6 +391,58 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Bericht sluiten</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Paginasamenvattingen</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">AI-bedieningselementen inschakelen</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">AI-bedieningselementen</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">U hebt altijd een keuze in %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Dat omvat het al dan niet gebruiken van met AI verbeterde functies.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Meer info</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">AI-verbeteringen blokkeren</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Blokkeren betekent dat u geen nieuwe of huidige AI-verbeteringen ziet in %s, of pop-ups daarover.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Bekijken wat wel en niet is inbegrepen</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Nieuwe en huidige AI-verbeteringen worden standaard geblokkeerd. Deblokkeer hieronder specifieke functies.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">AI-aangedreven functies</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Vertalingen</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Alle vertalingen blijven privé op uw apparaat.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Meer vertaalinstellingen</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Meer instellingen voor paginasamenvattingen</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Gesproken zoekopdracht</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Audio wordt naar tekst omgezet door Google Speech Services.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">AI-verbeteringen blokkeren?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">U ziet geen nieuwe of huidige AI-verbeteringen in %1$s, of pop-ups daarover. Daarna kunt u alles wat u wilt blijven gebruiken deblokkeren.\n\nBlokkeren heeft ook invloed op extensies die AI door %1$s gebruiken.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Wat wordt geblokkeerd:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Annuleren</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Blokkeren</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -1417,6 +1469,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">De werkbalk omhoog vegen om tabbladen te openen</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">De adresbalk opzij vegen om van tabblad te wisselen</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Schudden voor een samenvatting</string>
   <!--
     Library
 
@@ -1579,6 +1633,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Open privétabbladen: %1$s. Tik om tussen tabbladen te wisselen.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d tabbladgroep geopend. Tik om van tabblad te wisselen.</item>
+    <item quantity="other">%1$d tabbladgroepen geopend. Tik om van tabblad te wisselen.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1680,6 +1742,10 @@
   <string name="pwa_site_controls_title_private">%1$s (privémodus)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Tabblad zoeken openen</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Probeer tabbladgroepen voor minder scrollen, meer doen</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Selecteer tabbladen om een groep aan te maken. Ze worden hier opgeslagen, klaar als u dat bent.</string>
   <!--
     Tab Group
 
@@ -3034,6 +3100,55 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">E-mailmaskers zijn momenteel niet beschikbaar. Probeer het over een paar minuten opnieuw.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">De ingebouwde VPN van %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Navigeer met extra bescherming door uw locatie te verbergen, zelfs op openbare wifi.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Meer info</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Maandelijkse gegevenslimiet</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f GB van %2$.1f GB resterend</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Wordt opnieuw ingesteld naar %1$.0f GB op de eerste van elke maand.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Locatie</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Aanbevolen</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Selecteert de snelste VPN-locatie voor u.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Aan</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Uit</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Verbinden…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Gepauzeerd</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Fout</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">VPN-instellingen openen</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN is aan</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN is actief.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3347,6 +3462,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Alle sneltoetsen tonen</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Snelkoppeling toevoegen</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Voer een website-URL in</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Snelkoppelingslimiet bereikt</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3595,6 +3712,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Deze websites nooit vertalen</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Talen downloaden</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Vertalingen</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Alle vertalingen blijven privé op uw apparaat.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Meer info</string>
   <!--
     Automatic translation preference screen
 

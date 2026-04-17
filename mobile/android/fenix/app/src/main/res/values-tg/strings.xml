@@ -3033,6 +3033,22 @@
   <string name="email_masks_max_free_tier_reached">Зеро ки шумо аз ҳамаи 5 ниқоби ройгони почтаи электронии худ истифода кардед, мо барои идомаи истифода ба шумо яке аз онҳоро интихоб намудем.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Дар айни ҳол ниқобҳои почтаи электронӣ дастнорасанд. Пас аз чанд дақиқа аз нав кӯшиш кунед.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Маълумоти бештар</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Ҷойгиршавӣ</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Тавсияшуда</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Фаъол</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Ғайрифаъол</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Пайваст мешавад…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Таваққуф карда шуд</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Хато</string>
   <!--
     Autofill
 
@@ -3595,6 +3611,8 @@
   <string name="translation_settings_automatic_never_translate_sites">Ин сомонаҳо бояд ҳеҷ вақт тарҷума карда нашаванд</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Боргирӣ кардани забонҳо</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Маълумоти бештар</string>
   <!--
     Automatic translation preference screen
 

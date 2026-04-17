@@ -391,6 +391,58 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Хабарламаны елемеу</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Беттер қорытындылары</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">ЖИ басқару элементтерін іске қосу</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">ЖИ басқару элементтері</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">%s ішінде сізде әрқашан таңдау мүмкіндігіңіз бар</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Бұған ЖИ жақсартылған мүмкіндіктерді пайдалану керек пе, жоқ па деген сұрақ кіреді.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Көбірек білу</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">ЖИ жақсартуларын бұғаттау</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Бұғаттау дегеніміз, %s ішінде жаңа немесе ағымдағы ЖИ жақсартуларын немесе олар туралы қалқымалы терезелерді көрмейтініңізді білдіреді.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Не кіретінін және не кірмейтінін қарау</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Жаңа және ағымдағы ЖИ жақсартулары үнсіз келісім бойынша бұғатталады. Белгілі бір мүмкіндікті төменде бұғаттан шығаруға болады.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">ЖИ-негізіндегі мүмкіндіктер</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Аудармалар</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Барлық аудармалар құрылғыңызда жеке болып сақталады.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Көбірек аударма баптаулары</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Беттерді қорытындылаудың қосымша баптаулары</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Дауыстық іздеу</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Аудио мәтінге Google Speech Services арқылы түрлендіріледі.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">ЖИ жақсартуларын бұғаттау керек пе?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Сіз %1$s ішінде жаңа немесе ағымдағы ЖИ жақсартуларын немесе олар туралы қалқымалы терезелерді көрмейсіз. Содан кейін, пайдалануды жалғастырғыңыз келетін кез келген нәрсені бұғаттан босата аласыз.\n\nСонымен қатар, бұғаттау %1$s ұсынған ЖИ қолданатын барлық кеңейтулерге әсер етеді.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Не бұғатталады:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Бас тарту</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Блоктау</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -1417,6 +1469,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">Беттерді ашу үшін құралдар тақтасын жоғары қарай сырғытыңыз</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Беттерді ауыстыру үшін адрестік жолақты сырғытыңыз</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Қорытындылау үшін сілкіңіз</string>
   <!--
     Library
 
@@ -1579,6 +1633,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Жекелік ашық беттер: %1$s. Беттерді ауыстыру үшін шертіңіз.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d беттер тобы ашық. Беттерді ауыстыру үшін шертіңіз.</item>
+    <item quantity="other">%1$d беттер тобы ашық. Беттерді ауыстыру үшін шертіңіз.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1680,6 +1742,10 @@
   <string name="pwa_site_controls_title_private">%1$s (жекелік режимі)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Ашық беттерден іздеу</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Айналдыруды азайтып, көбірек жұмыс істеу үшін беттер топтарын қолданып көріңіз</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Топты жасау үшін беттерді таңдаңыз. Олар осында сақталады және сізге керек болған кезде дайын болады.</string>
   <!--
     Tab Group
 
@@ -3034,6 +3100,55 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Эл. пошта маскалары қазір қолжетімді емес. Бірнеше минуттан кейін әрекетті қайталаңыз.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">%s ішіндегі кіріктірілген VPN</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Қоғамдық Wi-Fi желісінде болсаңыз да, орналасқан жеріңізді жасыру арқылы қосымша қорғаныспен шолыңыз.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Көбірек білу</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Ай сайынғы деректер шегі</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f ГБ/%2$.1f ГБ ішінен қалды</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Әр айдың бірінші күнінде %1$.0f ГБ қалпына келтіріледі.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Орналасу</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Ұсынылатын</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Сіз үшін ең жылдам VPN орналасуын таңдайды.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Іске қосулы</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Сөндірулі</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Байланысу…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Аялдатылған</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Қате</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">VPN баптауларын ашу</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN іске қосулы</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN белсенді.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3347,6 +3462,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Барлық жарлықтарды көрсету</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Жарлықты қосу</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Веб-сайт URL адресін енгізіңіз</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Жарлықтар саны шегіне жетті</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3595,6 +3712,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Бұл сайттарды ешқашан аудармау</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Тілдерді жүктеп алу</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Аудармалар</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Барлық аудармалар құрылғыңызда жеке болып сақталады.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Көбірек білу</string>
   <!--
     Automatic translation preference screen
 

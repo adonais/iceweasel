@@ -391,6 +391,58 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Cau\'r neges</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Crynodebau tudalen</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">Galluogi rheolyddion AI</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">Rheolaethau AI</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Mae gennych ddewis o %s bob amser</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Mae hynny\'n cynnwys defnyddio nodweddion sydd wedi\'u gwella gydag AI neu beidio.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Dysgu rhagor</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Rhwystro nodweddion AI</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Mae blocio yn golygu na fyddwch yn gweld gwelliannau AI newydd neu gyfredol yn %s, na ffenestri naid yn eu cylch.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Gweld beth sy wedi\'i gynnwys a beth sy ddim</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Mae nodweddion AI newydd a rhai cyfredol yn cael eu rhwystro fel rhagosodiad. Gallwch ddadrwystro nodweddion penodol, isod.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Nodweddion wedi\'u pweru gan AI</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Cyfieithu</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Mae pob cyfieithiad yn aros yn breifat ar eich dyfais.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Rhagor o osodiadau cyfieithu</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Mwy o osodiadau crynodeb tudalen</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Chwilio llais</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Mae sain yn cael ei drawsnewid yn destun gan Google Speech Services.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Rhwystro nodweddion AI?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Ni fyddwch yn gweld gwelliannau AI newydd neu gyfredol yn %1$s, na ffenestri naid yn eu cylch. Wedi hynny, gallwch ddadflocio unrhyw beth rydych chi am barhau i\'w ddefnyddio. \u0020Mae blocio hefyd yn effeithio ar estyniadau sy\'n defnyddio AI a ddarperir gan %1$s.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Beth fydd yn cael ei rwystro:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Diddymu</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Rhwystro</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -1421,6 +1473,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">Llusgo’r bar offer i fyny i agor tabiau</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Llusgo’r bar cyfeiriad ar draws i newid tabiau</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Ysgwyd i grynhoi</string>
   <!--
     Library
 
@@ -1583,6 +1637,18 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Tabiau Preifat ac ar Agor: %1$s. Tapiwch i newid tab.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">Grŵp tab %1$d ar agor. Tapiwch i newid tabiau.</item>
+    <item quantity="zero">Grwpiau tab %1$d yn agor. Tapiwch i newid tabiau.</item>
+    <item quantity="two">Grwpiau tab %1$d yn agor. Tapiwch i newid tabiau.</item>
+    <item quantity="few">Grwpiau tab %1$d yn agor. Tapiwch i newid tabiau.</item>
+    <item quantity="many">Grwpiau tab %1$d yn agor. Tapiwch i newid tabiau.</item>
+    <item quantity="other">Grwpiau tab %1$d yn agor. Tapiwch i newid tabiau.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1684,6 +1750,10 @@
   <string name="pwa_site_controls_title_private">%1$s (Modd Preifat)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Agor chwilio tabiau</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Rhowch gynnig ar grwpiau tab am lai o sgrolio, mwy yn ei wneud</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Dewiswch dabiau i greu grŵp. Maen nhw\'n cael eu cadw yma, yn barod pan fyddwch chi.</string>
   <!--
     Tab Group
 
@@ -3050,6 +3120,55 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Does dim arallenwau e-bost ar gael ar hyn o bryd. Ceisiwch eto mewn ychydig funudau.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">VPN integredig %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Porwch gydag diogelwch ychwanegol trwy guddio\'ch lleoliad, hyd yn oed pan ar Wi-Fi cyhoeddus.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Dysgu rhagor</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Terfyn data misol</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f GB o %2$.1f GB ar ôl</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Yn ailosod i %1$.0f GB ar y cyntaf o bob mis.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Lleoliad</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Cymeradwy</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Yn dewis y lleoliad VPN cyflymaf i chi.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Ymlaen</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Diffodd</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Cysylltu…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Oedwyd</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Gwall</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Agor gosodiadau VPN</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN ymlaen</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">Mae VPN yn weithredol.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3363,6 +3482,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Dangos pob llwybr byr</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Ychwanegu llwybr byr</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Rhowch URL Gwefan</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Cyrhaeddwyd terfyn llwybr byr</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3611,6 +3732,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Peidio â chyfieithu\'r gwefannau hyn</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Llwytho ieithoedd i lawr</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Cyfieithu</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Mae pob cyfieithiad yn aros yn breifat ar eich dyfais.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Dysgu rhagor</string>
   <!--
     Automatic translation preference screen
 

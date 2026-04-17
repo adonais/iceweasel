@@ -391,6 +391,54 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Emboyke ñe’ẽmondo</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Kuatiarogueita mombyky</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">Embobjuruja IA moambueha</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">IA moambueha</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Eguereko meme jeporavorã %s-pe</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Upéva ogueroike eiporútarõ tembiapoite iporãva IA ndive.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Eikuaave</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Ejoko IA porãverã rehegua</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Ehecha mba’épa oike térã ndoikéi</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">IA porãverã taipyahu térã oĩva ojejoko ijypykue rupi. Embojuruja tembiapoite eku’ejeývo.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Tembiapoite IA omongu’éva</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Ñemoñe’ẽasa</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Opaite ñe’ẽasa opyta ñemíme ne mba’e’okápe.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Oĩ poravoverã ñe’ẽasarãme</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Oĩ poravoverã kuatiarogue mombykýpe</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Ñe’ẽ jeheka</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Mba’epúgui oiko moñe’ẽrã Google Voice Services rupive.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">¿Ejoko IA porãverã?</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Mba’épa ojejokóta:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Heja</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Joko</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -1417,6 +1465,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">Eraha mba’erenda yvate gotyo embojuruja hag̃ua tendayke</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Eraha mba’erenda yke gotyo emoambue hag̃ua tendayke</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Emongu’e emombyky hag̃ua</string>
   <!--
     Library
 
@@ -1579,6 +1629,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Tendayke ñemi ijurujáva: %1$s. Eikutu emoambue hag̃ua tendayke.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d tendayke aty ijurujáva. Eikutu emoambue hag̃ua tendayke.</item>
+    <item quantity="other">%1$d tendayke aty ijurujáva. Eikutu emoambue hag̃ua tendayke.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1680,6 +1738,8 @@
   <string name="pwa_site_controls_title_private">%1$s (Ayvu Ñemigua)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Embojuruja jehekaha tendayképe</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Eiporu tendayke aty eku’e’ive ha ejapove hag̃ua</string>
   <!--
     Tab Group
 
@@ -3034,6 +3094,53 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Ñanduti veve rovamo’ãha ndojeporukuaái ko’ág̃aite. Eha’ã jey ag̃ave.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">VPN juajupyre %s rehegua</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Eikuaave</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Mba’ekuaarã jasygua ru’ã</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f GB %2$.1f GB mba’e hembýva</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Oiko jey %1$.0f-pe GB oñepyrũvo ára jasygua.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Tendaite</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Jeroviaha</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Oiporavo VPN rendaite ipya’evéva ndéve g̃uarã.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Hendypyre</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Mboguepyre</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Oñembojoajuhína…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Mombytapyre</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Javy</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Open VPN ñemboheko</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN hendy</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN hendyhína.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3347,6 +3454,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Ehechaukapa tairenda mbopya’eha</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Embojuaju jeike pya’eha</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Ehai URL ñanduti rogue rehegua</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Emohu’ãma mbopya’ehápe g̃uarã</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3595,6 +3704,10 @@
   <string name="translation_settings_automatic_never_translate_sites">Aníke emoñe’ẽasa ko’ã tenda</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Emboguejy ñe’ẽita</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Ñemoñe’ẽasa</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Eikuaave</string>
   <!--
     Automatic translation preference screen
 

@@ -584,6 +584,21 @@
   <string name="security_popup_security_verified">تثبّت منها: %1$s</string>
   <!-- Content Description of Security Icon in toolbar -->
   <string name="site_security_icon_content_description">أمن الموقع</string>
+  <!--
+    %1$s will be replaced with the organization for which the certificate
+    used by the site was issued. For example, the certificate in use by
+    the site https://eidas.ec.europa.eu/ was issued to "The European
+    Commission".
+  -->
+  <string name="qualified_identity">شهادة صادرة إلى %1$s</string>
+  <!--
+    The European Union eIDAS Regulation specifies a type of certificate
+    called a "qualified website authentication certificate" (QWAC) and
+    requires that browsers identify and indicate such certificates. This
+    text was paraphrased from ETSI TS 119 411-5 V2.1.1 section 6.3 and
+    indicates that the website uses a QWAC.
+  -->
+  <string name="qualified_text">مؤهل وفقًا لما هو محدد في اللائحة (الاتحاد الأوروبي) 2024/1183.</string>
   <string name="preference_autocomplete_duplicate_url_error">المسار موجود بالفعل</string>
   <!-- Label for the Find in page button -->
   <string name="find_in_page">ابحث في الصفحة</string>
@@ -926,7 +941,7 @@
     This is the subtitle of promote search widget dialog. %1$s will get replaced with the name
     of the app (e.g. "Focus")
   -->
-  <string name="promote_search_widget_dialog_subtitle">سنتركك لتصفحك الخاص ، ولكن ابدأ بشكل أسرع في المرة القادمة باستخدام ودجت %1$s على شاشتك الرئيسية.</string>
+  <string name="promote_search_widget_dialog_subtitle">سنتركك لتصفحك الخاص، ولكن ابدأ بشكل أسرع في المرة القادمة باستخدام ودجت %1$s على شاشتك الرئيسية.</string>
   <!--
     Messages explaining how to exit fullscreen mode
 

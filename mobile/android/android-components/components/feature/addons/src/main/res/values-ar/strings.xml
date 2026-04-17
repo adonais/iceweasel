@@ -87,7 +87,7 @@
   <!-- Description for the "sessions" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_sessions_description">الوصول إلى التبويبات المغلقة حديثًا</string>
   <!-- Description for the "tabHide" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_tab_hide_description">إخفاء و إظهار تبويبات المتصفّح</string>
+  <string name="mozac_feature_addons_permissions_tab_hide_description">أخفِ وأظهر تبويبات المتصفّح</string>
   <!-- Description for the "topSites" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_top_sites_description">الوصول إلى سجل التصفّح</string>
   <!-- Description for the "trialML" WebExtensions API permission. -->
@@ -141,7 +141,7 @@
   <!-- Description for the "sessions" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_sessions_description_for_update">الوصول إلى التبويبات المغلقة حديثًا.</string>
   <!-- Description for the "tabHide" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_tab_hide_description_for_update">إخفاء وإظهار تبويبات المتصفح.</string>
+  <string name="mozac_feature_addons_permissions_tab_hide_description_for_update">أخفِ وأظهر تبويبات المتصفح.</string>
   <!-- Description for the "topSites" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_top_sites_description_for_update">الوصول إلى سجل التصفح.</string>
   <!-- Description for the "trialML" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
@@ -183,9 +183,9 @@
   <!-- The sentence used when the extension requests new data collection permissions. %1$s is a formatted list of permissions. -->
   <string name="mozac_feature_addons_permissions_data_collection_optional_description">يقول المطور أن الامتداد يريد جمع: %1$s</string>
   <!-- Description for text button that expands the list of domain permissions -->
-  <string name="mozac_feature_addons_permissions_show_all_sites">إظهار جميع المواقع</string>
+  <string name="mozac_feature_addons_permissions_show_all_sites">أظهر جميع المواقع</string>
   <!-- Description for text button that hides the majority of the list of domain permissions -->
-  <string name="mozac_feature_addons_permissions_show_fewer_sites">إظهار مواقع أقل</string>
+  <string name="mozac_feature_addons_permissions_show_fewer_sites">أظهر مواقع أقل</string>
   <!-- Short description for the authenticationInfo data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_authenticationInfo_short_description">معلومات المصادقة</string>
   <!-- Short description for the bookmarksInfo data collection permission -->

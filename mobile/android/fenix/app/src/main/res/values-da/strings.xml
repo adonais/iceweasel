@@ -19,6 +19,8 @@
   <string name="content_description_menu">Flere indstillinger</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Privat browsing</string>
+  <!-- Content description (not visible, for screen readers etc.): "Normal Browsing" menu button. -->
+  <string name="content_description_normal_browsing">Normal browsing</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Søg eller indtast adresse</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -314,10 +316,14 @@
   <string name="browser_menu_edit_bookmark">Rediger bogmærke</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
   <string name="browser_menu_save_as_pdf_2">Gem som PDF</string>
+  <!-- Browser menu label for moving the current private tab to a non-private tab -->
+  <string name="browser_menu_move_to_non_private_tab">Flyt til ikke-privat faneblad</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Oversæt side</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Sammenfat side</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Ny</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Rapporter probl. m. websted…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -370,6 +376,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Side oversat fra %1$s til %2$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Ryst din enhed for at sammenfatte denne side på få sekunder. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -382,6 +390,46 @@
   <string name="translation_toolbar_expand_action">Åbn oversættelsesoversigten</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Afvis besked</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Sammenfatning af sider</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">Aktiver AI-indstillinger</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">AI-indstillinger</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Med %s har du altid et valg</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Læs mere</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Bloker AI-forbedringer</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Nye og nuværende AI-forbedringer er som standard blokeret. Fjern blokeringen af en specifik funktion nedenfor.</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Oversættelser</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Alle oversættelser forbliver private på din enhed.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Flere indstillinger for oversættelse</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Flere indstillinger for sammenfatning af sider</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Stemme-søgning</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Bloker AI-forbedringer?</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Hvad bliver blokeret:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Annuller</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Bloker</string>
   <!--
     Locale Settings Fragment
 
@@ -612,8 +660,12 @@
 
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Fortsæt</string>
+  <!-- "Continue browsing" onboarding button. -->
+  <string name="nova_onboarding_continue_browsing_button" tools:ignore="UnusedResources">Fortsæt browsing</string>
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Ikke nu</string>
+  <!-- "Skip" onboarding button. -->
+  <string name="nova_onboarding_skip_button" tools:ignore="UnusedResources">Spring over</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Gør dig klar til frihed</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
@@ -688,6 +740,25 @@
   <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Start hver søgning fra din telefons startskærm, og vid, at Firefox\' automatiske beskyttelser står klar til at hjælpe dig.</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Tilføj Firefox-widget</string>
+  <!-- Customize prompt onboarding title. -->
+  <string name="nova_onboarding_customize_prompt_title" tools:ignore="UnusedResources">Nem at tilpasse og mere privat med hvert tryk</string>
+  <plurals name="nova_onboarding_customize_prompt_body" tools:ignore="UnusedResources">
+    <!--
+      Customize prompt onboarding body.
+      %1$s is replaced by the product name (for example "Firefox"),
+      %2$,d is replaced by the number of trackers blocked. The comma represents the thousand
+      separator (e.g. 1,000 in English), and it will automatically use the correct character
+      for your locale (don't change or remove it).
+    -->
+    <item quantity="one">%1$s blokerede %2$,d sporings-mekanisme, mens du var på nettet.</item>
+    <item quantity="other">%1$s blokerede %2$,d sporings-mekanismer, mens du var på nettet.</item>
+  </plurals>
+  <!-- Customize prompt onboarding positive button. -->
+  <string name="nova_onboarding_customize_prompt_positive_button" tools:ignore="UnusedResources">Gå i gang med at tilpasse</string>
+  <!-- App icon onboarding title. -->
+  <string name="nova_onboarding_app_icon_prompt_title" tools:ignore="UnusedResources">Vælg et brugerdefineret appikon</string>
+  <!-- App icon onboarding body. -->
+  <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">Giv din startskærm et personligt præg.</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -755,6 +826,12 @@
   <string name="preferences_category_about">Om</string>
   <!-- Preference category for settings related to changing the default search engine -->
   <string name="preferences_category_select_default_search_engine">Vælg en</string>
+  <!-- Preference category for settings related to changing the default search engine -->
+  <string name="preferences_category_select_default_search_engine_2">Standard-søgetjeneste til normal browsing</string>
+  <!-- Preference category for settings related to changing the private browsing search engine -->
+  <string name="preferences_category_select_private_search_engine">Standard-søgetjeneste til privat browsing</string>
+  <!-- Option to set the private browsing mode to use the normal default search engine -->
+  <string name="search_engine_use_default">Brug den samme søgetjeneste som ved almindelig browsing</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">Håndter alternative søgetjenester</string>
   <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
@@ -940,6 +1017,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Forslag fra %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Få forslag fra nettet relateret til din søgning</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Hent forslag fra Mozilla, mens du skriver</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Link-deling</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -969,6 +1048,15 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Du har ikke tilladelse til at bruge denne mappe. Prøv at vælge en anden.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Håndter filhentninger med en anden app</string>
+  <!-- Preference category for deleting or removing downloads -->
+  <string name="preferences_category_delete_or_remove_downloads">Slet eller fjern filhentninger</string>
+  <string name="preferences_downloads_delete_from_device">Slet fra enhed</string>
+  <string name="preferences_downloads_delete_from_device_description">Fil slettes fra din enhed og fjernes fra filhentningshistorikken</string>
+  <string name="preferences_downloads_remove_from_download_history">Fjern fra filhentningshistorik</string>
+  <string name="preferences_downloads_remove_from_download_history_description">Fil fjernes fra din filhentningshistorik, men er stadig gemt på din enhed</string>
+  <string name="preferences_downloads_ask_when_to_delete_files">Spørg, når jeg sletter filer</string>
+  <!-- Preference for downloads -->
+  <string name="preferences_downloads_2">Indstillinger for filhentning</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
   <string name="preferences_downloads_settings_clean_up_files_title">Slet fra %s og enhed</string>
   <!-- Summary for the setting to automatically clean up downloaded files -->
@@ -1027,6 +1115,12 @@
   <string name="customize_addon_collection_user_hint">Samlingens ejer (Bruger-id)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Udvidelses-samling ændret. Afslutter applikationen for at anvende ændringerne…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Privatlivsrapport</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Hop tilbage til</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -1325,6 +1419,8 @@
   <string name="toolbar_customize_shortcut_homepage">Startside</string>
   <!-- Back shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_back">Tilbage</string>
+  <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+  <string name="toolbar_customize_shortcut_none">Ingen</string>
   <!--
     App icon Preferences
 
@@ -1361,6 +1457,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">Stryg værktøjslinje op for at åbne faneblade</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Stryg adresselinjen sidelæns for at skifte faneblade</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Ryst for at sammenfatte</string>
   <!--
     Library
 
@@ -1523,6 +1621,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Private åbne faneblade: %1$s. Tryk for at skifte faneblade.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d fanebladsgruppe åben. Tryk for at skifte faneblade.</item>
+    <item quantity="other">%1$d fanebladsgrupper åbne. Tryk for at skifte faneblade.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1582,6 +1688,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Del</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Føj til samling</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Føj til gruppe</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Del valgte faneblde</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1628,8 +1736,43 @@
     Title for the create tab group bottom sheet
   -->
   <string name="create_tab_group_title">Opret fanebladsgruppe</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Rediger gruppe</string>
   <string name="create_tab_group_save_button">Gem</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Luk redigering af fanebladsgruppe</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Gruppe</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Gruppe %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="create_tab_group_name_label">Navn</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Navn</string>
+  <!-- Title for adding more tabs to a tab group. -->
+  <string name="add_to_tab_group_title">Føj til</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_close_content_description">Luk føj til fanebladsgruppe</string>
+  <!-- Label for adding to a new tab group. -->
+  <string name="add_to_new_tab_group_title">Ny fanebladsgruppe</string>
+  <plurals name="tab_group_tabs_count_subtitle">
+    <!--
+      Subtitle for the number of tabs in a tab group.
+      %1$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">%1$d faneblad</item>
+    <item quantity="other">%1$d faneblade</item>
+  </plurals>
+  <!-- Title for the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_title">Slet fanebladsgruppe?</string>
+  <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_body">Dette sletter gruppen permanent.</string>
+  <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_confirm">Slet gruppe</string>
+  <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_cancel">Annuller</string>
   <!--
     History
 
@@ -1708,6 +1851,11 @@
     This button will dismiss the dialog.
   -->
   <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Annuller</string>
+  <plurals name="downloads_delete_dialog_title">
+    <!-- Title for the download deletion confirmation dialog. The message changes depending on how many files are selected. %d is the number of files to be deleted. -->
+    <item quantity="one">Slet fil?</item>
+    <item quantity="other">Slet %d filer?</item>
+  </plurals>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Slet</string>
   <!-- Content description for the toolbar "Navigate back" button -->
@@ -1739,6 +1887,14 @@
   <string name="download_delete_multi_select_dialog_confirm">Slet</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Annuller</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_device">Slet fra enhed</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_history">Fjern kun fra filhentningshistorik</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
+  <string name="download_delete_dialog_cancel">Annuller</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
+  <string name="download_delete_dialog_confirm">Bekræft</string>
   <!-- Title for the alert dialog confirmation before renaming a download item. -->
   <string name="download_rename_dialog_title">Omdøb fil</string>
   <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
@@ -1836,6 +1992,16 @@
   <string name="download_content_type_filter_document">Dokumenter</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
   <string name="download_content_type_filter_other_1">Andet</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location before downloading it.
+    %s is the formatted size of the file (e.g., "12.5 MB").
+  -->
+  <string name="download_rename_and_change_location_dialog_title">Hent fil?\n(%s)</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location
+    when the file size is not available before downloading it.
+  -->
+  <string name="download_rename_and_change_location_dialog_title_with_unknown_size">Hent fil?</string>
   <!--
     WebCompat Reporter
 
@@ -2238,6 +2404,24 @@
   <string name="menu_print">Udskriv</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">Send til enhed</string>
+  <!-- Content description for the drag handle that dismisses the Send to Device bottom sheet -->
+  <string name="send_to_devices_bottom_sheet_close_content_description">Luk Send til enhed</string>
+  <!-- Text for the QR code action in the native share sheet -->
+  <string name="share_qr_code">QR-kode</string>
+  <!-- Title shown in the QR code display screen -->
+  <string name="qr_code_display_title">QR-kode</string>
+  <!-- Content description for the close button in the QR code display screen -->
+  <string name="qr_code_display_close">Luk</string>
+  <!-- Heading on the QR code display screen -->
+  <string name="qr_code_display_share_nearby">Del link i nærheden</string>
+  <!-- Body text on the QR code display screen instructing the user to have others scan the code -->
+  <string name="qr_code_display_instructions">For at dele dette link med folk i nærheden, skal du få dem til at scanne QR-koden nedenfor.</string>
+  <!-- Label for the download button on the QR code display screen -->
+  <string name="qr_code_display_download">Hent</string>
+  <!-- Toast shown when the QR code is successfully saved to Downloads -->
+  <string name="qr_code_download_success">QR-kode gemt i Filhentninger</string>
+  <!-- Toast shown when saving the QR code to Downloads fails -->
+  <string name="qr_code_download_failure">Kunne ikke gemme QR-kode</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">Alle handlinger</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
@@ -2488,6 +2672,17 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s beskytter dig mod mange af de mest almindelige sporings-teknologier, der følger med i, hvad du laver på nettet.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Læs mere</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d sporings-tjeneste blokeret</item>
+    <item quantity="other">%d sporings-tjenester blokeret</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Du er beskyttet</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standard</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2889,6 +3084,53 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Mail-masker er ikke tilgængelige lige nu. Prøv igen om et par minutter.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">Den indbyggede VPN i %s</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Lær mere</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Månedlig data-grænse</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f GB af %2$.1f GB tilbage</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Nulstilles til %1$.0f GB den første hver måned.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Placering</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Anbefalet</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Vælger den hurtigste VPN-placering for dig.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Til</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Fra</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Opretter forbindelse…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Sat på pause</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Fejl</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Åbn VPN-indstillinger</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN slået til</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN er aktiv.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3200,6 +3442,10 @@
     which navigates the user to a screen displaying all the shortcuts.
   -->
   <string name="homepage_shortcuts_show_all_content_description">Vis alle genveje</string>
+  <!-- Label for the "Add shortcut" button displayed as a tile. -->
+  <string name="homepage_shortcuts_add_shortcut">Tilføj genvej</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Indtast en webadresse</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Grænsen for genveje er nået</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3298,6 +3544,8 @@
     Header text for a section on the home screen.
   -->
   <string name="pocket_stories_header_2">Historier</string>
+  <!-- Header text for the Stories screen. -->
+  <string name="stories_screen_text_news">Nyheder</string>
   <!--
     Context description text for the "Discover more" button in the stories home screen section
     which navigates the user to a screen displaying more stories.
@@ -3391,6 +3639,8 @@
   <string name="translation_error_could_not_load_languages_warning_text">Kunne ikke indlæse sprog. Kontroller din internetforbindelse, og prøv igen.</string>
   <!-- The title of the warning card informs the user that a language is not supported. %1$s is the name of the language that is not supported. -->
   <string name="translation_error_language_not_supported_warning_text" tools:ignore="UnusedResources" moz:removedIn="150">Beklager, men vi understøtter ikke %1$s endnu.</string>
+  <!-- The title of the warning card informs the user that translations from a language are not supported yet. %1$s is the name of the source language. -->
+  <string name="translation_error_language_not_supported_warning_text_2">Beklager, vi understøtter ikke oversættelser fra %1$s endnu.</string>
   <!-- Snackbar title shown if the user closes the Translation Request dialogue and a translation is in progress. -->
   <string name="translation_in_progress_snackbar">Oversætter…</string>
   <!--
@@ -3444,6 +3694,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Oversæt aldrig disse websteder</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Hent sprog</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Oversættelser</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Alle oversættelser forbliver private på din enhed.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Lær mere</string>
   <!--
     Automatic translation preference screen
 
@@ -3658,6 +3914,13 @@
   -->
   <string name="connection_security_panel_verified_by">Bekræftet af %s</string>
   <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Udstedt til %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Kvalificeret som angivet i forordning (EU) 2024/1183.</string>
+  <!--
     Debug drawer
 
     The user-facing title of the Debug Drawer feature.
@@ -3747,6 +4010,16 @@
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Jeg bruger ikke søgefunktionen i Firefox</string>
   <!-- Option for likert scale -->
   <string name="likert_scale_option_8" tools:ignore="UnusedResources">Jeg bruger ikke synkroniseringsfunktionen</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_slow_or_buggy" tools:ignore="UnusedResources">Den er langsom eller fejlbehæftet</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_features_hard_to_find_or_missing" tools:ignore="UnusedResources">Funktioner er svære at finde eller mangler</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_confusing_or_hard_to_use" tools:ignore="UnusedResources">Den er forvirrende eller svært at bruge</string>
+  <!-- Option for likert scale -->
+  <string name="likert_scale_option_its_okay" tools:ignore="UnusedResources">Den er okay, men ikke bedre end andre browsere</string>
+  <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
+  <string name="likert_scale_option_i_plan_to_keep_using" tools:ignore="BrandUsage,UnusedResources">Jeg planlægger at fortsætte med at bruge Firefox</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Hjælp med at gøre udskrivning i Firefox bedre. Det tager kun et øjeblik</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3761,6 +4034,8 @@
   <string name="microsurvey_search_title" tools:ignore="BrandUsage,UnusedResources">Hvor tilfreds er du med søgefunktionen i Firefox?</string>
   <!-- Text shown in the survey title for sync experience microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_sync_title" tools:ignore="BrandUsage,UnusedResources">Hvor tilfreds er du med synkroniseringsfunktionen i Firefox?</string>
+  <!-- Text shown in the survey title for 'describe your experience so far' microsurvey. Note: The word "Firefox" should NOT be translated. -->
+  <string name="microsurvey_describe_your_experience_title" tools:ignore="BrandUsage,UnusedResources">Hjælp os med at forbedre Firefox. Hvad beskriver bedst din oplevelse indtil videre?</string>
   <!--
     Accessibility
 

@@ -3029,6 +3029,8 @@
   <string name="email_masks_max_free_tier_reached">您的 5 个免费马甲邮箱已用完，我们选择了一个供您重复使用。</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">目前无法使用马甲邮箱，请过几分钟再试。</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN 已启用。</string>
   <!--
     Autofill
 
@@ -3343,6 +3345,8 @@
   <string name="homepage_shortcuts_show_all_content_description">显示所有快捷方式</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">添加快捷方式</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">输入网址</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">超出快捷方式限制</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3503,7 +3507,7 @@
   <!-- Title for the translation dialog that allows a user to translate the webpage when a user uses the translation feature the first time. %1$s is the name of the app (for example "Firefox"). -->
   <string name="translations_bottom_sheet_title_first_time">试试 %1$s 注重隐私的翻译功能</string>
   <!-- Additional information on the translation dialog that appears when a user uses the translation feature the first time. %1$s is a link using translations_bottom_sheet_info_message_learn_more as text. -->
-  <string name="translations_bottom_sheet_info_message">为保护隐私，翻译过程只会在本地进行。我们很快会支持更多语言并带来改进！%1$s</string>
+  <string name="translations_bottom_sheet_info_message">为保护隐私，翻译内容不会离开您的设备。我们很快会支持更多语言并带来改进！%1$s</string>
   <!-- Text that links to additional information about the Firefox translations feature. -->
   <string name="translations_bottom_sheet_info_message_learn_more">详细了解</string>
   <!-- Label for the dropdown to select which language to translate from on the translations dialog. Usually the translate from language selected will be the same as the page language. -->
@@ -3719,7 +3723,7 @@
   -->
   <string name="download_language_file_dialog_title">要在流量节省模式开启时下载吗（%1$s）？</string>
   <!-- Additional information for the data saving mode warning dialog used by the translations feature. This text explains the reason a download is required for a translation. -->
-  <string name="download_language_file_dialog_message_all_languages">我们会下载并缓存语言包中部分内容，以保护翻译过程私密。</string>
+  <string name="download_language_file_dialog_message_all_languages">我们会下载并缓存语言包中部分内容，以保护翻译内容私密。</string>
   <!-- Checkbox label text on the data saving mode warning dialog used by the translations feature. This checkbox allows users to ignore the data usage warnings. -->
   <string name="download_language_file_dialog_checkbox_text">始终允许在流量节省模式开启时下载</string>
   <!-- Button text on the data saving mode warning dialog used by the translations feature to allow users to confirm they wish to continue and download the language file. -->

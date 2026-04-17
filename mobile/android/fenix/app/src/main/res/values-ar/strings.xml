@@ -72,7 +72,7 @@
   -->
   <string name="home_bookmarks_title">العلامات</string>
   <!-- Content description for the button which navigates the user to show all of their bookmarks. -->
-  <string name="home_bookmarks_show_all_content_description">إظهار كل العلامات</string>
+  <string name="home_bookmarks_show_all_content_description">أظهر كل العلامات</string>
   <!-- Text for the menu button to remove a recently saved bookmark from the user's home screen -->
   <string name="home_bookmarks_menu_item_remove">إزالة</string>
   <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
@@ -160,7 +160,7 @@
   -->
   <string name="recent_tabs_header">العودة إلى حيث كنت</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
-  <string name="recent_tabs_show_all">إظهار الكل</string>
+  <string name="recent_tabs_show_all">أظهر الكل</string>
   <!-- Content description for the button which navigates the user to show all recent tabs in the tabs tray. -->
   <string name="recent_tabs_show_all_content_description_2">زر ”عرض كل التبويبات الحديثة“</string>
   <!-- Text for button in synced tab card that opens synced tabs tray -->
@@ -390,6 +390,58 @@
   <string name="translation_toolbar_expand_action">فتح ورقة الترجمة</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">تجاهل الرسالة</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">ملخصات الصفحات</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">فعِّل عناصر التحكم بالذكاء الاصطناعي</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">التحكم بالذكاء الاصطناعي</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">لديك دائمًا خيار في %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">ويشمل ذلك ما إذا كان ينبغي استخدام الميزات المحسّنة بالذكاء الاصطناعي.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">اطّلع على المزيد</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">احظر تحسينات الذكاء الاصطناعي</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">يعني الحظر أنك لن ترى التحسينات الجديدة أو الحالية للذكاء الاصطناعي في %s، أو النوافذ المنبثقة المتعلقة بها.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">تعرّف على ما هو مشمول وما هو غير مشمول</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">تُحظر التحسينات الجديدة والحالية للذكاء الاصطناعي مبدئيًا. يمكنك إلغاء حظر ميزات محدّدة أدناه.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">ميزات مدعومة بالذكاء الاصطناعي</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">الترجمات</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">تبقى جميع الترجمات خاصة على جهازك.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">المزيد من إعدادات الترجمة</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">المزيد من إعدادات ملخص الصفحة</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">البحث الصوتي</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">يُحوّل الصوت إلى نص بواسطة خدمات جوجل للكلام.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">احظر تحسينات الذكاء الاصطناعي؟</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">لن ترى أي تحسينات جديدة أو حالية للذكاء الاصطناعي في %1$s، ولن تظهر لك أي إشعارات بشأنها. بعد ذلك، يمكنك إلغاء حظر أي شيء ترغب في الاستمرار باستخدامه.\n\nيؤثر الحظر أيضًا على الامتدادات التي تستخدم الذكاء الاصطناعي المُقدم من %1$s.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">ما الذي سيُحظر:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">ألغِ</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">احظر</string>
   <!--
     Locale Settings Fragment
 
@@ -954,7 +1006,7 @@
   <!-- Preference title for switch preference to show trending search suggestions -->
   <string name="preferences_show_trending_search_suggestions">عرض اقتراحات البحث المُتداولة</string>
   <!-- Preference title for switch preference to show recent search suggestions -->
-  <string name="preferences_show_recent_search_suggestions">إظهار عمليات البحث الأخيرة</string>
+  <string name="preferences_show_recent_search_suggestions">أظهر عمليات البحث الأخيرة</string>
   <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
   <string name="preferences_show_clipboard_suggestions">اعرض اقتراحات الحافظة</string>
   <!-- Preference title for switch preference to suggest browsing history when searching -->
@@ -1408,7 +1460,7 @@
 
     Preferences for showing tab strip
   -->
-  <string name="preference_tab_strip_show">إظهار شريط علامة التبويب</string>
+  <string name="preference_tab_strip_show">أظهر شريط علامة التبويب</string>
   <!--
     Gestures Preferences
 
@@ -1421,6 +1473,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">مرّر شريط الأدوات إلى أعلى لفتح التبويبات</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">مرّر شريط العنوان جانبًا للانتقال بين التبويبات</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">هزّ للتلخيص</string>
   <!--
     Library
 
@@ -1583,6 +1637,18 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">التبويبات الخاصة المفتوحة: %1$s. انقر للانتقال بين التبويبات.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="zero">%1$d مجموعة لسان مفتوحة. اضغط للتبديل بين الألسنة.</item>
+    <item quantity="one">%1$d مجموعة لسان مفتوحة. اضغط للتبديل بين الألسنة.</item>
+    <item quantity="two">%1$d مجموعتا لسان مفتوحتان. اضغط للتبديل بين الألسنة.</item>
+    <item quantity="few">%1$d مجموعة لسان مفتوحة. اضغط للتبديل بين الألسنة.</item>
+    <item quantity="many">%1$d مجموعة لسان مفتوحة. اضغط للتبديل بين الألسنة.</item>
+    <item quantity="other">%1$d مجموعة لسان مفتوحة. اضغط للتبديل بين الألسنة.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1684,6 +1750,10 @@
   <string name="pwa_site_controls_title_private">‏%1$s (الوضع الخاص)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">فتح تبويب البحث</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">جرّب استخدام مجموعات اللسان لتقليل التمرير وزيادة الإنجاز</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">حدّد ألسنة لإنشاء مجموعة. تُحفظ هنا، وتكون جاهزة عندما تكون أنت جاهزًا.</string>
   <!--
     Tab Group
 
@@ -3002,7 +3072,7 @@
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
   <string name="saved_login_open_site">فتح الموقع في المتصفح</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
-  <string name="saved_login_reveal_password">إظهار كلمة المرور</string>
+  <string name="saved_login_reveal_password">أظهر كلمة المرور</string>
   <!-- Content Description (for screenreaders etc) read for the button to hide a password in logins -->
   <string name="saved_login_hide_password">إخفاء كلمة المرور</string>
   <!-- Message displayed in biometric prompt displayed for authentication before allowing users to view their passwords -->
@@ -3049,6 +3119,55 @@
   <string name="email_masks_max_free_tier_reached">استنفدت أقنعة البريد الإلكتروني المجانية الـ 5، لذلك حدّدنا لك واحدًا لإعادة استخدامه.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">أقنعة البريد الإلكتروني غير متوفرة حاليًا. يُرجى المحاولة مرة أخرى بعد قليل.</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">شبكة VPN المدمجة في %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">تصفح الإنترنت بحماية إضافية عن طريق إخفاء موقعك حتى على شبكات الواي فاي العامة.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">اطّلع على المزيد</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">حد البيانات الشهري</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f ج.بايت من أصل %2$.1f ج.بايت متبقية</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">يُصفّر إلى %1$.0f ج.بايت في الأول من كل شهر.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">الموقع</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">يُنصح به</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">يختار لك أسرع موقع VPN.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">مفعّل</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">معطّل</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">يتّصل…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">أُلبِث</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">خطأ</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">افتح إعدادات VPN</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">ال VPN مفعّل</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">ال VPN نشط.</string>
   <!--
     Autofill
 
@@ -3363,6 +3482,8 @@
   <string name="homepage_shortcuts_show_all_content_description">عرض كل الاختصارات</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">أضِف اختصارًا</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">أدخل عنوان URL للموقع الإلكتروني</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">بلغت أقصى حدّ للاختصارات</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3611,6 +3732,12 @@
   <string name="translation_settings_automatic_never_translate_sites">لا تترجم هذه المواقع أبدًا</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">تنزيل اللغات</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">الترجمات</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">تبقى جميع الترجمات خاصة على جهازك.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">اطّلع على المزيد</string>
   <!--
     Automatic translation preference screen
 

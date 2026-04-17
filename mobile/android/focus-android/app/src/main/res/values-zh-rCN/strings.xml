@@ -332,7 +332,7 @@
   <!-- Preference switch for daily usage ping data collection -->
   <string name="preference_daily_usage_ping_title">每日使用情况报告</string>
   <string name="preference_daily_usage_ping_description">此信息可帮助 Mozilla 估算活跃用户数量。</string>
-  <string name="preference_daily_usage_ping_learn_more">详细信息</string>
+  <string name="preference_daily_usage_ping_learn_more">详细了解</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
   <string name="preference_privacy_notice">隐私声明</string>
   <!-- In-app link (in settings) to Focus licensing information. -->

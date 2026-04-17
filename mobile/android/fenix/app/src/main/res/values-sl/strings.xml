@@ -755,6 +755,12 @@
   <string name="preferences_category_about">Vizitka</string>
   <!-- Preference category for settings related to changing the default search engine -->
   <string name="preferences_category_select_default_search_engine">Izberite enega</string>
+  <!-- Preference category for settings related to changing the default search engine -->
+  <string name="preferences_category_select_default_search_engine_2">Privzeti iskalnik v običajnem brskanju</string>
+  <!-- Preference category for settings related to changing the private browsing search engine -->
+  <string name="preferences_category_select_private_search_engine">Privzeti iskalnik v zasebnem brskanju</string>
+  <!-- Option to set the private browsing mode to use the normal default search engine -->
+  <string name="search_engine_use_default">Uporabljaj isti iskalnik kot pri običajnem brskanju</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">Upravljaj pomožne iskalnike</string>
   <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
@@ -971,6 +977,15 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Za uporabo te mape nimate dovoljenja. Poskusite izbrati drugo.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Upravljaj prenose z drugo aplikacijo</string>
+  <!-- Preference category for deleting or removing downloads -->
+  <string name="preferences_category_delete_or_remove_downloads">Izbriši ali odstrani prenose</string>
+  <string name="preferences_downloads_delete_from_device">Izbriši z naprave</string>
+  <string name="preferences_downloads_delete_from_device_description">Datoteka je izbrisana z naprave in odstranjena iz zgodovine prenosov</string>
+  <string name="preferences_downloads_remove_from_download_history">Odstrani iz zgodovine prenosov</string>
+  <string name="preferences_downloads_remove_from_download_history_description">Datoteka je odstranjena iz zgodovine prenosov, je pa še vedno shranjena na napravi</string>
+  <string name="preferences_downloads_ask_when_to_delete_files">Vprašaj ob brisanju datotek</string>
+  <!-- Preference for downloads -->
+  <string name="preferences_downloads_2">Nastavitve prenosov</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
   <string name="preferences_downloads_settings_clean_up_files_title">Izbriši iz %sa in iz naprave</string>
   <!-- Summary for the setting to automatically clean up downloaded files -->
@@ -1333,6 +1348,8 @@
   <string name="toolbar_customize_shortcut_homepage">Domača stran</string>
   <!-- Back shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_back">Nazaj</string>
+  <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+  <string name="toolbar_customize_shortcut_none">Brez</string>
   <!--
     App icon Preferences
 
@@ -1755,6 +1772,13 @@
     This button will dismiss the dialog.
   -->
   <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Prekliči</string>
+  <plurals name="downloads_delete_dialog_title">
+    <!-- Title for the download deletion confirmation dialog. The message changes depending on how many files are selected. %d is the number of files to be deleted. -->
+    <item quantity="one">Želite izbrisati datoteko?</item>
+    <item quantity="two">Želite izbrisati %d datoteki?</item>
+    <item quantity="few">Želite izbrisati %d datoteke?</item>
+    <item quantity="other">Želite izbrisati %d datotek?</item>
+  </plurals>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Izbriši</string>
   <!-- Content description for the toolbar "Navigate back" button -->
@@ -1786,6 +1810,10 @@
   <string name="download_delete_multi_select_dialog_confirm">Izbriši</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Prekliči</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_device">Izbriši z naprave</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_history">Samo odstrani iz zgodovine prenosov</string>
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
   <string name="download_delete_dialog_cancel">Prekliči</string>
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
@@ -1887,6 +1915,16 @@
   <string name="download_content_type_filter_document">Dokumenti</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
   <string name="download_content_type_filter_other_1">Drugo</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location before downloading it.
+    %s is the formatted size of the file (e.g., "12.5 MB").
+  -->
+  <string name="download_rename_and_change_location_dialog_title">Prenesem datoteko?\n(%s)</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location
+    when the file size is not available before downloading it.
+  -->
+  <string name="download_rename_and_change_location_dialog_title_with_unknown_size">Prenesem datoteko?</string>
   <!--
     WebCompat Reporter
 
@@ -2289,12 +2327,20 @@
   <string name="menu_print">Natisni</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">Pošlji na napravo</string>
+  <!-- Content description for the drag handle that dismisses the Send to Device bottom sheet -->
+  <string name="send_to_devices_bottom_sheet_close_content_description">Zapri pošiljanje na napravo</string>
   <!-- Text for the QR code action in the native share sheet -->
   <string name="share_qr_code">Koda QR</string>
   <!-- Title shown in the QR code display screen -->
   <string name="qr_code_display_title">Koda QR</string>
   <!-- Content description for the close button in the QR code display screen -->
   <string name="qr_code_display_close">Zapri</string>
+  <!-- Heading on the QR code display screen -->
+  <string name="qr_code_display_share_nearby">Deli povezavo z osebami v bližini</string>
+  <!-- Label for the download button on the QR code display screen -->
+  <string name="qr_code_display_download">Prenesi</string>
+  <!-- Toast shown when the QR code is successfully saved to Downloads -->
+  <string name="qr_code_download_success">Koda QR shranjena med prenose</string>
   <!-- Toast shown when saving the QR code to Downloads fails -->
   <string name="qr_code_download_failure">Kode QR ni bilo mogoče shraniti</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
@@ -2960,6 +3006,10 @@
   <string name="email_masks_max_free_tier_reached">Svojih 5 brezplačnih e-poštnih mask ste že uporabili, zato smo ponovno uporabili eno od njih.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">E-poštne maske ta trenutek niso na voljo. Poskusite znova čez nekaj minut.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Več o tem</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Odpri nastavitve VPN</string>
   <!--
     Autofill
 
@@ -3274,6 +3324,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Prikaži vse bližnjice</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Dodaj bližnjico</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Vnesite naslov spletnega mesta</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Doseženo je največje število bližnjic</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3522,6 +3574,10 @@
   <string name="translation_settings_automatic_never_translate_sites">Nikoli ne prevajaj teh spletnih mest</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Prenesi jezike</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Prevajanje</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Več o tem</string>
   <!--
     Automatic translation preference screen
 
