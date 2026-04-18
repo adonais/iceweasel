@@ -31,10 +31,6 @@
   <string name="tab_search_hint">Cercar pels onglets</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Picatz un tèrme de recèrca</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Vòstres onglets dobèrts seràn visibles aquí.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Los onglets privats se mostraràn aquí.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d seleccionats</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -45,8 +41,6 @@
   <string name="tab_tray_select_collection">Seleccionar una colleccion</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Sortir del mòde seleccion multipla</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Enregistrar los onglets seleccionats dins la colleccion</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">Connexion</string>
   <!--
@@ -175,8 +169,6 @@
   <string name="browser_menu_stop">Arrestar</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Extensions</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Avètz d’extensions installadas, mas son pas activadas</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Gerir las extensions</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -196,18 +188,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">Ensajatz una extension recomandada</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Informacion compte</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Ajuda</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Novetats</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Paramètres</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Bibliotèca</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Version ordenador</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Dobrir dins un onglet classic</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Apondre a l’ecran d’acuèlh</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -235,11 +221,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">FONCIONA GRÀCIA A %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">Fonciona gràcia a %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Mòde lectura</string>
@@ -248,15 +229,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Dobrir amb l’aplicacion</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Personalizar la vista lectura</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Personalizar la vista lectura</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Apondre</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Modificar</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Personalizar la pagina d’acuèlh</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Connexion</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -275,12 +248,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Tampar lo menú</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navegacion</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Tampar lo panèl del menú de las extensions</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Tampar lo panèl del menú d’enregistrament</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Tampar lo panèl del menú de las aisinas</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Tampar lo panèl del menú dels onglets personalizats</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -1315,16 +1282,8 @@
   <string name="add_tab">Apondre un onglet</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Dobrir onglet privat</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Privat</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Sincronizar</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Partejar totes los onglets</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Onglets tampats recentament</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Tampaduras recentas</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Paramètres del compte</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1337,12 +1296,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">Tampar los onglets</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Anullar</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Marcar los onglets</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Marcar los onglets seleccionats</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Tampar los onglets</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Tampar los onglets seleccionats</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1935,8 +1890,6 @@
   <string name="toast_copy_link_to_clipboard">Copiat dins lo quichapapièrs</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Se connectar a Sync</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Connexion</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Enviar a totes los periferics</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2093,8 +2046,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Suprimir las donadas de navegacion en quitant</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Suprimís automaticament las donadas de navegacion quand seleccionatz « Quitar » al menú principal</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Sortir</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Periòde de suprimir</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2748,26 +2699,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Verificat per : %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Suprimir</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Modificar</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Volètz vertadièrament suprimir aqueste senhal ?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Suprimir</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Anullar</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Opcions de senhal</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Lo camp de tèxt modificable per l’adreça del site web.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Lo camp de tèxt modificable pel nom d’utilizaire.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Lo camp de tèxt modificable pel senhal.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Enregistrar las modificacions.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Modificar lo senhal</string>
   <!-- The page title for adding new password. -->
@@ -2936,16 +2873,6 @@
   <string name="experiments_snackbar">Activar la telemetria per enviar de donadas</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Anar als paramètres</string>
-  <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Assignam als avises una <b>notacion alfabetica</b> de A a F.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[L’<b>evaluacion corregida</b> es basada suls avises que pensam que son fisables.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>Notables</b> venon dels avises de %s dels darrièrs 80 jorns que pensam que son fisables.]]></string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 

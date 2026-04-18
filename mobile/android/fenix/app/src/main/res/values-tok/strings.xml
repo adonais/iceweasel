@@ -31,10 +31,6 @@
   <string name="tab_search_hint">o alasa e lipu lon</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">o pana e nimi alasa</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">lipu open li kama lon poki ni.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">lipu len open li kama lon poki ni.</string>
   <!-- The header text displayed on the normal tabs page when no normal tabs are open -->
   <string name="tab_manager_empty_normal_tabs_page_header">o open e poki tawa alasa</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -45,8 +41,6 @@
   <string name="tab_tray_select_collection">o wile e kulupu poki</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">o weka e nasin pi wile mute</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">o pana e poki wile tawa kulupu</string>
   <!--
     Home - Bookmarks
 
@@ -159,8 +153,6 @@
   <string name="browser_menu_stop">o pini</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">ilo namako</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">ilo namako li lon ilo sina. taso sina li ken ala e ona</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">o nasin e ilo namako</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -180,18 +172,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">o jo e ilo namako pona</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">sona sijelo</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">o sona</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">seme li sin</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">nasin ilo</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">kulupu lipu</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">nasin lukin</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">o pana tawa poki</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">o pana tawa lipu lawa ilo</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -217,11 +203,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">ILO %1$s LI KEN E MI</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">ilo %1$s li ken e mi</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">o open e lukin pona</string>
@@ -230,23 +211,13 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">o open e ni lon ilo ante</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">o nasin e lukin pona</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">o nasin e lukin pona</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">o pana</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">o ante</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">o nasin sina e lipu lawa</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">o lon sijelo</string>
   <!-- Browser menu label that creates a private tab -->
   <string name="browser_menu_new_private_tab">poki sin pi nasin len</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">nimi open</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">o lukin ala e lipu pi ilo namako</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
   <string name="browser_menu_bookmark_this_page_2">o awen e lipu</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
@@ -800,22 +771,10 @@
   <string name="add_tab">o open e poki</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">o open e poki pi nasin len</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">nasin len</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">o sama e ilo</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">o pana e poki ale</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">poki pi pini poka</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">pini poka</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">nasin ilo sijelo</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">o awen</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">o pini</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">o weka e poki tan kulupu ni</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button. Closes the current session when pressed -->
@@ -1479,10 +1438,6 @@
   <string name="browser_menu_add_to_shortcuts">o awen lon lipu open</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
   <string name="browser_menu_remove_from_shortcuts">o awen ala lon lipu open</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">o weka</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">o ante</string>
   <!-- Error text displayed underneath the password field when it is in an error case. -->
   <string name="saved_login_password_required_2">o pana e nimi open</string>
   <!-- The error message in add login view when username field is blank. -->

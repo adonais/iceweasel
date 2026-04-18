@@ -108,18 +108,12 @@
   <string name="browser_menu_extension_plus_icon_content_description_2">%1$s اے شاغ</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">اکاونٹ ناباروٹ</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">کمک</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">انت اس پوسکنے</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">سیٹنگاک</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">لائبریری</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">ڈیسک ٹاپ سائٹ</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">عام ٹیب ٹی ملتہ</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">ہوم اسکرین اے ات</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -141,8 +135,6 @@
   <string name="browser_menu_open_in_fenix">%1$s ٹی ملبو</string>
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">ایپ ٹی مل</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">بدلی</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">کلیت لوزاک</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
@@ -445,8 +437,6 @@
   <string name="tab_manager_search_bar_placeholder">ٹیباتیٹ پٹبو</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">زوتیاٹ بندکروکا ٹیب اک</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">نشانی</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">گچین ٹیب تے نشانی کبو</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->

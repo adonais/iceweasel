@@ -29,10 +29,6 @@
   <string name="tab_search_hint">ٹیب دی کھوج</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">کھوج دی لکھت پایو</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">تہاڈیاں کھلھیاں ٹیباں نوں اتھے وکھایا جاۓگا۔</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">تہاڈیاں نجی ٹیباں نوں اتھے وکھایا جاۓگا۔</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d چݨیاں</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -43,8 +39,6 @@
   <string name="tab_tray_select_collection">مجموعہ چݨو</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">بہو چوݨ ڈھنگ وچھوں باہر جاؤ</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">چݨیاں ٹیباں نوں مجموعے چ سمبھالو</string>
   <!--
     Home - Bookmarks
 
@@ -175,18 +169,12 @@
   <string name="browser_menu_discover_more_extensions">ہور پھیلاؤ لبھو</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">کھاتے دی جاݨکاری</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">مدد</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">نویں کیہہ آں</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">سیٹنگاں</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">لائبریری</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">ڈیسک‌ٹاپ سائٹ</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">سادے ٹیب چ کھولھو</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">مکھ سکرین تے جوڑو</string>
   <!-- Content description (not visible, for screen readers etc.) for the Resync tabs button -->
@@ -208,11 +196,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s دی طاقت نال چل رہا</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">%1$s دی طاقت نال چل رہا</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">پڑھاکو جھلک</string>
@@ -221,15 +204,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">ایپ وچ کھولھو</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">پڑھن جھلک دیاں ترجیحاں</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">پڑھن جھلک نوں پسند قاری منظر بݨاؤ</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">پتہ پایو</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">سودھو</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">مکھ صفحے دیاں ترجیحاں</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">لوگ این کرو</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
@@ -927,26 +902,14 @@
   <string name="add_tab">نویں ٹیب کھولھو</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">نجی ٹیب کھولھو</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">نجی</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">ہم وقت کرو</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">سریاں ٹیباں سانجھیاں کرو</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">تازہ بند کیتیاں ٹیباں</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">تازہ بند کیتیاں</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">کھاتے دیاں سیٹنگاں</string>
   <!-- Text shown in the menu to view tab settings -->
   <string name="tab_tray_menu_tab_settings">ٹیب سیٹنگاں</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">ساریاں ٹیباں بند کرو</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">اتا پتہ</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">بند کرو</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">چݨیاں ٹیباں سانجھیاں کرو</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1345,8 +1308,6 @@
   <string name="preferences_delete_browsing_data_browsing_data_subtitle">%d پتے</string>
   <!-- Title for the downloads item in Delete browsing data -->
   <string name="preferences_delete_browsing_data_downloads">ڈاؤن‌لوڈ</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">باہر نکل جاؤ</string>
   <!-- Text for the cancel button for the data deletion dialog -->
   <string name="delete_browsing_data_prompt_cancel">رد کرو</string>
   <!-- Text for the allow button for the data deletion dialog -->
@@ -1531,10 +1492,6 @@
   <string name="search_engine_edit">سودھو</string>
   <!-- Text for the menu button to delete a search engine -->
   <string name="search_engine_delete">مٹاؤ</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">مٹاؤ</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">سودھو</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">مٹاؤ</string>
   <!-- Negative action of a dialog asking to delete login -->

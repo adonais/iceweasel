@@ -31,10 +31,6 @@
   <string name="tab_search_hint">ស្វែងរកផ្ទាំង</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">បញ្ចូលពាក្យស្វែងរក</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ផ្ទាំងបើករបស់លោកអ្នកនឹងត្រូវបង្ហាញនៅទីនេះ។</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ផ្ទាំងឯកជនរបស់លោកអ្នកនឹងត្រូវបង្ហាញនៅទីនេះ។</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">ការច្បោលឯកជន</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -53,8 +49,6 @@
   <string name="tab_tray_select_collection">ជ្រើសរើស​បណ្តុំ</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">ចេញពីរបៀបជ្រើសរើសច្រើន</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">រក្សាទុកផ្ទាំងដែលបានជ្រើសរើសទៅក្នុងបណ្តុំ</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">ចាប់យកផ្ទាំងពីឧបករណ៍ណាមួយ</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -200,8 +194,6 @@
   <string name="browser_menu_stop">បញ្ឈប់</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">ផ្នែក​បន្ថែម</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">អ្នកបានដំឡើងផ្នែកបន្ថែមរួចហើយ ប៉ុន្តែមិនទាន់បើកដំណើរការនៅឡើយទេ</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">គ្រប់គ្រងផ្នែកបន្ថែម</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -221,18 +213,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">សាកល្បង​កម្មវិធី​បន្ថែម​ដែល​បាន​ណែនាំ</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">ព័ត៌មានគណនី</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">ជំនួយ</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">អ្វីដែលថ្មី</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">ការ​កំណត់</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">បណ្ណាល័យ</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">គេហទំព័រ​លើ​កុំព្យូទ័រ</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">បើកក្នុងផ្ទាំងធម្មតា</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">បន្ថែមទៅអេក្រង់ដើម</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -260,11 +246,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">ដំណើរការដោយ %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">ដំណើរការដោយ %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">ទិដ្ឋភាពអ្នកអាន</string>
@@ -273,15 +254,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">បើកនៅក្នុងកម្មវិធី</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">ប្ដូរតាមបំណងទិដ្ឋភាពអ្នកអាន</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">ប្ដូរតាមបំណងទិដ្ឋភាពអ្នកអាន</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">បន្ថែម</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">កែសម្រួល</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">ប្ដូរតាមបំណងទំព័រដើម</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">ចូល</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -300,12 +273,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">បិទម៉ឺនុយ</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">ការ​រុករក</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">បិទសន្លឹកម៉ឺនុយផ្នែកបន្ថែម</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">បិទសន្លឹកម៉ឺនុយរក្សាទុក</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">បិទសន្លឹកម៉ឺនុយឧបករណ៍</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">បិទសន្លឹកម៉ឺនុយផ្ទាំងផ្ទាល់ខ្លួន</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -1231,14 +1198,8 @@
   <string name="add_tab">បន្ថែមផ្ទាំង</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">បន្ថែមផ្ទាំងឯកជន</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">ឯកជន</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">សមកាលកម្ម</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">ស្វែងរកផ្ទាំងរបស់អ្នក</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">ចែករំលែកផ្ទាំងទាំងអស់</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">ផ្ទាំងដែលទើបបិទថ្មីៗនេះ</string>
   <!-- Text shown in the menu to view account settings -->
@@ -1255,12 +1216,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">បិទ​ផ្ទាំង</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">បោះបង់</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">ចំណាំ</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">ចំណាំផ្ទាំងដែលបានជ្រើសរើស</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">បិទ</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">បិទផ្ទាំងដែលបានជ្រើសរើស</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1860,16 +1817,12 @@
   <string name="search_add_custom_engine_form_description">ព័ត៌មានលម្អិតអំពីអេនជីនស្វែងរកផ្ទាល់ខ្លួន</string>
   <!-- Text shown when a user leaves the name field empty -->
   <string name="search_add_custom_engine_error_empty_name">បញ្ចូលឈ្មោះអេនជីនស្វែងរក</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">លុប</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">តើអ្នកពិតជាចង់លុបពាក្យសម្ងាត់នេះមែនទេ?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">លុប</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">បោះបង់</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">ជម្រើសពាក្យសម្ងាត់</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">កែសម្រួលពាក្យសម្ងាត់</string>
   <!-- The page title for adding new password. -->

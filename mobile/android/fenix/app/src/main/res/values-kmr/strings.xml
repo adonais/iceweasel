@@ -31,10 +31,6 @@
   <string name="tab_search_hint">Di hilpekînan de bigere</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Peyvên lêgerînê binivîse</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Hilpekînên te yên vekirî ew ê li vir bên nîşandan.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Hilpekînên te yên veşartî ew ê li vir bên nîşandan.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d hilpekîn hatin bijartin</string>
   <!-- Tab tray multi select title in app bar when no tabs are selected -->
@@ -47,8 +43,6 @@
   <string name="tab_tray_select_collection">Koleksiyonê hilbijêre</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Ji moda bijartina-pir derkeve</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Hilpekînên bijartî li koleksiyonê qeyd bike</string>
   <!--
     Home - Bookmarks
 
@@ -175,8 +169,6 @@
   <string name="browser_menu_stop">Rawestîne</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Pêvek</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Te pêvekên sazkirî hene, lê ne çalakkirî ne</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Pêvekan bi rê ve bibe</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -194,18 +186,12 @@
   <string name="browser_menu_no_extensions_installed_description">Tu pêvek nehatine çalakkirin</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Agahiyên hesêb</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Alîkarî</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Çi tiştên nû hene?</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Sazkarî</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Pirtûkxane</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Malpera sermaseyê</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Di hilpekîneke asayî de veke</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Tevlî ekrana destpêkê bike</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -231,11 +217,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">Bihêzkirin ji aliyê %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">Bihêzkirin ji aliyê %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Moda xwînerê</string>
@@ -244,15 +225,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Di sepanê de veke</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Moda xwînerê taybet bike</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Xuyakirina Readerê taybet bike</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Lê zêde bike</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Serast bike</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Serrûpelê taybet bike</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Têkeve</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -271,12 +244,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Menuyê bigire</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navîgasyon</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Menuya pêvekan bigire</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Menuya qeydkirinê bigire</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Menuya amûran bigire</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Menuya hilpekîna taybet bigire</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -1064,26 +1031,14 @@
   <string name="add_tab">Hilpekînê tevlî bike</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Hilpekîna veşartî tevlî bike</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Veşartî</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Senkronîzekirin</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Hemû hilpekînan parve bike</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Hilpekînên herî dawî hatine girtin</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Vê dawiyê hatine girtin</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Sazkariyên hesabî</string>
   <!-- Text shown in the menu to view tab settings -->
   <string name="tab_tray_menu_tab_settings">Sazkariyên hilpekînê</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Hemû hilpekînan bigire</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Favorî</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Bigire</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Hilpekînên hilbijartî parve bike</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1623,8 +1578,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Di derketinê de daneyên gerînê jê bibe</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Gava tu ji menûya giştî \"Derkeve\"yê hilbijêrî daneyên gerînê xweber paqij dike</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Derkeve</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Dema dê jê bê birin</string>
   <!-- Radio button in the delete browsing data dialog to delete history items for the last hour. -->
@@ -2074,10 +2027,6 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Piştrastkirin ji aliyê: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Jê bibe</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Sererast bike</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Jê bibe</string>
   <!-- Negative action of a dialog asking to delete login -->

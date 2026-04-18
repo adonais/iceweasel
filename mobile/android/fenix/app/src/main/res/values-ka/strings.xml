@@ -33,10 +33,6 @@
   <string name="tab_search_hint">ჩანართების ძიება</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">შეიყვანეთ საძიებო ფრაზა</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">თქვენი გახსნილი ჩანართები გამოჩნდება აქ.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">თქვენი პირადი ჩანართები გამოჩნდება აქ.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">პირადი თვალიერება</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -55,8 +51,6 @@
   <string name="tab_tray_select_collection">კრებულის შერჩევა</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">ერთიანად შერჩევის გაუქმება</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">შერჩეული ჩანართების კრებულში შენახვა</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">წამოიღეთ ჩანართები ნებისმიერი მოწყობილობიდან</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -202,8 +196,6 @@
   <string name="browser_menu_stop">შეჩერება</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">გაფართოებები</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">თქვენ დაყენებული გაქვთ გაფართოებები, მაგრამ არაა ჩართული</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">გაფართოებების მართვა</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -223,18 +215,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">მოსინჯეთ რჩეული გაფართოება</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">ანგარიშის შესახებ</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">დახმარება</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">რა სიახლეებია</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">პარამეტრები</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">ბიბლიოთეკა</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">სრული საიტი</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">გახსნა ჩვეულებრივ ჩანართში</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">ეკრანზე დამატება</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -262,11 +248,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">უზრუნველყოფს %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">უზრუნველყოფს %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">კითხვის რეჟიმი</string>
@@ -275,15 +256,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">გახსნა პროგრამით</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">კითხვის რეჟიმის მორგება</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">კითხვის ხედის მორგება</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">დამატება</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">ჩასწორება</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">საწყისი გვერდის მორგება</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">შესვლა</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -302,12 +275,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">მენიუს დახურვა</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">გადაადგილება</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">გაფართოების მენიუს ფურცლის დახურვა</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">შენახვის მენიუს ფურცლის დახურვა</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ხელსაწყოების მენიუს ფურცლის დახურვა</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">მორგებული ჩანართის ფურცლის დახურვა</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -390,6 +357,58 @@
   <string name="translation_toolbar_expand_action">გაიხსნას თარგმანის არე</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">შეტყობინების აცილება</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">გვერდის შეჯამებები</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">AI-სამართავის ჩართვა</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">AI-სამართავი</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">არჩევანის უფლებას ყოველთვის მოგცემთ %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">ეს გულისხმობს, იყენებდეს თუ არა ხელგონის შესაძლებლობებს.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">ვრცლად</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">შეიზღუდოს AI-შესაძლებლობები?</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">შეზღუდვა გულისხმობს, რომ %s აღარ გიჩვენებთ ახალ ან არსებულ AI-შესაძლებლობებს, არც მათ შესახებ ამომხტომ ცნობებს.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">იხილეთ, რა არის და რას მოიცავს</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">ახალი ან არსებული AI-შესაძლებლობები შეიზღუდება ნაგულისხმევად. ცალკეულ შესაძლებლობას შეზღუდვა მოხსენით ქვემოთ.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">ხელგონით მომუშავე შესაძლებლობები</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">თარგმანები</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">თარგმნილი მასალა საიდუმლოდ რჩება მოწყობილობაზევე.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">თარგმნის სხვა პარამეტრები</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">გვერდის შეჯამების დამატებითი პარამეტრები</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">ხმოვანი ძიება</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">ხმის ნაწერად ქცევისთვის გამოიყენება Google Speech Services.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">შეიზღუდოს AI-შესაძლებლობები?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">თქვენთვის აღარ გამოაჩენს %1$s ახალ ან არსებულ AI-შესაძლებლობებს და მათ შესახებ ამომხტომ ცნობებს. მომავალში შეგეძლებათ მოხსნათ შეზღუდვა და სურვილისამებრ განაგრძოთ გამოყენება.\n\nშეზღუდვა ასევე შეეხება ხელგონით მოსარგებლე გაფართოებებს, რომელთა მუშაობასაც უზრუნველყოფს %1$s.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">რა შეიზღუდება:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">გაუქმება</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">შეზღუდვა</string>
   <!--
     Locale Settings Fragment
 
@@ -1417,6 +1436,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">აუსვით ხელსაწყოთა ზოლზე ჩანართების გახსნისთვის</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">მისამართის ველზე გასმით ჩანართების გადართვა</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">შერხევით შეჯამება</string>
   <!--
     Library
 
@@ -1579,6 +1600,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">გახსნილი პირადი ჩანართი: %1$s. შეეხეთ გადასაცვლელად.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d ჩანართის ჯგუფია გახსნილი. შეეხეთ ჩანართების გადასართველად.</item>
+    <item quantity="other">%1$d ჩანართის ჯგუფია გახსნილი. შეეხეთ ჩანართების გადასართველად.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1600,18 +1629,10 @@
   <string name="add_tab">ჩანართის დამატება</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">პირადი ჩანართის დამატება</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">პირადი</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">დასინქრონება</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">ძიება თქვენს ჩანართებში</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">ყველა ჩანართის გაზიარება</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">ბოლოს დახურული ჩანართები</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">ახლახან დახურული</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">ანგარიშის პარამეტრები</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1626,12 +1647,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">ჩანართების დახურვა</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">გაუქმება</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">სანიშნი</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">შერჩეული ჩანართების ჩანიშვნა</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">დახურვა</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">შერჩეული ჩანართების დახურვა</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1680,6 +1697,10 @@
   <string name="pwa_site_controls_title_private">%1$s (პირადი რეჟიმი)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">გახსენით ჩანართების ძიება</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">მოსინჯეთ ჩანართების ჯგუფები ნაკლები მოძრაობებისა და მეტი შედეგიანობისთვის</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">შეარჩიეთ ჩანართები დასაჯგუფებლად. შეინახება აქვე, მზად იქნება, როცა დაგჭირდებათ.</string>
   <!--
     Tab Group
 
@@ -2382,8 +2403,6 @@
   <string name="toast_copy_link_to_clipboard">ასლი აღებულია</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">დასინქ. შესვლა</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">შესვლა</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">ყველა მოწყობილობაზე გაგზავნა</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2540,8 +2559,6 @@
   <string name="preferences_delete_browsing_data_on_quit">დათვალიერების მონაცემების წაშლა გამოსვლისას</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">წაიშლება დათვალიერებული გვერდების მონაცემები მენიუში „გამოსვლაზე“ დაჭერისას</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">გამოსვლა</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">გასასუფთავებელი დროის შუალედი</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2643,10 +2660,6 @@
   <string name="preference_enhanced_tracking_protection_strict">მკაცრი</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">მეტად მძლავრი დაცვა თვალთვალისგან და მეტი სისწრაფე, მაგრამ საიტების ნაწილმა, შესაძლოა გაუმართავად იმუშაოს.</string>
-  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">ნების დართვა, რომ %1$s თავადვე მიუთითებს საჭირო გამონაკლისებს ცნობილ საიტებზე გაუმართაობების ასარიდებლად.</string>
-  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">აგრეთვე, თავადვე მიუთითებს იმ გამონაკლისებსაც, რომლებიც მხოლოდ მცირე ხარვეზების აღმოფხვრისა და მოსახერხებელი შესაძლებლობების ხელმისაწვდომობისთვისაა საჭირო.</string>
   <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">საიტზე მნიშვნელოვანი ხარვეზების გამოსწორება (სასურველია)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
@@ -3034,6 +3047,55 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">ელფოსტის ნიღბები ამჟამად მიუწვდომელია. სცადეთ ხელახლა რამდენიმე წუთში.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">%s ჩაშენებული VPN-ით</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">იმოგზაურეთ ინტერნეტში დამატებითი დაცვით, მდებარეობის დაფარვით, მათ შორის საჯარო WiFi-ქსელებში.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">ვრცლად</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">ყოველთვიური მოცულობის ზღვარი</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">დარჩა %1$.1f ᲒᲑ, სულ %2$.1f ᲒᲑ</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">აღდგება %1$.0f ᲒᲑ ყოველი თვის პირველი რიცხვიდან.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">მდებარეობა</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">სასურველი</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">ირჩევს თქვენთვის უსწრაფეს VPN-მდებარეობას.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">ჩართ.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">გამორთ.</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">უკავშირდება…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">შეჩერებულია</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">შეცდომა</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">VPN-პარამეტრების გახსნა</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN ჩართ.</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN მოქმედია.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3268,26 +3330,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">დამმოწმებელი: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">წაშლა</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">ჩასწორება</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">ნამდვილად გსურთ ამ პაროლის წაშლა?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">წაშლა</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">გაუქმება</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">პაროლის პარამეტრები</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">ჩასასწორებელი ველი საიტის მისამართისთვის.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">ჩასასწორებელი ველი სახელისთვის.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">ჩასასწორებელი ველი პაროლისთვის.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">ცვლილებების შენახვა.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">პაროლის შესწორება</string>
   <!-- The page title for adding new password. -->
@@ -3347,6 +3395,8 @@
   <string name="homepage_shortcuts_show_all_content_description">ყველა მალსახმობის ჩვენება</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">მალსახმობის დამატება</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">შეიყვანეთ ვებსაიტის ბმული</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">მალსახმობების ზღვარი მიღწეულია</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3460,16 +3510,6 @@
   <string name="experiments_snackbar">ჩართეთ გაზომვები მონაცემთა გასაგზავნად.</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">პარამეტრებზე გადასვლა</string>
-  <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[გასაყიდ ნაწარმზე თითოეულ მიმოხილვას ეწერება <b>ნიშნები</b> A-დან F-მდე.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>შესწორებული შეფასება</b> ეყრდნობა მხოლოდ სანდოდ მიჩნეულ მიმოხილვებს.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>გამოსარჩევი</b> ბოლო 80 დღეში %s-ის სანდოდ მიჩნეული მიმოხილვებიდან.]]></string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -3595,6 +3635,12 @@
   <string name="translation_settings_automatic_never_translate_sites">არასდროს ითარგმნოს ეს საიტები</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">ენების ჩამოტვირთვა</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">თარგმანები</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">თარგმნილი მასალა საიდუმლოდ რჩება მოწყობილობაზევე.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">ვრცლად</string>
   <!--
     Automatic translation preference screen
 

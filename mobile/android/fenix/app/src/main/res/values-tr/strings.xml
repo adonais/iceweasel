@@ -33,10 +33,6 @@
   <string name="tab_search_hint">Sekmelerde ara</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Aranacak terimleri yazın</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Açık sekmeleriniz burada gösterilecek.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Gizli sekmeleriniz burada gösterilecek.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Gizli gezinti</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -55,8 +51,6 @@
   <string name="tab_tray_select_collection">Koleksiyon seç</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Çoklu seçim modundan çık</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Seçilen sekmeleri koleksiyona kaydet</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Sekmelerinize tüm cihazlarınızdan ulaşın</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -202,8 +196,6 @@
   <string name="browser_menu_stop">Durdur</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Uzantılar</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Yüklenmiş ama etkinleştirilmemiş uzantılarınız var</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Uzantıları yönet</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -223,18 +215,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">Önerilen uzantıları deneyin</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Hesap bilgileri</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Yardım</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Yeni neler var?</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Ayarlar</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Arşiv</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Masaüstü sitesi</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Normal sekmede aç</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Ana ekrana ekle</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -262,11 +248,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s SEKMESİ</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">%1$s desteğiyle</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Okuyucu görünümü</string>
@@ -275,15 +256,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Uygulamada aç</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Okuyucuyu özelleştir</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Okuyucu görünümünü özelleştir</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Ekle</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Düzenle</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Giriş sayfasını özelleştir</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Giriş yap</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -302,12 +275,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Menüyü kapat</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navigasyon</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Uzantılar menüsünü kapat</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Kaydet menüsünü kapat</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Araçlar menüsünü kapat</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Özel sekme menüsünü kapat</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -390,6 +357,54 @@
   <string name="translation_toolbar_expand_action">Çeviri sayfasını aç</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Mesajı kapat</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Sayfa özetleri</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">Yapay zekâ kontrollerini etkinleştir</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">Yapay zekâ kontrolleri</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">%s ile tercih daima sizin</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Yapay zekâ sayesinde çalışan özelliklerin kullanılması da dahildir.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Daha fazla bilgi al</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Yapay zekâ geliştirmelerini engelle</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Engellerseniz %s uygulamasında yeni veya mevcut yapay zekâ geliştirmelerini ve bunlarla ilgili açılır tanıtımları görmeyeceksiniz.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Nelerin dahil olup nelerin olmadığını görün</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Yeni ve mevcut yapay zekâ geliştirmeleri varsayılan olarak engelleniyor. İstediğiniz özelliklerin engelini aşağıdan kaldırabilirsiniz.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Yapay zekâ destekli özellikler</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Çeviri</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Tüm çeviriler gizli kalır ve cihazınızdan dışarı çıkmaz.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Diğer çeviri ayarları</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Diğer sayfa özeti ayarları</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Sesle arama</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Sesler Google Speech Service tarafından metne dönüştürülür.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Yapay zekâ geliştirmeleri engellensin mi?</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Neler engellenecek?</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Engelle</string>
   <!--
     Locale Settings Fragment
 
@@ -1579,6 +1594,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">%1$s açık gizli sekme. Sekme değiştirmek için dokunun.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d sekme grubu açık. Sekme değiştirmek için dokunun.</item>
+    <item quantity="other">%1$d sekme grubu açık. Sekme değiştirmek için dokunun.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1600,18 +1623,10 @@
   <string name="add_tab">Sekme ekle</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Gizli sekme ekle</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">GİZLİ</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">EŞİTLE</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Sekmelerimde ara</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Tüm sekmeleri paylaş</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Son kapatılan sekmeler</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Son kapatılanlar</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Hesap ayarları</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1626,12 +1641,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">Sekmeleri kapat</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">İptal</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Yer imlerine ekle</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Seçili sekmeleri yer imlerine ekle</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Kapat</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Seçili sekmeleri kapat</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1680,6 +1691,8 @@
   <string name="pwa_site_controls_title_private">%1$s (Gizli Mod)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Sekme aramayı aç</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Daha az kaydırarak daha çok iş yapmak için sekme gruplarını deneyin</string>
   <!--
     Tab Group
 
@@ -2382,8 +2395,6 @@
   <string name="toast_copy_link_to_clipboard">Panoya kopyalandı</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Sync’e giriş yap</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Giriş yap</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Tüm cihazlara gönder</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2540,8 +2551,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Çıkarken gezinti verilerini sil</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Ana menüden \"Çık\"ı seçtiğinizde gezinti verilerini otomatik olarak siler</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Çık</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Silinecek zaman aralığı</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2643,10 +2652,6 @@
   <string name="preference_enhanced_tracking_protection_strict">Sıkı</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Daha güçlü izlenme koruması ve daha hızlı performans, ancak bazı siteler düzgün çalışmayabilir.</string>
-  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Bazı sitelerin ciddi şekilde bozulmasını önlemek için %1$s gerekli istisnaları otomatik olarak uygulasın.</string>
-  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">Yalnızca küçük sorunları düzeltmek ve kullanışlı özellikleri çalışır halde tutmak için gereken istisnalar da otomatik olarak uygulansın.</string>
   <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Önemli site sorunlarını düzelt (önerilir)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
@@ -3034,6 +3039,42 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">E-posta maskeleri şu anda kullanılamıyor. Birkaç dakika sonra yeniden deneyin.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Konumunuzu gizleyin, halka açık Wi-Fi ağlarında bile ekstra korumayla gezinin.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Daha fazla bilgi alın</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Aylık kota</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Konum</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Önerilen</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Sizin için en hızlı VPN konumunu seçer.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Açık</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Kapalı</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Bağlanıyor…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Duraklatıldı</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Hata</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">VPN ayarlarını aç</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN açık</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN etkin.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3268,26 +3309,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Doğrulayan: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Sil</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Düzenle</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Bu parolayı silmek istediğinizden emin misiniz?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Sil</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">İptal</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Parola seçenekleri</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Web sitesi adresi için düzenlenebilir metin alanı.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Kullanıcı adı için düzenlenebilir metin alanı.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Parola için düzenlenebilir metin alanı.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Değişiklikleri kaydet.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Parola düzenle</string>
   <!-- The page title for adding new password. -->
@@ -3347,6 +3374,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Tüm kısayolları göster</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Kısayol ekle</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Bir site adresi girin</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Kısayol sınırına ulaştınız</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3460,16 +3489,6 @@
   <string name="experiments_snackbar">Veri göndermek için telemetriyi etkinleştirin.</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Ayarlara git</string>
-  <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Her ürünün değerlendirmelerine A’dan F’ye kadar bir <b>harf notu</b> veriyoruz.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>Düzeltilmiş puan</b> yalnızca güvenilir olduğunu düşündüğümüz değerlendirmelere dayanır.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>Öne çıkanlar</b> son 80 gün içindeki güvenilir olduğunu düşündüğümüz %s değerlendirmelerinden alınmıştır.]]></string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -3595,6 +3614,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Bu siteleri asla çevirme</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Dilleri indir</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Çeviri</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Tüm çeviriler gizli kalır ve cihazınızdan dışarı çıkmaz.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Daha fazla bilgi al</string>
   <!--
     Automatic translation preference screen
 

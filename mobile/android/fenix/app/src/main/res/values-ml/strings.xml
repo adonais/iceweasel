@@ -33,10 +33,6 @@
   <string name="tab_search_hint">ടാബുകൾ തിരയുക</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">തിരയൽ പദങ്ങൾ പറയുക</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">താങ്കളുടെ തുറന്നു കിടക്കുന്ന ടാബുകൾ ഇവിടെ കാണിക്കും.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">നിങ്ങളുടെ സ്വകാര്യ ടാബുകൾ ഇവിടെ കാണിക്കും.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">സ്വകാര്യ തിരയൽ</string>
   <!-- The header text displayed on the normal tabs page when no normal tabs are open -->
@@ -53,8 +49,6 @@
   <string name="tab_tray_select_collection">ശേഖരം തിരഞ്ഞെടുക്കുക</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">ബഹുതിരഞ്ഞെടുപ്പു് രീതി നിന്നു് പുറത്തുകടക്കുക</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">തിരഞ്ഞെടുത്ത ടാബുകൾ ശേഖരത്തിൽ കരുതിവയ്ക്കുക</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">ഏതുപകരണത്തിൽ നിന്നും ടാബുകൾ എടുത്തുപയോഗിക്കുക</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
@@ -198,8 +192,6 @@
   <string name="browser_menu_stop">നിർത്തുക</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">വിപുലീകരണങ്ങൾ</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">നിങ്ങൾ വിപുലീകരണങ്ങൾ സ്ഥാപിച്ചിരിക്കുന്നു, പക്ഷേ പ്രവർത്തനക്ഷമമാക്കിയിട്ടില്ല</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">വിപുലീകരണങ്ങൾ കൈകാര്യം ചെയ്യുക</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -219,18 +211,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">ശുപാർശപെട്ട വിപുലീകരണം ഉപയോഗിച്ചുന്നോക്കുക</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">രൂപരേഖ വിവരങ്ങൾ</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">തുണ</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">പുതിയതെന്തെല്ലാം</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">ക്രമീകരണങ്ങള്‍</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">ഗ്രന്ഥപ്പുര</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">ഉപരിഫലക സൈറ്റു്</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">സാധാരണ ടാബിൽ തുറക്കുക</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">ആമുഖതാളിലേക്കു് ചേർക്കുക</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -258,11 +244,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s ലഭ്യമാക്കുന്നത്</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">%1$s ലഭ്യമാക്കുന്നത്</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">വായനയ്ക്കുള്ള കാഴ്ച</string>
@@ -271,15 +252,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">ആപ്പിൽ തുറക്കുക</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">വായന ദൃശ്യരൂപം ഇഷ്ടാനുസൃതമാക്കുക</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">വായന ദൃശ്യരൂപം ഇഷ്ടാനുസൃതമാക്കുക</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">ചേര്‍ക്കു</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">തിരുത്തുക</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">ആമുഖത്താൾ ഇഷ്ടാനുസൃതമാക്കുക</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">പ്രവേശിക്കുക</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -298,12 +271,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">കുറിപ്പടി അടയ്ക്കുക</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">വഴികാട്ടൽവ്യവസ്ഥ</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">വിപുലീകരണ കുറിപ്പടി കടലാസു് അടയ്ക്കുക</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">കരുതിവയ്ക്കൽ കുറിപ്പടി കടലാസു് അടയ്ക്കുക</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">കരുക്കുറിപ്പടി കടലാസു് അടയ്ക്കുക</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">ഇഷ്ടാനുസൃത ടാബുകുറിപ്പടി താളു് അടയ്ക്കുക</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -1433,18 +1400,10 @@
   <string name="add_tab">ടാബ് ചേര്‍ക്കുക</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">സ്വകാര്യ ടാബ് ചേർക്കുക</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">സ്വകാര്യം</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">സമന്വയം</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">ടാബുകൾക്കായി തിരയുക</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">എല്ലാ ടാബുകളും പങ്കിടുക</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">അടുത്തിടെ അടച്ച ടാബുകൾ</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">അടുത്തിടെ അടച്ചതു്</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">അക്കൗണ്ട് ക്രമീകരണങ്ങള്‍</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1459,12 +1418,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">ടാബുകൾ അടയ്ക്കുക</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">റദ്ദാക്കുക</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">അടയാളകുറിപ്പു്</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">തിരഞ്ഞെടുത്ത ടാബുകളെ കുറിച്ചിടുക</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">അടയ്ക്കുക</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">തിരഞ്ഞെടുത്ത ടാബുകളെ അടയ്ക്കുക</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -2143,8 +2098,6 @@
   <string name="toast_copy_link_to_clipboard">പകർത്തൽപെട്ടിയിലേക്കു് പകര്‍ത്തിയിരിയ്ക്കുന്നു</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">സമന്വയിപ്പിക്കാനായി പ്രവേശിക്കുക</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">പ്രവേശിക്കുക</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">എല്ലാ ഉപകരണങ്ങളിലേക്കും അയയ്ക്കുക</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2301,8 +2254,6 @@
   <string name="preferences_delete_browsing_data_on_quit">പുറത്ത് കടക്കുമ്പോൾ തിരയൽദത്ത മായ്ക്കുക</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">പ്രധാനക്കുറിപ്പടികട്ടയിൽ നിന്ന് “പുറത്തുകടക്കുക” തിരഞ്ഞെടുക്കുമ്പോൾ തിരച്ചിൽദത്ത തനിയേ മായ്ക്കുന്നു</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">പുറത്ത് കടക്കുക</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">മായ്ക്കാനുള്ള സമയപരിധി</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2965,26 +2916,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">പരിശോധിച്ചത്: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">നീക്കം ചെയ്യുക</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">തിരുത്തുക</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">താങ്ങൾക്കു് ഉറപ്പായിട്ടു് ഈ ഒളിവാക്കു് മായ്ക്കണോ?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">നീക്കം ചെയ്യുക</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">റദ്ദാക്കുക</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">ഒളിവാക്കു് സാധ്യതകൾ</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">വെബ്സ്ഥാന വിലാസത്തിനുള്ള ഒരു തിരുത്താനാകുന്ന പാഠതലം.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">ഉപയോക്തൃപ്പേരിനുള്ള ഒരു തിരുത്താനാകുന്ന പാഠതലം.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">ഒളിവാക്കിനുള്ള ഒരു തിരുത്താനാകുന്ന പാഠതലം.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">മാറ്റങ്ങൾ കരുതിവയ്ക്കുക.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">ഒളിവാക്കു് തിരുത്തുക</string>
   <!-- The page title for adding new password. -->

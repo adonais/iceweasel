@@ -31,10 +31,6 @@
   <string name="tab_search_hint">Klask en ivinelloù</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Skrivit gerioù ar c’hlask</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Diskouezet e vo amañ hocʼh ivinelloù digoret.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Diskouezet e vo amañ hocʼh ivinelloù prevez.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d diuzet</string>
   <!-- Tab tray multi select title in app bar when no tabs are selected -->
@@ -47,8 +43,6 @@
   <string name="tab_tray_select_collection">Diuzañ an dastumad</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Kuitaat ar mod lies-diuzañ</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Enrollañ an ivinelloù diuzet en dastumad</string>
   <!--
     Home - Bookmarks
 
@@ -173,8 +167,6 @@
   <string name="browser_menu_stop">Paouez</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Askouezhioù</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Staliet eo askouezhioù met n\'int ket gweredekaet</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Merañ an askouezhioù</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -192,18 +184,12 @@
   <string name="browser_menu_no_extensions_installed_description">N\'eus askouezh ebet gweredekaet</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Titouroù ar gont</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Skoazell</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Petra nevez</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Arventennoù</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Levraoueg</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Lecʼhienn urzhiataer</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Digeriñ en un ivinell ordinal</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Ouzhpennañ dʼar skramm degemer</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -229,11 +215,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">LUSKET GANT %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">Lusket gant %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Mod Lenn</string>
@@ -242,15 +223,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Digeriñ en arload</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Personelaat ar mod lenn</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Personelaat ar mod lenn</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Ouzhpennañ</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Embann</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Personelaat an degemer</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Kennaskañ</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
@@ -263,12 +236,6 @@
   <string name="browser_menu_passwords">Gerioù-tremen</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Merdeiñ</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Serriñ panell al lañser askouezhioù</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Serriñ panell al lañser enrollañ</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Serriñ panell al lañser ostilhoù</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Serriñ panell al lañser ivinelloù personelaet</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -1159,26 +1126,14 @@
   <string name="add_tab">Ouzhpennañ un ivinell</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Ouzhpennañ un ivinell prevez</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Prevez</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Goubredañ</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Rannañ an holl ivinelloù</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Ivinelloù serret nevez zo</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Serret nevez ’zo</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Arventennoù ar gont</string>
   <!-- Text shown in the menu to view tab settings -->
   <string name="tab_tray_menu_tab_settings">Arventennoù an ivinelloù</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Serriñ an holl ivinelloù</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Sined</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Serriñ</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Serriñ an ivinelloù diuzet</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1846,8 +1801,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Dilemel ar roadennoù merdeiñ pa vez kuitaet</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Dilemel a raio ar roadennoù merdeiñ ent emgefreek pa zibabot \"Kuitaat\" el lañser pennañ</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Kuitaat</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Mare da zilemel</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2397,26 +2350,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Gwiriet gant:%1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Dilemel</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Embann</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Sur ocʼh e fell deocʼh dilemel ar ger-tremen-mañ?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Dilemel</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Nullañ</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Dibarzhioù ar gerioù-tremen</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Ar vaezienn destenn kemmus evit chomlec’h ar lec’hienn web.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Ar vaezienn destenn kemmus evit an anv arveriad.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Ar vaezienn destenn kemmus evit ar ger-tremen.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Enrollañ ar cʼhemmoù.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Aozañ ar ger-tremen</string>
   <!-- The page title for adding new password. -->
@@ -2561,16 +2500,6 @@
   <string name="experiments_snackbar">Gweredekaet ar pellventerezh evit kas roadennoù.</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Mont d’an arventennoù</string>
-  <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Reiñ a reomp d\'an holl alioù un <b>notenn</b> etre A ha F.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[An <b>notenn reizhet</b> a zo diazezet war an alioù fizius.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Ar <b>poentoù pouezus</b> a zeu eus alioù %s er 80 devezh diwezhañ a soñj deomp int fizius.]]></string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 

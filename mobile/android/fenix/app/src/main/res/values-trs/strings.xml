@@ -33,10 +33,6 @@
   <string name="tab_search_hint">Nānà\'huì\' nej rakïj ñanj</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Duguatûj nuguan\'an</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Hiūj nan nāruguì\\’ nej rakïj ñanj huā ni\\’nïnj ïn</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Hiūj nan nāruguì\\’ nej rakïj ñanj huì nīkājt.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Riña gachē nu huìt</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -55,8 +51,6 @@
   <string name="tab_tray_select_collection">Nāguī sa màn yì\'nïn\'ïn</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Gāhuī riña multiselección</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Na\'nïnj sà\' nej rakïj ñanj riña \'na\' nej kolexión</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Nāda’a rakïj ñanj nū riña a’ngô mān’an si āgâ’t</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -202,8 +196,6 @@
   <string name="browser_menu_stop">Gānikïn\'</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">A\'ngô nej ra\'a</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Nga nū ekstensiûn ‘hiát, sanī nitāj si ‘hiaj sun nej man akuan’ nïn</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Gānātsij nej ekstensiûn</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -223,18 +215,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">Gīni’hiāj ngà ‘ngō ekstensiûn gatāj aga’ nan gūnïnt nê’èj</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Nuguan’ huā rayi’î kuênta</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Sa rūgûñu\'ūnj un</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Nùhuin sā huā nākà doj</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Nāgi\'iô\'</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Dukuâ ñanj</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Si luguâ eskritôrio</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Nā’nïn riña rakïj ñanj nāsinùnj un</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Nāchrūn riña pantayâ Ayi\'ìi</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -262,11 +248,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">RUGÛÑU\'ŪNJ SA GU\'NÀJ %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">Rugûñu\'ūnj sa gu\'nàj %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Sa ni\'iāj duguî\' ahiaa</string>
@@ -275,15 +256,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Na\'nīn\' riña aplikasiûn</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Nāgi’hiaj da’ nānùn man guendâ gāhiāt</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Nāgi’hiaj da’ Nānùn man guendâ Gāhiāt</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Nūtà\'</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Nāgi\'hiaj riñaj</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Nāgi’hiaj dà garan’ ruhuât riña paginâ ayi’ìt</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Gāyi\'ì sēsiûn</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -302,12 +275,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Nārán riña menû</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Sun aché nuu</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Nārán riña ñanj ‘na’ si menú nej ekstensiûn</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Nārán riña ñanj ‘na’ menú sa na’nïn sà’t</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Ñanj ‘na menú da’ narûn’ riña nej rasuun</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Ñanj ‘na menú da’ narûn’ riña nej rasuun</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -1087,26 +1054,14 @@
   <string name="add_tab">Nūtà\' a\'ngô rakïj ñanj</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Nūtà\' a\'ngô rakïj ñanj huìi</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Sa huìi</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Nāgi’hiaj nūguan’àn</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Dūyinga\' daran\' nej rakïj ñanj</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Rakïj ñanj hiaj narrán nakà</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Rakïj ñanj hiaj narrán nakà</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Nāgi\'iô\' riña kuênta</string>
   <!-- Text shown in the menu to view tab settings -->
   <string name="tab_tray_menu_tab_settings">Nādunā sa huā riña rakïj ñanj</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Nārrán riña daran\' nej rakïj ñanj</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Sa arâj sun nīchrò\' doj</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Nārán</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_share">Dūyingô\'</string>
   <!-- Content description for tabs tray multiselect share button -->
@@ -1596,8 +1551,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Nādure\' nej si datô riña sā nana\'uî\'t ngà gāhuīt</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Nārè\' man\'an nej si datô riña sā nana\'uî\'t ngà gūru\'man ra\'ât riña tāj \\“Gāhuīt\\” riña menú ñāan</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Gāhuī</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Diû gāchīn da’ gā’hue nārè’ej</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2031,10 +1984,6 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Ngà ganatsij sa gu\'nàj: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Nādūre\'</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Nāgi\'iaj riñaj</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Nādūre\'</string>
   <!-- Negative action of a dialog asking to delete login -->

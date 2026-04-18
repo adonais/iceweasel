@@ -33,10 +33,6 @@
   <string name="tab_search_hint">Lapok keresése</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Adja meg a keresési kifejezéseket</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">A nyitott lapok itt fognak megjelenni.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">A privát lapjai itt fognak megjelenni.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Privát böngészés</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -55,8 +51,6 @@
   <string name="tab_tray_select_collection">Gyűjtemény kiválasztása</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Kilépés a többszörös kiválasztási módból</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Kiválasztott lapok gyűjteménybe mentése</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Vegye át a lapokat bármely eszközről</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -202,8 +196,6 @@
   <string name="browser_menu_stop">Leállítás</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Kiegészítők</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Vannak olyan kiegészítői, amelyek telepítve vannak, de nincsenek engedélyezve</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Kiegészítők kezelése</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -223,18 +215,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">Próbáljon ki egy ajánlott kiegészítőt</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Fiókinformáció</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Súgó</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Újdonságok</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Beállítások</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Könyvtár</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Asztali oldal</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Megnyitás szokásos lapon</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Kezdőképernyőhöz adás</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -262,11 +248,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">%1$s ALAPOKON</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">A motorháztető alatt: %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Olvasó nézet</string>
@@ -275,15 +256,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Megnyitás alkalmazásban</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Olvasó nézet testreszabása</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Olvasó nézet testreszabása</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Hozzáadás</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Szerkesztés</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Kezdőoldal testreszabása</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Bejelentkezés</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -302,12 +275,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Menü bezárása</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Navigáció</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Kiegészítők menülap bezárása</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Mentés menülap bezárása</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Eszközök menülap bezárása</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Egyéni lap menülap bezárása</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -390,6 +357,40 @@
   <string name="translation_toolbar_expand_action">Fordítások lap megnyitása</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Üzenet eltüntetése</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Oldalösszegzések</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">MI vezérlők engedélyezése</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">MI vezérlők</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Mindig van választása a %sban</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Ez magában foglalja, hogy használja-e az MI funkciókkal bővített szolgáltatásokat.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">További tudnivalók</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">MI funkcióbővítések letiltása</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">A blokkolás azt jelenti, hogy nem fogja látni a %s új vagy jelenlegi fejlesztéseit, vagy az ezekről szóló felugró ablakokat.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Nézze meg, hogy mi tartozik ide és mi nem</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Az új és jelenlegi MI funkcióbővítések alapértelmezés szerint blokkolva vannak. Egy adott funkció blokkolásának feloldásához használja az alábbi vezérlőket.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">MI-alapú funkciók</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Fordítások</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Az összes fordítás privát marad az eszközén.</string>
   <!--
     Locale Settings Fragment
 
@@ -1600,18 +1601,10 @@
   <string name="add_tab">Lap hozzáadása</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Privát lap hozzáadása</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Privát</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Szinkronizálás</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Lapok keresése</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Az összes lap megosztása</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Nemrég bezárt lapok</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Nemrég bezárt</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Fiókbeállítások</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1626,12 +1619,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">Lapok bezárása</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Mégse</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Könyvjelzőzés</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Kijelölt lapok könyvjelzőzése</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Bezárás</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Kiválasztott lapok bezárása</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -2382,8 +2371,6 @@
   <string name="toast_copy_link_to_clipboard">Vágólapra másolva</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Jelentkezzen be a Syncbe</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Bejelentkezés</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Küldés az összes eszközre</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2540,8 +2527,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Böngészési adatok törlése kilépéskor</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Automatikusan törli a böngészési adatokat, ha a főmenüben a „Kilépés” lehetőséget választja</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Kilépés</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Törlendő időtartomány</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2643,10 +2628,6 @@
   <string name="preference_enhanced_tracking_protection_strict">Szigorú</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Erősebb követésvédelem és jobb teljesítmény, de előfordulhat, hogy egyes oldalak nem fognak megfelelően működni.</string>
-  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Engedélyezés, hogy a %1$s automatikusan alkalmazza a nagyobb webhelyhibák elkerüléséhez szükséges kivételeket.</string>
-  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">A csak az apró hibák megoldásához és a kényelmi funkciók elérhetőségéhez szükséges kivételek automatikus alkalmazása.</string>
   <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Nagy oldalhibák javítása (ajánlott)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
@@ -3033,6 +3014,12 @@
   <string name="email_masks_max_free_tier_reached">Felhasználta az 5 ingyenes e-mail-maszkját, ezért kiválasztottunk egyet, amelyet újra felhasználhat.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Az e-mail-maszkok jelenleg nem érhetőek el. Próbálja újra néhány perc múlva.</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">VPN beállítások megnyitása</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN be</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">A VPN aktív.</string>
   <!--
     Autofill
 
@@ -3268,26 +3255,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Ellenőrizte: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Törlés</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Szerkesztés</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Biztos, hogy törli ezt a jelszót?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Törlés</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Mégse</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Jelszóbeállítások</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">A webhely címének szerkeszthető szövegmezője.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">A felhasználónév szerkeszthető szövegmezője.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">A jelszó szerkeszthető szövegmezője.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Változások mentése.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Jelszó szerkesztése</string>
   <!-- The page title for adding new password. -->
@@ -3347,6 +3320,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Összes indítóikon megjelenítése</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Indítóikon hozzáadása</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Adjon meg egy webhelycímet</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Az indítóikonok korlátja elérve</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3460,16 +3435,6 @@
   <string name="experiments_snackbar">Engedélyezze a telemetriát az adatok küldéséhez.</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Ugrás a beállításokhoz</string>
-  <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Minden termékértékeléshez egy <b>betűvel megadott osztályzatot</b> rendelünk, A-tól F-ig.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[A <b>módosított értékelés</b> az általunk megbízhatónak gondolt értékelések alapján van számítva.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[A <b>kiemelések</b> a(z) %s értékeléseinek az elmúlt 80 napból származó és megbízhatónak ítélt elemei.]]></string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -3595,6 +3560,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Sose fordítsa ezeket az oldalakat</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Nyelvek letöltése</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Fordítások</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Az összes fordítás privát marad az eszközén.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">További tudnivalók</string>
   <!--
     Automatic translation preference screen
 

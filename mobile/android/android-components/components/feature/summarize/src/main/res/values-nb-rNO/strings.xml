@@ -58,5 +58,21 @@
   <!-- Error code shown on long press of the error icon. %1$d is an error code. -->
   <string name="mozac_summarize_info_error_code">Feilkode: %1$d</string>
   <!-- Loading text displayed while a page summary is being generated -->
-  <string name="mozac_feature_summarize_loading_title" translatable="false">Oppsummerer…</string>
+  <string name="mozac_feature_summarize_loading_title">Oppsummerer…</string>
+  <!-- Link text to learn more about page summaries in settings -->
+  <string name="mozac_summarize_settings_learn_more">Les mer</string>
+  <!-- Section header for gesture settings -->
+  <string name="mozac_summarize_settings_gestures">Bevegelser</string>
+  <!-- Label for the shake to summarize toggle in settings -->
+  <string name="mozac_summarize_settings_shake_to_summarize">Rist for å oppsummere</string>
+  <!-- Description for the shake to summarize toggle in settings -->
+  <string name="mozac_summarize_settings_shake_to_summarize_description">Rist enheten fra side til side for å oppsummere en side.</string>
+  <!-- Message for summary by model, %1$s is the name of the model that is being displayed -->
+  <string name="mozac_feature_summarize_summary_model">Sammendrag av %1$s</string>
+  <!-- Disclaimer message -->
+  <string name="mozac_feature_summarize_disclaimer_message">AI kan gjøre feil</string>
+  <!-- Title for the page summary AI controllable feature -->
+  <string name="mozac_ai_controls_page_summary_title">Sidesammendrag</string>
+  <!-- Description for the page summary AI controllable feature -->
+  <string name="mozac_ai_controls_page_summary_description">Sider og sammendrag lagres aldri.</string>
 </resources>

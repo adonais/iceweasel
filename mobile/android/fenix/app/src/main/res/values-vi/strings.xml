@@ -33,10 +33,6 @@
   <string name="tab_search_hint">Tìm kiếm thẻ</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Nhập từ tìm kiếm</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Các thẻ đang mở của bạn sẽ được hiển thị ở đây.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Các thẻ riêng tư của bạn sẽ được hiển thị ở đây.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Duyệt web riêng tư</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -55,8 +51,6 @@
   <string name="tab_tray_select_collection">Chọn bộ sưu tập</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Thoát chế độ nhiều lựa chọn</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Lưu các thẻ đã chọn vào bộ sưu tập</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Lấy các thẻ từ bất cứ thiết bị nào</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -202,8 +196,6 @@
   <string name="browser_menu_stop">Dừng</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Tiện ích</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Bạn đã cài đặt tiện ích mở rộng nhưng chưa bật</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Quản lý tiện ích</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -223,18 +215,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">Hãy thử một tiện ích mở rộng được đề xuất</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Thông tin tài khoản</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Trợ giúp</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Có gì mới</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Cài đặt</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Thư viện</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Trang web cho máy tính</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Mở trong thẻ thông thường</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Thêm vào màn hình chính</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -262,11 +248,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">ĐƯỢC HỖ TRỢ BỞI %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">Được hỗ trợ bởi %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Chế độ đọc sách</string>
@@ -275,15 +256,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Mở trong ứng dụng</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Tùy chỉnh chế độ đọc</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Tùy chỉnh chế độ đọc</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Thêm</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Chỉnh sửa</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Tùy biến trang chủ</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Đăng nhập</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -302,12 +275,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Đóng menu</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Điều hướng</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Đóng bảng menu tiện ích</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Đóng bảng menu lưu</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Đóng bảng menu công cụ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Đóng bảng menu thẻ tuỳ chỉnh</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -390,6 +357,58 @@
   <string name="translation_toolbar_expand_action">Mở bảng dịch</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Bỏ qua thông báo</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Tóm tắt trang</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">Bật kiểm soát trí tuệ nhân tạo</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">Kiểm soát trí tuệ nhân tạo (AI)</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Bạn luôn có quyền lựa chọn trong %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Điều đó bao gồm cả việc có nên sử dụng các tính năng được tăng cường bằng trí tuệ nhân tạo hay không.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Tìm hiểu thêm</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Chặn cải tiến AI</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Chặn có nghĩa là bạn sẽ không thấy các cải tiến AI mới hoặc hiện tại trong %s, hoặc các cửa sổ bật lên về chúng.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Xem những gì có và không bao gồm</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Các tính năng nâng cao AI mới và hiện tại đều bị chặn theo mặc định. Mở khoá các tính năng cụ thể bên dưới.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Các tính năng được hỗ trợ bởi trí tuệ nhân tạo</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Dịch</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Tất cả các bản dịch đều được giữ một cách riêng tư trên thiết bị của bạn.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Cài đặt dịch thuật khác</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Cài đặt khác về tóm tắt trang</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Tìm kiếm bằng giọng nói</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Âm thanh được chuyển đổi thành văn bản bởi Dịch vụ nhận dạng giọng nói của Google.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Chặn các cải tiến AI?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Bạn sẽ không thấy các cải tiến AI mới hoặc hiện tại trong %1$s, hoặc các cửa sổ bật lên về chúng. Sau đó, bạn có thể bỏ chặn bất cứ thứ gì bạn muốn tiếp tục sử dụng.\n\nViệc chặn cũng ảnh hưởng đến các tiện ích mở rộng sử dụng AI do %1$s cung cấp.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Những gì sẽ bị chặn:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Hủy bỏ</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Chặn</string>
   <!--
     Locale Settings Fragment
 
@@ -785,6 +804,8 @@
   <string name="preferences_category_about">Giới thiệu</string>
   <!-- Preference category for settings related to changing the default search engine -->
   <string name="preferences_category_select_default_search_engine">Chọn một</string>
+  <!-- Preference category for settings related to changing the default search engine -->
+  <string name="preferences_category_select_default_search_engine_2">Công cụ tìm kiếm mặc định khi duyệt web thông thường</string>
   <!-- Preference category for settings related to changing the private browsing search engine -->
   <string name="preferences_category_select_private_search_engine">Công cụ tìm kiếm mặc định cho trình duyệt riêng tư</string>
   <!-- Option to set the private browsing mode to use the normal default search engine -->
@@ -1376,6 +1397,8 @@
   <string name="toolbar_customize_shortcut_homepage">Trang chủ</string>
   <!-- Back shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_back">Quay lại</string>
+  <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+  <string name="toolbar_customize_shortcut_none">Không có</string>
   <!--
     App icon Preferences
 
@@ -1412,6 +1435,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">Vuốt thanh công cụ lên để mở các thẻ</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Vuốt thanh địa chỉ sang một bên để chuyển thẻ</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Lắc để tóm tắt</string>
   <!--
     Library
 
@@ -1574,6 +1599,13 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">%1$s thẻ riêng tư đang mở. Nhấn để chuyển sang thẻ.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="other">%1$d nhóm thẻ đang mở. Nhấn để chuyển thẻ.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1595,18 +1627,10 @@
   <string name="add_tab">Thêm thẻ</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Thêm thẻ riêng tư</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Riêng tư</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Đồng bộ hóa</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Tìm kiếm thẻ của bạn</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Chia sẻ tất cả các thẻ</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Các thẻ đã đóng gần đây</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Đã đóng gần đây</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Cài đặt tài khoản</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1621,12 +1645,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">Đóng thẻ</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Hủy bỏ</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Đánh dấu</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Đánh dấu các thẻ đã chọn</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Đóng</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Đóng thẻ đã chọn</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -1675,6 +1695,10 @@
   <string name="pwa_site_controls_title_private">%1$s (Chế độ riêng tư)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Mở tìm kiếm thẻ</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Thử sử dụng nhóm thẻ để giảm thao tác cuộn, tập trung làm việc hơn</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Chọn các thẻ để tạo nhóm. Chúng được lưu ở đây, sẵn sàng khi bạn cần.</string>
   <!--
     Tab Group
 
@@ -2375,8 +2399,6 @@
   <string name="toast_copy_link_to_clipboard">Đã sao chép vào khay nhớ tạm</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Đăng nhập để đồng bộ hóa</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Đăng nhập</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Gửi đến tất cả các thiết bị</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2533,8 +2555,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Xóa dữ liệu duyệt web khi thoát</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Tự động xóa dữ liệu duyệt khi bạn chọn \"Thoát\" từ menu chính</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Thoát</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Khoảng thời gian để xóa</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2635,10 +2655,6 @@
   <string name="preference_enhanced_tracking_protection_strict">Nghiêm ngặt</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Trình chống theo dõi mạnh mẽ hơn và hiệu suất nhanh hơn, nhưng có thể làm hỏng một số trang web.</string>
-  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Cho phép %1$s tự động áp dụng các ngoại lệ cần thiết để tránh gây ra lỗi nghiêm trọng cho trang web.</string>
-  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">Ngoài ra, tự động áp dụng các ngoại lệ chỉ cần thiết để khắc phục các sự cố nhỏ và cung cấp các tính năng tiện lợi.</string>
   <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Sửa các sự cố lớn của trang web (đề xuất)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
@@ -3026,6 +3042,55 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Hiện tại email ẩn danh không khả dụng. Hãy thử lại sau vài phút.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">VPN tích hợp sẵn của %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Duyệt web an toàn hơn nhờ tính năng ẩn vị trí, ngay cả khi sử dụng Wi-Fi công cộng.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Tìm hiểu thêm</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Giới hạn dữ liệu hàng tháng</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f GB còn lại của %2$.1f GB</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Đặt lại về %1$.0f GB vào ngày đầu tiên của mỗi tháng.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Địa điểm</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Được đề xuất</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Tự động chọn địa điểm VPN nhanh nhất cho bạn.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Bật</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Tắt</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Đang kết nối…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Đã tạm dừng</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Lỗi</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Mở cài đặt VPN</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN bật</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN đang bật.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3260,26 +3325,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Được xác minh bởi: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Xóa</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Chỉnh sửa</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Bạn có chắc chắn muốn xóa mật khẩu này?</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Xóa</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Hủy bỏ</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Cài đặt mật khẩu</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Trường văn bản có thể chỉnh sửa cho địa chỉ trang web.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Trường văn bản có thể chỉnh sửa cho tên người dùng.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Trường văn bản có thể chỉnh sửa cho mật khẩu.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Lưu thay đổi.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Chỉnh sửa mật khẩu</string>
   <!-- The page title for adding new password. -->
@@ -3337,6 +3388,10 @@
     which navigates the user to a screen displaying all the shortcuts.
   -->
   <string name="homepage_shortcuts_show_all_content_description">Hiển thị tất cả lối tắt</string>
+  <!-- Label for the "Add shortcut" button displayed as a tile. -->
+  <string name="homepage_shortcuts_add_shortcut">Thêm lối tắt</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Nhập URL trang web</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Đã đạt đến giới hạn lối tắt</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3450,16 +3505,6 @@
   <string name="experiments_snackbar">Bật telemetry để gửi dữ liệu.</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Đi đến cài đặt</string>
-  <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Chúng tôi đưa ra đánh giá cho từng sản phẩm một <b>điểm bằng chữ cái</b> từ A đến F.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>Đánh giá đã được điều chỉnh</b> chỉ dựa trên những đánh giá mà chúng tôi tin là đáng tin cậy.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[<b>Điểm nổi bật</b> từ %s đánh giá trong vòng 80 ngày qua mà chúng tôi tin là đáng tin cậy.]]></string>
   <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
@@ -3585,6 +3630,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Không bao giờ dịch các trang này</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Tải xuống ngôn ngữ</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Dịch</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Tất cả bản dịch sẽ được giữ riêng tư trên thiết bị của bạn.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Tìm hiểu thêm</string>
   <!--
     Automatic translation preference screen
 

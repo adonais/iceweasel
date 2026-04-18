@@ -15,8 +15,6 @@
   <string name="content_description_menu">Altre opsion</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Serca o scrìvi on indiriso</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Ƚe schede vèrte ƚe vegnerà mostrà chive.</string>
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Miti da sfatare so ƚa navigasion anonima</string>
   <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
@@ -41,10 +39,6 @@
   <string name="browser_menu_refresh">Axorna</string>
   <!-- Content description (not visible, for screen readers etc.): Stop loading current website -->
   <string name="browser_menu_stop">Interonpi</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Ajuto</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Novità</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Inpostasion</string>
   <!-- Browser menu button that opens a user's library -->
@@ -62,11 +56,6 @@
     %1$s is the name of the app (for example "Firefox").
   -->
   <string name="browser_menu_open_in_fenix">Vèrxi en %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">CO TECNOLOGIA %1$s</string>
   <!--
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
@@ -545,8 +534,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Naxendo fora vegnerà scanseƚà i dati de navigasion</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Scanseƚa otomàticamente i dati de navigasion cò viene seƚesionà “Va fora” nel menu principaƚe</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Va fora</string>
   <!-- Dialog message to the user asking to delete browsing data. %s is the name of the app (for example "Firefox"). -->
   <string name="delete_browsing_data_prompt_message_3">%s scanseƚerà i dati de navigasion seƚesionà.</string>
   <!-- Text for the cancel button for the data deletion dialog -->
@@ -761,8 +748,6 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Verificà da: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Scanseƚa</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Rimovi</string>
   <!-- Translations feature -->

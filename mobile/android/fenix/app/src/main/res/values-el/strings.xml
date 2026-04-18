@@ -33,10 +33,6 @@
   <string name="tab_search_hint">Αναζήτηση καρτελών</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Εισαγωγή όρων αναζήτησης</string>
-  <!-- No Open Tabs Message Description -->
-  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Οι ανοικτές καρτέλες σας θα εμφανίζονται εδώ.</string>
-  <!-- No Private Tabs Message Description -->
-  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">Οι ιδιωτικές καρτέλες σας θα εμφανίζονται εδώ.</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Ιδιωτική περιήγηση</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
@@ -55,8 +51,6 @@
   <string name="tab_tray_select_collection">Επιλογή συλλογής</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Τέλος λειτουργίας πολλαπλής επιλογής</string>
-  <!-- Content description for save to collection button while in multiselect mode in tab tray -->
-  <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Αποθήκευση επιλεγμένων καρτελών στη συλλογή</string>
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">Λάβετε καρτέλες από οποιαδήποτε συσκευή</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
@@ -202,8 +196,6 @@
   <string name="browser_menu_stop">Διακοπή</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">Επεκτάσεις</string>
-  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
-  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">Έχετε εγκαταστήσει επεκτάσεις, αλλά δεν τις έχετε ενεργοποιήσει</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">Διαχείριση επεκτάσεων</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -223,18 +215,12 @@
   <string name="browser_menu_try_a_recommended_extension_description">Δοκιμάστε μια προτεινόμενη επέκταση</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">Πληροφορίες λογαριασμού</string>
-  <!-- Browser menu button that sends a user to help articles -->
-  <string name="browser_menu_help" tools:ignore="UnusedResources" moz:removedIn="149">Βοήθεια</string>
-  <!-- Browser menu button that sends a to a the what's new article -->
-  <string name="browser_menu_whats_new" tools:ignore="UnusedResources" moz:removedIn="149">Τι νέο υπάρχει</string>
   <!-- Browser menu button that opens the settings menu -->
   <string name="browser_menu_settings">Ρυθμίσεις</string>
   <!-- Browser menu button that opens a user's library -->
   <string name="browser_menu_library">Βιβλιοθήκη</string>
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Έκδοση υπολογιστή</string>
-  <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab" tools:ignore="UnusedResources" moz:removedIn="149">Άνοιγμα σε κανονική καρτέλα</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Προσθήκη στην αρχική οθόνη</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -262,11 +248,6 @@
     Browser menu text shown in custom tabs to indicate this is a Fenix tab
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">ΜΕ ΤΗΝ ΥΠΟΣΤΗΡΙΞΗ ΤΟΥ %1$s</string>
-  <!--
-    Browser menu text shown in custom tabs to indicate this is a Fenix tab
-    %1$s is the name of the app (for example "Firefox").
-  -->
   <string name="browser_menu_powered_by2">Με την υποστήριξη του %1$s</string>
   <!-- Browser menu button to put the current page in reader mode -->
   <string name="browser_menu_read">Προβολή ανάγνωσης</string>
@@ -275,15 +256,7 @@
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">Άνοιγμα σε εφαρμογή</string>
   <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
-  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">Προσαρμογή προβολής ανάγνωσης</string>
-  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
   <string name="browser_menu_customize_reader_view_2">Προσαρμογή προβολής ανάγνωσης</string>
-  <!-- Browser menu label for adding a bookmark -->
-  <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">Προσθήκη</string>
-  <!-- Browser menu label for editing a bookmark -->
-  <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">Επεξεργασία</string>
-  <!-- Button shown on the home page that opens the Customize home settings -->
-  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">Προσαρμογή αρχικής σελίδας</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Σύνδεση</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
@@ -302,12 +275,6 @@
   <string name="browser_close_main_menu_handlebar_content_description">Κλείσιμο μενού</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Πλοήγηση</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
-  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Κλείσιμο φύλλου μενού επεκτάσεων</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
-  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Κλείσιμο φύλλου μενού αποθήκευσης</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
-  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Κλείσιμο φύλλου μενού εργαλείων</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
   <string name="browser_custom_tab_menu_handlebar_content_description">Κλείσιμο φύλλου μενού προσαρμοσμένων καρτελών</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
@@ -390,6 +357,38 @@
   <string name="translation_toolbar_expand_action">Άνοιγμα σελίδας μετάφρασης</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Απόρριψη μηνύματος</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">Επιλογές ελέγχου ΤΝ</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Έχετε πάντα επιλογές στο %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Αυτό περιλαμβάνει και το αν θα γίνεται χρήση λειτουργιών με βελτιώσεις τεχνητής νοημοσύνης.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Μάθετε περισσότερα</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Αποκλεισμός βελτιώσεων ΤΝ</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Ο αποκλεισμός σημαίνει ότι δεν θα βλέπετε νέες ή τρέχουσες βελτιώσεις τεχνητής νοημοσύνης στο %s, ούτε αναδυόμενα παράθυρα σχετικά με αυτές.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Δείτε τι περιλαμβάνεται και τι όχι</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Οι νέες και οι τρέχουσες βελτιώσεις τεχνητής νοημοσύνης αποκλείονται από προεπιλογή. Μπορείτε να άρετε τον αποκλεισμό συγκεκριμένων λειτουργιών παρακάτω.</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Μεταφράσεις</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Όλες οι μεταφράσεις παραμένουν ιδιωτικές στη συσκευή σας.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Περισσότερες ρυθμίσεις μεταφράσεων</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Φωνητική αναζήτηση</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Αποκλεισμός βελτιώσεων ΤΝ;</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Τι θα αποκλειστεί:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Ακύρωση</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Φραγή</string>
   <!--
     Locale Settings Fragment
 
@@ -1417,6 +1416,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">Ολίσθηση γραμμής εργαλείων προς τα πάνω για άνοιγμα καρτελών</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Ολίσθηση γραμμής διευθύνσεων προς τα πλάγια για εναλλαγή καρτελών</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Ανακίνηση για σύνοψη</string>
   <!--
     Library
 
@@ -1600,18 +1601,10 @@
   <string name="add_tab">Προσθήκη καρτέλας</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">Προσθήκη ιδιωτικής καρτέλας</string>
-  <!-- Text for the new tab button to indicate adding a new private tab in the tab -->
-  <string name="tab_drawer_fab_content" tools:ignore="UnusedResources" moz:removedIn="149">Ιδιωτικη</string>
-  <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
-  <string name="tab_drawer_fab_sync" tools:ignore="UnusedResources" moz:removedIn="149">Συγχρονισμός</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">Αναζήτηση καρτελών</string>
-  <!-- Text shown in the menu for sharing all tabs -->
-  <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">Κοινή χρήση όλων των καρτελών</string>
   <!-- Text shown in the menu to view recently closed tabs -->
   <string name="tab_tray_menu_recently_closed">Πρόσφατα κλεισμένες καρτέλες</string>
-  <!-- Text shown in the tabs tray inactive tabs section -->
-  <string name="tab_tray_inactive_recently_closed" tools:ignore="UnusedResources" moz:removedIn="149">Έκλεισαν πρόσφατα</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">Ρυθμίσεις λογαριασμού</string>
   <!-- Text shown in the menu to view tab settings -->
@@ -1626,12 +1619,8 @@
   <string name="tab_manager_close_all_tabs_dialog_confirm">Κλείσιμο καρτελών</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">Ακύρωση</string>
-  <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">Αποθήκευση</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Προσθήκη επιλεγμένων καρτελών στους σελιδοδείκτες</string>
-  <!-- Text shown in the multiselect menu for closing selected tabs. -->
-  <string name="tab_tray_multiselect_menu_item_close" tools:ignore="UnusedResources" moz:removedIn="149">Κλείσιμο</string>
   <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_close_content_description">Κλείσιμο επιλεγμένων καρτελών</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
@@ -2382,8 +2371,6 @@
   <string name="toast_copy_link_to_clipboard">Αντιγράφηκε στο πρόχειρο</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Σύνδεση στο Sync</string>
-  <!-- An option from the three dot menu to sign in -->
-  <string name="sync_menu_sign_in" tools:ignore="UnusedResources" moz:removedIn="149">Σύνδεση</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Αποστολή σε όλες τις συσκευές</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2540,8 +2527,6 @@
   <string name="preferences_delete_browsing_data_on_quit">Διαγραφή δεδομένων κατά την έξοδο</string>
   <!-- Summary for the Delete browsing data on quit preference. "Quit" translation should match delete_browsing_data_on_quit_action translation. -->
   <string name="preference_summary_delete_browsing_data_on_quit_2">Αυτόματη διαγραφή δεδομένων περιήγησης όταν επιλέγετε «Έξοδος» από το κύριο μενού</string>
-  <!-- Action item in menu for the Delete browsing data on quit feature -->
-  <string name="delete_browsing_data_on_quit_action" tools:ignore="UnusedResources" moz:removedIn="149">Έξοδος</string>
   <!-- Title text of a delete browsing data dialog. -->
   <string name="delete_history_prompt_title">Χρονικό διάστημα διαγραφής</string>
   <!-- Body text of a delete browsing data dialog. -->
@@ -2643,10 +2628,6 @@
   <string name="preference_enhanced_tracking_protection_strict">Αυστηρή</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Ισχυρότερη προστασία από καταγραφή και καλύτερες επιδόσεις, αλλά ορισμένοι ιστότοποι ενδέχεται να μην λειτουργούν σωστά.</string>
-  <!-- Preference description for the checkbox setting for "baseline" exceptions (a set of content blocking exceptions applied to fix major website breakage). %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">Να επιτρέπεται στο %1$s η αυτόματη εφαρμογή των απαιτούμενων εξαιρέσεων για την αποτροπή σημαντικών δυσλειτουργιών στους ιστοτόπους.</string>
-  <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">Να εμφαρμόζονται επίσης αυτόματα εξαιρέσεις που απαιτούνται μόνο για τη διόρθωση μικρών ζητημάτων και την ενεργοποίηση βολικών λειτουργιών.</string>
   <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Διόρθωση σημαντικών ζητημάτων ιστοτόπου (προτείνεται)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
@@ -3034,6 +3015,39 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Οι μάσκες email δεν είναι διαθέσιμες αυτήν τη στιγμή. Δοκιμάστε ξανά σε λίγα λεπτά.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Μάθετε περισσότερα</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Μηνιαίο όριο δεδομένων</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">Απομένουν %1$.1f GB από %2$.1f GB</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Γίνεται επαναφορά στα %1$.0f GB την πρώτη μέρα κάθε μήνα.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Τοποθεσία</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Προτείνεται</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Σύνδεση…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Σε παύση</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Σφάλμα</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3268,26 +3282,12 @@
     the certificate authority that verified the ticket
   -->
   <string name="certificate_info_verified_by">Επαλήθευση από: %1$s</string>
-  <!-- Login overflow menu delete button -->
-  <string name="login_menu_delete_button" tools:ignore="UnusedResources" moz:removedIn="149">Διαγραφή</string>
-  <!-- Login overflow menu edit button -->
-  <string name="login_menu_edit_button" tools:ignore="UnusedResources" moz:removedIn="149">Επεξεργασία</string>
   <!-- Message in delete confirmation dialog for password -->
   <string name="login_deletion_confirmation_2">Θέλετε σίγουρα να διαγράψετε αυτόν τον κωδικό πρόσβασης;</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">Διαγραφή</string>
   <!-- Negative action of a dialog asking to delete login -->
   <string name="dialog_delete_negative">Ακύρωση</string>
-  <!-- The saved password options menu description. -->
-  <string name="login_options_menu_2" tools:ignore="UnusedResources" moz:removedIn="149">Επιλογές κωδικών πρόσβασης</string>
-  <!-- The editable text field for a website address. -->
-  <string name="saved_login_hostname_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Το επεξεργάσιμο πεδίο κειμένου της διεύθυνσης ιστοτόπου.</string>
-  <!-- The editable text field for a username. -->
-  <string name="saved_login_username_description_3" tools:ignore="UnusedResources" moz:removedIn="149">Το επεξεργάσιμο πεδίο κειμένου για το όνομα χρήστη.</string>
-  <!-- The editable text field for a login's password. -->
-  <string name="saved_login_password_description_2" tools:ignore="UnusedResources" moz:removedIn="149">Το επεξεργάσιμο πεδίο κειμένου για τον κωδικό πρόσβασης.</string>
-  <!-- The button description to save changes to an edited password. -->
-  <string name="save_changes_to_login_2" tools:ignore="UnusedResources" moz:removedIn="149">Αποθήκευση αλλαγών.</string>
   <!-- The page title for editing a saved password. -->
   <string name="edit_2">Επεξεργασία κωδικού πρόσβασης</string>
   <!-- The page title for adding new password. -->
@@ -3461,16 +3461,6 @@
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">Μετάβαση στις ρυθμίσεις</string>
   <!--
-    Review quality check feature
-
-    Paragraph explaining the grading system we use to classify the reliability of a product's reviews.
-  -->
-  <string name="review_quality_check_info_review_grade_header" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Αναθέτουμε στις κριτικές κάθε προϊόντος έναν <b>βαθμό</b>, από A έως F.]]></string>
-  <!-- Paragraph explaining how a product's adjusted grading is calculated. -->
-  <string name="review_quality_check_explanation_body_adjusted_grading" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Η <b>αναπροσαρμοσμένη βαθμολογία</b> βασίζεται μόνο στις κριτικές που πιστεύουμε ότι είναι αξιόπιστες.]]></string>
-  <!-- Paragraph explaining product review highlights. %s is the name of the retailer (e.g. Amazon). -->
-  <string name="review_quality_check_explanation_body_highlights" moz:removedIn="136" tools:ignore="UnusedResources"><![CDATA[Τα <b>σημαντικά σημεία</b> προέρχονται από κριτικές για το %s, οι οποίες γράφτηκαν τις τελευταίες 80 ημέρες και πιστεύουμε ότι είναι αξιόπιστες.]]></string>
-  <!--
     Accessibility services actions labels. These will be appended to accessibility actions like "Double tap to.." but not by or applications but by services like Talkback.
 
     Action label for elements that can be collapsed if interacting with them. Talkback will append this to say "Double tap to collapse".
@@ -3595,6 +3585,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Να μην μεταφράζονται ποτέ αυτοί οι ιστότοποι</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Λήψη γλωσσών</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Μεταφράσεις</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Όλες οι μεταφράσεις παραμένουν ιδιωτικές στη συσκευή σας.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Μάθετε περισσότερα</string>
   <!--
     Automatic translation preference screen
 
