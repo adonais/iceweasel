@@ -129,7 +129,7 @@ function iniSafeGet(ini, section, key) {
   try {
     return ini.getString(section, key);
   } catch (e) {
-    return null;
+    return "0";
   }
 }
 
