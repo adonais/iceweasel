@@ -392,7 +392,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">All translations stay private on your device.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">More translations settings</string>
+  <string name="ai_controls_more_translations_settings">More translations settings</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">More page summary settings</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -1710,6 +1710,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Edit group</string>
   <string name="create_tab_group_save_button">Save</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">New group, collapse drag handle</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Close Edit Tab Group</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Group</string>
@@ -1725,6 +1727,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Add to</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Add to a tab group, collapse drag handle</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Add to new tab group</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Close add to tab group</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">New tab group</string>
@@ -1736,6 +1742,33 @@
     <item quantity="one">%1$d tab</item>
     <item quantity="other">%1$d tabs</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Add to %1$s tab group, %2$d tab, colour %3$s</item>
+    <item quantity="other">Add to %1$s tab group, %2$d tabs, colour %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Share %1$s tab group with %2$d tab.</item>
+    <item quantity="other">Share %1$s tab group with %2$d tabs.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">View tab group, collapse drag handle</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s tab group with %2$d tab, colour %3$s</item>
+    <item quantity="other">%1$s tab group with %2$d tabs, colour %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Delete tab group?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1744,6 +1777,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Delete group</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Cancel</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Yellow</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Orange</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Red</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Pink</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Purple</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Violet</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Blue</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cyan</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Green</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Grey</string>
   <!--
     History
 
@@ -3051,7 +3108,11 @@
 
     Title for the browser VPN entry in the settings list
   -->
-  <string name="preferences_ip_protection_title">VPN</string>
+  <string name="preferences_ip_protection_title_2">Built-in VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
@@ -3095,6 +3156,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN on</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN is active.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Get started</string>
   <!--
     Autofill
 

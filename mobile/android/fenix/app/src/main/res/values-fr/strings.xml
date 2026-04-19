@@ -392,7 +392,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Toutes les traductions restent confidentielles sur votre appareil.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Plus de paramètres de traduction</string>
+  <string name="ai_controls_more_translations_settings">Plus de paramètres de traduction</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">Plus de paramètres des résumés de pages</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -1724,6 +1724,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nom</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Ajouter à</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Ajouter à un nouveau groupe d’onglets</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Fermer Ajouter au groupe d’onglets</string>
   <!-- Label for adding to a new tab group. -->
@@ -1736,6 +1738,33 @@
     <item quantity="one">%1$d\u00a0onglet</item>
     <item quantity="other">%1$d\u00a0onglets</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Ajouter au groupe d’onglets %1$s, %2$d onglet, couleur %3$s</item>
+    <item quantity="other">Ajouter au groupe d’onglets %1$s, %2$d onglets, couleur %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Partager le groupe d’onglets %1$s avec %2$d onglet.</item>
+    <item quantity="other">Partager le groupe d’onglets %1$s avec %2$d\u00a0onglets.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Afficher le groupe d’onglets, replier la poignée de déplacement</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Groupe d’onglets %1$s avec %2$d onglet, couleur %3$s</item>
+    <item quantity="other">Groupe d’onglets %1$s avec %2$d onglets, couleur %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Supprimer le groupe d’onglets\u00a0?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1744,6 +1773,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Supprimer le groupe</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Annuler</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Jaune</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Orange</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Rouge</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Rose</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Pourpre</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Violet</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Bleu</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cyan</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Vert</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Gris</string>
   <!--
     History
 
@@ -3051,7 +3104,11 @@
 
     Title for the browser VPN entry in the settings list
   -->
-  <string name="preferences_ip_protection_title">VPN</string>
+  <string name="preferences_ip_protection_title_2">VPN intégré</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BÊTA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
@@ -3095,6 +3152,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN activé</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">Le VPN est actif.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Démarrer</string>
   <!--
     Autofill
 

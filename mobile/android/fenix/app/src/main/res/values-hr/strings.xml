@@ -358,6 +358,58 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Odbaci poruku</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Sažeci stranica</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">Aktiviraj kontrole umjetne inteligencije</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">Kontrole umjetne inteligencije</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">U aplikaciji %s uvijek imaš izbor</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">To uključuje i hoće li se koristiti funkcije sa poboljšanom umjetnom inteligencijom.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Saznaj više</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Blokiraj poboljšanja umjetne inteligencije</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Blokiranje znači da nećeš vidjeti nova ili trenutačna poboljšanja umjetne inteligencije u aplikaciji %s, niti skočne prozore o njima.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Pogledaj što je, a što nije uključeno</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Nova i trenutačna poboljšanja umjetne inteligencije su standardno blokirana. Dolje odblokiraj određene.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Funkcije umjetne inteligencije</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Prijevodi</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Svi prijevodi ostaju privatni na tvom uređaju.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Više postavki za prijevode</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Više postavki za sažetak stranice</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Glasovno pretraživanje</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Audio zapis se pretvara u tekst pomoću Googleovih govornih usluga.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Blokirati poboljšanja umjetne inteligencije?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Nećeš vidjeti nova ili trenutna poboljšanja umjetne inteligencije u aplikaciji %1$s, niti skočne prozore o njima. Nakon toga možeš odblokirati sve što želiš nastaviti koristiti.\n\nBlokiranje također utječe na proširenja koja koriste umjetnu inteligenciju koju pruža %1$s.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Što će se blokirati:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Odustani</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Blokiraj</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -1385,6 +1437,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">Otvaranje kartica vertikalnim pomakom alatne trake</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Povuci adresnu traku u stranu za mijenjanje kartica</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Protresi za izradu sažetka</string>
   <!--
     Library
 
@@ -1547,6 +1601,15 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Otvorene privatne kartice: %1$s. Dodirni za mijenjanje kartice.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d otvorena grupa. Dodirni za prebacivanje na kartice.</item>
+    <item quantity="few">%1$d otvorene grupe. Dodirni za prebacivanje na kartice.</item>
+    <item quantity="other">%1$d otvorenih grupa. Dodirni za prebacivanje na kartice.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1636,6 +1699,10 @@
   <string name="pwa_site_controls_title_private">%1$s (privatni modus)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Otvori pretraživanje kartica</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Isprobaj grupe kartica za manje pomicanja, više rada</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Odaberi kartice za stvaranje grupe. Spremaju se ovdje i spremne su kad god ih želiš koristiti.</string>
   <!--
     Tab Group
 
@@ -1645,6 +1712,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Uredi grupu</string>
   <string name="create_tab_group_save_button">Spremi</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Nova grupa, sažmi ručku za povlačenje</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Zatvori uređivanje grupe kartica</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupa</string>
@@ -1660,6 +1729,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Dodaj u</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Dodaj u grupu kartica, sažmi ručku za povlačenje</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Dodaj u novu grupu kartica</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Zatvori dodavanje u grupu kartica</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Nova grupa kartica</string>
@@ -1672,6 +1745,36 @@
     <item quantity="few">%1$d kartice</item>
     <item quantity="other">%1$d kartica</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Dodaj u grupu kartica %1$s, %2$d kartica, boja %3$s</item>
+    <item quantity="few">Dodaj u grupu kartica %1$s, %2$d kartice, boja %3$s</item>
+    <item quantity="other">Dodaj u grupu kartica %1$s, %2$d kartica, boja %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Dijeli grupu kartica %1$s s %2$d karticom.</item>
+    <item quantity="few">Dijeli grupu kartica %1$s s %2$d kartice.</item>
+    <item quantity="other">Dijeli grupu kartica %1$s s %2$d kartica.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Prikaži grupu kartica, sažmi ručku za povlačenje</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Grupa kartica %1$s s %2$d karticom, boja %3$s</item>
+    <item quantity="few">Grupa kartica %1$s s %2$d kartice, boja %3$s</item>
+    <item quantity="other">Grupa kartica %1$s s %2$d kartica, boja %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Izbrisati grupu kartica?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1680,6 +1783,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Izbriši grupu</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Odustani</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Žuta</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Narančasta</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Crvena</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Ružičasta</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Ljubičasta</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Modroljubičasta</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Plava</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cijan</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Zelena</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Siva</string>
   <!--
     History
 
@@ -2985,6 +3112,59 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Maske e-mail adresa trenutačno nisu dostupne. Pokušaj ponovo za par minuta.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Ugrađeni VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">Ugrađeni VPN aplikacije %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Pretraži s dodatnom zaštitom, skrivanjem svoje lokacije čak i na javnoj Wi-Fi mreži.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Saznaj više</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Mjesečno ograničenje količine podataka</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">Preostalo je %1$.1f GB od %2$.1f GB</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Resetira se na %1$.0f GB svakog prvog dana u mjesecu.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Lokacija</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Preporučeno</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Bira najbržu VPN lokaciju za tebe.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Uključeno</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Isključeno</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Povezivanje …</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Pauzirano</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Greška</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Otvori VPN postavke</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN je uključen</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN je aktivan.</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3284,6 +3464,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Prikaži sve prečace</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Dodaj prečac</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Upiši URL jedne web-stranice</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Dosegnuto je ograničenje prečaca</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3522,6 +3704,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Nikada ne prevodi ove web stranice</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Preuzmi jezike</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Prijevodi</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Svi prijevodi ostaju privatni na tvom uređaju.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Saznaj više</string>
   <!--
     Automatic translation preference screen
 

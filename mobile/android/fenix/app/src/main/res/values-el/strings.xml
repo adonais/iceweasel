@@ -357,6 +357,18 @@
   <string name="translation_toolbar_expand_action">Άνοιγμα σελίδας μετάφρασης</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Απόρριψη μηνύματος</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Συνόψεις σελίδων</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">Ενεργοποίηση επιλογών ελέγχου ΤΝ</string>
   <!-- Title for the AI controls settings screen -->
   <string name="preferences_ai_controls">Επιλογές ελέγχου ΤΝ</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
@@ -378,7 +390,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Όλες οι μεταφράσεις παραμένουν ιδιωτικές στη συσκευή σας.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Περισσότερες ρυθμίσεις μεταφράσεων</string>
+  <string name="ai_controls_more_translations_settings">Περισσότερες ρυθμίσεις μεταφράσεων</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">Φωνητική αναζήτηση</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
@@ -1692,6 +1704,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Όνομα</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Προσθήκη σε</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Προσθήκη σε νέα ομάδα καρτελών</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Κλείσιμο προσθήκης σε ομάδα καρτελών</string>
   <!-- Label for adding to a new tab group. -->
@@ -1712,6 +1726,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Διαγραφή ομάδας</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Ακύρωση</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Κίτρινο</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Πορτοκαλί</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Κόκκινο</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Ροζ</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Μοβ</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Βιολετί</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Μπλε</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Κυανό</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Πράσινο</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Γκρι</string>
   <!--
     History
 
@@ -3019,9 +3057,17 @@
 
     Title for the browser VPN entry in the settings list
   -->
-  <string name="preferences_ip_protection_title">VPN</string>
+  <string name="preferences_ip_protection_title_2">Ενσωματωμένο VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">Ενσωματωμένο VPN του %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Περιηγηθείτε με επιπλέον προστασία κρύβοντας την τοποθεσία σας, ακόμα και σε δημόσια Wi-Fi.</string>
   <!-- Link text that opens additional information about the browser VPN -->
   <string name="ip_protection_learn_more">Μάθετε περισσότερα</string>
   <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
@@ -3041,12 +3087,26 @@
   <string name="ip_protection_location_section">Τοποθεσία</string>
   <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
   <string name="ip_protection_location_recommended_label">Προτείνεται</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Επιλέγει την πιο γρήγορη τοποθεσία VPN για εσάς.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Ενεργό</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Ανενεργό</string>
   <!-- Badge label shown in the menu item while the browser VPN is connecting -->
   <string name="ip_protection_menu_connecting">Σύνδεση…</string>
   <!-- Badge label shown in the menu item when the browser VPN is paused -->
   <string name="ip_protection_menu_paused">Σε παύση</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Σφάλμα</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Άνοιγμα ρυθμίσεων VPN</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">Ενεργό VPN</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">Το VPN είναι ενεργό.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Έναρξη</string>
   <!--
     Autofill
 
@@ -3347,6 +3407,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Εμφάνιση όλων των συντομεύσεων</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Προσθήκη συντόμευσης</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Εισαγάγετε μια διεύθυνση URL ιστότοπου</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Έχετε φτάσει το όριο συντομεύσεων</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->

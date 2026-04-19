@@ -370,17 +370,17 @@
   -->
   <string name="preferences_debug_settings_ai_controls">Galluogi rheolyddion AI</string>
   <!-- Title for the AI controls settings screen -->
-  <string name="preferences_ai_controls">Rheolaethau AI</string>
+  <string name="preferences_ai_controls">Rheolyddion AI</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_banner_headline">Mae gennych ddewis o %s bob amser</string>
+  <string name="ai_controls_banner_headline">Mae gennych ddewis bob tro gyda %s</string>
   <!-- Supporting text for the AI controls banner -->
-  <string name="ai_controls_banner_supporting_text">Mae hynny\'n cynnwys defnyddio nodweddion sydd wedi\'u gwella gydag AI neu beidio.</string>
+  <string name="ai_controls_banner_supporting_text">Mae hynny\'n cynnwys defnyddio nodweddion sy wedi\'u gwella gydag AI neu beidio.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Dysgu rhagor</string>
   <!-- Title for the block AI enhancements toggle -->
   <string name="ai_controls_block_ai_title">Rhwystro nodweddion AI</string>
   <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_block_ai_description">Mae blocio yn golygu na fyddwch yn gweld gwelliannau AI newydd neu gyfredol yn %s, na ffenestri naid yn eu cylch.</string>
+  <string name="ai_controls_block_ai_description">Mae rhwystro yn golygu y byddwch chi ddim yn gweld nodweddion AI newydd neu gyfredol yn %s, na llamlenni amdanyn nhw.</string>
   <!-- Link text to see what AI enhancements are and aren’t included -->
   <string name="ai_controls_see_whats_included">Gweld beth sy wedi\'i gynnwys a beth sy ddim</string>
   <!-- Banner text shown when AI enhancements are blocked -->
@@ -392,21 +392,21 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Mae pob cyfieithiad yn aros yn breifat ar eich dyfais.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Rhagor o osodiadau cyfieithu</string>
+  <string name="ai_controls_more_translations_settings">Rhagor o osodiadau cyfieithu</string>
   <!-- Link text to navigate to more page summary settings -->
-  <string name="ai_controls_more_page_summary_settings">Mwy o osodiadau crynodeb tudalen</string>
+  <string name="ai_controls_more_page_summary_settings">Rhagor o osodiadau crynhoi tudalen</string>
   <!-- Title for the voice search AI feature toggle -->
-  <string name="ai_controls_voice_search_title">Chwilio llais</string>
+  <string name="ai_controls_voice_search_title">Chwilio llafar</string>
   <!-- Description for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_description">Mae sain yn cael ei drawsnewid yn destun gan Google Speech Services.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Rhwystro nodweddion AI?</string>
   <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_block_dialog_body">Ni fyddwch yn gweld gwelliannau AI newydd neu gyfredol yn %1$s, na ffenestri naid yn eu cylch. Wedi hynny, gallwch ddadflocio unrhyw beth rydych chi am barhau i\'w ddefnyddio. \u0020Mae blocio hefyd yn effeithio ar estyniadau sy\'n defnyddio AI a ddarperir gan %1$s.</string>
+  <string name="ai_controls_block_dialog_body">Fyddwch chi ddim yn gweld nodweddion AI newydd neu rhai cyfredol yn %1$s, na llamlenni amdanyn nhw. Wedi hynny, gallwch ddadrwystro unrhyw beth rydych chi am barhau i\'w ddefnyddio.\n\nMae rhwystro hefyd yn effeithio ar estyniadau sy\'n defnyddio AI sy\'n cael eu darparu gan %1$s.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Beth fydd yn cael ei rwystro:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
-  <string name="ai_controls_block_dialog_cancel">Diddymu</string>
+  <string name="ai_controls_block_dialog_cancel">Na</string>
   <!-- Block button text in the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_block">Rhwystro</string>
   <!--
@@ -1609,12 +1609,12 @@
       Title for the list of tab groups used by a11y services
       The %1$d will be replaced by the number of opened tab groups
     -->
-    <item quantity="one">Grŵp tab %1$d ar agor. Tapiwch i newid tabiau.</item>
-    <item quantity="zero">Grwpiau tab %1$d yn agor. Tapiwch i newid tabiau.</item>
-    <item quantity="two">Grwpiau tab %1$d yn agor. Tapiwch i newid tabiau.</item>
-    <item quantity="few">Grwpiau tab %1$d yn agor. Tapiwch i newid tabiau.</item>
-    <item quantity="many">Grwpiau tab %1$d yn agor. Tapiwch i newid tabiau.</item>
-    <item quantity="other">Grwpiau tab %1$d yn agor. Tapiwch i newid tabiau.</item>
+    <item quantity="one">%1$d grŵp tabiau ar agor. Tapiwch i newid tabiau.</item>
+    <item quantity="zero">%1$d grwpiau tabiau ar agor. Tapiwch i newid tabiau.</item>
+    <item quantity="two">%1$d grŵp tabiau ar agor. Tapiwch i newid tabiau.</item>
+    <item quantity="few">%1$d grŵp tabiau ar agor. Tapiwch i newid tabiau.</item>
+    <item quantity="many">%1$d grŵp tabiau ar agor. Tapiwch i newid tabiau.</item>
+    <item quantity="other">%1$d grŵp tabiau ar agor. Tapiwch i newid tabiau.</item>
   </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
@@ -1706,9 +1706,9 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Agor chwilio tabiau</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
-  <string name="tab_manager_empty_tab_groups_page_header">Rhowch gynnig ar grwpiau tab am lai o sgrolio, mwy yn ei wneud</string>
+  <string name="tab_manager_empty_tab_groups_page_header">Rhowch gynnig ar grwpiau tabiau am lai o sgrolio a gwneud mwy</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
-  <string name="tab_manager_empty_tab_groups_page_description">Dewiswch dabiau i greu grŵp. Maen nhw\'n cael eu cadw yma, yn barod pan fyddwch chi.</string>
+  <string name="tab_manager_empty_tab_groups_page_description">Dewiswch dabiau i greu grŵp. Maen nhw\'n cael eu cadw yma, yn barod ar eich cyfer.</string>
   <!--
     Tab Group
 
@@ -1718,6 +1718,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Golygu grŵp</string>
   <string name="create_tab_group_save_button">Cadw</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Grŵp newydd, cau\'r ddolen llusgo</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Cau Golygu Grŵp Tab</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grŵp</string>
@@ -1732,6 +1734,10 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Enw</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Ychwanegu at</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Ychwanegu at grŵp tabiau, cau\'r ddolen llusgo</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Ychwanegu at grŵp tabiau newydd</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Cau ychwanegu at grŵp tabiau</string>
   <!-- Label for adding to a new tab group. -->
@@ -1748,6 +1754,45 @@
     <item quantity="many">%1$d thab</item>
     <item quantity="other">%1$d tab</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Ychwanegu at grŵp tabiau %1$s, %2$d tab, lliw %3$s</item>
+    <item quantity="zero">Ychwanegu at grŵp tabiau %1$s, %2$d tabiau, lliw %3$s</item>
+    <item quantity="two">Ychwanegu at grŵp tabiau %1$s, %2$d tab, lliw %3$s</item>
+    <item quantity="few">Ychwanegu at grŵp tabiau %1$s, %2$d tab, lliw %3$s</item>
+    <item quantity="many">Ychwanegu at grŵp tabiau %1$s, %2$d tab, lliw %3$s</item>
+    <item quantity="other">Ychwanegu at grŵp tabiau %1$s, %2$d tab, lliw %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Rhannu grŵp tabiau %1$s gyda %2$d tab.</item>
+    <item quantity="zero">Rhannu grŵp tabiau %1$s gyda %2$d tabiau.</item>
+    <item quantity="two">Rhannu grŵp tabiau %1$s gyda %2$d dab.</item>
+    <item quantity="few">Rhannu grŵp tabiau %1$s gyda %2$d tab.</item>
+    <item quantity="many">Rhannu grŵp tabiau %1$s gyda %2$d tab.</item>
+    <item quantity="other">Rhannu grŵp tabiau %1$s gyda %2$d tab.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Gweld grŵp tabiau, cau\'r ddolen llusgo</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Grŵp tabiau %1$s gyda %2$d tab, lliw %3$s</item>
+    <item quantity="zero">Grŵp tabiau %1$s gyda %2$d tabiau, lliw %3$s</item>
+    <item quantity="two">Grŵp tabiau %1$s gyda %2$d dab, lliw %3$s</item>
+    <item quantity="few">Grŵp tabiau %1$s gyda %2$d tab, lliw %3$s</item>
+    <item quantity="many">Grŵp tabiau %1$s gyda %2$d tab, lliw %3$s</item>
+    <item quantity="other">Grŵp tabiau %1$s gyda %2$d tab, lliw %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Dileu grŵp tabiau?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1756,6 +1801,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Dileu grŵp</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Diddymu</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Melyn</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Oren</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Coch</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Pinc</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Porffor</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Fioled</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Glas</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Gwyrddlas</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Gwyrdd</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Llwyd</string>
   <!--
     History
 
@@ -3071,11 +3140,15 @@
 
     Title for the browser VPN entry in the settings list
   -->
-  <string name="preferences_ip_protection_title">VPN</string>
+  <string name="preferences_ip_protection_title_2">VPN mewnol</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
-  <string name="ip_protection_promo_headline">VPN integredig %s</string>
+  <string name="ip_protection_promo_headline">VPN mewnol %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">Porwch gydag diogelwch ychwanegol trwy guddio\'ch lleoliad, hyd yn oed pan ar Wi-Fi cyhoeddus.</string>
   <!-- Link text that opens additional information about the browser VPN -->
@@ -3115,6 +3188,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN ymlaen</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">Mae VPN yn weithredol.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Cychwyn arni</string>
   <!--
     Autofill
 

@@ -391,6 +391,8 @@
   <string name="ai_controls_translations_title">Fordítások</string>
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Az összes fordítás privát marad az eszközén.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">További fordítási beállítások</string>
   <!--
     Locale Settings Fragment
 

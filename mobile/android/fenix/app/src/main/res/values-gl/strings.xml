@@ -392,7 +392,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Todas as traducións permanecen privadas no teu dispositivo.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Máis opcións de configuración de traducións</string>
+  <string name="ai_controls_more_translations_settings">Máis opcións de configuración de traducións</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">Máis configuración de resumo da páxina</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -1710,6 +1710,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Editar grupo</string>
   <string name="create_tab_group_save_button">Gardar</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Novo grupo, contraer o controlador de arrastre</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Pecha Editar grupo de pestanas</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupo</string>
@@ -1725,6 +1727,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Engadir a</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Engadir a un grupo de pestanas, contraer o controlador de arrastre</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Engadir a un novo grupo de pestanas</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Pechar engadir ao grupo de pestanas</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Novo grupo de pestanas</string>
@@ -1736,6 +1742,33 @@
     <item quantity="one">Pestana %1$d</item>
     <item quantity="other">%1$d pestanas</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Engadir ao grupo de pestanas %1$s, pestana %2$d, cor %3$s</item>
+    <item quantity="other">Engadir ao grupo de pestanas %1$s, %2$d pestanas, cor %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Comparte o grupo de pestanas de %1$s coa pestana de %2$d.</item>
+    <item quantity="other">Comparte %1$s grupo de pestanas con %2$d pestanas.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Ver grupo de pestanas, contraer o controlador de arrastre</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Grupo de pestanas %1$s con pestana %2$d, cor %3$s</item>
+    <item quantity="other">Grupo de pestanas de %1$s con %2$d pestanas, cor %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Queres eliminar o grupo de pestanas?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1744,6 +1777,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Eliminar grupo</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Cancelar</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Amarelo</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Laranxa</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Vermello</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Rosa</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Púrpura</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Violeta</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Azul</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cian</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Verde</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Gris</string>
   <!--
     History
 
@@ -3051,7 +3108,11 @@
 
     Title for the browser VPN entry in the settings list
   -->
-  <string name="preferences_ip_protection_title">VPN</string>
+  <string name="preferences_ip_protection_title_2">VPN incorporada</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
@@ -3095,6 +3156,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN activada</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">A VPN está activa.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Comezar</string>
   <!--
     Autofill
 

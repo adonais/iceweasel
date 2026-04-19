@@ -392,7 +392,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Tất cả các bản dịch đều được giữ một cách riêng tư trên thiết bị của bạn.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Cài đặt dịch thuật khác</string>
+  <string name="ai_controls_more_translations_settings">Cài đặt dịch thuật khác</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">Cài đặt khác về tóm tắt trang</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -3041,12 +3041,6 @@
   <string name="email_masks_max_free_tier_reached">Bạn đã sử dụng hết 5 email ẩn danh miễn phí, vì vậy chúng tôi đã chọn một cái để bạn sử dụng lại.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Hiện tại email ẩn danh không khả dụng. Hãy thử lại sau vài phút.</string>
-  <!--
-    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
-
-    Title for the browser VPN entry in the settings list
-  -->
-  <string name="preferences_ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->

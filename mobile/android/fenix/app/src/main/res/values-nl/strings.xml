@@ -392,7 +392,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Alle vertalingen blijven privé op uw apparaat.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Meer vertaalinstellingen</string>
+  <string name="ai_controls_more_translations_settings">Meer vertaalinstellingen</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">Meer instellingen voor paginasamenvattingen</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -1710,6 +1710,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Groep bewerken</string>
   <string name="create_tab_group_save_button">Opslaan</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Nieuwe groep, sleepgreep samenvouwen</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Tabbladgroep bewerken sluiten</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Groep</string>
@@ -1725,6 +1727,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Toevoegen aan</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Toevoegen aan een tabbladgroep, sleepgreep samenvouwen</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Aan nieuwe tabbladgroep toevoegen</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Toevoegen aan tabbladgroep sluiten</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Nieuwe tabbladgroep</string>
@@ -1736,6 +1742,33 @@
     <item quantity="one">%1$d tabblad</item>
     <item quantity="other">%1$d tabbladen</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%2$d tabblad aan tabbladgroep %1$s toevoegen, kleur %3$s</item>
+    <item quantity="other">%2$d tabbladen aan tabbladgroep %1$s toevoegen, kleur %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Tabbladgroep %1$s met %2$d tabblad delen.</item>
+    <item quantity="other">Tabbladgroep %1$s met %2$d tabbladen delen.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Tabbladgroep bekijken, sleepgreep samenvouwen</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Tabbladgroep %1$s met %2$d tabblad, kleur %3$s</item>
+    <item quantity="other">Tabbladgroep %1$s met %2$d tabbladen, kleur %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Tabbladgroep verwijderen?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1744,6 +1777,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Groep verwijderen</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Annuleren</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Geel</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Oranje</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Rood</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Roze</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Paars</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Lila</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Blauw</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cyaan</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Groen</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Grijs</string>
   <!--
     History
 
@@ -3051,7 +3108,11 @@
 
     Title for the browser VPN entry in the settings list
   -->
-  <string name="preferences_ip_protection_title">VPN</string>
+  <string name="preferences_ip_protection_title_2">Ingebouwde VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->

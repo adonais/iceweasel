@@ -392,7 +392,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Всички преводи остават поверителни на устройството ви.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Настройки за още преводи</string>
+  <string name="ai_controls_more_translations_settings">Настройки за още преводи</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">Още настройки за обобщение на страницата</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -1710,6 +1710,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Редактиране на групата</string>
   <string name="create_tab_group_save_button">Запазване</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Нова група, манипулатор за плъзгане при свиване</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Затваряне на група за редактиране</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Група</string>
@@ -1725,6 +1727,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Добавяне към</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Добавяне към група раздели, свиване на манипулатора за влачене</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Добавяне към нова група раздели</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Затваряне на добавянето към групата раздели</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Нова група раздели</string>
@@ -1736,6 +1742,33 @@
     <item quantity="one">%1$d</item>
     <item quantity="other">%1$d раздела</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Добавяне към %1$s група раздели, %2$d раздел, цвят %3$s</item>
+    <item quantity="other">Добавяне към %1$s група раздели, %2$d раздела, цвят %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Споделяне на група от раздели „%1$s“ с %2$d.</item>
+    <item quantity="other">Споделяне на %1$s група от раздели с %2$d раздела.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Група раздели изглед, манипулатор за влачене при свиване</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s група от раздел с %2$d раздел, цвят %3$s</item>
+    <item quantity="other">%1$s група от раздели с %2$d раздела, цвят %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Изтриване на група раздели?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1744,6 +1777,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Премахване на групата</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Отказ</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Жълто</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Оранжево</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Червено</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Розово</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Лилаво</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Виолетов</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Синьо</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Синьозелено</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Зелено</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Сиво</string>
   <!--
     History
 
@@ -3051,7 +3108,11 @@
 
     Title for the browser VPN entry in the settings list
   -->
-  <string name="preferences_ip_protection_title">VPN</string>
+  <string name="preferences_ip_protection_title_2">Вграден VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">БЕТА</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
@@ -3095,6 +3156,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN включен</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN е активен.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Въведение</string>
   <!--
     Autofill
 

@@ -392,7 +392,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">تبقى جميع الترجمات خاصة على جهازك.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">المزيد من إعدادات الترجمة</string>
+  <string name="ai_controls_more_translations_settings">المزيد من إعدادات الترجمة</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">المزيد من إعدادات ملخص الصفحة</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -1718,6 +1718,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">حرّر على المجموعة</string>
   <string name="create_tab_group_save_button">احفظ</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">مجموعة جديدة، اطوِ مقبض السحب</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">أغلِق تحرير مجموعة اللسان</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">مجموعة</string>
@@ -1732,6 +1734,10 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">الاسم</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">أضِف إلى</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">أضف إلى مجموعة اللسان، اطوِ مقبض السحب</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">أضف إلى مجموعة لسان جديدة</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">أغلِق الإضافة إلى مجموعة اللسان</string>
   <!-- Label for adding to a new tab group. -->
@@ -1748,6 +1754,20 @@
     <item quantity="many">%1$d لسانًا</item>
     <item quantity="other">%1$d لسان</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="zero">أضف إلى مجموعة لسان %1$s، %2$d لسان، اللون %3$s</item>
+    <item quantity="one">أضف إلى مجموعة لسان %1$s، لسان، اللون %3$s</item>
+    <item quantity="two">أضف إلى مجموعة لسان %1$s، لسانين، اللون %3$s</item>
+    <item quantity="few">أضف إلى مجموعة لسان %1$s، %2$d ألسنة، اللون %3$s</item>
+    <item quantity="many">أضف إلى مجموعة لسان %1$s، %2$d لسانًا، اللون %3$s</item>
+    <item quantity="other">أضف إلى مجموعة لسان %1$s، %2$d لسان، اللون %3$s</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">اعرض مجموعة اللسان، اطوِ مقبض السحب</string>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">حذف مجموعة اللسان؟</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1756,6 +1776,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">احذف المجموعة</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">ألغِ</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">أصفر</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">برتقالي</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">أحمر</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">وردي</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">أرجواني</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">بنفسجي</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">أزرق</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">سماوي</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">أخضر</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">رمادي</string>
   <!--
     History
 
@@ -3071,7 +3115,11 @@
 
     Title for the browser VPN entry in the settings list
   -->
-  <string name="preferences_ip_protection_title">VPN</string>
+  <string name="preferences_ip_protection_title_2">VPN مدمج</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">تجريبي</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
@@ -3115,6 +3163,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">ال VPN مفعّل</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">ال VPN نشط.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">ابدأ</string>
   <!--
     Autofill
 

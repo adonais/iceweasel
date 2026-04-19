@@ -392,7 +392,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">თარგმნილი მასალა საიდუმლოდ რჩება მოწყობილობაზევე.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">თარგმნის სხვა პარამეტრები</string>
+  <string name="ai_controls_more_translations_settings">თარგმნის სხვა პარამეტრები</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">გვერდის შეჯამების დამატებითი პარამეტრები</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -3046,12 +3046,6 @@
   <string name="email_masks_max_free_tier_reached">თქვენ უკვე გამოყენებული გაქვთ ელფოსტის 5 უფასო ნიღაბი, ამიტომ მათგან შეირჩევა რომელიმე კვლავ გამოყენებისთვის.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">ელფოსტის ნიღბები ამჟამად მიუწვდომელია. სცადეთ ხელახლა რამდენიმე წუთში.</string>
-  <!--
-    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
-
-    Title for the browser VPN entry in the settings list
-  -->
-  <string name="preferences_ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->

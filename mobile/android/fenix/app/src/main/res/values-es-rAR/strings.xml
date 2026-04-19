@@ -392,17 +392,17 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Todas las traducciones se mantienen privadas en tu dispositivo.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Más opciones de traducciones</string>
+  <string name="ai_controls_more_translations_settings">Más opciones de traducciones</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">Más opciones de resumen de página</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">Búsqueda por voz</string>
   <!-- Description for the voice search AI feature toggle -->
-  <string name="ai_controls_voice_search_description">El audio es convertido a texto por los servicios de voz de Google.</string>
+  <string name="ai_controls_voice_search_description">El audio es convertido a texto por los servicios de Google Speech.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">¿Bloquear mejoras de IA?</string>
   <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_block_dialog_body">No verá mejoras de IA nuevas o actuales en %1$s, ni ventanas emergentes sobre ellas. Después, podés desbloquear todo lo que querés seguir usando. \u0020El bloqueo también afecta las extensiones que usan IA provista por %1$s.</string>
+  <string name="ai_controls_block_dialog_body">No se verán mejoras de IA nuevas o actuales en %1$s, ni ventanas emergentes sobre ellas. Después, se podrá desbloquear todo lo que quieras seguir usando.\n\nEl bloqueo también afecta a las extensiones que usan IA provista por %1$s.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Qué será bloqueado:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -1710,6 +1710,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Editar grupo</string>
   <string name="create_tab_group_save_button">Guardar</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Nuevo grupo, contraer el controlador de arrastre</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Cerrar edición de grupos de pestañas</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupo</string>
@@ -1725,6 +1727,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Agregar a</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Agregar a un grupo de pestañas, contraer el controlador de arrastre</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Agregar a un nuevo grupo de pestañas</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Cerrar agregar al grupo de pestañas</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Nuevo grupo de pestañas</string>
@@ -1736,6 +1742,33 @@
     <item quantity="one">%1$d pestaña</item>
     <item quantity="other">%1$d pestañas</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Agregar a %1$s grupo de pestañas, %2$d pestañas, colorear %3$s</item>
+    <item quantity="other">Agregar a %1$s grupo de pestañas, %2$d pestañas, colorear %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Compartir %1$s grupo de pestañas con %2$d pestaña.</item>
+    <item quantity="other">Compartir %1$s grupo de pestañas con %2$d pestañas.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Ver grupo de pestañas, contraer el controlador de arrastre</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s grupo de pestañas con %2$d pestaña, color %3$s</item>
+    <item quantity="other">%1$s grupo de pestañas con %2$d pestañas, color %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">¿Eliminar grupo de pestañas?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1744,6 +1777,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Borrar grupo</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Cancelar</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Amarillo</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Naranja</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Rojo</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Rosa</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Púrpura</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Violeta</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Azul</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cian</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Verde</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Gris</string>
   <!--
     History
 
@@ -3051,7 +3108,11 @@
 
     Title for the browser VPN entry in the settings list
   -->
-  <string name="preferences_ip_protection_title">VPN</string>
+  <string name="preferences_ip_protection_title_2">VPN integrada</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
@@ -3095,6 +3156,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN activada</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">La VPN está activa.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Comenzar</string>
   <!--
     Autofill
 

@@ -390,7 +390,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Opaite ñe’ẽasa opyta ñemíme ne mba’e’okápe.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Oĩ poravoverã ñe’ẽasarãme</string>
+  <string name="ai_controls_more_translations_settings">Oĩ poravoverã ñe’ẽasarãme</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">Oĩ poravoverã kuatiarogue mombykýpe</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -3040,12 +3040,6 @@
   <string name="email_masks_max_free_tier_reached">Eiporu 5 ñanduti veve rovamo’ãha reigua, upévare roiporavo eiporukuaajeýva.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Ñanduti veve rovamo’ãha ndojeporukuaái ko’ág̃aite. Eha’ã jey ag̃ave.</string>
-  <!--
-    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
-
-    Title for the browser VPN entry in the settings list
-  -->
-  <string name="preferences_ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->

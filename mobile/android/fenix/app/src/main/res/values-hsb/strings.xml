@@ -392,7 +392,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Wšě přełožki na wašim graće priwatne wostawaja.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Dalše přełožowanske nastajenja</string>
+  <string name="ai_controls_more_translations_settings">Dalše přełožowanske nastajenja</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">Dalše nastajenja za zjimanje stronow</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -1714,6 +1714,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Skupinu wodźěłać</string>
   <string name="create_tab_group_save_button">Składować</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Nowa skupina, ćahaty přimk schować</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Dialog Skupinu rajtarkow wobdźěłać začinić</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Skupina</string>
@@ -1729,6 +1731,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Přidajće k</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Skupinje rajtarkow přidać, ćahanski přimk schować</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Nowej skupinje rajtarkow přidać</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Přidawanje k skupinje rajtarkow začinić</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Nowa skupina rajtarkow</string>
@@ -1742,6 +1748,39 @@
     <item quantity="few">%1$d rajtarki</item>
     <item quantity="other">%1$d rajtarkow</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Skupinje rajtarkow %1$s přidać, %2$d rajtark, barba %3$s</item>
+    <item quantity="two">Skupinje rajtarkow %1$s přidać, %2$d rajtarkaj, barba %3$s</item>
+    <item quantity="few">Skupinje rajtarkow %1$s přidać, %2$d rajtarki, barba %3$s</item>
+    <item quantity="other">Skupinje rajtarkow %1$s přidać, %2$d rajtarkow, barba %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Skupinu rajtarkow %1$s z %2$d rajtarkom dźělić.</item>
+    <item quantity="two">Skupinu rajtarkow %1$s z %2$d rajtarkomaj dźělić.</item>
+    <item quantity="few">Skupinu rajtarkow %1$s z %2$d rajtarkami dźělić.</item>
+    <item quantity="other">Skupinu rajtarkow %1$s z %2$d rajtarkami dźělić.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Skupinu rajtarkow pokazać, ćahanski přimk schować</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Skupina rajtarkow %1$s, %2$d rajtark, barba %3$s</item>
+    <item quantity="two">Skupina rajtarkow %1$s, %2$d rajtarkaj, barba %3$s</item>
+    <item quantity="few">Skupina rajtarkow %1$s, %2$d rajtarki, barba %3$s</item>
+    <item quantity="other">Skupina rajtarkow %1$s, %2$d rajtarkow, barba %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Skupinu rajtarkow zhašeć?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1750,6 +1789,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Skupinu zhašeć</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Přetorhnyć</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Žołty</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Oranžowy</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Čerwjeny</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Pink</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Purpurowy</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Wioletny</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Módry</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cyan</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Zeleny</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Šěry</string>
   <!--
     History
 
@@ -3061,7 +3124,11 @@
 
     Title for the browser VPN entry in the settings list
   -->
-  <string name="preferences_ip_protection_title">VPN</string>
+  <string name="preferences_ip_protection_title_2">Zatwarjeny VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
@@ -3105,6 +3172,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN aktiwny</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN je aktiwny.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Prěnje kroki</string>
   <!--
     Autofill
 

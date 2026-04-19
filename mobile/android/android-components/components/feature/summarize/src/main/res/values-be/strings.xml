@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources>
+  <!-- Button text shown while a download is in progress to cancel the download -->
+  <string name="mozac_summarize_download_progress_button_negative">Скасаваць</string>
+  <!-- Title for the download error screen -->
+  <string name="mozac_summarize_download_error_title">Памылка</string>
+  <!-- Generic fallback message for the download error screen -->
+  <string name="mozac_summarize_download_error_fallback_message">Невядомая памылка</string>
+  <!-- Button for the download error screen to try again -->
+  <string name="mozac_summarize_download_error_positive_button">Паспрабаваць зноў</string>
+  <!-- Button for the download error screen to cancel -->
+  <string name="mozac_summarize_download_error_negative_button">Скасаваць</string>
+  <!-- Link text to learn more about page summaries in settings -->
+  <string name="mozac_summarize_settings_learn_more">Падрабязней</string>
+  <!-- Section header for gesture settings -->
+  <string name="mozac_summarize_settings_gestures">Жэсты</string>
+  <!-- Disclaimer message -->
+  <string name="mozac_feature_summarize_disclaimer_message">Штучны інтэлект можа рабіць памылкі</string>
+</resources>

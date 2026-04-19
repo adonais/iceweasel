@@ -2946,12 +2946,6 @@
   <string name="email_masks_max_free_tier_reached">Þú hefur notað 5 ókeypis tölvupósthulur, svo við völdum eina fyrir þig til að endurnýta.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Tölvupóstshulur eru ekki tiltækar eins og er. Reyndu aftur eftir nokkrar mínútur.</string>
-  <!--
-    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
-
-    Title for the browser VPN entry in the settings list
-  -->
-  <string name="preferences_ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->

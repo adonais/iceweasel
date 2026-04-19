@@ -387,12 +387,28 @@
   <string name="ai_controls_blocked_info_banner">Nye og eksisterende AI-forbedringer er blokkert som standard. Opphev blokkeringen av spesifikke funksjoner nedenfor.</string>
   <!-- Section header for the AI-powered features list -->
   <string name="ai_controls_ai_powered_features">AI-drevne funksjoner</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Oversettelser</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Alle oversettelser forblir private på enheten din.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Flere oversettelsesinnstillinger</string>
+  <string name="ai_controls_more_translations_settings">Flere oversettelsesinnstillinger</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">Flere innstillinger for sidesammendrag</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">Stemmesøk</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Lyd konverteres til tekst av Google Speech Services.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Blokkere AI-forbedringer?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Du vil ikke se nye eller eksisterende AI-forbedringer i %1$s, eller varsler om dem. Etterpå kan du oppheve blokkeringen av det du ønsker å fortsette å bruke.\n\nBlokkering påvirker også utvidelser som bruker AI levert av %1$s.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Hva som vil bli blokkert:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Avbryt</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Blokker</string>
   <!--
     Locale Settings Fragment
 
@@ -1420,6 +1436,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">Sveip verktøylinjen opp for å åpne faner</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Sveip adressefeltet sidelengs for å bytte fane</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Rist for å oppsummere</string>
   <!--
     Library
 
@@ -1582,6 +1600,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Private faner åpne: %1$s. Trykk for å bytte fane.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d fanegruppe er åpen. Trykk for å bytte fane.</item>
+    <item quantity="other">%1$d fanegrupper er åpne. Trykk for å bytte fane.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1671,6 +1697,10 @@
   <string name="pwa_site_controls_title_private">%1$s (privatmodus)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Åpne fanesøk</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Prøv fanegrupper for mindre scrolling og mer gjort</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Velg faner for å opprette en gruppe. De er lagret her, klare når du er det.</string>
   <!--
     Tab Group
 
@@ -1680,6 +1710,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Rediger gruppe</string>
   <string name="create_tab_group_save_button">Lagre</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Ny gruppe, skjul drahåndtak</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Lukk redigering av fanegruppe</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Gruppe</string>
@@ -1695,6 +1727,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Legg til i</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Legg til i en fanegruppe, skjul drahåndtaket</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Legg til i ny fanegruppe</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Lukk legg til i fanegruppe</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Ny fanegruppe</string>
@@ -1706,6 +1742,14 @@
     <item quantity="one">%1$d fane</item>
     <item quantity="other">%1$d faner</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Legg til i fanegruppen %1$s, %2$d fane, farge %3$s</item>
+    <item quantity="other">Legg til i fanegruppen %1$s, %2$d faner, farge %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Slette fanegruppe?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1714,6 +1758,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Slett gruppe</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Avbryt</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Gul</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Oransje</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Rød</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Rosa</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Lilla</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Fiolett</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Blå</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Turkis</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Grønn</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Grå</string>
   <!--
     History
 
@@ -3017,6 +3085,51 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">E-postalias er ikke tilgjengelige akkurat nå. Prøv igjen om noen minutter.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Innebygd VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">Den innebygde VPN-en i %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Surf med ekstra beskyttelse ved å skjule plasseringen din, også på offentlig Wi-Fi.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Les mer</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Månedlig datagrense</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f GB av %2$.1f GB igjen</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Nullstilles til %1$.0f GB den første i hver måned.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Plassering</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Anbefalt</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Velger den raskeste VPN-plasseringen for deg.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">På</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Av</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Kobler til …</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Satt på pause</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3554,6 +3667,10 @@
   <string name="translation_settings_automatic_never_translate_sites">Oversett aldri disse nettstedene</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Last ned språk</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Alle oversettelser forblir private på enheten din.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Les mer</string>
   <!--
     Automatic translation preference screen
 

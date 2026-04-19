@@ -343,6 +343,16 @@
   <string name="translation_toolbar_expand_action">Адкрыць аркуш перакладаў</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Адхіліць паведамленне</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">Кіраванне штучным інтэлектам</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Пераклады</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Галасавы пошук</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Скасаваць</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Заблакаваць</string>
   <!--
     Locale Settings Fragment
 

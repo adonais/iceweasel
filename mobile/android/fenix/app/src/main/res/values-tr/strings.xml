@@ -392,7 +392,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Tüm çeviriler gizli kalır ve cihazınızdan dışarı çıkmaz.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">Diğer çeviri ayarları</string>
+  <string name="ai_controls_more_translations_settings">Diğer çeviri ayarları</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">Diğer sayfa özeti ayarları</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -401,8 +401,12 @@
   <string name="ai_controls_voice_search_description">Sesler Google Speech Service tarafından metne dönüştürülür.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Yapay zekâ geliştirmeleri engellensin mi?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">%1$s tarayıcısında yeni ve mevcut yapay zekâ geliştirmelerini ve bunlarla ilgili tanıtımları görmeyeceksiniz. Kullanmaya devam etmek istediğiniz özelliklerin engelini kaldırabilirsiniz.\n\nEngelleme, %1$s tarafından sunulan yapay zekâ özelliklerini kullanan uzantıları da etkiler.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Neler engellenecek?</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">İptal</string>
   <!-- Block button text in the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_block">Engelle</string>
   <!--
@@ -1432,6 +1436,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">Sekmeleri açmak için araç çubuğunu yukarı kaydır</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Sekme değiştirmek için adres çubuğunu yana kaydır</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Özetlemek için salla</string>
   <!--
     Library
 
@@ -1716,6 +1722,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Adı</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Gruba ekle</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Yeni sekme grubuna ekle</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Sekme grubuna eklemeyi kapat</string>
   <!-- Label for adding to a new tab group. -->
@@ -1728,6 +1736,31 @@
     <item quantity="one">%1$d sekme</item>
     <item quantity="other">%1$d sekme</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s sekme grubuna ekle, %2$d sekme, %3$s renkli</item>
+    <item quantity="other">%1$s sekme grubuna ekle, %2$d sekme, %3$s renkli</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">%1$s sekme grubunu %2$d sekmeyle paylaş.</item>
+    <item quantity="other">%1$s sekme grubunu %2$d sekmeyle paylaş.</item>
+  </plurals>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s sekme grubu, %2$d sekme, %3$s renkli</item>
+    <item quantity="other">%1$s sekme grubu, %2$d sekme, %3$s renkli</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Sekme grubu silinsin mi?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1736,6 +1769,28 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Grubu sil</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Vazgeç</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Sarı</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Turuncu</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Kırmızı</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Pembe</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Mor</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Eflatun</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Mavi</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Açık mavi</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Yeşil</string>
   <!--
     History
 
@@ -3038,12 +3093,6 @@
   <string name="email_masks_max_free_tier_reached">5 ücretsiz e-posta maskesi hakkınız dolduğundan mevcut maskelerinizden birini sizin için seçtik.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">E-posta maskeleri şu anda kullanılamıyor. Birkaç dakika sonra yeniden deneyin.</string>
-  <!--
-    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
-
-    Title for the browser VPN entry in the settings list
-  -->
-  <string name="preferences_ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Body text for the browser VPN promo card -->

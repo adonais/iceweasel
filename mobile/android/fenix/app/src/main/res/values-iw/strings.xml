@@ -392,7 +392,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">כל התרגומים נשארים פרטיים במכשיר שלך.</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">הגדרות תרגום נוספות</string>
+  <string name="ai_controls_more_translations_settings">הגדרות תרגום נוספות</string>
   <!-- Link text to navigate to more page summary settings -->
   <string name="ai_controls_more_page_summary_settings">הגדרות נוספות לסיכום עמודים</string>
   <!-- Title for the voice search AI feature toggle -->
@@ -1712,6 +1712,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">עריכת קבוצה</string>
   <string name="create_tab_group_save_button">שמירה</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">קבוצה חדשה, כיווץ ידית גרירה</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">סגירת החלונית של עריכת קבוצת הלשוניות</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">קבוצה</string>
@@ -1727,6 +1729,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">הוספה אל</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">הוספה לקבוצת לשוניות, כיווץ ידית גרירה</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">הוספה לקבוצת לשוניות חדשה</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">סגירת החלונית של הוספה לקבוצת לשוניות</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">קבוצת לשוניות חדשה</string>
@@ -1739,6 +1745,36 @@
     <item quantity="two">%1$d לשוניות</item>
     <item quantity="other">%1$d לשוניות</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">הוספה לקבוצת לשוניות %1$s, לשונית אחת, בצבע %3$s</item>
+    <item quantity="two">הוספה לקבוצת לשוניות %1$s, %2$d לשוניות, בצבע %3$s</item>
+    <item quantity="other">הוספה לקבוצת לשוניות %1$s, %2$d לשוניות, בצבע %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">שיתוף קבוצת לשוניות %1$s בעלת לשונית אחת.</item>
+    <item quantity="two">שיתוף קבוצת לשוניות %1$s בעלת %2$d לשוניות.</item>
+    <item quantity="other">שיתוף קבוצת לשוניות %1$s בעלת %2$d לשוניות.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">הצגת קבוצת לשוניות, כיווץ ידית גרירה</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">קבוצת לשוניות %1$s בעלת לשונית אחת, בצבע %3$s</item>
+    <item quantity="two">קבוצת לשוניות %1$s בעלת %2$d לשוניות, בצבע %3$s</item>
+    <item quantity="other">קבוצת לשוניות %1$s בעלת %2$d לשוניות, בצבע %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">למחוק את קבוצת הלשוניות?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1747,6 +1783,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">מחיקת הקבוצה</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">ביטול</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">צהוב</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">כתום</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">אדום</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">ורוד</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">ארגמן</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">סגול</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">כחול</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">ציאן</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">ירוק</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">אפור</string>
   <!--
     History
 
@@ -3056,7 +3116,11 @@
 
     Title for the browser VPN entry in the settings list
   -->
-  <string name="preferences_ip_protection_title">VPN</string>
+  <string name="preferences_ip_protection_title_2">‏VPN מובנה</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->

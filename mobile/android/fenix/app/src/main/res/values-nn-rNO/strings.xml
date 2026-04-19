@@ -383,6 +383,12 @@
   <string name="ai_controls_blocked_info_banner">Nye og eksisterande AI-forbetringar er blokkerte som standard. Opphev blokkeringa av spesifikke funksjonar nedanfor.</string>
   <!-- Title for the translations AI feature toggle -->
   <string name="ai_controls_translations_title">Omsettingar</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Kva som vil bli blokkert:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Avbryt</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Blokker</string>
   <!--
     Locale Settings Fragment
 
@@ -1410,6 +1416,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">Sveip verktøylinja opp for å opne faner</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Sveip adresselinja sidelengs for å byte fane</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Rist for å oppsummere</string>
   <!--
     Library
 
@@ -1704,6 +1712,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Slett gruppe</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Avbryt</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Gul</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Oransje</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Raud</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Rosa</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Lilla</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Fiolett</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Blå</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cyan</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Grøn</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Grå</string>
   <!--
     History
 
@@ -3006,6 +3038,16 @@
   <string name="email_masks_max_free_tier_reached">Du har brukt dei 5 gratis e-postaliasa dine, så vi valde éitt du kan bruke om igjen.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">E-postalias er ikkje tilgjengelege akkurat no. Prøv igjen om nokre minutt.</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Innebygd VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Link text that opens additional information about the browser VPN -->

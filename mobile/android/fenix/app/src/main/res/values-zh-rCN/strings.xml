@@ -392,7 +392,7 @@
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">所有翻译内容都不会离开您的设备，以确保隐私。</string>
   <!-- Link text to navigate to more translations settings -->
-  <string name="ai_controls_more_translations_settings" tools:ignore="UnusedResources">更多翻译设置</string>
+  <string name="ai_controls_more_translations_settings">更多翻译设置</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">语音搜索</string>
   <!-- Description for the voice search AI feature toggle -->
@@ -3031,6 +3031,8 @@
   <string name="email_masks_max_free_tier_reached">您的 5 个免费马甲邮箱已用完，我们选择了一个供您重复使用。</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">目前无法使用马甲邮箱，请过几分钟再试。</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">即使使用公共 Wi-Fi，也能隐藏真实位置，获得额外保护。</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN 已启用。</string>
   <!--
@@ -3573,6 +3575,10 @@
   <string name="translation_settings_automatic_never_translate_sites">永不翻译的网站</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">下载语言包</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">翻译</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">所有翻译内容都不会离开您的设备，以确保隐私。</string>
   <!--
     Automatic translation preference screen
 
