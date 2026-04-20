@@ -169,15 +169,19 @@ void AudioSegment::Mix(AudioMixer& aMixer, uint32_t aOutputChannels,
       }
       if (channelData.Length() < aOutputChannels) {
         // Up-mix.
-        AudioChannelsUpMix(&channelData, aOutputChannels,
-                           SilentChannel::ZeroChannel<AudioDataValue>());
+        AudioChannelsUpMix(&channelData, aOutputChannels, nullptr);
         for (uint32_t channel = 0; channel < aOutputChannels; channel++) {
           AudioDataValue* ptr = PointerForOffsetInChannel(
               buf.Elements(), outBufferLength, aOutputChannels, channel,
               offsetSamples);
-          PodCopy(ptr,
-                  reinterpret_cast<const AudioDataValue*>(channelData[channel]),
-                  frames);
+          if (channelData[channel]) {
+            PodCopy(
+                ptr,
+                reinterpret_cast<const AudioDataValue*>(channelData[channel]),
+                frames);
+          } else {
+            PodZero(ptr, frames);
+          }
         }
         MOZ_ASSERT(channelData.Length() == aOutputChannels);
       } else if (channelData.Length() > aOutputChannels) {
