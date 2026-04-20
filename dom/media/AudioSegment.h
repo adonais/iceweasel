@@ -529,7 +529,7 @@ void WriteChunk(const AudioChunk& aChunk, uint32_t aOutputChannels,
     // Up-mix. Note that this might actually make channelData have more
     // than aOutputChannels temporarily.
     AudioChannelsUpMix(&channelData, aOutputChannels,
-                       static_cast<const SrcT*>(nullptr));
+                       SilentChannel::ZeroChannel<SrcT>());
   }
   if (channelData.Length() > aOutputChannels) {
     // Down-mix.
