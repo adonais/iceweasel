@@ -358,6 +358,38 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Փակել ուղերձը</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Էջի ամփոփումներ</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">Միացնել արհեստական բանականության կառավարումը</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">ԱԲ կառավարում</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Դուք միշտ ունեք ընտրություն %s-ում</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Դա ներառում է նաև արհեստական բանականությամբ բարելավված գործառույթների օգտագործման անհրաժեշտությունը։</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Իմանալ ավելին</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Արգելափակել ԱԲ բարելավումները</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Արգելափակումը նշանակում է, որ դուք չեք տեսնի նոր կամ ներկայիս արհեստական բանականության բարելավումները %s-ում կամ դրանց մասին ցատկող պատուհաններ։</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Տեսեք, թե ինչն է ներառված և ինչը՝ ոչ</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Նոր և ներկայիս արհեստական բանականության բարելավումները լռելյայնորեն արգելափակված են: Ապաարգելափակեք որոշակի գործառույթներ ստորև:</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Արհեստական բանականությամբ աշխատող գործառույթներ</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Թարգմանություններ</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -2980,6 +3012,49 @@
   <string name="email_masks_max_free_tier_reached">Դուք օգտագործել եք ձեր 5 անվճար էլ. փոստի դիմակները, ուստի մենք ընտրեցինք մեկը, որպեսզի կարողանաք վերօգտագործել։</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Էլ․ փոստի դիմակներն այս պահին հասանելի չեն։ Փորձեք կրկին մի քանի րոպեից։</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">%s-ի ներկառուցված VPN</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Դիտեք լրացուցիչ պաշտպանությամբ՝ թաքցնելով ձեր գտնվելու վայրը, նույնիսկ հանրային Wi-Fi-ում։</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Իմանալ ավելին</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Ամսական տվյալների սահմանաչափ</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">Մնացել է %1$.1f ԳԲ՝ %2$.1f ԳԲ-ից</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Յուրաքանչյուր ամսվա առաջին օրը վերակայվում է %1$.0f ԳԲ-ի։</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Տեղադրություն</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Խորհուրդ է տրվում</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Ընտրում է ձեզ համար ամենաարագ VPN տեղադրությունը։</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Միաց.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Անջ.</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Կապակցում...</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Դադար</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Սխալ</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Բացել VPN կարգավորումները</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN-ը միացված է</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN-ն ակտիվ է։</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Սկսել</string>
   <!--
     Autofill
 
@@ -3280,6 +3355,8 @@
   <string name="homepage_shortcuts_show_all_content_description">Ցուցադրել բոլոր դյուրացումները</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Հավելել դյուրանցում</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Մուտքագրեք կայքի URL-ը</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Դյուրանցումների սահմանաչափը լրացել է</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3518,6 +3595,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Երբեք չթարգմանել այս կայքերը</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Ներբեռնել լեզուներ</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Թարգմանություններ</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Բոլոր թարգմանությունները մնում են գաղտնի ձեր սարքում։</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Իմանալ ավելին</string>
   <!--
     Automatic translation preference screen
 

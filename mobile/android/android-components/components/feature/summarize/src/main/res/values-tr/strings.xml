@@ -34,7 +34,7 @@
   <!-- Button text for the consent to download an on-device model denying download consent -->
   <string name="mozac_summarize_download_consent_button_negative">İptal</string>
   <!-- Title for the download in progress screen -->
-  <string name="mozac_summarize_download_progress_title">Özetler ayarlıyor</string>
+  <string name="mozac_summarize_download_progress_title">Özetler ayarlanıyor</string>
   <!-- Message to describe that a download is in progress using an on-device, private model -->
   <string name="mozac_summarize_download_progress_message">Gizli özetler için tek seferlik indirme.</string>
   <!-- Caption to describe the progress of the download. %1$.2f is bytes downloaded, %2$.2f is total bytes required for download to complete. -->

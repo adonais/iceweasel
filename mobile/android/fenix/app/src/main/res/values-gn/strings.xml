@@ -1704,6 +1704,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Embosako’i aty</string>
   <string name="create_tab_group_save_button">Ñongatu</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Aty pyahu, sã mbosyryryha ikangýva</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Emboty tendayke aty ñembosako’i</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Aty</string>
@@ -1719,6 +1721,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Embojuaju</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Embojuaju tendayke aty, sã mbosyryryha ikangýva</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Embojuaju tendayke aty pyahu</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Emboty tendayke aty ñembojuaju</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Tendayke aty pyahu</string>
@@ -1730,6 +1736,33 @@
     <item quantity="one">%1$d tendayke</item>
     <item quantity="other">%1$d tendaykeita</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Embojuaju tendayke atýpe %1$s, tendayke %2$d, sa’y %3$s</item>
+    <item quantity="other">Embojuaju tendayke atýpe %1$s, tendaykeita %2$d, sa’y %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Emoherakuã tendayke aty %1$s %2$d tendayke ndive.</item>
+    <item quantity="other">Emoherakuã tendayke aty %1$s %2$d tendaykeita ndive.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Ehecha tendayke aty, sã mbosyryryha ikangýva</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s tendayke aty %2$d tendayke ndive, sa’y %3$s</item>
+    <item quantity="other">%1$s tendayke aty %2$d tendaykeita ndive, sa’y %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">¿Embogue tendayke aty?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1738,6 +1771,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Emboguete aty</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Eheja</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Sa’yju</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Naraha</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Ñanduti</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Pytãngy</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Pytãũ</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Líla</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Hovy</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Hovyũ</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Hovyũ</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Hũngy</string>
   <!--
     History
 
@@ -3040,10 +3097,22 @@
   <string name="email_masks_max_free_tier_reached">Eiporu 5 ñanduti veve rovamo’ãha reigua, upévare roiporavo eiporukuaajeýva.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Ñanduti veve rovamo’ãha ndojeporukuaái ko’ág̃aite. Eha’ã jey ag̃ave.</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">VPN juajupyre</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">VPN juajupyre %s rehegua</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Ñeikundaha ñemo’ãve ndive oñomívo hendaite, taha’e Wi-Fi ojeporukuaávape.</string>
   <!-- Link text that opens additional information about the browser VPN -->
   <string name="ip_protection_learn_more">Eikuaave</string>
   <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
@@ -3081,6 +3150,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN hendy</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN hendyhína.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Eñepyrũ</string>
   <!--
     Autofill
 
@@ -3623,6 +3694,8 @@
   <string name="translation_settings_download_language">Emboguejy ñe’ẽita</string>
   <!-- Toggle switch title and description for the translation settings control. -->
   <string name="translation_settings_control_title">Ñemoñe’ẽasa</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Opaite ñe’ẽasa opyta ñemíme ne mba’e’okápe.</string>
   <!-- Clickable text for the translations settings item that links to a website. -->
   <string name="translation_settings_control_learn_more">Eikuaave</string>
   <!--

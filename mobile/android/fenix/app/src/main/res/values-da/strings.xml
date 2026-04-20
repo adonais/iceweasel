@@ -1019,7 +1019,7 @@
   <string name="preferences_category_delete_or_remove_downloads">Slet eller fjern filhentninger</string>
   <string name="preferences_downloads_delete_from_device">Slet fra enhed</string>
   <string name="preferences_downloads_delete_from_device_description">Fil slettes fra din enhed og fjernes fra filhentningshistorikken</string>
-  <string name="preferences_downloads_remove_from_download_history">Fjern fra filhentningshistorik</string>
+  <string name="preferences_downloads_remove_from_download_history">Fjern fra filhentningshistorikken</string>
   <string name="preferences_downloads_remove_from_download_history_description">Fil fjernes fra din filhentningshistorik, men er stadig gemt på din enhed</string>
   <string name="preferences_downloads_ask_when_to_delete_files">Spørg, når jeg sletter filer</string>
   <!-- Preference for downloads -->
@@ -1845,7 +1845,7 @@
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
   <string name="download_delete_dialog_from_device">Slet fra enhed</string>
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
-  <string name="download_delete_dialog_from_history">Fjern kun fra filhentningshistorik</string>
+  <string name="download_delete_dialog_from_history">Fjern kun fra filhentningshistorikken</string>
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
   <string name="download_delete_dialog_cancel">Annuller</string>
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->

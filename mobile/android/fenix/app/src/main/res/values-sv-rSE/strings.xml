@@ -1747,7 +1747,7 @@
       Accessibility description for add to existing tab group.
       %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
     -->
-    <item quantity="one">Lägg till i flikgrupp %1$s, flik %2$d, färg %3$s</item>
+    <item quantity="one">Lägg till i flikgrupp %1$s, %2$d flik, färg %3$s</item>
     <item quantity="other">Lägg till i flikgrupp %1$s, %2$d flikar, färg %3$s</item>
   </plurals>
   <plurals name="share_tab_group_button_content_description">
@@ -1756,7 +1756,7 @@
       %1$s is the name of the tab group.
       %2$d is the number of tabs in a tab group.
     -->
-    <item quantity="one">Dela flikgrupp %1$s med flik %2$d.</item>
+    <item quantity="one">Dela flikgrupp %1$s med %2$d flik.</item>
     <item quantity="other">Dela flikgrupp %1$s med %2$d flikar.</item>
   </plurals>
   <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
@@ -1766,7 +1766,7 @@
       Accessibility description for the header of an expanded tab group.
       %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
     -->
-    <item quantity="one">Flikgrupp %1$s med flik %2$d, färg %3$s</item>
+    <item quantity="one">Flikgrupp %1$s med %2$d flik, färg %3$s</item>
     <item quantity="other">Flikgrupp %1$s med %2$d flikar, färg %3$s</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->

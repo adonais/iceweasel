@@ -355,6 +355,14 @@
   <string name="translation_toolbar_expand_action">เปิดชีตการแปล</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">ปิดข้อความ</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">เรียนรู้เพิ่มเติม</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">ค้นหาด้วยเสียง</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">ยกเลิก</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">ปิดกั้น</string>
   <!--
     Locale Settings Fragment
 
@@ -966,6 +974,7 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">คุณไม่มีสิทธิ์ใช้โฟลเดอร์นี้ โปรดลองเลือกโฟลเดอร์อื่น</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">จัดการการดาวน์โหลดด้วยแอปอื่น</string>
+  <string name="preferences_downloads_delete_from_device">ลบจากอุปกรณ์</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
   <string name="preferences_downloads_settings_clean_up_files_title">ลบออกจาก %s และอุปกรณ์</string>
   <!-- Summary for the setting to automatically clean up downloaded files -->
@@ -1328,6 +1337,8 @@
   <string name="toolbar_customize_shortcut_homepage">หน้าแรก</string>
   <!-- Back shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_back">กลับ</string>
+  <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+  <string name="toolbar_customize_shortcut_none">ไม่มี</string>
   <!--
     App icon Preferences
 
@@ -1364,6 +1375,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">ปัดแถบเครื่องมือไปด้านบนเพื่อเปิดแท็บ</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">ปัดแถบที่อยู่ไปด้านข้างเพื่อสลับแท็บ</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">เขย่าเพื่อสรุป</string>
   <!--
     Library
 
@@ -2267,6 +2280,10 @@
   <string name="share_device_subheader">ส่งไปยังอุปกรณ์</string>
   <!-- Content description for the drag handle that dismisses the Send to Device bottom sheet -->
   <string name="send_to_devices_bottom_sheet_close_content_description">ปิด ส่งไปยังอุปกรณ์</string>
+  <!-- Content description for the close button in the QR code display screen -->
+  <string name="qr_code_display_close">ปิด</string>
+  <!-- Label for the download button on the QR code display screen -->
+  <string name="qr_code_display_download">ดาวน์โหลด</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">การกระทำทั้งหมด</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
@@ -2919,6 +2936,8 @@
   <string name="email_masks_max_free_tier_reached">คุณได้ใช้ตัวปกปิดอีเมลฟรี 5 ตัวของคุณหมดแล้ว เราจึงเลือกตัวหนึ่งใหม่ให้คุณใช้ซ้ำ</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">ตัวปกปิดอีเมลไม่พร้อมใช้งานในขณะนี้ โปรดลองอีกครั้งในอีกสักครู่</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">แนะนำ</string>
   <!--
     Autofill
 

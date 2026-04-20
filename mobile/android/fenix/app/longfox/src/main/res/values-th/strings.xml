@@ -23,4 +23,6 @@
   <string name="hiscore">คะแนนสูงสุด: %1$d</string>
   <string name="sound_on">🔈 เสียงเปิดอยู่</string>
   <string name="sound_off">🔇 เสียงปิดอยู่</string>
+  <!-- Back button -->
+  <string name="back">ย้อนกลับ</string>
 </resources>

@@ -3707,7 +3707,7 @@
   -->
   <string name="protection_panel_banner_not_secure_title">Buďte na této stránce opatrní</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
-  <string name="protection_panel_banner_not_secure_description">Vaše připojení není zabezpečené.</string>
+  <string name="protection_panel_banner_not_secure_description">Vaše spojení není zabezpečené.</string>
   <!-- Title text for the protection panel banner when tracking protection is disabled. -->
   <string name="protection_panel_banner_not_protected_title">Vypnuli jste ochranu</string>
   <!--

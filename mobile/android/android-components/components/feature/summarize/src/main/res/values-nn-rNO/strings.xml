@@ -69,6 +69,8 @@
   <string name="mozac_summarize_settings_learn_more">Les meir</string>
   <!-- Section header for gesture settings -->
   <string name="mozac_summarize_settings_gestures">Rørsler</string>
+  <!-- Label for the shake to summarize toggle in settings -->
+  <string name="mozac_summarize_settings_shake_to_summarize">Rist for å oppsummere</string>
   <!-- Message for summary by model, %1$s is the name of the model that is being displayed -->
   <string name="mozac_feature_summarize_summary_model">Samandrag av %1$s</string>
   <!-- Disclaimer message -->

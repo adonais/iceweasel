@@ -1747,8 +1747,8 @@
       Accessibility description for add to existing tab group.
       %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
     -->
-    <item quantity="one">Agregar a %1$s grupo de pestañas, %2$d pestañas, colorear %3$s</item>
-    <item quantity="other">Agregar a %1$s grupo de pestañas, %2$d pestañas, colorear %3$s</item>
+    <item quantity="one">Agregar al grupo de pestañas %1$s, %2$d pestaña, color %3$s</item>
+    <item quantity="other">Agregar al grupo de pestañas %1$s, %2$d pestañas, color %3$s</item>
   </plurals>
   <plurals name="share_tab_group_button_content_description">
     <!--
@@ -1756,8 +1756,8 @@
       %1$s is the name of the tab group.
       %2$d is the number of tabs in a tab group.
     -->
-    <item quantity="one">Compartir %1$s grupo de pestañas con %2$d pestaña.</item>
-    <item quantity="other">Compartir %1$s grupo de pestañas con %2$d pestañas.</item>
+    <item quantity="one">Compartir grupo de pestañas %1$s con %2$d pestaña.</item>
+    <item quantity="other">Compartir grupo de pestañas %1$s con %2$d pestañas.</item>
   </plurals>
   <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
   <string name="tab_group_sheet_dismiss_description">Ver grupo de pestañas, contraer el controlador de arrastre</string>
@@ -1766,8 +1766,8 @@
       Accessibility description for the header of an expanded tab group.
       %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
     -->
-    <item quantity="one">%1$s grupo de pestañas con %2$d pestaña, color %3$s</item>
-    <item quantity="other">%1$s grupo de pestañas con %2$d pestañas, color %3$s</item>
+    <item quantity="one">Grupo de pestañas %1$s con %2$d pestaña, color %3$s</item>
+    <item quantity="other">Grupo de pestañas %1$s con %2$d pestañas, color %3$s</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">¿Eliminar grupo de pestañas?</string>
@@ -3141,13 +3141,13 @@
   <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
   <string name="ip_protection_location_recommended_description">Selecciona la ubicación de la VPN más rápida para vos.</string>
   <!-- Badge label shown in the menu item when the browser VPN is active -->
-  <string name="preferences_ip_protection_on">Activado</string>
+  <string name="preferences_ip_protection_on">Activada</string>
   <!-- Badge label shown in the menu item when the browser VPN is off -->
-  <string name="preferences_ip_protection_off">Desactivado</string>
+  <string name="preferences_ip_protection_off">Desactivada</string>
   <!-- Badge label shown in the menu item while the browser VPN is connecting -->
   <string name="ip_protection_menu_connecting">Conectando…</string>
   <!-- Badge label shown in the menu item when the browser VPN is paused -->
-  <string name="ip_protection_menu_paused">Pausado</string>
+  <string name="ip_protection_menu_paused">Pausada</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Error</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
@@ -3157,7 +3157,7 @@
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">La VPN está activa.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
-  <string name="ip_protection_get_started">Comenzar</string>
+  <string name="ip_protection_get_started">Empezar</string>
   <!--
     Autofill
 

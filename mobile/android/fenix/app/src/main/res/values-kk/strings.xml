@@ -1710,6 +1710,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Топты түзету</string>
   <string name="create_tab_group_save_button">Сақтау</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Жаңа топ, сүйреп апару тұтқасын жию</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Беттер тобын түзетуді жабу</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Топ</string>
@@ -1725,6 +1727,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Қайда қосу</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Беттер тобына қосу, сүйреп апару тұтқасын жию</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Жаңа беттер тобына қосу</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Беттер тобына қосуды жабу</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Жаңа беттер тобы</string>
@@ -1736,6 +1742,33 @@
     <item quantity="one">%1$d бет</item>
     <item quantity="other">%1$d бет</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s беттер тобына қосу, %2$d бет, түс %3$s</item>
+    <item quantity="other">%1$s беттер тобына қосу, %2$d бет, түс %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">%2$d беті бар %1$s беттер тобын бөлісу.</item>
+    <item quantity="other">%2$d беті бар %1$s беттер тобын бөлісу.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Беттер тобын қарау, сүйреп апару тұтқасын жию</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%2$d беті бар %1$s беттер тобы, түс %3$s</item>
+    <item quantity="other">%2$d беті бар %1$s беттер тобы, түс %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Беттер тобын өшіру керек пе?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1744,6 +1777,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Топты өшіру</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Бас тарту</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Сары</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Қызғылт сары</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Қызыл</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Қызғылт</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Қызыл көк</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Күлгін</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Көк</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Көгілдір</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Жасыл</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Сұр</string>
   <!--
     History
 
@@ -3046,6 +3103,16 @@
   <string name="email_masks_max_free_tier_reached">Сіз 5 тегін эл. пошта маскасын пайдаландыңыз, сондықтан қайта пайдалануыңыз үшін біреуін таңдадық.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Эл. пошта маскалары қазір қолжетімді емес. Бірнеше минуттан кейін әрекетті қайталаңыз.</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Кірістірілген VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">БЕТА</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
@@ -3089,6 +3156,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN іске қосулы</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN белсенді.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Бастау</string>
   <!--
     Autofill
 

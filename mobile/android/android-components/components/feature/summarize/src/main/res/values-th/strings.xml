@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-->
+
+<resources>
+  <!-- Button text for the off-device shake summarization consent screen approving shake consent. Localization note: "Continue" turns on the shake to summarize feature. -->
+  <string name="mozac_summarize_shake_consent_off_device_button_positive">ดำเนินการต่อ</string>
+  <!-- Button text for the off-device shake summarization consent screen denying shake consent. Localization note: "Not now" dismisses the request to turn on the shake to summarize feature. -->
+  <string name="mozac_summarize_shake_consent_off_device_negative_button">ไม่ใช่ตอนนี้</string>
+  <!-- Title for the on-device shake summarization and download consent screen -->
+  <string name="mozac_summarize_shake_consent_on_device_title">สรุปหน้านี้</string>
+  <!-- Message for summary by model, %1$s is the name of the model that is being displayed -->
+  <string name="mozac_feature_summarize_summary_model">บทสรุปโดย %1$s</string>
+</resources>
