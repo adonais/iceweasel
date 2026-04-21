@@ -8,7 +8,6 @@
 
 #include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/dom/ReferrerInfo.h"
-#include "nsQueryObject.h"
 
 namespace IPC {
 void ParamTraits<nsIReferrerInfo*>::Write(MessageWriter* aWriter,
@@ -16,8 +15,7 @@ void ParamTraits<nsIReferrerInfo*>::Write(MessageWriter* aWriter,
   bool isNull = !aParam;
   WriteParam(aWriter, isNull);
   if (!isNull) {
-    RefPtr<mozilla::dom::ReferrerInfo> info = do_QueryObject(aParam);
-    MOZ_ASSERT(info);
+    auto* info = static_cast<mozilla::dom::ReferrerInfo*>(aParam);
     info->Serialize(aWriter);
   }
 }
