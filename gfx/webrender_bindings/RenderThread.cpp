@@ -962,7 +962,8 @@ void RenderThread::RegisterExternalImage(
   if (texture->SyncObjectNeeded()) {
     mSyncObjectNeededRenderTextures.emplace(aExternalImageId, texture);
   }
-  mRenderTextures.emplace(aExternalImageId, texture);
+  auto [it, inserted] = mRenderTextures.emplace(aExternalImageId, texture);
+  MOZ_RELEASE_ASSERT(inserted, "ExternalImageId collision");
 }
 
 void RenderThread::UnregisterExternalImage(
