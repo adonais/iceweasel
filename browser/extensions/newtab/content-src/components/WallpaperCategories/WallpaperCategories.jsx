@@ -690,7 +690,7 @@ export class _WallpaperCategories extends React.PureComponent {
                 <moz-button
                   ref={this.arrowButtonRef}
                   type="ghost"
-                  className="arrow-button"
+                  className="wallpapers-arrow-button"
                   iconSrc={arrowIconSrc}
                   data-l10n-id={activeCategoryFluentID}
                   onClick={this.handleBack}

@@ -16249,7 +16249,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       novaEnabled ? /*#__PURE__*/external_React_default().createElement("moz-button", {
         ref: this.arrowButtonRef,
         type: "ghost",
-        className: "arrow-button",
+        className: "wallpapers-arrow-button",
         iconSrc: arrowIconSrc,
         "data-l10n-id": activeCategoryFluentID,
         onClick: this.handleBack
