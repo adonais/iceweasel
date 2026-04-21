@@ -444,7 +444,9 @@ add_task(async function test_source_searchModeSwitcher() {
       });
       let popup = await UrlbarTestUtils.openSearchModeSwitcher(window);
       let loadPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-      popup.querySelector("panel-item[data-engine-name=Example]").click();
+      popup
+        .querySelector("panel-item[data-engine-name=Example]")
+        .button.click();
       await loadPromise;
       return tab;
     },
