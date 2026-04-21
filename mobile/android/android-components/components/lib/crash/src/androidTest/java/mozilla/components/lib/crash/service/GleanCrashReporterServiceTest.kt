@@ -281,7 +281,7 @@ class GleanCrashReporterServiceTest {
                 "AsyncShutdownTimeout": "{\"phase\":\"abcd\",\"conditions\":[{\"foo\":\"bar\"}],\"brokenAddBlockers\":[\"foo\"]}",
                 "CrashID": "d462c4b4-a9f8-4244-b526-7435fcdc4403",
                 "QuotaManagerShutdownTimeout": "line1\nline2\nline3",
-                "StackTraces": ${stackTracesAnnotation.replace("\"", "\\\"")},
+                "StackTraces": "${stackTracesAnnotation.replace("\"", "\\\"")}",
                 "JSLargeAllocationFailure": "reporting",
                 "JSOutOfMemory": "recovered"
             }
