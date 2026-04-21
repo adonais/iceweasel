@@ -36,6 +36,7 @@
   max-width: 95%;
 
   font: message-box;
+  font-size: 21px;
 
   align-items: center;
   color-scheme: dark;
@@ -88,7 +89,6 @@
 
 .pointerlockfswarning-domain-text,
 .pointerlockfswarning-generic-text {
-  font-size: 21px;
   margin: 0 16px;
   word-wrap: break-word;
   /* We must specify a min-width, otherwise word-wrap:break-word doesn't work. Bug 630864. */
