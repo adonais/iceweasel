@@ -9,6 +9,7 @@
 // 2025-11-01 - game status is "scheduled", without icon
 const SUGGESTION_VALUE_SCHEDULED = {
   sport: "Sport 3",
+  sport_category: "Sport Category 3",
   query: "query 3",
   date: "2025-11-01T17:00:00Z",
   home_team: {
@@ -78,6 +79,7 @@ add_task(async function disabledPrefs() {
           {
             query: "query 3",
             sport: "Sport 3",
+            sport_category: "Sport Category 3",
             status_type: "scheduled",
             date: "2025-11-01T17:00:00Z",
             home_team: {
@@ -117,6 +119,7 @@ add_task(async function command_notInterested() {
       {
         query: "query 3",
         sport: "Sport 3",
+        sport_category: "Sport Category 3",
         status_type: "scheduled",
         date: "2025-11-01T17:00:00Z",
         home_team: {
@@ -151,6 +154,7 @@ add_task(async function command_showLessFrequently() {
     {
       query: "query 3",
       sport: "Sport 3",
+      sport_category: "Sport Category 3",
       status_type: "scheduled",
       date: "2025-11-01T17:00:00Z",
       home_team: {

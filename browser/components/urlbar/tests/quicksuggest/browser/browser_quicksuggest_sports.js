@@ -9,6 +9,7 @@ requestLongerTimeout(3);
 // 2025-10-30 - game status is "past", without icon
 const SUGGESTION_VALUE_PAST = {
   sport: "Sport 1",
+  sport_category: "Sport Category 1",
   query: "query 1",
   date: "2025-10-30T17:00:00Z",
   home_team: {
@@ -42,6 +43,7 @@ const SUGGESTION_VALUE_PAST_NO_SCORES = {
 // 2025-10-31 - game status is "live", without icon
 const SUGGESTION_VALUE_LIVE = {
   sport: "Sport 2",
+  sport_category: "Sport Category 2",
   query: "query 2",
   date: "2025-10-31T17:00:00Z",
   home_team: {
@@ -75,6 +77,7 @@ const SUGGESTION_VALUE_LIVE_NO_SCORES = {
 // 2025-11-01 - game status is "scheduled", without icon
 const SUGGESTION_VALUE_SCHEDULED = {
   sport: "Sport 3",
+  sport_category: "Sport Category 3",
   query: "query 3",
   date: "2025-11-01T17:00:00Z",
   home_team: {
@@ -109,53 +112,42 @@ const SUGGESTION_VALUE_SCHEDULED_ICONS_IN_TEAMS = {
   },
 };
 
-// NBA game (basketball), live
-const SUGGESTION_VALUE_NBA_LIVE = {
-  ...SUGGESTION_VALUE_LIVE,
-  sport: "NBA",
-};
-
-// NBA game (basketball), scheduled
-const SUGGESTION_VALUE_NBA_SCHEDULED = {
-  ...SUGGESTION_VALUE_SCHEDULED,
-  sport: "NBA",
-};
-
-// NFL game (American football), live
-const SUGGESTION_VALUE_NFL_LIVE = {
-  ...SUGGESTION_VALUE_LIVE,
-  sport: "NFL",
-};
-
-// NFL game (American football), scheduled
-const SUGGESTION_VALUE_NFL_SCHEDULED = {
-  ...SUGGESTION_VALUE_SCHEDULED,
-  sport: "NFL",
-};
-
-// NHL game (hockey), live
-const SUGGESTION_VALUE_NHL_LIVE = {
-  ...SUGGESTION_VALUE_LIVE,
-  sport: "NHL",
-};
-
-// NHL game (hockey), scheduled
-const SUGGESTION_VALUE_NHL_SCHEDULED = {
-  ...SUGGESTION_VALUE_SCHEDULED,
-  sport: "NHL",
-};
-
-// MLB game (baseball), live
-const SUGGESTION_VALUE_MLB_LIVE = {
-  ...SUGGESTION_VALUE_LIVE,
-  sport: "MLB",
-};
-
-// MLB game (baseball), scheduled
-const SUGGESTION_VALUE_MLB_SCHEDULED = {
-  ...SUGGESTION_VALUE_SCHEDULED,
-  sport: "MLB",
-};
+// Known sports, i.e., sports that have have fallback icons
+const KNOWN_SPORTS = [
+  knownSportData({
+    sportCategory: "baseball",
+    sport: "MLB",
+  }),
+  knownSportData({
+    sportCategory: "basketball",
+    sport: "NBA",
+  }),
+  knownSportData({
+    sportCategory: "cricket",
+    sport: "IPL",
+  }),
+  knownSportData({
+    sportCategory: "football",
+    sport: "NFL",
+    svgName: "american-football",
+  }),
+  knownSportData({
+    sportCategory: "golf",
+    sport: "PGA",
+  }),
+  knownSportData({
+    sportCategory: "hockey",
+    sport: "NHL",
+  }),
+  knownSportData({
+    sportCategory: "racing",
+    sport: "F1",
+  }),
+  knownSportData({
+    sportCategory: "soccer",
+    sport: "FIFA",
+  }),
+];
 
 add_setup(async function () {
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
@@ -177,6 +169,7 @@ add_setup(async function () {
   });
 });
 
+// Tests many items in a single suggestion, including all `KNOWN_SPORTS`.
 add_task(async function manyItems() {
   await doTest({
     now: "2025-10-31T14:00:00-04:00[-04:00]",
@@ -186,22 +179,16 @@ add_task(async function manyItems() {
       SUGGESTION_VALUE_LIVE,
       SUGGESTION_VALUE_SCHEDULED,
       // live games with known sports -- should use generic sports icons
-      SUGGESTION_VALUE_NBA_LIVE,
-      SUGGESTION_VALUE_NFL_LIVE,
-      SUGGESTION_VALUE_NHL_LIVE,
-      SUGGESTION_VALUE_MLB_LIVE,
+      ...KNOWN_SPORTS.map(({ live }) => live.value),
       // scheduled games with known sports -- should use date chiclet
-      SUGGESTION_VALUE_NBA_SCHEDULED,
-      SUGGESTION_VALUE_NFL_SCHEDULED,
-      SUGGESTION_VALUE_NHL_SCHEDULED,
-      SUGGESTION_VALUE_MLB_SCHEDULED,
+      ...KNOWN_SPORTS.map(({ scheduled }) => scheduled.value),
     ]),
     expectedItems: [
       // games with unknown sports -- should use date chiclet
       {
         item: {
           attributes: {
-            sport: "Sport 1",
+            "sport-category": "Sport Category 1",
             status: "past",
           },
         },
@@ -213,7 +200,7 @@ add_task(async function manyItems() {
         },
         "scheduled-date-chiclet-day": "30",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 1",
+        sport: "Sport 1",
         "home-team-name": "Team 1 Home",
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
@@ -224,7 +211,7 @@ add_task(async function manyItems() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -236,7 +223,7 @@ add_task(async function manyItems() {
         },
         "scheduled-date-chiclet-day": "31",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -251,7 +238,7 @@ add_task(async function manyItems() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -263,7 +250,7 @@ add_task(async function manyItems() {
         },
         "scheduled-date-chiclet-day": "1",
         "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -286,283 +273,42 @@ add_task(async function manyItems() {
       },
 
       // live games with known sports -- should use generic sports icons
-      {
-        item: {
-          attributes: {
-            sport: "NBA",
-            status: "live",
-          },
-        },
-        image: null,
-        image_container: {
-          attributes: {
-            "is-fallback": "",
-          },
-          backgroundImage:
-            'url("chrome://browser/skin/urlbar/sports-basketball.svg")',
-        },
-        "scheduled-date-chiclet-day": {
-          isHidden: true,
-        },
-        "scheduled-date-chiclet-month": {
-          isHidden: true,
-        },
-        "sport-name": "NBA",
-        "home-team-name": "Team 2 Home",
-        "home-team-score": "1",
-        "away-team-name": "Team 2 Away",
-        "away-team-score": "0",
-        date: "Today",
-        status: {
-          l10n: {
-            id: "urlbar-result-sports-status-live",
-          },
-        },
-      },
-      {
-        item: {
-          attributes: {
-            sport: "NFL",
-            status: "live",
-          },
-        },
-        image: null,
-        image_container: {
-          attributes: {
-            "is-fallback": "",
-          },
-          backgroundImage:
-            'url("chrome://browser/skin/urlbar/sports-american-football.svg")',
-        },
-        "scheduled-date-chiclet-day": {
-          isHidden: true,
-        },
-        "scheduled-date-chiclet-month": {
-          isHidden: true,
-        },
-        "sport-name": "NFL",
-        "home-team-name": "Team 2 Home",
-        "home-team-score": "1",
-        "away-team-name": "Team 2 Away",
-        "away-team-score": "0",
-        date: "Today",
-        status: {
-          l10n: {
-            id: "urlbar-result-sports-status-live",
-          },
-        },
-      },
-      {
-        item: {
-          attributes: {
-            sport: "NHL",
-            status: "live",
-          },
-        },
-        image: null,
-        image_container: {
-          attributes: {
-            "is-fallback": "",
-          },
-          backgroundImage:
-            'url("chrome://browser/skin/urlbar/sports-hockey.svg")',
-        },
-        "scheduled-date-chiclet-day": {
-          isHidden: true,
-        },
-        "scheduled-date-chiclet-month": {
-          isHidden: true,
-        },
-        "sport-name": "NHL",
-        "home-team-name": "Team 2 Home",
-        "home-team-score": "1",
-        "away-team-name": "Team 2 Away",
-        "away-team-score": "0",
-        date: "Today",
-        status: {
-          l10n: {
-            id: "urlbar-result-sports-status-live",
-          },
-        },
-      },
-      {
-        item: {
-          attributes: {
-            sport: "MLB",
-            status: "live",
-          },
-        },
-        image: null,
-        image_container: {
-          attributes: {
-            "is-fallback": "",
-          },
-          backgroundImage:
-            'url("chrome://browser/skin/urlbar/sports-baseball.svg")',
-        },
-        "scheduled-date-chiclet-day": {
-          isHidden: true,
-        },
-        "scheduled-date-chiclet-month": {
-          isHidden: true,
-        },
-        "sport-name": "MLB",
-        "home-team-name": "Team 2 Home",
-        "home-team-score": "1",
-        "away-team-name": "Team 2 Away",
-        "away-team-score": "0",
-        date: "Today",
-        status: {
-          l10n: {
-            id: "urlbar-result-sports-status-live",
-          },
-        },
-      },
+      ...KNOWN_SPORTS.map(({ live }) => live.expectedItem),
 
       // scheduled games with known sports -- should use date chiclet
+      ...KNOWN_SPORTS.map(({ scheduled }) => scheduled.expectedItem),
+    ],
+  });
+});
+
+// Fallback icons should be based on `sport_category` and not `sport`. This task
+// uses a Merino suggestion with `sport_category` "baseball" and `sport` "NHL",
+// a hockey league/sport. The fallback baseball icon should be used.
+add_task(async function mismatchedSportAndCategory() {
+  // Need to use the live value since scheduled values cause the date chiclet to
+  // be shown instead of the fallback icon.
+  let baseballData = KNOWN_SPORTS.find(
+    ({ live }) => live.value.sport_category == "baseball"
+  );
+  Assert.ok(
+    baseballData,
+    "Sanity check: Should have found a known sport will sport_categort == 'baseball'"
+  );
+
+  let sport = "NHL"; // not a baseball `sport`
+
+  await doTest({
+    now: "2025-10-31T14:00:00-04:00[-04:00]",
+    suggestions: merinoSuggestions([
       {
-        item: {
-          attributes: {
-            sport: "NBA",
-            status: "scheduled",
-          },
-        },
-        image: null,
-        image_container: {
-          attributes: {
-            "is-fallback": "",
-          },
-        },
-        "scheduled-date-chiclet-day": "1",
-        "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "NBA",
-        "team-names": {
-          l10n: {
-            id: "urlbar-result-sports-team-names",
-            args: {
-              homeTeam: "Team 3 Home",
-              awayTeam: "Team 3 Away",
-            },
-          },
-        },
-        date: {
-          l10n: {
-            id: "urlbar-result-sports-game-date-with-time",
-            args: {
-              date: "Tomorrow",
-              time: "1:00 PM GMT-4",
-            },
-          },
-        },
-        status: "",
+        ...baseballData.live.value,
+        sport,
       },
+    ]),
+    expectedItems: [
       {
-        item: {
-          attributes: {
-            sport: "NFL",
-            status: "scheduled",
-          },
-        },
-        image: null,
-        image_container: {
-          attributes: {
-            "is-fallback": "",
-          },
-        },
-        "scheduled-date-chiclet-day": "1",
-        "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "NFL",
-        "team-names": {
-          l10n: {
-            id: "urlbar-result-sports-team-names",
-            args: {
-              homeTeam: "Team 3 Home",
-              awayTeam: "Team 3 Away",
-            },
-          },
-        },
-        date: {
-          l10n: {
-            id: "urlbar-result-sports-game-date-with-time",
-            args: {
-              date: "Tomorrow",
-              time: "1:00 PM GMT-4",
-            },
-          },
-        },
-        status: "",
-      },
-      {
-        item: {
-          attributes: {
-            sport: "NHL",
-            status: "scheduled",
-          },
-        },
-        image: null,
-        image_container: {
-          attributes: {
-            "is-fallback": "",
-          },
-        },
-        "scheduled-date-chiclet-day": "1",
-        "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "NHL",
-        "team-names": {
-          l10n: {
-            id: "urlbar-result-sports-team-names",
-            args: {
-              homeTeam: "Team 3 Home",
-              awayTeam: "Team 3 Away",
-            },
-          },
-        },
-        date: {
-          l10n: {
-            id: "urlbar-result-sports-game-date-with-time",
-            args: {
-              date: "Tomorrow",
-              time: "1:00 PM GMT-4",
-            },
-          },
-        },
-        status: "",
-      },
-      {
-        item: {
-          attributes: {
-            sport: "MLB",
-            status: "scheduled",
-          },
-        },
-        image: null,
-        image_container: {
-          attributes: {
-            "is-fallback": "",
-          },
-        },
-        "scheduled-date-chiclet-day": "1",
-        "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "MLB",
-        "team-names": {
-          l10n: {
-            id: "urlbar-result-sports-team-names",
-            args: {
-              homeTeam: "Team 3 Home",
-              awayTeam: "Team 3 Away",
-            },
-          },
-        },
-        date: {
-          l10n: {
-            id: "urlbar-result-sports-game-date-with-time",
-            args: {
-              date: "Tomorrow",
-              time: "1:00 PM GMT-4",
-            },
-          },
-        },
-        status: "",
+        ...baseballData.live.expectedItem,
+        sport,
       },
     ],
   });
@@ -576,7 +322,7 @@ add_task(async function past_noScores() {
       {
         item: {
           attributes: {
-            sport: "Sport 1",
+            "sport-category": "Sport Category 1",
             status: "past",
           },
         },
@@ -588,7 +334,7 @@ add_task(async function past_noScores() {
         },
         "scheduled-date-chiclet-day": "30",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 1",
+        sport: "Sport 1",
         // should use "team-names" UI, not scores
         "team-names": {
           l10n: {
@@ -614,7 +360,7 @@ add_task(async function live_noScores() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -626,7 +372,7 @@ add_task(async function live_noScores() {
         },
         "scheduled-date-chiclet-day": "31",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         // should use "team-names" UI, not scores
         "team-names": {
           l10n: {
@@ -656,7 +402,7 @@ add_task(async function scheduled_iconsInTeams() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -673,7 +419,7 @@ add_task(async function scheduled_iconsInTeams() {
             src: "https://example.com/sports-icon-home",
           },
         },
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -710,7 +456,7 @@ add_task(async function past_lastYear_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 1",
+            "sport-category": "Sport Category 1",
             status: "past",
           },
         },
@@ -722,7 +468,7 @@ add_task(async function past_lastYear_noIcon() {
         },
         "scheduled-date-chiclet-day": "30",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 1",
+        sport: "Sport 1",
         "home-team-name": "Team 1 Home",
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
@@ -742,7 +488,7 @@ add_task(async function past_lastYear_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 1",
+            "sport-category": "Sport Category 1",
             status: "past",
           },
         },
@@ -758,7 +504,7 @@ add_task(async function past_lastYear_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 1",
+        sport: "Sport 1",
         "home-team-name": "Team 1 Home",
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
@@ -778,7 +524,7 @@ add_task(async function past_beforeYesterday_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 1",
+            "sport-category": "Sport Category 1",
             status: "past",
           },
         },
@@ -790,7 +536,7 @@ add_task(async function past_beforeYesterday_noIcon() {
         },
         "scheduled-date-chiclet-day": "30",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 1",
+        sport: "Sport 1",
         "home-team-name": "Team 1 Home",
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
@@ -810,7 +556,7 @@ add_task(async function past_beforeYesterday_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 1",
+            "sport-category": "Sport Category 1",
             status: "past",
           },
         },
@@ -826,7 +572,7 @@ add_task(async function past_beforeYesterday_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 1",
+        sport: "Sport 1",
         "home-team-name": "Team 1 Home",
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
@@ -846,7 +592,7 @@ add_task(async function past_yesterday_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 1",
+            "sport-category": "Sport Category 1",
             status: "past",
           },
         },
@@ -858,7 +604,7 @@ add_task(async function past_yesterday_noIcon() {
         },
         "scheduled-date-chiclet-day": "30",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 1",
+        sport: "Sport 1",
         "home-team-name": "Team 1 Home",
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
@@ -878,7 +624,7 @@ add_task(async function past_yesterday_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 1",
+            "sport-category": "Sport Category 1",
             status: "past",
           },
         },
@@ -894,7 +640,7 @@ add_task(async function past_yesterday_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 1",
+        sport: "Sport 1",
         "home-team-name": "Team 1 Home",
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
@@ -914,7 +660,7 @@ add_task(async function past_todayPast_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 1",
+            "sport-category": "Sport Category 1",
             status: "past",
           },
         },
@@ -926,7 +672,7 @@ add_task(async function past_todayPast_noIcon() {
         },
         "scheduled-date-chiclet-day": "30",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 1",
+        sport: "Sport 1",
         "home-team-name": "Team 1 Home",
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
@@ -950,7 +696,7 @@ add_task(async function past_todayPast_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 1",
+            "sport-category": "Sport Category 1",
             status: "past",
           },
         },
@@ -966,7 +712,7 @@ add_task(async function past_todayPast_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 1",
+        sport: "Sport 1",
         "home-team-name": "Team 1 Home",
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
@@ -991,7 +737,7 @@ add_task(async function past_todayFuture_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 1",
+            "sport-category": "Sport Category 1",
             status: "past",
           },
         },
@@ -1003,7 +749,7 @@ add_task(async function past_todayFuture_noIcon() {
         },
         "scheduled-date-chiclet-day": "30",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 1",
+        sport: "Sport 1",
         "home-team-name": "Team 1 Home",
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
@@ -1036,7 +782,7 @@ add_task(async function past_todayFuture_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 1",
+            "sport-category": "Sport Category 1",
             status: "past",
           },
         },
@@ -1052,7 +798,7 @@ add_task(async function past_todayFuture_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 1",
+        sport: "Sport 1",
         "home-team-name": "Team 1 Home",
         "home-team-score": "5",
         "away-team-name": "Team 1 Away",
@@ -1090,7 +836,7 @@ add_task(async function live_lastYear_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -1102,7 +848,7 @@ add_task(async function live_lastYear_noIcon() {
         },
         "scheduled-date-chiclet-day": "31",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -1128,7 +874,7 @@ add_task(async function live_lastYear_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -1144,7 +890,7 @@ add_task(async function live_lastYear_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -1169,7 +915,7 @@ add_task(async function live_beforeYesterday_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -1181,7 +927,7 @@ add_task(async function live_beforeYesterday_noIcon() {
         },
         "scheduled-date-chiclet-day": "31",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -1206,7 +952,7 @@ add_task(async function live_beforeYesterday_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -1222,7 +968,7 @@ add_task(async function live_beforeYesterday_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -1248,7 +994,7 @@ add_task(async function live_yesterday_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -1260,7 +1006,7 @@ add_task(async function live_yesterday_noIcon() {
         },
         "scheduled-date-chiclet-day": "31",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -1286,7 +1032,7 @@ add_task(async function live_yesterday_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -1302,7 +1048,7 @@ add_task(async function live_yesterday_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -1326,7 +1072,7 @@ add_task(async function live_todayPast_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -1338,7 +1084,7 @@ add_task(async function live_todayPast_noIcon() {
         },
         "scheduled-date-chiclet-day": "31",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -1362,7 +1108,7 @@ add_task(async function live_todayPast_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -1378,7 +1124,7 @@ add_task(async function live_todayPast_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -1403,7 +1149,7 @@ add_task(async function live_todayFuture_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -1415,7 +1161,7 @@ add_task(async function live_todayFuture_noIcon() {
         },
         "scheduled-date-chiclet-day": "31",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -1448,7 +1194,7 @@ add_task(async function live_todayFuture_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -1464,7 +1210,7 @@ add_task(async function live_todayFuture_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -1497,7 +1243,7 @@ add_task(async function live_tomorrow_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -1509,7 +1255,7 @@ add_task(async function live_tomorrow_noIcon() {
         },
         "scheduled-date-chiclet-day": "31",
         "scheduled-date-chiclet-month": "Oct",
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -1542,7 +1288,7 @@ add_task(async function live_tomorrow_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 2",
+            "sport-category": "Sport Category 2",
             status: "live",
           },
         },
@@ -1558,7 +1304,7 @@ add_task(async function live_tomorrow_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 2",
+        sport: "Sport 2",
         "home-team-name": "Team 2 Home",
         "home-team-score": "1",
         "away-team-name": "Team 2 Away",
@@ -1595,7 +1341,7 @@ add_task(async function scheduled_lastYear_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -1607,7 +1353,7 @@ add_task(async function scheduled_lastYear_noIcon() {
         },
         "scheduled-date-chiclet-day": "1",
         "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -1633,7 +1379,7 @@ add_task(async function scheduled_lastYear_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -1649,7 +1395,7 @@ add_task(async function scheduled_lastYear_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -1675,7 +1421,7 @@ add_task(async function scheduled_beforeYesterday_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -1687,7 +1433,7 @@ add_task(async function scheduled_beforeYesterday_noIcon() {
         },
         "scheduled-date-chiclet-day": "1",
         "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -1713,7 +1459,7 @@ add_task(async function scheduled_beforeYesterday_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -1729,7 +1475,7 @@ add_task(async function scheduled_beforeYesterday_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -1755,7 +1501,7 @@ add_task(async function scheduled_yesterday_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -1767,7 +1513,7 @@ add_task(async function scheduled_yesterday_noIcon() {
         },
         "scheduled-date-chiclet-day": "1",
         "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -1793,7 +1539,7 @@ add_task(async function scheduled_yesterday_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -1809,7 +1555,7 @@ add_task(async function scheduled_yesterday_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -1835,7 +1581,7 @@ add_task(async function scheduled_todayPast_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -1847,7 +1593,7 @@ add_task(async function scheduled_todayPast_noIcon() {
         },
         "scheduled-date-chiclet-day": "1",
         "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -1873,7 +1619,7 @@ add_task(async function scheduled_todayPast_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -1889,7 +1635,7 @@ add_task(async function scheduled_todayPast_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -1914,7 +1660,7 @@ add_task(async function scheduled_todayFuture_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -1926,7 +1672,7 @@ add_task(async function scheduled_todayFuture_noIcon() {
         },
         "scheduled-date-chiclet-day": "1",
         "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -1959,7 +1705,7 @@ add_task(async function scheduled_todayFuture_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -1975,7 +1721,7 @@ add_task(async function scheduled_todayFuture_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -2008,7 +1754,7 @@ add_task(async function scheduled_tomorrow_noIcon() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -2020,7 +1766,7 @@ add_task(async function scheduled_tomorrow_noIcon() {
         },
         "scheduled-date-chiclet-day": "1",
         "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -2053,7 +1799,7 @@ add_task(async function scheduled_tomorrow_icon() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -2069,7 +1815,7 @@ add_task(async function scheduled_tomorrow_icon() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -2103,7 +1849,7 @@ add_task(async function scheduled_afterTomorrow_noIcon_thisYear() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -2115,7 +1861,7 @@ add_task(async function scheduled_afterTomorrow_noIcon_thisYear() {
         },
         "scheduled-date-chiclet-day": "1",
         "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -2150,7 +1896,7 @@ add_task(async function scheduled_afterTomorrow_noIcon_nextYear() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -2162,7 +1908,7 @@ add_task(async function scheduled_afterTomorrow_noIcon_nextYear() {
         },
         "scheduled-date-chiclet-day": "1",
         "scheduled-date-chiclet-month": "Nov",
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -2197,7 +1943,7 @@ add_task(async function scheduled_afterTomorrow_icon_thisYear() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -2213,7 +1959,7 @@ add_task(async function scheduled_afterTomorrow_icon_thisYear() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -2248,7 +1994,7 @@ add_task(async function scheduled_afterTomorrow_icon_nextYear() {
       {
         item: {
           attributes: {
-            sport: "Sport 3",
+            "sport-category": "Sport Category 3",
             status: "scheduled",
           },
         },
@@ -2264,7 +2010,7 @@ add_task(async function scheduled_afterTomorrow_icon_nextYear() {
             src: "https://example.com/sports-icon",
           },
         },
-        "sport-name": "Sport 3",
+        sport: "Sport 3",
         "team-names": {
           l10n: {
             id: "urlbar-result-sports-team-names",
@@ -2441,6 +2187,113 @@ async function doOneTest({ expectedItems }) {
 
   await UrlbarTestUtils.promisePopupClose(window);
   gURLBar.handleRevert();
+}
+
+function knownSportData({ sportCategory, sport, svgName = sportCategory }) {
+  return {
+    live: {
+      value: {
+        ...SUGGESTION_VALUE_LIVE,
+        sport,
+        sport_category: sportCategory,
+      },
+      expectedItem: expectedItemKnownSportLive({
+        sportCategory,
+        sport,
+        svgName,
+      }),
+    },
+    scheduled: {
+      value: {
+        ...SUGGESTION_VALUE_SCHEDULED,
+        sport,
+        sport_category: sportCategory,
+      },
+      expectedItem: expectedItemKnownSportScheduled({
+        sportCategory,
+        sport,
+        svgName,
+      }),
+    },
+  };
+}
+
+function expectedItemKnownSportLive({
+  sport,
+  sportCategory,
+  svgName = sportCategory,
+}) {
+  return {
+    sport,
+    item: {
+      attributes: {
+        "sport-category": sportCategory,
+        status: "live",
+      },
+    },
+    image: null,
+    image_container: {
+      attributes: {
+        "is-fallback": "",
+      },
+      backgroundImage: `url("chrome://browser/skin/urlbar/sports-${svgName}.svg")`,
+    },
+    "scheduled-date-chiclet-day": {
+      isHidden: true,
+    },
+    "scheduled-date-chiclet-month": {
+      isHidden: true,
+    },
+    "home-team-name": "Team 2 Home",
+    "home-team-score": "1",
+    "away-team-name": "Team 2 Away",
+    "away-team-score": "0",
+    date: "Today",
+    status: {
+      l10n: {
+        id: "urlbar-result-sports-status-live",
+      },
+    },
+  };
+}
+
+function expectedItemKnownSportScheduled({ sport, sportCategory }) {
+  return {
+    sport,
+    item: {
+      attributes: {
+        "sport-category": sportCategory,
+        status: "scheduled",
+      },
+    },
+    image: null,
+    image_container: {
+      attributes: {
+        "is-fallback": "",
+      },
+    },
+    "scheduled-date-chiclet-day": "1",
+    "scheduled-date-chiclet-month": "Nov",
+    "team-names": {
+      l10n: {
+        id: "urlbar-result-sports-team-names",
+        args: {
+          homeTeam: "Team 3 Home",
+          awayTeam: "Team 3 Away",
+        },
+      },
+    },
+    date: {
+      l10n: {
+        id: "urlbar-result-sports-game-date-with-time",
+        args: {
+          date: "Tomorrow",
+          time: "1:00 PM GMT-4",
+        },
+      },
+    },
+    status: "",
+  };
 }
 
 function merinoSuggestions(values) {

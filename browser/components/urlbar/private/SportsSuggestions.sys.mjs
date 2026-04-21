@@ -92,7 +92,7 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
   getViewTemplateForDescriptionBottom(item, index) {
     return [
       {
-        name: `sport-name-${index}`,
+        name: `sport-${index}`,
         tag: "span",
       },
       {
@@ -127,7 +127,7 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
       ...this.#viewUpdateImageAndBottom(item, index),
       [`item_${index}`]: {
         attributes: {
-          sport: item.sport,
+          "sport-category": item.sport_category,
           status: item.status_type,
         },
       },
@@ -283,7 +283,7 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
       ...imageUpdate,
       ...dateUpdate,
       ...statusUpdate,
-      [`sport-name-${i}`]: {
+      [`sport-${i}`]: {
         textContent: item.sport,
       },
     };
