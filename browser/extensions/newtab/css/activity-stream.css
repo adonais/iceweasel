@@ -559,115 +559,113 @@ panel-item::part(button) {
   color: var(--newtab-primary-action-background);
 }
 
-main {
+main.newtab-main {
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
   width: 274px;
   padding: 0;
-}
-main.newtab-main {
   min-width: min-content;
 }
-main .vertical-center-wrapper {
+main.newtab-main .vertical-center-wrapper {
   margin: auto 0;
 }
-main section {
+main.newtab-main section {
   margin-block-end: var(--space-medium);
   position: relative;
 }
-.hide-main main {
+.hide-main main.newtab-main {
   visibility: hidden;
 }
 @media (min-width: 610px) {
-  main {
+  main.newtab-main {
     width: 530px;
   }
 }
 @media (min-width: 866px) {
-  main {
+  main.newtab-main {
     width: 786px;
   }
 }
 @media (min-width: 1122px) {
-  main {
+  main.newtab-main {
     width: 1042px;
   }
 }
 
-.no-search main {
+.no-search main.newtab-main {
   margin-block-start: var(--space-xxlarge);
 }
 
-.ds-outer-wrapper-search-alignment main {
+.ds-outer-wrapper-search-alignment main.newtab-main {
   margin: 0 auto;
 }
 
-.ds-outer-wrapper-breakpoint-override main {
+.ds-outer-wrapper-breakpoint-override main.newtab-main {
   width: auto;
   padding-block-end: 0;
 }
-.ds-outer-wrapper-breakpoint-override main .ds-card {
+.ds-outer-wrapper-breakpoint-override main.newtab-main .ds-card {
   width: var(--newtab-card-grid-layout-width);
 }
-.ds-outer-wrapper-breakpoint-override main .ds-card-grid:not(.ds-section-grid) {
+.ds-outer-wrapper-breakpoint-override main.newtab-main .ds-card-grid:not(.ds-section-grid) {
   grid-gap: var(--space-large);
 }
-.ds-outer-wrapper-breakpoint-override main .ds-card-grid:not(.ds-section-grid).empty {
+.ds-outer-wrapper-breakpoint-override main.newtab-main .ds-card-grid:not(.ds-section-grid).empty {
   grid-template-columns: auto;
 }
-.ds-outer-wrapper-breakpoint-override main .body-wrapper {
+.ds-outer-wrapper-breakpoint-override main.newtab-main .body-wrapper {
   width: 346px;
   margin: 0 auto;
 }
 @media (min-width: 610px) {
-  .ds-outer-wrapper-breakpoint-override main {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main {
     width: auto;
   }
-  .ds-outer-wrapper-breakpoint-override main .ds-card-grid:not(.ds-section-grid) {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main .ds-card-grid:not(.ds-section-grid) {
     grid-template-columns: repeat(1, 1fr);
   }
-  .ds-outer-wrapper-breakpoint-override main .body-wrapper {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main .body-wrapper {
     width: 346px;
   }
 }
 @media (min-width: 724px) {
-  .ds-outer-wrapper-breakpoint-override main {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main {
     width: auto;
   }
-  .ds-outer-wrapper-breakpoint-override main .ds-card-grid:not(.ds-section-grid) {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main .ds-card-grid:not(.ds-section-grid) {
     grid-template-columns: repeat(2, 1fr);
   }
-  .ds-outer-wrapper-breakpoint-override main .body-wrapper {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main .body-wrapper {
     width: 659px;
   }
 }
 @media (min-width: 1122px) {
-  .ds-outer-wrapper-breakpoint-override main {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main {
     width: auto;
   }
-  .ds-outer-wrapper-breakpoint-override main .ds-card-grid:not(.ds-section-grid) {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main .ds-card-grid:not(.ds-section-grid) {
     grid-template-columns: repeat(3, 1fr);
     grid-gap: var(--space-xlarge);
   }
-  .ds-outer-wrapper-breakpoint-override main .body-wrapper {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main .body-wrapper {
     width: 989px;
   }
 }
 @media (min-width: 1698px) {
-  .ds-outer-wrapper-breakpoint-override main {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main {
     width: auto;
   }
-  .ds-outer-wrapper-breakpoint-override main .body-wrapper {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main .body-wrapper {
     display: flex;
     flex-direction: column;
     width: 1311px;
   }
-  .ds-outer-wrapper-breakpoint-override main .ds-highlights .card-outer {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main .ds-highlights .card-outer {
     min-width: 216px;
   }
-  .ds-outer-wrapper-breakpoint-override main .ds-card-grid:not(.ds-section-grid) {
+  .ds-outer-wrapper-breakpoint-override main.newtab-main .ds-card-grid:not(.ds-section-grid) {
     grid-template-columns: repeat(4, 1fr);
   }
 }
@@ -761,6 +759,7 @@ main section {
 .nova-outer-wrapper {
   color: var(--newtab-text-primary-color);
   min-height: 100vh;
+  padding-block-start: var(--space-xlarge);
 }
 
 .as-error-fallback {
@@ -797,10 +796,13 @@ main section {
   justify-content: center;
   margin-block-end: var(--space-xxlarge);
 }
+.nova-enabled .logo-and-wordmark {
+  justify-content: flex-start;
+}
 .nova-enabled .logo-and-wordmark .wordmark {
   display: none;
 }
-@container outer-grid (inline-size >= calc(2 * 150px + 7 * 0.75rem + 6 * 75px)) {
+@container outer-grid (inline-size >= calc(2 * 150px + 9 * 0.75rem + 8 * 75px)) {
   .nova-enabled .logo-and-wordmark {
     width: max-content;
   }
@@ -1794,6 +1796,27 @@ main section {
 @media (min-width: 866px) {
   .has-recommended-stories .wordmark {
     display: block;
+  }
+}
+
+.nova-enabled .search-wrapper {
+  container-type: normal;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+.nova-enabled .search-inner-wrapper {
+  grid-column: 1/-1;
+  margin-inline: auto;
+  width: calc(4 * var(--col-width) + 3 * var(--space-medium));
+}
+@container content-grid (inline-size >= calc(6 * 75px + 5 * 0.75rem)) {
+  .nova-enabled .search-inner-wrapper {
+    width: calc(6 * var(--col-width) + 5 * var(--space-medium));
+  }
+}
+@container content-grid (inline-size >= calc(10 * 75px + 9 * 0.75rem)) {
+  .nova-enabled .search-inner-wrapper {
+    width: calc(10 * var(--col-width) + 9 * var(--space-medium));
   }
 }
 
@@ -4045,6 +4068,25 @@ dialog:dir(rtl)::after {
 }
 .discoverystream-admin.collapsed {
   display: none;
+}
+.discoverystream-admin main.main-panel {
+  margin: 0 auto;
+  width: 274px;
+}
+@media (min-width: 610px) {
+  .discoverystream-admin main.main-panel {
+    width: 530px;
+  }
+}
+@media (min-width: 866px) {
+  .discoverystream-admin main.main-panel {
+    width: 786px;
+  }
+}
+@media (min-width: 1122px) {
+  .discoverystream-admin main.main-panel {
+    width: 1042px;
+  }
 }
 .discoverystream-admin h1 {
   font-size: var(--font-size-xxlarge);

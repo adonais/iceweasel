@@ -16,11 +16,13 @@
 
   // @nova-cleanup(remove-conditional): Make default behavior, remove .nova-enabled selector
   .nova-enabled & {
+    justify-content: flex-start;
+
     .wordmark {
       display: none;
     }
 
-    @include at-outer-grid-cols(6) {
+    @include at-outer-grid-cols(8) {
       width: max-content;
 
       .wordmark {
