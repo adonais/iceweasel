@@ -104,13 +104,22 @@ bool AudioData::SetTrimWindow(const media::TimeInterval& aTrim) {
   }
 
   size_t frameOffset = trimBefore.ToTicksAtRate(mRate);
+  size_t dataOffset = frameOffset * mChannels;
+  int64_t frameCountAfterTrim = (trimAfter - trimBefore).ToTicksAtRate(mRate);
+  if (dataOffset > mAudioData.Length() || frameCountAfterTrim < 0) {
+    return false;
+  }
   mTrimWindow = Some(aTrim);
-  mDataOffset = frameOffset * mChannels;
-  MOZ_DIAGNOSTIC_ASSERT(mDataOffset <= mAudioData.Length(),
-                        "Data offset outside original buffer");
-  mFrames = (trimAfter - trimBefore).ToTicksAtRate(mRate);
-  MOZ_DIAGNOSTIC_ASSERT(mFrames <= mAudioData.Length() / mChannels,
-                        "More frames than found in container");
+  mDataOffset = dataOffset;
+  const size_t availFrames = (mAudioData.Length() - mDataOffset) / mChannels;
+  if (frameCountAfterTrim > AssertedCast<int64_t>(availFrames)) {
+    // Accept rounding error caused by an imprecise time_base in the container,
+    // that can cause a mismatch but not other kind of unexpected frame count.
+    MOZ_RELEASE_ASSERT(!trimBefore.IsBase(mRate));
+    mFrames = 0;
+  } else {
+    mFrames = frameCountAfterTrim;
+  }
   mTime = mOriginalTime + trimBefore;
   mDuration = TimeUnit(mFrames, mRate);
 
