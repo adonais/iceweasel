@@ -228,7 +228,7 @@
       "channel": "release",
       "userFacingName": "Homescreen Default Content Android - New Users",
       "userFacingDescription": "Homescreen Default Content Android",
-      "isEnrollmentPaused": false,
+      "isEnrollmentPaused": true,
       "isRollout": false,
       "bucketConfig": {
         "randomizationUnit": "nimbus_id",
@@ -315,7 +315,7 @@
       ],
       "targeting": "((is_already_enrolled) || ((isFirstRun == 'true') && (app_version|versionCompare('149.0.1') >= 0)))",
       "startDate": "2026-03-19",
-      "enrollmentEndDate": null,
+      "enrollmentEndDate": "2026-04-21",
       "endDate": null,
       "proposedDuration": 21,
       "proposedEnrollment": 15,
