@@ -14,7 +14,6 @@
 #include "TimeUnits.h"
 #include "VideoUtils.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/CheckedInt.h"
 
 extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define MP3LOG(msg, ...) \
@@ -774,14 +773,8 @@ int64_t MP3TrackDemuxer::OffsetFromFrameIndex(int64_t aFrameIndex) const {
   const auto& vbr = mParser.VBRInfo();
 
   if (vbr.IsComplete()) {
-    CheckedInt<int64_t> product =
-        CheckedInt<int64_t>(aFrameIndex) * vbr.NumBytes().value();
-    if (product.isValid()) {
-      offset =
-          mFirstFrameOffset + product.value() / vbr.NumAudioFrames().value();
-    } else {
-      offset = StreamLength();
-    }
+    offset = mFirstFrameOffset + aFrameIndex * vbr.NumBytes().value() /
+                                     vbr.NumAudioFrames().value();
   } else if (AverageFrameLength() > 0) {
     offset = mFirstFrameOffset +
              AssertedCast<int64_t>(static_cast<float>(aFrameIndex) *
