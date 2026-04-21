@@ -1298,7 +1298,7 @@ toolbar[inactive="true"] .urlbar,
   /* TODO bug 2032017: clean this up after 1826841 is done */
   --panel-list-background-color: var(--panel-background);
   --panel-list-border-radius: var(--panel-border-radius);
-  padding: 8px;
+  padding: var(--panel-subview-body-padding);
 
   /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
@@ -1312,9 +1312,10 @@ toolbar[inactive="true"] .urlbar,
     background-image: var(--icon-url, url("chrome://global/skin/icons/search-glass.svg"));
     background-size: 16px 16px;
     /* TODO bug 2032017: clean this up after 1826841 is done */
-    padding-inline-start: 30px;
-    padding-block: 8px;
+    padding: var(--panel-menuitem-padding);
+    padding-inline-start: calc(var(--panel-menuitem-padding-inline) + 22px);
     border-radius: var(--menuitem-border-radius);
+    margin: var(--panel-menuitem-margin);
   }
 
   > .searchmode-switcher-panel-search-settings-button::part(button) {
@@ -1332,11 +1333,16 @@ toolbar[inactive="true"] .urlbar,
     top: 4px;
     inset-inline-start: 17px;
   }
+
+  > hr {
+    margin: var(--panel-menuitem-margin);
+  }
 }
 
 .searchmode-switcher-panel-description {
   color: var(--text-color-deemphasized);
-  padding: var(--menuitem-padding);
+  padding: var(--panel-menuitem-padding);
+  margin: var(--panel-menuitem-margin);
 }
 
 .urlbar-visually-hidden {
