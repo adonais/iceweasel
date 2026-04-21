@@ -200,7 +200,7 @@ private fun TabLayoutScrollHelper(
     val density = LocalDensity.current
     val bottomPaddingPx = with(density) { bottomPadding.roundToPx() }
 
-    LaunchedEffect(selectedTabIndex) {
+    LaunchedEffect(Unit) {
         if (selectedTabIndex < 0) return@LaunchedEffect
 
         val targetIndex = selectedTabIndex + (if (isHeaderPresent) 1 else 0)
