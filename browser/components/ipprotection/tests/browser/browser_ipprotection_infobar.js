@@ -685,6 +685,90 @@ add_task(async function test_infobar_shown_in_new_window() {
   IPProtectionInfobarManager.uninit();
 });
 
+add_task(async function test_dismiss_infobar_removes_from_all_windows() {
+  IPProtectionInfobarManager.init();
+
+  dispatchUsageEvent(0.2);
+
+  await TestUtils.waitForCondition(
+    () =>
+      window.gNotificationBox.getNotificationWithValue(
+        "ip-protection-bandwidth-warning-75"
+      ),
+    "Wait for 75% notification to appear in original window"
+  );
+
+  const newWin = await BrowserTestUtils.openNewBrowserWindow();
+
+  await TestUtils.waitForCondition(
+    () =>
+      newWin.gNotificationBox.getNotificationWithValue(
+        "ip-protection-bandwidth-warning-75"
+      ),
+    "Wait for 75% notification to appear in new window"
+  );
+
+  window.gNotificationBox
+    .getNotificationWithValue("ip-protection-bandwidth-warning-75")
+    .dismiss();
+
+  await TestUtils.waitForCondition(
+    () =>
+      !newWin.gNotificationBox.getNotificationWithValue(
+        "ip-protection-bandwidth-warning-75"
+      ),
+    "Wait for 75% notification to be removed from new window after dismissal"
+  );
+
+  Assert.equal(
+    newWin.gNotificationBox.getNotificationWithValue(
+      "ip-protection-bandwidth-warning-75"
+    ),
+    null,
+    "75% notification removed from new window when dismissed in original window"
+  );
+
+  await BrowserTestUtils.closeWindow(newWin);
+  Services.prefs.clearUserPref(BANDWIDTH_WARNING_DISMISSED_PREF);
+  IPProtectionInfobarManager.uninit();
+});
+
+add_task(async function test_panel_dismiss_does_not_hide_infobars() {
+  IPProtectionInfobarManager.init();
+
+  dispatchUsageEvent(0.2);
+
+  await TestUtils.waitForCondition(
+    () =>
+      window.gNotificationBox.getNotificationWithValue(
+        "ip-protection-bandwidth-warning-75"
+      ),
+    "Wait for 75% notification to appear"
+  );
+
+  // Simulate panel warning dismissed in another window: only the panel key changes
+  Services.prefs.setStringPref(
+    BANDWIDTH_WARNING_DISMISSED_PREF,
+    JSON.stringify({ infobar: 0, panel: 75 })
+  );
+  await TestUtils.waitForTick();
+
+  Assert.ok(
+    window.gNotificationBox.getNotificationWithValue(
+      "ip-protection-bandwidth-warning-75"
+    ),
+    "75% infobar remains visible when only the panel warning is dismissed"
+  );
+
+  window.gNotificationBox.removeNotification(
+    window.gNotificationBox.getNotificationWithValue(
+      "ip-protection-bandwidth-warning-75"
+    )
+  );
+  Services.prefs.clearUserPref(BANDWIDTH_WARNING_DISMISSED_PREF);
+  IPProtectionInfobarManager.uninit();
+});
+
 add_task(async function test_handles_missing_usage_data() {
   IPProtectionInfobarManager.init();
 

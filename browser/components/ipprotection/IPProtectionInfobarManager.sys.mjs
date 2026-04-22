@@ -4,6 +4,9 @@
 
 import { formatRemainingBandwidth } from "chrome://browser/content/ipprotection/ipprotection-utils.mjs";
 
+const BANDWIDTH_WARNING_DISMISSED_PREF =
+  "browser.ipProtection.bandwidthWarningDismissedThreshold";
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -28,6 +31,7 @@ class IPProtectionInfobarManagerClass {
   #lastThreshold = null;
   #lastUsage = null;
   #windowListener = null;
+  #prefObserver = null;
 
   get initialized() {
     return this.#initialized;
@@ -66,6 +70,12 @@ class IPProtectionInfobarManagerClass {
     };
     Services.wm.addListener(this.#windowListener);
 
+    this.#prefObserver = this.#handlePrefChange.bind(this);
+    Services.prefs.addObserver(
+      BANDWIDTH_WARNING_DISMISSED_PREF,
+      this.#prefObserver
+    );
+
     this.#initialized = true;
   }
 
@@ -88,7 +98,26 @@ class IPProtectionInfobarManagerClass {
     this.#lastThreshold = null;
     this.#lastUsage = null;
 
+    Services.prefs.removeObserver(
+      BANDWIDTH_WARNING_DISMISSED_PREF,
+      this.#prefObserver
+    );
+    this.#prefObserver = null;
+
     this.#initialized = false;
+  }
+
+  #handlePrefChange(_subject, _topic, data) {
+    if (data !== BANDWIDTH_WARNING_DISMISSED_PREF) {
+      return;
+    }
+    const { infobar } = lazy.IPPUsageHelper.getDismissedThresholds();
+    if (infobar >= 75) {
+      this.#hideInfobar(75);
+    }
+    if (infobar >= 90) {
+      this.#hideInfobar(90);
+    }
   }
 
   handleEvent(event) {
