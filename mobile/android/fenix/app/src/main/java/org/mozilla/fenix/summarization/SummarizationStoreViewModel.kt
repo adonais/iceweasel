@@ -23,6 +23,7 @@ import mozilla.components.feature.summarize.summarizationReducer
  * A [ViewModel] that owns and survives configuration changes for a [SummarizationStore].
  *
  * @param initializedFromShake Whether the summarization feature was triggered by a shake gesture.
+ * @param pageTitle The title of the page being summarized.
  * @param connectionType the current network [ConnectionType].
  * @param llmProvider the [LlmProvider] used to summarize the page.
  * @param settings the SummarizationSettings.
@@ -33,6 +34,7 @@ import mozilla.components.feature.summarize.summarizationReducer
 @Suppress("LongParameterList")
 class SummarizationStoreViewModel(
     initializedFromShake: Boolean,
+    pageTitle: String,
     connectionType: ConnectionType,
     llmProvider: CloudLlmProvider,
     settings: SummarizationSettings,
@@ -48,7 +50,11 @@ class SummarizationStoreViewModel(
             SummarizationMiddleware(
                 settings = settings,
                 llmProvider = llmProvider,
-                contentProvider = ContentProvider.fromPage(pageContentExtractor, pageMetadataExtractor),
+                contentProvider = ContentProvider.fromPage(
+                    pageTitle = pageTitle,
+                    pageContentExtractor = pageContentExtractor,
+                    pageMetadataExtractor = pageMetadataExtractor,
+                ),
                 errorReporter = errorReporter,
                 scope = viewModelScope,
             ),
@@ -60,6 +66,7 @@ class SummarizationStoreViewModel(
          * Creates a [ViewModelProvider.Factory] for [SummarizationStoreViewModel].
          *
          * @param initializedFromShake Whether the summarization feature was triggered by a shake gesture.
+         * @param pageTitle The title of the page being summarized.
          * @param connectionType the current network [ConnectionType].
          * @param llmProvider the [LlmProvider] used to summarize the page.
          * @param settings the SummarizationSettings.
@@ -69,6 +76,7 @@ class SummarizationStoreViewModel(
          */
         fun factory(
             initializedFromShake: Boolean,
+            pageTitle: String,
             connectionType: ConnectionType,
             llmProvider: CloudLlmProvider,
             settings: SummarizationSettings,
@@ -79,7 +87,8 @@ class SummarizationStoreViewModel(
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 return SummarizationStoreViewModel(
-                    initializedFromShake,
+                    initializedFromShake = initializedFromShake,
+                    pageTitle = pageTitle,
                     llmProvider = llmProvider,
                     connectionType = connectionType,
                     settings = settings,

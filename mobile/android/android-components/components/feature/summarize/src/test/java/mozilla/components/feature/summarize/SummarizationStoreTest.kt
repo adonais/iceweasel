@@ -49,7 +49,7 @@ class SummarizationStoreTest {
     fun `test that we can consent to shake`() = runTest {
         val settings = SummarizationSettings.inMemory()
         val provider = FakeCloudProvider(llm = FakeLlm.successful)
-
+        val pageTitle = "Article Headline"
         val store = SummarizationStore(
             initialState = Inert(true),
             reducer = ::summarizationReducer,
@@ -57,7 +57,7 @@ class SummarizationStoreTest {
                 SummarizationMiddleware(
                     settings = settings,
                     llmProvider = provider,
-                    contentProvider = { Result.success(Content()) },
+                    contentProvider = { Result.success(Content(PageMetadata(pageTitle = pageTitle))) },
                     errorReporter = noopReporter,
                     scope = backgroundScope,
                     dispatcher = StandardTestDispatcher(testScheduler),
@@ -79,10 +79,10 @@ class SummarizationStoreTest {
             Inert(true),
             ShakeConsentRequired,
             Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# This is the article\n")),
-            Summarizing(provider.info, parser.parse("# This is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# This is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# This is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
         )
 
         assertEquals(expected, states)
@@ -135,6 +135,7 @@ class SummarizationStoreTest {
         val llm = FakeLlm.successful
         val provider = FakeCloudProvider(llm = llm)
         val content = "this is expected content."
+        val pageTitle = "Article Headline"
         val store = SummarizationStore(
             initialState = Inert(true),
             reducer = ::summarizationReducer,
@@ -142,7 +143,7 @@ class SummarizationStoreTest {
                 SummarizationMiddleware(
                     llmProvider = provider,
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    contentProvider = { Result.success(Content(PageMetadata(listOf("Article"), 0, "en"), content)) },
+                    contentProvider = { Result.success(Content(PageMetadata(listOf("Article"), 0, "en", pageTitle = pageTitle), content)) },
                     errorReporter = noopReporter,
                     scope = backgroundScope,
                     dispatcher = StandardTestDispatcher(testScheduler),
@@ -162,10 +163,10 @@ class SummarizationStoreTest {
         val expected = listOf<SummarizationState>(
             Inert(true),
             Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# This is the article\n")),
-            Summarizing(provider.info, parser.parse("# This is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# This is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# This is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
         )
 
         assertEquals(expected, states)
@@ -216,6 +217,7 @@ class SummarizationStoreTest {
         val content = "this is expected content."
         val provider = FakeCloudProvider(llm = llm)
         var usingReaderContent = true
+        val pageTitle = "Article Headline"
         val store = SummarizationStore(
             initialState = Inert(true),
             reducer = ::summarizationReducer,
@@ -224,8 +226,9 @@ class SummarizationStoreTest {
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     llmProvider = provider,
                     contentProvider = ContentProvider.fromPage(
+                        pageTitle = pageTitle,
                         pageMetadataExtractor = {
-                            Result.success(PageMetadata(listOf("Recipe"), 0, "en", isReaderable = true))
+                            Result.success(PageMetadata(listOf("Recipe"), 0, "en", isReaderable = true, pageTitle = pageTitle))
                         },
                         pageContentExtractor = { options ->
                             usingReaderContent = options.shouldUseReaderModeContent
@@ -251,10 +254,10 @@ class SummarizationStoreTest {
         val expected = listOf<SummarizationState>(
             Inert(true),
             Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# This is the article\n")),
-            Summarizing(provider.info, parser.parse("# This is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# This is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# This is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
         )
 
         assertFalse(usingReaderContent)
@@ -267,6 +270,7 @@ class SummarizationStoreTest {
         val llm = FakeLlm.successful
         val content = "this is expected content."
         val provider = FakeCloudProvider(llm = llm)
+        val pageTitle = "Article Headline"
         var usingReaderContent = false
         val store = SummarizationStore(
             initialState = Inert(true),
@@ -276,6 +280,7 @@ class SummarizationStoreTest {
                     settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
                     llmProvider = provider,
                     contentProvider = ContentProvider.fromPage(
+                        pageTitle = pageTitle,
                         pageMetadataExtractor = {
                             Result.success(PageMetadata(listOf("Article"), 0, "en", isReaderable = true))
                         },
@@ -303,10 +308,10 @@ class SummarizationStoreTest {
         val expected = listOf<SummarizationState>(
             Inert(true),
             Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# This is the article\n")),
-            Summarizing(provider.info, parser.parse("# This is the article\nThis is some content...\n")),
-            Summarizing(provider.info, parser.parse("# This is the article\nThis is some content...\nThis is some *bold* content.\n")),
-            Summarized(provider.info, parser.parse("# This is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
         )
 
         assertTrue(usingReaderContent)
@@ -319,6 +324,7 @@ class SummarizationStoreTest {
         val llm = FakeLlm.successful
         val content = "this is expected content."
         val provider = FakeCloudProvider(llm = llm)
+        val pageTitle = "Article Headline"
         val store = SummarizationStore(
             initialState = Inert(true),
             reducer = ::summarizationReducer,
@@ -333,6 +339,7 @@ class SummarizationStoreTest {
                                     listOf("Recipe"),
                                     0,
                                     "es",
+                                    pageTitle = pageTitle,
                                 ),
                                     content,
                             ),
@@ -357,22 +364,55 @@ class SummarizationStoreTest {
         val expected = listOf<SummarizationState>(
             Inert(true),
             Loading(provider.info),
-            Summarizing(provider.info, parser.parse("# This is the article\n")),
-            Summarizing(
-                provider.info,
-                parser.parse("# This is the article\nThis is some content...\n"),
-            ),
-            Summarizing(
-                provider.info,
-                parser.parse("# This is the article\nThis is some content...\nThis is some *bold* content.\n"),
-            ),
-            Summarized(
-                provider.info,
-                parser.parse("# This is the article\nThis is some content...\nThis is some *bold* content.\n"),
-            ),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
         )
 
         assertEquals(expected, states)
         assertEquals(Prompt(content, recipeInstructions("es")), llm.lastPrompt)
+    }
+
+    @Test
+    fun `if a title is not provided, skip prepending a title line`() = runTest {
+        val llm = FakeLlm.successful
+        val provider = FakeCloudProvider(llm = llm)
+        val content = "this is expected content."
+        val store = SummarizationStore(
+            initialState = Inert(true),
+            reducer = ::summarizationReducer,
+            middleware = listOf(
+                SummarizationMiddleware(
+                    llmProvider = provider,
+                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                    contentProvider = { Result.success(Content(PageMetadata(listOf("Article"), 0, "en"), content)) },
+                    errorReporter = noopReporter,
+                    scope = backgroundScope,
+                    dispatcher = StandardTestDispatcher(testScheduler),
+                ),
+            ),
+        )
+
+        val states = mutableListOf<SummarizationState>()
+        backgroundScope.launch {
+            store.stateFlow.toList(states)
+        }
+        testScheduler.advanceTimeBy(1.seconds)
+
+        store.dispatch(ViewAppeared)
+        testScheduler.advanceTimeBy(15.seconds)
+
+        val expected = listOf<SummarizationState>(
+            Inert(true),
+            Loading(provider.info),
+            Summarizing(provider.info, parser.parse("This is the article\n")),
+            Summarizing(provider.info, parser.parse("This is the article\nThis is some content...\n")),
+            Summarizing(provider.info, parser.parse("This is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarized(provider.info, parser.parse("This is the article\nThis is some content...\nThis is some *bold* content.\n")),
+        )
+
+        assertEquals(expected, states)
+        assertEquals(Prompt(content, defaultInstructions()), llm.lastPrompt)
     }
 }

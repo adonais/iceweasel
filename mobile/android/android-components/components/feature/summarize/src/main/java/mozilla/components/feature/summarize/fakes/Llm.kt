@@ -60,7 +60,7 @@ data class FakeLlm(
     companion object {
         val successful get() = FakeLlm(
             listOf(
-               "# This is the article\n",
+               "This is the article\n",
                "This is some content...\n",
                "This is some *bold* content.\n",
             ),

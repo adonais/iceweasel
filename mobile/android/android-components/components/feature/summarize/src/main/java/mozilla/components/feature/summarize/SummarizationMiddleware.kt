@@ -70,7 +70,10 @@ class SummarizationMiddleware(
         store.dispatch(ContentExtracted(content))
 
         llm.prompt(content.prompt)
-            .mapToRichDocument(dispatcher)
+            .mapToRichDocument(
+                pageTitle = content.metadata.pageTitle,
+                dispatcher = dispatcher,
+            )
             .onCompletion { if (it == null) store.dispatch(SummarizationCompleted) }
             .collect { store.dispatch(ReceivedParsedDocument(it)) }
     }.onFailure { store.dispatch(SummarizationFailed(it)) }

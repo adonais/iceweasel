@@ -44,6 +44,7 @@ import mozilla.components.support.utils.ext.top
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.SupportUtils
+import org.mozilla.fenix.tabstray.ext.toDisplayTitle
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -110,10 +111,13 @@ private fun Context.getConnectionType(): ConnectionType {
 class SummarizationFragment : BottomSheetDialogFragment() {
     private val args by navArgs<SummarizationFragmentArgs>()
     private val storeViewModel: SummarizationStoreViewModel by viewModels {
-        val engineSession = requireComponents.core.store.state.selectedTab?.engineState?.engineSession
+        val currentTab = requireComponents.core.store.state.selectedTab
+        val engineSession = currentTab?.engineState?.engineSession
         val provider = requireComponents.llm.mlpaProvider
+        val title = currentTab?.toDisplayTitle() ?: ""
         SummarizationStoreViewModel.factory(
             initializedFromShake = args.fromShake,
+            pageTitle = title,
             connectionType = requireContext().getConnectionType(),
             llmProvider = provider,
             settings = SummarizationSettings.dataStore(requireContext()),

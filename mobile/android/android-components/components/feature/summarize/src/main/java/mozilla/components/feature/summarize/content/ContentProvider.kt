@@ -41,11 +41,15 @@ fun interface ContentProvider {
          * @param pageMetadataExtractor Extracts metadata such as the page title and author.
          */
         fun fromPage(
+            pageTitle: String,
             pageContentExtractor: PageContentExtractor,
             pageMetadataExtractor: PageMetadataExtractor,
         ) = ContentProvider {
             runCatching {
-                val metadata = pageMetadataExtractor.getPageMetadata().getOrDefault(PageMetadata())
+                val metadata = pageMetadataExtractor
+                    .getPageMetadata()
+                    .getOrDefault(PageMetadata())
+                    .copy(pageTitle = pageTitle)
                 val content = pageContentExtractor.getPageContent(
                     options = PageContentExtractor.Options(
                         shouldUseReaderModeContent = metadata.shouldUseReaderModeContent,

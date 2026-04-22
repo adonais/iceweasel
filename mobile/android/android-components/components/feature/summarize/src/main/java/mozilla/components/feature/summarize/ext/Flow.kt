@@ -16,9 +16,16 @@ import mozilla.components.ui.richtext.parsing.Parser
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
-internal fun Flow<String>.mapToRichDocument(dispatcher: CoroutineDispatcher): Flow<RichDocument> {
+internal fun Flow<String>.mapToRichDocument(
+    pageTitle: String,
+    dispatcher: CoroutineDispatcher,
+): Flow<RichDocument> {
     val parser = Parser()
     val responseBuilder = StringBuilder()
+
+    if (pageTitle.isNotEmpty()) {
+        responseBuilder.append("# $pageTitle\n")
+    }
 
     return map { responseBuilder.append(it) }
         .sampledMap { parser.parse(it.toString()) }
