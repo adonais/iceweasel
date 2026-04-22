@@ -326,6 +326,9 @@ const COMMON_PREFERENCES = new Map([
   // Disable useragent updates
   ["general.useragent.updates.enabled", false],
 
+  // Do not open system settings when geolocation is requested without OS permission
+  ["geo.prompt.open_system_prefs", false],
+
   // Disable geolocation ping(#2)
   ["geo.provider.network.url", ""],
 
