@@ -3156,6 +3156,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN is aan</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN is actief.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Beginnen</string>
   <!--
     Autofill
 

@@ -1431,7 +1431,7 @@
   -->
   <string name="preference_gestures_website_pull_to_refresh">Lûk om te fernijen</string>
   <!-- Preference for using the dynamic toolbar -->
-  <string name="preference_gestures_dynamic_toolbar">Scroll om de wurkbalke te ferstopjen</string>
+  <string name="preference_gestures_dynamic_toolbar">Skowe om de wurkbalke te ferstopjen</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Fei de wurkbalke omheech om ljepblêden te iepenjen</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
@@ -3156,6 +3156,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN is oan</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN is aktyf.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Begjinne</string>
   <!--
     Autofill
 

@@ -374,7 +374,7 @@
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">არჩევანის უფლებას ყოველთვის მოგცემთ %s</string>
   <!-- Supporting text for the AI controls banner -->
-  <string name="ai_controls_banner_supporting_text">ეს გულისხმობს, იყენებდეს თუ არა ხელგონის შესაძლებლობებს.</string>
+  <string name="ai_controls_banner_supporting_text">იგულისხმება, იყენებდეს თუ არა ხელგონის შესაძლებლობებს.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">ვრცლად</string>
   <!-- Title for the block AI enhancements toggle -->
@@ -1030,9 +1030,9 @@
   <!-- Preference category for deleting or removing downloads -->
   <string name="preferences_category_delete_or_remove_downloads">წაშლა ან მოცილება ჩამოტვირთვებიდან</string>
   <string name="preferences_downloads_delete_from_device">წაშლა მოწყობილობიდან</string>
-  <string name="preferences_downloads_delete_from_device_description">ფაილი წაიშალა თქვენი მოწყობილობიდან და მოცილდა ჩამოტვირთვების ისტორიიდან</string>
+  <string name="preferences_downloads_delete_from_device_description">ფაილი იშლება თქვენი მოწყობილობიდან და ცილდება ჩამოტვირთვების ისტორიიდან</string>
   <string name="preferences_downloads_remove_from_download_history">მოცილება ჩამოტვირთვების ისტორიიდან</string>
-  <string name="preferences_downloads_remove_from_download_history_description">ფაილი მოცილებულია თქვენი ჩამოტვირთვების ისტორიიდან, მაგრამ რჩება მოწყობილობაზე</string>
+  <string name="preferences_downloads_remove_from_download_history_description">ფაილი ცილდება ჩამოტვირთვების ისტორიიდან, მაგრამ რჩება მოწყობილობაზე</string>
   <string name="preferences_downloads_ask_when_to_delete_files">კითხვა ფაილების წაშლისას</string>
   <!-- Preference for downloads -->
   <string name="preferences_downloads_2">ჩამოტვირთვების პარამეტრები</string>
@@ -1433,6 +1433,8 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">გადაადგილებისას ხელსაწყოთა დამალვა</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">ხელსაწყოთა ზოლის შვეულად ასმით ჩანართების ნახვა</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">აუსვით ხელსაწყოთა ზოლზე ჩანართების გახსნისთვის</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">მისამართის ველზე გასმით ჩანართების გადართვა</string>
@@ -1710,6 +1712,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">ჯგუფის ჩასწორება</string>
   <string name="create_tab_group_save_button">შენახვა</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">ახალი ჯგუფი, გადასაადგილებლის აკეცვა</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">ჩანართების ჯგუფის ჩასწორების დახურვა</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">ჯგუფი</string>
@@ -1725,6 +1729,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">დამატება</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">დამატება ჩანართების ჯგუფში, გადასაადგილებლის აკეცვა</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">ჩანართის ახალ ჯგუფში დამატება</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">ჩანართების ჯგუფში დამატების დახურვა</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">ჩანართების ახალი ჯგუფი</string>
@@ -1736,6 +1744,33 @@
     <item quantity="one">%1$d ჩანართი</item>
     <item quantity="other">%1$d ჩანართი</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">დამატება ჩანართების ჯგუფში %1$s, %2$d ჩანართი, ფერი %3$s</item>
+    <item quantity="other">დამატება ჩანართების ჯგუფში %1$s, %2$d ჩანართი, ფერი %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">გაზიარდეს ჩანართების ჯგუფი %1$s %2$d ჩანართით.</item>
+    <item quantity="other">გაზიარდეს ჩანართების ჯგუფი %1$s %2$d ჩანართით.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">ჩანართების ჯგუფის ნახვა, გადასაადგილებლის აკეცვა</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">ჩანართების ჯგუფი %1$s %2$d ჩანართით, ფერი %3$s</item>
+    <item quantity="other">ჩანართების ჯგუფი %1$s %2$d ჩანართით, ფერი %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">წაიშალოს ჩანართების ჯგუფი?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1744,6 +1779,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">ჯგუფის წაშლა</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">გაუქმება</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">ყვითელი</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">ნარინჯისფერი</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">წითელი</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">ვარდისფერი</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">მეწამული</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">იისფერი</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">ლურჯი</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">მოცისფრო</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">მწვანე</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">ნაცრისფერი</string>
   <!--
     History
 
@@ -3046,6 +3105,16 @@
   <string name="email_masks_max_free_tier_reached">თქვენ უკვე გამოყენებული გაქვთ ელფოსტის 5 უფასო ნიღაბი, ამიტომ მათგან შეირჩევა რომელიმე კვლავ გამოყენებისთვის.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">ელფოსტის ნიღბები ამჟამად მიუწვდომელია. სცადეთ ხელახლა რამდენიმე წუთში.</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">ჩაშენებული VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
@@ -3089,6 +3158,8 @@
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN ჩართ.</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN მოქმედია.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">დაიწყეთ</string>
   <!--
     Autofill
 
@@ -4321,6 +4392,106 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">ვრცლად იხილავთ %1$s.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">აქ</string>
+  <!--
+    Sports widget
+
+    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
+  -->
+  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">თვალი ადევნეთ თქვენს გუნდს</string>
+  <!-- Section header for the North America region in the sports widget country selector. -->
+  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">ჩრდილო ამერიკა</string>
+  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">აფრიკა</string>
+  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">აზია</string>
+  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
+  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">კონკაკაფი</string>
+  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">ევროპა</string>
+  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">ოკეანეთი</string>
+  <!-- Section header for the South America confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">სამხრეთი ამერიკა</string>
+  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_england" tools:ignore="UnusedResources">ინგლისი</string>
+  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">შოტლანდია</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">ᲞᲘᲠᲓ.</string>
+  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026 მსოფლიოს გამარჯვებულები</string>
+  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">ოცდამეთორმეტედფინალი</string>
+  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">მეთექვსმეტედფინალი</string>
+  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
+  <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">მეოთხედფინალი</string>
+  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
+  <string name="sports_widget_semi_final" tools:ignore="UnusedResources">ნახევარფინალი</string>
+  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
+  <string name="sports_widget_final" tools:ignore="UnusedResources">ფინალი</string>
+  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
+  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">ბრინჯაოსთვის</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a" tools:ignore="UnusedResources">ჯგუფი A</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b" tools:ignore="UnusedResources">ჯგუფი B</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c" tools:ignore="UnusedResources">ჯგუფი C</string>
+  <!-- Sports widget group stage label for group D in the soccer tournament. -->
+  <string name="sports_widget_group_d" tools:ignore="UnusedResources">ჯგუფი D</string>
+  <!-- Sports widget group stage label for group E in the soccer tournament. -->
+  <string name="sports_widget_group_e" tools:ignore="UnusedResources">ჯგუფი E</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f" tools:ignore="UnusedResources">ჯგუფი F</string>
+  <!-- Sports widget group stage label for group G in the soccer tournament. -->
+  <string name="sports_widget_group_g" tools:ignore="UnusedResources">ჯგუფი G</string>
+  <!-- Sports widget group stage label for group H in the soccer tournament. -->
+  <string name="sports_widget_group_h" tools:ignore="UnusedResources">ჯგუფი H</string>
+  <!-- Sports widget group stage label for group I in the soccer tournament. -->
+  <string name="sports_widget_group_i" tools:ignore="UnusedResources">ჯგუფი I</string>
+  <!-- Sports widget group stage label for group J in the soccer tournament. -->
+  <string name="sports_widget_group_j" tools:ignore="UnusedResources">ჯგუფი J</string>
+  <!-- Sports widget group stage label for group K in the soccer tournament. -->
+  <string name="sports_widget_group_k" tools:ignore="UnusedResources">ჯგუფი K</string>
+  <!-- Sports widget group stage label for group L in the soccer tournament. -->
+  <string name="sports_widget_group_l" tools:ignore="UnusedResources">ჯგუფი L</string>
+  <!-- Sports widget button label to see match results. -->
+  <string name="sports_widget_see_results" tools:ignore="UnusedResources">იხილეთ შედეგები</string>
+  <!-- Sports widget button label to view details of a soccer match results. -->
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">შეხვედრის შესახებ ვრცლად</string>
+  <!-- Sports widget section header for previous soccer match results. -->
+  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">წინა შეხვედრა</string>
+  <!-- Sports widget section header for related soccer matches in the same group. -->
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">მსგავსი შეხვედრები</string>
+  <!--
+    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
+    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
+    It’s playfully related to Firefox in that “tabs” are a browser feature.
+    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
+    or tracking in a technical sense; the meaning is about staying informed.
+  -->
+  <string name="sports_widget_card_title" tools:ignore="UnusedResources">თვალი ადევნეთ მსოფლიო თასს</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">შეხვედრების სიახლეები პირდაპირ ეთერში და ა.შ.</string>
+  <!-- Sports widget menu item to change the selected team. -->
+  <string name="sports_widget_change_team" tools:ignore="UnusedResources">გუნდის შეცვლა</string>
+  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
+  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">მიიღეთ სასურველი ფონი</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove" tools:ignore="UnusedResources">მოცილება</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">კვლავ გსურთ თვალი ადევნოთ?</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">აირჩიეთ სხვა გუნდი მსოფლიო თასზე თვალის მისადევნებლად.</string>
+  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
+  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">სხვა გუნდის მიდევნება</string>
+  <!-- Sports widget match status label shown during halftime of a match. -->
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">შესვენება</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">დამატებითი დრო</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">თერთმეტმეტრიანები</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
