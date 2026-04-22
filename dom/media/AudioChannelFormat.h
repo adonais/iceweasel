@@ -119,6 +119,8 @@ static const DownMixMatrix gDownMixMatrices[CUSTOM_CHANNEL_LAYOUTS *
  * Given an array of input channels, downmix to aOutputChannelCount, and copy
  * the results to the channel buffers in aOutputChannels.  Don't call this with
  * input count <= output count.
+ * Each of aOutputChannels must be non-null.
+ * aChannelArray elements may be null.
  */
 template <typename T>
 void AudioChannelsDownMix(const nsTArray<const T*>& aChannelArray,
@@ -131,7 +133,11 @@ void AudioChannelsDownMix(const nsTArray<const T*>& aChannelArray,
   if (inputChannelCount > 6) {
     // Just drop the unknown channels.
     for (uint32_t o = 0; o < aOutputChannelCount; ++o) {
-      PodCopy(aOutputChannels[o], inputChannels[o], aDuration);
+      if (inputChannels[o]) {
+        PodCopy(aOutputChannels[o], inputChannels[o], aDuration);
+      } else {
+        std::fill_n(aOutputChannels[o], aDuration, static_cast<T>(0));
+      }
     }
     return;
   }
@@ -150,14 +156,19 @@ void AudioChannelsDownMix(const nsTArray<const T*>& aChannelArray,
     // want an input channel to contribute to nothing
     T outputChannels[CUSTOM_CHANNEL_LAYOUTS + 1] = {0};
     for (uint32_t c = 0; c < inputChannelCount; ++c) {
-      outputChannels[m.mInputDestination[c]] +=
-          m.mInputCoefficient[c] * (static_cast<const T*>(inputChannels[c]))[s];
+      if (inputChannels[c]) {
+        outputChannels[m.mInputDestination[c]] +=
+            m.mInputCoefficient[c] *
+            (static_cast<const T*>(inputChannels[c]))[s];
+      }
     }
     // Utilize the fact that in every layout, C is the third channel.
     if (m.mCExtraDestination != IGNORE) {
-      outputChannels[m.mCExtraDestination] +=
-          m.mInputCoefficient[SURROUND_C] *
-          (static_cast<const T*>(inputChannels[SURROUND_C]))[s];
+      if (inputChannels[SURROUND_C]) {
+        outputChannels[m.mCExtraDestination] +=
+            m.mInputCoefficient[SURROUND_C] *
+            (static_cast<const T*>(inputChannels[SURROUND_C]))[s];
+      }
     }
 
     for (uint32_t c = 0; c < aOutputChannelCount; ++c) {
