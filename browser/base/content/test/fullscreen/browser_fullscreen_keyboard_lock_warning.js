@@ -11,6 +11,7 @@ add_setup(async () => {
       ["dom.fullscreen.keyboard_lock.long_press_interval", 0],
       ["full-screen-api.allow-trusted-requests-only", false],
       ["full-screen-api.warning.timeout", 1000],
+      ["full-screen-api.keyboardlock-warning.timeout", 1000],
     ],
   });
 });

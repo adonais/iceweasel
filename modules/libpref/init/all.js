@@ -3195,6 +3195,7 @@ pref("dom.webnotifications.requireinteraction.count", 3);
 pref("full-screen-api.transition.timeout", 1000);
 // time for the warning box stays on the screen before sliding out, unit: ms
 pref("full-screen-api.warning.timeout", 3000);
+pref("full-screen-api.keyboardlock-warning.timeout", 4000);
 // delay for the warning box to show when pointer stays on the top, unit: ms
 pref("full-screen-api.warning.delay", 500);
 
