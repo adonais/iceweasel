@@ -1463,6 +1463,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
             navController = findNavController(),
             tabId = args.sessionToStartSearchFor,
             searchAccessPoint = args.searchAccessPoint,
+            isEdgeToEdgeBackgroundEnabled = isEdgeToEdgeBackgroundEnabled(),
         ).also {
             awesomeBarComposable = it
         }
