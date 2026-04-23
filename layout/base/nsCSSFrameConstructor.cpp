@@ -5140,13 +5140,6 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
   if (bits & FCDATA_SUPPRESS_FRAME) {
     return;
   }
-  // Inside colgroups, suppress everything except columns.
-  if (aParentFrame && aParentFrame->IsTableColGroupFrame() &&
-      (!(bits & FCDATA_IS_TABLE_PART) ||
-       display.mDisplay != StyleDisplay::TableColumn)) {
-    return;
-  }
-
   // Create our shadow tree lazily if needed.
   // NOTE(emilio): This is rather hacky, we should ideally remove this and make
   // shadow tree creation faster, see bug 2017005.
@@ -8590,6 +8583,12 @@ void nsCSSFrameConstructor::CreateNeededPseudoContainers(
       continue;
     }
 
+    if (ourParentType == eTypeColGroup) {
+      // Suppress non-col items of colgroups.
+      iter.DeleteItemsTo(this, endIter);
+      continue;
+    }
+
     // Now group together all the items between iter and endIter.  The right
     // parent type to use depends on ourParentType.
     ParentType wrapperType;
@@ -8608,7 +8607,7 @@ void nsCSSFrameConstructor::CreateNeededPseudoContainers(
             groupingParentType == eTypeColGroup ? eTypeColGroup : eTypeRowGroup;
         break;
       case eTypeColGroup:
-        MOZ_CRASH("Colgroups should be suppresing non-col child items");
+        MOZ_FALLTHROUGH_ASSERT("handled above");
       default:
         NS_ASSERTION(ourParentType == eTypeBlock, "Unrecognized parent type");
         if (IsRubyParentType(groupingParentType)) {
