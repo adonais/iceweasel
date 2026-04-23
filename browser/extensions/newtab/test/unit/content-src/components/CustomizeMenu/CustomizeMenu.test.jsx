@@ -18,6 +18,17 @@ const DEFAULT_STATE = {
   },
 };
 
+const NOVA_STATE = {
+  ...DEFAULT_STATE,
+  Prefs: {
+    ...DEFAULT_STATE.Prefs,
+    values: {
+      ...DEFAULT_STATE.Prefs.values,
+      "nova.enabled": true,
+    },
+  },
+};
+
 function WrapWithProvider({ children, state = DEFAULT_STATE }) {
   const store = createStore(combineReducers(reducers), state);
   return <Provider store={store}>{children}</Provider>;
@@ -65,6 +76,54 @@ describe("<CustomizeMenu>", () => {
       wrapper = null;
     }
     sandbox.restore();
+  });
+
+  it("renders the legacy personalize button when nova is not enabled", () => {
+    wrapper = mount(
+      <WrapWithProvider>
+        <CustomizeMenu {...DEFAULT_PROPS} />
+      </WrapWithProvider>
+    );
+    assert.isFalse(
+      wrapper.find("moz-button.open-customization-button").exists(),
+      "nova moz-button is not rendered"
+    );
+    assert.isTrue(
+      wrapper.find("button.personalize-button").exists(),
+      "legacy button is rendered"
+    );
+  });
+
+  it("renders a moz-button when nova is enabled", () => {
+    wrapper = mount(
+      <WrapWithProvider state={NOVA_STATE}>
+        <CustomizeMenu {...DEFAULT_PROPS} />
+      </WrapWithProvider>
+    );
+    const btn = wrapper.find("moz-button.open-customization-button");
+    assert.isTrue(btn.exists(), "nova moz-button renders");
+    assert.equal(
+      btn.prop("data-l10n-id"),
+      "newtab-customize-panel-label",
+      "correct l10n id"
+    );
+    assert.equal(
+      btn.prop("iconsrc"),
+      "chrome://global/skin/icons/edit-outline.svg",
+      "correct icon src"
+    );
+    assert.equal(btn.prop("iconposition"), "end", "icon at end position");
+    assert.equal(btn.prop("aria-haspopup"), "dialog", "aria-haspopup dialog");
+  });
+
+  it("calls onOpen when the nova moz-button is clicked", () => {
+    wrapper = mount(
+      <WrapWithProvider state={NOVA_STATE}>
+        <CustomizeMenu {...DEFAULT_PROPS} />
+      </WrapWithProvider>
+    );
+    wrapper.find("moz-button.open-customization-button").simulate("click");
+    assert.calledOnce(DEFAULT_PROPS.onOpen);
   });
 
   it("renders the personalize button when not showing and calls onOpen on click", () => {

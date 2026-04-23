@@ -711,7 +711,7 @@ add_task(async function test_activation_window_variants() {
         }, "Top sites should be hidden during activation window");
 
         const customizeButton = content.document.querySelector(
-          "button.personalize-button"
+          "button.personalize-button, moz-button.open-customization-button"
         );
         Assert.ok(
           customizeButton.classList.contains(

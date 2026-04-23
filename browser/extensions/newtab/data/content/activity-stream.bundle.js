@@ -16978,7 +16978,18 @@ class _CustomizeMenu extends (external_React_default()).PureComponent {
       classNames: "personalize-animate",
       in: !this.props.showing,
       appear: true
-    }, /*#__PURE__*/external_React_default().createElement("button", {
+    },
+    // @nova-cleanup(remove-conditional): replace with moz-button only
+    novaEnabled ? /*#__PURE__*/external_React_default().createElement("moz-button", {
+      ref: this.personalizeButtonRef,
+      className: `open-customization-button${activationWindowClass ? ` ${activationWindowClass}` : ""}`,
+      "data-l10n-id": "newtab-customize-panel-label",
+      "aria-haspopup": "dialog",
+      onClick: () => this.props.onOpen(),
+      iconsrc: "chrome://global/skin/icons/edit-outline.svg",
+      iconposition: "end",
+      type: "default"
+    }) : /*#__PURE__*/external_React_default().createElement("button", {
       ref: this.personalizeButtonRef,
       className: `${activationWindowClass} personalize-button`,
       "data-l10n-id": "newtab-customize-panel-icon-button",

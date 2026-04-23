@@ -80,10 +80,66 @@
       margin 0.3s ease,
       max-width 0.3s ease;
   }
+
+}
+
+// @nova-cleanup(remove-conditional): replace .open-customization-button with the default .personalize-button styles
+.open-customization-button {
+  &.personalize-animate-exit-done {
+    visibility: hidden;
+  }
+
+  &::part(moz-button-label) {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: opacity 0.3s ease, max-width 0.3s ease;
+    }
+
+    @include wallpaper-contrast-fix;
+  }
+
+  &::part(button) {
+    min-width: var(--button-size-icon);
+    max-width: var(--button-size-icon);
+    height: var(--button-size-icon);
+    // centers the icon within the circular button when the label is hidden
+    padding-inline: 0 calc((var(--button-size-icon) - var(--icon-size-medium)) / 2);
+    overflow: hidden;
+    justify-content: flex-end;
+    gap: 0;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: max-width 0.3s ease, padding 0.3s ease, gap 0.3s ease;
+    }
+
+    @include wallpaper-contrast-fix;
+  }
+
+  &:hover,
+  &:focus-within,
+  &.activation-window-variant-a,
+  &.activation-window-variant-b {
+    &::part(moz-button-label) {
+      opacity: 1;
+      max-width: 30ch;
+    }
+
+    &::part(button) {
+      // wider than the label to account for icon + gap + padding
+      max-width: calc(30ch + var(--icon-size-medium) + var(--space-small) + var(--space-large) * 2);
+      padding: var(--space-small) var(--space-large);
+      gap: var(--space-small);
+    }
+  }
 }
 
 .personalize-button:hover,
 .personalize-button:focus-visible,
+.personalize-button:focus-within,
 .personalize-button.activation-window-variant-a,
 .personalize-button.activation-window-variant-b {
   > label {

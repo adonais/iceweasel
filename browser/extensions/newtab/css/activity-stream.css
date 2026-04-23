@@ -2003,8 +2003,59 @@ main.newtab-main section {
   transition: opacity 0.3s ease, margin 0.3s ease, max-width 0.3s ease;
 }
 
+.open-customization-button.personalize-animate-exit-done {
+  visibility: hidden;
+}
+.open-customization-button::part(moz-button-label) {
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .open-customization-button::part(moz-button-label) {
+    transition: opacity 0.3s ease, max-width 0.3s ease;
+  }
+}
+.lightWallpaper .open-customization-button::part(moz-button-label) {
+  color-scheme: light;
+}
+.darkWallpaper .open-customization-button::part(moz-button-label) {
+  color-scheme: dark;
+}
+.open-customization-button::part(button) {
+  min-width: var(--button-size-icon);
+  max-width: var(--button-size-icon);
+  height: var(--button-size-icon);
+  padding-inline: 0 calc((var(--button-size-icon) - var(--icon-size-medium)) / 2);
+  overflow: hidden;
+  justify-content: flex-end;
+  gap: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .open-customization-button::part(button) {
+    transition: max-width 0.3s ease, padding 0.3s ease, gap 0.3s ease;
+  }
+}
+.lightWallpaper .open-customization-button::part(button) {
+  color-scheme: light;
+}
+.darkWallpaper .open-customization-button::part(button) {
+  color-scheme: dark;
+}
+.open-customization-button:hover::part(moz-button-label), .open-customization-button:focus-within::part(moz-button-label), .open-customization-button.activation-window-variant-a::part(moz-button-label), .open-customization-button.activation-window-variant-b::part(moz-button-label) {
+  opacity: 1;
+  max-width: 30ch;
+}
+.open-customization-button:hover::part(button), .open-customization-button:focus-within::part(button), .open-customization-button.activation-window-variant-a::part(button), .open-customization-button.activation-window-variant-b::part(button) {
+  max-width: calc(30ch + var(--icon-size-medium) + var(--space-small) + var(--space-large) * 2);
+  padding: var(--space-small) var(--space-large);
+  gap: var(--space-small);
+}
+
 .personalize-button:hover > label,
 .personalize-button:focus-visible > label,
+.personalize-button:focus-within > label,
 .personalize-button.activation-window-variant-a > label,
 .personalize-button.activation-window-variant-b > label {
   opacity: 1;

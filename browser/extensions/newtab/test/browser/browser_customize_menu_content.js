@@ -82,11 +82,16 @@ test_newtab({
       "browser.newtabpage.activity-stream.feeds.section.topstories";
 
     await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".personalize-button"),
+      () =>
+        content.document.querySelector(
+          ".personalize-button, .open-customization-button"
+        ),
       "Wait for prefs button to load on the newtab page"
     );
 
-    let customizeButton = content.document.querySelector(".personalize-button");
+    let customizeButton = content.document.querySelector(
+      ".personalize-button, .open-customization-button"
+    );
     customizeButton.click();
 
     let defaultPos = "matrix(1, 0, 0, 1, 0, 0)";
@@ -201,11 +206,16 @@ test_newtab({
     }
 
     await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".personalize-button"),
+      () =>
+        content.document.querySelector(
+          ".personalize-button, .open-customization-button"
+        ),
       "Wait for prefs button to load on the newtab page"
     );
 
-    let customizeButton = content.document.querySelector(".personalize-button");
+    let customizeButton = content.document.querySelector(
+      ".personalize-button, .open-customization-button"
+    );
     customizeButton.click();
 
     let defaultPos = "matrix(1, 0, 0, 1, 0, 0)";
@@ -279,11 +289,16 @@ test_newtab({
   test: async function test_open_close_customizeMenu() {
     const EventUtils = ContentTaskUtils.getEventUtils(content);
     await ContentTaskUtils.waitForCondition(
-      () => content.document.querySelector(".personalize-button"),
+      () =>
+        content.document.querySelector(
+          ".personalize-button, .open-customization-button"
+        ),
       "Wait for prefs button to load on the newtab page"
     );
 
-    let customizeButton = content.document.querySelector(".personalize-button");
+    let customizeButton = content.document.querySelector(
+      ".personalize-button, .open-customization-button"
+    );
     customizeButton.click();
 
     let defaultPos = "matrix(1, 0, 0, 1, 0, 0)";
@@ -303,7 +318,9 @@ test_newtab({
     await ContentTaskUtils.waitForCondition(
       () =>
         content.getComputedStyle(
-          content.document.querySelector(".personalize-button")
+          content.document.querySelector(
+            ".personalize-button, .open-customization-button"
+          )
         ).visibility === "hidden",
       "Personalize button should become hidden"
     );
@@ -321,14 +338,21 @@ test_newtab({
 
     await ContentTaskUtils.waitForCondition(
       () =>
-        content.document.activeElement.classList.contains("personalize-button"),
+        content.document.activeElement.classList.contains(
+          "personalize-button"
+        ) ||
+        content.document.activeElement.classList.contains(
+          "open-customization-button"
+        ),
       "Personalize button should be focused when menu closes"
     );
 
     await ContentTaskUtils.waitForCondition(
       () =>
         content.getComputedStyle(
-          content.document.querySelector(".personalize-button")
+          content.document.querySelector(
+            ".personalize-button, .open-customization-button"
+          )
         ).visibility === "visible",
       "Personalize button should become visible"
     );
