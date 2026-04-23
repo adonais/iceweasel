@@ -53,6 +53,7 @@ export class IPProtectionToolbarButton {
   #widgetId = null;
   #previousIsExcluded = null;
   #prefObserver = null;
+  #visitedExcludedSites = new Set();
 
   static CONFIRMATION_HINT_MESSAGE_ID =
     "confirmation-hint-ipprotection-navigated-to-excluded-site";
@@ -194,6 +195,14 @@ export class IPProtectionToolbarButton {
 
     let exclusionChanged =
       event.type === "IPPExceptionsManager:ExclusionChanged";
+
+    if (
+      event.type === "IPPProxyManager:StateChanged" &&
+      lazy.IPPProxyManager.state !== lazy.IPPProxyStates.ACTIVE
+    ) {
+      this.#visitedExcludedSites.clear();
+    }
+
     this.updateState(null, { showConfirmationHint: !exclusionChanged });
   }
 
@@ -315,7 +324,9 @@ export class IPProtectionToolbarButton {
   /**
    * Shows a confirmation hint after navigating from a
    * protected site to an excluded site while the VPN is on.
-   * Ignore the message if there is an error or the VPN is off.
+   * Ignore the message if there is an error, if the VPN is off,
+   * or if we already showed the message for a site during the
+   * VPN session.
    *
    * @param {object} confirmationHint
    *  The current window's confirmation hint instance
@@ -347,6 +358,12 @@ export class IPProtectionToolbarButton {
       return;
     }
 
+    let siteOrigin = this.gBrowser?.contentPrincipal?.origin;
+    if (!siteOrigin || this.#visitedExcludedSites.has(siteOrigin)) {
+      return;
+    }
+
+    this.#visitedExcludedSites.add(siteOrigin);
     confirmationHint.show(
       toolbaritem,
       IPProtectionToolbarButton.CONFIRMATION_HINT_MESSAGE_ID,
