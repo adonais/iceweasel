@@ -2202,7 +2202,11 @@ void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
     return;
   }
 
-  // If the content format is HDR, we will want to use more than 8bit.
+  // If the content is HDR, we will want to use more than 8bit. A high bit-depth
+  // pixel format alone is not sufficient — 10-bit SDR content (e.g. BT.2020
+  // with a non-HDR transfer function) must not be treated as HDR, otherwise
+  // the compositor applies HDR tone mapping to SDR content and corrupts the
+  // image. Check both the pixel format and the transfer function.
   mContentIsHDR = false;
   if (texture) {
     const auto format = texture->GetFormat();
@@ -2213,9 +2217,13 @@ void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
       case gfx::SurfaceFormat::R10G10B10X2_UINT32:
       case gfx::SurfaceFormat::R16G16B16A16F:
       case gfx::SurfaceFormat::P010:
-      case gfx::SurfaceFormat::P016:
-        mContentIsHDR = true;
+      case gfx::SurfaceFormat::P016: {
+        const auto* dxgiTexture = texture->AsRenderDXGITextureHost();
+        mContentIsHDR =
+            dxgiTexture &&
+            gfx::IsHDRTransferFunction(dxgiTexture->GetTransferFunction());
         break;
+      }
       default:
         break;
     }
