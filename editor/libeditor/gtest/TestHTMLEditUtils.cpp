@@ -1392,7 +1392,7 @@ TEST(HTMLEditUtilsTest, IsEmptyNode)
            IsEmptyNodeTest{u"<button></button>", "button", {}, false, false},
            IsEmptyNodeTest{
                u"<textarea></textarea>", "textarea", {}, false, false},
-           IsEmptyNodeTest{u"<output></output>", "output", {}, false, false},
+           IsEmptyNodeTest{u"<output></output>", "output", {}, true, false},
            IsEmptyNodeTest{
                u"<progress></progress>", "progress", {}, false, false},
            IsEmptyNodeTest{u"<meter></meter>", "meter", {}, false, false},

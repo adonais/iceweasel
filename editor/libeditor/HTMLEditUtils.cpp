@@ -825,9 +825,6 @@ bool HTMLEditUtils::IsReplacedElement(const Element& aElement) {
     return !aElement.AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
                                  nsGkAtoms::hidden, eIgnoreCase);
   }
-  if (HTMLEditUtils::IsFormWidgetElement(aElement)) {
-    return true;
-  }
   // <object> is a special element, it shows its subtree when it does not load
   // its content.
   if (aElement.IsHTMLElement(nsGkAtoms::object)) {
@@ -843,20 +840,14 @@ bool HTMLEditUtils::IsReplacedElement(const Element& aElement) {
       nsGkAtoms::audio,
       // In strictly speaking, <br> is not a replaced element, but treating it
       // as a replaced element makes HTMLEditor and its peers simpler.
-      nsGkAtoms::br, nsGkAtoms::canvas, nsGkAtoms::embed, nsGkAtoms::iframe,
-      nsGkAtoms::img,
+      nsGkAtoms::br, nsGkAtoms::button, nsGkAtoms::canvas, nsGkAtoms::embed,
+      nsGkAtoms::iframe, nsGkAtoms::img, nsGkAtoms::meter,
       // <optgroup> and <option> are not replaced element actually but they
       // are treated as so for the compatibility with Chrome.
       // XXX I wonder if we can treat them as so only when they are in
       // <select>.
-      nsGkAtoms::optgroup, nsGkAtoms::option, nsGkAtoms::video);
-}
-
-bool HTMLEditUtils::IsFormWidgetElement(const nsIContent& aContent) {
-  return aContent.IsAnyOfHTMLElements(nsGkAtoms::textarea, nsGkAtoms::select,
-                                      nsGkAtoms::button, nsGkAtoms::output,
-                                      nsGkAtoms::progress, nsGkAtoms::meter,
-                                      nsGkAtoms::input);
+      nsGkAtoms::optgroup, nsGkAtoms::option, nsGkAtoms::progress,
+      nsGkAtoms::select, nsGkAtoms::textarea, nsGkAtoms::video);
 }
 
 bool HTMLEditUtils::IsAlignAttrSupported(const nsIContent& aContent) {
