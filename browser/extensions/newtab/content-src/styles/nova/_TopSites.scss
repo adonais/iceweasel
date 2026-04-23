@@ -146,10 +146,18 @@
     background: var(--newtab-background-card);
   }
 
-  .title .title-label {
-    padding: 0;
-    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-    width: var(--col-width);
+  .title {
+    .title-label {
+      padding: 0;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      width: var(--col-width);
+    }
+
+    // Allow a bit more character space for sponsored tile labels
+    &.sponsored > .title-label {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      width: calc(var(--col-width) + 8px);
+    }
   }
 }
 

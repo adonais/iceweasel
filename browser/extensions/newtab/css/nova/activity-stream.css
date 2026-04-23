@@ -11060,6 +11060,10 @@ button.arrow-button:dir(rtl) {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   width: var(--col-width);
 }
+.nova-enabled .top-site-outer .title.sponsored > .title-label {
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  width: calc(var(--col-width) + 8px);
+}
 
 @media (forced-colors: active) {
   .nova-enabled .top-site-outer .tile {
