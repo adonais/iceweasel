@@ -83,6 +83,13 @@ async function doHandoffTest({ trigger, assert, private: isPrivate }) {
 
       BrowserTestUtils.startLoadingURIString(browser, handoffPage);
       await BrowserTestUtils.browserLoaded(browser, false, handoffPage);
+      // Ensure the urlbar is not focused so setHiddenFocus() calls focus() and
+      // fires a focus event we can wait on.
+      browser.focus();
+      const onFocus = BrowserTestUtils.waitForEvent(
+        win.gURLBar.inputField,
+        "focus"
+      );
       await SpecialPowers.spawn(browser, [], async function () {
         await ContentTaskUtils.waitForCondition(() =>
           content.document.querySelector("content-search-handoff-ui")
@@ -91,10 +98,9 @@ async function doHandoffTest({ trigger, assert, private: isPrivate }) {
           "content-search-handoff-ui"
         );
         await handoffUI.updateComplete;
-        const searchInput =
-          handoffUI.shadowRoot.querySelector(".fake-editable");
-        searchInput.click();
+        handoffUI.shadowRoot.querySelector(".fake-editable").click();
       });
+      await onFocus;
       EventUtils.synthesizeKey("x", {}, win);
       await UrlbarTestUtils.promiseSearchComplete(win);
       await trigger(win);
