@@ -7,6 +7,7 @@
 
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/dom/GeolocationIPCUtils.h"
 #include "mozilla/dom/PermissionStatusBinding.h"
 #include "mozilla/dom/PermissionsBinding.h"
 #include "nsIPermission.h"
@@ -21,7 +22,15 @@ class ThreadSafeWorkerRef;
 
 class PermissionStatusSink {
  public:
+  struct InternalPermissionStates {
+    uint32_t mBrowser = 0;
+    PermissionState mSystem = PermissionState::Denied;
+  };
+  using InternalPermissionStatesPromise =
+      MozPromise<InternalPermissionStates, nsresult, true>;
   using PermissionStatePromise = MozPromise<uint32_t, nsresult, true>;
+  using SystemPermissionStatePromise =
+      MozPromise<PermissionState, nsresult, true>;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PermissionStatusSink)
 
@@ -29,7 +38,7 @@ class PermissionStatusSink {
                        PermissionName aPermissionName,
                        const nsACString& aPermissionType);
 
-  RefPtr<PermissionStatePromise> Init();
+  RefPtr<InternalPermissionStatesPromise> Init();
 
   // These functions should be called when an permission is updated which may
   // change the state of this PermissionStatus. MaybeUpdatedByOnMainThread
@@ -56,6 +65,8 @@ class PermissionStatusSink {
 
   RefPtr<PermissionStatePromise> ComputeStateOnMainThreadInternal(
       nsPIDOMWindowInner* aWindow);
+
+  RefPtr<SystemPermissionStatePromise> ComputeSystemState();
 
   nsCOMPtr<nsISerialEventTarget> mSerialEventTarget;
   nsCOMPtr<nsIPrincipal> mPrincipalForPermission;
