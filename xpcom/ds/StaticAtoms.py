@@ -1036,6 +1036,7 @@ STATIC_ATOMS = [
     Atom("plaintextOnly", "plaintext-only"),
     Atom("playbackrate", "playbackrate"),
     Atom("pointSize", "point-size"),
+    Atom("polarion_rte_RichTextArea", "polarion-rte-RichTextArea"),
     Atom("poly", "poly"),
     Atom("polygon", "polygon"),
     Atom("popover", "popover"),
