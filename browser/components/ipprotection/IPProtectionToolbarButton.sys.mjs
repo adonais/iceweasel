@@ -20,6 +20,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ERRORS: "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
 });
 
+const OPENED_WITH_LOCATION_PREF =
+  "browser.ipProtection.openedPanelWithLocation";
+
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "siteExceptionsFeaturePref",
@@ -49,6 +52,7 @@ export class IPProtectionToolbarButton {
   #progressListener = null;
   #widgetId = null;
   #previousIsExcluded = null;
+  #prefObserver = null;
 
   static CONFIRMATION_HINT_MESSAGE_ID =
     "confirmation-hint-ipprotection-navigated-to-excluded-site";
@@ -123,6 +127,9 @@ export class IPProtectionToolbarButton {
     if (this.gBrowser?.tabContainer) {
       this.gBrowser.tabContainer.addEventListener("TabSelect", this);
     }
+
+    this.#prefObserver = { observe: () => this.#updateBadge() };
+    Services.prefs.addObserver(OPENED_WITH_LOCATION_PREF, this.#prefObserver);
 
     if (toolbaritem) {
       toolbaritem.classList.add("subviewbutton-nav"); // adds the right arrow in overflow menu
@@ -269,6 +276,40 @@ export class IPProtectionToolbarButton {
       isExcluded,
       isPaused,
     });
+
+    this.#updateBadge(toolbaritem);
+  }
+
+  /**
+   * Updates the badge on the toolbar button based on whether the user has
+   * opened the panel since location controls were introduced.
+   * The badge is not shown when the button is in the customize toolbar palette.
+   *
+   * @param {XULElement|null} [toolbaritem]
+   */
+  #updateBadge(toolbaritem = null) {
+    toolbaritem ??= this.toolbaritem;
+
+    if (!toolbaritem) {
+      return;
+    }
+
+    let everOpenedPanel = Services.prefs.getBoolPref(
+      OPENED_WITH_LOCATION_PREF,
+      false
+    );
+
+    let inPalette = !lazy.CustomizableUI.getPlacementOfWidget(this.#widgetId);
+
+    let badge = toolbaritem.querySelector(".toolbarbutton-badge");
+
+    if (everOpenedPanel || inPalette) {
+      toolbaritem.removeAttribute("badged");
+      badge?.classList.remove("feature-callout");
+    } else {
+      toolbaritem.setAttribute("badged", "true");
+      badge?.classList.add("feature-callout");
+    }
   }
 
   /**
@@ -394,6 +435,12 @@ export class IPProtectionToolbarButton {
       this.gBrowser.removeTabsProgressListener(this.#progressListener);
     }
     this.#progressListener = null;
+
+    Services.prefs.removeObserver(
+      OPENED_WITH_LOCATION_PREF,
+      this.#prefObserver
+    );
+    this.#prefObserver = null;
 
     if (this.gBrowser?.tabContainer) {
       this.gBrowser.tabContainer.removeEventListener("TabSelect", this);

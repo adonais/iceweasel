@@ -722,14 +722,24 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
 }
 
 /* IP Protection */
-#ipprotection-button > .toolbarbutton-icon {
+#ipprotection-button {
   --icon-width: 48px;
-  width: calc(2 * var(--toolbarbutton-inner-padding) + var(--icon-width));
-  padding-block: 0;
-}
+  --panel-and-palette-icon-size: var(--icon-width);
 
-toolbarpaletteitem[place="palette"] > #ipprotection-button > .toolbarbutton-icon {
-  max-height: 16px;
+  > .toolbarbutton-icon {
+    width: calc(2 * var(--toolbarbutton-inner-padding) + var(--icon-width));
+    padding-block: 0;
+  }
+
+  > .toolbarbutton-badge-stack > .toolbarbutton-icon {
+    width: var(--icon-width);
+  }
+
+  toolbarpaletteitem[place="palette"] > & > .toolbarbutton-icon,
+  toolbarpaletteitem[place="palette"] > & > .toolbarbutton-badge-stack > .toolbarbutton-icon {
+    min-height: 16px;
+    max-height: 16px;
+  }
 }
 
 /* Smart Window toolbar ask button */

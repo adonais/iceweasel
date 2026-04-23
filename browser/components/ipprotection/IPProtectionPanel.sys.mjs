@@ -51,6 +51,8 @@ const BANDWIDTH_RESET_DATE_PREF = "browser.ipProtection.bandwidthResetDate";
 const DEFAULT_EGRESS_LOCATION = { name: "United States", code: "us" };
 const EGRESS_LOCATION_PREF = "browser.ipProtection.egressLocationEnabled";
 const USER_OPENED_PREF = "browser.ipProtection.everOpenedPanel";
+const OPENED_WITH_LOCATION_PREF =
+  "browser.ipProtection.openedPanelWithLocation";
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -399,6 +401,13 @@ export class IPProtectionPanel {
     let hasUserEverOpenedPanel = Services.prefs.getBoolPref(USER_OPENED_PREF);
     if (!hasUserEverOpenedPanel) {
       Services.prefs.setBoolPref(USER_OPENED_PREF, true);
+    }
+
+    let hasOpenedPanelWithLocation = Services.prefs.getBoolPref(
+      OPENED_WITH_LOCATION_PREF
+    );
+    if (!hasOpenedPanelWithLocation) {
+      Services.prefs.setBoolPref(OPENED_WITH_LOCATION_PREF, true);
     }
   }
 

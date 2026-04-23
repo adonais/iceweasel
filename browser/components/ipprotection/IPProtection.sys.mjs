@@ -316,6 +316,12 @@ class IPProtectionWidget {
     if (!moved) {
       Glean.ipprotection.removedFromToolbar.record();
       lazy.IPPProxyManager.stop();
+      let toolbarButtons = ChromeUtils.nondeterministicGetWeakMapKeys(
+        this.#toolbarButtons
+      );
+      for (let win of toolbarButtons) {
+        this.#toolbarButtons.get(win)?.updateState();
+      }
     }
   }
 
