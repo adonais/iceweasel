@@ -867,9 +867,41 @@
             data-l10n-id="ipprotection-experiment-badge"
           ></html:moz-badge>
         </html:h1>
+        <html:moz-button
+          id="ipprotection-header-button"
+          class="panel-info-button"
+          data-captures-focus="true"
+          type="ghost"
+          iconsrc="chrome://global/skin/icons/info.svg"
+          size="small"
+          data-l10n-id="ipprotection-help-button">
+        </html:moz-button>
     </hbox>
     <toolbarseparator/>
     <vbox id="PanelUI-ipprotection-content" class="panel-subview-body"/>
+  </panelview>
+
+  <panelview id="PanelUI-ipprotection-locations"
+             class="PanelUI-subView"
+             data-l10n-id="ipprotection-locations-subview"
+             data-l10n-attrs="title">
+    <hbox id="PanelUI-ipprotection-locations-header"
+         class="panel-header panel-header-with-info-button">
+      <html:h1>
+        <html:span></html:span>
+      </html:h1>
+      <html:moz-button
+        id="ipprotection-locations-header-button"
+        class="panel-info-button"
+        data-captures-focus="true"
+        type="ghost"
+        iconsrc="chrome://global/skin/icons/info.svg"
+        size="small"
+        data-l10n-id="ipprotection-help-button">
+      </html:moz-button>
+    </hbox>
+    <toolbarseparator/>
+    <vbox id="PanelUI-ipprotection-locations-content" class="panel-subview-body"/>
   </panelview>
 
   <panelview id="ai-window-toggle-view" class="PanelUI-subView">
