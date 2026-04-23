@@ -77,7 +77,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(IMEContentObserver)
   tmp->NotifyIMEOfBlur();
   tmp->UnregisterObservers();
 
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelection)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mRootElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mRootEditableNodeOrTextControlElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocShell)
@@ -96,7 +95,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(IMEContentObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWidget)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mFocusedWidget)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelection)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRootElement)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRootEditableNodeOrTextControlElement)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocShell)
@@ -219,6 +217,25 @@ void IMEContentObserver::OnIMEReceivedFocus() {
   FlushMergeableNotifications();
 }
 
+dom::Selection* IMEContentObserver::GetSelection() const {
+  if (NS_WARN_IF(!mEditorBase) ||
+      NS_WARN_IF(!mRootEditableNodeOrTextControlElement)) {
+    return nullptr;
+  }
+  nsCOMPtr<nsISelectionController> selCon;
+  if (mRootEditableNodeOrTextControlElement->IsElement()) {
+    selCon = mEditorBase->GetSelectionController();
+  } else {
+    MOZ_ASSERT(mRootEditableNodeOrTextControlElement->IsDocument());
+    selCon =
+        mRootEditableNodeOrTextControlElement->AsDocument()->GetPresShell();
+  }
+  if (NS_WARN_IF(!selCon)) {
+    return nullptr;
+  }
+  return selCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
+}
+
 bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
                                         Element* aElement,
                                         EditorBase& aEditorBase) {
@@ -235,23 +252,8 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
 
   RefPtr<PresShell> presShell = aPresContext.GetPresShell();
 
-  // get selection and root content
-  nsCOMPtr<nsISelectionController> selCon;
-  if (mRootEditableNodeOrTextControlElement->IsElement()) {
-    selCon = aEditorBase.GetSelectionController();
-    if (NS_WARN_IF(!selCon)) {
-      return false;
-    }
-  } else {
-    MOZ_ASSERT(mRootEditableNodeOrTextControlElement->IsDocument());
-    selCon = presShell;
-    if (NS_WARN_IF(!selCon)) {
-      return false;
-    }
-  }
-
-  mSelection = selCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
-  if (NS_WARN_IF(!mSelection)) {
+  RefPtr selection = GetSelection();
+  if (NS_WARN_IF(!selection)) {
     return false;
   }
 
@@ -264,7 +266,7 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
       mTextControlValueLength = ContentEventHandler::GetNativeTextLength(*text);
     }
     mIsTextControl = true;
-  } else if (const nsRange* selRange = mSelection->GetRangeAt(0)) {
+  } else if (const nsRange* selRange = selection->GetRangeAt(0)) {
     MOZ_ASSERT(!mIsTextControl);
     if (NS_WARN_IF(!selRange->GetStartContainer())) {
       return false;
@@ -313,7 +315,6 @@ bool IMEContentObserver::InitWithEditor(nsPresContext& aPresContext,
 
 void IMEContentObserver::Clear() {
   mEditorBase = nullptr;
-  mSelection = nullptr;
   mRootEditableNodeOrTextControlElement = nullptr;
   mRootElement = nullptr;
   mDocShell = nullptr;
@@ -326,7 +327,6 @@ void IMEContentObserver::Clear() {
 }
 
 void IMEContentObserver::ObserveEditableNode() {
-  MOZ_RELEASE_ASSERT(mSelection);
   MOZ_RELEASE_ASSERT(mRootElement);
   MOZ_RELEASE_ASSERT(GetState() != eState_Observing);
 
@@ -413,14 +413,11 @@ void IMEContentObserver::UnregisterObservers() {
            mRootElement ? ToString(*mRootElement).c_str() : "nullptr"));
 
   mIsObserving = false;
+  mSelectionData.Clear();
+  mFocusedWidget = nullptr;
 
   if (mEditorBase) {
     mEditorBase->SetIMEContentObserver(nullptr);
-  }
-
-  if (mSelection) {
-    mSelectionData.Clear();
-    mFocusedWidget = nullptr;
   }
 
   if (mRootElement) {
@@ -563,7 +560,7 @@ bool IMEContentObserver::IsObserving(
 }
 
 IMEContentObserver::State IMEContentObserver::GetState() const {
-  if (!mSelection || !mRootElement || !mRootEditableNodeOrTextControlElement) {
+  if (!mRootElement || !mRootEditableNodeOrTextControlElement) {
     return eState_NotObserving;  // failed to initialize or finalized.
   }
   if (!mRootElement->IsInComposedDoc()) {
@@ -641,12 +638,13 @@ bool IMEContentObserver::IsEditorComposing() const {
 
 nsresult IMEContentObserver::GetSelectionAndRoot(Selection** aSelection,
                                                  Element** aRootElement) const {
-  if (!mRootEditableNodeOrTextControlElement || !mSelection) {
+  auto* selection = GetSelection();
+  if (!selection || !mRootElement) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  NS_ASSERTION(mSelection && mRootElement, "uninitialized content observer");
-  NS_ADDREF(*aSelection = mSelection);
+  NS_ASSERTION(mRootElement, "uninitialized content observer");
+  NS_ADDREF(*aSelection = selection);
   NS_ADDREF(*aRootElement = mRootElement);
   return NS_OK;
 }
@@ -817,7 +815,7 @@ nsresult IMEContentObserver::MaybeHandleSelectionEvent(
       mSelectionData.IsInitialized() && mSelectionData.HasRange() &&
       mSelectionData.StartOffset() == aEvent->mOffset &&
       mSelectionData.Length() == aEvent->mLength) {
-    if (RefPtr<Selection> selection = mSelection) {
+    if (RefPtr<Selection> selection = GetSelection()) {
       selection->ScrollIntoView(nsISelectionController::SELECTION_FOCUS_REGION);
     }
     aEvent->mSucceeded = true;

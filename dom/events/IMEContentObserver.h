@@ -172,6 +172,7 @@ class IMEContentObserver final : public nsStubMutationObserver,
   nsPresContext* GetPresContext() const;
   nsresult GetSelectionAndRoot(dom::Selection** aSelection,
                                dom::Element** aRootElement) const;
+  dom::Selection* GetSelection() const;
 
   /**
    * TryToFlushPendingNotifications() should be called when pending events
@@ -392,7 +393,6 @@ class IMEContentObserver final : public nsStubMutationObserver,
   // focused editor is in XUL panel, this should be the widget of the panel.
   // On the other hand, mWidget is its parent which handles IME.
   nsCOMPtr<nsIWidget> mFocusedWidget;
-  RefPtr<dom::Selection> mSelection;
   // The anonymous <div> element if mEditorBase is a TextEditor or an editing
   // host if mEditorBase is an HTMLEditor.
   RefPtr<dom::Element> mRootElement;
