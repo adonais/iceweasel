@@ -4491,7 +4491,7 @@
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Verlängerung</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Strafen</string>
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Elfmeter</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

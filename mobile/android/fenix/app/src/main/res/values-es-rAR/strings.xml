@@ -4417,11 +4417,11 @@
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Escocia</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live" tools:ignore="UnusedResources">EN DIRECTO</string>
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">EN VIVO</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Campeones de la Copa del Mundo 2026</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">32 de final</string>
+  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">16avos de final</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">Octavos de Final</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
@@ -4431,7 +4431,7 @@
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
   <string name="sports_widget_final" tools:ignore="UnusedResources">Final</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Final de bronce</string>
+  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Tercer puesto</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">Grupo A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4459,11 +4459,11 @@
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Ver resultados</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
-  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Ver detalles de la coincidencia</string>
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Ver detalles del partido</string>
   <!-- Sports widget section header for previous soccer match results. -->
-  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Coincidencia anterior</string>
+  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Partido anterior</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Coincidencias relacionadas</string>
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Partidos relacionados</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4481,17 +4481,17 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Eliminar</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">¿Todavía querés seguirnos?</string>
+  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">¿Todavía querés seguirlo?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
   <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Elegí otro equipo para seguir el ritmo de la Copa del Mundo.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Seguir a otro equipo</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
-  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Medio tiempo</string>
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Entretiempo</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
-  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Tiempo extra</string>
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Tiempo suplementario</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Penalizaciones</string>
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Penales</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

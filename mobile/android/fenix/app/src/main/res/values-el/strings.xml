@@ -385,16 +385,24 @@
   <string name="ai_controls_see_whats_included">Δείτε τι περιλαμβάνεται και τι όχι</string>
   <!-- Banner text shown when AI enhancements are blocked -->
   <string name="ai_controls_blocked_info_banner">Οι νέες και οι τρέχουσες βελτιώσεις τεχνητής νοημοσύνης αποκλείονται από προεπιλογή. Μπορείτε να άρετε τον αποκλεισμό συγκεκριμένων λειτουργιών παρακάτω.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Λειτουργίες τεχνητής νοημοσύνης</string>
   <!-- Title for the translations AI feature toggle -->
   <string name="ai_controls_translations_title">Μεταφράσεις</string>
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Όλες οι μεταφράσεις παραμένουν ιδιωτικές στη συσκευή σας.</string>
   <!-- Link text to navigate to more translations settings -->
   <string name="ai_controls_more_translations_settings">Περισσότερες ρυθμίσεις μεταφράσεων</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Περισσότερες ρυθμίσεις σύνοψης σελίδων</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">Φωνητική αναζήτηση</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Ο ήχος μετατρέπεται σε κείμενο από τις υπηρεσίες ομιλίας της Google.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Αποκλεισμός βελτιώσεων ΤΝ;</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Δεν θα βλέπετε τις νέες ή τρέχουσες βελτιώσεις τεχνητής νοημοσύνης στο %1$s, ούτε αναδυόμενα παράθυρα σχετικά με αυτές. Αργότερα, μπορείτε να άρετε τον αποκλεισμό όποιας λειτουργίας θέλετε να συνεχίσετε να χρησιμοποιείτε.\n\nΟ αποκλεισμός επηρεάζει και τις επεκτάσεις που χρησιμοποιούν τεχνητή νοημοσύνη που τροφοδοτείται από το %1$s.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Τι θα αποκλειστεί:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -1425,6 +1433,8 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Κύλιση για απόκρυψη γραμμής εργαλείων</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Κάθετη ολίσθηση γραμμής εργαλείων για προβολή ανοικτών καρτελών</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Ολίσθηση γραμμής εργαλείων προς τα πάνω για άνοιγμα καρτελών</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Ολίσθηση γραμμής διευθύνσεων προς τα πλάγια για εναλλαγή καρτελών</string>
@@ -1592,6 +1602,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Ανοικτές ιδιωτικές καρτέλες: %1$s. Πατήστε για εναλλαγή καρτελών.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d ανοικτή ομάδα καρτελών. Πατήστε για εναλλαγή καρτελών.</item>
+    <item quantity="other">%1$d ανοικτές ομάδες καρτελών. Πατήστε για εναλλαγή καρτελών.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1683,6 +1701,8 @@
   <string name="tab_manager_open_tab_search">Αναζήτηση ανοικτών καρτελών</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">Δοκιμάστε τις ομάδες καρτελών για λιγότερη κύλιση και περισσότερες εργασίες</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Επιλέξτε καρτέλες για να δημιουργήσετε μια ομάδα. Αποθηκεύονται εδώ, πάντα στη διάθεσή σας.</string>
   <!--
     Tab Group
 
@@ -1692,6 +1712,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Επεξεργασία ομάδας</string>
   <string name="create_tab_group_save_button">Αποθήκευση</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Νέα ομάδα, σύμπτυξη λαβής μεταφοράς</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Κλείσιμο επεξεργασίας ομάδας καρτελών</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Ομάδα</string>
@@ -1706,6 +1728,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Όνομα</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Προσθήκη σε</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Προσθήκη σε ομάδα καρτελών, σύμπτυξη λαβής μεταφοράς</string>
   <!-- Content Description for "New tab group" panel. -->
   <string name="add_to_new_tab_group_content_description">Προσθήκη σε νέα ομάδα καρτελών</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
@@ -1719,6 +1743,33 @@
     -->
     <item quantity="one">%1$d καρτέλα</item>
     <item quantity="other">%1$d καρτέλες</item>
+  </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Προσθήκη στην ομάδα καρτελών «%1$s», %2$d καρτέλα, %3$s χρώμα</item>
+    <item quantity="other">Προσθήκη στην ομάδα καρτελών «%1$s», %2$d καρτέλες, %3$s χρώμα</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Κοινή χρήση της ομάδας καρτελών «%1$s» με %2$d καρτέλα.</item>
+    <item quantity="other">Κοινή χρήση της ομάδας καρτελών «%1$s» με %2$d καρτέλες.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Προβολή ομάδας καρτελών, σύμπτυξη λαβής μεταφοράς</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Ομάδα καρτελών «%1$s» με %2$d καρτέλα, %3$s χρώμα</item>
+    <item quantity="other">Ομάδα καρτελών «%1$s» με %2$d καρτέλες, %3$s χρώμα</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Διαγραφή ομάδας καρτελών;</string>

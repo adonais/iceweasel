@@ -19,6 +19,8 @@
   <string name="content_description_menu">Додатково</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Приватний перегляд</string>
+  <!-- Content description (not visible, for screen readers etc.): "Normal Browsing" menu button. -->
+  <string name="content_description_normal_browsing">Звичайний перегляд</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Введіть запит чи адресу</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -281,10 +283,14 @@
   <string name="browser_menu_edit_bookmark">Редагувати закладку</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
   <string name="browser_menu_save_as_pdf_2">Зберегти як PDF</string>
+  <!-- Browser menu label for moving the current private tab to a non-private tab -->
+  <string name="browser_menu_move_to_non_private_tab">Перемістити на звичайну вкладку</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Перекласти сторінку</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
   <string name="browser_menu_summarize_page">Підсумувати вміст сторінки</string>
+  <!-- Browser menu badge text for summarization feature -->
+  <string name="browser_menu_summarize_page_badge">Нове</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Повідомити про пошкоджений сайт…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -337,6 +343,8 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Сторінку перекладено: %1$s – %2$s.</string>
+  <!-- CFR description for the browser toolbar describing the "Shake to summarize feature" -->
+  <string name="browser_toolbar_summarize_cfr_description">Потрусіть пристрій, щоб підсумувати вміст сторінки за лічені секунди. ⚡️</string>
   <!--
     Translation Toolbar
 
@@ -349,6 +357,58 @@
   <string name="translation_toolbar_expand_action">Відкрити аркуш перекладу</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Відхилити повідомлення</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Підсумки вмісту сторінок</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">Увімкнути керування ШІ</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">Керування ШІ</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">З %s у вас завжди є вибір</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Це передбачає можливість використання функцій, вдосконалених ШІ.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Докладніше</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Блокувати вдосконалення ШІ</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Блокування означає, що ви не бачитимете нових або поточних покращень ШІ у %s, а також спливних повідомлень про них.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Перегляньте відомості про функції</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Поточні та нові вдосконалення ШІ типово заблоковано. Розблокуйте певні функції нижче.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Функції на основі ШІ</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Переклади</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Усі переклади залишаються конфіденційними на вашому пристрої.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Інші налаштування перекладів</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Інші налаштування підсумку сторінок</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Голосовий пошук</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Аудіо конвертується в текст за допомогою Служб мовлення Google.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Блокувати вдосконалення ШІ?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Ви не побачите поточних або нових вдосконалень ШІ у %1$s, а також спливних повідомлень про них. Згодом ви зможете розблокувати будь-яку функцію та використовувати її надалі.\n\nБлокування також впливає на розширення, які використовують ШІ від %1$s.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Що буде заблоковано:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Скасувати</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Блокувати</string>
   <!--
     Locale Settings Fragment
 
@@ -579,8 +639,12 @@
 
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Продовжити</string>
+  <!-- "Continue browsing" onboarding button. -->
+  <string name="nova_onboarding_continue_browsing_button" tools:ignore="UnusedResources">Продовжити перегляд</string>
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Не зараз</string>
+  <!-- "Skip" onboarding button. -->
+  <string name="nova_onboarding_skip_button" tools:ignore="UnusedResources">Пропустити</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Приготуйтеся до свободи</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
@@ -1692,6 +1756,13 @@
   <string name="download_rename_dialog_label">Назва</string>
   <string name="download_rename_dialog_confirm_button">Зберегти</string>
   <string name="download_rename_dialog_cancel_button">Скасувати</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Файл з назвою “%s” вже існує в цьому розташуванні</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Назви файлів не можуть містити символ “/”</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Не вдається перейменувати файл</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2808,6 +2879,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Докладніше</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Керувати масками е-пошти</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Ви використали свої 5 безплатних масок електронної пошти, тому ми вибрали одну з них для повторного використання.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Маски електронної пошти зараз недоступні. Повторіть спробу за кілька хвилин.</string>
   <!--
     Autofill
 

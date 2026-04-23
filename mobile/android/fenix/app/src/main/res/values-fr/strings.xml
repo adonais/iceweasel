@@ -1712,6 +1712,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Modifier le groupe</string>
   <string name="create_tab_group_save_button">Enregistrer</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Nouveau groupe, replier la poignée de déplacement</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Fermer Modifier le groupe d’onglets</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Groupe</string>
@@ -1726,6 +1728,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nom</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Ajouter à</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Ajouter à un groupe d’onglets, replier la poignée de déplacement</string>
   <!-- Content Description for "New tab group" panel. -->
   <string name="add_to_new_tab_group_content_description">Ajouter à un nouveau groupe d’onglets</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
@@ -4415,7 +4419,7 @@
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">EN\u00a0DIRECT</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Champion du monde 2026</string>
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Champions du monde 2026</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">16es de finale</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4459,7 +4463,7 @@
   <!-- Sports widget section header for previous soccer match results. -->
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Match précédent</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Matches liés</string>
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Matchs liés</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4469,7 +4473,7 @@
   -->
   <string name="sports_widget_card_title" tools:ignore="UnusedResources">Gardez un œil sur la Coupe du monde</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Soyez au courant des matches et bien plus.</string>
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Recevez les dernières infos en direct sur les matchs et bien plus encore.</string>
   <!-- Sports widget menu item to change the selected team. -->
   <string name="sports_widget_change_team" tools:ignore="UnusedResources">Changer d’équipe</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->

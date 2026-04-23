@@ -4483,7 +4483,7 @@
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Vuoi continuare a seguire il torneo?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Scegli un\'altra squadra per continuare a seguire i Mondiali.</string>
+  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Scegli un’altra squadra per continuare a seguire i Mondiali.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Segui un’altra squadra</string>
   <!-- Sports widget match status label shown during halftime of a match. -->

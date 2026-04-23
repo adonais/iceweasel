@@ -389,6 +389,26 @@
   <string name="ai_controls_ai_powered_features">Արհեստական բանականությամբ աշխատող գործառույթներ</string>
   <!-- Title for the translations AI feature toggle -->
   <string name="ai_controls_translations_title">Թարգմանություններ</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Բոլոր թարգմանությունները մնում են գաղտնի ձեր սարքում։</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Թարգմանության ավելի շատ կարգավորումներ</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Էջի ամփոփման ավելի շատ կարգավորումներ</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Ձայնային որոնում</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Ձայնը տեքստի է վերածվում Google Speech Services-ի կողմից։</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Արգելափակե՞լ ԱԲ բարելավումները։</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Դուք %1$s-ում չեք տեսնի արհեստական բանականության նոր կամ ընթացիկ բարելավումներ կամ դրանց մասին թռուցիկ պատուհաններ: Հետագայում կարող եք արգելափակել ցանկացած բան, որը ցանկանում եք շարունակել օգտագործել:\n\nԱրգելափակումն ազդում է նաև այն ընդլայնումների վրա, որոնք օգտագործում են %1$s-ի կողմից տրամադրված արհեստական բանականությունը:</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Ինչը կարգելափակվի`</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Չեղարկել</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Արգելափակել</string>
   <!--
     Locale Settings Fragment
 
@@ -1413,9 +1433,13 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Ոլորել՝ գործիքագոտիի թաքցնման համար</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Բաց ներդիրները տեսնելու համար գործիքագոտին սահեցրեք ուղղահայաց</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Սահարկել գործիքագոտին վերև՝ ներդիրների բացման համար</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Սահարկեք գործիքագոտին կողքից՝ ներդիրներին անցնելու համար</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Թափահարեք՝ ամփոփելու համար</string>
   <!--
     Library
 
@@ -1578,6 +1602,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Գաղտնի ներդիրներ են բաց՝ %1$s: Հպեք՝ ներդիրները փոխելու համար:</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d ներդիրների խումբ բաց է։ Հպեք՝ ներդիրները փոխելու համար։</item>
+    <item quantity="other">%1$d ներդիրների խմբեր բաց են։ Հպեք՝ ներդիրները փոխելու համար։</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1667,6 +1699,10 @@
   <string name="pwa_site_controls_title_private">%1$s (Գաղտնի կերպ)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Բացել ներդիրների որոնումը</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Փորձեք ներդիրների խմբերը՝ ավելի քիչ գլորելու և ավելի շատ գործելու համար</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Ընտրեք ներդիրներ՝ խումբ ստեղծելու համար։ Դրանք պահվում են այստեղ և պատրաստ են, երբ դուք պատրաստ լինեք։</string>
   <!--
     Tab Group
 
@@ -1676,6 +1712,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Խմբագրել խումբը</string>
   <string name="create_tab_group_save_button">Պահել</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Նոր խումբ, կոծկել քաշելու բռնակը</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Փակել «Խմբագրել» ներդիրի խումբը</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Խումբ</string>
@@ -1691,6 +1729,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Ավելացնել՝</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Ավելացրեք ներդիրների խմբում, կոծկել քաշելու բռնակը</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Ավելացնել նոր ներդիրների խմբում</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Փակել ներդիրների խմբում ավելացնելը</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Նոր ներդիրների խումբ</string>
@@ -1702,6 +1744,33 @@
     <item quantity="one">%1$d ներդիր</item>
     <item quantity="other">%1$d ներդիրներ</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Ավելացնել %1$s ներդիրների խմբում, %2$d ներդիր, գույն՝ %3$s</item>
+    <item quantity="other">՝Ավելացնել %1$s ներդիրների խմբում, %2$d ներդիր, գույն՝ %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Կիսվել %1$s ներդիրների խմբով %2$d ներդիրի հետ։</item>
+    <item quantity="other">Կիսվել %1$s ներդիրների խմբով %2$d ներդիրների հետ։</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Դիտել ներդիրների խումբը, կոծկել քաշելու բռնակը</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s ներդիրների խումբ %2$d ներդիրով, գույն՝ %3$s</item>
+    <item quantity="other">%1$s ներդիրների խումբ %2$d ներդիրներով, գույն՝ %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Ջնջե՞լ ներդիրների խումբը:</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1710,6 +1779,30 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Ջնջել խումբը</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Չեղարկել</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Դեղին</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Նարնջագույն</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Կարմիր</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Վարդագույն</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Մանուշակագույն</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Մանուշակագույն</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Կապույտ</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Երկնագույն</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Կանաչ</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Մոխրագույն</string>
   <!--
     History
 
@@ -3012,6 +3105,18 @@
   <string name="email_masks_max_free_tier_reached">Դուք օգտագործել եք ձեր 5 անվճար էլ. փոստի դիմակները, ուստի մենք ընտրեցինք մեկը, որպեսզի կարողանաք վերօգտագործել։</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Էլ․ փոստի դիմակներն այս պահին հասանելի չեն։ Փորձեք կրկին մի քանի րոպեից։</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Ներկառուցված VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
   <string name="ip_protection_promo_headline">%s-ի ներկառուցված VPN</string>
   <!-- Body text for the browser VPN promo card -->
@@ -4287,6 +4392,106 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">Դուք կարող եք ավելին իմանալ %1$s-ի մասին։</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">այստեղ</string>
+  <!--
+    Sports widget
+
+    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
+  -->
+  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">Հետևեք ձեր թիմին</string>
+  <!-- Section header for the North America region in the sports widget country selector. -->
+  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Հյուսիսային Ամերիկա</string>
+  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Աֆրիկա</string>
+  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Ասիա</string>
+  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
+  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">ԿՈՆԿԱԿԱՖ</string>
+  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Եվրոպա</string>
+  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Օվկիանիա</string>
+  <!-- Section header for the South America confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">Հարավային Ամերիկա</string>
+  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Անգլիա</string>
+  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Շոտլանդիա</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">ԿԵՆԴԱՆԻ</string>
+  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026 թվականի աշխարհի առաջնության չեմպիոններ</string>
+  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">32-ի փուլ</string>
+  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">16-ի փուլ</string>
+  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
+  <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">Քառորդ եզրափակիչներ</string>
+  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
+  <string name="sports_widget_semi_final" tools:ignore="UnusedResources">Կիսաեզրափակիչներ</string>
+  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
+  <string name="sports_widget_final" tools:ignore="UnusedResources">Եզրափակիչ</string>
+  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
+  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Բրոնզե եզրափակիչ</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Խումբ A</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Խումբ B</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Խումբ C</string>
+  <!-- Sports widget group stage label for group D in the soccer tournament. -->
+  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Խումբ D</string>
+  <!-- Sports widget group stage label for group E in the soccer tournament. -->
+  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Խումբ E</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Խումբ F</string>
+  <!-- Sports widget group stage label for group G in the soccer tournament. -->
+  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Խումբ G</string>
+  <!-- Sports widget group stage label for group H in the soccer tournament. -->
+  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Խումբ H</string>
+  <!-- Sports widget group stage label for group I in the soccer tournament. -->
+  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Խումբ I</string>
+  <!-- Sports widget group stage label for group J in the soccer tournament. -->
+  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Խումբ J</string>
+  <!-- Sports widget group stage label for group K in the soccer tournament. -->
+  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Խումբ K</string>
+  <!-- Sports widget group stage label for group L in the soccer tournament. -->
+  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Խումբ L</string>
+  <!-- Sports widget button label to see match results. -->
+  <string name="sports_widget_see_results" tools:ignore="UnusedResources">Տեսնել արդյունքները</string>
+  <!-- Sports widget button label to view details of a soccer match results. -->
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Դիտել խաղի մանրամասները</string>
+  <!-- Sports widget section header for previous soccer match results. -->
+  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Նախորդ խաղը</string>
+  <!-- Sports widget section header for related soccer matches in the same group. -->
+  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Առնչվող խաղեր</string>
+  <!--
+    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
+    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
+    It’s playfully related to Firefox in that “tabs” are a browser feature.
+    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
+    or tracking in a technical sense; the meaning is about staying informed.
+  -->
+  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Հետևեք Աշխարհի գավաթին</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Ստացեք խաղերի թարմացումներ և այլն։</string>
+  <!-- Sports widget menu item to change the selected team. -->
+  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Փոխել թիմը</string>
+  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
+  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Ստաnal անհատականացված պաստառ</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove" tools:ignore="UnusedResources">Հեռացնել</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Դեռևս ցանկանո՞ւմ եք հետևել։</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Ընտրեք մեկ այլ թիմ՝ Աշխարհի գավաթի խաղարկությանը համընթաց քայլելու համար։</string>
+  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
+  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Հետևել մեկ այլ թիմի</string>
+  <!-- Sports widget match status label shown during halftime of a match. -->
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Խաղակես</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Լրացուցիչ ժամանակ</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">11 մետրանոցներ</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

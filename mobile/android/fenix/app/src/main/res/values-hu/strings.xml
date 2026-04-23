@@ -402,7 +402,7 @@
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Letiltja az MI funkcióbővítéseket?</string>
   <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_block_dialog_body">Nem fogja látni a { -brand-short-name } új vagy jelenlegi MI funkcióbővítéseit, vagy az ezekkel kapcsolatos felugró ablakokat. Később feloldhatja bármelyik használni kívánt elem letiltását.\n\nA letiltás hatással van a %1$s által biztosított MI-t használó kiegészítőkre is.</string>
+  <string name="ai_controls_block_dialog_body">Nem fogja látni a %1$s új vagy jelenlegi MI funkcióbővítéseit, vagy az ezekkel kapcsolatos felugró ablakokat. Később feloldhatja bármelyik használni kívánt elem letiltását.\n\nA letiltás hatással van a %1$s által biztosított MI-t használó kiegészítőkre is.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Mi lesz letiltva:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -1433,9 +1433,13 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Görgetés az eszköztár elrejtéséhez</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Az eszköztár csúsztatása függőlegesen a megnyitott lapok megtekintéséhez</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Eszköztár felfelé csúsztatása a lapok megnyitásához</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Lapok közti váltás a címsáv csúsztatásával</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Rázás az összegzéshez</string>
   <!--
     Library
 
@@ -1598,6 +1602,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Nyitott privát lapok: %1$s. Koppintson a lapok közötti váltáshoz.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d lapcsoport van nyitva. Koppintson a lapok közötti váltáshoz.</item>
+    <item quantity="other">%1$d lapcsoport van nyitva. Koppintson a lapok közötti váltáshoz.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1687,6 +1699,10 @@
   <string name="pwa_site_controls_title_private">%1$s (privát mód)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Lapkeresés megnyitása</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Próbálja ki a lapcsoportokat: kevesebb görgetés, több munka</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Válassza ki a lapokat egy csoport létrehozásához. Itt vannak mentve, és készen állnak.</string>
   <!--
     Tab Group
 
@@ -1696,6 +1712,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Csoport szerkesztése</string>
   <string name="create_tab_group_save_button">Mentés</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Új csoport, húzó fogantyú összecsukása</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Lapcsoport szerkesztésének bezárása</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Csoport</string>
@@ -1711,6 +1729,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Hozzáadás…</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Hozzáadás lapcsoporthoz, húzó fogantyú összecsukása</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Hozzáadás új lapcsoporthoz</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Lapcsoporthoz adás bezárása</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Új lapcsoport</string>
@@ -1721,6 +1743,33 @@
     -->
     <item quantity="one">%1$d lap</item>
     <item quantity="other">%1$d lap</item>
+  </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Hozzáadás a(z) %1$s lapcsoporthoz, %2$d lap, %3$s színű</item>
+    <item quantity="other">Hozzáadás a(z) %1$s lapcsoporthoz, %2$d lap, %3$s színű</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">A(z) %1$s lapcsoport megosztása %2$d lappal.</item>
+    <item quantity="other">A(z) %1$s lapcsoport megosztása %2$d lappal.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Lapcsoport megtekintése, húzó fogantyú összecsukása</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">%1$s lapcsoport %2$d lappal, %3$s színű</item>
+    <item quantity="other">%1$s lapcsoport %2$d lappal, %3$s színű</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Törli a lapcsoportot?</string>
@@ -4349,6 +4398,22 @@
     Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
   -->
   <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">Kövesse a csapatát</string>
+  <!-- Section header for the North America region in the sports widget country selector. -->
+  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Észak-Amerika</string>
+  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Afrika</string>
+  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Ázsia</string>
+  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
+  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Európa</string>
+  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Óceánia</string>
+  <!-- Section header for the South America confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">Dél-Amerika</string>
+  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Anglia</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Skócia</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->

@@ -4447,7 +4447,7 @@
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
   <string name="sports_widget_final" tools:ignore="UnusedResources">Finale</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Hra wo město 3</string>
+  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Hra wo městno 3</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">Skupina A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->

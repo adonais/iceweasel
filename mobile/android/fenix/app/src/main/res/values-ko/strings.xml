@@ -3910,7 +3910,7 @@
     Text for the connection security panel to indicate who the certificate was verified by.
     %s is a placeholder for the name of the certificate authority that issued the certificate.
   -->
-  <string name="connection_security_panel_verified_by">%s이(가) 인증함</string>
+  <string name="connection_security_panel_verified_by">%s에서 인증함</string>
   <!--
     Text for the connection security panel when the site uses a QWAC.
     %s is a placeholder for the organization for which the certificate was issued.
