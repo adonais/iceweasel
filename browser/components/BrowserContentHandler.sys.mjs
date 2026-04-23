@@ -1304,6 +1304,35 @@ function maybeRecordToHandleTelemetry(uri, isLaunch) {
   }
 }
 
+/**
+ * Records a count for Bing navigations that match the Windows Search pattern,
+ * using the Bing base domain and `/search` path as heuristic signals. It also
+ * records telemetry for example.com to allow the testing of the filepath.
+ *
+ * @param {nsIURI} uri
+ *        The URI being loaded.
+ * @param {bool} isLaunch
+ *        Indicates whether the browser is starting (true) or already running.
+ */
+function maybeRecordSearchActivationTelemetry(uri, isLaunch) {
+  if (AppConstants.platform != "win") {
+    return;
+  }
+
+  try {
+    if (
+      Services.eTLD.getBaseDomain(uri) == "bing.com" &&
+      uri.filePath == "/search"
+    ) {
+      Glean.browserEngagement.windowsStartSearchActivationCount[
+        isLaunch ? "startup" : "new_tab"
+      ].add(1);
+    }
+  } catch (_) {
+    // Ignore URIs for which no registrable domain can be determined.
+  }
+}
+
 export function nsDefaultCommandLineHandler() {}
 
 nsDefaultCommandLineHandler.prototype = {
@@ -1570,6 +1599,7 @@ nsDefaultCommandLineHandler.prototype = {
           const isLaunch =
             cmdLine && cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH;
 
+          maybeRecordSearchActivationTelemetry(uri, isLaunch);
           maybeRecordToHandleTelemetry(uri, isLaunch);
         }
       }
