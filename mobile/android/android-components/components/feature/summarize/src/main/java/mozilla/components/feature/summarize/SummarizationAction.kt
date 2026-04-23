@@ -138,4 +138,7 @@ sealed interface DownloadErrorAction : SummarizationAction {
 sealed interface ErrorAction : SummarizationAction {
     /** Dispatched when the user taps the "Learn more" link. */
     data object LearnMoreClicked : ErrorAction
+
+    /** Dispatched when the user taps the the "Dismiss" button on the error screen. */
+    data object ErrorDismissed : ErrorAction
 }

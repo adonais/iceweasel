@@ -21,16 +21,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.feature.summarize.R
 
 @Composable
-internal fun ContentTooLongError(modifier: Modifier = Modifier) {
+internal fun ContentTooLongError(modifier: Modifier = Modifier, onDismiss: () -> Unit = {}) {
     Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(
-            painter = painterResource(mozilla.components.ui.icons.R.drawable.mozac_ic_warning_fill_24),
+            painter = painterResource(mozilla.components.ui.icons.R.drawable.mozac_ic_warning_24),
             contentDescription = null,
             modifier = Modifier.padding(end = 8.dp),
+            tint = MaterialTheme.colorScheme.error,
         )
 
         Spacer(modifier = Modifier.height(AcornTheme.layout.space.static300))
@@ -40,6 +42,16 @@ internal fun ContentTooLongError(modifier: Modifier = Modifier) {
             style = AcornTheme.typography.headline6,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
+        )
+
+        Spacer(modifier = Modifier.height(AcornTheme.layout.space.dynamic600))
+
+        OutlinedButton(
+            text = stringResource(R.string.mozac_summarize_error_dissmiss),
+            modifier = Modifier.fillMaxWidth(),
+            contentColor = MaterialTheme.colorScheme.primary,
+            outlineColor = MaterialTheme.colorScheme.outline,
+            onClick = { onDismiss() },
         )
     }
 }

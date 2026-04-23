@@ -194,9 +194,15 @@ private fun SummarizationScreenContent(
         is SummarizationState.Error -> {
             when (state.error) {
                 is SummarizationError.DownloadFailed -> DownloadError()
-                is SummarizationError.ContentTooLong -> ContentTooLongError()
+                is SummarizationError.ContentTooLong ->
+                    ContentTooLongError(
+                        onDismiss = { store.dispatch(ErrorAction.ErrorDismissed) },
+                    )
                 is SummarizationError.SummarizationFailed ->
-                    InfoError(errorCode = state.error.exception.errorCode)
+                    InfoError(
+                        errorCode = state.error.exception.errorCode,
+                        onDismiss = { store.dispatch(ErrorAction.ErrorDismissed) },
+                    )
             }
         }
 

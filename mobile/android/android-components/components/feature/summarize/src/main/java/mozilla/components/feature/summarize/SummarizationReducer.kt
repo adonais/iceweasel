@@ -20,6 +20,7 @@ fun summarizationReducer(state: SummarizationState, action: SummarizationAction)
     OffDeviceSummarizationShakeConsentAction.CancelClicked -> SummarizationState.Finished.Cancelled
     OffDeviceSummarizationShakeConsentAction.LearnMoreClicked -> SummarizationState.LearnMoreAboutShakeConsent
     OnDeviceSummarizationShakeConsentAction.LearnMoreClicked -> SummarizationState.LearnMoreAboutShakeConsent
+    ErrorAction.ErrorDismissed -> SummarizationState.Finished.ErrorDismissed
     is SummarizationRequested -> SummarizationState.Loading(action.info)
     is SummarizationCompleted -> state.complete()
     is SummarizationFailed -> SummarizationState.Error(action.throwable.summarizationError())

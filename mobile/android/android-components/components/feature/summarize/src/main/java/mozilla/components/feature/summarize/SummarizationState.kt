@@ -83,6 +83,9 @@ sealed class SummarizationState : State {
     sealed class Finished : SummarizationState() {
         /** User finished by canceling the flow. */
         data object Cancelled : Finished()
+
+        /** User finished by dismissing the error screen. */
+        data object ErrorDismissed : Finished()
     }
 
     /** User clicked Learn More in the shake consent screen. */
