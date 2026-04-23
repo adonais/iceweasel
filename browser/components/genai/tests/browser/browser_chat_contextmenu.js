@@ -149,9 +149,9 @@ add_task(async function test_hidden_in_popup() {
 });
 
 /**
- * Check that the chat context menu is hidden for chrome:// pages (e.g., Smart Window)
+ * Check that the chat context menu is hidden inside a Smart Window
  */
-add_task(async function test_hidden_in_chrome_page() {
+add_task(async function test_hidden_in_smart_window() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.ml.chat.provider", "http://localhost:8080"]],
   });
@@ -163,8 +163,11 @@ add_task(async function test_hidden_in_chrome_page() {
   let hidden = null;
   await GenAI.buildAskChatMenu(menu, {
     browser: {
-      browsingContext: {
-        currentURI: { spec: "chrome://browser/content/aiwindow/aiWindow.html" },
+      browsingContext: { currentURI: { spec: "https://example.com" } },
+      ownerGlobal: {
+        document: {
+          documentElement: { hasAttribute: attr => attr === "ai-window" },
+        },
       },
     },
     selectionInfo: {},
@@ -175,7 +178,7 @@ add_task(async function test_hidden_in_chrome_page() {
     contextTabs: null,
   });
 
-  Assert.ok(hidden, "Menu should be hidden for chrome:// URLs");
+  Assert.ok(hidden, "Menu should be hidden inside a Smart Window");
   await SpecialPowers.popPrefEnv();
 });
 
