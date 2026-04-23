@@ -3588,3 +3588,67 @@ add_task(async function testUpdateRecipesOnlyFeatureIds() {
 
   await cleanup();
 });
+
+add_task(async function testUpdateRecipesOnlyFeatureIdsLabs() {
+  const now = new Date().getTime();
+  const experiments = [
+    NimbusTestUtils.factories.recipe.withFeatureConfig(
+      "no-feature-firefox-desktop",
+      { featureId: "no-feature-firefox-desktop" },
+      {
+        isFirefoxLabsOptIn: true,
+        firefoxLabsTitle: "opt-in-1-title",
+        firefoxLabsDescription: "opt-in-1-desc",
+        firefoxLabsDescriptionLinks: null,
+        firefoxLabsGroup: "group",
+        requiresRestart: false,
+        isRollout: true,
+        targeting: "true",
+        publishedDate: new Date(now).toISOString(),
+      }
+    ),
+    NimbusTestUtils.factories.recipe.withFeatureConfig(
+      "updated-separately",
+      { featureId: "updated-separately" },
+      {
+        isFirefoxLabsOptIn: true,
+        firefoxLabsTitle: "opt-in-2-title",
+        firefoxLabsDescription: "opt-in-2-desc",
+        firefoxLabsDescriptionLinks: null,
+        firefoxLabsGroup: "group",
+        requiresRestart: false,
+        isRollout: true,
+        targeting: "false",
+        publishedDate: new Date(now - 10000).toISOString(),
+      }
+    ),
+  ];
+
+  const features = [
+    new ExperimentFeature("updated-separately", {
+      isEarlyStartup: false,
+      variables: {},
+    }),
+  ];
+
+  const { cleanup, manager, loader } = await NimbusTestUtils.setupTest({
+    experiments,
+    features,
+  });
+
+  Assert.deepEqual(
+    manager.optInRecipes.map(r => r.slug),
+    ["updated-separately", "no-feature-firefox-desktop"]
+  );
+
+  await loader.updateRecipes("test", {
+    onlyFeatureIds: new Set(["updated-separately"]),
+  });
+
+  Assert.deepEqual(
+    manager.optInRecipes.map(r => r.slug),
+    ["updated-separately", "no-feature-firefox-desktop"]
+  );
+
+  await cleanup();
+});
