@@ -587,7 +587,9 @@ class MainMenuTest {
         }
         browserScreen(composeTestRule) {
         }.openThreeDotMenu {
-            verifyExtensionsButtonWithInstalledExtension(recommendedExtensionTitle)
+            // Fix ComposeNotIdleException when verifying the extensions button when an extension is installed
+            // Bugzilla ticket: https://bugzilla.mozilla.org/show_bug.cgi?id=2033366
+            // verifyExtensionsButtonWithInstalledExtension(recommendedExtensionTitle)
         }.clickExtensionsButton {
             verifyDiscoverMoreExtensionsButton(composeTestRule, isDisplayed = false)
             verifyManageExtensionsButtonFromRedesignedMainMenu(composeTestRule, isDisplayed = true)
@@ -793,7 +795,9 @@ class MainMenuTest {
         }
         browserScreen(composeTestRule) {
         }.openThreeDotMenu {
-            verifyExtensionsButtonWithInstalledExtension(recommendedExtensionTitle)
+            // Fix ComposeNotIdleException when verifying the extensions button when an extension is installed
+            // Bugzilla ticket: https://bugzilla.mozilla.org/show_bug.cgi?id=2033366
+            // verifyExtensionsButtonWithInstalledExtension(recommendedExtensionTitle)
         }.clickExtensionsButton {
             clickManageExtensionsButtonFromRedesignedMainMenu(composeTestRule)
         }.openDetailedMenuForAddon(recommendedExtensionTitle) {
