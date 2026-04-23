@@ -998,15 +998,17 @@ SupportedAlpnRank IsAlpnSupported(const nsACString& aAlpn) {
   return SupportedAlpnRank::NOT_SUPPORTED;
 }
 
-// NSS Errors which *may* have been triggered by the use of 0-RTT in the
-// presence of badly behaving middleboxes. We may re-attempt the connection
-// without early data.
+// NSS errors that may be triggered by early data or PSK session resumption
+// (e.g. badly behaving middleboxes, or a server whose session ticket
+// encryption key has rotated). We re-attempt the connection without early
+// data; MaybeRemoveSSLToken evicts the stale token so it is not re-offered.
 bool PossibleZeroRTTRetryError(nsresult aReason) {
   return (aReason ==
           psm::GetXPCOMFromNSSError(SSL_ERROR_PROTOCOL_VERSION_ALERT)) ||
          (aReason == psm::GetXPCOMFromNSSError(SSL_ERROR_BAD_MAC_ALERT)) ||
          (aReason ==
-          psm::GetXPCOMFromNSSError(SSL_ERROR_HANDSHAKE_UNEXPECTED_ALERT));
+          psm::GetXPCOMFromNSSError(SSL_ERROR_HANDSHAKE_UNEXPECTED_ALERT)) ||
+         (aReason == psm::GetXPCOMFromNSSError(SSL_ERROR_DECRYPT_ERROR_ALERT));
 }
 
 nsresult MakeOriginURL(const nsACString& origin, nsCOMPtr<nsIURI>& url) {

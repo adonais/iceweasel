@@ -574,3 +574,49 @@ function getTestServerCertificate() {
   }
   return null;
 }
+
+function makeChan(url) {
+  let chan = NetUtil.newChannel({
+    uri: url,
+    loadUsingSystemPrincipal: true,
+  }).QueryInterface(Ci.nsIHttpChannel);
+  chan.loadFlags = Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
+  return chan;
+}
+
+function channelOpenPromise(chan, flags) {
+  return new Promise(resolve => {
+    chan.asyncOpen(
+      new ChannelListener((req, buffer) => resolve([req, buffer]), null, flags)
+    );
+  });
+}
+
+function sleep(seconds) {
+  return new Promise(resolve => do_timeout(seconds * 1000, resolve));
+}
+
+// Starts the FaultyServer TLS test server and configures the shared
+// environment that every FaultyServer test needs:
+//   - FAULTY_SERVER_CALLBACK_PORT pointed at callbackServer
+//   - MOZ_TLS_SERVER_0RTT enabled so NewSessionTickets carry maxEarlyDataSize
+//   - The FaultyServer binary started via asyncStartTLSTestServer
+//   - The NSS external+internal session cache cleared (see Bug 1878505)
+//   - network.http.speculative-parallel-limit suppressed and restored
+async function asyncSetupFaultyServer(callbackServer) {
+  Services.env.set(
+    "FAULTY_SERVER_CALLBACK_PORT",
+    callbackServer.identity.primaryPort
+  );
+  Services.env.set("MOZ_TLS_SERVER_0RTT", "1");
+  await asyncStartTLSTestServer(
+    "FaultyServer",
+    "../../../security/manager/ssl/tests/unit/test_faulty_server"
+  );
+  let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
+  await nssComponent.asyncClearSSLExternalAndInternalSessionCache();
+  Services.prefs.setIntPref("network.http.speculative-parallel-limit", 0);
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("network.http.speculative-parallel-limit");
+  });
+}

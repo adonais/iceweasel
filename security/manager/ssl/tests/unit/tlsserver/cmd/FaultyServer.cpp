@@ -37,6 +37,7 @@ const char* kHostZeroRttAlertVersion =
     "0rtt-alert-protocol-version.example.com";
 const char* kHostZeroRttAlertUnexpected = "0rtt-alert-unexpected.example.com";
 const char* kHostZeroRttAlertDowngrade = "0rtt-alert-downgrade.example.com";
+const char* kHostDecryptErrorOnResume = "decrypt-error-on-resume.example.com";
 
 const char* kHostMlkem768x25519NetInterrupt =
     "mlkem768x25519-net-interrupt.example.com";
@@ -56,6 +57,7 @@ MOZ_RUNINIT const FaultyServerHost sFaultyServerHosts[]{
     {kHostZeroRttAlertVersion, kCertWildcard, ZeroRtt},
     {kHostZeroRttAlertUnexpected, kCertWildcard, ZeroRtt},
     {kHostZeroRttAlertDowngrade, kCertWildcard, ZeroRtt},
+    {kHostDecryptErrorOnResume, kCertWildcard, ZeroRtt},
     {kHostMlkem768x25519NetInterrupt, kCertWildcard, Mlkem768x25519},
     {kHostMlkem768x25519AlertAfterServerHello, kCertWildcard, Mlkem768x25519},
     {nullptr, nullptr},
@@ -159,6 +161,8 @@ void SecretCallbackFailZeroRtt(PRFileDesc* fd, PRUint16 epoch,
       SSL3_SendAlert(ss, alert_fatal, protocol_version);
     } else if (!strcmp(host->mHostName, kHostZeroRttAlertUnexpected)) {
       SSL3_SendAlert(ss, alert_fatal, unexpected_message);
+    } else if (!strcmp(host->mHostName, kHostDecryptErrorOnResume)) {
+      SSL3_SendAlert(ss, alert_fatal, decrypt_error);
     }
   }
 }

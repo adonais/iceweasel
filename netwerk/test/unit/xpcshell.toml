@@ -1480,6 +1480,9 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix", # Bug 1808048
 ]
 
+["test_retry_decrypt_error.js"]
+run-sequentially = ["true"] # tlsserver uses fixed port
+
 ["test_safeoutputstream.js"]
 
 ["test_safeoutputstream_append.js"]
