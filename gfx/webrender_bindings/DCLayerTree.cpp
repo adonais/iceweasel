@@ -2219,9 +2219,8 @@ void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
       case gfx::SurfaceFormat::P010:
       case gfx::SurfaceFormat::P016: {
         const auto* dxgiTexture = texture->AsRenderDXGITextureHost();
-        mContentIsHDR =
-            dxgiTexture &&
-            gfx::IsHDRTransferFunction(dxgiTexture->GetTransferFunction());
+        mContentIsHDR = dxgiTexture && gfx::IsHDRTransferFunction(
+                                           dxgiTexture->GetTransferFunction());
         break;
       }
       default:
