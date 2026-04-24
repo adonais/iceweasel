@@ -3434,28 +3434,38 @@ dialog:dir(rtl)::after {
   content: url("chrome://browser/skin/weather/night-mostly-cloudy-with-flurries.svg");
 }
 
-.location-input-wrapper {
+.weatherWrapper .location-input-wrapper,
+.weather-forecast-widget .location-input-wrapper {
   background-color: light-dark(var(--color-white), var(--newtab-background-color-secondary));
   color: var(--newtab-text-primary-color);
   border-radius: var(--border-radius-medium);
   padding: var(--space-small);
   position: relative;
 }
-.lightWallpaper .location-input-wrapper, .darkWallpaper .location-input-wrapper {
+.lightWallpaper .weatherWrapper .location-input-wrapper, .darkWallpaper .weatherWrapper .location-input-wrapper,
+.lightWallpaper .weather-forecast-widget .location-input-wrapper,
+.darkWallpaper .weather-forecast-widget .location-input-wrapper {
   background-color: var(--newtab-weather-background-color);
 }
-.lightWallpaper .location-input-wrapper:hover, .darkWallpaper .location-input-wrapper:hover {
+.lightWallpaper .weatherWrapper .location-input-wrapper:hover, .darkWallpaper .weatherWrapper .location-input-wrapper:hover,
+.lightWallpaper .weather-forecast-widget .location-input-wrapper:hover,
+.darkWallpaper .weather-forecast-widget .location-input-wrapper:hover {
   background-color: var(--newtab-button-static-hover-background);
 }
-.lightWallpaper .location-input-wrapper:hover:active, .darkWallpaper .location-input-wrapper:hover:active {
+.lightWallpaper .weatherWrapper .location-input-wrapper:hover:active, .darkWallpaper .weatherWrapper .location-input-wrapper:hover:active,
+.lightWallpaper .weather-forecast-widget .location-input-wrapper:hover:active,
+.darkWallpaper .weather-forecast-widget .location-input-wrapper:hover:active {
   background-color: var(--newtab-button-static-active-background);
 }
 @media (prefers-contrast) {
-  .lightWallpaper .location-input-wrapper, .darkWallpaper .location-input-wrapper {
+  .lightWallpaper .weatherWrapper .location-input-wrapper, .darkWallpaper .weatherWrapper .location-input-wrapper,
+.lightWallpaper .weather-forecast-widget .location-input-wrapper,
+.darkWallpaper .weather-forecast-widget .location-input-wrapper {
     background-color: var(--background-color-box);
   }
 }
-.location-input-wrapper .search-icon {
+.weatherWrapper .location-input-wrapper .search-icon,
+.weather-forecast-widget .location-input-wrapper .search-icon {
   content: url("chrome://global/skin/icons/search-glass.svg");
   -moz-context-properties: fill;
   fill: var(--icon-color);
@@ -3464,22 +3474,26 @@ dialog:dir(rtl)::after {
   transform: translateY(-50%);
   inset-inline-start: var(--space-large);
 }
-.location-input-wrapper .close-icon {
+.weatherWrapper .location-input-wrapper .close-icon,
+.weather-forecast-widget .location-input-wrapper .close-icon {
   position: absolute;
   inset-block-start: 50%;
   transform: translateY(-50%);
   inset-inline-end: var(--space-medium);
 }
-.location-input-wrapper .close-icon:focus-visible {
+.weatherWrapper .location-input-wrapper .close-icon:focus-visible,
+.weather-forecast-widget .location-input-wrapper .close-icon:focus-visible {
   outline: var(--focus-outline);
 }
-.location-input-wrapper input {
+.weatherWrapper .location-input-wrapper input,
+.weather-forecast-widget .location-input-wrapper input {
   border-radius: var(--border-radius-medium);
   background-color: light-dark(var(--color-white), var(--newtab-background-color-secondary));
   padding: var(--space-small) var(--space-xxlarge);
   border: 1px solid var(--border-color);
 }
-.location-input-wrapper input:focus-visible {
+.weatherWrapper .location-input-wrapper input:focus-visible,
+.weather-forecast-widget .location-input-wrapper input:focus-visible {
   outline: var(--focus-outline);
 }
 

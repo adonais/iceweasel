@@ -976,4 +976,62 @@ describe("<Weather> (Widgets/Weather)", () => {
       expect(container.querySelector(".full-forecast")).not.toBeInTheDocument();
     });
   });
+
+  describe("search UI", () => {
+    it("adds weather-search-active class when searchActive is true", () => {
+      const state = {
+        ...mockState,
+        Weather: { ...mockState.Weather, searchActive: true },
+      };
+      const { container } = renderWeather("medium", state);
+      expect(
+        container.querySelector(".weather-widget.weather-search-active")
+      ).toBeInTheDocument();
+    });
+
+    it("does not add weather-search-active class when searchActive is false", () => {
+      const { container } = renderWeather();
+      expect(
+        container.querySelector(".weather-widget.weather-search-active")
+      ).not.toBeInTheDocument();
+    });
+
+    it("renders LocationSearch when searchActive is true", () => {
+      const state = {
+        ...mockState,
+        Weather: { ...mockState.Weather, searchActive: true },
+      };
+      const { container } = renderWeather("medium", state);
+      expect(container.querySelector(".location-search")).toBeInTheDocument();
+    });
+
+    it("does not render LocationSearch when searchActive is false", () => {
+      const { container } = renderWeather();
+      expect(
+        container.querySelector(".location-search")
+      ).not.toBeInTheDocument();
+    });
+
+    it("suppresses weather-opt-in class when searchActive is true during opt-in", () => {
+      const state = {
+        ...optInMockState,
+        Weather: { ...optInMockState.Weather, searchActive: true },
+      };
+      const { container } = renderWeather("medium", state);
+      expect(
+        container.querySelector(".weather-widget.weather-opt-in")
+      ).not.toBeInTheDocument();
+    });
+
+    it("does not render context menu when searchActive is true", () => {
+      const state = {
+        ...mockState,
+        Weather: { ...mockState.Weather, searchActive: true },
+      };
+      const { container } = renderWeather("medium", state);
+      expect(
+        container.querySelector(".weather-context-menu-wrapper")
+      ).not.toBeInTheDocument();
+    });
+  });
 });

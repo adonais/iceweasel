@@ -1096,6 +1096,7 @@ main.newtab-main section {
   grid-column: 3;
   grid-row: 1/span 2;
   grid-template-rows: subgrid;
+  position: relative;
 }
 
 .sidebar-inline-start {
@@ -5025,6 +5026,7 @@ button.arrow-button:dir(rtl) {
   display: flex;
   flex-direction: column;
   position: relative;
+  z-index: 1;
   --weather-sunny-background-color: light-dark(var(--color-yellow-0), var(--color-yellow-90));
   --weather-cloudy-background-color: light-dark(var(--color-gray-20), var(--color-gray-80));
   --weather-rainy-background-color: light-dark(var(--color-blue-0), var(--color-blue-90));
@@ -5418,6 +5420,48 @@ button.arrow-button:dir(rtl) {
 }
 .weather-widget.weather-opt-in.large-widget .weather-opt-in-container-buttons {
   gap: var(--space-medium);
+}
+.weather-widget.weather-search-active .weather-search-container {
+  position: relative;
+}
+.weather-widget.weather-search-active .location-input {
+  padding: var(--space-small);
+  outline: 1px solid var(--border-color-selected);
+  border-radius: var(--border-radius-circle);
+  padding-inline-start: calc(var(--space-medium) * 4);
+  border: 0;
+  width: 100%;
+}
+.weather-widget.weather-search-active .location-input-wrapper {
+  margin-block-end: var(--space-small);
+  position: relative;
+}
+.weather-widget.weather-search-active .search-icon {
+  content: url("chrome://global/skin/icons/search-glass.svg");
+  -moz-context-properties: fill;
+  fill: var(--icon-color);
+  position: absolute;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  inset-inline-start: var(--space-large);
+}
+.weather-widget.weather-search-active .close-icon {
+  position: absolute;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  inset-inline-end: var(--space-medium);
+}
+.weather-widget.weather-search-active .close-icon:focus-visible {
+  outline: var(--focus-outline);
+}
+.weather-widget.weather-search-active .weather-anchor, .weather-widget.weather-search-active .weather-container, .weather-widget.weather-search-active .forecast-footer, .weather-widget.weather-search-active .widget-title-bar {
+  display: none;
+}
+.weather-widget.weather-search-active.small-widget {
+  position: absolute;
+  inset-inline-end: 0;
+  width: calc(4 * var(--col-width) + 3 * var(--space-medium));
+  height: calc(2 * var(--row-height) + var(--space-medium));
 }
 
 .ds-card-grid .ds-card {

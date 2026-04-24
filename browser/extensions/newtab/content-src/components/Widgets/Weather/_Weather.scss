@@ -7,6 +7,8 @@
 .weather-widget {
   @include widget-base-style;
 
+  z-index: 1;
+
   .weather-anchor {
     position: absolute;
     inset: 0;
@@ -508,6 +510,60 @@
       }
     }
 
+  }
+
+  // Search Active
+  &.weather-search-active {
+    .weather-search-container {
+      position: relative;
+    }
+
+    .location-input {
+      padding: var(--space-small);
+      outline: 1px solid var(--border-color-selected);
+      border-radius: var(--border-radius-circle);
+      padding-inline-start: calc(var(--space-medium) * 4);
+      border: 0;
+      width: 100%;
+    }
+
+    .location-input-wrapper {
+      margin-block-end: var(--space-small);
+      position: relative;
+    }
+
+    .search-icon {
+      content: url('chrome://global/skin/icons/search-glass.svg');
+      -moz-context-properties: fill;
+      fill: var(--icon-color);
+      position: absolute;
+      inset-block-start: 50%;
+      transform: translateY(-50%);
+      inset-inline-start: var(--space-large);
+    }
+
+    .close-icon {
+      position: absolute;
+      inset-block-start: 50%;
+      transform: translateY(-50%);
+      inset-inline-end: var(--space-medium);
+
+      &:focus-visible {
+        outline: var(--focus-outline);
+      }
+    }
+
+    // Hide other UI when search is active
+    .weather-anchor, .weather-container, .forecast-footer, .widget-title-bar {
+      display: none;
+    }
+
+    &.small-widget {
+      position: absolute;
+      inset-inline-end: 0;
+      width: calc(4 * var(--col-width) + 3 * var(--space-medium));
+      height: calc(2 * var(--row-height) + var(--space-medium));
+    }
   }
 
 }

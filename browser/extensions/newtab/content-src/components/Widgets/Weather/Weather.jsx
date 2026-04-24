@@ -416,9 +416,25 @@ function Weather({ dispatch, size }) {
     );
   }
 
+  function getArticleClassNames() {
+    return [
+      "weather-widget",
+      "col-4",
+      `${size}-widget`,
+      hasError && "weather-error-state",
+      // weather-opt-in is suppressed while search is active so the opt-in
+      // layout styles don't conflict with the search UI layout.
+      showOptInState && !searchActive && "weather-opt-in",
+      // weather-search-active hides weather content and expands small widgets to 4-col.
+      searchActive && "weather-search-active",
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+
   return (
     <article
-      className={`weather-widget col-4 ${size}-widget${hasError ? " weather-error-state" : ""}${showOptInState ? " weather-opt-in" : ""}`}
+      className={getArticleClassNames()}
       ref={el => {
         weatherRef.current = [el];
       }}
@@ -437,19 +453,11 @@ function Weather({ dispatch, size }) {
       )}
       <div className="widget-title-bar">
         <div className="widget-title">
-          {searchActive && (
-            <LocationSearch
-              outerClassName=""
-              onLocationSelected={
-                showOptInState ? handleOptInLocationSelected : undefined
-              }
-            />
-          )}
-          {!searchActive && !showOptInState && (
+          {!showOptInState && !searchActive && (
             <h3>{weatherData.locationData.city}</h3>
           )}
         </div>
-        {renderContextMenu()}
+        {!searchActive && renderContextMenu()}
       </div>
       {hasError && (
         <div className="forecast-error" ref={errorRef}>
@@ -457,6 +465,18 @@ function Weather({ dispatch, size }) {
           <p data-l10n-id="newtab-weather-error-not-available"></p>
         </div>
       )}
+      {/* Search  */}
+      {searchActive && (
+        <div className="weather-search-container">
+          <LocationSearch
+            outerClassName=""
+            onLocationSelected={
+              showOptInState ? handleOptInLocationSelected : undefined
+            }
+          />
+        </div>
+      )}
+
       {showOptInState ? (
         !searchActive && (
           <div className="weather-opt-in-container">

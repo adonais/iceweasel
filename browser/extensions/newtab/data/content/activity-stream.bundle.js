@@ -13495,6 +13495,10 @@ function LocationSearch({
   const [selectedLocation, setSelectedLocation] = (0,external_React_namespaceObject.useState)("");
   const suggestedLocations = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Weather.suggestedLocations);
   const locationSearchString = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Weather.locationSearchString);
+  const novaEnabled = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values["nova.enabled"]);
+  const weatherOptIn = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values["system.showWeatherOptIn"]);
+  const optInAccepted = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values["weather.optInAccepted"]);
+  const showCurrentLocation = !weatherOptIn || optInAccepted;
   const [userInput, setUserInput] = (0,external_React_namespaceObject.useState)(locationSearchString || "");
   const inputRef = (0,external_React_namespaceObject.useRef)(null);
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
@@ -13561,6 +13565,15 @@ function LocationSearch({
       handleCloseSearch();
     }
   }
+  function handleUseCurrentLocation() {
+    dispatch(actionCreators.AlsoToMain({
+      type: actionTypes.WEATHER_USER_OPT_IN_LOCATION
+    }));
+    dispatch(actionCreators.BroadcastToContent({
+      type: actionTypes.WEATHER_SEARCH_ACTIVE,
+      data: false
+    }));
+  }
   return /*#__PURE__*/external_React_default().createElement("div", {
     className: `${outerClassName} location-search`
   }, /*#__PURE__*/external_React_default().createElement("div", {
@@ -13574,9 +13587,10 @@ function LocationSearch({
     "data-l10n-id": "newtab-weather-change-location-search-input-placeholder",
     onChange: handleChange,
     value: userInput,
-    onKeyDown: handleKeyDown
+    onKeyDown: handleKeyDown,
+    className: "location-input"
   }), /*#__PURE__*/external_React_default().createElement("moz-button", {
-    class: "close-icon",
+    className: "close-icon",
     type: "icon ghost",
     size: "small",
     iconSrc: "chrome://global/skin/icons/close.svg",
@@ -13586,7 +13600,12 @@ function LocationSearch({
   }, (suggestedLocations || []).map(merinoLocation => /*#__PURE__*/external_React_default().createElement("option", {
     value: merinoLocation.key,
     key: merinoLocation.key
-  }, merinoLocation.localized_name, ",", " ", merinoLocation.administrative_area.localized_name)))));
+  }, merinoLocation.localized_name, ",", " ", merinoLocation.administrative_area.localized_name)))), showCurrentLocation && novaEnabled && /*#__PURE__*/external_React_default().createElement("moz-button", {
+    "data-l10n-id": "newtab-weather-change-location-search-use-current",
+    type: "icon ghost",
+    iconSrc: "chrome://browser/skin/notification-icons/geo.svg",
+    onClick: handleUseCurrentLocation
+  }));
 }
 
 ;// CONCATENATED MODULE: ./content-src/components/Widgets/WeatherForecast/WeatherForecast.jsx
@@ -14330,8 +14349,16 @@ function Weather_Weather({
       onClick: handleLearnMore
     })));
   }
+  function getArticleClassNames() {
+    return ["weather-widget", "col-4", `${size}-widget`, hasError && "weather-error-state",
+    // weather-opt-in is suppressed while search is active so the opt-in
+    // layout styles don't conflict with the search UI layout.
+    showOptInState && !searchActive && "weather-opt-in",
+    // weather-search-active hides weather content and expands small widgets to 4-col.
+    searchActive && "weather-search-active"].filter(Boolean).join(" ");
+  }
   return /*#__PURE__*/external_React_default().createElement("article", {
-    className: `weather-widget col-4 ${size}-widget${hasError ? " weather-error-state" : ""}${showOptInState ? " weather-opt-in" : ""}`,
+    className: getArticleClassNames(),
     ref: el => {
       weatherRef.current = [el];
     }
@@ -14344,16 +14371,18 @@ function Weather_Weather({
     className: "widget-title-bar"
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "widget-title"
-  }, searchActive && /*#__PURE__*/external_React_default().createElement(LocationSearch, {
-    outerClassName: "",
-    onLocationSelected: showOptInState ? handleOptInLocationSelected : undefined
-  }), !searchActive && !showOptInState && /*#__PURE__*/external_React_default().createElement("h3", null, weatherData.locationData.city)), renderContextMenu()), hasError && /*#__PURE__*/external_React_default().createElement("div", {
+  }, !showOptInState && !searchActive && /*#__PURE__*/external_React_default().createElement("h3", null, weatherData.locationData.city)), !searchActive && renderContextMenu()), hasError && /*#__PURE__*/external_React_default().createElement("div", {
     className: "forecast-error",
     ref: errorRef
   }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "icon icon-info-warning"
   }), " ", /*#__PURE__*/external_React_default().createElement("p", {
     "data-l10n-id": "newtab-weather-error-not-available"
+  })), searchActive && /*#__PURE__*/external_React_default().createElement("div", {
+    className: "weather-search-container"
+  }, /*#__PURE__*/external_React_default().createElement(LocationSearch, {
+    outerClassName: "",
+    onLocationSelected: showOptInState ? handleOptInLocationSelected : undefined
   })), showOptInState ? !searchActive && /*#__PURE__*/external_React_default().createElement("div", {
     className: "weather-opt-in-container"
   }, /*#__PURE__*/external_React_default().createElement("div", {

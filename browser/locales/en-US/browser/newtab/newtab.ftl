@@ -404,6 +404,9 @@ newtab-weather-menu-change-location = Change location
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Search location
     .aria-label = Search location
+# "Current" refers to the user's physical/geographic location detected via geolocation.
+newtab-weather-change-location-search-use-current =
+    .label = Use current location
 newtab-weather-menu-weather-display = Weather display
 newtab-weather-todays-forecast = Today’s forecast
 newtab-weather-see-full-forecast = See full forecast

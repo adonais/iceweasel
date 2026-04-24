@@ -15,6 +15,14 @@ function LocationSearch({ outerClassName, onLocationSelected }) {
   const locationSearchString = useSelector(
     state => state.Weather.locationSearchString
   );
+  const novaEnabled = useSelector(state => state.Prefs.values["nova.enabled"]);
+  const weatherOptIn = useSelector(
+    state => state.Prefs.values["system.showWeatherOptIn"]
+  );
+  const optInAccepted = useSelector(
+    state => state.Prefs.values["weather.optInAccepted"]
+  );
+  const showCurrentLocation = !weatherOptIn || optInAccepted;
 
   const [userInput, setUserInput] = useState(locationSearchString || "");
   const inputRef = useRef(null);
@@ -96,6 +104,13 @@ function LocationSearch({ outerClassName, onLocationSelected }) {
     }
   }
 
+  function handleUseCurrentLocation() {
+    dispatch(ac.AlsoToMain({ type: at.WEATHER_USER_OPT_IN_LOCATION }));
+    dispatch(
+      ac.BroadcastToContent({ type: at.WEATHER_SEARCH_ACTIVE, data: false })
+    );
+  }
+
   return (
     <div className={`${outerClassName} location-search`}>
       <div className="location-input-wrapper">
@@ -108,9 +123,10 @@ function LocationSearch({ outerClassName, onLocationSelected }) {
           onChange={handleChange}
           value={userInput}
           onKeyDown={handleKeyDown}
+          className="location-input"
         />
         <moz-button
-          class="close-icon"
+          className="close-icon"
           type="icon ghost"
           size="small"
           iconSrc="chrome://global/skin/icons/close.svg"
@@ -125,6 +141,14 @@ function LocationSearch({ outerClassName, onLocationSelected }) {
           ))}
         </datalist>
       </div>
+      {showCurrentLocation && novaEnabled && (
+        <moz-button
+          data-l10n-id="newtab-weather-change-location-search-use-current"
+          type="icon ghost"
+          iconSrc="chrome://browser/skin/notification-icons/geo.svg"
+          onClick={handleUseCurrentLocation}
+        ></moz-button>
+      )}
     </div>
   );
 }
