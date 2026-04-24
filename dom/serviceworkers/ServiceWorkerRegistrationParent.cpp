@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "ServiceWorkerRegistrationProxy.h"
+#include "nsNetUtil.h"
 
 namespace mozilla::dom {
 
@@ -87,6 +88,9 @@ IPCResult ServiceWorkerRegistrationParent::RecvSetNavigationPreloadEnabled(
 
 IPCResult ServiceWorkerRegistrationParent::RecvSetNavigationPreloadHeader(
     const nsACString& aHeader, SetNavigationPreloadHeaderResolver&& aResolver) {
+  if (!NS_IsReasonableHTTPHeaderValue(aHeader)) {
+    return IPC_FAIL(this, "Invalid navigation preload header value");
+  }
   if (!mProxy) {
     aResolver(false);
     return IPC_OK();
