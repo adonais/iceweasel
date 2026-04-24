@@ -120,12 +120,6 @@ aiwindow-new-chat =
     .tooltiptext = New chat
     .aria-label = New chat
 
-## Close Sidebar Button
-
-aiwindow-close-sidebar =
-    .tooltiptext = Close
-    .aria-label = Close
-
 ## Sign out dialog
 
 fxa-signout-dialog-body-aiwindow = Synced data will remain in your account. Open Smart Windows will switch to Classic Windows.
