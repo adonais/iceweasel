@@ -3387,6 +3387,14 @@
   value: 500
   mirror: always
 
+#ifdef XP_WIN
+# Whether or not to restrict the HANDLE types which are allowed to be transferred over IPC.
+- name: dom.ipc.handle_type_restrictions.enabled
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+#endif
+
 #ifdef MOZ_ENABLE_FORKSERVER
 - name: dom.ipc.forkserver.enable
   type: bool

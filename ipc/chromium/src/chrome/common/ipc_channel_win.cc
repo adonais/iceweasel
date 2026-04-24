@@ -22,6 +22,7 @@
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/LateWriteChecks.h"
 #include "mozilla/RandomNum.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "nsThreadUtils.h"
 
 using namespace mozilla::ipc;
@@ -573,6 +574,44 @@ static HANDLE Uint32ToHandle(uint32_t h) {
       static_cast<uintptr_t>(static_cast<int32_t>(h)));
 }
 
+bool ChannelWin::IsAllowedHandleType(HANDLE handle) {
+  MOZ_ASSERT(XRE_IsParentProcess(),
+             "IPC can only reliably access prefs in the parent process");
+  if (!mozilla::StaticPrefs::dom_ipc_handle_type_restrictions_enabled()) {
+    return true;
+  }
+
+  // Use a buffer large enough to contain at least 32 characters. This is larger
+  // than the largest type name we allow.
+  struct {
+    PUBLIC_OBJECT_TYPE_INFORMATION type_info;
+    wchar_t extra_space[32];
+  } buffer;
+
+  DWORD status = ::NtQueryObject(handle, ObjectTypeInformation,
+                                 &buffer.type_info, sizeof(buffer), nullptr);
+  if (NS_WARN_IF(status != STATUS_SUCCESS)) {
+    CHROMIUM_LOG(ERROR) << "Failed to query ObjectTypeInformation";
+    return false;
+  }
+
+  // Check if it is one of the allowed types.
+  nsDependentString type_name(
+      buffer.type_info.TypeName.Buffer,
+      buffer.type_info.TypeName.Length / sizeof(wchar_t));
+  if (type_name == u"Event"_ns || type_name == u"File"_ns ||
+      type_name == u"Directory"_ns || type_name == u"Section"_ns ||
+      type_name == u"Semaphore"_ns || type_name == u"Mutant"_ns ||
+      type_name == u"DxgkCompositionObject"_ns ||
+      type_name == u"DxgkSharedResource"_ns) {
+    return true;
+  }
+
+  CHROMIUM_LOG(ERROR) << "Cannot transfer disallowed handle type: "
+                      << NS_ConvertUTF16toUTF8(type_name).get();
+  return false;
+}
+
 bool ChannelWin::AcceptHandles(Message& msg) {
   chan_cap_.NoteOnTarget();
 
@@ -629,6 +668,11 @@ bool ChannelWin::AcceptHandles(Message& msg) {
                 << " from process " << other_pid_ << " for message "
                 << msg.name() << " in AcceptHandles with error: " << err;
           }
+          return false;
+        }
+        if (!IsAllowedHandleType(local_handle.get())) {
+          CHROMIUM_LOG(ERROR)
+              << "Cannot accept disallowed handle type from child process";
           return false;
         }
         break;
@@ -691,6 +735,11 @@ bool ChannelWin::TransferHandles(Message& msg) {
         MOZ_ASSERT(other_process_, "other_process_ cannot be null");
         if (other_process_ == INVALID_HANDLE_VALUE) {
           CHROMIUM_LOG(ERROR) << "other_process_ is invalid in TransferHandles";
+          return false;
+        }
+        if (!IsAllowedHandleType(local_handle.get())) {
+          CHROMIUM_LOG(ERROR)
+              << "Cannot transfer disallowed handle type into child process";
           return false;
         }
         if (!DuplicateRealHandle(GetCurrentProcess(), local_handle.get(),
