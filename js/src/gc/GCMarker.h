@@ -450,6 +450,8 @@ class GCMarker {
   bool shouldCheckCompartments() { return strictCompartmentChecking; }
 
   bool markOneObjectForTest(JSObject* obj);
+
+  bool isRootMarking() const { return state == RootMarking; }
 #endif
 
   bool markCurrentColorInParallel(gc::ParallelMarkTask* task,
@@ -675,6 +677,17 @@ class GCMarker {
   /* Random number generator state. */
   MainThreadOrGCTaskData<mozilla::non_crypto::XorShift128PlusRNG> random;
 
+  /*
+   * The zone of the object whose trace hook is currently being
+   * called, if any. Set with AutoSetTracingSource.
+   *
+   * This is required so that MarkingTracerT::onEdge can keep the source zone's
+   * atom-marking bitmap entry for Symbol edges in sync. It's also used in debug
+   * builds to catch cross-compartment edges traced without
+   * TraceCrossCompartmentEdge.
+   */
+  MainThreadOrGCTaskData<Zone*> tracingZone;
+
 #ifdef DEBUG
  private:
   /* Assert that start and stop are called with correct ordering. */
@@ -694,12 +707,11 @@ class GCMarker {
 
  public:
   /*
-   * The compartment and zone of the object whose trace hook is currently being
-   * called, if any. Used to catch cross-compartment edges traced without use of
+   * The compartment of the object whose trace hook is currently being called,
+   * if any. Used to catch cross-compartment edges traced without use of
    * TraceCrossCompartmentEdge.
    */
   MainThreadOrGCTaskData<Compartment*> tracingCompartment;
-  MainThreadOrGCTaskData<Zone*> tracingZone;
 #endif  // DEBUG
 };
 
