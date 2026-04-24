@@ -38,50 +38,6 @@
 
 namespace webrtc {
 
-PipeWireVersion PipeWireVersion::Parse(const absl::string_view& version) {
-  std::vector<absl::string_view> parsed_version = split(version, '.');
-
-  if (parsed_version.size() != 3) {
-    return {};
-  }
-
-  std::optional<int> major = StringToNumber<int>(parsed_version.at(0));
-  std::optional<int> minor = StringToNumber<int>(parsed_version.at(1));
-  std::optional<int> micro = StringToNumber<int>(parsed_version.at(2));
-
-  // Return invalid version if we failed to parse it
-  if (!major || !minor || !micro) {
-    return {};
-  }
-
-  return {.major = major.value(),
-          .minor = minor.value(),
-          .micro = micro.value(),
-          .full_version = std::string(version)};
-}
-
-bool PipeWireVersion::operator>=(const PipeWireVersion& other) {
-  if (!major && !minor && !micro) {
-    return false;
-  }
-
-  return std::tie(major, minor, micro) >=
-         std::tie(other.major, other.minor, other.micro);
-}
-
-bool PipeWireVersion::operator<=(const PipeWireVersion& other) {
-  if (!major && !minor && !micro) {
-    return false;
-  }
-
-  return std::tie(major, minor, micro) <=
-         std::tie(other.major, other.minor, other.micro);
-}
-
-absl::string_view PipeWireVersion::ToStringView() const {
-  return full_version;
-}
-
 spa_pod* BuildFormat(spa_pod_builder* builder,
                      uint32_t format,
                      const std::vector<uint64_t>& modifiers,
