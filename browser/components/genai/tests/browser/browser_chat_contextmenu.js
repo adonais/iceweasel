@@ -149,6 +149,40 @@ add_task(async function test_hidden_in_popup() {
 });
 
 /**
+ * Check that the chat context menu is hidden inside a Smart Window
+ */
+add_task(async function test_hidden_in_smart_window() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.chat.provider", "http://localhost:8080"]],
+  });
+
+  const { GenAI } = ChromeUtils.importESModule(
+    "resource:///modules/GenAI.sys.mjs"
+  );
+  const menu = document.getElementById("context-ask-chat");
+  let hidden = null;
+  await GenAI.buildAskChatMenu(menu, {
+    browser: {
+      browsingContext: { currentURI: { spec: "https://example.com" } },
+      ownerGlobal: {
+        document: {
+          documentElement: { hasAttribute: attr => attr === "ai-window" },
+        },
+      },
+    },
+    selectionInfo: {},
+    showItem: (item, show) => {
+      hidden = !show;
+    },
+    source: null,
+    contextTabs: null,
+  });
+
+  Assert.ok(hidden, "Menu should be hidden inside a Smart Window");
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
  * Check tab behavior of chat menu items without sidebar pref
  */
 add_task(async function test_open_tab() {

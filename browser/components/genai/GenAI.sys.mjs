@@ -10,6 +10,8 @@ import { AIFeature } from "chrome://global/content/ml/AIFeature.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  AIWindow:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   ContentAnalysisUtils: "resource://gre/modules/ContentAnalysisUtils.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
@@ -630,6 +632,7 @@ export const GenAI = {
       !browser ||
       this.ignoredInputs.has(data.inputType) ||
       !lazy.chatShortcuts ||
+      lazy.AIWindow.isAIWindowActive(browser.ownerGlobal) ||
       !this.canShowChatEntrypoint
     ) {
       return;
@@ -729,7 +732,10 @@ export const GenAI = {
 
     // DO NOT show menu when inside an extension panel
     const uri = browser.browsingContext?.currentURI.spec;
-    if (uri?.startsWith("moz-extension:")) {
+    if (
+      uri?.startsWith("moz-extension:") ||
+      lazy.AIWindow.isAIWindowActive(browser.ownerGlobal)
+    ) {
       showItem(menu, false);
       return;
     }
