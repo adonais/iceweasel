@@ -734,7 +734,10 @@ export const GenAI = {
     const uri = browser.browsingContext?.currentURI.spec;
     if (
       uri?.startsWith("moz-extension:") ||
-      lazy.AIWindow.isAIWindowActive(browser.ownerGlobal)
+      lazy.AIWindow.isAIWindowActive(
+        browser.ownerGlobal?.browsingContext?.topChromeWindow ??
+          browser.ownerGlobal
+      )
     ) {
       showItem(menu, false);
       return;
