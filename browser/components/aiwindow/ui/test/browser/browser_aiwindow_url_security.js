@@ -497,3 +497,43 @@ add_task(async function test_aiwindow_component_trust_smoke() {
     await SpecialPowers.popPrefEnv();
   }
 });
+
+/**
+ * Regression test: A malformed URL that causes URL.parse() to return null must
+ * not throw. Exercises the full flow from LLM response to rendered message.
+ */
+add_task(async function test_malformed_url_does_not_throw() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.enabled", true],
+      ["browser.ml.security.enabled", true],
+    ],
+  });
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["Oops: [click](http://[unclosed)"] },
+  });
+  const restoreSignIn = skipSignIn();
+
+  let win;
+  try {
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    await typeInSmartbar(browser, "hello");
+    await submitSmartbar(browser);
+
+    // If #isSettingsURL throws on a null-parsed URL then getAssistantMessage()
+    // never completes and no assistant message appears.
+    await TestUtils.waitForCondition(async () => {
+      const messages = await getSidebarChatMessages(browser);
+      return messages.some(m => m.role === "assistant" && m.hasRendered);
+    }, "Assistant message should render without throwing for a malformed URL");
+  } finally {
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    restoreSignIn();
+    await restore();
+    await SpecialPowers.popPrefEnv();
+  }
+});

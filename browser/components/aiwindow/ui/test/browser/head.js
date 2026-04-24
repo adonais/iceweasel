@@ -687,10 +687,16 @@ async function getSidebarChatMessages(sidebarBrowser) {
     );
     await contentEl.updateComplete;
     const messageEls = contentEl.shadowRoot.querySelectorAll("ai-chat-message");
-    return Array.from(messageEls, el => ({
-      role: el.role,
-      message: el.message,
-    }));
+    return Array.from(messageEls, el => {
+      const elJS = el.wrappedJSObject || el;
+      return {
+        role: elJS.role,
+        message: elJS.message,
+        hasRendered: !!el.shadowRoot?.querySelector(
+          ".message-assistant, .message-user"
+        ),
+      };
+    });
   });
 }
 

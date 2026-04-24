@@ -219,6 +219,9 @@ export class AIChatMessage extends MozLitElement {
    * @returns {boolean}
    */
   #isSettingsURL(parsed) {
+    if (!parsed) {
+      return false;
+    }
     return (
       parsed.protocol === AIChatMessage.#SETTINGS_URL.protocol &&
       (parsed.pathname === AIChatMessage.#SETTINGS_URL.pathname ||
