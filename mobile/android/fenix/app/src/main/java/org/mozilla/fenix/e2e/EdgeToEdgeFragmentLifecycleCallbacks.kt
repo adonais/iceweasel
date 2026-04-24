@@ -10,7 +10,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.Window
 import androidx.core.view.WindowCompat.enableEdgeToEdge
-import androidx.core.view.doOnPreDraw
+import androidx.core.view.doOnAttach
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -56,9 +56,9 @@ class EdgeToEdgeFragmentLifecycleCallbacks(
 
     private fun setEdgeToEdgeStrategy(fragment: Fragment) {
         fragment.requireActivity().window.apply {
-            // Change the edge-to-edge behavior right before the new fragment is about to be drawn
-            // to prevent the previous one with a different strategy "jumping".
-            fragment.view?.doOnPreDraw {
+            // Change the edge-to-edge behavior immediately after the new fragment is attached
+            // to ensure an immediate change.
+            fragment.view?.doOnAttach {
                 when (fragment is SystemInsetsPaddedFragment || fragment is NavHostFragment) {
                     true -> setupPersistentInsets()
                     else -> clearPersistentInsets()
