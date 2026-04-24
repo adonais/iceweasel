@@ -106,18 +106,20 @@ TEST(TestDNS, ResolveHostCallbackCanReenterResolveHost)
                       PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
   ASSERT_TRUE(thread);
 
+  bool wasCompleted;
   {
     MutexAutoLock lock(mutex);
     // Wait up to 10 seconds for completion; a timeout indicates deadlock.
     condVar.Wait(TimeDuration::FromSeconds(10));
-    EXPECT_TRUE(completed)
+    wasCompleted = completed;
+    EXPECT_TRUE(wasCompleted)
         << "Deadlock detected (Bug 2031968): OnResolveHostComplete was invoked "
            "while mDBLock write was held; the callback could not re-enter "
            "ResolveHost.";
   }
 
   // If deadlocked, the thread is abandoned rather than blocking forever.
-  if (completed) {
+  if (wasCompleted) {
     PR_JoinThread(thread);
     resolver->Shutdown();
   }
