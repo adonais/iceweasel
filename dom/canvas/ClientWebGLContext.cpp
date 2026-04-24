@@ -430,7 +430,7 @@ void ClientWebGLContext::RunHelper(bool noGc, Args&&... args) const {
 
   const auto& inProcess = notLost->inProcess;
   if (inProcess) {
-    if (noGC) {
+    if (noGc) {
       // JsWarning may trigger GC, so defer warning till after any args have
       // been used.
       std::vector<std::string> warnings;
