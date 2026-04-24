@@ -88,6 +88,8 @@ class GeckoInstance:
         "dom.max_script_run_time": 0,
         # Disable navigation change rate limitation
         "dom.navigation.navigationRateLimit.count": 0,
+        # Disable system permission checks for navigator.permissions.query
+        "dom.permissions.testing.enabled": True,
         # DOM Push
         "dom.push.connection.enabled": False,
         # Screen Orientation API

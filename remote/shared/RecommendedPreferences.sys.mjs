@@ -255,6 +255,9 @@ const COMMON_PREFERENCES = new Map([
   // Disable location change rate limitation
   ["dom.navigation.navigationRateLimit.count", 0],
 
+  // Disable system permission checks for navigator.permissions.query
+  ["dom.permissions.testing.enabled", true],
+
   // DOM Push
   ["dom.push.connection.enabled", false],
 
