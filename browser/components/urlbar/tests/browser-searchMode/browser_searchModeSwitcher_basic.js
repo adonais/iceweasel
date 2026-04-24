@@ -466,24 +466,13 @@ add_task(async function test_searchWithPostEngine() {
 });
 
 add_task(async function open_engine_page_in_tab() {
+  const ACTIONS = ["click", "middleclick", "key"];
   const TEST_DATA = [
     {
-      action: "click",
       input: "",
       expected: "https://example.com/",
     },
     {
-      action: "click",
-      input: "a b c",
-      expected: "https://example.com/?q=a+b+c",
-    },
-    {
-      action: "key",
-      input: "",
-      expected: "https://example.com/",
-    },
-    {
-      action: "key",
       input: "a b c",
       expected: "https://example.com/?q=a+b+c",
     },
@@ -498,53 +487,63 @@ add_task(async function open_engine_page_in_tab() {
     { setAsDefault: true, skipUnload: true }
   );
 
-  for (let { action, input, expected } of TEST_DATA) {
-    info(`Test for ${JSON.stringify({ action, input, expected })}`);
+  for (let action of ACTIONS) {
+    for (let { input, expected } of TEST_DATA) {
+      info(`Test for ${JSON.stringify({ action, input, expected })}`);
 
-    info("Open a window");
-    let newWin = await BrowserTestUtils.openNewBrowserWindow();
+      info("Open a window");
+      let newWin = await BrowserTestUtils.openNewBrowserWindow();
 
-    info(`Open the result popup with [${input}]`);
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window: newWin,
-      value: input,
-    });
+      info(`Open the result popup with [${input}]`);
+      await UrlbarTestUtils.promiseAutocompleteResultPopup({
+        window: newWin,
+        value: input,
+      });
 
-    info("Open the mode switcher");
-    let popup = await UrlbarTestUtils.openSearchModeSwitcher(newWin);
+      info("Open the mode switcher");
+      let popup = await UrlbarTestUtils.openSearchModeSwitcher(newWin);
 
-    info(`Do action of [${action}] on MozSearch menuitem`);
-    let newTabOpened = BrowserTestUtils.waitForNewTab(
-      newWin.gBrowser,
-      expected,
-      true
-    );
-
-    if (action == "click") {
-      EventUtils.synthesizeMouseAtCenter(
-        popup.querySelector(`panel-item[data-engine-name=MozSearch]`),
-        {
-          accelKey: true,
-        },
-        newWin
+      info(`Do action "${action}" on MozSearch panel-item`);
+      let newTabOpened = BrowserTestUtils.waitForNewTab(
+        newWin.gBrowser,
+        expected,
+        true
       );
-    } else {
-      let panelItems = Array.from(popup.querySelectorAll(`panel-item`));
-      let index = panelItems.findIndex(
-        item => item.dataset.engineName == "MozSearch"
-      );
-      for (let i = 0; i < index; i++) {
-        EventUtils.synthesizeKey("KEY_ArrowDown", {}, newWin);
+
+      if (action == "click") {
+        EventUtils.synthesizeMouseAtCenter(
+          popup.querySelector(`panel-item[data-engine-name=MozSearch]`),
+          {
+            accelKey: true,
+          },
+          newWin
+        );
+      } else if (action == "middleclick") {
+        EventUtils.synthesizeMouseAtCenter(
+          popup.querySelector(`panel-item[data-engine-name=MozSearch]`),
+          {
+            button: 1,
+          },
+          newWin
+        );
+      } else /* action == "key" */ {
+        let panelItems = Array.from(popup.querySelectorAll("panel-item"));
+        let index = panelItems.findIndex(
+          item => item.dataset.engineName == "MozSearch"
+        );
+        for (let i = 0; i < index; i++) {
+          EventUtils.synthesizeKey("KEY_ArrowDown", {}, newWin);
+        }
+        EventUtils.synthesizeKey("KEY_Enter", { accelKey: true }, newWin);
       }
-      EventUtils.synthesizeKey("KEY_Enter", { accelKey: true }, newWin);
+
+      await UrlbarTestUtils.assertSearchMode(newWin, null);
+      let tab = await newTabOpened;
+      Assert.ok(true, "Expected page was loaded in a new tab");
+      Assert.ok(!tab.selected, "New tab opened in the background");
+
+      await BrowserTestUtils.closeWindow(newWin);
     }
-
-    await UrlbarTestUtils.assertSearchMode(newWin, null);
-    let tab = await newTabOpened;
-    Assert.ok(true, "Expected page was loaded in a new tab");
-    Assert.ok(!tab.selected, "New tab opened in the background");
-
-    await BrowserTestUtils.closeWindow(newWin);
   }
 
   // Cleanup.
