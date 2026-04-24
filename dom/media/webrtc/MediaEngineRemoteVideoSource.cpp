@@ -219,6 +219,9 @@ MediaEngineRemoteVideoSource::CreateFrom(
 }
 
 MediaEngineRemoteVideoSource::~MediaEngineRemoteVideoSource() {
+  if (mCaptureId >= 0) {
+    camera::CamerasChild::RemoveCallbackIfExists(mCaptureId);
+  }
   mFirstFramePromiseHolder.RejectIfExists(NS_ERROR_ABORT, __func__);
 }
 
