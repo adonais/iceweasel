@@ -566,4 +566,54 @@
     }
   }
 
+  // Error State
+  &.weather-error-state {
+    justify-content: flex-start;
+
+    .weather-error {
+      display: flex;
+      align-items: flex-start;
+      flex-direction: column;
+      justify-content: space-evenly;
+      gap: var(--space-small);
+    }
+
+    p {
+      margin: 0;
+      font-size: var(--font-size-small);
+      color: var(--text-color-deemphasized);
+    }
+
+    &.small-widget {
+      .weather-error {
+        margin-block-start: auto;
+        gap: var(--space-xsmall);
+      }
+    }
+
+    &.medium-widget {
+      .weather-error {
+        flex-direction: row;
+        justify-content: flex-start;
+        margin-block: auto;
+      }
+
+      .widget-title-bar {
+        margin-block-end: 0;
+      }
+    }
+
+    &.large-widget {
+      .weather-error {
+        height: 100%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .widget-title-bar {
+        margin-block-end: 0;
+      }
+    }
+  }
 }

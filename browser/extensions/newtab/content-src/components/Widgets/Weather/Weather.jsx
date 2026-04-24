@@ -460,7 +460,7 @@ function Weather({ dispatch, size }) {
         {!searchActive && renderContextMenu()}
       </div>
       {hasError && (
-        <div className="forecast-error" ref={errorRef}>
+        <div className="weather-error" ref={errorRef}>
           <span className="icon icon-info-warning" />{" "}
           <p data-l10n-id="newtab-weather-error-not-available"></p>
         </div>

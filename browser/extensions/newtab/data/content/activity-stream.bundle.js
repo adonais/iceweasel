@@ -13566,13 +13566,15 @@ function LocationSearch({
     }
   }
   function handleUseCurrentLocation() {
-    dispatch(actionCreators.AlsoToMain({
-      type: actionTypes.WEATHER_USER_OPT_IN_LOCATION
-    }));
-    dispatch(actionCreators.BroadcastToContent({
-      type: actionTypes.WEATHER_SEARCH_ACTIVE,
-      data: false
-    }));
+    (0,external_ReactRedux_namespaceObject.batch)(() => {
+      dispatch(actionCreators.AlsoToMain({
+        type: actionTypes.WEATHER_USER_OPT_IN_LOCATION
+      }));
+      dispatch(actionCreators.BroadcastToContent({
+        type: actionTypes.WEATHER_SEARCH_ACTIVE,
+        data: false
+      }));
+    });
   }
   return /*#__PURE__*/external_React_default().createElement("div", {
     className: `${outerClassName} location-search`
@@ -14372,7 +14374,7 @@ function Weather_Weather({
   }, /*#__PURE__*/external_React_default().createElement("div", {
     className: "widget-title"
   }, !showOptInState && !searchActive && /*#__PURE__*/external_React_default().createElement("h3", null, weatherData.locationData.city)), !searchActive && renderContextMenu()), hasError && /*#__PURE__*/external_React_default().createElement("div", {
-    className: "forecast-error",
+    className: "weather-error",
     ref: errorRef
   }, /*#__PURE__*/external_React_default().createElement("span", {
     className: "icon icon-info-warning"

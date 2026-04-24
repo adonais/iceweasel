@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React, { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { batch, useDispatch, useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 
 function LocationSearch({ outerClassName, onLocationSelected }) {
@@ -105,10 +105,12 @@ function LocationSearch({ outerClassName, onLocationSelected }) {
   }
 
   function handleUseCurrentLocation() {
-    dispatch(ac.AlsoToMain({ type: at.WEATHER_USER_OPT_IN_LOCATION }));
-    dispatch(
-      ac.BroadcastToContent({ type: at.WEATHER_SEARCH_ACTIVE, data: false })
-    );
+    batch(() => {
+      dispatch(ac.AlsoToMain({ type: at.WEATHER_USER_OPT_IN_LOCATION }));
+      dispatch(
+        ac.BroadcastToContent({ type: at.WEATHER_SEARCH_ACTIVE, data: false })
+      );
+    });
   }
 
   return (
@@ -147,7 +149,7 @@ function LocationSearch({ outerClassName, onLocationSelected }) {
           type="icon ghost"
           iconSrc="chrome://browser/skin/notification-icons/geo.svg"
           onClick={handleUseCurrentLocation}
-        ></moz-button>
+        />
       )}
     </div>
   );

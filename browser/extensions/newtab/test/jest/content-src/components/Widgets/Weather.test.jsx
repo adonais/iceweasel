@@ -637,7 +637,7 @@ describe("<Weather> (Widgets/Weather)", () => {
   });
 
   describe("error state", () => {
-    it("renders forecast-error when current_conditions is missing", () => {
+    it("renders weather-error when current_conditions is missing", () => {
       const state = {
         ...mockState,
         Weather: {
@@ -646,15 +646,15 @@ describe("<Weather> (Widgets/Weather)", () => {
         },
       };
       const { container } = renderWeather("medium", state);
-      expect(container.querySelector(".forecast-error")).toBeInTheDocument();
+      expect(container.querySelector(".weather-error")).toBeInTheDocument();
       expect(
         container.querySelector(
-          ".forecast-error p[data-l10n-id='newtab-weather-error-not-available']"
+          ".weather-error p[data-l10n-id='newtab-weather-error-not-available']"
         )
       ).toBeInTheDocument();
     });
 
-    it("renders forecast-error when forecast is missing", () => {
+    it("renders weather-error when forecast is missing", () => {
       const state = {
         ...mockState,
         Weather: {
@@ -665,7 +665,7 @@ describe("<Weather> (Widgets/Weather)", () => {
         },
       };
       const { container } = renderWeather("medium", state);
-      expect(container.querySelector(".forecast-error")).toBeInTheDocument();
+      expect(container.querySelector(".weather-error")).toBeInTheDocument();
     });
 
     it("adds weather-error-state class to root element on error", () => {
