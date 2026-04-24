@@ -141,21 +141,43 @@ smartwindow-prompts {
 
 .sidebar-header {
   box-sizing: border-box;
+  display: flex;
+  gap: var(--space-small);
   grid-area: sidebar-header;
+  justify-content: flex-end;
   padding: var(--space-small);
   width: 100%;
 }
 
-moz-button.new-chat-icon-button {
-  --button-border-radius: var(--border-radius-large);
-  /* Updating background color for light only, persisting default dark background-color */
-  --button-background-color: light-dark(var(--color-white), rgba(0, 0, 0, 0.33));
-  --button-text-color: light-dark(var(--color-violet-80), var(--color-white));
-  --button-background-color-hover: color-mix(in srgb, currentColor 11%, transparent);
+moz-button.new-chat-icon-button,
+moz-button.close-sidebar-button {
+  --button-border-radius: var(--border-radius-circle);
+  --smartwindow-sidebar-button-background-color: light-dark(var(--color-white), var(--color-violet-110));
+  --smartwindow-sidebar-button-color: light-dark(var(--color-violet-90), var(--color-violet-0));
+  --smartwindow-sidebar-button-background-color-hover: light-dark(var(--color-violet-20), var(--color-violet-90));
+  --smartwindow-sidebar-button-background-color-active: light-dark(var(--color-violet-30), var(--color-violet-80));
 }
 
-moz-button.new-chat-icon-button::part(button) {
+moz-button.new-chat-icon-button::part(button),
+moz-button.close-sidebar-button::part(button) {
+  backdrop-filter: blur(12px);
+  background-color: var(--smartwindow-sidebar-button-background-color);
   box-shadow: var(--box-shadow-level-1);
+  color: var(--smartwindow-sidebar-button-color);
+}
+
+moz-button.new-chat-icon-button::part(button):hover,
+moz-button.close-sidebar-button::part(button):hover {
+  background-color: var(--smartwindow-sidebar-button-background-color-hover);
+}
+
+moz-button.new-chat-icon-button::part(button):active,
+moz-button.close-sidebar-button::part(button):active {
+  background-color: var(--smartwindow-sidebar-button-background-color-active);
+}
+
+moz-button.close-sidebar-button {
+  --icon-size: calc(var(--icon-size-xsmall) - 2px);
 }
 
 #smartbar-toggle-button:not([hidden]) {
