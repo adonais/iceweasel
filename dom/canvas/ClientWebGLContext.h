@@ -756,6 +756,8 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   // Needs sync IPC to ensure that the remote texture exists in the
   // RemoteTextureMap.
   bool mNeedsRemoteTextureSync = true;
+  // Buffer to accumulate JS warnings until it is safe to flush them.
+  mutable std::vector<std::string>* mDeferJsWarnings = nullptr;
 
   // -
 
@@ -2210,10 +2212,20 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
             typename... Args>
   friend ReturnType RunOn(const ClientWebGLContext& context, Args&&... aArgs);
 
+  template <typename MethodType, MethodType method, typename... Args>
+  void RunHelper(bool noGc, Args&&... aArgs) const;
+
   // If we are running WebGL in this process then call the HostWebGLContext
   // method directly.  Otherwise, dispatch over IPC.
   template <typename MethodType, MethodType method, typename... Args>
-  void Run(Args&&... aArgs) const;
+  void Run(Args&&... aArgs) const {
+    RunHelper<MethodType, method>(false, aArgs...);
+  }
+
+  template <typename MethodType, MethodType method, typename... Args>
+  void RunWithGCData(Args&&... aArgs) const {
+    RunHelper<MethodType, method>(true, aArgs...);
+  }
 
   // -------------------------------------------------------------------------
   // Helpers for DOM operations, composition, actors, etc
