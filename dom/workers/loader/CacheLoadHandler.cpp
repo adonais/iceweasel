@@ -46,7 +46,8 @@ void CachePromiseHandler::ResolvedCallback(JSContext* aCx,
                                            JS::Handle<JS::Value> aValue,
                                            ErrorResult& aRv) {
   AssertIsOnMainThread();
-  if (mRequestHandle->IsEmpty()) {
+  // skip to schedule execution if it has been scheduled already.
+  if (mRequestHandle->mExecutionScheduled) {
     return;
   }
   WorkerLoadContext* loadContext = mRequestHandle->GetContext();
@@ -69,7 +70,8 @@ void CachePromiseHandler::RejectedCallback(JSContext* aCx,
                                            JS::Handle<JS::Value> aValue,
                                            ErrorResult& aRv) {
   AssertIsOnMainThread();
-  if (mRequestHandle->IsEmpty()) {
+  // skip to schedule execution if it has been scheduled already.
+  if (mRequestHandle->mExecutionScheduled) {
     return;
   }
   WorkerLoadContext* loadContext = mRequestHandle->GetContext();
@@ -261,6 +263,11 @@ void CacheLoadHandler::Fail(nsresult aRv) {
     mPump->Cancel(aRv);
     mPump = nullptr;
   }
+
+  if (mRequestHandle->mExecutionScheduled) {
+    return;
+  }
+
   if (mRequestHandle->IsEmpty()) {
     return;
   }
@@ -275,7 +282,12 @@ void CacheLoadHandler::Fail(nsresult aRv) {
 
   loadContext->mCachePromise = nullptr;
 
-  mRequestHandle->LoadingFinished(aRv);
+  if (loadContext->mLoadingFinished) {
+    loadContext->mLoadResult = aRv;
+    mRequestHandle->MaybeExecuteFinishedScripts();
+  } else {
+    mRequestHandle->LoadingFinished(aRv);
+  }
 }
 
 void CacheLoadHandler::Load(Cache* aCache) {
