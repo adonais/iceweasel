@@ -337,12 +337,13 @@ PseudoStyleType Gecko_GetImplementedPseudoType(const Element* aElement) {
 }
 
 nsAtom* Gecko_GetImplementedPseudoIdentifier(const Element* aElement) {
-  if (!PseudoStyle::IsNamedViewTransitionPseudoElement(
-          aElement->GetPseudoElementType())) {
+  if (!aElement->HasName()) {
     return nullptr;
   }
 
-  if (!aElement->HasName()) {
+  PseudoStyleType type = aElement->GetPseudoElementType();
+  if (!PseudoStyle::IsNamedViewTransitionPseudoElement(type) &&
+      type != PseudoStyleType::Picker) {
     return nullptr;
   }
 
