@@ -1175,8 +1175,8 @@ fn prepare_tiles(
                 );
                 let c_bl = DeviceRect::from_origin_and_size(
                     DevicePoint::new(
-                        rect.min.x,
-                        rect.max.y - r_bl.height,
+                        clip_device_rect.min.x,
+                        clip_device_rect.max.y - r_bl.height,
                     ),
                     r_bl,
                 );
@@ -2327,7 +2327,9 @@ impl QuadTileClassifier {
         &mut self,
         mask_region: DeviceRect,
     ) {
-        self.mask_regions.push(mask_region);
+        if !mask_region.is_empty() {
+            self.mask_regions.push(mask_region);
+        }
     }
 
     // TODO(gw): Make use of this to skip tiles that are completely clipped out in a follow up!
