@@ -1146,10 +1146,13 @@ fn prepare_tiles(
 
                 // Map the local rect and radii
                 let clip_device_rect = transform.map_rect(rect);
-                let r_tl = transform.map_size(&radius.top_left);
-                let r_tr = transform.map_size(&radius.top_right);
-                let r_br = transform.map_size(&radius.bottom_right);
-                let r_bl = transform.map_size(&radius.bottom_left);
+                // If the transform has a negative scale, the rect will be correctly
+                // flipped by the transform so that it isn't empty, but the sizes will
+                // be negative. Make sure that the size stay positive.
+                let r_tl = transform.map_size(&radius.top_left).abs();
+                let r_tr = transform.map_size(&radius.top_right).abs();
+                let r_br = transform.map_size(&radius.bottom_right).abs();
+                let r_bl = transform.map_size(&radius.bottom_left).abs();
 
                 // Construct the mask regions for each corner
                 let c_tl = DeviceRect::from_origin_and_size(
