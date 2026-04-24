@@ -34,9 +34,3 @@ aiwindow-retry =
 aiwindow-copy-message =
     .tooltiptext = Copy
     .aria-label = Copy message
-
-## Jump to Bottom Button
-
-aiwindow-jump-to-bottom =
-    .tooltiptext = Jump to bottom
-    .aria-label = Jump to bottom of chat

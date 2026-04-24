@@ -13,10 +13,6 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  --smart-window-fade-size: var(--size-item-xlarge);
-  /* space between chat bubbles + spacing around the header + header size */
-  --smart-window-top-spacing-chat: calc(var(--space-large) * 2 + var(--space-small) * 2 + var(--button-size-icon));
-  position: relative;
 }
 
 .chat-content-wrapper {
@@ -27,21 +23,6 @@
   overflow-y: auto;
   padding-block: var(--space-large);
   width: 100%;
-
-  &[overflowing] {
-    --bottom-fade-size: var(--smart-window-fade-size);
-    mask-image: linear-gradient(
-      to bottom,
-      transparent,
-      var(--color-black) var(--smart-window-fade-size),
-      var(--color-black) calc(100% - var(--bottom-fade-size)),
-      transparent
-    );
-  }
-
-  &[overflowing][scrolled-to-bottom] {
-    --bottom-fade-size: 0px;
-  }
 
   @media (prefers-reduced-motion: no-preference) {
     scroll-behavior: smooth;
@@ -86,34 +67,4 @@
 .chat-bubble-assistant {
   gap: var(--space-small);
   width: 100%;
-}
-
-moz-button.jump-to-bottom-button {
-  --button-border-radius: var(--border-radius-large);
-  --button-background-color: light-dark(var(--color-white), var(--color-violet-110));
-  --button-text-color: light-dark(var(--color-violet-90), var(--color-violet-0));
-  --button-background-color-hover: light-dark(var(--color-violet-20), var(--color-violet-90));
-  --button-background-color-active: light-dark(var(--color-violet-30), var(--color-violet-80));
-  --button-opacity-disabled: 1;
-  bottom: var(--space-large);
-  inset-inline: 0;
-  margin-inline: auto;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  transition:
-    opacity 100ms linear,
-    visibility 100ms linear;
-  visibility: hidden;
-  width: max-content;
-}
-
-moz-button.jump-to-bottom-button::part(button) {
-  box-shadow: var(--box-shadow-level-1);
-}
-
-moz-button.jump-to-bottom-button[visible] {
-  opacity: 1;
-  pointer-events: auto;
-  visibility: visible;
 }
