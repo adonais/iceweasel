@@ -1123,7 +1123,7 @@ fn prepare_tiles(
         clip_to_raster.set_target_spatial_node(clip_instance.spatial_node_index, ctx.spatial_tree);
 
         let transform = match clip_to_raster.as_2d_scale_offset() {
-            Some(transform) => transform,
+            Some(t) => t.then_scale(transform.device_pixel_scale.0),
             None => {
                 // If the clip transform is not axis-aligned, just assume the entire primitive
                 // is affected by the clip, for now.
