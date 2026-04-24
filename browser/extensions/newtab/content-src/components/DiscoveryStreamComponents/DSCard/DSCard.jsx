@@ -6,7 +6,7 @@ import { actionCreators as ac } from "common/Actions.mjs";
 import { DSImage } from "../DSImage/DSImage.jsx";
 import { DSLinkMenu } from "../DSLinkMenu/DSLinkMenu";
 import { ImpressionStats } from "../../DiscoveryStreamImpressionStats/ImpressionStats";
-import { getActiveCardSize } from "../../../lib/utils";
+import { getActiveCardSize, getNovaColumnLayout } from "../../../lib/utils";
 import React from "react";
 import { SafeAnchor } from "../SafeAnchor/SafeAnchor";
 import {
@@ -324,7 +324,8 @@ export class _DSCard extends React.PureComponent {
                     window.innerWidth,
                     this.props.sectionsClassNames,
                     this.props.section,
-                    this.props.flightId
+                    this.props.flightId,
+                    getNovaColumnLayout(this.contextMenuButtonHostElement)
                   ),
                 }),
             ...(this.props.section
@@ -363,7 +364,8 @@ export class _DSCard extends React.PureComponent {
                       window.innerWidth,
                       this.props.sectionsClassNames,
                       this.props.section,
-                      this.props.flightId
+                      this.props.flightId,
+                      getNovaColumnLayout(this.contextMenuButtonHostElement)
                     ),
                   }),
               ...(this.props.section
@@ -783,7 +785,8 @@ export class _DSCard extends React.PureComponent {
                       window.innerWidth,
                       this.props.sectionsClassNames,
                       this.props.section,
-                      this.props.flightId
+                      this.props.flightId,
+                      getNovaColumnLayout(this.contextMenuButtonHostElement)
                     )
               }
               isSectionsCard={this.props.mayHaveSectionsCards}

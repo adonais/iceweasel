@@ -68,16 +68,41 @@ function getActiveColumnLayout(screenWidth) {
 }
 
 /**
+ * Reads the active column layout from a DOM element via the --sections-col-count
+ * CSS variable set by Nova grid container queries.
+ *
+ * @param {Element} el
+ * @returns {string|null} e.g. "col-2", or null if the property is not set (classic path)
+ */
+function getNovaColumnLayout(el) {
+  if (!el) {
+    return null;
+  }
+  const val = parseInt(
+    getComputedStyle(el).getPropertyValue("--sections-col-count"),
+    10
+  );
+  return Number.isInteger(val) ? `col-${val}` : null;
+}
+
+/**
  * Determines the active card size ("small", "medium", or "large") based on the screen width
  * and class names applied to the card element at the time of an event (example: click)
  *
  * @param {number} screenWidth - The current window width (in pixels).
  * @param {string | string[]} classNames - A string or array of class names applied to the sections card.
  * @param {boolean[]} sectionsEnabled - If sections is not enabled, all cards are `medium-card`
- * @param {number} flightId - Error ege case: This function should not be called on spocs, which have flightId
+ * @param {number} flightId - Error edge case: This function should not be called on spocs, which have flightId
+ * @param {string} [columnLayout] - The active column layout (e.g. "col-2")
  * @returns {"small-card" | "medium-card" | "large-card" | null} The active card type, or null if none is matched.
  */
-function getActiveCardSize(screenWidth, classNames, sectionsEnabled, flightId) {
+function getActiveCardSize(
+  screenWidth,
+  classNames,
+  sectionsEnabled,
+  flightId,
+  columnLayout
+) {
   // Only applies to sponsored content
   if (flightId) {
     return "spoc";
@@ -90,7 +115,8 @@ function getActiveCardSize(screenWidth, classNames, sectionsEnabled, flightId) {
   }
 
   // Return null if no values are available
-  if (!screenWidth || !classNames) {
+  // @nova-cleanup(remove-conditional): Remove the screenWidth check once Nova ships
+  if ((!screenWidth && !columnLayout) || !classNames) {
     // Missing arguments
     return null;
   }
@@ -99,21 +125,13 @@ function getActiveCardSize(screenWidth, classNames, sectionsEnabled, flightId) {
   const cardTypes = ["small", "medium", "large"];
 
   // Determine which column is active based on the current screen width
-  const currColumnCount = getActiveColumnLayout(screenWidth);
+  // @nova-cleanup(remove-conditional): Replace with just columnLayout once Nova ships
+  const currColumnCount = columnLayout ?? getActiveColumnLayout(screenWidth);
 
   // Match the card type for that column count
   for (let type of cardTypes) {
     const className = `${currColumnCount}-${type}`;
     if (classList.includes(className)) {
-      // Special case: below $break-point-medium (610px), report `col-1-small` as medium
-      if (
-        screenWidth < 610 &&
-        currColumnCount === "col-1" &&
-        type === "small"
-      ) {
-        return "medium-card";
-      }
-      // Will be either "small-card", "medium-card", or "large-card"
       return `${type}-card`;
     }
   }
@@ -268,5 +286,6 @@ export {
   useIntersectionObserver,
   getActiveCardSize,
   getActiveColumnLayout,
+  getNovaColumnLayout,
   useConfetti,
 };

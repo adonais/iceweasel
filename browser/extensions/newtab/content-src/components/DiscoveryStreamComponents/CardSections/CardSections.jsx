@@ -10,6 +10,7 @@ import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
   useIntersectionObserver,
   getActiveColumnLayout,
+  getNovaColumnLayout,
 } from "../../../lib/utils";
 import { shouldShowOMCHighlight } from "../../../lib/asrouter-message-utils.mjs";
 import { SectionContextMenu } from "../SectionContextMenu/SectionContextMenu";
@@ -647,14 +648,9 @@ function CardSections({
     if (!novaEnabled || !gridRef.current) {
       return;
     }
-    const val = parseInt(
-      getComputedStyle(gridRef.current).getPropertyValue(
-        "--sections-col-count"
-      ),
-      10
-    );
-    if (Number.isInteger(val)) {
-      setActiveColumnLayout(`col-${val}`);
+    const columnLayout = getNovaColumnLayout(gridRef.current);
+    if (columnLayout) {
+      setActiveColumnLayout(columnLayout);
     }
   }, [novaEnabled]);
 
@@ -662,15 +658,7 @@ function CardSections({
     e => {
       let nextLayout = getActiveColumnLayout(window.innerWidth);
       if (novaEnabled) {
-        const val = parseInt(
-          getComputedStyle(e.currentTarget).getPropertyValue(
-            "--sections-col-count"
-          ),
-          10
-        );
-        if (Number.isInteger(val)) {
-          nextLayout = `col-${val}`;
-        }
+        nextLayout = getNovaColumnLayout(e.currentTarget);
       }
       setActiveColumnLayout(currLayout =>
         currLayout === nextLayout ? currLayout : nextLayout

@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { getActiveCardSize } from "../../lib/utils";
+import { getActiveCardSize, getNovaColumnLayout } from "../../lib/utils";
 import { TOP_SITES_SOURCE } from "../TopSites/TopSitesConstants";
 import React from "react";
 
@@ -117,7 +117,8 @@ export class ImpressionStats extends React.PureComponent {
                   window.innerWidth,
                   link.class_names,
                   link.section,
-                  link.flightId
+                  link.flightId,
+                  getNovaColumnLayout(this.impressionRef.current)
                 ),
               }),
           ...(link.section
