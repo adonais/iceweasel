@@ -8527,6 +8527,8 @@ var SessionStoreInternal = {
     });
     tabGroupState.tabs.push(...newTabState);
     let newSplitViewData = this._collectSplitViewDataForTabGroup(tabs);
+
+    tabGroupState.splitViews ??= [];
     tabGroupState.splitViews.push(...newSplitViewData);
 
     let isVerticalMode = win.gBrowser.tabContainer.verticalMode;
