@@ -85,6 +85,10 @@ export class AutoScrollChild extends JSWindowActorChild {
   }
 
   isScrollableElement(aNode) {
+    if (aNode == aNode.ownerDocument?.scrollingElement) {
+      // We'll consider the window as scrollable instead.
+      return false;
+    }
     let content = aNode.ownerGlobal;
     if (content.HTMLElement.isInstance(aNode)) {
       return !content.HTMLSelectElement.isInstance(aNode) || aNode.multiple;
@@ -113,8 +117,10 @@ export class AutoScrollChild extends JSWindowActorChild {
 
     let global = node.ownerGlobal;
 
-    // this is a list of overflow property values that allow scrolling
-    const scrollingAllowed = ["scroll", "auto"];
+    // This is a list of overflow property values that don't allow scrolling.
+    // Note that some elements (like <select multiple> or <textarea>) are
+    // scrollable even if they don't have scrollable overflow values.
+    const scrollingDisallowed = ["hidden", "clip"];
 
     let cs = global.getComputedStyle(node);
     let overflowx = cs.getPropertyValue("overflow-x");
@@ -123,16 +129,13 @@ export class AutoScrollChild extends JSWindowActorChild {
     // scroll for multiline ones directly without checking for a
     // overflow property
     let scrollVert =
-      node.scrollTopMax &&
-      (global.HTMLSelectElement.isInstance(node) ||
-        scrollingAllowed.includes(overflowy));
+      node.scrollTopMax && !scrollingDisallowed.includes(overflowy);
 
     // do not allow horizontal scrolling for select elements, it leads
     // to visual artifacts and is not the expected behavior anyway
     if (
-      !global.HTMLSelectElement.isInstance(node) &&
       node.scrollLeftMin != node.scrollLeftMax &&
-      scrollingAllowed.includes(overflowx)
+      !scrollingDisallowed.includes(overflowx)
     ) {
       return scrollVert ? "NSEW" : "EW";
     }
