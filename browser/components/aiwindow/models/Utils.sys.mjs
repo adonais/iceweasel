@@ -793,9 +793,15 @@ export class openAIEngine {
    * @yields {object}                   LLM streaming response chunks
    */
   async *_runWithGeneratorAuth(options) {
+    // Extract signal before passing options to engineInstance — AbortSignal
+    // cannot be cloned via postMessage (structured clone algorithm).
+    const { signal, ...engineOptions } = options;
     try {
-      const generator = this.engineInstance.runWithGenerator(options);
+      const generator = this.engineInstance.runWithGenerator(engineOptions);
       for await (const chunk of generator) {
+        if (signal?.aborted) {
+          return;
+        }
         yield chunk;
       }
     } catch (ex) {
@@ -816,11 +822,14 @@ export class openAIEngine {
       await this._recreateEngine();
 
       const newToken = await openAIEngine.getFxAccountToken();
-      const updatedOptions = { ...options, fxAccountToken: newToken };
+      const updatedOptions = { ...engineOptions, fxAccountToken: newToken };
 
       try {
         const generator = this.engineInstance.runWithGenerator(updatedOptions);
         for await (const chunk of generator) {
+          if (signal?.aborted) {
+            return;
+          }
           yield chunk;
         }
       } catch (retryEx) {

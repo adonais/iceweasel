@@ -303,16 +303,30 @@ async function getSmartbarContextChipLabels(browser, expectedUrl) {
  * Submits the current smartbar input by pressing Enter.
  *
  * @param {MozBrowser} browser - The browser element
+ * @param {object} [options]
+ * @param {boolean} [options.useButton] - Click the CTA button instead of pressing Enter
  */
-async function submitSmartbar(browser) {
-  await SpecialPowers.spawn(browser, [], async () => {
+async function submitSmartbar(browser, { useButton = false } = {}) {
+  await SpecialPowers.spawn(browser, [useButton], async clickButton => {
     const aiWindowElement = content.document.querySelector("ai-window");
     const smartbar = aiWindowElement.shadowRoot.querySelector(
       "#ai-window-smartbar"
     );
-    const inputField = smartbar.inputField;
-    inputField.focus();
-    EventUtils.synthesizeKey("KEY_Enter", {}, content);
+    if (clickButton) {
+      const inputCta = smartbar.querySelector("input-cta");
+      const mozButton = inputCta.shadowRoot.querySelector("moz-button");
+      const button = mozButton.shadowRoot.querySelector("button");
+      button.click();
+    } else {
+      const inputCta = smartbar.querySelector("input-cta");
+      await ContentTaskUtils.waitForCondition(
+        () => inputCta.getAttribute("action") !== "stop",
+        "Wait for generation to complete before submitting via Enter"
+      );
+      const inputField = smartbar.inputField;
+      inputField.focus();
+      EventUtils.synthesizeKey("KEY_Enter", {}, content);
+    }
   });
 }
 

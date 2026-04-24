@@ -35,7 +35,7 @@ export class InputCta extends MozLitElement {
     searchEngineInfo: { type: Object },
   };
 
-  static ACTIONS = ["chat", "navigate", "search"];
+  static ACTIONS = ["chat", "navigate", "search", "stop"];
 
   constructor() {
     super();
@@ -49,6 +49,9 @@ export class InputCta extends MozLitElement {
   }
 
   get buttonIconSrc() {
+    if (this.action == "stop") {
+      return "chrome://browser/content/aiwindow/assets/stop-generation.svg";
+    }
     return this.action ? undefined : "chrome://browser/skin/forward.svg";
   }
 
@@ -74,8 +77,9 @@ export class InputCta extends MozLitElement {
   }
 
   #onAction() {
+    const eventType = `aiwindow-input-cta:${this.action == "stop" ? "on-stop" : "on-action"}`;
     this.dispatchEvent(
-      new CustomEvent("aiwindow-input-cta:on-action", {
+      new CustomEvent(eventType, {
         detail: { action: this.action },
         bubbles: true,
         composed: true,
@@ -105,25 +109,29 @@ export class InputCta extends MozLitElement {
   }
 
   render() {
-    const panelListTemplate = this.action
-      ? html`<panel-list id=${this._menuId}>
-          ${repeat(
-            InputCta.ACTIONS,
-            key => key,
-            key =>
-              html`<panel-item
-                @click=${() => this.#setAction(key)}
-                data-l10n-id=${`aiwindow-input-cta-menu-label-${key}`}
-                data-l10n-args=${key === "search"
-                  ? JSON.stringify({
-                      searchEngineName: this.searchEngineInfo.name,
-                    })
-                  : undefined}
-                icon=${key}
-              ></panel-item>`
-          )}
-        </panel-list>`
-      : null;
+    const isStop = this.action == "stop";
+    const menuActions = InputCta.ACTIONS.filter(a => a !== "stop");
+
+    const panelListTemplate =
+      this.action && !isStop
+        ? html`<panel-list id=${this._menuId}>
+            ${repeat(
+              menuActions,
+              key => key,
+              key =>
+                html`<panel-item
+                  @click=${() => this.#setAction(key)}
+                  data-l10n-id=${`aiwindow-input-cta-menu-label-${key}`}
+                  data-l10n-args=${key == "search"
+                    ? JSON.stringify({
+                        searchEngineName: this.searchEngineInfo.name,
+                      })
+                    : undefined}
+                  icon=${key}
+                ></panel-item>`
+            )}
+          </panel-list>`
+        : null;
 
     return html`
       <link
@@ -131,17 +139,21 @@ export class InputCta extends MozLitElement {
         href="chrome://browser/content/aiwindow/components/input-cta.css"
       />
       <moz-button
-        type=${this.action ? "split" : "default"}
+        type=${this.action && !isStop ? "split" : "default"}
         class="input-cta"
-        .menuId=${this.action ? this._menuId : undefined}
+        .menuId=${this.action && !isStop ? this._menuId : undefined}
         .iconSrc=${this.buttonIconSrc}
         @click=${this.#onAction}
         ?disabled=${!this.action}
+        .ariaLabel=${isStop ? "Stop response generation" : ""}
+        .title=${isStop ? "Stop response" : ""}
       >
-        <slot>
-          ${this.action &&
-          html`<span data-l10n-id=${this.actionLabelId}></span>`}
-        </slot>
+        ${isStop
+          ? ""
+          : html`<slot>
+              ${this.action &&
+              html`<span data-l10n-id=${this.actionLabelId}></span>`}
+            </slot>`}
       </moz-button>
       ${panelListTemplate}
     `;

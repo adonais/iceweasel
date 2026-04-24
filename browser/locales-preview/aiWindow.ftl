@@ -55,6 +55,10 @@ ai-window-toggleview-status-label-inactive = Classic Window
 aiwindow-input-cta-submit-label-chat = Ask
 aiwindow-input-cta-submit-label-navigate = Go
 aiwindow-input-cta-submit-label-search = Search
+aiwindow-input-cta-submit-label-stop = Stop
+
+# Text announced to screen readers when response generation starts.
+aiwindow-generation-started-announcement = Response generation started
 
 aiwindow-input-cta-menu-label-chat = Ask
 aiwindow-input-cta-menu-label-navigate = Go to site

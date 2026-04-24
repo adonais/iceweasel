@@ -268,6 +268,10 @@ export class SmartbarInput extends HTMLElement {
    */
   #sapName;
   #smartbarAction = "";
+  // Stores the smartbar action in effect before generation started, so it can
+  // be restored when generation ends or is stopped.
+  #smartbarActionSaved = "";
+  #smartbarAssistantIsGenerating = false;
   #smartbarEditor = null;
   #smartbarInputController = null;
   _userTypedValue = "";
@@ -407,6 +411,7 @@ export class SmartbarInput extends HTMLElement {
         this
       );
       this._inputCta.addEventListener("aiwindow-input-cta:on-action", this);
+      this._inputCta.addEventListener("aiwindow-input-cta:on-stop", this);
       this._inputCta.addEventListener("shown", this);
       this.addEventListener("ai-website-chip:remove", this);
       this.#findWebsiteContextChipsContainer();
@@ -627,6 +632,7 @@ export class SmartbarInput extends HTMLElement {
         this
       );
       this._inputCta.removeEventListener("aiwindow-input-cta:on-action", this);
+      this._inputCta.removeEventListener("aiwindow-input-cta:on-stop", this);
       this._inputCta.removeEventListener("shown", this);
       this.removeEventListener("ai-website-chip:remove", this);
     }
@@ -727,6 +733,27 @@ export class SmartbarInput extends HTMLElement {
   }
 
   /**
+   * Set to true when the chat assistant is in the middle of generating answers.
+   */
+  get assistantIsGenerating() {
+    return this.#smartbarAssistantIsGenerating;
+  }
+
+  set assistantIsGenerating(value) {
+    if (this.#smartbarAssistantIsGenerating == value) {
+      return;
+    }
+    this.#smartbarAssistantIsGenerating = value;
+    if (value) {
+      this.#smartbarActionSaved = this.#smartbarAction;
+      this._inputCta.setAttribute("action", "stop");
+    } else {
+      this._inputCta.setAttribute("action", this.#smartbarActionSaved || "");
+      this.#smartbarActionSaved = "";
+    }
+  }
+
+  /**
    * Gets the Smartbar location.
    *
    * @returns {SapLocation} The location of the smartbar
@@ -782,7 +809,9 @@ export class SmartbarInput extends HTMLElement {
     if (this.#smartbarAction != action) {
       this.#smartbarAction = action;
       this.setAttribute("smartbar-action", action);
-      this._inputCta.setAttribute("action", action);
+      if (!this.#smartbarAssistantIsGenerating) {
+        this._inputCta.setAttribute("action", action);
+      }
     }
   }
 
@@ -1272,12 +1301,21 @@ export class SmartbarInput extends HTMLElement {
    * @param {CustomEvent} event The custom event to handle.
    */
   handleCtaInputEvent(event) {
-    this.smartbarAction = event.detail.action;
     switch (event.type) {
+      case "aiwindow-input-cta:on-stop":
+        this.dispatchEvent(
+          new CustomEvent("smartbar-stop-generation", {
+            bubbles: true,
+            composed: true,
+          })
+        );
+        return;
       case "aiwindow-input-cta:on-action-change":
+        this.smartbarAction = event.detail.action;
         this.smartbarActionIsUserInitiated = true;
         break;
       case "aiwindow-input-cta:on-action":
+        this.smartbarAction = event.detail.action;
         this.smartbarActionIsUserInitiated = false;
         break;
       default:
@@ -5964,7 +6002,7 @@ export class SmartbarInput extends HTMLElement {
     if (
       this.#isSmartbarMode &&
       event.keyCode === KeyEvent.DOM_VK_RETURN &&
-      event.shiftKey
+      (event.shiftKey || this.#smartbarAssistantIsGenerating)
     ) {
       event.preventDefault();
       return;

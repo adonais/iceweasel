@@ -311,10 +311,10 @@ export class AIChatContent extends MozLitElement {
     }
 
     this.errorObj = null;
-    this.#checkConversationState(message);
 
     switch (message.role) {
       case "loading":
+        this.#checkConversationState(message);
         this.handleLoadingEvent(event);
         break;
       case "assistant":
@@ -325,10 +325,24 @@ export class AIChatContent extends MozLitElement {
         this.#checkConversationState(message);
         this.handleUserPromptEvent(event);
         break;
+      case "assistant-message-complete":
+        this.#setMessageCompleteAttr(message);
+        break;
       // Used to clear the conversation state via side effects ( new conv id )
       case "clear-conversation":
         this.#checkConversationState(message);
     }
+  }
+
+  #setMessageCompleteAttr(message) {
+    this.assistantIsLoading = false;
+    const assistantLastMessage = this.conversationState.findLast(
+      msg => msg?.messageId === message.content.id
+    );
+    if (assistantLastMessage) {
+      assistantLastMessage.isLastChunk = true;
+    }
+    this.requestUpdate();
   }
 
   /**
