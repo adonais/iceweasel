@@ -61,6 +61,8 @@ class RTCEncodedFrameBase : public nsISupports, public nsWrapperCache {
 
   uint64_t GetCounter() const;
 
+  size_t Size() const;
+
   virtual bool CheckOwner(RTCRtpScriptTransformer* aOwner) const = 0;
 
   std::unique_ptr<webrtc::TransformableFrameInterface> TakeFrame();

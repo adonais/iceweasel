@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <utility>
@@ -424,8 +425,10 @@ JSObject* RTCRtpScriptTransformer::WrapObject(
 already_AddRefed<Promise> RTCRtpScriptTransformer::OnTransformedFrame(
     RTCEncodedFrameBase* aFrame, ErrorResult& aError) {
   // Spec says to skip frames that are out of order or have wrong owner
+  // We also skip frames that are unreasonably large
   if (aFrame->GetCounter() > mLastReceivedFrameCounter &&
-      aFrame->CheckOwner(this) && mProxy) {
+      aFrame->CheckOwner(this) && mProxy &&
+      aFrame->Size() <= std::numeric_limits<int>::max() / 4) {
     mLastReceivedFrameCounter = aFrame->GetCounter();
     // also skip if frame has been detached (transferred away)
     if (auto frame = aFrame->TakeFrame()) {
