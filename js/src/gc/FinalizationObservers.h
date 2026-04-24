@@ -10,6 +10,7 @@
 #include "gc/Barrier.h"
 #include "gc/WeakMap.h"  // For GetSymbolHash.
 #include "gc/ZoneAllocator.h"
+#include "js/friend/CycleCollector.h"
 #include "js/GCHashTable.h"
 #include "js/GCVector.h"
 #include "js/Value.h"
@@ -219,6 +220,8 @@ class FinalizationObservers {
   bool addWeakRefTarget(Handle<Value> target, Handle<WeakRefObject*> weakRef);
   void removeWeakRefTarget(Handle<Value> target,
                            Handle<WeakRefObject*> weakRef);
+  void maybeClearWeakRefTargets(JS::ShouldClearWeakRefTargetCallback callback,
+                                void* data);
 
   void traceWeakEdges(JSTracer* trc);
 

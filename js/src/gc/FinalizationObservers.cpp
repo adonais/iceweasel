@@ -13,6 +13,7 @@
 #include "builtin/FinalizationRegistryObject.h"
 #include "builtin/WeakRefObject.h"
 #include "gc/GCRuntime.h"
+#include "gc/PublicIterators.h"
 #include "gc/Zone.h"
 #include "vm/JSContext.h"
 
@@ -562,6 +563,39 @@ void FinalizationObservers::traceWeakWeakRefList(JSTracer* trc,
       MOZ_ASSERT(MaybeForwarded(weakRef->target().toGCThing()) ==
                  target.toGCThing());
       weakRef->setTargetUnbarriered(target);
+    }
+  }
+}
+
+JS_PUBLIC_API void JS::MaybeClearWeakRefTargets(
+    JSRuntime* runtime, JS::ShouldClearWeakRefTargetCallback callback,
+    void* data) {
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(runtime));
+  AssertHeapIsIdle();
+  runtime->gc.maybeClearWeakRefTargets(callback, data);
+}
+
+void GCRuntime::maybeClearWeakRefTargets(
+    JS::ShouldClearWeakRefTargetCallback callback, void* data) {
+  for (AllZonesIter zone(this); !zone.done(); zone.next()) {
+    FinalizationObservers* observers = zone->finalizationObservers();
+    if (observers) {
+      observers->maybeClearWeakRefTargets(callback, data);
+    }
+  }
+}
+
+void FinalizationObservers::maybeClearWeakRefTargets(
+    JS::ShouldClearWeakRefTargetCallback callback, void* data) {
+  for (auto iter = weakRefMap.modIter(); !iter.done(); iter.next()) {
+    Value target = iter.get().key();
+    if (callback(target.toGCCellPtr(), data)) {
+      ObserverList& weakRefs = iter.get().value();
+      while (!weakRefs.isEmpty()) {
+        auto* weakRef = &weakRefs.getFirst()->as<WeakRefObject>();
+        weakRef->clearTargetAndUnlink();
+      }
+      iter.remove();
     }
   }
 }
