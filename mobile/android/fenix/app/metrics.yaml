@@ -9494,7 +9494,6 @@ play_store_attribution:
   source:
     type: string
     send_in_pings:
-      - first-session
       - play-store-attribution
     description: |
       The name of the utm_source that is responsible for this installation.
@@ -9517,7 +9516,6 @@ play_store_attribution:
   medium:
     type: string
     send_in_pings:
-      - first-session
       - play-store-attribution
     description: |
       The name of the utm_medium that is responsible for this installation.
@@ -9540,7 +9538,6 @@ play_store_attribution:
   campaign:
     type: string
     send_in_pings:
-      - first-session
       - play-store-attribution
     description: |
       The name of the utm_campaign that is responsible for this installation.
@@ -9563,7 +9560,6 @@ play_store_attribution:
   term:
     type: string
     send_in_pings:
-      - first-session
       - play-store-attribution
     description: |
       The name of the utm_term that is responsible for this installation.
@@ -9586,7 +9582,6 @@ play_store_attribution:
   content:
     type: string
     send_in_pings:
-      - first-session
       - play-store-attribution
     description: |
       The name of the utm_content that is responsible for this installation.
@@ -9629,7 +9624,7 @@ play_store_attribution:
     time_unit: millisecond
     send_in_pings:
       - metrics
-      - install-referrer-attribution
+      - play-store-attribution
     description: >
       The time that it takes to derive the attribution parameters by
       the Google Play Install Referrer library.
@@ -9653,8 +9648,7 @@ meta_attribution:
   app:
     type: string
     send_in_pings:
-      - first-session
-      - install-referrer-attribution
+      - play-store-attribution
     description: |
       The mobile application ID in Meta's attribution.
     bugs:
@@ -9674,8 +9668,7 @@ meta_attribution:
   t:
     type: string
     send_in_pings:
-      - first-session
-      - install-referrer-attribution
+      - play-store-attribution
     description: |
       Value tracking user interaction with Meta attribution.
     bugs:
@@ -9695,8 +9688,7 @@ meta_attribution:
   data:
     type: text
     send_in_pings:
-      - first-session
-      - install-referrer-attribution
+      - play-store-attribution
     description: |
       The Meta attribution data in encrypted format.
     bugs:
@@ -9717,8 +9709,7 @@ meta_attribution:
   nonce:
     type: string
     send_in_pings:
-      - first-session
-      - install-referrer-attribution
+      - play-store-attribution
     description: |
       Nonce used to decrypt the encrypted Meta attribution data.
     bugs:
