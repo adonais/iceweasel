@@ -485,6 +485,7 @@ export class SmartbarInput extends HTMLElement {
       this.window.document.documentElement.hasAttribute("taskbartab") ||
       this.readOnly
     ) {
+      this.#stopBreakout();
       return;
     }
 
