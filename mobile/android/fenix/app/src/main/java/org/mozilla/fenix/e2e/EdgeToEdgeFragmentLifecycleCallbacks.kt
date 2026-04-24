@@ -47,6 +47,12 @@ class EdgeToEdgeFragmentLifecycleCallbacks(
     ) {
         // Dialog fragments have their own edge-to-edge behavior, separate from Fenix's main activity.
         if (f is DialogFragment) return
+
+        // DialogFragments which cycle through inner fragments should not change the edge-to-edge strategy for
+        // Fenix's main activity. One such example is the calendar picker handled in a MaterialDatePicker dialog
+        // which then uses a normal fragment for the actual picker functionality.
+        if (f.parentFragment is DialogFragment) return
+
         // QRFragment is a generic Android Components fragment that is nested in Fenix.
         // As such the edge-to-edge behavior is to be controlled only through its Fenix container.
         if (f is QrFragment) return
