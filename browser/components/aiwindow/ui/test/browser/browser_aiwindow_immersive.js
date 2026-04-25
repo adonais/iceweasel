@@ -129,3 +129,61 @@ add_task(async function test_open_sidebar_immersive_view() {
   await BrowserTestUtils.closeWindow(win);
   await SpecialPowers.popPrefEnv();
 });
+
+add_task(
+  async function test_back_forward_buttons_visible_after_back_navigation() {
+    const win = await openAIWindow();
+    try {
+      const chromeRoot = win.document.documentElement;
+      const browser = win.gBrowser.selectedBrowser;
+
+      await navigateAndWait(win, AIWINDOW_URL);
+
+      Assert.ok(
+        !chromeRoot.hasAttribute("aiwindow-has-nav-forward"),
+        "No aiwindow-has-nav-forward on initial load with no history"
+      );
+
+      await promiseNavigateAndLoad(browser, "https://example.com/");
+
+      let loaded = BrowserTestUtils.browserLoaded(browser, {
+        wantLoad: AIWINDOW_URL,
+      });
+      win.gBrowser.goBack();
+      await loaded;
+
+      await BrowserTestUtils.waitForMutationCondition(
+        chromeRoot,
+        { attributes: true },
+        () => chromeRoot.hasAttribute("aiwindow-has-nav-forward")
+      );
+
+      const backButton = win.document.getElementById("back-button");
+      const forwardButton = win.document.getElementById("forward-button");
+
+      Assert.equal(
+        win.getComputedStyle(backButton).visibility,
+        "visible",
+        "Back button is visible after navigating back to AI window"
+      );
+      Assert.equal(
+        win.getComputedStyle(forwardButton).visibility,
+        "visible",
+        "Forward button is visible after navigating back to AI window"
+      );
+
+      loaded = BrowserTestUtils.browserLoaded(browser, {
+        wantLoad: "https://example.com/",
+      });
+      win.gBrowser.goForward();
+      await loaded;
+
+      Assert.ok(
+        !chromeRoot.hasAttribute("aiwindow-has-nav-forward"),
+        "aiwindow-has-nav-forward is removed after navigating forward to a page"
+      );
+    } finally {
+      await BrowserTestUtils.closeWindow(win);
+    }
+  }
+);

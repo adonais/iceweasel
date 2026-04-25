@@ -1469,6 +1469,25 @@ popupnotificationcontent {
     visibility: hidden;
   }
 
+  /* Show back/forward buttons when navigating back to the Smart Window from a page */
+  &[aiwindow-has-nav-forward] {
+    #nav-bar:not(.browser-titlebar) {
+      height: unset;
+      min-height: unset;
+      visibility: visible;
+    }
+
+    #sidebar-button {
+      display: none;
+    }
+
+    #nav-bar-customization-target > #back-button,
+    #nav-bar-customization-target > #forward-button {
+      visibility: visible;
+      -moz-user-focus: normal;
+    }
+  }
+
   /* immersive view styles exclusive for first run */
   &[aiwindow-first-run] {
     #PanelUI-button {
