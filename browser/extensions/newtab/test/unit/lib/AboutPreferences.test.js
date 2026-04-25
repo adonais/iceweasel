@@ -214,6 +214,104 @@ describe("AboutPreferences Feed", () => {
     });
   });
 
+  describe("#_setupHomeGroup", () => {
+    let addSetting;
+    let Preferences;
+
+    beforeEach(() => {
+      addSetting = sandbox.stub();
+      Preferences = { addSetting };
+    });
+
+    it("should register weather against showWeather prefs when Nova is disabled", () => {
+      sandbox
+        .stub(Services.prefs, "getBoolPref")
+        .withArgs("browser.newtabpage.activity-stream.nova.enabled", false)
+        .returns(false);
+
+      instance._setupHomeGroup({ Preferences });
+
+      const calls = addSetting.args.map(([{ id, pref }]) => ({ id, pref }));
+      assert.isTrue(
+        calls.some(
+          c =>
+            c.id === "weather" &&
+            c.pref === "browser.newtabpage.activity-stream.showWeather"
+        )
+      );
+      assert.isFalse(
+        calls.some(
+          c =>
+            c.pref ===
+            "browser.newtabpage.activity-stream.widgets.weather.enabled"
+        )
+      );
+    });
+
+    it("should register weather against widgets.weather.enabled when Nova is enabled", () => {
+      sandbox
+        .stub(Services.prefs, "getBoolPref")
+        .withArgs("browser.newtabpage.activity-stream.nova.enabled", false)
+        .returns(true);
+
+      instance._setupHomeGroup({ Preferences });
+
+      const calls = addSetting.args.map(([{ id, pref }]) => ({ id, pref }));
+      assert.isTrue(
+        calls.some(
+          c =>
+            c.id === "weather" &&
+            c.pref ===
+              "browser.newtabpage.activity-stream.widgets.weather.enabled"
+        )
+      );
+      assert.isFalse(
+        calls.some(
+          c => c.pref === "browser.newtabpage.activity-stream.showWeather"
+        )
+      );
+    });
+  });
+
+  describe("PREFS_FOR_SETTINGS (legacy path, settings-redesign disabled)", () => {
+    let renderStub;
+
+    beforeEach(() => {
+      renderStub = sandbox.stub(instance, "renderPreferenceSection");
+      sandbox.stub(instance, "toggleRestoreDefaults");
+    });
+
+    it("uses showWeather pref when Nova is disabled", () => {
+      sandbox
+        .stub(Services.prefs, "getBoolPref")
+        .withArgs("browser.newtabpage.activity-stream.nova.enabled", false)
+        .returns(false);
+
+      instance.observe(window);
+
+      const weatherSection = renderStub.args
+        .map(([s]) => s)
+        .find(s => s && s.id === "weather");
+      assert.isDefined(weatherSection);
+      assert.equal(weatherSection.pref.feed, "showWeather");
+    });
+
+    it("uses widgets.weather.enabled pref when Nova is enabled", () => {
+      sandbox
+        .stub(Services.prefs, "getBoolPref")
+        .withArgs("browser.newtabpage.activity-stream.nova.enabled", false)
+        .returns(true);
+
+      instance.observe(window);
+
+      const weatherSection = renderStub.args
+        .map(([s]) => s)
+        .find(s => s && s.id === "weather");
+      assert.isDefined(weatherSection);
+      assert.equal(weatherSection.pref.feed, "widgets.weather.enabled");
+    });
+  });
+
   describe("#renderPreferenceSection", () => {
     let node;
     let Preferences;

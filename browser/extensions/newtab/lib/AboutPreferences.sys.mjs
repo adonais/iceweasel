@@ -27,89 +27,98 @@ export const PREFERENCES_LOADED_EVENT_SUBPANE = "customHomepage-pane-loaded";
 
 // These "section" objects are formatted in a way to be similar to the ones from
 // SectionsManager to construct the preferences view.
-const PREFS_FOR_SETTINGS = () => [
-  {
-    id: "web-search",
-    pref: {
-      feed: "showSearch",
-      titleString: "home-prefs-search-header",
-    },
-  },
-  {
-    id: "weather",
-    pref: {
-      feed: "showWeather",
-      titleString: "home-prefs-weather-header",
-      descString: "home-prefs-weather-description",
-      learnMore: {
-        link: {
-          href: "https://support.mozilla.org/kb/customize-items-on-firefox-new-tab-page",
-          id: "home-prefs-weather-learn-more-link",
-        },
+// @nova-cleanup(remove-conditional): Remove novaEnabled check; hardcode feed: "widgets.weather.enabled" and shouldHidePref using widgets.system.weather.enabled; convert function body back to arrow returning array literal
+const PREFS_FOR_SETTINGS = () => {
+  const novaEnabled = Services.prefs.getBoolPref(
+    "browser.newtabpage.activity-stream.nova.enabled",
+    false
+  );
+  return [
+    {
+      id: "web-search",
+      pref: {
+        feed: "showSearch",
+        titleString: "home-prefs-search-header",
       },
     },
-    eventSource: "WEATHER",
-    shouldHidePref: !Services.prefs.getBoolPref(
-      "browser.newtabpage.activity-stream.system.showWeather",
-      false
-    ),
-  },
-  {
-    id: "topsites",
-    pref: {
-      feed: "feeds.topsites",
-      titleString: "home-prefs-shortcuts-header",
-      descString: "home-prefs-shortcuts-description",
-    },
-    maxRows: 4,
-    rowsPref: "topSitesRows",
-    eventSource: "TOP_SITES",
-  },
-  {
-    id: "topstories",
-    pref: {
-      feed: "feeds.section.topstories",
-      titleString: {
-        id: "home-prefs-recommended-by-header-generic",
-      },
-      descString: {
-        id: "home-prefs-recommended-by-description-generic",
-      },
-    },
-    shouldHidePref: !Services.prefs.getBoolPref(
-      "browser.newtabpage.activity-stream.feeds.system.topstories",
-      true
-    ),
-    eventSource: "TOP_STORIES",
-  },
-  {
-    id: "support-firefox",
-    pref: {
-      feed: "showSponsoredCheckboxes",
-      titleString: "home-prefs-support-firefox-header",
-      nestedPrefs: [
-        {
-          name: "showSponsoredTopSites",
-          titleString: "home-prefs-shortcuts-by-option-sponsored",
-          eventSource: "SPONSORED_TOP_SITES",
+    {
+      id: "weather",
+      pref: {
+        feed: novaEnabled ? "widgets.weather.enabled" : "showWeather",
+        titleString: "home-prefs-weather-header",
+        descString: "home-prefs-weather-description",
+        learnMore: {
+          link: {
+            href: "https://support.mozilla.org/kb/customize-items-on-firefox-new-tab-page",
+            id: "home-prefs-weather-learn-more-link",
+          },
         },
-        {
-          name: "showSponsored",
-          titleString: "home-prefs-recommended-by-option-sponsored-stories",
-          eventSource: "POCKET_SPOCS",
-          shouldHidePref: !Services.prefs.getBoolPref(
-            "browser.newtabpage.activity-stream.feeds.system.topstories",
-            true
-          ),
-          shouldDisablePref: !Services.prefs.getBoolPref(
-            "browser.newtabpage.activity-stream.feeds.section.topstories",
-            true
-          ),
-        },
-      ],
+      },
+      eventSource: "WEATHER",
+      shouldHidePref: !Services.prefs.getBoolPref(
+        novaEnabled
+          ? "browser.newtabpage.activity-stream.widgets.system.weather.enabled"
+          : "browser.newtabpage.activity-stream.system.showWeather",
+        false
+      ),
     },
-  },
-];
+    {
+      id: "topsites",
+      pref: {
+        feed: "feeds.topsites",
+        titleString: "home-prefs-shortcuts-header",
+        descString: "home-prefs-shortcuts-description",
+      },
+      maxRows: 4,
+      rowsPref: "topSitesRows",
+      eventSource: "TOP_SITES",
+    },
+    {
+      id: "topstories",
+      pref: {
+        feed: "feeds.section.topstories",
+        titleString: {
+          id: "home-prefs-recommended-by-header-generic",
+        },
+        descString: {
+          id: "home-prefs-recommended-by-description-generic",
+        },
+      },
+      shouldHidePref: !Services.prefs.getBoolPref(
+        "browser.newtabpage.activity-stream.feeds.system.topstories",
+        true
+      ),
+      eventSource: "TOP_STORIES",
+    },
+    {
+      id: "support-firefox",
+      pref: {
+        feed: "showSponsoredCheckboxes",
+        titleString: "home-prefs-support-firefox-header",
+        nestedPrefs: [
+          {
+            name: "showSponsoredTopSites",
+            titleString: "home-prefs-shortcuts-by-option-sponsored",
+            eventSource: "SPONSORED_TOP_SITES",
+          },
+          {
+            name: "showSponsored",
+            titleString: "home-prefs-recommended-by-option-sponsored-stories",
+            eventSource: "POCKET_SPOCS",
+            shouldHidePref: !Services.prefs.getBoolPref(
+              "browser.newtabpage.activity-stream.feeds.system.topstories",
+              true
+            ),
+            shouldDisablePref: !Services.prefs.getBoolPref(
+              "browser.newtabpage.activity-stream.feeds.section.topstories",
+              true
+            ),
+          },
+        ],
+      },
+    },
+  ];
+};
 
 export class AboutPreferences {
   init() {
@@ -214,6 +223,14 @@ export class AboutPreferences {
       },
       {
         id: "browser.newtabpage.activity-stream.widgets.enabled",
+        type: "bool",
+      },
+      {
+        id: "browser.newtabpage.activity-stream.widgets.system.weather.enabled",
+        type: "bool",
+      },
+      {
+        id: "browser.newtabpage.activity-stream.widgets.weather.enabled",
         type: "bool",
       },
       {
@@ -776,17 +793,37 @@ export class AboutPreferences {
     });
 
     // Weather
-    Preferences.addSetting({
-      id: "showWeather",
-      pref: "browser.newtabpage.activity-stream.system.showWeather",
-    });
+    // @nova-cleanup(remove-conditional): Remove novaEnabled check and else branch; keep only the Nova registration block (weatherEnabled + weather addSetting calls)
+    const novaEnabled = Services.prefs.getBoolPref(
+      "browser.newtabpage.activity-stream.nova.enabled",
+      false
+    );
 
-    Preferences.addSetting({
-      id: "weather",
-      pref: "browser.newtabpage.activity-stream.showWeather",
-      deps: ["showWeather"],
-      visible: ({ showWeather }) => showWeather.value,
-    });
+    if (novaEnabled) {
+      Preferences.addSetting({
+        id: "weatherEnabled",
+        pref: "browser.newtabpage.activity-stream.widgets.system.weather.enabled",
+      });
+
+      Preferences.addSetting({
+        id: "weather",
+        pref: "browser.newtabpage.activity-stream.widgets.weather.enabled",
+        deps: ["weatherEnabled"],
+        visible: ({ weatherEnabled }) => weatherEnabled.value,
+      });
+    } else {
+      Preferences.addSetting({
+        id: "showWeather",
+        pref: "browser.newtabpage.activity-stream.system.showWeather",
+      });
+
+      Preferences.addSetting({
+        id: "weather",
+        pref: "browser.newtabpage.activity-stream.showWeather",
+        deps: ["showWeather"],
+        visible: ({ showWeather }) => showWeather.value,
+      });
+    }
 
     // Widgets: general
     Preferences.addSetting({

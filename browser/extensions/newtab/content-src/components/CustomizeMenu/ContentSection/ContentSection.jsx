@@ -290,20 +290,25 @@ export class ContentSection extends React.PureComponent {
           )}
           <div className="settings-toggles">
             {/* Note: If widgets are enabled, the weather toggle will be moved under Widgets subsection */}
-            {!mayHaveWidgets && mayHaveWeather && (
-              <div id="weather-section" className="section">
-                {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
-                <moz-toggle
-                  id="weather-toggle"
-                  pressed={weatherEnabled || null}
-                  ontoggle={this.onPreferenceSelect}
-                  onToggle={this.onPreferenceSelect}
-                  data-preference="showWeather"
-                  data-event-source="WEATHER"
-                  data-l10n-id="newtab-custom-weather-toggle"
-                />
-              </div>
-            )}
+            {
+              // @nova-cleanup(remove-conditional): Remove novaEnabled conditional on data-preference; replace with data-preference="widgets.weather.enabled"
+              !mayHaveWidgets && mayHaveWeather && (
+                <div id="weather-section" className="section">
+                  {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
+                  <moz-toggle
+                    id="weather-toggle"
+                    pressed={weatherEnabled || null}
+                    ontoggle={this.onPreferenceSelect}
+                    onToggle={this.onPreferenceSelect}
+                    data-preference={
+                      novaEnabled ? "widgets.weather.enabled" : "showWeather"
+                    }
+                    data-event-source="WEATHER"
+                    data-l10n-id="newtab-custom-weather-toggle"
+                  />
+                </div>
+              )
+            }
 
             <span className="divider" role="separator"></span>
 

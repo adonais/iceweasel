@@ -5,12 +5,13 @@
 import { render, act } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { combineReducers, createStore } from "redux";
-import { actionTypes as at } from "common/Actions.mjs";
+import { actionTypes as at, actionCreators as ac } from "common/Actions.mjs";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { WrapWithProvider } from "test/jest/test-utils";
 import {
   Base as ConnectedBase,
   _Base as Base,
+  BaseContent,
 } from "content-src/components/Base/Base";
 
 const weatherSuggestion = {
@@ -113,5 +114,96 @@ describe("<Base> Nova startup layout stability", () => {
     expect(
       container.querySelector(".sidebar-inline-end .weather-widget")
     ).toBeInTheDocument();
+  });
+});
+
+describe("<BaseContent> weather opt-in dialog trigger", () => {
+  function makeInstance(currentPrefs, dispatch = jest.fn()) {
+    const inst = Object.create(BaseContent.prototype);
+    inst.props = {
+      Prefs: { values: currentPrefs },
+      dispatch,
+      App: { isForStartupCache: {} },
+      DiscoveryStream: { spocs: {} },
+    };
+    inst.state = { visible: false };
+    inst.applyBodyClasses = jest.fn();
+    inst.spocsOnDemandUpdated = jest.fn();
+    inst.trackSpocPlaceholderDuration = jest.fn();
+    Object.defineProperty(inst, "isSpocsOnDemandExpired", { get: () => false });
+    return { inst, dispatch };
+  }
+
+  function makePrevProps(prefs) {
+    return {
+      Prefs: { values: prefs },
+      DiscoveryStream: { spocs: {} },
+      App: { isForStartupCache: {} },
+    };
+  }
+
+  it("triggers weather.optInDisplayed in classic mode when showWeather transitions to true", () => {
+    const { inst, dispatch } = makeInstance({
+      "nova.enabled": false,
+      showWeather: true,
+    });
+
+    inst.componentDidUpdate(
+      makePrevProps({ "nova.enabled": false, showWeather: false })
+    );
+
+    expect(dispatch).toHaveBeenCalledWith(
+      ac.SetPref("weather.optInDisplayed", true)
+    );
+  });
+
+  it("does not trigger weather.optInDisplayed in classic mode when showWeather was already true", () => {
+    const { inst, dispatch } = makeInstance({
+      "nova.enabled": false,
+      showWeather: true,
+    });
+
+    inst.componentDidUpdate(
+      makePrevProps({ "nova.enabled": false, showWeather: true })
+    );
+
+    expect(dispatch).not.toHaveBeenCalledWith(
+      ac.SetPref("weather.optInDisplayed", true)
+    );
+  });
+
+  it("triggers weather.optInDisplayed in Nova mode when widgets.weather.enabled transitions to true", () => {
+    const { inst, dispatch } = makeInstance({
+      "nova.enabled": true,
+      "widgets.weather.enabled": true,
+    });
+
+    inst.componentDidUpdate(
+      makePrevProps({ "nova.enabled": true, "widgets.weather.enabled": false })
+    );
+
+    expect(dispatch).toHaveBeenCalledWith(
+      ac.SetPref("weather.optInDisplayed", true)
+    );
+  });
+
+  it("does not trigger weather.optInDisplayed in Nova mode when only showWeather transitions to true", () => {
+    const { inst, dispatch } = makeInstance({
+      "nova.enabled": true,
+      "widgets.weather.enabled": true,
+      showWeather: true,
+    });
+
+    inst.componentDidUpdate(
+      makePrevProps({
+        "nova.enabled": true,
+        "widgets.weather.enabled": true,
+        showWeather: false,
+      })
+    );
+
+    expect(dispatch).not.toHaveBeenCalledWith(
+      ac.SetPref("weather.optInDisplayed", true)
+    );
   });
 });

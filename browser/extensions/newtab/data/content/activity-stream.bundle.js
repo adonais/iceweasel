@@ -16777,7 +16777,9 @@ class ContentSection extends (external_React_default()).PureComponent {
       "data-l10n-id": "newtab-custom-widget-timer-toggle"
     })))), /*#__PURE__*/external_React_default().createElement("div", {
       className: "settings-toggles"
-    }, !mayHaveWidgets && mayHaveWeather && /*#__PURE__*/external_React_default().createElement("div", {
+    },
+    // @nova-cleanup(remove-conditional): Remove novaEnabled conditional on data-preference; replace with data-preference="widgets.weather.enabled"
+    !mayHaveWidgets && mayHaveWeather && /*#__PURE__*/external_React_default().createElement("div", {
       id: "weather-section",
       className: "section"
     }, /*#__PURE__*/external_React_default().createElement("moz-toggle", {
@@ -16785,7 +16787,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       pressed: weatherEnabled || null,
       ontoggle: this.onPreferenceSelect,
       onToggle: this.onPreferenceSelect,
-      "data-preference": "showWeather",
+      "data-preference": novaEnabled ? "widgets.weather.enabled" : "showWeather",
       "data-event-source": "WEATHER",
       "data-l10n-id": "newtab-custom-weather-toggle"
     })), /*#__PURE__*/external_React_default().createElement("span", {
@@ -18753,8 +18755,11 @@ class BaseContent extends (external_React_default()).PureComponent {
     const prefs = this.props.Prefs.values;
 
     // Check if weather widget was re-enabled from customization menu
-    const wasWeatherDisabled = !prevProps.Prefs.values.showWeather;
-    const isWeatherEnabled = this.props.Prefs.values.showWeather;
+    // @nova-cleanup(remove-conditional): Remove novaEnabledInUpdate and weatherPref variables; replace wasWeatherDisabled/isWeatherEnabled with direct reads of prevProps/props.Prefs.values["widgets.weather.enabled"]
+    const novaEnabledInUpdate = this.props.Prefs.values["nova.enabled"];
+    const weatherPref = novaEnabledInUpdate ? "widgets.weather.enabled" : "showWeather";
+    const wasWeatherDisabled = !prevProps.Prefs.values[weatherPref];
+    const isWeatherEnabled = this.props.Prefs.values[weatherPref];
     if (wasWeatherDisabled && isWeatherEnabled) {
       // If weather widget was enabled from customization menu, display opt-in dialog
       this.props.dispatch(actionCreators.SetPref("weather.optInDisplayed", true));
@@ -19131,7 +19136,8 @@ class BaseContent extends (external_React_default()).PureComponent {
     const novaEnabled = prefs[Base_PREF_NOVA_ENABLED];
     const activeWallpaper = prefs[`newtabWallpapers.wallpaper`] || prefs[`newtabWallpapers.initialWallpaper`];
     const wallpapersEnabled = prefs["newtabWallpapers.enabled"];
-    const weatherEnabled = prefs.showWeather;
+    // @nova-cleanup(remove-conditional): Remove conditional; replace with prefs["widgets.weather.enabled"]
+    const weatherEnabled = novaEnabled ? prefs["widgets.weather.enabled"] : prefs.showWeather;
     const {
       showTopicSelection
     } = DiscoveryStream;

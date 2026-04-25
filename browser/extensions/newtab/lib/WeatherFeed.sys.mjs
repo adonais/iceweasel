@@ -66,6 +66,8 @@ const MERINO_CLIENT_KEY = "HNT_WEATHER_FEED";
 const PREF_WEATHER_QUERY = "weather.query";
 const PREF_SHOW_WEATHER = "showWeather";
 const PREF_SYSTEM_SHOW_WEATHER = "system.showWeather";
+const PREF_NOVA_ENABLED = "nova.enabled";
+const PREF_WIDGETS_WEATHER_ENABLED = "widgets.weather.enabled";
 
 /**
  * A feature that periodically fetches weather suggestions from Merino for HNT.
@@ -103,7 +105,10 @@ export class WeatherFeed {
 
   isEnabled() {
     const { values } = this.store.getState().Prefs;
-    const userValue = values[PREF_SHOW_WEATHER];
+    // @nova-cleanup(remove-conditional): Remove PREF_NOVA_ENABLED conditional; replace userValue with values[PREF_WIDGETS_WEATHER_ENABLED] directly
+    const userValue = values[PREF_NOVA_ENABLED]
+      ? values[PREF_WIDGETS_WEATHER_ENABLED]
+      : values[PREF_SHOW_WEATHER];
     const systemValue = values[PREF_SYSTEM_SHOW_WEATHER];
     const experimentValue = values.trainhopConfig?.weather?.enabled || false;
     return userValue && (systemValue || experimentValue);
@@ -239,7 +244,9 @@ export class WeatherFeed {
       case PREF_WEATHER_QUERY:
         await this.fetch();
         break;
+      // @nova-cleanup(remove-conditional): Remove case PREF_SHOW_WEATHER; keep only PREF_WIDGETS_WEATHER_ENABLED
       case PREF_SHOW_WEATHER:
+      case PREF_WIDGETS_WEATHER_ENABLED:
       case PREF_SYSTEM_SHOW_WEATHER:
       case "trainhopConfig": {
         const enabled = this.isEnabled();

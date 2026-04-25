@@ -760,3 +760,159 @@ add_task(async function test_fetchHelper_small_size_skips_hourly() {
 
   sandbox.restore();
 });
+
+add_task(async function test_isEnabled_classic_mode() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(WeatherFeed.prototype, "PersistentCache").returns({
+    set: () => {},
+    get: () => {},
+  });
+
+  let feed = new WeatherFeed();
+  feed.store = {
+    getState() {
+      return {
+        Prefs: {
+          values: {
+            showWeather: true,
+            "system.showWeather": true,
+            "nova.enabled": false,
+            "widgets.weather.enabled": false,
+          },
+        },
+      };
+    },
+  };
+
+  Assert.ok(
+    feed.isEnabled(),
+    "isEnabled returns true when showWeather is true in classic mode"
+  );
+
+  feed.store.getState = () => ({
+    Prefs: {
+      values: {
+        showWeather: false,
+        "system.showWeather": true,
+        "nova.enabled": false,
+        "widgets.weather.enabled": true,
+      },
+    },
+  });
+
+  Assert.ok(
+    !feed.isEnabled(),
+    "isEnabled returns false when showWeather is false in classic mode"
+  );
+
+  sandbox.restore();
+});
+
+add_task(async function test_isEnabled_nova_mode() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(WeatherFeed.prototype, "PersistentCache").returns({
+    set: () => {},
+    get: () => {},
+  });
+
+  let feed = new WeatherFeed();
+  feed.store = {
+    getState() {
+      return {
+        Prefs: {
+          values: {
+            showWeather: true,
+            "system.showWeather": true,
+            "nova.enabled": true,
+            "widgets.weather.enabled": true,
+          },
+        },
+      };
+    },
+  };
+
+  Assert.ok(
+    feed.isEnabled(),
+    "isEnabled returns true when widgets.weather.enabled is true in Nova mode"
+  );
+
+  feed.store.getState = () => ({
+    Prefs: {
+      values: {
+        showWeather: true,
+        "system.showWeather": true,
+        "nova.enabled": true,
+        "widgets.weather.enabled": false,
+      },
+    },
+  });
+
+  Assert.ok(
+    !feed.isEnabled(),
+    "isEnabled returns false when widgets.weather.enabled is false in Nova mode"
+  );
+
+  sandbox.restore();
+});
+
+add_task(async function test_onPrefChanged_widgets_weather_enabled() {
+  let sandbox = sinon.createSandbox();
+  sandbox.stub(WeatherFeed.prototype, "PersistentCache").returns({
+    set: () => {},
+    get: () => {},
+  });
+
+  let feed = new WeatherFeed();
+  feed.store = {
+    dispatch: sinon.spy(),
+    getState() {
+      return {
+        Prefs: {
+          values: {
+            showWeather: true,
+            "system.showWeather": true,
+            "nova.enabled": true,
+            "widgets.weather.enabled": false,
+          },
+        },
+      };
+    },
+  };
+  feed.loaded = true;
+
+  const resetWeatherStub = sandbox.stub(feed, "resetWeather").resolves();
+  const loadWeatherStub = sandbox.stub(feed, "loadWeather").resolves();
+
+  await feed.onPrefChangedAction({
+    data: { name: "widgets.weather.enabled" },
+  });
+
+  Assert.ok(
+    resetWeatherStub.calledOnce,
+    "resetWeather called when widgets.weather.enabled is set to false"
+  );
+  Assert.ok(loadWeatherStub.notCalled, "loadWeather not called");
+
+  feed.loaded = false;
+  feed.store.getState = () => ({
+    Prefs: {
+      values: {
+        showWeather: true,
+        "system.showWeather": true,
+        "nova.enabled": true,
+        "widgets.weather.enabled": true,
+      },
+    },
+  });
+
+  await feed.onPrefChangedAction({
+    data: { name: "widgets.weather.enabled" },
+  });
+
+  Assert.ok(
+    loadWeatherStub.calledOnce,
+    "loadWeather called when widgets.weather.enabled is set to true"
+  );
+
+  sandbox.restore();
+});
