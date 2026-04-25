@@ -64,6 +64,9 @@ aiwindow-input-cta-menu-label-chat = Ask
 aiwindow-input-cta-menu-label-navigate = Go to site
 # $searchEngineName (string) - The name of the default search engine
 aiwindow-input-cta-menu-label-search = Search with { $searchEngineName }
+aiwindow-input-cta-menu-label-search-with = Search with…
+
+aiwindow-input-cta-search-submenu-header = Search
 
 ## Smartbar
 

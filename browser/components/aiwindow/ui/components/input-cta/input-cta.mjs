@@ -2,7 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html, repeat } from "chrome://global/content/vendor/lit.all.mjs";
+import {
+  html,
+  repeat,
+  styleMap,
+} from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
@@ -22,7 +26,8 @@ import "chrome://global/content/elements/moz-button.mjs";
  *
  * @typedef {"" | "chat" | "search" | "navigate"} SmartbarAction
  * @property {SmartbarAction} action - Current action or empty string for initial state.
- * @property {SearchEngineInfo} searchEngine - The current search engine display info.
+ * @property {SearchEngineInfo} searchEngineInfo - The current search engine display info.
+ * @property {SearchEngineInfo[]} searchEngines - The list of visible search engines.
  */
 export class InputCta extends MozLitElement {
   static shadowRootOptions = {
@@ -33,6 +38,7 @@ export class InputCta extends MozLitElement {
   static properties = {
     action: { type: String, reflect: true },
     searchEngineInfo: { type: Object },
+    searchEngines: { type: Array },
   };
 
   static ACTIONS = ["chat", "navigate", "search", "stop"];
@@ -42,6 +48,8 @@ export class InputCta extends MozLitElement {
     this.action = "";
     this.searchEngineInfo = { name: "", icon: "" };
     this._menuId = `actions-menu-${crypto.randomUUID()}`;
+    this._searchSubpanelId = `search-submenu-${crypto.randomUUID()}`;
+    this.searchEngines = [];
   }
 
   get actionLabelId() {
@@ -61,6 +69,18 @@ export class InputCta extends MozLitElement {
       : "chrome://global/skin/icons/search-glass.svg";
   }
 
+  get #mainPanel() {
+    return this.shadowRoot?.getElementById(this._menuId);
+  }
+
+  get #searchSubpanel() {
+    return this.shadowRoot?.getElementById(this._searchSubpanelId);
+  }
+
+  get #mozButton() {
+    return this.shadowRoot?.querySelector("moz-button");
+  }
+
   #setAction(key) {
     if (!InputCta.ACTIONS.includes(key)) {
       return;
@@ -69,6 +89,7 @@ export class InputCta extends MozLitElement {
     if (key !== this.action) {
       this.action = key;
     }
+
     this.dispatchEvent(
       new CustomEvent("aiwindow-input-cta:on-action-change", {
         detail: { action: key },
@@ -87,6 +108,32 @@ export class InputCta extends MozLitElement {
         composed: true,
       })
     );
+  }
+
+  #onSearchEngineSelect(engine) {
+    this.dispatchEvent(
+      new CustomEvent("aiwindow-input-cta:on-search-engine-select", {
+        detail: { action: "search", engineName: engine.name },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  #onSearchItemClick(event) {
+    event.stopPropagation();
+    this.#mainPanel?.hide(event, { force: true });
+    requestAnimationFrame(() => {
+      this.#searchSubpanel?.show(null, this.#mozButton.chevronButtonEl);
+    });
+  }
+
+  #onBackClick(event) {
+    event.stopPropagation();
+    this.#searchSubpanel?.hide(event, { force: true });
+    requestAnimationFrame(() => {
+      this.#mainPanel?.show(null, this.#mozButton.chevronButtonEl);
+    });
   }
 
   willUpdate(changedProps) {
@@ -132,8 +179,37 @@ export class InputCta extends MozLitElement {
                   icon=${key}
                 ></panel-item>`
             )}
+            <panel-item
+              @click=${e => this.#onSearchItemClick(e)}
+              data-l10n-id="aiwindow-input-cta-menu-label-search-with"
+              icon="search-with"
+            ></panel-item>
           </panel-list>`
         : null;
+
+    const searchSubpanelTemplate = this.action
+      ? html`<panel-list id=${this._searchSubpanelId}>
+          <panel-item
+            @click=${e => this.#onBackClick(e)}
+            data-l10n-id="aiwindow-input-cta-search-submenu-header"
+            icon="back"
+          ></panel-item>
+          ${repeat(
+            this.searchEngines,
+            engine => engine.name,
+            engine =>
+              html`<panel-item
+                @click=${() => this.#onSearchEngineSelect(engine)}
+                icon="engine"
+                style=${styleMap(
+                  engine.icon ? { "--engine-icon": `url(${engine.icon})` } : {}
+                )}
+              >
+                ${engine.name}
+              </panel-item>`
+          )}
+        </panel-list>`
+      : null;
 
     return html`
       <link
@@ -157,7 +233,7 @@ export class InputCta extends MozLitElement {
               html`<span data-l10n-id=${this.actionLabelId}></span>`}
             </slot>`}
       </moz-button>
-      ${panelListTemplate}
+      ${panelListTemplate} ${searchSubpanelTemplate}
     `;
   }
 }

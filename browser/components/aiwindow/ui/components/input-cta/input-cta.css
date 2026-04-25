@@ -81,6 +81,7 @@ moz-button[type="split"].input-cta::part(chevron-button)::before {
 
 panel-item::part(button) {
   -moz-context-properties: fill, stroke;
+  background-repeat: no-repeat;
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   fill: var(--panel-icon-fill-color);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
@@ -111,4 +112,20 @@ panel-item[icon="search"]::part(button) {
   width: var(--size-item-large);
   height: var(--size-item-large);
   min-width: var(--size-item-large);
+}
+
+panel-item[icon="search-with"]::part(button) {
+  background-image: url("chrome://global/skin/icons/search-glass.svg");
+}
+
+panel-item[icon="engine"]::part(button) {
+  background-image: var(--engine-icon, var(--search-icon));
+}
+
+panel-item[icon="back"]::part(button) {
+  background-image: url("chrome://global/skin/icons/arrow-left.svg");
+}
+
+panel-item[icon="back"]::part(button):dir(rtl) {
+  background-image: url("chrome://global/skin/icons/arrow-right.svg");
 }

@@ -416,6 +416,10 @@ ${
       );
       this._inputCta.addEventListener("aiwindow-input-cta:on-action", this);
       this._inputCta.addEventListener("aiwindow-input-cta:on-stop", this);
+      this._inputCta.addEventListener(
+        "aiwindow-input-cta:on-search-engine-select",
+        this
+      );
       this._inputCta.addEventListener("shown", this);
       this.addEventListener("ai-website-chip:remove", this);
       this.#findWebsiteContextChipsContainer();
@@ -640,6 +644,10 @@ ${
       );
       this._inputCta.removeEventListener("aiwindow-input-cta:on-action", this);
       this._inputCta.removeEventListener("aiwindow-input-cta:on-stop", this);
+      this._inputCta.removeEventListener(
+        "aiwindow-input-cta:on-search-engine-select",
+        this
+      );
       this._inputCta.removeEventListener("shown", this);
       this.removeEventListener("ai-website-chip:remove", this);
     }
@@ -1342,6 +1350,10 @@ ${
         this.smartbarAction = event.detail.action;
         this.smartbarActionIsUserInitiated = false;
         break;
+      case "aiwindow-input-cta:on-search-engine-select":
+        this.smartbarAction = event.detail.action;
+        this.smartbarActionIsUserInitiated = true;
+        break;
       default:
         lazy.logger.debug(`Unhandled event ${event.type}`, event);
     }
@@ -1487,7 +1499,10 @@ ${
 
     // Run search
     if (action === "search") {
-      const engine = lazy.UrlbarSearchUtils.getDefaultEngine();
+      const engineName = event?.detail?.engineName;
+      const engine = engineName
+        ? lazy.UrlbarSearchUtils.getEngineByName(engineName)
+        : lazy.UrlbarSearchUtils.getDefaultEngine();
       const { chat_id, message_seq } = this.conversationTelemetryInfo;
       Glean.smartWindow.searchSubmit.record({
         chat_id,
@@ -1496,9 +1511,12 @@ ${
         location: this.sapLocation,
         message_seq: String(message_seq),
         model: this.modelName,
-        provider: engine.name,
+        provider: engine?.name ?? "unknown",
         submit_type:
-          event?.type === "aiwindow-input-cta:on-action" ? "button" : "enter",
+          event?.type === "aiwindow-input-cta:on-action" ||
+          event?.type === "aiwindow-input-cta:on-search-engine-select"
+            ? "button"
+            : "enter",
       });
 
       if (this.smartbarActionIsUserInitiated) {
@@ -3485,6 +3503,7 @@ ${
     switch (topic) {
       case lazy.SearchUtils.TOPIC_ENGINE_MODIFIED: {
         let engine = subject.wrappedJSObject;
+        this.#updateCtaSearchEngineInfo();
         switch (data) {
           case lazy.SearchUtils.MODIFIED_TYPE.CHANGED:
           case lazy.SearchUtils.MODIFIED_TYPE.REMOVED: {
@@ -5097,6 +5116,16 @@ ${
       name: engine.name,
       icon: await engine.getIconURL(),
     };
+
+    const engines = await lazy.SearchService.getVisibleEngines();
+    this._inputCta.searchEngines = await Promise.all(
+      engines
+        .filter(e => !e.hideOneOffButton)
+        .map(async e => ({
+          name: e.name,
+          icon: await e.getIconURL(),
+        }))
+    );
   }
 
   /**

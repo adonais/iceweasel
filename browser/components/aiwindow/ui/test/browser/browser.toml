@@ -78,6 +78,8 @@ skip-if = [
 
 ["browser_aiwindow_smartbar_inline_mentions.js"]
 
+["browser_aiwindow_smartbar_input_cta.js"]
+
 ["browser_aiwindow_smartbar_interactions.js"]
 
 ["browser_aiwindow_smartbar_keyboard_navigation.js"]
