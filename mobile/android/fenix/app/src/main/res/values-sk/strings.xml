@@ -363,6 +363,18 @@
     Toolbar title for the Page summaries settings fragment
   -->
   <string name="preferences_page_summaries">Súhrny stránok</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">Povoliť nastavenia AI</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">Nastavenia AI</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Vo %se máte vždy na výber</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">To zahŕňa aj to, či používať funkcie vylepšené umelou inteligenciou.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Ďalšie informácie</string>
   <!-- Title for the block AI enhancements toggle -->
@@ -389,6 +401,8 @@
   <string name="ai_controls_voice_search_description">Zvuk sa prevádza na text pomocou služby Google Speech Services.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Zablokovať vylepšenia umelej inteligencie?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Vo %1$se sa nezobrazia nové ani aktuálne vylepšenia umelej inteligencie, ani kontextové okná o nich. Následne môžete odblokovať čokoľvek, čo chcete naďalej používať.\n\nBlokovanie ovplyvňuje aj rozšírenia, ktoré využívajú umelú inteligenciu od %1$su.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Čo bude blokované:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -1421,9 +1435,13 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Skryť panel s nástrojmi posunutím stránky</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Potiahnutím panela s nástrojmi vertikálne zobrazíte otvorené karty</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Potiahnutím panela nástrojov smerom hore otvoríte karty</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Prepínať medzi kartami posunutím panela s adresou do strán</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Zatrasením vytvoriť súhrn</string>
   <!--
     Library
 
@@ -1586,6 +1604,16 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Počet otvorených súkromných kariet: %1$s. Ťuknutím prepnete karty.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d otvorená karta. Ťuknutím prepnete karty.</item>
+    <item quantity="few">%1$d otvorené karty. Ťuknutím prepnete karty.</item>
+    <item quantity="many">%1$d otvorených kariet. Ťuknutím prepnete karty.</item>
+    <item quantity="other">%1$d otvorených kariet. Ťuknutím prepnete karty.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1675,6 +1703,10 @@
   <string name="pwa_site_controls_title_private">%1$s (súkromné prehliadanie)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Otvoriť vyhľadávanie v kartách</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Vyskúšajte skupiny kariet, budete menej rolovať a viac sa zabávať</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Vyberte karty na vytvorenie skupiny. Sú uložené tu a pripravené, keď ich budete potrebovať.</string>
   <!--
     Tab Group
 
@@ -1684,6 +1716,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Upraviť skupinu</string>
   <string name="create_tab_group_save_button">Uložiť</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Nová skupina, úchyt pre zbalenie</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Zavrieť Upraviť skupinu kariet</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Skupina</string>
@@ -1699,6 +1733,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Pridať do</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Pridať do skupiny kariet, úchyt pre zbalenie</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Pridať do novej skupiny kariet</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Zatvoriť voľbu Pridať do skupiny kariet</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Nová skupina kariet</string>
@@ -1711,6 +1749,39 @@
     <item quantity="few">%1$d karty</item>
     <item quantity="many">%1$d kariet</item>
     <item quantity="other">%1$d kariet</item>
+  </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Pridať do skupiny kariet %1$s, %2$d karta, farba %3$s</item>
+    <item quantity="few">Pridať do skupiny kariet %1$s, %2$d karty, farba %3$s</item>
+    <item quantity="many">Pridať do skupiny kariet %1$s, %2$d kariet, farba %3$s</item>
+    <item quantity="other">Pridať do skupiny kariet %1$s, %2$d kariet, farba %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Zdieľať skupinu kariet %1$s obsahujúcu %2$d kartu.</item>
+    <item quantity="few">Zdieľať skupinu kariet %1$s obsahujúcu %2$d karty.</item>
+    <item quantity="many">Zdieľať skupinu kariet %1$s obsahujúcu %2$d kariet.</item>
+    <item quantity="other">Zdieľať skupinu kariet %1$s obsahujúcu %2$d kariet.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Zobraziť skupinu kariet, úchyt pre zbalenie</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Skupina kariet %1$s obsahujúca %2$d kartu, farba %3$s</item>
+    <item quantity="few">Skupina kariet %1$s obsahujúca %2$d karty, farba %3$s</item>
+    <item quantity="many">Skupina kariet %1$s obsahujúca %2$d kariet, farba %3$s</item>
+    <item quantity="other">Skupina kariet %1$s obsahujúca %2$d kariet, farba %3$s</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Odstrániť skupinu kariet?</string>
@@ -3099,6 +3170,16 @@
   <string name="ip_protection_menu_error">Chyba</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Otvoriť nastavenia VPN</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Dosiahnutý limit %1$d\u00a0GB</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Vyčerpali ste celý objem %1$d\u00a0GB dát pre VPN. Prístup sa obnoví budúci mesiac.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN je zapnutá</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
@@ -4409,6 +4490,16 @@
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Predchádzajúci zápas</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Súvisiace zápasy</string>
+  <!--
+    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
+    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
+    It’s playfully related to Firefox in that “tabs” are a browser feature.
+    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
+    or tracking in a technical sense; the meaning is about staying informed.
+  -->
+  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Sledujte Majstrovstvá sveta vo futbale</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Získajte živé aktualizácie zápasov a ďalšie informácie.</string>
   <!-- Sports widget menu item to change the selected team. -->
   <string name="sports_widget_change_team" tools:ignore="UnusedResources">Zmeniť tím</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->

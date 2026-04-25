@@ -83,4 +83,6 @@
   <string name="mozac_ai_controls_page_summary_title">Էջի ամփոփումներ</string>
   <!-- Description for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_description">Էջերը և ամփոփագրերը երբեք չեն պահվում։</string>
+  <!-- Button text for the Error dismiss button on Shake to Summarize -->
+  <string name="mozac_summarize_error_dissmiss">Բաց թողնել</string>
 </resources>

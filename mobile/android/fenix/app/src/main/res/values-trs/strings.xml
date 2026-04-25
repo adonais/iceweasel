@@ -283,6 +283,8 @@
   <string name="browser_menu_edit_bookmark">Nādūnā riña sa arâj sun nīchrò\' doj</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
   <string name="browser_menu_save_as_pdf_2">Nā’nïnj sà’ ngà PDF</string>
+  <!-- Browser menu label for moving the current private tab to a non-private tab -->
+  <string name="browser_menu_move_to_non_private_tab">Dūguachîn gān’an riña rakïj ñanj huā nî’nïnj ïn</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Pajinâ riñā gā’hue nādunō’ a’ngô nuguan’an</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
@@ -355,6 +357,30 @@
   <string name="translation_toolbar_expand_action">Huā nî’nïnj riña ñanj nachrûn’</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Dūyichin’ nuguan’an</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Nej nuguan’ rū’u a’min rayi’î nej pâjina</string>
+  <!--
+    AI Controls settings
+
+    Label for the secret settings preference to enable AI controls
+  -->
+  <string name="preferences_debug_settings_ai_controls">Nāchrūn sa nikāj ñu’ūnj dàj gi’hiaj sun IA</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">Nej sa nikāj ñu’ūnj dàj gi’hiaj sun IA</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Nīgànj chre hua sa nāguīt riña %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Ngà ‘na’ nej nuguan’ yākàn doj sa gā’hue nāgi’hiaj sà’t ngà IA.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Gāhuin chrūn doj</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Dūyichin\'</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Si ga\'nïn\'</string>
   <!--
     Locale Settings Fragment
 
@@ -798,6 +824,8 @@
   <string name="alternative_app_icon_option_blue">Sa kuāan</string>
   <!-- Title for the "Purple" alternative app icon variant in the icon picker screen. -->
   <string name="alternative_app_icon_option_purple">Sa ya’nuun</string>
+  <!-- Dialog button text for cancelling app icon change -->
+  <string name="restart_warning_dialog_button_negative">Dūyichin\'</string>
   <!--
     Account Preferences
 
@@ -868,6 +896,12 @@
   <string name="preference_experiments_2">Nej ēstûdio</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">Gā’nï̄n guendâ gā’nïnj Mozilla nej ēstûdio</string>
+  <!--
+    Turn On Sync Preferences
+
+    Header of the Sign in preference view
+  -->
+  <string name="preferences_sign_in">Gāyi\'ì sēsiûn</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Gāyi\'ì sēsiûn da\' ga\'ue gānātū nûnt</string>
   <!-- Preference for removing FxA account -->
@@ -1046,8 +1080,12 @@
   <string name="studies_active">Ngà \'hiaj sunj</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Gāhuin chrūn doj</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Gāhuin chrūn doj</string>
   <!-- Text for the tabs header private tabs -->
   <string name="tabs_header_private_tabs_title">Sa huìi</string>
+  <!-- Text for the tabs header normal tabs -->
+  <string name="tabs_header_normal_tabs_title">Nej rakïj ñanj</string>
   <!-- Text for the new tab button in the Tab Manager to indicate opening a new normal tab -->
   <string name="tab_manager_floating_action_button_new_normal_tab">Rakïj ñanj nākàa</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -1062,6 +1100,8 @@
   <string name="tab_tray_menu_tab_settings">Nādunā sa huā riña rakïj ñanj</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Nārrán riña daran\' nej rakïj ñanj</string>
+  <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_cancel">Dūyichin\'</string>
   <!-- Text shown in the multiselect menu for sharing selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_share">Dūyingô\'</string>
   <!-- Content description for tabs tray multiselect share button -->
@@ -1094,6 +1134,8 @@
   <string name="delete_from_history">Nādure’ man riña ‘na’ sa gini’hiājt</string>
   <!-- Postfix for private WebApp titles. %1$s is the name of the app (for example "Firefox"). -->
   <string name="pwa_site_controls_title_private">%1$s (Riña Huìi)</string>
+  <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_cancel">Dūyichin\'</string>
   <!--
     History
 
@@ -1125,6 +1167,12 @@
   <string name="history_older">Sa nâ doj</string>
   <!-- Text shown when no history exists -->
   <string name="history_empty_message">Nitāj à\'ngō sa gini\'iājt</string>
+  <!-- Text for the snackbar action button to view in progress download details. -->
+  <string name="download_in_progress_snackbar_action_details">A\'ngô nej sa nika</string>
+  <!-- Text for the snackbar to confirm that a download has completed. -->
+  <string name="download_completed_snackbar">Ngà gisîj nahuij nadunin</string>
+  <!-- Text for the snackbar action button to open a completed download. -->
+  <string name="download_completed_snackbar_action_open">Nā\'nīn</string>
   <!-- Text for the snackbar action button to undo deleting a download. -->
   <string name="download_undo_delete_snackbar_action">Dūre\'</string>
   <!--
@@ -1152,6 +1200,28 @@
   <string name="download_delete_multi_select_dialog_confirm">Nādūre\'</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Dūyichin\'</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
+  <string name="download_delete_dialog_cancel">Dūyichin\'</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
+  <string name="download_delete_dialog_confirm">Gī\'iaj hīa</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Si yugui</string>
+  <string name="download_rename_dialog_confirm_button">Nā\'nïnj sà\'</string>
+  <string name="download_rename_dialog_cancel_button">Dūyichin\'</string>
+  <string name="download_rename_error_dismiss_button">GĀ’HUE</string>
+  <string name="change_file_extension_cancel_button">Dūyichin\'</string>
+  <!--
+    Time period headers for downloads
+
+    Text for the header that groups the downloads for today
+  -->
+  <string name="download_time_period_today">Gui hìaj</string>
+  <!-- Text for the header that groups the downloads for yesterday -->
+  <string name="download_time_period_yesterday">Guki</string>
+  <!-- Text for the header that groups the downloads the past 7 days -->
+  <string name="download_time_period_last_7_days">Sa gahuin 7 gui ga\'na\'</string>
+  <!-- Text for the header that groups the downloads older than other groups -->
+  <string name="download_time_period_older">Sa nâ doj</string>
   <!-- Text for the "Select all" button, which selects all downloaded items in the downloads list. -->
   <string name="download_select_all_items">Gīda\'a daran\'anj</string>
   <!--
@@ -1164,12 +1234,16 @@
   <string name="download_content_type_filter_document">Nel ñanj</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
   <string name="download_content_type_filter_other_1">A\'ngoj</string>
+  <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
+  <string name="webcompat_reporter_learn_more">Gāhuin chrūn doj</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
   <string name="webcompat_reporter_label_url">URL</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">Dūyichin\'</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Ga\'nìnj gan\'an</string>
+  <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
+  <string name="webcompat_reporter_preview_bottom_sheet_send">Ga\'nìnj gan\'an</string>
   <!--
     Crashes
 
@@ -1398,6 +1472,10 @@
   <string name="menu_print">Gīrī ñadu’hua</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">Gā\'nïnj riña aga\'</string>
+  <!-- Content description for the close button in the QR code display screen -->
+  <string name="qr_code_display_close">Nārán</string>
+  <!-- Label for the download button on the QR code display screen -->
+  <string name="qr_code_display_download">Nādunïnj</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">Daran\' sun huā</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
@@ -1485,6 +1563,8 @@
   <string name="snackbar_tab_closed">Ganarán riña rakïj ñanj</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">Ganarán riña nej rakïj ñanj</string>
+  <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
+  <string name="snackbar_num_tabs_closed">Rakïj ñanj huā ráan: %1$s</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Ngà nanunj riña nej aksêso dirêkto!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -1633,6 +1713,8 @@
   <string name="preference_enhanced_tracking_protection_strict">Sa nùkuaj doj</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Dugumîn doj sò’ nī hìo doj ‘hiaj sunj, sanī ga’hue sisī sī gi’hiaj sun hue’ê da’āj sitio.</string>
+  <!-- Learn more text for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_learn_more">Gāhuin chrūn doj</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">Ahuin si riñā narán sa nùkuaj doj dugumî sò\' \'na\' niñā guendâ nej sa naga\'nāj a</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -1771,6 +1853,10 @@
   <string name="add_to_homescreen_text_placeholder">Si yūgui aksêso dīrêkto</string>
   <!-- Describes the add to homescreen functionality -->
   <string name="add_to_homescreen_description_2">Gā\'hue nāchrūnt sitiô nan riña pajinâ ayi\'ìt riña aga\' sikà\' rà nīkājt da\' ga\'hue hìo gātūt riñanj dàj rû\' \'hiaj \'ngō aplikāsiûn.</string>
+  <!-- Preference for managing the settings for logins and passwords in Fenix -->
+  <string name="preferences_passwords_logins_and_passwords_2">Nej da\'nga\' huìi</string>
+  <!-- Preference for managing the saving of logins and passwords in Fenix -->
+  <string name="preferences_passwords_save_logins_2">Nā’nïnj sà’ nej da’nga’ huìi</string>
   <!-- Preference option for asking to save passwords in Fenix -->
   <string name="preferences_passwords_save_logins_ask_to_save">Gāchìnj nì\'iaj nā\'nïnj sà\'t</string>
   <!-- Preference option for never saving passwords in Fenix -->
@@ -1783,6 +1869,8 @@
   <string name="preferences_android_autofill">Nāchra mān’an man riña a’ngô nej aplikasiûn</string>
   <!-- Description for the preference for autofilling logins from Fenix in other apps (e.g. autofilling the Twitter app) -->
   <string name="preferences_android_autofill_description">Nāchra nāhuij nej si yūgui sa arâj suun ngà nej da’nga’ huìi riña na’ngô nej aplikasiûn riña si āgâ’t nan.</string>
+  <!-- Preference option for adding a password -->
+  <string name="preferences_logins_add_login_2">Gūnutà\' a\'ngô da\'nga\' huìi</string>
   <!-- Preference to access list of login exceptions that we never save logins for -->
   <string name="preferences_passwords_exceptions">Sa huā gi\'iát</string>
   <!-- Text on button to remove all saved login exceptions -->
@@ -1807,6 +1895,10 @@
   <string name="saved_login_clear_username">Nādure’ si yūgui sa arâj suun</string>
   <!-- Content Description (for screenreaders etc) read for the button to clear the hostname field while creating a login -->
   <string name="saved_login_clear_hostname">Nādure’ si yūgui sērbidôr</string>
+  <!-- Delete text for the login detail menu delete button -->
+  <string name="login_detail_menu_delete_button">Nādūre\'</string>
+  <!-- Content description, used by tools like screenreaders, to go back and exit the add login view. -->
+  <string name="add_login_navigate_back_button_content_description">Gūij ne\' rūkùu</string>
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
   <string name="saved_login_open_site">Nā’nïn sitiô nan riña sērbidôr</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -1827,6 +1919,10 @@
   <string name="saved_logins_sort_strategy_alphabetically">Si yūgui (A-Z)</string>
   <!-- Saved logins sorting strategy menu item -by last used- (if selected, it will sort saved logins by last used) -->
   <string name="saved_logins_sort_strategy_last_used">Āmān garâj sun rūkù nï\'t</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Gāhuin chrūn doj</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Dūnikïn\' akuan\'</string>
   <!--
     Autofill
 
@@ -1901,6 +1997,10 @@
   <string name="addresses_phone">Si telefonôt</string>
   <!-- The header for the email of an address -->
   <string name="addresses_email">Korrêo</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Island field, used in places like the Cayman Islands and the Bahamas if an address is located on a specific island. -->
+  <string name="addresses_island" tools:ignore="UnusedResources">Isla</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Townland field, specific to Ireland is a specific type of land division used in rural areas. -->
+  <string name="addresses_townland" tools:ignore="UnusedResources">Townland</string>
   <!-- The text for the "Save" button for saving an address -->
   <string name="addresses_save_button">Nā\'nïnj sà\'</string>
   <!-- The text for the "Cancel" button for cancelling adding, updating or deleting an address -->
@@ -2086,6 +2186,8 @@
   <string name="radio_preference_info_content_description">Gā’huì’ klik da’ gīni’înt doj sa huāa</string>
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">Gāchē nun gan’ānj nāhuīt</string>
+  <!-- Header text for the Stories screen. -->
+  <string name="stories_screen_text_news">Notîsia</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Sa rugûñu’ūnj rukû nan</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -2104,15 +2206,112 @@
   <string name="a11y_action_label_wallpaper_collection_learn_more">nā’nïn riña enlâse da’ gīni’înt doj dàj hua rayi’î yi’nïn’ nan</string>
   <!-- Translations feature -->
 
+  <!-- Text that links to additional information about the Firefox translations feature. -->
+  <string name="translations_bottom_sheet_info_message_learn_more">Gahuin chrūn doj</string>
+  <!-- Button text on the translations dialog when a translation error appears. -->
+  <string name="translations_bottom_sheet_positive_button_error">Ginùn huin ñûn</string>
+  <!-- Inactive button text on the translations dialog that indicates a translation is currently in progress. This button will be accompanied by a loading icon. -->
+  <string name="translations_bottom_sheet_translating_in_progress">Hìaj nachrunj</string>
+  <!-- Button content description (not visible, for screen readers etc.) for the translations dialog translate button that indicates a translation is currently in progress. -->
+  <string name="translations_bottom_sheet_translating_in_progress_content_description">Hìaj nachrunj hua</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Gāhuin chrūn doj</string>
   <!-- The Delete site dialogue positive button will appear when the user clicks on a list item. The site will be deleted. -->
   <string name="never_translate_site_dialog_confirm_delete_preference">Nādūre\'</string>
   <!-- The Delete site dialogue negative button will appear when the user clicks on a list item. The dialog will be dismissed. -->
   <string name="never_translate_site_dialog_cancel_preference">Dūyichin\'</string>
+  <!-- Clickable text from the screen header that links to a website. -->
+  <string name="download_languages_header_learn_more_preference">Gāhuin chrūn doj</string>
+  <!-- The subhead of the download language preference screen will appear above the pivot language. -->
+  <string name="download_languages_available_languages_preference">Nej nânj huaa</string>
+  <!-- Text that will appear beside a core or pivot language package name to show that the language is necessary for the translation feature to function. -->
+  <string name="download_languages_default_system_language_require_preference">sa ni\'ñu\'</string>
+  <!--
+    A text for download language preference item.
+    %1$s is the language name, for example, "Spanish".
+    %2$s is the language file size, for example, "(3.91 KB)" or, if the language package name is a pivot language, the string defined in download_languages_default_system_language_require_preference ("required").
+  -->
+  <string name="download_languages_language_item_preference">%1$s (%2$s)</string>
+  <!-- The subhead of the download language preference screen will appear above the items that were not downloaded. -->
+  <string name="download_language_header_preference">Nādunïnj nânj garan\' ruhuât</string>
+  <!-- All languages list item. When the user presses this item, they can download all languages. -->
+  <string name="download_language_all_languages_item_preference">Daran\' nej nânj an</string>
+  <!-- Content description (not visible, for screen readers etc.): For a language list item that was downloaded, the user can now delete it. -->
+  <string name="download_languages_item_content_description_downloaded_state">Nādūre\'</string>
+  <!-- Content description (not visible, for screen readers etc.): For a language list item that was not downloaded. -->
+  <string name="download_languages_item_content_description_not_downloaded_state">Nādunïnj</string>
+  <!-- Button text on the dialog used by the translations feature to confirm deleting a language. -->
+  <string name="delete_language_file_dialog_positive_button_text">Nādūre\'</string>
+  <!-- Button text on the dialog used by the translations feature to cancel deleting a language. -->
+  <string name="delete_language_file_dialog_negative_button_text">Dūyichin\'</string>
+  <!-- Button text on the data saving mode warning dialog used by the translations feature to allow users to confirm they wish to continue and download the language file. -->
+  <string name="download_language_file_dialog_positive_button_text">Nādunïnj</string>
+  <!-- Button text on the data saving mode warning dialog used by the translations feature to allow users to cancel the action and not perform a download of the language file. -->
+  <string name="download_language_file_dialog_negative_button_text">Dūyichin\'</string>
+  <!-- Toggle if Enhanced Tracking Protection is turned on -->
+  <string name="protection_panel_etp_toggle_on">Nāchrūn</string>
+  <!-- Toggle if Enhanced Tracking Protection is turned off -->
+  <string name="protection_panel_etp_toggle_off">Dūnâ\'àj</string>
+  <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
+  <string name="clear_site_data_dialog_positive_button_text">Nā\'nïn\'</string>
+  <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
+  <string name="clear_site_data_dialog_negative_button_text">Dūyichin\'</string>
+  <!-- The continue button label -->
+  <string name="micro_survey_continue_button_label" tools:ignore="UnusedResources">Guij ne\' ñāan</string>
+  <!-- Content description for "X" button that is closing microsurvey. -->
+  <string name="microsurvey_close_button_content_description">Nārán</string>
+  <!--
+    Debug drawer logins
+
+    The title of the Logins feature in the Debug Drawer.
+  -->
+  <string name="debug_drawer_logins_title">Nej riña ayi\'ì\' sesión</string>
   <!-- TextField Design System Component -->
 
   <!-- ==== Terms of use pop up prompt ==== -->
 
+  <!-- Learn more link in the pop up prompt message that links to a site with more information about the terms of use -->
+  <string name="terms_of_use_prompt_link_learn_more">Gāhuin chrūn doj</string>
   <!-- ==== Experiment strings. ==== -->
 
+  <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
+  <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">hiuj nan</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Yi\'nïn\' C</string>
+  <!-- Sports widget group stage label for group D in the soccer tournament. -->
+  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Yi\'nïn\' D</string>
+  <!-- Sports widget group stage label for group E in the soccer tournament. -->
+  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Yi\'nïn\' E</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Yi\'nïn\' F</string>
+  <!-- Sports widget group stage label for group G in the soccer tournament. -->
+  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Yi\'nïn\' G</string>
+  <!-- Sports widget group stage label for group H in the soccer tournament. -->
+  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Yi\'nïn\' H</string>
+  <!-- Sports widget group stage label for group I in the soccer tournament. -->
+  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Yi\'nïn\' I</string>
+  <!-- Sports widget group stage label for group J in the soccer tournament. -->
+  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Yi\'nïn\' J</string>
+  <!-- Sports widget group stage label for group K in the soccer tournament. -->
+  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Yi\'nïn\' K</string>
+  <!-- Sports widget group stage label for group L in the soccer tournament. -->
+  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Yi\'nïn\' L</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove" tools:ignore="UnusedResources">Nādure\'</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Huā nïn’ dugu’nïn’t ruhuâ raj</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Nāguī a’ngô yi’nïn’ïn da’ ginut riña mundial.</string>
+  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
+  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Gānikò’ a’ngô yi’nïn’ïn</string>
+  <!-- Sports widget match status label shown during halftime of a match. -->
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Diû dā’āj a</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Diû nata\'a</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Nej penal</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
+
+  <!-- The second active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Gāhuin chrūn doj</string>
 </resources>

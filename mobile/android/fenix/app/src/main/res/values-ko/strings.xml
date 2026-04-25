@@ -3127,7 +3127,7 @@
     Text shown below the data usage bar describing when the monthly allowance resets.
     %1$.0f is the total monthly data allowance in GB (for example "50").
   -->
-  <string name="ip_protection_data_reset_info">매월 1일 %1$.0f GB로 초기화합니다.</string>
+  <string name="ip_protection_data_reset_info">매월 1일 %1$.0f GB로 초기화됩니다.</string>
   <!-- Header for the browser VPN `location` section -->
   <string name="ip_protection_location_section">위치</string>
   <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
@@ -3146,6 +3146,16 @@
   <string name="ip_protection_menu_error">오류</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">VPN 설정 열기</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">%1$d GB 제한에 도달함</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">VPN 데이터 %1$d GB를 모두 사용했습니다. 접근 권한이 다음 달에 재설정됩니다.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN 켜짐</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->

@@ -3161,6 +3161,16 @@
   <string name="ip_protection_menu_error">خطأ</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">افتح إعدادات VPN</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">وصلت إلى حد %1$d ج.بايت</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">لقد استهلكت كامل سعة بيانات VPN الخاصة بك %1$d ج.بايت. سيُصفّر الشهر المقبل.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">ال VPN مفعّل</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
@@ -4423,6 +4433,8 @@
   <string name="sports_widget_country_england" tools:ignore="UnusedResources">إنجلترا</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">اسكتلندا</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove" tools:ignore="UnusedResources">أزِل</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

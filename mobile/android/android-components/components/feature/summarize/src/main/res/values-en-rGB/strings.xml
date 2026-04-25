@@ -83,4 +83,6 @@
   <string name="mozac_ai_controls_page_summary_title">Page summaries</string>
   <!-- Description for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_description">Pages and summaries are never stored.</string>
+  <!-- Button text for the Error dismiss button on Shake to Summarize -->
+  <string name="mozac_summarize_error_dissmiss">Dismiss</string>
 </resources>

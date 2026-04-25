@@ -351,6 +351,36 @@
   <string name="translation_toolbar_translated_from_and_to" tools:ignore="UnusedResources">Prevedeno iz jezika %1$s v jezik %2$s</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Skrij sporočilo</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">V %su imate vedno izbiro</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Več o tem</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Prepovej izboljšave z uporabo UI</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Prepoved pomeni, da %s ne bo prikazoval novih ali trenutnih izboljšav z uporabo umetne inteligence, niti obvestil v zvezi z njimi.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Kaj je in kaj ni vključeno</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Nove in trenutne izboljšave z uporabo UI so privzeto prepovedane. Določene možnosti lahko posebej omogočite spodaj.</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Prevajanje</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Vsi prevodi ostanejo zasebni na vaši napravi.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Več nastavitev prevajanja</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Več nastavitev povzemanja strani</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Glasovno iskanje</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Želite prepovedati izboljšave z uporabo UI?</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Kaj bo onemogočeno:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Prekliči</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Prepovej</string>
   <!--
     Locale Settings Fragment
 
@@ -606,6 +636,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Nastavitve</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Poslovite se od vsiljivih sledilcev</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Odpirajte povezave z vgrajeno zasebnostjo</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Ščitimo vaše podatke in samodejno preprečujemo podjetjem, da bi vohunila za vašimi kliki.</string>
   <!-- "Set to default" onboarding button. -->
@@ -1604,6 +1636,8 @@
   <string name="pwa_site_controls_title_private">%1$s (zasebni način)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Odpri iskanje zavihkov</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Izberite zavihke, iz katerih želite ustvariti skupino. Vanjo bodo shranjeni in pripravljeni na trenutek, ko jih boste potrebovali.</string>
   <!--
     Tab Group
 
@@ -1627,6 +1661,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Ime</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Dodaj v</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Dodaj novi skupini zavihkov</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Zapri dodajanje v skupino zavihkov</string>
   <!-- Label for adding to a new tab group. -->
@@ -1640,6 +1676,16 @@
     <item quantity="two">%1$d zavihka</item>
     <item quantity="few">%1$d zavihki</item>
     <item quantity="other">%1$d zavihkov</item>
+  </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Dodaj skupini zavihkov %1$s, %2$d zavihek, barva %3$s</item>
+    <item quantity="two">Dodaj skupini zavihkov %1$s, %2$d zavihka, barva %3$s</item>
+    <item quantity="few">Dodaj skupini zavihkov %1$s, %2$d zavihki, barva %3$s</item>
+    <item quantity="other">Dodaj skupini zavihkov %1$s, %2$d zavihkov, barva %3$s</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Želite izbrisati skupino zavihkov?</string>
@@ -3003,6 +3049,8 @@
   <string name="preferences_ip_protection_off">Izklopljen</string>
   <!-- Badge label shown in the menu item while the browser VPN is connecting -->
   <string name="ip_protection_menu_connecting">Povezovanje …</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Začasno ustavljeno</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Napaka</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
@@ -3555,6 +3603,8 @@
   <string name="translation_settings_download_language">Prenesi jezike</string>
   <!-- Toggle switch title and description for the translation settings control. -->
   <string name="translation_settings_control_title">Prevajanje</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Vsi prevodi ostanejo zasebni na vaši napravi.</string>
   <!-- Clickable text for the translations settings item that links to a website. -->
   <string name="translation_settings_control_learn_more">Več o tem</string>
   <!--
@@ -4243,6 +4293,12 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">Več lahko izveste %1$s.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">tukaj</string>
+  <!--
+    Sports widget
+
+    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
+  -->
+  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">Sledite svoji ekipi</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
   <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Severna Amerika</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
@@ -4259,6 +4315,22 @@
   <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">Južna Amerika</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
   <string name="sports_widget_country_england" tools:ignore="UnusedResources">Anglija</string>
+  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Škotska</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">V ŽIVO</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Skupina A</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Skupina B</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Skupina C</string>
+  <!-- Sports widget group stage label for group D in the soccer tournament. -->
+  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Skupina D</string>
+  <!-- Sports widget group stage label for group E in the soccer tournament. -->
+  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Skupina E</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Skupina F</string>
   <!-- Sports widget group stage label for group G in the soccer tournament. -->
   <string name="sports_widget_group_g" tools:ignore="UnusedResources">Skupina G</string>
   <!-- Sports widget group stage label for group H in the soccer tournament. -->
@@ -4287,14 +4359,26 @@
     or tracking in a technical sense; the meaning is about staying informed.
   -->
   <string name="sports_widget_card_title" tools:ignore="UnusedResources">Spremljajte svetovno prvenstvo</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">V živo prejemajte obvestila o dogajanju na tekmah in še več.</string>
   <!-- Sports widget menu item to change the selected team. -->
   <string name="sports_widget_change_team" tools:ignore="UnusedResources">Zamenjaj ekipo</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
   <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Pridobite ozadje po meri</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Odstrani</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Vas še zanima?</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Izberite še kakšno ekipo, katere napredek na svetovnem prvenstvu želite spremljati.</string>
+  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
+  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Spremljaj drugo ekipo</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Polčas</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Podaljški</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Enajstmetrovke</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

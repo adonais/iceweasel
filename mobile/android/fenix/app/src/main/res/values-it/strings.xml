@@ -3154,6 +3154,16 @@
   <string name="ip_protection_menu_error">Errore</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Apri impostazioni VPN</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Raggiunto il limite di %1$d GB</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Hai utilizzato tutti i %1$d GB dei dati disponibili per la VPN. L’accesso verrà reimpostato il prossimo mese.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN attiva</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
@@ -4419,7 +4429,7 @@
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">LIVE</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Campioni della Coppa del Mondo 2026</string>
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Campioni della Coppa del mondo 2026</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">Sedicesimi di finale</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->

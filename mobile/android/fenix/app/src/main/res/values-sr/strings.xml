@@ -357,6 +357,8 @@
   <string name="translation_toolbar_expand_action">Отвори лист за превођење</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Одбаци поруку</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Сазнајте више</string>
   <!--
     Locale Settings Fragment
 

@@ -3162,6 +3162,16 @@
   <string name="ip_protection_menu_error">שגיאה</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">פתיחת הגדרות VPN</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">הגעת למכסה של %1$d ג״ב</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">השתמשת בכל %1$d ג״ב של נתוני ה־VPN שלך. הגישה תתאפס בחודש הבא.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">‏VPN מופעל</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
@@ -4425,9 +4435,9 @@
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">אלופי המונדיאל 2026</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">סיבוב 32</string>
+  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">סיבוב 32 האחרונות</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">סיבוב 16</string>
+  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">שמינית הגמר</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
   <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">רבע גמר</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
@@ -4435,7 +4445,7 @@
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
   <string name="sports_widget_final" tools:ignore="UnusedResources">גמר</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">גמר ארד</string>
+  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">משחק על מדליית הארד</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">קבוצה A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->

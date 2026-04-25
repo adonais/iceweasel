@@ -83,4 +83,6 @@
   <string name="mozac_ai_controls_page_summary_title">Zjeća stronow</string>
   <!-- Description for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_description">Strony a zjeća so ženje njeskładuja.</string>
+  <!-- Button text for the Error dismiss button on Shake to Summarize -->
+  <string name="mozac_summarize_error_dissmiss">Zaćisnyć</string>
 </resources>

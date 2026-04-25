@@ -81,4 +81,6 @@
   <string name="mozac_ai_controls_page_summary_title">Kuatiarogueita mombyky</string>
   <!-- Description for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_description">Kuatiarogueita ha mombyky noñembojo’ái.</string>
+  <!-- Button text for the Error dismiss button on Shake to Summarize -->
+  <string name="mozac_summarize_error_dissmiss">Emboyke</string>
 </resources>

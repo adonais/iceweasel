@@ -3154,6 +3154,16 @@
   <string name="ip_protection_menu_error">Fehler</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">VPN-Einstellungen öffnen</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">%1$d GB Limit erreicht</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Sie haben die gesamten %1$d GB Ihres VPN-Datenvolumens aufgebraucht. Das VPN-Datenvolumen wird nächsten Monat zurückgesetzt.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN aktiviert</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
@@ -4491,7 +4501,7 @@
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Verlängerung</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Elfmeter</string>
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Elfmeterschließen</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

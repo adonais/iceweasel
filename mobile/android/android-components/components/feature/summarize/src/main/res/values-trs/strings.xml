@@ -59,6 +59,30 @@
   <string name="mozac_summarize_info_error_code">Da’nga’ nùhuin saj gire’ej: %1$d</string>
   <!-- Loading text displayed while a page summary is being generated -->
   <string name="mozac_feature_summarize_loading_title">Nù huin nagi’hiaj rū’u nuguan’an…</string>
+  <!-- Content description for the settings icon button in the summarized view -->
+  <string name="mozac_summarize_settings_button_content_description">Nātsij riña nagi’hiaj rū’u nuguan’an riña pajina</string>
+  <!-- Title for the settings screen shown in the summarization bottom sheet -->
+  <string name="mozac_summarize_settings_title">Nej nuguan’ rū’u a’min rayi’î nej pâjina</string>
+  <!-- Label for the summarize pages toggle in settings -->
+  <string name="mozac_summarize_settings_summarize_pages">Nāgi’hiaj rū’u si nūguàn’ pajinâ nan</string>
+  <!-- Description for the summarize pages toggle -->
+  <string name="mozac_summarize_settings_summarize_pages_cloud">Nāgi’hiaj rū’u si nūguàn’ ngà IA. Nej pajinâ dan ngà nej nuguan’ rū’u narugui’ dan nī nitāj āmān nañû sà’ nej man.</string>
   <!-- Link text to learn more about page summaries in settings -->
   <string name="mozac_summarize_settings_learn_more">Gāhuin chrūn doj</string>
+  <!-- Section header for gesture settings -->
+  <string name="mozac_summarize_settings_gestures">Da\'nga\'a</string>
+  <!-- Label for the shake to summarize toggle in settings -->
+  <string name="mozac_summarize_settings_shake_to_summarize">Shakê guendâ nāgi’hiaj rū’û’ nuguan’an</string>
+  <!-- Description for the shake to summarize toggle in settings -->
+  <string name="mozac_summarize_settings_shake_to_summarize_description">Nāgunan’ ānèj ané aga’ nan da’ nāgi’hiaj rū’u si nūguàn’ pâjina.</string>
+  <!-- Message for summary by model, %1$s is the name of the model that is being displayed -->
+  <string name="mozac_feature_summarize_summary_model">Sa nagi’hiaj rū’u nuguan’an huin %1$s</string>
+  <!-- Disclaimer message -->
+  <string name="mozac_feature_summarize_disclaimer_message">Huā sa ahui a’nan’ ‘hiaj IA nej</string>
+  <!-- Title for the page summary AI controllable feature -->
+  <string name="mozac_ai_controls_page_summary_title">Nej nuguan’ rū’u a’min rayi’î nej pâjina</string>
+  <!-- Description for the page summary AI controllable feature -->
+  <string name="mozac_ai_controls_page_summary_description">Nej pajinâ ngà nej nuguan’ rū’u dan nī nitāj āmān nañû sà’ nej man.</string>
+  <!-- Button text for the Error dismiss button on Shake to Summarize -->
+  <string name="mozac_summarize_error_dissmiss">Si gi\'hiaj guendô\'</string>
 </resources>

@@ -3154,6 +3154,16 @@
   <string name="ip_protection_menu_error">Error</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Abrir configuración de VPN</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Límite de %1$d GB alcanzado</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Se usaron los %1$d GB de datos de su VPN. El acceso se restablecerá el próximo mes.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN activada</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
@@ -4483,7 +4493,7 @@
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">¿Todavía querés seguirlo?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Elegí otro equipo para seguir el ritmo de la Copa del Mundo.</string>
+  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Elegí otro equipo para estar al día con la Copa del Mundo.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Seguir a otro equipo</string>
   <!-- Sports widget match status label shown during halftime of a match. -->

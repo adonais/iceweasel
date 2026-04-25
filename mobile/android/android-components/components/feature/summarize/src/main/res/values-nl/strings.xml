@@ -83,4 +83,6 @@
   <string name="mozac_ai_controls_page_summary_title">Paginasamenvattingen</string>
   <!-- Description for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_description">Pagina’s en samenvattingen worden nooit opgeslagen.</string>
+  <!-- Button text for the Error dismiss button on Shake to Summarize -->
+  <string name="mozac_summarize_error_dissmiss">Sluiten</string>
 </resources>
