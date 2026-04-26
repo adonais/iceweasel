@@ -791,6 +791,7 @@ export const AIWindow = {
     if (!this.isAIWindowActiveAndEnabled(win)) {
       root.toggleAttribute("hide-ai-sidebar", shouldHideSidebarForNewtab);
       root.removeAttribute("aiwindow-immersive-view");
+      root.removeAttribute("aiwindow-has-nav-forward");
       return;
     }
 
@@ -807,6 +808,12 @@ export const AIWindow = {
     const isFirstRun = currentURI.equalsExceptRef(FIRSTRUN_URI);
     root.toggleAttribute("aiwindow-first-run", isFirstRun && isImmersiveView);
     root.toggleAttribute("aiwindow-immersive-view", isImmersiveView);
+
+    const canGoForward =
+      isImmersiveView &&
+      !isFirstRun &&
+      (win.gBrowser.selectedBrowser?.webNavigation?.canGoForward ?? false);
+    root.toggleAttribute("aiwindow-has-nav-forward", canGoForward);
 
     // Set attr on the specific browser that has content to override color scheme
     win.gBrowser.selectedBrowser?.toggleAttribute(
