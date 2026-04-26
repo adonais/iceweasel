@@ -34,6 +34,8 @@ aiwindow-retry =
 aiwindow-copy-message =
     .tooltiptext = Copy
     .aria-label = Copy message
+aiwindow-applied-memories-popover =
+    .aria-label = Applied memories
 
 ## Jump to Bottom Button
 

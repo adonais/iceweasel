@@ -62,15 +62,18 @@ export class AppliedMemoriesButton extends MozLitElement {
     this.showCallout = false;
 
     this._onDocumentClick = this._onDocumentClick.bind(this);
+    this._onKeyDown = this._onKeyDown.bind(this);
   }
 
   connectedCallback() {
     super.connectedCallback();
     document.addEventListener("click", this._onDocumentClick);
+    this.addEventListener("keydown", this._onKeyDown);
   }
 
   disconnectedCallback() {
     document.removeEventListener("click", this._onDocumentClick);
+    this.removeEventListener("keydown", this._onKeyDown);
     super.disconnectedCallback();
   }
 
@@ -97,6 +100,7 @@ export class AppliedMemoriesButton extends MozLitElement {
 
     this.open = true;
     this.toggleAttribute("data-open", true);
+    this.updateComplete.then(() => this.#focusItemAt(0));
     this.#dispatchToggleAppliedMemories({ isOpen: true });
   }
 
@@ -133,6 +137,10 @@ export class AppliedMemoriesButton extends MozLitElement {
     }
     this.toggleAttribute("data-open", this.open);
 
+    if (this.open) {
+      this.updateComplete.then(() => this.#focusItemAt(0));
+    }
+
     this.#dispatchToggleAppliedMemories({ isOpen: this.open });
   }
 
@@ -144,6 +152,74 @@ export class AppliedMemoriesButton extends MozLitElement {
     if (!this.open) {
       return;
     }
+    this.#closePopover();
+  }
+
+  _onKeyDown(event) {
+    if (!this.open) {
+      return;
+    }
+    switch (event.key) {
+      case "Escape":
+        event.preventDefault();
+        event.stopPropagation();
+        this.#closePopover();
+        this.shadowRoot.querySelector(".memories-trigger")?.focus();
+        break;
+      case "Tab":
+        this.#closePopover();
+        this.shadowRoot.querySelector(".memories-trigger")?.focus();
+        break;
+      case "ArrowDown":
+        event.preventDefault();
+        this.#moveFocus(1);
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        this.#moveFocus(-1);
+        break;
+      case "Home":
+        event.preventDefault();
+        this.#focusItemAt(0);
+        break;
+      case "End":
+        event.preventDefault();
+        this.#focusItemAt(-1);
+        break;
+    }
+  }
+
+  get #menuItems() {
+    const popover = this.shadowRoot.querySelector(".popover");
+    return popover ? [...popover.querySelectorAll("[data-focusable]")] : [];
+  }
+
+  #moveFocus(direction) {
+    const items = this.#menuItems;
+    if (!items.length) {
+      return;
+    }
+    const active = this.shadowRoot.activeElement;
+    const currentIndex = items.indexOf(active);
+    const nextIndex = (currentIndex + direction + items.length) % items.length;
+    this.#focusItemAt(nextIndex);
+  }
+
+  #focusItemAt(index) {
+    const items = this.#menuItems;
+    if (!items.length) {
+      return;
+    }
+    if (index < 0) {
+      index = items.length + index;
+    }
+    items.forEach((item, i) => {
+      item.tabIndex = i === index ? 0 : -1;
+    });
+    items[index].focus();
+  }
+
+  #closePopover() {
     this.open = false;
     this.#showCalloutState = false;
     this.toggleAttribute("data-open", false);
@@ -199,6 +275,8 @@ export class AppliedMemoriesButton extends MozLitElement {
         ></p>
         <button
           class="memories-callout-learn-more"
+          role="menuitem"
+          data-focusable
           data-l10n-id="aiwindow-memories-learn-more"
           @click=${() => {
             this.dispatchEvent(
@@ -224,23 +302,27 @@ export class AppliedMemoriesButton extends MozLitElement {
     return html`
       <div
         class="popover ${isOpen ? "open" : ""}"
-        role="region"
-        aria-hidden=${!isOpen}
+        role="menu"
+        data-l10n-id="aiwindow-applied-memories-popover"
+        data-l10n-attrs="aria-label"
+        ?inert=${!isOpen}
         @click=${event => this._onPopoverClick(event)}
       >
         ${this.#showCalloutState ? this.renderCallout() : nothing}
 
-        <ul class="memories-list">
+        <ul class="memories-list" role="none">
           ${visibleMemories.map(memory => {
             // @todo Bug 2010069
             // Localize aria-label
             return html`
-              <li class="memories-list-item">
+              <li class="memories-list-item" role="none">
                 <span class="memories-list-label"
                   >${memory.memory_summary}</span
                 >
                 <moz-button
                   class="memories-remove-button"
+                  role="menuitem"
+                  data-focusable
                   type="ghost"
                   size="small"
                   iconsrc="chrome://global/skin/icons/close.svg"
@@ -252,12 +334,14 @@ export class AppliedMemoriesButton extends MozLitElement {
           })}
         </ul>
 
-        <div class="popover-action-row">
+        <div class="popover-action-row" role="none">
           <moz-button
             type="ghost"
             size="default"
             iconsrc="chrome://global/skin/icons/settings.svg"
             iconposition="start"
+            role="menuitem"
+            data-focusable
             class="popover-action-row-button manage-memories-button"
             data-l10n-id="aiwindow-manage-memories"
             data-l10n-attrs="label"
@@ -265,12 +349,14 @@ export class AppliedMemoriesButton extends MozLitElement {
           ></moz-button>
         </div>
 
-        <div class="popover-action-row">
+        <div class="popover-action-row" role="none">
           <moz-button
             type="ghost"
             size="default"
             iconsrc="chrome://global/skin/icons/reload.svg"
             iconposition="start"
+            role="menuitem"
+            data-focusable
             class="popover-action-row-button retry-without-memories-button"
             data-l10n-id="aiwindow-retry-without-memories"
             data-l10n-attrs="label"
@@ -297,7 +383,7 @@ export class AppliedMemoriesButton extends MozLitElement {
         size="small"
         iconposition="start"
         iconsrc="chrome://browser/content/aiwindow/assets/memories-on.svg"
-        aria-haspopup="dialog"
+        aria-haspopup="menu"
         aria-expanded=${this.open && this._hasMemories}
         data-l10n-id="aiwindow-memories-used"
         data-l10n-attrs="label"
