@@ -106,13 +106,14 @@ class AdjustMetricsService(
 
             config.setLogLevel(LogLevel.SUPPRESS)
 
-            Adjust.initSdk(config)
             if (settings.isUserMetaAttributed) {
                 enableOnlyMetaThirdPartySharing()
             } else {
                 disableMetaThirdPartySharing()
             }
 
+            // All configuration have to be done before this.
+            Adjust.initSdk(config)
             Adjust.enable()
             logger.info("Adjust SDK enabled")
         }
