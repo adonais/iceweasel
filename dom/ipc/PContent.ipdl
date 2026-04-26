@@ -1323,6 +1323,9 @@ parent:
      *   The principal of the top level page the request comes from.
      * @param tabId
      *   To identify which tab issues this request.
+     * @param aIgnoreAllowSitePermission
+     *   If true, ignore SitePermissions that indicate that this request
+     *   should be permitted.
      *
      * NOTE: The principal is untrusted in the parent process. Only
      *       principals that can live in the content process should
@@ -1333,7 +1336,8 @@ parent:
                                     nullable nsIPrincipal aTopLevelPrincipal,
                                     bool aIsHandlingUserInput,
                                     bool aMaybeUnsafePermissionDelegate,
-                                    TabId tabId);
+                                    TabId tabId,
+                                    bool aIgnoreAllowSitePermission);
 
     /**
      * If the profiler is running when the process shuts down, this sends the

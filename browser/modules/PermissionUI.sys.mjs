@@ -490,7 +490,8 @@ class PermissionPrompt {
 
       if (
         state == lazy.SitePermissions.ALLOW &&
-        !this.request.isRequestDelegatedToUnsafeThirdParty
+        !this.request.isRequestDelegatedToUnsafeThirdParty &&
+        !this.request.ignoreAllowSitePermission
       ) {
         this.allow();
         return;
@@ -976,6 +977,10 @@ class GeolocationPermissionPrompt extends PermissionPromptForRequest {
   cancel(...args) {
     this.#updateGeoSharing(false);
     super.cancel(...args);
+  }
+
+  ignoreAllowSitePermission() {
+    return this.request.ignoreAllowSitePermission;
   }
 }
 

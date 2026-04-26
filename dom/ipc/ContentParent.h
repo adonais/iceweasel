@@ -535,13 +535,15 @@ class ContentParent final : public PContentParent,
   PContentPermissionRequestParent* AllocPContentPermissionRequestParent(
       const nsTArray<PermissionRequest>& aRequests, nsIPrincipal* aPrincipal,
       nsIPrincipal* aTopLevelPrincipal, const bool& aIsHandlingUserInput,
-      const bool& aMaybeUnsafePermissionDelegate, const TabId& aTabId);
+      const bool& aMaybeUnsafePermissionDelegate, const TabId& aTabId,
+      const bool& aIgnoreAllowSitePermission);
 
   mozilla::ipc::IPCResult RecvPContentPermissionRequestConstructor(
       PContentPermissionRequestParent* aActor,
       nsTArray<PermissionRequest>&& aRequests, nsIPrincipal* aPrincipal,
       nsIPrincipal* aTopLevelPrincipal, const bool& aIsHandlingUserInput,
-      const bool& aMaybeUnsafePermissionDelegate, const TabId& tabId) override;
+      const bool& aMaybeUnsafePermissionDelegate, const TabId& tabId,
+      const bool& aIgnoreAllowSitePermission) override;
 
   bool DeallocPContentPermissionRequestParent(
       PContentPermissionRequestParent* actor);
