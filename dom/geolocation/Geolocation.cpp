@@ -117,6 +117,13 @@ class nsGeolocationRequest final : public ContentPermissionRequestBase,
     mBehavior = aBehavior;
   }
 
+  NS_IMETHOD GetIgnoreAllowSitePermission(
+      bool* aIgnoreAllowSitePermission) override {
+    *aIgnoreAllowSitePermission =
+        mBehavior != geolocation::SystemGeolocationPermissionBehavior::NoPrompt;
+    return NS_OK;
+  }
+
  private:
   virtual ~nsGeolocationRequest();
 
