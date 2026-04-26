@@ -1933,6 +1933,8 @@
   <string name="download_rename_error_exists_error">檔案「%s」已經存在此位置</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">檔案名稱中不得使用「/」符號</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">您輸入的檔案名稱只有大小寫變動，請改用不同檔名。</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">無法重新命名檔案</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -4436,6 +4438,12 @@
   <string name="sports_widget_final" tools:ignore="UnusedResources">決賽</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">銅牌戰</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">目前暫時無法提供賽事資訊，請稍候幾分鐘再重新整理頁面。</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">連線中斷 — 即時更新已暫停。</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">重新整理</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">A 組</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4467,7 +4475,9 @@
   <!-- Sports widget section header for previous soccer match results. -->
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">上一場比賽</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">相關比賽</string>
+  <string name="sports_widget_related_matches">相關比賽</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time">（終場）</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).

@@ -4477,7 +4477,7 @@
   <!-- Sports widget section header for previous soccer match results. -->
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">המשחק הקודם</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">משחקים קשורים</string>
+  <string name="sports_widget_related_matches">משחקים קשורים</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).

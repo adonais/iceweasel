@@ -377,6 +377,30 @@
   <string name="ai_controls_banner_supporting_text">Ngà ‘na’ nej nuguan’ yākàn doj sa gā’hue nāgi’hiaj sà’t ngà IA.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Gāhuin chrūn doj</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Sa gā’hue nāhuin hue’ê doj riña yi’nïn’ IA</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Sisī gānaránt riñanj nī sī ga’hue gīni’hiājt dàj nìko %s nahuin sà’ riña IA, nī sī ga’hue gīni’hiājt nej bentanâ narugui’ mān’an.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Gīni’hiāj nùhuin doj sa nīka ‘na’ nī sa nitāj si nīka nej</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Nej sa nahuin sà’ nīkāj IA ‘naj nī huā rán riña nej man. Nā’nïn riña nej sa ruhuât gī’hiaj sun.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Nej sa girià IA huin nej man</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Nej sa nachrûn’</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Nanun hùi daran’ nej sa nachrûnt riña aga’ nan.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Nātsij doj nej sa nīkāj riña nachrûnt</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Doj nej sa gā’hue nāgi’hiát riña nagi’hiaj rū’ût sinùguàn pâjina</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Nānà\'huì\' ngà nanèt</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Nahuin nanèt lêchra ‘hiaj sa ‘hiaj sun ngà nej nanè a’min’ nīkāj Google.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Sa gā’hue nāhuin hue’ê doj riña yi’nïn’ IA huin man anj</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_cancel">Dūyichin\'</string>
   <!-- Block button text in the block AI enhancements confirmation dialog -->
@@ -522,6 +546,14 @@
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Guruhuât gunumânt riña Firefox</string>
   <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Guij ne\' ñāan</string>
+  <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
+  <string name="onboarding_term_of_service_line_one_2">Si gān’ānjt ne’ ñāa, nī arâjyinat %1$s.</string>
+  <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
+  <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">Chrēj da’huît gānikò’t sisī gārāsunt Firefox</string>
+  <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
+  <string name="onboarding_term_of_service_line_two_link_text">Notisiâ Huìi</string>
+  <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$s is replaced by an active link using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
+  <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Da’ gā’hue nāhuin sà’ doj riña aché nunt nan nī, a’nïn Firefox nuguan’ da’ nàchinj nan’an dàj ‘hiaj sun Mozilla. %1$s</string>
   <!-- Terms of use (ToU) onboarding redesign title. -->
   <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">Giri yītïn sa nana’hui’ ‘hiaj sun ngà Android</string>
   <!-- Terms of use (ToU) first subheader. -->
@@ -579,6 +611,10 @@
   <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">Sī ga\'hue akuan\' nïn</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_opt_out_checkbox">Nāga’huì’ nej nuguan’ huāa riña nej duguî’ ‘nïnj ra’a si marhetin Mozilla. Nej nuguan’ naga’huî’t sanī nitāj āmān gārāsun ñûnj man guendâ ‘ngō sa yī’ìi.</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Dàj arâj sun ñunj nej nuguan’an</string>
+  <!-- Marketing onboarding page body variant. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">\u0020Nātà’ nan’ānj dàj gayī’ìt garâj sunt Firefox nī aràj sunt man ngà nej duguî’ ‘nïnj ra’a si marketin Mozzilla. Nitāj si ane’ nej nuguan’ nan.</string>
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
   <!-- "Continue" onboarding button. -->
@@ -596,6 +632,17 @@
   <string name="nova_onboarding_tou_body_line_1">Si gān’ānjt ne’ ñāa, nī arâjyinat %1$s.</string>
   <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">Chrēj da’huît gānikò’t sisī gārāsunt Firefox</string>
+  <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
+  <string name="nova_onboarding_tou_body_line_2_link_text">Notisiâ Huìi</string>
+  <!--
+    Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
+  -->
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">Da’ gā’hue nāhuin sà’ doj riña aché nunt nan nī, a’nïn Firefox nuguan’ da’ nàchinj nan’an dàj ‘hiaj sun Mozilla. %1$s</string>
+  <!-- Theme selection onboarding "light" option label. -->
+  <string name="nova_onboarding_theme_selection_light_label" tools:ignore="UnusedResources">Sa yigìïn</string>
+  <!-- Theme selection onboarding "dark" option label. -->
+  <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Dàj rumin\' man</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->

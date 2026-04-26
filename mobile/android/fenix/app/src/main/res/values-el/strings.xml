@@ -4442,6 +4442,8 @@
   <string name="sports_widget_final" tools:ignore="UnusedResources">Τελικός</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Αγώνας τρίτης θέσης</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Ανανέωση</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">Όμιλος Α</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4473,7 +4475,7 @@
   <!-- Sports widget section header for previous soccer match results. -->
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Προηγούμενος αγώνας</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Σχετικοί αγώνες</string>
+  <string name="sports_widget_related_matches">Σχετικοί αγώνες</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).

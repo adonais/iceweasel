@@ -1966,6 +1966,8 @@
   <string name="download_rename_error_exists_error">Mae ffeil o\'r enw “%s” eisoes yn bodoli yn y lleoliad hwn</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Dyw enwau ffeiliau ddim yn gallu ddefnyddio “/”</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Mae\'r enw roesoch chi\'n newid llythrennau mawr neu fach yn unig. Rhowch gynnig ar enw ffeil gwahanol.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Methu ail-enwi ffeil</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -3195,7 +3197,7 @@
     Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
     %1$d is the total monthly allowance in GB (for example "50").
   -->
-  <string name="ip_protection_data_limit_reached_description">Rydych chi wedi defnyddio %1$d GB o\'ch data VPN i gyd. Mynediad yn ailosod y mis nesaf.</string>
+  <string name="ip_protection_data_limit_reached_description">Rydych chi wedi defnyddio %1$d GB o\'ch data VPN. Mae\'ch mynediad yn ailosod y mis nesaf.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN ymlaen</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
@@ -4474,6 +4476,12 @@
   <string name="sports_widget_final" tools:ignore="UnusedResources">Y Ffeinal</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Y Ffeinal Efydd</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">Dyw manylion y gêm ddim ar gael ar hyn o bryd. Ceisiwch adnewyddu eto mewn ychydig funudau.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">Cysylltiad wedi\'i dorri - diweddariadau byw wedi\'u hoedi.</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Adnewyddu</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">Grŵp A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4505,7 +4513,9 @@
   <!-- Sports widget section header for previous soccer match results. -->
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Y gêm flaenorol</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Gemau cysylltiedig</string>
+  <string name="sports_widget_related_matches">Gemau cysylltiedig</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time">(Llawn amser)</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).

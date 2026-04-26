@@ -1952,6 +1952,8 @@
   <string name="download_rename_error_exists_error">Dataja z mjenom „%s“ hižo na tutym městnje eksistuje</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Datajowe mjena njemóža „/“ wužiwać</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Mjeno, kotrež sće zapodał, so jenož přez wulkopisanje abo małopisanje rozeznawa. Spytajće druhe datajowe mjeno.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Dataja njeda so přemjenować</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -4458,6 +4460,12 @@
   <string name="sports_widget_final" tools:ignore="UnusedResources">Finale</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Hra wo městno 3</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">Informacije wo hrě tuchwilu k dispoziciji njejsu. Spytajće za mało mjeńšin aktualizować.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">Zwisk přetorhnjeny – aktualizacije live zastajene.</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Aktualizować</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">Skupina A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4489,7 +4497,9 @@
   <!-- Sports widget section header for previous soccer match results. -->
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Předchadna hra</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Podobne hry</string>
+  <string name="sports_widget_related_matches">Podobne hry</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time">(Wšón čas)</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).

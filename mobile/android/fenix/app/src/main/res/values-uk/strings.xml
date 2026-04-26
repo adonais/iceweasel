@@ -719,6 +719,26 @@
   <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Починайте кожен пошук з головного екрану, знаючи що вас прикриває автоматичний захист Firefox.</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Додати віджет Firefox</string>
+  <!-- Customize prompt onboarding title. -->
+  <string name="nova_onboarding_customize_prompt_title" tools:ignore="UnusedResources">Прості налаштування і приватність у кожному дотику</string>
+  <plurals name="nova_onboarding_customize_prompt_body" tools:ignore="UnusedResources">
+    <!--
+      Customize prompt onboarding body.
+      %1$s is replaced by the product name (for example "Firefox"),
+      %2$,d is replaced by the number of trackers blocked. The comma represents the thousand
+      separator (e.g. 1,000 in English), and it will automatically use the correct character
+      for your locale (don't change or remove it).
+    -->
+    <item quantity="one">%1$s заблокував %2$,d вистежувач, поки ви блукали інтернетом.</item>
+    <item quantity="few">%1$s заблокував %2$,d вистежувачі, поки ви блукали інтернетом.</item>
+    <item quantity="other">%1$s заблокував %2$,d вистежувачів, поки ви блукали інтернетом.</item>
+  </plurals>
+  <!-- Customize prompt onboarding positive button. -->
+  <string name="nova_onboarding_customize_prompt_positive_button" tools:ignore="UnusedResources">Почати налаштування</string>
+  <!-- App icon onboarding title. -->
+  <string name="nova_onboarding_app_icon_prompt_title" tools:ignore="UnusedResources">Виберіть власну піктограму програми</string>
+  <!-- App icon onboarding body. -->
+  <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">Надайте своїй домівці індивідуальності.</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -786,6 +806,12 @@
   <string name="preferences_category_about">Про програму</string>
   <!-- Preference category for settings related to changing the default search engine -->
   <string name="preferences_category_select_default_search_engine">Оберіть</string>
+  <!-- Preference category for settings related to changing the default search engine -->
+  <string name="preferences_category_select_default_search_engine_2">Типова пошукова система для звичайного перегляду</string>
+  <!-- Preference category for settings related to changing the private browsing search engine -->
+  <string name="preferences_category_select_private_search_engine">Типова пошукова система для приватного перегляду</string>
+  <!-- Option to set the private browsing mode to use the normal default search engine -->
+  <string name="search_engine_use_default">Та ж пошукова система, що й для звичайного перегляду</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">Альтернативні пошукові системи</string>
   <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
@@ -971,6 +997,8 @@
   <string name="preferences_show_nonsponsored_suggestions">Пропозиції від %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Отримувати пропозиції з інтернету, пов’язані з вашим пошуком</string>
+  <!-- Preference title for switch preference to show search optimization cards -->
+  <string name="preferences_show_search_optimization_cards">Отримувати пропозиції від Mozilla під час введення тексту</string>
   <!-- Preference for link sharing -->
   <string name="preferences_link_sharing">Обмін посиланнями</string>
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
@@ -1000,6 +1028,15 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">У вас немає дозволу на використання цієї теки. Повторіть спробу, вибравши іншу теку.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Керування завантаженнями за допомогою іншої програми</string>
+  <!-- Preference category for deleting or removing downloads -->
+  <string name="preferences_category_delete_or_remove_downloads">Видалення і вилучення завантажень</string>
+  <string name="preferences_downloads_delete_from_device">Видалити з пристрою</string>
+  <string name="preferences_downloads_delete_from_device_description">Файл видаляється з вашого пристрою та з історії завантажень</string>
+  <string name="preferences_downloads_remove_from_download_history">Вилучити з історії завантажень</string>
+  <string name="preferences_downloads_remove_from_download_history_description">Файл вилучається з історії завантажень, але все ще зберігається на пристрої</string>
+  <string name="preferences_downloads_ask_when_to_delete_files">Запитувати, коли я видаляю файли</string>
+  <!-- Preference for downloads -->
+  <string name="preferences_downloads_2">Налаштування завантажень</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
   <string name="preferences_downloads_settings_clean_up_files_title">Видалити з %s і з пристрою</string>
   <!-- Summary for the setting to automatically clean up downloaded files -->
@@ -1058,6 +1095,12 @@
   <string name="customize_addon_collection_user_hint">Власник збірки (ID користувача)</string>
   <!-- Toast shown after confirming the custom extension collection configuration -->
   <string name="toast_customize_extension_collection_done">Збірку розширень змінено. Вихід з програми для застосування змін…</string>
+  <!--
+    Customize Home
+
+    Title for the customize home screen section with privacy report.
+  -->
+  <string name="customize_toggle_privacy_report">Звіт про приватність</string>
   <!-- Header text for jumping back into the recent tab in customize the home screen -->
   <string name="customize_toggle_jump_back_in">Повернутися до</string>
   <!-- Title for the customize home screen section with bookmarks. -->
@@ -1356,6 +1399,8 @@
   <string name="toolbar_customize_shortcut_homepage">Домівка</string>
   <!-- Back shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_back">Назад</string>
+  <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+  <string name="toolbar_customize_shortcut_none">Немає</string>
   <!--
     App icon Preferences
 
@@ -1389,9 +1434,13 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Прокрутити, щоб сховати панель інструментів</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Проведіть від панелі інструментів вертикально, щоб побачити відкриті вкладки</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Провести вгору на панелі інструментів вгору для відкриття вкладок</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Посуньте вбік по панелі адреси, щоб перемкнути вкладки</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Потрусити, щоб підсумувати</string>
   <!--
     Library
 
@@ -1554,6 +1603,15 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Відкриті приватні вкладки: %1$s. Торкніться, щоб перемкнути вкладку.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">Відкрито %1$d групу вкладок. Торкніться, щоб перемкнути вкладки.</item>
+    <item quantity="few">Відкрито %1$d групи вкладок. Торкніться, щоб перемкнути вкладки.</item>
+    <item quantity="other">Відкрито %1$d груп вкладок. Торкніться, щоб перемкнути вкладки.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1601,6 +1659,8 @@
   <string name="tab_manager_multiselect_menu_item_share">Поділитися</string>
   <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
   <string name="tab_manager_multiselect_menu_item_add_to_collection">Додати до збірки</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to a tab group. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_tab_group">Додати до групи</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">Поділитися вибраними вкладками</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1641,6 +1701,52 @@
   <string name="pwa_site_controls_title_private">%1$s (Приватний режим)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Відкрити пошук у вкладках</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Створити групу вкладок</string>
+  <!-- Title for the edit tab group bottom sheet -->
+  <string name="edit_tab_group_title">Редагувати групу</string>
+  <string name="create_tab_group_save_button">Зберегти</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Нова група, згорнути маркер перетягування</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Закрити редактор групи вкладок</string>
+  <!-- Default tab group name when creating a tab group -->
+  <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Група</string>
+  <!--
+    Default tab group name when creating a tab group
+    %d is the number of existing tab groups + 1.
+  -->
+  <string name="create_tab_group_form_default_name">Група %d</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="create_tab_group_name_label">Назва</string>
+  <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
+  <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Назва</string>
+  <!-- Title for adding more tabs to a tab group. -->
+  <string name="add_to_tab_group_title">Додати до</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_close_content_description">Закрити додавання до групи вкладок</string>
+  <!-- Label for adding to a new tab group. -->
+  <string name="add_to_new_tab_group_title">Нова група вкладок</string>
+  <plurals name="tab_group_tabs_count_subtitle">
+    <!--
+      Subtitle for the number of tabs in a tab group.
+      %1$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">%1$d вкладка</item>
+    <item quantity="few">%1$d вкладки</item>
+    <item quantity="other">%1$d вкладок</item>
+  </plurals>
+  <!-- Title for the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_title">Видалити групу вкладок?</string>
+  <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_body">Ця дія остаточно видаляє групу.</string>
+  <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_confirm">Видалити групу</string>
+  <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_cancel">Скасувати</string>
   <!--
     History
 

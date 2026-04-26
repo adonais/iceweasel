@@ -1941,6 +1941,8 @@
   <string name="download_rename_error_exists_error">يوجد ملف باسم \"%s\" بالفعل في هذا الموقع</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">لا يُمكن استخدام \"/\" في أسماء الملفات</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">الاسم الذي أدخلته يتغير فقط بين الأحرف الكبيرة والصغيرة. جرّب اسم ملف مختلف.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">يتعذّر إعادة تسمية الملف</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->

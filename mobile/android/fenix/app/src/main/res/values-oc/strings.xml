@@ -31,6 +31,8 @@
   <string name="tab_search_hint">Cercar pels onglets</string>
   <!-- Placeholder text shown in the search bar when using application search engines -->
   <string name="application_search_hint">Picatz un tèrme de recèrca</string>
+  <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
+  <string name="tab_manager_empty_private_tabs_page_description">%1$s gardarà pas d\'istoric nimai de cookies, pasmens los marcapaginas novèls seràn servats.</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d seleccionats</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -41,6 +43,8 @@
   <string name="tab_tray_select_collection">Seleccionar una colleccion</string>
   <!-- Content description for close button while in multiselect mode in tab tray -->
   <string name="tab_tray_close_multiselect_content_description">Sortir del mòde seleccion multipla</string>
+  <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
+  <string name="tab_manager_empty_synced_tabs_page_description">Connectatz-vos per gerir los onglets sincronizats de totes los aparelhs.</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">Connexion</string>
   <!--
@@ -64,7 +68,12 @@
 
     Title for info card on private homescreen in True Private Browsing Mode.
   -->
-  <string name="felt_privacy_desc_card_title">Daissatz pas cap de traça sus aqueste aparelh</string>
+  <string name="felt_privacy_desc_card_title">Daissetz pas cap de traça sus aqueste aparelh</string>
+  <!--
+    Description of private browsing mode displayed to users on the homepage when they enable private mode.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="felt_privacy_info_card_subtitle_3">%1$s suprimís los cookies, istoric e donadas de sites quand tampatz totes los onglets de navegacion privada.</string>
   <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
@@ -322,6 +331,10 @@
   <string name="translation_toolbar_expand_action">Dobrir lo fuèlh de traduccion</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Ignorar lo messatge</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Ne saber mai</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Traduccions</string>
   <!--
     Locale Settings Fragment
 
@@ -638,6 +651,8 @@
   <string name="preferences_https_only_title">Mòde HTTPS solament</string>
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Utilizar lo verrolhatge d’ecran per amagar los onglets en navegacion privada.</string>
+  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
+  <string name="preferences_pbm_lock_screen_summary_3">Accedissètz a vòstres onglets gràcias a vòstra emprenta digitala, vòstre còde PIN o la reconeissença faciala. L’activacion d’aquesta foncionalitat blòca tanben la captura e lo partiment d’ecran.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Blocador de bandièras de cookies</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -673,7 +688,7 @@
   <!-- Message for the cookie banner re-engagement CFR -->
   <string name="cookie_banner_cfr_message">Mens de distraccions, mens de cookies que vos pistan sus aqueste site.</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
-  <string name="preferences_https_only_summary">Ensaja automaticament de se connectar als sites amb lo chiframent HTTPS per una seguretat melhorada.</string>
+  <string name="preferences_https_only_summary">Ensajar automaticament de se connectar als sites amb lo chiframent HTTPS per una seguretat melhorada.</string>
   <!-- Summary of https only preference if https only is set to off -->
   <string name="preferences_https_only_off">Desactivat</string>
   <!-- Summary of https only preference if https only is set to on in all tabs -->
@@ -702,14 +717,24 @@
   <string name="preferences_category_account">Compte</string>
   <!-- Preference for changing where the AddressBar is positioned -->
   <string name="preferences_toolbar_2">Emplaçament de la barra d’adreça</string>
+  <!-- Preference for changing toolbar layout -->
+  <string name="preferences_toolbar_layout">Disposicion de la barra d’aisinas</string>
   <!-- Preference for changing default theme to dark or light mode -->
   <string name="preferences_theme">Tèma</string>
   <!-- Preference for customizing the home screen -->
   <string name="preferences_home_2">Pagina d’acuèlh</string>
+  <!-- Preference for showing the tab strip -->
+  <string name="preferences_tab_strip">Afichatge de la barra d’onglets</string>
+  <!-- Preference for gestures based actions -->
+  <string name="preferences_toolbar_shortcut">Acorchi de la barra d’aisinas</string>
+  <!-- Preference for gestures based actions -->
+  <string name="preferences_toolbar_select_shortcut">Seleccionar un acorchi</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Gèstes</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Personalizacion</string>
+  <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
+  <string name="preferences_sign_in_description">Sincronizatz los onglets, marcapaginas, senhals e encara mai.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Compte Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -773,11 +798,15 @@
   <!-- Preference for open links in third party apps always open in apps option -->
   <string name="preferences_open_links_in_apps_always">Totjorn</string>
   <!-- Preference for open links in third party apps ask before opening option -->
-  <string name="preferences_open_links_in_apps_ask">Demandar avant dobertura</string>
+  <string name="preferences_open_links_in_apps_ask">Demandar abans dobertura</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Pas jamai</string>
+  <!-- Preference title for choosing an app to handle downloads -->
+  <string name="preferences_choose_app_for_downloads">Gerir los telecargaments amb una autra aplicacion</string>
   <!-- Preference for downloads -->
   <string name="preferences_downloads_2">Paramètres de telecargament</string>
+  <!-- Summary for the setting to automatically clean up downloaded files -->
+  <string name="preferences_downloads_settings_clean_up_files_summary">Suprimir los fichièrs dels gestionari de telecargament los suprimís tanben de l’aparelh</string>
   <!-- Preference for downloads -->
   <string name="preferences_downloads">Telecargaments</string>
   <!-- Preference for enabling gecko engine logs -->
@@ -1025,6 +1054,8 @@
   <string name="preferences_daily_usage_ping_title">Ping d’usatge jornalièr</string>
   <string name="preferences_daily_usage_ping_description">Aquò ajuda a Mozilla a estimar los utilizaires actius.</string>
   <string name="preferences_daily_usage_ping_learn_more">Ne saber mai tocant lo ping d’usatge jornalièr</string>
+  <!-- Text for sumo link to learn more about crash reports in data collection screen -->
+  <string name="preferences_crashes_learn_more">Ne saber mai suls rapòrts de plantatge</string>
   <!-- Title Headers for data collection settings screen -->
   <string name="crash_reports_data_category">Rapòrts de plantatge</string>
   <string name="usage_data_category">Donadas d’utilizacion</string>
@@ -1086,6 +1117,8 @@
   <string name="toolbar_customize_shortcut_homepage">Pagina d\'acuèlh</string>
   <!-- Back shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_back">Tornar</string>
+  <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+  <string name="toolbar_customize_shortcut_none">Pas cap</string>
   <!--
     App icon Preferences
 
@@ -1254,8 +1287,24 @@
   <string name="studies_remove">Suprimir</string>
   <!-- Title of the active section on the studies list -->
   <string name="studies_active">Actiu</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox selecciona a l’azard d’utilizaires e utilizairas per provar de foncionalitats, melhora la qualitat per tot lo monde.</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Autorizar los estudis de foncionalitats</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Ne saber mai</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Autorizar los melhoraments a distància</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox melhorarà las foncionalitats, las performanças e l\'estabilitat entre las mesas a jorn. Modificacions aplicadas a distància.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Ne saber mai</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">Melhoraments a distància</string>
   <!--
     Title for the list of tabs in the current private session used by a11y services
     The %1$s will be replaced by the number of opened private tabs
@@ -1441,6 +1490,8 @@
   <string name="download_delete_multi_select_dialog_confirm">Suprimir</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Anullar</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
+  <string name="download_delete_dialog_confirm">Confirmar</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">En cors</string>
   <!--
@@ -2136,6 +2187,12 @@
   <string name="preference_enhanced_tracking_protection_strict">Estricta</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Una proteccion renfortida contra lo seguiment e de performanças melhoras, mas d’unes sites pòdon quitar de foncionar.</string>
+  <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Reglar los problèmas màgers dels sites (recomandat)</string>
+  <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience_label">Reglar los problèmas menors dels sites</string>
+  <!-- Preference sub header for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_subheader">Reglar los problèmas dels sites</string>
   <!-- Learn more text for the enhanced tracking protection options to fix issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_learn_more">Ne saber mai</string>
   <!-- Accessibility text for the Strict protection information icon -->
@@ -2474,6 +2531,14 @@
   <string name="saved_logins_sort_strategy_last_used">Darrièra utilizacion</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Menú de tria dels senhals</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Ne saber mai</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Ne saber mai</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Activat</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Connexion…</string>
   <!--
     Autofill
 
@@ -2996,6 +3061,10 @@
   <string name="translation_settings_automatic_never_translate_sites">Traduire pas jamai aquestes sites</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Telecargar de lengas</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Traduccions</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Ne saber mai</string>
   <!--
     Automatic translation preference screen
 
@@ -3157,6 +3226,8 @@
   <string name="protection_panel_banner_protected_description">Sètz jos proteccion. Se trobam quicòm, vos assabentarem.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
   <string name="protection_panel_etp_toggle_label">Proteccion renfortida contra lo seguiment</string>
+  <!-- Toggle if Enhanced Tracking Protection is turned on -->
+  <string name="protection_panel_etp_toggle_on">Activada</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
   <string name="protection_panel_etp_toggle_enabled_description_2">Se quicòm sembla copat sus aqueste site, ensajatz de la desactivar.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
@@ -3583,7 +3654,15 @@
   <string name="terms_of_use_prompt_postpone">Lo me remembrar mai tard</string>
   <!-- ==== Experiment strings. ==== -->
 
+  <!--
+    Copy for the Terms of Use popup prompt body line two.
+    %1$s is the string terms_of_use_prompt_body_line_two_alternative_link ("here") that is a link to the Terms of Use
+  -->
+  <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">Ne podètz saber mai %1$s.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">aicí</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
+
+  <!-- The second active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Ne saber mai</string>
 </resources>

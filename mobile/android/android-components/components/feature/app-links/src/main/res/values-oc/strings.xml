@@ -42,4 +42,6 @@
   <string name="mozac_feature_applinks_source_url">URL font</string>
   <!-- The label for the destination URL in the details section -->
   <string name="mozac_feature_applinks_destination_url">URL de destinacion</string>
+  <!-- The text shown when there is no Firefox URL -->
+  <string name="mozac_feature_applinks_none">Pas cap</string>
 </resources>
