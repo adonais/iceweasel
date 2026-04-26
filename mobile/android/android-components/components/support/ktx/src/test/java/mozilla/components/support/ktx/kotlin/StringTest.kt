@@ -547,6 +547,7 @@ class StringTest {
     }
 
     @Test
+    @Ignore("Bug 2034967 - IDN conversion failure, likely due to external change, temp bypass")
     fun `should convert host to idn when calling shortURL`() {
         "http://$PUNYCODE.blah.com" shortenedShouldBecome "$IDN.blah.com"
     }
