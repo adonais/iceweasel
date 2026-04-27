@@ -3166,10 +3166,13 @@ pub extern "C" fn wr_dp_push_stacking_context(
             sc_origin_key != SpatialTreeItemKey::default(),
             "sc_origin_key must be set when stacking context has non-zero origin"
         );
+        // Inherit the stacking context's transform style so this translate-only
+        // reference frame doesn't introduce a 3D flattening boundary for
+        // preserve-3d contexts.
         wr_spatial_id = state.frame_builder.dl_builder.push_reference_frame(
             bounds.min,
             wr_spatial_id,
-            TransformStyle::Flat,
+            params.transform_style,
             PropertyBinding::Value(LayoutTransform::identity()),
             ReferenceFrameKind::Transform {
                 is_2d_scale_translation: true,
