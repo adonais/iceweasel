@@ -16,6 +16,7 @@
 #include "libavutil/log.h"
 #include "libavutil/mastering_display_metadata.h"
 #include "libavutil/mem.h"
+#include "libavcodec/packet.h"
 
 #pragma GCC visibility pop
 

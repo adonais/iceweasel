@@ -6,6 +6,8 @@
 
 if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
     SOURCES += [
+        'fdctdsp_init_aarch64.c',
+        'fdctdsp_neon.S',
         'h264chroma_init_aarch64.c',
         'h264cmc_neon.S',
         'h264dsp_init_aarch64.c',
