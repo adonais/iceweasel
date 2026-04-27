@@ -375,8 +375,7 @@ class RuleEditor extends EventEmitter {
       if (ancestorData.type == "container") {
         this.#createAncestorContainerQuerySelector(
           selectorContainer,
-          ancestorData,
-          index
+          ancestorData
         );
       } else if (ancestorData.type == "layer") {
         selectorContainer.append(
@@ -461,13 +460,8 @@ class RuleEditor extends EventEmitter {
    *        should be added.
    * @param {object} containerQueryData
    * @param {Array<object>} containerQueryData.conditions
-   * @param {number} ancestorDataIndex
    */
-  #createAncestorContainerQuerySelector(
-    selectorContainer,
-    containerQueryData,
-    ancestorDataIndex
-  ) {
+  #createAncestorContainerQuerySelector(selectorContainer, containerQueryData) {
     // @backward-compat { version 151 } Before, we were receiving single
     // containerName and containerQuery. Firefox 150 added the possibility to have
     // multiple conditions in a container query, so we need to transform the "old"
@@ -508,38 +502,6 @@ class RuleEditor extends EventEmitter {
 
       if (containerName) {
         containerConditionEl.append(containerName);
-      }
-
-      if (hasContainer) {
-        const jumpToNodeButton = createChild(containerConditionEl, "button", {
-          class: "open-inspector",
-          title: l10n("rule.containerQuery.selectContainerButton.tooltip"),
-        });
-
-        let containerNodeFront;
-        const getNodeFront = async () => {
-          if (!containerNodeFront) {
-            const res = await this.rule.domRule.getQueryContainerForNode(
-              ancestorDataIndex,
-              this.rule.inherited ||
-                this.ruleView.inspector.selection.nodeFront,
-              conditionIndex
-            );
-            containerNodeFront = res.node;
-          }
-          return containerNodeFront;
-        };
-
-        jumpToNodeButton.addEventListener("click", async () => {
-          const front = await getNodeFront();
-          if (!front) {
-            return;
-          }
-          this.ruleView.inspector.selection.setNodeFront(front);
-          await this.ruleView.inspector.highlighters.hideHighlighterType(
-            this.ruleView.inspector.highlighters.TYPES.BOXMODEL
-          );
-        });
       }
 
       // Add a space between the container name and the query so the title,

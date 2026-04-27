@@ -470,6 +470,27 @@ class HTMLTooltip extends EventEmitter {
   }
 
   /**
+   * Update the HTMLTooltip content with an Element, using fluent for localization purposes.
+   * Force translation early before measuring the tooltip dimensions.
+   *
+   * @param {Element} element
+   *        The Element to use as tooltip content
+   * @param {object} contentSizeOptions
+   *        See setContentSize().
+   */
+  async replaceChildrenLocalized(element, contentSizeOptions) {
+    // Because Fluent is async we need to manually translate the element and
+    // then insert it into the tooltip. This is needed in order for the tooltip
+    // to size to the contents properly and for tests.
+    await this.doc.l10n.translateElements([element]);
+    this.doc.l10n.pauseObserving();
+    this.panel.replaceChildren(element);
+    this.doc.l10n.resumeObserving();
+
+    this.setContentSize(contentSizeOptions);
+  }
+
+  /**
    * Show the tooltip next to the provided anchor element, or update the tooltip position
    * if it was already visible. A preferred position can be set.
    * The event "shown" will be fired after the tooltip is displayed.

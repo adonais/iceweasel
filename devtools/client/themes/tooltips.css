@@ -255,6 +255,25 @@ strong {
   text-overflow: ellipsis;
   overflow: hidden;
   color: var(--theme-body-color);
+
+  .open-inspector {
+    display: inline-block;
+    vertical-align: top;
+    height: 15px;
+    width: 15px;
+    margin: 1px 4px 0;
+    padding: 0;
+    border: none;
+    color: var(--theme-icon-color);
+    fill: currentColor;
+    cursor: pointer;
+    -moz-context-properties: fill;
+    background: url("chrome://devtools/skin/images/open-inspector.svg") no-repeat;
+  }
+
+  .objectBox-node:hover .open-inspector {
+    color: var(--theme-icon-alternate-hover-color);
+  }
 }
 
 .devtools-tooltip-query-container ul {

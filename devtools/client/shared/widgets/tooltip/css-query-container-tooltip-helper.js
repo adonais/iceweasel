@@ -21,58 +21,27 @@ class CssQueryContainerTooltipHelper {
   /**
    * Fill the tooltip with container information.
    */
-  async setContentAndShowContainerHighlighter(data, tooltip) {
+  async setContent(data, tooltip) {
+    const inspector = data.rule.elementStyle.ruleView.inspector;
     const res = await data.rule.domRule.getQueryContainerForNode(
       data.ancestorIndex,
-      data.rule.inherited ||
-        data.rule.elementStyle.ruleView.inspector.selection.nodeFront,
+      data.rule.inherited || inspector.selection.nodeFront,
       data.conditionIndex
     );
 
-    if (res.node) {
-      const inspector = data.rule.elementStyle.ruleView.inspector;
-      await inspector.highlighters.showHighlighterTypeForNode(
-        inspector.highlighters.TYPES.BOXMODEL,
-        res.node
-      );
-      tooltip.once("hidden", () => {
-        inspector.highlighters.hideHighlighterType(
-          inspector.highlighters.TYPES.BOXMODEL
-        );
-      });
-    }
-
-    const fragment = this.#getTemplate(res, tooltip);
-    await tooltip.setLocalizedFragment(fragment, { width: "auto" });
-  }
-
-  /**
-   * Get the template of the tooltip.
-   *
-   * @param {object} data: returned value of StyleRuleActor.getQueryContainerForNode
-   * @param {NodeFront|null} data.node
-   * @param {string} data.containerType
-   * @param {Array<object>} data.queryFeatures
-   * @param {HTMLTooltip} tooltip
-   *        The tooltip we are targetting.
-   */
-  #getTemplate(data, tooltip) {
     const { doc } = tooltip;
-
-    const templateNode = doc.createElementNS(XHTML_NS, "template");
 
     const tooltipContainer = doc.createElementNS(XHTML_NS, "div");
     tooltipContainer.classList.add("devtools-tooltip-query-container");
-    templateNode.content.appendChild(tooltipContainer);
 
-    if (!data.node) {
+    if (!res.node) {
       tooltipContainer.setAttribute(
         "data-l10n-id",
         "css-selector-container-query-condition-no-container"
       );
       tooltipContainer.setAttribute(
         "data-l10n-args",
-        JSON.stringify({ name: data.containerName })
+        JSON.stringify({ name: res.containerName })
       );
     } else {
       const nodeContainer = doc.createElementNS(XHTML_NS, "header");
@@ -80,24 +49,25 @@ class CssQueryContainerTooltipHelper {
 
       const nodeEl = doc.createElementNS(XHTML_NS, "span");
       nodeEl.classList.add("objectBox-node");
-      nodeContainer.append(doc.createTextNode("<"), nodeEl);
+      nodeContainer.append(nodeEl);
+      nodeEl.append("<");
 
       const nodeNameEl = doc.createElementNS(XHTML_NS, "span");
       nodeNameEl.classList.add("tag-name");
       nodeNameEl.appendChild(
-        doc.createTextNode(data.node.nodeName.toLowerCase())
+        doc.createTextNode(res.node.nodeName.toLowerCase())
       );
 
       nodeEl.appendChild(nodeNameEl);
 
-      if (data.node.id) {
+      if (res.node.id) {
         const idEl = doc.createElementNS(XHTML_NS, "span");
         idEl.classList.add("attribute-name");
-        idEl.appendChild(doc.createTextNode(`#${data.node.id}`));
+        idEl.appendChild(doc.createTextNode(`#${res.node.id}`));
         nodeEl.appendChild(idEl);
       }
 
-      for (const attr of data.node.attributes) {
+      for (const attr of res.node.attributes) {
         if (attr.name !== "class") {
           continue;
         }
@@ -108,12 +78,37 @@ class CssQueryContainerTooltipHelper {
           nodeEl.appendChild(el);
         }
       }
-      nodeContainer.append(doc.createTextNode(">"));
+      nodeEl.append(">");
+
+      nodeEl.addEventListener("mouseover", async () => {
+        await inspector.highlighters.showHighlighterTypeForNode(
+          inspector.highlighters.TYPES.BOXMODEL,
+          res.node
+        );
+      });
+      nodeEl.addEventListener("mouseout", async () => {
+        await inspector.highlighters.hideHighlighterType(
+          inspector.highlighters.TYPES.BOXMODEL
+        );
+      });
+
+      const jumpToNodeButton = doc.createElementNS(XHTML_NS, "button");
+      jumpToNodeButton.classList.add("open-inspector");
+      jumpToNodeButton.setAttribute(
+        "title",
+        STYLE_INSPECTOR_L10N.getStr(
+          "rule.containerQuery.selectContainerButton.tooltip"
+        )
+      );
+      jumpToNodeButton.addEventListener("click", () => {
+        inspector.selection.setNodeFront(res.node);
+      });
+      nodeEl.appendChild(jumpToNodeButton);
 
       const ul = doc.createElementNS(XHTML_NS, "ul");
       tooltipContainer.appendChild(ul);
 
-      if (data.containerName) {
+      if (res.containerName) {
         const containerNameEl = doc.createElementNS(XHTML_NS, "li");
         const containerNameLabel = doc.createElementNS(XHTML_NS, "span");
         containerNameLabel.classList.add("property-name");
@@ -121,7 +116,7 @@ class CssQueryContainerTooltipHelper {
 
         const containerNameValue = doc.createElementNS(XHTML_NS, "span");
         containerNameValue.classList.add("property-value");
-        containerNameValue.append(data.containerName);
+        containerNameValue.append(res.containerName);
 
         containerNameEl.append(containerNameLabel, ": ", containerNameValue);
         ul.appendChild(containerNameEl);
@@ -134,7 +129,7 @@ class CssQueryContainerTooltipHelper {
 
       const containerTypeValue = doc.createElementNS(XHTML_NS, "span");
       containerTypeValue.classList.add("property-value");
-      containerTypeValue.appendChild(doc.createTextNode(data.containerType));
+      containerTypeValue.appendChild(doc.createTextNode(res.containerType));
 
       containerTypeEl.append(
         containerTypeLabel,
@@ -143,10 +138,10 @@ class CssQueryContainerTooltipHelper {
       );
       ul.appendChild(containerTypeEl);
 
-      // @backward-compat { version 151 } data.queryFeatures was added in Firefox 151.
+      // @backward-compat { version 151 } res.queryFeatures was added in Firefox 151.
       // When it's not present, show what we used to before. Once 151 hits release,
       // this if block can be remove, and we can keep only what's in the else block.
-      if (!data.queryFeatures) {
+      if (!res.queryFeatures) {
         const inlineSizeEl = doc.createElementNS(XHTML_NS, "li");
 
         const inlineSizeLabel = doc.createElementNS(XHTML_NS, "span");
@@ -155,7 +150,7 @@ class CssQueryContainerTooltipHelper {
 
         const inlineSizeValue = doc.createElementNS(XHTML_NS, "span");
         inlineSizeValue.classList.add("property-value");
-        inlineSizeValue.appendChild(doc.createTextNode(data.inlineSize));
+        inlineSizeValue.appendChild(doc.createTextNode(res.inlineSize));
 
         inlineSizeEl.append(
           inlineSizeLabel,
@@ -164,7 +159,7 @@ class CssQueryContainerTooltipHelper {
         );
         ul.appendChild(inlineSizeEl);
 
-        if (data.containerType != "inline-size") {
+        if (res.containerType != "inline-size") {
           const blockSizeEl = doc.createElementNS(XHTML_NS, "li");
           const blockSizeLabel = doc.createElementNS(XHTML_NS, "span");
           blockSizeLabel.classList.add("property-name");
@@ -172,7 +167,7 @@ class CssQueryContainerTooltipHelper {
 
           const blockSizeValue = doc.createElementNS(XHTML_NS, "span");
           blockSizeValue.classList.add("property-value");
-          blockSizeValue.appendChild(doc.createTextNode(data.blockSize));
+          blockSizeValue.appendChild(doc.createTextNode(res.blockSize));
 
           blockSizeEl.append(
             blockSizeLabel,
@@ -183,7 +178,7 @@ class CssQueryContainerTooltipHelper {
         }
       } else {
         let unsetEl;
-        for (const { name, value, type } of data.queryFeatures) {
+        for (const { name, value, type } of res.queryFeatures) {
           const el = doc.createElementNS(XHTML_NS, "li");
 
           // We should display a specific string when the property is not set (i.e.
@@ -225,7 +220,9 @@ class CssQueryContainerTooltipHelper {
       }
     }
 
-    return doc.importNode(templateNode.content, true);
+    await tooltip.replaceChildrenLocalized(tooltipContainer, {
+      width: "auto",
+    });
   }
 }
 

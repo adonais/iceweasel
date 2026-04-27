@@ -463,7 +463,7 @@ class TooltipsOverlay {
         return false;
       }
 
-      await this.cssQueryContainerTooltipHelper.setContentAndShowContainerHighlighter(
+      await this.cssQueryContainerTooltipHelper.setContent(
         nodeInfo.value,
         this.getTooltip("interactiveTooltip")
       );
