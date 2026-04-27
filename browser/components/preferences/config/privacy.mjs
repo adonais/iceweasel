@@ -1674,13 +1674,13 @@ SettingGroupManager.registerGroups({
     ],
   },
   ipprotection: {
-    l10nId: "ip-protection-description",
+    l10nId: "ip-protection-description-1",
     headingLevel: 2,
     supportPage: "built-in-vpn",
     items: [
       {
         id: "ipProtectionNotOptedInSection",
-        l10nId: "ip-protection-not-opted-in-2",
+        l10nId: "ip-protection-not-opted-in-3",
         l10nArgs: {
           maxUsage: "50",
         },
