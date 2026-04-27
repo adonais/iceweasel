@@ -25,6 +25,7 @@ SOURCES += [
     'audio_frame_queue.c',
     'avcodec.c',
     'avdct.c',
+    'avfft.c',
     'bitstream.c',
     'bitstream_filters.c',
     'bsf.c',

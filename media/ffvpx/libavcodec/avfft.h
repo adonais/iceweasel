@@ -21,7 +21,6 @@
 
 #include "libavutil/attributes.h"
 #include "version_major.h"
-#if FF_API_AVFFT
 
 /**
  * @file
@@ -145,5 +144,4 @@ void av_dct_end (DCTContext *s);
  * @}
  */
 
-#endif /* FF_API_AVFFT */
 #endif /* AVCODEC_AVFFT_H */

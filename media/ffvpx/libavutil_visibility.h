@@ -14,6 +14,8 @@
 
 // We need av_log() to be visible so we can enable assertions in libavcodec.
 #include "libavutil/log.h"
+#include "libavutil/mastering_display_metadata.h"
+#include "libavutil/mem.h"
 
 #pragma GCC visibility pop
 
