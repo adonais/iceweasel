@@ -256,11 +256,18 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
                                                     DecodedData& aResults) {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
   PROCESS_DECODE_LOG(aSample);
-  AVPacket packet;
-  mLib->av_init_packet(&packet);
+  AVPacket* packet;
+#if LIBAVCODEC_VERSION_MAJOR >= 61
+  packet = mLib->av_packet_alloc();
+  auto freePacket = MakeScopeExit([&] { mLib->av_packet_free(&packet); });
+#else
+  AVPacket packet_mem;
+  packet = &packet_mem;
+  mLib->av_init_packet(packet);
+#endif
 
-  packet.data = const_cast<uint8_t*>(aData);
-  packet.size = aSize;
+  packet->data = const_cast<uint8_t*>(aData);
+  packet->size = aSize;
 
   if (aGotFrame) {
     *aGotFrame = false;
@@ -275,12 +282,12 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
 
   int64_t samplePosition = aSample->mOffset;
 
-  while (packet.size > 0) {
+  while (packet->size > 0) {
     int decoded = false;
     int bytesConsumed = -1;
 #if LIBAVCODEC_VERSION_MAJOR < 59
     bytesConsumed =
-        mLib->avcodec_decode_audio4(mCodecContext, mFrame, &decoded, &packet);
+        mLib->avcodec_decode_audio4(mCodecContext, mFrame, &decoded, packet);
     if (bytesConsumed < 0) {
       NS_WARNING("FFmpeg audio decoder error.");
       return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
@@ -288,10 +295,10 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
     }
 #else
 #  define AVRESULT_OK 0
-    int ret = mLib->avcodec_send_packet(mCodecContext, &packet);
+    int ret = mLib->avcodec_send_packet(mCodecContext, packet);
     switch (ret) {
       case AVRESULT_OK:
-        bytesConsumed = packet.size;
+        bytesConsumed = packet->size;
         break;
       case AVERROR(EAGAIN):
         break;
@@ -332,7 +339,11 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
             RESULT_DETAIL(
                 "FFmpeg audio decoder outputs unsupported audio format"));
       }
+#if LIBAVCODEC_VERSION_MAJOR >= 61
+      uint32_t numChannels = mCodecContext->ch_layout.nb_channels;
+#else
       uint32_t numChannels = mCodecContext->channels;
+#endif
       uint32_t samplingRate = mCodecContext->sample_rate;
 
       AlignedAudioBuffer audio =
@@ -365,7 +376,13 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
 
       RefPtr<AudioData> data =
           new AudioData(samplePosition, pts, std::move(audio), numChannels,
-                        samplingRate, mCodecContext->channel_layout);
+                        samplingRate,
+#if LIBAVCODEC_VERSION_MAJOR >= 61
+                        mCodecContext->ch_layout.u.mask
+#else
+                        mCodecContext->channel_layout
+#endif
+      );
       MOZ_ASSERT(duration == data->mDuration, "must be equal");
       aResults.AppendElement(std::move(data));
 
@@ -378,8 +395,8 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
     // The packet wasn't sent to ffmpeg, another attempt will happen next
     // iteration.
     if (bytesConsumed != -1) {
-      packet.data += bytesConsumed;
-      packet.size -= bytesConsumed;
+      packet->data += bytesConsumed;
+      packet->size -= bytesConsumed;
       samplePosition += bytesConsumed;
     }
   }
