@@ -6791,9 +6791,9 @@ FontVisibility WorkerPrivate::GetFontVisibility() const {
 
 void WorkerPrivate::ReportBlockedFontFamily(const nsCString& aMsg) const {
   MOZ_LOG(gFingerprinterDetection, mozilla::LogLevel::Info, ("%s", aMsg.get()));
-  nsContentUtils::ReportToConsoleNonLocalized(NS_ConvertUTF8toUTF16(aMsg),
-                                              nsIScriptError::warningFlag,
-                                              "Security"_ns, GetDocument());
+  nsContentUtils::ReportToConsoleByWindowID(NS_ConvertUTF8toUTF16(aMsg),
+                                            nsIScriptError::warningFlag,
+                                            "Security"_ns, WindowID());
 }
 
 bool WorkerPrivate::IsChrome() const { return IsChromeWorker(); }
