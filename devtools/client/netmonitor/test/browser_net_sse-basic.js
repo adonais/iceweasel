@@ -7,6 +7,10 @@
  * Test basic SSE connection.
  */
 
+// connection closed messages can take more than 5 seconds to show up,
+// increase the waitFor interval (10 -> 50).
+waitFor.overrideIntervalForTestFile = 50;
+
 function setupTestServer() {
   const httpServer = createTestHTTPServer();
   httpServer.registerContentType("html", "text/html");
