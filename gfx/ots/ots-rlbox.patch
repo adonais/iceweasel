@@ -10,7 +10,7 @@ diff --git a/gfx/ots/src/ots.cc b/gfx/ots/src/ots.cc
  
  // The OpenType Font File
  // http://www.microsoft.com/typography/otspec/otff.htm
-@@ -511,43 +511,9 @@ bool ProcessWOFF(ots::FontFile *header,
+@@ -511,44 +511,9 @@ bool ProcessWOFF(ots::FontFile *header,
    return ProcessGeneric(header, font, woff_tag, output, data, length, tables, file);
  }
  
@@ -40,6 +40,7 @@ diff --git a/gfx/ots/src/ots.cc b/gfx/ots/src/ots.cc
 -
 -  std::string buf(decompressed_size, 0);
 -  woff2::WOFF2StringOut out(&buf);
+-  out.SetMaxSize(decompressed_size);
 -  if (!woff2::ConvertWOFF2ToTTF(data, length, &out)) {
 -    return OTS_FAILURE_MSG_HDR("Failed to convert WOFF 2.0 font to SFNT");
 -  }

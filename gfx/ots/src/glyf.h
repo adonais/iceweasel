@@ -12,12 +12,19 @@
 #include "ots.h"
 
 namespace ots {
+class OpenTypeLOCA;
 class OpenTypeMAXP;
 
 class OpenTypeGLYF : public Table {
  public:
   explicit OpenTypeGLYF(Font *font, uint32_t tag)
       : Table(font, tag, tag), maxp(NULL) { }
+
+  ~OpenTypeGLYF() {
+    for (auto* p : replacements) {
+      delete[] p;
+    }
+  }
 
   bool Parse(const uint8_t *data, size_t length);
   bool Serialize(OTSStream *out);
@@ -36,13 +43,25 @@ class OpenTypeGLYF : public Table {
 
   bool ParseFlagsForSimpleGlyph(Buffer &glyph,
                                 uint32_t num_flags,
+                                std::vector<uint8_t>& flags,
                                 uint32_t *flag_index,
                                 uint32_t *coordinates_length);
-  bool ParseSimpleGlyph(Buffer &glyph, int16_t num_contours);
+  bool ParseSimpleGlyph(Buffer &glyph,
+                        unsigned gid,
+                        int16_t num_contours,
+                        int16_t xmin,
+                        int16_t ymin,
+                        int16_t xmax,
+                        int16_t ymax,
+                        bool is_tricky_font);
+
+  // The skip_count outparam returns the number of bytes from the original
+  // glyph description that are being skipped on output (normally zero).
   bool ParseCompositeGlyph(
       Buffer &glyph,
-      ComponentPointCount* component_point_count);
-
+      unsigned glyph_id,
+      ComponentPointCount* component_point_count,
+      unsigned* skip_count);
 
   bool TraverseComponentsCountingPoints(
       Buffer& glyph,
@@ -56,9 +75,14 @@ class OpenTypeGLYF : public Table {
       const std::vector<uint32_t>& loca_offsets,
       unsigned glyph_id);
 
+  OpenTypeLOCA* loca;
   OpenTypeMAXP* maxp;
 
   std::vector<std::pair<const uint8_t*, size_t> > iov;
+
+  // Any blocks of replacement data created during parsing are stored here
+  // to be available during serialization.
+  std::vector<uint8_t*> replacements;
 };
 
 }  // namespace ots
