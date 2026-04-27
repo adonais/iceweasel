@@ -33,6 +33,7 @@
 #include "frontend/FrontendContext.h"  // AutoReportFrontendContext
 #include "gc/GC.h"
 #include "gc/GCContext.h"
+#include "gc/GCRuntime.h"
 #include "gc/Marking.h"
 #include "gc/PublicIterators.h"
 #include "jit/JitSpewer.h"
@@ -582,6 +583,8 @@ static void ReleaseAssertObjectHasNoWrappers(JSContext* cx,
       MOZ_CRASH("wrapper found for target object");
     }
   }
+  MOZ_RELEASE_ASSERT(
+      !gc::GCRuntime::isFinalizationObserverTarget(ObjectValue(*target)));
 }
 
 /*
@@ -710,6 +713,13 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
 
   // Lastly, update the original object to point to the new one.
   if (origobj->compartment() != destination) {
+    // If origobj is a weak ref target, relocate the weak ref map entry to
+    // newIdentity before the swap turns origobj into a CCW.
+    if (!gc::GCRuntime::relocateWeakRefTarget(ObjectValue(*origobj),
+                                              ObjectValue(*newIdentity))) {
+      oomUnsafe.crash("JS_TransplantObject weak ref relocation");
+    }
+
     RootedObject newIdentityWrapper(cx, newIdentity);
     AutoRealm ar(cx, origobj);
     if (!JS_WrapObject(cx, &newIdentityWrapper)) {

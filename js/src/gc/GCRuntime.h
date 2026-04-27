@@ -753,6 +753,11 @@ class GCRuntime {
   void maybeClearWeakRefTargets(JS::ShouldClearWeakRefTargetCallback callback,
                                 void* data);
 
+  static bool isFinalizationObserverTarget(const Value& target);
+
+  static bool relocateWeakRefTarget(const Value& oldTarget,
+                                    const Value& newTarget);
+
   static void clearWeakRefTargets(JS::Compartment* source, const Value& target);
   static void clearWeakRefTargets(const CompartmentFilter& sourceFilter,
                                   JS::Realm* targetFilter);

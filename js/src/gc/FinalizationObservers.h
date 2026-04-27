@@ -24,8 +24,6 @@ class WeakRefObject;
 
 namespace gc {
 
-JS::Zone* GetWeakTargetZone(const Value& value);
-
 // ObserverList
 //
 // The following classes provide ObserverList, a circular doubly linked list of
@@ -224,6 +222,11 @@ class FinalizationObservers {
   // Integration with cycle collector:
   void maybeClearWeakRefTargets(JS::ShouldClearWeakRefTargetCallback callback,
                                 void* data);
+
+  // Integration with object transplanting:
+  bool isTarget(const Value& target);
+  ObserverList removeWeakRefTargets(const Value& target);
+  bool addWeakRefTargets(const Value& target, ObserverList&& list);
 
   // Integration with nuking CCWs:
   void clearWeakRefTargets(JS::Compartment* source, const Value& target);

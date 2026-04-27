@@ -4108,7 +4108,8 @@ static bool DummyPreserveWrapperCallback(JSContext* cx, HandleObject obj) {
   return true;
 }
 
-static bool DummyHasReleasedWrapperCallback(HandleObject obj) { return true; }
+/* Wrappers stay preserved for dummy DOM objects. */
+static bool DummyHasReleasedWrapperCallback(HandleObject obj) { return false; }
 
 #ifdef FUZZING_JS_FUZZILLI
 static bool fuzzilli_hash(JSContext* cx, unsigned argc, Value* vp) {
