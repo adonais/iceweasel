@@ -200,22 +200,36 @@ class nsHostResolver : public nsISupports, public AHostResolver {
   explicit nsHostResolver();
   virtual ~nsHostResolver();
 
+  using CallbackArray = nsTArray<RefPtr<nsResolveHostCallback>>;
+
+  // Invoke all callbacks in aCallbacks with the given record and status.
+  // Must be called outside any nsHostResolver lock.
+  void FireCallbacks(const CallbackArray& aCallbacks, nsHostRecord* aRec,
+                     nsresult aStatus);
+
+  // Move all callbacks from a LinkedList into a CallbackArray.
+  static void DrainCallbacks(
+      mozilla::LinkedList<RefPtr<nsResolveHostCallback>>& aSrc,
+      CallbackArray& aDst);
+
   bool DoRetryTRR(AddrHostRecord* aAddrRec) MOZ_REQUIRES(mQueue.mLock);
   bool MaybeRetryTRRLookup(
       AddrHostRecord* aAddrRec, nsresult aFirstAttemptStatus,
       mozilla::net::TRRSkippedReason aFirstAttemptSkipReason,
       nsresult aChannelStatus) MOZ_REQUIRES(mQueue.mLock);
 
-  LookupStatus CompleteLookupLocked(nsHostRecord*, nsresult,
+  LookupStatus CompleteLookupLocked(nsHostRecord*, nsresult&,
                                     mozilla::net::AddrInfo*, bool pb,
                                     const nsACString& aOriginsuffix,
                                     mozilla::net::TRRSkippedReason aReason,
-                                    mozilla::net::TRR* aTRRRequest)
+                                    mozilla::net::TRR* aTRRRequest,
+                                    CallbackArray& aCallbacks)
       MOZ_REQUIRES(mDBLock) MOZ_REQUIRES(mQueue.mLock);
   LookupStatus CompleteLookupByTypeLocked(
-      nsHostRecord*, nsresult, mozilla::net::TypeRecordResultType& aResult,
-      mozilla::net::TRRSkippedReason aReason, uint32_t aTtl, bool pb)
-      MOZ_REQUIRES(mDBLock) MOZ_REQUIRES(mQueue.mLock);
+      nsHostRecord*, nsresult&, mozilla::net::TypeRecordResultType& aResult,
+      mozilla::net::TRRSkippedReason aReason, uint32_t aTtl, bool pb,
+      CallbackArray& aCallbacks) MOZ_REQUIRES(mDBLock)
+      MOZ_REQUIRES(mQueue.mLock);
   nsresult Init();
   static void ComputeEffectiveTRRMode(nsHostRecord* aRec);
   nsresult NativeLookup(nsHostRecord* aRec) MOZ_REQUIRES(mQueue.mLock);
