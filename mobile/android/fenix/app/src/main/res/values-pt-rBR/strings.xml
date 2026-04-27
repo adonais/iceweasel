@@ -36,7 +36,7 @@
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">Navegação privativa</string>
   <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
-  <string name="tab_manager_empty_private_tabs_page_description">O %1$s não salvará nenhum histórico nem cookies, mas novos favoritos serão salvos.</string>
+  <string name="tab_manager_empty_private_tabs_page_description">O %1$s não salva nenhum histórico nem cookies, mas novos favoritos são salvos.</string>
   <!-- The header text displayed on the normal tabs page when no normal tabs are open -->
   <string name="tab_manager_empty_normal_tabs_page_header">Crie uma nova aba para começar a pesquisar</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
@@ -1184,7 +1184,7 @@
     The user can decide if they would like to continue trying to start extensions or if they'd rather continue without them.
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="extension_process_crash_dialog_message">Uma ou mais extensões pararam de funcionar, tornando seu sistema instável. O %1$s tentou reiniciar as extensões sem sucesso.\n\nAs extensões não serão reiniciados durante a sessão atual.\n\nRemover ou desativar extensões pode resolver este problema.</string>
+  <string name="extension_process_crash_dialog_message">Uma ou mais extensões pararam de funcionar, tornando seu sistema instável. O %1$s tentou reiniciar as extensões sem sucesso.\n\nAs extensões não serão reiniciadas durante a sessão atual.\n\nRemover ou desativar extensões pode resolver este problema.</string>
   <!-- Button text on the extension crash dialog to prompt the user to try restarting the extensions but the dialog will reappear if it is unsuccessful again -->
   <string name="extension_process_crash_dialog_retry_button_text" tools:ignore="UnusedResources">Experimente reiniciar as extensões</string>
   <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->
@@ -3430,7 +3430,7 @@
   <!-- Title for the translation dialog that allows a user to translate the webpage when a user uses the translation feature the first time. %1$s is the name of the app (for example "Firefox"). -->
   <string name="translations_bottom_sheet_title_first_time">Experimente tradução privativa no %1$s</string>
   <!-- Additional information on the translation dialog that appears when a user uses the translation feature the first time. %1$s is a link using translations_bottom_sheet_info_message_learn_more as text. -->
-  <string name="translations_bottom_sheet_info_message">Para sua privacidade, o texto de tradução nunca sai do seu dispositivo. Novos idiomas e melhorias em breve! %1$s</string>
+  <string name="translations_bottom_sheet_info_message">Para sua privacidade, o texto de tradução não sai do seu dispositivo. Novos idiomas e melhorias em breve! %1$s</string>
   <!-- Text that links to additional information about the Firefox translations feature. -->
   <string name="translations_bottom_sheet_info_message_learn_more">Saiba mais</string>
   <!-- Label for the dropdown to select which language to translate from on the translations dialog. Usually the translate from language selected will be the same as the page language. -->

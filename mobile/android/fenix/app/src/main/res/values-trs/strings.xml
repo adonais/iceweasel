@@ -2346,11 +2346,11 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Nādure\'</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Huā nïn’ dugu’nïn’t ruhuâ raj</string>
+  <string name="sports_widget_still_want_to_follow">Huā nïn’ dugu’nïn’t ruhuâ raj</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Nāguī a’ngô yi’nïn’ïn da’ ginut riña mundial.</string>
+  <string name="sports_widget_choose_another_team">Nāguī a’ngô yi’nïn’ïn da’ ginut riña mundial.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Gānikò’ a’ngô yi’nïn’ïn</string>
+  <string name="sports_widget_follow_another_team">Gānikò’ a’ngô yi’nïn’ïn</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Diû dā’āj a</string>
   <!-- Sports widget match status label shown during extra time of a match. -->

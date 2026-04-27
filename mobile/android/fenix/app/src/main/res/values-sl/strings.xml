@@ -4368,11 +4368,11 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Odstrani</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Vas še zanima?</string>
+  <string name="sports_widget_still_want_to_follow">Vas še zanima?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Izberite še kakšno ekipo, katere napredek na svetovnem prvenstvu želite spremljati.</string>
+  <string name="sports_widget_choose_another_team">Izberite še kakšno ekipo, katere napredek na svetovnem prvenstvu želite spremljati.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Spremljaj drugo ekipo</string>
+  <string name="sports_widget_follow_another_team">Spremljaj drugo ekipo</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Polčas</string>
   <!-- Sports widget match status label shown during extra time of a match. -->

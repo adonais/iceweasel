@@ -4447,17 +4447,17 @@
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Majstrovstvá sveta vo futbale 2026</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">Najlepších 32</string>
+  <string name="sports_widget_round_of_32">Najlepších 32</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">Najlepších 16</string>
+  <string name="sports_widget_round_of_16">Najlepších 16</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">Štvrťfinále</string>
+  <string name="sports_widget_quarter_final">Štvrťfinále</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final" tools:ignore="UnusedResources">Semifinále</string>
+  <string name="sports_widget_semi_final">Semifinále</string>
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final" tools:ignore="UnusedResources">Finále</string>
+  <string name="sports_widget_final">Finále</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">O tretie miesto</string>
+  <string name="sports_widget_bronze_final">O tretie miesto</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">Skupina A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4507,11 +4507,11 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Odstrániť</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Stále chcete sledovať?</string>
+  <string name="sports_widget_still_want_to_follow">Stále chcete sledovať?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Vyberte si iný tím, aby ste udržali krok s majstrovstvami sveta.</string>
+  <string name="sports_widget_choose_another_team">Vyberte si iný tím, aby ste udržali krok s majstrovstvami sveta.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Sledovať iný tím</string>
+  <string name="sports_widget_follow_another_team">Sledovať iný tím</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Polčas</string>
   <!-- Sports widget match status label shown during extra time of a match. -->

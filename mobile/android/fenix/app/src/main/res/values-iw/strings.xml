@@ -1945,6 +1945,8 @@
   <string name="download_rename_error_exists_error">קובץ בשם ״%s״ כבר קיים במיקום זה</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">שמות קבצים אינם יכולים להשתמש ב-״/״</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">השם שהזנת משנה רק אותיות גדולות או קטנות. נא לנסות שם קובץ אחר.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">לא ניתן לשנות את שם הקובץ</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -4435,17 +4437,23 @@
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">אלופי המונדיאל 2026</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">סיבוב 32 האחרונות</string>
+  <string name="sports_widget_round_of_32">סיבוב 32 האחרונות</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">שמינית הגמר</string>
+  <string name="sports_widget_round_of_16">שמינית הגמר</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">רבע גמר</string>
+  <string name="sports_widget_quarter_final">רבע גמר</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final" tools:ignore="UnusedResources">חצי גמר</string>
+  <string name="sports_widget_semi_final">חצי גמר</string>
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final" tools:ignore="UnusedResources">גמר</string>
+  <string name="sports_widget_final">גמר</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">משחק על מדליית הארד</string>
+  <string name="sports_widget_bronze_final">משחק על מדליית הארד</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">פרטי המשחק אינם זמינים כרגע. נא לנסות לרענן בעוד מספר דקות.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">החיבור נקטע - עדכונים חיים הושהו.</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">ריענון</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">קבוצה A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4478,6 +4486,8 @@
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">המשחק הקודם</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">משחקים קשורים</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time">(המשחק הסתיים)</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4495,17 +4505,35 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">הסרה</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">עדיין ברצונך לעקוב?</string>
+  <string name="sports_widget_still_want_to_follow">עדיין ברצונך לעקוב?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">יש לבחור בנבחרת אחרת להמשך מעקב אחרי המונדיאל.</string>
+  <string name="sports_widget_choose_another_team">יש לבחור בנבחרת אחרת להמשך מעקב אחרי המונדיאל.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">מעקב אחרי נבחרת אחרת</string>
+  <string name="sports_widget_follow_another_team">מעקב אחרי נבחרת אחרת</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">מחצית</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">הארכה</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
   <string name="sports_widget_penalties" tools:ignore="UnusedResources">פנדלים</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">י’</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">ש’</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">ד’</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

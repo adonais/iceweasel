@@ -4425,17 +4425,17 @@
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">แชมป์ฟุตบอลโลก 2026</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">รอบ 32 ทีม</string>
+  <string name="sports_widget_round_of_32">รอบ 32 ทีม</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">รอบ 16 ทีม</string>
+  <string name="sports_widget_round_of_16">รอบ 16 ทีม</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">รอบก่อนรองชนะเลิศ</string>
+  <string name="sports_widget_quarter_final">รอบก่อนรองชนะเลิศ</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final" tools:ignore="UnusedResources">รอบรองชนะเลิศ</string>
+  <string name="sports_widget_semi_final">รอบรองชนะเลิศ</string>
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final" tools:ignore="UnusedResources">รอบชิงชนะเลิศ</string>
+  <string name="sports_widget_final">รอบชิงชนะเลิศ</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">รอบชิงเหรียญทองแดง</string>
+  <string name="sports_widget_bronze_final">รอบชิงเหรียญทองแดง</string>
   <!-- Sports widget error card message shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed">ข้อมูลการแข่งไม่พร้อมใช้งานในขณะนี้ โปรดลองเรียกใหม่อีกครั้งในอีกสักครู่</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
@@ -4493,11 +4493,11 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">เอาออก</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">ยังอยากติดตามผลบอลต่อหรือไม่?</string>
+  <string name="sports_widget_still_want_to_follow">ยังอยากติดตามผลบอลต่อหรือไม่?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">เลือกทีมอื่นเพื่อติดตามการแข่งขันฟุตบอลโลกต่อ</string>
+  <string name="sports_widget_choose_another_team">เลือกทีมอื่นเพื่อติดตามการแข่งขันฟุตบอลโลกต่อ</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">ติดตามทีมอื่น</string>
+  <string name="sports_widget_follow_another_team">ติดตามทีมอื่น</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">ช่วงพักครึ่ง</string>
   <!-- Sports widget match status label shown during extra time of a match. -->

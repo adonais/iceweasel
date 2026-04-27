@@ -4431,17 +4431,17 @@
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026ko Munduko Koparen Txapeldunak</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">Final hogeita hamabirenak</string>
+  <string name="sports_widget_round_of_32">Final hogeita hamabirenak</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">Final hamaseirenak</string>
+  <string name="sports_widget_round_of_16">Final hamaseirenak</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">Final laurdenak</string>
+  <string name="sports_widget_quarter_final">Final laurdenak</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final" tools:ignore="UnusedResources">Finalerdiak</string>
+  <string name="sports_widget_semi_final">Finalerdiak</string>
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final" tools:ignore="UnusedResources">Finala</string>
+  <string name="sports_widget_final">Finala</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Brontzerako finala</string>
+  <string name="sports_widget_bronze_final">Brontzerako finala</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">A Multzoa</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4491,11 +4491,11 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Kendu</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Txapelketa jarraitzen segi nahi duzu?</string>
+  <string name="sports_widget_still_want_to_follow">Txapelketa jarraitzen segi nahi duzu?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Aukeratu beste talde bat Munduko Kopa jarraitzeko.</string>
+  <string name="sports_widget_choose_another_team">Aukeratu beste talde bat Munduko Kopa jarraitzeko.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Jarraitu beste talde bat</string>
+  <string name="sports_widget_follow_another_team">Jarraitu beste talde bat</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Atsedenaldia</string>
   <!-- Sports widget match status label shown during extra time of a match. -->

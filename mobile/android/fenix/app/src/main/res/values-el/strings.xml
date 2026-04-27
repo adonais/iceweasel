@@ -4431,17 +4431,17 @@
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Πρωταθλητές Παγκοσμίου Κυπέλλου 2026</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">Φάση των 32</string>
+  <string name="sports_widget_round_of_32">Φάση των 32</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">Φάση των 16</string>
+  <string name="sports_widget_round_of_16">Φάση των 16</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">Προημιτελικοί</string>
+  <string name="sports_widget_quarter_final">Προημιτελικοί</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final" tools:ignore="UnusedResources">Ημιτελικοί</string>
+  <string name="sports_widget_semi_final">Ημιτελικοί</string>
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final" tools:ignore="UnusedResources">Τελικός</string>
+  <string name="sports_widget_final">Τελικός</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Αγώνας τρίτης θέσης</string>
+  <string name="sports_widget_bronze_final">Αγώνας τρίτης θέσης</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Ανανέωση</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4493,11 +4493,11 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Αφαίρεση</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Θέλετε ακόμα να παρακολουθείτε τις εξελίξεις;</string>
+  <string name="sports_widget_still_want_to_follow">Θέλετε ακόμα να παρακολουθείτε τις εξελίξεις;</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Επιλέξτε μια άλλη ομάδα για να παρακολουθείτε το Παγκόσμιο Κύπελλο.</string>
+  <string name="sports_widget_choose_another_team">Επιλέξτε μια άλλη ομάδα για να παρακολουθείτε το Παγκόσμιο Κύπελλο.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Παρακολούθηση άλλης ομάδας</string>
+  <string name="sports_widget_follow_another_team">Παρακολούθηση άλλης ομάδας</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Ημίχρονο</string>
   <!-- Sports widget match status label shown during extra time of a match. -->

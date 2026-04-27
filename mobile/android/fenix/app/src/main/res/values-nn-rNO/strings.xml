@@ -371,16 +371,22 @@
   <string name="preferences_debug_settings_ai_controls">Aktiver KI-kontrollar</string>
   <!-- Title for the AI controls settings screen -->
   <string name="preferences_ai_controls">KI-kontrollar</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Du har alltid eit val i %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">Det inkluderer om du vil bruke funksjonar som er forbetra med AI.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Les meir</string>
   <!-- Title for the block AI enhancements toggle -->
   <string name="ai_controls_block_ai_title">Blokker AI-forbetringar</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Blokkering betyr at du ikkje vil sjå nye eller noverande AI-forbetringar i %s, eller sprettoppvindauge om dei.</string>
   <!-- Link text to see what AI enhancements are and aren’t included -->
   <string name="ai_controls_see_whats_included">Sjå kva som er og ikkje er inkludert</string>
   <!-- Banner text shown when AI enhancements are blocked -->
   <string name="ai_controls_blocked_info_banner">Nye og eksisterande AI-forbetringar er blokkerte som standard. Opphev blokkeringa av spesifikke funksjonar nedanfor.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">AI-drivne funksjonar</string>
   <!-- Title for the translations AI feature toggle -->
   <string name="ai_controls_translations_title">Omsettingar</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
@@ -4341,17 +4347,17 @@
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">VM 2026 – verds­meistrar</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">Sekstandedelsfinale</string>
+  <string name="sports_widget_round_of_32">Sekstandedelsfinale</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">Åttandedelsfinale</string>
+  <string name="sports_widget_round_of_16">Åttandedelsfinale</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">Kvartfinalar</string>
+  <string name="sports_widget_quarter_final">Kvartfinalar</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final" tools:ignore="UnusedResources">Semifinalar</string>
+  <string name="sports_widget_semi_final">Semifinalar</string>
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final" tools:ignore="UnusedResources">Finale</string>
+  <string name="sports_widget_final">Finale</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Bronsefinale</string>
+  <string name="sports_widget_bronze_final">Bronsefinale</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">Gruppe A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4401,11 +4407,11 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Fjern</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Vil du framleis følgje med?</string>
+  <string name="sports_widget_still_want_to_follow">Vil du framleis følgje med?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Vel eit anna lag for å halde tritt med VM.</string>
+  <string name="sports_widget_choose_another_team">Vel eit anna lag for å halde tritt med VM.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Følg eit anna lag</string>
+  <string name="sports_widget_follow_another_team">Følg eit anna lag</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Pause</string>
   <!-- Sports widget match status label shown during extra time of a match. -->

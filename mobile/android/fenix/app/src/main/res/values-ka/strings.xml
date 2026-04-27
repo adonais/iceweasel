@@ -648,7 +648,7 @@
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">მოემზადეთ თავისუფლად ნავარდისთვის</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
-  <string name="nova_onboarding_tou_subtitle">სწრაფია, უსაფრთხო და თქვენით არ ვაჭრობს.\nმხოლოდ გვერდების უკეთ მონახულება.</string>
+  <string name="nova_onboarding_tou_subtitle">სწრაფია, უსაფრთხოა და თქვენით არ ვაჭრობს.\nმხოლოდ გვერდების უკეთ მონახულებისთვის.</string>
   <!--
     Terms of use (ToU) onboarding body line one.
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
@@ -1026,7 +1026,7 @@
   -->
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">თქვენ არ გაქვთ ამ საქაღალდის გამოყენების ნებართვა. ეცადეთ, აირჩიოთ სხვა.</string>
   <!-- Preference title for choosing an app to handle downloads -->
-  <string name="preferences_choose_app_for_downloads">მართეთ ჩამოტვირთვები სხვა პროგრამით</string>
+  <string name="preferences_choose_app_for_downloads">ჩამოტვირთვების მართვა სხვა პროგრამით</string>
   <!-- Preference category for deleting or removing downloads -->
   <string name="preferences_category_delete_or_remove_downloads">წაშლა ან მოცილება ჩამოტვირთვებიდან</string>
   <string name="preferences_downloads_delete_from_device">წაშლა მოწყობილობიდან</string>
@@ -1938,6 +1938,8 @@
   <string name="download_rename_error_exists_error">ფაილი დასახელებით „%s“ უკვე არსებობს ამ მისამართზე</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">ფაილის სახელში არ უნდა იყოს „/“</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">თქვენ მიერ მითითებული სახელი მხოლოდ მთავრულის ან ნუსხურის ცვლილებაა. ეცადეთ სხვა სახელი მიანიჭოთ.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">ფაილის გადარქმევა ვერ ხერხდება</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -3154,6 +3156,16 @@
   <string name="ip_protection_menu_error">შეცდომა</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">VPN-პარამეტრების გახსნა</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">%1$d ᲒᲑ ზღვარი მიღწეულია</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">თქვენ სრულად გახარჯეთ %1$d ᲒᲑ თქვენი VPN-მოცულობიდან. წვდომა აღდგება შემდეგი თვიდან.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN ჩართ.</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
@@ -4397,7 +4409,7 @@
 
     Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
   -->
-  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">თვალი ადევნეთ თქვენს გუნდს</string>
+  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">თვალი მიადევნეთ თქვენს გუნდს</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
   <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">ჩრდილო ამერიკა</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
@@ -4421,17 +4433,23 @@
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026 მსოფლიოს გამარჯვებულები</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">ოცდამეთორმეტედფინალი</string>
+  <string name="sports_widget_round_of_32">1/32-ფინალი</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">მეთექვსმეტედფინალი</string>
+  <string name="sports_widget_round_of_16">1/16-ფინალი</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">მეოთხედფინალი</string>
+  <string name="sports_widget_quarter_final">მეოთხედფინალი</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final" tools:ignore="UnusedResources">ნახევარფინალი</string>
+  <string name="sports_widget_semi_final">ნახევარფინალი</string>
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final" tools:ignore="UnusedResources">ფინალი</string>
+  <string name="sports_widget_final">ფინალი</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">ბრინჯაოსთვის</string>
+  <string name="sports_widget_bronze_final">ბრინჯაოსთვის</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">შესაბამისი მონაცემები ამჟამად მიუწვდომელია. სცადეთ გაახლება რამდენიმე წუთში.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">კავშირი გაწყვეტილია — პირდაპირი განახლებები შეჩერებულია.</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">გაახლება</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">ჯგუფი A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4464,6 +4482,8 @@
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">წინა შეხვედრა</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">მსგავსი შეხვედრები</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time">(დასრულებული)</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4481,17 +4501,35 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">მოცილება</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">კვლავ გსურთ თვალი ადევნოთ?</string>
+  <string name="sports_widget_still_want_to_follow">კვლავ გსურთ თვალი ადევნოთ?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">აირჩიეთ სხვა გუნდი მსოფლიო თასზე თვალის მისადევნებლად.</string>
+  <string name="sports_widget_choose_another_team">აირჩიეთ სხვა გუნდი მსოფლიო თასზე თვალის მისადევნებლად.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">სხვა გუნდის მიდევნება</string>
+  <string name="sports_widget_follow_another_team">სხვა გუნდის მიდევნება</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">შესვენება</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">დამატებითი დრო</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
   <string name="sports_widget_penalties" tools:ignore="UnusedResources">თერთმეტმეტრიანები</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">დღ</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">სთ</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">თვ</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

@@ -65,12 +65,16 @@
   <string name="mozac_summarize_settings_title">Sideoppsummeringar</string>
   <!-- Label for the summarize pages toggle in settings -->
   <string name="mozac_summarize_settings_summarize_pages">Oppsummer sider</string>
+  <!-- Description for the summarize pages toggle -->
+  <string name="mozac_summarize_settings_summarize_pages_cloud">Lag sidesamandrag med AI. Sider og samandrag held fram med å vere private og blir aldri lagra.</string>
   <!-- Link text to learn more about page summaries in settings -->
   <string name="mozac_summarize_settings_learn_more">Les meir</string>
   <!-- Section header for gesture settings -->
   <string name="mozac_summarize_settings_gestures">Rørsler</string>
   <!-- Label for the shake to summarize toggle in settings -->
   <string name="mozac_summarize_settings_shake_to_summarize">Rist for å oppsummere</string>
+  <!-- Description for the shake to summarize toggle in settings -->
+  <string name="mozac_summarize_settings_shake_to_summarize_description">Rist eininga frå side til side for å samanfatte ei side.</string>
   <!-- Message for summary by model, %1$s is the name of the model that is being displayed -->
   <string name="mozac_feature_summarize_summary_model">Samandrag av %1$s</string>
   <!-- Disclaimer message -->

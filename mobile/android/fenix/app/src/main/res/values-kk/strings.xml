@@ -1938,6 +1938,8 @@
   <string name="download_rename_error_exists_error">“%s” деп аталатын файл бұл орналасуда бар болып тұр</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Файл атында “/” таңбасы болмауы тиіс</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Енгізілген атау тек бас немесе кіші әріптерді өзгертеді. Басқа файл атауын қолданып көріңіз.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Файлдың атын ауыстыру мүмкін емес</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -4431,17 +4433,23 @@
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026 ӘЧ чемпиондары</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">1/16 финал</string>
+  <string name="sports_widget_round_of_32">1/16 финал</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">1/8 финал</string>
+  <string name="sports_widget_round_of_16">1/8 финал</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">Ширек финал</string>
+  <string name="sports_widget_quarter_final">Ширек финал</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final" tools:ignore="UnusedResources">Жартылай финал</string>
+  <string name="sports_widget_semi_final">Жартылай финал</string>
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final" tools:ignore="UnusedResources">Финал</string>
+  <string name="sports_widget_final">Финал</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Үшінші орын үшін ойын</string>
+  <string name="sports_widget_bronze_final">Үшінші орын үшін ойын</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">Сәйкестік туралы ақпарат қазір қолжетімді емес. Бірнеше минуттан кейін жаңартып көріңіз.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">Байланыс үзілді — тікелей жаңартулар кідіртілді.</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Жаңарту</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">А тобы</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4474,6 +4482,8 @@
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Алдыңғы матч</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">Байланысқан матчтар</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time">(Толық уақыт)</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4491,17 +4501,35 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Өшіру</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Әлі де бақылағыңыз келе ме?</string>
+  <string name="sports_widget_still_want_to_follow">Әлі де бақылағыңыз келе ме?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Әлем чемпионаты жаңалықтарына хабардар болу үшін басқа команданы таңдаңыз.</string>
+  <string name="sports_widget_choose_another_team">Әлем чемпионаты жаңалықтарына хабардар болу үшін басқа команданы таңдаңыз.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Басқа командаға жазылу</string>
+  <string name="sports_widget_follow_another_team">Басқа командаға жазылу</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Үзіліс</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Қосымша уақыт</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
   <string name="sports_widget_penalties" tools:ignore="UnusedResources">Пенальти</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">К</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">С</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">М</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

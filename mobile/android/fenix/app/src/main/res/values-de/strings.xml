@@ -4433,17 +4433,17 @@
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Weltmeister 2026</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">Runde der letzten 32</string>
+  <string name="sports_widget_round_of_32">Runde der letzten 32</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">Runde der letzten 16</string>
+  <string name="sports_widget_round_of_16">Runde der letzten 16</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">Viertelfinale</string>
+  <string name="sports_widget_quarter_final">Viertelfinale</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final" tools:ignore="UnusedResources">Halbfinale</string>
+  <string name="sports_widget_semi_final">Halbfinale</string>
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final" tools:ignore="UnusedResources">Finale</string>
+  <string name="sports_widget_final">Finale</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Spiel um Platz 3</string>
+  <string name="sports_widget_bronze_final">Spiel um Platz 3</string>
   <!-- Sports widget error card message shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed">Informationen zum Spiel sind derzeit nicht verfügbar. Aktualisieren Sie die Daten in ein paar Minuten.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
@@ -4501,17 +4501,35 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Entfernen</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Möchten Sie das Turnier trotzdem weiter verfolgen?</string>
+  <string name="sports_widget_still_want_to_follow">Möchten Sie das Turnier trotzdem weiter verfolgen?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Wählen Sie ein anderes Team, um es bei der Weltmeisterschaft zu verfolgen.</string>
+  <string name="sports_widget_choose_another_team">Wählen Sie ein anderes Team, um es bei der Weltmeisterschaft zu verfolgen.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Einem anderen Team folgen</string>
+  <string name="sports_widget_follow_another_team">Einem anderen Team folgen</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Halbzeit</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Verlängerung</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
   <string name="sports_widget_penalties" tools:ignore="UnusedResources">Elfmeterschließen</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">T</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">S</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">M</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

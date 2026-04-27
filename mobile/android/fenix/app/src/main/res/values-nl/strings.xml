@@ -4433,17 +4433,17 @@
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Wereldkampioen 2026</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32" tools:ignore="UnusedResources">Ronde van 32</string>
+  <string name="sports_widget_round_of_32">Ronde van 32</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16" tools:ignore="UnusedResources">Ronde van 16</string>
+  <string name="sports_widget_round_of_16">Ronde van 16</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final" tools:ignore="UnusedResources">Kwartfinales</string>
+  <string name="sports_widget_quarter_final">Kwartfinales</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
-  <string name="sports_widget_semi_final" tools:ignore="UnusedResources">Halve finales</string>
+  <string name="sports_widget_semi_final">Halve finales</string>
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
-  <string name="sports_widget_final" tools:ignore="UnusedResources">Finale</string>
+  <string name="sports_widget_final">Finale</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final" tools:ignore="UnusedResources">Troostfinale</string>
+  <string name="sports_widget_bronze_final">Troostfinale</string>
   <!-- Sports widget error card message shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed">Wedstrijdinfo is momenteel niet beschikbaar. Probeer over een paar minuten te verversen.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
@@ -4501,11 +4501,11 @@
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Verwijderen</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-  <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Nog steeds volgen?</string>
+  <string name="sports_widget_still_want_to_follow">Nog steeds volgen?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Kies een ander team om het WK bij te houden.</string>
+  <string name="sports_widget_choose_another_team">Kies een ander team om het WK bij te houden.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-  <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Een ander team volgen</string>
+  <string name="sports_widget_follow_another_team">Een ander team volgen</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Rust</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
