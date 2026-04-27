@@ -22,6 +22,7 @@ SOURCES += [
     'bprint.c',
     'buffer.c',
     'channel_layout.c',
+    'container_fifo.c',
     'cpu.c',
     'crc.c',
     'dict.c',
@@ -30,6 +31,7 @@ SOURCES += [
     'fifo.c',
     'fixed_dsp.c',
     'float_dsp.c',
+    'float_scalarproduct.c',
     'frame.c',
     'hwcontext.c',
     'imgutils.c',
@@ -41,10 +43,17 @@ SOURCES += [
     'parseutils.c',
     'pixdesc.c',
     'rational.c',
+    'refstruct.c',
     'reverse.c',
     'samplefmt.c',
+    'side_data.c',
     'slicethread.c',
     'time.c',
+    'timecode_internal.c',
+    'tx.c',
+    'tx_double.c',
+    'tx_float.c',
+    'tx_int32.c',
     'utils.c'
 ]
 
@@ -52,12 +61,11 @@ if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
     SOURCES += [
         'adler32.c',
         'base64.c',
-        'color_utils.c',
         'film_grain_params.c',
+        'hdr_dynamic_metadata.c',
         'integer.c',
         'intmath.c',
         'lls.c',
-        'mastering_display_metadata.c',
         'pixelutils.c',
         'threadmessage.c',
         'timecode.c',
@@ -69,6 +77,10 @@ if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
             'hwcontext_vaapi.c',
         ]
         USE_LIBS += ['mozva']
+    if CONFIG["OS_TARGET"] == "WINNT":
+        SOURCES += [
+            'hwcontext_d3d11va.c',
+        ]
 
 SYMBOLS_FILE =  'avutil.symbols'
 NoVisibilityFlags()

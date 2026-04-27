@@ -802,10 +802,6 @@
 %macro PMINSD 3 ; dst, src, tmp/unused
 %if cpuflag(sse4)
     pminsd    %1, %2
-%elif cpuflag(sse2)
-    cvtdq2ps  %1, %1
-    minps     %1, %2
-    cvtps2dq  %1, %1
 %else
     mova      %3, %2
     pcmpgtd   %3, %1
@@ -1026,3 +1022,15 @@
     pxor  %1, %2
 %endif
 %endmacro
+
+; NASM panics when emitting CodeView debug info for an empty translation unit.
+; GNU binutils `strip` and some other tools such as older MSVC linker also fail
+; on such files. Emit a dummy byte in a section with IMAGE_SCN_LNK_REMOVE flag
+; to work around these issues. Sections like that are dropped by the linker.
+%ifidn __OUTPUT_FORMAT__,win64
+    section .x86util info
+        db 0
+%elifidn __OUTPUT_FORMAT__,win32
+    section .x86util info
+        db 0
+%endif

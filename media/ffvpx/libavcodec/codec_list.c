@@ -17,4 +17,85 @@ static const FFCodec * const codec_list[] = {
 #if CONFIG_AV1_DECODER
     &ff_av1_decoder,
 #endif
+#if CONFIG_LIBVORBIS_DECODER
+    &ff_libvorbis_decoder,
+#endif
+#if CONFIG_LIBVORBIS_ENCODER
+    &ff_libvorbis_encoder,
+#endif
+#if CONFIG_PCM_ALAW_DECODER
+    &ff_pcm_alaw_decoder,
+#endif
+#if CONFIG_PCM_F32LE_DECODER
+    &ff_pcm_f32le_decoder,
+#endif
+#if CONFIG_PCM_MULAW_DECODER
+    &ff_pcm_mulaw_decoder,
+#endif
+#if CONFIG_PCM_S16LE_DECODER
+    &ff_pcm_s16le_decoder,
+#endif
+#if CONFIG_PCM_S24LE_DECODER
+    &ff_pcm_s24le_decoder,
+#endif
+#if CONFIG_PCM_S32LE_DECODER
+    &ff_pcm_s32le_decoder,
+#endif
+#if CONFIG_PCM_U8_DECODER
+    &ff_pcm_u8_decoder,
+#endif
+#if CONFIG_LIBOPUS_DECODER
+    &ff_libopus_decoder,
+#endif
+#if CONFIG_LIBOPUS_ENCODER
+    &ff_libopus_encoder,
+#endif
+#if CONFIG_LIBVPX_VP8_DECODER
+    &ff_libvpx_vp8_decoder,
+#endif
+#if CONFIG_LIBVPX_VP9_DECODER
+    &ff_libvpx_vp9_decoder,
+#endif
+#if CONFIG_LIBVPX_VP8_ENCODER
+    &ff_libvpx_vp8_encoder,
+#endif
+#if CONFIG_LIBVPX_VP9_ENCODER
+    &ff_libvpx_vp9_encoder,
+#endif
+#if CONFIG_LIBAOM_AV1_ENCODER
+    &ff_libaom_av1_encoder,
+#endif
+#if CONFIG_AAC_MEDIACODEC_DECODER
+    &ff_aac_mediacodec_decoder,
+#endif
+#if CONFIG_AV1_MEDIACODEC_DECODER
+    &ff_av1_mediacodec_decoder,
+#endif
+#if CONFIG_VP8_MEDIACODEC_DECODER
+    &ff_vp8_mediacodec_decoder,
+#endif
+#if CONFIG_VP9_MEDIACODEC_DECODER
+    &ff_vp9_mediacodec_decoder,
+#endif
+#if CONFIG_H264_MEDIACODEC_DECODER
+    &ff_h264_mediacodec_decoder,
+#endif
+#if CONFIG_HEVC_MEDIACODEC_DECODER
+    &ff_hevc_mediacodec_decoder,
+#endif
+#if CONFIG_AV1_MEDIACODEC_ENCODER
+    &ff_av1_mediacodec_encoder,
+#endif
+#if CONFIG_VP8_MEDIACODEC_ENCODER
+    &ff_vp8_mediacodec_encoder,
+#endif
+#if CONFIG_VP9_MEDIACODEC_ENCODER
+    &ff_vp9_mediacodec_encoder,
+#endif
+#if CONFIG_H264_MEDIACODEC_ENCODER
+    &ff_h264_mediacodec_encoder,
+#endif
+#if CONFIG_HEVC_MEDIACODEC_ENCODER
+    &ff_hevc_mediacodec_encoder,
+#endif
     NULL };

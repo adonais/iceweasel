@@ -25,6 +25,9 @@ LOCAL_INCLUDES += ['/media/ffvpx']
 # We allow warnings for third-party code that can be updated from upstream.
 AllowCompilerWarnings()
 
+# FFmpeg 6.x+ requires C11.
+CFLAGS += ['-std=gnu11']
+
 # Suppress warnings in third-party code.
 CFLAGS += [
     '-Wno-parentheses',
