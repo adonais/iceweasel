@@ -282,6 +282,7 @@ export default class IPProtectionContentElement extends MozLitElement {
         .bandwidthUsage=${ifDefined(this.state.bandwidthUsage)}
         .hasExclusion=${hasExclusion}
         .isActivating=${this.state.isActivating}
+        .showLocationButtonBadge=${this.state.showLocationButtonBadge}
       ></ipprotection-status-card>
     `;
   }

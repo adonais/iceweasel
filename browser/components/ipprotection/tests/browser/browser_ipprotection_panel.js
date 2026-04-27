@@ -15,6 +15,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
 });
 
+const LOCATION_BADGE_DISMISSED_PREF =
+  "browser.ipProtection.locationButtonBadgeDismissed";
 /**
  * Tests that clicking toolbar button opens the panel,
  * the panel contains a `<ipprotection-content>` element,
@@ -178,6 +180,117 @@ add_task(async function test_location_button_opens_subview() {
 
   await closePanel();
 });
+
+/**
+ * Tests that the "new" badge on the location button is shown by default
+ * when the dismissed pref is not set.
+ */
+add_task(async function test_location_button_badge_shown_by_default() {
+  Services.prefs.clearUserPref(LOCATION_BADGE_DISMISSED_PREF);
+
+  let content = await openPanel({
+    isProtectionEnabled: true,
+    showLocationButtonBadge: true,
+  });
+
+  let statusCard = content.statusCardEl;
+  Assert.ok(statusCard, "ipprotection-status-card should be present");
+
+  let locationButton = statusCard.locationButtonEl;
+  let badge = locationButton.querySelector("moz-badge[type='new']");
+  Assert.ok(badge, "Badge should be present when pref is not set");
+  Assert.ok(BrowserTestUtils.isVisible(badge), "Badge should be visible");
+
+  await closePanel();
+  Services.prefs.clearUserPref(LOCATION_BADGE_DISMISSED_PREF);
+});
+
+/**
+ * Tests that closing the panel permanently dismisses the badge by setting
+ * the dismissed pref, and that the badge is hidden on subsequent opens.
+ */
+add_task(async function test_location_button_badge_dismissed_on_panel_close() {
+  Services.prefs.clearUserPref(LOCATION_BADGE_DISMISSED_PREF);
+
+  let content = await openPanel({
+    isProtectionEnabled: true,
+    showLocationButtonBadge: true,
+  });
+
+  let statusCard = content.statusCardEl;
+  let locationButton = statusCard.locationButtonEl;
+  let badge = locationButton.querySelector("moz-badge[type='new']");
+  Assert.ok(badge, "Badge should be visible before panel is closed");
+
+  await closePanel(window, false);
+
+  Assert.ok(
+    Services.prefs.getBoolPref(LOCATION_BADGE_DISMISSED_PREF, false),
+    "locationButtonBadgeDismissed pref should be set after closing the panel"
+  );
+
+  content = await openPanel({ isProtectionEnabled: true });
+  statusCard = content.statusCardEl;
+  locationButton = statusCard.locationButtonEl;
+  badge = locationButton.querySelector("moz-badge[type='new']");
+  Assert.ok(!badge, "Badge should not be present after panel was closed");
+
+  await closePanel();
+  Services.prefs.clearUserPref(LOCATION_BADGE_DISMISSED_PREF);
+});
+
+/**
+ * Tests that clicking the location selection button permanently dismisses
+ * the badge by setting the dismissed pref.
+ */
+add_task(
+  async function test_location_button_badge_dismissed_on_location_button_click() {
+    Services.prefs.clearUserPref(LOCATION_BADGE_DISMISSED_PREF);
+
+    let content = await openPanel({
+      isProtectionEnabled: true,
+      showLocationButtonBadge: true,
+    });
+
+    let statusCard = content.statusCardEl;
+    let locationButton = statusCard.locationButtonEl;
+    let badge = locationButton.querySelector("moz-badge[type='new']");
+    Assert.ok(
+      badge,
+      "Badge should be visible before clicking the location button"
+    );
+
+    let subview = PanelMultiView.getViewNode(
+      document,
+      lazy.IPProtectionPanel.LOCATIONS_PANELVIEW
+    );
+    let locationsShownPromise = BrowserTestUtils.waitForEvent(
+      subview,
+      "ViewShown"
+    );
+    locationButton.click();
+    await locationsShownPromise;
+
+    Assert.ok(
+      Services.prefs.getBoolPref(LOCATION_BADGE_DISMISSED_PREF, false),
+      "locationButtonBadgeDismissed pref should be set after clicking the location button"
+    );
+
+    await closePanel(window, false);
+
+    content = await openPanel({ isProtectionEnabled: true });
+    statusCard = content.statusCardEl;
+    locationButton = statusCard.locationButtonEl;
+    badge = locationButton.querySelector("moz-badge[type='new']");
+    Assert.ok(
+      !badge,
+      "Badge should not be present after location button was clicked"
+    );
+
+    await closePanel();
+    Services.prefs.clearUserPref(LOCATION_BADGE_DISMISSED_PREF);
+  }
+);
 
 add_task(async function test_user_enable_count() {
   Services.prefs.clearUserPref("browser.ipProtection.userEnableCount");

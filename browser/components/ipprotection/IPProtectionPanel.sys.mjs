@@ -55,6 +55,8 @@ const EGRESS_LOCATION_PREF = "browser.ipProtection.egressLocationEnabled";
 const USER_OPENED_PREF = "browser.ipProtection.everOpenedPanel";
 const OPENED_WITH_LOCATION_PREF =
   "browser.ipProtection.openedPanelWithLocation";
+const LOCATION_BADGE_DISMISSED_PREF =
+  "browser.ipProtection.locationButtonBadgeDismissed";
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
@@ -139,6 +141,8 @@ export class IPProtectionPanel {
    *  An object containing the current and max usage
    * @property {boolean} isActivating
    *  True if the VPN service is in the process of connecting, else false.
+   * @property {boolean} showLocationButtonBadge
+   *  True if the "new" badge on the location selection button should be visible.
    */
 
   /**
@@ -266,6 +270,10 @@ export class IPProtectionPanel {
       isCheckingEntitlement:
         lazy.IPPEnrollAndEntitleManager.isEnrolling ||
         lazy.IPPEnrollAndEntitleManager.isCheckingEntitlement,
+      showLocationButtonBadge: !Services.prefs.getBoolPref(
+        LOCATION_BADGE_DISMISSED_PREF,
+        false
+      ),
     };
 
     // The progress listener to listen for page navigations.
@@ -472,6 +480,11 @@ export class IPProtectionPanel {
    * Disables updates to the panel.
    */
   hiding() {
+    if (this.state.showLocationButtonBadge) {
+      Services.prefs.setBoolPref(LOCATION_BADGE_DISMISSED_PREF, true);
+      this.state.showLocationButtonBadge = false;
+    }
+
     const mask = lazy.IPPOnboardingMessage.readPrefMask();
     const hasUsedSiteExceptions = !!(
       mask & ONBOARDING_PREF_FLAGS.EVER_USED_SITE_EXCEPTIONS
@@ -1052,6 +1065,10 @@ export class IPProtectionPanel {
     } else if (event.type == "IPPUsageHelper:StateChanged") {
       this.setState({ bandwidthWarning: this.#shouldShowBandwidthWarning() });
     } else if (event.type == "IPProtection:UserShowLocations") {
+      if (this.state.showLocationButtonBadge) {
+        Services.prefs.setBoolPref(LOCATION_BADGE_DISMISSED_PREF, true);
+        this.setState({ showLocationButtonBadge: false });
+      }
       this.showLocationSelector();
     }
   }

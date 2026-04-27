@@ -476,6 +476,68 @@ add_task(async function test_bandwidth_states() {
 });
 
 /**
+ * Tests that the "new" badge is visible when showLocationButtonBadge is true.
+ */
+add_task(async function test_location_button_badge_visible() {
+  await setupStatusCardTest();
+
+  let content = await openPanel({
+    location: mockLocation,
+    isProtectionEnabled: true,
+    bandwidthUsage: mockBandwidthUsage,
+    showLocationButtonBadge: true,
+  });
+
+  let statusCard = content.statusCardEl;
+  Assert.ok(statusCard, "ipprotection-status-card should be present");
+
+  let locationButton = statusCard.locationButtonEl;
+  Assert.ok(locationButton, "Location selection button should be present");
+
+  let badge = locationButton.querySelector("moz-badge[type='new']");
+  Assert.ok(
+    badge,
+    "Badge should be present when showLocationButtonBadge is true"
+  );
+  Assert.ok(
+    BrowserTestUtils.isVisible(badge),
+    "Badge should be visible when showLocationButtonBadge is true"
+  );
+
+  await closePanel();
+  await cleanupStatusCardTest();
+});
+
+/**
+ * Tests that the "new" badge is absent when showLocationButtonBadge is false.
+ */
+add_task(async function test_location_button_badge_hidden() {
+  await setupStatusCardTest();
+
+  let content = await openPanel({
+    location: mockLocation,
+    isProtectionEnabled: true,
+    bandwidthUsage: mockBandwidthUsage,
+    showLocationButtonBadge: false,
+  });
+
+  let statusCard = content.statusCardEl;
+  Assert.ok(statusCard, "ipprotection-status-card should be present");
+
+  let locationButton = statusCard.locationButtonEl;
+  Assert.ok(locationButton, "Location selection button should be present");
+
+  let badge = locationButton.querySelector("moz-badge[type='new']");
+  Assert.ok(
+    !badge,
+    "Badge should not be present when showLocationButtonBadge is false"
+  );
+
+  await closePanel();
+  await cleanupStatusCardTest();
+});
+
+/**
  * Tests that clicking the location selection button dispatches the
  * IPProtection:UserShowLocations event.
  */

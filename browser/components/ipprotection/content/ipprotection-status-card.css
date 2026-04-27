@@ -18,6 +18,12 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    flex: 1;
+  }
+
+  .arrow-icon {
+    -moz-context-properties: fill, fill-opacity, stroke;
+    fill: currentColor;
   }
 
   :-moz-locale-dir(rtl) & .arrow-icon {
