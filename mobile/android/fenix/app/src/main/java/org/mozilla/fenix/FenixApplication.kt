@@ -435,7 +435,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         queueStorageMaintenance(queue)
         queueIntegrityClientWarmUp(queue)
         queueNimbusFetchInForeground(queue)
-        queueSetAutofillMetrics(queue)
         queueDownloadWallpapers(queue)
 
         if (settings().enableFxSuggest) {
@@ -616,31 +615,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 }
             }
         }
-
-    /**
-     * Sets autofill telemetry about Addresses, CreditCards, and Logins.
-     *
-     * @param queue The queue the function should use.
-     */
-    @OptIn(DelicateCoroutinesApi::class)
-    private fun queueSetAutofillMetrics(queue: RunWhenReadyQueue) = runOnVisualCompleteness(queue) {
-        GlobalScope.launch(IO) {
-            try {
-                val autoFillStorage = applicationContext.components.core.autofillStorage
-                Addresses.savedAll.set(autoFillStorage.countAllAddresses())
-                CreditCards.savedAll.set(autoFillStorage.countAllCreditCards())
-            } catch (e: AutofillApiException) {
-                logger.error("Failed to fetch autofill data", e)
-            }
-
-            try {
-                val passwordsStorage = applicationContext.components.core.passwordsStorage
-                Logins.savedAll.set(passwordsStorage.count())
-            } catch (e: LoginsApiException) {
-                logger.error("Failed to fetch list of logins", e)
-            }
-        }
-    }
 
     /**
      * Sets up LeakCanary based on different build variant implementations.
@@ -1078,6 +1052,8 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 }
             }
         }
+
+        setAutofillMetrics()
     }
 
     private fun setTermsOfUseStartUpMetrics(settings: Settings) {
@@ -1201,6 +1177,26 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             globalPrivacyControlEnabled.set(settings.shouldEnableGlobalPrivacyControl)
         }
         reportHomeScreenMetrics(settings)
+    }
+
+    private fun setAutofillMetrics() {
+        @OptIn(DelicateCoroutinesApi::class)
+        GlobalScope.launch(IO) {
+            try {
+                val autoFillStorage = applicationContext.components.core.autofillStorage
+                Addresses.savedAll.set(autoFillStorage.countAllAddresses())
+                CreditCards.savedAll.set(autoFillStorage.countAllCreditCards())
+            } catch (e: AutofillApiException) {
+                logger.error("Failed to fetch autofill data", e)
+            }
+
+            try {
+                val passwordsStorage = applicationContext.components.core.passwordsStorage
+                Logins.savedAll.set(passwordsStorage.count())
+            } catch (e: LoginsApiException) {
+                logger.error("Failed to fetch list of logins", e)
+            }
+        }
     }
 
     @VisibleForTesting
