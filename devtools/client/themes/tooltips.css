@@ -229,6 +229,14 @@ strong {
 }
 
 /* Tooltip: query container info */
+.tooltip-container:has(.devtools-tooltip-query-container) {
+  /* By default, in dark mode, the tooltip background color is lighter than the background
+     color of the Rules view. Since we're using the same color than in the Rules view
+     for CSS values, this can lead to poor contrast.
+     To prevent this, we apply the same background color than in the Rules view */
+  --theme-arrowpanel-background: var(--theme-body-background);
+}
+
 .devtools-tooltip-query-container {
   color: var(--theme-body-color);
   margin: 0;
