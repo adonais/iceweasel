@@ -49,8 +49,14 @@ export default class IPProtectionStatusCard extends MozLitElement {
     );
   }
 
-  // TODO: Will be implemented in https://bugzilla.mozilla.org/show_bug.cgi?id=2033138
-  handleLocationButtonClick() {}
+  handleLocationButtonClick() {
+    this.dispatchEvent(
+      new CustomEvent("IPProtection:UserShowLocations", {
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
 
   focus() {
     const button = this.shadowRoot.querySelector(`moz-button[slot="action"]`);
@@ -84,6 +90,7 @@ export default class IPProtectionStatusCard extends MozLitElement {
       <moz-button
         class="toolbarbutton"
         slot="location-action"
+        closemenu="none"
         @click=${this.handleLocationButtonClick}
       >
         <span class="location-btn-content">

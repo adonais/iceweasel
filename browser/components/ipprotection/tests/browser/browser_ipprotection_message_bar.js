@@ -1094,8 +1094,15 @@ add_task(async function test_dismiss_panel_warning_removes_from_all_windows() {
     "Message bar should be present in original window"
   );
 
+  // Close the original panel before opening the new window. In headless mode
+  // focus shifts do not automatically close popups, so without this the panel
+  // stays open and the subsequent openPanel call hangs. The bandwidth warning
+  // state in IPPUsageHelper is shared and unaffected by closing the panel.
+  // Here we're closing the panel and maintaining the state by setting the
+  // second parameter (resetState) to false:
+  await closePanel(window, false);
+
   // Open a new window and verify the warning is also shown there.
-  // (Opening newWin shifts focus and closes the original window's popup.)
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
   const contentNewWin = await openPanel(
     { unauthenticated: false, error: "" },

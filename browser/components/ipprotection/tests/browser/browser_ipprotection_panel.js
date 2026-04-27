@@ -138,6 +138,47 @@ add_task(async function test_close_panel() {
   Assert.ok(!BrowserTestUtils.isVisible(panelView), "Panel should be closed");
 });
 
+/**
+ * Tests that clicking the location selection button in the status card opens
+ * the locations subview.
+ */
+add_task(async function test_location_button_opens_subview() {
+  let content = await openPanel({
+    isProtectionEnabled: true,
+  });
+
+  let statusCard = content.statusCardEl;
+  Assert.ok(statusCard, "ipprotection-status-card should be present");
+
+  let locationButton = statusCard.locationButtonEl;
+  Assert.ok(locationButton, "Location selection button should be present");
+
+  let subview = PanelMultiView.getViewNode(
+    document,
+    lazy.IPProtectionPanel.LOCATIONS_PANELVIEW
+  );
+  let locationsShownPromise = BrowserTestUtils.waitForEvent(
+    subview,
+    "ViewShown"
+  );
+
+  locationButton.click();
+
+  await locationsShownPromise;
+
+  Assert.ok(
+    BrowserTestUtils.isVisible(subview),
+    "Locations subview should be visible after clicking the location button"
+  );
+
+  Assert.ok(
+    subview.querySelector(lazy.IPProtectionPanel.LOCATIONS_TAGNAME),
+    "Locations component should be present"
+  );
+
+  await closePanel();
+});
+
 add_task(async function test_user_enable_count() {
   Services.prefs.clearUserPref("browser.ipProtection.userEnableCount");
 

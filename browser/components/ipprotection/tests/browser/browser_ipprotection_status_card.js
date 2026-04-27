@@ -474,3 +474,36 @@ add_task(async function test_bandwidth_states() {
     await cleanupStatusCardTest();
   }
 });
+
+/**
+ * Tests that clicking the location selection button dispatches the
+ * IPProtection:UserShowLocations event.
+ */
+add_task(async function test_location_button_click_dispatches_event() {
+  await setupStatusCardTest();
+
+  let content = await openPanel({
+    location: mockLocation,
+    isProtectionEnabled: true,
+    bandwidthUsage: mockBandwidthUsage,
+  });
+
+  let statusCard = content.statusCardEl;
+  Assert.ok(statusCard, "ipprotection-status-card should be present");
+
+  let locationButton = statusCard.locationButtonEl;
+  Assert.ok(locationButton, "Location selection button should be present");
+
+  let showLocationsEventPromise = BrowserTestUtils.waitForEvent(
+    window,
+    "IPProtection:UserShowLocations"
+  );
+
+  locationButton.click();
+
+  await showLocationsEventPromise;
+  Assert.ok(true, "IPProtection:UserShowLocations event was dispatched");
+
+  await closePanel();
+  await cleanupStatusCardTest();
+});
