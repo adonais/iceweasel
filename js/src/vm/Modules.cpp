@@ -1602,7 +1602,7 @@ static bool InnerModuleLoading(JSContext* cx,
 
     // Step 5.b. For each Cyclic Module Record loaded of state.[[Visited]], do
     for (auto iter = state->visited().iter(); !iter.done(); iter.next()) {
-      auto& loaded = iter.get();
+      ModuleObject* loaded = &iter.get()->as<ModuleObject>();
       // Step 5.b.i. If loaded.[[Status]] is new, set loaded.[[Status]] to
       // unlinked.
       if (loaded->status() == ModuleStatus::New) {

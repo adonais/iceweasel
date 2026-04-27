@@ -549,7 +549,7 @@ class ModuleObject : public NativeObject {
 };
 
 using VisitedModuleSet =
-    GCHashSet<HeapPtr<ModuleObject*>, DefaultHasher<HeapPtr<ModuleObject*>>,
+    GCHashSet<HeapPtr<JSObject*>, StableCellHasher<HeapPtr<JSObject*>>,
               SystemAllocPolicy>;
 
 // The fields of a GraphLoadingState Record, as described in:
