@@ -518,4 +518,11 @@ jobs:
       run-on-projects:
           - mozilla-beta
       when:
-          - {minute: 15}
+          - {hour: 0, minute: 15}
+          - {hour: 3, minute: 15}
+          - {hour: 6, minute: 15}
+          - {hour: 9, minute: 15}
+          - {hour: 12, minute: 15}
+          - {hour: 15, minute: 15}
+          - {hour: 18, minute: 15}
+          - {hour: 21, minute: 15}
