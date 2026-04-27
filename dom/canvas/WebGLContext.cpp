@@ -2433,14 +2433,6 @@ webgl::ExplicitPixelPackingState::ForUseWith(
     state.imageHeight = subrectSize.y;
   }
 
-  if (!std::in_range<GLint>(state.rowLength) ||
-      !std::in_range<GLint>(state.imageHeight) ||
-      !std::in_range<GLint>(state.skipPixels) ||
-      !std::in_range<GLint>(state.skipRows) ||
-      !std::in_range<GLint>(state.skipImages)) {
-    return Err("pixelStorei params must be GLint.");
-  }
-
   // -
 
   const auto mpii = PackingInfoInfo::For(pi);
