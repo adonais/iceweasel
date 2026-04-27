@@ -107,7 +107,6 @@ function Widgets() {
   const { messageData } = useSelector(state => state.Messages);
   const timerType = useSelector(state => state.TimerWidget.timerType);
   const timerData = useSelector(state => state.TimerWidget);
-  const widgetsMayBeMaximized = prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED];
   const dispatch = useDispatch();
 
   const novaEnabled = prefs[PREF_NOVA_ENABLED];
@@ -134,6 +133,7 @@ function Widgets() {
     prefs.trainhopConfig?.widgets?.feedbackUrl ?? WIDGETS_FEEDBACK_URL;
   const showWidgetsSizeToggle =
     nimbusMaximizedTrainhopEnabled || prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED];
+  const widgetsMayBeMaximized = showWidgetsSizeToggle;
 
   const widgetsEnabled = prefs[PREF_WIDGETS_ENABLED];
 

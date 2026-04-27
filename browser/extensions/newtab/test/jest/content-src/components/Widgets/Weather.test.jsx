@@ -61,6 +61,7 @@ const mockState = {
       "widgets.system.weather.enabled": true,
       "widgets.weather.enabled": true,
       "widgets.weather.size": "medium",
+      "widgets.system.maximized": true,
     },
   },
   Weather: {
@@ -386,6 +387,34 @@ describe("<Weather> (Widgets/Weather)", () => {
           .querySelector("panel-item[data-l10n-id='newtab-widget-size-small']")
           .hasAttribute("checked")
       ).toBe(false);
+    });
+
+    it("hides change-size submenu when widgets.system.maximized is false", () => {
+      const state = {
+        ...mockState,
+        Prefs: {
+          ...mockState.Prefs,
+          values: {
+            ...mockState.Prefs.values,
+            "widgets.system.maximized": false,
+          },
+        },
+      };
+      const { container } = renderWeather("medium", state);
+      expect(
+        container.querySelector(
+          "span[data-l10n-id='newtab-widget-menu-change-size']"
+        )
+      ).not.toBeInTheDocument();
+    });
+
+    it("shows change-size submenu when widgets.system.maximized is true", () => {
+      const { container } = renderWeather();
+      expect(
+        container.querySelector(
+          "span[data-l10n-id='newtab-widget-menu-change-size']"
+        )
+      ).toBeInTheDocument();
     });
 
     it("contains hide and learn-more items", () => {

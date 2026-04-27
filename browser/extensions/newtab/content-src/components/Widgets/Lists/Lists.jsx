@@ -862,9 +862,8 @@ function Lists({
             onClick={() => handleCopyListToClipboard()}
           ></panel-item>
           {
-            // @nova-cleanup(remove-conditional): Remove the novaEnabled check; always
-            // render the size submenu after Nova ships
-            novaEnabled && (
+            // @nova-cleanup(remove-conditional): Remove the `novaEnabled &&` check; keep widgetsMayBeMaximized
+            novaEnabled && widgetsMayBeMaximized && (
               <panel-item submenu="lists-size-submenu">
                 <span data-l10n-id="newtab-widget-menu-change-size"></span>
                 <panel-list

@@ -718,6 +718,7 @@ describe("<Lists> size submenu (nova)", () => {
         <Lists
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={true}
         />
       </WrapWithProvider>
     );
@@ -738,6 +739,7 @@ describe("<Lists> size submenu (nova)", () => {
         <Lists
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={true}
         />
       </WrapWithProvider>
     );
@@ -757,6 +759,7 @@ describe("<Lists> size submenu (nova)", () => {
         <Lists
           dispatch={dispatch}
           handleUserInteraction={handleUserInteraction}
+          widgetsMayBeMaximized={true}
         />
       </WrapWithProvider>
     );

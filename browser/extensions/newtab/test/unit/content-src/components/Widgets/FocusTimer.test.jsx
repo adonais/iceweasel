@@ -862,7 +862,7 @@ describe("<FocusTimer>", () => {
           <FocusTimer
             dispatch={dispatch}
             handleUserInteraction={handleUserInteraction}
-            widgetsMayBeMaximized={false}
+            widgetsMayBeMaximized={true}
           />
         </WrapWithProvider>
       );
@@ -892,7 +892,7 @@ describe("<FocusTimer>", () => {
           <FocusTimer
             dispatch={dispatch}
             handleUserInteraction={handleUserInteraction}
-            widgetsMayBeMaximized={false}
+            widgetsMayBeMaximized={true}
           />
         </WrapWithProvider>
       );
@@ -924,7 +924,7 @@ describe("<FocusTimer>", () => {
           <FocusTimer
             dispatch={dispatch}
             handleUserInteraction={handleUserInteraction}
-            widgetsMayBeMaximized={false}
+            widgetsMayBeMaximized={true}
           />
         </WrapWithProvider>
       );

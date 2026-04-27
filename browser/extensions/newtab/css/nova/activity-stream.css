@@ -4513,7 +4513,6 @@ button.arrow-button:dir(rtl) {
   transition: opacity 0.2s ease;
   border-radius: var(--border-radius-large);
   padding-block-start: var(--space-medium);
-  box-shadow: var(--card-box-shadow, var(--box-shadow-card));
   position: relative;
   display: flex;
   flex-direction: column;
@@ -4521,13 +4520,27 @@ button.arrow-button:dir(rtl) {
 .lists:hover {
   background: var(--newtab-background-color-secondary);
 }
+.nova-enabled .lists {
+  box-shadow: var(--box-shadow-level-2);
+}
+.nova-enabled .lists:hover, .nova-enabled .lists:focus-within {
+  outline: 1px solid var(--border-color-deemphasized);
+  box-shadow: var(--card-box-shadow-hover);
+}
 .classic-enabled .lists {
   grid-column: span 1;
   width: var(--newtab-card-grid-layout-width);
   height: var(--newtab-card-height);
+  box-shadow: var(--card-box-shadow, var(--box-shadow-card));
 }
 .has-sections-grid .classic-enabled .lists {
   width: var(--newtab-card-width-medium);
+}
+.lightWallpaper .classic-enabled .lists .empty-list {
+  color-scheme: light;
+}
+.darkWallpaper .classic-enabled .lists .empty-list {
+  color-scheme: dark;
 }
 .lists.medium-widget {
   grid-row: span 2;
@@ -4695,12 +4708,6 @@ button.arrow-button:dir(rtl) {
   height: 100%;
   padding-block-end: var(--space-medium);
 }
-.lightWallpaper .lists .empty-list {
-  color-scheme: light;
-}
-.darkWallpaper .lists .empty-list {
-  color-scheme: dark;
-}
 .lists .empty-list .empty-list-text {
   margin: 0;
   text-align: center;
@@ -4753,15 +4760,22 @@ button.arrow-button:dir(rtl) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: var(--card-box-shadow, var(--box-shadow-card));
 }
 .focus-timer:hover {
   background: var(--newtab-background-color-secondary);
+}
+.nova-enabled .focus-timer {
+  box-shadow: var(--box-shadow-level-2);
+}
+.nova-enabled .focus-timer:hover, .nova-enabled .focus-timer:focus-within {
+  outline: 1px solid var(--border-color-deemphasized);
+  box-shadow: var(--card-box-shadow-hover);
 }
 .classic-enabled .focus-timer {
   grid-column: span 1;
   width: var(--newtab-card-grid-layout-width);
   height: var(--newtab-card-height);
+  box-shadow: var(--card-box-shadow, var(--box-shadow-card));
 }
 .has-sections-grid .classic-enabled .focus-timer {
   width: var(--newtab-card-width-medium);
@@ -4787,14 +4801,17 @@ button.arrow-button:dir(rtl) {
   justify-content: center;
   flex-grow: 1;
 }
-.focus-timer-tabs-buttons moz-button {
+.nova-enabled .focus-timer-tabs-buttons {
+  gap: var(--space-small);
+}
+.classic-enabled .focus-timer-tabs-buttons moz-button {
   flex-grow: 1;
 }
-.focus-timer-tabs-buttons moz-button:first-of-type::part(button) {
+.classic-enabled .focus-timer-tabs-buttons moz-button:first-of-type::part(button) {
   border-end-end-radius: 0;
   border-start-end-radius: 0;
 }
-.focus-timer-tabs-buttons moz-button:last-of-type::part(button) {
+.classic-enabled .focus-timer-tabs-buttons moz-button:last-of-type::part(button) {
   border-start-start-radius: 0;
   border-end-start-radius: 0;
 }

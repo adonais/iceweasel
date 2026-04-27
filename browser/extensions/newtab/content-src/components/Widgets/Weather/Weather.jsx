@@ -28,6 +28,9 @@ function Weather({ dispatch, size }) {
   const errorRef = useRef(null);
   const sizeSubmenuRef = useRef(null);
   const currentWeatherSize = prefs[PREF_WEATHER_SIZE] || "medium";
+  const widgetsMayBeMaximized =
+    prefs.trainhopConfig?.widgets?.maximized ||
+    prefs["widgets.system.maximized"];
 
   const handleChangeSize = useCallback(
     newSize => {
@@ -383,26 +386,28 @@ function Weather({ dispatch, size }) {
           )}
           {/* Only show size options when both system and user prefs are enabled;
               medium/large sizes require the widgets row, which only renders when both are true. */}
-          {prefs["widgets.system.enabled"] && prefs["widgets.enabled"] && (
-            <panel-item submenu="weather-size-submenu">
-              <span data-l10n-id="newtab-widget-menu-change-size"></span>
-              <panel-list
-                ref={sizeSubmenuRef}
-                slot="submenu"
-                id="weather-size-submenu"
-              >
-                {["small", "medium", "large"].map(s => (
-                  <panel-item
-                    key={s}
-                    type="checkbox"
-                    checked={currentWeatherSize === s || undefined}
-                    data-size={s}
-                    data-l10n-id={`newtab-widget-size-${s}`}
-                  />
-                ))}
-              </panel-list>
-            </panel-item>
-          )}
+          {prefs["widgets.system.enabled"] &&
+            prefs["widgets.enabled"] &&
+            widgetsMayBeMaximized && (
+              <panel-item submenu="weather-size-submenu">
+                <span data-l10n-id="newtab-widget-menu-change-size"></span>
+                <panel-list
+                  ref={sizeSubmenuRef}
+                  slot="submenu"
+                  id="weather-size-submenu"
+                >
+                  {["small", "medium", "large"].map(s => (
+                    <panel-item
+                      key={s}
+                      type="checkbox"
+                      checked={currentWeatherSize === s || undefined}
+                      data-size={s}
+                      data-l10n-id={`newtab-widget-size-${s}`}
+                    />
+                  ))}
+                </panel-list>
+              </panel-item>
+            )}
           <panel-item
             data-l10n-id="newtab-widget-menu-hide"
             onClick={handleHideWeather}

@@ -5,13 +5,21 @@
 .focus-timer {
   @include newtab-card-style;
 
+  .nova-enabled & {
+    box-shadow: var(--box-shadow-level-2);
+
+    &:hover,
+    &:focus-within {
+      outline: 1px solid var(--border-color-deemphasized);
+      box-shadow: var(--card-box-shadow-hover);
+    }
+  }
+
   border-radius: var(--border-radius-large);
   padding-block: var(--space-medium);
   display: flex;
   flex-direction: column;
   align-items: center;
-  // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
-  box-shadow: var(--card-box-shadow, var(--box-shadow-card));
 
   // Classic layout (when Nova is disabled)
   // @nova-cleanup(remove-conditional): Remove classic fixed-width/height styles after Nova ships
@@ -19,6 +27,9 @@
     grid-column: span 1;
     width: var(--newtab-card-grid-layout-width);
     height: var(--newtab-card-height);
+
+    // @backward-compat { version 150 } D281466/D283723 renamed design tokens; remove once Firefox 150 is on Release.
+    box-shadow: var(--card-box-shadow, var(--box-shadow-card));
 
     // Match the new card width if sections are enabled
     .has-sections-grid & {
@@ -50,21 +61,27 @@
   justify-content: center;
   flex-grow: 1;
 
-  moz-button {
-    flex-grow: 1;
+  .nova-enabled & {
+    gap: var(--space-small);
   }
 
-  moz-button:first-of-type {
-    &::part(button) {
-      border-end-end-radius: 0;
-      border-start-end-radius: 0;
+  .classic-enabled & {
+    moz-button {
+      flex-grow: 1;
     }
-  }
 
-  moz-button:last-of-type {
-    &::part(button) {
-      border-start-start-radius: 0;
-      border-end-start-radius: 0;
+    moz-button:first-of-type {
+      &::part(button) {
+        border-end-end-radius: 0;
+        border-start-end-radius: 0;
+      }
+    }
+
+    moz-button:last-of-type {
+      &::part(button) {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+      }
     }
   }
 }
