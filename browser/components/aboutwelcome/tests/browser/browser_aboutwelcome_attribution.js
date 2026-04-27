@@ -127,6 +127,12 @@ async function test_screen_content(
   );
 }
 
+add_setup(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.backup.restore.enabled", false]],
+  });
+});
+
 add_task(async function test_rtamo_attribution() {
   let browser = await openRTAMOWithAttribution();
 

@@ -100,6 +100,12 @@ async function test_screen_content(
   );
 }
 
+add_setup(async () => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.backup.restore.enabled", false]],
+  });
+});
+
 /**
  * Test the RTAMO welcome UI
  */
