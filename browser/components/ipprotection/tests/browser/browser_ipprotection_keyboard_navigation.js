@@ -58,8 +58,11 @@ add_task(async function test_keyboard_navigation_in_panel() {
 
   let statusCard = content.statusCardEl;
   let turnOnButton = statusCard.actionButtonEl;
+  let locationButton = statusCard.locationButtonEl;
 
   await expectFocusAfterKey("Tab", turnOnButton);
+
+  await expectFocusAfterKey("Tab", locationButton);
 
   await expectFocusAfterKey("Tab", content.settingsButtonEl);
 
@@ -72,6 +75,8 @@ add_task(async function test_keyboard_navigation_in_panel() {
   );
   await expectFocusAfterKey("Tab", turnOnButton);
 
+  await expectFocusAfterKey("Tab", locationButton);
+
   await expectFocusAfterKey("Tab", content.settingsButtonEl);
 
   // Loop back around with ArrowDown
@@ -80,8 +85,10 @@ add_task(async function test_keyboard_navigation_in_panel() {
   );
   await expectFocusAfterKey("ArrowDown", headerButton);
   await expectFocusAfterKey("ArrowDown", turnOnButton);
+  await expectFocusAfterKey("ArrowDown", locationButton);
 
   // Test ArrowUp (backward)
+  await expectFocusAfterKey("ArrowUp", turnOnButton);
   await expectFocusAfterKey("ArrowUp", headerButton);
 
   // Navigate forward to turnOnButton to set up for Shift+Tab test

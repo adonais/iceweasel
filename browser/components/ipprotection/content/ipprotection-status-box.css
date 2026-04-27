@@ -138,7 +138,13 @@
 }
 
 ::slotted([slot="action"]) {
-  --button-padding: var(--space-large);
-  width: 100%;
   margin-block-start: var(--space-large);
+  --button-padding: var(--space-medium);
+  width: 100%;
+}
+
+::slotted([slot="location-action"]) {
+  margin-block-start: var(--space-small);
+  width: 100%;
+  --button-padding: var(--space-medium);
 }

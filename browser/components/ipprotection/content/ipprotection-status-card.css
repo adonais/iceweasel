@@ -1,0 +1,26 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+
+.toolbarbutton::part(moz-button-label) {
+  width: 100%;
+}
+
+.location-btn-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-medium);
+  width: 100%;
+
+  span {
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  :-moz-locale-dir(rtl) & .arrow-icon {
+    scale: -1 1;
+  }
+}

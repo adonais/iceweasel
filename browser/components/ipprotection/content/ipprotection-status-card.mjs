@@ -20,6 +20,7 @@ export default class IPProtectionStatusCard extends MozLitElement {
   static queries = {
     statusBoxEl: "ipprotection-status-box",
     actionButtonEl: 'moz-button[slot="action"]',
+    locationButtonEl: 'moz-button[slot="location-action"]',
   };
 
   static shadowRootOptions = {
@@ -48,6 +49,9 @@ export default class IPProtectionStatusCard extends MozLitElement {
     );
   }
 
+  // TODO: Will be implemented in https://bugzilla.mozilla.org/show_bug.cgi?id=2033138
+  handleLocationButtonClick() {}
+
   focus() {
     const button = this.shadowRoot.querySelector(`moz-button[slot="action"]`);
     button?.focus();
@@ -75,6 +79,26 @@ export default class IPProtectionStatusCard extends MozLitElement {
       : null;
   }
 
+  locationSelectionButtonTemplate() {
+    return html`
+      <moz-button
+        class="toolbarbutton"
+        slot="location-action"
+        @click=${this.handleLocationButtonClick}
+      >
+        <span class="location-btn-content">
+          <moz-badge type="new"></moz-badge>
+          <span data-l10n-id="ipprotection-recommended-location-button"></span>
+          <img
+            class="arrow-icon"
+            src="chrome://global/skin/icons/arrow-right.svg"
+            role="presentation"
+          />
+        </span>
+      </moz-button>
+    `;
+  }
+
   statusTemplate({
     type,
     headerL10nId,
@@ -84,6 +108,10 @@ export default class IPProtectionStatusCard extends MozLitElement {
     iconSrc = null,
   }) {
     return html`
+      <link
+        rel="stylesheet"
+        href="chrome://browser/content/ipprotection/ipprotection-status-card.css"
+      />
       <ipprotection-status-box .headerL10nId=${headerL10nId} .type=${type}>
         ${iconSrc
           ? html`<img
@@ -102,6 +130,8 @@ export default class IPProtectionStatusCard extends MozLitElement {
           ?disabled=${buttonDisabled}
           closemenu="none"
         ></moz-button>
+
+        ${this.locationSelectionButtonTemplate()}
       </ipprotection-status-box>
     `;
   }
