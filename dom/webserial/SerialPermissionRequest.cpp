@@ -7,45 +7,145 @@
 #include "SerialPermissionRequest.h"
 
 #include "SerialLogging.h"
+#include "js/PropertyAndElement.h"
+#include "js/Wrapper.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/JSONStringWriteFuncs.h"
 #include "mozilla/JSONWriter.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/dom/Document.h"
-#include "mozilla/dom/Promise.h"
+#include "mozilla/dom/Element.h"
+#include "mozilla/dom/RootedDictionary.h"
 #include "mozilla/dom/ScriptSettings.h"
-#include "mozilla/dom/Serial.h"
-#include "mozilla/dom/SerialManagerChild.h"
-#include "mozilla/dom/SerialPort.h"
+#include "mozilla/dom/WindowGlobalParent.h"
+#include "nsContentPermissionHelper.h"
 #include "nsContentUtils.h"
+#include "nsIArray.h"
 #include "nsThreadUtils.h"
+#include "xpcpublic.h"
 
 namespace mozilla::dom {
 
 constexpr uint32_t kPermissionDeniedBaseDelayMs = 3000;
 constexpr uint32_t kPermissionDeniedMaxRandomDelayMs = 10000;
 
-NS_IMPL_CYCLE_COLLECTION_INHERITED(SerialPermissionRequest,
-                                   ContentPermissionRequestBase, mPromise,
-                                   mSerial)
-
-NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(SerialPermissionRequest,
-                                             ContentPermissionRequestBase,
-                                             nsIRunnable)
+NS_IMPL_ISUPPORTS(SerialPermissionRequest, nsIContentPermissionRequest)
 
 SerialPermissionRequest::SerialPermissionRequest(
-    nsPIDOMWindowInner* aWindow, Promise* aPromise,
-    const SerialPortRequestOptions& aOptions, Serial* aSerial)
-    : ContentPermissionRequestBase(aWindow->GetDoc()->NodePrincipal(), aWindow,
-                                   ""_ns, "serial"_ns),
-      mPromise(aPromise),
-      mOptions(aOptions),
-      mSerial(aSerial) {
-  MOZ_ASSERT(aPromise);
-  MOZ_ASSERT(aSerial);
-  mPrincipal = aWindow->GetDoc()->NodePrincipal();
-  MOZ_ASSERT(mPrincipal);
+    WindowGlobalParent* aWindowGlobalParent, bool aAutoselect,
+    nsTArray<IPCSerialPortInfo>&& aPorts)
+    : mWindowGlobalParent(aWindowGlobalParent),
+      mAutoselect(aAutoselect),
+      mPorts(std::move(aPorts)) {
+  MOZ_ASSERT(mWindowGlobalParent);
+  MOZ_ASSERT(mWindowGlobalParent->DocumentPrincipal());
+}
+
+nsIPrincipal* SerialPermissionRequest::Principal() const {
+  return mWindowGlobalParent->DocumentPrincipal();
+}
+
+SerialPermissionRequest::~SerialPermissionRequest() {
+  // Defensive: if no path settled the promise, fall back to InternalError so
+  // the consumer always sees a decision.
+  mPromiseHolder.RejectIfExists(RequestPortReason::InternalError, __func__);
+}
+
+bool SerialPermissionRequest::IsSitePermAllow() const {
+  return nsContentUtils::IsSitePermAllow(Principal(), "serial"_ns);
+}
+
+bool SerialPermissionRequest::IsSitePermDeny() const {
+  return nsContentUtils::IsSitePermDeny(Principal(), "serial"_ns);
+}
+
+bool SerialPermissionRequest::ShouldShowAddonGate() const {
+  nsIPrincipal* principal = Principal();
+  return StaticPrefs::dom_webserial_gated() &&
+         StaticPrefs::dom_sitepermsaddon_provider_enabled() &&
+         !IsSitePermAllow() && !principal->GetIsLoopbackHost() &&
+         !principal->SchemeIs("file");
+}
+
+RefPtr<SerialChooserPromise> SerialPermissionRequest::Run() {
+  AssertIsOnMainThread();
+
+  RefPtr<SerialChooserPromise> promise = mPromiseHolder.Ensure(__func__);
+
+  if (!IsSitePermAllow()) {
+    if (IsSitePermDeny()) {
+      CancelWithRandomizedDelay(RequestPortReason::AddonDenied);
+      return promise;
+    }
+    if (nsContentUtils::IsSitePermDeny(Principal(), "install"_ns) &&
+        StaticPrefs::dom_sitepermsaddon_provider_enabled() &&
+        !Principal()->GetIsLoopbackHost()) {
+      CancelWithRandomizedDelay(RequestPortReason::AddonDenied);
+      return promise;
+    }
+  }
+
+  // Testing-only autoselect bypass: when the testing pref is on and gated
+  // mode is off, we skip the prompt entirely and pick the first port. The
+  // bypass is only honored when testing is enabled, so a malicious content
+  // process cannot use the autoselect flag to skip the chooser in release.
+  if (mAutoselect && StaticPrefs::dom_webserial_testing_enabled() &&
+      !StaticPrefs::dom_webserial_gated()) {
+    if (mPorts.IsEmpty()) {
+      ResolveCancelled(RequestPortReason::UserCancelled);
+      return promise;
+    }
+    ResolveWithPort(mPorts[0]);
+    return promise;
+  }
+
+  if (NS_FAILED(DoPrompt())) {
+    ResolveCancelled(RequestPortReason::InternalError);
+  }
+  return promise;
+}
+
+void SerialPermissionRequest::CancelWithRandomizedDelay(
+    RequestPortReason aReason) {
+  AssertIsOnMainThread();
+
+  uint32_t randomDelayMS =
+      xpc::IsInAutomation()
+          ? 0
+          : RandomUint64OrDie() % kPermissionDeniedMaxRandomDelayMs;
+  auto delay = TimeDuration::FromMilliseconds(kPermissionDeniedBaseDelayMs +
+                                              randomDelayMS);
+  NS_NewTimerWithCallback(
+      getter_AddRefs(mCancelTimer),
+      [self = RefPtr{this}, aReason](auto) { self->ResolveCancelled(aReason); },
+      delay, nsITimer::TYPE_ONE_SHOT,
+      "SerialPermissionRequest::CancelWithRandomizedDelay"_ns);
+}
+
+nsresult SerialPermissionRequest::DoPrompt() {
+  return nsContentPermissionUtils::AskPermission(this, /* aWindow */ nullptr);
+}
+
+void SerialPermissionRequest::ResolveWithPort(const IPCSerialPortInfo& aPort) {
+  mCancelTimer = nullptr;
+  MOZ_LOG(gWebSerialLog, LogLevel::Info,
+          ("    friendlyName: %s",
+           NS_ConvertUTF16toUTF8(aPort.friendlyName()).get()));
+  if (aPort.usbVendorId().isSome()) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Info,
+            ("    usbVendorId: 0x%04x", aPort.usbVendorId().value()));
+  }
+  if (aPort.usbProductId().isSome()) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Info,
+            ("    usbProductId: 0x%04x", aPort.usbProductId().value()));
+  }
+
+  mPromiseHolder.ResolveIfExists(aPort, __func__);
+}
+
+void SerialPermissionRequest::ResolveCancelled(RequestPortReason aReason) {
+  mCancelTimer = nullptr;
+  mPromiseHolder.RejectIfExists(aReason, __func__);
 }
 
 NS_IMETHODIMP
@@ -54,17 +154,18 @@ SerialPermissionRequest::GetTypes(nsIArray** aTypes) {
 
   MOZ_LOG(gWebSerialLog, LogLevel::Info,
           ("SerialPermissionRequest::GetTypes called with %zu ports",
-           mAvailablePorts.Length()));
+           mPorts.Length()));
 
   nsTArray<nsString> options;
 
-  // Pass autoselect flag to the UI via options metadata
-  if (ShouldAutoselect()) {
+  // Pass the autoselect flag to the JS UI so that it can auto-confirm the
+  // chooser when testing+gated is in use.
+  if (mAutoselect && StaticPrefs::dom_webserial_testing_enabled()) {
     options.AppendElement(u"{\"__autoselect__\":true}"_ns);
   }
 
   size_t index = 0;
-  for (const auto& port : mAvailablePorts) {
+  for (const auto& port : mPorts) {
     nsCString utf8Json;
     JSONStringRefWriteFunc writeFunc(utf8Json);
     JSONWriter writer(writeFunc, JSONWriter::SingleLineStyle);
@@ -88,259 +189,144 @@ SerialPermissionRequest::GetTypes(nsIArray** aTypes) {
     nsString utf16Json;
     CopyUTF8toUTF16(utf8Json, utf16Json);
     options.AppendElement(std::move(utf16Json));
-    index++;
+    ++index;
   }
 
-  return nsContentPermissionUtils::CreatePermissionArray(mType, options,
+  return nsContentPermissionUtils::CreatePermissionArray("serial"_ns, options,
                                                          aTypes);
 }
 
 NS_IMETHODIMP
+SerialPermissionRequest::GetPrincipal(nsIPrincipal** aPrincipal) {
+  NS_IF_ADDREF(*aPrincipal = Principal());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SerialPermissionRequest::GetTopLevelPrincipal(nsIPrincipal** aPrincipal) {
+  NS_IF_ADDREF(*aPrincipal = mWindowGlobalParent->TopWindowContext()
+                                 ->DocumentPrincipal());
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SerialPermissionRequest::GetDelegatePrincipal(const nsACString& aType,
+                                              nsIPrincipal** aPrincipal) {
+  return PermissionDelegateHandler::GetDelegatePrincipal(aType, this,
+                                                         aPrincipal);
+}
+
+NS_IMETHODIMP
+SerialPermissionRequest::GetWindow(mozIDOMWindow** aWindow) {
+  *aWindow = nullptr;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SerialPermissionRequest::GetElement(Element** aElement) {
+  NS_ENSURE_ARG_POINTER(aElement);
+  RefPtr<Element> element = mWindowGlobalParent->GetRootOwnerElement();
+  element.forget(aElement);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SerialPermissionRequest::GetHasValidTransientUserGestureActivation(bool* aOut) {
+  // The content process already rejects requestPort() without transient
+  // user activation (Serial::RequestPort step 3), so the parent-side request
+  // can report true without re-querying WindowContext (whose transient-
+  // activation state is only tracked in-process and would assert here).
+  *aOut = true;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SerialPermissionRequest::GetIsRequestDelegatedToUnsafeThirdParty(bool* aOut) {
+  // The parent process does not have a permission delegate handler available
+  // (that lives on the document) so we conservatively report false.
+  *aOut = false;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SerialPermissionRequest::GetIgnoreAllowSitePermission(bool* aOut) {
+  *aOut = false;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+SerialPermissionRequest::NotifyShown() { return NS_OK; }
+
+NS_IMETHODIMP
 SerialPermissionRequest::Cancel() {
+  AssertIsOnMainThread();
   mCancelTimer = nullptr;
 
-  // loopback hosts and file:/// URLs do not require the addon
-  if (StaticPrefs::dom_webserial_gated() &&
-      StaticPrefs::dom_sitepermsaddon_provider_enabled() &&
-      mCancellationReason == CancellationReason::UserCancelled &&
-      !IsSitePermAllow() && !mPrincipal->GetIsLoopbackHost() &&
-      !mPrincipal->SchemeIs("file")) {
-    mCancellationReason = CancellationReason::AddonDenied;
+  RequestPortReason reason = RequestPortReason::UserCancelled;
+  if (ShouldShowAddonGate()) {
+    reason = RequestPortReason::AddonDenied;
   }
 
-  switch (mCancellationReason) {
-    case CancellationReason::UserCancelled:
-      mPromise->MaybeRejectWithNotFoundError("No port selected");
-      break;
-    case CancellationReason::AddonDenied:
-      mPromise->MaybeRejectWithSecurityError(
-          "WebSerial requires a site permission add-on to activate");
-      break;
-    case CancellationReason::InternalError:
-      mPromise->MaybeRejectWithNotSupportedError("Request failed");
-      break;
-  }
-
+  ResolveCancelled(reason);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 SerialPermissionRequest::Allow(JS::Handle<JS::Value> aChoices) {
-  // Parse selection from aChoices
-  // Expected format: { serial: "0" }
-
-  MOZ_LOG(gWebSerialLog, LogLevel::Info,
-          ("SerialPermissionRequest::Allow called"));
-  MOZ_LOG(gWebSerialLog, LogLevel::Debug,
-          ("  mAvailablePorts.Length(): %zu", mAvailablePorts.Length()));
+  AssertIsOnMainThread();
+  mCancelTimer = nullptr;
 
   if (!aChoices.isObject()) {
-    MOZ_LOG(gWebSerialLog, LogLevel::Error, ("  aChoices is not an object"));
-    mPromise->MaybeRejectWithNotSupportedError("Invalid selection passed");
+    ResolveCancelled(RequestPortReason::InternalError);
     return NS_OK;
   }
+
+  // The choices object can come in any realm — chrome calls Allow() from JS.
+  // Unwrap and enter its realm before reading properties.
+  JS::Rooted<JSObject*> obj(RootingCx(), &aChoices.toObject());
+  obj = js::CheckedUnwrapStatic(obj);
+  if (!obj) {
+    ResolveCancelled(RequestPortReason::InternalError);
+    return NS_OK;
+  }
+
+  nsIGlobalObject* global = xpc::NativeGlobal(obj);
+  if (!global) {
+    ResolveCancelled(RequestPortReason::InternalError);
+    return NS_OK;
+  }
+
   AutoJSAPI jsapi;
-  if (!jsapi.Init(mWindow)) {
-    MOZ_LOG(gWebSerialLog, LogLevel::Error, ("  Failed to initialize JS API"));
-    mPromise->MaybeRejectWithNotSupportedError("Failed to initialize JS API");
+  if (!jsapi.Init(global)) {
+    ResolveCancelled(RequestPortReason::InternalError);
     return NS_OK;
   }
-
   JSContext* cx = jsapi.cx();
-  JS::Rooted<JSObject*> obj(cx, &aChoices.toObject());
+
   JS::Rooted<JS::Value> serialVal(cx);
-
-  bool gotProperty = JS_GetProperty(cx, obj, "serial", &serialVal);
-  MOZ_LOG(gWebSerialLog, LogLevel::Debug,
-          ("  JS_GetProperty('serial') succeeded: %s",
-           gotProperty ? "true" : "false"));
-
-  if (!gotProperty) {
-    MOZ_LOG(gWebSerialLog, LogLevel::Error,
-            ("  aChoices does not have a serial property"));
-    mPromise->MaybeRejectWithNotSupportedError(
-        "Invalid selection (no serial property)");
+  if (!JS_GetProperty(cx, obj, "serial", &serialVal) || !serialVal.isString()) {
+    ResolveCancelled(RequestPortReason::InternalError);
     return NS_OK;
   }
-  if (!serialVal.isString()) {
-    MOZ_LOG(gWebSerialLog, LogLevel::Error,
-            ("  aChoices['serial'] is not a string"));
-    mPromise->MaybeRejectWithNotSupportedError(
-        "Invalid selection (not a string)");
-    return NS_OK;
-  }
+
   nsAutoJSString choice;
   if (!choice.init(cx, serialVal)) {
-    mPromise->MaybeRejectWithNotSupportedError("Invalid selection");
+    ResolveCancelled(RequestPortReason::InternalError);
     return NS_OK;
   }
+
   nsresult rv;
-  int32_t selectedPortIndex = choice.ToInteger(&rv);
-  if (NS_FAILED(rv)) {
-    MOZ_LOG(gWebSerialLog, LogLevel::Error,
-            ("  Failed to convert serial string to integer"));
-    mPromise->MaybeRejectWithNotSupportedError("Invalid selection value");
-    return NS_OK;
-  }
-  MOZ_LOG(
-      gWebSerialLog, LogLevel::Info,
-      ("  Successfully parsed serial choice as string: %d", selectedPortIndex));
-
-  // Validate index
-  if (selectedPortIndex < 0 ||
-      selectedPortIndex >= static_cast<int32_t>(mAvailablePorts.Length())) {
-    MOZ_LOG(gWebSerialLog, LogLevel::Error,
-            ("  Port selection out of range: index=%d, length=%zu",
-             selectedPortIndex, mAvailablePorts.Length()));
-    mPromise->MaybeRejectWithNotFoundError("Port selection out of range");
+  int32_t selectedIndex = choice.ToInteger(&rv);
+  if (NS_FAILED(rv) || selectedIndex < 0 ||
+      static_cast<size_t>(selectedIndex) >= mPorts.Length()) {
+    ResolveCancelled(RequestPortReason::InternalError);
     return NS_OK;
   }
 
-  // Get the selected port
-  const IPCSerialPortInfo& selectedPort = mAvailablePorts[selectedPortIndex];
-
   MOZ_LOG(gWebSerialLog, LogLevel::Info,
-          ("  Selected port at index %d:", selectedPortIndex));
-  MOZ_LOG(gWebSerialLog, LogLevel::Info,
-          ("    path: %s", NS_ConvertUTF16toUTF8(selectedPort.path()).get()));
-  MOZ_LOG(gWebSerialLog, LogLevel::Info,
-          ("    friendlyName: %s",
-           NS_ConvertUTF16toUTF8(selectedPort.friendlyName()).get()));
-  if (selectedPort.usbVendorId().isSome()) {
-    MOZ_LOG(gWebSerialLog, LogLevel::Info,
-            ("    usbVendorId: 0x%04x", selectedPort.usbVendorId().value()));
-  }
-  if (selectedPort.usbProductId().isSome()) {
-    MOZ_LOG(gWebSerialLog, LogLevel::Info,
-            ("    usbProductId: 0x%04x", selectedPort.usbProductId().value()));
-  }
-
-  RefPtr<SerialPort> port = mSerial->GetOrCreatePort(selectedPort);
-  if (!port) {
-    mPromise->MaybeRejectWithNotSupportedError("Failed to create port actor");
-    return NS_OK;
-  }
-  port->MarkPhysicallyPresent();
-  mPromise->MaybeResolve(port);
-
+          ("  Selected port at index %d:", selectedIndex));
+  ResolveWithPort(mPorts[selectedIndex]);
   return NS_OK;
-}
-
-bool SerialPermissionRequest::IsSitePermAllow() {
-  return nsContentUtils::IsSitePermAllow(mPrincipal, "serial"_ns);
-}
-
-bool SerialPermissionRequest::IsSitePermDeny() {
-  return nsContentUtils::IsSitePermDeny(mPrincipal, "serial"_ns);
-}
-
-NS_IMETHODIMP
-SerialPermissionRequest::Run() {
-  if (!IsSitePermAllow()) {
-    if (IsSitePermDeny()) {
-      CancelWithRandomizedDelay();
-      return NS_OK;
-    }
-
-    if (nsContentUtils::IsSitePermDeny(mPrincipal, "install"_ns) &&
-        StaticPrefs::dom_sitepermsaddon_provider_enabled() &&
-        !mPrincipal->GetIsLoopbackHost()) {
-      CancelWithRandomizedDelay();
-      return NS_OK;
-    }
-  }
-
-  AssertIsOnMainThread();
-
-  RefPtr<SerialManagerChild> child = mSerial->GetOrCreateManagerChild();
-  if (!child) {
-    mCancellationReason = CancellationReason::InternalError;
-    Cancel();
-    return NS_ERROR_FAILURE;
-  }
-
-  // Fetch available ports
-  RefPtr<SerialPermissionRequest> self = this;
-
-  child->SendGetAvailablePorts()->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [self](nsTArray<IPCSerialPortInfo>&& ports) {
-        self->mAvailablePorts = std::move(ports);
-
-        // Apply filters from requestPort() options
-        if (!self->FilterPorts(self->mAvailablePorts)) {
-          // There was an invalid filter
-          self->Cancel();
-          return;
-        }
-
-        // Check if we should auto-select for testing after filtering
-        bool testingAutoselect = self->ShouldAutoselect();
-
-        if (testingAutoselect && !StaticPrefs::dom_webserial_gated()) {
-          // Testing mode or existing permission - auto-allow with first port
-          // Or autoselect is enabled without gated mode
-          self->Allow(JS::UndefinedHandleValue);
-        } else {
-          // Show the doorhanger for user selection
-          // If testingAutoselect is enabled with gated mode, the doorhanger
-          // will still show addon prompts but should auto-select the port
-          if (NS_FAILED(self->DoPrompt())) {
-            self->Cancel();
-          }
-        }
-      },
-      [self](mozilla::ipc::ResponseRejectReason&& aReason) {
-        self->mCancellationReason = CancellationReason::InternalError;
-        self->Cancel();
-      });
-
-  return NS_OK;
-}
-
-void SerialPermissionRequest::CancelWithRandomizedDelay() {
-  AssertIsOnMainThread();
-
-  // This is called when addon is denied
-  mCancellationReason = CancellationReason::AddonDenied;
-
-  uint32_t randomDelayMS =
-      xpc::IsInAutomation()
-          ? 0
-          : RandomUint64OrDie() % kPermissionDeniedMaxRandomDelayMs;
-  auto delay = TimeDuration::FromMilliseconds(kPermissionDeniedBaseDelayMs +
-                                              randomDelayMS);
-  NS_NewTimerWithCallback(
-      getter_AddRefs(mCancelTimer),
-      [self = RefPtr{this}](auto) { self->Cancel(); }, delay,
-      nsITimer::TYPE_ONE_SHOT,
-      "SerialPermissionRequest::CancelWithRandomizedDelay"_ns);
-}
-
-nsresult SerialPermissionRequest::DoPrompt() {
-  // User is being shown the chooser - if they cancel, it's UserCancelled
-  mCancellationReason = CancellationReason::UserCancelled;
-
-  if (NS_FAILED(nsContentPermissionUtils::AskPermission(this, mWindow))) {
-    // Prompt failed to show - this is an internal error
-    mCancellationReason = CancellationReason::InternalError;
-    Cancel();
-    return NS_ERROR_FAILURE;
-  }
-  return NS_OK;
-}
-
-bool SerialPermissionRequest::FilterPorts(nsTArray<IPCSerialPortInfo>& aPorts) {
-  if (!mOptions.mFilters.WasPassed()) {
-    return true;
-  }
-
-  return Serial::ApplyPortFilters(aPorts, mOptions.mFilters.Value());
-}
-
-bool SerialPermissionRequest::ShouldAutoselect() const {
-  return StaticPrefs::dom_webserial_testing_enabled() &&
-         mSerial->AutoselectPorts();
 }
 
 }  // namespace mozilla::dom

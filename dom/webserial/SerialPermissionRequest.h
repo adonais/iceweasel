@@ -7,64 +7,64 @@
 #ifndef mozilla_dom_SerialPermissionRequest_h
 #define mozilla_dom_SerialPermissionRequest_h
 
-#include "mozilla/dom/SerialBinding.h"
+#include "mozilla/MozPromise.h"
+#include "mozilla/dom/SerialPortIPCTypes.h"
 #include "mozilla/dom/SerialTypes.h"
-#include "nsContentPermissionHelper.h"
-#include "nsIRunnable.h"
+#include "nsCOMPtr.h"
+#include "nsIContentPermissionPrompt.h"
 #include "nsITimer.h"
+
+class nsIPrincipal;
 
 namespace mozilla::dom {
 
-class Promise;
-class Serial;
+class Element;
+class WindowGlobalParent;
 
-class SerialPermissionRequest final : public ContentPermissionRequestBase,
-                                      public nsIRunnable {
+// Promise returned by SerialPermissionRequest::Run(). Resolves with the
+// IPCSerialPortInfo of the port the user picked, or rejects with a
+// RequestPortReason describing why the chooser did not grant a port.
+using SerialChooserPromise =
+    MozPromise<IPCSerialPortInfo, RequestPortReason, /* IsExclusive */ true>;
+
+// Parent-process implementation of nsIContentPermissionRequest used to drive
+// the WebSerial chooser. The chrome prompt service routes "serial" requests
+// to the SerialPermissionPrompt JS class which reads the available ports out
+// of the request's options array and posts a doorhanger to the user.
+//
+// On user grant the request resolves its chooser promise with the picked
+// port; on cancel/error it rejects with a RequestPortReason.
+class SerialPermissionRequest final : public nsIContentPermissionRequest {
  public:
-  SerialPermissionRequest(nsPIDOMWindowInner* aWindow, Promise* aPromise,
-                          const SerialPortRequestOptions& aOptions,
-                          Serial* aSerial);
+  SerialPermissionRequest(WindowGlobalParent* aWindowGlobalParent,
+                          bool aAutoselect,
+                          nsTArray<IPCSerialPortInfo>&& aPorts);
 
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_NSIRUNNABLE
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SerialPermissionRequest,
-                                           ContentPermissionRequestBase)
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSICONTENTPERMISSIONREQUEST
 
-  // nsIContentPermissionRequest
-  NS_IMETHOD Cancel(void) override;
-  NS_IMETHOD Allow(JS::Handle<JS::Value> choices) override;
-  NS_IMETHOD GetTypes(nsIArray** aTypes) override;
-
-  // Check if auto-select is enabled for testing
-  bool ShouldAutoselect() const;
+  // Begin the request: runs sitepermsaddon checks, then either auto-resolves
+  // or invokes nsContentPermissionUtils::AskPermission to show the chooser.
+  // Returns the promise that will be settled when the chooser completes.
+  RefPtr<SerialChooserPromise> Run();
 
  private:
-  ~SerialPermissionRequest() override = default;
+  ~SerialPermissionRequest();
+
+  nsIPrincipal* Principal() const;
+  bool IsSitePermAllow() const;
+  bool IsSitePermDeny() const;
+  bool ShouldShowAddonGate() const;
+  void CancelWithRandomizedDelay(RequestPortReason aReason);
   nsresult DoPrompt();
-  void CancelWithRandomizedDelay();
-  // Returns whether filters were applied successfully
-  bool FilterPorts(nsTArray<IPCSerialPortInfo>& aPorts);
-  bool IsSitePermAllow();
-  bool IsSitePermDeny();
+  void ResolveWithPort(const IPCSerialPortInfo& aPort);
+  void ResolveCancelled(RequestPortReason aReason);
 
-  // Track why Cancel() is being called to determine the appropriate error type
-  enum class CancellationReason {
-    UserCancelled,  // User clicked Cancel in the port chooser dialog
-    AddonDenied,    // Site permission addon installation was denied
-    InternalError   // IPC failure, prompt failure, etc.
-  };
-
-  // If we're canceling on a timer, we need to hold a strong ref while it's
-  // outstanding
+  RefPtr<WindowGlobalParent> mWindowGlobalParent;
+  bool mAutoselect;
+  nsTArray<IPCSerialPortInfo> mPorts;
+  MozPromiseHolder<SerialChooserPromise> mPromiseHolder;
   nsCOMPtr<nsITimer> mCancelTimer;
-
-  // Promise for returning SerialPort on request success
-  RefPtr<Promise> mPromise;
-  SerialPortRequestOptions mOptions;
-  nsTArray<IPCSerialPortInfo> mAvailablePorts;
-  RefPtr<Serial> mSerial;
-
-  CancellationReason mCancellationReason = CancellationReason::UserCancelled;
 };
 
 }  // namespace mozilla::dom

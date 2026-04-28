@@ -9,6 +9,7 @@ include "mozilla/dom/SerialPortIPCTypes.h";
 using nsString from "nsString.h";
 using mozilla::dom::ParityType from "mozilla/dom/SerialPortBinding.h";
 using mozilla::dom::FlowControlType from "mozilla/dom/SerialPortBinding.h";
+using mozilla::dom::RequestPortReason from "mozilla/dom/SerialPortIPCTypes.h";
 
 namespace mozilla {
 namespace dom {
@@ -20,6 +21,23 @@ struct IPCSerialPortInfo {
   uint16_t? usbVendorId;
   uint16_t? usbProductId;
   nsString? bluetoothServiceClassId;
+};
+
+// Filter applied by the parent process when enumerating ports for a chooser
+// request. Any usbVendorId/usbProductId/bluetoothServiceClassId fields not
+// passed by the page are sent as Nothing(); the bluetoothServiceClassId is
+// resolved to a canonical UUID by the content process before sending.
+struct IPCSerialPortFilter {
+  uint16_t? usbVendorId;
+  uint16_t? usbProductId;
+  nsString? bluetoothServiceClassId;
+};
+
+// Outcome of a parent-driven RequestPort IPC. The `port` field is set iff
+// reason is RequestPortReason::Granted.
+struct IPCRequestPortResult {
+  RequestPortReason reason;
+  IPCSerialPortInfo? port;
 };
 
 struct IPCSerialOptions {

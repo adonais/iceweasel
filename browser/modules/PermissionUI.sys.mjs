@@ -1994,6 +1994,12 @@ class SerialPermissionPrompt extends SitePermsAddonInstallRequest {
             } catch (ex) {
               console.error("[WebSerial] Failed to populate device list:", ex);
             }
+          } else if (topic === "removed") {
+            // PopupNotifications removes the notification on location change
+            // and other non-user-driven teardown paths. Cancel the underlying
+            // request so the content-process requestPort() promise settles
+            // instead of waiting for the destructor fallback.
+            promptInstance.cancel();
           }
         },
       };

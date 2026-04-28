@@ -8,7 +8,6 @@
 
 #include "Navigator.h"
 #include "SerialLogging.h"
-#include "SerialPermissionRequest.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -30,6 +29,11 @@
 #include "nsThreadUtils.h"
 
 namespace mozilla::dom {
+
+// Forward declaration for use in RequestPort below; the implementation lives
+// further down with the other Bluetooth UUID helpers.
+static bool ResolveBluetoothServiceUUID(const OwningStringOrUnsignedLong& aName,
+                                        nsAutoString& aResult);
 
 static Serial* FindWindowSerialForWorkerPrivate(WorkerPrivate* aWorkerPrivate) {
   AssertIsOnMainThread();
@@ -164,31 +168,26 @@ static bool PortSecurityCheck(Promise& aPromise, nsIGlobalObject* aGlobal,
   return true;
 }
 
-// Returns whether the filters validated successfully. If this function
-// returns false, aPromise will have been resolved with an error.
-static bool ValidatePortFilters(const Sequence<SerialPortFilter>& aFilters,
-                                dom::Promise& aPromise) {
-  for (const auto& filter : aFilters) {
-    // https://wicg.github.io/serial/#ref-for-dom-serialportrequestoptions-filters-1
-    if (filter.mBluetoothServiceClassId.WasPassed()) {
-      if (filter.mUsbVendorId.WasPassed() || filter.mUsbProductId.WasPassed()) {
-        aPromise.MaybeRejectWithTypeError(
-            "A filter cannot specify both bluetoothServiceClassId and "
-            "usbVendorId or usbProductId.");
-        return false;
+bool Serial::ValidatePortFilter(bool aHasUsbVendorId, bool aHasUsbProductId,
+                                bool aHasBluetoothServiceClassId,
+                                nsACString& aFailureReason) {
+  // https://wicg.github.io/serial/#ref-for-dom-serialportrequestoptions-filters-1
+  if (aHasBluetoothServiceClassId) {
+    if (aHasUsbVendorId || aHasUsbProductId) {
+      aFailureReason =
+          "A filter cannot specify both bluetoothServiceClassId and "
+          "usbVendorId or usbProductId."_ns;
+      return false;
+    }
+  } else {
+    if (!aHasUsbVendorId) {
+      if (!aHasUsbProductId) {
+        aFailureReason = "A filter must provide a property to filter by."_ns;
+      } else {
+        aFailureReason =
+            "A filter containing a usbProductId must also specify a usbVendorId."_ns;
       }
-    } else {
-      if (!filter.mUsbVendorId.WasPassed()) {
-        if (!filter.mUsbProductId.WasPassed()) {
-          aPromise.MaybeRejectWithTypeError(
-              "A filter must provide a property to filter by.");
-        } else {
-          aPromise.MaybeRejectWithTypeError(
-              "A filter containing a usbProductId must also specify a "
-              "usbVendorId.");
-        }
-        return false;
-      }
+      return false;
     }
   }
   return true;
@@ -197,8 +196,8 @@ static bool ValidatePortFilters(const Sequence<SerialPortFilter>& aFilters,
 already_AddRefed<Promise> Serial::RequestPort(
     const SerialPortRequestOptions& aOptions, ErrorResult& aRv) {
   AssertIsOnMainThread();
-  // RequestPort() doesn't work in workers, so we can skip straight
-  // to the window.
+  // RequestPort() doesn't work in workers, so we can skip straight to the
+  // window.
   nsPIDOMWindowInner* window = GetOwnerWindow();
   if (!window) {
     MOZ_LOG(gWebSerialLog, LogLevel::Error,
@@ -252,129 +251,102 @@ already_AddRefed<Promise> Serial::RequestPort(
     MOZ_LOG(gWebSerialLog, LogLevel::Debug,
             ("Serial[%p]::RequestPort validating %zu filters", this,
              aOptions.mFilters.Value().Length()));
-    if (!ValidatePortFilters(aOptions.mFilters.Value(), *promise)) {
-      MOZ_LOG(gWebSerialLog, LogLevel::Warning,
-              ("Serial[%p]::RequestPort failed filter validation", this));
-      return promise.forget();
+    nsAutoCString validatePortFailureReason;
+    for (const auto& filter : aOptions.mFilters.Value()) {
+      if (!ValidatePortFilter(filter.mUsbVendorId.WasPassed(),
+                              filter.mUsbProductId.WasPassed(),
+                              filter.mBluetoothServiceClassId.WasPassed(),
+                              validatePortFailureReason)) {
+        promise->MaybeRejectWithTypeError(validatePortFailureReason);
+        MOZ_LOG(gWebSerialLog, LogLevel::Warning,
+                ("Serial[%p]::RequestPort failed filter validation", this));
+        return promise.forget();
+      }
     }
   }
 
-  // In testing mode with auto-select, directly create a port from
-  // TestSerialPlatformService without showing the chooser UI.
-  // However, when gated mode is enabled, we must go through the full
-  // SerialPermissionRequest flow to test the addon installation path.
-  if (StaticPrefs::dom_webserial_testing_enabled() && mAutoselectPorts &&
-      !StaticPrefs::dom_webserial_gated()) {
-    return RequestPortWithTestingAutoselect(aOptions, std::move(promise));
-  }
-
-  // Step 5 (in parallel): Enumerate available ports, prompt the user to select
-  // one, and resolve or reject the promise accordingly.
-  MOZ_LOG(gWebSerialLog, LogLevel::Info,
-          ("Serial[%p]::RequestPort starting permission request", this));
-  auto request =
-      MakeRefPtr<SerialPermissionRequest>(window, promise, aOptions, this);
-
-  nsresult rv = request->Run();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    MOZ_LOG(
-        gWebSerialLog, LogLevel::Error,
-        ("Serial[%p]::RequestPort failed to start permission request: 0x%08x",
-         this, static_cast<uint32_t>(rv)));
-    promise->MaybeRejectWithNotSupportedError(
-        "Failed to start permission request");
+  // Step 5 (in parallel): ask the parent process to enumerate, prompt the
+  // user, and record the granted port id.
+  SerialManagerChild* child = GetOrCreateManagerChild();
+  if (!child) {
+    promise->MaybeRejectWithNotSupportedError("Request failed");
     return promise.forget();
   }
 
-  // Step 6: Return promise.
-  return promise.forget();
-}
-
-already_AddRefed<Promise> Serial::RequestPortWithTestingAutoselect(
-    const SerialPortRequestOptions& aOptions, RefPtr<Promise> aPromise) {
-  // In testing mode with auto-select, directly create a port from
-  // TestSerialPlatformService without showing the chooser UI
-  AssertIsOnMainThread();
-  MOZ_RELEASE_ASSERT(StaticPrefs::dom_webserial_testing_enabled());
-  MOZ_RELEASE_ASSERT(!StaticPrefs::dom_webserial_gated());
-
-  MOZ_LOG(gWebSerialLog, LogLevel::Info,
-          ("Serial[%p]::RequestPort using testing mode autoselect", this));
-
-  SerialManagerChild* child = GetOrCreateManagerChild();
-  if (!child) {
-    MOZ_LOG(gWebSerialLog, LogLevel::Error,
-            ("Serial[%p]::RequestPort failed: IPC manager child not available",
-             this));
-    aPromise->MaybeRejectWithNotSupportedError("IPC not available");
-    return aPromise.forget();
-  }
-
-  Sequence<SerialPortFilter> filters;
+  nsTArray<IPCSerialPortFilter> ipcFilters;
   if (aOptions.mFilters.WasPassed()) {
-    if (!filters.AppendElements(aOptions.mFilters.Value(), mozilla::fallible)) {
-      MOZ_LOG(gWebSerialLog, LogLevel::Error,
-              ("Serial[%p]::RequestPort failed to copy filter options", this));
-      aPromise->MaybeRejectWithNotSupportedError(
-          "Failed to copy filter options");
-      return aPromise.forget();
+    for (const auto& filter : aOptions.mFilters.Value()) {
+      IPCSerialPortFilter ipcFilter;
+      if (filter.mUsbVendorId.WasPassed()) {
+        ipcFilter.usbVendorId() = Some(filter.mUsbVendorId.Value());
+      }
+      if (filter.mUsbProductId.WasPassed()) {
+        ipcFilter.usbProductId() = Some(filter.mUsbProductId.Value());
+      }
+      if (filter.mBluetoothServiceClassId.WasPassed()) {
+        nsAutoString uuid;
+        if (!ResolveBluetoothServiceUUID(
+                filter.mBluetoothServiceClassId.Value(), uuid)) {
+          promise->MaybeRejectWithTypeError(
+              "Invalid bluetoothServiceClassId in port filter");
+          return promise.forget();
+        }
+        ipcFilter.bluetoothServiceClassId() = Some(uuid);
+      }
+      ipcFilters.AppendElement(std::move(ipcFilter));
     }
   }
 
-  MOZ_LOG(
-      gWebSerialLog, LogLevel::Debug,
-      ("Serial[%p]::RequestPort sending GetAvailablePorts IPC request", this));
-  // In the second lambda below, we only need "this" to log the pointer value.
-  // So declare selfPtr as void* to ensure we don't try to use it (without
-  // wrapping it in a RefPtr).
-  void* selfPtr = this;
-  child->SendGetAvailablePorts()->Then(
-      GetMainThreadSerialEventTarget(), __func__,
-      [promise = aPromise, self = RefPtr{this},
-       filters = std::move(filters)](nsTArray<IPCSerialPortInfo>&& ports) {
-        MOZ_LOG(gWebSerialLog, LogLevel::Debug,
-                ("Serial[%p]::RequestPort received %zu ports", self.get(),
-                 ports.Length()));
-        if (!ApplyPortFilters(ports, filters)) {
-          MOZ_LOG(
-              gWebSerialLog, LogLevel::Warning,
-              ("Serial[%p]::RequestPort failed applying filters", self.get()));
-          promise->MaybeRejectWithTypeError(
-              "Invalid bluetoothServiceClassId in port filter");
-          return;
-        }
+  bool autoselect =
+      StaticPrefs::dom_webserial_testing_enabled() && mAutoselectPorts;
 
-        if (ports.IsEmpty()) {
-          MOZ_LOG(gWebSerialLog, LogLevel::Warning,
-                  ("Serial[%p]::RequestPort no serial port available after "
-                   "filtering",
-                   self.get()));
-          promise->MaybeRejectWithNotFoundError("No serial port available");
-          return;
-        }
+  child->SendRequestPort(ipcFilters, autoselect)
+      ->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [promise, self = RefPtr{this}](
+              std::tuple<IPCRequestPortResult,
+                         mozilla::ipc::Endpoint<PSerialPortChild>>&& aTuple) {
+            IPCRequestPortResult& result = std::get<0>(aTuple);
+            mozilla::ipc::Endpoint<PSerialPortChild> endpoint =
+                std::move(std::get<1>(aTuple));
+            switch (result.reason()) {
+              case RequestPortReason::Granted: {
+                if (result.port().isNothing()) {
+                  promise->MaybeRejectWithNotSupportedError(
+                      "Granted port info missing");
+                  return;
+                }
+                RefPtr<SerialPort> port = self->GetOrCreatePort(
+                    result.port().value(), std::move(endpoint));
+                if (!port) {
+                  promise->MaybeRejectWithNotSupportedError(
+                      "Failed to create port actor");
+                  return;
+                }
+                port->MarkPhysicallyPresent();
+                promise->MaybeResolve(port);
+                return;
+              }
+              case RequestPortReason::UserCancelled:
+              case RequestPortReason::AddonDenied:
+                promise->MaybeRejectWithNotFoundError("No port selected");
+                return;
+              case RequestPortReason::InternalError:
+                promise->MaybeRejectWithNotSupportedError("Request failed");
+                return;
+              case RequestPortReason::EndGuard_:
+                MOZ_ASSERT_UNREACHABLE("Bad RequestPortReason");
+                promise->MaybeRejectWithNotSupportedError("Request failed");
+                return;
+            }
+            promise->MaybeRejectWithNotSupportedError("Request failed");
+          },
+          [promise](mozilla::ipc::ResponseRejectReason) {
+            promise->MaybeRejectWithNotSupportedError("Request failed");
+          });
 
-        MOZ_LOG(gWebSerialLog, LogLevel::Info,
-                ("Serial[%p]::RequestPort selected port '%s' (testing mode)",
-                 self.get(), NS_ConvertUTF16toUTF8(ports[0].id()).get()));
-
-        RefPtr<SerialPort> port = self->GetOrCreatePort(ports[0]);
-        if (!port) {
-          promise->MaybeRejectWithNotSupportedError(
-              "Failed to create port actor");
-          return;
-        }
-        port->MarkPhysicallyPresent();
-        promise->MaybeResolve(port);
-      },
-      [promise = aPromise,
-       selfPtr](mozilla::ipc::ResponseRejectReason aReason) {
-        MOZ_LOG(gWebSerialLog, LogLevel::Error,
-                ("Serial[%p]::RequestPort IPC request failed (reason: %d)",
-                 selfPtr, (int)aReason));
-        promise->MaybeRejectWithNotSupportedError("IPC request failed");
-      });
-
-  return aPromise.forget();
+  // Step 6: Return promise.
+  return promise.forget();
 }
 
 already_AddRefed<Promise> Serial::GetPorts(ErrorResult& aRv) {
@@ -583,7 +555,7 @@ static nsAutoString BluetoothCanonicalUUID(uint32_t aAlias) {
 // A valid UUID is a lowercase string matching
 // /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // https://webbluetoothcg.github.io/web-bluetooth/#valid-uuid
-static bool IsValidBluetoothUUID(const nsAString& aString) {
+bool Serial::IsValidBluetoothUUID(const nsAString& aString) {
   // 8-4-4-4-12 = 32 hex chars + 4 dashes = 36 chars
   if (aString.Length() != 36) {
     return false;
@@ -617,7 +589,7 @@ static bool ResolveBluetoothServiceUUID(const OwningStringOrUnsignedLong& aName,
   const nsString& name = aName.GetAsString();
 
   // Step 2: If name is a valid UUID, return name.
-  if (IsValidBluetoothUUID(name)) {
+  if (Serial::IsValidBluetoothUUID(name)) {
     aResult = name;
     return true;
   }
@@ -628,65 +600,6 @@ static bool ResolveBluetoothServiceUUID(const OwningStringOrUnsignedLong& aName,
 
   // Step 4: Otherwise, throw a TypeError.
   return false;
-}
-
-// https://wicg.github.io/serial/#dfn-matches-the-filter
-// A port matches a filter if for each present member of the filter,
-// the port has a matching value.
-bool Serial::ApplyPortFilters(nsTArray<IPCSerialPortInfo>& aPorts,
-                              const Sequence<SerialPortFilter>& aFilters) {
-  if (aFilters.IsEmpty()) {
-    return true;
-  }
-
-  bool filtersValid = true;
-  aPorts.RemoveElementsBy([&](const IPCSerialPortInfo& port) {
-    if (!filtersValid) {
-      // We have already resolved the promise with a TypeError,
-      // just early exit
-      return false;
-    }
-    for (const auto& filter : aFilters) {
-      // Step 1: If filter.usbVendorId is present and port's USB vendor ID
-      // does not match, this filter fails.
-      bool vendorMatches =
-          !filter.mUsbVendorId.WasPassed() ||
-          (port.usbVendorId() &&
-           port.usbVendorId().value() == filter.mUsbVendorId.Value());
-
-      // Step 2: If filter.usbProductId is present and port's USB product ID
-      // does not match, this filter fails.
-      bool productMatches =
-          !filter.mUsbProductId.WasPassed() ||
-          (port.usbProductId() &&
-           port.usbProductId().value() == filter.mUsbProductId.Value());
-
-      // Step 3: If filter.bluetoothServiceClassId is present and port's
-      // Bluetooth service class ID does not match, this filter fails.
-      bool bluetoothMatches = true;
-      if (filter.mBluetoothServiceClassId.WasPassed()) {
-        nsAutoString filterUUID;
-        if (!ResolveBluetoothServiceUUID(
-                filter.mBluetoothServiceClassId.Value(), filterUUID)) {
-          // Resolution failed (invalid name per ResolveUUIDName step 4)
-          filtersValid = false;
-          return false;
-        } else if (port.bluetoothServiceClassId().isNothing()) {
-          bluetoothMatches = false;
-        } else {
-          bluetoothMatches =
-              port.bluetoothServiceClassId().value() == filterUUID;
-        }
-      }
-
-      // Step 4: The port matches if all present filter members matched.
-      if (vendorMatches && productMatches && bluetoothMatches) {
-        return false;
-      }
-    }
-    return true;
-  });
-  return filtersValid;
 }
 
 void Serial::ForgetAllPorts() {
@@ -712,27 +625,30 @@ void Serial::ForgetAllPorts() {
   }
 }
 
-RefPtr<SerialPort> Serial::GetOrCreatePort(const IPCSerialPortInfo& aInfo) {
-  // Look for an existing port with the same ID.
+RefPtr<SerialPort> Serial::GetOrCreatePort(
+    const IPCSerialPortInfo& aInfo,
+    mozilla::ipc::Endpoint<PSerialPortChild>&& aEndpoint) {
+  // Look for an existing port with the same ID. If present, drop the
+  // newly-minted endpoint; letting it fall out of scope closes its
+  // channel, which will destroy the orphan SerialPortParent on the
+  // other side.
   for (const auto& existing : mPorts) {
     if (existing->Id() == aInfo.id() && !existing->IsForgotten()) {
       return existing;
     }
   }
 
-  RefPtr<SerialPort> port = MakeRefPtr<SerialPort>(aInfo, this);
-
-  // On the main thread, eagerly create and bind a PSerialPort actor.
-  if (NS_IsMainThread()) {
-    SerialManagerChild* child = GetOrCreateManagerChild();
-    if (child) {
-      RefPtr<SerialPortChild> actor = child->CreatePort(aInfo.id());
-      if (actor) {
-        actor->SetPort(port);
-        port->SetChild(actor);
-      }
-    }
+  if (!aEndpoint.IsValid()) {
+    return nullptr;
   }
+
+  auto actor = MakeRefPtr<SerialPortChild>();
+  if (!aEndpoint.Bind(actor)) {
+    return nullptr;
+  }
+  RefPtr<SerialPort> port = MakeRefPtr<SerialPort>(aInfo, this);
+  actor->SetPort(port);
+  port->SetChild(actor);
 
   mPorts.AppendElement(port);
   return port;

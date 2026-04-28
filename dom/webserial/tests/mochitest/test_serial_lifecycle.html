@@ -241,6 +241,24 @@ add_task(async function testAbortAfterCloseSucceeds() {
   await port.close();
 });
 
+add_task(async function testRequestPortTwiceWithTheSamePort() {
+  SpecialPowers.wrap(document).notifyUserGestureActivation();
+  const port = await navigator.serial.requestPort({ filters: [] });
+  await port.open({ baudRate: 9600 });
+  await port.close();
+  const port2 = await navigator.serial.requestPort({ filters: [] });
+  // Ensure that we get the same port each time, otherwise this test isn't
+  // testing what we think it is.
+  is(port.getInfo().usbVendorId, port2.getInfo().usbVendorId, "got same port both times");
+  await port2.open({ baudRate: 9600 });
+  await port2.close();
+  await port.open({ baudRate: 9600 });
+  await port.close();
+  let ports = await navigator.serial.getPorts();
+  is(ports.length, 1, "selecting the same port twice should only result in one port in getPorts()");
+});
+
+
 </script>
 </body>
 </html>

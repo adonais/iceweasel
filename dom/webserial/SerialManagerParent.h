@@ -10,10 +10,12 @@
 #include "mozilla/Mutex.h"
 #include "mozilla/dom/PSerialManagerParent.h"
 #include "mozilla/dom/SerialPlatformService.h"
+#include "mozilla/ipc/Endpoint.h"
 #include "nsIObserver.h"
 
 namespace mozilla::dom {
 
+class SerialPermissionRequest;
 class SerialPortParent;
 
 // Thread-safe proxy that forwards device change notifications to port actors
@@ -59,14 +61,11 @@ class SerialManagerParent final : public PSerialManagerParent {
 
   void Init(uint64_t aBrowserId);
 
-  mozilla::ipc::IPCResult RecvGetAvailablePorts(
-      GetAvailablePortsResolver&& aResolver);
-
-  mozilla::ipc::IPCResult RecvCreatePort(
-      const nsString& aPortId,
-      mozilla::ipc::Endpoint<PSerialPortParent>&& aEndpoint);
-
   void ActorDestroy(ActorDestroyReason aWhy) override;
+
+  mozilla::ipc::IPCResult RecvRequestPort(
+      nsTArray<IPCSerialPortFilter>&& aFilters, bool aAutoselect,
+      RequestPortResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvSimulateDeviceConnection(
       const nsString& aDeviceId, const nsString& aDevicePath,
@@ -86,6 +85,18 @@ class SerialManagerParent final : public PSerialManagerParent {
  private:
   ~SerialManagerParent();
 
+  // Main-thread continuation of RecvRequestPort. Constructs the chooser
+  // request from the (now main-thread-safe) actor state and starts it.
+  void StartChooserRequest(bool aAutoselect,
+                           nsTArray<IPCSerialPortInfo>&& aPorts,
+                           RequestPortResolver&& aResolver);
+
+  // Creates a PSerialPort endpoint pair and binds the parent endpoint to a
+  // new SerialPortParent on the IO thread. Returns the child endpoint, or a
+  // default-constructed invalid endpoint on failure.
+  mozilla::ipc::Endpoint<PSerialPortChild> CreateAndBindPortActor(
+      const nsAString& aPortId);
+
   template <typename TWork, typename TResolver>
   mozilla::ipc::IPCResult DispatchTestOperation(const char* aName,
                                                 TWork&& aWork,
@@ -93,6 +104,10 @@ class SerialManagerParent final : public PSerialManagerParent {
 
   uint64_t mBrowserId = 0;
   RefPtr<SerialDeviceChangeProxy> mProxy;
+
+  // Whether there is a currently outstanding chooser request. If true,
+  // a new chooser request is rejected.
+  bool mChooserRequestInFlight = false;
 };
 
 }  // namespace mozilla::dom

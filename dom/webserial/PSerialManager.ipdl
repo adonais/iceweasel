@@ -15,14 +15,14 @@ async protocol PSerialManager {
   manager PWindowGlobal;
 
 parent:
-  // Get available ports for chooser UI (does not grant access)
-  async GetAvailablePorts() returns (IPCSerialPortInfo[] ports);
-
-  // Create a toplevel PSerialPort actor for a specific port. The content
-  // process creates both endpoints, sends the parent endpoint here, and
-  // binds the child endpoint locally.
-  async CreatePort(nsString portId,
-                   Endpoint<PSerialPortParent> parentEndpoint);
+  // Request a port through the user-facing chooser. The permission
+  // prompt & filtering are performed by the parent. In the granted case
+  // the parent creates a PSerialPort endpoint pair, binds the parent
+  // endpoint to a new SerialPortParent on the IO thread, and returns the
+  // child endpoint here. Otherwise the returned endpoint is invalid.
+  async RequestPort(IPCSerialPortFilter[] filters, bool autoselect)
+                    returns (IPCRequestPortResult result,
+                             Endpoint<PSerialPortChild> childEndpoint);
 
   // Test-only
   async SimulateDeviceConnection(nsString deviceId, nsString devicePath,

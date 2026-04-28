@@ -3,6 +3,8 @@
 
 const TEST_URL =
   "https://example.com/document-builder.sjs?html=<h1>Test serial port chooser</h1>";
+const TEST_URL_AFTER_NAV =
+  "https://example.org/document-builder.sjs?html=<h1>After navigation</h1>";
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
@@ -187,6 +189,94 @@ add_task(async function testChooserSelection() {
     1,
     "getPorts() returns non-empty list after requestPort() is called"
   );
+});
+
+add_task(async function testChooserDismissedOnNavigation() {
+  info(
+    "Test that navigating the tab while the chooser is open dismisses it and " +
+      "does not leave stale parent-side state"
+  );
+
+  await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+
+  let popupShown = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popupshown"
+  );
+
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+    content.navigator.serial.autoselectPorts = false;
+    SpecialPowers.wrap(content.document).notifyUserGestureActivation();
+    // Swallow the rejection; the document is about to be replaced and we
+    // don't want an unhandled-rejection warning in the test log.
+    content.navigator.serial.requestPort().catch(() => {});
+  });
+
+  await popupShown;
+
+  is(
+    PopupNotifications.panel.querySelector("popupnotification").id,
+    "webSerial-choosePort-notification",
+    "Port chooser notification was displayed"
+  );
+
+  let loaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  BrowserTestUtils.startLoadingURIString(
+    gBrowser.selectedBrowser,
+    TEST_URL_AFTER_NAV
+  );
+  await loaded;
+
+  await TestUtils.waitForCondition(
+    () =>
+      !PopupNotifications.getNotification(
+        "webSerial-choosePort",
+        gBrowser.selectedBrowser
+      ),
+    "Chooser notification should be removed after navigation"
+  );
+
+  // The new page should be able to open its own chooser. This exercises the
+  // parent-side cleanup: a new WindowGlobalParent spawns a new
+  // SerialManagerParent, and the prior one's in-flight state is gone.
+  let secondPopupShown = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popupshown"
+  );
+
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+    content.navigator.serial.autoselectPorts = false;
+    SpecialPowers.wrap(content.document).notifyUserGestureActivation();
+    content.portRequestPromise = content.navigator.serial.requestPort();
+  });
+
+  await secondPopupShown;
+
+  is(
+    PopupNotifications.panel.querySelector("popupnotification").id,
+    "webSerial-choosePort-notification",
+    "Second port chooser notification was displayed after navigation"
+  );
+
+  PopupNotifications.panel
+    .querySelector(".popup-notification-primary-button")
+    .click();
+
+  let gotPort = await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [],
+    async () => {
+      try {
+        const port = await content.portRequestPromise;
+        delete content.portRequestPromise;
+        return !!port;
+      } catch (e) {
+        return false;
+      }
+    }
+  );
+
+  ok(gotPort, "Post-navigation requestPort resolved with a port");
 });
 
 add_task(async function testChooserSelectSecondDevice() {

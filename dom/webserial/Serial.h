@@ -21,7 +21,6 @@ class Promise;
 class SerialManagerChild;
 class SerialPort;
 struct SerialPortRequestOptions;
-struct SerialPortFilter;
 
 class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
  public:
@@ -42,13 +41,6 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
   IMPL_EVENT_HANDLER(connect)
   IMPL_EVENT_HANDLER(disconnect)
 
-  // Apply filters to a list of ports, removing ports that don't match
-  // Returns whether filters were applied successfully. If this function
-  // returns false, this means one of the bluetoothServiceClassId's
-  // was formatted wrong.
-  static bool ApplyPortFilters(nsTArray<IPCSerialPortInfo>& aPorts,
-                               const Sequence<SerialPortFilter>& aFilters);
-
   void Shutdown();
 
   SerialManagerChild* GetOrCreateManagerChild();
@@ -68,9 +60,13 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   already_AddRefed<Promise> ResetToDefaultMockDevices(ErrorResult& aRv);
 
-  // Find or create a SerialPort for the given info. On the main thread,
-  // eagerly creates and binds a PSerialPort actor. Returns nullptr on failure.
-  RefPtr<SerialPort> GetOrCreatePort(const IPCSerialPortInfo& aInfo);
+  // Find or create a SerialPort for the given info. If an existing port
+  // for aInfo.id() is already tracked, aEndpoint is dropped; the
+  // caller is expected to reuse the existing port. Otherwise binds
+  // aEndpoint to a new SerialPortChild.
+  RefPtr<SerialPort> GetOrCreatePort(
+      const IPCSerialPortInfo& aInfo,
+      mozilla::ipc::Endpoint<PSerialPortChild>&& aEndpoint);
 
   // Remove the port from the granted list and mark it forgotten.
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void ForgetPort(const nsAString& aPortId);
@@ -80,11 +76,17 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   bool AutoselectPorts() const { return mAutoselectPorts; }
 
+  static bool IsValidBluetoothUUID(const nsAString& aString);
+
+  // Returns whether the filter validated successfully. If this function
+  // returns false, aFailureReason will contain a string that can be used to
+  // reject a Promise.
+  static bool ValidatePortFilter(bool aHasUsbVendorId, bool aHasUsbProductId,
+                                 bool aHasBluetoothServiceClassId,
+                                 nsACString& aFailureReason);
+
  private:
   ~Serial() override;
-
-  already_AddRefed<Promise> RequestPortWithTestingAutoselect(
-      const SerialPortRequestOptions& aOptions, RefPtr<Promise> aPromise);
 
   // Returns the manager child if the testing preference is enabled, otherwise
   // sets a NotSupportedError on aRv and returns nullptr.

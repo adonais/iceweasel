@@ -10,7 +10,6 @@
 #include "mozilla/dom/PSerialManagerChild.h"
 #include "mozilla/dom/SerialPortChild.h"
 #include "mozilla/dom/SerialPortInfo.h"
-#include "mozilla/ipc/Endpoint.h"
 
 namespace mozilla::dom {
 
@@ -23,10 +22,6 @@ class SerialManagerChild final : public PSerialManagerChild {
   NS_INLINE_DECL_REFCOUNTING(SerialManagerChild, override)
 
   explicit SerialManagerChild(Serial* aSerial);
-
-  // Creates a PSerialPort endpoint pair, sends the parent endpoint to the
-  // parent process, and creates a SerialManagerChild with the child endpoint.
-  already_AddRefed<SerialPortChild> CreatePort(const nsAString& aPortId);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void ActorDestroy(
       ActorDestroyReason aWhy) override;
