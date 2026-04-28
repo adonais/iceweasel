@@ -4407,7 +4407,7 @@
 
     Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
   -->
-  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">Følg laget ditt</string>
+  <string name="sports_widget_country_selector_title">Følg laget ditt</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
   <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Nord-Amerika</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->

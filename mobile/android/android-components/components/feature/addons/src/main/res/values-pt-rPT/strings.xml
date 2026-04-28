@@ -310,9 +310,9 @@
   <!-- Accessibility content description for the amount of stars that add-on has, where %1$.02f will be the amount of stars. -->
   <string name="mozac_feature_addons_rating_content_description_2">Avaliação: %1$.02f de 5</string>
   <!-- This is the title of page where all the add-ons are listed -->
-  <string name="mozac_feature_addons_addons">Extras</string>
+  <string name="mozac_feature_addons_addons">Complementos</string>
   <!-- Label for add-ons sub menu item for add-ons manager -->
-  <string name="mozac_feature_addons_addons_manager">Gestor de extras</string>
+  <string name="mozac_feature_addons_addons_manager">Gestor de complementos</string>
   <!-- The title of the "crash" notification in the extensions manager -->
   <string name="mozac_feature_extensions_manager_notification_title_text">As extensões estão temporariamente desativadas</string>
   <!-- The content of the "crash" notification in the extensions manager -->
@@ -336,11 +336,11 @@
   <!-- Name of the "notification channel" used for displaying a notification for updating an extension. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_addons_updater_notification_channel_2">Atualizações da extensão</string>
   <!-- Name of the "notification channel" used for displaying a notification for new supported add-ons. See https://developer.android.com/training/notify-user/channels -->
-  <string name="mozac_feature_addons_supported_checker_notification_channel" tools:ignore="UnusedResources">Verificador de extras suportados</string>
+  <string name="mozac_feature_addons_supported_checker_notification_channel" tools:ignore="UnusedResources">Verificador de complementos suportados</string>
   <!-- The tile of the notification, this will be shown to the user when one newly supported add-on is available. -->
-  <string name="mozac_feature_addons_supported_checker_notification_title" tools:ignore="UnusedResources">Novo extra disponível</string>
+  <string name="mozac_feature_addons_supported_checker_notification_title" tools:ignore="UnusedResources">Novo complemento disponível</string>
   <!-- The tile of the notification, this will be shown to the user when more than one newly supported add-ons are available. -->
-  <string name="mozac_feature_addons_supported_checker_notification_title_plural" tools:ignore="UnusedResources">Novos extras disponíveis</string>
+  <string name="mozac_feature_addons_supported_checker_notification_title_plural" tools:ignore="UnusedResources">Novos complementos disponíveis</string>
   <!-- The content of the notification, this will be shown to the user when one newly supported add-on is available. %1$s is the add-on name and %2$s is the app name (in most cases Firefox). -->
   <string name="mozac_feature_addons_supported_checker_notification_content_one">Adicionar %1$s ao %2$s</string>
   <!-- The content of the notification, this will be shown to the user when two newly supported add-ons are available. %1$s is the first add-on name. %2$s is the second add-on name. %3$s is the app name (in most cases Firefox). -->
@@ -390,7 +390,7 @@
   <!-- Text shown after failed to remove an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_remove" tools:ignore="UnusedResources">A remoção de %1$s falhou</string>
   <!-- Label shown to indicate that the add-on was migrated from a previous version of the app. %1$s is the app name most of the case it will be Firefox. -->
-  <string name="mozac_feature_addons_migrated_from_a_previous_version_label" tools:ignore="UnusedResources">Este extra foi migrado de uma versão anterior de %1$s</string>
+  <string name="mozac_feature_addons_migrated_from_a_previous_version_label" tools:ignore="UnusedResources">Este complemento foi migrado de uma versão anterior de %1$s</string>
   <!-- Text shown in not yet supported add-ons section. -->
   <string name="mozac_feature_addons_unsupported_caption_2">1 extensão</string>
   <!-- Text shown in not yet supported add-ons section - plural. %1$s is the number of unsupported extensions. -->

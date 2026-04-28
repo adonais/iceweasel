@@ -1113,6 +1113,8 @@
   <string name="customize_wallpapers">Mba’erechaha rugua</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Jeike pya’eha jehepyme’ẽpyre</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Copa del Mundo</string>
   <!--
     Wallpapers
 
@@ -2183,6 +2185,10 @@
   <string name="bookmark_sort_menu_a_to_z">Emoĩ A guive Z peve</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Emoĩ Z guive A peve</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Marandurendágui jegueru</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Ndaikatúi egueru techaukahaita. Eha’ã jey.</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2241,8 +2247,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Emboty ñongatuha: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Emboty techaukaha</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Marandurendágui jegueru</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Ndaipóri gueteri techaukaha</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Erekopaite techaukahaita erohoryvéva oñondive</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Marandurendápe techaukaha: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -4403,7 +4413,7 @@
 
     Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
   -->
-  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">Eho nde atygua ndive</string>
+  <string name="sports_widget_country_selector_title">Eho nde atygua ndive</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
   <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">América del Norte</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
@@ -4426,6 +4436,10 @@
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">HECHAPY</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Copa del Mundo 2026 oganáva</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Osẽva mokõihápe</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Osẽva mbohapyhápe</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">32hápe oĩva</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4438,6 +4452,10 @@
   <string name="sports_widget_final">Paha</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">Mbohapyhapegua</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">Jeikerã oñekytĩva — mbohekopyahu mombytapyre.</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Mbopiro’y</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">Aty A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4470,6 +4488,12 @@
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Partído oikoramóva</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">Partidoita ojuehegua</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Oupotáva</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(Ára pukukue)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time" tools:ignore="UnusedResources">(Ára pukukue)</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4492,12 +4516,36 @@
   <string name="sports_widget_choose_another_team">Eiporavo ambue aty eikuaa hag̃ua Copa del Mundo rehegua.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Ehapykueho ambue atýpe</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Copa del Mundo ñeg̃uahẽ jepapa</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Ehecha nde aravorã</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Jepo</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Jepytu’u</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Aravo’i juapyvegua</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
   <string name="sports_widget_penalties" tools:ignore="UnusedResources">Penal-kuéra</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">D</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">H</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">M</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

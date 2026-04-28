@@ -43,4 +43,12 @@
   <string name="mozac_summarize_download_progress_button_negative">Cancelar</string>
   <!-- Title for the download error screen -->
   <string name="mozac_summarize_download_error_title">Error</string>
+  <!-- Generic fallback message for the download error screen -->
+  <string name="mozac_summarize_download_error_fallback_message">Error desconocido</string>
+  <!-- Button for the download error screen to try again -->
+  <string name="mozac_summarize_download_error_positive_button">Intentar de nuevo</string>
+  <!-- Button for the download error screen to cancel -->
+  <string name="mozac_summarize_download_error_negative_button">Cancelar</string>
+  <!-- Title for the error screen when page is too long to summarize -->
+  <string name="mozac_summarize_content_too_long_error_title">Página demasiado larga para resumir</string>
 </resources>

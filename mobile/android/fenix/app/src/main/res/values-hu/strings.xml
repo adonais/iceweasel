@@ -4409,7 +4409,7 @@
 
     Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
   -->
-  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">Kövesse a csapatát</string>
+  <string name="sports_widget_country_selector_title">Kövesse a csapatát</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
   <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Észak-Amerika</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
@@ -4482,8 +4482,8 @@
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Előző mérkőzés</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">Kapcsolódó mérkőzések</string>
-  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time">(Teljes játékidő)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time" tools:ignore="UnusedResources">(Teljes játékidő)</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).

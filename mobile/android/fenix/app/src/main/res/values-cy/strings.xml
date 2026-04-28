@@ -1121,6 +1121,8 @@
   <string name="customize_wallpapers">Papur wal</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Llwybrau byr wedi’u noddi</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Cwpan y Byd</string>
   <!--
     Wallpapers
 
@@ -2217,6 +2219,10 @@
   <string name="bookmark_sort_menu_a_to_z">Trefnu yn ôl A i Z</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Trefnu yn ôl Z i A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Mewnforio o ffeil</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Ni fu modd mewnforio nodau tudalen. Ceisiwch eto.</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2275,8 +2281,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Cau\'r ffolder: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Cau nodau tudalen</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Mewnforio o ffeil</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Dim nodau tudalen eto</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Cadwch eich hoff nodau tudalen gyda\'i gilydd</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Nodau tudalen yn y ffolder: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -4441,7 +4451,7 @@
 
     Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
   -->
-  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">Dilynwch eich tîm</string>
+  <string name="sports_widget_country_selector_title">Dilynwch eich tîm</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
   <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Gogledd America</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
@@ -4464,6 +4474,10 @@
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">BYW</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Pencampwyr Cwpan y Byd 2026</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Ail</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Trydydd lle</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">Rownd o 32</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4514,8 +4528,12 @@
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Y gêm flaenorol</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">Gemau cysylltiedig</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">I Ddod</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time">(Llawn amser)</string>
+  <string name="sports_widget_match_full_time_suffix">(Llawn amser)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time" tools:ignore="UnusedResources">(Llawn amser)</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4538,6 +4556,12 @@
   <string name="sports_widget_choose_another_team">Dewis tîm arall i\'w dilyn ar Gwpan y Byd.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Dilyn tîm arall</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Paratoi ar gyfer Cwpan y Byd</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Gweld amserlen</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Hepgor</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Hanner amser</string>
   <!-- Sports widget match status label shown during extra time of a match. -->

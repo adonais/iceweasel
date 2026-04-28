@@ -362,7 +362,7 @@
 
     Toolbar title for the Page summaries settings fragment
   -->
-  <string name="preferences_page_summaries">Resumos da página</string>
+  <string name="preferences_page_summaries">Resumos de páginas</string>
   <!--
     AI Controls settings
 
@@ -372,15 +372,15 @@
   <!-- Title for the AI controls settings screen -->
   <string name="preferences_ai_controls">Controlos de IA</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_banner_headline">Tem sempre uma escolha em %s</string>
+  <string name="ai_controls_banner_headline">Tem sempre uma escolha no %s</string>
   <!-- Supporting text for the AI controls banner -->
-  <string name="ai_controls_banner_supporting_text">Isto inclui se devem ou não utilizar funcionalidades melhoradas com IA.</string>
+  <string name="ai_controls_banner_supporting_text">Isto inclui a decisão de utilizar, ou não, funcionalidades potenciadas por IA.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Saber mais</string>
   <!-- Title for the block AI enhancements toggle -->
   <string name="ai_controls_block_ai_title">Bloquear melhorias de IA</string>
   <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_block_ai_description">O bloqueio significa que não irá ver as melhorias de IA novas ou atuais no %s, ou pop-ups sobre as mesmas.</string>
+  <string name="ai_controls_block_ai_description">Ao bloquear, deixará de ver melhorias de IA, sejam novas ou existentes, no %s, assim como notificações sobre as mesmas.</string>
   <!-- Link text to see what AI enhancements are and aren’t included -->
   <string name="ai_controls_see_whats_included">Veja o que está e o que não está incluído</string>
   <!-- Banner text shown when AI enhancements are blocked -->
@@ -1117,6 +1117,8 @@
   <string name="customize_wallpapers">Fundos</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Atalhos patrocinados</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Taça do mundo</string>
   <!--
     Wallpapers
 
@@ -2189,6 +2191,10 @@
   <string name="bookmark_sort_menu_a_to_z">Ordenar por A a Z</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Ordenar por Z a A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Importar de ficheiro</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Não foi possível importar os marcadores. Tente novamente.</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2247,8 +2253,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Fechar pasta: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Fechar marcadores</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Importar de ficheiro</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Ainda sem marcadores</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Mantenha todos os seus marcadores favoritos juntos</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Marcadores na pasta: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -4145,7 +4155,7 @@
 
     The description of the Add-ons Tools in the Debug Drawer
   -->
-  <string name="debug_drawer_addons_tools_title">Ferramentas de extras</string>
+  <string name="debug_drawer_addons_tools_title">Ferramentas de complementos</string>
   <!-- The title of the button used to check for add-on updates. -->
   <string name="addons_debug_tools_check_for_updates_button">Procurar por atualizações</string>
   <!--
@@ -4187,7 +4197,7 @@
   <!-- Homepage card title about old Firefox version -->
   <string name="certificate_warning_homepage_card_hcw2_title" tools:ignore="UnusedResources">Faltam menos de 7 dias para atualizar</string>
   <!-- Homepage card message about old Firefox version. Note: The word "Firefox" should NOT be translated. -->
-  <string name="certificate_warning_homepage_card_hcw2_message" tools:ignore="BrandUsage,UnusedResources">A 14 de março, os extras e outras funcionalidades do Firefox vão deixar de funcionar porque um certificado raiz está a expirar.</string>
+  <string name="certificate_warning_homepage_card_hcw2_message" tools:ignore="BrandUsage,UnusedResources">A 14 de março, os complementos e outras funcionalidades do Firefox vão deixar de funcionar porque um certificado raiz está a expirar.</string>
   <!-- Homepage card title about old Firefox version. Note: The word "Firefox" should NOT be translated. -->
   <string name="certificate_warning_homepage_card_hcw3_title" tools:ignore="BrandUsage,UnusedResources">Última oportunidade para manter o seu Firefox</string>
   <!-- Homepage card message about old Firefox version. Note: The word "Firefox" should NOT be translated. -->
@@ -4195,11 +4205,11 @@
   <!-- Push notification title about old Firefox version. "Update" is a noun. -->
   <string name="certificate_warning_push_notification_update_recommended_title" tools:ignore="UnusedResources">Atualização recomendada</string>
   <!-- Push notification message about old Firefox version -->
-  <string name="certificate_warning_push_notification_pnr1_message" tools:ignore="UnusedResources">Os extras e algumas funcionalidades deixarão de funcionar a 14 de março.</string>
+  <string name="certificate_warning_push_notification_pnr1_message" tools:ignore="UnusedResources">Os complementos e algumas funcionalidades deixarão de funcionar a 14 de março.</string>
   <!-- Push notification title about old Firefox version. Note: The word "Firefox" should NOT be translated. -->
   <string name="certificate_warning_push_notification_pnw2_title" tools:ignore="BrandUsage,UnusedResources">Está a utilizar uma versão antiga do Firefox</string>
   <!-- Push notification message about old Firefox version. "Update" is a verb. -->
-  <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Atualize antes de 14 de março para continuar a utilizar extras e outras funcionalidades.</string>
+  <string name="certificate_warning_push_notification_pnw2_message" tools:ignore="UnusedResources">Atualize antes de 14 de março para continuar a utilizar complementos e outras funcionalidades.</string>
   <!-- Push notification message about old Firefox version -->
   <string name="certificate_warning_push_notification_pnw3_message" tools:ignore="UnusedResources">Algumas funcionalidades vão deixar de funcionar amanhã.</string>
   <!-- TextField Design System Component -->
@@ -4409,7 +4419,7 @@
 
     Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
   -->
-  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">Siga a sua equipa</string>
+  <string name="sports_widget_country_selector_title">Siga a sua equipa</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
   <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">América do Norte</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
@@ -4432,6 +4442,10 @@
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">AO DIREITO</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Campes da copa do mundo de 2026</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">2º lugar</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">3º lugar</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">Rodada de 32</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4482,8 +4496,12 @@
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Correspondência anterior</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">Correspondências relacionadas</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Brevemente</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time">(Tempo completo)</string>
+  <string name="sports_widget_match_full_time_suffix">(Tempo completo)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time" tools:ignore="UnusedResources">(Tempo completo)</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4506,6 +4524,12 @@
   <string name="sports_widget_choose_another_team">Escolha outra equipa para acompanhar o copa do mundo.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Seguir outra equipa</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Contagem regressiva para a copa do mundo</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Ver programação</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Ignorar</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Intervalo</string>
   <!-- Sports widget match status label shown during extra time of a match. -->

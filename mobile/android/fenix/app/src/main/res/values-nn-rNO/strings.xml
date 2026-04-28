@@ -389,6 +389,12 @@
   <string name="ai_controls_ai_powered_features">AI-drivne funksjonar</string>
   <!-- Title for the translations AI feature toggle -->
   <string name="ai_controls_translations_title">Omsettingar</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Fleire omsettingsinnstillingar</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Stemmesøk</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Blokkere AI-forbetringar?</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Kva som vil bli blokkert:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -1103,6 +1109,8 @@
   <string name="customize_wallpapers">Bakgrunnsbilde</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Sponsa snarvegar</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">VM</string>
   <!--
     Wallpapers
 
@@ -4323,7 +4331,7 @@
 
     Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
   -->
-  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">Følg laget ditt</string>
+  <string name="sports_widget_country_selector_title">Følg laget ditt</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
   <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Nord-Amerika</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->

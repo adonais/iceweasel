@@ -4298,7 +4298,7 @@
 
     Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
   -->
-  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">Sledite svoji ekipi</string>
+  <string name="sports_widget_country_selector_title">Sledite svoji ekipi</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
   <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Severna Amerika</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->

@@ -2217,6 +2217,10 @@
   <string name="bookmark_sort_menu_a_to_z">ترتيب من الألف إلى الياء</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">ترتيب من الياء إلى الألف</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">استورِد من ملف</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">تعذّر استيراد العلامات. حاول مجددًا.</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2275,8 +2279,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">إغلاق المجلد: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">إغلاق الإشارات المرجعية</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">استورِد من ملف</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">لا توجد علامات حتى الآن</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">احتفظ بجميع علاماتك المفضلة معًا</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">الإشارات المرجعية في المجلد: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -4441,7 +4449,7 @@
 
     Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
   -->
-  <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">تابع فريقك</string>
+  <string name="sports_widget_country_selector_title">تابع فريقك</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
   <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">أمريكا الشمالية</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
