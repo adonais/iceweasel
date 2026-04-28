@@ -1447,14 +1447,16 @@ def android_gtest(
     "-o",
     "--output",
     type=str,
+    default=None,
     help="Force archive name.",
 )
 @CommandArgument(
     "--upload",
     type=str,
+    default="",
     help="Compute package check sum and move both to the given location.",
 )
-def source_package(command_context, verbose=False, output=None, upload=""):
+def source_package(command_context, output, upload):
     substs = command_context.substs
     if conditions.is_jsshell(command_context):
         if output:
@@ -1558,7 +1560,6 @@ def source_package(command_context, verbose=False, output=None, upload=""):
         if upload:
             checksum_path = archive_path[: -len(".tar.xz")] + ".checksums"
             command_context._run_make(
-                directory="browser/installer",
                 target=[
                     "upload",
                     f"UPLOAD_PATH={upload}",
