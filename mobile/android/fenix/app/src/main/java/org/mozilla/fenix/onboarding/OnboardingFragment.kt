@@ -88,7 +88,9 @@ class OnboardingFragment : Fragment() {
             pagesToDisplay(
                 showDefaultBrowserPage = displayDefaultBrowserPage(this),
                 showNotificationPage = canShowNotificationPage(),
-                showAddWidgetPage = canShowAddSearchWidgetPrompt(AppWidgetManager.getInstance(activity)),
+                showAddWidgetPage = AppWidgetManager.getInstance(requireContext())
+                    ?.let { canShowAddSearchWidgetPrompt(it) }
+                    ?: false,
             ).toMutableList()
         }
     }
@@ -364,14 +366,14 @@ class OnboardingFragment : Fragment() {
                 telemetryRecorder.onNotificationPermissionClick(
                     sequenceId = pagesToDisplay.telemetrySequenceId(),
                     sequencePosition =
-                    pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.NOTIFICATION_PERMISSION),
+                        pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.NOTIFICATION_PERMISSION),
                 )
             },
             onSkipNotificationClick = {
                 telemetryRecorder.onSkipTurnOnNotificationsClick(
                     sequenceId = pagesToDisplay.telemetrySequenceId(),
                     sequencePosition =
-                    pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.NOTIFICATION_PERMISSION),
+                        pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.NOTIFICATION_PERMISSION),
                 )
             },
             onAddFirefoxWidgetClick = {
