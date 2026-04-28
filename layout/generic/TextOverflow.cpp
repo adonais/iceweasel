@@ -26,33 +26,15 @@ using mozilla::layout::TextDrawTarget;
 
 namespace mozilla::css {
 
-class LazyReferenceRenderingDrawTargetGetterFromFrame final
-    : public gfxFontGroup::LazyReferenceDrawTargetGetter {
- public:
-  typedef mozilla::gfx::DrawTarget DrawTarget;
-
-  explicit LazyReferenceRenderingDrawTargetGetterFromFrame(nsIFrame* aFrame)
-      : mFrame(aFrame) {}
-  virtual already_AddRefed<DrawTarget> GetRefDrawTarget() override {
-    UniquePtr<gfxContext> ctx =
-        mFrame->PresShell()->CreateReferenceRenderingContext();
-    RefPtr<DrawTarget> dt = ctx->GetDrawTarget();
-    return dt.forget();
-  }
-
- private:
-  nsIFrame* mFrame;
-};
-
-static gfxTextRun* GetEllipsisTextRun(nsIFrame* aFrame) {
+static already_AddRefed<gfxTextRun> MakeEllipsisTextRun(nsIFrame* aFrame) {
   RefPtr<nsFontMetrics> fm =
       nsLayoutUtils::GetInflatedFontMetricsForFrame(aFrame);
-  LazyReferenceRenderingDrawTargetGetterFromFrame lazyRefDrawTargetGetter(
-      aFrame);
-  return fm->GetThebesFontGroup()->GetEllipsisTextRun(
+  UniquePtr<gfxContext> ctx =
+      aFrame->PresShell()->CreateReferenceRenderingContext();
+  return fm->GetThebesFontGroup()->MakeEllipsisTextRun(
       aFrame->PresContext()->AppUnitsPerDevPixel(),
       nsLayoutUtils::GetTextRunOrientFlagsForStyle(aFrame->Style()),
-      lazyRefDrawTargetGetter);
+      ctx->GetDrawTarget());
 }
 
 static nsIFrame* GetSelfOrNearestBlock(nsIFrame* aFrame) {
@@ -232,7 +214,7 @@ void nsDisplayTextOverflowMarker::PaintTextToContext(gfxContext* aCtx,
   pt += aOffsetFromRect;
 
   if (mStyle.IsEllipsis()) {
-    gfxTextRun* textRun = GetEllipsisTextRun(mFrame);
+    RefPtr<gfxTextRun> textRun = MakeEllipsisTextRun(mFrame);
     if (textRun) {
       NS_ASSERTION(!textRun->IsRightToLeft(),
                    "Ellipsis textruns should always be LTR!");
@@ -910,7 +892,7 @@ void TextOverflow::Marker::SetupString(nsIFrame* aFrame) {
   // separately, if both apply to the element, we will always use "…" as the
   // string for text-overflow.
   if (HasBlockEllipsis(aFrame) || mStyle->IsEllipsis()) {
-    gfxTextRun* textRun = GetEllipsisTextRun(aFrame);
+    RefPtr<gfxTextRun> textRun = MakeEllipsisTextRun(aFrame);
     if (textRun) {
       mISize = textRun->GetAdvanceWidth();
     } else {
