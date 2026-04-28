@@ -19550,24 +19550,6 @@
       "last_modified": 1666727870028
     },
     {
-      "schema": 1666727401140,
-      "derHash": "y2Zmsyv/Lv7cxBh98Umm00pdELcWW5z/KmfA4xGu7tc=",
-      "subject": "CN=QuoVadis Europe EV SSL CA G1,O=QuoVadis Trustlink B.V.,C=NL",
-      "subjectDN": "MFYxCzAJBgNVBAYTAk5MMSAwHgYDVQQKDBdRdW9WYWRpcyBUcnVzdGxpbmsgQi5WLjElMCMGA1UEAwwcUXVvVmFkaXMgRXVyb3BlIEVWIFNTTCBDQSBHMQ==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "990290f2ea4ff420df521c3b3851971e7be41a8508394faa2cb562a69bce9e55",
-        "size": 2385,
-        "filename": "WkWVWx1-X3CuwtFGJvDjdr5hOX8PeMryJG2Va7Y6cj8=.pem",
-        "location": "security-state-staging/intermediates/a0cf3874-21b6-41ef-b36d-7e3b20b5db08.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "WkWVWx1+X3CuwtFGJvDjdr5hOX8PeMryJG2Va7Y6cj8=",
-      "crlite_enrolled": false,
-      "id": "28a8c02e-5350-422e-a3eb-6f8150960132",
-      "last_modified": 1666727869996
-    },
-    {
       "schema": 1666727414241,
       "derHash": "Fh7lOGMpsoon/0BXNlUqYh1ahEpDgR42I+Uu76C6hAo=",
       "subject": "CN=QuoVadis Global SSL ICA G3,O=QuoVadis Limited,C=BM",
@@ -19620,24 +19602,6 @@
       "crlite_enrolled": false,
       "id": "aab7988d-97f1-489f-bb5a-2fcf4db1d18f",
       "last_modified": 1666727869912
-    },
-    {
-      "schema": 1666727369431,
-      "derHash": "sarhvNVV6KPR492o7ITnV8VSZVNEzj/uu6+Y6JXb7aw=",
-      "subject": "CN=QuoVadis Europe SSL CA G2,O=QuoVadis Trustlink B.V.,C=NL",
-      "subjectDN": "MFMxCzAJBgNVBAYTAk5MMSAwHgYDVQQKDBdRdW9WYWRpcyBUcnVzdGxpbmsgQi5WLjEiMCAGA1UEAwwZUXVvVmFkaXMgRXVyb3BlIFNTTCBDQSBHMg==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "dfb31ebff112bccbef0ba90c29987f9962823acb59f69bd984351d9e2c7e22df",
-        "size": 2381,
-        "filename": "XOogr9_VItHwTOA_JogutdX4V06tVw9btHQLa2tR0_A=.pem",
-        "location": "security-state-staging/intermediates/88eff6f9-143b-4a55-bfef-19933a4e3007.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "XOogr9/VItHwTOA/JogutdX4V06tVw9btHQLa2tR0/A=",
-      "crlite_enrolled": false,
-      "id": "12bb227c-277f-4680-a556-f5998b87f658",
-      "last_modified": 1666727869884
     },
     {
       "schema": 1666727365874,
@@ -29774,5 +29738,5 @@
       "last_modified": 1559865884636
     }
   ],
-  "timestamp": 1777042952409
+  "timestamp": 1777341753427
 }
