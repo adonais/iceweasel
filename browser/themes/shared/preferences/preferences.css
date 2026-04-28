@@ -287,6 +287,14 @@ setting-group:has(> moz-card).spotlight {
 
 /* General Pane */
 
+#isNotDefaultPane,
+#isDefaultPane {
+  /* 64px for the kit image + border. This may be slightly too large due to
+   * pixel-snapping. Defining it helps avoid layout changes once the kit
+   * image is loaded. */
+  min-height: calc(64px + 2 * var(--border-width));
+}
+
 /* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.migrate.preferences-entrypoint.enabled") {
   #dataMigrationGroup {

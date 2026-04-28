@@ -30,6 +30,9 @@
     --promo-message-text-color: var(--text-color);
     --promo-border-color: var(--border-color);
   }
+
+  display: flex;
+  flex-direction: column;
 }
 
 /* MozPromo layout */
@@ -44,6 +47,7 @@
   gap: var(--space-medium);
   align-items: center;
   overflow: hidden;
+  flex-grow: 1;
 }
 
 .text-container {

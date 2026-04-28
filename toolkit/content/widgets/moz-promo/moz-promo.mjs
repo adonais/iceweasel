@@ -16,7 +16,7 @@ import { MozLitElement } from "../lit-utils.mjs";
  * @property {string} message - The message of the promo element.
  * @property {string} imageSrc - The main image of the promo element.
  * @property {string} imageAlignment - How the image should be aligned. Can be "start", "end", "center".
- * @property {string} imageWidth - How big the image is sized. Can be "default" or "large".
+ * @property {string} imageWidth - How big the image is sized. Can be "default", "small" or "large".
  * @property {string} imageDisplay - Whether the image touches the edge of the promo or has a little bit of padding around it. Can be "cover" or "padded".
  */
 export default class MozPromo extends MozLitElement {
