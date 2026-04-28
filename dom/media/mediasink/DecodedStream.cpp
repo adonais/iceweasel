@@ -817,7 +817,8 @@ RefPtr<GenericPromise> DecodedStream::SetAudioDevice(
   mDevice = aDevice;
   return InvokeAsync(
       GetMainThreadSerialEventTarget(), __func__,
-      [self = RefPtr<DecodedStream>(this), this, aDevice]() -> RefPtr<GenericPromise> {
+      [self = RefPtr<DecodedStream>(this), this,
+       aDevice]() -> RefPtr<GenericPromise> {
         RefPtr<ProcessedMediaTrack> audioOutputTrack;
         for (const auto& track : mOutputTracks) {
           if (track->mType == MediaSegment::AUDIO) {
