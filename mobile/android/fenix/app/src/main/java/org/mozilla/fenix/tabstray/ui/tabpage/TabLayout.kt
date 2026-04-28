@@ -213,13 +213,13 @@ private fun TabLayoutScrollHelper(
 
         snapshotFlow { calculateScrollDimensions(state) }
             .filterNotNull()
-            .first()
+            .first { (viewportHeight, itemHeight) ->
+                viewportHeight > 0 && itemHeight > 0
+            }
             .let { (viewportHeight, itemHeight) ->
-                if (viewportHeight > 0 && itemHeight > 0) {
-                    val offset = -(viewportHeight - itemHeight - bottomPaddingPx)
-                    withFrameNanos { }
-                    scrollToItem(targetIndex, offset)
-                }
+                val offset = -(viewportHeight - itemHeight - bottomPaddingPx)
+                withFrameNanos { }
+                scrollToItem(targetIndex, offset)
             }
     }
 }
