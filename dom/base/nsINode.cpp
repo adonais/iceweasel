@@ -268,6 +268,13 @@ nsINode::nsINode(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
 }
 #endif
 
+void nsINode::SetNamespacePrefix(nsAtom* aPrefix) {
+  MOZ_ASSERT(!GetParentNode(), "Only safe on disconnected nodes");
+  mNodeInfo = mNodeInfo->NodeInfoManager()->GetNodeInfo(
+      mNodeInfo->NameAtom(), aPrefix, mNodeInfo->NamespaceID(),
+      nsINode::ELEMENT_NODE);
+}
+
 nsINode::~nsINode() {
   MOZ_ASSERT(!HasSlots(), "LastRelease was not called?");
   MOZ_ASSERT(mSubtreeRoot == this, "Didn't restore state properly?");

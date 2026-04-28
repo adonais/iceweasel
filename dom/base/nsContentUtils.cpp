@@ -11514,7 +11514,6 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
       //         map[C] to registry."
       // 5.1.3. "Run these steps while catching any exceptions:
       //         Set result to the result of constructing C, with no arguments."
-      definition->mPrefixStack.AppendElement(nodeInfo->GetPrefixAtom());
       RefPtr<Document> doc = nodeInfo->GetDocument();
       DoCustomElementCreate(aResult, cx, doc, nodeInfo,
                             MOZ_KnownLive(definition->mConstructor), rv,
@@ -11530,8 +11529,10 @@ nsresult nsContentUtils::NewXULOrHTMLElement(
           NS_IF_ADDREF(*aResult = nsXULElement::Construct(nodeInfo.forget()));
         }
         (*aResult)->SetDefined(false);
+      } else if (*aResult && nodeInfo->GetPrefixAtom()) {
+        // 5.1.3.9. Set result's namespace prefix to prefix.
+        (*aResult)->SetNamespacePrefix(nodeInfo->GetPrefixAtom());
       }
-      definition->mPrefixStack.RemoveLastElement();
       return NS_OK;
     }
 

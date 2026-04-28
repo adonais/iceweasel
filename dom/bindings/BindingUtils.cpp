@@ -3785,47 +3785,6 @@ bool GetDesiredProto(JSContext* aCx, const JS::CallArgs& aCallArgs,
   return MaybeWrapObject(aCx, aDesiredProto);
 }
 
-namespace {
-
-class MOZ_RAII AutoConstructionDepth final {
- public:
-  MOZ_IMPLICIT AutoConstructionDepth(CustomElementDefinition* aDefinition)
-      : mDefinition(aDefinition) {
-    MOZ_ASSERT(mDefinition->mConstructionStack.IsEmpty());
-
-    mDefinition->mConstructionDepth++;
-    // If the mConstructionDepth isn't matched with the length of mPrefixStack,
-    // this means the constructor is called directly from JS, i.e.
-    // 'new CustomElementConstructor()', we have to push a dummy prefix into
-    // stack.
-    if (mDefinition->mConstructionDepth > mDefinition->mPrefixStack.Length()) {
-      mDidPush = true;
-      mDefinition->mPrefixStack.AppendElement(nullptr);
-    }
-
-    MOZ_ASSERT(mDefinition->mConstructionDepth ==
-               mDefinition->mPrefixStack.Length());
-  }
-
-  ~AutoConstructionDepth() {
-    MOZ_ASSERT(mDefinition->mConstructionDepth > 0);
-    MOZ_ASSERT(mDefinition->mConstructionDepth ==
-               mDefinition->mPrefixStack.Length());
-
-    if (mDidPush) {
-      MOZ_ASSERT(mDefinition->mPrefixStack.LastElement() == nullptr);
-      mDefinition->mPrefixStack.RemoveLastElement();
-    }
-    mDefinition->mConstructionDepth--;
-  }
-
- private:
-  CustomElementDefinition* mDefinition;
-  bool mDidPush = false;
-};
-
-}  // anonymous namespace
-
 /* https://html.spec.whatwg.org/#html-element-constructors */
 namespace binding_detail {
 bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
@@ -4036,19 +3995,8 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
   //     object..."
   JS::Rooted<JSObject*> desiredProto(aCx);
 
-  // Check which construction path we're taking before running any JS.
-  // This determines whether we need AutoConstructionDepth protection.
   nsTArray<RefPtr<Element>>& constructionStack = definition->mConstructionStack;
   const bool isDirectConstruction = constructionStack.IsEmpty();
-
-  // For direct construction (not upgrade), create AutoConstructionDepth before
-  // GetDesiredProto. This ensures mConstructionDepth is incremented before any
-  // re-entrant JS can run via Proxy traps, preventing desynchronization with
-  // mPrefixStack which may be pushed by nsContentUtils::NewXULOrHTMLElement.
-  mozilla::Maybe<AutoConstructionDepth> autoDepth;
-  if (isDirectConstruction) {
-    autoDepth.emplace(definition);
-  }
 
   if (!GetDesiredProto(aCx, args, aProtoId, aCreator, &desiredProto)) {
     return false;
@@ -4063,9 +4011,11 @@ bool HTMLConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp,
     //       implementing the interface..."
     JSAutoRealm ar(aCx, global.Get());
 
+    // The namespace prefix will be set after construction by
+    // nsContentUtils::NewXULOrHTMLElement per spec step 6.1.10 of
+    // https://dom.spec.whatwg.org/#concept-create-element.
     RefPtr<NodeInfo> nodeInfo = doc->NodeInfoManager()->GetNodeInfo(
-        definition->mLocalName, definition->mPrefixStack.LastElement(), ns,
-        nsINode::ELEMENT_NODE);
+        definition->mLocalName, nullptr, ns, nsINode::ELEMENT_NODE);
     MOZ_ASSERT(nodeInfo);
 
     if (ns == kNameSpaceID_XUL) {

@@ -871,6 +871,11 @@ class nsINode : public mozilla::dom::EventTarget {
    */
   inline mozilla::dom::NodeInfo* NodeInfo() const { return mNodeInfo; }
 
+  // Per spec step 5.1.3.9 of
+  // https://dom.spec.whatwg.org/#concept-create-element
+  // Set the namespace prefix on a freshly-created, disconnected node.
+  void SetNamespacePrefix(nsAtom* aPrefix);
+
   /**
    * Called when we have been adopted, and the information of the
    * node has been changed.
