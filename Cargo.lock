@@ -4926,7 +4926,7 @@ dependencies = [
 [[package]]
 name = "mtu"
 version = "0.3.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.24.1#5b4e8507abb992c39e3e8787d9bf415a065b21dd"
+source = "git+https://github.com/mozilla/neqo?tag=v0.24.2#5acfebb8068e851e273b44c941e6644b97d2861c"
 dependencies = [
  "bindgen 0.72.0",
  "cfg_aliases",
@@ -4970,8 +4970,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-bin"
-version = "0.24.1"
-source = "git+https://github.com/mozilla/neqo?tag=v0.24.1#5b4e8507abb992c39e3e8787d9bf415a065b21dd"
+version = "0.24.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.24.2#5acfebb8068e851e273b44c941e6644b97d2861c"
 dependencies = [
  "clap",
  "clap-verbosity-flag",
@@ -4995,8 +4995,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-common"
-version = "0.24.1"
-source = "git+https://github.com/mozilla/neqo?tag=v0.24.1#5b4e8507abb992c39e3e8787d9bf415a065b21dd"
+version = "0.24.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.24.2#5acfebb8068e851e273b44c941e6644b97d2861c"
 dependencies = [
  "enum-map",
  "env_logger",
@@ -5009,8 +5009,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-crypto"
-version = "0.24.1"
-source = "git+https://github.com/mozilla/neqo?tag=v0.24.1#5b4e8507abb992c39e3e8787d9bf415a065b21dd"
+version = "0.24.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.24.2#5acfebb8068e851e273b44c941e6644b97d2861c"
 dependencies = [
  "bindgen 0.72.0",
  "enum-map",
@@ -5028,8 +5028,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-http3"
-version = "0.24.1"
-source = "git+https://github.com/mozilla/neqo?tag=v0.24.1#5b4e8507abb992c39e3e8787d9bf415a065b21dd"
+version = "0.24.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.24.2#5acfebb8068e851e273b44c941e6644b97d2861c"
 dependencies = [
  "enumset",
  "http",
@@ -5047,8 +5047,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-qpack"
-version = "0.24.1"
-source = "git+https://github.com/mozilla/neqo?tag=v0.24.1#5b4e8507abb992c39e3e8787d9bf415a065b21dd"
+version = "0.24.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.24.2#5acfebb8068e851e273b44c941e6644b97d2861c"
 dependencies = [
  "log",
  "neqo-common",
@@ -5061,8 +5061,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-transport"
-version = "0.24.1"
-source = "git+https://github.com/mozilla/neqo?tag=v0.24.1#5b4e8507abb992c39e3e8787d9bf415a065b21dd"
+version = "0.24.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.24.2#5acfebb8068e851e273b44c941e6644b97d2861c"
 dependencies = [
  "enum-map",
  "enumset",
@@ -5081,8 +5081,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-udp"
-version = "0.24.1"
-source = "git+https://github.com/mozilla/neqo?tag=v0.24.1#5b4e8507abb992c39e3e8787d9bf415a065b21dd"
+version = "0.24.2"
+source = "git+https://github.com/mozilla/neqo?tag=v0.24.2#5acfebb8068e851e273b44c941e6644b97d2861c"
 dependencies = [
  "cfg_aliases",
  "libc",

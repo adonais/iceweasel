@@ -77,6 +77,8 @@ support-files = [
 
 ["browser_aiwindow_smartbar_telemetry.js"]
 
+["browser_aiwindow_stop_generation.js"]
+
 ["browser_aiwindow_switcher.js"]
 
 ["browser_aiwindow_theme.js"]
@@ -117,6 +119,8 @@ support-files = [
 
 ["browser_smartwindow_init.js"]
 
+["browser_smartwindow_jump_to_bottom.js"]
+
 ["browser_smartwindow_leak.js"]
 
 ["browser_smartwindow_metrics_telemetry.js"]
@@ -135,13 +139,13 @@ support-files = [
 
 ["browser_smartwindow_shortcut.js"]
 
+["browser_smartwindow_sidebar_prefs.js"]
+
 ["browser_smartwindow_smartbar_tab_state.js"]
 
 ["browser_smartwindow_switcher_telemetry.js"]
 
 ["browser_smartwindow_tab_move.js"]
-
-["browser_smartwindow_sidebar_prefs.js"]
 
 ["browser_smartwindow_tab_switching.js"]
 

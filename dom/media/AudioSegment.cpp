@@ -204,9 +204,14 @@ static void DownMixChunk(const AudioChunk& aChunk,
   } else {
     // The channel count is already what we want.
     for (uint32_t channel = 0; channel < aOutputChannels.Length(); channel++) {
-      ConvertAudioSamplesWithScale(channelData[channel],
-                                   aOutputChannels[channel], frameCount,
-                                   aChunk.mVolume);
+      if (channelData[channel]) {
+        ConvertAudioSamplesWithScale(channelData[channel],
+                                     aOutputChannels[channel], frameCount,
+                                     aChunk.mVolume);
+      } else {
+        std::fill_n(aOutputChannels[channel], frameCount,
+                    static_cast<AudioDataValue>(0));
+      }
     }
   }
 }
@@ -277,7 +282,7 @@ void AudioSegment::Mix(AudioMixer& aMixer, uint32_t aOutputChannels,
       // Up-mix.
       upMixChunk = c;
       AudioChannelsUpMix<void>(&upMixChunk.mChannelData, aOutputChannels,
-                               SilentChannel::gZeroChannel);
+                               nullptr);
       downMixInput = &upMixChunk;
     }
     downMixInput->DownMixTo(outChannelPtrs);

@@ -34,3 +34,11 @@ aiwindow-retry =
 aiwindow-copy-message =
     .tooltiptext = Copy
     .aria-label = Copy message
+aiwindow-applied-memories-popover =
+    .aria-label = Applied memories
+
+## Jump to Bottom Button
+
+aiwindow-jump-to-bottom =
+    .tooltiptext = Jump to bottom
+    .aria-label = Jump to bottom of chat

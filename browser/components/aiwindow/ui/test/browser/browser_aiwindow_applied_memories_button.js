@@ -4,6 +4,11 @@ const TEST_PAGE =
   "chrome://mochitests/content/browser/browser/components/aiwindow/ui/test/browser/test_applied_memories_page.html";
 
 add_task(async function test_applied_memories_button_basic() {
+  // We intentionally turn off this a11y check, because the following
+  // click is sent on an arbitrary web content that is not expected to
+  // be tested by itself with the browser mochitests, therefore this
+  // rule check shall be ignored by a11y-checks suite.
+  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
   await BrowserTestUtils.withNewTab(TEST_PAGE, async browser => {
     await SpecialPowers.spawn(browser, [], async () => {
       const doc = content.document;
@@ -59,6 +64,7 @@ add_task(async function test_applied_memories_button_basic() {
       is(removeEventDetail.memory, "User is vegan", "Event includes memory");
 
       doc.body.click();
+
       await content.Promise.resolve();
 
       popover = button.shadowRoot.querySelector(".popover");
@@ -68,6 +74,7 @@ add_task(async function test_applied_memories_button_basic() {
       );
     });
   });
+  AccessibilityUtils.resetEnv();
 });
 
 add_task(async function test_applied_memories_button_retry_without_memories() {
@@ -136,6 +143,106 @@ add_task(async function test_applied_memories_button_showCallout_auto_opens() {
 
       const callout = button.shadowRoot.querySelector(".memories-callout");
       ok(callout, "Callout element is rendered");
+    });
+  });
+});
+
+add_task(async function test_applied_memories_button_keyboard_navigation() {
+  await BrowserTestUtils.withNewTab(TEST_PAGE, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      function pressKey(element, key) {
+        element.dispatchEvent(
+          new content.KeyboardEvent("keydown", {
+            key,
+            bubbles: true,
+            composed: true,
+          })
+        );
+      }
+
+      function assertFocused(root, element, message) {
+        is(root.activeElement, element, message);
+      }
+
+      const button = content.document.getElementById("test-button");
+      button.messageId = "msg-1";
+      button.appliedMemories = [
+        { memory_summary: "User is vegan" },
+        { memory_summary: "User has a cat" },
+      ];
+
+      await content.customElements.whenDefined("applied-memories-button");
+      await button.updateComplete;
+
+      let popover = button.shadowRoot.querySelector(".popover");
+      ok(popover.inert, "Popover is inert when closed");
+
+      const trigger = button.shadowRoot.querySelector(
+        "moz-button.memories-trigger"
+      );
+      trigger.click();
+      await button.updateComplete;
+
+      popover = button.shadowRoot.querySelector(".popover");
+      ok(!popover.inert, "Popover is not inert when open");
+
+      const root = button.shadowRoot;
+      const removeButtons = root.querySelectorAll(".memories-remove-button");
+      const manageButton = root.querySelector(".manage-memories-button");
+      const retryButton = root.querySelector(".retry-without-memories-button");
+
+      is(removeButtons.length, 2, "Two remove buttons rendered");
+
+      // Opening the menu should focus the first item.
+      assertFocused(root, removeButtons[0], "First item focused on open");
+
+      // ArrowDown moves to next item
+      pressKey(removeButtons[0], "ArrowDown");
+      assertFocused(root, removeButtons[1], "ArrowDown moves to second item");
+
+      pressKey(removeButtons[1], "ArrowDown");
+      assertFocused(root, manageButton, "ArrowDown moves to manage button");
+
+      pressKey(manageButton, "ArrowDown");
+      assertFocused(root, retryButton, "ArrowDown moves to retry button");
+
+      // ArrowDown wraps from last to first
+      pressKey(retryButton, "ArrowDown");
+      assertFocused(root, removeButtons[0], "ArrowDown wraps to first item");
+
+      // ArrowUp wraps from first to last
+      pressKey(removeButtons[0], "ArrowUp");
+      assertFocused(root, retryButton, "ArrowUp wraps to last item");
+
+      // ArrowUp moves to previous item
+      pressKey(retryButton, "ArrowUp");
+      assertFocused(root, manageButton, "ArrowUp moves to manage button");
+
+      // Home jumps to first item
+      pressKey(manageButton, "Home");
+      assertFocused(root, removeButtons[0], "Home jumps to first item");
+
+      // End jumps to last item
+      pressKey(removeButtons[0], "End");
+      assertFocused(root, retryButton, "End jumps to last item");
+
+      // Tab closes popover and returns focus to trigger
+      pressKey(retryButton, "Tab");
+      await button.updateComplete;
+      ok(!button.open, "Tab closes popover");
+      assertFocused(root, trigger, "Tab returns focus to trigger");
+
+      // Reopen and test Escape
+      trigger.click();
+      await button.updateComplete;
+
+      pressKey(removeButtons[0], "Escape");
+      await button.updateComplete;
+
+      ok(!button.open, "Escape closes popover");
+      assertFocused(root, trigger, "Escape returns focus to trigger");
+      popover = root.querySelector(".popover");
+      ok(popover.inert, "Popover is inert after Escape");
     });
   });
 });

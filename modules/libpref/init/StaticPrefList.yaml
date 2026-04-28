@@ -3387,6 +3387,14 @@
   value: 500
   mirror: always
 
+#ifdef XP_WIN
+# Whether or not to restrict the HANDLE types which are allowed to be transferred over IPC.
+- name: dom.ipc.handle_type_restrictions.enabled
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+#endif
+
 #ifdef MOZ_ENABLE_FORKSERVER
 - name: dom.ipc.forkserver.enable
   type: bool
@@ -3964,6 +3972,13 @@
 - name: dom.performance.event_timing.enable_interactionid
   type: RelaxedAtomicBool
   value: true
+  mirror: always
+
+# Whether to opt out of system permission check for navigator.permissions.query on testing.
+# This is because we cannot control the system permission state on CI.
+- name: dom.permissions.testing.enabled
+  type: RelaxedAtomicBool
+  value: false
   mirror: always
 
 # Is support for Element.requestPointerLock enabled?
@@ -6098,7 +6113,14 @@
   value: true
   mirror: always
 
-# Per-domain blocklist for the previous hack.
+# Whether to enable about:blank async-load workaround for Polarion's version of
+# the GWT's RichTextArea.
+- name: dom.about-blank-polarion-gwt-hack.enabled
+  type: bool
+  value: true
+  mirror: always
+
+# Per-domain blocklist for the GWT hack.
 - name: dom.about-blank-gwt-hack.disabled-domains
   type: String
   value: ""
@@ -19281,6 +19303,11 @@
 - name: webgl.lose-context-on-memory-pressure
   type: RelaxedAtomicBool
   value: false
+  mirror: always
+
+- name: webgl.max-bytes-per-row
+  type: RelaxedAtomicUint32
+  value: 2147483647 # 0 => no limit, >0 => max valid bytes per row
   mirror: always
 
 - name: webgl.max-contexts

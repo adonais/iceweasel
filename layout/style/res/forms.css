@@ -277,6 +277,17 @@ select:-moz-select-list-box {
   }
 }
 
+/* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+select::picker(select) {
+  /* TODO(custom-select): Remove when making the picker a proper popover */
+  display: none;
+}
+
+/* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+select:-moz-select-list-box::picker(select) {
+  display: contents !important;
+}
+
 option[label]::before {
   content: attr(label);
 }

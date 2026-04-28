@@ -408,7 +408,7 @@
 #smartwindow-ask-button-inner {
   list-style-image: url("chrome://browser/content/aiwindow/assets/ask-icon.svg");
 
-  &.sidebar-is-open {
+  &[checked] {
     list-style-image: url("chrome://global/skin/icons/close.svg");
   }
 }

@@ -21,6 +21,8 @@ skip-if = [
 
 ["browser_selectpopup_dir.js"]
 
+["browser_selectpopup_display_inherit.js"]
+
 ["browser_selectpopup_focus.js"]
 
 ["browser_selectpopup_hr.js"]

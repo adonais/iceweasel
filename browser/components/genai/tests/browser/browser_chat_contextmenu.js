@@ -149,6 +149,54 @@ add_task(async function test_hidden_in_popup() {
 });
 
 /**
+ * Check that the chat context menu is hidden inside a Smart Window,
+ * both directly and when accessed from a sidebar panel sub-window.
+ */
+add_task(async function test_hidden_in_smart_window() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.chat.provider", "http://localhost:8080"]],
+  });
+
+  const { GenAI } = ChromeUtils.importESModule(
+    "resource:///modules/GenAI.sys.mjs"
+  );
+  const menu = document.getElementById("context-ask-chat");
+  const aiWindowDoc = {
+    documentElement: { hasAttribute: attr => attr === "ai-window" },
+  };
+  const buildMenu = async ownerGlobal => {
+    let hidden = null;
+    await GenAI.buildAskChatMenu(menu, {
+      browser: {
+        browsingContext: { currentURI: { spec: "https://example.com" } },
+        ownerGlobal,
+      },
+      selectionInfo: {},
+      showItem: (item, show) => {
+        hidden = !show;
+      },
+      source: null,
+      contextTabs: null,
+    });
+    return hidden;
+  };
+
+  Assert.ok(
+    await buildMenu({ document: aiWindowDoc }),
+    "Menu hidden when ownerGlobal is the Smart Window"
+  );
+  Assert.ok(
+    await buildMenu({
+      document: { documentElement: { hasAttribute: () => false } },
+      browsingContext: { topChromeWindow: { document: aiWindowDoc } },
+    }),
+    "Menu hidden when ownerGlobal is a sidebar sub-window inside a Smart Window"
+  );
+
+  await SpecialPowers.popPrefEnv();
+});
+
+/**
  * Check tab behavior of chat menu items without sidebar pref
  */
 add_task(async function test_open_tab() {

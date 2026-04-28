@@ -55,6 +55,14 @@ if (AppConstants.platform != "macosx") {
   });
 }
 
+if (!Services.prefs.getBoolPref("dom.select.customizable_select.enabled")) {
+  ignoreList.push({
+    sourceName: /\bforms\.css$/i,
+    errorMessage: /Unknown pseudo-class or pseudo-element ‘picker’./i,
+    isFromDevTools: false,
+  });
+}
+
 if (!Services.prefs.getBoolPref("layout.css.zoom.enabled")) {
   ignoreList.push({
     sourceName: /\bscrollbars\.css$/i,

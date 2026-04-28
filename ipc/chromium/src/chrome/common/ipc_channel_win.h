@@ -41,6 +41,8 @@ class ChannelWin : public Channel, public MessageLoopForIO::IOHandler {
 
   static const ChannelKind sKind;
 
+  static bool IsAllowedHandleType(HANDLE handle);
+
  private:
   ~ChannelWin() {
     IOThread().AssertOnCurrentThread();

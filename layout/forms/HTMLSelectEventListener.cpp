@@ -29,13 +29,6 @@ static bool IsOptionInteractivelySelectable(HTMLSelectElement& aSelect,
   if (!aIsCombobox) {
     return aOption.GetPrimaryFrame();
   }
-  // TODO(emilio): This is a bit silly and doesn't match the options that we
-  // show / don't show in the dropdown, but matches the frame construction we
-  // do for multiple selects. For backwards compat also don't allow selecting
-  // options in a display: contents subtree interactively.
-  // test_select_key_navigation_bug1498769.html tests for this and should
-  // probably be changed (and this loop removed) or alternatively
-  // SelectChild.sys.mjs should be changed to match it.
   for (Element* el = &aOption; el && el != &aSelect;
        el = el->GetParentElement()) {
     RefPtr style = nsComputedDOMStyle::GetComputedStyleNoFlush(el);
@@ -43,7 +36,7 @@ static bool IsOptionInteractivelySelectable(HTMLSelectElement& aSelect,
       return false;
     }
     auto display = style->StyleDisplay()->mDisplay;
-    if (display == StyleDisplay::None || display == StyleDisplay::Contents) {
+    if (display == StyleDisplay::None) {
       return false;
     }
   }

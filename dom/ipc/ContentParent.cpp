@@ -5148,7 +5148,8 @@ PContentPermissionRequestParent*
 ContentParent::AllocPContentPermissionRequestParent(
     const nsTArray<PermissionRequest>& aRequests, nsIPrincipal* aPrincipal,
     nsIPrincipal* aTopLevelPrincipal, const bool& aIsHandlingUserInput,
-    const bool& aMaybeUnsafePermissionDelegate, const TabId& aTabId) {
+    const bool& aMaybeUnsafePermissionDelegate, const TabId& aTabId,
+    const bool& aIgnoreAllowSitePermission) {
   RefPtr<BrowserParent> tp;
   ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
   if (cpm) {
@@ -5166,14 +5167,15 @@ ContentParent::AllocPContentPermissionRequestParent(
   }
   return nsContentPermissionUtils::CreateContentPermissionRequestParent(
       tp->GetOwnerElement(), aPrincipal, topPrincipal, aIsHandlingUserInput,
-      aMaybeUnsafePermissionDelegate, aTabId);
+      aMaybeUnsafePermissionDelegate, aTabId, aIgnoreAllowSitePermission);
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvPContentPermissionRequestConstructor(
     PContentPermissionRequestParent* aActor,
     nsTArray<PermissionRequest>&& aRequests, nsIPrincipal* aPrincipal,
     nsIPrincipal* aTopLevelPrincipal, const bool& aIsHandlingUserInput,
-    const bool& aMaybeUnsafePermissionDelegate, const TabId& tabId) {
+    const bool& aMaybeUnsafePermissionDelegate, const TabId& tabId,
+    const bool& aIgnoreAllowSitePermission) {
   nsContentPermissionUtils::InitContentPermissionRequestParent(
       aActor, std::move(aRequests));
   return IPC_OK();

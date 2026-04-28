@@ -133,7 +133,6 @@ void HTMLSelectElement::SetupShadowTree() {
   if (NS_WARN_IF(!sr)) {
     return;
   }
-  sr->AppendBuiltInStyleSheet(BuiltInStyleSheet::Select);
   // For now, we append a <label> with a text node, a <span> (for the menulist
   // icon), and an hidden <slot> element.
   Document* doc = OwnerDoc();
@@ -152,8 +151,14 @@ void HTMLSelectElement::SetupShadowTree() {
     icon->AppendChildTo(text, false, IgnoreErrors());
   }
   sr->AppendChildTo(icon, false, IgnoreErrors());
+
+  RefPtr picker = doc->CreateHTMLElement(nsGkAtoms::div);
+  picker->SetPseudoElementType(PseudoStyleType::Picker);
+  picker->SetAttr(nsGkAtoms::name, u"select"_ns, IgnoreErrors());
+
   RefPtr slot = doc->CreateHTMLElement(nsGkAtoms::slot);
-  sr->AppendChildTo(slot, false, IgnoreErrors());
+  picker->AppendChildTo(slot, false, IgnoreErrors());
+  sr->AppendChildTo(picker, false, IgnoreErrors());
 }
 
 Text* HTMLSelectElement::GetSelectedContentText() const {

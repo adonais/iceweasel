@@ -84,12 +84,14 @@ Object.assign(Chat, {
    * @param {openAIEngine} options.engineInstance
    * @param {BrowsingContext} options.browsingContext - Omitted for tests only.
    * @param {"fullpage" | "sidebar" | "urlbar"} options.mode - See the MODE in ai-window.mjs
+   * @param {AbortSignal} [options.signal]
    */
   async fetchWithHistory({
     conversation,
     engineInstance,
     browsingContext,
     mode,
+    signal,
   }) {
     if (!browsingContext && !Cu.isInAutomation) {
       throw new Error(
@@ -142,6 +144,7 @@ Object.assign(Chat, {
         tool_choice: "auto",
         tools: chatToolsConfig,
         args: messages,
+        signal,
         ...inferenceParams,
       });
     };
@@ -170,6 +173,10 @@ Object.assign(Chat, {
       }
 
       if (!pendingToolCalls || pendingToolCalls.length === 0) {
+        return;
+      }
+
+      if (signal?.aborted) {
         return;
       }
 

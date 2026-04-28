@@ -269,6 +269,16 @@ bool nsStandardURL::IsValid() {
     return false;
   }
 
+  // mSpec must not contain embedded NULs
+  if (NS_WARN_IF(mSpec.FindChar('\0') != -1)) {
+    return false;
+  }
+
+  // The character immediately after the scheme must be ':', e.g. "http:".
+  if (mScheme.mLen > 0 && NS_WARN_IF(mSpec.CharAt(mScheme.mLen) != ':')) {
+    return false;
+  }
+
   return true;
 }
 
@@ -794,15 +804,14 @@ bool nsStandardURL::SegmentIs(const URLSegment& seg, const char* val,
   if (seg.mLen < 0) {
     return false;
   }
-  // if the first |seg.mLen| chars of |val| match, then |val| must
-  // also be null terminated at |seg.mLen|.
-  if (ignoreCase) {
-    return !nsCRT::strncasecmp(mSpec.get() + seg.mPos, val, seg.mLen) &&
-           (val[seg.mLen] == '\0');
+  size_t vlen = strlen(val);
+  if (static_cast<uint32_t>(seg.mLen) != vlen) {
+    return false;
   }
-
-  return !strncmp(mSpec.get() + seg.mPos, val, seg.mLen) &&
-         (val[seg.mLen] == '\0');
+  if (ignoreCase) {
+    return !nsCRT::strncasecmp(mSpec.get() + seg.mPos, val, vlen);
+  }
+  return !strncmp(mSpec.get() + seg.mPos, val, vlen);
 }
 
 bool nsStandardURL::SegmentIs(const char* spec, const URLSegment& seg,
@@ -814,14 +823,14 @@ bool nsStandardURL::SegmentIs(const char* spec, const URLSegment& seg,
   if (seg.mLen < 0) {
     return false;
   }
-  // if the first |seg.mLen| chars of |val| match, then |val| must
-  // also be null terminated at |seg.mLen|.
-  if (ignoreCase) {
-    return !nsCRT::strncasecmp(spec + seg.mPos, val, seg.mLen) &&
-           (val[seg.mLen] == '\0');
+  size_t vlen = strlen(val);
+  if (static_cast<uint32_t>(seg.mLen) != vlen) {
+    return false;
   }
-
-  return !strncmp(spec + seg.mPos, val, seg.mLen) && (val[seg.mLen] == '\0');
+  if (ignoreCase) {
+    return !nsCRT::strncasecmp(spec + seg.mPos, val, vlen);
+  }
+  return !strncmp(spec + seg.mPos, val, vlen);
 }
 
 bool nsStandardURL::SegmentIs(const URLSegment& seg1, const char* val,
@@ -3689,6 +3698,21 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
   NS_ENSURE_TRUE(
       mRef.mLen == -1 || (mRef.mPos > 0 && mSpec.CharAt(mRef.mPos - 1) == '#'),
       false);
+
+  // mDirectory, mBasename, mExtension must be sub-ranges of mFilepath,
+  // which must be a sub-range of mPath.
+  auto isSubSegment = [](const URLSegment& inner, const URLSegment& outer) {
+    if (inner.mLen == -1) return true;
+    return inner.mPos >= outer.mPos &&
+           inner.mPos + inner.mLen <= outer.mPos + outer.mLen;
+  };
+  NS_ENSURE_TRUE(isSubSegment(mFilepath, mPath), false);
+  NS_ENSURE_TRUE(isSubSegment(mDirectory, mFilepath), false);
+  NS_ENSURE_TRUE(isSubSegment(mBasename, mFilepath), false);
+  NS_ENSURE_TRUE(isSubSegment(mExtension, mFilepath), false);
+  NS_ENSURE_TRUE(isSubSegment(mHost, mAuthority), false);
+  NS_ENSURE_TRUE(isSubSegment(mUsername, mAuthority), false);
+  NS_ENSURE_TRUE(isSubSegment(mPassword, mAuthority), false);
 
   if (!IsValid()) {
     return false;

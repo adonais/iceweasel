@@ -4,6 +4,8 @@
 
 #include "jsapi/RTCEncodedFrameBase.h"
 
+#include <cstddef>
+
 #include "api/frame_transformer_interface.h"
 #include "js/ArrayBuffer.h"
 #include "js/GCAPI.h"
@@ -112,6 +114,13 @@ std::unique_ptr<webrtc::TransformableFrameInterface>
 RTCEncodedFrameBase::TakeFrame() {
   DetachData();
   return std::move(mState.mFrame);
+}
+
+size_t RTCEncodedFrameBase::Size() const {
+  if (!mState.mFrame) {
+    return 0;
+  }
+  return mState.mFrame->GetData().size();
 }
 
 RTCEncodedFrameState::~RTCEncodedFrameState() = default;

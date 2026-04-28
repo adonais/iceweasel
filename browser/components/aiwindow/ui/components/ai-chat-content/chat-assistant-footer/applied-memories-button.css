@@ -6,13 +6,36 @@
   --aiwindow-text-accent: light-dark(var(--color-violet-90), var(--color-white));
   --aiwindow-border-subtle: light-dark(var(--color-gray-20), var(--color-gray-60));
   --aiwindow-memory-item-bg: light-dark(var(--color-gray-05), var(--color-gray-80));
+  --aiwindow-memory-item-border: none;
   --aiwindow-popover-bg: light-dark(var(--color-white), var(--color-gray-90));
   --memories-accent-bg-hover: rgba(191, 143, 204, 0.2);
   --memories-accent-bg-active: rgba(191, 143, 204, 0.26);
-  --memories-accent-border: rgba(0, 0, 0, 0);
+  --memories-accent-border: var(--button-border-color-ghost);
   --aiwindow-callout-text-color: light-dark(var(--color-violet-60), var(--color-violet-20));
   --aiwindow-callout-text-color-hover: light-dark(var(--color-violet-70), var(--color-violet-10));
   --aiwindow-callout-border-color: light-dark(transparent, var(--color-violet-50));
+  --aiwindow-remove-btn-opacity: 0;
+  --aiwindow-remove-btn-pointer-events: none;
+  --aiwindow-memory-item-bg-action-hover: var(--aiwindow-memory-item-bg);
+  --aiwindow-memory-item-border-color-action-hover: transparent;
+  --aiwindow-memory-label-color-action-hover: var(--text-color);
+  --aiwindow-action-btn-ghost-bg: var(--button-background-color-ghost);
+  --aiwindow-action-btn-ghost-text: var(--button-text-color-ghost);
+
+  @media (prefers-contrast) and (not (forced-colors)) {
+    --aiwindow-memory-item-border: var(--border-width) solid currentColor;
+  }
+
+  @media (forced-colors) {
+    --aiwindow-popover-bg: var(--background-color-canvas);
+    --aiwindow-memory-item-bg: var(--background-color-canvas);
+    --memories-accent-bg-hover: var(--button-background-color-ghost-hover);
+    --memories-accent-bg-active: var(--button-background-color-ghost-active);
+    --aiwindow-memory-item-border: var(--border-width) solid var(--border-color);
+    --aiwindow-memory-item-border-color-action-hover: var(--border-color);
+    --aiwindow-action-btn-ghost-bg: var(--button-background-color);
+    --aiwindow-action-btn-ghost-text: var(--button-text-color);
+  }
 }
 
 :host([data-open]) moz-button.memories-trigger {
@@ -58,6 +81,7 @@ moz-button.memories-trigger::part(moz-button-label) {
 }
 
 moz-button.memories-trigger:not([disabled]):hover::part(moz-button-label),
+moz-button.memories-trigger:not([disabled]):focus-within::part(moz-button-label),
 :host([data-open]) moz-button.memories-trigger::part(moz-button-label) {
   opacity: 1;
   max-width: 12em;
@@ -157,6 +181,7 @@ moz-button.memories-trigger:not([disabled]):hover::part(moz-button-label),
   justify-content: space-between;
   align-items: center;
   border-radius: var(--border-radius-medium);
+  border: var(--aiwindow-memory-item-border);
   /* stylelint-disable-next-line */
   background-color: var(--aiwindow-memory-item-bg);
 }
@@ -170,11 +195,31 @@ moz-button.memories-trigger:not([disabled]):hover::part(moz-button-label),
 }
 
 .memories-remove-button {
-  display: none;
+  opacity: var(--aiwindow-remove-btn-opacity);
+  pointer-events: var(--aiwindow-remove-btn-pointer-events);
 }
 
-.memories-list-item:hover .memories-remove-button {
-  display: inline-flex;
+.memories-list-item:hover .memories-remove-button,
+.memories-list-item:focus-within .memories-remove-button {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.memories-remove-button,
+.popover-action-row-button {
+  --button-background-color-ghost: var(--aiwindow-action-btn-ghost-bg);
+  --button-text-color-ghost: var(--aiwindow-action-btn-ghost-text);
+}
+
+.popover:has(.popover-action-row:hover) {
+  & .memories-list-item {
+    border-color: var(--aiwindow-memory-item-border-color-action-hover);
+    background-color: var(--aiwindow-memory-item-bg-action-hover);
+  }
+
+  & .memories-list-label {
+    color: var(--aiwindow-memory-label-color-action-hover);
+  }
 }
 
 .popover-action-row {
