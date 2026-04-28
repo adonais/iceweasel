@@ -750,6 +750,75 @@ declare const attachedFxAOAuthClients: Promise<OAuthClient[]>
 }
 ```
 
+### `relayProfileInfo`
+
+Firefox Relay profile information including subscription tier and mask count.
+Returns null if the user is not signed into Firefox, has no Relay account, or if an error occurs.
+
+This attribute fetches data from the Relay API, including both profile information (subscription tier) and the total number of email masks created.
+
+#### Definition
+
+```
+interface RelayProfileInfo {
+  has_premium: boolean;  // true if user has premium subscription
+  has_phone: boolean;    // true if user has phone masking
+  has_vpn: boolean;      // true if user has VPN bundled
+  masksCount: number;    // total number of email masks created
+}
+
+declare const relayProfileInfo: Promise<RelayProfileInfo | null>
+```
+
+#### Examples
+```javascript
+// Check if user has premium
+relayProfileInfo.has_premium
+
+// Get mask count from profile
+relayProfileInfo.masksCount > 1
+```
+
+### `relayEmailMasksCount`
+
+Number of Firefox Relay email masks created by the signed-in user.
+Returns 0 if the user is not signed into Firefox, has no Relay account, or if an error occurs.
+
+#### Definition
+
+```
+declare const relayEmailMasksCount: Promise<number>
+```
+
+#### Examples
+```javascript
+// Show to users with more than 1 mask
+relayEmailMasksCount > 1
+
+// Show to users with at least 5 masks
+relayEmailMasksCount >= 5
+```
+
+### `isRelayFreeTier`
+
+Boolean indicating if the signed-in user has a FREE tier Relay subscription (not premium).
+Returns false if the user is not signed into Firefox, has no Relay account, or if an error occurs.
+
+#### Definition
+
+```
+declare const isRelayFreeTier: Promise<boolean>
+```
+
+#### Examples
+```javascript
+// Show only to FREE tier Relay users
+isRelayFreeTier
+
+// Show only to premium Relay users
+!isRelayFreeTier && relayEmailMasksCount > 0
+```
+
 ### `platformName`
 
 [Platform information](https://searchfox.org/mozilla-central/rev/c5c002f81f08a73e04868e0c2bf0eb113f200b03/toolkit/modules/AppConstants.sys.mjs#153).

@@ -608,27 +608,6 @@
           "additionalProperties": false,
           "required": ["id"],
           "description": "Occurs every time a user opens a new Smart Window tab."
-        },
-        {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "string",
-              "enum": ["relayMaskUsed"]
-            },
-            "context": {
-              "type": "object",
-              "properties": {
-                "masksUsedCount": {
-                  "type": "integer",
-                  "description": "The number of Relay masks used this session"
-                }
-              }
-            }
-          },
-          "additionalProperties": false,
-          "required": ["id"],
-          "description": "Happens when the user uses a Firefox Relay email mask"
         }
       ]
     }

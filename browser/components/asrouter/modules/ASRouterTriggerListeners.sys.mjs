@@ -1881,45 +1881,4 @@ export const ASRouterTriggerListeners = new Map([
       },
     },
   ],
-  [
-    "relayMaskUsed",
-    {
-      id: "relayMaskUsed",
-      _initialized: false,
-      _triggerHandler: null,
-      _masksUsedCount: 0,
-
-      init(triggerHandler) {
-        if (!this._initialized) {
-          Services.obs.addObserver(this, "relay-mask-used");
-          this._initialized = true;
-        }
-        this._triggerHandler = triggerHandler;
-      },
-
-      uninit() {
-        if (this._initialized) {
-          Services.obs.removeObserver(this, "relay-mask-used");
-          this._initialized = false;
-          this._triggerHandler = null;
-          this._masksUsedCount = 0;
-        }
-      },
-
-      observe(aSubject) {
-        this._masksUsedCount++;
-        this._triggerHandler(aSubject, {
-          id: this.id,
-          context: {
-            masksUsedCount: this._masksUsedCount,
-          },
-        });
-      },
-
-      QueryInterface: ChromeUtils.generateQI([
-        "nsIObserver",
-        "nsISupportsWeakReference",
-      ]),
-    },
-  ],
 ]);

@@ -398,7 +398,6 @@ async function showReusableMasksAsync(browser, origin, error) {
               browser,
               "confirmation-hint-firefox-relay-mask-reused"
             );
-            Services.obs.notifyObservers(browser, "relay-mask-used");
             Glean.relayIntegration.reuseMaskReusePanel.record({
               value: gFlowId,
             });
@@ -509,7 +508,6 @@ async function generateUsernameAsync(browser, origin) {
     lazy.log.info(`generated Relay mask`);
     const result = await response.json();
     showConfirmation(browser, "confirmation-hint-firefox-relay-mask-created");
-    Services.obs.notifyObservers(browser, "relay-mask-used");
     return result.full_address;
   }
 
@@ -1114,6 +1112,64 @@ class RelayFeature extends OptInFeature {
 
   async offerRelayIntegration(browser, origin) {
     return this.implementation.offerRelayIntegration?.(this, browser, origin);
+  }
+
+  async getRelayProfileInfo() {
+    if (!lazy.fxAccounts.constructor.config.isProductionConfig()) {
+      return null;
+    }
+
+    const hasSession = await lazy.fxAccounts.hasLocalSession();
+    if (!hasSession) {
+      return null;
+    }
+
+    try {
+      const token = await getRelayTokenAsync();
+      if (!token) {
+        return null;
+      }
+
+      const profileResponse = await fetch(gConfig.profilesUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      if (!profileResponse.ok) {
+        return null;
+      }
+
+      const profiles = await profileResponse.json();
+      const profile =
+        Array.isArray(profiles) && profiles.length ? profiles[0] : profiles;
+
+      const masksResponse = await fetch(gConfig.addressesUrl, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      let masksCount = 0;
+      if (masksResponse.ok) {
+        const masks = await masksResponse.json();
+        masksCount = Array.isArray(masks) ? masks.length : 0;
+      }
+
+      return {
+        has_premium: profile?.has_premium || false,
+        has_phone: profile?.has_phone || false,
+        has_vpn: profile?.has_vpn || false,
+        masksCount,
+      };
+    } catch (e) {
+      console.error("Error fetching Relay profile:", e);
+      return null;
+    }
   }
 }
 

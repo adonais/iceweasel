@@ -68,7 +68,6 @@ let patterns: string[];
 - [`ipProtectionBandwidthReset`](#ipprotectionbandwidthreset)
 - [`selectableProfilesUpdated`](#selectableprofilesupdated)
 - [`smartWindowNewTab`](#smartwindownewtab)
-- [`relayMaskUsed`](#relaymaskused)
 
 ### `openArticleURL`
 
@@ -501,23 +500,5 @@ Occurs every time a user opens a new Smart Window tab.
 {
   trigger: { id: "smartWindowNewTab" },
   targeting: "isAIWindow && 'browser.smartwindow.firstrun.hasCompleted' | preferenceValue",
-}
-```
-
-### `relayMaskUsed`
-
-Happens when the user uses a Firefox Relay email mask. The trigger tracks the number of masks used in a session.
-
-Does not filter by host or patterns.
-
-The `masksUsedCount` context variable is available in targeting and represents the cumulative number of times the user has used a Relay mask during the current session.
-
-```js
-// Register a message with the following trigger and include
-// the masksUsedCount context variable in the targeting.
-// Here, the message triggers after the first Relay mask is used.
-{
-  trigger: { id: "relayMaskUsed" },
-  targeting: "masksUsedCount >= 1"
 }
 ```

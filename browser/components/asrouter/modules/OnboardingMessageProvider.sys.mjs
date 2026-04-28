@@ -3091,10 +3091,10 @@ const BASE_MESSAGES = () => [
     template: "feature_callout",
     groups: ["cfr"],
     trigger: {
-      id: "relayMaskUsed",
+      id: "defaultBrowserCheck",
     },
     targeting:
-      "masksUsedCount >= 1 && !activeNotifications && !isMajorUpgrade && userPrefs.cfrFeatures && (currentDate|date - profileAgeCreated|date) / 86400000 > 3",
+      "source == 'startup' && isFxASignedIn && isRelayFreeTier && relayEmailMasksCount > 1 && !activeNotifications && !isMajorUpgrade && userPrefs.cfrFeatures && (currentDate|date - profileAgeCreated|date) / 86400000 > 3",
     frequency: {
       lifetime: 1,
     },
@@ -3139,6 +3139,7 @@ const BASE_MESSAGES = () => [
                 type: "OPEN_URL",
                 data: {
                   args: "https://relay.firefox.com",
+                  where: "tab",
                 },
                 dismiss: true,
               },

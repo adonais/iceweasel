@@ -64,6 +64,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   FeatureCalloutBroker:
     "resource:///modules/asrouter/FeatureCalloutBroker.sys.mjs",
+  FirefoxRelay: "resource://gre/modules/FirefoxRelay.sys.mjs",
   HomePage: "resource:///modules/HomePage.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
@@ -462,6 +463,16 @@ export const QueryCache = {
             bs = lazy.BackupService.init();
           }
           return bs.findBackupsInWellKnownLocations();
+        },
+      }
+    ),
+    relayProfileInfo: new CachedTargetingGetter(
+      "getRelayProfileInfo",
+      null,
+      FRECENT_SITES_UPDATE_INTERVAL,
+      {
+        async getRelayProfileInfo() {
+          return lazy.FirefoxRelay.getRelayProfileInfo();
         },
       }
     ),
@@ -936,6 +947,19 @@ const TargetingGetters = {
             .catch(() => resolve([]))
         )
       : [];
+  },
+  get relayProfileInfo() {
+    return QueryCache.getters.relayProfileInfo.get();
+  },
+  get relayEmailMasksCount() {
+    return QueryCache.getters.relayProfileInfo
+      .get()
+      .then(info => info?.masksCount || 0);
+  },
+  get isRelayFreeTier() {
+    return QueryCache.getters.relayProfileInfo
+      .get()
+      .then(info => info !== null && !info.has_premium);
   },
   get platformName() {
     return AppConstants.platform;
