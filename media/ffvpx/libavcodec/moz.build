@@ -15,18 +15,22 @@ if CONFIG['FFVPX_ASFLAGS']:
 if CONFIG['CPU_ARCH'] == 'aarch64':
     DIRS += ['aarch64']
 
+DIRS += ['bsf']
+
 SharedLibrary('mozavcodec')
 SOURCES += [
+    'adts_header.c',
+    'adts_parser.c',
     'allcodecs.c',
+    'audio_frame_queue.c',
     'avcodec.c',
     'avdct.c',
-    'avpacket.c',
+    'avfft.c',
     'bitstream.c',
     'bitstream_filters.c',
     'bsf.c',
     'codec_desc.c',
     'codec_par.c',
-    'dct.c',
     'dct32_fixed.c',
     'dct32_float.c',
     'decode.c',
@@ -34,9 +38,6 @@ SOURCES += [
     'faandct.c',
     'faanidct.c',
     'fdctdsp.c',
-    'fft_fixed_32.c',
-    'fft_float.c',
-    'fft_init_table.c',
     'flac.c',
     'flacdata.c',
     'flacdec.c',
@@ -47,6 +48,8 @@ SOURCES += [
     'jfdctint.c',
     'jrevdct.c',
     'log2_tab.c',
+    'mpeg4audio.c',
+    'mpeg4audio_sample_rates.c',
     'mpegaudio.c',
     'mpegaudiodata.c',
     'mpegaudiodec_common.c',
@@ -57,20 +60,21 @@ SOURCES += [
     'mpegaudiodsp_fixed.c',
     'mpegaudiodsp_float.c',
     'mpegaudiotabs.c',
-    'null_bsf.c',
     'options.c',
+    'packet.c',
     'parser.c',
     'parsers.c',
     'profiles.c',
     'pthread.c',
     'pthread_frame.c',
     'pthread_slice.c',
-    'rdft.c',
     'reverse.c',
     'simple_idct.c',
+    'threadprogress.c',
     'utils.c',
     'version.c',
     'vlc.c',
+    'vorbis_data.c',
     'vorbis_parser.c',
     'xiph.c'
 ]
@@ -78,11 +82,11 @@ SOURCES += [
 if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
     SOURCES += [
         'atsc_a53.c',
-        'av1_frame_split_bsf.c',
+        'av1_parse.c',
         'av1dec.c',
-        'avpicture.c',
         'cbs.c',
         'cbs_av1.c',
+        'cbs_vp9.c',
         'golomb.c',
         'h264pred.c',
         'imgconvert.c',
@@ -93,10 +97,10 @@ if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
         'videodsp.c',
         'vp8.c',
         'vp8_parser.c',
+        'vp8data.c',
         'vp8dsp.c',
         'vp9.c',
         'vp9_parser.c',
-        'vp9_superframe_split_bsf.c',
         'vp9block.c',
         'vp9data.c',
         'vp9dsp.c',
@@ -125,11 +129,6 @@ if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
           'mozva'
         ]
 
-if CONFIG['MOZ_LIBAV_FFT']:
-    SOURCES += [
-        'avfft.c',
-    ]
-
 SYMBOLS_FILE = 'avcodec.symbols'
 NoVisibilityFlags()
 
@@ -137,7 +136,14 @@ USE_LIBS += [
      'mozavutil'
 ]
 
-if CONFIG['OS_TARGET'] != 'WINNT':
+if CONFIG['OS_TARGET'] == 'WINNT':
+    if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
+        SOURCES += [
+            'd3d11va.c',
+            'dxva2.c',
+            'dxva2_vp9.c',
+        ]
+else:
     OS_LIBS += ['m']
 
 include("../ffvpxcommon.mozbuild")

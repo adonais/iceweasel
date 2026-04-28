@@ -1415,7 +1415,11 @@ cairo_cff_font_subset_dict_string(cairo_cff_font_t   *font,
     if (sid < NUM_STD_STRINGS)
         return CAIRO_STATUS_SUCCESS;
 
-    element = _cairo_array_index (&font->strings_index, sid - NUM_STD_STRINGS);
+    sid -= NUM_STD_STRINGS;
+    if (sid >= (int)_cairo_array_num_elements (&font->strings_index))
+        return CAIRO_INT_STATUS_UNSUPPORTED;
+
+    element = _cairo_array_index (&font->strings_index, sid);
     sid = NUM_STD_STRINGS + _cairo_array_num_elements (&font->strings_subset_index);
     status = cff_index_append (&font->strings_subset_index, element->data, element->length);
     if (unlikely (status))
@@ -1601,6 +1605,8 @@ cairo_cff_parse_charstring (cairo_cff_font_t *font,
             if (font->is_cid) {
                 fd = font->fdselect[glyph_id];
                 sub_num = font->type2_stack_top_value + font->fd_local_sub_bias[fd];
+		if (sub_num < 0 || sub_num >= (int)_cairo_array_num_elements(&font->fd_local_sub_index[fd]))
+ 		    return CAIRO_INT_STATUS_UNSUPPORTED;
                 element = _cairo_array_index (&font->fd_local_sub_index[fd], sub_num);
                 if (! font->fd_local_subs_used[fd][sub_num]) {
 		    font->fd_local_subs_used[fd][sub_num] = TRUE;
@@ -1608,7 +1614,7 @@ cairo_cff_parse_charstring (cairo_cff_font_t *font,
 		}
             } else {
                 sub_num = font->type2_stack_top_value + font->local_sub_bias;
-		if (sub_num >= _cairo_array_num_elements(&font->local_sub_index))
+		if (sub_num < 0 || sub_num >= (int)_cairo_array_num_elements(&font->local_sub_index))
 		    return CAIRO_INT_STATUS_UNSUPPORTED;
                 element = _cairo_array_index (&font->local_sub_index, sub_num);
                 if (! font->local_subs_used[sub_num] ||
@@ -1634,6 +1640,8 @@ cairo_cff_parse_charstring (cairo_cff_font_t *font,
 		font->type2_seen_first_int = FALSE;
 
 	    sub_num = font->type2_stack_top_value + font->global_sub_bias;
+	    if (sub_num < 0 || sub_num >= (int)_cairo_array_num_elements(&font->global_sub_index))
+ 		return CAIRO_INT_STATUS_UNSUPPORTED;
 	    element = _cairo_array_index (&font->global_sub_index, sub_num);
             if (! font->global_subs_used[sub_num] ||
 		(need_width && !font->type2_found_width))

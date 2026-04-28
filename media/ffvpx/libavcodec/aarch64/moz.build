@@ -6,8 +6,8 @@
 
 if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
     SOURCES += [
-        'fft_init_aarch64.c',
-        'fft_neon.S',
+        'fdctdsp_init_aarch64.c',
+        'fdctdsp_neon.S',
         'h264chroma_init_aarch64.c',
         'h264cmc_neon.S',
         'h264dsp_init_aarch64.c',
@@ -19,7 +19,6 @@ if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
         'hpeldsp_neon.S',
         'idctdsp_init_aarch64.c',
         'idctdsp_neon.S',
-        'mdct_neon.S',
         'mpegaudiodsp_init.c',
         'mpegaudiodsp_neon.S',
         'neon.S',
@@ -41,8 +40,6 @@ if not CONFIG['MOZ_FFVPX_AUDIOONLY']:
     ]
 else:
     SOURCES += [
-        'fft_init_aarch64.c',
-        'fft_neon.S',
         'idctdsp_init_aarch64.c',
         'idctdsp_neon.S',
         'mpegaudiodsp_init.c',

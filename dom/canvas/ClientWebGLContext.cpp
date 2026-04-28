@@ -205,6 +205,10 @@ ClientWebGLContext::~ClientWebGLContext() {
 }
 
 void ClientWebGLContext::JsWarning(const std::string& utf8) const {
+  if (mDeferJsWarnings) {
+    mDeferJsWarnings->push_back(utf8);
+    return;
+  }
   nsIGlobalObject* global = nullptr;
   if (mCanvasElement) {
     mozilla::dom::Document* doc = mCanvasElement->OwnerDoc();
@@ -419,13 +423,29 @@ void ClientWebGLContext::ThrowEvent_WebGLContextCreationError(
 // If we are running WebGL in this process then call the HostWebGLContext
 // method directly.  Otherwise, dispatch over IPC.
 template <typename MethodType, MethodType method, typename... Args>
-void ClientWebGLContext::Run(Args&&... args) const {
+void ClientWebGLContext::RunHelper(bool noGc, Args&&... args) const {
   const auto notLost =
       mNotLost;  // Hold a strong-ref to prevent LoseContext=>UAF.
   if (IsContextLost()) return;
 
   const auto& inProcess = notLost->inProcess;
   if (inProcess) {
+    if (noGc) {
+      // JsWarning may trigger GC, so defer warning till after any args have
+      // been used.
+      std::vector<std::string> warnings;
+      mDeferJsWarnings = &warnings;
+
+      (inProcess.get()->*method)(std::forward<Args>(args)...);
+
+      // Flush out any warnings, which may trigger GC.
+      mDeferJsWarnings = nullptr;
+      for (const auto& warning : warnings) {
+        JsWarning(warning);
+      }
+      return;
+    }
+
     return (inProcess.get()->*method)(std::forward<Args>(args)...);
   }
 
@@ -4581,7 +4601,7 @@ void ClientWebGLContext::CompressedTexImage(bool sub, uint8_t funcDims,
   // We don't need to shrink `range` because valid calls require `range` to
   // match requirements exactly.
 
-  Run<RPROC(CompressedTexImage)>(
+  RunWithGCData<RPROC(CompressedTexImage)>(
       sub, imageTarget, static_cast<uint32_t>(level), format, CastUvec3(offset),
       CastUvec3(isize), range, static_cast<uint32_t>(pboImageSize), pboOffset);
 }
@@ -4842,7 +4862,7 @@ void ClientWebGLContext::UniformData(const GLenum funcElemType,
       reinterpret_cast<const webgl::UniformDataVal*>(bytes.begin().get()) +
       elemOffset;
   const auto range = Range{begin, availCount};
-  Run<RPROC(UniformData)>(locId, transpose, RawBuffer{range});
+  RunWithGCData<RPROC(UniformData)>(locId, transpose, RawBuffer{range});
 }
 
 // -

@@ -748,7 +748,9 @@ int FFmpegVideoDecoder<LIBAV_VER>::GetVideoBuffer(
   aFrame->height = aCodecContext->coded_height;
   aFrame->format = aCodecContext->pix_fmt;
   aFrame->extended_data = aFrame->data;
+#if LIBAVCODEC_VERSION_MAJOR < 61
   aFrame->reordered_opaque = aCodecContext->reordered_opaque;
+#endif
   MOZ_ASSERT(aFrame->data[0] && aFrame->data[1] && aFrame->data[2]);
 
   // This will hold a reference to image, and the reference would be dropped
@@ -858,9 +860,13 @@ void FFmpegVideoDecoder<LIBAV_VER>::UpdateDecodeTimes(TimeStamp aDecodeStart) {
       "decoded %d frames\n",
       decodeTime, mAverangeDecodeTime, mDecodedFrames);
 #if LIBAVCODEC_VERSION_MAJOR >= 58
+#  if LIBAVCODEC_VERSION_MAJOR >= 61
+  if (mFrame->duration > 0) {
+    float frameDuration = mFrame->duration / 1000.0f;
+#  else
   if (mFrame->pkt_duration > 0) {
-    // Switch frame duration to ms
     float frameDuration = mFrame->pkt_duration / 1000.0f;
+#  endif
     if (frameDuration < decodeTime) {
       PROFILER_MARKER_TEXT("FFmpegVideoDecoder::DoDecode", MEDIA_PLAYBACK, {},
                            "frame decode takes too long");
@@ -884,17 +890,24 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
     MediaRawData* aSample, uint8_t* aData, int aSize, bool* aGotFrame,
     MediaDataDecoder::DecodedData& aResults) {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
-  AVPacket packet;
-  mLib->av_init_packet(&packet);
+  AVPacket* packet;
+#if LIBAVCODEC_VERSION_MAJOR >= 61
+  packet = mLib->av_packet_alloc();
+  auto raii = MakeScopeExit([&]() { mLib->av_packet_free(&packet); });
+#else
+  AVPacket packet_mem;
+  packet = &packet_mem;
+  mLib->av_init_packet(packet);
+#endif
 
   TimeStamp decodeStart = TimeStamp::Now();
 
-  packet.data = aData;
-  packet.size = aSize;
-  packet.dts = aSample->mTimecode.ToMicroseconds();
-  packet.pts = aSample->mTime.ToMicroseconds();
-  packet.flags = aSample->mKeyframe ? AV_PKT_FLAG_KEY : 0;
-  packet.pos = aSample->mOffset;
+  packet->data = aData;
+  packet->size = aSize;
+  packet->dts = aSample->mTimecode.ToMicroseconds();
+  packet->pts = aSample->mTime.ToMicroseconds();
+  packet->flags = aSample->mKeyframe ? AV_PKT_FLAG_KEY : 0;
+  packet->pos = aSample->mOffset;
 
   mTrackingId.apply([&](const auto& aId) {
     MediaInfoFlag flag = MediaInfoFlag::None;
@@ -925,14 +938,14 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
         break;
     }
     mPerformanceRecorder.Start(
-        packet.dts,
+        packet->dts,
         nsPrintfCString("FFmpegVideoDecoder(%d)", LIBAVCODEC_VERSION_MAJOR),
         aId, flag);
   });
 
 #if LIBAVCODEC_VERSION_MAJOR >= 58
-  packet.duration = aSample->mDuration.ToMicroseconds();
-  int res = mLib->avcodec_send_packet(mCodecContext, &packet);
+  packet->duration = aSample->mDuration.ToMicroseconds();
+  int res = mLib->avcodec_send_packet(mCodecContext, packet);
   if (res < 0) {
     // In theory, avcodec_send_packet could sent -EAGAIN should its internal
     // buffers be full. In practice this can't happen as we only feed one frame
@@ -991,8 +1004,13 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
             NS_ERROR_DOM_MEDIA_DECODE_ERR,
             RESULT_DETAIL("HW decoding is slow, switch back to SW decode"));
       }
-      rv = CreateImageVAAPI(mFrame->pkt_pos, GetFramePts(mFrame),
-                            mFrame->pkt_duration, aResults);
+      rv = CreateImageVAAPI(
+#if LIBAVCODEC_VERSION_MAJOR >= 61
+          0, GetFramePts(mFrame), mFrame->duration,
+#else
+          mFrame->pkt_pos, GetFramePts(mFrame), mFrame->pkt_duration,
+#endif
+          aResults);
       // If VA-API playback failed, just quit. Decoder is going to be restarted
       // without VA-API.
       if (NS_FAILED(rv)) {
@@ -1004,8 +1022,13 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
     } else
 #  endif
     {
-      rv = CreateImage(mFrame->pkt_pos, GetFramePts(mFrame),
-                       mFrame->pkt_duration, aResults);
+      rv = CreateImage(
+#if LIBAVCODEC_VERSION_MAJOR >= 61
+          0, GetFramePts(mFrame), mFrame->duration,
+#else
+          mFrame->pkt_pos, GetFramePts(mFrame), mFrame->pkt_duration,
+#endif
+          aResults);
     }
     if (NS_FAILED(rv)) {
       return rv;
@@ -1064,19 +1087,26 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
   }
 
   // Required with old version of FFmpeg/LibAV
+#if LIBAVCODEC_VERSION_MAJOR < 61
   mFrame->reordered_opaque = AV_NOPTS_VALUE;
+#endif
 
   int decoded;
   int bytesConsumed =
-      mLib->avcodec_decode_video2(mCodecContext, mFrame, &decoded, &packet);
+      mLib->avcodec_decode_video2(mCodecContext, mFrame, &decoded, packet);
 
   FFMPEG_LOG(
       "DoDecodeFrame:decode_video: rv=%d decoded=%d "
       "(Input: pts(%" PRId64 ") dts(%" PRId64 ") Output: pts(%" PRId64
       ") "
       "opaque(%" PRId64 ") pts(%" PRId64 ") pkt_dts(%" PRId64 "))",
-      bytesConsumed, decoded, packet.pts, packet.dts, mFrame->pts,
-      mFrame->reordered_opaque, mFrame->pts, mFrame->pkt_dts);
+      bytesConsumed, decoded, packet->pts, packet->dts, mFrame->pts,
+#if LIBAVCODEC_VERSION_MAJOR < 61
+      mFrame->reordered_opaque,
+#else
+      (int64_t)0,
+#endif
+      mFrame->pts, mFrame->pkt_dts);
 
   if (bytesConsumed < 0) {
     return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
@@ -1220,7 +1250,13 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
     MediaDataDecoder::DecodedData& aResults) const {
   FFMPEG_LOG("Got one frame output with pts=%" PRId64 " dts=%" PRId64
              " duration=%" PRId64 " opaque=%" PRId64,
-             aPts, mFrame->pkt_dts, aDuration, mCodecContext->reordered_opaque);
+             aPts, mFrame->pkt_dts, aDuration,
+#if LIBAVCODEC_VERSION_MAJOR < 61
+             mCodecContext->reordered_opaque
+#else
+             (int64_t)0
+#endif
+  );
 
   VideoData::YCbCrBuffer b;
   b.mPlanes[0].mData = mFrame->data[0];
@@ -1306,13 +1342,23 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
     v = VideoData::CreateFromImage(
         mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
         TimeUnit::FromMicroseconds(aDuration), wrapper->AsImage(),
-        !!mFrame->key_frame, TimeUnit::FromMicroseconds(-1));
+#if LIBAVCODEC_VERSION_MAJOR >= 61
+        !!(mFrame->flags & AV_FRAME_FLAG_KEY),
+#else
+        !!mFrame->key_frame,
+#endif
+        TimeUnit::FromMicroseconds(-1));
   }
 #endif
   if (!v) {
     v = VideoData::CreateAndCopyData(
         mInfo, mImageContainer, aOffset, TimeUnit::FromMicroseconds(aPts),
-        TimeUnit::FromMicroseconds(aDuration), b, !!mFrame->key_frame,
+        TimeUnit::FromMicroseconds(aDuration), b,
+#if LIBAVCODEC_VERSION_MAJOR >= 61
+        !!(mFrame->flags & AV_FRAME_FLAG_KEY),
+#else
+        !!mFrame->key_frame,
+#endif
         TimeUnit::FromMicroseconds(-1),
         mInfo.ScaledImageRect(mFrame->width, mFrame->height), mImageAllocator);
   }
@@ -1347,7 +1393,13 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVAAPI(
     MediaDataDecoder::DecodedData& aResults) {
   FFMPEG_LOG("VA-API Got one frame output with pts=%" PRId64 " dts=%" PRId64
              " duration=%" PRId64 " opaque=%" PRId64,
-             aPts, mFrame->pkt_dts, aDuration, mCodecContext->reordered_opaque);
+             aPts, mFrame->pkt_dts, aDuration,
+#if LIBAVCODEC_VERSION_MAJOR < 61
+             mCodecContext->reordered_opaque
+#else
+             (int64_t)0
+#endif
+  );
 
   VADRMPRIMESurfaceDescriptor vaDesc;
   if (!GetVAAPISurfaceDescriptor(&vaDesc)) {
@@ -1377,7 +1429,12 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageVAAPI(
   RefPtr<VideoData> vp = VideoData::CreateFromImage(
       mInfo.mDisplay, aOffset, TimeUnit::FromMicroseconds(aPts),
       TimeUnit::FromMicroseconds(aDuration), surface->GetAsImage(),
-      !!mFrame->key_frame, TimeUnit::FromMicroseconds(-1));
+#if LIBAVCODEC_VERSION_MAJOR >= 61
+      !!(mFrame->flags & AV_FRAME_FLAG_KEY),
+#else
+      !!mFrame->key_frame,
+#endif
+      TimeUnit::FromMicroseconds(-1));
 
   if (!vp) {
     return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,

@@ -32,6 +32,7 @@
 #include "libavutil/crc.h"
 #include "libavutil/float_dsp.h"
 #include "libavutil/libm.h"
+#include "libavutil/mem.h"
 #include "libavutil/mem_internal.h"
 #include "libavutil/thread.h"
 
@@ -92,7 +93,7 @@ typedef struct MPADecodeContext {
     int err_recognition;
     AVCodecContext* avctx;
     MPADSPContext mpadsp;
-    void (*butterflies_float)(float *av_restrict v1, float *av_restrict v2, int len);
+    void (*butterflies_float)(float *restrict v1, float *restrict v2, int len);
     AVFrame *frame;
     uint32_t crc;
 } MPADecodeContext;
@@ -279,10 +280,9 @@ static av_cold void decode_init_static(void)
     ff_mpegaudiodec_common_init_static();
 }
 
-static av_cold int decode_init(AVCodecContext * avctx)
+static av_cold int decode_ctx_init(AVCodecContext *avctx, MPADecodeContext *s)
 {
     static AVOnce init_static_once = AV_ONCE_INIT;
-    MPADecodeContext *s = avctx->priv_data;
 
     s->avctx = avctx;
 
@@ -312,6 +312,11 @@ static av_cold int decode_init(AVCodecContext * avctx)
     ff_thread_once(&init_static_once, decode_init_static);
 
     return 0;
+}
+
+static av_cold int decode_init(AVCodecContext *avctx)
+{
+    return decode_ctx_init(avctx, avctx->priv_data);
 }
 
 #define C3 FIXHR(0.86602540378443864676/2)
@@ -380,7 +385,7 @@ static int handle_crc(MPADecodeContext *s, int sec_len)
         crc_val = av_crc(crc_tab, crc_val, tmp_buf, 3);
 
         if (crc_val) {
-            av_log(s->avctx, AV_LOG_ERROR, "CRC mismatch %X!\n", crc_val);
+            av_log(s->avctx, AV_LOG_ERROR, "CRC mismatch %"PRIX32"!\n", crc_val);
             if (s->err_recognition & AV_EF_EXPLODE)
                 return AVERROR_INVALIDDATA;
         }
@@ -760,6 +765,7 @@ static int huffman_decode(MPADecodeContext *s, GranuleDef *g,
     /* low frequencies (called big values) */
     s_index = 0;
     for (i = 0; i < 3; i++) {
+        const VLCElem *vlctab;
         int j, k, l, linbits;
         j = g->region_size[i];
         if (j == 0)
@@ -768,13 +774,13 @@ static int huffman_decode(MPADecodeContext *s, GranuleDef *g,
         k       = g->table_select[i];
         l       = ff_mpa_huff_data[k][0];
         linbits = ff_mpa_huff_data[k][1];
-        vlc     = &ff_huff_vlc[l];
 
         if (!l) {
             memset(&g->sb_hybrid[s_index], 0, sizeof(*g->sb_hybrid) * 2 * j);
             s_index += 2 * j;
             continue;
         }
+        vlctab  = ff_huff_vlc[l];
 
         /* read huffcode and compute each couple */
         for (; j > 0; j--) {
@@ -787,7 +793,7 @@ static int huffman_decode(MPADecodeContext *s, GranuleDef *g,
                 if (pos >= end_pos)
                     break;
             }
-            y = get_vlc2(&s->gb, vlc->table, 7, 3);
+            y = get_vlc2(&s->gb, vlctab, 7, 3);
 
             if (!y) {
                 g->sb_hybrid[s_index    ] =
@@ -1602,7 +1608,8 @@ static int decode_frame(AVCodecContext *avctx, AVFrame *frame,
     if (ret >= 0) {
         s->frame->nb_samples = avctx->frame_size;
         *got_frame_ptr       = 1;
-        avctx->sample_rate   = s->sample_rate;
+        if (avctx->codec_id != AV_CODEC_ID_AHX)
+            avctx->sample_rate = s->sample_rate;
         //FIXME maybe move the other codec info stuff from above here too
     } else {
         av_log(avctx, AV_LOG_ERROR, "Error while decoding MPEG audio frame.\n");
@@ -1619,7 +1626,7 @@ static int decode_frame(AVCodecContext *avctx, AVFrame *frame,
     return buf_size + skipped;
 }
 
-static void mp_flush(MPADecodeContext *ctx)
+static av_cold void mp_flush(MPADecodeContext *ctx)
 {
     memset(ctx->synth_buf, 0, sizeof(ctx->synth_buf));
     memset(ctx->mdct_buf, 0, sizeof(ctx->mdct_buf));
@@ -1627,7 +1634,7 @@ static void mp_flush(MPADecodeContext *ctx)
     ctx->dither_state = 0;
 }
 
-static void flush(AVCodecContext *avctx)
+static av_cold void flush(AVCodecContext *avctx)
 {
     mp_flush(avctx->priv_data);
 }
@@ -1732,10 +1739,8 @@ static const int16_t chan_layout[8] = {
 static av_cold int decode_close_mp3on4(AVCodecContext * avctx)
 {
     MP3On4DecodeContext *s = avctx->priv_data;
-    int i;
 
-    for (i = 0; i < s->frames; i++)
-        av_freep(&s->mp3decctx[i]);
+    av_freep(&s->mp3decctx[0]);
 
     return 0;
 }
@@ -1768,20 +1773,14 @@ static av_cold int decode_init_mp3on4(AVCodecContext * avctx)
     else
         s->syncword = 0xfff00000;
 
-    /* Init the first mp3 decoder in standard way, so that all tables get builded
-     * We replace avctx->priv_data with the context of the first decoder so that
-     * decode_init() does not have to be changed.
+    /* Init the first mp3 decoder in standard way, so that all tables get built
      * Other decoders will be initialized here copying data from the first context
      */
-    // Allocate zeroed memory for the first decoder context
-    s->mp3decctx[0] = av_mallocz(sizeof(MPADecodeContext));
+    // Allocate zeroed memory for the decoder contexts
+    s->mp3decctx[0] = av_calloc(s->frames, sizeof(*s->mp3decctx[0]));
     if (!s->mp3decctx[0])
         return AVERROR(ENOMEM);
-    // Put decoder context in place to make init_decode() happy
-    avctx->priv_data = s->mp3decctx[0];
-    ret = decode_init(avctx);
-    // Restore mp3on4 context pointer
-    avctx->priv_data = s;
+    ret = decode_ctx_init(avctx, s->mp3decctx[0]);
     if (ret < 0)
         return ret;
     s->mp3decctx[0]->adu_mode = 1; // Set adu mode
@@ -1790,20 +1789,20 @@ static av_cold int decode_init_mp3on4(AVCodecContext * avctx)
      * Each frame is 1 or 2 channels - up to 5 frames allowed
      */
     for (i = 1; i < s->frames; i++) {
-        s->mp3decctx[i] = av_mallocz(sizeof(MPADecodeContext));
-        if (!s->mp3decctx[i])
-            return AVERROR(ENOMEM);
+        s->mp3decctx[i] = s->mp3decctx[0] + i;
         s->mp3decctx[i]->adu_mode = 1;
         s->mp3decctx[i]->avctx = avctx;
         s->mp3decctx[i]->mpadsp = s->mp3decctx[0]->mpadsp;
+#if USE_FLOATS
         s->mp3decctx[i]->butterflies_float = s->mp3decctx[0]->butterflies_float;
+#endif
     }
 
     return 0;
 }
 
 
-static void flush_mp3on4(AVCodecContext *avctx)
+static av_cold void flush_mp3on4(AVCodecContext *avctx)
 {
     int i;
     MP3On4DecodeContext *s = avctx->priv_data;

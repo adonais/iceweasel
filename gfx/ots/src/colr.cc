@@ -183,17 +183,28 @@ bool ParseAffine(const ots::Font* font,
 
 // Paint-record dispatch function that reads the format byte and then dispatches
 // to one of the record-specific helpers.
-bool ParsePaint(const ots::Font* font, const uint8_t* data, size_t length, colrState& state);
+bool ParsePaint(const ots::Font* font, const uint8_t* data, size_t length, colrState& state, uint32_t depth);
+
+// ParsePaint will bail out with an error if paint records are too deeply nested.
+constexpr uint32_t kPaintRecursionLimit = 256;
 
 // All these paint record parsers start with Skip(1) to ignore the format field,
 // which the caller has already read in order to dispatch here.
 
 bool ParsePaintColrLayers(const ots::Font* font,
                           const uint8_t* data, size_t length,
-                          colrState& state)
+                          colrState& state, uint32_t depth)
 {
   if (setContains(state.visited, data)) {
+#ifdef OTS_COLR_CYCLE_CHECK
+    // A cycle would imply an infinite loop during painting, unless the renderer
+    // detects and breaks it. To be safe, reject the table.
     return OTS_FAILURE_MSG("Cycle detected in PaintColrLayers");
+#else
+    // Just issue a warning and return (as we've already checked this subgraph).
+    OTS_WARNING("Cycle detected in COLRv1 glyph paint graph (PaintColrLayers)\n");
+    return true;
+#endif
   }
   state.visited.insert(data);
 
@@ -214,7 +225,7 @@ bool ParsePaintColrLayers(const ots::Font* font,
 
   for (auto i = firstLayerIndex; i < firstLayerIndex + numLayers; ++i) {
     auto layer = state.layerList[i];
-    if (!ParsePaint(font, layer.first, layer.second, state)) {
+    if (!ParsePaint(font, layer.first, layer.second, state, depth + 1)) {
       return OTS_FAILURE_MSG("Failed to parse layer");
     }
   }
@@ -360,7 +371,7 @@ bool ParsePaintSweepGradient(const ots::Font* font,
 
 bool ParsePaintGlyph(const ots::Font* font,
                      const uint8_t* data, size_t length,
-                     colrState& state)
+                     colrState& state, uint32_t depth)
 {
   ots::Buffer subtable(data, length);
 
@@ -381,7 +392,7 @@ bool ParsePaintGlyph(const ots::Font* font,
     return OTS_FAILURE_MSG("Glyph ID %u out of bounds", glyphID);
   }
 
-  if (!ParsePaint(font, data + paintOffset, length - paintOffset, state)) {
+  if (!ParsePaint(font, data + paintOffset, length - paintOffset, state, depth + 1)) {
     return OTS_FAILURE_MSG("Failed to parse paint for PaintGlyph");
   }
 
@@ -390,10 +401,15 @@ bool ParsePaintGlyph(const ots::Font* font,
 
 bool ParsePaintColrGlyph(const ots::Font* font,
                          const uint8_t* data, size_t length,
-                         colrState& state)
+                         colrState& state, uint32_t depth)
 {
   if (setContains(state.visited, data)) {
+#ifdef OTS_COLR_CYCLE_CHECK
     return OTS_FAILURE_MSG("Cycle detected in PaintColrGlyph");
+#else
+    OTS_WARNING("Cycle detected in COLRv1 glyph paint graph (PaintColrGlyph)\n");
+    return true;
+#endif
   }
   state.visited.insert(data);
 
@@ -411,7 +427,7 @@ bool ParsePaintColrGlyph(const ots::Font* font,
     return OTS_FAILURE_MSG("Glyph ID %u not found in BaseGlyphList", glyphID);
   }
 
-  if (!ParsePaint(font, baseGlyph->second.first, baseGlyph->second.second, state)) {
+  if (!ParsePaint(font, baseGlyph->second.first, baseGlyph->second.second, state, depth + 1)) {
     return OTS_FAILURE_MSG("Failed to parse referenced color glyph %u", glyphID);
   }
 
@@ -422,7 +438,7 @@ bool ParsePaintColrGlyph(const ots::Font* font,
 
 bool ParsePaintTransform(const ots::Font* font,
                          const uint8_t* data, size_t length,
-                         colrState& state, bool var)
+                         colrState& state, uint32_t depth, bool var)
 {
   ots::Buffer subtable(data, length);
 
@@ -442,7 +458,7 @@ bool ParsePaintTransform(const ots::Font* font,
     return OTS_FAILURE_MSG("Transform offset out of bounds");
   }
 
-  if (!ParsePaint(font, data + paintOffset, length - paintOffset, state)) {
+  if (!ParsePaint(font, data + paintOffset, length - paintOffset, state, depth + 1)) {
     return OTS_FAILURE_MSG("Failed to parse paint for Paint[Var]Transform");
   }
 
@@ -455,7 +471,7 @@ bool ParsePaintTransform(const ots::Font* font,
 
 bool ParsePaintTranslate(const ots::Font* font,
                          const uint8_t* data, size_t length,
-                         colrState& state, bool var)
+                         colrState& state, uint32_t depth, bool var)
 {
   ots::Buffer subtable(data, length);
 
@@ -475,7 +491,7 @@ bool ParsePaintTranslate(const ots::Font* font,
     return OTS_FAILURE_MSG("Invalid paint offset in Paint[Var]Translate");
   }
 
-  if (!ParsePaint(font, data + paintOffset, length - paintOffset, state)) {
+  if (!ParsePaint(font, data + paintOffset, length - paintOffset, state, depth + 1)) {
     return OTS_FAILURE_MSG("Failed to parse paint for Paint[Var]Translate");
   }
 
@@ -484,7 +500,7 @@ bool ParsePaintTranslate(const ots::Font* font,
 
 bool ParsePaintScale(const ots::Font* font,
                      const uint8_t* data, size_t length,
-                     colrState& state,
+                     colrState& state, uint32_t depth,
                      bool var, bool aroundCenter, bool uniform)
 {
   ots::Buffer subtable(data, length);
@@ -508,7 +524,7 @@ bool ParsePaintScale(const ots::Font* font,
     return OTS_FAILURE_MSG("Invalid paint offset in Paint[Var]Scale[...]");
   }
 
-  if (!ParsePaint(font, data + paintOffset, length - paintOffset, state)) {
+  if (!ParsePaint(font, data + paintOffset, length - paintOffset, state, depth + 1)) {
     return OTS_FAILURE_MSG("Failed to parse paint for Paint[Var]Scale[...]");
   }
 
@@ -517,7 +533,7 @@ bool ParsePaintScale(const ots::Font* font,
 
 bool ParsePaintRotate(const ots::Font* font,
                       const uint8_t* data, size_t length,
-                      colrState& state,
+                      colrState& state, uint32_t depth,
                       bool var, bool aroundCenter)
 {
   ots::Buffer subtable(data, length);
@@ -540,7 +556,7 @@ bool ParsePaintRotate(const ots::Font* font,
     return OTS_FAILURE_MSG("Invalid paint offset in Paint[Var]Rotate[...]");
   }
 
-  if (!ParsePaint(font, data + paintOffset, length - paintOffset, state)) {
+  if (!ParsePaint(font, data + paintOffset, length - paintOffset, state, depth + 1)) {
     return OTS_FAILURE_MSG("Failed to parse paint for Paint[Var]Rotate[...]");
   }
 
@@ -549,7 +565,7 @@ bool ParsePaintRotate(const ots::Font* font,
 
 bool ParsePaintSkew(const ots::Font* font,
                     const uint8_t* data, size_t length,
-                    colrState& state,
+                    colrState& state, uint32_t depth,
                     bool var, bool aroundCenter)
 {
   ots::Buffer subtable(data, length);
@@ -573,7 +589,7 @@ bool ParsePaintSkew(const ots::Font* font,
     return OTS_FAILURE_MSG("Invalid paint offset in Paint[Var]Skew[...]");
   }
 
-  if (!ParsePaint(font, data + paintOffset, length - paintOffset, state)) {
+  if (!ParsePaint(font, data + paintOffset, length - paintOffset, state, depth + 1)) {
     return OTS_FAILURE_MSG("Failed to parse paint for Paint[Var]Skew[...]");
   }
 
@@ -582,7 +598,7 @@ bool ParsePaintSkew(const ots::Font* font,
 
 bool ParsePaintComposite(const ots::Font* font,
                          const uint8_t* data, size_t length,
-                         colrState& state)
+                         colrState& state, uint32_t depth)
 {
   ots::Buffer subtable(data, length);
 
@@ -603,14 +619,14 @@ bool ParsePaintComposite(const ots::Font* font,
   if (!sourcePaintOffset || sourcePaintOffset >= length) {
     return OTS_FAILURE_MSG("Invalid source paint offset");
   }
-  if (!ParsePaint(font, data + sourcePaintOffset, length - sourcePaintOffset, state)) {
+  if (!ParsePaint(font, data + sourcePaintOffset, length - sourcePaintOffset, state, depth + 1)) {
     return OTS_FAILURE_MSG("Failed to parse source paint");
   }
 
   if (!backdropPaintOffset || backdropPaintOffset >= length) {
     return OTS_FAILURE_MSG("Invalid backdrop paint offset");
   }
-  if (!ParsePaint(font, data + backdropPaintOffset, length - backdropPaintOffset, state)) {
+  if (!ParsePaint(font, data + backdropPaintOffset, length - backdropPaintOffset, state, depth + 1)) {
     return OTS_FAILURE_MSG("Failed to parse backdrop paint");
   }
 
@@ -619,10 +635,14 @@ bool ParsePaintComposite(const ots::Font* font,
 
 bool ParsePaint(const ots::Font* font,
                 const uint8_t* data, size_t length,
-                colrState& state)
+                colrState& state, uint32_t depth)
 {
   if (setContains(state.paints, data)) {
     return true;
+  }
+
+  if (depth > kPaintRecursionLimit) {
+    return OTS_FAILURE_MSG("Excessive paint recursion");
   }
 
   ots::Buffer subtable(data, length);
@@ -635,7 +655,7 @@ bool ParsePaint(const ots::Font* font,
 
   bool ok = true;
   switch (format) {
-    case 1: ok = ParsePaintColrLayers(font, data, length, state); break;
+    case 1: ok = ParsePaintColrLayers(font, data, length, state, depth); break;
     case 2: ok = ParsePaintSolid(font, data, length, state, false); break;
     case 3: ok = ParsePaintSolid(font, data, length, state, true); break;
     case 4: ok = ParsePaintLinearGradient(font, data, length, state, false); break;
@@ -644,29 +664,29 @@ bool ParsePaint(const ots::Font* font,
     case 7: ok = ParsePaintRadialGradient(font, data, length, state, true); break;
     case 8: ok = ParsePaintSweepGradient(font, data, length, state, false); break;
     case 9: ok = ParsePaintSweepGradient(font, data, length, state, true); break;
-    case 10: ok = ParsePaintGlyph(font, data, length, state); break;
-    case 11: ok = ParsePaintColrGlyph(font, data, length, state); break;
-    case 12: ok = ParsePaintTransform(font, data, length, state, false); break;
-    case 13: ok = ParsePaintTransform(font, data, length, state, true); break;
-    case 14: ok = ParsePaintTranslate(font, data, length, state, false); break;
-    case 15: ok = ParsePaintTranslate(font, data, length, state, true); break;
-    case 16: ok = ParsePaintScale(font, data, length, state, false, false, false); break; // Scale
-    case 17: ok = ParsePaintScale(font, data, length, state, true, false, false); break; // VarScale
-    case 18: ok = ParsePaintScale(font, data, length, state, false, true, false); break; // ScaleAroundCenter
-    case 19: ok = ParsePaintScale(font, data, length, state, true, true, false); break; // VarScaleAroundCenter
-    case 20: ok = ParsePaintScale(font, data, length, state, false, false, true); break; // ScaleUniform
-    case 21: ok = ParsePaintScale(font, data, length, state, true, false, true); break; // VarScaleUniform
-    case 22: ok = ParsePaintScale(font, data, length, state, false, true, true); break; // ScaleUniformAroundCenter
-    case 23: ok = ParsePaintScale(font, data, length, state, true, true, true); break; // VarScaleUniformAroundCenter
-    case 24: ok = ParsePaintRotate(font, data, length, state, false, false); break; // Rotate
-    case 25: ok = ParsePaintRotate(font, data, length, state, true, false); break; // VarRotate
-    case 26: ok = ParsePaintRotate(font, data, length, state, false, true); break; // RotateAroundCenter
-    case 27: ok = ParsePaintRotate(font, data, length, state, true, true); break; // VarRotateAroundCenter
-    case 28: ok = ParsePaintSkew(font, data, length, state, false, false); break; // Skew
-    case 29: ok = ParsePaintSkew(font, data, length, state, true, false); break; // VarSkew
-    case 30: ok = ParsePaintSkew(font, data, length, state, false, true); break; // SkewAroundCenter
-    case 31: ok = ParsePaintSkew(font, data, length, state, true, true); break; // VarSkewAroundCenter
-    case 32: ok = ParsePaintComposite(font, data, length, state); break;
+    case 10: ok = ParsePaintGlyph(font, data, length, state, depth); break;
+    case 11: ok = ParsePaintColrGlyph(font, data, length, state, depth); break;
+    case 12: ok = ParsePaintTransform(font, data, length, state, depth, false); break;
+    case 13: ok = ParsePaintTransform(font, data, length, state, depth, true); break;
+    case 14: ok = ParsePaintTranslate(font, data, length, state, depth, false); break;
+    case 15: ok = ParsePaintTranslate(font, data, length, state, depth, true); break;
+    case 16: ok = ParsePaintScale(font, data, length, state, depth, false, false, false); break; // Scale
+    case 17: ok = ParsePaintScale(font, data, length, state, depth, true, false, false); break; // VarScale
+    case 18: ok = ParsePaintScale(font, data, length, state, depth, false, true, false); break; // ScaleAroundCenter
+    case 19: ok = ParsePaintScale(font, data, length, state, depth, true, true, false); break; // VarScaleAroundCenter
+    case 20: ok = ParsePaintScale(font, data, length, state, depth, false, false, true); break; // ScaleUniform
+    case 21: ok = ParsePaintScale(font, data, length, state, depth, true, false, true); break; // VarScaleUniform
+    case 22: ok = ParsePaintScale(font, data, length, state, depth, false, true, true); break; // ScaleUniformAroundCenter
+    case 23: ok = ParsePaintScale(font, data, length, state, depth, true, true, true); break; // VarScaleUniformAroundCenter
+    case 24: ok = ParsePaintRotate(font, data, length, state, depth, false, false); break; // Rotate
+    case 25: ok = ParsePaintRotate(font, data, length, state, depth, true, false); break; // VarRotate
+    case 26: ok = ParsePaintRotate(font, data, length, state, depth, false, true); break; // RotateAroundCenter
+    case 27: ok = ParsePaintRotate(font, data, length, state, depth, true, true); break; // VarRotateAroundCenter
+    case 28: ok = ParsePaintSkew(font, data, length, state, depth, false, false); break; // Skew
+    case 29: ok = ParsePaintSkew(font, data, length, state, depth, true, false); break; // VarSkew
+    case 30: ok = ParsePaintSkew(font, data, length, state, depth, false, true); break; // SkewAroundCenter
+    case 31: ok = ParsePaintSkew(font, data, length, state, depth, true, true); break; // VarSkewAroundCenter
+    case 32: ok = ParsePaintComposite(font, data, length, state, depth); break;
     default:
       // Clients are supposed to ignore unknown paint types.
       OTS_WARNING("Unknown paint type %u", format);
@@ -804,9 +824,9 @@ bool ParseBaseGlyphList(const ots::Font* font,
     prevGlyphID = glyphID;
   }
 
-  for (const auto& [gid, rec] : state.baseGlyphMap) {
-    if (!ParsePaint(font, rec.first, rec.second, state)) {
-      return OTS_FAILURE_MSG("Failed to parse paint for base glyph ID %u", gid);
+  for (const auto& iter : state.baseGlyphMap) {
+    if (!ParsePaint(font, iter.second.first, iter.second.second, state, 0)) {
+      return OTS_FAILURE_MSG("Failed to parse paint for base glyph ID %u", iter.first);
     }
 
     // After each base glyph record is fully processed, the visited set should be clear;

@@ -27,8 +27,8 @@
 #include "libavutil/x86/asm.h"
 #include "libavutil/x86/cpu.h"
 #include "libavcodec/videodsp.h"
+#include "videodsp.h"
 
-#if HAVE_X86ASM
 typedef void emu_edge_vfix_func(uint8_t *dst, x86_reg dst_stride,
                                 const uint8_t *src, x86_reg src_stride,
                                 x86_reg start_y, x86_reg end_y, x86_reg bh);
@@ -37,37 +37,37 @@ typedef void emu_edge_vvar_func(uint8_t *dst, x86_reg dst_stride,
                                 x86_reg start_y, x86_reg end_y, x86_reg bh,
                                 x86_reg w);
 
-extern emu_edge_vfix_func ff_emu_edge_vfix1_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix2_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix3_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix4_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix5_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix6_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix7_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix8_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix9_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix10_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix11_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix12_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix13_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix14_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix15_mmx;
-extern emu_edge_vfix_func ff_emu_edge_vfix16_sse;
-extern emu_edge_vfix_func ff_emu_edge_vfix17_sse;
-extern emu_edge_vfix_func ff_emu_edge_vfix18_sse;
-extern emu_edge_vfix_func ff_emu_edge_vfix19_sse;
-extern emu_edge_vfix_func ff_emu_edge_vfix20_sse;
-extern emu_edge_vfix_func ff_emu_edge_vfix21_sse;
-extern emu_edge_vfix_func ff_emu_edge_vfix22_sse;
-static emu_edge_vfix_func * const vfixtbl_sse[22] = {
-    ff_emu_edge_vfix1_mmx,  ff_emu_edge_vfix2_mmx,  ff_emu_edge_vfix3_mmx,
-    ff_emu_edge_vfix4_mmx,  ff_emu_edge_vfix5_mmx,  ff_emu_edge_vfix6_mmx,
-    ff_emu_edge_vfix7_mmx,  ff_emu_edge_vfix8_mmx,  ff_emu_edge_vfix9_mmx,
-    ff_emu_edge_vfix10_mmx, ff_emu_edge_vfix11_mmx, ff_emu_edge_vfix12_mmx,
-    ff_emu_edge_vfix13_mmx, ff_emu_edge_vfix14_mmx, ff_emu_edge_vfix15_mmx,
-    ff_emu_edge_vfix16_sse, ff_emu_edge_vfix17_sse, ff_emu_edge_vfix18_sse,
-    ff_emu_edge_vfix19_sse, ff_emu_edge_vfix20_sse, ff_emu_edge_vfix21_sse,
-    ff_emu_edge_vfix22_sse
+extern emu_edge_vfix_func ff_emu_edge_vfix1_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix2_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix3_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix4_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix5_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix6_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix7_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix8_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix9_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix10_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix11_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix12_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix13_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix14_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix15_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix16_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix17_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix18_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix19_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix20_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix21_sse2;
+extern emu_edge_vfix_func ff_emu_edge_vfix22_sse2;
+static emu_edge_vfix_func * const vfixtbl_sse2[22] = {
+    ff_emu_edge_vfix1_sse2,  ff_emu_edge_vfix2_sse2,  ff_emu_edge_vfix3_sse2,
+    ff_emu_edge_vfix4_sse2,  ff_emu_edge_vfix5_sse2,  ff_emu_edge_vfix6_sse2,
+    ff_emu_edge_vfix7_sse2,  ff_emu_edge_vfix8_sse2,  ff_emu_edge_vfix9_sse2,
+    ff_emu_edge_vfix10_sse2, ff_emu_edge_vfix11_sse2, ff_emu_edge_vfix12_sse2,
+    ff_emu_edge_vfix13_sse2, ff_emu_edge_vfix14_sse2, ff_emu_edge_vfix15_sse2,
+    ff_emu_edge_vfix16_sse2, ff_emu_edge_vfix17_sse2, ff_emu_edge_vfix18_sse2,
+    ff_emu_edge_vfix19_sse2, ff_emu_edge_vfix20_sse2, ff_emu_edge_vfix21_sse2,
+    ff_emu_edge_vfix22_sse2
 };
 extern emu_edge_vvar_func ff_emu_edge_vvar_sse;
 
@@ -76,21 +76,21 @@ typedef void emu_edge_hfix_func(uint8_t *dst, x86_reg dst_stride,
 typedef void emu_edge_hvar_func(uint8_t *dst, x86_reg dst_stride,
                                 x86_reg start_x, x86_reg n_words, x86_reg bh);
 
-extern emu_edge_hfix_func ff_emu_edge_hfix2_mmx;
-extern emu_edge_hfix_func ff_emu_edge_hfix4_mmx;
-extern emu_edge_hfix_func ff_emu_edge_hfix6_mmx;
-extern emu_edge_hfix_func ff_emu_edge_hfix8_mmx;
-extern emu_edge_hfix_func ff_emu_edge_hfix10_mmx;
-extern emu_edge_hfix_func ff_emu_edge_hfix12_mmx;
-extern emu_edge_hfix_func ff_emu_edge_hfix14_mmx;
+extern emu_edge_hfix_func ff_emu_edge_hfix2_sse2;
+extern emu_edge_hfix_func ff_emu_edge_hfix4_sse2;
+extern emu_edge_hfix_func ff_emu_edge_hfix6_sse2;
+extern emu_edge_hfix_func ff_emu_edge_hfix8_sse2;
+extern emu_edge_hfix_func ff_emu_edge_hfix10_sse2;
+extern emu_edge_hfix_func ff_emu_edge_hfix12_sse2;
+extern emu_edge_hfix_func ff_emu_edge_hfix14_sse2;
 extern emu_edge_hfix_func ff_emu_edge_hfix16_sse2;
 extern emu_edge_hfix_func ff_emu_edge_hfix18_sse2;
 extern emu_edge_hfix_func ff_emu_edge_hfix20_sse2;
 extern emu_edge_hfix_func ff_emu_edge_hfix22_sse2;
 static emu_edge_hfix_func * const hfixtbl_sse2[11] = {
-    ff_emu_edge_hfix2_mmx,  ff_emu_edge_hfix4_mmx,  ff_emu_edge_hfix6_mmx,
-    ff_emu_edge_hfix8_mmx,  ff_emu_edge_hfix10_mmx, ff_emu_edge_hfix12_mmx,
-    ff_emu_edge_hfix14_mmx, ff_emu_edge_hfix16_sse2, ff_emu_edge_hfix18_sse2,
+    ff_emu_edge_hfix2_sse2,  ff_emu_edge_hfix4_sse2,  ff_emu_edge_hfix6_sse2,
+    ff_emu_edge_hfix8_sse2,  ff_emu_edge_hfix10_sse2, ff_emu_edge_hfix12_sse2,
+    ff_emu_edge_hfix14_sse2, ff_emu_edge_hfix16_sse2, ff_emu_edge_hfix18_sse2,
     ff_emu_edge_hfix20_sse2, ff_emu_edge_hfix22_sse2
 };
 extern emu_edge_hvar_func ff_emu_edge_hvar_sse2;
@@ -104,7 +104,7 @@ extern emu_edge_hfix_func ff_emu_edge_hfix18_avx2;
 extern emu_edge_hfix_func ff_emu_edge_hfix20_avx2;
 extern emu_edge_hfix_func ff_emu_edge_hfix22_avx2;
 static emu_edge_hfix_func * const hfixtbl_avx2[11] = {
-    ff_emu_edge_hfix2_mmx,  ff_emu_edge_hfix4_mmx,  ff_emu_edge_hfix6_mmx,
+    ff_emu_edge_hfix2_sse2,  ff_emu_edge_hfix4_sse2,  ff_emu_edge_hfix6_sse2,
     ff_emu_edge_hfix8_avx2,  ff_emu_edge_hfix10_avx2, ff_emu_edge_hfix12_avx2,
     ff_emu_edge_hfix14_avx2, ff_emu_edge_hfix16_avx2, ff_emu_edge_hfix18_avx2,
     ff_emu_edge_hfix20_avx2, ff_emu_edge_hfix22_avx2
@@ -188,15 +188,15 @@ static av_always_inline void emulated_edge_mc(uint8_t *dst, const uint8_t *src,
     }
 }
 
-static av_noinline void emulated_edge_mc_sse2(uint8_t *buf, const uint8_t *src,
-                                              ptrdiff_t buf_stride,
-                                              ptrdiff_t src_stride,
-                                              int block_w, int block_h,
-                                              int src_x, int src_y, int w,
-                                              int h)
+void ff_emulated_edge_mc_sse2(uint8_t *buf, const uint8_t *src,
+                              ptrdiff_t buf_stride,
+                              ptrdiff_t src_stride,
+                              int block_w, int block_h,
+                              int src_x, int src_y, int w,
+                              int h)
 {
     emulated_edge_mc(buf, src, buf_stride, src_stride, block_w, block_h,
-                     src_x, src_y, w, h, vfixtbl_sse, &ff_emu_edge_vvar_sse,
+                     src_x, src_y, w, h, vfixtbl_sse2, &ff_emu_edge_vvar_sse,
                      hfixtbl_sse2, &ff_emu_edge_hvar_sse2);
 }
 
@@ -209,29 +209,26 @@ static av_noinline void emulated_edge_mc_avx2(uint8_t *buf, const uint8_t *src,
                                               int h)
 {
     emulated_edge_mc(buf, src, buf_stride, src_stride, block_w, block_h,
-                     src_x, src_y, w, h, vfixtbl_sse, &ff_emu_edge_vvar_sse,
+                     src_x, src_y, w, h, vfixtbl_sse2, &ff_emu_edge_vvar_sse,
                      hfixtbl_avx2, &ff_emu_edge_hvar_avx2);
 }
 #endif /* HAVE_AVX2_EXTERNAL */
-#endif /* HAVE_X86ASM */
 
 void ff_prefetch_mmxext(const uint8_t *buf, ptrdiff_t stride, int h);
 
 av_cold void ff_videodsp_init_x86(VideoDSPContext *ctx, int bpc)
 {
-#if HAVE_X86ASM
     int cpu_flags = av_get_cpu_flags();
 
     if (EXTERNAL_MMXEXT(cpu_flags)) {
         ctx->prefetch = ff_prefetch_mmxext;
     }
     if (EXTERNAL_SSE2(cpu_flags) && bpc <= 8) {
-        ctx->emulated_edge_mc = emulated_edge_mc_sse2;
+        ctx->emulated_edge_mc = ff_emulated_edge_mc_sse2;
     }
 #if HAVE_AVX2_EXTERNAL
     if (EXTERNAL_AVX2(cpu_flags) && bpc <= 8) {
         ctx->emulated_edge_mc = emulated_edge_mc_avx2;
     }
 #endif
-#endif /* HAVE_X86ASM */
 }

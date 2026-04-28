@@ -165,6 +165,7 @@
 
 #include <utility>
 
+#include "js/friend/CycleCollector.h"
 #include "js/SliceBudget.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoGlobalTimelineMarker.h"
@@ -1227,6 +1228,12 @@ class nsCycleCollector : public nsIMemoryReporter {
   // returns whether anything was collected
   bool CollectWhite();
 
+  void ClearWhiteJSWeakRefTargets();
+
+ public:
+  bool IsGCThingWhiteInCCGraph(JS::GCCellPtr aPtr);
+
+ private:
   void CleanupAfterCollection();
 };
 
@@ -3076,6 +3083,8 @@ bool nsCycleCollector::CollectWhite() {
   //   - Unlink(whites), which drops outgoing links on each white.
   //   - Unroot(whites), which returns the whites to normal GC.
 
+  ClearWhiteJSWeakRefTargets();
+
   // Segments are 4 KiB on 32-bit and 8 KiB on 64-bit.
   static const size_t kSegmentSize = sizeof(void*) * 1024;
   SegmentedVector<PtrInfo*, kSegmentSize, InfallibleAllocPolicy> whiteNodes(
@@ -3162,6 +3171,31 @@ bool nsCycleCollector::CollectWhite() {
   mIncrementalPhase = CleanupPhase;
 
   return numWhiteNodes > 0 || numWhiteGCed > 0 || numWhiteJSZones > 0;
+}
+
+static bool IsGCThingWhiteInCCGraph(JS::GCCellPtr aPtr, void* aData) {
+  auto* cc = static_cast<nsCycleCollector*>(aData);
+  return cc->IsGCThingWhiteInCCGraph(aPtr);
+}
+
+bool nsCycleCollector::IsGCThingWhiteInCCGraph(JS::GCCellPtr aPtr) {
+  PtrInfo* pinfo = mGraph.FindNode(aPtr.asCell());
+  if (!pinfo) {
+    return false;
+  }
+
+  MOZ_ASSERT(pinfo->mParticipant);
+  bool isWhite = pinfo->mColor == white;
+
+  MOZ_ASSERT_IF(isWhite, pinfo->IsGrayJS());
+  return isWhite;
+}
+
+void nsCycleCollector::ClearWhiteJSWeakRefTargets() {
+  // Clear the targets of JS WeakRef objects whose target is part of a cycle
+  // that we're about to unlink.
+  JSRuntime* runtime = Runtime()->Runtime();
+  JS::MaybeClearWeakRefTargets(runtime, &::IsGCThingWhiteInCCGraph, this);
 }
 
 ////////////////////////

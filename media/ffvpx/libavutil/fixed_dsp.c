@@ -47,6 +47,7 @@
 
 #include "common.h"
 #include "fixed_dsp.h"
+#include "mem.h"
 
 static void vector_fmul_add_c(int *dst, const int *src0, const int *src1, const int *src2, int len){
     int i;
@@ -135,7 +136,7 @@ static int scalarproduct_fixed_c(const int *v1, const int *v2, int len)
     return (int)(p >> 31);
 }
 
-static void butterflies_fixed_c(int *av_restrict v1s, int *av_restrict v2, int len)
+static void butterflies_fixed_c(int *restrict v1s, int *restrict v2, int len)
 {
     int i;
     unsigned int *v1 = v1s;
@@ -164,7 +165,7 @@ AVFixedDSPContext * avpriv_alloc_fixed_dsp(int bit_exact)
 
 #if ARCH_RISCV
     ff_fixed_dsp_init_riscv(fdsp);
-#elif ARCH_X86
+#elif ARCH_X86 && HAVE_X86ASM
     ff_fixed_dsp_init_x86(fdsp);
 #endif
 

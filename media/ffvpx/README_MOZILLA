@@ -2,9 +2,9 @@
 
 This directory contains files used in gecko builds from FFmpeg
 (http://ffmpeg.org). The current files are from FFmpeg as of
-revision fed07efcde72824ac1ada80d4af4e91ac4fcfc14
+revision 6c114bd6fa9fe006bed7dcdb88de4790510080d4
 git clone https://git.ffmpeg.org/ffmpeg.git ffmpeg
-git checkout fed07efcde72824ac1ada80d4af4e91ac4fcfc14
+git checkout 6c114bd6fa9fe006bed7dcdb88de4790510080d4
 
 This copy has a single patch backported from a later revision to fix the build with recent binutils:
 
@@ -163,5 +163,4 @@ and link errors.
 There are going to be a lot of changes in terms of symbols exported. Adjust
 `libavutil/avutil.symbols` and `libavcodec/avcodec.symbols` by removing and
 
-Finally, apply the patches:
-- vp9-get-format-rollback.patch to fix a VP9 decoder error handling issue.
+Finally, apply the patches in `changes.patch` and `1846703.patch`.
