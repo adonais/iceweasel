@@ -404,6 +404,9 @@ PTextureParent* ContentCompositorBridgeParent::AllocPTextureParent(
         << "Texture backend is wrong";
   }
 
+  if (aSharedData.type() == SurfaceDescriptor::TSurfaceDescriptorDcompSurface) {
+    return nullptr;
+  }
   return TextureHost::CreateIPDLActor(
       this, aSharedData, std::move(aReadLock), aLayersBackend, aFlags,
       mCompositorManager->GetContentId(), aSerial, aExternalImageId);
