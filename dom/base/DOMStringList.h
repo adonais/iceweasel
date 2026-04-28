@@ -5,6 +5,7 @@
 #ifndef mozilla_dom_DOMStringList_h
 #define mozilla_dom_DOMStringList_h
 
+#include "nsCOMPtr.h"
 #include "nsISupports.h"
 #include "nsString.h"
 #include "nsTArray.h"
@@ -17,12 +18,14 @@ class DOMStringList : public nsISupports, public nsWrapperCache {
   virtual ~DOMStringList();
 
  public:
+  explicit DOMStringList(nsISupports* aParent = nullptr) : mParent(aParent) {}
+
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(DOMStringList)
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
-  nsISupports* GetParentObject() { return nullptr; }
+  nsISupports* GetParentObject() { return mParent; }
 
   void IndexedGetter(uint32_t aIndex, bool& aFound, nsAString& aResult) {
     EnsureFresh();
@@ -75,6 +78,7 @@ class DOMStringList : public nsISupports, public nsWrapperCache {
   // XXXbz we really want this to be a fallible array, but we end up passing it
   // to consumers who declare themselves as taking and nsTArray.  :(
   nsTArray<nsString> mNames;
+  nsCOMPtr<nsISupports> mParent;
 };
 
 }  // namespace mozilla::dom

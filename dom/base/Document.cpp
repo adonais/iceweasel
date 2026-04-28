@@ -18278,7 +18278,7 @@ Span<const nsString> Document::GetAncestorOriginsList() const {
 
 already_AddRefed<DOMStringList> Document::AncestorOrigins() {
   if (!mCachedAncestorOrigins) {
-    mCachedAncestorOrigins = new DOMStringList();
+    mCachedAncestorOrigins = new DOMStringList(ToSupports(this));
     for (const auto& origin : mAncestorOriginsList) {
       mCachedAncestorOrigins->Add(origin);
     }

@@ -218,7 +218,8 @@ RefPtr<DOMStringList> Location::GetAncestorOrigins(
   // Step 1. If this's relevant Document is null, then return an empty list.
   if (!doc || !doc->IsActive()) {
     if (!mRelevantDocNullAncestorOriginsList) {
-      mRelevantDocNullAncestorOriginsList = MakeRefPtr<DOMStringList>();
+      mRelevantDocNullAncestorOriginsList =
+          MakeRefPtr<DOMStringList>(mInnerWindow);
     }
     return mRelevantDocNullAncestorOriginsList;
   }
