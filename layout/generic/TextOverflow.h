@@ -255,6 +255,8 @@ class TextOverflow final {
                      bool aCreateIEnd, const LogicalRect& aInsideMarkersArea,
                      const LogicalRect& aContentArea, uint32_t aLineNumber);
 
+  gfxTextRun* GetEllipsisTextRun();
+
   LogicalRect mContentArea;
   nsDisplayListBuilder* mBuilder;
   nsIFrame* mBlock;
@@ -322,6 +324,8 @@ class TextOverflow final {
 
   Marker mIStart;  // the inline start marker
   Marker mIEnd;    // the inline end marker
+
+  RefPtr<gfxTextRun> mEllipsisTextRun;
 };
 
 }  // namespace css
