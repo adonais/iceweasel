@@ -30,6 +30,17 @@ add_task(function test_stringifyArguments_no_value() {
   equal(stringifyArguments({ type: "window" }), "window");
 });
 
+add_task(function test_stringifyArguments_error() {
+  equal(
+    stringifyArguments({ type: "error", value: "Error: test message" }),
+    "Error: test message"
+  );
+  equal(
+    stringifyArguments({ type: "error", value: "TypeError: type error" }),
+    "TypeError: type error"
+  );
+});
+
 add_task(function test_stringifyArguments_regexp() {
   equal(
     stringifyArguments({

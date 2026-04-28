@@ -41,18 +41,20 @@ export const formatConsoleMessage = options => {
     return messageText;
   }
 
+  const stringifiedArgs = serializedArgs.map((arg, idx) => {
+    if (arg.type === "error") {
+      arg.value = messageArguments[idx];
+    }
+    return stringifyArguments(arg);
+  });
+
   if (method === "timeLog") {
-    const rest = serializedArgs.slice(1).map(stringifyArguments).join(" ");
+    const rest = stringifiedArgs.slice(1).join(" ");
     return rest ? `${parameters[0]} ${rest}` : String(parameters[0]);
   }
 
-  // Formatters have already been applied at this point.
-  // message.arguments corresponds to the "formatted args" from the
-  // specifications.
-
-  const args = serializedArgs || [];
   // Concatenate all formatted arguments in text.
-  return args.map(stringifyArguments).join(" ");
+  return stringifiedArgs.join(" ");
 };
 
 export const stringifyArguments = arg => {
@@ -71,6 +73,8 @@ export const stringifyArguments = arg => {
 
     // Per spec, non-primitive types should return
     // an implementation-defined string.
+    case "error":
+      return String(value);
     // Perform the following transformations to better align
     // with Google Chrome representation.
     case "array":
