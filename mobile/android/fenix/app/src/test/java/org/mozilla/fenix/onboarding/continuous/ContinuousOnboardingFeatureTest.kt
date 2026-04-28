@@ -379,15 +379,6 @@ class ContinuousOnboardingFeatureTest {
     }
 
     @Test
-    fun `WHEN default browser step completed without RESULT_OK THEN pending stage is marked completed`() {
-        feature.pendingStage = ContinuousOnboardingStage.DAY_2
-
-        feature.onDefaultBrowserStepCompleted(activity, Activity.RESULT_CANCELED)
-
-        assertEquals(dateTimeProvider.currentTimeMillis(), settings.secondDayOnboardingCompletedTimestamp)
-    }
-
-    @Test
     fun `WHEN default browser step completed without RESULT_OK THEN pending stage is reset`() {
         feature.pendingStage = ContinuousOnboardingStage.DAY_2
 

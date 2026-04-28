@@ -221,10 +221,9 @@ class ContinuousOnboardingFeatureDefault(
                 sequenceId = OnboardingPageUiData.Type.DEFAULT_BROWSER.telemetryId,
                 sequencePosition = "0",
             )
-            maybeShowNotificationCardDialog(activity, pendingStage)
-        } else {
-            markStageCompleted(pendingStage)
         }
+
+        maybeShowNotificationCardDialog(activity, pendingStage)
 
         // Reset the pending stage
         pendingStage = ContinuousOnboardingStage.NONE
