@@ -787,7 +787,17 @@ export class SearchModeSwitcher {
 
     let observer = engineObj => {
       Services.obs.removeObserver(observer, topic);
-      this.#remoteSearch(engineObj.wrappedJSObject, event);
+      this.#input.search(this.#getSearchString(), {
+        searchEngine: engineObj.wrappedJSObject,
+        searchModeEntry: "searchbutton",
+      });
+      if (this.#input.sapName == "urlbar") {
+        Glean.urlbarUnifiedsearchbutton.picked[
+          engineObj.wrappedJSObject.isConfigEngine
+            ? "builtin_search"
+            : "addon_search"
+        ].add(1);
+      }
     };
     Services.obs.addObserver(observer, topic);
 
