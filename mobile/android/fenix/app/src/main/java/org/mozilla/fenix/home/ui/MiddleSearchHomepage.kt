@@ -186,7 +186,6 @@ private fun MiddleSearchHomepagePreview() {
                 showCollections = true,
                 showPrivacyReport = true,
                 trackersBlockedCount = 754,
-                showSportsWidget = false,
                 sportsWidgetState = SportsWidgetState(),
                 headerState = HeaderState.Normal(
                     wordmarkTextColor = null,

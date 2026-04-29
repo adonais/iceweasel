@@ -20,6 +20,11 @@ interface SportsInteractor {
      * Called when the user dismisses the "Follow your team" card via the "Skip" action.
      */
     fun onSkippedFollowTeam()
+
+    /**
+     * Called when the user dismisses the sports widget.
+     */
+    fun onSportsWidgetDismissed()
 }
 
 /**
@@ -37,5 +42,9 @@ class DefaultSportsInteractor(
 
     override fun onSkippedFollowTeam() {
         controller.handleSkippedFollowTeam()
+    }
+
+    override fun onSportsWidgetDismissed() {
+        controller.handleSportsWidgetDismissed()
     }
 }

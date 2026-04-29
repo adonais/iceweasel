@@ -24,6 +24,11 @@ interface SportsController {
      * Handles the user skipping the "Follow your team" card.
      */
     fun handleSkippedFollowTeam()
+
+    /**
+     * Handles the user dismissing the sports widget from the homepage.
+     */
+    fun handleSportsWidgetDismissed()
 }
 
 /**
@@ -44,5 +49,10 @@ class DefaultSportsController(
     override fun handleSkippedFollowTeam() {
         settings.hasSkippedSportsFollowTeam = true
         appStore.dispatch(AppAction.SportsWidgetAction.FollowTeamSkipped)
+    }
+
+    override fun handleSportsWidgetDismissed() {
+        settings.showHomepageSportsWidget = false
+        appStore.dispatch(AppAction.SportsWidgetAction.SportsWidgetDismissed)
     }
 }

@@ -302,4 +302,10 @@ class SessionControlInteractorTest {
         interactor.onSkippedFollowTeam()
         verify { sportsController.handleSkippedFollowTeam() }
     }
+
+    @Test
+    fun `WHEN the sports widget is dismissed THEN sports controller handles the dismissal`() {
+        interactor.onSportsWidgetDismissed()
+        verify { sportsController.handleSportsWidgetDismissed() }
+    }
 }

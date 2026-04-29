@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components.appstate.sports
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.components.appstate.AppAction
@@ -120,5 +121,53 @@ class SportsWidgetReducerTest {
 
         assertEquals(setOf("US"), finalState.sportsWidgetState.countriesSelected)
         assertEquals(true, finalState.sportsWidgetState.hasSkippedFollowTeam)
+    }
+
+    @Test
+    fun `GIVEN isVisible is true WHEN SportsWidgetDismissed is dispatched THEN isVisible is false`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(isVisible = true),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.SportsWidgetDismissed,
+        )
+
+        assertFalse(finalState.sportsWidgetState.isVisible)
+    }
+
+    @Test
+    fun `GIVEN isVisible is false WHEN SportsWidgetDismissed is dispatched THEN isVisible remains false`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(isVisible = false),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.SportsWidgetDismissed,
+        )
+
+        assertFalse(finalState.sportsWidgetState.isVisible)
+    }
+
+    @Test
+    fun `GIVEN countries and skip state WHEN SportsWidgetDismissed is dispatched THEN other fields are preserved`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(
+                countriesSelected = setOf("US"),
+                hasSkippedFollowTeam = true,
+                isVisible = true,
+            ),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.SportsWidgetDismissed,
+        )
+
+        assertEquals(setOf("US"), finalState.sportsWidgetState.countriesSelected)
+        assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
+        assertFalse(finalState.sportsWidgetState.isVisible)
     }
 }

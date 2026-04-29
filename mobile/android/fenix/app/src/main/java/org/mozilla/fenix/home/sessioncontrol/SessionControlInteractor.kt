@@ -426,4 +426,8 @@ class SessionControlInteractor(
     override fun onSkippedFollowTeam() {
         sportsController.handleSkippedFollowTeam()
     }
+
+    override fun onSportsWidgetDismissed() {
+        sportsController.handleSportsWidgetDismissed()
+    }
 }

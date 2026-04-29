@@ -23,5 +23,11 @@ internal object SportsWidgetReducer {
                 hasSkippedFollowTeam = true,
             ),
         )
+
+        SportsWidgetAction.SportsWidgetDismissed -> state.copy(
+            sportsWidgetState = state.sportsWidgetState.copy(
+                isVisible = false,
+            ),
+        )
     }
 }

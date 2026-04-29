@@ -834,5 +834,10 @@ sealed class AppAction : Action {
          * Dispatched when the user skips the "Follow your team" card.
          */
         data object FollowTeamSkipped : SportsWidgetAction()
+
+        /**
+         * Dispatched when the user dismisses the sports widget.
+         */
+        data object SportsWidgetDismissed : SportsWidgetAction()
     }
 }

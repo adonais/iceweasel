@@ -106,6 +106,8 @@ internal object FakeHomepagePreview {
             override fun onCountriesSelected(countryCodes: Set<String>) { /* no op */ }
 
             override fun onSkippedFollowTeam() { /* no op */ }
+
+            override fun onSportsWidgetDismissed() { /* no op */ }
         }
 
     internal val storiesInteractor

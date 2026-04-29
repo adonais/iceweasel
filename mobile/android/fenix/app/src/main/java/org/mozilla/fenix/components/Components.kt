@@ -369,6 +369,8 @@ class Components(private val context: Context) {
     private fun setupSportsWidgetState() = SportsWidgetState(
         countriesSelected = settings.sportsSelectedCountries,
         hasSkippedFollowTeam = settings.hasSkippedSportsFollowTeam,
+        isVisible = settings.showHomepageSportsWidget,
+        isFeatureEnabled = settings.enableHomepageSportsWidget,
     )
 
     val fxSuggest by lazyMonitored { FxSuggest(context, remoteSettingsService.value, analytics.crashReporter) }

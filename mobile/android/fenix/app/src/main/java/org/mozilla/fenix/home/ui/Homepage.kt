@@ -206,30 +206,16 @@ internal fun Homepage(
                                 )
                             }
 
-                            if (showSportsWidget) {
-                                Spacer(modifier = Modifier.height(44.dp))
-
-                                if (!sportsWidgetState.hasWorldCupStarted) {
-                                    CountdownPromoCard(
-                                        days = "5",
-                                        hours = "21",
-                                        mins = "3",
-                                        onViewSchedule = {},
-                                        onDismiss = {},
-                                        modifier = Modifier.padding(horizontal = horizontalMargin),
-                                    )
-                                } else if (!sportsWidgetState.hasSkippedFollowTeam && sportsWidgetState.countriesSelected.isEmpty()) {
-                                    FollowTeamPromoCard(
-                                        onFollowTeam = {
-                                            showSportsCountrySelector = true
-                                        },
-                                        onSkip = interactor::onSkippedFollowTeam,
-                                        onDismiss = {
-                                            showSportsCountrySelector = false
-                                        },
-                                        modifier = Modifier.padding(horizontal = horizontalMargin),
-                                    )
-                                }
+                            if (sportsWidgetState.isShown) {
+                                SportsWidgetSection(
+                                    sportsWidgetState = sportsWidgetState,
+                                    onDismiss = interactor::onSportsWidgetDismissed,
+                                    onViewSchedule = {},
+                                    onFollowTeam = {
+                                        showSportsCountrySelector = true
+                                    },
+                                    onSkip = interactor::onSkippedFollowTeam,
+                                )
                             }
 
                             MaybeAddSetupChecklist(setupChecklistState, interactor)
@@ -557,6 +543,35 @@ private fun CollectionsSection(
 }
 
 @Composable
+private fun SportsWidgetSection(
+    sportsWidgetState: SportsWidgetState,
+    onDismiss: () -> Unit,
+    onViewSchedule: () -> Unit,
+    onFollowTeam: () -> Unit,
+    onSkip: () -> Unit,
+) {
+    Spacer(modifier = Modifier.height(44.dp))
+
+    if (!sportsWidgetState.hasWorldCupStarted) {
+        CountdownPromoCard(
+            days = "5",
+            hours = "21",
+            mins = "3",
+            onViewSchedule = onViewSchedule,
+            onDismiss = onDismiss,
+            modifier = Modifier.padding(horizontal = horizontalMargin),
+        )
+    } else if (!sportsWidgetState.hasSkippedFollowTeam && sportsWidgetState.countriesSelected.isEmpty()) {
+        FollowTeamPromoCard(
+            onFollowTeam = onFollowTeam,
+            onSkip = onSkip,
+            onDismiss = onDismiss,
+            modifier = Modifier.padding(horizontal = horizontalMargin),
+        )
+    }
+}
+
+@Composable
 @PreviewLightDark
 private fun HomepagePreview() {
     FirefoxTheme {
@@ -581,7 +596,6 @@ private fun HomepagePreview() {
                     showCollections = true,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
-                    showSportsWidget = true,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
@@ -636,7 +650,6 @@ private fun HomepageBannerPreview() {
                     showCollections = true,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
-                    showSportsWidget = true,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
@@ -691,7 +704,6 @@ private fun HomepagePreviewCollections() {
                     showCollections = true,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
-                    showSportsWidget = true,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
@@ -746,7 +758,6 @@ private fun MinimalHomepagePreview() {
                     showCollections = false,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
-                    showSportsWidget = true,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
                         wordmarkTextColor = null,

@@ -88,7 +88,6 @@ internal sealed class HomepageState {
      * @property showCollections Whether to show the collections section.
      * @property showPrivacyReport Whether to show the privacy report section.
      * @property trackersBlockedCount The number of trackers blocked for the privacy report.
-     * @property showSportsWidget Whether to show the sports widget.
      * @property sportsWidgetState State of the sports widget on the homepage.
      * @property headerState State related to the header of the homepage.
      * @property searchBarVisible Whether the middle search bar should be visible or not.
@@ -122,7 +121,6 @@ internal sealed class HomepageState {
         val showCollections: Boolean,
         val showPrivacyReport: Boolean,
         val trackersBlockedCount: Int,
-        val showSportsWidget: Boolean,
         val sportsWidgetState: SportsWidgetState,
         override val headerState: HeaderState,
         val searchBarVisible: Boolean,
@@ -252,7 +250,6 @@ internal sealed class HomepageState {
                 showPrivacyReport = settings.showPrivacyReportSectionToggle &&
                     settings.showPrivacyReportFeature,
                 trackersBlockedCount = trackersBlockedCount,
-                showSportsWidget = settings.enableHomepageSportsWidget && settings.showHomepageSportsWidget,
                 sportsWidgetState = sportsWidgetState,
                 headerState = buildHeaderState(
                     settings = settings,

@@ -68,4 +68,14 @@ class SportsControllerTest {
             appStore.dispatch(AppAction.SportsWidgetAction.FollowTeamSkipped)
         }
     }
+
+    @Test
+    fun `WHEN the sports widget is dismissed THEN the visibility preference is set to false and the action is dispatched`() {
+        controller.handleSportsWidgetDismissed()
+
+        verify {
+            settings.showHomepageSportsWidget = false
+            appStore.dispatch(AppAction.SportsWidgetAction.SportsWidgetDismissed)
+        }
+    }
 }
