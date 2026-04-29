@@ -476,6 +476,12 @@ HRESULT MFCDMParent::RecreateCDM() {
 
   MutexAutoLock lock(Mutex());
   mCDMAccessLock.NoteExclusiveAccess();
+  if (mCDM) {
+    auto rv = mCDM->SetPMPHostApp(nullptr);
+    if (FAILED(rv)) {
+      MFCDM_PARENT_LOG("Failed to clear PMP Host App, rv=%lx", rv);
+    }
+  }
   mCDMProxy = nullptr;
   mCDM.Reset();
   mPMPHostWrapper.Reset();
