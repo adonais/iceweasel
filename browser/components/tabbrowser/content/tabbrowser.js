@@ -10403,8 +10403,12 @@ var TabContextMenu = {
         pinnedTabs.length ||
         customizeTabs.length;
 
-      this.addNewBadge(contextMoveTabToNewSplitView);
-      this.addNewBadge(contextSeparateSplitView);
+      this.removeNewBadge(contextMoveTabToNewSplitView);
+      this.removeNewBadge(contextSeparateSplitView);
+      if (!Services.prefs.getBoolPref("browser.tabs.splitview.hasUsed", true)) {
+        this.addNewBadge(contextMoveTabToNewSplitView);
+        this.addNewBadge(contextSeparateSplitView);
+      }
     }
 
     // Only one of Reload_Tab/Reload_Selected_Tabs should be visible.

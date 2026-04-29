@@ -727,3 +727,65 @@ add_task(async function test_contextMenuReverseSplitView() {
     BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
   }
 });
+
+add_task(async function test_new_badge() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.tabs.splitView.enabled", true],
+      ["browser.tabs.splitview.hasUsed", false],
+    ],
+  });
+
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+
+  gBrowser.selectedTab = tab1;
+
+  // Badge should appear when the user has never used split view.
+  await withTabMenu(tab1, async (moveItem, unsplitItem) => {
+    await BrowserTestUtils.waitForMutationCondition(
+      moveItem,
+      { attributes: true },
+      () => !moveItem.hidden,
+      "moveItem is visible"
+    );
+    Assert.ok(
+      moveItem.classList.contains("badge-new"),
+      "moveTabToSplitView shows new badge when hasUsed is false"
+    );
+    Assert.ok(
+      unsplitItem.classList.contains("badge-new"),
+      "separateSplitView shows new badge when hasUsed is false"
+    );
+  });
+
+  // Badge should disappear after using split view.
+  let splitViewCreated = BrowserTestUtils.waitForEvent(
+    gBrowser.tabContainer,
+    "SplitViewCreated"
+  );
+  gBrowser.addTabSplitView([tab1, tab2]);
+  await splitViewCreated;
+
+  await withTabMenu(tab1, async (moveItem, unsplitItem) => {
+    await BrowserTestUtils.waitForMutationCondition(
+      unsplitItem,
+      { attributes: true },
+      () => !unsplitItem.hidden,
+      "unsplitItem is visible"
+    );
+    Assert.ok(
+      !moveItem.classList.contains("badge-new"),
+      "moveTabToSplitView has no badge after using split view"
+    );
+    Assert.ok(
+      !unsplitItem.classList.contains("badge-new"),
+      "separateSplitView has no badge after using split view"
+    );
+  });
+
+  tab1.splitview.close();
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+  }
+});
