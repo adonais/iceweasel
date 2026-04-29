@@ -4056,7 +4056,7 @@
     <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
     <string name="sports_widget_match_full_time_suffix">(Full time)</string>
     <!-- Sports widget match status to indicate the match has been completed. -->
-    <string name="sports_widget_match_full_time" tools:ignore="UnusedResources">Full time</string>
+    <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Full time</string>
     <!-- Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
       meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
       It’s playfully related to Firefox in that “tabs” are a browser feature.
