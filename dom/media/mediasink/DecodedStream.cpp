@@ -650,8 +650,7 @@ nsresult DecodedStream::Start(const TimeUnit& aStartTime,
   SyncRunnable::DispatchToThread(GetMainThreadSerialEventTarget(), r);
   if (static_cast<R*>(r.get())->mDidRegisterAudio) {
     NS_DispatchToMainThread(NS_NewRunnableFunction(
-        "DecodedStream::Start",
-        [self = RefPtr<DecodedStream>(this), this]() {
+        "DecodedStream::Start", [self = RefPtr<DecodedStream>(this), this]() {
           AssertIsOnMainThread();
           mAudioOutputRegistered = true;
         }));
@@ -825,7 +824,8 @@ RefPtr<GenericPromise> DecodedStream::SetAudioDevice(
   mDevice = aDevice;
   return InvokeAsync(
       GetMainThreadSerialEventTarget(), __func__,
-      [self = RefPtr<DecodedStream>(this), this, aDevice]() -> RefPtr<GenericPromise> {
+      [self = RefPtr<DecodedStream>(this), this,
+       aDevice]() -> RefPtr<GenericPromise> {
         AssertIsOnMainThread();
         RefPtr<ProcessedMediaTrack> audioOutputTrack;
         for (const auto& track : mOutputTracks) {
