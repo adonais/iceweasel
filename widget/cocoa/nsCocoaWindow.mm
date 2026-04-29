@@ -8417,7 +8417,9 @@ static const NSUInteger kWindowShadowOptionsTooltip = 4;
     return parent;
   }
   NSMutableDictionary* copy = [parent mutableCopy];
-  for (auto* key : {@"com.apple.WindowShadowRimDensityActive",
+  for (auto* key : {@"com.apple.WindowShadowInnerRimDensityActive",
+                    @"com.apple.WindowShadowInnerRimDensityInactive",
+                    @"com.apple.WindowShadowRimDensityActive",
                     @"com.apple.WindowShadowRimDensityInactive"}) {
     if ([parent objectForKey:key] != nil) {
       [copy setValue:@(0) forKey:key];
