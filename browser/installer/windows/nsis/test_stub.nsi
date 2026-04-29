@@ -189,6 +189,13 @@ Function .onInit
     ${UnitTest} TestUseExistingInstallPathIfNoInstallDirArgWithNameArg
     ${UnitTest} TestUseExistingInstallPathIfNoInstallDirArgWithDArg
 
+    ${UnitTest} TestGetInstallationTelemetryFromMsiFileDoesNotExist
+    ${UnitTest} TestGetInstallationTelemetryFromMsiFileIsEmpty
+    ${UnitTest} TestGetInstallationTelemetryFromMsiTypeIsIncorrect
+    ${UnitTest} TestGetInstallationTelemetryFromMsiValueIsUnknown
+    ${UnitTest} TestGetInstallationTelemetryFromMsiValueIsTrue
+    ${UnitTest} TestGetInstallationTelemetryFromMsiValueIsFalse
+
     Call TelemetryTests
 
     ${If} $TestFailureCount = 0
@@ -750,6 +757,88 @@ Function TestUseExistingInstallPathIfNoInstallDirArgWithDArg
   ${UseExistingInstallPathIfNoInstallDirArg} "C:\Existing"
   ${AssertEqual} INSTDIR "C:\Default"
   Pop $MockCommandLine
+FunctionEnd
+
+Function TestGetInstallationTelemetryFromMsiFileDoesNotExist
+  GetTempFileName $0
+  Delete $0
+
+  Push $0
+  Call GetInstallationTelemetryFromMsi
+  Pop $1
+  ${IfNot} ${Errors}
+    ${Fail} "Expected GetInstallationTelemetryFromMsi to set errors if file does not exist"
+  ${EndIf}
+FunctionEnd
+
+Function TestGetInstallationTelemetryFromMsiFileIsEmpty
+  GetTempFileName $0
+  FileOpen $1 "$0" w
+  FileClose $1
+
+  Push $0
+  Call GetInstallationTelemetryFromMsi
+  Pop $1
+  Delete $0
+  ${IfNot} ${Errors}
+    ${Fail} "Expected GetInstallationTelemetryFromMsi to set errors if file is empty"
+  ${EndIf}
+FunctionEnd
+
+Function TestGetInstallationTelemetryFromMsiTypeIsIncorrect
+  GetTempFileName $0
+  FileOpen $1 "$0" w
+  FileWriteUTF16LE $1 "{$\"from_msi$\":$\"text$\"}"
+  FileClose $1
+
+  Push $0
+  Call GetInstallationTelemetryFromMsi
+  Pop $1
+  Delete $0
+  ${IfNot} ${Errors}
+    ${Fail} "Expected GetInstallationTelemetryFromMsi to set errors if type is incorrect"
+  ${EndIf}
+FunctionEnd
+
+Function TestGetInstallationTelemetryFromMsiValueIsUnknown
+  GetTempFileName $0
+  FileOpen $1 "$0" w
+  FileWriteUTF16LE $1 "{$\"from_msi$\":unknown}"
+  FileClose $1
+
+  Push $0
+  Call GetInstallationTelemetryFromMsi
+  Pop $1
+  Delete $0
+  ${IfNot} ${Errors}
+    ${Fail} "Expected GetInstallationTelemetryFromMsi to set errors if value is unknown"
+  ${EndIf}
+FunctionEnd
+
+Function TestGetInstallationTelemetryFromMsiValueIsTrue
+  GetTempFileName $0
+  FileOpen $1 "$0" w
+  FileWriteUTF16LE $1 "{$\"from_msi$\":true}"
+  FileClose $1
+
+  Push $0
+  Call GetInstallationTelemetryFromMsi
+  Pop $1
+  Delete $0
+  ${AssertEqual} 1 "1"
+FunctionEnd
+
+Function TestGetInstallationTelemetryFromMsiValueIsFalse
+  GetTempFileName $0
+  FileOpen $1 "$0" w
+  FileWriteUTF16LE $1 "{$\"from_msi$\":false}"
+  FileClose $1
+
+  Push $0
+  Call GetInstallationTelemetryFromMsi
+  Pop $1
+  Delete $0
+  ${AssertEqual} 1 "0"
 FunctionEnd
 
 Section

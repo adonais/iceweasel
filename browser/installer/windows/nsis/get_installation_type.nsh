@@ -43,3 +43,46 @@ Function GetInstallationType
 FunctionEnd
 
 !endif
+
+Function GetInstallationTelemetryFromMsi
+  Pop $0
+  ClearErrors
+
+  nsJSON::Set /file /unicode "$0"
+  ${If} ${Errors}
+    SetErrors
+    Push 0
+    Return
+  ${EndIf}
+
+  nsJSON::Get /type `from_msi` /end
+  ${If} ${Errors}
+    SetErrors
+    Push 0
+    Return
+  ${EndIf}
+
+  Pop $1
+  ${If} $1 != "value"
+    SetErrors
+    Push 0
+    Return
+  ${EndIf}
+
+  nsJSON::Get `from_msi` /end
+  ${If} ${Errors}
+    SetErrors
+    Push 0
+    Return
+  ${EndIf}
+
+  Pop $1
+  ${If} $1 == "true"
+    Push 1
+  ${ElseIf} $1 == "false"
+    Push 0
+  ${Else}
+    SetErrors
+    Push 0
+  ${EndIf}
+FunctionEnd

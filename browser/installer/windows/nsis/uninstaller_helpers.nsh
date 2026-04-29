@@ -491,6 +491,15 @@ ${RemoveDefaultBrowserAgentShortcut}
 Function OnUpdateDesktopLauncherHandler
   Push $0
   Push "$INSTDIR\installation_telemetry.json"
+  Call GetInstallationTelemetryFromMsi
+  Pop $0
+  ${IfNot} ${Errors}
+  ${AndIf} $0 == 1
+    Pop $0
+    Return
+  ${EndIf}
+
+  Push "$INSTDIR\installation_telemetry.json"
   Call GetInstallationType
   ; Pop the result from the stack into $0
   Pop $0
