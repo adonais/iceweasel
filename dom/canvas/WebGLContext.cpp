@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <bitset>
+#include <limits>
 #include <queue>
 #include <regex>
 
@@ -2431,6 +2432,13 @@ webgl::ExplicitPixelPackingState::ForUseWith(
   }
   if (!state.imageHeight) {
     state.imageHeight = subrectSize.y;
+  }
+
+  constexpr uint32_t kGLintMax = std::numeric_limits<GLint>::max();
+  if (state.rowLength > kGLintMax || state.imageHeight > kGLintMax ||
+      state.skipPixels > kGLintMax || state.skipRows > kGLintMax ||
+      state.skipImages > kGLintMax) {
+    return Err("pixelStorei params must be GLint.");
   }
 
   // -
