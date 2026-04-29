@@ -64,6 +64,8 @@ support-files = [
   "blank_page.sjs",
 ]
 
+["browser_aboutNetError_connectionFailure.js"]
+
 ["browser_aboutNetError_contentEncodingError.js"]
 
 ["browser_aboutNetError_csp_iframe.js"]

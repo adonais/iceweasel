@@ -186,3 +186,23 @@ async function loadTRRErrorPage() {
   await pageLoaded;
   return browser;
 }
+
+async function loadNetErrorPage(errorType, hostAndPort) {
+  let browser, tab;
+  const url = `about:neterror?e=${errorType}&u=http%3A%2F%2F${encodeURIComponent(hostAndPort)}%2F`;
+  await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    () => {
+      gBrowser.selectedTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+      browser = gBrowser.selectedBrowser;
+      tab = gBrowser.selectedTab;
+    },
+    false
+  );
+  const pageLoaded = BrowserTestUtils.waitForErrorPage(browser);
+  SpecialPowers.spawn(browser, [url], errorUrl => {
+    content.location = errorUrl;
+  });
+  await pageLoaded;
+  return { browser, tab };
+}

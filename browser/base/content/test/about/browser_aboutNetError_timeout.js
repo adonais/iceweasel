@@ -80,26 +80,19 @@ add_task(async function test_netTimeout_error_page_elements() {
       "fp-neterror-net-timeout-intro",
       "Using the netTimeout intro"
     );
-    const whatCanYouDoList = doc
-      .querySelector("net-error-card")
-      .shadowRoot.querySelector(".what-can-you-do-list");
-    Assert.ok(whatCanYouDoList, "The what-can-you-do list is present");
-    const items = whatCanYouDoList.querySelectorAll("li");
-    Assert.equal(items.length, 3, "Three what-can-you-do items are present");
-    Assert.equal(
-      items[0].dataset.l10nId,
-      "neterror-load-error-try-again",
-      "First item has correct l10n ID"
+    const list = netErrorCard.renderRoot.querySelector(".what-can-you-do-list");
+    Assert.ok(list, "The what-can-you-do list is present");
+    Assert.ok(
+      list.querySelector('[data-l10n-id="neterror-load-error-try-again"]'),
+      "List includes try-again item"
     );
-    Assert.equal(
-      items[1].dataset.l10nId,
-      "neterror-load-error-connection",
-      "Second item has correct l10n ID"
+    Assert.ok(
+      list.querySelector('[data-l10n-id="neterror-load-error-connection"]'),
+      "List includes connection item"
     );
-    Assert.equal(
-      items[2].dataset.l10nId,
-      "neterror-load-error-firewall",
-      "Third item has correct l10n ID"
+    Assert.ok(
+      list.querySelector('[data-l10n-id="neterror-load-error-firewall"]'),
+      "List includes firewall item"
     );
     Assert.ok(
       ContentTaskUtils.isVisible(netErrorCard.tryAgainButton),

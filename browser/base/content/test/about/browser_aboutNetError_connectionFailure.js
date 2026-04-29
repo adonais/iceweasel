@@ -3,8 +3,11 @@
 
 "use strict";
 
-add_task(async function test_netInterrupt_error_page_elements() {
-  const { browser, tab } = await loadNetErrorPage("netInterrupt", "127.0.0.1");
+add_task(async function test_connectionFailure_error_page_elements() {
+  const { browser, tab } = await loadNetErrorPage(
+    "connectionFailure",
+    "127.0.0.1"
+  );
 
   await SpecialPowers.spawn(browser, [], async function () {
     await ContentTaskUtils.waitForCondition(
@@ -17,13 +20,13 @@ add_task(async function test_netInterrupt_error_page_elements() {
 
     Assert.equal(
       netErrorCard.errorTitle.dataset.l10nId,
-      "netInterrupt-title",
-      "Using the netInterrupt title"
+      "connectionFailure-title",
+      "Using the connectionFailure title"
     );
     Assert.equal(
       netErrorCard.errorIntro.dataset.l10nId,
       "fp-neterror-offline-intro",
-      "Using the netInterrupt intro"
+      "Using the connectionFailure intro"
     );
     const list = netErrorCard.renderRoot.querySelector(".what-can-you-do-list");
     Assert.ok(list, "NetErrorCard has what-can-you-do list");
@@ -47,7 +50,7 @@ add_task(async function test_netInterrupt_error_page_elements() {
       !netErrorCard.renderRoot.querySelector(
         '[data-l10n-id="fp-cert-error-code"]'
       ),
-      "No error code is shown for netInterrupt"
+      "No error code is shown for connectionFailure"
     );
   });
 

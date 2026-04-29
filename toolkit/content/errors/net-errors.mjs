@@ -247,7 +247,7 @@ export const NET_ERRORS = [
     id: "connectionFailure",
     errorCode: "connectionFailure",
     category: "net",
-    bodyTitleL10nId: "problem-with-this-site-title",
+    bodyTitleL10nId: "connectionFailure-title",
     introContent: {
       dataL10nId: "fp-neterror-offline-intro",
       dataL10nArgs: { hostname: null },
@@ -258,8 +258,18 @@ export const NET_ERRORS = [
       showGoBack: false,
     },
     customNetError: {
-      titleL10nId: "problem-with-this-site-title",
-      whatCanYouDoL10nId: "fp-neterror-offline-what-can-you-do-body",
+      titleL10nId: "connectionFailure-title",
+      whatCanYouDoItems(context) {
+        const items = [
+          "neterror-load-error-try-again",
+          "neterror-load-error-connection",
+          "neterror-load-error-firewall",
+        ];
+        if (context.showOSXPermissionWarning) {
+          items.push("neterror-load-osx-permission");
+        }
+        return items;
+      },
     },
     hasNoUserFix: false,
     image: NET_ERROR_ILLUSTRATIONS.noConnection,
@@ -311,11 +321,17 @@ export const NET_ERRORS = [
     },
     customNetError: {
       titleL10nId: "netTimeout-title",
-      whatCanYouDoItems: [
-        "neterror-load-error-try-again",
-        "neterror-load-error-connection",
-        "neterror-load-error-firewall",
-      ],
+      whatCanYouDoItems(context) {
+        const items = [
+          "neterror-load-error-try-again",
+          "neterror-load-error-connection",
+          "neterror-load-error-firewall",
+        ];
+        if (context.showOSXPermissionWarning) {
+          items.push("neterror-load-osx-permission");
+        }
+        return items;
+      },
     },
     hasNoUserFix: false,
     image: NET_ERROR_ILLUSTRATIONS.noConnection,
