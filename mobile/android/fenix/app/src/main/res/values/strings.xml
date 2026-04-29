@@ -4037,10 +4037,10 @@
     <string name="sports_widget_see_results" tools:ignore="UnusedResources">See results</string>
     <!-- Sports widget button label to view details of a soccer match results. -->
     <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">View match details</string>
-    <!-- Sports widget section header for previous soccer match results. -->
-    <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Previous match</string>
     <!-- Sports widget section header for related soccer matches in the same group. -->
-    <string name="sports_widget_related_matches" tools:ignore="UnusedResources">Related matches</string>
+    <string name="sports_widget_related_matches">Related matches</string>
+    <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+    <string name="sports_widget_match_full_time">(Full time)</string>
     <!-- Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
       meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
       It’s playfully related to Firefox in that “tabs” are a browser feature.
