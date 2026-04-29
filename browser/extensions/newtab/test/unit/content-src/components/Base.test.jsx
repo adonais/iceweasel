@@ -192,6 +192,168 @@ describe("<BaseContent>", () => {
   });
 });
 
+describe("<BaseContent> wallpaper update logic", () => {
+  const DOCUMENT_STUB = {
+    visibilityState: "visible",
+    addEventListener: sinon.stub(),
+    removeEventListener: sinon.stub(),
+  };
+
+  const makeWallpaperProps = (prefsOverride = {}) => ({
+    store: { getState: () => {} },
+    App: { initialized: true, isForStartupCache: { Wallpaper: false } },
+    Prefs: {
+      values: {
+        "newtabWallpapers.enabled": true,
+        "newtabWallpapers.user.enabled": true,
+        "newtabWallpapers.wallpaper": "beach",
+        "newtabWallpapers.initialWallpaper": "",
+        "newtabWallpapers.customWallpaper.theme": "",
+        "nova.enabled": false,
+        ...prefsOverride,
+      },
+    },
+    Sections: [],
+    DiscoveryStream: { config: { enabled: false }, spocs: {} },
+    Wallpapers: { wallpaperList: [], uploadedWallpaper: null },
+    dispatch: () => {},
+    document: DOCUMENT_STUB,
+  });
+
+  it("should call updateWallpaper when wallpaper is just enabled (wasWallpaperActive false, isWallpaperActive true)", () => {
+    const props = makeWallpaperProps();
+    const wrapper = shallow(<BaseContent {...props} />);
+    const instance = wrapper.instance();
+    const updateSpy = sinon.spy(instance, "updateWallpaper");
+
+    const prevProps = {
+      ...props,
+      Prefs: {
+        values: {
+          ...props.Prefs.values,
+          "newtabWallpapers.enabled": false,
+        },
+      },
+    };
+
+    instance.componentDidUpdate(prevProps);
+    assert.calledOnce(updateSpy);
+  });
+
+  it("should call updateWallpaper when wallpaper is just disabled (wasWallpaperActive true, isWallpaperActive false)", () => {
+    const props = makeWallpaperProps({
+      "newtabWallpapers.enabled": false,
+    });
+    const wrapper = shallow(<BaseContent {...props} />);
+    const instance = wrapper.instance();
+    const updateSpy = sinon.spy(instance, "updateWallpaper");
+
+    const prevProps = {
+      ...props,
+      Prefs: {
+        values: {
+          ...props.Prefs.values,
+          "newtabWallpapers.enabled": true,
+        },
+      },
+    };
+
+    instance.componentDidUpdate(prevProps);
+    assert.calledOnce(updateSpy);
+  });
+
+  it("should call updateWallpaper when the selected wallpaper changes", () => {
+    const props = makeWallpaperProps();
+    const wrapper = shallow(<BaseContent {...props} />);
+    const instance = wrapper.instance();
+    const updateSpy = sinon.spy(instance, "updateWallpaper");
+
+    const prevProps = {
+      ...props,
+      Prefs: {
+        values: {
+          ...props.Prefs.values,
+          "newtabWallpapers.wallpaper": "mountains",
+        },
+      },
+    };
+
+    instance.componentDidUpdate(prevProps);
+    assert.calledOnce(updateSpy);
+  });
+
+  it("should not call updateWallpaper when wallpaper is active but nothing changed", () => {
+    const props = makeWallpaperProps();
+    const wrapper = shallow(<BaseContent {...props} />);
+    const instance = wrapper.instance();
+    const updateSpy = sinon.spy(instance, "updateWallpaper");
+
+    instance.componentDidUpdate(props);
+    assert.notCalled(updateSpy);
+  });
+
+  it("should call updateWallpaper when uploadedWallpaper changes", () => {
+    const props = makeWallpaperProps();
+    const wrapper = shallow(<BaseContent {...props} />);
+    const instance = wrapper.instance();
+    const updateSpy = sinon.spy(instance, "updateWallpaper");
+
+    const prevProps = {
+      ...props,
+      Wallpapers: { wallpaperList: [], uploadedWallpaper: "old-url" },
+    };
+
+    instance.componentDidUpdate(prevProps);
+    assert.calledOnce(updateSpy);
+  });
+
+  it("should call updateWallpaper with Nova when both system and user prefs are enabled", () => {
+    const props = makeWallpaperProps({ "nova.enabled": true });
+    const wrapper = shallow(<BaseContent {...props} />);
+    const instance = wrapper.instance();
+    const updateSpy = sinon.spy(instance, "updateWallpaper");
+
+    const prevProps = {
+      ...props,
+      Prefs: {
+        values: {
+          ...props.Prefs.values,
+          "nova.enabled": true,
+          "newtabWallpapers.wallpaper": "old-wallpaper",
+        },
+      },
+    };
+
+    instance.componentDidUpdate(prevProps);
+    assert.calledOnce(updateSpy);
+  });
+
+  it("should not call updateWallpaper with Nova when user pref is disabled even if system pref is on", () => {
+    const props = makeWallpaperProps({
+      "nova.enabled": true,
+      "newtabWallpapers.user.enabled": false,
+    });
+    const wrapper = shallow(<BaseContent {...props} />);
+    const instance = wrapper.instance();
+    const updateSpy = sinon.spy(instance, "updateWallpaper");
+
+    const prevProps = {
+      ...props,
+      Prefs: {
+        values: {
+          ...props.Prefs.values,
+          "nova.enabled": true,
+          "newtabWallpapers.user.enabled": false,
+          "newtabWallpapers.wallpaper": "old-wallpaper",
+        },
+      },
+    };
+
+    instance.componentDidUpdate(prevProps);
+    assert.notCalled(updateSpy);
+  });
+});
+
 function makeASRouterMessages({ position, isVisible = true } = {}) {
   return {
     isVisible,

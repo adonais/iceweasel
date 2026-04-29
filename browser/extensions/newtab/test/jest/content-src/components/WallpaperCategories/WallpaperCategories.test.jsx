@@ -52,6 +52,31 @@ describe("<WallpaperCategories>", () => {
       "newtabWallpapers.initialWallpaper",
       ""
     );
+    expect(DEFAULT_PROPS.setPref).toHaveBeenCalledWith(
+      "newtabWallpapers.user.enabled",
+      true
+    );
+  });
+
+  it("should not render the reset button when Nova is enabled", () => {
+    const novaProps = {
+      ...DEFAULT_PROPS,
+      Prefs: {
+        values: {
+          ...DEFAULT_PROPS.Prefs.values,
+          "nova.enabled": true,
+        },
+      },
+    };
+    const { container } = render(<WallpaperCategories {...novaProps} />);
+    expect(
+      container.querySelector(".wallpapers-reset")
+    ).not.toBeInTheDocument();
+  });
+
+  it("should render the reset button when Nova is disabled", () => {
+    const { container } = render(<WallpaperCategories {...DEFAULT_PROPS} />);
+    expect(container.querySelector(".wallpapers-reset")).toBeInTheDocument();
   });
 
   it("should clear initialWallpaper when a custom colour is set", () => {
@@ -69,6 +94,10 @@ describe("<WallpaperCategories>", () => {
     expect(DEFAULT_PROPS.setPref).toHaveBeenCalledWith(
       "newtabWallpapers.initialWallpaper",
       ""
+    );
+    expect(DEFAULT_PROPS.setPref).toHaveBeenCalledWith(
+      "newtabWallpapers.user.enabled",
+      true
     );
   });
 });
