@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.IconButton
@@ -41,6 +42,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param title The optional header text shown above the [description].
  * @param footer An optional piece of text with a clickable link.
  * @param illustration Composable slot displayed at the end of the card. Commonly used for illustrations.
+ * @param contentSpacing The vertical spacing between the title, message, and actions slots.
  * @param colors Defines the color styling for the card. Defaults to
  * [PromoCardColors.promoCardColors].
  */
@@ -53,6 +55,7 @@ fun PromoCard(
     title: String? = null,
     footer: Pair<String, LinkTextState>? = null,
     illustration: (@Composable () -> Unit)? = null,
+    contentSpacing: Dp = FirefoxTheme.layout.space.static50,
     colors: PromoCardColors = PromoCardColors.promoCardColors(),
 ) {
     PromoCard(
@@ -71,6 +74,7 @@ fun PromoCard(
             }
         },
         illustration = illustration,
+        contentSpacing = contentSpacing,
         colors = colors,
         onDismiss = onDismiss,
     )
@@ -87,6 +91,7 @@ fun PromoCard(
  * @param message Composable slot displayed below the title. Intended for descriptive or supporting content.
  * @param actions Composable slot below the message, intended for actions such as a link or buttons.
  * @param illustration Composable slot displayed at the end of the card.
+ * @param contentSpacing The vertical spacing between the title, message, and actions slots.
  * @param colors Defines the color styling for the card. Defaults to [PromoCardColors.promoCardColors].
  */
 @Composable
@@ -98,6 +103,7 @@ fun PromoCard(
     message: (@Composable () -> Unit)? = null,
     actions: (@Composable () -> Unit)? = null,
     illustration: (@Composable () -> Unit)? = null,
+    contentSpacing: Dp = FirefoxTheme.layout.space.static50,
     colors: PromoCardColors = PromoCardColors.promoCardColors(),
 ) {
     InfoCardContainer(
@@ -118,7 +124,7 @@ fun PromoCard(
                     modifier = Modifier
                         .weight(1f)
                         .padding(vertical = FirefoxTheme.layout.space.static150),
-                    verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.static50),
+                    verticalArrangement = Arrangement.spacedBy(contentSpacing),
                 ) {
                     CompositionLocalProvider(
                         LocalTextStyle provides FirefoxTheme.typography.headline8.copy(

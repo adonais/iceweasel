@@ -3976,7 +3976,7 @@
 
     <!-- Sports widget -->
     <!-- Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow. -->
-    <string name="sports_widget_country_selector_title" tools:ignore="UnusedResources">Follow your team</string>
+    <string name="sports_widget_country_selector_title">Follow your team</string>
     <!-- Section header for the North America region in the sports widget country selector. -->
     <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">North America</string>
     <!-- Section header for the Africa confederation group in the sports widget country selector. -->
@@ -4080,7 +4080,7 @@
     <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
     <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Countdown to the World Cup</string>
     <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
-    <string name="sports_widget_view_schedule" tools:ignore="UnusedResources">View schedule</string>
+    <string name="sports_widget_view_schedule">View schedule</string>
     <!-- Sports widget match status label shown during halftime of a match. -->
     <string name="sports_widget_halftime" tools:ignore="UnusedResources">Halftime</string>
     <!-- Sports widget match status label shown during extra time of a match. -->
