@@ -169,7 +169,7 @@ export class ContentSection extends React.PureComponent {
       mayHaveListsWidget,
       mayHaveWeatherForecast,
       openPreferences,
-      wallpapersUserEnabled,
+      wallpapersEnabled,
       activeWallpaper,
       setPref,
       mayHaveTopicSections,
@@ -180,7 +180,6 @@ export class ContentSection extends React.PureComponent {
       showSectionsMgmtPanel,
       // @nova-cleanup(remove-conditional): Remove novaEnabled
       novaEnabled,
-      wallpapersEnabled,
       toggleWidgetsManagementPanel,
       showWidgetsManagementPanel,
       widgetsEnabled,
@@ -208,26 +207,28 @@ export class ContentSection extends React.PureComponent {
     return (
       <>
         <div className="home-section">
-          {wallpapersEnabled && (
+          {(wallpapersEnabled || novaEnabled) && (
             <>
               <div className="wallpapers-section">
                 {novaEnabled && (
                   <moz-toggle
                     id="wallpapers-toggle"
-                    pressed={wallpapersUserEnabled || null}
+                    pressed={wallpapersEnabled || null}
                     ontoggle={this.onPreferenceSelect}
                     onToggle={this.onPreferenceSelect}
-                    data-preference="newtabWallpapers.user.enabled"
+                    data-preference="newtabWallpapers.enabled"
                     data-event-source="WALLPAPERS"
                     data-l10n-id="newtab-wallpaper-toggle-title"
                   />
                 )}
-                <WallpaperCategories
-                  setPref={setPref}
-                  activeWallpaper={activeWallpaper}
-                  exitEventFired={exitEventFired}
-                  onSubpanelToggle={onSubpanelToggle}
-                />
+                {wallpapersEnabled && (
+                  <WallpaperCategories
+                    setPref={setPref}
+                    activeWallpaper={activeWallpaper}
+                    exitEventFired={exitEventFired}
+                    onSubpanelToggle={onSubpanelToggle}
+                  />
+                )}
               </div>
             </>
           )}

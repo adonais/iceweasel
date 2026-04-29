@@ -692,14 +692,6 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
-    "newtabWallpapers.user.enabled",
-    {
-      title:
-        "Boolean flag controlling wallpaper visibility -- if true the user's selected wallpaper is shown, if false it is hidden",
-      value: false,
-    },
-  ],
-  [
     "newtabWallpapers.customColor.enabled",
     {
       title: "Boolean flag to turn show custom color select box",

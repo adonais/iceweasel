@@ -19,7 +19,6 @@ const DEFAULT_PROPS = {
     widgetsMayBeMaximized: false,
   },
   wallpapersEnabled: false,
-  wallpapersUserEnabled: false,
   activeWallpaper: null,
   pocketRegion: false,
   mayHaveTopicSections: false,
