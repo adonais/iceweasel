@@ -81,7 +81,10 @@ elif CONFIG['INTEL_ARCHITECTURE']:
     DEFINES['WEBP_HAVE_SSE41'] = 1;
     # The avx intrinsics that libwebp uses are only available in gcc 11 or newer.
     if CONFIG["CC_TYPE"] != "gcc" or int(CONFIG["CC_VERSION"].split(".")[0]) >= 11:
-      DEFINES['WEBP_HAVE_AVX2'] = 1;
+      # disable avx2 until this bug is fixed
+      # https://bugzilla.mozilla.org/show_bug.cgi?id=1980010
+      # https://issues.chromium.org/u/1/issues/435213378
+      # DEFINES['WEBP_HAVE_AVX2'] = 1;
       SOURCES += [
         'lossless_avx2.c',
         'lossless_enc_avx2.c',

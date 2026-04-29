@@ -86,7 +86,7 @@
 #endif
 
 #if (defined(__AVX2__) || defined(WEBP_MSC_AVX2)) && \
-    (!defined(HAVE_CONFIG_H) || defined(WEBP_HAVE_AVX2))
+    (defined(WEBP_HAVE_AVX2))
 #define WEBP_USE_AVX2
 #endif
 
