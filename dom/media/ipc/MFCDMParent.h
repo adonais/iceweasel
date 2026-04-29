@@ -13,6 +13,7 @@
 #include "RemoteMediaManagerParent.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/EventTargetAndLockCapability.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/PMFCDMParent.h"
 #include "mozilla/RefPtr.h"
 
@@ -85,6 +86,11 @@ class MFCDMParent final : public PMFCDMParent {
   mozilla::ipc::IPCResult RecvGetStatusForPolicy(
       const dom::HDCPVersion& aMinHdcpVersion,
       GetStatusForPolicyResolver&& aResolver);
+
+  // Checks whether the HDCP 2.2 link has settled after a hardware reset.
+  // The result is used as a timing signal only; playback proceeds regardless
+  // of whether the check succeeds or fails.
+  RefPtr<GenericPromise> WaitForHDCPSettleAfterReset();
 
   // A thread-safe method to access the CDM proxy. Returns nullptr if the CDM
   // has been shut down.

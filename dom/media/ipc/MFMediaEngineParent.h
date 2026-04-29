@@ -15,6 +15,7 @@
 #include "MFMediaSource.h"
 #include "MediaInfo.h"
 #include "PlatformDecoderModule.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/PMFMediaEngineParent.h"
 
 namespace mozilla {
@@ -140,6 +141,11 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   // interim and would otherwise interrupt the reinit sequence. Only
   // access/modify on the manager thread.
   bool mHardwareResetInProgress = false;
+  // Pending HDCP readiness check started at hardware reset time. Shared
+  // across engine instances so the new engine created after recovery can
+  // chain SetMediaSourceOnEngine() on the already-running check.
+  static inline RefPtr<GenericPromise> sPendingHDCPCheck;
+  MozPromiseRequestHolder<GenericPromise> mHDCPRequestHolder;
 #endif
 
   // When flush happens inside the media engine, it will reset the statistic

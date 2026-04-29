@@ -122,6 +122,7 @@ void MFMediaEngineParent::DestroyEngineIfExists(
     mContentProtectionManager = nullptr;
   }
   mProxyId.reset();
+  mHDCPRequestHolder.DisconnectIfExists();
 #endif
   if (mMediaEngine) {
     LOG_IF_FAILED(mMediaEngine->Shutdown());
@@ -297,10 +298,12 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
   if (IsHardwareResetHRESULT(aResult)) {
     LOG("Notifying hardware reset error, hr=%lx", aResult);
     ENGINE_MARKER("MFMediaEngineParent,HardwareContextReset");
+    sPendingHDCPCheck = nullptr;
     mHardwareResetInProgress = true;
     if (MFCDMParent* cdmParent =
             mProxyId ? MFCDMParent::GetCDMById(*mProxyId) : nullptr) {
       cdmParent->OnHardwareContextReset();
+      sPendingHDCPCheck = cdmParent->WaitForHDCPSettleAfterReset();
     }
     (void)SendNotifyHardwareReset();
     return;
@@ -612,7 +615,25 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
   // handle that as well.
   if (mMediaSource) {
     mMediaSource->SetCDMProxy(proxy);
-    SetMediaSourceOnEngine();
+    if (sPendingHDCPCheck) {
+      LOG("Deferring SetMediaSourceOnEngine until HDCP settle check completes");
+      RefPtr<GenericPromise> hdcpCheck = std::move(sPendingHDCPCheck);
+      hdcpCheck
+          ->Then(
+              mManagerThread, __func__,
+              [self = RefPtr{this}](GenericPromise::ResolveOrRejectValue&&) {
+                self->mHDCPRequestHolder.Complete();
+                // Proceed regardless of whether the HDCP check resolved or
+                // rejected: the check is a timing signal, not a hard gate.
+                // The engine will enforce any HDCP policy on its own.
+                if (self->mMediaEngine) {
+                  self->SetMediaSourceOnEngine();
+                }
+              })
+          ->Track(mHDCPRequestHolder);
+    } else {
+      SetMediaSourceOnEngine();
+    }
   }
   LOG("Set CDM Proxy successfully on the media engine!");
 #endif
