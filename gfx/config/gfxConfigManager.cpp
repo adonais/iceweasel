@@ -30,8 +30,8 @@ void gfxConfigManager::Init() {
   mWrSoftwareForceEnabled = StaticPrefs::gfx_webrender_software_AtStartup();
   mWrCompositorForceEnabled =
 #ifdef MOZ_WAYLAND
-      StaticPrefs::gfx_wayland_hdr_AtStartup() ||
-      StaticPrefs::gfx_wayland_hdr_force_enabled_AtStartup() ||
+      StaticPrefs::gfx_color_management_hdr() ||
+      StaticPrefs::gfx_color_management_hdr_force_enabled() ||
 #endif
       StaticPrefs::gfx_webrender_compositor_force_enabled_AtStartup();
   mWrForcePartialPresent =

@@ -7246,10 +7246,12 @@
   value: true # Match naive behavior, but hopefully we can stop soon!
   mirror: always
 
-# Enable HDR video support.
-- name: gfx.color_management.hdr_video
+# Enable reporting video-dynamic-range: high media capability so that websites
+# choose to serve HDR video, this does not affect whether HDR videos will play
+# as HDR as that is just a matter of color space and transfer function.
+- name: gfx.color_management.hdr
   type: RelaxedAtomicBool
-#if defined(XP_MACOSX) || defined(MOZ_WAYLAND)
+#if defined(XP_MACOSX)
   value: true
 #elif defined(XP_WIN)
 # Change to true when shipping HDR video on Windows
@@ -7258,6 +7260,13 @@
 #else
   value: false
 #endif
+  mirror: always
+
+# Enable reporting video-dynamic-range: high media capability on non-HDR display
+# for testing purposes.
+- name: gfx.color_management.hdr.force_enabled
+  type: RelaxedAtomicBool
+  value: false
   mirror: always
 
 #ifdef XP_MACOSX
@@ -8495,18 +8504,6 @@
   type: RelaxedAtomicBool
   value: false
   mirror: always
-
-#if defined(MOZ_WAYLAND)
-- name: gfx.wayland.hdr
-  type: bool
-  value: false
-  mirror: once
-
-- name: gfx.wayland.hdr.force-enabled
-  type: bool
-  value: false
-  mirror: once
-#endif
 
 #---------------------------------------------------------------------------
 # Prefs starting with "gl." (OpenGL)
@@ -11352,20 +11349,6 @@
   value: false
   mirror: always
   rust: true
-
-# Is matching video-dynamic-range: high allowed?
-- name: layout.css.video-dynamic-range.allows-high
-  type: RelaxedAtomicBool
-#if defined(XP_MACOSX) || defined(MOZ_WAYLAND)
-  value: true
-#elif defined(XP_WIN)
-# Change to true when shipping HDR video on Windows
-# https://bugzilla.mozilla.org/show_bug.cgi?id=2012848
-  value: @IS_EARLY_BETA_OR_EARLIER@
-#else
-  value: false
-#endif
-  mirror: always
 
 # Is support for CSS Typed Object Model API enabled?
 #

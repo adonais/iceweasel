@@ -77,8 +77,8 @@ void NativeLayerRemoteMac::AttachExternalImage(
   mIsDRM = isDRM;
 
   MacIOSurface* macIOSurface = texture->GetSurface();
-  mIsHDR = macIOSurface->IsHDRSurface() &&
-           StaticPrefs::gfx_color_management_hdr_video();
+  mIsHDR =
+      macIOSurface->IsHDRSurface() && StaticPrefs::gfx_color_management_hdr();
 
   mDirtyLayerInfo |= changedDisplayRect;
   mSnapshotLayer.mMutatedFrontSurface = true;

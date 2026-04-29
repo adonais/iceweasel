@@ -2311,11 +2311,13 @@ bool DCSurfaceVideo::CalculateSwapChainSize(gfx::Matrix& aTransform) {
                       !contentIsHDR && monitorIsHDR && driverSupportsAutoHDR &&
                       powerIsCharging && !mVpAutoHDRFailed;
 
-  bool useHDR =
-      gfx::gfxVars::WebRenderOverlayHDR() && contentIsHDR && monitorIsHDR;
-  // We can't rely on SupportsHardwareOverlayRGB10A2 because DWM may convert for
-  // us, let's hope this works on older GPUs (~2016 GPUs that support HDR for
-  // the whole desktop but may not support MPO overlays that are HDR).
+  bool useHDR = gfx::gfxVars::WebRenderOverlayHDR() && contentIsHDR;
+  // We can rely on the Desktop Window Manager (DWM) to handle RGB10A2 format
+  // swapchains with BT2100 PQ color space, even if hardware overlays are not
+  // supported it will convert for us, it also guarantees support for scRGB in
+  // RGBA16F format but that uses twice the bandwidth and VideoProcessor is not
+  // required to implement conversion from YCBCR BT2100 PQ to scRGB RGBA16F, so
+  // some drivers can't do that and we should stick to RGB10A2 where possible.
   bool useHDRRGB10A2 = useHDR;
   bool useHDRRGBA16F = false;
 
@@ -2632,7 +2634,7 @@ static Maybe<DXGI_COLOR_SPACE_TYPE> GetSourceDXGIColorSpace(
       return Nothing();
     case gfx::YUVColorSpace::BT2020:
       // https://en.wikipedia.org/wiki/Rec._2020 - this is the UHDTV color space
-      if (!StaticPrefs::gfx_color_management_hdr_video()) {
+      if (!StaticPrefs::gfx_color_management_hdr()) {
         // This pref being off mimics legacy behavior, it's wrong but it's
         // precisely what we did before, looks washed out if it's PQ.
         switch (aColorRange) {
