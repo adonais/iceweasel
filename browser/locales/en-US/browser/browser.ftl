@@ -834,9 +834,6 @@ urlbar-searchmode-popup-header = Search with:
 urlbar-searchmode-popup-search-settings-panelitem = Search Settings
 urlbar-searchmode-popup-settings-panelitem = Settings
 
-# Label shown next to a new search engine in the Searchmode Switcher popup to promote it.
-urlbar-searchmode-new = New
-
 # Label prompting user to search with a particular search engine.
 #  $engine (String): the name of a search engine that searches a specific site
 urlbar-result-search-with = Search with { $engine }

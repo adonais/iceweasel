@@ -112,6 +112,8 @@ skip-if = [
 
 ["test_panel_item_accesskey.html"]
 
+["test_panel_item_badge.html"]
+
 ["test_panel_item_checkbox.html"]
 
 ["test_panel_item_disabled.html"]

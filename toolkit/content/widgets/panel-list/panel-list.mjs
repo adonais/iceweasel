@@ -686,9 +686,10 @@ customElements.define("panel-list", PanelList);
 export class PanelItem extends HTMLElement {
   #initialized = false;
   #defaultSlot;
+  #badge;
 
   static get observedAttributes() {
-    return ["accesskey", "type", "disabled"];
+    return ["accesskey", "type", "disabled", "badge-type"];
   }
 
   constructor() {
@@ -710,6 +711,7 @@ export class PanelItem extends HTMLElement {
     this.label.setAttribute("part", "label");
 
     this.button.appendChild(this.label);
+    this.#updateBadge();
 
     let supportLinkSlot = document.createElement("slot");
     supportLinkSlot.name = "support-link";
@@ -757,9 +759,7 @@ export class PanelItem extends HTMLElement {
         this.panel.setAttribute("has-submenu", "");
         this.icon = document.createElement("div");
         this.icon.setAttribute("class", "submenu-icon");
-        this.label.setAttribute("class", "submenu-label");
 
-        this.button.setAttribute("class", "submenu-container");
         this.button.appendChild(this.icon);
 
         this.submenuSlot = document.createElement("slot");
@@ -837,6 +837,8 @@ export class PanelItem extends HTMLElement {
       }
     } else if (name === "type" || name === "disabled") {
       this.#setButtonAttributes();
+    } else if (name === "badge-type") {
+      this.#updateBadge();
     }
   }
 
@@ -849,6 +851,19 @@ export class PanelItem extends HTMLElement {
       this.button.removeAttribute("aria-checked");
     }
     this.button.toggleAttribute("disabled", this.disabled);
+  }
+
+  #updateBadge() {
+    if (this.hasAttribute("badge-type")) {
+      if (!this.#badge) {
+        this.#badge = document.createElement("moz-badge");
+        this.label.after(this.#badge);
+      }
+      this.#badge.setAttribute("type", this.getAttribute("badge-type"));
+    } else if (this.#badge) {
+      this.#badge.remove();
+      this.#badge = null;
+    }
   }
 
   #setLabelContents() {

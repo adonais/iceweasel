@@ -25,9 +25,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 ChromeUtils.defineLazyGetter(lazy, "SearchModeSwitcherL10n", () => {
   return new Localization(["browser/browser.ftl"]);
 });
-ChromeUtils.defineLazyGetter(lazy, "searchModeNewBadge", () => {
-  return lazy.SearchModeSwitcherL10n.formatValue("urlbar-searchmode-new");
-});
 
 // Default icon used for engines that do not have icons loaded.
 const DEFAULT_ENGINE_ICON =
@@ -517,8 +514,7 @@ export class SearchModeSwitcher {
       menuitem.setAttribute("closemenu", "none");
 
       if (engine.isNew() && engine.isAppProvided) {
-        menuitem.setAttribute("badge", await lazy.searchModeNewBadge);
-        menuitem.classList.add("badge-new");
+        menuitem.setAttribute("badge-type", "new");
       }
 
       menuitem.dataset.engineId = engine.id;
