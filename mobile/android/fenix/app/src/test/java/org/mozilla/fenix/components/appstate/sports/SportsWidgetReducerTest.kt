@@ -124,35 +124,49 @@ class SportsWidgetReducerTest {
     }
 
     @Test
-    fun `GIVEN isVisible is true WHEN SportsWidgetDismissed is dispatched THEN isVisible is false`() {
+    fun `GIVEN isVisible is true WHEN VisibilityChanged is dispatched with false THEN isVisible is false`() {
         val initialState = AppState(
             sportsWidgetState = SportsWidgetState(isVisible = true),
         )
 
         val finalState = AppStoreReducer.reduce(
             initialState,
-            AppAction.SportsWidgetAction.SportsWidgetDismissed,
+            AppAction.SportsWidgetAction.VisibilityChanged(isVisible = false),
         )
 
         assertFalse(finalState.sportsWidgetState.isVisible)
     }
 
     @Test
-    fun `GIVEN isVisible is false WHEN SportsWidgetDismissed is dispatched THEN isVisible remains false`() {
+    fun `GIVEN isVisible is false WHEN VisibilityChanged is dispatched with true THEN isVisible is true`() {
         val initialState = AppState(
             sportsWidgetState = SportsWidgetState(isVisible = false),
         )
 
         val finalState = AppStoreReducer.reduce(
             initialState,
-            AppAction.SportsWidgetAction.SportsWidgetDismissed,
+            AppAction.SportsWidgetAction.VisibilityChanged(isVisible = true),
+        )
+
+        assertTrue(finalState.sportsWidgetState.isVisible)
+    }
+
+    @Test
+    fun `GIVEN isVisible is false WHEN VisibilityChanged is dispatched with false THEN isVisible remains false`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(isVisible = false),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.VisibilityChanged(isVisible = false),
         )
 
         assertFalse(finalState.sportsWidgetState.isVisible)
     }
 
     @Test
-    fun `GIVEN countries and skip state WHEN SportsWidgetDismissed is dispatched THEN other fields are preserved`() {
+    fun `GIVEN countries and skip state WHEN VisibilityChanged is dispatched THEN other fields are preserved`() {
         val initialState = AppState(
             sportsWidgetState = SportsWidgetState(
                 countriesSelected = setOf("US"),
@@ -163,7 +177,7 @@ class SportsWidgetReducerTest {
 
         val finalState = AppStoreReducer.reduce(
             initialState,
-            AppAction.SportsWidgetAction.SportsWidgetDismissed,
+            AppAction.SportsWidgetAction.VisibilityChanged(isVisible = false),
         )
 
         assertEquals(setOf("US"), finalState.sportsWidgetState.countriesSelected)

@@ -24,9 +24,9 @@ internal object SportsWidgetReducer {
             ),
         )
 
-        SportsWidgetAction.SportsWidgetDismissed -> state.copy(
+        is SportsWidgetAction.VisibilityChanged -> state.copy(
             sportsWidgetState = state.sportsWidgetState.copy(
-                isVisible = false,
+                isVisible = action.isVisible,
             ),
         )
     }

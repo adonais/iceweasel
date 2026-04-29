@@ -53,6 +53,6 @@ class DefaultSportsController(
 
     override fun handleSportsWidgetDismissed() {
         settings.showHomepageSportsWidget = false
-        appStore.dispatch(AppAction.SportsWidgetAction.SportsWidgetDismissed)
+        appStore.dispatch(AppAction.SportsWidgetAction.VisibilityChanged(isVisible = false))
     }
 }

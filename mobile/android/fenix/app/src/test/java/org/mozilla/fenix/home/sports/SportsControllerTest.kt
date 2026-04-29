@@ -75,7 +75,7 @@ class SportsControllerTest {
 
         verify {
             settings.showHomepageSportsWidget = false
-            appStore.dispatch(AppAction.SportsWidgetAction.SportsWidgetDismissed)
+            appStore.dispatch(AppAction.SportsWidgetAction.VisibilityChanged(isVisible = false))
         }
     }
 }

@@ -22,6 +22,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.components.appstate.AppAction.ContentRecommendationsAction
+import org.mozilla.fenix.components.appstate.AppAction.SportsWidgetAction
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.home.pocket.ContentRecommendationsFeatureHelper
 import org.mozilla.fenix.utils.Settings
@@ -138,15 +139,31 @@ internal class HomeSettingsFragmentTest {
     }
 
     @Test
-    fun `WHEN toggling the World Cup setting THEN the preference is persisted`() {
+    fun `WHEN toggling the World Cup setting off THEN the preference is persisted and a VisibilityChanged action is dispatched`() {
         activateFragment()
         val result = getSportsWidgetPreference().callChangeListener(false)
 
         assertTrue(result)
         verify {
+            appStore.dispatch(SportsWidgetAction.VisibilityChanged(isVisible = false))
             appPrefsEditor.putBoolean(
                 homeSettingsFragment.getString(R.string.pref_key_show_homepage_sports_widget),
                 false,
+            )
+        }
+    }
+
+    @Test
+    fun `WHEN toggling the World Cup setting on THEN the preference is persisted and a VisibilityChanged action is dispatched`() {
+        activateFragment()
+        val result = getSportsWidgetPreference().callChangeListener(true)
+
+        assertTrue(result)
+        verify {
+            appStore.dispatch(SportsWidgetAction.VisibilityChanged(isVisible = true))
+            appPrefsEditor.putBoolean(
+                homeSettingsFragment.getString(R.string.pref_key_show_homepage_sports_widget),
+                true,
             )
         }
     }

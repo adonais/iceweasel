@@ -836,8 +836,10 @@ sealed class AppAction : Action {
         data object FollowTeamSkipped : SportsWidgetAction()
 
         /**
-         * Dispatched when the user dismisses the sports widget.
+         * Dispatched when the sports widget's visibility changes.
+         *
+         * @property isVisible The new visibility state of the sports widget.
          */
-        data object SportsWidgetDismissed : SportsWidgetAction()
+        data class VisibilityChanged(val isVisible: Boolean) : SportsWidgetAction()
     }
 }
