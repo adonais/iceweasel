@@ -1328,8 +1328,7 @@ nsresult nsHttpChannel::HandleOverrideResponse() {
     return rv;
   }
 
-  rv = ProcessSecurityHeaders();
-  if (NS_FAILED(rv)) {
+  if (NS_FAILED(ProcessSecurityHeaders())) {
     NS_WARNING("ProcessSecurityHeaders failed, continuing load.");
   }
 
@@ -3224,9 +3223,8 @@ nsresult nsHttpChannel::ContinueProcessResponse1(
 
     // Given a successful connection, process any STS or PKP data that's
     // relevant.
-    rv = ProcessSecurityHeaders();
-    if (NS_FAILED(rv)) {
-      NS_WARNING("ProcessSTSHeader failed, continuing load.");
+    if (NS_FAILED(ProcessSecurityHeaders())) {
+      NS_WARNING("ProcessSecurityHeaders failed, continuing load.");
     }
 
     if ((httpStatus < 500) && (httpStatus != 421)) {
