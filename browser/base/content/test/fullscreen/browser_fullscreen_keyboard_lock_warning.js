@@ -160,6 +160,128 @@ add_task(async function test_keyboard_lock_warning_change() {
   });
 });
 
+add_task(async function test_keyboard_lock_warning_change_shadow_dom() {
+  await BrowserTestUtils.withNewTab("https://example.com", async browser => {
+    info("Setup shadow DOM");
+    await SpecialPowers.spawn(browser, [], async () => {
+      let host = content.document.createElement("div");
+      host.id = "host";
+      content.document.body.appendChild(host);
+
+      let shadowRoot = host.attachShadow({ mode: "open" });
+      shadowRoot.innerHTML = `
+        <div id="outer">
+          Outer
+          <div id="inner">Inner</div>
+        </div>
+      `;
+    });
+
+    info("Start fullscreen without keyboard lock");
+    let warningShownPromise = DOMFullscreenTestUtils.waitForWarningState(
+      browser,
+      "onscreen"
+    );
+    await DOMFullscreenTestUtils.changeFullscreen(browser, true);
+    await warningShownPromise;
+
+    info("Wait for fullscreen warning timed out");
+    await DOMFullscreenTestUtils.waitForWarningState(browser, "hidden");
+
+    info("request fullscreen again with keyboard lock in shadow DOM");
+    warningShownPromise = DOMFullscreenTestUtils.waitForWarningState(
+      browser,
+      "onscreen",
+      true
+    );
+    await SpecialPowers.spawn(browser, [], async () => {
+      let host = content.document.getElementById("host");
+      let shadowRoot = host.shadowRoot;
+      let outer = shadowRoot.getElementById("outer");
+      outer.requestFullscreen({ keyboardLock: "browser" });
+    });
+    await warningShownPromise;
+
+    info("Wait for fullscreen warning timed out");
+    await DOMFullscreenTestUtils.waitForWarningState(browser, "hidden");
+
+    info("Press Escape key multiple times should reshow the warning");
+    warningShownPromise = DOMFullscreenTestUtils.waitForWarningState(
+      browser,
+      "onscreen",
+      true
+    );
+    EventUtils.synthesizeKey("KEY_Escape", {});
+    EventUtils.synthesizeKey("KEY_Escape", {});
+    EventUtils.synthesizeKey("KEY_Escape", {});
+    await warningShownPromise;
+
+    info(
+      "request fullscreen again without keyboard lock on nested node in shadow DOM"
+    );
+    warningShownPromise = DOMFullscreenTestUtils.waitForWarningState(
+      browser,
+      "onscreen"
+    );
+    await SpecialPowers.spawn(browser, [], async () => {
+      let host = content.document.getElementById("host");
+      let shadowRoot = host.shadowRoot;
+      let inner = shadowRoot.getElementById("inner");
+      inner.requestFullscreen({ keyboardLock: "none" });
+    });
+    await warningShownPromise;
+
+    info("Wait for fullscreen warning timed out");
+    await DOMFullscreenTestUtils.waitForWarningState(browser, "hidden");
+
+    info(
+      "document.exitFullscreen() should back to fullscreen with keyboard lock"
+    );
+    warningShownPromise = DOMFullscreenTestUtils.waitForWarningState(
+      browser,
+      "onscreen",
+      true
+    );
+    await SpecialPowers.spawn(browser, [], async () => {
+      await content.document.exitFullscreen();
+    });
+    await warningShownPromise;
+
+    info("Wait for fullscreen warning timed out");
+    await DOMFullscreenTestUtils.waitForWarningState(browser, "hidden");
+
+    info("Press Escape key multiple times should reshow the warning");
+    warningShownPromise = DOMFullscreenTestUtils.waitForWarningState(
+      browser,
+      "onscreen",
+      true
+    );
+    EventUtils.synthesizeKey("KEY_Escape", {});
+    EventUtils.synthesizeKey("KEY_Escape", {});
+    EventUtils.synthesizeKey("KEY_Escape", {});
+    await warningShownPromise;
+
+    info(
+      "document.exitFullscreen() should back to fullscreen without keyboard lock"
+    );
+    warningShownPromise = DOMFullscreenTestUtils.waitForWarningState(
+      browser,
+      "onscreen",
+      false
+    );
+    await SpecialPowers.spawn(browser, [], async () => {
+      await content.document.exitFullscreen();
+    });
+    await warningShownPromise;
+
+    info("Wait for fullscreen warning timed out");
+    await DOMFullscreenTestUtils.waitForWarningState(browser, "hidden");
+
+    info("Exit fullscreen.");
+    await DOMFullscreenTestUtils.changeFullscreen(browser, false);
+  });
+});
+
 add_task(async function test_keyboard_lock_change_warning_change_iframe() {
   await BrowserTestUtils.withNewTab("https://example.com", async browser => {
     info("start fullscreen without keyboard lock");

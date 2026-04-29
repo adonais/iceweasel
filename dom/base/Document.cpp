@@ -16878,7 +16878,7 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   }
 
   Element* elem = aRequest->Element();
-  if (GetFullscreenElement() == elem) {
+  if (GetUnretargetedFullscreenElement() == elem) {
     // We are applying fullscreen to the already fullscreen element - this must
     // be because fullscreen was requested again with different options.
     if (aRequest->mFullscreenKeyboardLock !=
@@ -21137,7 +21137,7 @@ void Document::GetAllInProcessDocuments(
 }
 
 void Document::SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus) {
-  Element* elem = GetFullscreenElement();
+  Element* elem = GetUnretargetedFullscreenElement();
   MOZ_ASSERT(elem || aStatus == FullscreenKeyboardLock::None);
 
   if (elem) {
@@ -21147,7 +21147,7 @@ void Document::SetFullscreenKeyboardLockStatus(FullscreenKeyboardLock aStatus) {
 }
 
 FullscreenKeyboardLock Document::GetFullscreenKeyboardLockStatus() const {
-  Element* elem = GetFullscreenElement();
+  Element* elem = GetUnretargetedFullscreenElement();
   return (elem &&
           elem->State().HasState(ElementState::FULLSCREEN_KEYBOARD_LOCK))
              ? FullscreenKeyboardLock::Browser
@@ -21155,7 +21155,7 @@ FullscreenKeyboardLock Document::GetFullscreenKeyboardLockStatus() const {
 }
 
 bool Document::HasFullscreenKeyboardLockEnabled() {
-  Element* elem = GetFullscreenElement();
+  Element* elem = GetUnretargetedFullscreenElement();
   return elem && elem->State().HasState(ElementState::FULLSCREEN_KEYBOARD_LOCK);
 }
 
