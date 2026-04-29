@@ -6,6 +6,7 @@
 #define ENTERPRISE_POLICIES_H_
 
 #include <filesystem>
+#include <string_view>
 
 namespace EnterprisePolicies {
 
@@ -16,6 +17,14 @@ namespace EnterprisePolicies {
  * @return true if enterprise policies are set, false otherwise.
  */
 bool InDistribution(const std::filesystem::path& aDir);
+
+/**
+ * Check if enterprise policies are set via registry.
+ *
+ * @param  aBrand The application brand name.
+ * @return true if enterprise policies are set, false otherwise..
+ */
+bool InRegistry(std::wstring_view aBrand);
 
 }  // namespace EnterprisePolicies
 
