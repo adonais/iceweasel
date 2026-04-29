@@ -168,6 +168,13 @@ export const AIWindowUI = {
       return;
     }
 
+    // Return early if the sidebar was closed while we were waiting for the
+    // content element to load, prevents opening a conversation or creating
+    // a new one if the sidebar is closed anyway.
+    if (!this.isSidebarOpen(win)) {
+      return;
+    }
+
     if (conversation) {
       aiWindowElement.openConversation(conversation);
       return;

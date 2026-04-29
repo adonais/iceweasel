@@ -254,6 +254,72 @@ function skipSignIn() {
   return () => stub.restore();
 }
 
+/**
+ * Opens the Smartbar's context menu via the "+" button and clicks the
+ * panel item whose visible text matches the given label. Waits for the
+ * panel to populate before selecting.
+ *
+ * @param {MozBrowser} sidebarBrowser - The sidebar browser element
+ *   (e.g. win.document.getElementById("ai-window-browser"))
+ * @param {string} label - The visible text label of the tab to select
+ *   (e.g. the tab's title)
+ */
+async function openTabContextMenuAndClickTabByLabel(sidebarBrowser, label) {
+  await SpecialPowers.spawn(sidebarBrowser, [label], async tabLabel => {
+    const aiWindowElement = await ContentTaskUtils.waitForCondition(
+      () => content.document.querySelector("ai-window"),
+      "Wait for ai-window"
+    );
+    const smartbar = await ContentTaskUtils.waitForCondition(
+      () => aiWindowElement.shadowRoot?.querySelector("#ai-window-smartbar"),
+      "Wait for Smartbar"
+    );
+    const contextButton = smartbar.querySelector("context-icon-button");
+    const button = contextButton.shadowRoot.querySelector("moz-button");
+    button.click();
+
+    const panelList = smartbar.querySelector("smartwindow-panel-list");
+    const panel = panelList.shadowRoot.querySelector("panel-list");
+    await ContentTaskUtils.waitForMutationCondition(
+      panel,
+      { childList: true, subtree: true },
+      () => panel.querySelector("panel-item:not(.panel-section-header)")
+    );
+
+    const items = panel.querySelectorAll(
+      "panel-item:not(.panel-section-header)"
+    );
+    let targetItem;
+    for (const item of items) {
+      if (item.textContent.trim() === tabLabel) {
+        targetItem = item;
+        break;
+      }
+    }
+    Assert.ok(
+      targetItem,
+      `Should find a tab labeled '${tabLabel}' in the context menu`
+    );
+    targetItem.click();
+  });
+}
+
+/**
+ * Clicks the New Chat button in the sidebar
+ *
+ * @param {Window} win
+ */
+async function clickNewChatButton(win) {
+  const sidebarBrowser = win.document.getElementById("ai-window-browser");
+  await TestUtils.waitForCondition(
+    () => sidebarBrowser.contentDocument?.querySelector("ai-window:defined"),
+    "Wait for ai-window to be defined in sidebar"
+  );
+  const aiWindow = sidebarBrowser.contentDocument.querySelector("ai-window");
+  const newChatBtn = aiWindow.shadowRoot.querySelector(".new-chat-icon-button");
+  newChatBtn.click();
+}
+
 async function getSmartbarContextChipLabels(browser, expectedUrl) {
   await BrowserTestUtils.waitForCondition(
     () => browser.contentDocument?.querySelector("ai-window:defined"),

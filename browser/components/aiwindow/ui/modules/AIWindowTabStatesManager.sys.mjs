@@ -108,16 +108,28 @@ export class AIWindowTabStatesManager {
    */
   async openSidebarForReturningUser() {
     await this.#restorePromise;
-    if (this.#window && !lazy.AIWindowUI.isSidebarOpen(this.#window)) {
-      const tab = this.#window.gBrowser.selectedTab;
-      if (
-        getKeepSidebarOpenState(
-          this.#getTabState(tab)?.state,
-          lazy.sidebarOpenByDefault
-        )
-      ) {
-        lazy.AIWindowUI.openSidebar(this.#window);
-      }
+    // Guard against the window being closed (uninit called) while awaiting.
+    if (!this.#window) {
+      return;
+    }
+    const tab = this.#window.gBrowser.selectedTab;
+    const tabUrl = tab.linkedBrowser.currentURI.spec;
+    const tabState = this.#getTabState(tab);
+    // AIWINDOW_URL tabs are fullpage and don't use the sidebar.
+    if (
+      tabUrl === lazy.AIWINDOW_URL ||
+      lazy.AIWindowUI.isSidebarOpen(this.#window) ||
+      tabState?.state?.keepSidebarOpen === false
+    ) {
+      return;
+    }
+    if (
+      getKeepSidebarOpenState(
+        this.#getTabState(tab)?.state,
+        lazy.sidebarOpenByDefault
+      )
+    ) {
+      lazy.AIWindowUI.openSidebar(this.#window);
     }
   }
 
