@@ -292,20 +292,20 @@ internal fun Homepage(
                             }
 
                             Spacer(Modifier.height(bottomPadding.dp))
+
+                            if (showSportsCountrySelector) {
+                                SportsCountrySelectorBottomSheet(
+                                    selectedCountryCode = sportsWidgetState.countriesSelected.firstOrNull(),
+                                    onCountrySelected = { countryCode ->
+                                        interactor.onCountriesSelected(setOf(countryCode))
+                                        showSportsCountrySelector = false
+                                    },
+                                    onDismiss = { showSportsCountrySelector = false },
+                                )
+                            }
                         }
                     }
                 }
-            }
-
-            if (showSportsCountrySelector) {
-                SportsCountrySelectorBottomSheet(
-                    selectedCountryCode = null,
-                    onCountrySelected = { countryCode ->
-                        interactor.onCountriesSelected(setOf(countryCode))
-                        showSportsCountrySelector = false
-                    },
-                    onDismiss = { showSportsCountrySelector = false },
-                )
             }
         }
     }
