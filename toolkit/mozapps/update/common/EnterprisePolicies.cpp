@@ -9,7 +9,7 @@
 #include <fstream>
 #include <string_view>
 #include <string>
-#include <Windows.h>
+#include <windows.h>
 
 #include <json/json.h>
 
