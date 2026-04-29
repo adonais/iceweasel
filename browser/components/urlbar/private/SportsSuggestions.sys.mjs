@@ -7,6 +7,7 @@ import { RealtimeSuggestProvider } from "moz-src:///browser/components/urlbar/pr
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
@@ -26,23 +27,43 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
     return "sports";
   }
 
-  getViewTemplateForImage(item, index) {
-    if (itemIcon(item)) {
-      return super.getViewTemplateForImage(item, index);
-    }
-
-    return [
-      {
-        name: `scheduled-date-chiclet-day-${index}`,
-        tag: "span",
-        classList: ["urlbarView-sports-scheduled-date-chiclet-day"],
-      },
-      {
-        name: `scheduled-date-chiclet-month-${index}`,
-        tag: "span",
-        classList: ["urlbarView-sports-scheduled-date-chiclet-month"],
-      },
-    ];
+  getViewTemplateForImageContainer(item, index) {
+    // Create two image containers, one for the home team and one for the away
+    // team. Each container has an `img` and date chiclet components. Depending
+    // on the item, there are three possible "modes" for each container:
+    //
+    // (1) When the team has an icon: `img[src]` will be the icon URL (which
+    //     will be a remote URL)
+    // (2) When the sport is recognized: The container's `background-image` will
+    //     be a fallback icon set via CSS
+    // (3) Otherwise: The date chiclet will be visible
+    //
+    // Note that only one team may have an icon, depending on Merino, even
+    // though that shouldn't typically happen.
+    //
+    // See the view-update logic in `#viewUpdateImageAndBottom()`.
+    return ["home", "away"].map(team => ({
+      name: `${team}-team-image-container-${index}`,
+      tag: "span",
+      classList: ["urlbarView-realtime-image-container"],
+      children: [
+        {
+          name: `${team}-team-image-${index}`,
+          tag: "img",
+          classList: ["urlbarView-realtime-image"],
+        },
+        {
+          name: `${team}-team-date-chiclet-day-${index}`,
+          tag: "span",
+          classList: ["urlbarView-sports-date-chiclet-day"],
+        },
+        {
+          name: `${team}-team-date-chiclet-month-${index}`,
+          tag: "span",
+          classList: ["urlbarView-sports-date-chiclet-month"],
+        },
+      ],
+    }));
   }
 
   getViewTemplateForDescriptionTop(item, index) {
@@ -166,9 +187,8 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
   }
 
   #viewUpdateImageAndBottom(item, i) {
+    // Format the date.
     let date = new Date(item.date);
-    let icon = itemIcon(item);
-
     let {
       formattedDate,
       formattedTime,
@@ -176,58 +196,70 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
     } = lazy.UrlbarUtils.formatDate(date, {
       // If the item has an icon, the date chiclet won't be shown, so show the
       // absolute date in the bottom part of the row.
-      forceAbsoluteDate: !!icon,
+      forceAbsoluteDate: !!item.home_team?.icon || !!item.away_team?.icon,
       includeTimeZone: true,
       capitalizeRelativeDate: true,
     });
 
-    // Create the image update.
-    let imageUpdate;
-    if (icon) {
-      // The image container will contain the icon.
-      imageUpdate = {
-        [`image_container_${i}`]: {
+    // Compute the date chiclet components.
+    let partsArray = new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      timeZone: zonedNow.timeZoneId,
+    }).formatToParts(date);
+    let partsMap = Object.fromEntries(
+      partsArray.map(({ type, value }) => [type, value])
+    );
+
+    // Create the image update. Start by creating each team's update.
+    let imageUpdatesByTeam = ["home", "away"].reduce((memo, team) => {
+      let itemKey = `${team}_team`;
+      let icon = item[itemKey]?.icon;
+      memo[team] = {
+        [`image-container-${i}`]: {
           attributes: {
-            // Remove the fallback attribute by setting it to null.
-            "is-fallback": null,
+            "has-team-icon": icon ? "" : null,
           },
         },
-        [`image_${i}`]: {
+        [`image-${i}`]: {
           attributes: {
-            src: icon,
+            src: icon ?? null,
           },
+        },
+        [`date-chiclet-day-${i}`]: {
+          textContent: partsMap.day ?? "",
+        },
+        [`date-chiclet-month-${i}`]: {
+          textContent: partsMap.month ?? "",
         },
       };
-    } else {
-      // Instead of an icon, the image container will be a date chiclet
-      // containing the item's date as text, with the day above the month.
-      let partsArray = new Intl.DateTimeFormat(undefined, {
-        month: "short",
-        day: "numeric",
-        timeZone: zonedNow.timeZoneId,
-      }).formatToParts(date);
-      let partsMap = Object.fromEntries(
-        partsArray.map(({ type, value }) => [type, value])
-      );
-      if (partsMap.day && partsMap.month) {
-        imageUpdate = {
-          [`image_container_${i}`]: {
-            attributes: {
-              "is-fallback": "",
-            },
-          },
-          [`scheduled-date-chiclet-day-${i}`]: {
-            textContent: partsMap.day,
-          },
-          [`scheduled-date-chiclet-month-${i}`]: {
-            textContent: partsMap.month,
-          },
-        };
-      } else {
-        // This shouldn't happen.
-        imageUpdate = {};
-      }
-    }
+      return memo;
+    }, {});
+
+    // If the teams' updates are the same, then they'll show the same thing, so
+    // hide the away team's container (the second container) in that case.
+    // @ts-ignore
+    imageUpdatesByTeam.away[`image-container-${i}`].attributes.hidden =
+      lazy.ObjectUtils.deepEqual(
+        // @ts-ignore
+        imageUpdatesByTeam.home,
+        // @ts-ignore
+        imageUpdatesByTeam.away
+      )
+        ? ""
+        : null;
+
+    // Create the final image update. Merge the two teams' updates and prefix
+    // each key with the team.
+    let imageUpdate = Object.entries(imageUpdatesByTeam).reduce(
+      (memo, [team, teamUpdate]) => {
+        for (let [key, value] of Object.entries(teamUpdate)) {
+          memo[`${team}-team-${key}`] = value;
+        }
+        return memo;
+      },
+      {}
+    );
 
     // Create the date update in the bottom part of the row.
     let dateUpdate;
@@ -288,10 +320,6 @@ export class SportsSuggestions extends RealtimeSuggestProvider {
       },
     };
   }
-}
-
-function itemIcon(item) {
-  return item.icon || item.home_team?.icon || item.away_team?.icon;
 }
 
 function stringifiedScore(scoreValue) {

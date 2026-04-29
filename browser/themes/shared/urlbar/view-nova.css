@@ -1552,7 +1552,18 @@
 /* Realtime sports suggestions */
 
 .urlbarView-row[dynamicType="realtime-sports"] > .urlbarView-realtime-root > .urlbarView-realtime-item {
-  > .urlbarView-realtime-image-container[is-fallback] {
+  > .urlbarView-realtime-image-container[hidden] {
+    display: none;
+  }
+
+  > .urlbarView-realtime-image-container[has-team-icon] {
+    > .urlbarView-sports-date-chiclet-day,
+    > .urlbarView-sports-date-chiclet-month {
+      display: none;
+    }
+  }
+
+  > .urlbarView-realtime-image-container:not([has-team-icon]) {
     flex-direction: column;
 
     background-color: var(--violet-bg-color);
@@ -1563,50 +1574,48 @@
     fill: var(--violet-fg-color);
     -moz-context-properties: fill;
 
-    > .urlbarView-sports-scheduled-date-chiclet-day {
+    > .urlbarView-sports-date-chiclet-day {
       font-size: 1.25em;
     }
 
-    /* Fallback icons per sport but only for games not in the future */
-    .urlbarView-realtime-item:not([status="scheduled"]) > & {
-      .urlbarView-realtime-item[sport-category="baseball"] > &,
-      .urlbarView-realtime-item[sport-category="basketball"] > &,
-      .urlbarView-realtime-item[sport-category="cricket"] > &,
-      .urlbarView-realtime-item[sport-category="football"] > &,
-      .urlbarView-realtime-item[sport-category="golf"] > &,
-      .urlbarView-realtime-item[sport-category="hockey"] > &,
-      .urlbarView-realtime-item[sport-category="racing"] > &,
-      .urlbarView-realtime-item[sport-category="soccer"] > & {
-        /* stylelint-disable-next-line max-nesting-depth */
-        > .urlbarView-sports-scheduled-date-chiclet-day,
-        > .urlbarView-sports-scheduled-date-chiclet-month {
-          display: none;
-        }
+    /* Fallback icons per sport */
+    .urlbarView-realtime-item[sport-category="baseball"] > &,
+    .urlbarView-realtime-item[sport-category="basketball"] > &,
+    .urlbarView-realtime-item[sport-category="cricket"] > &,
+    .urlbarView-realtime-item[sport-category="football"] > &,
+    .urlbarView-realtime-item[sport-category="golf"] > &,
+    .urlbarView-realtime-item[sport-category="hockey"] > &,
+    .urlbarView-realtime-item[sport-category="racing"] > &,
+    .urlbarView-realtime-item[sport-category="soccer"] > & {
+      /* stylelint-disable-next-line max-nesting-depth */
+      > .urlbarView-sports-date-chiclet-day,
+      > .urlbarView-sports-date-chiclet-month {
+        display: none;
       }
-      .urlbarView-realtime-item[sport-category="baseball"] > & {
-        background-image: url("chrome://browser/skin/urlbar/sports-baseball.svg");
-      }
-      .urlbarView-realtime-item[sport-category="basketball"] > & {
-        background-image: url("chrome://browser/skin/urlbar/sports-basketball.svg");
-      }
-      .urlbarView-realtime-item[sport-category="cricket"] > & {
-        background-image: url("chrome://browser/skin/urlbar/sports-cricket.svg");
-      }
-      .urlbarView-realtime-item[sport-category="football"] > & {
-        background-image: url("chrome://browser/skin/urlbar/sports-american-football.svg");
-      }
-      .urlbarView-realtime-item[sport-category="golf"] > & {
-        background-image: url("chrome://browser/skin/urlbar/sports-golf.svg");
-      }
-      .urlbarView-realtime-item[sport-category="hockey"] > & {
-        background-image: url("chrome://browser/skin/urlbar/sports-hockey.svg");
-      }
-      .urlbarView-realtime-item[sport-category="racing"] > & {
-        background-image: url("chrome://browser/skin/urlbar/sports-racing.svg");
-      }
-      .urlbarView-realtime-item[sport-category="soccer"] > & {
-        background-image: url("chrome://browser/skin/urlbar/sports-soccer.svg");
-      }
+    }
+    .urlbarView-realtime-item[sport-category="baseball"] > & {
+      background-image: url("chrome://browser/skin/urlbar/sports-baseball.svg");
+    }
+    .urlbarView-realtime-item[sport-category="basketball"] > & {
+      background-image: url("chrome://browser/skin/urlbar/sports-basketball.svg");
+    }
+    .urlbarView-realtime-item[sport-category="cricket"] > & {
+      background-image: url("chrome://browser/skin/urlbar/sports-cricket.svg");
+    }
+    .urlbarView-realtime-item[sport-category="football"] > & {
+      background-image: url("chrome://browser/skin/urlbar/sports-american-football.svg");
+    }
+    .urlbarView-realtime-item[sport-category="golf"] > & {
+      background-image: url("chrome://browser/skin/urlbar/sports-golf.svg");
+    }
+    .urlbarView-realtime-item[sport-category="hockey"] > & {
+      background-image: url("chrome://browser/skin/urlbar/sports-hockey.svg");
+    }
+    .urlbarView-realtime-item[sport-category="racing"] > & {
+      background-image: url("chrome://browser/skin/urlbar/sports-racing.svg");
+    }
+    .urlbarView-realtime-item[sport-category="soccer"] > & {
+      background-image: url("chrome://browser/skin/urlbar/sports-soccer.svg");
     }
   }
 
