@@ -2275,6 +2275,8 @@ void PatchIfFile::Finish(int status) {
 //-----------------------------------------------------------------------------
 
 #ifdef XP_WIN
+#  include "EnterprisePolicies.h"
+#  include "EnterprisePoliciesFlagFile.h"
 #  include "nsWindowsRestart.cpp"
 #  include "nsWindowsHelpers.h"
 #  include "uachelper.h"
@@ -2390,7 +2392,13 @@ bool LaunchWinPostProcess(const WCHAR* installationDir,
   wcsncpy(dummyArg, L"argv0ignored ",
           sizeof(dummyArg) / sizeof(dummyArg[0]) - 1);
 
-  size_t len = wcslen(exearg) + wcslen(dummyArg);
+  const bool addDesktopLauncher{
+      !EnterprisePoliciesFlagFile::Exists(gPatchDirPath)};
+  if (addDesktopLauncher) {
+    LOG(("Add /DesktopLauncher argument to helper.exe"));
+  }
+  LPCWSTR desktopLauncherArg{addDesktopLauncher ? L" /DesktopLauncher" : L""};
+  size_t len{wcslen(exearg) + wcslen(dummyArg) + wcslen(desktopLauncherArg)};
   WCHAR* cmdline = (WCHAR*)malloc((len + 1) * sizeof(WCHAR));
   if (!cmdline) {
     LOG(
@@ -2402,6 +2410,7 @@ bool LaunchWinPostProcess(const WCHAR* installationDir,
 
   wcsncpy(cmdline, dummyArg, len);
   wcscat(cmdline, exearg);
+  wcscat(cmdline, desktopLauncherArg);
 
   // We want to launch the post update helper app to update the Windows
   // registry even if there is a failure with removing the uninstall.update
@@ -3236,6 +3245,10 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv
     }
 
     EXIT_IF_SECOND_UPDATER_INSTANCE(updateLockFileHandle, 0);
+
+    // Flag removed by the unelevated process during the single-process update
+    EnterprisePoliciesFlagFile::Remove(gPatchDirPath);
+
 #elif XP_MACOSX
     if (gInvocation == UpdaterInvocation::First) {
       if (gSucceeded) {
@@ -3938,6 +3951,14 @@ int NS_main(int argc, NS_tchar** argv) {
         LOG(("Successfully opened lock file"));
       }
 
+      if (EnterprisePolicies::InDistribution(gInstallDirPath) ||
+          EnterprisePolicies::InRegistry(L"" MOZ_APP_BASENAME)) {
+        LOG(("Enterprise policies detected"));
+        EnterprisePoliciesFlagFile::Add(gPatchDirPath);
+      } else {
+        LOG(("No enterprise policies detected"));
+      }
+
       if (updateLockFileHandle == INVALID_HANDLE_VALUE ||
           (useService && testOnlyFallbackKeyExists &&
            (noServiceFallback || forceServiceFallback))) {
@@ -4269,6 +4290,9 @@ int NS_main(int argc, NS_tchar** argv) {
                  "'succeeded'."));
           }
         }
+
+        // Flag removed by the unelevated process during the two-process update
+        EnterprisePoliciesFlagFile::Remove(gPatchDirPath);
 
         if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
           CloseHandle(updateLockFileHandle);
