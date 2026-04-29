@@ -29,7 +29,6 @@ import mozilla.components.support.ktx.android.content.isEdgeToEdgeDisabled
 import mozilla.components.support.ktx.android.util.dpToPx
 import mozilla.components.support.utils.ColorUtils.isDark
 import mozilla.components.support.utils.ext.bottom
-import mozilla.components.support.utils.ext.getWindowInsets
 import mozilla.components.support.utils.ext.left
 import mozilla.components.support.utils.ext.right
 import mozilla.components.support.utils.ext.top
@@ -134,7 +133,7 @@ fun Window.setupPersistentInsets(consumeInsets: Boolean = false) {
 
     val rootView = decorView.findViewById<View>(android.R.id.content)
 
-    setPersistentInsets(rootView.getWindowInsets(), rootView)
+    ViewCompat.requestApplyInsets(rootView)
 
     ViewCompat.setOnApplyWindowInsetsListener(rootView) { _, windowInsets ->
         setPersistentInsets(windowInsets, rootView)
