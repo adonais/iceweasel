@@ -12,6 +12,7 @@ EXPORTS += [
 
 if CONFIG["OS_ARCH"] == "WINNT":
     EXPORTS += [
+        "EnterprisePoliciesFlagFile.h",
         "pathhash.h",
         "uachelper.h",
         "updatehelper.cpp",
@@ -42,6 +43,7 @@ DisableStlWrapping()
 
 if CONFIG["OS_ARCH"] == "WINNT":
     SOURCES += [
+        "EnterprisePoliciesFlagFile.cpp",
         "pathhash.cpp",
         "uachelper.cpp",
         "updatehelper.cpp",

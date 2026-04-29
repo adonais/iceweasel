@@ -4,6 +4,8 @@
 
 FINAL_TARGET = "_tests/xpcshell/toolkit/mozapps/update/tests/data"
 
+TEST_DIRS += ["gtest"]
+
 if not CONFIG["MOZ_SUITE"]:
     BROWSER_CHROME_MANIFESTS += [
         "browser/browser.toml",
