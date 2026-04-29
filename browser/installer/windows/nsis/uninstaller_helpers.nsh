@@ -505,6 +505,15 @@ Function OnUpdateDesktopLauncherHandler
   Pop $0
   ${If} $0 == "full"
     Push $1
+    Push "${UpdateChannel}"
+    Call IsUpdateChannelEsr
+    Pop $1
+    ${If} $1 == 1
+      Pop $1
+      Pop $0
+      ; Early return if the update channel is ESR
+      Return
+    ${EndIf}
     Call ShouldInstallDesktopLauncher
     Pop $1
     ${If} $1 == 0

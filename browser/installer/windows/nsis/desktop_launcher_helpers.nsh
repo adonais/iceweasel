@@ -87,6 +87,16 @@ Function GetInstallationTelemetryFromMsi
   ${EndIf}
 FunctionEnd
 
+Function IsUpdateChannelEsr
+  Exch $0
+  ${If} $0 == "esr"
+    StrCpy $0 1
+  ${Else}
+    StrCpy $0 0
+  ${EndIf}
+  Exch $0
+FunctionEnd
+
 Function ShouldInstallDesktopLauncher
   Push $0
   ${GetParameters} $0

@@ -196,6 +196,9 @@ Function .onInit
     ${UnitTest} TestGetInstallationTelemetryFromMsiValueIsTrue
     ${UnitTest} TestGetInstallationTelemetryFromMsiValueIsFalse
 
+    ${UnitTest} TestIsUpdateChannelEsrFailure
+    ${UnitTest} TestIsUpdateChannelEsrSuccess
+
     ${UnitTest} TestShouldInstallDesktopLauncherFailure
     ${UnitTest} TestShouldInstallDesktopLauncherSuccess
 
@@ -842,6 +845,20 @@ Function TestGetInstallationTelemetryFromMsiValueIsFalse
   Pop $1
   Delete $0
   ${AssertEqual} 1 "0"
+FunctionEnd
+
+Function TestIsUpdateChannelEsrFailure
+  Push "release"
+  Call IsUpdateChannelEsr
+  Pop $0
+  ${AssertEqual} 0 "0"
+FunctionEnd
+
+Function TestIsUpdateChannelEsrSuccess
+  Push "esr"
+  Call IsUpdateChannelEsr
+  Pop $0
+  ${AssertEqual} 0 "1"
 FunctionEnd
 
 Function TestShouldInstallDesktopLauncherFailure
