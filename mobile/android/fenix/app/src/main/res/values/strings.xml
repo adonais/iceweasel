@@ -4081,6 +4081,8 @@
     <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Countdown to the World Cup</string>
     <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
     <string name="sports_widget_view_schedule">View schedule</string>
+    <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+    <string name="sports_widget_skip">Skip</string>
     <!-- Sports widget match status label shown during halftime of a match. -->
     <string name="sports_widget_halftime" tools:ignore="UnusedResources">Halftime</string>
     <!-- Sports widget match status label shown during extra time of a match. -->
