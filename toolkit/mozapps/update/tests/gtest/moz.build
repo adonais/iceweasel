@@ -17,6 +17,7 @@ if CONFIG['OS_ARCH'] == 'WINNT':
         '/third_party/googletest/googletest/src/gtest-all.cc',
         '/third_party/googletest/googletest/src/gtest_main.cc',
         'EnterprisePoliciesFlagFileTests.cpp',
+        'EnterprisePoliciesTests.cpp',
         'TestDirHelpers.cpp',
     ]
 

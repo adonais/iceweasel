@@ -51,6 +51,7 @@ DIRS += [
     "gecko-trace",
     "glean",
     "httpsonlyerror",
+    "jsoncpp",
     "jsoncpp/src/lib_json",
     "kvstore",
     "media",

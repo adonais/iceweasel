@@ -12,6 +12,7 @@ EXPORTS += [
 
 if CONFIG["OS_ARCH"] == "WINNT":
     EXPORTS += [
+        "EnterprisePolicies.h",
         "EnterprisePoliciesFlagFile.h",
         "pathhash.h",
         "uachelper.h",
@@ -43,6 +44,7 @@ DisableStlWrapping()
 
 if CONFIG["OS_ARCH"] == "WINNT":
     SOURCES += [
+        "EnterprisePolicies.cpp",
         "EnterprisePoliciesFlagFile.cpp",
         "pathhash.cpp",
         "uachelper.cpp",
@@ -74,6 +76,11 @@ SOURCES += [
 
 LOCAL_INCLUDES += [
     "/other-licenses/nsis/Contrib/CityHash/cityhash",
+    "/toolkit/components/jsoncpp/include",
+]
+
+USE_LIBS += [
+    "jsoncpp_mt",
 ]
 
 DEFINES["MOZ_APP_BASENAME"] = '"%s"' % CONFIG["MOZ_APP_BASENAME"]
