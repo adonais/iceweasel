@@ -323,7 +323,8 @@ void MFMediaEngineParent::NotifyError(MF_MEDIA_ENGINE_ERR aError,
                         nsPrintfCString("Decoder error (hr=%lx)", aResult),
                         Some(static_cast<int32_t>(aResult)));
 #ifdef MOZ_WMF_CDM
-      if (aResult == MSPR_E_NO_DECRYPTOR_AVAILABLE) {
+      if (aResult == MSPR_E_NO_DECRYPTOR_AVAILABLE ||
+          aResult == MF_E_HARDWARE_DRM_UNSUPPORTED) {
         NotifyDisableHWDRM();
       }
 #endif
