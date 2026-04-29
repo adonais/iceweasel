@@ -152,14 +152,6 @@ Var ArchToInstall
 ; interval defined in InstallIntervalMS
 !define ERR_INSTALL_TIMEOUT 30
 
-!define DESKTOP_LAUNCHER_STATUS_UNKNOWN 0
-!define DESKTOP_LAUNCHER_STATUS_NOT_ENABLED 1
-!define DESKTOP_LAUNCHER_STATUS_NOT_CHECKED 2
-!define DESKTOP_LAUNCHER_STATUS_NOT_INSTALLED 3
-!define DESKTOP_LAUNCHER_STATUS_INSTALLED 4
-!define DESKTOP_LAUNCHER_STATUS_REINSTALLED 5
-!define DESKTOP_LAUNCHER_STATUS_REMOVED 6
-
 ; Maximum times to retry the download before displaying an error
 !define DownloadMaxRetries 9
 
@@ -805,107 +797,6 @@ FunctionEnd
 
 Function GetHadOldInstall
   ${If} "$PreviousInstallDir" != ""
-    Push 1
-  ${Else}
-    Push 0
-  ${EndIf}
-FunctionEnd
-
-Function GetDesktopLauncherStatus
-  Push $0
-
-  Call IsInstallationSuccessful
-  Pop $0
-  ${If} $0 == 0
-    Pop $0
-    Push ${DESKTOP_LAUNCHER_STATUS_UNKNOWN}
-    Return
-  ${EndIf}
-
-  Call IsDesktopLauncherEnabled
-  Pop $0
-  ${If} $0 == 0
-    Pop $0
-    Push ${DESKTOP_LAUNCHER_STATUS_NOT_ENABLED}
-    Return
-  ${EndIf}
-
-  Call IsShortcutInstallationChecked
-  Pop $0
-  ${If} $0 == 0
-    Pop $0
-    Push ${DESKTOP_LAUNCHER_STATUS_NOT_CHECKED}
-    Return
-  ${EndIf}
-
-  Call IsDesktopLauncherInstalled
-  Pop $0
-  ${If} $0 == 0
-    Call WasDesktopLauncherPreviouslyInstalled
-    Pop $0
-    ${If} $0 == 0
-      Pop $0
-      Push ${DESKTOP_LAUNCHER_STATUS_NOT_INSTALLED}
-    ${Else}
-      Pop $0
-      Push ${DESKTOP_LAUNCHER_STATUS_REMOVED}
-    ${EndIf}
-  ${Else}
-    Call IsFreshInstall
-    Pop $0
-    ${If} $0 == 0
-      Pop $0
-      Push ${DESKTOP_LAUNCHER_STATUS_REINSTALLED}
-    ${Else}
-      Pop $0
-      Push ${DESKTOP_LAUNCHER_STATUS_INSTALLED}
-    ${EndIf}
-  ${EndIf}
-FunctionEnd
-
-Function IsInstallationSuccessful
-  ${If} $ExitCode == ${ERR_SUCCESS}
-    Push 1
-  ${Else}
-    Push 0
-  ${EndIf}
-FunctionEnd
-
-Function IsDesktopLauncherEnabled
-  !ifdef DESKTOP_LAUNCHER_ENABLED
-    Push 1
-  !else
-    Push 0
-  !endif
-FunctionEnd
-
-Function IsShortcutInstallationChecked
-  ${If} $CheckboxShortcuts != 0
-    Push 1
-  ${Else}
-    Push 0
-  ${EndIf}
-FunctionEnd
-
-Function IsDesktopLauncherInstalled
-  ${If} ${FileExists} "$DESKTOP\${BrandShortName}.exe"
-    Push 1
-  ${Else}
-    Push 0
-  ${EndIf}
-FunctionEnd
-
-Function IsFreshInstall
-  ${If} $ExistingVersion == 0
-    Push 1
-  ${Else}
-    Push 0
-  ${EndIf}
-FunctionEnd
-
-Function WasDesktopLauncherPreviouslyInstalled
-  ReadRegDWORD $0 HKCU "Software\Mozilla\${BrandFullNameInternal}" "DesktopLauncherAppInstalled"
-  ${If} $0 == 1
     Push 1
   ${Else}
     Push 0

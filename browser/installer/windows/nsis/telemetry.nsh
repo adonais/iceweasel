@@ -2,6 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+!define DESKTOP_LAUNCHER_STATUS_UNKNOWN 0
+!define DESKTOP_LAUNCHER_STATUS_NOT_ENABLED 1
+!define DESKTOP_LAUNCHER_STATUS_NOT_CHECKED 2
+!define DESKTOP_LAUNCHER_STATUS_NOT_INSTALLED 3
+!define DESKTOP_LAUNCHER_STATUS_INSTALLED 4
+!define DESKTOP_LAUNCHER_STATUS_REINSTALLED 5
+!define DESKTOP_LAUNCHER_STATUS_REMOVED 6
+
 !ifndef GenerateUUID ; mock out when testing
 !define GenerateUUID "Call GenerateUUID_dontcall"
 !endif
@@ -267,8 +275,36 @@ Function PrepareFullInstallPing
     nsJSON::Set /tree ping "Data" "silent" /value false
   ${EndIf}
 
+  Call GetDesktopLauncherStatus
+  Pop $0
+  nsJSON::Set /tree ping "Data" "desktop_launcher_status" /value "$0"
+
   Pop $1
   Pop $0
+FunctionEnd
+
+Function IsFreshInstall
+  ${If} $InstallExisted != "true"
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
+FunctionEnd
+
+Function IsShortcutInstallationChecked
+  ${If} $AddDesktopSC != 0
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
+FunctionEnd
+
+Function IsInstallationSuccessful
+  ${If} $InstallResult == "success"
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
 FunctionEnd
 !endif
 
@@ -444,4 +480,107 @@ Function PrepareStubInstallPing
   Pop $1
   Pop $0
 FunctionEnd
+
+Function IsFreshInstall
+  ${If} $ExistingVersion == 0
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
+FunctionEnd
+
+Function IsShortcutInstallationChecked
+  ${If} $CheckboxShortcuts != 0
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
+FunctionEnd
+
+
+Function IsInstallationSuccessful
+  ${If} $ExitCode == ${ERR_SUCCESS}
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
+FunctionEnd
 !endif
+
+Function WasDesktopLauncherPreviouslyInstalled
+  ReadRegDWORD $0 HKCU "Software\Mozilla\${BrandFullNameInternal}" \
+    "DesktopLauncherAppInstalled"
+  ${If} $0 == 1
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
+FunctionEnd
+
+Function IsDesktopLauncherInstalled
+  ${If} ${FileExists} "$DESKTOP\${BrandShortName}.exe"
+    Push 1
+  ${Else}
+    Push 0
+  ${EndIf}
+FunctionEnd
+
+Function IsDesktopLauncherEnabled
+  !ifdef DESKTOP_LAUNCHER_ENABLED
+    Push 1
+  !else
+    Push 0
+  !endif
+FunctionEnd
+
+Function GetDesktopLauncherStatus
+  Push $0
+
+  Call IsInstallationSuccessful
+  Pop $0
+  ${If} $0 == 0
+    Pop $0
+    Push ${DESKTOP_LAUNCHER_STATUS_UNKNOWN}
+    Return
+  ${EndIf}
+
+  Call IsDesktopLauncherEnabled
+  Pop $0
+  ${If} $0 == 0
+    Pop $0
+    Push ${DESKTOP_LAUNCHER_STATUS_NOT_ENABLED}
+    Return
+  ${EndIf}
+
+  Call IsShortcutInstallationChecked
+  Pop $0
+  ${If} $0 == 0
+    Pop $0
+    Push ${DESKTOP_LAUNCHER_STATUS_NOT_CHECKED}
+    Return
+  ${EndIf}
+
+  Call IsDesktopLauncherInstalled
+  Pop $0
+  ${If} $0 == 0
+    Call WasDesktopLauncherPreviouslyInstalled
+    Pop $0
+    ${If} $0 == 0
+      Pop $0
+      Push ${DESKTOP_LAUNCHER_STATUS_NOT_INSTALLED}
+    ${Else}
+      Pop $0
+      Push ${DESKTOP_LAUNCHER_STATUS_REMOVED}
+    ${EndIf}
+  ${Else}
+    Call IsFreshInstall
+    Pop $0
+    ${If} $0 == 0
+      Pop $0
+      Push ${DESKTOP_LAUNCHER_STATUS_REINSTALLED}
+    ${Else}
+      Pop $0
+      Push ${DESKTOP_LAUNCHER_STATUS_INSTALLED}
+    ${EndIf}
+  ${EndIf}
+FunctionEnd
