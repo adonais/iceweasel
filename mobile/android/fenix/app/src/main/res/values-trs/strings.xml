@@ -401,6 +401,10 @@
   <string name="ai_controls_voice_search_description">Nahuin nanèt lêchra ‘hiaj sa ‘hiaj sun ngà nej nanè a’min’ nīkāj Google.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Sa gā’hue nāhuin hue’ê doj riña yi’nïn’ IA huin man anj</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Sī ga’hue gīni’hiājt sa nahuin nākà nikāj IA riña %1$s, nī nej bēntanâ narugui’ mān’an riñanj. Ne’ rūkù, gā’hue nā’nïnt riña ahuin mān’an sa ruhuât gārasunt.\n\nSa narán nan nī a’hui’ yī’ij riña nej ra’a IA narikî \u0020%1$s.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Sa gānarán riña:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_cancel">Dūyichin\'</string>
   <!-- Block button text in the block AI enhancements confirmation dialog -->
@@ -544,6 +548,8 @@
   <string name="onboarding_preferences_dialog_positive_button">Gà\' huaj</string>
   <!-- Terms of service onboarding title card label. 'Firefox' intentionally hardcoded here -->
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">Guruhuât gunumânt riña Firefox</string>
+  <!-- Terms of service sub header label. -->
+  <string name="onboarding_terms_of_service_sub_header_2">Riña gāchē nu hìót nī hue’êt</string>
   <!-- Terms of service onboarding page continue button label. -->
   <string name="onboarding_term_of_service_agree_and_continue_button_label_2">Guij ne\' ñāan</string>
   <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
@@ -619,8 +625,12 @@
 
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Gūij ne’ ñāan</string>
+  <!-- "Continue browsing" onboarding button. -->
+  <string name="nova_onboarding_continue_browsing_button" tools:ignore="UnusedResources">Huê dan gīnunt gāchēnunt</string>
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Sī ga\'hue akuan\' nïn</string>
+  <!-- "Skip" onboarding button. -->
+  <string name="nova_onboarding_skip_button" tools:ignore="UnusedResources">Sī gi\'hiaj guendât</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Gī’hiaj yūgui da’ gūnānj chrêt</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
@@ -632,6 +642,11 @@
   <string name="nova_onboarding_tou_body_line_1">Si gān’ānjt ne’ ñāa, nī arâjyinat %1$s.</string>
   <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">Chrēj da’huît gānikò’t sisī gārāsunt Firefox</string>
+  <!--
+    Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
+  -->
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Riñun ruhuâ Firefox da’ gā huì gāchēt. Gīnī’in doj dàj hua nuguan’ nan riña %1$s.</string>
   <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
   <string name="nova_onboarding_tou_body_line_2_link_text">Notisiâ Huìi</string>
   <!--

@@ -1624,6 +1624,14 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Eliminar grupo</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Cancelar</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Amarillo</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Naranja</string>
   <!-- Tab group color: Red -->
   <string name="tab_group_color_red">Rojo</string>
   <!-- Tab group color: Pink -->
@@ -2159,6 +2167,12 @@
   <string name="menu_print">Imprimir</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">Enviar a dispositivo</string>
+  <!-- Text for the QR code action in the native share sheet -->
+  <string name="share_qr_code">Código QR</string>
+  <!-- Title shown in the QR code display screen -->
+  <string name="qr_code_display_title">Código QR</string>
+  <!-- Content description for the close button in the QR code display screen -->
+  <string name="qr_code_display_close">Cerrar</string>
   <!-- Label for the download button on the QR code display screen -->
   <string name="qr_code_display_download">Descargar</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
@@ -2407,6 +2421,8 @@
   <string name="preference_enhanced_tracking_protection_strict">Estricto</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Protección contra rastreo mejorada y mayor rendimiento, pero puede que algunos sitios no funcionen correctamente.</string>
+  <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience_label">Solucionar problemas menores del sitio</string>
   <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
   <string name="preference_enhanced_tracking_protection_allow_list_dialog_cancel">Mantener las correcciones activadas</string>
   <!-- Accessibility text for the Strict protection information icon -->
@@ -2727,6 +2743,8 @@
     Title for the Email Masks in the settings menu
   -->
   <string name="preferences_email_masks">Máscaras de correo electrónico</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">Administrar máscaras de correo electrónico</string>
   <!--
     Autofill
 
@@ -2837,6 +2855,12 @@
   <string name="addresses_email">Correo electrónico</string>
   <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is used for addresses in Iran, Mexico. -->
   <string name="addresses_neighborhood" tools:ignore="UnusedResources">Vecindario</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Island field, used in places like the Cayman Islands and the Bahamas if an address is located on a specific island. -->
+  <string name="addresses_island" tools:ignore="UnusedResources">Isla</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Townland field, specific to Ireland is a specific type of land division used in rural areas. -->
+  <string name="addresses_townland" tools:ignore="UnusedResources">Townland</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is used as secondary address information (below the country level, e.g. county) in Honk Kong, Sudan, Syria, Türkiye, and as sublocality (civil entity below a locality, e.g. district) in Korea. -->
+  <string name="addresses_district" tools:ignore="UnusedResources">Distrito</string>
   <!-- The text for the "Save" button for saving an address -->
   <string name="addresses_save_button">Guardar</string>
   <!-- The text for the "Cancel" button for cancelling adding, updating or deleting an address -->

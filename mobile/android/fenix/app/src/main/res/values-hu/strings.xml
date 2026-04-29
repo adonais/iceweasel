@@ -1117,6 +1117,8 @@
   <string name="customize_wallpapers">Háttérképek</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Szponzorált indítóikonok</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Világbajnokság</string>
   <!--
     Wallpapers
 
@@ -2189,6 +2191,10 @@
   <string name="bookmark_sort_menu_a_to_z">Rendezés A-tól Z-ig</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Rendezés Z-től A-ig</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Importálás fájlból</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Nem sikerült a könyvjelzők importálása. Próbálja újra.</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2247,8 +2253,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Mappa bezárása: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Könyvjelzők bezárása</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Importálás fájlból</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Még nincsenek könyvjelzők</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Tartsa egyben az összes kedvenc könyvjelzőjét</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Könyvjelzők a mappában: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -4432,6 +4442,10 @@
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">ÉLŐ</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">A 2026-os világbajnokság bajnokai</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Második helyezett</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Harmadik helyezett</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">Legjobb 32</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4482,6 +4496,10 @@
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Előző mérkőzés</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">Kapcsolódó mérkőzések</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Közelgő</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(Teljes játékidő)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time" tools:ignore="UnusedResources">(Teljes játékidő)</string>
   <!--
@@ -4506,6 +4524,12 @@
   <string name="sports_widget_choose_another_team">Válasszon másik csapatot, hogy lépést tartson a világbajnoksággal.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Másik csapat követése</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Visszaszámlálás a vébéig</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Ütemezés megtekintése</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Kihagyás</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Félidő</string>
   <!-- Sports widget match status label shown during extra time of a match. -->

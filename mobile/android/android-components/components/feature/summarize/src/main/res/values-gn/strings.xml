@@ -27,6 +27,8 @@
   <string name="mozac_summarize_shake_consent_on_device_negative_button">Ani ko’ág̃a</string>
   <!-- Title for the download consent screen -->
   <string name="mozac_summarize_download_consent_title">Emboheko mombyky ñemigua</string>
+  <!-- Message for the consent to download when using an on-device model. %s will be replaced by app name. -->
+  <string name="mozac_summarize_download_nano_consent_message">Peteĩ ñemboguejy añoite omoneĩ %s-pe omoheñóivo ñemombyky oĩva nde poguýpe.</string>
   <!-- Button text for the consent to download an on-device model approving download consent -->
   <string name="mozac_summarize_download_consent_button_positive">Emboguejy emombyky hag̃ua</string>
   <!-- Button text for the consent to download an on-device model denying download consent -->

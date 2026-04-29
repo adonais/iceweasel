@@ -384,25 +384,25 @@
   <!-- Link text to see what AI enhancements are and aren’t included -->
   <string name="ai_controls_see_whats_included">Veja o que está e o que não está incluído</string>
   <!-- Banner text shown when AI enhancements are blocked -->
-  <string name="ai_controls_blocked_info_banner">As melhorias de IA novas e existentes são bloqueadas por omissão. Pode desbloquear funcionalidades específicas em baixo.</string>
+  <string name="ai_controls_blocked_info_banner">As melhorias de IA, novas e existentes, são bloqueadas por omissão. Pode desbloquear funcionalidades específicas abaixo.</string>
   <!-- Section header for the AI-powered features list -->
-  <string name="ai_controls_ai_powered_features">Funcionalidades suportadas por IA</string>
+  <string name="ai_controls_ai_powered_features">Funcionalidades com tecnologia de IA</string>
   <!-- Title for the translations AI feature toggle -->
   <string name="ai_controls_translations_title">Traduções</string>
   <!-- Description for the translations AI feature toggle -->
-  <string name="ai_controls_translations_description">Todas as traduções permanecem privadas no seu dispositivo.</string>
+  <string name="ai_controls_translations_description">Todas as traduções permanecem privadas, no seu dispositivo.</string>
   <!-- Link text to navigate to more translations settings -->
   <string name="ai_controls_more_translations_settings">Mais definições das traduções</string>
   <!-- Link text to navigate to more page summary settings -->
-  <string name="ai_controls_more_page_summary_settings">Mais definições de sumário de página</string>
+  <string name="ai_controls_more_page_summary_settings">Mais definições de resumos de páginas</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">Pesquisa por voz</string>
   <!-- Description for the voice search AI feature toggle -->
-  <string name="ai_controls_voice_search_description">O áudio é convertido para texto pelos Serviços de fala da Google.</string>
+  <string name="ai_controls_voice_search_description">O áudio é transformado em texto através dos Serviços de Voz da Google.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Bloquear melhorias de IA?</string>
   <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="ai_controls_block_dialog_body">Não irá ver melhorias de IA novas ou atuais em %1$s, ou pop-ups sobre as mesmas. Depois, pode desbloquear qualquer coisa que queira continuar a utilizar. \u0020O bloqueio também afeta extensões que utilizam IA fornecida por %1$s.</string>
+  <string name="ai_controls_block_dialog_body">Deixará de ver quaisquer melhorias de IA, novas ou existentes, no %1$s, bem como notificações relacionadas com as mesmas. Mais tarde, pode desbloquear o que quiser continuar a utilizar.\n\nO bloqueio também afeta as extensões que utilizam a IA disponibilizada pelo %1$s.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">O que será bloqueado:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -1118,7 +1118,7 @@
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Atalhos patrocinados</string>
   <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
-  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Taça do mundo</string>
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Mundial de Futebol</string>
   <!--
     Wallpapers
 
@@ -1441,7 +1441,7 @@
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Deslize a barra de endereço para o lado para alternar entre separadores</string>
   <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
-  <string name="preferences_shake_to_summarize">Balancear para resumir</string>
+  <string name="preferences_shake_to_summarize">Abanar para resumir</string>
   <!--
     Library
 
@@ -1609,7 +1609,7 @@
       Title for the list of tab groups used by a11y services
       The %1$d will be replaced by the number of opened tab groups
     -->
-    <item quantity="one">%1$d grupos de separadores abertos. Toque para mudar de separadores.</item>
+    <item quantity="one">%1$d grupo de separadores aberto. Toque para mudar de separadores.</item>
     <item quantity="other">%1$d grupos de separadores abertos. Toque para mudar de separadores.</item>
   </plurals>
   <!--
@@ -1702,9 +1702,9 @@
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Abrir pesquisa de separador</string>
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
-  <string name="tab_manager_empty_tab_groups_page_header">Experimente os grupos de separadores para menos deslocamento e mais ação</string>
+  <string name="tab_manager_empty_tab_groups_page_header">Experimente os grupos de separadores, para menos deslocamento e mais ação</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
-  <string name="tab_manager_empty_tab_groups_page_description">Selecione os separadores para criar um grupo. Eles estão guardados aqui, prontos quando você estiver.</string>
+  <string name="tab_manager_empty_tab_groups_page_description">Selecione separadores para criar um grupo. Ficam guardados aqui, prontos para quando quiser.</string>
   <!--
     Tab Group
 
@@ -1715,7 +1715,7 @@
   <string name="edit_tab_group_title">Editar grupo</string>
   <string name="create_tab_group_save_button">Guardar</string>
   <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
-  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Novo grupo, colapsar identificador de arrasto</string>
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Novo grupo, botão de arrasto de colapso</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Fechar edição de grupo de separadores</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupo</string>
@@ -1731,7 +1731,7 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Adicionar a</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
-  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Adicionar a um grupo de separadores, colapsar o identificador de arrasto</string>
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Adicionar a grupo de separadores, botão de arrasto de colapso</string>
   <!-- Content Description for "New tab group" panel. -->
   <string name="add_to_new_tab_group_content_description">Adicionar a novo grupo de separadores</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
@@ -1751,7 +1751,7 @@
       Accessibility description for add to existing tab group.
       %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
     -->
-    <item quantity="one">Adicionar ao grupo de separadores %1$s, separador %2$d, cor %3$s</item>
+    <item quantity="one">Adicionar ao grupo de separadores %1$s, %2$d separador, cor %3$s</item>
     <item quantity="other">Adicionar ao grupo de separadores %1$s, %2$d separadores, cor %3$s</item>
   </plurals>
   <plurals name="share_tab_group_button_content_description">
@@ -1760,17 +1760,17 @@
       %1$s is the name of the tab group.
       %2$d is the number of tabs in a tab group.
     -->
-    <item quantity="one">Partilhe %1$s grupos de separadores com %2$d separadores.</item>
-    <item quantity="other">Partilhe %1$s grupo de separadores com %2$d separadores.</item>
+    <item quantity="one">Partilhar o grupo de separadores %1$s com %2$d separador.</item>
+    <item quantity="other">Partilhar o grupo de separadores %1$s com %2$d separadores.</item>
   </plurals>
   <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
-  <string name="tab_group_sheet_dismiss_description">Ver grupo de separadores, colapsar identificador de arrasto</string>
+  <string name="tab_group_sheet_dismiss_description">Ver grupo de separadores, botão de arrasto de colapso</string>
   <plurals name="expanded_tab_group_header_description">
     <!--
       Accessibility description for the header of an expanded tab group.
       %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
     -->
-    <item quantity="one">%1$s grupo de separadores com %2$d separadores, cor %3$s</item>
+    <item quantity="one">%1$s grupo de separadores com %2$d separador, cor %3$s</item>
     <item quantity="other">%1$s grupo de separadores com %2$d separadores, cor %3$s</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
@@ -1941,7 +1941,7 @@
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Os nomes de ficheiros não podem utilizar “/”</string>
   <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
-  <string name="download_rename_error_case_only_error">O nome que introduziu apenas altera para letras maiúsculas ou minúsculas. Tente um nome de ficheiro diferente.</string>
+  <string name="download_rename_error_case_only_error">O nome que introduziu apenas altera maiúsculas ou minúsculas. Experimente um nome de ficheiro diferente.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Não é possível renomear o ficheiro</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -3130,7 +3130,7 @@
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
-  <string name="ip_protection_promo_headline">VPN integrada de %s</string>
+  <string name="ip_protection_promo_headline">VPN integrada do %s</string>
   <!-- Body text for the browser VPN promo card -->
   <string name="ip_protection_promo_body">Navegue com proteção adicional ao ocultar a sua localização, mesmo ao utilizar o Wi-Fi público.</string>
   <!-- Link text that opens additional information about the browser VPN -->
@@ -3142,22 +3142,22 @@
     %1$.1f is the data remaining in GB (for example "8.3").
     %2$.1f is the total monthly allowance in GB (for example "50.0").
   -->
-  <string name="ip_protection_data_limit_value">Faltam %1$.1f GB de %2$.1f GB</string>
+  <string name="ip_protection_data_limit_value">Restam %1$.1f\u00a0GB de %2$.1f\u00a0GB</string>
   <!--
     Text shown below the data usage bar describing when the monthly allowance resets.
     %1$.0f is the total monthly data allowance in GB (for example "50").
   -->
-  <string name="ip_protection_data_reset_info">Repõe para %1$.0f GB no primeiro dia de cada mês.</string>
+  <string name="ip_protection_data_reset_info">Reinicia para %1$.0f\u00a0GB no primeiro dia de cada mês.</string>
   <!-- Header for the browser VPN `location` section -->
   <string name="ip_protection_location_section">Localização</string>
   <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
-  <string name="ip_protection_location_recommended_label">Recomendado</string>
+  <string name="ip_protection_location_recommended_label">Recomendada</string>
   <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
-  <string name="ip_protection_location_recommended_description">Seleciona o local da VPN mais rápido para si.</string>
+  <string name="ip_protection_location_recommended_description">Seleciona a localização da VPN mais rápida para si.</string>
   <!-- Badge label shown in the menu item when the browser VPN is active -->
-  <string name="preferences_ip_protection_on">Ligado</string>
+  <string name="preferences_ip_protection_on">Ligada</string>
   <!-- Badge label shown in the menu item when the browser VPN is off -->
-  <string name="preferences_ip_protection_off">Desligado</string>
+  <string name="preferences_ip_protection_off">Desligada</string>
   <!-- Badge label shown in the menu item while the browser VPN is connecting -->
   <string name="ip_protection_menu_connecting">A ligar…</string>
   <!-- Badge label shown in the menu item when the browser VPN is paused -->
@@ -3170,12 +3170,12 @@
     Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
     %1$d is the total monthly allowance in GB (for example "50").
   -->
-  <string name="ip_protection_menu_limit_reached">Limite de %1$d GB atingido</string>
+  <string name="ip_protection_menu_limit_reached">Limite de %1$d\u00a0GB atingido</string>
   <!--
     Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
     %1$d is the total monthly allowance in GB (for example "50").
   -->
-  <string name="ip_protection_data_limit_reached_description">Utilizou todos os %1$d GB de dados da sua VPN. O acesso é reposto no próximo mês.</string>
+  <string name="ip_protection_data_limit_reached_description">Utilizou todos os %1$d\u00a0GB de dados da sua VPN. O acesso será reposto no próximo mês.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
   <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN ativada</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
@@ -3483,7 +3483,7 @@
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Adicionar atalho</string>
   <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
-  <string name="homepage_shortcuts_add_website_title">Introduza um URL de site</string>
+  <string name="homepage_shortcuts_add_website_title">Introduza um URL de um site</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Limite de atalhos alcançado</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3725,7 +3725,7 @@
   <!-- Toggle switch title and description for the translation settings control. -->
   <string name="translation_settings_control_title">Traduções</string>
   <!-- Description for the translation settings toggle switch. -->
-  <string name="translation_settings_control_description">Todas as traduções permanecem privadas no seu dispositivo.</string>
+  <string name="translation_settings_control_description">Todas as traduções permanecem privadas, no seu dispositivo.</string>
   <!-- Clickable text for the translations settings item that links to a website. -->
   <string name="translation_settings_control_learn_more">Saber mais</string>
   <!--
@@ -4435,33 +4435,33 @@
   <!-- Section header for the South America confederation group in the sports widget country selector. -->
   <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">América do Sul</string>
   <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Inglês</string>
+  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Inglaterra</string>
   <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
-  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Escocês</string>
+  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Escócia</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
-  <string name="sports_widget_match_live" tools:ignore="UnusedResources">AO DIREITO</string>
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">EM DIRETO</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
-  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Campes da copa do mundo de 2026</string>
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Campeões do Mundial de 2026</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
-  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">2º lugar</string>
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Vice-campeões</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">3º lugar</string>
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">3.º lugar</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_32">Rodada de 32</string>
+  <string name="sports_widget_round_of_32">Fase dos 32-avos</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
-  <string name="sports_widget_round_of_16">Rodada de 16</string>
+  <string name="sports_widget_round_of_16">Oitavos de final</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
-  <string name="sports_widget_quarter_final">Quarto-de-Final</string>
+  <string name="sports_widget_quarter_final">Quartos de final</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
   <string name="sports_widget_semi_final">Meias-finais</string>
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
   <string name="sports_widget_final">Final</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final">Final Chrome</string>
+  <string name="sports_widget_bronze_final">Final de Bronze</string>
   <!-- Sports widget error card message shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed">A informação da correspondência não está disponível neste momento. Tente atualizar em alguns minutos.</string>
+  <string name="sports_widget_error_load_failed">A informação do jogo não está disponível de momento. Tente atualizar dentro de alguns minutos.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
-  <string name="sports_widget_error_connection_interrupted">Ligação interrompida — atualizações em tempo real em pausa.</string>
+  <string name="sports_widget_error_connection_interrupted">Ligação interrompida — as atualizações em direto foram suspensas.</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Atualizar</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4491,17 +4491,19 @@
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Ver resultados</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
-  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Ver detalhes da correspondência</string>
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Ver detalhes do jogo</string>
   <!-- Sports widget section header for previous soccer match results. -->
-  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Correspondência anterior</string>
+  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Jogo anterior</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches">Correspondências relacionadas</string>
+  <string name="sports_widget_related_matches">Jogos relacionados</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Brevemente</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_suffix">(Tempo completo)</string>
+  <string name="sports_widget_match_full_time_suffix">(Tempo regulamentar)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time" tools:ignore="UnusedResources">(Tempo completo)</string>
+  <string name="sports_widget_match_full_time" tools:ignore="UnusedResources">(Tempo regulamentar)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Tempo regulamentar</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4509,11 +4511,11 @@
     It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
     or tracking in a technical sense; the meaning is about staying informed.
   -->
-  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Mantenha separadores no copa do mundo</string>
+  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Mantenha os separadores do Mundial de Futebol</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
   <string name="sports_widget_card_description" tools:ignore="UnusedResources">Obtenha atualizações dos jogos em direto e muito mais.</string>
   <!-- Sports widget menu item to change the selected team. -->
-  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Mudar equipa</string>
+  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Alterar equipa</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
   <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Obter um fundo personalizado</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
@@ -4521,21 +4523,21 @@
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">Ainda pretende acompanhar?</string>
   <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-  <string name="sports_widget_choose_another_team">Escolha outra equipa para acompanhar o copa do mundo.</string>
+  <string name="sports_widget_choose_another_team">Escolha outra equipa para acompanhar o Mundial de Futebol.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Seguir outra equipa</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
-  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Contagem regressiva para a copa do mundo</string>
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Contagem regressiva para o Mundial de Futebol</string>
   <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
-  <string name="sports_widget_view_schedule">Ver programação</string>
+  <string name="sports_widget_view_schedule">Ver programa</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
   <string name="sports_widget_skip">Ignorar</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
-  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Intervalo</string>
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Primeira parte</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
-  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Tempo extra</string>
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Prolongamento</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
-  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Sanções</string>
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Grandes penalidades</string>
   <!--
     Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
     if there is an equivalent single character for your language, use that (e.g. T for German).
@@ -4554,6 +4556,49 @@
     Your translation will be automatically truncated at 2 characters to avoid layout issues
   -->
   <string name="sports_widget_countdown_minutes">M</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Fechar folha de seleção da equipa</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description" tools:ignore="UnusedResources">Fechar</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Mais opções</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description" tools:ignore="UnusedResources">Tempo remanescente. Dias: %1$d. Horas: %2$d. Minutos: %3$d.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Ir para o site do Mundial de Futebol</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Brevemente: %1$s vs %2$s, %3$s às %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, jogo em direto</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, em direto</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, página %2$d de %3$d</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Resultados finais do Mundial, página %1$d de %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Remover o Mundial da página inicial</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

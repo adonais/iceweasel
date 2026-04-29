@@ -8,9 +8,9 @@
 
 <resources>
   <!-- Title for the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_title">Importando marcadores</string>
+  <string name="mozac_feature_importer_dialog_title">Importation des marque-pages</string>
   <!-- Description for the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_description">Mantené esta pantalla abierta. Solo debería tomar unos segundos.</string>
+  <string name="mozac_feature_importer_dialog_description">Laissez cet écran ouvert. Cela ne devrait prendre que quelques secondes.</string>
   <!-- Label for the cancel action on the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_cancel">Cancelar</string>
+  <string name="mozac_feature_importer_dialog_cancel">Annuler</string>
 </resources>

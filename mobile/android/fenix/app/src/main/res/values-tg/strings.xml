@@ -357,6 +357,26 @@
   <string name="translation_toolbar_expand_action">Кушодани саҳифаи тарҷума</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Нодида гузаронидани паём</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Хулосаҳои саҳифа</string>
+  <!-- Title for the AI controls settings screen -->
+  <string name="preferences_ai_controls">Унсурҳои идоракунии зеҳни сунъӣ (AI)</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Маълумоти бештар</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Манъ кардани такмилҳои зеҳни сунъӣ (AI)</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Тарҷумаҳо</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Ҳамаи тарҷумаҳо дар дастгоҳи шумо ба таври махфӣ мемонанд.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Танзимоти иловагии тарҷума</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Ҷустуҷӯи овозӣ</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_cancel">Бекор кардан</string>
   <!-- Block button text in the block AI enhancements confirmation dialog -->
@@ -1684,6 +1704,26 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Нест кардани гурӯҳ</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Бекор кардан</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Зард</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Норинҷӣ</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Сурх</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Гулобӣ</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Лоҷувард</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Бунафш</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Кабуд</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Осмонӣ</string>
   <!-- Tab group color: Green -->
   <string name="tab_group_color_green">Сабз</string>
   <!-- Tab group color: Grey -->
@@ -2072,6 +2112,8 @@
   <string name="bookmark_sort_menu_a_to_z">Мураттаб кардан аз А то Я</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Мураттаб кардан аз Я то А</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Ворид кардан аз файл</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -4270,6 +4312,8 @@
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Дидани натиҷаҳо</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Тоза кардан</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Нодида гузарондан</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

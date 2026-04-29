@@ -175,7 +175,7 @@
   <!-- Text preview for larger sized widgets -->
   <string name="search_widget_text_long">ويب پر تلاش کريں</string>
   <!-- Content description (not visible, for screen readers etc.): Voice search -->
-  <string name="search_widget_voice">آواز سے تلاش</string>
+  <string name="search_widget_voice">آواز کے ذریعے تلاش کریں</string>
   <!--
     Preferences
 
@@ -238,7 +238,7 @@
   <!-- Preference title for switch preference to show search suggestions -->
   <string name="preferences_show_search_suggestions">تلاش تجاویز دکھائیں</string>
   <!-- Preference title for switch preference to show voice search button -->
-  <string name="preferences_show_voice_search">آواز سے تلاش دکھائیں</string>
+  <string name="preferences_show_voice_search">آواز کے ذریعے تلاش دکھائیں</string>
   <!-- Preference title for switch preference to show search suggestions also in private mode -->
   <string name="preferences_show_search_suggestions_in_private">نجی سیشن میں دکھائیں</string>
   <!-- Preference title for switch preference to show a clipboard suggestion when searching -->
@@ -1114,7 +1114,7 @@
   <!-- The error message in add login view when hostname field is blank. -->
   <string name="saved_login_hostname_required" tools:ignore="UnusedResources">میزبان نام درکار ہے۔</string>
   <!-- Voice search button content description -->
-  <string name="voice_search_content_description">آواز سے تلاش</string>
+  <string name="voice_search_content_description">آواز کے ذریعے تلاش کریں</string>
   <!-- Voice search prompt description displayed after the user presses the voice search button -->
   <string name="voice_search_explainer">اب بولیں</string>
   <!-- The error message in edit login view when a duplicate username exists. -->

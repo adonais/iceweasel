@@ -8,9 +8,9 @@
 
 <resources>
   <!-- Title for the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_title">Importando marcadores</string>
+  <string name="mozac_feature_importer_dialog_title">Gāchìn’ gā’na’ nej sa arâj sun nīchrò’ doj</string>
   <!-- Description for the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_description">Mantené esta pantalla abierta. Solo debería tomar unos segundos.</string>
+  <string name="mozac_feature_importer_dialog_description">Huê dan gānî’nïnj riña raga’ nan gī’hiát. Sê sī nìko diû gānika.</string>
   <!-- Label for the cancel action on the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_cancel">Cancelar</string>
+  <string name="mozac_feature_importer_dialog_cancel">Dūyichin\'</string>
 </resources>

@@ -2105,6 +2105,8 @@
   <string name="bookmark_sort_menu_a_to_z">Razvrsti od A do Ž</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Razvrsti od Ž do A</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Zaznamkov ni bilo mogoče uvoziti. Poskusite znova.</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2163,6 +2165,8 @@
   <string name="bookmark_select_folder_close_folder_content_description">Zapri mapo: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Zapri zaznamke</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Uvozi iz datoteke</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Ni zaznamkov</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
@@ -2632,7 +2636,7 @@
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_description_5">Strani se bodo nalagale normalno, vendar bo zavrnjenih manj sledilcev.</string>
   <!-- Accessibility text for the Standard protection information icon -->
-  <string name="preference_enhanced_tracking_protection_standard_info_button">Kaj je zavrnjeno s standardno zaščito pred sledenjem</string>
+  <string name="preference_enhanced_tracking_protection_standard_info_button">Kaj blokira običajna zaščita pred sledenjem</string>
   <!-- Preference for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict">Strogo</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
@@ -4319,6 +4323,8 @@
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Škotska</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">V ŽIVO</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Osveži</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
   <string name="sports_widget_group_a" tools:ignore="UnusedResources">Skupina A</string>
   <!-- Sports widget group stage label for group B in the soccer tournament. -->
@@ -4373,12 +4379,25 @@
   <string name="sports_widget_choose_another_team">Izberite še kakšno ekipo, katere napredek na svetovnem prvenstvu želite spremljati.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Spremljaj drugo ekipo</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Preskoči</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Polčas</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Podaljški</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
   <string name="sports_widget_penalties" tools:ignore="UnusedResources">Enajstmetrovke</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description" tools:ignore="UnusedResources">Zapri</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Več možnosti</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description" tools:ignore="UnusedResources">Preostali čas. Dni: %1$d. Ur: %2$d. Minut: %3$d.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Obišči spletno stran svetovnega prvenstva</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

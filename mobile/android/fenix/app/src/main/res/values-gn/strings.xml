@@ -379,6 +379,8 @@
   <string name="ai_controls_learn_more">Eikuaave</string>
   <!-- Title for the block AI enhancements toggle -->
   <string name="ai_controls_block_ai_title">Ejoko IA porãverã rehegua</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Jejoko he’ise nderehechamo’ãiha IA iporãvéva térã ag̃agua %s-pe, ni ovetã apysẽ hi’arikuéra.</string>
   <!-- Link text to see what AI enhancements are and aren’t included -->
   <string name="ai_controls_see_whats_included">Ehecha mba’épa oike térã ndoikéi</string>
   <!-- Banner text shown when AI enhancements are blocked -->
@@ -4452,6 +4454,8 @@
   <string name="sports_widget_final">Paha</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">Mbohapyhapegua</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">Pe marandu partído rehegua ndaipóri ko’ag̃aite. Eha’ã jey ag̃amieve.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
   <string name="sports_widget_error_connection_interrupted">Jeikerã oñekytĩva — mbohekopyahu mombytapyre.</string>
   <!-- Sports widget action label to refresh match data after an error. -->
@@ -4494,6 +4498,8 @@
   <string name="sports_widget_match_full_time_suffix">(Ára pukukue)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time" tools:ignore="UnusedResources">(Ára pukukue)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Ára pukukue</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4546,6 +4552,21 @@
     Your translation will be automatically truncated at 2 characters to avoid layout issues
   -->
   <string name="sports_widget_countdown_minutes">M</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Kuatia poravorã aty ñembotygua</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description" tools:ignore="UnusedResources">Emboty</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Jeporavorãve</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Eike Mundial ñanduti roguápe</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Tenondeve: %1$s %2$srovái, %3$s %4$s-pe</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Eipe’a Copa del Mundo nde rógagui</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
