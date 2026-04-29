@@ -125,7 +125,7 @@ Var MockLocalAppDataFolder
 !define GenerateUUID "Push 'THIS_IS_A_UNIQUE_ID_FOR_TESTING'"
 
 !include stub.nsh
-!include get_installation_type.nsh
+!include desktop_launcher_helpers.nsh
 !include install_dir_helpers.nsh
 
 Var MockCommandLine
@@ -195,6 +195,9 @@ Function .onInit
     ${UnitTest} TestGetInstallationTelemetryFromMsiValueIsUnknown
     ${UnitTest} TestGetInstallationTelemetryFromMsiValueIsTrue
     ${UnitTest} TestGetInstallationTelemetryFromMsiValueIsFalse
+
+    ${UnitTest} TestShouldInstallDesktopLauncherFailure
+    ${UnitTest} TestShouldInstallDesktopLauncherSuccess
 
     Call TelemetryTests
 
@@ -839,6 +842,20 @@ Function TestGetInstallationTelemetryFromMsiValueIsFalse
   Pop $1
   Delete $0
   ${AssertEqual} 1 "0"
+FunctionEnd
+
+Function TestShouldInstallDesktopLauncherFailure
+  StrCpy $MockParameters ""
+  Call ShouldInstallDesktopLauncher
+  Pop $0
+  ${AssertEqual} 0 "0"
+FunctionEnd
+
+Function TestShouldInstallDesktopLauncherSuccess
+  StrCpy $MockParameters "/DesktopLauncher"
+  Call ShouldInstallDesktopLauncher
+  Pop $0
+  ${AssertEqual} 0 "1"
 FunctionEnd
 
 Section

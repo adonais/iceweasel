@@ -34,7 +34,7 @@ INSTALLER_FILES = \
   nsis/telemetry.nsh \
   nsis/test_stub.nsi \
   nsis/test_telemetry.nsh \
-  nsis/get_installation_type.nsh \
+  nsis/desktop_launcher_helpers.nsh \
   stub.tag \
   $(NULL)
 

@@ -2,8 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-!ifndef GET_INSTALLATION_TYPE_NSH
-!define GET_INSTALLATION_TYPE_NSH
+!ifndef DESKTOP_LAUNCHER_HELPERS_NSH
+!define DESKTOP_LAUNCHER_HELPERS_NSH
 
 ; Looks at installation_telemetry.json to determine whether the installation
 ; was installed by the stub installer or not.
@@ -85,4 +85,17 @@ Function GetInstallationTelemetryFromMsi
     SetErrors
     Push 0
   ${EndIf}
+FunctionEnd
+
+Function ShouldInstallDesktopLauncher
+  Push $0
+  ${GetParameters} $0
+  ClearErrors
+  ${GetOptions} "$0" "/DesktopLauncher" "$0"
+  ${IfNot} ${Errors}
+    StrCpy $0 1
+  ${Else}
+    StrCpy $0 0
+  ${EndIf}
+  Exch $0
 FunctionEnd

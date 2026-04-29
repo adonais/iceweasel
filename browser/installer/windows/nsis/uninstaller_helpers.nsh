@@ -5,7 +5,7 @@
 !ifndef UNINSTALLER_HELPERS_NSH
 !define UNINSTALLER_HELPERS_NSH
 
-!include get_installation_type.nsh
+!include desktop_launcher_helpers.nsh
 
 /**
  * Called from the uninstaller's .onInit function not to be confused with the
@@ -503,7 +503,21 @@ Function OnUpdateDesktopLauncherHandler
   Call GetInstallationType
   ; Pop the result from the stack into $0
   Pop $0
+  ${If} $0 == "full"
+    Push $1
+    Call ShouldInstallDesktopLauncher
+    Pop $1
+    ${If} $1 == 0
+      Pop $1
+      Pop $0
+      ; Early return if we should not install the Desktop Launcher
+      Return
+    ${EndIf}
+    Pop $1
+  ${EndIf}
+
   ${If} $0 == "stub"
+  ${OrIf} $0 == "full"
     ${If} $RegHive == "HKLM"
       SetShellVarContext all
       Call OnUpdateDesktopLauncher_HKLM
