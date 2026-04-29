@@ -591,13 +591,22 @@ Function OnUpdateDesktopLauncher_HKCU
     Delete "$DESKTOP\${BrandShortName}.lnk"
     Call InstallDesktopLauncher
   ${ElseIf} $1 == "1"
-  ${OrIf} $3 == "1"
-    ; This block covers these two cases:
-    ; - If the elevated post-update script runs before the unelevated one, then it will have deleted the shortcut and set the UpdaterDeletedShortcut regkey.
-    ; - Or, if the unelevated script is running now befor the elevated one, then there will still be a shortcut in the shared location.
-    ; In either case, we need to install the desktop launcher now. It's the responsibility of the elevated post-update script to delete
-    ; the shared shortcut, and that is implemented in OnUpdateDesktopLauncher_HKLM
+    ; The elevated process during the two-process update already deleted the
+    ; shortcut on the Public Desktop by calling OnUpdateDesktopLauncher_HKLM
     Call InstallDesktopLauncher
+  ${ElseIf} $3 == "1"
+    ; In a single-process update, the elevated process never runs, so the
+    ; shortcut on the Public Desktop may not have been deleted because
+    ; OnUpdateDesktopLauncher_HKLM was never called
+    ; We try to delete it and only install the Desktop Launcher if that
+    ; succeeds, to avoid having both on the desktop
+    SetShellVarContext all
+    ClearErrors
+    Delete "$DESKTOP\${BrandShortName}.lnk"
+    SetShellVarContext current
+    ${IfNot} ${Errors}
+      Call InstallDesktopLauncher
+    ${EndIf}
   ${EndIf}
   Pop $3
   Pop $2
