@@ -4,7 +4,7 @@
 
 package org.mozilla.fenix.compose
 
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,10 +14,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -31,128 +34,97 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.compose.base.theme.informationContainer
+import mozilla.components.compose.base.theme.onInformationContainer
+import mozilla.components.compose.base.theme.onWarningContainer
+import mozilla.components.compose.base.theme.warningContainer
 import org.mozilla.fenix.shopping.ui.ext.headingResource
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemedValue
 import org.mozilla.fenix.theme.ThemedValueProvider
+import kotlin.enums.enumEntries
 import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Card for presenting informational messages or errors.
  *
- * @param modifier Modifier to be applied to the card.
- * @param title The primary text of the info message.
+ * @param description The primary piece of text.
  * @param type The [InfoType] of message to display.
+ * @param modifier [Modifier] to be applied to the card.
+ * @param title The optional header text shown above the description.
  * @param verticalRowAlignment An optional adjustment of how the row of text aligns.
- * @param description The optional secondary piece of text.
  * @param footer An optional piece of text with a clickable link.
- * @param buttonText The text to show in the optional button.
+ * @param colors [InfoCardColors] that will be used to resolve the container and content colors
+ * for this card. Defaults to the palette for [type] via [InfoCardDefaults.colors].
  */
-@Suppress("LongMethod")
 @Composable
 fun InfoCard(
+    description: String,
+    type: InfoType,
     modifier: Modifier = Modifier,
     title: String? = null,
-    type: InfoType,
     verticalRowAlignment: Alignment.Vertical = Alignment.Top,
-    description: String? = null,
     footer: Pair<String, LinkTextState>? = null,
-    buttonText: InfoCardButtonText? = null,
+    colors: InfoCardColors = InfoCardDefaults.colors(type),
 ) {
     InfoCardContainer(
         modifier = modifier,
-        backgroundColor = type.cardBackgroundColor,
+        backgroundColor = colors.container,
+        shape = MaterialTheme.shapes.large,
         contentPadding = PaddingValues(
-            horizontal = 12.dp,
-            vertical = 8.dp,
+            start = FirefoxTheme.layout.space.static150,
+            top = FirefoxTheme.layout.space.static150,
+            end = FirefoxTheme.layout.space.static200,
+            bottom = FirefoxTheme.layout.space.static150,
         ),
         elevation = 0.dp,
     ) {
-        val titleContentDescription = title?.let { headingResource(it) }
+        CompositionLocalProvider(LocalContentColor provides colors.content) {
+            Row(
+                verticalAlignment = verticalRowAlignment,
+            ) {
+                Icon(
+                    painter = painterResource(id = type.iconId),
+                    contentDescription = null,
+                )
 
-        Row(
-            verticalAlignment = verticalRowAlignment,
-        ) {
-            when (type) {
-                InfoType.Warning -> {
-                    InfoCardIcon(iconId = iconsR.drawable.mozac_ic_warning_fill_24)
-                }
+                Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static150))
 
-                InfoType.Error -> {
-                    InfoCardIcon(iconId = iconsR.drawable.mozac_ic_critical_fill_24)
-                }
-
-                InfoType.Info -> {
-                    InfoCardIcon(iconId = iconsR.drawable.mozac_ic_information_fill_24)
-                }
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column {
-                title?.let {
-                    Text(
-                        text = it,
-                        style = FirefoxTheme.typography.headline8,
-                        modifier = Modifier.semantics {
-                            heading()
-                            if (titleContentDescription != null) {
+                Column {
+                    title?.let { titleText ->
+                        val titleContentDescription = headingResource(titleText)
+                        Text(
+                            text = titleText,
+                            style = FirefoxTheme.typography.headline8,
+                            modifier = Modifier.semantics {
+                                heading()
                                 contentDescription = titleContentDescription
-                            }
-                        },
-                    )
-                }
+                            },
+                        )
 
-                description?.let {
-                    title?.let { Spacer(modifier = Modifier.height(4.dp)) }
+                        Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static50))
+                    }
 
                     Text(
                         text = remember(description) { parseHtml(description) },
                         style = FirefoxTheme.typography.body2,
                     )
-                }
 
-                footer?.let {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    footer?.let {
+                        Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static50))
 
-                    LinkText(
-                        text = it.first,
-                        linkTextStates = listOf(it.second),
-                        style = FirefoxTheme.typography.body2.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
-                        ),
-                        linkTextColor = MaterialTheme.colorScheme.onSurface,
-                        linkTextDecoration = TextDecoration.Underline,
-                    )
+                        LinkText(
+                            text = it.first,
+                            linkTextStates = listOf(it.second),
+                            style = FirefoxTheme.typography.body2,
+                            linkTextColor = colors.content,
+                            linkTextDecoration = TextDecoration.Underline,
+                        )
+                    }
                 }
             }
         }
-
-        buttonText?.let {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            FilledButton(
-                text = it.text,
-                modifier = Modifier.fillMaxWidth(),
-                contentColor = type.buttonTextColor,
-                containerColor = type.buttonBackgroundColor,
-                onClick = it.onClick,
-            )
-        }
     }
-}
-
-@Composable
-private fun InfoCardIcon(
-    iconId: Int,
-    modifier: Modifier = Modifier,
-) {
-    Icon(
-        painter = painterResource(id = iconId),
-        contentDescription = null,
-        modifier = modifier,
-    )
 }
 
 /**
@@ -174,71 +146,93 @@ enum class InfoType {
      */
     Info,
 
+    /**
+     * Stylizes the card for subtle informational messages using the surface palette.
+     */
+    Neutral,
+
     ;
 
-    val cardBackgroundColor: Color
-        @Composable
-        @ReadOnlyComposable
+    @get:DrawableRes
+    internal val iconId: Int
         get() = when (this) {
-            Warning -> FirefoxTheme.colors.layerWarning
-            Error -> FirefoxTheme.colors.layerCritical
-            Info -> FirefoxTheme.colors.layerInformation
-        }
-
-    val buttonBackgroundColor: Color
-        @Composable
-        @ReadOnlyComposable
-        get() = when (this) {
-            Warning -> FirefoxTheme.colors.actionWarning
-            Error -> FirefoxTheme.colors.actionCritical
-            Info -> FirefoxTheme.colors.actionInformation
-        }
-
-    val buttonTextColor: Color
-        @Composable
-        @ReadOnlyComposable
-        get() = when {
-            this == Info && !isSystemInDarkTheme() -> FirefoxTheme.colors.textOnColorPrimary
-            else -> MaterialTheme.colorScheme.onSurface
+            Warning -> iconsR.drawable.mozac_ic_warning_24
+            Error -> iconsR.drawable.mozac_ic_critical_24
+            Info, Neutral -> iconsR.drawable.mozac_ic_information_24
         }
 }
 
 /**
- * Model for the optional button in a [InfoCard].
+ * Container and content colors used by an [InfoCard].
  *
- * @property text The text to show in the button.
- * @property onClick The callback to invoke when the button is clicked.
+ * @property container The background color of the card.
+ * @property content The color applied to the icon, text, and link inside the card.
  */
-data class InfoCardButtonText(
-    val text: String,
-    val onClick: () -> Unit,
+@Immutable
+data class InfoCardColors(
+    val container: Color,
+    val content: Color,
 )
 
+/**
+ * Default values used by [InfoCard].
+ */
+object InfoCardDefaults {
+    /**
+     * Creates the [InfoCardColors] that represent the default container and content colors for
+     * the given [type].
+     */
+    @Composable
+    @ReadOnlyComposable
+    fun colors(type: InfoType): InfoCardColors = when (type) {
+        InfoType.Warning -> InfoCardColors(
+            container = MaterialTheme.colorScheme.warningContainer,
+            content = MaterialTheme.colorScheme.onWarningContainer,
+        )
+        InfoType.Error -> InfoCardColors(
+            container = MaterialTheme.colorScheme.errorContainer,
+            content = MaterialTheme.colorScheme.onErrorContainer,
+        )
+        InfoType.Info -> InfoCardColors(
+            container = MaterialTheme.colorScheme.informationContainer,
+            content = MaterialTheme.colorScheme.onInformationContainer,
+        )
+        InfoType.Neutral -> InfoCardColors(
+            container = MaterialTheme.colorScheme.surfaceContainerHighest,
+            content = MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
 private class PreviewModelParameterProvider : ThemedValueProvider<InfoType>(
-    baseValues = enumValues<InfoType>().asSequence(),
+    baseValues = enumEntries<InfoType>().asSequence(),
     getDisplayName = { _, infoType -> infoType.name },
 )
 
 @Composable
 private fun InfoCardPreviewContent(type: InfoType) {
     Surface {
-        InfoCard(
-            title = "Title text",
-            type = type,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(all = 16.dp),
-            description = "Description text",
-            footer = "Primary link text with an underlined hyperlink." to LinkTextState(
-                text = "underlined hyperlink",
-                url = "https://www.mozilla.org",
-                onClick = {},
-            ),
-            buttonText = InfoCardButtonText(
-                text = "Button text",
-                onClick = {},
-            ),
-        )
+        Column(modifier = Modifier.padding(all = 16.dp)) {
+            InfoCard(
+                description = "Description text",
+                type = type,
+                modifier = Modifier.fillMaxWidth(),
+                title = "Title text",
+                footer = "Primary link text with an underlined hyperlink." to LinkTextState(
+                    text = "underlined hyperlink",
+                    url = "https://www.mozilla.org",
+                    onClick = {},
+                ),
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            InfoCard(
+                description = "Description-only variant without a title or link.",
+                type = type,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
