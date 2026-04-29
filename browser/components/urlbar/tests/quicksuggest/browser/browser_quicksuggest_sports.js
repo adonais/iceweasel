@@ -531,7 +531,7 @@ add_task(async function unknownSports_awayTeamIcon() {
 
 // Past without scores
 //
-// => Show the no-score UI: "Away Team at Home Team"
+// => Show the no-score UI: "Home Team vs Away Team"
 add_task(async function pastWithoutScores() {
   await doTest({
     now: "2025-10-31T14:00:00-04:00[-04:00]",
@@ -557,7 +557,7 @@ add_task(async function pastWithoutScores() {
 
 // Live without scores
 //
-// => Show the no-score UI: "Away Team at Home Team"
+// => Show the no-score UI: "Home Team vs Away Team"
 add_task(async function liveWithoutScores() {
   await doTest({
     now: "2025-10-31T14:00:00-04:00[-04:00]",
@@ -611,7 +611,7 @@ add_task(async function scheduledWithScores() {
 
 // Score in one team but not the other
 //
-// => Show the no-score UI: "Away Team at Home Team"
+// => Show the no-score UI: "Home Team vs Away Team"
 add_task(async function scoreInOneTeam() {
   await doTest({
     now: "2025-10-31T14:00:00-04:00[-04:00]",
