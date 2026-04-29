@@ -15,6 +15,7 @@ async function getGleanEvents(metric) {
 
 // Test: load_aboutneterror fires for a DNS error (top-level)
 add_task(async function test_feltprivacy_neterror_load() {
+  await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 
   let pageLoaded;
@@ -47,6 +48,7 @@ add_task(async function test_feltprivacy_neterror_load() {
 
 // Test: load_aboutneterror fires with is_frame=true for iframe errors
 add_task(async function test_feltprivacy_neterror_load_iframe() {
+  await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 
   let tab = await openErrorPage(NET_ERROR_PAGE, true);
@@ -64,6 +66,7 @@ add_task(async function test_feltprivacy_neterror_load_iframe() {
 
 // Test: cert errors do NOT fire load_aboutneterror
 add_task(async function test_feltprivacy_certerror_no_neterror() {
+  await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 
   let tab = await openErrorPage(BAD_CERT, false);
@@ -88,6 +91,7 @@ add_task(async function test_legacy_neterror_load() {
   await SpecialPowers.pushPrefEnv({
     set: [["security.certerrors.felt-privacy-v1", false]],
   });
+  await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 
   let pageLoaded;
@@ -124,6 +128,7 @@ add_task(async function test_legacy_certerror_no_neterror() {
   await SpecialPowers.pushPrefEnv({
     set: [["security.certerrors.felt-privacy-v1", false]],
   });
+  await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 
   let tab = await openErrorPage(BAD_CERT, false);
@@ -161,6 +166,7 @@ function assertDohEventExtras(event, label) {
 
 // Test: DoH warning page telemetry for load and button clicks in TRR-only mode
 add_task(async function test_trr_only_telemetry() {
+  await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 
   let browser = await loadTRRErrorPage();

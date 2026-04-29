@@ -371,6 +371,8 @@ export class NetErrorCard extends MozLitElement {
       domainMismatchNames: this.domainMismatchNames,
       offline: gOffline,
       filePath: getFilePath(),
+      showOSXPermissionWarning:
+        !gIsCertError && RPMShowOSXLocalNetworkPermissionWarning(),
     });
 
     if (errorConfig.checkClockSkew && gIsCertError) {

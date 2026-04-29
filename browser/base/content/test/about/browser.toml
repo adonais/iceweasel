@@ -93,6 +93,8 @@ support-files = [
   "invalid_header.sjs",
 ]
 
+["browser_aboutNetError_netInterrupt.js"]
+
 ["browser_aboutNetError_server_error.js"]
 support-files = [
   "http_error.sjs",
