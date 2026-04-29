@@ -822,16 +822,29 @@ RefPtr<GenericPromise> DecodedStream::SetAudioDevice(
     return GenericPromise::CreateAndResolve(true, __func__);
   }
   LOG_DS(LogLevel::Debug, "SetAudioDevice() device=%p", aDevice.get());
-  RefPtr<GenericPromise> promise;
-  for (const auto& track : mOutputTracks) {
-    if (track->mType == MediaSegment::AUDIO) {
-      track->AddAudioOutput(this, aDevice);
-      promise = mDummyTrack->mTrack->Graph()->NotifyWhenDeviceStarted(aDevice);
-    }
-  }
-  MOZ_DIAGNOSTIC_ASSERT(promise,
-                        "Should have an audio output track to set device!");
-  return promise;
+  mDevice = aDevice;
+  return InvokeAsync(
+      GetMainThreadSerialEventTarget(), __func__,
+      [self = RefPtr<DecodedStream>(this), this, aDevice]() -> RefPtr<GenericPromise> {
+        AssertIsOnMainThread();
+        RefPtr<ProcessedMediaTrack> audioOutputTrack;
+        for (const auto& track : mOutputTracks) {
+          if (track->mType == MediaSegment::AUDIO) {
+            audioOutputTrack = track;
+            break;
+          }
+        }
+        if (!audioOutputTrack) {
+          return GenericPromise::CreateAndResolve(true, __func__);
+        }
+        if (mAudioOutputRegistered) {
+          audioOutputTrack->RemoveAudioOutput(this);
+        }
+        audioOutputTrack->AddAudioOutput(this, aDevice);
+        mAudioOutputRegistered = true;
+        return audioOutputTrack->Graph()->NotifyWhenDeviceStarted(
+            aDevice ? aDevice->DeviceID() : nullptr);
+      });
 }
 
 double DecodedStream::PlaybackRate() const {
