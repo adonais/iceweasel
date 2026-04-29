@@ -79,9 +79,9 @@ enum class TournamentRound {
  * @property time Display time for the match (e.g. "2:00 PM").
  * @property round Which round of the tournament this match belongs to.
  * @property groupLabel Group label (e.g. "Group D"), shown during group stage.
+ * @property countdownDays Days remaining until kickoff.
  * @property countdownHours Hours remaining until kickoff.
  * @property countdownMins Minutes remaining until kickoff.
- * @property countdownSecs Seconds remaining until kickoff.
  * @property penaltiesSummary Post-match penalties summary, e.g. "FINAL 5-2 on penalties".
  */
 data class MatchInfo(
@@ -97,9 +97,9 @@ data class MatchInfo(
     val time: String = "",
     val round: TournamentRound = TournamentRound.GROUP_STAGE,
     val groupLabel: String = "",
+    val countdownDays: String = "",
     val countdownHours: String = "",
     val countdownMins: String = "",
-    val countdownSecs: String = "",
     val penaltiesSummary: String = "",
 )
 
