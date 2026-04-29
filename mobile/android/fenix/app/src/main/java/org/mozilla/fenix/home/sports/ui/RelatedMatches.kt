@@ -118,7 +118,7 @@ private fun formatScoreWithSuffix(match: MatchInfo): String {
         MatchStatus.FINAL,
         MatchStatus.ELIMINATED,
         MatchStatus.WINNER,
-            -> stringResource(R.string.sports_widget_match_full_time)
+            -> stringResource(R.string.sports_widget_match_full_time_suffix)
 
         else -> ""
     }
