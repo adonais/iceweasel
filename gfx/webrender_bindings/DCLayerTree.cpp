@@ -2814,16 +2814,17 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
   videoContext1->VideoProcessorSetStreamColorSpace1(videoProcessor, 0,
                                                     inputColorSpace);
 
-  Maybe<DXGI_COLOR_SPACE_TYPE> outputColorSpace =
+  Maybe<DXGI_COLOR_SPACE_TYPE> outputColorSpaceRef =
       GetOutputDXGIColorSpace(mSwapChainFormat, inputColorSpace, mUseVpAutoHDR);
-  if (outputColorSpace.isNothing()) {
+  if (outputColorSpaceRef.isNothing()) {
     gfxCriticalNoteOnce << "Unrecognized DXGI mSwapChainFormat, unsure of "
                            "correct DXGI colorspace: "
                         << gfx::hexa(mSwapChainFormat);
     return false;
   }
+  DXGI_COLOR_SPACE_TYPE outputColorSpace = outputColorSpaceRef.ref();
 
-  hr = swapChain3->SetColorSpace1(outputColorSpace.ref());
+  hr = swapChain3->SetColorSpace1(outputColorSpace);
   if (FAILED(hr)) {
     gfxCriticalNoteOnce << "SetColorSpace1 failed: " << gfx::hexa(hr);
     RenderThread::Get()->NotifyWebRenderError(
@@ -2831,7 +2832,7 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
     return false;
   }
   videoContext1->VideoProcessorSetOutputColorSpace1(videoProcessor,
-                                                    outputColorSpace.ref());
+                                                    outputColorSpace);
 
   auto hdrMetadata =
       gfx::DeviceManagerDx::Get()->WindowHDRMetadata(mDCLayerTree->GetHwnd());
@@ -2839,9 +2840,20 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
   videoContext->QueryInterface(
       (ID3D11VideoContext2**)getter_AddRefs(videoContext2));
   if (hdrMetadata.isSome() && videoContext2) {
-    videoContext2->VideoProcessorSetOutputHDRMetaData(
-        videoProcessor, DXGI_HDR_METADATA_TYPE_HDR10,
-        sizeof(DXGI_HDR_METADATA_HDR10), &(hdrMetadata.ref()));
+    // If we had to fall back to non-HDR color spaces in VideoProcessorBlt we
+    // should remove the HDR meta data to avoid confusing the
+    // VideoProcessorBlt implementation.  We'll still display as HDR if it was
+    // PQ content but without the metadata being fed to VideoProcessorBlt, so it
+    // may be too bright but at least it should work.
+    if (mFailedVideoProcessorBltYUVHLGToRGBPQ ||
+        mFailedVideoProcessorBltYUVPQtoRGBPQ) {
+      videoContext2->VideoProcessorSetOutputHDRMetaData(
+          videoProcessor, DXGI_HDR_METADATA_TYPE_NONE, 0, NULL);
+    } else {
+      videoContext2->VideoProcessorSetOutputHDRMetaData(
+          videoProcessor, DXGI_HDR_METADATA_TYPE_HDR10,
+          sizeof(DXGI_HDR_METADATA_HDR10), &(hdrMetadata.ref()));
+    }
   }
 
   D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputDesc = {};
@@ -2950,6 +2962,63 @@ bool DCSurfaceVideo::CallVideoProcessorBlt() {
 
   hr = videoContext->VideoProcessorBlt(videoProcessor, mOutputView, 0, 1,
                                        &stream);
+  if (hr == E_NOTIMPL &&
+      outputColorSpace == DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020) {
+    if (inputColorSpace == DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020 ||
+        inputColorSpace == DXGI_COLOR_SPACE_YCBCR_FULL_GHLG_TOPLEFT_P2020) {
+      // If YUV BT2100 HLG conversion to RGB BT2100 PQ is not working, we have
+      // to fall back to displaying it as regular RGB BT2020, which is not HDR
+      // but still has the gamut of BT2020.  Once we implement HLG conversion
+      // ourselves (probably using a D3D11 shader instead of VideoProcessorBlt)
+      // we can handle this more gracefully.
+      gfxCriticalNoteOnce
+          << "VideoProcessorBlt failed with BT2100 HLG content with "
+             "error E_NOTIMPL, BT2100 HLG content will be displayed as BT2020 "
+             "(not HDR).  Input color space: "
+          << static_cast<int>(inputColorSpace)
+          << ", output color space: " << static_cast<int>(outputColorSpace)
+          << ", swap chain format: " << static_cast<int>(mSwapChainFormat);
+      mFailedVideoProcessorBltYUVHLGToRGBPQ = true;
+      hr = swapChain3->SetColorSpace1(DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020);
+      if (FAILED(hr)) {
+        gfxCriticalNoteOnce << "SetColorSpace1 failed: " << gfx::hexa(hr);
+        RenderThread::Get()->NotifyWebRenderError(
+            wr::WebRenderError::VIDEO_OVERLAY);
+        return false;
+      }
+      // Now retry the VideoProcessorBlt with BT709 which should just work.
+      if (inputColorSpace == DXGI_COLOR_SPACE_YCBCR_STUDIO_GHLG_TOPLEFT_P2020) {
+        videoContext1->VideoProcessorSetStreamColorSpace1(
+            videoProcessor, 0, DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709);
+      } else {
+        videoContext1->VideoProcessorSetStreamColorSpace1(
+            videoProcessor, 0, DXGI_COLOR_SPACE_YCBCR_FULL_G22_LEFT_P709);
+      }
+      videoContext1->VideoProcessorSetOutputColorSpace1(
+          videoProcessor, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P2020);
+      hr = videoContext->VideoProcessorBlt(videoProcessor, mOutputView, 0, 1,
+                                           &stream);
+    } else {
+      // If YUV BT2100 PQ conversion to RGB BT2100 PQ is not working, we can
+      // just pretend it is BT2020 and the VideoProcessorBlt should succeed,
+      // it's not clear if this causes any color distortion.
+      gfxCriticalNoteOnce
+          << "VideoProcessorBlt failed with BT2100 PQ content with "
+             "error E_NOTIMPL, will retry as BT709 for processing and display "
+             "as BT2100 PQ.  Input color space: "
+          << static_cast<int>(inputColorSpace)
+          << ", output color space: " << static_cast<int>(outputColorSpace)
+          << ", swap chain format: " << static_cast<int>(mSwapChainFormat);
+      mFailedVideoProcessorBltYUVPQtoRGBPQ = true;
+      // Now retry the VideoProcessorBlt with BT709 which should just work.
+      videoContext1->VideoProcessorSetStreamColorSpace1(
+          videoProcessor, 0, DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709);
+      videoContext1->VideoProcessorSetOutputColorSpace1(
+          videoProcessor, DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709);
+      hr = videoContext->VideoProcessorBlt(videoProcessor, mOutputView, 0, 1,
+                                           &stream);
+    }
+  }
   if (FAILED(hr)) {
     gfxCriticalNote << "VideoProcessorBlt failed: " << gfx::hexa(hr);
     return false;

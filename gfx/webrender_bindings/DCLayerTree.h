@@ -579,6 +579,10 @@ class DCSurfaceVideo : public DCSurface {
   DXGI_FORMAT mSwapChainFormat = DXGI_FORMAT_B8G8R8A8_UNORM;
   bool mIsDRM = false;
   bool mFailedYuvSwapChain = false;
+  // Indicates if VideoProcessorBlt is unable to convert YUV HLG to RGB PQ.
+  bool mFailedVideoProcessorBltYUVHLGToRGBPQ = false;
+  // Indicates if VideoProcessorBlt is unable to convert YUV PQ to RGB PQ.
+  bool mFailedVideoProcessorBltYUVPQtoRGBPQ = false;
   RefPtr<RenderTextureHost> mRenderTextureHost;
   RefPtr<RenderTextureHost> mPrevTexture;
   RefPtr<RenderTextureHostUsageInfo> mRenderTextureHostUsageInfo;
