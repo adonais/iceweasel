@@ -620,17 +620,16 @@ mozilla::ipc::IPCResult MFMediaEngineParent::RecvSetCDMProxyId(
       LOG("Deferring SetMediaSourceOnEngine until HDCP settle check completes");
       RefPtr<GenericPromise> hdcpCheck = std::move(sPendingHDCPCheck);
       hdcpCheck
-          ->Then(
-              mManagerThread, __func__,
-              [self = RefPtr{this}](GenericPromise::ResolveOrRejectValue&&) {
-                self->mHDCPRequestHolder.Complete();
-                // Proceed regardless of whether the HDCP check resolved or
-                // rejected: the check is a timing signal, not a hard gate.
-                // The engine will enforce any HDCP policy on its own.
-                if (self->mMediaEngine) {
-                  self->SetMediaSourceOnEngine();
-                }
-              })
+          ->Then(mManagerThread, __func__,
+                 [self = RefPtr{this}](GenericPromise::ResolveOrRejectValue&&) {
+                   self->mHDCPRequestHolder.Complete();
+                   // Proceed regardless of whether the HDCP check resolved or
+                   // rejected: the check is a timing signal, not a hard gate.
+                   // The engine will enforce any HDCP policy on its own.
+                   if (self->mMediaEngine) {
+                     self->SetMediaSourceOnEngine();
+                   }
+                 })
           ->Track(mHDCPRequestHolder);
     } else {
       SetMediaSourceOnEngine();

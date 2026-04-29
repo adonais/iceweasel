@@ -128,10 +128,10 @@ inline constexpr HRESULT MSPR_E_NO_DECRYPTOR_AVAILABLE =
 // path). Semantically equivalent to MSPR_E_NO_DECRYPTOR_AVAILABLE — triggers
 // SL3000→SL2000 fallback. mferror.h defines this as a macro on systems where
 // it ships with the SDK; guard against redefinition.
-#ifndef MF_E_HARDWARE_DRM_UNSUPPORTED
+#  ifndef MF_E_HARDWARE_DRM_UNSUPPORTED
 inline constexpr HRESULT MF_E_HARDWARE_DRM_UNSUPPORTED =
     static_cast<HRESULT>(0xC00D3706);
-#endif
+#  endif
 #endif
 
 const char* MediaEventTypeToStr(MediaEventType aType);
