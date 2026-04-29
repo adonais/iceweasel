@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.6.110
- * pdfjsBuild = a1cc75126
+ * pdfjsVersion = 5.7.98
+ * pdfjsBuild = 7e7902b2c
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -503,20 +503,9 @@ function isLittleEndian() {
   const view32 = new Uint32Array(buffer8.buffer, 0, 1);
   return view32[0] === 1;
 }
-function isEvalSupported() {
-  try {
-    new Function("");
-    return true;
-  } catch {
-    return false;
-  }
-}
 class FeatureTest {
   static get isLittleEndian() {
     return shadow(this, "isLittleEndian", isLittleEndian());
-  }
-  static get isEvalSupported() {
-    return shadow(this, "isEvalSupported", isEvalSupported());
   }
   static get isOffscreenCanvasSupported() {
     return shadow(this, "isOffscreenCanvasSupported", typeof OffscreenCanvas !== "undefined");
@@ -895,6 +884,8 @@ function _isValidExplicitDest(validRef, validName, dest) {
 const makeArr = () => [];
 const makeMap = () => new Map();
 const makeObj = () => Object.create(null);
+
+;// ./src/shared/math_clamp.js
 function MathClamp(v, min, max) {
   return Math.min(Math.max(v, min), max);
 }
@@ -998,7 +989,7 @@ class XfaLayer {
           for (const option of element.children) {
             if (option.attributes.value === storedData.value) {
               option.attributes.selected = true;
-            } else if (option.attributes.hasOwnProperty("selected")) {
+            } else if (Object.hasOwn(option.attributes, "selected")) {
               delete option.attributes.selected;
             }
           }
@@ -1154,6 +1145,7 @@ class XfaLayer {
 }
 
 ;// ./src/display/display_utils.js
+
 
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -1382,41 +1374,28 @@ function getPdfFilenameFromUrl(url, defaultFilename = "document.pdf") {
   return defaultFilename;
 }
 class StatTimer {
-  started = Object.create(null);
+  #started = new Map();
   times = [];
   time(name) {
-    if (name in this.started) {
+    if (this.#started.has(name)) {
       warn(`Timer is already running for ${name}`);
     }
-    this.started[name] = Date.now();
+    this.#started.set(name, Date.now());
   }
   timeEnd(name) {
-    if (!(name in this.started)) {
+    if (!this.#started.has(name)) {
       warn(`Timer has not been started for ${name}`);
     }
     this.times.push({
       name,
-      start: this.started[name],
+      start: this.#started.get(name),
       end: Date.now()
     });
-    delete this.started[name];
+    this.#started.delete(name);
   }
   toString() {
-    const outBuf = [];
-    let longest = 0;
-    for (const {
-      name
-    } of this.times) {
-      longest = Math.max(name.length, longest);
-    }
-    for (const {
-      name,
-      start,
-      end
-    } of this.times) {
-      outBuf.push(`${name.padEnd(longest)} ${end - start}ms\n`);
-    }
-    return outBuf.join("");
+    const longest = Math.max(...this.times.map(t => t.name.length));
+    return this.times.map(t => `${t.name.padEnd(longest)} ${t.end - t.start}ms\n`).join("");
   }
 }
 function isValidFetchUrl(url, baseUrl) {
@@ -1497,7 +1476,7 @@ function getRGB(color) {
     return color.slice(4, -1).split(",").map(x => parseInt(x));
   }
   if (color.startsWith("rgba(")) {
-    return color.slice(5, -1).split(",").map(x => parseInt(x)).slice(0, 3);
+    return color.slice(5, -1).split(",", 3).map(x => parseInt(x));
   }
   warn(`Not a valid color format: "${color}"`);
   return [0, 0, 0];
@@ -1631,13 +1610,10 @@ class CSSConstants {
     return shadow(this, "commentForegroundColor", getRGB(color));
   }
 }
-function applyOpacity(r, g, b, opacity) {
+function applyOpacity(color, opacity) {
   opacity = MathClamp(opacity ?? 1, 0, 1);
   const white = 255 * (1 - opacity);
-  r = Math.round(r * opacity + white);
-  g = Math.round(g * opacity + white);
-  b = Math.round(b * opacity + white);
-  return [r, g, b];
+  return color.map(c => Math.round(c * opacity + white));
 }
 function RGBToHSL(rgb, output) {
   const r = rgb[0] / 255;
@@ -4981,6 +4957,7 @@ class TouchManager {
 
 
 
+
 class AnnotationEditor {
   #accessibilityData = null;
   #allResizerDivs = null;
@@ -6772,14 +6749,10 @@ class AnnotationStorage {
     if (this.#storage.size === 0) {
       this.resetModified();
     }
-    if (typeof this.onAnnotationEditor === "function") {
-      for (const value of this.#storage.values()) {
-        if (value instanceof AnnotationEditor) {
-          return;
-        }
-      }
-      this.onAnnotationEditor(null);
+    if (this.#storage.values().some(v => v instanceof AnnotationEditor)) {
+      return;
     }
+    this.onAnnotationEditor?.(null);
   }
   setValue(key, value) {
     const obj = this.#storage.get(key);
@@ -6800,9 +6773,7 @@ class AnnotationStorage {
     }
     if (value instanceof AnnotationEditor) {
       (this.#editorsMap ||= new Map()).set(value.annotationElementId, value);
-      if (typeof this.onAnnotationEditor === "function") {
-        this.onAnnotationEditor(value.constructor._type);
-      }
+      this.onAnnotationEditor?.(value.constructor._type);
     }
   }
   has(key) {
@@ -6814,17 +6785,13 @@ class AnnotationStorage {
   #setModified() {
     if (!this.#modified) {
       this.#modified = true;
-      if (typeof this.onSetModified === "function") {
-        this.onSetModified();
-      }
+      this.onSetModified?.();
     }
   }
   resetModified() {
     if (this.#modified) {
       this.#modified = false;
-      if (typeof this.onResetModified === "function") {
-        this.onResetModified();
-      }
+      this.onResetModified?.();
     }
   }
   get print() {
@@ -6995,6 +6962,7 @@ class PrintAnnotationStorage extends AnnotationStorage {
 }
 
 ;// ./src/display/canvas_dependency_tracker.js
+
 
 const FORCED_DEPENDENCY_LABEL = "__forcedDependency";
 const {
@@ -7171,10 +7139,10 @@ class CanvasBBoxTracker {
     }
     const bbox = [Infinity, Infinity, -Infinity, -Infinity];
     Util.axialAlignedBoundingBox([minX, minY, maxX, maxY], transform, bbox);
-    this.#pendingBBox[0] = Math.min(this.#pendingBBox[0], Math.max(bbox[0], clipBox[0]));
-    this.#pendingBBox[1] = Math.min(this.#pendingBBox[1], Math.max(bbox[1], clipBox[1]));
-    this.#pendingBBox[2] = Math.max(this.#pendingBBox[2], Math.min(bbox[2], clipBox[2]));
-    this.#pendingBBox[3] = Math.max(this.#pendingBBox[3], Math.min(bbox[3], clipBox[3]));
+    this.#pendingBBox[0] = MathClamp(bbox[0], clipBox[0], this.#pendingBBox[0]);
+    this.#pendingBBox[1] = MathClamp(bbox[1], clipBox[1], this.#pendingBBox[1]);
+    this.#pendingBBox[2] = MathClamp(bbox[2], this.#pendingBBox[2], clipBox[2]);
+    this.#pendingBBox[3] = MathClamp(bbox[3], this.#pendingBBox[3], clipBox[3]);
     return this;
   }
   recordFullPageBBox(idx) {
@@ -8190,9 +8158,7 @@ class FontInfo {
       offset += this.#view.getUint32(offset) + 4;
     }
     const length = this.#view.getUint32(offset);
-    const stringData = new Uint8Array(length);
-    stringData.set(new Uint8Array(this.#buffer, offset + 4, length));
-    return this.#decoder.decode(stringData);
+    return this.#decoder.decode(new Uint8Array(this.#buffer, offset + 4, length));
   }
   get fallbackName() {
     return this.#readString(0);
@@ -8284,8 +8250,8 @@ class PatternInfo {
     let offset = 20;
     const coords = new Float32Array(this.buffer, offset, nCoord * 2);
     offset += nCoord * 8;
-    const colors = new Uint8Array(this.buffer, offset, nColor * 3);
-    offset += nColor * 3;
+    const colors = new Uint8Array(this.buffer, offset, nColor * 4);
+    offset += nColor * 4;
     const stops = [];
     for (let i = 0; i < nStop; ++i) {
       const p = dataView.getFloat32(offset, true);
@@ -8837,7 +8803,278 @@ class MessageHandler {
   }
 }
 
+;// ./src/display/webgpu.js
+
+const MESH_WGSL = `
+struct Uniforms {
+  offsetX      : f32,
+  offsetY      : f32,
+  scaleX       : f32,
+  scaleY       : f32,
+  paddedWidth  : f32,
+  paddedHeight : f32,
+  borderSize   : f32,
+  _pad         : f32,
+};
+
+@group(0) @binding(0) var<uniform> u : Uniforms;
+
+struct VertexInput {
+  @location(0) position : vec2<f32>,
+  @location(1) color    : vec4<f32>,
+};
+
+struct VertexOutput {
+  @builtin(position) position : vec4<f32>,
+  @location(0)       color    : vec3<f32>,
+};
+
+@vertex
+fn vs_main(in : VertexInput) -> VertexOutput {
+  var out : VertexOutput;
+  let cx = (in.position.x + u.offsetX) * u.scaleX;
+  let cy = (in.position.y + u.offsetY) * u.scaleY;
+  out.position = vec4<f32>(
+    ((cx + u.borderSize) / u.paddedWidth) * 2.0 - 1.0,
+    1.0 - ((cy + u.borderSize) / u.paddedHeight) * 2.0,
+    0.0,
+    1.0
+  );
+  out.color = in.color.rgb;
+  return out;
+}
+
+@fragment
+fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
+  return vec4<f32>(in.color, 1.0);
+}
+`;
+class WebGPU {
+  #initPromise = null;
+  #device = null;
+  #meshPipeline = null;
+  #preferredFormat = null;
+  async #initGPU() {
+    if (!globalThis.navigator?.gpu) {
+      return false;
+    }
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      if (!adapter) {
+        return false;
+      }
+      this.#preferredFormat = navigator.gpu.getPreferredCanvasFormat();
+      this.#device = await adapter.requestDevice();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  init() {
+    return this.#initPromise ||= this.#initGPU();
+  }
+  get isReady() {
+    return this.#device !== null;
+  }
+  loadMeshShader() {
+    if (!this.#device || this.#meshPipeline) {
+      return;
+    }
+    const shaderModule = this.#device.createShaderModule({
+      code: MESH_WGSL
+    });
+    this.#meshPipeline = this.#device.createRenderPipeline({
+      layout: "auto",
+      vertex: {
+        module: shaderModule,
+        entryPoint: "vs_main",
+        buffers: [{
+          arrayStride: 2 * 4,
+          attributes: [{
+            shaderLocation: 0,
+            offset: 0,
+            format: "float32x2"
+          }]
+        }, {
+          arrayStride: 4,
+          attributes: [{
+            shaderLocation: 1,
+            offset: 0,
+            format: "unorm8x4"
+          }]
+        }]
+      },
+      fragment: {
+        module: shaderModule,
+        entryPoint: "fs_main",
+        targets: [{
+          format: this.#preferredFormat
+        }]
+      },
+      primitive: {
+        topology: "triangle-list"
+      }
+    });
+  }
+  #buildVertexStreams(figures, context) {
+    const {
+      coords,
+      colors
+    } = context;
+    let vertexCount = 0;
+    for (const figure of figures) {
+      const ps = figure.coords;
+      if (figure.type === MeshFigureType.TRIANGLES) {
+        vertexCount += ps.length;
+      } else if (figure.type === MeshFigureType.LATTICE) {
+        const vpr = figure.verticesPerRow;
+        vertexCount += (Math.floor(ps.length / vpr) - 1) * (vpr - 1) * 6;
+      }
+    }
+    const posData = new Float32Array(vertexCount * 2);
+    const colData = new Uint8Array(vertexCount * 4);
+    let pOff = 0,
+      cOff = 0;
+    const addVertex = (pi, ci) => {
+      posData[pOff++] = coords[pi * 2];
+      posData[pOff++] = coords[pi * 2 + 1];
+      colData[cOff++] = colors[ci * 4];
+      colData[cOff++] = colors[ci * 4 + 1];
+      colData[cOff++] = colors[ci * 4 + 2];
+      cOff++;
+    };
+    for (const figure of figures) {
+      const ps = figure.coords;
+      const cs = figure.colors;
+      if (figure.type === MeshFigureType.TRIANGLES) {
+        for (let i = 0, ii = ps.length; i < ii; i += 3) {
+          addVertex(ps[i], cs[i]);
+          addVertex(ps[i + 1], cs[i + 1]);
+          addVertex(ps[i + 2], cs[i + 2]);
+        }
+      } else if (figure.type === MeshFigureType.LATTICE) {
+        const vpr = figure.verticesPerRow;
+        const rows = Math.floor(ps.length / vpr) - 1;
+        const cols = vpr - 1;
+        for (let i = 0; i < rows; i++) {
+          let q = i * vpr;
+          for (let j = 0; j < cols; j++, q++) {
+            addVertex(ps[q], cs[q]);
+            addVertex(ps[q + 1], cs[q + 1]);
+            addVertex(ps[q + vpr], cs[q + vpr]);
+            addVertex(ps[q + vpr + 1], cs[q + vpr + 1]);
+            addVertex(ps[q + 1], cs[q + 1]);
+            addVertex(ps[q + vpr], cs[q + vpr]);
+          }
+        }
+      }
+    }
+    return {
+      posData,
+      colData,
+      vertexCount
+    };
+  }
+  draw(figures, context, backgroundColor, paddedWidth, paddedHeight, borderSize) {
+    this.loadMeshShader();
+    const device = this.#device;
+    const {
+      offsetX,
+      offsetY,
+      scaleX,
+      scaleY
+    } = context;
+    const {
+      posData,
+      colData,
+      vertexCount
+    } = this.#buildVertexStreams(figures, context);
+    const posBuffer = device.createBuffer({
+      size: Math.max(posData.byteLength, 4),
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    });
+    if (posData.byteLength > 0) {
+      device.queue.writeBuffer(posBuffer, 0, posData);
+    }
+    const colBuffer = device.createBuffer({
+      size: Math.max(colData.byteLength, 4),
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    });
+    if (colData.byteLength > 0) {
+      device.queue.writeBuffer(colBuffer, 0, colData);
+    }
+    const uniformBuffer = device.createBuffer({
+      size: 8 * 4,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+    device.queue.writeBuffer(uniformBuffer, 0, new Float32Array([offsetX, offsetY, scaleX, scaleY, paddedWidth, paddedHeight, borderSize, 0]));
+    const bindGroup = device.createBindGroup({
+      layout: this.#meshPipeline.getBindGroupLayout(0),
+      entries: [{
+        binding: 0,
+        resource: {
+          buffer: uniformBuffer
+        }
+      }]
+    });
+    const offscreen = new OffscreenCanvas(paddedWidth, paddedHeight);
+    const gpuCtx = offscreen.getContext("webgpu");
+    gpuCtx.configure({
+      device,
+      format: this.#preferredFormat,
+      alphaMode: backgroundColor ? "opaque" : "premultiplied"
+    });
+    const clearValue = backgroundColor ? {
+      r: backgroundColor[0] / 255,
+      g: backgroundColor[1] / 255,
+      b: backgroundColor[2] / 255,
+      a: 1
+    } : {
+      r: 0,
+      g: 0,
+      b: 0,
+      a: 0
+    };
+    const commandEncoder = device.createCommandEncoder();
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [{
+        view: gpuCtx.getCurrentTexture().createView(),
+        clearValue,
+        loadOp: "clear",
+        storeOp: "store"
+      }]
+    });
+    if (vertexCount > 0) {
+      renderPass.setPipeline(this.#meshPipeline);
+      renderPass.setBindGroup(0, bindGroup);
+      renderPass.setVertexBuffer(0, posBuffer);
+      renderPass.setVertexBuffer(1, colBuffer);
+      renderPass.draw(vertexCount);
+    }
+    renderPass.end();
+    device.queue.submit([commandEncoder.finish()]);
+    posBuffer.destroy();
+    colBuffer.destroy();
+    uniformBuffer.destroy();
+    return offscreen.transferToImageBitmap();
+  }
+}
+const _webGPU = new WebGPU();
+function initGPU() {
+  return _webGPU.init();
+}
+function isGPUReady() {
+  return _webGPU.isReady;
+}
+function loadMeshShader() {
+  _webGPU.loadMeshShader();
+}
+function drawMeshWithGPU(figures, context, backgroundColor, paddedWidth, paddedHeight, borderSize) {
+  return _webGPU.draw(figures, context, backgroundColor, paddedWidth, paddedHeight, borderSize);
+}
+
 ;// ./src/display/pattern_helper.js
+
 
 
 const PathType = {
@@ -8881,12 +9118,12 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
   isRadial() {
     return this._type === "radial";
   }
-  _isCircleCenterOutside() {
-    if (!this.isRadial() || this._r0 > this._r1) {
+  areConic() {
+    if (!this.isRadial()) {
       return false;
     }
     const dist = Math.hypot(this._p0[0] - this._p1[0], this._p0[1] - this._p1[1]);
-    return dist > this._r1;
+    return dist + this._r1 > this._r0 && dist + this._r0 > this._r1;
   }
   _createGradient(ctx, transform = null) {
     let grad;
@@ -8965,7 +9202,7 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
       const ownerBBox = owner.current.getClippedPathBoundingBox(pathType, getCurrentTransform(ctx)) || [0, 0, 0, 0];
       const width = Math.ceil(ownerBBox[2] - ownerBBox[0]) || 1;
       const height = Math.ceil(ownerBBox[3] - ownerBBox[1]) || 1;
-      const tmpCanvas = owner.cachedCanvases.getCanvas("pattern", width, height);
+      const tmpCanvas = owner.canvasFactory.create(width, height);
       const tmpCtx = tmpCanvas.context;
       tmpCtx.clearRect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
       tmpCtx.beginPath();
@@ -8977,17 +9214,18 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
         tmpCtx.transform(...this.matrix);
       }
       applyBoundingBox(tmpCtx, this._bbox);
-      if (this._isCircleCenterOutside()) {
+      if (this.areConic()) {
         tmpCtx.fillStyle = this._createReversedGradient(tmpCtx);
         tmpCtx.fill();
       }
       tmpCtx.fillStyle = this._createGradient(tmpCtx);
       tmpCtx.fill();
       pattern = ctx.createPattern(tmpCanvas.canvas, "no-repeat");
+      owner.canvasFactory.destroy(tmpCanvas);
       const domMatrix = new DOMMatrix(inverse);
       pattern.setTransform(domMatrix);
     } else {
-      if (this._isCircleCenterOutside()) {
+      if (this.areConic()) {
         ctx.save();
         applyBoundingBox(ctx, this._bbox);
         ctx.fillStyle = this._createReversedGradient(ctx);
@@ -9006,7 +9244,7 @@ function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
   const bytes = data.data,
     rowSize = data.width * 4;
   let tmp;
-  if (coords[p1 + 1] > coords[p2 + 1]) {
+  if (coords[p1 * 2 + 1] > coords[p2 * 2 + 1]) {
     tmp = p1;
     p1 = p2;
     p2 = tmp;
@@ -9014,7 +9252,7 @@ function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
     c1 = c2;
     c2 = tmp;
   }
-  if (coords[p2 + 1] > coords[p3 + 1]) {
+  if (coords[p2 * 2 + 1] > coords[p3 * 2 + 1]) {
     tmp = p2;
     p2 = p3;
     p3 = tmp;
@@ -9022,7 +9260,7 @@ function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
     c2 = c3;
     c3 = tmp;
   }
-  if (coords[p1 + 1] > coords[p2 + 1]) {
+  if (coords[p1 * 2 + 1] > coords[p2 * 2 + 1]) {
     tmp = p1;
     p1 = p2;
     p2 = tmp;
@@ -9030,24 +9268,24 @@ function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
     c1 = c2;
     c2 = tmp;
   }
-  const x1 = (coords[p1] + context.offsetX) * context.scaleX;
-  const y1 = (coords[p1 + 1] + context.offsetY) * context.scaleY;
-  const x2 = (coords[p2] + context.offsetX) * context.scaleX;
-  const y2 = (coords[p2 + 1] + context.offsetY) * context.scaleY;
-  const x3 = (coords[p3] + context.offsetX) * context.scaleX;
-  const y3 = (coords[p3 + 1] + context.offsetY) * context.scaleY;
+  const x1 = (coords[p1 * 2] + context.offsetX) * context.scaleX;
+  const y1 = (coords[p1 * 2 + 1] + context.offsetY) * context.scaleY;
+  const x2 = (coords[p2 * 2] + context.offsetX) * context.scaleX;
+  const y2 = (coords[p2 * 2 + 1] + context.offsetY) * context.scaleY;
+  const x3 = (coords[p3 * 2] + context.offsetX) * context.scaleX;
+  const y3 = (coords[p3 * 2 + 1] + context.offsetY) * context.scaleY;
   if (y1 >= y3) {
     return;
   }
-  const c1r = colors[c1],
-    c1g = colors[c1 + 1],
-    c1b = colors[c1 + 2];
-  const c2r = colors[c2],
-    c2g = colors[c2 + 1],
-    c2b = colors[c2 + 2];
-  const c3r = colors[c3],
-    c3g = colors[c3 + 1],
-    c3b = colors[c3 + 2];
+  const c1r = colors[c1 * 4],
+    c1g = colors[c1 * 4 + 1],
+    c1b = colors[c1 * 4 + 2];
+  const c2r = colors[c2 * 4],
+    c2g = colors[c2 * 4 + 1],
+    c2b = colors[c2 * 4 + 2];
+  const c3r = colors[c3 * 4],
+    c3g = colors[c3 * 4 + 1],
+    c3b = colors[c3 * 4 + 2];
   const minY = Math.round(y1),
     maxY = Math.round(y3);
   let xa, car, cag, cab;
@@ -9138,8 +9376,9 @@ class MeshShadingPattern extends BaseShadingPattern {
     this._bbox = IR[6];
     this._background = IR[7];
     this.matrix = null;
+    loadMeshShader();
   }
-  _createMeshCanvas(combinedScale, backgroundColor, cachedCanvases) {
+  _createMeshCanvas(combinedScale, backgroundColor, canvasFactory) {
     const EXPECTED_SCALE = 1.1;
     const MAX_PATTERN_SIZE = 3000;
     const BORDER_SIZE = 2;
@@ -9161,25 +9400,27 @@ class MeshShadingPattern extends BaseShadingPattern {
     };
     const paddedWidth = width + BORDER_SIZE * 2;
     const paddedHeight = height + BORDER_SIZE * 2;
-    const tmpCanvas = cachedCanvases.getCanvas("mesh", paddedWidth, paddedHeight);
-    const tmpCtx = tmpCanvas.context;
-    const data = tmpCtx.createImageData(width, height);
-    if (backgroundColor) {
-      const bytes = data.data;
-      for (let i = 0, ii = bytes.length; i < ii; i += 4) {
-        bytes[i] = backgroundColor[0];
-        bytes[i + 1] = backgroundColor[1];
-        bytes[i + 2] = backgroundColor[2];
-        bytes[i + 3] = 255;
+    const tmpCanvas = canvasFactory.create(paddedWidth, paddedHeight);
+    if (isGPUReady()) {
+      tmpCanvas.context.drawImage(drawMeshWithGPU(this._figures, context, backgroundColor, paddedWidth, paddedHeight, BORDER_SIZE), 0, 0);
+    } else {
+      const data = tmpCanvas.context.createImageData(width, height);
+      if (backgroundColor) {
+        const bytes = data.data;
+        for (let i = 0, ii = bytes.length; i < ii; i += 4) {
+          bytes[i] = backgroundColor[0];
+          bytes[i + 1] = backgroundColor[1];
+          bytes[i + 2] = backgroundColor[2];
+          bytes[i + 3] = 255;
+        }
       }
+      for (const figure of this._figures) {
+        drawFigure(data, figure, context);
+      }
+      tmpCanvas.context.putImageData(data, BORDER_SIZE, BORDER_SIZE);
     }
-    for (const figure of this._figures) {
-      drawFigure(data, figure, context);
-    }
-    tmpCtx.putImageData(data, BORDER_SIZE, BORDER_SIZE);
-    const canvas = tmpCanvas.canvas;
     return {
-      canvas,
+      canvas: tmpCanvas.canvas,
       offsetX: offsetX - BORDER_SIZE * scaleX,
       offsetY: offsetY - BORDER_SIZE * scaleY,
       scaleX,
@@ -9203,7 +9444,7 @@ class MeshShadingPattern extends BaseShadingPattern {
     } else {
       Util.singularValueDecompose2dScale(owner.baseTransform, scale);
     }
-    const temporaryPatternCanvas = this._createMeshCanvas(scale, pathType === PathType.SHADING ? null : this._background, owner.cachedCanvases);
+    const temporaryPatternCanvas = this._createMeshCanvas(scale, pathType === PathType.SHADING ? null : this._background, owner.canvasFactory);
     if (pathType !== PathType.SHADING) {
       ctx.setTransform(...owner.baseTransform);
       if (this.matrix) {
@@ -9212,7 +9453,9 @@ class MeshShadingPattern extends BaseShadingPattern {
     }
     ctx.translate(temporaryPatternCanvas.offsetX, temporaryPatternCanvas.offsetY);
     ctx.scale(temporaryPatternCanvas.scaleX, temporaryPatternCanvas.scaleY);
-    return ctx.createPattern(temporaryPatternCanvas.canvas, "no-repeat");
+    const pattern = ctx.createPattern(temporaryPatternCanvas.canvas, "no-repeat");
+    owner.canvasFactory.destroy(temporaryPatternCanvas);
+    return pattern;
   }
 }
 class DummyShadingPattern extends BaseShadingPattern {
@@ -9246,73 +9489,120 @@ class TilingPattern {
     this.ystep = IR[6];
     this.paintType = IR[7];
     this.tilingType = IR[8];
+    this.needsIsolation = IR[9] ?? true;
     this.ctx = ctx;
     this.canvasGraphicsFactory = canvasGraphicsFactory;
     this.baseTransform = baseTransform;
+    this.patternBaseMatrix = this.matrix ? Util.transform(baseTransform, this.matrix) : baseTransform;
   }
-  createPatternCanvas(owner, opIdx) {
-    const {
-      bbox,
-      operatorList,
-      paintType,
-      tilingType,
-      color,
-      canvasGraphicsFactory
-    } = this;
-    let {
-      xstep,
-      ystep
-    } = this;
-    xstep = Math.abs(xstep);
-    ystep = Math.abs(ystep);
-    info("TilingType: " + tilingType);
-    const x0 = bbox[0],
-      y0 = bbox[1],
-      x1 = bbox[2],
-      y1 = bbox[3];
-    const width = x1 - x0;
-    const height = y1 - y0;
-    const scale = new Float32Array(2);
-    Util.singularValueDecompose2dScale(this.matrix, scale);
-    const [matrixScaleX, matrixScaleY] = scale;
-    Util.singularValueDecompose2dScale(this.baseTransform, scale);
-    const combinedScaleX = matrixScaleX * scale[0];
-    const combinedScaleY = matrixScaleY * scale[1];
-    let canvasWidth = width,
-      canvasHeight = height,
-      redrawHorizontally = false,
-      redrawVertically = false;
-    const xScaledStep = Math.ceil(xstep * combinedScaleX);
-    const yScaledStep = Math.ceil(ystep * combinedScaleY);
-    const xScaledWidth = Math.ceil(width * combinedScaleX);
-    const yScaledHeight = Math.ceil(height * combinedScaleY);
-    if (xScaledStep >= xScaledWidth) {
-      canvasWidth = xstep;
-    } else {
-      redrawHorizontally = true;
+  canSkipPatternCanvas([width, height, offsetX, offsetY]) {
+    const [x0, y0, x1, y1] = this.bbox;
+    const absXStep = Math.abs(this.xstep);
+    const absYStep = Math.abs(this.ystep);
+    if (width > absXStep + 1e-6 || height > absYStep + 1e-6) {
+      return null;
     }
-    if (yScaledStep >= yScaledHeight) {
-      canvasHeight = ystep;
-    } else {
-      redrawVertically = true;
-    }
-    const dimx = this.getSizeAndScale(canvasWidth, this.ctx.canvas.width, combinedScaleX);
-    const dimy = this.getSizeAndScale(canvasHeight, this.ctx.canvas.height, combinedScaleY);
-    const tmpCanvas = owner.cachedCanvases.getCanvas("pattern", dimx.size, dimy.size);
+    const nXFirst = Math.floor((offsetX - x1) / absXStep) + 1;
+    const nXLast = Math.ceil((offsetX + width - x0) / absXStep) - 1;
+    const nYFirst = Math.floor((offsetY - y1) / absYStep) + 1;
+    const nYLast = Math.ceil((offsetY + height - y0) / absYStep) - 1;
+    return nXLast <= nXFirst && nYLast <= nYFirst ? [nXFirst, nYFirst] : null;
+  }
+  updatePatternDims(clippedBBox, dims) {
+    const inv = Util.inverseTransform(this.patternBaseMatrix);
+    const c1 = [clippedBBox[0], clippedBBox[1]];
+    const c2 = [clippedBBox[2], clippedBBox[3]];
+    Util.applyTransform(c1, inv);
+    Util.applyTransform(c2, inv);
+    dims[0] = Math.abs(c2[0] - c1[0]);
+    dims[1] = Math.abs(c2[1] - c1[1]);
+    dims[2] = Math.min(c1[0], c2[0]);
+    dims[3] = Math.min(c1[1], c2[1]);
+  }
+  _renderTileCanvas(owner, opIdx, dimx, dimy) {
+    const [x0, y0, x1, y1] = this.bbox;
+    const tmpCanvas = owner.canvasFactory.create(dimx.size, dimy.size);
     const tmpCtx = tmpCanvas.context;
-    const graphics = canvasGraphicsFactory.createCanvasGraphics(tmpCtx, opIdx);
+    const graphics = this.canvasGraphicsFactory.createCanvasGraphics(tmpCtx, opIdx);
     graphics.groupLevel = owner.groupLevel;
-    this.setFillAndStrokeStyleToContext(graphics, paintType, color);
+    this.setFillAndStrokeStyleToContext(graphics, this.paintType, this.color);
     tmpCtx.translate(-dimx.scale * x0, -dimy.scale * y0);
     graphics.transform(0, dimx.scale, 0, 0, dimy.scale, 0, 0);
     tmpCtx.save();
     graphics.dependencyTracker?.save();
     this.clipBbox(graphics, x0, y0, x1, y1);
     graphics.baseTransform = getCurrentTransform(graphics.ctx);
-    graphics.executeOperatorList(operatorList);
+    graphics.executeOperatorList(this.operatorList);
     graphics.endDrawing();
     graphics.dependencyTracker?.restore();
     tmpCtx.restore();
+    return tmpCanvas;
+  }
+  _getCombinedScales() {
+    const scale = new Float32Array(2);
+    Util.singularValueDecompose2dScale(this.matrix, scale);
+    const [matrixScaleX, matrixScaleY] = scale;
+    Util.singularValueDecompose2dScale(this.baseTransform, scale);
+    return [matrixScaleX * scale[0], matrixScaleY * scale[1]];
+  }
+  drawPattern(owner, path, useEOFill = false, [n, m], opIdx) {
+    const [x0, y0, x1, y1] = this.bbox;
+    owner.save();
+    if (useEOFill) {
+      owner.ctx.clip(path, "evenodd");
+    } else {
+      owner.ctx.clip(path);
+    }
+    owner.ctx.setTransform(...this.patternBaseMatrix);
+    owner.ctx.translate(n * this.xstep, m * this.ystep);
+    if (this.needsIsolation || owner.ctx.globalAlpha !== 1 || owner.ctx.globalCompositeOperation !== "source-over" || owner.inSMaskMode) {
+      const bboxWidth = x1 - x0;
+      const bboxHeight = y1 - y0;
+      const [combinedScaleX, combinedScaleY] = this._getCombinedScales();
+      const dimx = this.getSizeAndScale(bboxWidth, this.ctx.canvas.width, combinedScaleX);
+      const dimy = this.getSizeAndScale(bboxHeight, this.ctx.canvas.height, combinedScaleY);
+      const tmpCanvas = this._renderTileCanvas(owner, opIdx, dimx, dimy);
+      owner.ctx.drawImage(tmpCanvas.canvas, x0, y0, bboxWidth, bboxHeight);
+      owner.canvasFactory.destroy(tmpCanvas);
+    } else {
+      this.setFillAndStrokeStyleToContext(owner, this.paintType, this.color);
+      this.clipBbox(owner, x0, y0, x1, y1);
+      owner.baseTransformStack.push(owner.baseTransform);
+      owner.baseTransform = getCurrentTransform(owner.ctx);
+      owner.executeOperatorList(this.operatorList);
+      owner.baseTransform = owner.baseTransformStack.pop();
+    }
+    owner.restore();
+  }
+  createPatternCanvas(owner, opIdx) {
+    const [x0, y0, x1, y1] = this.bbox;
+    const width = x1 - x0;
+    const height = y1 - y0;
+    let {
+      xstep,
+      ystep
+    } = this;
+    xstep = Math.abs(xstep);
+    ystep = Math.abs(ystep);
+    info("TilingType: " + this.tilingType);
+    const [combinedScaleX, combinedScaleY] = this._getCombinedScales();
+    let canvasWidth = width,
+      canvasHeight = height,
+      redrawHorizontally = false,
+      redrawVertically = false;
+    if (Math.ceil(xstep * combinedScaleX) >= Math.ceil(width * combinedScaleX)) {
+      canvasWidth = xstep;
+    } else {
+      redrawHorizontally = true;
+    }
+    if (Math.ceil(ystep * combinedScaleY) >= Math.ceil(height * combinedScaleY)) {
+      canvasHeight = ystep;
+    } else {
+      redrawVertically = true;
+    }
+    const dimx = this.getSizeAndScale(canvasWidth, this.ctx.canvas.width, combinedScaleX);
+    const dimy = this.getSizeAndScale(canvasHeight, this.ctx.canvas.height, combinedScaleY);
+    const tmpCanvas = this._renderTileCanvas(owner, opIdx, dimx, dimy);
     if (redrawHorizontally || redrawVertically) {
       const image = tmpCanvas.canvas;
       if (redrawHorizontally) {
@@ -9325,7 +9615,7 @@ class TilingPattern {
       const dimy2 = this.getSizeAndScale(canvasHeight, this.ctx.canvas.height, combinedScaleY);
       const xSize = dimx2.size;
       const ySize = dimy2.size;
-      const tmpCanvas2 = owner.cachedCanvases.getCanvas("pattern-workaround", xSize, ySize);
+      const tmpCanvas2 = owner.canvasFactory.create(xSize, ySize);
       const tmpCtx2 = tmpCanvas2.context;
       const ii = redrawHorizontally ? Math.floor(width / xstep) : 0;
       const jj = redrawVertically ? Math.floor(height / ystep) : 0;
@@ -9334,8 +9624,10 @@ class TilingPattern {
           tmpCtx2.drawImage(image, xSize * i, ySize * j, xSize, ySize, 0, 0, xSize, ySize);
         }
       }
+      owner.canvasFactory.destroy(tmpCanvas);
       return {
         canvas: tmpCanvas2.canvas,
+        canvasEntry: tmpCanvas2,
         scaleX: dimx2.scale,
         scaleY: dimy2.scale,
         offsetX: x0,
@@ -9344,6 +9636,7 @@ class TilingPattern {
     }
     return {
       canvas: tmpCanvas.canvas,
+      canvasEntry: tmpCanvas,
       scaleX: dimx.scale,
       scaleY: dimy.scale,
       offsetX: x0,
@@ -9366,10 +9659,11 @@ class TilingPattern {
   clipBbox(graphics, x0, y0, x1, y1) {
     const bboxWidth = x1 - x0;
     const bboxHeight = y1 - y0;
-    graphics.ctx.rect(x0, y0, bboxWidth, bboxHeight);
+    const clip = new Path2D();
+    clip.rect(x0, y0, bboxWidth, bboxHeight);
     Util.axialAlignedBoundingBox([x0, y0, x1, y1], getCurrentTransform(graphics.ctx), graphics.current.minMax);
-    graphics.clip();
-    graphics.endPath();
+    graphics.ctx.clip(clip);
+    graphics.current.updateClipFromPath();
   }
   setFillAndStrokeStyleToContext(graphics, paintType, color) {
     const context = graphics.ctx,
@@ -9395,18 +9689,13 @@ class TilingPattern {
     return false;
   }
   getPattern(ctx, owner, inverse, pathType, opIdx) {
-    let matrix = inverse;
-    if (pathType !== PathType.SHADING) {
-      matrix = Util.transform(matrix, owner.baseTransform);
-      if (this.matrix) {
-        matrix = Util.transform(matrix, this.matrix);
-      }
-    }
+    const matrix = pathType !== PathType.SHADING ? Util.transform(inverse, this.patternBaseMatrix) : inverse;
     const temporaryPatternCanvas = this.createPatternCanvas(owner, opIdx);
     let domMatrix = new DOMMatrix(matrix);
     domMatrix = domMatrix.translate(temporaryPatternCanvas.offsetX, temporaryPatternCanvas.offsetY);
     domMatrix = domMatrix.scale(1 / temporaryPatternCanvas.scaleX, 1 / temporaryPatternCanvas.scaleY);
     const pattern = ctx.createPattern(temporaryPatternCanvas.canvas, "repeat");
+    owner.canvasFactory.destroy(temporaryPatternCanvas.canvasEntry);
     pattern.setTransform(domMatrix);
     return pattern;
   }
@@ -9636,31 +9925,6 @@ function mirrorContextOperations(ctx, destCtx) {
     this.__originalBeginPath();
   };
 }
-class CachedCanvases {
-  #cache = new Map();
-  constructor(canvasFactory) {
-    this.canvasFactory = canvasFactory;
-  }
-  getCanvas(id, width, height) {
-    let canvasEntry = this.#cache.get(id);
-    if (canvasEntry) {
-      this.canvasFactory.reset(canvasEntry, width, height);
-    } else {
-      canvasEntry = this.canvasFactory.create(width, height);
-      this.#cache.set(id, canvasEntry);
-    }
-    return canvasEntry;
-  }
-  delete(id) {
-    this.#cache.delete(id);
-  }
-  clear() {
-    for (const canvasEntry of this.#cache.values()) {
-      this.canvasFactory.destroy(canvasEntry);
-    }
-    this.#cache.clear();
-  }
-}
 function drawImageAtIntegerCoords(ctx, srcImg, srcX, srcY, srcW, srcH, destX, destY, destW, destH) {
   const [a, b, c, d, tx, ty] = getCurrentTransform(ctx);
   if (b === 0 && c === 0) {
@@ -9715,6 +9979,7 @@ class CanvasExtraState {
   textRise = 0;
   fillColor = "#000000";
   strokeColor = "#000000";
+  tilingPatternDims = null;
   patternFill = false;
   patternStroke = false;
   fillAlpha = 1;
@@ -9722,15 +9987,15 @@ class CanvasExtraState {
   lineWidth = 1;
   activeSMask = null;
   transferMaps = "none";
-  constructor(width, height, preInit) {
-    preInit?.(this);
+  minMax = MIN_MAX_INIT.slice();
+  constructor(width, height) {
     this.clipBox = new Float32Array([0, 0, width, height]);
-    this.minMax = MIN_MAX_INIT.slice();
   }
   clone() {
     const clone = Object.create(this);
     clone.clipBox = this.clipBox.slice();
     clone.minMax = this.minMax.slice();
+    clone.tilingPatternDims = this.tilingPatternDims?.slice();
     return clone;
   }
   getPathBoundingBox(pathType = PathType.FILL, transform = null) {
@@ -9952,11 +10217,11 @@ class CanvasGraphics {
     this.smaskStack = [];
     this.smaskCounter = 0;
     this.tempSMask = null;
+    this.smaskGroupCanvases = [];
     this.suspendedCtx = null;
     this.contentVisible = true;
     this.markedContentStack = markedContentStack || [];
     this.optionalContentConfig = optionalContentConfig;
-    this.cachedCanvases = new CachedCanvases(this.canvasFactory);
     this.cachedPatterns = new Map();
     this.annotationCanvasMap = annotationCanvasMap;
     this.viewportScale = 1;
@@ -9989,10 +10254,12 @@ class CanvasGraphics {
     this.ctx.fillRect(0, 0, width, height);
     this.ctx.fillStyle = savedFillStyle;
     if (transparency) {
-      const transparentCanvas = this.cachedCanvases.getCanvas("transparent", width, height);
+      const transparentCanvas = this.transparentCanvasEntry = this.canvasFactory.create(width, height);
       this.compositeCtx = this.ctx;
-      this.transparentCanvas = transparentCanvas.canvas;
-      this.ctx = transparentCanvas.context;
+      ({
+        canvas: this.transparentCanvas,
+        context: this.ctx
+      } = transparentCanvas);
       this.ctx.save();
       this.ctx.transform(...getCurrentTransform(this.compositeCtx));
     }
@@ -10028,7 +10295,9 @@ class CanvasGraphics {
           return i;
         }
         if (stepper.shouldSkip(i)) {
-          i++;
+          if (++i === argsArrayLen) {
+            return i;
+          }
           continue;
         }
       }
@@ -10077,12 +10346,19 @@ class CanvasGraphics {
       this.ctx.setTransform(1, 0, 0, 1, 0, 0);
       this.ctx.drawImage(this.transparentCanvas, 0, 0);
       this.ctx.restore();
+      this.canvasFactory.destroy(this.transparentCanvasEntry);
       this.transparentCanvas = null;
+      this.transparentCanvasEntry = null;
     }
   }
   endDrawing() {
     this.#restoreInitialState();
-    this.cachedCanvases.clear();
+    for (const canvas of this.smaskGroupCanvases) {
+      this.canvasFactory.destroy(canvas);
+    }
+    this.smaskGroupCanvases.length = 0;
+    this.tempSMask = null;
+    this.smaskStack.length = 0;
     this.cachedPatterns.clear();
     for (const cache of this._cachedBitmapsMap.values()) {
       for (const canvas of cache.values()) {
@@ -10109,36 +10385,75 @@ class CanvasGraphics {
   _scaleImage(img, inverseTransform) {
     const width = img.width ?? img.displayWidth;
     const height = img.height ?? img.displayHeight;
-    let widthScale = Math.max(Math.hypot(inverseTransform[0], inverseTransform[1]), 1);
-    let heightScale = Math.max(Math.hypot(inverseTransform[2], inverseTransform[3]), 1);
+    const widthScale = Math.max(Math.hypot(inverseTransform[0], inverseTransform[1]), 1);
+    const heightScale = Math.max(Math.hypot(inverseTransform[2], inverseTransform[3]), 1);
+    const scaleSteps = [];
+    let ws = widthScale,
+      hs = heightScale,
+      pw = width,
+      ph = height;
+    while (ws > 2 && pw > 1 || hs > 2 && ph > 1) {
+      let nw = pw,
+        nh = ph;
+      if (ws > 2 && pw > 1) {
+        nw = pw >= 16384 ? Math.floor(pw / 2) - 1 || 1 : Math.ceil(pw / 2);
+        ws /= pw / nw;
+      }
+      if (hs > 2 && ph > 1) {
+        nh = ph >= 16384 ? Math.floor(ph / 2) - 1 || 1 : Math.ceil(ph) / 2;
+        hs /= ph / nh;
+      }
+      scaleSteps.push({
+        newWidth: nw,
+        newHeight: nh
+      });
+      pw = nw;
+      ph = nh;
+    }
+    if (scaleSteps.length === 0) {
+      return {
+        img,
+        paintWidth: width,
+        paintHeight: height,
+        tmpCanvas: null
+      };
+    }
+    if (scaleSteps.length === 1) {
+      const {
+        newWidth,
+        newHeight
+      } = scaleSteps[0];
+      const tmpCanvas = this.canvasFactory.create(newWidth, newHeight);
+      tmpCanvas.context.drawImage(img, 0, 0, width, height, 0, 0, newWidth, newHeight);
+      return {
+        img: tmpCanvas.canvas,
+        paintWidth: newWidth,
+        paintHeight: newHeight,
+        tmpCanvas
+      };
+    }
+    let readEntry = this.canvasFactory.create(1, 1);
+    let writeEntry = this.canvasFactory.create(1, 1);
     let paintWidth = width,
       paintHeight = height;
-    let tmpCanvasId = "prescale1";
-    let tmpCanvas, tmpCtx;
-    while (widthScale > 2 && paintWidth > 1 || heightScale > 2 && paintHeight > 1) {
-      let newWidth = paintWidth,
-        newHeight = paintHeight;
-      if (widthScale > 2 && paintWidth > 1) {
-        newWidth = paintWidth >= 16384 ? Math.floor(paintWidth / 2) - 1 || 1 : Math.ceil(paintWidth / 2);
-        widthScale /= paintWidth / newWidth;
-      }
-      if (heightScale > 2 && paintHeight > 1) {
-        newHeight = paintHeight >= 16384 ? Math.floor(paintHeight / 2) - 1 || 1 : Math.ceil(paintHeight) / 2;
-        heightScale /= paintHeight / newHeight;
-      }
-      tmpCanvas = this.cachedCanvases.getCanvas(tmpCanvasId, newWidth, newHeight);
-      tmpCtx = tmpCanvas.context;
-      tmpCtx.clearRect(0, 0, newWidth, newHeight);
-      tmpCtx.drawImage(img, 0, 0, paintWidth, paintHeight, 0, 0, newWidth, newHeight);
-      img = tmpCanvas.canvas;
+    let source = img;
+    for (const {
+      newWidth,
+      newHeight
+    } of scaleSteps) {
+      this.canvasFactory.reset(writeEntry, newWidth, newHeight);
+      writeEntry.context.drawImage(source, 0, 0, paintWidth, paintHeight, 0, 0, newWidth, newHeight);
+      [readEntry, writeEntry] = [writeEntry, readEntry];
+      source = readEntry.canvas;
       paintWidth = newWidth;
       paintHeight = newHeight;
-      tmpCanvasId = tmpCanvasId === "prescale1" ? "prescale2" : "prescale1";
     }
+    this.canvasFactory.destroy(writeEntry);
     return {
-      img,
+      img: readEntry.canvas,
       paintWidth,
-      paintHeight
+      paintHeight,
+      tmpCanvas: readEntry
     };
   }
   _createMaskCanvas(opIdx, img) {
@@ -10169,7 +10484,7 @@ class CanvasGraphics {
       scaled = cachedImage;
     }
     if (!scaled) {
-      maskCanvas = this.cachedCanvases.getCanvas("maskCanvas", width, height);
+      maskCanvas = this.canvasFactory.create(width, height);
       putBinaryImageMask(maskCanvas.context, img);
     }
     let maskToCanvas = Util.transform(currentTransform, [1 / width, 0, 0, -1 / height, 0, 0]);
@@ -10179,32 +10494,46 @@ class CanvasGraphics {
     const [minX, minY, maxX, maxY] = minMax;
     const drawnWidth = Math.round(maxX - minX) || 1;
     const drawnHeight = Math.round(maxY - minY) || 1;
-    const fillCanvas = this.cachedCanvases.getCanvas("fillCanvas", drawnWidth, drawnHeight);
+    const fillCanvas = this.canvasFactory.create(drawnWidth, drawnHeight);
     const fillCtx = fillCanvas.context;
     const offsetX = minX;
     const offsetY = minY;
     fillCtx.translate(-offsetX, -offsetY);
     fillCtx.transform(...maskToCanvas);
+    let scaledEntry = null;
     if (!scaled) {
-      scaled = this._scaleImage(maskCanvas.canvas, getCurrentTransformInverse(fillCtx));
-      scaled = scaled.img;
+      const scaleResult = this._scaleImage(maskCanvas.canvas, getCurrentTransformInverse(fillCtx));
+      scaled = scaleResult.img;
+      scaledEntry = scaleResult.tmpCanvas;
+      if (scaled !== maskCanvas.canvas) {
+        this.canvasFactory.destroy(maskCanvas);
+        maskCanvas = null;
+      }
       if (cache && isPatternFill) {
         cache.set(cacheKey, scaled);
+        scaledEntry = null;
+        maskCanvas = null;
       }
     }
     fillCtx.imageSmoothingEnabled = getImageSmoothingEnabled(getCurrentTransform(fillCtx), img.interpolate);
     drawImageAtIntegerCoords(fillCtx, scaled, 0, 0, scaled.width, scaled.height, 0, 0, width, height);
+    if (scaledEntry) {
+      this.canvasFactory.destroy(scaledEntry);
+    }
+    if (maskCanvas) {
+      this.canvasFactory.destroy(maskCanvas);
+    }
     fillCtx.globalCompositeOperation = "source-in";
     const inverse = Util.transform(getCurrentTransformInverse(fillCtx), [1, 0, 0, 1, -offsetX, -offsetY]);
     fillCtx.fillStyle = isPatternFill ? fillColor.getPattern(ctx, this, inverse, PathType.FILL, opIdx) : fillColor;
     fillCtx.fillRect(0, 0, width, height);
     if (cache && !isPatternFill) {
-      this.cachedCanvases.delete("fillCanvas");
       cache.set(cacheKey, fillCanvas.canvas);
     }
     this.dependencyTracker?.recordDependencies(opIdx, Dependencies.transformAndFill);
     return {
       canvas: fillCanvas.canvas,
+      canvasEntry: cache && !isPatternFill ? null : fillCanvas,
       offsetX: Math.round(offsetX),
       offsetY: Math.round(offsetY)
     };
@@ -10308,8 +10637,8 @@ class CanvasGraphics {
     }
     const drawnWidth = this.ctx.canvas.width;
     const drawnHeight = this.ctx.canvas.height;
-    const cacheId = "smaskGroupAt" + this.groupLevel;
-    const scratchCanvas = this.cachedCanvases.getCanvas(cacheId, drawnWidth, drawnHeight);
+    const scratchCanvas = this.canvasFactory.create(drawnWidth, drawnHeight);
+    this.smaskScratchCanvas = scratchCanvas;
     this.suspendedCtx = this.ctx;
     const ctx = this.ctx = scratchCanvas.context;
     ctx.setTransform(this.suspendedCtx.getTransform());
@@ -10325,6 +10654,8 @@ class CanvasGraphics {
     copyCtxState(this.ctx, this.suspendedCtx);
     this.ctx = this.suspendedCtx;
     this.suspendedCtx = null;
+    this.canvasFactory.destroy(this.smaskScratchCanvas);
+    this.smaskScratchCanvas = null;
   }
   compose(dirtyBox) {
     if (!this.current.activeSMask) {
@@ -10366,16 +10697,17 @@ class CanvasGraphics {
     let maskCanvas = maskCtx.canvas;
     let maskX = layerOffsetX - maskOffsetX;
     let maskY = layerOffsetY - maskOffsetY;
+    let maskExtensionEntry = null;
     if (backdrop) {
       if (maskX < 0 || maskY < 0 || maskX + width > maskCanvas.width || maskY + height > maskCanvas.height) {
-        const canvas = this.cachedCanvases.getCanvas("maskExtension", width, height);
-        const ctx = canvas.context;
+        maskExtensionEntry = this.canvasFactory.create(width, height);
+        const ctx = maskExtensionEntry.context;
         ctx.drawImage(maskCanvas, -maskX, -maskY);
         ctx.globalCompositeOperation = "destination-atop";
         ctx.fillStyle = backdrop;
         ctx.fillRect(0, 0, width, height);
         ctx.globalCompositeOperation = "source-over";
-        maskCanvas = canvas.canvas;
+        maskCanvas = maskExtensionEntry.canvas;
         maskX = maskY = 0;
       } else {
         maskCtx.save();
@@ -10404,6 +10736,9 @@ class CanvasGraphics {
     layerCtx.globalCompositeOperation = "destination-in";
     layerCtx.drawImage(maskCanvas, maskX, maskY, width, height, layerOffsetX, layerOffsetY, width, height);
     layerCtx.restore();
+    if (maskExtensionEntry) {
+      this.canvasFactory.destroy(maskExtensionEntry);
+    }
   }
   save(opIdx) {
     if (this.inSMaskMode) {
@@ -10443,6 +10778,9 @@ class CanvasGraphics {
     let [path] = data;
     if (!minMax) {
       path ||= data[0] = new Path2D();
+      if (op !== OPS.stroke && op !== OPS.closeStroke) {
+        this.current.tilingPatternDims = null;
+      }
       this[op](opIdx, path);
       return;
     }
@@ -10454,6 +10792,15 @@ class CanvasGraphics {
       path = data[0] = makePathFromDrawOPS(path);
     }
     Util.axialAlignedBoundingBox(minMax, getCurrentTransform(this.ctx), this.current.minMax);
+    const tilingDims = this.current.tilingPatternDims;
+    if (tilingDims && op !== OPS.stroke && op !== OPS.closeStroke && this.current.fillColor instanceof TilingPattern) {
+      const clippedBBox = Util.intersect(this.current.clipBox, this.current.minMax);
+      if (!clippedBBox) {
+        this.current.tilingPatternDims = null;
+      } else {
+        this.current.fillColor.updatePatternDims(clippedBBox, tilingDims);
+      }
+    }
     this[op](opIdx, path);
     this._pathStartIdx = opIdx;
   }
@@ -10494,7 +10841,19 @@ class CanvasGraphics {
     const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
     let needRestore = false;
+    const intersect = this.current.getClippedPathBoundingBox();
     if (isPatternFill) {
+      const dims = this.current.tilingPatternDims;
+      const tileIdx = dims && fillColor.canSkipPatternCanvas(dims);
+      if (tileIdx) {
+        fillColor.drawPattern(this, path, this.pendingEOFill, tileIdx, opIdx);
+        this.pendingEOFill = false;
+        if (consumePath) {
+          this.consumePath(opIdx, path, intersect);
+        }
+        this.current.tilingPatternDims = null;
+        return;
+      }
       const baseTransform = fillColor.isModifyingCurrentTransform() ? ctx.getTransform() : null;
       this.dependencyTracker?.save(opIdx);
       ctx.save();
@@ -10506,7 +10865,6 @@ class CanvasGraphics {
       }
       needRestore = true;
     }
-    const intersect = this.current.getClippedPathBoundingBox();
     if (this.contentVisible && intersect !== null) {
       if (this.pendingEOFill) {
         ctx.fill(path, "evenodd");
@@ -10765,12 +11123,12 @@ class CanvasGraphics {
     }
   }
   get isFontSubpixelAAEnabled() {
-    const {
-      context: ctx
-    } = this.cachedCanvases.getCanvas("isFontSubpixelAAEnabled", 10, 10);
+    const tmpCanvas = this.canvasFactory.create(10, 10);
+    const ctx = tmpCanvas.context;
     ctx.scale(1.5, 1);
     ctx.fillText("I", 0, 10);
     const data = ctx.getImageData(0, 0, 10, 10).data;
+    this.canvasFactory.destroy(tmpCanvas);
     let enabled = false;
     for (let i = 3; i < data.length; i += 4) {
       if (data[i] > 0 && data[i] < 255) {
@@ -10825,20 +11183,6 @@ class CanvasGraphics {
     const fillStrokeMode = current.textRenderingMode & TextRenderingMode.FILL_STROKE_MASK;
     const needsFill = fillStrokeMode === TextRenderingMode.FILL || fillStrokeMode === TextRenderingMode.FILL_STROKE;
     const needsStroke = fillStrokeMode === TextRenderingMode.STROKE || fillStrokeMode === TextRenderingMode.FILL_STROKE;
-    if (needsFill && current.patternFill) {
-      ctx.save();
-      const pattern = current.fillColor.getPattern(ctx, this, getCurrentTransformInverse(ctx), PathType.FILL, opIdx);
-      patternFillTransform = getCurrentTransform(ctx);
-      ctx.restore();
-      ctx.fillStyle = pattern;
-    }
-    if (needsStroke && current.patternStroke) {
-      ctx.save();
-      const pattern = current.strokeColor.getPattern(ctx, this, getCurrentTransformInverse(ctx), PathType.STROKE, opIdx);
-      patternStrokeTransform = getCurrentTransform(ctx);
-      ctx.restore();
-      ctx.strokeStyle = pattern;
-    }
     let lineWidth = current.lineWidth;
     const scale = current.textMatrixScale;
     if (scale === 0 || lineWidth === 0) {
@@ -10853,6 +11197,20 @@ class CanvasGraphics {
       lineWidth /= fontSizeScale;
     }
     ctx.lineWidth = lineWidth;
+    if (needsFill && current.patternFill) {
+      ctx.save();
+      const pattern = current.fillColor.getPattern(ctx, this, getCurrentTransformInverse(ctx), PathType.FILL, opIdx);
+      patternFillTransform = getCurrentTransform(ctx);
+      ctx.restore();
+      ctx.fillStyle = pattern;
+    }
+    if (needsStroke && current.patternStroke) {
+      ctx.save();
+      const pattern = current.strokeColor.getPattern(ctx, this, getCurrentTransformInverse(ctx), PathType.STROKE, opIdx);
+      patternStrokeTransform = getCurrentTransform(ctx);
+      ctx.restore();
+      ctx.strokeStyle = pattern;
+    }
     if (font.isInvalidPDFjsFont) {
       const chars = [];
       let width = 0;
@@ -11029,8 +11387,9 @@ class CanvasGraphics {
   }
   setFillColorN(opIdx, ...args) {
     this.dependencyTracker?.recordSimpleData("fillColor", opIdx);
-    this.current.fillColor = this.getColorN_Pattern(opIdx, args);
+    const pattern = this.current.fillColor = this.getColorN_Pattern(opIdx, args);
     this.current.patternFill = true;
+    this.current.tilingPatternDims = pattern instanceof TilingPattern ? [0, 0, 0, 0] : null;
   }
   setStrokeRGBColor(opIdx, color) {
     this.dependencyTracker?.recordSimpleData("strokeColor", opIdx);
@@ -11046,11 +11405,13 @@ class CanvasGraphics {
     this.dependencyTracker?.recordSimpleData("fillColor", opIdx);
     this.ctx.fillStyle = this.current.fillColor = color;
     this.current.patternFill = false;
+    this.current.tilingPatternDims = null;
   }
   setFillTransparent(opIdx) {
     this.dependencyTracker?.recordSimpleData("fillColor", opIdx);
     this.ctx.fillStyle = this.current.fillColor = "transparent";
     this.current.patternFill = false;
+    this.current.tilingPatternDims = null;
   }
   _getPattern(opIdx, objId, matrix = null) {
     let pattern;
@@ -11128,7 +11489,10 @@ class CanvasGraphics {
       return;
     }
     this.save(opIdx);
-    if (this.inSMaskMode) {
+    const {
+      inSMaskMode
+    } = this;
+    if (inSMaskMode) {
       this.endSMaskMode();
       this.current.activeSMask = null;
     }
@@ -11139,39 +11503,61 @@ class CanvasGraphics {
     if (group.knockout) {
       warn("Knockout groups not supported.");
     }
+    if (!group.needsIsolation && currentCtx.globalAlpha === 1 && currentCtx.globalCompositeOperation === "source-over" && !inSMaskMode) {
+      if (group.bbox) {
+        let clip = new Path2D();
+        const [x0, y0, x1, y1] = group.bbox;
+        clip.rect(x0, y0, x1 - x0, y1 - y0);
+        if (group.matrix) {
+          const path = new Path2D();
+          path.addPath(clip, new DOMMatrix(group.matrix));
+          clip = path;
+        }
+        currentCtx.clip(clip);
+      }
+      this.groupStack.push(null);
+      this.groupLevel++;
+      return;
+    }
     const currentTransform = getCurrentTransform(currentCtx);
     if (group.matrix) {
       currentCtx.transform(...group.matrix);
     }
-    if (!group.bbox) {
-      throw new Error("Bounding box is required.");
-    }
-    let bounds = MIN_MAX_INIT.slice();
-    Util.axialAlignedBoundingBox(group.bbox, getCurrentTransform(currentCtx), bounds);
     const canvasBounds = [0, 0, currentCtx.canvas.width, currentCtx.canvas.height];
-    bounds = Util.intersect(bounds, canvasBounds) || [0, 0, 0, 0];
+    let bounds;
+    if (group.bbox) {
+      bounds = MIN_MAX_INIT.slice();
+      Util.axialAlignedBoundingBox(group.bbox, getCurrentTransform(currentCtx), bounds);
+      bounds = Util.intersect(bounds, canvasBounds) || [0, 0, 0, 0];
+    } else {
+      bounds = canvasBounds;
+    }
     const offsetX = Math.floor(bounds[0]);
     const offsetY = Math.floor(bounds[1]);
     const drawnWidth = Math.max(Math.ceil(bounds[2]) - offsetX, 1);
     const drawnHeight = Math.max(Math.ceil(bounds[3]) - offsetY, 1);
     this.current.startNewPathAndClipBox([0, 0, drawnWidth, drawnHeight]);
-    let cacheId = "groupAt" + this.groupLevel;
     if (group.smask) {
-      cacheId += "_smask_" + this.smaskCounter++ % 2;
+      this.smaskCounter++;
     }
-    const scratchCanvas = this.cachedCanvases.getCanvas(cacheId, drawnWidth, drawnHeight);
+    const scratchCanvas = this.canvasFactory.create(drawnWidth, drawnHeight);
+    if (group.smask) {
+      this.smaskGroupCanvases.push(scratchCanvas);
+    }
     const groupCtx = scratchCanvas.context;
     groupCtx.translate(-offsetX, -offsetY);
     groupCtx.transform(...currentTransform);
-    let clip = new Path2D();
-    const [x0, y0, x1, y1] = group.bbox;
-    clip.rect(x0, y0, x1 - x0, y1 - y0);
-    if (group.matrix) {
-      const path = new Path2D();
-      path.addPath(clip, new DOMMatrix(group.matrix));
-      clip = path;
+    if (group.bbox) {
+      let clip = new Path2D();
+      const [x0, y0, x1, y1] = group.bbox;
+      clip.rect(x0, y0, x1 - x0, y1 - y0);
+      if (group.matrix) {
+        const path = new Path2D();
+        path.addPath(clip, new DOMMatrix(group.matrix));
+        clip = path;
+      }
+      groupCtx.clip(clip);
     }
-    groupCtx.clip(clip);
     if (group.smask) {
       this.smaskStack.push({
         canvas: scratchCanvas.canvas,
@@ -11203,6 +11589,10 @@ class CanvasGraphics {
     this.groupLevel--;
     const groupCtx = this.ctx;
     const ctx = this.groupStack.pop();
+    if (ctx === null) {
+      this.restore(opIdx);
+      return;
+    }
     this.ctx = ctx;
     this.ctx.imageSmoothingEnabled = false;
     this.dependencyTracker?.popBaseTransform();
@@ -11222,6 +11612,10 @@ class CanvasGraphics {
       Util.axialAlignedBoundingBox([0, 0, groupCtx.canvas.width, groupCtx.canvas.height], currentMtx, dirtyBox);
       this.ctx.drawImage(groupCtx.canvas, 0, 0);
       this.ctx.restore();
+      this.canvasFactory.destroy({
+        canvas: groupCtx.canvas,
+        context: groupCtx
+      });
       this.compose(dirtyBox);
     }
   }
@@ -11270,8 +11664,10 @@ class CanvasGraphics {
       }
     }
     this.current = new CanvasExtraState(this.ctx.canvas.width, this.ctx.canvas.height);
+    this.baseTransformStack.push(this.baseTransform);
     this.transform(opIdx, ...transform);
     this.transform(opIdx, ...matrix);
+    this.baseTransform = getCurrentTransform(this.ctx);
   }
   endAnnotation(opIdx) {
     if (this.annotationCanvas) {
@@ -11281,6 +11677,7 @@ class CanvasGraphics {
       delete this.annotationCanvas.savedCtx;
       delete this.annotationCanvas;
     }
+    this.baseTransform = this.baseTransformStack.pop();
   }
   paintImageMaskXObject(opIdx, img) {
     if (!this.contentVisible) {
@@ -11297,6 +11694,9 @@ class CanvasGraphics {
     ctx.drawImage(maskCanvas, mask.offsetX, mask.offsetY);
     this.dependencyTracker?.resetBBox(opIdx).recordBBox(opIdx, this.ctx, mask.offsetX, mask.offsetX + maskCanvas.width, mask.offsetY, mask.offsetY + maskCanvas.height).recordOperation(opIdx);
     ctx.restore();
+    if (mask.canvasEntry) {
+      this.canvasFactory.destroy(mask.canvasEntry);
+    }
     this.compose();
   }
   paintImageMaskXObjectRepeat(opIdx, img, scaleX, skewX = 0, skewY = 0, scaleY, positions) {
@@ -11317,6 +11717,9 @@ class CanvasGraphics {
       this.dependencyTracker?.recordBBox(opIdx, this.ctx, trans[4], trans[4] + mask.canvas.width, trans[5], trans[5] + mask.canvas.height);
     }
     ctx.restore();
+    if (mask.canvasEntry) {
+      this.canvasFactory.destroy(mask.canvasEntry);
+    }
     this.compose();
     this.dependencyTracker?.recordOperation(opIdx);
   }
@@ -11335,7 +11738,7 @@ class CanvasGraphics {
         height,
         transform
       } = image;
-      const maskCanvas = this.cachedCanvases.getCanvas("maskCanvas", width, height);
+      const maskCanvas = this.canvasFactory.create(width, height);
       const maskCtx = maskCanvas.context;
       maskCtx.save();
       const img = this.getObject(opIdx, data, image);
@@ -11348,6 +11751,7 @@ class CanvasGraphics {
       ctx.transform(...transform);
       ctx.scale(1, -1);
       drawImageAtIntegerCoords(ctx, maskCanvas.canvas, 0, 0, width, height, 0, -1, 1, 1);
+      this.canvasFactory.destroy(maskCanvas);
       this.dependencyTracker?.recordBBox(opIdx, ctx, 0, width, 0, height);
       ctx.restore();
     }
@@ -11398,19 +11802,25 @@ class CanvasGraphics {
   }
   applyTransferMapsToBitmap(imgData) {
     if (this.current.transferMaps === "none") {
-      return imgData.bitmap;
+      return {
+        img: imgData.bitmap,
+        canvasEntry: null
+      };
     }
     const {
       bitmap,
       width,
       height
     } = imgData;
-    const tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", width, height);
+    const tmpCanvas = this.canvasFactory.create(width, height);
     const tmpCtx = tmpCanvas.context;
     tmpCtx.filter = this.current.transferMaps;
     tmpCtx.drawImage(bitmap, 0, 0);
     tmpCtx.filter = "none";
-    return tmpCanvas.canvas;
+    return {
+      img: tmpCanvas.canvas,
+      canvasEntry: tmpCanvas
+    };
   }
   paintInlineImageXObject(opIdx, imgData) {
     if (!this.contentVisible) {
@@ -11428,15 +11838,18 @@ class CanvasGraphics {
     }
     ctx.scale(1 / width, -1 / height);
     let imgToPaint;
+    let inlineImgCanvas = null;
     if (imgData.bitmap) {
-      imgToPaint = this.applyTransferMapsToBitmap(imgData);
+      const result = this.applyTransferMapsToBitmap(imgData);
+      imgToPaint = result.img;
+      inlineImgCanvas = result.canvasEntry;
     } else if (typeof HTMLElement === "function" && imgData instanceof HTMLElement || !imgData.data) {
       imgToPaint = imgData;
     } else {
-      const tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", width, height);
-      const tmpCtx = tmpCanvas.context;
-      putBinaryImageData(tmpCtx, imgData);
-      imgToPaint = this.applyTransferMapsToCanvas(tmpCtx);
+      const tmpCanvas = this.canvasFactory.create(width, height);
+      putBinaryImageData(tmpCanvas.context, imgData);
+      imgToPaint = this.applyTransferMapsToCanvas(tmpCanvas.context);
+      inlineImgCanvas = tmpCanvas;
     }
     const scaled = this._scaleImage(imgToPaint, getCurrentTransformInverse(ctx));
     ctx.imageSmoothingEnabled = getImageSmoothingEnabled(getCurrentTransform(ctx), imgData.interpolate);
@@ -11445,6 +11858,12 @@ class CanvasGraphics {
       this.imagesTracker?.record(ctx, width, height, this.dependencyTracker.clipBox);
     }
     drawImageAtIntegerCoords(ctx, scaled.img, 0, 0, scaled.paintWidth, scaled.paintHeight, 0, -height, width, height);
+    if (scaled.tmpCanvas) {
+      this.canvasFactory.destroy(scaled.tmpCanvas);
+    }
+    if (inlineImgCanvas) {
+      this.canvasFactory.destroy(inlineImgCanvas);
+    }
     this.compose();
     this.restore(opIdx);
   }
@@ -11454,15 +11873,16 @@ class CanvasGraphics {
     }
     const ctx = this.ctx;
     let imgToPaint;
+    let inlineImgCanvas = null;
     if (imgData.bitmap) {
       imgToPaint = imgData.bitmap;
     } else {
       const w = imgData.width;
       const h = imgData.height;
-      const tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", w, h);
-      const tmpCtx = tmpCanvas.context;
-      putBinaryImageData(tmpCtx, imgData);
-      imgToPaint = this.applyTransferMapsToCanvas(tmpCtx);
+      const tmpCanvas = this.canvasFactory.create(w, h);
+      putBinaryImageData(tmpCanvas.context, imgData);
+      imgToPaint = this.applyTransferMapsToCanvas(tmpCanvas.context);
+      inlineImgCanvas = tmpCanvas;
     }
     this.dependencyTracker?.resetBBox(opIdx);
     for (const entry of map) {
@@ -11472,6 +11892,9 @@ class CanvasGraphics {
       drawImageAtIntegerCoords(ctx, imgToPaint, entry.x, entry.y, entry.w, entry.h, 0, -1, 1, 1);
       this.dependencyTracker?.recordBBox(opIdx, ctx, 0, 1, -1, 0);
       ctx.restore();
+    }
+    if (inlineImgCanvas) {
+      this.canvasFactory.destroy(inlineImgCanvas);
     }
     this.dependencyTracker?.recordOperation(opIdx);
     this.compose();
@@ -11647,6 +12070,13 @@ for (const op in OPS) {
   }
 }
 
+;// ./src/display/stubs.js
+const DOMBinaryDataFactory = null;
+const getNetworkStream = null;
+const NodeBinaryDataFactory = null;
+const NodeCanvasFactory = null;
+const NodeFilterFactory = null;
+
 ;// ./src/display/canvas_factory.js
 
 class BaseCanvasFactory {
@@ -11668,22 +12098,26 @@ class BaseCanvasFactory {
       })
     };
   }
-  reset(canvasAndContext, width, height) {
-    if (!canvasAndContext.canvas) {
+  reset({
+    canvas
+  }, width, height) {
+    if (!canvas) {
       throw new Error("Canvas is not specified");
     }
     if (width <= 0 || height <= 0) {
       throw new Error("Invalid canvas size");
     }
-    canvasAndContext.canvas.width = width;
-    canvasAndContext.canvas.height = height;
+    canvas.width = width;
+    canvas.height = height;
   }
   destroy(canvasAndContext) {
-    if (!canvasAndContext.canvas) {
+    const {
+      canvas
+    } = canvasAndContext;
+    if (!canvas) {
       throw new Error("Canvas is not specified");
     }
-    canvasAndContext.canvas.width = 0;
-    canvasAndContext.canvas.height = 0;
+    canvas.width = canvas.height = 0;
     canvasAndContext.canvas = null;
     canvasAndContext.context = null;
   }
@@ -11708,19 +12142,6 @@ class DOMCanvasFactory extends BaseCanvasFactory {
     return canvas;
   }
 }
-
-;// ./src/display/stubs.js
-const DOMCMapReaderFactory = null;
-const DOMWasmFactory = null;
-const DOMStandardFontDataFactory = null;
-const NodeCanvasFactory = null;
-const NodeCMapReaderFactory = null;
-const NodeFilterFactory = null;
-const NodeWasmFactory = null;
-const NodeStandardFontDataFactory = null;
-const PDFFetchStream = null;
-const PDFNetworkStream = null;
-const PDFNodeStream = null;
 
 ;// ./src/display/filter_factory.js
 
@@ -12369,6 +12790,7 @@ class OptionalContentConfig {
 
 ;// ./src/display/pages_mapper.js
 
+
 class PagesMapper {
   #pageNumberToId = null;
   #prevPageNumbers = null;
@@ -12717,17 +13139,19 @@ class PDFDataTransportStream extends BasePDFStream {
       this._queuedChunks.push(buffer);
     }
     this._progressiveDone = progressiveDone;
-    pdfDataRangeTransport.addRangeListener((begin, chunk) => {
-      this.#onReceiveData(begin, chunk);
-    });
-    pdfDataRangeTransport.addProgressiveReadListener(chunk => {
-      this.#onReceiveData(undefined, chunk);
-    });
-    pdfDataRangeTransport.addProgressiveDoneListener(() => {
-      this._fullReader?.progressiveDone();
-      this._progressiveDone = true;
-    });
-    pdfDataRangeTransport.transportReady();
+    const listener = args => {
+      switch (args.type) {
+        case "range":
+        case "progressiveRead":
+          this.#onReceiveData(args.begin, args.chunk);
+          break;
+        case "progressiveDone":
+          this._fullReader?.progressiveDone();
+          this._progressiveDone = true;
+          break;
+      }
+    };
+    pdfDataRangeTransport.transportReady(listener);
   }
   #onReceiveData(begin, chunk) {
     const buffer = getArrayBuffer(chunk);
@@ -12903,12 +13327,9 @@ const dataObj = () => ({
 });
 class PDFObjects {
   #objs = new Map();
-  #ensureObj(objId) {
-    return this.#objs.getOrInsertComputed(objId, dataObj);
-  }
   get(objId, callback = null) {
     if (callback) {
-      const obj = this.#ensureObj(objId);
+      const obj = this.#objs.getOrInsertComputed(objId, dataObj);
       obj.promise.then(() => callback(obj.data));
       return null;
     }
@@ -12931,7 +13352,10 @@ class PDFObjects {
     return true;
   }
   resolve(objId, data = null) {
-    const obj = this.#ensureObj(objId);
+    const obj = this.#objs.getOrInsertComputed(objId, dataObj);
+    if (obj.data !== INITIAL_DATA) {
+      throw new Error(`Object already resolved ${objId}.`);
+    }
     obj.data = data;
     obj.resolve();
   }
@@ -13332,8 +13756,6 @@ class TextLayer {
 
 
 
-
-
 const RENDERING_CANCELLED_TIMEOUT = 100;
 function getDocument(src = {}) {
   const task = new PDFDocumentLoadingTask();
@@ -13352,15 +13774,11 @@ function getDocument(src = {}) {
   const docBaseUrl = typeof src.docBaseUrl === "string" && !isDataScheme(src.docBaseUrl) ? src.docBaseUrl : null;
   const cMapUrl = getFactoryUrlProp(src.cMapUrl);
   const cMapPacked = src.cMapPacked !== false;
-  const CMapReaderFactory = src.CMapReaderFactory || DOMCMapReaderFactory;
   const iccUrl = getFactoryUrlProp(src.iccUrl);
   const standardFontDataUrl = getFactoryUrlProp(src.standardFontDataUrl);
-  const StandardFontDataFactory = src.StandardFontDataFactory || DOMStandardFontDataFactory;
   const wasmUrl = getFactoryUrlProp(src.wasmUrl);
-  const WasmFactory = src.WasmFactory || DOMWasmFactory;
   const ignoreErrors = src.stopAtErrors !== true;
   const maxImageSize = Number.isInteger(src.maxImageSize) && src.maxImageSize > -1 ? src.maxImageSize : -1;
-  const isEvalSupported = src.isEvalSupported !== false;
   const isOffscreenCanvasSupported = typeof src.isOffscreenCanvasSupported === "boolean" ? src.isOffscreenCanvasSupported : !isNodeJS;
   const isImageDecoderSupported = typeof src.isImageDecoderSupported === "boolean" ? src.isImageDecoderSupported : true;
   const canvasMaxAreaInBytes = Number.isInteger(src.canvasMaxAreaInBytes) ? src.canvasMaxAreaInBytes : -1;
@@ -13374,7 +13792,10 @@ function getDocument(src = {}) {
   const pdfBug = src.pdfBug === true;
   const CanvasFactory = src.CanvasFactory || DOMCanvasFactory;
   const FilterFactory = src.FilterFactory || DOMFilterFactory;
+  const BinaryDataFactory = src.BinaryDataFactory || DOMBinaryDataFactory;
   const enableHWA = src.enableHWA === true;
+  const enableWebGPU = src.enableWebGPU === true;
+  const gpuPromise = enableWebGPU ? initGPU() : Promise.resolve(false);
   const useWasm = src.useWasm !== false;
   const pagesMapper = src.pagesMapper || new PagesMapper();
   const useSystemFonts = typeof src.useSystemFonts === "boolean" ? src.useSystemFonts : !isNodeJS && !disableFontFace;
@@ -13390,9 +13811,7 @@ function getDocument(src = {}) {
       docId,
       ownerDocument
     }),
-    cMapReaderFactory: null,
-    standardFontDataFactory: null,
-    wasmFactory: null
+    binaryDataFactory: null
   };
   if (!worker) {
     worker = PDFWorker.create({
@@ -13403,7 +13822,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.6.110",
+    apiVersion: "5.7.98",
     data,
     password,
     disableAutoFetch,
@@ -13414,7 +13833,6 @@ function getDocument(src = {}) {
       maxImageSize,
       disableFontFace,
       ignoreErrors,
-      isEvalSupported,
       isOffscreenCanvasSupported,
       isImageDecoderSupported,
       canvasMaxAreaInBytes,
@@ -13423,9 +13841,11 @@ function getDocument(src = {}) {
       useWasm,
       useWorkerFetch,
       cMapUrl,
+      cMapPacked,
       iccUrl,
       standardFontDataUrl,
-      wasmUrl
+      wasmUrl,
+      hasGPU: false
     }
   };
   const transportParams = {
@@ -13438,13 +13858,14 @@ function getDocument(src = {}) {
       enableXfa
     }
   };
-  worker.promise.then(function () {
+  Promise.all([worker.promise, gpuPromise]).then(function ([, hasGPU]) {
     if (task.destroyed) {
       throw new Error("Loading aborted");
     }
     if (worker.destroyed) {
       throw new Error("Worker was destroyed");
     }
+    docParams.evaluatorOptions.hasGPU = hasGPU;
     const workerIdPromise = worker.messageHandler.sendWithPromise("GetDocRequest", docParams, data ? [data.buffer] : null);
     let networkStream;
     if (data) {} else if (rangeTransport) {
@@ -13508,44 +13929,37 @@ class PDFDocumentLoadingTask {
 }
 class PDFDataRangeTransport {
   #capability = Promise.withResolvers();
-  #progressiveDoneListeners = [];
-  #progressiveReadListeners = [];
-  #rangeListeners = [];
+  #listener = null;
   constructor(length, initialData, progressiveDone = false, contentDispositionFilename = null) {
     this.length = length;
     this.initialData = initialData;
     this.progressiveDone = progressiveDone;
     this.contentDispositionFilename = contentDispositionFilename;
   }
-  addRangeListener(listener) {
-    this.#rangeListeners.push(listener);
-  }
-  addProgressiveReadListener(listener) {
-    this.#progressiveReadListeners.push(listener);
-  }
-  addProgressiveDoneListener(listener) {
-    this.#progressiveDoneListeners.push(listener);
-  }
   onDataRange(begin, chunk) {
-    for (const listener of this.#rangeListeners) {
-      listener(begin, chunk);
-    }
+    this.#listener({
+      type: "range",
+      begin,
+      chunk
+    });
   }
   onDataProgressiveRead(chunk) {
     this.#capability.promise.then(() => {
-      for (const listener of this.#progressiveReadListeners) {
-        listener(chunk);
-      }
+      this.#listener({
+        type: "progressiveRead",
+        chunk
+      });
     });
   }
   onDataProgressiveDone() {
     this.#capability.promise.then(() => {
-      for (const listener of this.#progressiveDoneListeners) {
-        listener();
-      }
+      this.#listener({
+        type: "progressiveDone"
+      });
     });
   }
-  transportReady() {
+  transportReady(listener) {
+    this.#listener = listener;
     this.#capability.resolve();
   }
   requestDataRange(begin, end) {
@@ -14402,7 +14816,7 @@ class WorkerTransport {
     this.#pageCache.clear();
     this.#pagePromises.clear();
     this.#pageRefCache.clear();
-    if (this.hasOwnProperty("annotationStorage")) {
+    if (Object.hasOwn(this, "annotationStorage")) {
       this.annotationStorage.resetModified();
     }
     const terminated = this.messageHandler.sendWithPromise("Terminate", null);
@@ -15020,8 +15434,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.6.110";
-const build = "a1cc75126";
+const version = "5.7.98";
+const build = "7e7902b2c";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -15306,11 +15720,12 @@ class BasicColorPicker {
 }
 
 ;// ./src/shared/scripting_utils.js
+
 function makeColorComp(n) {
-  return Math.floor(Math.max(0, Math.min(1, n)) * 255).toString(16).padStart(2, "0");
+  return Math.floor(MathClamp(n, 0, 1) * 255).toString(16).padStart(2, "0");
 }
 function scaleAndClamp(x) {
-  return Math.max(0, Math.min(255, 255 * x));
+  return MathClamp(x, 0, 1) * 255;
 }
 class ColorConverters {
   static CMYK_G([c, y, m, k]) {
@@ -15761,7 +16176,7 @@ class AnnotationElement {
       const borderColor = data.borderColor || null;
       if (borderColor) {
         this.#hasBorder = true;
-        style.borderColor = Util.makeHexColor(borderColor[0] | 0, borderColor[1] | 0, borderColor[2] | 0);
+        style.borderColor = Util.makeHexColor(...borderColor);
       } else {
         style.borderWidth = 0;
       }
@@ -16504,7 +16919,7 @@ class WidgetAnnotationElement extends AnnotationElement {
   }
   _setBackgroundColor(element) {
     const color = this.data.backgroundColor || null;
-    element.style.backgroundColor = color === null ? "transparent" : Util.makeHexColor(color[0], color[1], color[2]);
+    element.style.backgroundColor = color === null ? "transparent" : Util.makeHexColor(...color);
   }
   _setTextStyle(element) {
     const TEXT_ALIGNMENT = ["left", "center", "right"];
@@ -16526,7 +16941,7 @@ class WidgetAnnotationElement extends AnnotationElement {
       computedFontSize = Math.min(fontSize, roundToOneDecimal(height / LINE_FACTOR));
     }
     style.fontSize = `calc(${computedFontSize}px * var(--total-scale-factor))`;
-    style.color = Util.makeHexColor(fontColor[0], fontColor[1], fontColor[2]);
+    style.color = Util.makeHexColor(...fontColor);
     if (this.data.textAlignment !== null) {
       style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
     }
@@ -17123,9 +17538,16 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
         option.selected = option.value === defaultValue;
       }
     });
+    const fixDisplayValue = (option, value) => {
+      const newValue = value.replaceAll(" ", "\u00A0");
+      option.textContent = newValue;
+      if (newValue !== value) {
+        option.setAttribute("display-value", value);
+      }
+    };
     for (const option of this.data.options) {
       const optionElement = document.createElement("option");
-      optionElement.textContent = option.displayValue;
+      fixDisplayValue(optionElement, option.displayValue);
       optionElement.value = option.exportValue;
       if (storedData.value.includes(option.exportValue)) {
         optionElement.setAttribute("selected", true);
@@ -17162,7 +17584,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
     const getItems = event => {
       const options = event.target.options;
       return Array.prototype.map.call(options, option => ({
-        displayValue: option.textContent,
+        displayValue: option.getAttribute("display-value") || option.textContent,
         exportValue: option.value
       }));
     };
@@ -17219,7 +17641,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
             } = event.detail.insert;
             const selectChild = selectElement.children[index];
             const optionElement = document.createElement("option");
-            optionElement.textContent = displayValue;
+            fixDisplayValue(optionElement, displayValue);
             optionElement.value = exportValue;
             if (selectChild) {
               selectChild.before(optionElement);
@@ -17245,7 +17667,7 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
                 exportValue
               } = item;
               const optionElement = document.createElement("option");
-              optionElement.textContent = displayValue;
+              fixDisplayValue(optionElement, displayValue);
               optionElement.value = exportValue;
               selectElement.append(optionElement);
             }
@@ -21637,6 +22059,7 @@ class DrawingEditor extends AnnotationEditor {
 ;// ./src/display/editor/drawers/inkdraw.js
 
 
+
 class InkDrawOutliner {
   #last = new Float64Array(6);
   #line;
@@ -24539,7 +24962,7 @@ class AnnotationEditorLayer {
     const {
       target
     } = event;
-    if (target === this.#textLayer.div || (target.getAttribute("role") === "img" || target.classList.contains("endOfContent")) && this.#textLayer.div.contains(target)) {
+    if (target === this.#textLayer.div || (target.getAttribute("role") === "img" || target.classList.contains("endOfContent") || target.classList.contains("textLayerImagePlaceholder")) && this.#textLayer.div.contains(target)) {
       const {
         isMac
       } = FeatureTest.platform;
@@ -25275,6 +25698,7 @@ class TextLayerImages {
 }
 
 ;// ./src/pdf.js
+
 
 
 

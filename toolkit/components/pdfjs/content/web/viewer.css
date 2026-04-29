@@ -693,6 +693,7 @@
     &.selected{
       background-color:var(--highlight-selected-bg-color);
       backdrop-filter:var(--highlight-selected-backdrop-filter);
+      scroll-margin-top:50px;
     }
   }
 
