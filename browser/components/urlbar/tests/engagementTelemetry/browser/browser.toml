@@ -95,3 +95,5 @@ skip-if = [
 ["browser_glean_telemetry_record_preferences.js"]
 
 ["browser_glean_telemetry_reenter.js"]
+
+["browser_glean_telemetry_search_mode_switcher.js"]

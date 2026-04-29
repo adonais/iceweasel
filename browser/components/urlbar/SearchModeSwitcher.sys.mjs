@@ -97,6 +97,8 @@ export class SearchModeSwitcher {
   }
 
   async #onPopupShowing() {
+    // Discard event to avoid recording an abandonment.
+    this.#input.controller.engagementEvent.discard();
     await this.#buildSearchModeList();
     this.#input.view.close({ showFocusBorder: false });
 
