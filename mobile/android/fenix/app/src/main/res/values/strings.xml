@@ -4062,11 +4062,11 @@
     <!-- Sports widget menu item to remove the widget from the homepage. -->
     <string name="sports_widget_remove" tools:ignore="UnusedResources">Remove</string>
     <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
-    <string name="sports_widget_still_want_to_follow" tools:ignore="UnusedResources">Still want to follow along?</string>
+    <string name="sports_widget_still_want_to_follow">Still want to follow along?</string>
     <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
-    <string name="sports_widget_choose_another_team" tools:ignore="UnusedResources">Choose another team to keep up with the World Cup.</string>
+    <string name="sports_widget_choose_another_team">Choose another team to keep up with the World Cup.</string>
     <!-- Sports widget button label to follow another team after the current team is eliminated. -->
-    <string name="sports_widget_follow_another_team" tools:ignore="UnusedResources">Follow another team</string>
+    <string name="sports_widget_follow_another_team">Follow another team</string>
     <!-- Sports widget match status label shown during halftime of a match. -->
     <string name="sports_widget_halftime" tools:ignore="UnusedResources">Halftime</string>
     <!-- Sports widget match status label shown during extra time of a match. -->
