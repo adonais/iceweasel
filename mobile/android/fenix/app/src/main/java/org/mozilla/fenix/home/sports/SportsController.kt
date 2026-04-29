@@ -16,7 +16,7 @@ interface SportsController {
     /**
      * Handles the user selecting countries in the sports widget country selector.
      *
-     * @param countryCodes Set of ISO codes of the selected countries.
+     * @param countryCodes Set of country codes for the selected countries.
      */
     fun handleCountriesSelected(countryCodes: Set<String>)
 
@@ -43,6 +43,7 @@ class DefaultSportsController(
 ) : SportsController {
 
     override fun handleCountriesSelected(countryCodes: Set<String>) {
+        settings.sportsSelectedCountries = countryCodes
         appStore.dispatch(AppAction.SportsWidgetAction.CountriesSelected(countryCodes = countryCodes))
     }
 

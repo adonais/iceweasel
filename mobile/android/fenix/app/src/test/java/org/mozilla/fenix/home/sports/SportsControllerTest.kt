@@ -21,12 +21,13 @@ class SportsControllerTest {
     )
 
     @Test
-    fun `GIVEN a set of country codes WHEN countries are selected THEN the action is dispatched to the store`() {
-        val countryCodes = setOf("US", "JP", "BR")
+    fun `GIVEN a set of country codes WHEN countries are selected THEN the selection is persisted and the action is dispatched`() {
+        val countryCodes = setOf("USA", "JPN", "BRA")
 
         controller.handleCountriesSelected(countryCodes)
 
         verify {
+            settings.sportsSelectedCountries = countryCodes
             appStore.dispatch(
                 AppAction.SportsWidgetAction.CountriesSelected(countryCodes = countryCodes),
             )
@@ -34,12 +35,13 @@ class SportsControllerTest {
     }
 
     @Test
-    fun `GIVEN an empty set WHEN countries are selected THEN the action is dispatched with an empty set`() {
+    fun `GIVEN an empty set WHEN countries are selected THEN the selection is cleared and the action is dispatched`() {
         val countryCodes = emptySet<String>()
 
         controller.handleCountriesSelected(countryCodes)
 
         verify {
+            settings.sportsSelectedCountries = countryCodes
             appStore.dispatch(
                 AppAction.SportsWidgetAction.CountriesSelected(countryCodes = countryCodes),
             )
@@ -47,12 +49,13 @@ class SportsControllerTest {
     }
 
     @Test
-    fun `GIVEN a single country WHEN countries are selected THEN the action is dispatched with a single-element set`() {
-        val countryCodes = setOf("US")
+    fun `GIVEN a single country WHEN countries are selected THEN the selection is persisted and the action is dispatched`() {
+        val countryCodes = setOf("USA")
 
         controller.handleCountriesSelected(countryCodes)
 
         verify {
+            settings.sportsSelectedCountries = countryCodes
             appStore.dispatch(
                 AppAction.SportsWidgetAction.CountriesSelected(countryCodes = countryCodes),
             )

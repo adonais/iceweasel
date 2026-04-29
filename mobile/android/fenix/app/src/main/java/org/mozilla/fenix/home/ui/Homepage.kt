@@ -300,7 +300,10 @@ internal fun Homepage(
             if (showSportsCountrySelector) {
                 SportsCountrySelectorBottomSheet(
                     selectedCountryCode = null,
-                    onCountrySelected = { showSportsCountrySelector = false },
+                    onCountrySelected = { countryCode ->
+                        interactor.onCountriesSelected(setOf(countryCode))
+                        showSportsCountrySelector = false
+                    },
                     onDismiss = { showSportsCountrySelector = false },
                 )
             }
