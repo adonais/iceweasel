@@ -30,8 +30,6 @@
   @media (-moz-platform: macos) {
     --panel-background: none;
     --panel-border-color: transparent;
-    /* -moz-window-shadow does the trick on macOS */
-    --panel-shadow-margin: 0px;
 
     @media (-moz-mac-tahoe-theme) {
       /* GetMenuCornerRadius() returns a larger value on Tahoe */
@@ -58,6 +56,9 @@
   }
 
   @media (-moz-platform: macos) {
+    /* -moz-window-shadow does the trick on macOS */
+    --panel-shadow: none;
+    --panel-shadow-margin: 0px;
     appearance: auto;
     -moz-default-appearance: menupopup;
     /* We set the default background here, rather than on ::part(content),
