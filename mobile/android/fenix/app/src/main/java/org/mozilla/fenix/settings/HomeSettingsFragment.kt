@@ -95,6 +95,12 @@ class HomeSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
             onPreferenceChangeListener = createMetricPreferenceChangeListener("jump_back_in")
         }
 
+        requirePreference<SwitchPreferenceCompat>(R.string.pref_key_show_homepage_sports_widget).apply {
+            isVisible = fenixSettings.enableHomepageSportsWidget
+            isChecked = fenixSettings.showHomepageSportsWidget
+            onPreferenceChangeListener = createMetricPreferenceChangeListener("world_cup")
+        }
+
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_customization_bookmarks).apply {
             isVisible = fenixSettings.showHomepageBookmarksSectionToggle
             isChecked = fenixSettings.showBookmarksHomeFeature

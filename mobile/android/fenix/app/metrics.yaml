@@ -4219,7 +4219,7 @@ customize_home:
           toggled.
 
           We currently track: most_visited_sites, jump_back_in,
-          recently_visited, bookmarks, pocket, and contile.
+          recently_visited, bookmarks, pocket, contile, and world_cup.
           We previously tracked bookmarks as recently_saved.
       enabled:
         type: boolean
