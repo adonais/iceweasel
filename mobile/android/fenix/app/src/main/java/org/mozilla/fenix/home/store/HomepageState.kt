@@ -252,7 +252,7 @@ internal sealed class HomepageState {
                 showPrivacyReport = settings.showPrivacyReportSectionToggle &&
                     settings.showPrivacyReportFeature,
                 trackersBlockedCount = trackersBlockedCount,
-                showSportsWidget = settings.enableHomepageSportsWidget,
+                showSportsWidget = settings.enableHomepageSportsWidget && settings.showHomepageSportsWidget,
                 sportsWidgetState = sportsWidgetState,
                 headerState = buildHeaderState(
                     settings = settings,

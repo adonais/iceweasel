@@ -75,6 +75,8 @@ import org.mozilla.fenix.home.recentvisits.view.RecentlyVisited
 import org.mozilla.fenix.home.sessioncontrol.CollectionInteractor
 import org.mozilla.fenix.home.sessioncontrol.MessageCardInteractor
 import org.mozilla.fenix.home.setup.ui.SetupChecklist
+import org.mozilla.fenix.home.sports.ui.CountdownPromoCard
+import org.mozilla.fenix.home.sports.ui.FollowTeamPromoCard
 import org.mozilla.fenix.home.sports.ui.SportsCountrySelectorBottomSheet
 import org.mozilla.fenix.home.store.HeaderState
 import org.mozilla.fenix.home.store.HomepageState
@@ -202,6 +204,32 @@ internal fun Homepage(
                                     trackersBlockedCount = trackersBlockedCount,
                                     modifier = Modifier.padding(top = 16.dp),
                                 )
+                            }
+
+                            if (showSportsWidget) {
+                                Spacer(modifier = Modifier.height(44.dp))
+
+                                if (!sportsWidgetState.hasWorldCupStarted) {
+                                    CountdownPromoCard(
+                                        days = "5",
+                                        hours = "21",
+                                        mins = "3",
+                                        onViewSchedule = {},
+                                        onDismiss = {},
+                                        modifier = Modifier.padding(horizontal = horizontalMargin),
+                                    )
+                                } else if (sportsWidgetState.countriesSelected.isEmpty()) {
+                                    FollowTeamPromoCard(
+                                        onFollowTeam = {
+                                            showSportsCountrySelector = true
+                                        },
+                                        onSkip = {},
+                                        onDismiss = {
+                                            showSportsCountrySelector = false
+                                        },
+                                        modifier = Modifier.padding(horizontal = horizontalMargin),
+                                    )
+                                }
                             }
 
                             MaybeAddSetupChecklist(setupChecklistState, interactor)
@@ -553,7 +581,7 @@ private fun HomepagePreview() {
                     showCollections = true,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
-                    showSportsWidget = false,
+                    showSportsWidget = true,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
@@ -608,7 +636,7 @@ private fun HomepageBannerPreview() {
                     showCollections = true,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
-                    showSportsWidget = false,
+                    showSportsWidget = true,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
@@ -663,7 +691,7 @@ private fun HomepagePreviewCollections() {
                     showCollections = true,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
-                    showSportsWidget = false,
+                    showSportsWidget = true,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
                         wordmarkTextColor = null,
@@ -718,7 +746,7 @@ private fun MinimalHomepagePreview() {
                     showCollections = false,
                     showPrivacyReport = true,
                     trackersBlockedCount = 754,
-                    showSportsWidget = false,
+                    showSportsWidget = true,
                     sportsWidgetState = SportsWidgetState(),
                     headerState = HeaderState.Normal(
                         wordmarkTextColor = null,

@@ -8,7 +8,9 @@ package org.mozilla.fenix.components.appstate.sports
  * State of the sports widget on the homepage.
  *
  * @property countriesSelected Set of ISO codes of the selected countries, empty if none.
+ * @property hasWorldCupStarted Whether the World Cup has started.
  */
 data class SportsWidgetState(
     val countriesSelected: Set<String> = emptySet(),
+    val hasWorldCupStarted: Boolean = false,
 )
