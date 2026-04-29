@@ -131,14 +131,21 @@ export function resolveAdvancedConfig(advancedConfig, l10nArgValues) {
 }
 
 function resolveCustomNetError(customNetError, l10nArgValues) {
-  if (!customNetError?.whatCanYouDoL10nArgs) {
+  if (!customNetError) {
     return customNetError;
   }
-  const argsClone = {
-    dataL10nArgs: { ...customNetError.whatCanYouDoL10nArgs },
-  };
-  resolveL10nArgs(argsClone, l10nArgValues);
-  return { ...customNetError, whatCanYouDoL10nArgs: argsClone.dataL10nArgs };
+  const resolved = { ...customNetError };
+  if (typeof resolved.whatCanYouDoItems === "function") {
+    resolved.whatCanYouDoItems = resolved.whatCanYouDoItems(l10nArgValues);
+  }
+  if (customNetError.whatCanYouDoL10nArgs) {
+    const argsClone = {
+      dataL10nArgs: { ...customNetError.whatCanYouDoL10nArgs },
+    };
+    resolveL10nArgs(argsClone, l10nArgValues);
+    resolved.whatCanYouDoL10nArgs = argsClone.dataL10nArgs;
+  }
+  return resolved;
 }
 
 /**

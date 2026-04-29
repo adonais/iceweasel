@@ -105,6 +105,12 @@ add_task(async function test_netTimeout_error_page_elements() {
       ContentTaskUtils.isVisible(netErrorCard.tryAgainButton),
       "The 'Try Again' button is shown"
     );
+    Assert.ok(
+      !netErrorCard.renderRoot.querySelector(
+        '[data-l10n-id="fp-cert-error-code"]'
+      ),
+      "No error code is shown for netTimeout"
+    );
   });
 
   BrowserTestUtils.removeTab(tab);
