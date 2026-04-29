@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components.appstate.sports
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
@@ -76,5 +77,48 @@ class SportsWidgetReducerTest {
             setOf("DE"),
             finalState.sportsWidgetState.countriesSelected,
         )
+    }
+
+    @Test
+    fun `GIVEN hasSkippedFollowTeam is false WHEN SkippedFollowTeam is dispatched THEN hasSkippedFollowTeam is true`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(hasSkippedFollowTeam = false),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.FollowTeamSkipped,
+        )
+
+       assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
+    }
+
+    @Test
+    fun `GIVEN hasSkippedFollowTeam is true WHEN SkippedFollowTeam is dispatched THEN hasSkippedFollowTeam remains true`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(hasSkippedFollowTeam = true),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.FollowTeamSkipped,
+        )
+
+       assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
+    }
+
+    @Test
+    fun `GIVEN countries already selected WHEN SkippedFollowTeam is dispatched THEN countriesSelected is preserved`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(countriesSelected = setOf("US")),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.FollowTeamSkipped,
+        )
+
+        assertEquals(setOf("US"), finalState.sportsWidgetState.countriesSelected)
+        assertEquals(true, finalState.sportsWidgetState.hasSkippedFollowTeam)
     }
 }

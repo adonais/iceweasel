@@ -9,11 +9,16 @@ import io.mockk.verify
 import org.junit.Test
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.utils.Settings
 
 class SportsControllerTest {
 
     private val appStore: AppStore = mockk(relaxed = true)
-    private val controller: SportsController = DefaultSportsController(appStore = appStore)
+    private val settings: Settings = mockk(relaxed = true)
+    private val controller: SportsController = DefaultSportsController(
+        appStore = appStore,
+        settings = settings,
+    )
 
     @Test
     fun `GIVEN a set of country codes WHEN countries are selected THEN the action is dispatched to the store`() {
@@ -51,6 +56,16 @@ class SportsControllerTest {
             appStore.dispatch(
                 AppAction.SportsWidgetAction.CountriesSelected(countryCodes = countryCodes),
             )
+        }
+    }
+
+    @Test
+    fun `WHEN the follow team flow is skipped THEN the preference is persisted and the action is dispatched`() {
+        controller.handleSkippedFollowTeam()
+
+        verify {
+            settings.hasSkippedSportsFollowTeam = true
+            appStore.dispatch(AppAction.SportsWidgetAction.FollowTeamSkipped)
         }
     }
 }

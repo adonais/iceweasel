@@ -104,6 +104,8 @@ internal object FakeHomepagePreview {
     internal val sportsInteractor
         get() = object : SportsInteractor {
             override fun onCountriesSelected(countryCodes: Set<String>) { /* no op */ }
+
+            override fun onSkippedFollowTeam() { /* no op */ }
         }
 
     internal val storiesInteractor

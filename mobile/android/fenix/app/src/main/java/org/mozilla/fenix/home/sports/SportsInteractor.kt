@@ -15,6 +15,11 @@ interface SportsInteractor {
      * @param countryCodes Set of ISO codes of the selected countries.
      */
     fun onCountriesSelected(countryCodes: Set<String>)
+
+    /**
+     * Called when the user dismisses the "Follow your team" card via the "Skip" action.
+     */
+    fun onSkippedFollowTeam()
 }
 
 /**
@@ -28,5 +33,9 @@ class DefaultSportsInteractor(
 
     override fun onCountriesSelected(countryCodes: Set<String>) {
         controller.handleCountriesSelected(countryCodes = countryCodes)
+    }
+
+    override fun onSkippedFollowTeam() {
+        controller.handleSkippedFollowTeam()
     }
 }

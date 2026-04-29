@@ -9,8 +9,10 @@ package org.mozilla.fenix.components.appstate.sports
  *
  * @property countriesSelected Set of ISO codes of the selected countries, empty if none.
  * @property hasWorldCupStarted Whether the World Cup has started.
+ * @property hasSkippedFollowTeam Whether the user skipped the "Follow your team" card.
  */
 data class SportsWidgetState(
     val countriesSelected: Set<String> = emptySet(),
     val hasWorldCupStarted: Boolean = false,
+    val hasSkippedFollowTeam: Boolean = false,
 )

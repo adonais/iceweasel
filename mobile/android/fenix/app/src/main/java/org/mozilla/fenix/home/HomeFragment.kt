@@ -702,6 +702,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
             ),
             sportsController = DefaultSportsController(
                 appStore = components.appStore,
+                settings = components.settings,
             ),
         )
 

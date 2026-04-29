@@ -218,12 +218,12 @@ internal fun Homepage(
                                         onDismiss = {},
                                         modifier = Modifier.padding(horizontal = horizontalMargin),
                                     )
-                                } else if (sportsWidgetState.countriesSelected.isEmpty()) {
+                                } else if (!sportsWidgetState.hasSkippedFollowTeam && sportsWidgetState.countriesSelected.isEmpty()) {
                                     FollowTeamPromoCard(
                                         onFollowTeam = {
                                             showSportsCountrySelector = true
                                         },
-                                        onSkip = {},
+                                        onSkip = interactor::onSkippedFollowTeam,
                                         onDismiss = {
                                             showSportsCountrySelector = false
                                         },

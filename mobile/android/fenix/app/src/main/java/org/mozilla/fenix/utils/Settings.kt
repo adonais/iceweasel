@@ -2589,6 +2589,15 @@ class Settings(
     )
 
     /**
+     * Whether the user has dismissed the sports widget "Follow your team" card via the
+     * "Skip" action. When true, the "Follow your team" card is not shown again.
+     */
+    var hasSkippedSportsFollowTeam by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_sports_has_skipped_follow_team),
+        default = false,
+    )
+
+    /**
      * Adjust Activated User sent
      */
     var growthUserActivatedSent by booleanPreference(
