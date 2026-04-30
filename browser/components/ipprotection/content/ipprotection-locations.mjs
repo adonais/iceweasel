@@ -5,6 +5,9 @@
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/ipprotection/locations-list.mjs";
+
 /**
  * A custom element that wraps the locations content.
  */
@@ -18,13 +21,23 @@ export default class IPProtectionLocationsElement extends MozLitElement {
     this.state = {};
   }
 
+  createRenderRoot() {
+    return this;
+  }
+
   connectedCallback() {
     super.connectedCallback();
     this.dispatchEvent(new CustomEvent("IPProtection:Init", { bubbles: true }));
   }
 
   render() {
-    return html` <div id="ipprotection-locations-wrapper"></div> `;
+    if (!this.state.location && !this.state.locationsList) {
+      return null;
+    }
+    return html`<locations-list
+      .selectedLocation=${this.state.location}
+      .locations=${this.state.locationsList}
+    ></locations-list>`;
   }
 }
 

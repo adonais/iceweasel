@@ -626,10 +626,28 @@ export class IPProtectionPanel {
     let viewShown = new Promise(resolve => {
       view.addEventListener("ViewShown", resolve, { once: true });
     });
+
+    // ipprotection-locations and locations-list are rendered as roots in the light DOM,
+    // so moveFocus in the panelKeyListener can reach both elements naturally.
+    // TODO: see if we can tab between the header buttons and the locations list,
+    // but have arrow keys for moving through location items. (Bug 2034577)
+    view.addEventListener(
+      "ViewHiding",
+      () => {
+        view.removeEventListener("keydown", this.#panelKeyListener, {
+          capture: true,
+        });
+      },
+      { once: true }
+    );
+
     this.panelMultiView?.showSubView(IPProtectionPanel.LOCATIONS_PANELVIEW);
     this.#createPanel(view, IPProtectionPanel.LOCATIONS_TAGNAME);
 
     await viewShown;
+    view.addEventListener("keydown", this.#panelKeyListener, {
+      capture: true,
+    });
   }
 
   /**
@@ -694,6 +712,7 @@ export class IPProtectionPanel {
       this.handleEvent
     );
     doc.addEventListener("IPProtection:UserShowLocations", this.handleEvent);
+    doc.addEventListener("IPProtection:UserSelectLocation", this.handleEvent);
   }
 
   #removePanelListeners(doc) {
@@ -716,6 +735,10 @@ export class IPProtectionPanel {
       this.handleEvent
     );
     doc.removeEventListener("IPProtection:UserShowLocations", this.handleEvent);
+    doc.removeEventListener(
+      "IPProtection:UserSelectLocation",
+      this.handleEvent
+    );
   }
 
   #addProxyListeners() {
@@ -1086,6 +1109,8 @@ export class IPProtectionPanel {
         this.setState({ showLocationButtonBadge: false });
       }
       this.showLocationSelector();
+    } else if (event.type == "IPProtection:UserSelectLocation") {
+      // TODO: Save selected location (Bug 2033621)
     }
   }
 

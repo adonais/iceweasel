@@ -18,3 +18,5 @@ browser.jar:
     content/browser/ipprotection/bandwidth-usage.css (content/bandwidth-usage.css)
     content/browser/ipprotection/bandwidth-usage.mjs (content/bandwidth-usage.mjs)
     content/browser/ipprotection/ipprotection-locations.mjs (content/ipprotection-locations.mjs)
+    content/browser/ipprotection/locations-list.css (content/locations-list.css)
+    content/browser/ipprotection/locations-list.mjs (content/locations-list.mjs)
