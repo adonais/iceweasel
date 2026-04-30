@@ -631,10 +631,11 @@ bool GCRuntime::isFinalizationObserverTarget(const Value& target) {
 }
 
 /* static */
-bool GCRuntime::relocateWeakRefTarget(const Value& oldTarget,
-                                      const Value& newTarget) {
+bool GCRuntime::relocateFinalizationObserverTarget(const Value& oldTarget,
+                                                   const Value& newTarget) {
   CheckTargetValue(oldTarget);
   CheckTargetValue(newTarget);
+  MOZ_ASSERT(oldTarget != newTarget);
 
   Zone* oldZone = GetWeakTargetZone(oldTarget);
   FinalizationObservers* oldObservers = oldZone->finalizationObservers();
@@ -642,13 +643,14 @@ bool GCRuntime::relocateWeakRefTarget(const Value& oldTarget,
     return true;
   }
 
-  ObserverList list = oldObservers->removeWeakRefTargets(oldTarget);
-  if (list.isEmpty()) {
+  ObserverList weakRefList = oldObservers->extractWeakRefObservers(oldTarget);
+  ObserverList recordList = oldObservers->extractRecordObservers(oldTarget);
+  if (weakRefList.isEmpty() && recordList.isEmpty()) {
     return true;
   }
 
   // Update the target stored in each WeakRefObject.
-  for (auto iter = list.iter(); !iter.done(); iter.next()) {
+  for (auto iter = weakRefList.iter(); !iter.done(); iter.next()) {
     auto* weakRef = &iter.get()->as<WeakRefObject>();
     MOZ_ASSERT(weakRef->target() == oldTarget);
     weakRef->setTargetUnbarriered(newTarget);
@@ -660,10 +662,21 @@ bool GCRuntime::relocateWeakRefTarget(const Value& oldTarget,
   }
 
   FinalizationObservers* newObservers = newZone->finalizationObservers();
-  return newObservers->addWeakRefTargets(newTarget, std::move(list));
+  if (!weakRefList.isEmpty() &&
+      !newObservers->addWeakRefObservers(newTarget, std::move(weakRefList))) {
+    return false;
+  }
+
+  if (!recordList.isEmpty() &&
+      !newObservers->addRecordObservers(newTarget, std::move(recordList))) {
+    return false;
+  }
+
+  return true;
 }
 
-ObserverList FinalizationObservers::removeWeakRefTargets(const Value& target) {
+ObserverList FinalizationObservers::extractWeakRefObservers(
+    const Value& target) {
   ObserverList list;
   if (auto ptr = weakRefMap.lookup(target)) {
     list = std::move(ptr->value());
@@ -673,21 +686,47 @@ ObserverList FinalizationObservers::removeWeakRefTargets(const Value& target) {
   return list;
 }
 
-bool FinalizationObservers::addWeakRefTargets(const Value& target,
-                                              ObserverList&& list) {
+bool FinalizationObservers::addWeakRefObservers(const Value& target,
+                                                ObserverList&& list) {
   auto ptr = weakRefMap.lookupForAdd(target);
-  if (!ptr && !weakRefMap.relookupOrAdd(ptr, target, std::move(list))) {
-    return false;
-  } else if (ptr) {
+  if (ptr) {
     // There's already an entry for this target (unlikely but possible).
     // Merge the lists by moving elements one by one.
     ObserverList& existing = ptr->value();
     while (!list.isEmpty()) {
       existing.insertFront(list.getFirst());
     }
+    return true;
   }
 
-  return true;
+  return weakRefMap.add(ptr, target, std::move(list));
+}
+
+ObserverList FinalizationObservers::extractRecordObservers(
+    const Value& target) {
+  ObserverList list;
+  if (auto ptr = recordMap.lookup(target)) {
+    list = std::move(ptr->value());
+    recordMap.remove(ptr);
+  }
+
+  return list;
+}
+
+bool FinalizationObservers::addRecordObservers(const Value& target,
+                                               ObserverList&& list) {
+  auto ptr = recordMap.lookupForAdd(target);
+  if (ptr) {
+    // There's already an entry for this target (unlikely but possible).
+    // Merge the lists by moving elements one by one.
+    ObserverList& existing = ptr->value();
+    while (!list.isEmpty()) {
+      existing.insertFront(list.getFirst());
+    }
+    return true;
+  }
+
+  return recordMap.add(ptr, target, std::move(list));
 }
 
 /* static */

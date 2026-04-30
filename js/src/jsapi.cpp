@@ -713,11 +713,11 @@ JS_PUBLIC_API JSObject* JS_TransplantObject(JSContext* cx, HandleObject origobj,
 
   // Lastly, update the original object to point to the new one.
   if (origobj->compartment() != destination) {
-    // If origobj is a weak ref target, relocate the weak ref map entry to
-    // newIdentity before the swap turns origobj into a CCW.
-    if (!gc::GCRuntime::relocateWeakRefTarget(ObjectValue(*origobj),
-                                              ObjectValue(*newIdentity))) {
-      oomUnsafe.crash("JS_TransplantObject weak ref relocation");
+    // If origobj is a weak ref or finalization registry target, relocate the
+    // map entries to newIdentity before the swap turns origobj into a CCW.
+    if (!gc::GCRuntime::relocateFinalizationObserverTarget(
+            ObjectValue(*origobj), ObjectValue(*newIdentity))) {
+      oomUnsafe.crash("JS_TransplantObject finalization observer relocation");
     }
 
     RootedObject newIdentityWrapper(cx, newIdentity);
