@@ -53,6 +53,7 @@ describe("ASRTargeting docs", () => {
       "isAIWindow",
       "isFirstRun",
       "isFirstStartup",
+      "isNonStubFirstRun",
     ];
     for (const targetingParam of DOCS_TARGETING_HEADINGS.filter(
       doc => !allow.includes(doc)

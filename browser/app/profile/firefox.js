@@ -2108,6 +2108,7 @@ pref("messaging-system.log", "warn");
 pref("messaging-system.rsexperimentloader.collection_id", "nimbus-desktop-experiments");
 pref("nimbus.debug", false);
 pref("nimbus.validation.enabled", true);
+pref("nimbus.firstUpdateComplete", false);
 
 // Should Nimbus write to the shared ProfilesDatastoreService? Only used by tests.
 // TODO(bug 1967779): Require the ProfileDatastoreService by default and remove

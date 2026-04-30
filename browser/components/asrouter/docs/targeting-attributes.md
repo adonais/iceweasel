@@ -1346,6 +1346,32 @@ declare const isFirstStartup: boolean;
 ```
 
 [Source](https://searchfox.org/mozilla-central/source/toolkit/components/nimbus/lib/ExperimentManager.sys.mjs#233)
+
+### `isNonStubFirstRun`
+
+`true` during the first Nimbus `updateRecipes` pass on a new profile, `false`
+on all subsequent passes. The `nimbus.firstUpdateComplete` pref is set to `true`
+after the first `updateRecipes` pass completes; this attribute reads from that
+pref.
+
+This is the cross-platform equivalent of `isFirstStartup` for platforms where
+`isFirstStartup` is always `false` (Mac, Linux, and MSIX). On Windows stub
+installer builds, both `isFirstStartup` and `isNonStubFirstRun` will be `true`
+during first-run enrollment.
+
+> **NOTE:** This targeting attribute is only available for the JEXL expressions
+> of experiments' advanced targeting configs, which are defined in the
+> [experimenter repository](https://experimenter.info). Targeting expressions for
+> messages do not have access to this attribute.
+
+#### Definition
+
+```ts
+declare const isNonStubFirstRun: boolean;
+```
+
+[Source](https://searchfox.org/mozilla-central/source/toolkit/components/nimbus/lib/ExperimentManager.sys.mjs#235)
+
 ### `experimentsLoaded`
 
 Boolean that's true once Nimbus has loaded remote experiments from Remote Settings at least once. Returns true if experiments are disabled. This generally shouldn't be used outside of the splash screen.

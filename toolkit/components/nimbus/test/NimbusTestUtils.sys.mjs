@@ -1329,6 +1329,8 @@ export const NimbusTestUtils = {
         // Remove all migration state.
         Services.prefs.deleteBranch("nimbus.migrations.");
 
+        Services.prefs.clearUserPref("nimbus.firstUpdateComplete");
+
         NimbusLogging.maybeResetLogLevel();
       },
     };

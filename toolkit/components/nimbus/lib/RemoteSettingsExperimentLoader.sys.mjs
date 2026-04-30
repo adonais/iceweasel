@@ -391,6 +391,8 @@ export class RemoteSettingsExperimentLoader {
 
     await this.withUpdateLock(() => this.#updateImpl(trigger, options));
 
+    Services.prefs.setBoolPref("nimbus.firstUpdateComplete", true);
+
     this._hasUpdatedOnce = true;
     this._updating = false;
     this._updatingDeferred.resolve();

@@ -232,6 +232,11 @@ export class ExperimentManager {
 
       isFirstStartup: lazy.FirstStartup.state === lazy.FirstStartup.IN_PROGRESS,
 
+      isNonStubFirstRun: !Services.prefs.getBoolPref(
+        "nimbus.firstUpdateComplete",
+        false
+      ),
+
       get currentDate() {
         return new Date();
       },
