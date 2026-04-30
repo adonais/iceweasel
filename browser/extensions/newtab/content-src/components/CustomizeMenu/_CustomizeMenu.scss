@@ -757,5 +757,9 @@
   .section #shortcuts-toggle #row-selector {
     width: 100%;
   }
+
+  #wallpapers-toggle {
+    margin-block-end: var(--space-large);
+  }
 }
 
