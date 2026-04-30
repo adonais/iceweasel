@@ -162,6 +162,40 @@ add_task(async function test_locations_list_unknown_falls_back_to_rec() {
 });
 
 /**
+ * Tests that locations except for the recommended location are
+ * rendered in alphabetical order by their localized country name.
+ */
+add_task(async function test_locations_list_sorted_alphabetically() {
+  let { locationsList } = await openLocationsList({
+    locationsList: [
+      { code: "DE", available: true },
+      { code: "US", available: true },
+      { code: "CA", available: true },
+    ],
+  });
+
+  Assert.ok(locationsList, "locations-list element should exist");
+
+  let locationItems = locationsList.querySelectorAll(
+    "#locations-list li:not(:first-child) button"
+  );
+  let renderedCodes = Array.from(locationItems).map(btn =>
+    btn.id.replace("location-option-", "")
+  );
+
+  let expectedCodes = ["CA", "DE", "US"];
+
+  Assert.deepEqual(
+    renderedCodes,
+    expectedCodes,
+    "locations should be rendered in alphabetical order by localized country name"
+  );
+
+  await closePanel();
+  cleanupService();
+});
+
+/**
  * Tests that disabled locations are rendered with the disabled attribute.
  */
 add_task(async function test_locations_list_disabled_locations() {

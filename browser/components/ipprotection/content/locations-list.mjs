@@ -21,6 +21,16 @@ export default class LocationsList extends MozLitElement {
     return LocationsList.#displayNames.of(code) ?? null;
   }
 
+  static collator = new Intl.Collator(undefined, { sensitivity: "base" });
+
+  get #sortedLocations() {
+    return Array.from(this.locations ?? []).sort((a, b) => {
+      const nameA = LocationsList.countryName(a.code) ?? a.code;
+      const nameB = LocationsList.countryName(b.code) ?? b.code;
+      return LocationsList.collator.compare(nameA, nameB);
+    });
+  }
+
   constructor() {
     super();
     this.selectedLocation = "";
@@ -115,7 +125,9 @@ export default class LocationsList extends MozLitElement {
         ></span>
         <ul id="locations-list">
           ${this.#locationRow(recommendedLocation)}
-          ${this.locations?.map(aLocation => this.#locationRow(aLocation))}
+          ${this.#sortedLocations.map(aLocation =>
+            this.#locationRow(aLocation)
+          )}
         </ul>
       </div>
     `;
