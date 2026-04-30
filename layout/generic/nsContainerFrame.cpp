@@ -1997,7 +1997,7 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
                                              aBorderPadding.ISize(aWM) -
                                              boxSizingAdjust.ISize(aWM);
 
-  // We don't expect these intial values of iSize/bSize to be used, but this
+  // We don't expect these initial values of iSize/bSize to be used, but this
   // silences a GCC warning about them being uninitialized.
   nscoord minISize, maxISize, minBSize, maxBSize, iSize = 0, bSize = 0;
   enum class FillCB {
@@ -2192,11 +2192,13 @@ LogicalSize nsContainerFrame::ComputeSizeWithIntrinsicDimensions(
             (blockFillCB == FillCB::Stretch ? FillCB::Stretch : FillCB::Clamp);
       }
 
-      if (hasIntrinsicBSize) {
-        tentBSize = intrinsicBSize;
-      } else if (aspectRatio) {
+      // Honor aspect ratio if there's an intrinsic isize, even if there's an
+      // intrinsic bsize.
+      if (aspectRatio && (!hasIntrinsicBSize || hasIntrinsicISize)) {
         tentBSize = aspectRatio.ComputeRatioDependentSize(
             LogicalAxis::Block, aWM, tentISize, boxSizingAdjust);
+      } else if (hasIntrinsicBSize) {
+        tentBSize = intrinsicBSize;
       } else {
         tentBSize = fallbackIntrinsicSize.BSize(aWM);
       }

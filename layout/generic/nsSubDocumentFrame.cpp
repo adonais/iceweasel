@@ -272,7 +272,7 @@ nsRect nsSubDocumentFrame::GetDestRect(const nsRect& aConstraintRect) const {
   // intrinsic size and ratio.
   return nsLayoutUtils::ComputeObjectDestRect(
       aConstraintRect, ComputeIntrinsicSize(/* aIgnoreContainment = */ true),
-      GetIntrinsicRatio(), StylePosition());
+      GetIntrinsicRatio(/* aIgnoreContainment = */ true), StylePosition());
 }
 
 LayoutDeviceIntSize nsSubDocumentFrame::GetInitialSubdocumentSize() const {
@@ -602,10 +602,11 @@ IntrinsicSize nsSubDocumentFrame::ComputeIntrinsicSize(
 }
 
 /* virtual */
-AspectRatio nsSubDocumentFrame::GetIntrinsicRatio() const {
-  // FIXME(emilio): This should probably respect contain: size and return no
-  // ratio in the case subDocRoot is non-null. Otherwise we do it by virtue of
-  // using a zero-size below and reusing GetIntrinsicSize().
+AspectRatio nsSubDocumentFrame::GetIntrinsicRatio(
+    bool aIgnoreContainment) const {
+  if (!aIgnoreContainment && GetContainSizeAxes().IsAny()) {
+    return {};
+  }
   if (nsCOMPtr<nsIObjectLoadingContent> iolc = do_QueryInterface(mContent)) {
     auto olc = static_cast<nsObjectLoadingContent*>(iolc.get());
 

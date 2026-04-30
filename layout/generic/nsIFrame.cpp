@@ -6683,24 +6683,25 @@ AspectRatio nsIFrame::GetAspectRatio() const {
     return AspectRatio();
   }
 
-  const StyleAspectRatio& aspectRatio = StylePosition()->mAspectRatio;
+  const StyleAspectRatio& ar = StylePosition()->mAspectRatio;
+  const bool hasRatio = ar.HasRatio();
   // If aspect-ratio is zero or infinite, it's a degenerate ratio and behaves
   // as auto.
   // https://drafts.csswg.org/css-sizing-4/#valdef-aspect-ratio-ratio
-  if (!aspectRatio.BehavesAsAuto()) {
-    // Non-auto. Return the preferred aspect ratio from the aspect-ratio style.
-    return aspectRatio.ratio.AsRatio().ToLayoutRatio(UseBoxSizing::Yes);
+  // Non-auto. Return the preferred aspect ratio from the aspect-ratio style.
+  if (hasRatio && !ar.auto_) {
+    if (auto ratio = ar.ratio.AsRatio().ToLayoutRatio(UseBoxSizing::Yes)) {
+      return ratio;
+    }
   }
 
-  // The rest of the cases are when aspect-ratio has 'auto'.
   if (auto intrinsicRatio = GetIntrinsicRatio()) {
     return intrinsicRatio;
   }
 
-  if (aspectRatio.HasRatio()) {
-    // If it's a degenerate ratio, this returns 0. Just the same as the auto
-    // case.
-    return aspectRatio.ratio.AsRatio().ToLayoutRatio(UseBoxSizing::No);
+  if (hasRatio) {
+    // This returns a 0 ratio for degenerate rations, like the auto case below.
+    return ar.ratio.AsRatio().ToLayoutRatio(UseBoxSizing::No);
   }
 
   return AspectRatio();
