@@ -2000,20 +2000,21 @@ export class BackupService extends EventTarget {
   async #prepareStagingFolder(backupDirPath) {
     lazy.logConsole.debug(`Clearing snapshot folder ${backupDirPath}`);
     let numUnremovableStagingItems = 0;
-    let folder = await IOUtils.getFile(backupDirPath);
-    let folderEntries = folder.directoryEntries;
+    let folderEntries = await IOUtils.getChildren(backupDirPath, {
+      ignoreAbsent: true,
+    });
     if (folderEntries) {
       let unremovableContents = [];
       for (let folderItem of folderEntries) {
         try {
-          lazy.logConsole.debug(`Removing ${folderItem.path}`);
+          lazy.logConsole.debug(`Removing ${folderItem}`);
           await IOUtils.remove(folderItem, {
             recursive: true,
             retryReadonly: true,
           });
         } catch (e) {
           lazy.logConsole.warn(
-            `Failed to remove stale snapshot item ${folderItem.path}.  Exception: ${e}`
+            `Failed to remove stale snapshot item ${folderItem}.  Exception: ${e}`
           );
           // Whatever the problem was with removing the snapshot dir contents
           // (presumably a staging dir or archive), keep going until
@@ -2021,7 +2022,7 @@ export class BackupService extends EventTarget {
           // removed, at which point we abandon the backup, in order to avoid
           // filling drive space.
           numUnremovableStagingItems++;
-          unremovableContents.push(folderItem.path);
+          unremovableContents.push(folderItem);
           if (
             numUnremovableStagingItems >
             lazy.maximumNumberOfUnremovableStagingItems
