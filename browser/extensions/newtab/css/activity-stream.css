@@ -8821,6 +8821,9 @@ hr {
 .ds-navigation .ds-navigation-privacy:hover {
   text-decoration: none;
 }
+.ds-navigation .ds-navigation-privacy:focus-visible {
+  outline: var(--focus-outline);
+}
 .nova-enabled .content .ds-navigation {
   grid-column: 1/-1;
   display: grid;
@@ -8832,6 +8835,7 @@ hr {
 .nova-enabled .content .ds-navigation .ds-navigation-privacy {
   grid-column: 1/-1;
   justify-self: end;
+  color: var(--link-color);
 }
 .ds-navigation.ds-navigation-new-topics {
   display: block;
