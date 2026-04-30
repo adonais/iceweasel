@@ -37,6 +37,37 @@ export class SidebarBookmarkList extends SidebarTabList {
     this.getItemHeight = (item, h) => this.#itemHeightGetter(item, h);
   }
 
+  #containingDetails = null;
+  #onContainingDetailsToggle = () => {
+    if (this.#containingDetails?.open) {
+      // The inner <virtual-list> was first observed by its IntersectionObserver
+      // while the containing <details> had no layout box, so it never flipped
+      // its `isVisible` flag and skipped rendering rows. Re-observe now that
+      // the details has opened and a layout box exists.
+      this.shadowRoot
+        ?.querySelector("virtual-list")
+        ?.triggerIntersectionObserver();
+    }
+  };
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.#containingDetails = this.closest("details");
+    this.#containingDetails?.addEventListener(
+      "toggle",
+      this.#onContainingDetailsToggle
+    );
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.#containingDetails?.removeEventListener(
+      "toggle",
+      this.#onContainingDetailsToggle
+    );
+    this.#containingDetails = null;
+  }
+
   willUpdate(changes) {
     super.willUpdate(changes);
     if (changes.has("expandedFolderGuids")) {
