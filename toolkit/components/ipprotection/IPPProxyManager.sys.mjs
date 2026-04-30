@@ -471,6 +471,35 @@ class IPPProxyManagerSingleton extends EventTarget {
   }
 
   /**
+   * Switch the active proxy connection to a server in a different country.
+   *
+   * @param {string} country - country code
+   * @returns {{switched: boolean, error?: string}}
+   */
+  switch(country) {
+    if (this.#state !== IPPProxyStates.ACTIVE) {
+      return { switched: false };
+    }
+
+    const location = lazy.IPProtectionServerlist.getLocation(country);
+    const server = lazy.IPProtectionServerlist.selectServer(location?.city);
+
+    if (!server) {
+      this.#setErrorState(ERRORS.SERVER_NOT_FOUND);
+      return { switched: false, error: ERRORS.SERVER_NOT_FOUND };
+    }
+
+    lazy.logConsole.debug("Switching to server:", server?.hostname);
+
+    this.#connection.uninitialize();
+    this.#connection.initialize(this.#pass.asBearerToken(), server);
+
+    this.networkErrorObserver.addIsolationKey(this.#connection.isolationKey);
+
+    return { switched: true };
+  }
+
+  /**
    * Stop any connections and reset the pass and usage if the user has changed.
    */
   async reset() {
