@@ -7,6 +7,7 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
   AppUpdater: "resource://gre/modules/AppUpdater.sys.mjs",
 });
 
@@ -38,6 +39,10 @@ export default class SecurityPrivacyCard extends MozLitElement {
    * @returns {boolean} should we NOT warn the user about their app update status
    */
   #okUpdateStatus() {
+    if (!lazy.AppConstants.MOZ_UPDATER) {
+      return true;
+    }
+
     const okStatuses = [
       lazy.AppUpdater.STATUS.NO_UPDATES_FOUND,
       lazy.AppUpdater.STATUS.CHECKING,
@@ -229,6 +234,10 @@ export default class SecurityPrivacyCard extends MozLitElement {
    * @returns {TemplateResult} the HTML for the "update" bullet of the custom element
    */
   buildUpdateElement() {
+    if (!lazy.AppConstants.MOZ_UPDATER) {
+      return html``;
+    }
+
     switch (this.appUpdateStatus) {
       case lazy.AppUpdater.STATUS.NO_UPDATES_FOUND:
         return html`<li class="status-ok">

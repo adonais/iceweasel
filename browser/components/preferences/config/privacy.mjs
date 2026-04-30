@@ -7,10 +7,6 @@
 import { SettingGroupManager } from "chrome://browser/content/preferences/config/SettingGroupManager.mjs";
 import { Preferences } from "chrome://global/content/preferences/Preferences.mjs";
 
-const AppUpdater = ChromeUtils.importESModule(
-  "resource://gre/modules/AppUpdater.sys.mjs"
-).AppUpdater;
-
 const XPCOMUtils = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 ).XPCOMUtils;
@@ -21,6 +17,7 @@ const PrivateBrowsingUtils = ChromeUtils.importESModule(
 
 const lazy = XPCOMUtils.declareLazy({
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
+  AppUpdater: "resource://gre/modules/AppUpdater.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   DoHConfigController: "moz-src:///toolkit/components/doh/DoHConfig.sys.mjs",
   DownloadUtils: "resource://gre/modules/DownloadUtils.sys.mjs",
@@ -2645,10 +2642,10 @@ if (SECURITY_PRIVACY_STATUS_CARD_ENABLED) {
   Preferences.addSetting(
     /** @type {{ cachedValue: any } & SettingConfig} */ ({
       id: "appUpdateStatus",
-      cachedValue: AppUpdater.STATUS.NO_UPDATER,
+      cachedValue: undefined,
       setup(emitChange) {
         if (lazy.AppConstants.MOZ_UPDATER && !lazy.isPackagedApp) {
-          let appUpdater = new AppUpdater();
+          let appUpdater = new lazy.AppUpdater();
           /**
            * @param {number} appStatus
            * @param {any[]} _args
