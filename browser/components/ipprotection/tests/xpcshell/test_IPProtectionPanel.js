@@ -6,6 +6,9 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 const { IPProtectionPanel } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs"
 );
+const { IPProtectionServerlist } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs"
+);
 
 /**
  * A class that mocks the IP Protection panel.
@@ -383,55 +386,44 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
 });
 
 /**
- * Tests that egress location preference changes update the state.
+ * Tests that locationsList is populated from IPProtectionServerlist and
+ * kept in sync with IPProtectionServerlist:ListChanged events.
  */
-add_task(async function test_IPProtectionPanel_egressLocation_pref() {
+add_task(async function test_IPProtectionPanel_locationsList() {
+  await IPProtectionServerlist.maybeFetchList(true);
+
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
   ipProtectionPanel.components.add(fakeElement);
   ipProtectionPanel.panel = new FakeIPProtectionPanelView();
   fakeElement.isConnected = true;
 
-  const expectedLocation = {
-    name: "United States",
-    code: "us",
-  };
+  Assert.deepEqual(
+    ipProtectionPanel.state.locationsList,
+    IPProtectionServerlist.countries,
+    "locationsList should be set to IPProtectionServerlist.countries at construction"
+  );
+  Assert.ok(
+    ipProtectionPanel.state.locationsList.some(c => c.code === "US"),
+    "locationsList should include the seeded US country"
+  );
 
-  Services.prefs.setBoolPref(
-    "browser.ipProtection.egressLocationEnabled",
-    true
+  IPProtectionServerlist.dispatchEvent(
+    new Event("IPProtectionServerlist:ListChanged")
   );
 
   Assert.deepEqual(
-    ipProtectionPanel.state.location,
-    expectedLocation,
-    "location should be set when preference is true"
+    ipProtectionPanel.state.locationsList,
+    IPProtectionServerlist.countries,
+    "locationsList should be refreshed when ListChanged fires"
   );
-
   Assert.deepEqual(
-    fakeElement.state.location,
-    expectedLocation,
-    "location should be set on the fake element when preference is true"
-  );
-
-  Services.prefs.setBoolPref(
-    "browser.ipProtection.egressLocationEnabled",
-    false
-  );
-
-  Assert.ok(
-    !ipProtectionPanel.state.location,
-    "location should be null when preference is false"
-  );
-
-  Assert.ok(
-    !fakeElement.state.location,
-    "location should be null on the fake element when preference is false"
+    fakeElement.state.locationsList,
+    IPProtectionServerlist.countries,
+    "locationsList should propagate to the connected element"
   );
 
   ipProtectionPanel.uninit();
-
-  Services.prefs.clearUserPref("browser.ipProtection.egressLocationEnabled");
 });
 
 /**

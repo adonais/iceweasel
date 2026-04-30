@@ -11,10 +11,7 @@ const { IPPExceptionsManager } = ChromeUtils.importESModule(
   "moz-src:///toolkit/components/ipprotection/IPPExceptionsManager.sys.mjs"
 );
 
-const mockLocation = {
-  name: "United States",
-  code: "us",
-};
+const mockLocation = "US";
 
 const mockBandwidthUsage = {
   remaining: 30 * BANDWIDTH.BYTES_IN_GB,
@@ -30,10 +27,8 @@ const mockBandwidthUsage = {
   mbCount: 0,
 };
 
-async function setupStatusCardTest(
-  opts = { bandwidthEnabled: true, egressEnabled: true }
-) {
-  const { bandwidthEnabled, egressEnabled } = opts;
+async function setupStatusCardTest(opts = { bandwidthEnabled: true }) {
+  const { bandwidthEnabled } = opts;
   setupService({
     isSignedIn: true,
     isEnrolledAndEntitled: true,
@@ -50,37 +45,13 @@ async function setupStatusCardTest(
   await waitForProxyState(IPPProxyStates.READY);
 
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.ipProtection.bandwidth.enabled", bandwidthEnabled],
-      ["browser.ipProtection.egressLocationEnabled", egressEnabled],
-    ],
+    set: [["browser.ipProtection.bandwidth.enabled", bandwidthEnabled]],
   });
 }
 
 async function cleanupStatusCardTest() {
   await SpecialPowers.popPrefEnv();
   cleanupService();
-}
-
-function checkLocationAndBandwidth(statusBoxEl, location, bandwidthUsage) {
-  const locationEl = statusBoxEl.shadowRoot
-    .querySelector(`slot[name="location"]`)
-    .assignedElements()[0];
-  Assert.ok(
-    BrowserTestUtils.isVisible(locationEl),
-    "Location element should be present and visible"
-  );
-  Assert.equal(
-    locationEl.textContent.trim(),
-    location.name,
-    "Location element should be showing correct location"
-  );
-
-  const bandwidthEl = statusBoxEl.shadowRoot
-    .querySelector(`slot[name="bandwidth"]`)
-    .assignedElements()[0];
-
-  checkBandwidth(bandwidthEl, bandwidthUsage);
 }
 
 /**
@@ -106,7 +77,10 @@ add_task(async function test_status_card_disconnected() {
   let statusBoxEl = statusCard.statusBoxEl;
   Assert.ok(statusBoxEl, "Status box should be present");
 
-  checkLocationAndBandwidth(statusBoxEl, mockLocation, mockBandwidthUsage);
+  const bandwidthEl = statusBoxEl.shadowRoot
+    .querySelector(`slot[name="bandwidth"]`)
+    .assignedElements()[0];
+  checkBandwidth(bandwidthEl, mockBandwidthUsage);
 
   const turnOnButtonEl = statusCard.actionButtonEl;
   Assert.ok(turnOnButtonEl, "Button to turn on VPN should be present");
@@ -138,7 +112,10 @@ add_task(async function test_status_card_connected() {
   let statusBoxEl = statusCard.statusBoxEl;
   Assert.ok(statusBoxEl, "Status box should be present");
 
-  checkLocationAndBandwidth(statusBoxEl, mockLocation, mockBandwidthUsage);
+  const bandwidthEl = statusBoxEl.shadowRoot
+    .querySelector(`slot[name="bandwidth"]`)
+    .assignedElements()[0];
+  checkBandwidth(bandwidthEl, mockBandwidthUsage);
 
   const turnOffVPNButtonEl = statusCard.actionButtonEl;
   Assert.ok(turnOffVPNButtonEl, "Button to turn off VPN should be present");
@@ -282,7 +259,10 @@ add_task(async function test_status_card_excluded() {
     "Status box should have excluded type"
   );
 
-  checkLocationAndBandwidth(statusBoxEl, mockLocation, mockBandwidthUsage);
+  const bandwidthEl = statusBoxEl.shadowRoot
+    .querySelector(`slot[name="bandwidth"]`)
+    .assignedElements()[0];
+  checkBandwidth(bandwidthEl, mockBandwidthUsage);
 
   const turnOffVPNButtonEl = statusCard.actionButtonEl;
   Assert.ok(turnOffVPNButtonEl, "Button to turn off VPN should be present");
@@ -322,58 +302,15 @@ add_task(async function test_status_card_connecting() {
     "Status box should have connecting type"
   );
 
-  checkLocationAndBandwidth(statusBoxEl, mockLocation, mockBandwidthUsage);
+  const bandwidthEl = statusBoxEl.shadowRoot
+    .querySelector(`slot[name="bandwidth"]`)
+    .assignedElements()[0];
+  checkBandwidth(bandwidthEl, mockBandwidthUsage);
 
   const button = statusCard.actionButtonEl;
   Assert.ok(
     button?.disabled,
     "Button in connecting state should be present and disabled"
-  );
-
-  await closePanel();
-  await cleanupStatusCardTest();
-});
-
-/**
- * Tests that location is not displayed when the pref is disabled.
- */
-add_task(async function test_status_card_location_disabled() {
-  // Reset service state.
-  cleanupService();
-  IPProtectionService.updateState();
-
-  await setupStatusCardTest({ egressEnabled: false });
-
-  let content = await openPanel({
-    isProtectionEnabled: true,
-    bandwidthUsage: mockBandwidthUsage,
-  });
-
-  Assert.ok(
-    BrowserTestUtils.isVisible(content),
-    "ipprotection content component should be present"
-  );
-
-  let statusCard = content.statusCardEl;
-  Assert.ok(content.statusCardEl, "ipprotection-status-card should be present");
-
-  let statusBoxEl = statusCard.statusBoxEl;
-  Assert.ok(statusBoxEl, "Status box should be present");
-
-  const locationElements = statusBoxEl.shadowRoot
-    .querySelector(`slot[name="location"]`)
-    .assignedElements();
-  Assert.ok(
-    !locationElements.length,
-    "Location element should not be present when pref is disabled"
-  );
-
-  const bandwidthEl = statusBoxEl.shadowRoot
-    .querySelector(`slot[name="bandwidth"]`)
-    .assignedElements()[0];
-  Assert.ok(
-    BrowserTestUtils.isVisible(bandwidthEl),
-    "bandwidth-usage should still be present and visible"
   );
 
   await closePanel();
@@ -465,7 +402,10 @@ add_task(async function test_bandwidth_states() {
     let statusBoxEl = statusCard.statusBoxEl;
     Assert.ok(statusBoxEl, "Status box should be present");
 
-    checkLocationAndBandwidth(statusBoxEl, mockLocation, mockUsage);
+    const bandwidthEl = statusBoxEl.shadowRoot
+      .querySelector(`slot[name="bandwidth"]`)
+      .assignedElements()[0];
+    checkBandwidth(bandwidthEl, mockUsage);
 
     const turnOffVPNButtonEl = statusCard.actionButtonEl;
     Assert.ok(turnOffVPNButtonEl, "Button to turn off VPN should be present");

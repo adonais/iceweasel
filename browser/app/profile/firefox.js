@@ -3558,8 +3558,8 @@ pref("browser.ipProtection.added", false);
 pref("browser.ipProtection.hasUpgraded", false);
 // Pref that enables bandwidth usage feature
 pref("browser.ipProtection.bandwidth.enabled", true);
-// Pref that displays egress location in VPN panel
-pref("browser.ipProtection.egressLocationEnabled", false);
+// Pref that stores the current egress location for the VPN
+pref("browser.ipProtection.egressLocation", "");
 // Pref that flips at 50%, 75%, and 90% bandwidth usage thresholds
 pref("browser.ipProtection.bandwidthThreshold", 0);
 // Tracks the highest bandwidth warning threshold (75 or 90) dismissed per surface.

@@ -30,10 +30,7 @@ async function setupBandwidthPrecisionTest(maxBytes, remaining) {
   await IPPEnrollAndEntitleManager.refetchEntitlement();
   await IPPProxyManager.refreshUsage();
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.ipProtection.bandwidth.enabled", true],
-      ["browser.ipProtection.egressLocationEnabled", true],
-    ],
+    set: [["browser.ipProtection.bandwidth.enabled", true]],
   });
 }
 

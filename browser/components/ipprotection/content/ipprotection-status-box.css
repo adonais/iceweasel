@@ -103,8 +103,7 @@
   flex-direction: column;
 }
 
-#bandwidth,
-#location {
+#bandwidth {
   display: flex;
   align-items: center;
   gap: var(--space-xsmall);
@@ -121,19 +120,7 @@
   width: var(--size-image-small);
 }
 
-::slotted([slot="location-icon"]) {
-  -moz-context-properties: fill;
-  /* Intentionally set the icon color to match the deemphasized text */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  fill: var(--text-color-deemphasized);
-
-  @media (prefers-contrast) {
-    fill: currentColor;
-  }
-}
-
-::slotted([slot="bandwidth"]),
-::slotted([slot="location"]) {
+::slotted([slot="bandwidth"]) {
   color: var(--text-color-deemphasized);
 }
 

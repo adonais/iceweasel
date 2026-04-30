@@ -60,8 +60,9 @@ UI Features
 ``browser.ipProtection.bandwidth.enabled`` (boolean, default: ``false``)
   Controls whether bandwidth usage information is displayed in the status panel.
 
-``browser.ipProtection.egressLocationEnabled`` (boolean, default: ``false``)
-  Controls whether the VPN egress location is displayed in the status panel.
+``browser.ipProtection.egressLocation`` (string, default: ``""``)
+  A country code of the currently selected VPN egress location,
+  or a empty string for the default location.
 
 Diagnostics
 ~~~~~~~~~~~
