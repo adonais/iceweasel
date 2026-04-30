@@ -262,6 +262,10 @@ class IProtocol : public HasResultCodes {
   // Internal method called when the actor becomes connected.
   already_AddRefed<ActorLifecycleProxy> ActorConnected();
 
+  // Internal method called to indicate an actor will become disconnected.
+  // Implicitly called by ActorDisconnected.
+  void DoomSubtree();
+
   // Internal method called when actor becomes disconnected.
   void ActorDisconnected(ActorDestroyReason aWhy);
 
@@ -302,8 +306,6 @@ class IProtocol : public HasResultCodes {
 #else
   void WarnMessageDiscarded(IPC::Message*) {}
 #endif
-
-  void DoomSubtree();
 
   // Internal function returning an arbitrary directly managed actor. Used to
   // identify managed actors to destroy when tearing down an actor tree.
