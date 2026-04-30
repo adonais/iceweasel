@@ -43,11 +43,19 @@ async function openFolder(details) {
 }
 
 async function waitForNestedListRows(nestedList) {
+  info("waiting for nested list rows to render");
   await BrowserTestUtils.waitForMutationCondition(
     nestedList.shadowRoot,
     { childList: true, subtree: true },
     () => !!nestedList.rowEls.length || !!nestedList.folderEls.length
   );
+  info("rowEls or folderEls found");
+  if (nestedList.rowEls.length) {
+    for (const rowEl of nestedList.rowEls) {
+      await rowEl.updateComplete;
+    }
+  }
+  info("rowEls updateComplete");
 }
 
 add_task(async function test_arrow_down_into_expanded_folder() {
@@ -198,6 +206,7 @@ add_task(async function test_arrow_down_from_last_row_to_next_folder() {
   await openFolder(toolbarDetails);
 
   const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  nestedList.scrollIntoView();
   await BrowserTestUtils.waitForMutationCondition(
     nestedList.shadowRoot,
     { childList: true, subtree: true },
@@ -218,6 +227,7 @@ add_task(async function test_arrow_down_from_last_row_to_next_folder() {
   const folder1NestedList = folder1Details.querySelector(
     "sidebar-bookmark-list"
   );
+  folder1Details.scrollIntoView();
   await waitForNestedListRows(folder1NestedList);
 
   const lastRow = folder1NestedList.rowEls[folder1NestedList.rowEls.length - 1];
@@ -429,6 +439,7 @@ add_task(async function test_arrow_up_enters_previous_expanded_folder() {
   await openFolder(toolbarDetails);
 
   const nestedList = toolbarDetails.querySelector("sidebar-bookmark-list");
+  nestedList.scrollIntoView();
   await BrowserTestUtils.waitForMutationCondition(
     nestedList.shadowRoot,
     { childList: true, subtree: true },
@@ -446,6 +457,9 @@ add_task(async function test_arrow_up_enters_previous_expanded_folder() {
   const folder1NestedList = folder1Details.querySelector(
     "sidebar-bookmark-list"
   );
+  // Scroll into view so the IntersectionObserver fires and the virtual-list
+  // renders its items before we wait for them.
+  folder1Details.scrollIntoView();
   await waitForNestedListRows(folder1NestedList);
 
   const folder2Summary = folder2Details.querySelector("summary");
@@ -455,7 +469,9 @@ add_task(async function test_arrow_up_enters_previous_expanded_folder() {
     "ArrowUp from folder header should focus last item of previous expanded folder."
   );
   await SimpleTest.promiseFocus(contentWindow);
+
   EventUtils.synthesizeKey("KEY_ArrowUp", {}, contentWindow);
+
   await BrowserTestUtils.waitForMutationCondition(
     folder1NestedList.shadowRoot,
     { childList: true, subtree: true },
