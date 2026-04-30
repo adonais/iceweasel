@@ -481,7 +481,9 @@ class IPPProxyManagerSingleton extends EventTarget {
       return { switched: false };
     }
 
-    const location = lazy.IPProtectionServerlist.getLocation(country);
+    const location = country
+      ? lazy.IPProtectionServerlist.getLocation(country)
+      : lazy.IPProtectionServerlist.getRecommendedLocation();
     const server = lazy.IPProtectionServerlist.selectServer(location?.city);
 
     if (!server) {

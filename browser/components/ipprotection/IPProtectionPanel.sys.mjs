@@ -1110,7 +1110,12 @@ export class IPProtectionPanel {
       }
       this.showLocationSelector();
     } else if (event.type == "IPProtection:UserSelectLocation") {
-      // TODO: Save selected location (Bug 2033621)
+      const { code } = event.detail;
+      Services.prefs.setStringPref(EGRESS_LOCATION_PREF, code);
+      if (lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE) {
+        lazy.IPPProxyManager.switch(code === "REC" ? undefined : code);
+      }
+      this.panelMultiView?.goBack();
     }
   }
 

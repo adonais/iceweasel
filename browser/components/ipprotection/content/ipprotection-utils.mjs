@@ -4,6 +4,24 @@
 
 import { BANDWIDTH } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
 
+const countryDisplayNames = new Intl.DisplayNames(undefined, {
+  type: "region",
+});
+
+/**
+ * Returns the localized country name for a given country code.
+ *
+ * @param {string} code
+ * @returns {string|null}
+ */
+export function countryName(code) {
+  try {
+    return countryDisplayNames.of(code) ?? null;
+  } catch (_) {
+    return null;
+  }
+}
+
 /**
  * Formats remaining bandwidth bytes into a rounded value with a unit indicator.
  *

@@ -1579,6 +1579,54 @@ add_task(async function test_IPPProxyManager_switch_from_active() {
   sandbox.restore();
 });
 
+add_task(async function test_IPPProxyManager_switch_recommended() {
+  await IPPProxyManager.reset();
+  await putServerInRemoteSettings();
+
+  let sandbox = sinon.createSandbox();
+  setupStubs(sandbox);
+
+  const getRecommendedSpy = sandbox.spy(
+    IPProtectionServerlist,
+    "getRecommendedLocation"
+  );
+
+  const readyEvent = waitForEvent(
+    IPProtectionService,
+    "IPProtectionService:StateChanged",
+    () => IPProtectionService.state === IPProtectionStates.READY
+  );
+
+  IPProtectionService.init();
+  await readyEvent;
+
+  const activeEvent = waitForEvent(
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    () => IPPProxyManager.state === IPPProxyStates.ACTIVE
+  );
+
+  await IPPProxyManager.start(true, false);
+  await activeEvent;
+
+  const result = IPPProxyManager.switch();
+
+  Assert.deepEqual(
+    result,
+    { switched: true },
+    "switch() with no country should report success from ACTIVE"
+  );
+
+  Assert.ok(
+    getRecommendedSpy.called,
+    "getRecommendedLocation should be called when no country is provided"
+  );
+
+  await IPPProxyManager.stop();
+  IPProtectionService.uninit();
+  sandbox.restore();
+});
+
 add_task(async function test_IPPProxyManager_switch_no_server_found() {
   await IPPProxyManager.reset();
   await putServerInRemoteSettings();

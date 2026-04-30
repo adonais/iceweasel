@@ -202,6 +202,85 @@ add_task(async function test_locations_list_sorted_alphabetically() {
 });
 
 /**
+ * Tests that selecting a location writes the code to the egressLocation pref
+ * and propagates to the panel state.
+ */
+add_task(async function test_locations_list_selection_persists_to_pref() {
+  const EGRESS_LOCATION_PREF = "browser.ipProtection.egressLocation";
+
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(EGRESS_LOCATION_PREF);
+  });
+
+  let { locationsList } = await openLocationsList({ location: null });
+
+  let caButton = locationsList.querySelector("#location-option-CA");
+  Assert.ok(caButton, "CA location button should be present");
+
+  caButton.click();
+
+  let panel = IPProtection.getPanel(window);
+
+  await BrowserTestUtils.waitForCondition(
+    () => panel.state.location === "CA",
+    "panel state.location should update to the selected code"
+  );
+
+  Assert.equal(
+    Services.prefs.getStringPref(EGRESS_LOCATION_PREF, ""),
+    "CA",
+    "egressLocation pref should hold the selected code"
+  );
+
+  await closePanel();
+  cleanupService();
+});
+
+/**
+ * Tests that selecting a country while the proxy is active calls
+ * IPPProxyManager.switch with the selected code, and that "REC"
+ * switches to recommended location.
+ */
+add_task(
+  async function test_locations_list_selection_calls_switch_when_active() {
+    const EGRESS_LOCATION_PREF = "browser.ipProtection.egressLocation";
+
+    registerCleanupFunction(() => {
+      Services.prefs.clearUserPref(EGRESS_LOCATION_PREF);
+    });
+
+    let sandbox = sinon.createSandbox();
+    sandbox.stub(IPPProxyManager, "state").get(() => IPPProxyStates.ACTIVE);
+
+    let switchStub = sandbox.stub(IPPProxyManager, "switch").returns({
+      switched: true,
+    });
+
+    let { locationsList } = await openLocationsList({ location: null });
+
+    locationsList.querySelector("#location-option-CA").click();
+
+    await BrowserTestUtils.waitForCondition(
+      () => switchStub.calledWith("CA"),
+      "switch should be called with the selected country code"
+    );
+
+    switchStub.resetHistory();
+
+    locationsList.querySelector("#location-option-REC").click();
+
+    await BrowserTestUtils.waitForCondition(
+      () => switchStub.calledWith(undefined),
+      "switch should be called with undefined when REC is selected"
+    );
+
+    await closePanel();
+    cleanupService();
+    sandbox.restore();
+  }
+);
+
+/**
  * Tests that disabled locations are rendered with the disabled attribute.
  */
 add_task(async function test_locations_list_disabled_locations() {

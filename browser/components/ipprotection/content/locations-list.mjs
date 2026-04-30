@@ -4,6 +4,7 @@
 
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
+import { countryName } from "chrome://browser/content/ipprotection/ipprotection-utils.mjs";
 
 /**
  * A custom element that renders the single-select list of egress locations.
@@ -15,18 +16,13 @@ export default class LocationsList extends MozLitElement {
   };
 
   static defaultLocation = "REC";
-  static #displayNames = new Intl.DisplayNames(undefined, { type: "region" });
-
-  static countryName(code) {
-    return LocationsList.#displayNames.of(code) ?? null;
-  }
 
   static collator = new Intl.Collator(undefined, { sensitivity: "base" });
 
   get #sortedLocations() {
     return Array.from(this.locations ?? []).sort((a, b) => {
-      const nameA = LocationsList.countryName(a.code) ?? a.code;
-      const nameB = LocationsList.countryName(b.code) ?? b.code;
+      const nameA = countryName(a.code) ?? a.code;
+      const nameB = countryName(b.code) ?? b.code;
       return LocationsList.collator.compare(nameA, nameB);
     });
   }
@@ -98,7 +94,7 @@ export default class LocationsList extends MozLitElement {
                     data-l10n-id="ipprotection-locations-subview-recommended-description"
                   ></span>`
               : html`<span class="location-label"
-                  >${LocationsList.countryName(aLocation.code)}</span
+                  >${countryName(aLocation.code)}</span
                 >`}
           </span>
           <!--TODO: append an "unavailable" label if a location option is considered disabled-->

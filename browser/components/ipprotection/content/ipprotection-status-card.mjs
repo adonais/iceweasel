@@ -4,6 +4,7 @@
 
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
+import { countryName } from "chrome://browser/content/ipprotection/ipprotection-utils.mjs";
 
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-toggle.mjs";
@@ -76,6 +77,11 @@ export default class IPProtectionStatusCard extends MozLitElement {
   }
 
   locationSelectionButtonTemplate() {
+    const country =
+      this.location && this.location !== "REC"
+        ? countryName(this.location)
+        : null;
+
     return html`
       <moz-button
         class="toolbarbutton"
@@ -87,7 +93,14 @@ export default class IPProtectionStatusCard extends MozLitElement {
           ${this.showLocationButtonBadge
             ? html`<moz-badge type="new"></moz-badge>`
             : null}
-          <span data-l10n-id="ipprotection-recommended-location-button"></span>
+          ${country
+            ? html`<span
+                data-l10n-id="ipprotection-location-country-button"
+                data-l10n-args=${JSON.stringify({ country })}
+              ></span>`
+            : html`<span
+                data-l10n-id="ipprotection-recommended-location-button"
+              ></span>`}
           <img
             class="arrow-icon"
             src="chrome://global/skin/icons/arrow-right.svg"
