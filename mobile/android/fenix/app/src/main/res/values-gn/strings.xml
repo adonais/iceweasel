@@ -401,6 +401,8 @@
   <string name="ai_controls_voice_search_description">Mba’epúgui oiko moñe’ẽrã Google Voice Services rupive.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">¿Ejoko IA porãverã?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Ndojehechamo’ãi pe IA pyahu iporãvéva térã ag̃agua %1$s-pe, avei ovetã apysẽ hi’ári. Uperire, ikatu embohekojera opaite mba’e eiporuséva.\n\nPe jejoko avei ombyaikuaa jepysokue oiporúva IA ome’ẽva %1$s.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Mba’épa ojejokóta:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -1938,6 +1940,8 @@
   <string name="download_rename_error_exists_error">Oĩma marandurenda hérava “%s” ko tendaitépe</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Marandurenda réra ndoiporukuaái “/”</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Téra ojehaiva omoambue tai tuicháva térã michĩva. Eiporu peteĩ marandurenda réra iñambuéva.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Nadaikatúi emboherajey marandurenda</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -4558,6 +4562,11 @@
   <string name="sports_widget_close_content_description" tools:ignore="UnusedResources">Emboty</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
   <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Jeporavorãve</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description" tools:ignore="UnusedResources">Aravo hembýva. Ára: %1$d. Aravo: %2$d. Aravo’i: %3$d.</string>
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
   <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Eike Mundial ñanduti roguápe</string>
   <!--
@@ -4565,6 +4574,29 @@
     %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
   -->
   <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Tenondeve: %1$s %2$srovái, %3$s %4$s-pe</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, jehuga ñandutípe</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, ñandutípe</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, kuatiarogue %2$d %3$d rehegua</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Mba’éicha osẽ Copa del Mundo rehegua, kuatiarogue %1$d %2$d rehegua</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Eipe’a Copa del Mundo nde rógagui</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->

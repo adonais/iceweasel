@@ -27,6 +27,8 @@
   <string name="mozac_summarize_shake_consent_on_device_negative_button">暂时不要</string>
   <!-- Title for the download consent screen -->
   <string name="mozac_summarize_download_consent_title">设置保护隐私的摘要功能</string>
+  <!-- Button text for the consent to download an on-device model approving download consent -->
+  <string name="mozac_summarize_download_consent_button_positive">下载以生成摘要</string>
   <!-- Button text for the consent to download an on-device model denying download consent -->
   <string name="mozac_summarize_download_consent_button_negative">取消</string>
   <!-- Title for the download in progress screen -->
@@ -79,4 +81,6 @@
   <string name="mozac_ai_controls_page_summary_title">页面摘要</string>
   <!-- Description for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_description">页面和摘要内容永远不会被存储。</string>
+  <!-- Button text for the Error dismiss button on Shake to Summarize -->
+  <string name="mozac_summarize_error_dissmiss">知道了</string>
 </resources>

@@ -353,6 +353,8 @@
   <string name="translation_toolbar_close_action">Skrij sporočilo</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">V %su imate vedno izbiro</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Vključno s tem, ali želite uporabljati možnosti, izboljšane z umetno inteligenco.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Več o tem</string>
   <!-- Title for the block AI enhancements toggle -->
@@ -373,6 +375,8 @@
   <string name="ai_controls_more_page_summary_settings">Več nastavitev povzemanja strani</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">Glasovno iskanje</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Za pretvorbo govora v besedilo se uporabljajo Googlove govorne storitve.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Želite prepovedati izboljšave z uporabo UI?</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
@@ -1066,6 +1070,8 @@
   <string name="customize_wallpapers">Ozadja</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Sponzorirane bližnjice</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Svetovno prvenstvo</string>
   <!--
     Wallpapers
 
@@ -1381,6 +1387,8 @@
   <string name="preference_gestures_website_pull_to_refresh">Osvežitev s potegom navzdol</string>
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Skritje orodne vrstice ob pomiku</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Prikaz odprtih zavihkov s potegom orodne vrstice navzgor/navzdol</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Odpiranje zavihkov s potegom orodne vrstice navzgor</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
@@ -1856,6 +1864,8 @@
   <string name="download_rename_error_exists_error">Na tem mestu že obstaja datoteka z imenom \"%s\"</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Imena datotek ne smejo vsebovati \"/\"</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Vneseno ime se od trenutnega razlikuje samo po velikosti črk. Poskusite z drugačnim imenom.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Datoteke ni mogoče preimenovati</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2105,6 +2115,8 @@
   <string name="bookmark_sort_menu_a_to_z">Razvrsti od A do Ž</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Razvrsti od Ž do A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Uvozi iz datoteke</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">Zaznamkov ni bilo mogoče uvoziti. Poskusite znova.</string>
   <!--
@@ -2169,6 +2181,8 @@
   <string name="bookmark_import_bookmarks_button_content_description">Uvozi iz datoteke</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Ni zaznamkov</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Obdržite vse svoje priljubljene zaznamke na kupu</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Zaznamki v mapi: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -4323,6 +4337,16 @@
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Škotska</string>
   <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">V ŽIVO</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Tretje mesto</string>
+  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
+  <string name="sports_widget_quarter_final">Četrtfinali</string>
+  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
+  <string name="sports_widget_semi_final">Polfinala</string>
+  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
+  <string name="sports_widget_final">Finale</string>
+  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
+  <string name="sports_widget_bronze_final">Boj za tretje mesto</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">Osveži</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4387,6 +4411,8 @@
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Podaljški</string>
   <!-- Sports widget match status label shown during penalties of a match. -->
   <string name="sports_widget_penalties" tools:ignore="UnusedResources">Enajstmetrovke</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Zapri seznam za izbiro ekip</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description" tools:ignore="UnusedResources">Zapri</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
@@ -4398,6 +4424,8 @@
   <string name="sports_widget_countdown_remaining_content_description" tools:ignore="UnusedResources">Preostali čas. Dni: %1$d. Ur: %2$d. Minut: %3$d.</string>
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
   <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Obišči spletno stran svetovnega prvenstva</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Odstrani svetovno prvenstvo z domače strani</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
