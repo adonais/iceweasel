@@ -16728,7 +16728,7 @@ class ContentSection extends (external_React_default()).PureComponent {
       className: "wallpapers-section"
     }, novaEnabled && /*#__PURE__*/external_React_default().createElement("moz-toggle", {
       id: "wallpapers-toggle",
-      pressed: wallpapersUserEnabled || null,
+      pressed: wallpapersUserEnabled && !!activeWallpaper || null,
       ontoggle: this.onPreferenceSelect,
       onToggle: this.onPreferenceSelect,
       "data-preference": "newtabWallpapers.user.enabled",

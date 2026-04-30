@@ -18,6 +18,12 @@ const PREF_WALLPAPERS_ENABLED =
 const PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID =
   "browser.newtabpage.activity-stream.newtabWallpapers.customWallpaper.uuid";
 
+const PREF_SELECTED_WALLPAPER =
+  "browser.newtabpage.activity-stream.newtabWallpapers.wallpaper";
+
+const PREF_WALLPAPERS_USER_ENABLED_MIGRATED =
+  "browser.newtabpage.activity-stream.newtabWallpapers.user.enabled.migrated";
+
 function getWallpaperFeedForTest() {
   let feed = new WallpaperFeed();
 
@@ -358,4 +364,114 @@ add_task(async function test_Wallpaper_protocolURI() {
   await IOUtils.remove(testWallpaperFile);
   await IOUtils.remove(writtenFile);
   Services.prefs.clearUserPref(PREF_WALLPAPERS_CUSTOM_WALLPAPER_UUID);
+});
+
+add_task(
+  async function test_wallpaperSetup_migration_with_existing_wallpaper() {
+    let sandbox = sinon.createSandbox();
+    let feed = new WallpaperFeed();
+
+    Services.prefs.setBoolPref(PREF_WALLPAPERS_ENABLED, true);
+    Services.prefs.setStringPref(PREF_SELECTED_WALLPAPER, "beach");
+    Services.prefs.clearUserPref(PREF_WALLPAPERS_USER_ENABLED_MIGRATED);
+
+    sandbox.stub(feed, "RemoteSettings").returns({
+      get: () => [],
+      on: () => {},
+    });
+    feed.store = { dispatch: sinon.spy() };
+
+    info(
+      "wallpaperSetup should set user.enabled to true when a wallpaper was previously selected"
+    );
+
+    await feed.wallpaperSetup(true);
+
+    Assert.ok(
+      Services.prefs.getBoolPref(PREF_WALLPAPERS_USER_ENABLED_MIGRATED),
+      "Migration marker should be set after running"
+    );
+    Assert.ok(
+      feed.store.dispatch.calledWith(
+        actionCreators.SetPref("newtabWallpapers.user.enabled", true)
+      ),
+      "Should dispatch user.enabled = true when a wallpaper is already set"
+    );
+
+    Services.prefs.clearUserPref(PREF_WALLPAPERS_ENABLED);
+    Services.prefs.clearUserPref(PREF_SELECTED_WALLPAPER);
+    Services.prefs.clearUserPref(PREF_WALLPAPERS_USER_ENABLED_MIGRATED);
+    sandbox.restore();
+  }
+);
+
+add_task(
+  async function test_wallpaperSetup_migration_without_existing_wallpaper() {
+    let sandbox = sinon.createSandbox();
+    let feed = new WallpaperFeed();
+
+    Services.prefs.setBoolPref(PREF_WALLPAPERS_ENABLED, true);
+    Services.prefs.clearUserPref(PREF_SELECTED_WALLPAPER);
+    Services.prefs.clearUserPref(PREF_WALLPAPERS_USER_ENABLED_MIGRATED);
+
+    sandbox.stub(feed, "RemoteSettings").returns({
+      get: () => [],
+      on: () => {},
+    });
+    feed.store = { dispatch: sinon.spy() };
+
+    info(
+      "wallpaperSetup should not set user.enabled when no wallpaper was previously selected"
+    );
+
+    await feed.wallpaperSetup(true);
+
+    Assert.ok(
+      Services.prefs.getBoolPref(PREF_WALLPAPERS_USER_ENABLED_MIGRATED),
+      "Migration marker should be set after running"
+    );
+    Assert.ok(
+      !feed.store.dispatch.calledWith(
+        actionCreators.SetPref("newtabWallpapers.user.enabled", true)
+      ),
+      "Should not dispatch user.enabled = true when no wallpaper is set"
+    );
+
+    Services.prefs.clearUserPref(PREF_WALLPAPERS_ENABLED);
+    Services.prefs.clearUserPref(PREF_WALLPAPERS_USER_ENABLED_MIGRATED);
+    sandbox.restore();
+  }
+);
+
+add_task(async function test_wallpaperSetup_migration_does_not_rerun() {
+  let sandbox = sinon.createSandbox();
+  let feed = new WallpaperFeed();
+
+  Services.prefs.setBoolPref(PREF_WALLPAPERS_ENABLED, true);
+  Services.prefs.setStringPref(PREF_SELECTED_WALLPAPER, "beach");
+  Services.prefs.setBoolPref(PREF_WALLPAPERS_USER_ENABLED_MIGRATED, true);
+
+  sandbox.stub(feed, "RemoteSettings").returns({
+    get: () => [],
+    on: () => {},
+  });
+  feed.store = { dispatch: sinon.spy() };
+
+  info(
+    "wallpaperSetup should not set user.enabled when migration has already run"
+  );
+
+  await feed.wallpaperSetup(true);
+
+  Assert.ok(
+    !feed.store.dispatch.calledWith(
+      actionCreators.SetPref("newtabWallpapers.user.enabled", true)
+    ),
+    "Should not dispatch user.enabled = true when migration already ran"
+  );
+
+  Services.prefs.clearUserPref(PREF_WALLPAPERS_ENABLED);
+  Services.prefs.clearUserPref(PREF_SELECTED_WALLPAPER);
+  Services.prefs.clearUserPref(PREF_WALLPAPERS_USER_ENABLED_MIGRATED);
+  sandbox.restore();
 });

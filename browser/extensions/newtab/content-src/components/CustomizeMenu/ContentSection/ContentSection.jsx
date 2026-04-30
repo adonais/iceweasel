@@ -214,7 +214,9 @@ export class ContentSection extends React.PureComponent {
                 {novaEnabled && (
                   <moz-toggle
                     id="wallpapers-toggle"
-                    pressed={wallpapersUserEnabled || null}
+                    pressed={
+                      (wallpapersUserEnabled && !!activeWallpaper) || null
+                    }
                     ontoggle={this.onPreferenceSelect}
                     onToggle={this.onPreferenceSelect}
                     data-preference="newtabWallpapers.user.enabled"
