@@ -270,10 +270,13 @@ class IPPProxyManagerSingleton extends EventTarget {
    * True if started by user action, false if system action
    * @param {boolean} inPrivateBrowsing
    * True if started from a private browsing window
+   * @param {string} [country]
+   * Optional ISO 3166-1 alpha-2 country code to route through. When
+   * omitted, the recommended (anycast) location is used.
    * @returns {Promise<{started: boolean, error?: string}>}
    * Started is true if successfully connected, error contains the error message if it fails.
    */
-  async start(userAction = true, inPrivateBrowsing = false) {
+  async start(userAction = true, inPrivateBrowsing = false, country) {
     if (this.#state === IPPProxyStates.ACTIVATING) {
       if (!this.#activatingPromise) {
         throw new Error(ERRORS.MISSING_PROMISE);
@@ -313,7 +316,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     );
 
     this.#activatingPromise = Promise.race([
-      this.#startInternal(abortSignal),
+      this.#startInternal(abortSignal, country),
       abortPromise,
     ])
       .then(
@@ -351,7 +354,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     return this.#activatingPromise;
   }
 
-  async #startInternal(abortSignal) {
+  async #startInternal(abortSignal, country) {
     // Check network status before attempting connection
     if (lazy.IPPNetworkUtils.isOffline) {
       throw ERRORS.NETWORK;
@@ -390,7 +393,9 @@ class IPPProxyManagerSingleton extends EventTarget {
     }
     this.#schedulePassRotation(this.#pass);
 
-    const location = lazy.IPProtectionServerlist.getRecommendedLocation();
+    const location = country
+      ? lazy.IPProtectionServerlist.getLocation(country)
+      : lazy.IPProtectionServerlist.getRecommendedLocation();
     const server = lazy.IPProtectionServerlist.selectServer(location?.city);
     if (!server) {
       throw ERRORS.SERVER_NOT_FOUND;
