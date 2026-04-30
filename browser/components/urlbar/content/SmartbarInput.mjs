@@ -829,7 +829,7 @@ ${
    * @returns {number} The number of context websites
    */
   get contextWebsitesCount() {
-    return this.#getResolvedContextWebsites().length;
+    return this.getResolvedContextWebsites().length;
   }
 
   /**
@@ -1328,40 +1328,6 @@ ${
   }
 
   /**
-   * Handles custom input CTA events.
-   *
-   * @param {CustomEvent} event The custom event to handle.
-   */
-  handleCtaInputEvent(event) {
-    switch (event.type) {
-      case "aiwindow-input-cta:on-stop":
-        this.dispatchEvent(
-          new CustomEvent("smartbar-stop-generation", {
-            bubbles: true,
-            composed: true,
-          })
-        );
-        return;
-      case "aiwindow-input-cta:on-action-change":
-        this.smartbarAction = event.detail.action;
-        this.smartbarActionIsUserInitiated = true;
-        break;
-      case "aiwindow-input-cta:on-action":
-        this.smartbarAction = event.detail.action;
-        this.smartbarActionIsUserInitiated = false;
-        break;
-      case "aiwindow-input-cta:on-search-engine-select":
-        this.smartbarAction = event.detail.action;
-        this.smartbarActionIsUserInitiated = true;
-        break;
-      default:
-        lazy.logger.debug(`Unhandled event ${event.type}`, event);
-    }
-
-    this.handleCommand(event);
-  }
-
-  /**
    * Passes DOM events to the _on_<event type> methods.
    *
    * @param {Event} event The event to handle.
@@ -1380,7 +1346,7 @@ ${
 
     // Forward custom input CTA events.
     if (event.type.startsWith("aiwindow-input-cta:")) {
-      this.handleCtaInputEvent(/** @type {CustomEvent} */ (event));
+      this.#handleSmartbarCtaAction(/** @type {CustomEvent} */ (event));
       return;
     }
 
@@ -1444,6 +1410,42 @@ ${
   }
 
   /**
+   * Dispatches a smartbar-commit custom event.
+   *
+   * @param {Event} event - The event that triggered the action.
+   * @param {string} value - The value to commit.
+   */
+  #dispatchSmartbarCommitEvent(event, value) {
+    this.dispatchEvent(
+      new CustomEvent("smartbar-commit", {
+        bubbles: true,
+        composed: true,
+        detail: {
+          value,
+          action: this.smartbarAction,
+          contextMentions: this.getResolvedContextWebsites(),
+          contextPageUrl: this.getContextPageUrl(),
+          detectedIntent: this.detectedIntent,
+          event,
+          location: this.sapLocation,
+          searchProvider: lazy.UrlbarSearchUtils.getDefaultEngine()?.name,
+        },
+      })
+    );
+  }
+
+  /**
+   * Submit a chat event.
+   *
+   * @param {Event} event - The event that triggered the action.
+   * @param {string} value - The value to commit.
+   */
+  submitChat(event, value) {
+    this.smartbarAction = "chat";
+    this.#dispatchSmartbarCommitEvent(event, value);
+  }
+
+  /**
    * @typedef {object} HandleNavigationOneOffParams
    *
    * @property {string} openWhere
@@ -1457,45 +1459,41 @@ ${
   /**
    * Handles user initiated action.
    *
-   * @param {Event} event - The event that triggered the action.
-   * @param {object} triggeringPrincipal - The principal that the action was triggered from.
-   * @returns {boolean} - True if the action was user initiated handled and false if we fell through.
+   * @param {CustomEvent} event - The event that triggered the action.
    */
-  #handleSmartbarOnChangeAction(event, triggeringPrincipal) {
-    const committedValue = this.untrimmedValue;
-    const action = this.smartbarAction;
-    const contextMentions = this.#getResolvedContextWebsites();
+  #handleSmartbarCtaAction(event) {
+    if (event.type === "aiwindow-input-cta:on-stop") {
+      this.dispatchEvent(
+        new CustomEvent("smartbar-stop-generation", {
+          bubbles: true,
+          composed: true,
+        })
+      );
+      return;
+    }
 
-    const buttonSelType = action === "chat" ? "ask" : action;
+    const action = event.detail.action;
+    this.smartbarAction = action;
+    const isExplicitAction =
+      event.type === "aiwindow-input-cta:on-action-change";
+
+    // For non-explicit actions, forward to handleNavigation.
+    if (!isExplicitAction) {
+      this.handleNavigation({ event });
+      return;
+    }
+
+    // Handle explicit actions from smartbar CTA.
+    const committedValue = this.untrimmedValue;
     this.controller.engagementEvent.record(event, {
       location: this.sapLocation,
       searchString: committedValue,
       searchSource: this.getSearchSource(event),
-      selType: `${buttonSelType}_button`,
+      selType: `${action}_button`,
       result: null,
       windowMode: this.windowMode,
     });
-
-    this.dispatchEvent(
-      new CustomEvent("smartbar-commit", {
-        bubbles: true,
-        composed: true,
-        detail: {
-          value: committedValue,
-          event,
-          action,
-          contextMentions,
-          contextPageUrl: this.#getContextPageUrl(),
-        },
-      })
-    );
-
-    // Submit chat
-    if (action === "chat") {
-      this.#contextWebsites = [];
-      this.#updateContextChips();
-      return true;
-    }
+    this.#dispatchSmartbarCommitEvent(event, committedValue);
 
     // Run search
     if (action === "search") {
@@ -1503,73 +1501,32 @@ ${
       const engine = engineName
         ? lazy.UrlbarSearchUtils.getEngineByName(engineName)
         : lazy.UrlbarSearchUtils.getDefaultEngine();
-      const { chat_id, message_seq } = this.conversationTelemetryInfo;
-      Glean.smartWindow.searchSubmit.record({
-        chat_id,
-        detected_intent: this.detectedIntent,
-        length: String(committedValue.length),
-        location: this.sapLocation,
-        message_seq: String(message_seq),
-        model: this.modelName,
-        provider: engine?.name ?? "unknown",
-        submit_type:
-          event?.type === "aiwindow-input-cta:on-action" ||
-          event?.type === "aiwindow-input-cta:on-search-engine-select"
-            ? "button"
-            : "enter",
+      const [url, postData] = lazy.UrlbarUtils.getSearchQueryUrl(
+        engine,
+        committedValue
+      );
+      this._loadURL(url, event, this._whereToOpen(event), {
+        postData,
+        allowInheritPrincipal: false,
       });
-
-      if (this.smartbarActionIsUserInitiated) {
-        const [url, postData] = lazy.UrlbarUtils.getSearchQueryUrl(
-          engine,
-          committedValue
-        );
-        this._loadURL(url, event, this._whereToOpen(event), {
-          triggeringPrincipal,
-          postData,
-          allowInheritPrincipal: false,
-        });
-        this._recordSearch(engine, event);
-        return true;
-      }
+      this._recordSearch(engine, event);
     }
 
     // Attempt to navigate to URL
     if (action === "navigate") {
-      const { chat_id, message_seq } = this.conversationTelemetryInfo;
-      Glean.smartWindow.navigateSubmit.record({
-        chat_id,
-        detected_intent: this.detectedIntent,
-        length: String(committedValue.length),
-        location: this.sapLocation,
-        message_seq: String(message_seq),
-        model: this.modelName,
-        submit_type:
-          event?.type === "aiwindow-input-cta:on-action" ? "button" : "enter",
-      });
-
-      if (this.smartbarActionIsUserInitiated) {
-        let flags = Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS;
-        if (this.isPrivate) {
-          flags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
-        }
-
-        let fixupInfo = Services.uriFixup.getFixupURIInfo(
-          committedValue,
-          flags
-        );
-        this._loadURL(
-          fixupInfo.preferredURI.spec,
-          event,
-          this._whereToOpen(event),
-          { triggeringPrincipal, allowInheritPrincipal: false }
-        );
-        return true;
+      let flags = Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS;
+      if (this.isPrivate) {
+        flags |= Ci.nsIURIFixup.FIXUP_FLAG_PRIVATE_CONTEXT;
       }
-    }
 
-    // Let the handleNavigation logic continue
-    return false;
+      let fixupInfo = Services.uriFixup.getFixupURIInfo(committedValue, flags);
+      this._loadURL(
+        fixupInfo.preferredURI.spec,
+        event,
+        this._whereToOpen(event),
+        { allowInheritPrincipal: false }
+      );
+    }
   }
 
   /**
@@ -1588,13 +1545,12 @@ ${
    *   The principal that the action was triggered from.
    */
   handleNavigation({ event, oneOffParams, triggeringPrincipal }) {
-    if (
-      this.#isSmartbarMode &&
-      this.#handleSmartbarOnChangeAction(event, triggeringPrincipal)
-    ) {
-      this.#clearSmartbarInput();
+    // When queries are suppressed, submit directly to chat.
+    if (this.#isSmartbarMode && this._permanentlySuppressStartQuery) {
+      this.submitChat(event, this.untrimmedValue);
       return;
     }
+
     let element = this.view.selectedElement;
     let result = this.view.getResultFromElement(element);
     let openParams = oneOffParams?.openParams || { triggeringPrincipal };
@@ -1621,6 +1577,7 @@ ${
       (result.heuristic ||
         !this.valueIsTyped ||
         result.type == lazy.UrlbarUtils.RESULT_TYPE.TIP ||
+        result.type == lazy.UrlbarUtils.RESULT_TYPE.AI_CHAT ||
         this.value == this.#getValueFromResult(result));
     if (
       !isComposing &&
@@ -1742,6 +1699,9 @@ ${
       openParams.schemelessInput = this.#getSchemelessInput(
         this.untrimmedValue
       );
+      if (this.#isSmartbarMode) {
+        this.#dispatchSmartbarCommitEvent(event, this.untrimmedValue);
+      }
       this._loadURL(url, event, where, openParams);
       return;
     }
@@ -1831,8 +1791,6 @@ ${
         dueToTabSwitch: true,
         hideSearchTerms: true,
       });
-    } else if (this.#isSmartbarMode) {
-      this.#clearSmartbarInput();
     } else {
       this.value = "";
     }
@@ -2327,7 +2285,6 @@ ${
           ),
           windowMode: this.windowMode,
         });
-        this.#clearSmartbarInput();
         return;
       }
     }
@@ -2390,6 +2347,9 @@ ${
       }
     }
 
+    if (this.#isSmartbarMode) {
+      this.#dispatchSmartbarCommitEvent(event, this.untrimmedValue);
+    }
     this._loadURL(
       url,
       event,
@@ -2404,7 +2364,7 @@ ${
     );
   }
 
-  #clearSmartbarInput() {
+  clearSmartbarInput() {
     this.value = "";
     this.userTypedValue = "";
     this._lastSearchString = "";
@@ -2412,6 +2372,8 @@ ${
     this._resultForCurrentValue = null;
     this.smartbarAction = "";
     this.#detectedIntent = "";
+    this.#contextWebsites = [];
+    this.#updateContextChips();
     this.setSelectionRange(0, 0);
     this.view.close();
   }
@@ -6564,8 +6526,8 @@ ${
    */
   getCurrentContextData() {
     return {
-      pageUrl: this.#getContextPageUrl(),
-      contextWebsites: this.#getResolvedContextWebsites(),
+      pageUrl: this.getContextPageUrl(),
+      contextWebsites: this.getResolvedContextWebsites(),
     };
   }
 
@@ -6575,7 +6537,7 @@ ${
    *
    * @returns {?URL}
    */
-  #getContextPageUrl() {
+  getContextPageUrl() {
     if (!this.#isSidebarMode) {
       return null;
     }
@@ -6592,7 +6554,7 @@ ${
    *
    * @returns {ContextWebsite[]}
    */
-  #getResolvedContextWebsites() {
+  getResolvedContextWebsites() {
     /** @type {ContextWebsite[]} */
     const candidates = [...this.#contextWebsites];
 
@@ -6622,7 +6584,7 @@ ${
    * Updates the website context chips shown in the Smartbar header.
    */
   #updateContextChips() {
-    const finalWebsites = this.#getResolvedContextWebsites();
+    const finalWebsites = this.getResolvedContextWebsites();
     finalWebsites.forEach(site => this.#ensureWebsiteIcon(site));
 
     const container = this.#findWebsiteContextChipsContainer();

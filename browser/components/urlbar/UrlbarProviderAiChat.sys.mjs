@@ -177,8 +177,9 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
     }
   }
 
-  async onEngagement(queryContext, controller) {
+  async onEngagement(queryContext, controller, details) {
     let win = controller.input.inputField.ownerGlobal;
+
     /** @type {AISmartBarParent} */
     let actor;
     if (queryContext.sapName == "urlbar") {
@@ -195,7 +196,18 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
       this.logger.error("AISmartBar actor not found");
       return;
     }
-    actor.ask(queryContext.searchString);
+
+    const isCtaButtonClick = details.event?.type.startsWith(
+      "aiwindow-input-cta:"
+    );
+    actor.ask({
+      contextMentions: controller.input.getResolvedContextWebsites?.() ?? [],
+      contextPageUrl: controller.input.getContextPageUrl?.() ?? null,
+      detectedIntent: this.#lastIntentEvaluation.intent ?? "chat",
+      location: controller.input.sapLocation ?? "urlbar",
+      submitType: isCtaButtonClick ? "button" : "enter",
+      value: queryContext.searchString,
+    });
   }
 
   async #getSidebarBrowser(win) {

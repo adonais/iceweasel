@@ -21,6 +21,10 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
+/**
+ * @import { SmartbarAction } from "chrome://browser/content/aiwindow/components/input-cta/input-cta.mjs"
+ */
+
 const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
 
 let gIntentEngineStub;
@@ -385,10 +389,13 @@ async function getSmartbarContextChipLabels(browser, expectedUrl) {
  */
 async function submitSmartbar(browser, { useButton = false } = {}) {
   await SpecialPowers.spawn(browser, [useButton], async clickButton => {
-    const aiWindowElement = content.document.querySelector("ai-window");
-    const smartbar = aiWindowElement.shadowRoot.querySelector(
-      "#ai-window-smartbar"
+    const aiWindow = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindow.shadowRoot,
+      { childList: true, subtree: true },
+      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
     );
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
     if (clickButton) {
       const inputCta = smartbar.querySelector("input-cta");
       const mozButton = inputCta.shadowRoot.querySelector("moz-button");
@@ -405,6 +412,132 @@ async function submitSmartbar(browser, { useButton = false } = {}) {
       EventUtils.synthesizeKey("KEY_Enter", {}, content);
     }
   });
+}
+
+/**
+ * Select an explicit action from the smartbar CTA dropdown menu.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @param {SmartbarAction} action - The action to select
+ */
+async function selectExplicitSmartbarAction(browser, action) {
+  await SpecialPowers.spawn(browser, [action], async actionType => {
+    const aiWindow = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindow.shadowRoot,
+      { childList: true, subtree: true },
+      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
+    );
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+    const inputCta = smartbar.querySelector("input-cta");
+    const mozButton = inputCta.shadowRoot.querySelector("moz-button");
+
+    await ContentTaskUtils.waitForMutationCondition(
+      mozButton.shadowRoot,
+      { childList: true, subtree: true },
+      () => mozButton.shadowRoot.querySelector("#chevron-button")
+    );
+    const chevronButton = mozButton.shadowRoot.querySelector("#chevron-button");
+    const panelList = inputCta.shadowRoot.querySelector("panel-list");
+    const shownPromise = ContentTaskUtils.waitForEvent(panelList, "shown");
+    chevronButton.click();
+    await shownPromise;
+
+    const actionItem = panelList.querySelector(
+      `panel-item[icon="${actionType}"]`
+    );
+    actionItem.click();
+  });
+}
+
+/**
+ * Wait for the smartbar action to be set.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @param {string} expectedAction - The expected action value
+ */
+async function waitForSmartbarAction(browser, expectedAction) {
+  await SpecialPowers.spawn(browser, [expectedAction], async action => {
+    const aiWindow = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindow.shadowRoot,
+      { childList: true, subtree: true },
+      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
+    );
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+    await ContentTaskUtils.waitForCondition(
+      () => smartbar.smartbarAction === action,
+      `Wait for smartbar action to be "${action}"`
+    );
+  });
+}
+
+/**
+ * Stub the smartbar method _loadURL to prevent navigation.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @param {object} [options] - Options for the stub
+ * @param {boolean} [options.captureURL=false] - If true, capture the URL
+ */
+async function stubLoadURL(browser, { captureURL = false } = {}) {
+  await SpecialPowers.spawn(browser, [captureURL], async capture => {
+    const aiWindow = content.document.querySelector("ai-window");
+    await ContentTaskUtils.waitForMutationCondition(
+      aiWindow.shadowRoot,
+      { childList: true, subtree: true },
+      () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
+    );
+    const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+    if (capture) {
+      content._stubLoadURLCalled = false;
+      content._stubLoadedURL = null;
+      smartbar._loadURL = url => {
+        content._stubLoadURLCalled = true;
+        content._stubLoadedURL = url;
+      };
+    } else {
+      smartbar._loadURL = () => {};
+    }
+  });
+}
+
+/**
+ * Get the result of a stubbed and captured stubLoadURL call.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @returns {Promise<{called: boolean, url: string|null}>}
+ */
+async function getStubLoadURLResult(browser) {
+  return SpecialPowers.spawn(browser, [], async () => {
+    return {
+      called: content._stubLoadURLCalled,
+      url: content._stubLoadedURL,
+    };
+  });
+}
+
+/**
+ * Assert the current smartbar value.
+ *
+ * @param {MozBrowser} browser - The browser element
+ * @param {string} expectedValue - The expected value
+ * @param {string} message - The assertion message
+ */
+async function assertSmartbarValue(browser, expectedValue, message) {
+  await SpecialPowers.spawn(
+    browser,
+    [expectedValue, message],
+    async (val, msg) => {
+      const aiWindow = content.document.querySelector("ai-window");
+      await ContentTaskUtils.waitForMutationCondition(
+        aiWindow.shadowRoot,
+        { childList: true, subtree: true },
+        () => aiWindow.shadowRoot.querySelector("#ai-window-smartbar")
+      );
+      const smartbar = aiWindow.shadowRoot.querySelector("#ai-window-smartbar");
+      Assert.equal(smartbar.value, val, msg);
+    }
+  );
 }
 
 /**

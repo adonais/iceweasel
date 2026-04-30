@@ -366,10 +366,19 @@ add_task(async function test_context_mentions_cleared_after_chat_submit() {
       1,
       "Should have one context mention before submit"
     );
+  });
 
-    smartbar.smartbarAction = "chat";
-    smartbar.handleCommand(new content.PointerEvent("click"));
+  await typeInSmartbar(browser, "tell me a joke");
+  await submitSmartbar(browser);
 
+  await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    const smartbar = aiWindowElement.shadowRoot.querySelector(
+      "#ai-window-smartbar"
+    );
+    const chipContainer = smartbar.querySelector(
+      ".smartbar-context-chips-header"
+    );
     Assert.equal(
       chipContainer.websites.length,
       0,
@@ -384,41 +393,57 @@ add_task(
   async function test_implicit_chip_persists_after_chat_submit_in_sidebar() {
     const { win, sidebarBrowser } = await openAIWindowWithSidebar();
 
-    await SpecialPowers.spawn(sidebarBrowser, [], async () => {
-      const smartbar = await ContentTaskUtils.waitForCondition(() => {
-        const aiWindowElement = content.document.querySelector("ai-window");
-        return aiWindowElement?.shadowRoot?.querySelector(
-          "#ai-window-smartbar"
-        );
-      }, "Sidebar smartbar should be loaded");
+    const implicitUrl = await SpecialPowers.spawn(
+      sidebarBrowser,
+      [],
+      async () => {
+        const smartbar = await ContentTaskUtils.waitForCondition(() => {
+          const aiWindowElement = content.document.querySelector("ai-window");
+          return aiWindowElement?.shadowRoot?.querySelector(
+            "#ai-window-smartbar"
+          );
+        }, "Sidebar smartbar should be loaded");
 
+        const chipContainer = smartbar.querySelector(
+          ".smartbar-context-chips-header"
+        );
+
+        await ContentTaskUtils.waitForMutationCondition(
+          chipContainer,
+          { childList: true, subtree: true },
+          () =>
+            Array.isArray(chipContainer.websites) &&
+            chipContainer.websites.length === 1
+        );
+
+        const url = chipContainer.websites[0].url;
+
+        smartbar.addContextMention({
+          type: "tab",
+          url: "https://example.com/1",
+          label: "Page 1",
+        });
+        Assert.equal(
+          chipContainer.websites.length,
+          2,
+          "Should have implicit chip plus one explicit chip"
+        );
+
+        return url;
+      }
+    );
+
+    await typeInSmartbar(sidebarBrowser, "tell me a joke");
+    await submitSmartbar(sidebarBrowser);
+
+    await SpecialPowers.spawn(sidebarBrowser, [implicitUrl], async url => {
+      const aiWindowElement = content.document.querySelector("ai-window");
+      const smartbar = aiWindowElement.shadowRoot.querySelector(
+        "#ai-window-smartbar"
+      );
       const chipContainer = smartbar.querySelector(
         ".smartbar-context-chips-header"
       );
-
-      await ContentTaskUtils.waitForMutationCondition(
-        chipContainer,
-        { childList: true, subtree: true },
-        () =>
-          Array.isArray(chipContainer.websites) &&
-          chipContainer.websites.length === 1
-      );
-
-      const implicitUrl = chipContainer.websites[0].url;
-
-      smartbar.addContextMention({
-        type: "tab",
-        url: "https://example.com/1",
-        label: "Page 1",
-      });
-      Assert.equal(
-        chipContainer.websites.length,
-        2,
-        "Should have implicit chip plus one explicit chip"
-      );
-
-      smartbar.smartbarAction = "chat";
-      smartbar.handleCommand(new content.PointerEvent("click"));
 
       Assert.equal(
         chipContainer.websites.length,
@@ -427,7 +452,7 @@ add_task(
       );
       Assert.equal(
         chipContainer.websites[0].url,
-        implicitUrl,
+        url,
         "Remaining chip should be the implicit current-tab chip"
       );
     });
@@ -467,9 +492,19 @@ add_task(
         0,
         "Implicit chip should be removed"
       );
+    });
 
-      smartbar.smartbarAction = "chat";
-      smartbar.handleCommand(new content.PointerEvent("click"));
+    await typeInSmartbar(sidebarBrowser, "tell me a joke");
+    await submitSmartbar(sidebarBrowser);
+
+    await SpecialPowers.spawn(sidebarBrowser, [], async () => {
+      const aiWindowElement = content.document.querySelector("ai-window");
+      const smartbar = aiWindowElement.shadowRoot.querySelector(
+        "#ai-window-smartbar"
+      );
+      const chipContainer = smartbar.querySelector(
+        ".smartbar-context-chips-header"
+      );
 
       Assert.equal(
         chipContainer.websites.length,

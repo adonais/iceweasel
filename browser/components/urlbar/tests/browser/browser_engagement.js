@@ -160,6 +160,8 @@ async function doTest({
     expectedEndDetails.result = result;
     expectedEndDetails.element = element;
 
+    // The event object that is passed to providers varies between calls.
+    delete details.event;
     Assert.deepEqual(
       details,
       Object.assign(detailsDefaults, expectedEndDetails),

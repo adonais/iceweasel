@@ -52,6 +52,10 @@ ChromeUtils.defineLazyGetter(lazy, "log", function () {
 });
 
 /**
+ * @import { SmartbarAction } from "chrome://browser/content/aiwindow/components/input-cta/input-cta.mjs"
+ */
+
+/**
  * @typedef {{
  *   input: string,
  *   mode: string,
@@ -1000,15 +1004,26 @@ export class AIWindow extends MozLitElement {
       this.#handleSmartbarCommit.name,
       this.conversationId
     );
+    this.#smartbar.clearSmartbarInput();
 
     const {
       value,
       action,
       contextMentions = [],
       contextPageUrl,
+      detectedIntent,
       event: triggeringEvent,
       location: sourceLocation,
+      searchProvider,
+      submitType: providedSubmitType,
     } = event.detail;
+
+    const submitType =
+      providedSubmitType ??
+      (triggeringEvent?.type.startsWith("aiwindow-input-cta:")
+        ? "button"
+        : "enter");
+
     if (action === ACTION.CHAT) {
       const { mergedMentions, allUrls, inlineMentions } =
         this.#calculateCurrentMentions(contextMentions);
@@ -1016,17 +1031,39 @@ export class AIWindow extends MozLitElement {
       if (allUrls.size) {
         this.#conversation.addSeenUrls(allUrls);
       }
-      const isButtonClick =
-        triggeringEvent?.type === "aiwindow-input-cta:on-action";
       this.submitChatMessage({
         text: value,
         contextMentions: mergedMentions,
         contextPageUrl,
-        submitType: isButtonClick ? "button" : "enter",
+        detectedIntent,
+        submitType,
         inlineMentionsCount: inlineMentions.length,
         sourceLocation,
       });
-    } else if (
+    } else if (action === ACTION.SEARCH) {
+      Glean.smartWindow.searchSubmit.record({
+        chat_id: this.conversationId,
+        detected_intent: detectedIntent,
+        length: value.length,
+        location: sourceLocation ?? this.mode,
+        message_seq: this.conversationMessageCount,
+        model: this.modelName,
+        provider: searchProvider,
+        submit_type: submitType,
+      });
+    } else if (action === ACTION.NAVIGATE) {
+      Glean.smartWindow.navigateSubmit.record({
+        chat_id: this.conversationId,
+        detected_intent: detectedIntent,
+        length: value.length,
+        location: sourceLocation ?? this.mode,
+        message_seq: this.conversationMessageCount,
+        model: this.modelName,
+        submit_type: submitType,
+      });
+    }
+
+    if (
       this.mode === MODE.SIDEBAR &&
       (action === ACTION.NAVIGATE || action === ACTION.SEARCH)
     ) {
@@ -1090,6 +1127,7 @@ export class AIWindow extends MozLitElement {
    * @param {ContextWebsite[]} [options.contextMentions]
    * @param {?URL} [options.contextPageUrl] - Page URL string from the smartbar's current
    *   state. null means the user removed page context
+   * @param {SmartbarAction} [options.detectedIntent] - The detected smarbar intent
    * @param {number} [options.inlineMentionsCount] - Number of inline mentions
    * @param {string} [options.sourceLocation] - Override smartbar location
    */
@@ -1098,6 +1136,7 @@ export class AIWindow extends MozLitElement {
     submitType,
     contextMentions = [],
     contextPageUrl,
+    detectedIntent,
     inlineMentionsCount = 0,
     sourceLocation,
   }) {
@@ -1108,8 +1147,8 @@ export class AIWindow extends MozLitElement {
 
     Glean.smartWindow.chatSubmit.record({
       chat_id: this.conversationId,
-      detected_intent: this.#smartbar.detectedIntent,
-      length: String(trimmed.length),
+      detected_intent: detectedIntent,
+      length: trimmed.length,
       location: sourceLocation ?? this.mode,
       mentions: inlineMentionsCount,
       message_seq: this.conversationMessageCount,
