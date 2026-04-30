@@ -485,6 +485,7 @@
         if (links.length) {
           BrowserUtils.copyLinks(links);
         }
+        Glean.tabgroup.groupInteractions.copy_all_links.add(1);
         this.close();
       });
 

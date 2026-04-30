@@ -467,7 +467,7 @@ tabgroup:
     description: >
       Records interactions with tab groups: expand/collapse; rename, change
       color; save/reopen/delete; ungroup tabs; open from tab menu/recent/
-      Awesomebar; move to another window
+      Awesomebar; move to another window; copy all links
     notification_emails:
       - dao@mozilla.com
       - jswinarton@mozilla.com
@@ -475,6 +475,7 @@ tabgroup:
     bugs:
       - https://bugzil.la/1938401
       - https://bugzil.la/1971241
+      - https://bugzil.la/2020866
     data_reviews:
       - https://bugzil.la/1938401
     data_sensitivity:
@@ -493,6 +494,7 @@ tabgroup:
       - ungroup
       - move_window
       - hover_preview
+      - copy_all_links
     expires: never
 
 

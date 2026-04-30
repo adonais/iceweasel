@@ -989,6 +989,39 @@ add_task(async function test_groupInteractions() {
   await resetTelemetry();
 });
 
+add_task(async function test_groupInteractions_copyAllLinks() {
+  await resetTelemetry();
+
+  let tab = BrowserTestUtils.addTab(win.gBrowser, "https://example.com");
+  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  let group = win.gBrowser.addTabGroup([tab]);
+  win.gBrowser.tabGroupMenu.close();
+
+  Assert.equal(
+    Glean.tabgroup.groupInteractions.copy_all_links.testGetValue(),
+    null,
+    "tab group copy_all_links count should start unset"
+  );
+
+  let tabGroupContextMenu = await openTabGroupContextMenu(group);
+  let panelHidden = BrowserTestUtils.waitForPopupEvent(
+    tabGroupContextMenu,
+    "hidden"
+  );
+  win.document.getElementById("tabGroupEditor_copyAllLinks").click();
+  await panelHidden;
+
+  Assert.equal(
+    Glean.tabgroup.groupInteractions.copy_all_links.testGetValue(),
+    1,
+    "tab group copy_all_links count should have increased"
+  );
+
+  await removeTabGroup(group);
+
+  await resetTelemetry();
+});
+
 add_task(async function test_cancelTabGroupCreation_ungroupTabsEvent() {
   await resetTelemetry();
 
