@@ -1731,7 +1731,7 @@ bool MediaDecoder::OutputCaptureInfo::operator==(
     const OutputCaptureInfo& aOther) const {
   return mState == aOther.mState &&
          mShouldConfigAudioOutput == aOther.mShouldConfigAudioOutput &&
-         mDummyTrack == aOther.mDummyTrack &&
+         mDummyTrack.get() == aOther.mDummyTrack.get() &&
          mDevice.get() == aOther.mDevice.get();
 }
 
