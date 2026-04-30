@@ -19,6 +19,7 @@
 #include <setupapi.h>
 
 #include "SerialLogging.h"
+#include "mozilla/AsyncPlatformPipes.h"
 #include "mozilla/ScopeExit.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -287,12 +288,17 @@ nsresult Win32SerialPlatformService::ConfigurePort(
   }
 
   COMMTIMEOUTS timeouts = {0};
-  // MAXDWORD + MAXDWORD + ReadTotalTimeoutConstant is a special combination:
-  // ReadFile returns immediately with available data, or waits up to
-  // ReadTotalTimeoutConstant ms if no data is in the buffer.
+  // When both ReadIntervalTimeout and ReadTotalTimeoutMultiplier are MAXDWORD,
+  // ReadFile returns immediately with buffered data, or waits up to
+  // ReadTotalTimeoutConstant ms for the first byte. We use a very large
+  // constant (MAXDWORD-1 ~= 49 days) so the overlapped ReadFile effectively
+  // waits forever for data, ensuring bytesRead > 0 on every completion.
+  // PlatformPipeReader treats 0-byte reads as EOF, so we must never time out
+  // with 0 bytes. Using MAXDWORD for all three would mean "return immediately
+  // even with 0 bytes" which we must avoid.
   timeouts.ReadIntervalTimeout = MAXDWORD;
   timeouts.ReadTotalTimeoutMultiplier = MAXDWORD;
-  timeouts.ReadTotalTimeoutConstant = 5;
+  timeouts.ReadTotalTimeoutConstant = MAXDWORD - 1;
   // Write timeout as a safety net.
   timeouts.WriteTotalTimeoutMultiplier = 0;
   timeouts.WriteTotalTimeoutConstant = 5000;
@@ -350,7 +356,7 @@ nsresult Win32SerialPlatformService::OpenImpl(
 
   HANDLE handle =
       CreateFileW(devicePath.get(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
-                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+                  OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr);
 
   if (handle == INVALID_HANDLE_VALUE) {
     DWORD error = GetLastError();
@@ -408,68 +414,6 @@ nsresult Win32SerialPlatformService::CloseImpl(const nsString& aPortId) {
   return NS_OK;
 }
 
-nsresult Win32SerialPlatformService::ReadImpl(const nsString& aPortId,
-                                              Span<uint8_t> aBuf,
-                                              uint32_t& aBytesRead) {
-  mIOCapability.AssertOnCurrentThread();
-  HANDLE handle = FindPortHandle(aPortId);
-  if (handle == INVALID_HANDLE_VALUE) {
-    MOZ_LOG(gWebSerialLog, LogLevel::Error,
-            ("Win32SerialPlatformService[%p]::Read port '%s' not found", this,
-             NS_ConvertUTF16toUTF8(aPortId).get()));
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  DWORD errors;
-  COMSTAT comStat;
-  if (!ClearCommError(handle, &errors, &comStat)) {
-    DWORD error = GetLastError();
-    MOZ_LOG(
-        gWebSerialLog, LogLevel::Error,
-        ("Win32SerialPlatformService[%p]::Read ClearCommError failed for port "
-         "'%s': 0x%08lx",
-         this, NS_ConvertUTF16toUTF8(aPortId).get(), error));
-    return NS_ERROR_FAILURE;
-  }
-
-  if (errors & (CE_FRAME | CE_RXPARITY | CE_OVERRUN | CE_RXOVER)) {
-    // These are non-fatal per the spec (FramingError, ParityError,
-    // BufferOverrunError). ClearCommError already cleared them; log and
-    // continue reading.
-    MOZ_LOG(gWebSerialLog, LogLevel::Warning,
-            ("Win32SerialPlatformService[%p]::Read non-fatal comm errors on "
-             "port '%s': 0x%08lx (cleared, continuing)",
-             this, NS_ConvertUTF16toUTF8(aPortId).get(), errors));
-  }
-
-  if (comStat.cbInQue == 0) {
-    return NS_OK;
-  }
-
-  DWORD bytesToRead =
-      std::min<DWORD>({comStat.cbInQue, static_cast<DWORD>(aBuf.Length())});
-  DWORD bytesRead = 0;
-
-  if (!ReadFile(handle, aBuf.Elements(), bytesToRead, &bytesRead, nullptr)) {
-    DWORD error = GetLastError();
-    MOZ_LOG(
-        gWebSerialLog, LogLevel::Error,
-        ("Win32SerialPlatformService[%p]::Read ReadFile failed for port '%s': "
-         "0x%08lx",
-         this, NS_ConvertUTF16toUTF8(aPortId).get(), error));
-    return NS_ERROR_FAILURE;
-  }
-
-  aBytesRead = bytesRead;
-  if (bytesRead > 0) {
-    MOZ_LOG(
-        gWebSerialLog, LogLevel::Debug,
-        ("Win32SerialPlatformService[%p]::Read read %lu bytes from port '%s'",
-         this, bytesRead, NS_ConvertUTF16toUTF8(aPortId).get()));
-  }
-  return NS_OK;
-}
-
 nsresult Win32SerialPlatformService::WriteImpl(const nsString& aPortId,
                                                Span<const uint8_t> aData) {
   mIOCapability.AssertOnCurrentThread();
@@ -497,16 +441,40 @@ nsresult Win32SerialPlatformService::WriteImpl(const nsString& aPortId,
   const uint8_t* buffer = aData.Elements();
   DWORD remaining = static_cast<DWORD>(aData.Length());
 
+  auto event = UniqueFileHandle(CreateEvent(nullptr, TRUE, FALSE, nullptr));
+  if (!event) {
+    return NS_ERROR_FAILURE;
+  }
+  OVERLAPPED ov = {};
+  // Setting the low-order bit of hEvent prevents the I/O completion from
+  // being queued to the IOCP. This is necessary because PlatformPipeReader
+  // may have registered a DuplicateHandle of this port with the IOCP, and
+  // completions from our local OVERLAPPED would corrupt the IOCP handler
+  // lookup. GetOverlappedResult still works via the event.
+  HANDLE rawEvent = event.get();
+  ov.hEvent =
+      reinterpret_cast<HANDLE>(reinterpret_cast<uintptr_t>(rawEvent) | 1);
+
   while (remaining > 0) {
-    DWORD bytesWritten = 0;
-    if (!WriteFile(handle, buffer + totalWritten, remaining, &bytesWritten,
-                   nullptr)) {
+    ResetEvent(event.get());
+
+    if (!WriteFile(handle, buffer + totalWritten, remaining, nullptr, &ov)) {
       DWORD error = GetLastError();
-      MOZ_LOG(
-          gWebSerialLog, LogLevel::Error,
-          ("Win32SerialPlatformService[%p]::Write WriteFile failed for port "
-           "'%s': 0x%08lx",
-           this, NS_ConvertUTF16toUTF8(aPortId).get(), error));
+      if (error != ERROR_IO_PENDING) {
+        MOZ_LOG(
+            gWebSerialLog, LogLevel::Error,
+            ("Win32SerialPlatformService[%p]::Write WriteFile failed for port "
+             "'%s': 0x%08lx",
+             this, NS_ConvertUTF16toUTF8(aPortId).get(), error));
+        return NS_ERROR_FAILURE;
+      }
+    }
+    DWORD bytesWritten = 0;
+    if (!GetOverlappedResult(handle, &ov, &bytesWritten, TRUE)) {
+      MOZ_LOG(gWebSerialLog, LogLevel::Error,
+              ("Win32SerialPlatformService[%p]::Write GetOverlappedResult "
+               "failed for port '%s': 0x%08lx",
+               this, NS_ConvertUTF16toUTF8(aPortId).get(), GetLastError()));
       return NS_ERROR_FAILURE;
     }
 
@@ -711,6 +679,32 @@ nsresult Win32SerialPlatformService::GetSignalsImpl(
            aSignals.ringIndicator() ? "true" : "false",
            aSignals.dataSetReady() ? "true" : "false"));
 
+  return NS_OK;
+}
+
+nsresult Win32SerialPlatformService::GetReadStreamImpl(
+    const nsString& aPortId, uint32_t aBufferSize,
+    nsIAsyncInputStream** aStream) {
+  mIOCapability.AssertOnCurrentThread();
+  HANDLE handle = FindPortHandle(aPortId);
+  if (handle == INVALID_HANDLE_VALUE) {
+    MOZ_LOG(
+        gWebSerialLog, LogLevel::Error,
+        ("Win32SerialPlatformService[%p]::GetReadStream port '%s' not found",
+         this, NS_ConvertUTF16toUTF8(aPortId).get()));
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  UniqueFileHandle readHandle = DuplicateFileHandle(handle);
+  if (!readHandle) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Error,
+            ("Win32SerialPlatformService[%p]::GetReadStream DuplicateHandle "
+             "failed for port '%s'",
+             this, NS_ConvertUTF16toUTF8(aPortId).get()));
+    return NS_ERROR_FAILURE;
+  }
+  RefPtr<PlatformPipeReader> reader =
+      MakeRefPtr<PlatformPipeReader>(std::move(readHandle), aBufferSize);
+  reader.forget(aStream);
   return NS_OK;
 }
 

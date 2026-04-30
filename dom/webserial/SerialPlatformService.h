@@ -11,6 +11,7 @@
 #include "mozilla/Span.h"
 #include "mozilla/dom/SerialPortInfo.h"
 #include "mozilla/dom/SerialTypes.h"
+#include "nsIAsyncInputStream.h"
 #include "nsISupportsImpl.h"
 #include "nsTArray.h"
 
@@ -49,14 +50,14 @@ class SerialPlatformService {
   nsresult EnumeratePorts(SerialPortList& aPorts);
   nsresult Open(const nsString& aPortId, const IPCSerialOptions& aOptions);
   nsresult Close(const nsString& aPortId);
-  nsresult Read(const nsString& aPortId, Span<uint8_t> aBuf,
-                uint32_t& aBytesRead);
   nsresult Write(const nsString& aPortId, Span<const uint8_t> aData);
   nsresult Drain(const nsString& aPortId);
   nsresult Flush(const nsString& aPortId, bool aReceive);
   nsresult SetSignals(const nsString& aPortId,
                       const IPCSerialOutputSignals& aSignals);
   nsresult GetSignals(const nsString& aPortId, IPCSerialInputSignals& aSignals);
+  nsresult GetReadStream(const nsString& aPortId, uint32_t aBufferSize,
+                         nsIAsyncInputStream** aStream);
 
   void AddDeviceChangeObserver(SerialDeviceChangeObserver* aObserver);
   void RemoveDeviceChangeObserver(SerialDeviceChangeObserver* aObserver);
@@ -75,8 +76,6 @@ class SerialPlatformService {
   virtual nsresult OpenImpl(const nsString& aPortId,
                             const IPCSerialOptions& aOptions) = 0;
   virtual nsresult CloseImpl(const nsString& aPortId) = 0;
-  virtual nsresult ReadImpl(const nsString& aPortId, Span<uint8_t> aBuf,
-                            uint32_t& aBytesRead) = 0;
   virtual nsresult WriteImpl(const nsString& aPortId,
                              Span<const uint8_t> aData) = 0;
   virtual nsresult DrainImpl(const nsString& aPortId) = 0;
@@ -85,6 +84,9 @@ class SerialPlatformService {
                                   const IPCSerialOutputSignals& aSignals) = 0;
   virtual nsresult GetSignalsImpl(const nsString& aPortId,
                                   IPCSerialInputSignals& aSignals) = 0;
+  virtual nsresult GetReadStreamImpl(const nsString& aPortId,
+                                     uint32_t aBufferSize,
+                                     nsIAsyncInputStream** aStream) = 0;
 
   struct ObserverState {
     bool shutdown = false;

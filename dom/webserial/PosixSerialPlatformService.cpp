@@ -15,6 +15,7 @@
 #include <unistd.h>
 
 #include "SerialLogging.h"
+#include "mozilla/AsyncPlatformPipes.h"
 #include "nsDirectoryServiceDefs.h"
 #include "nsIFile.h"
 #include "nsString.h"
@@ -48,7 +49,6 @@
 
 namespace mozilla::dom {
 
-constexpr int kMaxReadBufferSize = 4096;
 constexpr int kPollTimeoutMs = 100;
 // Maximum total time to spend in a single Write() call before giving up.
 // Prevents indefinite blocking when a serial port's buffer is full (e.g.
@@ -455,7 +455,12 @@ nsresult PosixSerialPlatformService::ConfigurePort(
                    IXOFF | IXANY);
   tty.c_iflag |= PARMRK;
 
-  tty.c_cc[VMIN] = 0;
+  // VMIN=1: the terminal driver requires at least 1 byte before completing
+  // a read.  VMIN=0 also works on Linux, because O_NONBLOCK takes precedence
+  // and reading with no bytes available still fails with EAGAIN, but not on
+  // macOS where that case returns 0 which PlatformPipeReader treats as EOF.
+  // POSIX allows either behavior, so we use VMIN=1 instead.
+  tty.c_cc[VMIN] = 1;
   tty.c_cc[VTIME] = 0;
 
   speed_t speed;
@@ -645,55 +650,6 @@ nsresult PosixSerialPlatformService::CloseImpl(const nsString& aPortId) {
   MOZ_LOG(gWebSerialLog, LogLevel::Debug,
           ("PosixSerialPlatformService[%p]::Close successfully closed port %s",
            this, NS_ConvertUTF16toUTF8(aPortId).get()));
-  return NS_OK;
-}
-
-nsresult PosixSerialPlatformService::ReadImpl(const nsString& aPortId,
-                                              Span<uint8_t> aBuf,
-                                              uint32_t& aBytesRead) {
-  int fd = FindPortFd(aPortId);
-  if (fd < 0) {
-    MOZ_LOG(gWebSerialLog, LogLevel::Error,
-            ("PosixSerialPlatformService[%p]::Read port not found: %s", this,
-             NS_ConvertUTF16toUTF8(aPortId).get()));
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-
-  int bytesAvailable = 0;
-  if (ioctl(fd, FIONREAD, &bytesAvailable) < 0) {
-    MOZ_LOG(
-        gWebSerialLog, LogLevel::Error,
-        ("PosixSerialPlatformService[%p]::Read ioctl FIONREAD failed: errno=%d",
-         this, errno));
-    return NS_ERROR_FAILURE;
-  }
-
-  if (bytesAvailable == 0) {
-    return NS_OK;
-  }
-
-  int bytesToRead = std::min<int>(
-      {bytesAvailable, kMaxReadBufferSize, static_cast<int>(aBuf.Length())});
-
-  ssize_t bytesRead = read(fd, aBuf.Elements(), bytesToRead);
-
-  if (bytesRead < 0) {
-    if (errno == EAGAIN) {
-      MOZ_LOG(
-          gWebSerialLog, LogLevel::Verbose,
-          ("PosixSerialPlatformService[%p]::Read would block, no data", this));
-      return NS_OK;
-    }
-    MOZ_LOG(gWebSerialLog, LogLevel::Error,
-            ("PosixSerialPlatformService[%p]::Read read() failed: errno=%d",
-             this, errno));
-    return NS_ERROR_FAILURE;
-  }
-
-  aBytesRead = static_cast<uint32_t>(bytesRead);
-  MOZ_LOG(
-      gWebSerialLog, LogLevel::Verbose,
-      ("PosixSerialPlatformService[%p]::Read read %zd bytes", this, bytesRead));
   return NS_OK;
 }
 
@@ -997,6 +953,31 @@ nsresult PosixSerialPlatformService::GetSignalsImpl(
            this, aSignals.dataCarrierDetect(), aSignals.clearToSend(),
            aSignals.ringIndicator(), aSignals.dataSetReady()));
 
+  return NS_OK;
+}
+
+nsresult PosixSerialPlatformService::GetReadStreamImpl(
+    const nsString& aPortId, uint32_t aBufferSize,
+    nsIAsyncInputStream** aStream) {
+  AssertIsOnIOThread();
+  int fd = FindPortFd(aPortId);
+  if (fd < 0) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Error,
+            ("PosixSerialPlatformService[%p]::GetReadStream port not found: %s",
+             this, NS_ConvertUTF16toUTF8(aPortId).get()));
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  UniqueFileHandle readHandle = DuplicateFileHandle(fd);
+  if (!readHandle) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Error,
+            ("PosixSerialPlatformService[%p]::GetReadStream dup failed for "
+             "port '%s': errno=%d",
+             this, NS_ConvertUTF16toUTF8(aPortId).get(), errno));
+    return NS_ERROR_FAILURE;
+  }
+  RefPtr<PlatformPipeReader> reader =
+      MakeRefPtr<PlatformPipeReader>(std::move(readHandle), aBufferSize);
+  reader.forget(aStream);
   return NS_OK;
 }
 

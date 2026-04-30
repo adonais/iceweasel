@@ -35,8 +35,6 @@ class Win32SerialPlatformService final : public SerialPlatformService {
   nsresult OpenImpl(const nsString& aPortId,
                     const IPCSerialOptions& aOptions) override;
   nsresult CloseImpl(const nsString& aPortId) override;
-  nsresult ReadImpl(const nsString& aPortId, Span<uint8_t> aBuf,
-                    uint32_t& aBytesRead) override;
   nsresult WriteImpl(const nsString& aPortId,
                      Span<const uint8_t> aData) override;
   nsresult DrainImpl(const nsString& aPortId) override;
@@ -45,6 +43,8 @@ class Win32SerialPlatformService final : public SerialPlatformService {
                           const IPCSerialOutputSignals& aSignals) override;
   nsresult GetSignalsImpl(const nsString& aPortId,
                           IPCSerialInputSignals& aSignals) override;
+  nsresult GetReadStreamImpl(const nsString& aPortId, uint32_t aBufferSize,
+                             nsIAsyncInputStream** aStream) override;
   ~Win32SerialPlatformService() override;
 
   HANDLE FindPortHandle(const nsString& aPortId);

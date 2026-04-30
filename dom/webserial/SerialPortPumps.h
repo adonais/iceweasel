@@ -18,32 +18,6 @@ constexpr uint32_t kMinSerialPortPumpSize = 16384;
 
 namespace mozilla::dom::webserial {
 
-// Reads data from the serial device and writes it into a local nsIPipe.
-// Runs on the IO thread. An NS_AsyncCopy bridges the nsIPipe to the
-// DataPipeSender on a separate thread (DataPipeSender::Write() can block).
-// Uses AsyncWait for backpressure when the local pipe is full.
-class SerialPortReadPump final : public Runnable,
-                                 public nsIOutputStreamCallback {
- public:
-  NS_DECL_ISUPPORTS_INHERITED
-
-  SerialPortReadPump(const nsString& aPortId, nsIAsyncOutputStream* aOutput);
-
-  void Stop();
-
-  NS_IMETHOD Run() override;
-  NS_IMETHOD OnOutputStreamReady(nsIAsyncOutputStream* aStream) override;
-
- private:
-  ~SerialPortReadPump() = default;
-
-  nsString mPortId;
-  nsCOMPtr<nsIAsyncOutputStream> mOutput;
-  Atomic<bool> mStopped{false};
-  nsTArray<uint8_t> mPendingData;
-  uint32_t mPendingOffset = 0;
-};
-
 // Reads data from a DataPipeReceiver (JS writes) and writes it to the serial
 // device. Runs on the IO thread. Uses AsyncWait to be notified when data is
 // available in the pipe.

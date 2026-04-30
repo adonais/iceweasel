@@ -7,7 +7,7 @@
 #include "TestSerialPlatformService.h"
 
 #include "SerialLogging.h"
-#include "mozilla/StaticPrefs_dom.h"
+#include "nsIPipe.h"
 
 namespace mozilla::dom {
 
@@ -56,6 +56,14 @@ nsresult TestSerialPlatformService::OpenImpl(const nsString& aPortId,
     return NS_ERROR_ALREADY_INITIALIZED;
   }
 
+  nsCOMPtr<nsIAsyncInputStream> reader;
+  nsCOMPtr<nsIAsyncOutputStream> writer;
+  NS_NewPipe2(getter_AddRefs(reader), getter_AddRefs(writer),
+              /* nonBlockingInput */ true, /* nonBlockingOutput */ true, 4096,
+              UINT32_MAX);
+  port->mPipeReadStream = reader;
+  port->mPipeWriteStream = writer;
+
   port->mIsOpen = true;
   port->mOptions = aOptions;
   return NS_OK;
@@ -72,25 +80,11 @@ nsresult TestSerialPlatformService::CloseImpl(const nsString& aPortId) {
   }
 
   port->mIsOpen = false;
-  port->mBuffer.Clear();
-  return NS_OK;
-}
-
-nsresult TestSerialPlatformService::ReadImpl(const nsString& aPortId,
-                                             Span<uint8_t> aBuf,
-                                             uint32_t& aBytesRead) {
-  MockSerialPort* port = FindPort(aPortId);
-  if (!port || !port->mIsOpen) {
-    return NS_ERROR_NOT_AVAILABLE;
+  if (port->mPipeWriteStream) {
+    port->mPipeWriteStream->Close();
+    port->mPipeWriteStream = nullptr;
   }
-
-  uint32_t toRead = std::min<uint32_t>(port->mBuffer.Length(), aBuf.Length());
-  if (toRead == 0) {
-    return NS_OK;
-  }
-  memcpy(aBuf.Elements(), port->mBuffer.Elements(), toRead);
-  port->mBuffer.RemoveElementsAt(0, toRead);
-  aBytesRead = toRead;
+  port->mPipeReadStream = nullptr;
   return NS_OK;
 }
 
@@ -101,7 +95,28 @@ nsresult TestSerialPlatformService::WriteImpl(const nsString& aPortId,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  port->mBuffer.AppendElements(aData);
+  if (aData.IsEmpty()) {
+    return NS_OK;
+  }
+
+  if (!port->mPipeWriteStream) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  uint32_t totalWritten = 0;
+  while (totalWritten < aData.Length()) {
+    uint32_t written = 0;
+    nsresult rv = port->mPipeWriteStream->Write(
+        reinterpret_cast<const char*>(aData.Elements() + totalWritten),
+        aData.Length() - totalWritten, &written);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+    if (written == 0) {
+      return NS_ERROR_FAILURE;
+    }
+    totalWritten += written;
+  }
 
   return NS_OK;
 }
@@ -122,10 +137,10 @@ nsresult TestSerialPlatformService::FlushImpl(const nsString& aPortId,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  if (aReceive) {
-    // Discard receive buffers: clear any data waiting to be read.
-    port->mBuffer.Clear();
-  }
+  // Don't recreate the pipe pair on flush. PlatformPipeReader holds a
+  // duplicate of the read end and persists across flush/reattach cycles;
+  // recreating the pair would leave it reading from a stale pipe.
+  // Any buffered data is drained by SerialPortParent::StartReadPump.
 
   return NS_OK;
 }
@@ -164,6 +179,21 @@ nsresult TestSerialPlatformService::GetSignalsImpl(
       port->mOutputSignals.dataTerminalReady().valueOr(false)  // dataSetReady
   };
 
+  return NS_OK;
+}
+
+nsresult TestSerialPlatformService::GetReadStreamImpl(
+    const nsString& aPortId, uint32_t aBufferSize,
+    nsIAsyncInputStream** aStream) {
+  MockSerialPort* port = FindPort(aPortId);
+  if (!port || !port->mIsOpen) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  if (!port->mPipeReadStream) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  nsCOMPtr<nsIAsyncInputStream> stream = port->mPipeReadStream;
+  stream.forget(aStream);
   return NS_OK;
 }
 

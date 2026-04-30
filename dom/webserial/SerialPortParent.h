@@ -10,6 +10,7 @@
 #include "mozilla/dom/PSerialPortParent.h"
 #include "mozilla/dom/SerialPlatformService.h"
 #include "mozilla/ipc/DataPipe.h"
+#include "nsIAsyncInputStream.h"
 #include "nsISupports.h"
 
 namespace mozilla::dom {
@@ -17,7 +18,6 @@ namespace mozilla::dom {
 class SerialDeviceChangeProxy;
 
 namespace webserial {
-class SerialPortReadPump;
 class SerialPortWritePump;
 }  // namespace webserial
 
@@ -62,9 +62,11 @@ class SerialPortParent final : public PSerialPortParent {
  private:
   ~SerialPortParent();
 
-  void StopPumps();
+  // This should only be called if the port is closing.
+  void StopPumpsBeforeClose();
 
   void StopReadPump();
+  void DestroyPlatformReader();
   void StopWritePump();
   void NotifySharingStateChanged(bool aConnected);
   void StartReadPump(
@@ -87,7 +89,12 @@ class SerialPortParent final : public PSerialPortParent {
   RefPtr<mozilla::ipc::DataPipeSender> mReadPipeSender;
   RefPtr<mozilla::ipc::DataPipeReceiver> mWritePipeReceiver;
 
-  RefPtr<webserial::SerialPortReadPump> mReadPump;
+  nsCOMPtr<nsIAsyncInputStream> mPlatformInputStream;
+  // Opaque context from NS_AsyncCopy used to cancel the in-flight copy from
+  // mPlatformInputStream to mReadPipeSender without closing
+  // mPlatformInputStream.
+  nsCOMPtr<nsISupports> mReadCopierCtx;
+
   RefPtr<webserial::SerialPortWritePump> mWritePump;
 
   RefPtr<SerialDeviceChangeProxy> mDeviceChangeProxy;

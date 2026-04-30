@@ -16,8 +16,6 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "nsHashPropertyBag.h"
 #include "nsIObserverService.h"
-#include "nsIPipe.h"
-#include "nsNetUtil.h"
 #include "nsStreamUtils.h"
 
 namespace mozilla::dom {
@@ -127,7 +125,7 @@ mozilla::ipc::IPCResult SerialPortParent::RecvClose(CloseResolver&& aResolver) {
           ("SerialPortParent[%p]::RecvClose closing port '%s'", this,
            NS_ConvertUTF16toUTF8(mPortId).get()));
 
-  StopPumps();
+  StopPumpsBeforeClose();
 
   RefPtr<SerialPlatformService> service = SerialPlatformService::GetInstance();
   nsresult rv = NS_ERROR_FAILURE;
@@ -153,14 +151,31 @@ mozilla::ipc::IPCResult SerialPortParent::RecvClose(CloseResolver&& aResolver) {
 }
 
 void SerialPortParent::StopReadPump() {
-  if (mReadPump) {
-    mReadPump->Stop();
-    mReadPump = nullptr;
+  if (mReadCopierCtx) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+            ("SerialPortParent[%p]::StopReadPump cancelling copy for port '%s'",
+             this, NS_ConvertUTF16toUTF8(mPortId).get()));
+    NS_CancelAsyncCopy(mReadCopierCtx, NS_BASE_STREAM_CLOSED);
+    mReadCopierCtx = nullptr;
   }
-  if (mReadPipeSender) {
-    mReadPipeSender->CloseWithStatus(NS_BASE_STREAM_CLOSED);
-    mReadPipeSender = nullptr;
+  // mPlatformInputStream is kept alive: on Windows, IOCP associates the kernel
+  // file object permanently, so re-registering a new duplicate handle fails.
+  // The reader is only destroyed in DestroyPlatformReader (port close).
+}
+
+void SerialPortParent::DestroyPlatformReader() {
+  if (!mPlatformInputStream) {
+    return;
   }
+  MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+          ("SerialPortParent[%p]::DestroyPlatformReader calling "
+           "CloseWithStatus for port '%s'",
+           this, NS_ConvertUTF16toUTF8(mPortId).get()));
+  // PlatformPipeReader cancels pending I/O and dispatches the handle close
+  // to a background thread with NS_DISPATCH_EVENT_MAY_BLOCK, so USB-serial
+  // driver cleanup cannot block the IPC I/O thread.
+  mPlatformInputStream->CloseWithStatus(NS_ERROR_ABORT);
+  mPlatformInputStream = nullptr;
 }
 
 void SerialPortParent::StopWritePump() {
@@ -183,9 +198,45 @@ void SerialPortParent::StartReadPump(
     return;
   }
 
-  mReadPump =
-      MakeRefPtr<webserial::SerialPortReadPump>(mPortId, mReadPipeSender);
-  service->IOThread()->Dispatch(do_AddRef(mReadPump));
+  if (!mPlatformInputStream) {
+    uint32_t bufferSize = std::max(mPipeCapacity, kMinSerialPortPumpSize);
+    nsresult rv = service->GetReadStream(mPortId, bufferSize,
+                                         getter_AddRefs(mPlatformInputStream));
+    if (NS_FAILED(rv) || !mPlatformInputStream) {
+      MOZ_LOG(gWebSerialLog, LogLevel::Error,
+              ("SerialPortParent[%p]::StartReadPump GetReadStream failed for "
+               "port '%s': 0x%08x",
+               this, NS_ConvertUTF16toUTF8(mPortId).get(),
+               static_cast<uint32_t>(rv)));
+      mReadPipeSender->CloseWithStatus(NS_FAILED(rv) ? rv : NS_ERROR_FAILURE);
+      mReadPipeSender = nullptr;
+      return;
+    }
+  }
+
+  // aCloseSource=false: PlatformPipeReader must outlive the copy because its
+  // IOCP registration is permanent per file object on Windows, so we reuse
+  // it across flush/reattach cycles.
+  nsresult rv =
+      NS_AsyncCopy(mPlatformInputStream, mReadPipeSender, service->IOThread(),
+                   NS_ASYNCCOPY_VIA_READSEGMENTS, 4096, nullptr, nullptr,
+                   /* aCloseSource = */ false, /* aCloseSink = */ true,
+                   getter_AddRefs(mReadCopierCtx));
+  if (NS_FAILED(rv)) {
+    MOZ_LOG(gWebSerialLog, LogLevel::Error,
+            ("SerialPortParent[%p]::StartReadPump NS_AsyncCopy failed for "
+             "port '%s': 0x%08x",
+             this, NS_ConvertUTF16toUTF8(mPortId).get(),
+             static_cast<uint32_t>(rv)));
+    mReadPipeSender->CloseWithStatus(rv);
+    mReadPipeSender = nullptr;
+    return;
+  }
+
+  MOZ_LOG(gWebSerialLog, LogLevel::Info,
+          ("SerialPortParent[%p]::StartReadPump started async read for "
+           "port '%s' (pipeCapacity=%u)",
+           this, NS_ConvertUTF16toUTF8(mPortId).get(), mPipeCapacity));
 }
 
 void SerialPortParent::StartWritePump(
@@ -425,7 +476,7 @@ void SerialPortParent::NotifyDisconnected() {
            NS_ConvertUTF16toUTF8(mPortId).get()));
 
   if (mIsOpen) {
-    StopPumps();
+    StopPumpsBeforeClose();
     mIsOpen = false;
     RefPtr<SerialPlatformService> service =
         SerialPlatformService::GetInstance();
@@ -442,8 +493,15 @@ void SerialPortParent::NotifyDisconnected() {
   }
 }
 
-void SerialPortParent::StopPumps() {
+void SerialPortParent::StopPumpsBeforeClose() {
+  MOZ_LOG(gWebSerialLog, LogLevel::Debug,
+          ("SerialPortParent[%p]::StopPumpsBeforeClose for port '%s' "
+           "(hasReader=%d, "
+           "hasCopier=%d, hasWritePump=%d)",
+           this, NS_ConvertUTF16toUTF8(mPortId).get(), !!mPlatformInputStream,
+           !!mReadCopierCtx, !!mWritePump));
   StopReadPump();
+  DestroyPlatformReader();
   StopWritePump();
 }
 
@@ -457,7 +515,7 @@ void SerialPortParent::ActorDestroy(ActorDestroyReason aWhy) {
     mDeviceChangeProxy = nullptr;
   }
 
-  StopPumps();
+  StopPumpsBeforeClose();
 
   if (mIsOpen) {
     RefPtr<SerialPlatformService> service =

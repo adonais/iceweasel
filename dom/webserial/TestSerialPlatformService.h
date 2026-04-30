@@ -8,6 +8,8 @@
 #define mozilla_dom_TestSerialPlatformService_h
 
 #include "mozilla/dom/SerialPlatformService.h"
+#include "nsIAsyncInputStream.h"
+#include "nsIAsyncOutputStream.h"
 #include "nsTArray.h"
 
 namespace mozilla::dom {
@@ -18,7 +20,8 @@ struct MockSerialPort {
   IPCSerialOptions mOptions;
   IPCSerialOutputSignals mOutputSignals = {Some(false), Some(false),
                                            Some(false)};
-  nsTArray<uint8_t> mBuffer;
+  nsCOMPtr<nsIAsyncInputStream> mPipeReadStream;
+  nsCOMPtr<nsIAsyncOutputStream> mPipeWriteStream;
 };
 
 class TestSerialPlatformService final : public SerialPlatformService {
@@ -49,8 +52,6 @@ class TestSerialPlatformService final : public SerialPlatformService {
   nsresult OpenImpl(const nsString& aPortId,
                     const IPCSerialOptions& aOptions) override;
   nsresult CloseImpl(const nsString& aPortId) override;
-  nsresult ReadImpl(const nsString& aPortId, Span<uint8_t> aBuf,
-                    uint32_t& aBytesRead) override;
   nsresult WriteImpl(const nsString& aPortId,
                      Span<const uint8_t> aData) override;
   nsresult DrainImpl(const nsString& aPortId) override;
@@ -59,6 +60,8 @@ class TestSerialPlatformService final : public SerialPlatformService {
                           const IPCSerialOutputSignals& aSignals) override;
   nsresult GetSignalsImpl(const nsString& aPortId,
                           IPCSerialInputSignals& aSignals) override;
+  nsresult GetReadStreamImpl(const nsString& aPortId, uint32_t aBufferSize,
+                             nsIAsyncInputStream** aStream) override;
 
   MockSerialPort* FindPort(const nsString& aPortId);
   void RemoveMockDevice(const nsString& aId);

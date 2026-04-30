@@ -123,18 +123,6 @@ nsresult SerialPlatformService::Close(const nsString& aPortId) {
   return CloseImpl(aPortId);
 }
 
-nsresult SerialPlatformService::Read(const nsString& aPortId,
-                                     Span<uint8_t> aBuf, uint32_t& aBytesRead) {
-  aBytesRead = 0;
-  {
-    auto observerState = mObserverState.Lock();
-    if (observerState->shutdown) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-  }
-  return ReadImpl(aPortId, aBuf, aBytesRead);
-}
-
 nsresult SerialPlatformService::Write(const nsString& aPortId,
                                       Span<const uint8_t> aData) {
   {
@@ -186,6 +174,18 @@ nsresult SerialPlatformService::GetSignals(const nsString& aPortId,
     }
   }
   return GetSignalsImpl(aPortId, aSignals);
+}
+
+nsresult SerialPlatformService::GetReadStream(const nsString& aPortId,
+                                              uint32_t aBufferSize,
+                                              nsIAsyncInputStream** aStream) {
+  {
+    auto observerState = mObserverState.Lock();
+    if (observerState->shutdown) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+  }
+  return GetReadStreamImpl(aPortId, aBufferSize, aStream);
 }
 
 void SerialPlatformService::AddDeviceChangeObserver(
