@@ -390,7 +390,7 @@ class IPPProxyManagerSingleton extends EventTarget {
     }
     this.#schedulePassRotation(this.#pass);
 
-    const location = lazy.IPProtectionServerlist.getDefaultLocation();
+    const location = lazy.IPProtectionServerlist.getRecommendedLocation();
     const server = lazy.IPProtectionServerlist.selectServer(location?.city);
     if (!server) {
       throw ERRORS.SERVER_NOT_FOUND;
