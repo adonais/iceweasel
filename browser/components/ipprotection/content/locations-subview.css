@@ -5,7 +5,7 @@
 @import "chrome://global/skin/global.css";
 
 #locations-list-wrapper {
-  padding-block: var(--space-medium);
+  padding-block-end: var(--space-xlarge);
 }
 
 #locations-list-description {
@@ -85,4 +85,8 @@
 .location-description {
   font-size: var(--font-size-small);
   color: var(--text-color-deemphasized);
+}
+
+#locations-subview-promo {
+  margin-inline: var(--space-medium);
 }

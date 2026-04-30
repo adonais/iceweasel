@@ -114,10 +114,6 @@ export default class LocationsList extends MozLitElement {
     };
 
     return html`
-      <link
-        rel="stylesheet"
-        href="chrome://browser/content/ipprotection/locations-list.css"
-      />
       <div id="locations-list-wrapper">
         <span
           id="locations-list-description"

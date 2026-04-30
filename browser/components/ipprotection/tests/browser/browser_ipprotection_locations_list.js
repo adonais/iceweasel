@@ -4,6 +4,10 @@
 
 "use strict";
 
+const { LINKS } = ChromeUtils.importESModule(
+  "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
+);
+
 const MOCK_LOCATIONS_LIST = [
   { code: "US", available: true },
   { code: "CA", available: true },
@@ -37,13 +41,15 @@ async function openLocationsList(state = {}) {
   panel.showLocationSelector();
   await viewShownPromise;
 
-  await locationsView.querySelector(IPProtectionPanel.LOCATIONS_TAGNAME)
-    ?.updateComplete;
+  let locationsEl = locationsView.querySelector(
+    IPProtectionPanel.LOCATIONS_TAGNAME
+  );
+  await locationsEl?.updateComplete;
 
   let locationsList = locationsView.querySelector("locations-list");
   await locationsList?.updateComplete;
 
-  return { locationsList, locationsView };
+  return { locationsList, locationsView, locationsEl };
 }
 
 /**
@@ -207,6 +213,48 @@ add_task(async function test_locations_list_disabled_locations() {
 
   let usButton = locationsList.querySelector("#location-option-US");
   Assert.ok(!usButton.disabled, "available location should not be disabled");
+
+  await closePanel();
+  cleanupService();
+});
+
+/**
+ * Tests that moz-promo is shown when not upgraded
+ */
+add_task(async function test_promo_shown_when_not_upgraded() {
+  let { locationsEl } = await openLocationsList({ hasUpgraded: false });
+
+  let promo = locationsEl.querySelector("moz-promo#locations-subview-promo");
+  Assert.ok(promo, "moz-promo should be present when user has not upgraded");
+  Assert.equal(
+    promo.getAttribute("imagealignment"),
+    "end",
+    "promo should have imagealignment='end'"
+  );
+  Assert.ok(
+    promo.getAttribute("imagesrc"),
+    "promo should have an imagesrc attribute"
+  );
+
+  let button = promo.querySelector("moz-button");
+  Assert.ok(button, "promo should have an actions button");
+  let openWebLinkInStub = sinon.stub(window, "openWebLinkIn");
+  button.click();
+  Assert.ok(
+    openWebLinkInStub.calledOnce,
+    "openWebLinkIn should be called once"
+  );
+  cleanupService();
+});
+
+/**
+ * Tests that moz-promo is not shown when the user has upgraded.
+ */
+add_task(async function test_promo_not_shown_when_upgraded() {
+  let { locationsEl } = await openLocationsList({ hasUpgraded: true });
+
+  let promo = locationsEl.querySelector("moz-promo");
+  Assert.ok(!promo, "moz-promo should not be present when user has upgraded");
 
   await closePanel();
   cleanupService();
