@@ -32,7 +32,7 @@ UntypedManagedEndpoint::~UntypedManagedEndpoint() {
     mInner->mOtherSide->ActorEventTarget()->Dispatch(NS_NewRunnableFunction(
         "~ManagedEndpoint (Local)",
         [otherSide = mInner->mOtherSide, id = mInner->mId] {
-          if (IProtocol* actor = otherSide->Get(); actor && actor->CanRecv()) {
+          if (IProtocol* actor = otherSide->Get(); actor && actor->CanSend()) {
             MOZ_DIAGNOSTIC_ASSERT(actor->Id() == id, "Wrong Actor?");
             RefPtr<ActorLifecycleProxy> strongProxy(actor->GetLifecycleProxy());
             strongProxy->Get()->OnMessageReceived(

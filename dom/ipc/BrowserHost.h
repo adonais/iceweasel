@@ -60,7 +60,7 @@ class BrowserHost : public RemoteBrowser,
   TabId GetTabId() const override;
   LayersId GetLayersId() const override;
   BrowsingContext* GetBrowsingContext() const override;
-  bool CanRecv() const override;
+  bool CanSend() const override;
 
   Element* GetOwnerElement() const { return mRoot->GetOwnerElement(); }
   already_AddRefed<nsPIDOMWindowOuter> GetParentWindowOuter() const {

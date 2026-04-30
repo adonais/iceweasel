@@ -671,7 +671,7 @@ bool IToplevelProtocol::OpenOnSameThread(IToplevelProtocol* aTarget,
 }
 
 void IToplevelProtocol::NotifyImpendingShutdown() {
-  if (CanRecv()) {
+  if (CanSend()) {
     GetIPCChannel()->NotifyImpendingShutdown();
   }
 }

@@ -37,7 +37,7 @@ class BrowserBridgeHost final : public RemoteBrowser {
   TabId GetTabId() const override;
   LayersId GetLayersId() const override;
   BrowsingContext* GetBrowsingContext() const override;
-  bool CanRecv() const override;
+  bool CanSend() const override;
 
   void LoadURL(nsDocShellLoadState* aLoadState) override;
   void ResumeLoad(uint64_t aPendingSwitchId) override;

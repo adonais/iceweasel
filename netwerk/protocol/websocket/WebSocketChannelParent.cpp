@@ -44,7 +44,7 @@ mozilla::ipc::IPCResult WebSocketChannelParent::RecvDeleteSelf() {
   mChannel = nullptr;
   mAuthProvider = nullptr;
   IProtocol* mgr = Manager();
-  if (CanRecv() && !Send__delete__(this)) {
+  if (CanSend() && !Send__delete__(this)) {
     return IPC_FAIL_NO_REASON(mgr);
   }
   return IPC_OK();
@@ -229,7 +229,7 @@ WebSocketChannelParent::OnStart(nsISupports* aContext) {
     encrypted = channel->IsEncrypted();
     httpChannelId = channel->HttpChannelId();
   }
-  if (!CanRecv() || !SendOnStart(protocol, extensions, effectiveURL, encrypted,
+  if (!CanSend() || !SendOnStart(protocol, extensions, effectiveURL, encrypted,
                                  httpChannelId)) {
     return NS_ERROR_FAILURE;
   }
@@ -239,7 +239,7 @@ WebSocketChannelParent::OnStart(nsISupports* aContext) {
 NS_IMETHODIMP
 WebSocketChannelParent::OnStop(nsISupports* aContext, nsresult aStatusCode) {
   LOG(("WebSocketChannelParent::OnStop() %p\n", this));
-  if (!CanRecv() || !SendOnStop(aStatusCode)) {
+  if (!CanSend() || !SendOnStop(aStatusCode)) {
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
@@ -279,7 +279,7 @@ WebSocketChannelParent::OnMessageAvailable(nsISupports* aContext,
                                            const nsACString& aMsg) {
   LOG(("WebSocketChannelParent::OnMessageAvailable() %p\n", this));
 
-  if (!CanRecv()) {
+  if (!CanSend()) {
     return NS_ERROR_FAILURE;
   }
 
@@ -300,7 +300,7 @@ WebSocketChannelParent::OnBinaryMessageAvailable(nsISupports* aContext,
                                                  const nsACString& aMsg) {
   LOG(("WebSocketChannelParent::OnBinaryMessageAvailable() %p\n", this));
 
-  if (!CanRecv()) {
+  if (!CanSend()) {
     return NS_ERROR_FAILURE;
   }
 
@@ -319,7 +319,7 @@ WebSocketChannelParent::OnBinaryMessageAvailable(nsISupports* aContext,
 NS_IMETHODIMP
 WebSocketChannelParent::OnAcknowledge(nsISupports* aContext, uint32_t aSize) {
   LOG(("WebSocketChannelParent::OnAcknowledge() %p\n", this));
-  if (!CanRecv() || !SendOnAcknowledge(aSize)) {
+  if (!CanSend() || !SendOnAcknowledge(aSize)) {
     return NS_ERROR_FAILURE;
   }
   return NS_OK;
@@ -329,7 +329,7 @@ NS_IMETHODIMP
 WebSocketChannelParent::OnServerClose(nsISupports* aContext, uint16_t code,
                                       const nsACString& reason) {
   LOG(("WebSocketChannelParent::OnServerClose() %p\n", this));
-  if (!CanRecv() || !SendOnServerClose(code, reason)) {
+  if (!CanSend() || !SendOnServerClose(code, reason)) {
     return NS_ERROR_FAILURE;
   }
   return NS_OK;

@@ -312,7 +312,7 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mUpdatedDimensions(false),
       mSizeMode(nsSizeMode_Normal),
       mCreatingWindow(false),
-      mMarkedDestroying(false),
+      mHoldingGroupKeepAlive(false),
       mIsDestroyed(false),
       mRemoteTargetSetsCursor(false),
       mIsPreservingLayers(false),
@@ -760,15 +760,14 @@ void BrowserParent::Destroy() {
   mContentParentKeepAlive = nullptr;
 #endif
 
-  // This `AddKeepAlive` will be cleared if `mMarkedDestroying` is set in
+  // This `AddKeepAlive` will be cleared if `mHoldingGroupKeepAlive` is set in
   // `ActorDestroy`. Out of caution, we don't add the `KeepAlive` if our IPC
   // actor has somehow already been destroyed, as that would mean `ActorDestroy`
   // won't be called.
-  if (CanRecv()) {
+  if (CanSend()) {
     mBrowsingContext->Group()->AddKeepAlive();
+    mHoldingGroupKeepAlive = true;
   }
-
-  mMarkedDestroying = true;
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvDidUnsuppressPainting() {
@@ -845,10 +844,9 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
     }
   }
 
-  // If we were shutting down normally, we held a reference to our
-  // BrowsingContextGroup in `BrowserParent::Destroy`. Clear that reference
-  // here.
-  if (mMarkedDestroying) {
+  // Release the reference to our `BrowsingContextGroup` we took in
+  // `BrowserParent::Destroy`.
+  if (mHoldingGroupKeepAlive) {
     mBrowsingContext->Group()->RemoveKeepAlive();
   }
 

@@ -964,9 +964,9 @@ class BrowserParent final : public PBrowserParent,
   int32_t mActiveSuppressDisplayportCount = 0;
 #endif
 
-  // When true, we've initiated normal shutdown and notified our managing
-  // PContent.
-  bool mMarkedDestroying : 1;
+  // When true, we're holding a KeepAlive on mBrowsingContext->Group() which
+  // must be cleared in ActorDestroy.
+  bool mHoldingGroupKeepAlive : 1;
   // When true, the BrowserParent is invalid and we should not send IPC
   // messages anymore.
   bool mIsDestroyed : 1;

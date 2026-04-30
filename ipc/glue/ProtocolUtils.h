@@ -137,12 +137,9 @@ enum class LinkStatus : uint8_t {
   // A live link is connected to the other side of this actor.
   Connected,
 
-  // The link has begun being destroyed. Messages may no longer be sent. The
-  // ActorDestroy method is queued to be called, but has not been invoked yet,
-  // as managed actors still need to be destroyed first.
-  //
-  // NOTE: While no new IPC can be received at this point, `CanRecv` will still
-  // be true until `LinkStatus::Destroyed`.
+  // The link has begun being destroyed. Messages may no longer be sent or
+  // received. The ActorDestroy method is queued to be called, but has not been
+  // invoked yet, as managed actors still need to be destroyed first.
   Doomed,
 
   // The actor has been destroyed, and ActorDestroy has been called, however an
@@ -218,13 +215,6 @@ class IProtocol : public HasResultCodes {
 
   Side GetSide() const { return mSide; }
   bool CanSend() const { return mLinkStatus == LinkStatus::Connected; }
-
-  // Returns `true` for an active actor until the actor's `ActorDestroy` method
-  // has been called.
-  bool CanRecv() const {
-    return mLinkStatus == LinkStatus::Connected ||
-           mLinkStatus == LinkStatus::Doomed;
-  }
 
   // Deallocate a managee given its type.
   virtual void DeallocManagee(ProtocolId, IProtocol*) = 0;

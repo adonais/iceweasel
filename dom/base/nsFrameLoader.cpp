@@ -1927,7 +1927,7 @@ nsresult nsFrameLoaderDestroyRunnable::Run() {
       // called at the right time. The frame loader is kept alive by
       // mFrameLoader during this time.
       if (!mFrameLoader->GetRemoteBrowser() ||
-          !mFrameLoader->GetRemoteBrowser()->CanRecv()) {
+          !mFrameLoader->GetRemoteBrowser()->CanSend()) {
         // When the docshell is destroyed, NotifyWindowIDDestroyed is called to
         // asynchronously notify {outer,inner}-window-destroyed via a runnable.
         // We don't want DestroyComplete to run until after those runnables have

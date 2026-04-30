@@ -31,8 +31,8 @@ BrowsingContext* BrowserBridgeHost::GetBrowsingContext() const {
   return mBridge->GetBrowsingContext();
 }
 
-bool BrowserBridgeHost::CanRecv() const {
-  return mBridge && mBridge->CanRecv();
+bool BrowserBridgeHost::CanSend() const {
+  return mBridge && mBridge->CanSend();
 }
 
 void BrowserBridgeHost::LoadURL(nsDocShellLoadState* aLoadState) {

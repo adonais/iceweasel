@@ -264,13 +264,13 @@ static IProtocol* GetOtherInProcessActor(IProtocol* aActor) {
 
   // Discover the manager of aActor which is PInProcess.
   IProtocol* current = aActor;
-  while (current && current->CanRecv()) {
+  while (current && current->CanSend()) {
     if (current->GetProtocolId() == PInProcessMsgStart) {
       break;  // Found the correct actor.
     }
     current = current->Manager();
   }
-  if (!current || !current->CanRecv()) {
+  if (!current || !current->CanSend()) {
     return nullptr;  // Not a live PInProcess actor, return |nullptr|
   }
 

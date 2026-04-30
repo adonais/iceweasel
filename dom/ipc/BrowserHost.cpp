@@ -45,7 +45,7 @@ BrowsingContext* BrowserHost::GetBrowsingContext() const {
   return mRoot->GetBrowsingContext();
 }
 
-bool BrowserHost::CanRecv() const { return mRoot && mRoot->CanRecv(); }
+bool BrowserHost::CanSend() const { return mRoot && mRoot->CanSend(); }
 
 a11y::DocAccessibleParent* BrowserHost::GetTopLevelDocAccessible() const {
   return mRoot ? mRoot->GetTopLevelDocAccessible() : nullptr;
