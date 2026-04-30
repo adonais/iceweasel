@@ -623,6 +623,87 @@
       "firefoxLabsDescriptionLinks": null,
       "firefoxLabsGroup": null,
       "requiresRestart": false
+    },
+    {
+      "schemaVersion": "1.12.0",
+      "slug": "shake-to-summarize-android-mistral-worldwide-english-release-experiment",
+      "id": "shake-to-summarize-android-mistral-worldwide-english-release-experiment",
+      "arguments": {},
+      "application": "org.mozilla.firefox",
+      "appName": "fenix",
+      "appId": "org.mozilla.firefox",
+      "channel": "release",
+      "userFacingName": "Shake To Summarize - Android - Mistral Worldwide English - Release Experiment",
+      "userFacingDescription": "Shake to Summarize feature experiment",
+      "isEnrollmentPaused": false,
+      "isRollout": false,
+      "bucketConfig": {
+        "randomizationUnit": "nimbus_id",
+        "namespace": "fenix-shake-to-summarize-release-1",
+        "start": 0,
+        "count": 2000,
+        "total": 10000
+      },
+      "featureIds": [
+        "shake-to-summarize"
+      ],
+      "probeSets": [],
+      "outcomes": [],
+      "branches": [
+        {
+          "slug": "control",
+          "ratio": 1,
+          "feature": {
+            "featureId": "this-is-included-for-mobile-pre-96-support",
+            "enabled": false,
+            "value": {}
+          },
+          "features": [
+            {
+              "featureId": "shake-to-summarize",
+              "enabled": true,
+              "value": {
+                "enabled": false
+              }
+            }
+          ]
+        },
+        {
+          "slug": "treatment-a",
+          "ratio": 1,
+          "feature": {
+            "featureId": "this-is-included-for-mobile-pre-96-support",
+            "enabled": false,
+            "value": {}
+          },
+          "features": [
+            {
+              "featureId": "shake-to-summarize",
+              "enabled": true,
+              "value": {
+                "enabled": true
+              }
+            }
+          ]
+        }
+      ],
+      "targeting": "((is_already_enrolled) || ((app_version|versionCompare('151.!') >= 0) && (language in ['en']))) && (user_disabled_ai == false)",
+      "startDate": "2026-04-29",
+      "enrollmentEndDate": null,
+      "endDate": null,
+      "proposedDuration": 14,
+      "proposedEnrollment": 14,
+      "referenceBranch": "control",
+      "featureValidationOptOut": false,
+      "localizations": null,
+      "locales": null,
+      "publishedDate": "2026-04-29T23:09:53.601842Z",
+      "isFirefoxLabsOptIn": false,
+      "firefoxLabsTitle": "",
+      "firefoxLabsDescription": "",
+      "firefoxLabsDescriptionLinks": null,
+      "firefoxLabsGroup": "",
+      "requiresRestart": false
     }
   ]
 }
