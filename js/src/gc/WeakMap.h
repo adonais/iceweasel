@@ -525,6 +525,9 @@ class WeakMap : public WeakMapBase {
   }
 
   void valueReadBarrier(const JS::Value& v) const {
+    // js::jit::WeakMapValueReadBarrier is a specialized version of this
+    // function designed to be called from jitcode. If this code is changed, it
+    // should be kept in sync.
     JS::ExposeValueToActiveJS(v);
     if (MOZ_UNLIKELY(v.isSymbol())) {
       gc::MarkSymbolForWeakMapReadBarrier(zone(), v.toSymbol());

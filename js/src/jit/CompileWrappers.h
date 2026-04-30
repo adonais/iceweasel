@@ -127,6 +127,7 @@ class CompileZone {
   bool allocNurseryObjects();
   bool allocNurseryStrings();
   bool allocNurseryBigInts();
+  void* addressOfZone();
   void* addressOfNurseryPosition();
 
   void* addressOfNurseryAllocatedSites();

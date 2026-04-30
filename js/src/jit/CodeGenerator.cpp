@@ -22512,10 +22512,13 @@ void CodeGenerator::visitWeakMapGetObject(LWeakMapGetObject* ins) {
     regsToSave.takeUnchecked(scratch5);
     masm.PushRegsInMask(regsToSave);
 
-    using Fn = void (*)(js::gc::Cell* cell);
+    masm.movePtr(ImmPtr(mirGen().realm->zone()->addressOfZone()), scratch2);
+
+    using Fn = void (*)(js::gc::TenuredCell*, Zone*);
     masm.setupAlignedABICall();
     masm.passABIArg(scratch);
-    masm.callWithABI<Fn, js::jit::ReadBarrier>();
+    masm.passABIArg(scratch2);
+    masm.callWithABI<Fn, js::jit::WeakMapValueReadBarrier>();
 
     masm.PopRegsInMask(regsToSave);
 
