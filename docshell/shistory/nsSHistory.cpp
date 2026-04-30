@@ -1482,7 +1482,9 @@ static bool MaybeLoadBFCache(const nsSHistory::LoadEntryResult& aLoadEntry) {
       }
     }
 
-    FinishRestore(canonicalBC, loadState, she, frameLoader, canSave);
+    if (!canonicalBC->IsReplaced()) {
+      FinishRestore(canonicalBC, loadState, she, frameLoader, canSave);
+    }
     return true;
   }
   if (frameLoader) {
