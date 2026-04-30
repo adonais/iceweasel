@@ -730,7 +730,10 @@ async function openUniqueFileInFolder(folderpath) {
   await worker.post("open", [testFile]);
 
   await Assert.rejects(
-    IOUtils.remove(folderpath),
+    IOUtils.remove(folderpath, {
+      recursive: true,
+      retryReadonly: true,
+    }),
     /NS_ERROR_FILE_DIR_NOT_EMPTY/,
     "attempt to remove folder threw an exception"
   );
@@ -849,6 +852,11 @@ async function checkBackupWithUnremovableItems(unremovableItemsLimit) {
  * reached.
  */
 add_task(
+  {
+    // Windows will prevent folder deletion if the folder has an open file.
+    // Other platforms do not do this.
+    skip_if: () => AppConstants.platform !== "win",
+  },
   async function test_createBackup_robustToNonReadonlyFileSystemErrorsAllowOneNonReadonly() {
     await checkBackupWithUnremovableItems(1);
   }
@@ -859,6 +867,11 @@ add_task(
  * 0.
  */
 add_task(
+  {
+    // Windows will prevent folder deletion if the folder has an open file.
+    // Other platforms do not do this.
+    skip_if: () => AppConstants.platform !== "win",
+  },
   async function test_createBackup_robustToNonReadonlyFileSystemErrors() {
     await checkBackupWithUnremovableItems(0);
   }
