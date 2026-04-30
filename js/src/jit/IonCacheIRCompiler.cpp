@@ -966,7 +966,7 @@ bool IonCacheIRCompiler::emitCallScriptedGetterResult(
   Register callee = allocator.useRegister(masm, calleeId);
   AutoScratchRegister scratch(allocator, masm);
 
-  int32_t nargsAndFlags = int32StubField(nargsAndFlagsOffset);
+  uint32_t nargsAndFlags = int32StubField(nargsAndFlagsOffset);
   size_t nargs = nargsAndFlags >> JSFunction::ArgCountShift;
 
   allocator.discardStack(masm);
@@ -1770,7 +1770,7 @@ bool IonCacheIRCompiler::emitCallScriptedSetter(ObjOperandId receiverId,
   Register callee = allocator.useRegister(masm, calleeId);
   ConstantOrRegister val = allocator.useConstantOrRegister(masm, rhsId);
 
-  int32_t nargsAndFlags = int32StubField(nargsAndFlagsOffset);
+  uint32_t nargsAndFlags = int32StubField(nargsAndFlagsOffset);
   size_t nargs = nargsAndFlags >> JSFunction::ArgCountShift;
 
   AutoScratchRegister scratch(allocator, masm);
