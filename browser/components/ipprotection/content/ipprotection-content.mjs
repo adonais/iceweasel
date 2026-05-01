@@ -445,6 +445,7 @@ export default class IPProtectionContentElement extends MozLitElement {
           />
         </span>
         <div class="skeleton skeleton-line-thick"></div>
+        <div class="skeleton skeleton-line-thick"></div>
       </div>
     `;
   }

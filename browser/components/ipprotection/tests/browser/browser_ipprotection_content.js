@@ -250,9 +250,10 @@ add_task(async function test_enrolling_skeleton() {
     container.querySelector(".skeleton-line"),
     "Skeleton line element should be present"
   );
-  Assert.ok(
-    container.querySelector(".skeleton-line-thick"),
-    "Skeleton line thick element should be present"
+  Assert.equal(
+    container.querySelectorAll(".skeleton-line-thick").length,
+    2,
+    "Two skeleton line thick elements should be present"
   );
 
   Assert.ok(
