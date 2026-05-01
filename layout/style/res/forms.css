@@ -141,10 +141,8 @@ button,
   baseline-source: first;
 }
 
-:is(:placeholder-shown, :-moz-autofill-preview)::-moz-text-control-editing-root {
-  inline-size: 0;
-  white-space: nowrap;
-  overflow: clip;
+:-moz-autofill-preview::-moz-text-control-editing-root {
+  visibility: hidden;
 }
 
 ::placeholder,
@@ -157,6 +155,8 @@ button,
   pointer-events: none;
   user-select: none;
   display: none;
+  /* Make sure we overlap the text control editor */
+  margin-inline-start: -100%;
 }
 
 ::-moz-text-control-preview {
