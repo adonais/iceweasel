@@ -107,6 +107,28 @@ aiwindow-firstrun-model-allpurpose-body = Solid fit for most needs
 aiwindow-firstrun-model-personal-label = Personal
 aiwindow-firstrun-model-personal-body = Most tailored answers
 aiwindow-firstrun-button = Let’s go!
+aiwindow-firstrun-back-button = Back
+aiwindow-firstrun-next-button = Next
+
+## Firstrun memories onboarding
+
+aiwindow-firstrun-memories-title = More helpful answers, on your terms
+aiwindow-firstrun-memories-subtitle = Smart Window can learn from your chats, browsing, or both to create memories. They make answers more helpful over time.
+
+aiwindow-firstrun-memories-conversation-title = Keep the conversation going
+aiwindow-firstrun-memories-conversation-body = Learning from chats means you’ll have to repeat yourself less.
+
+aiwindow-firstrun-memories-relevance-title = More relevant answers
+aiwindow-firstrun-memories-relevance-body = Learning from browsing gives Smart Window the bigger picture.
+
+aiwindow-firstrun-memories-privacy-title = Private by design
+aiwindow-firstrun-memories-privacy-body = Memories are stored on this device. Delete or turn off anytime.
+
+aiwindow-firstrun-memories-choose-label = Choose what Smart Window learns from
+aiwindow-firstrun-memories-checkbox-chats = Chats in Smart Window
+aiwindow-firstrun-memories-checkbox-browsing = Browsing across { -brand-product-name }
+aiwindow-firstrun-memories-update-settings = Update in settings anytime.
+aiwindow-firstrun-memories-no-create = Got it. Smart Window won’t create memories. Update in settings anytime.
 
 ## Ask Toolbar Button
 

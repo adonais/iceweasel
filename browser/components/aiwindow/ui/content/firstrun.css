@@ -34,6 +34,7 @@
   --button-active-bg: var(--button-gradient);
   --button-active-color: var(--button-text-color);
   --button-disabled-bg: var(--button-gradient);
+  --button-disabled-bg-color: var(--bg-transparent);
   --button-disabled-color: var(--button-text-color);
 
   @media (forced-colors) {
@@ -46,6 +47,7 @@
     --button-active-bg: var(--button-background-color-primary-active);
     --button-active-color: var(--button-text-color-primary-active);
     --button-disabled-bg: var(--button-background-color-primary-disabled);
+    --button-disabled-bg-color: var(--button-background-color-primary-disabled);
     --button-disabled-color: var(--button-text-color-primary-disabled);
   }
 
@@ -75,7 +77,8 @@
     }
   }
 
-  .screen.AI_WINDOW_CHOOSE_MODEL {
+  .screen.AI_WINDOW_CHOOSE_MODEL,
+  .screen.AI_WINDOW_MEMORIES {
     h2,
     p {
       letter-spacing: 0.3px;
@@ -91,6 +94,7 @@
     .welcome-text h2 {
       opacity: 0.8;
       margin-top: var(--space-medium);
+      font-size: var(--font-size-root);
     }
 
     button.primary {
@@ -104,7 +108,8 @@
       margin: 0 auto;
       border-radius: var(--border-radius-medium);
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom gradient per Figma design */
-      background: var(--button-gradient);
+      background-image: var(--button-gradient);
+      background-origin: border-box;
       color: var(--button-text-color);
       text-align: center;
       font-size: var(--button-font-size);
@@ -117,13 +122,15 @@
 
     button.primary:hover {
       border-color: var(--button-border-color-primary-hover);
-      background: var(--button-hover-bg);
+      background-image: var(--button-hover-bg);
+      background-origin: border-box;
       color: var(--button-hover-color);
     }
 
     button.primary:active {
       border-color: var(--button-border-color-primary-active);
-      background: var(--button-active-bg);
+      background-image: var(--button-active-bg);
+      background-origin: border-box;
       color: var(--button-active-color);
     }
 
@@ -132,8 +139,175 @@
       pointer-events: none;
       cursor: default;
       border-color: var(--button-border-color-primary-disabled);
-      background: var(--button-disabled-bg);
+      background-image: var(--button-disabled-bg);
+      background-color: var(--button-disabled-bg-color);
+      background-origin: border-box;
       color: var(--button-disabled-color);
+    }
+  }
+
+  .screen.AI_WINDOW_MEMORIES {
+    .section-main {
+      margin-top: calc(var(--space-xxlarge) * 3);
+    }
+    .welcome-text {
+      margin-bottom: var(--space-large);
+    }
+
+    .welcome-text p {
+      opacity: var(--opacity-deemphasized);
+      margin-block: var(--space-small) 0;
+    }
+
+    #content-tiles-container {
+      margin: 0;
+    }
+
+    .confirmation-checklist-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-medium);
+      padding: 0;
+      transition: var(--transition);
+
+      .onboardingContainer.transition-in & {
+        opacity: 0;
+        translate: 0 calc(-1 * var(--translate));
+      }
+
+      .confirmation-checklist-item {
+        display: grid;
+        grid-template-columns: 35px 1fr;
+        align-items: start;
+        margin-inline-start: 0;
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom spacing per Figma design */
+        margin-block-end: 10px;
+      }
+
+      .confirmation-checklist-icon-wrapper {
+        display: contents;
+      }
+
+      .confirmation-checklist-icon {
+        margin-top: var(--space-xxsmall);
+        -moz-context-properties: fill;
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom brand color per Figma design */
+        fill: var(--brand-text-color);
+      }
+
+      .confirmation-checklist-text {
+        grid-column: 2;
+        margin: 0;
+        text-align: start;
+      }
+
+      .confirmation-checklist-text .body-text {
+        margin: 0;
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-root);
+      }
+
+      .confirmation-checklist-subtext {
+        grid-column: 2;
+        opacity: var(--opacity-deemphasized);
+        text-align: start;
+        margin: 0;
+        font-size: var(--font-size-small);
+      }
+
+      .confirmation-checklist-subtext p {
+        margin: 0;
+        transition: unset;
+      }
+    }
+
+    #multi-stage-multi-select-label {
+      align-self: center;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom width per Figma design */
+      width: 420px;
+      margin-block: 0 var(--space-small);
+      font-size: var(--font-size-root);
+      opacity: var(--opacity-deemphasized);
+    }
+
+    #multi-stage-multi-select-footer-label {
+      align-self: center;
+      width: var(--size-layout-large);
+      text-align: center;
+      margin-block: var(--space-small) 0;
+      font-size: var(--font-size-root);
+      font-weight: normal;
+      opacity: var(--opacity-deemphasized);
+    }
+
+    .multi-select-container {
+      width: 100%;
+      gap: 0;
+      margin-block: 0;
+      padding: 0;
+      align-items: center;
+
+      .checkbox-container.multi-select-item {
+        width: var(--size-layout-large);
+        font-size: var(--font-size-root);
+        margin: 0;
+        grid-template-columns: 35px 1fr;
+        padding: var(--space-medium) var(--space-large);
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom card background per Figma design */
+        background: var(--card-bg);
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom border per Figma design */
+        border-inline: var(--border-width) solid var(--card-border-color);
+        border-block-end: var(--border-width) solid var(--card-border-color);
+      }
+
+      .checkbox-container.multi-select-item:first-of-type {
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom border per Figma design */
+        border-block-start: var(--border-width) solid var(--card-border-color);
+        border-start-start-radius: var(--border-radius-medium);
+        border-start-end-radius: var(--border-radius-medium);
+      }
+
+      .checkbox-container.multi-select-item:last-of-type {
+        border-end-start-radius: var(--border-radius-medium);
+        border-end-end-radius: var(--border-radius-medium);
+      }
+    }
+
+    .action-buttons {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-small);
+      margin-top: var(--space-xxlarge);
+    }
+
+    button.secondary {
+      width: calc(var(--size-item-xlarge) * 2.5);
+      height: var(--size-item-xlarge);
+      padding: 0;
+      border-radius: var(--border-radius-medium);
+      /* Hide the label text but keep it for assistive technology. */
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- transparent intentionally hides the visible label text in favor of the arrow icon */
+      color: transparent;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom brand background per Figma design */
+      background-color: var(--card-border-color);
+      background-image: url("chrome://browser/skin/back.svg");
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: var(--icon-size-medium);
+      -moz-context-properties: fill;
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom brand color per Figma design */
+      fill: var(--brand-text-color);
+      border: var(--border-width) solid transparent;
+      cursor: pointer;
+    }
+
+    button.secondary:dir(rtl) {
+      background-image: url("chrome://browser/skin/forward.svg");
+    }
+
+    button.secondary:hover {
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens -- custom brand border per Figma design */
+      border-color: var(--card-hovered-border-color);
     }
   }
 

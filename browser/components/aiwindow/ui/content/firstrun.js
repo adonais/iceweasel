@@ -14,6 +14,10 @@ const MODEL_PREF = "browser.smartwindow.firstrun.modelChoice";
 const AUTO_ADVANCE_PREF = "browser.smartwindow.firstrun.autoAdvanceMS";
 const FIRST_RUN_COMPLETE_PREF = "browser.smartwindow.firstrun.hasCompleted";
 const EXPLAINER_PAGE_PREF = "browser.smartwindow.firstrun.explainerURL";
+const MEMORIES_FROM_CONVERSATION_PREF =
+  "browser.smartwindow.memories.generateFromConversation";
+const MEMORIES_FROM_HISTORY_PREF =
+  "browser.smartwindow.memories.generateFromHistory";
 const { getAllModelsData } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs"
 );
@@ -184,19 +188,187 @@ function createAIWindowConfig(modelData) {
           primary_button: {
             disabled: "hasActiveSingleSelect",
             label: {
-              string_id: "aiwindow-firstrun-button",
+              string_id: "aiwindow-firstrun-next-button",
             },
             action: {
-              type: "SET_PREF",
-              data: {
-                pref: {
-                  name: FIRST_RUN_COMPLETE_PREF,
-                  value: true,
-                },
-              },
               navigate: true,
             },
           },
+        },
+      },
+      {
+        id: "AI_WINDOW_MEMORIES",
+        force_hide_steps_indicator: true,
+        content: {
+          position: "center",
+          background: "transparent",
+          screen_style: {
+            width: "650px",
+          },
+          title: {
+            string_id: "aiwindow-firstrun-memories-title",
+          },
+          subtitle: {
+            string_id: "aiwindow-firstrun-memories-subtitle",
+            width: "460px",
+          },
+          primary_button: {
+            label: {
+              string_id: "aiwindow-firstrun-back-button",
+            },
+            style: "secondary",
+            flow: "row",
+            action: {
+              goBack: true,
+              navigate: true,
+            },
+          },
+          additional_button: {
+            label: {
+              string_id: "aiwindow-firstrun-button",
+            },
+            flow: "row",
+            action: {
+              type: "MULTI_ACTION",
+              collectSelect: true,
+              navigate: true,
+              data: {
+                actions: [
+                  {
+                    type: "SET_PREF",
+                    data: {
+                      pref: {
+                        name: FIRST_RUN_COMPLETE_PREF,
+                        value: true,
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
+          tiles: [
+            {
+              type: "confirmation-checklist",
+              data: {
+                inert: true,
+                items: [
+                  {
+                    icon: {
+                      background:
+                        "center / contain no-repeat url('chrome://browser/content/aiwindow/assets/new-chat.svg')",
+                      height: "20px",
+                      width: "20px",
+                    },
+                    text: {
+                      string_id:
+                        "aiwindow-firstrun-memories-conversation-title",
+                      fontWeight: "600",
+                    },
+                    subtext: {
+                      string_id: "aiwindow-firstrun-memories-conversation-body",
+                    },
+                  },
+                  {
+                    icon: {
+                      background:
+                        "center / contain no-repeat url('chrome://global/skin/icons/settings.svg')",
+                      height: "20px",
+                      width: "20px",
+                    },
+                    text: {
+                      string_id: "aiwindow-firstrun-memories-relevance-title",
+                      fontWeight: "600",
+                    },
+                    subtext: {
+                      string_id: "aiwindow-firstrun-memories-relevance-body",
+                    },
+                  },
+                  {
+                    icon: {
+                      background:
+                        "center / contain no-repeat url('chrome://global/skin/icons/security.svg')",
+                      height: "20px",
+                      width: "20px",
+                    },
+                    text: {
+                      string_id: "aiwindow-firstrun-memories-privacy-title",
+                      fontWeight: "600",
+                    },
+                    subtext: {
+                      string_id: "aiwindow-firstrun-memories-privacy-body",
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              type: "multiselect",
+              label: {
+                string_id: "aiwindow-firstrun-memories-choose-label",
+              },
+              footer: {
+                unCheckAllLabel: {
+                  string_id: "aiwindow-firstrun-memories-no-create",
+                },
+                checkedLabel: {
+                  string_id: "aiwindow-firstrun-memories-update-settings",
+                },
+              },
+              data: [
+                {
+                  id: "memories-chats",
+                  defaultValue: true,
+                  label: {
+                    string_id: "aiwindow-firstrun-memories-checkbox-chats",
+                  },
+                  action: {
+                    type: "SET_PREF",
+                    data: {
+                      pref: {
+                        name: MEMORIES_FROM_CONVERSATION_PREF,
+                        value: true,
+                      },
+                    },
+                  },
+                  uncheckedAction: {
+                    type: "SET_PREF",
+                    data: {
+                      pref: {
+                        name: MEMORIES_FROM_CONVERSATION_PREF,
+                        value: false,
+                      },
+                    },
+                  },
+                },
+                {
+                  id: "memories-browsing",
+                  defaultValue: true,
+                  label: {
+                    string_id: "aiwindow-firstrun-memories-checkbox-browsing",
+                  },
+                  action: {
+                    type: "SET_PREF",
+                    data: {
+                      pref: {
+                        name: MEMORIES_FROM_HISTORY_PREF,
+                        value: true,
+                      },
+                    },
+                  },
+                  uncheckedAction: {
+                    type: "SET_PREF",
+                    data: {
+                      pref: {
+                        name: MEMORIES_FROM_HISTORY_PREF,
+                        value: false,
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
         },
       },
     ],
@@ -245,6 +417,22 @@ async function renderFirstRun() {
           const prefValue = Services.prefs.getStringPref(MODEL_PREF, "");
           Glean.smartWindow.onboardingModelNavigate.record({
             model: prefValue || "",
+          });
+        } else if (
+          source === "additional_button" &&
+          message_id.includes("AI_WINDOW_MEMORIES")
+        ) {
+          Glean.smartWindow.onboardingMemoriesNavigate.record();
+        }
+        break;
+
+      case "SELECT_CHECKBOX":
+        if (
+          message_id.includes("AI_WINDOW_MEMORIES") &&
+          Array.isArray(source)
+        ) {
+          Glean.smartWindow.onboardingMemoriesSettings.record({
+            source: source.length ? source.join(",") : "",
           });
         }
         break;

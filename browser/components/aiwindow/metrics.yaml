@@ -600,7 +600,7 @@ smart_window:
   onboarding_model_navigate:
     type: event
     description: |
-      Recorded when user clicks done on the model selection screen
+      Recorded when user clicks next on the model selection screen
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2009613
     data_reviews:
@@ -614,6 +614,41 @@ smart_window:
         description: >
           Identifier for the selected model during onboarding when user clicks done,
           for example: '1', '2', '3'
+        type: string
+    expires: never
+
+  onboarding_memories_navigate:
+    type: event
+    description: |
+      Recorded when user clicks done on the memories onboarding screen
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032998
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032998
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - pdahiya@mozilla.com
+    expires: never
+
+  onboarding_memories_settings:
+    type: event
+    description: |
+      Records memories checklist selections made by user on the memories onboarding screen
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032998
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032998
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - pdahiya@mozilla.com
+    extra_keys:
+      source:
+        description: >
+          Comma-separated list of memory checkbox ids the user had selected
+          when clicking done, for example: 'memories-chats,memories-browsing'.
+          Empty string if the user deselects all options
         type: string
     expires: never
 
