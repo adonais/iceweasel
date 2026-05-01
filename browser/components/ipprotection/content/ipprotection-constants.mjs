@@ -14,6 +14,17 @@ export const LINKS = Object.freeze({
     );
   },
 
+  // Used for the upgrade promo button in the locations subview
+  get LOCATION_PROMO_URL() {
+    return (
+      Services.prefs.getCharPref(
+        "browser.ipProtection.productVpn.endpoint",
+        "https://www.mozilla.org"
+      ) +
+      "/products/vpn/?utm_medium=firefox-desktop&utm_source=vpn-panel&utm_campaign=fx-vpn&utm_content=location-selector-promo"
+    );
+  },
+
   SUPPORT_SLUG: "built-in-vpn",
 });
 

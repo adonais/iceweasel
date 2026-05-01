@@ -1187,9 +1187,11 @@ export class IPProtectionPanel {
         Services.prefs.setBoolPref(LOCATION_BADGE_DISMISSED_PREF, true);
         this.setState({ showLocationButtonBadge: false });
       }
+      Glean.ipprotection.locationSelectorButtonClicked.record();
       this.showLocationSelector();
     } else if (event.type == "IPProtection:UserSelectLocation") {
       const { code } = event.detail;
+      Glean.ipprotection.locationChanged.record({ location: code });
       Services.prefs.setStringPref(EGRESS_LOCATION_PREF, code);
       if (lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE) {
         lazy.IPPProxyManager.switch(code === "REC" ? undefined : code);
