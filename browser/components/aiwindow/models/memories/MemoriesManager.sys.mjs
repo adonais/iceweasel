@@ -56,6 +56,8 @@ const DEFAULT_CHAT_HALF_LIFE_DAYS_FULL_RESULTS = 7;
 
 const LAST_HISTORY_MEMORY_TS_ATTRIBUTE = "last_history_memory_ts";
 const LAST_CONVERSATION_MEMORY_TS_ATTRIBUTE = "last_chat_memory_ts";
+
+const PREF_FIRSTRUN_HAS_COMPLETED = "browser.smartwindow.firstrun.hasCompleted";
 /**
  * MemoriesManager class
  */
@@ -676,6 +678,8 @@ export class MemoriesManager {
    * Gating logic for all schedulers:
    * - browser.smartwindow.enabled pref
    * - memories-from-source specific pref (history / conversation)
+   * - ToS consent
+   * - browser.smartwindow.firstrun.hasCompleted pref
    * - and whether any AIWindow is currently active
    *
    * If window APIs are not available (or throw), this falls back to false.
@@ -705,7 +709,17 @@ export class MemoriesManager {
 
     const hasConsent = AIWindowAccountAuth.hasToSConsent;
 
-    if (!aiWindowEnabled || !memoriesEnabled || !hasConsent) {
+    const hasFirstrunCompleted = Services.prefs.getBoolPref(
+      PREF_FIRSTRUN_HAS_COMPLETED,
+      false
+    );
+
+    if (
+      !aiWindowEnabled ||
+      !memoriesEnabled ||
+      !hasConsent ||
+      !hasFirstrunCompleted
+    ) {
       return false;
     }
 
