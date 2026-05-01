@@ -1654,10 +1654,11 @@ class Element : public FragmentOrElement {
 
   void UnattachShadow();
 
-  ShadowRoot* GetShadowRootByMode() const;
   void SetSlot(const nsAString& aName, ErrorResult& aError);
   void GetSlot(nsAString& aName);
 
+  ShadowRoot* GetShadowRootForBindings() const;
+  ShadowRoot* GetOpenOrClosedShadowRoot(nsIPrincipal& aSubject) const;
   ShadowRoot* GetShadowRoot() const {
     const nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
     return slots ? slots->mShadowRoot.get() : nullptr;

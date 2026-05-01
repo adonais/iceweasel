@@ -289,10 +289,10 @@ partial interface Element {
   // Shadow DOM v1
   [Throws, UseCounter]
   ShadowRoot attachShadow(ShadowRootInit shadowRootInitDict);
-  [BinaryName="shadowRootByMode"]
+  [BinaryName="shadowRootForBindings"]
   readonly attribute ShadowRoot? shadowRoot;
 
-  [Func="Document::IsCallerChromeOrAddon", BinaryName="shadowRoot"]
+  [NeedsSubjectPrincipal, Func="Document::IsCallerChromeOrAddon"]
   readonly attribute ShadowRoot? openOrClosedShadowRoot;
 
   [BinaryName="assignedSlotByMode"]
