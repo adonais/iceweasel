@@ -335,7 +335,11 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">Aloitusnäkymä</string>
-  <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
+  <!--
+    Browser Toolbar
+
+    Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
+  -->
   <string name="browser_toolbar_translate">Käännä sivu</string>
   <!--
     Content description (not visible, for screen readers etc.) for the translate page toolbar button that opens the translations dialog when the page is translated successfully.
@@ -423,7 +427,11 @@
   <string name="search_scan_button_2">Skannaa QR-koodi</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">Hakukoneasetukset</string>
-  <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user navigate to the site in their clipboard
+  -->
   <string name="awesomebar_clipboard_title">Täytä linkki leikepöydältä</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">Salli</string>
@@ -4451,8 +4459,6 @@
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Edellinen ottelu</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">Aiheeseen liittyvät ottelut</string>
-  <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time" tools:ignore="UnusedResources">(Lopputulos)</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).

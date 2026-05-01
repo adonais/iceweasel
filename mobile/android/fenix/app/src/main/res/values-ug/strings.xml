@@ -333,7 +333,11 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">باش ئېكران</string>
-  <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
+  <!--
+    Browser Toolbar
+
+    Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
+  -->
   <string name="browser_toolbar_translate">بەت تەرجىمىسى</string>
   <!--
     Content description (not visible, for screen readers etc.) for the translate page toolbar button that opens the translations dialog when the page is translated successfully.
@@ -373,7 +377,11 @@
   <string name="search_scan_button_2">QR كودىنى تارا</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">ئىزدەش ماتورى تەڭشىكى</string>
-  <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user navigate to the site in their clipboard
+  -->
   <string name="awesomebar_clipboard_title">چاپلاش تاختىسىدىكى ئۇلىنىشنى ئېچىش</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">يول قوي</string>

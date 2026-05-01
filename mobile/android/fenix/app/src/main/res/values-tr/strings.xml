@@ -335,7 +335,11 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">Ana ekran</string>
-  <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
+  <!--
+    Browser Toolbar
+
+    Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
+  -->
   <string name="browser_toolbar_translate">Sayfayı çevir</string>
   <!--
     Content description (not visible, for screen readers etc.) for the translate page toolbar button that opens the translations dialog when the page is translated successfully.
@@ -427,7 +431,11 @@
   <string name="search_scan_button_2">QR kodu tara</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">Arama motoru ayarları</string>
-  <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user navigate to the site in their clipboard
+  -->
   <string name="awesomebar_clipboard_title">Bağlantıyı panodan al</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">İzin ver</string>
@@ -1117,6 +1125,8 @@
   <string name="customize_wallpapers">Duvar kâğıtları</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Sponsorlu kısayollar</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Dünya Kupası</string>
   <!--
     Wallpapers
 
@@ -2189,6 +2199,10 @@
   <string name="bookmark_sort_menu_a_to_z">A’dan Z’ye sırala</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Z’den A’ya sırala</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Dosyadan içe aktar</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Yer imleri içe aktarılamadı. Yeniden deneyin.</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2247,8 +2261,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Klasörü kapat: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Yer imlerini kapat</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Dosyadan içe aktar</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Henüz yer imi yok</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Tüm yer imlerinizi bir arada tutun</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Klasördeki yer imi sayısı: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -4432,12 +4450,24 @@
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">CANLI</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026 Dünya Kupası Şampiyonu</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">İkinciler</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Üçüncü</string>
+  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_32">Son 32 turu</string>
+  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_16">Son 16 turu</string>
   <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
   <string name="sports_widget_quarter_final">Çeyrek finaller</string>
   <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
   <string name="sports_widget_semi_final">Yarı finaller</string>
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
   <string name="sports_widget_final">Final</string>
+  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
+  <string name="sports_widget_bronze_final">Üçüncülük maçı</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">Maç bilgisi şu anda mevcut değil. Birkaç dakika sonra yenilemeyi deneyin.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
   <string name="sports_widget_error_connection_interrupted">Bağlantı kesildi. Canlı güncellemeler duraklatıldı.</string>
   <!-- Sports widget action label to refresh match data after an error. -->
@@ -4474,6 +4504,20 @@
   <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Önceki maç</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">İlgili maçlar</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Yaklaşıyor</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(Maç sonu)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Maç sonu</string>
+  <!--
+    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
+    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
+    It’s playfully related to Firefox in that “tabs” are a browser feature.
+    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
+    or tracking in a technical sense; the meaning is about staying informed.
+  -->
+  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Dünya Kupası’nı takip edin</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
   <string name="sports_widget_card_description" tools:ignore="UnusedResources">Canlı maç haberlerini ve daha fazlasını alın.</string>
   <!-- Sports widget menu item to change the selected team. -->
@@ -4486,6 +4530,12 @@
   <string name="sports_widget_choose_another_team">Dünya Kupası’ndan haberdar olmak için başka bir takım seçin.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Başka bir takımı takip et</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Dünya Kupası’na geri sayım</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Takvimi gör</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Geç</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">İlk yarı</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
@@ -4510,6 +4560,49 @@
     Your translation will be automatically truncated at 2 characters to avoid layout issues
   -->
   <string name="sports_widget_countdown_minutes">D</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Takım seçme ekranını kapat</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description" tools:ignore="UnusedResources">Kapat</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Diğer seçenekler</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description" tools:ignore="UnusedResources">Kalan süre. %1$d gün. %2$d saat. %3$d dakika.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Dünya Kupası sitesine git</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Yaklaşıyor: %1$s - %2$s, %3$s %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, maç devam ediyor</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, canlı</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, sayfa %2$d %3$d</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Dünya Kupası sonuçları, sayfa %1$d/%2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Dünya Kupası’nı giriş sayfasından kaldır</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

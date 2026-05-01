@@ -153,7 +153,11 @@
   <string name="browser_menu_print_2">چاپ</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
   <string name="browser_menu_recommended_extensions_content_description">پین معلومات</string>
-  <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
+  <!--
+    Browser Toolbar
+
+    Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
+  -->
   <string name="browser_toolbar_translate">صفحہ اے مٹ کبو</string>
   <!--
     Translation Toolbar

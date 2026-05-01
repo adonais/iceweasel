@@ -113,7 +113,11 @@
   <string name="locale_search_hint">گەڕان بۆ زمان</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">ڕێکخستنەکانی بزوێنەری گەڕان</string>
-  <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user navigate to the site in their clipboard
+  -->
   <string name="awesomebar_clipboard_title">بەستەر بهێنە لە گرتەتەختەوە</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">ڕێگەبدە</string>

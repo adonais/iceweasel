@@ -335,7 +335,11 @@
     Content description for the Home screen button on the browser toolbar
   -->
   <string name="browser_toolbar_home">Домашній екран</string>
-  <!-- Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred. -->
+  <!--
+    Browser Toolbar
+
+    Content description for the translate page toolbar button that opens the translations dialog when no translation has occurred.
+  -->
   <string name="browser_toolbar_translate">Перекласти сторінку</string>
   <!--
     Content description (not visible, for screen readers etc.) for the translate page toolbar button that opens the translations dialog when the page is translated successfully.
@@ -427,7 +431,11 @@
   <string name="search_scan_button_2">Сканувати QR-код</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">Налаштування пошукових систем</string>
-  <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user navigate to the site in their clipboard
+  -->
   <string name="awesomebar_clipboard_title">Заповнити посилання з буфера обміну</string>
   <!-- Button in the search suggestions onboarding that allows search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_allow_button">Дозволити</string>
@@ -2717,6 +2725,18 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s захищає вас від численних найпоширеніших елементів стеження, що переслідують вас в мережі.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Докладніше</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">Заблоковано %d вистежувач</item>
+    <item quantity="few">Заблоковано %d вистежувачі</item>
+    <item quantity="other">Заблоковано %d вистежувачів</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Ви захищені</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Стандартний (типово)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -3114,6 +3134,71 @@
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Маски електронної пошти зараз недоступні. Повторіть спробу за кілька хвилин.</string>
   <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Вбудована VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">VPN, вбудована у %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Переглядайте вебсторінки з додатковим захистом, приховуючи своє розташування, навіть у публічних мережах Wi-Fi.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Докладніше</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Місячний ліміт даних</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">Залишилося %1$.1f ГБ з %2$.1f ГБ</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Скидається до %1$.0f ГБ першого числа кожного місяця.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Розташування</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Рекомендовано</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Вибір найшвидшого для вас розташування VPN.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Увімкнено</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Вимкнено</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">З’єднання…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Призупинено</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Помилка</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Відкрити налаштування VPN</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Досягнуто ліміту %1$d ГБ</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Ви використали всі %1$d ГБ своїх даних VPN. Доступ буде скинуто наступного місяця.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN увімкнено</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN-з’єднання активне.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Розпочати</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3411,6 +3496,8 @@
     which navigates the user to a screen displaying all the shortcuts.
   -->
   <string name="homepage_shortcuts_show_all_content_description">Показати всі ярлики</string>
+  <!-- Label for the "Add shortcut" button displayed as a tile. -->
+  <string name="homepage_shortcuts_add_shortcut">Додати ярлик</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Досягнуто обмеження кількості ярликів</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3509,6 +3596,8 @@
     Header text for a section on the home screen.
   -->
   <string name="pocket_stories_header_2">Історії</string>
+  <!-- Header text for the Stories screen. -->
+  <string name="stories_screen_text_news">Новини</string>
   <!--
     Context description text for the "Discover more" button in the stories home screen section
     which navigates the user to a screen displaying more stories.
