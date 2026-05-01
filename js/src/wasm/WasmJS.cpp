@@ -1250,9 +1250,28 @@ bool WasmModuleObject::imports(JSContext* cx, unsigned argc, Value* vp) {
 #endif  // ENABLE_WASM_TYPE_REFLECTIONS
 
   for (const Import& import : moduleMeta.imports) {
-    Maybe<BuiltinModuleId> builtinModule = ImportMatchesBuiltinModule(
-        import.module.utf8Bytes(), codeMeta.features().builtinModules);
+    Maybe<BuiltinModuleId> builtinModule =
+        ImportMatchesBuiltinModule(import, codeMeta.features().builtinModules);
     if (builtinModule) {
+#ifdef ENABLE_WASM_TYPE_REFLECTIONS
+      switch (import.kind) {
+        case DefinitionKind::Function:
+          numFuncImport++;
+          break;
+        case DefinitionKind::Table:
+          numTableImport++;
+          break;
+        case DefinitionKind::Memory:
+          numMemoryImport++;
+          break;
+        case DefinitionKind::Global:
+          numGlobalImport++;
+          break;
+        case DefinitionKind::Tag:
+          numTagImport++;
+          break;
+      }
+#endif  // ENABLE_WASM_TYPE_REFLECTIONS
       continue;
     }
 
