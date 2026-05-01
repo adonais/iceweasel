@@ -95,7 +95,6 @@
   --button-min-height: 24px;
 
   @at-root panel#{&} {
-    --panel-color: var(--fc-color);
     --panel-shadow: none;
     // Extra space around the panel for the shadow to be drawn in. The panel
     // content can't overflow the XUL popup frame, so the frame must be extended.

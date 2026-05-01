@@ -326,7 +326,6 @@
   }
 }
 panel#feature-callout {
-  --panel-color: var(--fc-color);
   --panel-shadow: none;
   --panel-shadow-margin: 6px;
   --panel-arrow-space: calc(var(--panel-shadow-margin) + var(--arrow-visible-height) - 1.5px);
