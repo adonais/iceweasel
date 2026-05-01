@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState } from "react";
 import { actionCreators as ac } from "common/Actions.mjs";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { SafeAnchor } from "../SafeAnchor/SafeAnchor";
 import { LinkMenuOptions } from "content-src/lib/link-menu-options.mjs";
 import { ImpressionStats } from "../../DiscoveryStreamImpressionStats/ImpressionStats";
@@ -27,6 +27,9 @@ const BriefingCard = ({
   const [isDismissed, setIsDismissed] = useState(false);
 
   const dispatch = useDispatch();
+  const prefs = useSelector(state => state.Prefs.values);
+  // @nova-cleanup(remove-pref): Remove novaEnabled, always use moz-button size="small"
+  const novaEnabled = prefs["nova.enabled"];
 
   const handleDismiss = () => {
     setIsDismissed(true);
@@ -121,12 +124,16 @@ const BriefingCard = ({
   };
 
   return (
-    <div className={`briefing-card ${sectionClassNames}`}>
+    <section
+      className={`briefing-card ${sectionClassNames}`}
+      aria-labelledby="briefing-card-title"
+    >
       <moz-button
         className="briefing-card-context-menu-button"
         iconSrc="chrome://global/skin/icons/more.svg"
         menuId="briefing-card-menu"
         type="ghost"
+        size={novaEnabled ? "small" : "default"}
       />
       <panel-list id="briefing-card-menu">
         <panel-item
@@ -136,6 +143,7 @@ const BriefingCard = ({
       </panel-list>
       <div className="briefing-card-header">
         <h3
+          id="briefing-card-title"
           className="briefing-card-title"
           data-l10n-id="newtab-daily-briefing-card-title"
         ></h3>
@@ -201,7 +209,7 @@ const BriefingCard = ({
         dispatch={dispatch}
         source="DAILY_BRIEFING"
       />
-    </div>
+    </section>
   );
 };
 

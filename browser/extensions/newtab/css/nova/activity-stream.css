@@ -10682,6 +10682,149 @@ button.arrow-button:dir(rtl) {
   }
 }
 
+.ds-section-grid.ds-card-grid .briefing-card {
+  background: var(--newtab-background-card);
+  transition: opacity 0.2s ease;
+  border-radius: var(--border-radius-medium);
+  box-shadow: var(--card-box-shadow, var(--box-shadow-card));
+  padding: var(--space-large);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-medium);
+  position: relative;
+}
+.ds-section-grid.ds-card-grid .briefing-card:hover {
+  background: var(--newtab-background-color-secondary);
+}
+.ds-section-grid.ds-card-grid .briefing-card:not(.nova-enabled *) {
+  padding: var(--space-large);
+  gap: var(--space-medium);
+}
+.ds-section-grid.ds-card-grid .briefing-card moz-button {
+  position: absolute;
+  inset-inline-end: var(--space-medium);
+  inset-block-start: var(--space-medium);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.ds-section-grid.ds-card-grid .briefing-card:hover moz-button, .ds-section-grid.ds-card-grid .briefing-card:focus-within moz-button {
+  opacity: 1;
+}
+.ds-section-grid.ds-card-grid .briefing-card:has(panel-list[open]) moz-button {
+  opacity: 1;
+}
+@media (forced-colors: active) {
+  .ds-section-grid.ds-card-grid .briefing-card {
+    border: var(--border-width) solid var(--card-border-color);
+  }
+}
+
+.briefing-card-header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: baseline;
+  gap: var(--space-medium);
+}
+
+.briefing-card-title {
+  font-size: var(--font-size-root);
+  font-weight: var(--font-weight-heading, var(--heading-font-weight));
+  color: var(--text-color);
+  margin: 0;
+  margin-block-start: var(--space-xxsmall);
+}
+
+.briefing-card-timestamp {
+  font-size: var(--font-size-small);
+  color: var(--link-color);
+}
+
+hr {
+  border: 0;
+  border-block-start: 1px solid var(--border-color);
+  margin: 0;
+}
+
+.briefing-card-headlines {
+  list-style: none;
+  counter-reset: headline-counter;
+  margin: 0;
+  margin-block: var(--space-xsmall);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-large);
+}
+
+.briefing-card-headline {
+  counter-increment: headline-counter;
+  position: relative;
+  padding-inline-start: var(--space-large);
+}
+.briefing-card-headline::before {
+  content: counter(headline-counter) ".";
+  position: absolute;
+  inset-inline-start: 0;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-semibold);
+}
+
+.briefing-card-headline-link {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xsmall);
+}
+.briefing-card-headline-link:hover .briefing-card-headline-title, .briefing-card-headline-link:focus .briefing-card-headline-title {
+  color: var(--link-color);
+}
+.briefing-card-headline-link:focus-visible {
+  outline: var(--focus-outline);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
+  outline-offset: var(--focus-outline-offset);
+  border-radius: var(--border-radius-small);
+}
+
+.briefing-card-headline-title {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-heading, var(--heading-font-weight));
+  color: var(--text-color);
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.briefing-card-headline-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-small);
+  margin-block-start: var(--space-xxsmall);
+  color: var(--text-color);
+}
+
+.briefing-card-headline-icon {
+  width: var(--size-item-xsmall);
+  height: var(--size-item-xsmall);
+  border-radius: var(--border-radius-xsmall);
+}
+
+.briefing-card-headline-source {
+  font-size: var(--font-size-small);
+  color: var(--text-color-deemphasized);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-inline-end: var(--space-xxlarge);
+}
+
+.nova-enabled .ds-section-grid.ds-card-grid .briefing-card {
+  padding: var(--space-large);
+  gap: var(--space-medium);
+}
+.nova-enabled .ds-section-grid.ds-card-grid .briefing-card .briefing-card-headlines {
+  gap: var(--space-xlarge);
+}
+
 .section-context-menu {
   position: relative;
 }

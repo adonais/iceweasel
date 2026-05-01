@@ -10806,6 +10806,11 @@ hr {
 .ds-section-grid.ds-card-grid .briefing-card:has(panel-list[open]) moz-button {
   opacity: 1;
 }
+@media (forced-colors: active) {
+  .ds-section-grid.ds-card-grid .briefing-card {
+    border: var(--border-width) solid var(--card-border-color);
+  }
+}
 
 .briefing-card-header {
   display: flex;
@@ -10903,6 +10908,14 @@ hr {
   overflow: hidden;
   text-overflow: ellipsis;
   padding-inline-end: var(--space-xxlarge);
+}
+
+.nova-enabled .ds-section-grid.ds-card-grid .briefing-card {
+  padding: var(--space-large);
+  gap: var(--space-medium);
+}
+.nova-enabled .ds-section-grid.ds-card-grid .briefing-card .briefing-card-headlines {
+  gap: var(--space-xlarge);
 }
 
 .section-context-menu {

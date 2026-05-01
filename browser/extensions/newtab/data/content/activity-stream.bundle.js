@@ -10949,6 +10949,9 @@ const BriefingCard = ({
   const [timeAgo, setTimeAgo] = (0,external_React_namespaceObject.useState)("");
   const [isDismissed, setIsDismissed] = (0,external_React_namespaceObject.useState)(false);
   const dispatch = (0,external_ReactRedux_namespaceObject.useDispatch)();
+  const prefs = (0,external_ReactRedux_namespaceObject.useSelector)(state => state.Prefs.values);
+  // @nova-cleanup(remove-pref): Remove novaEnabled, always use moz-button size="small"
+  const novaEnabled = prefs["nova.enabled"];
   const handleDismiss = () => {
     setIsDismissed(true);
     const tilesWithFormat = headlines.map(headline => ({
@@ -11021,13 +11024,15 @@ const BriefingCard = ({
     };
     dispatch(actionCreators.DiscoveryStreamUserEvent(userEvent));
   };
-  return /*#__PURE__*/external_React_default().createElement("div", {
-    className: `briefing-card ${sectionClassNames}`
+  return /*#__PURE__*/external_React_default().createElement("section", {
+    className: `briefing-card ${sectionClassNames}`,
+    "aria-labelledby": "briefing-card-title"
   }, /*#__PURE__*/external_React_default().createElement("moz-button", {
     className: "briefing-card-context-menu-button",
     iconSrc: "chrome://global/skin/icons/more.svg",
     menuId: "briefing-card-menu",
-    type: "ghost"
+    type: "ghost",
+    size: novaEnabled ? "small" : "default"
   }), /*#__PURE__*/external_React_default().createElement("panel-list", {
     id: "briefing-card-menu"
   }, /*#__PURE__*/external_React_default().createElement("panel-item", {
@@ -11036,6 +11041,7 @@ const BriefingCard = ({
   })), /*#__PURE__*/external_React_default().createElement("div", {
     className: "briefing-card-header"
   }, /*#__PURE__*/external_React_default().createElement("h3", {
+    id: "briefing-card-title",
     className: "briefing-card-title",
     "data-l10n-id": "newtab-daily-briefing-card-title"
   }), showTimestamp && /*#__PURE__*/external_React_default().createElement("span", {
