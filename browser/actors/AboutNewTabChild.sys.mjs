@@ -20,14 +20,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-// @nova-cleanup(remove-pref): Remove NOVA_ENABLED pref getter
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "NOVA_ENABLED",
-  "browser.newtabpage.activity-stream.nova.enabled",
-  false
-);
-
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "NEWTAB_SELF_LOADING",
@@ -105,21 +97,6 @@ export class AboutNewTabChild extends RemotePageChild {
 
         document.head.appendChild(frag);
         return;
-      }
-
-      // @nova-cleanup(remove-conditional): Remove Nova CSS swapping logic
-      if (lazy.NOVA_ENABLED) {
-        const doc = this.contentWindow.document;
-        const styleLinks = doc.querySelectorAll('link[rel="stylesheet"]');
-        for (const link of styleLinks) {
-          if (link.href.includes("activity-stream.css")) {
-            link.href = link.href.replace(
-              "activity-stream.css",
-              "nova/activity-stream.css"
-            );
-            break;
-          }
-        }
       }
 
       if (!lazy.NEWTAB_SELF_LOADING) {

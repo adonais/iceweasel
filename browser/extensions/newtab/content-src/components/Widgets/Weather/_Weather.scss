@@ -4,7 +4,7 @@
 
 @import 'weather-icons';
 
-.weather-widget {
+.nova-enabled .weather-widget {
   @include widget-base-style;
 
   z-index: 1;

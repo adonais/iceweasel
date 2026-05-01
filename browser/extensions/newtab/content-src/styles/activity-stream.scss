@@ -149,6 +149,7 @@ panel-item::part(button) {
 @import '../components/ActivationWindowMessage/ActivationWindowMessage';
 @import '../components/A11yLinkButton/A11yLinkButton';
 @import '../components/Base/Base';
+@import '../components/Base/Grid';
 @import '../components/ErrorBoundary/ErrorBoundary';
 @import '../components/Logo/Logo';
 @import '../components/TopSites/TopSites';
@@ -172,6 +173,7 @@ panel-item::part(button) {
 @import '../components/Widgets/Widgets';
 @import '../components/Widgets/Lists/Lists';
 @import '../components/Widgets/FocusTimer/FocusTimer';
+@import '../components/Widgets/Weather/Weather';
 @import '../components/Widgets/WeatherForecast/WeatherForecast';
 
 // Discovery Stream Components
@@ -204,5 +206,13 @@ panel-item::part(button) {
 @import '../components/DiscoveryStreamComponents/InterestPicker/InterestPicker';
 @import '../components/DiscoveryStreamComponents/ReportContent/ReportContent';
 @import '../components/DiscoveryStreamComponents/PersonalizedCard/PersonalizedCard';
+@import '../components/MessageWrapper/MessageWrapper';
+
+// Nova Component Styles
+// @nova-cleanup(merge-styles): After ship, remove the CSS swap in AboutNewTabChild.sys.mjs
+@import './nova/tokens';
+@import './nova/TopSites';
+@import './nova/CardSections';
+@import './nova/DSCard';
 
 // stylelint-enable no-invalid-position-at-import-rule

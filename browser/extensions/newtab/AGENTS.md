@@ -63,6 +63,9 @@ The version is when the workaround can be removed (once that Firefox version hit
 - If you must depend on an external change, add a `@backward-compat` comment and plan the removal
 - The `newtabTrainhop` escape hatch in `AboutNewTabChild.sys.mjs` allows overriding the XPI-bundled content with a locally-built version for testing train-hop changes before they ship
 
+## Nova CSS
+- Nova-specific CSS must be scoped under `.nova-enabled` — the CSS file switcher has been removed. Flag any nova styles not behind this class.
+
 ## Glean Metrics
 
 - Metric definitions live in `browser/components/newtab/metrics.yaml` and `browser/components/newtab/pings.yaml`.

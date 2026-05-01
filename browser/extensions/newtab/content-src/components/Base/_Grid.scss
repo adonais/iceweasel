@@ -37,7 +37,7 @@
   --content-max-width: calc(16 * var(--col-width) + 15 * var(--space-medium));
 }
 
-.container {
+.nova-enabled.container {
   container-type: inline-size;
   container-name: outer-grid;
   display: grid;
@@ -49,7 +49,7 @@
   padding-inline: var(--space-xlarge);
 }
 
-.content {
+.nova-enabled .content {
   container-type: inline-size;
   container-name: content-grid;
   display: grid;
@@ -61,7 +61,7 @@
 
 }
 
-.sidebar-inline-end {
+.nova-enabled .sidebar-inline-end {
   display: grid;
   grid-column: 3;
   grid-row: 1 / span 2;
@@ -69,50 +69,50 @@
   position: relative;
 }
 
-.sidebar-inline-start {
+.nova-enabled .sidebar-inline-start {
   grid-column: 1;
   grid-row: 1 / span 2;
 }
 
-.logo-in-content .content {
+.nova-enabled.logo-in-content .content {
   grid-row: 3 / span 2;
 }
 
-.content > * {
+.nova-enabled .content > * {
   grid-column: 1 / -1;
   container-type: inline-size;
   container-name: component;
 }
 
 // Fixed-width columns - always span the specified number
-.col-1 {
+.nova-enabled .col-1 {
   grid-column: span 1;
 }
 
-.col-2 {
+.nova-enabled .col-2 {
   grid-column: span 2;
 }
 
-.col-3 {
+.nova-enabled .col-3 {
   grid-column: span 3;
 }
 
-.col-4 {
+.nova-enabled .col-4 {
   grid-column: span 4;
 }
 
-.col-8 {
+.nova-enabled .col-8 {
   grid-column: span 8;
 }
 
-.col-12 {
+.nova-enabled .col-12 {
   grid-column: span 12;
 }
 
-.col-18 {
+.nova-enabled .col-18 {
   grid-column: span 18;
 }
 
-.col-26 {
+.nova-enabled .col-26 {
   grid-column: span 26;
 }

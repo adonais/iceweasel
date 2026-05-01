@@ -16,7 +16,7 @@
  * those token values directly so nova/activity-stream.css is self-contained.
  * Remove this file when `browser.nova.enabled` unifies both prefs and reaches Release.
  */
-:root {
+.nova-enabled {
   /** background-color **/
   --background-color-box: light-dark(var(--color-white), var(--color-neutral-70));
   --background-color-box-info: light-dark(var(--color-neutral-20), var(--color-neutral-80));
@@ -214,7 +214,7 @@
 }
 
 @media (forced-colors) {
-  :root {
+  .nova-enabled {
     /** background-color **/
     --background-color-box: var(--background-color-canvas);
     --background-color-box-info: var(--background-color-canvas);
@@ -1068,7 +1068,7 @@ main.newtab-main section {
   --content-max-width: calc(16 * var(--col-width) + 15 * var(--space-medium));
 }
 
-.container {
+.nova-enabled.container {
   container-type: inline-size;
   container-name: outer-grid;
   display: grid;
@@ -1080,7 +1080,7 @@ main.newtab-main section {
   padding-inline: var(--space-xlarge);
 }
 
-.content {
+.nova-enabled .content {
   container-type: inline-size;
   container-name: content-grid;
   display: grid;
@@ -1091,7 +1091,7 @@ main.newtab-main section {
   grid-row: 2/span 2;
 }
 
-.sidebar-inline-end {
+.nova-enabled .sidebar-inline-end {
   display: grid;
   grid-column: 3;
   grid-row: 1/span 2;
@@ -1099,50 +1099,50 @@ main.newtab-main section {
   position: relative;
 }
 
-.sidebar-inline-start {
+.nova-enabled .sidebar-inline-start {
   grid-column: 1;
   grid-row: 1/span 2;
 }
 
-.logo-in-content .content {
+.nova-enabled.logo-in-content .content {
   grid-row: 3/span 2;
 }
 
-.content > * {
+.nova-enabled .content > * {
   grid-column: 1/-1;
   container-type: inline-size;
   container-name: component;
 }
 
-.col-1 {
+.nova-enabled .col-1 {
   grid-column: span 1;
 }
 
-.col-2 {
+.nova-enabled .col-2 {
   grid-column: span 2;
 }
 
-.col-3 {
+.nova-enabled .col-3 {
   grid-column: span 3;
 }
 
-.col-4 {
+.nova-enabled .col-4 {
   grid-column: span 4;
 }
 
-.col-8 {
+.nova-enabled .col-8 {
   grid-column: span 8;
 }
 
-.col-12 {
+.nova-enabled .col-12 {
   grid-column: span 12;
 }
 
-.col-18 {
+.nova-enabled .col-18 {
   grid-column: span 18;
 }
 
-.col-26 {
+.nova-enabled .col-26 {
   grid-column: span 26;
 }
 
@@ -5037,7 +5037,7 @@ button.arrow-button:dir(rtl) {
   content: url("chrome://browser/skin/weather/night-mostly-cloudy-with-flurries.svg");
 }
 
-.weather-widget {
+.nova-enabled .weather-widget {
   padding: var(--space-medium);
   background-color: var(--newtab-background-card);
   border-radius: var(--border-radius-large);
@@ -5053,45 +5053,45 @@ button.arrow-button:dir(rtl) {
   --weather-snowy-background-color: light-dark(var(--color-violet-0), var(--color-violet-90));
   --weather-hot-background-color: light-dark(var(--color-orange-0), var(--color-orange-90));
 }
-.weather-widget:hover, .weather-widget:focus-within {
+.nova-enabled .weather-widget:hover, .nova-enabled .weather-widget:focus-within {
   outline: 1px solid var(--border-color-deemphasized);
   box-shadow: var(--card-box-shadow-hover);
 }
-.weather-widget .weather-anchor {
+.nova-enabled .weather-widget .weather-anchor {
   position: absolute;
   inset: 0;
   z-index: 0;
   border-radius: var(--border-radius-large);
   text-decoration: none;
 }
-.weather-widget .widget-title-bar {
+.nova-enabled .weather-widget .widget-title-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-block-end: auto;
   font-size: var(--font-size-small);
 }
-.weather-widget .widget-title-bar .widget-title h3 {
+.nova-enabled .weather-widget .widget-title-bar .widget-title h3 {
   margin: 0;
   font-size: var(--font-size-small);
   color: var(--text-color-deemphasized);
   font-weight: var(--font-weight);
 }
-.weather-widget .widget-title-bar .weather-context-menu-wrapper {
+.nova-enabled .weather-widget .widget-title-bar .weather-context-menu-wrapper {
   position: relative;
   z-index: 1;
 }
-.weather-widget .forecast-footer {
+.nova-enabled .weather-widget .forecast-footer {
   position: absolute;
   inset-block-end: calc(var(--space-xlarge) * -1);
   inset-inline-end: 0;
   font-size: var(--font-size-xsmall);
 }
-.weather-widget .forecast-footer .sponsored-text {
+.nova-enabled .weather-widget .forecast-footer .sponsored-text {
   visibility: hidden;
   text-wrap-mode: nowrap;
 }
-.weather-widget .forecast-footer .full-forecast {
+.nova-enabled .weather-widget .forecast-footer .full-forecast {
   display: none;
   color: var(--text-color);
   padding-inline-end: var(--space-xlarge);
@@ -5100,27 +5100,27 @@ button.arrow-button:dir(rtl) {
   fill: currentColor;
   font-size: var(--font-size-xsmall);
 }
-.weather-widget .forecast-footer .full-forecast:dir(rtl) {
+.nova-enabled .weather-widget .forecast-footer .full-forecast:dir(rtl) {
   background-image: url("chrome://global/skin/icons/arrow-left.svg");
   background-position: left center;
 }
-.weather-widget:hover .forecast-footer .sponsored-text, .weather-widget:focus-within .forecast-footer .sponsored-text {
+.nova-enabled .weather-widget:hover .forecast-footer .sponsored-text, .nova-enabled .weather-widget:focus-within .forecast-footer .sponsored-text {
   visibility: visible;
 }
-.weather-widget:hover .full-forecast, .weather-widget:focus-within .full-forecast {
+.nova-enabled .weather-widget:hover .full-forecast, .nova-enabled .weather-widget:focus-within .full-forecast {
   color: var(--link-color-hover);
 }
-.weather-widget .weather-container {
+.nova-enabled .weather-widget .weather-container {
   display: flex;
   align-items: flex-end;
 }
-.weather-widget .weather-conditions-view .weather-info-link {
+.nova-enabled .weather-widget .weather-conditions-view .weather-info-link {
   color: var(--text-color);
   display: flex;
   gap: var(--space-xsmall);
   text-decoration: none;
 }
-.weather-widget .weather-conditions-view .weather-icon-column {
+.nova-enabled .weather-widget .weather-conditions-view .weather-icon-column {
   padding: var(--space-small);
   display: flex;
   align-items: center;
@@ -5128,19 +5128,19 @@ button.arrow-button:dir(rtl) {
   align-self: center;
   border-radius: var(--border-radius-medium);
 }
-.weather-widget .weather-conditions-view .weather-icon-column .weather-icon {
+.nova-enabled .weather-widget .weather-conditions-view .weather-icon-column .weather-icon {
   width: var(--icon-size-large);
 }
-.weather-widget .weather-conditions-view .weather-info-row {
+.nova-enabled .weather-widget .weather-conditions-view .weather-info-row {
   display: flex;
   flex-direction: column;
 }
-.weather-widget .weather-conditions-view .temperature-unit {
+.nova-enabled .weather-widget .weather-conditions-view .temperature-unit {
   font-size: var(--font-size-large);
   font-weight: var(--font-weight-heading);
   text-transform: uppercase;
 }
-.weather-widget .weather-conditions-view .high-low-row {
+.nova-enabled .weather-widget .weather-conditions-view .high-low-row {
   display: flex;
   align-items: flex-end;
   align-self: flex-start;
@@ -5149,15 +5149,15 @@ button.arrow-button:dir(rtl) {
   font-size: var(--font-size-xsmall);
   gap: var(--space-small);
 }
-.weather-widget .weather-conditions-view .high-low-row .high-temperature,
-.weather-widget .weather-conditions-view .high-low-row .low-temperature {
+.nova-enabled .weather-widget .weather-conditions-view .high-low-row .high-temperature,
+.nova-enabled .weather-widget .weather-conditions-view .high-low-row .low-temperature {
   display: flex;
   align-items: center;
 }
-.weather-widget .weather-conditions-view .high-low-row .high-temperature {
+.nova-enabled .weather-widget .weather-conditions-view .high-low-row .high-temperature {
   margin-inline-end: var(--space-xsmall);
 }
-.weather-widget .weather-conditions-view .high-low-row .arrow-icon {
+.nova-enabled .weather-widget .weather-conditions-view .high-low-row .arrow-icon {
   display: inline-block;
   width: var(--size-item-xsmall);
   height: var(--size-item-xsmall);
@@ -5167,55 +5167,55 @@ button.arrow-button:dir(rtl) {
   -moz-context-properties: fill, fill-opacity;
   fill: currentColor;
 }
-.weather-widget .weather-conditions-view .high-low-row .arrow-icon.arrow-up {
+.nova-enabled .weather-widget .weather-conditions-view .high-low-row .arrow-icon.arrow-up {
   background-image: url("chrome://global/skin/icons/shaft-arrow-up.svg");
 }
-.weather-widget .weather-conditions-view .high-low-row .arrow-icon.arrow-down {
+.nova-enabled .weather-widget .weather-conditions-view .high-low-row .arrow-icon.arrow-down {
   background-image: url("chrome://global/skin/icons/shaft-arrow-down.svg");
 }
-.weather-widget .weather-conditions-view .weather-info-description {
+.nova-enabled .weather-widget .weather-conditions-view .weather-info-description {
   display: none;
 }
-.weather-widget .weather-conditions-view .weather-icon-column:has(.iconId1, .iconId2, .iconId3, .iconId4, .iconId5, .iconId6, .iconId33),
-.weather-widget .weather-opt-in-container .weather-icon-column:has(.iconId1, .iconId2, .iconId3, .iconId4, .iconId5, .iconId6, .iconId33), .weather-widget.small-widget .forecast-row-items > li:first-of-type:has(.iconId1, .iconId2, .iconId3, .iconId4, .iconId5, .iconId6, .iconId33) {
+.nova-enabled .weather-widget .weather-conditions-view .weather-icon-column:has(.iconId1, .iconId2, .iconId3, .iconId4, .iconId5, .iconId6, .iconId33),
+.nova-enabled .weather-widget .weather-opt-in-container .weather-icon-column:has(.iconId1, .iconId2, .iconId3, .iconId4, .iconId5, .iconId6, .iconId33), .nova-enabled .weather-widget.small-widget .forecast-row-items > li:first-of-type:has(.iconId1, .iconId2, .iconId3, .iconId4, .iconId5, .iconId6, .iconId33) {
   background-color: var(--weather-sunny-background-color);
 }
-.weather-widget .weather-conditions-view .weather-icon-column:has(.iconId7, .iconId8, .iconId11, .iconId32, .iconId34, .iconId35, .iconId36, .iconId37, .iconId38),
-.weather-widget .weather-opt-in-container .weather-icon-column:has(.iconId7, .iconId8, .iconId11, .iconId32, .iconId34, .iconId35, .iconId36, .iconId37, .iconId38), .weather-widget.small-widget .forecast-row-items > li:first-of-type:has(.iconId7, .iconId8, .iconId11, .iconId32, .iconId34, .iconId35, .iconId36, .iconId37, .iconId38) {
+.nova-enabled .weather-widget .weather-conditions-view .weather-icon-column:has(.iconId7, .iconId8, .iconId11, .iconId32, .iconId34, .iconId35, .iconId36, .iconId37, .iconId38),
+.nova-enabled .weather-widget .weather-opt-in-container .weather-icon-column:has(.iconId7, .iconId8, .iconId11, .iconId32, .iconId34, .iconId35, .iconId36, .iconId37, .iconId38), .nova-enabled .weather-widget.small-widget .forecast-row-items > li:first-of-type:has(.iconId7, .iconId8, .iconId11, .iconId32, .iconId34, .iconId35, .iconId36, .iconId37, .iconId38) {
   background-color: var(--weather-cloudy-background-color);
 }
-.weather-widget .weather-conditions-view .weather-icon-column:has(.iconId12, .iconId13, .iconId14, .iconId15, .iconId16, .iconId17, .iconId18, .iconId39, .iconId40, .iconId41, .iconId42),
-.weather-widget .weather-opt-in-container .weather-icon-column:has(.iconId12, .iconId13, .iconId14, .iconId15, .iconId16, .iconId17, .iconId18, .iconId39, .iconId40, .iconId41, .iconId42), .weather-widget.small-widget .forecast-row-items > li:first-of-type:has(.iconId12, .iconId13, .iconId14, .iconId15, .iconId16, .iconId17, .iconId18, .iconId39, .iconId40, .iconId41, .iconId42) {
+.nova-enabled .weather-widget .weather-conditions-view .weather-icon-column:has(.iconId12, .iconId13, .iconId14, .iconId15, .iconId16, .iconId17, .iconId18, .iconId39, .iconId40, .iconId41, .iconId42),
+.nova-enabled .weather-widget .weather-opt-in-container .weather-icon-column:has(.iconId12, .iconId13, .iconId14, .iconId15, .iconId16, .iconId17, .iconId18, .iconId39, .iconId40, .iconId41, .iconId42), .nova-enabled .weather-widget.small-widget .forecast-row-items > li:first-of-type:has(.iconId12, .iconId13, .iconId14, .iconId15, .iconId16, .iconId17, .iconId18, .iconId39, .iconId40, .iconId41, .iconId42) {
   background-color: var(--weather-rainy-background-color);
 }
-.weather-widget .weather-conditions-view .weather-icon-column:has(.iconId19, .iconId20, .iconId21, .iconId22, .iconId23, .iconId24, .iconId25, .iconId26, .iconId29, .iconId31, .iconId43, .iconId44),
-.weather-widget .weather-opt-in-container .weather-icon-column:has(.iconId19, .iconId20, .iconId21, .iconId22, .iconId23, .iconId24, .iconId25, .iconId26, .iconId29, .iconId31, .iconId43, .iconId44), .weather-widget.small-widget .forecast-row-items > li:first-of-type:has(.iconId19, .iconId20, .iconId21, .iconId22, .iconId23, .iconId24, .iconId25, .iconId26, .iconId29, .iconId31, .iconId43, .iconId44) {
+.nova-enabled .weather-widget .weather-conditions-view .weather-icon-column:has(.iconId19, .iconId20, .iconId21, .iconId22, .iconId23, .iconId24, .iconId25, .iconId26, .iconId29, .iconId31, .iconId43, .iconId44),
+.nova-enabled .weather-widget .weather-opt-in-container .weather-icon-column:has(.iconId19, .iconId20, .iconId21, .iconId22, .iconId23, .iconId24, .iconId25, .iconId26, .iconId29, .iconId31, .iconId43, .iconId44), .nova-enabled .weather-widget.small-widget .forecast-row-items > li:first-of-type:has(.iconId19, .iconId20, .iconId21, .iconId22, .iconId23, .iconId24, .iconId25, .iconId26, .iconId29, .iconId31, .iconId43, .iconId44) {
   background-color: var(--weather-snowy-background-color);
 }
-.weather-widget .weather-conditions-view .weather-icon-column:has(.iconId30),
-.weather-widget .weather-opt-in-container .weather-icon-column:has(.iconId30), .weather-widget.small-widget .forecast-row-items > li:first-of-type:has(.iconId30) {
+.nova-enabled .weather-widget .weather-conditions-view .weather-icon-column:has(.iconId30),
+.nova-enabled .weather-widget .weather-opt-in-container .weather-icon-column:has(.iconId30), .nova-enabled .weather-widget.small-widget .forecast-row-items > li:first-of-type:has(.iconId30) {
   background-color: var(--weather-hot-background-color);
 }
-.weather-widget .forecast-row {
+.nova-enabled .weather-widget .forecast-row {
   display: flex;
   gap: var(--space-medium);
   flex-direction: column;
 }
-.weather-widget .forecast-row .today-forecast {
+.nova-enabled .weather-widget .forecast-row .today-forecast {
   display: none;
   margin: 0;
   font-size: var(--font-size-small);
   color: var(--text-color-deemphasized);
   font-weight: var(--font-weight);
 }
-.weather-widget .forecast-row .forecast-row-items {
+.nova-enabled .weather-widget .forecast-row .forecast-row-items {
   list-style: none;
   display: flex;
   justify-content: space-around;
   padding: 0;
   margin-block: var(--space-xxsmall);
 }
-.weather-widget .forecast-row .forecast-row-items li {
+.nova-enabled .weather-widget .forecast-row .forecast-row-items li {
   background: var(--newtab-background-color);
   border-radius: var(--border-radius-small);
   display: flex;
@@ -5226,225 +5226,225 @@ button.arrow-button:dir(rtl) {
   padding: var(--space-small) var(--space-medium);
   font-size: var(--font-size-small);
 }
-.weather-widget .forecast-row .forecast-row-items li:first-of-type {
+.nova-enabled .weather-widget .forecast-row .forecast-row-items li:first-of-type {
   margin-inline-start: 0;
 }
-.weather-widget .forecast-row .forecast-row-items li:last-of-type {
+.nova-enabled .weather-widget .forecast-row .forecast-row-items li:last-of-type {
   margin-inline-end: 0;
 }
-.weather-widget.small-widget {
+.nova-enabled .weather-widget.small-widget {
   grid-column: span 2;
   grid-row: span 2;
 }
-.weather-widget.medium-widget {
+.nova-enabled .weather-widget.medium-widget {
   grid-column: span 4;
   grid-row: span 2;
 }
-.weather-widget.medium-widget .weather-container {
+.nova-enabled .weather-widget.medium-widget .weather-container {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-medium);
 }
-.weather-widget.medium-widget .weather-conditions-view {
+.nova-enabled .weather-widget.medium-widget .weather-conditions-view {
   flex: 1;
 }
-.weather-widget.medium-widget .weather-info-link {
+.nova-enabled .weather-widget.medium-widget .weather-info-link {
   width: 100%;
   gap: var(--space-small);
   align-items: center;
 }
-.weather-widget.medium-widget .weather-info-column {
+.nova-enabled .weather-widget.medium-widget .weather-info-column {
   flex: 1;
 }
-.weather-widget.medium-widget .weather-info-row {
+.nova-enabled .weather-widget.medium-widget .weather-info-row {
   flex-direction: row;
 }
-.weather-widget.medium-widget .high-low-row {
+.nova-enabled .weather-widget.medium-widget .high-low-row {
   align-self: center;
 }
-.weather-widget.medium-widget .weather-icon-column .weather-icon {
+.nova-enabled .weather-widget.medium-widget .weather-icon-column .weather-icon {
   width: var(--icon-size-xlarge);
 }
-.weather-widget.medium-widget .weather-info-description {
+.nova-enabled .weather-widget.medium-widget .weather-info-description {
   display: block;
   font-size: var(--font-size-small);
   color: var(--text-color-deemphasized);
 }
-.weather-widget.medium-widget .forecast-row-items li:nth-child(n+3) {
+.nova-enabled .weather-widget.medium-widget .forecast-row-items li:nth-child(n+3) {
   display: none;
 }
-.weather-widget.medium-widget .forecast-footer {
+.nova-enabled .weather-widget.medium-widget .forecast-footer {
   inset-inline-end: auto;
   inset-inline-start: 0;
 }
-.weather-widget.large-widget {
+.nova-enabled .weather-widget.large-widget {
   grid-column: span 4;
   grid-row: span 4;
 }
-.weather-widget.large-widget .weather-container {
+.nova-enabled .weather-widget.large-widget .weather-container {
   flex: 1;
   flex-direction: column;
   align-items: stretch;
   padding-block-start: var(--space-medium);
 }
-.weather-widget.large-widget .weather-conditions-view {
+.nova-enabled .weather-widget.large-widget .weather-conditions-view {
   flex: 1;
 }
-.weather-widget.large-widget .weather-info-link {
+.nova-enabled .weather-widget.large-widget .weather-info-link {
   width: 100%;
   gap: var(--space-medium);
   align-items: center;
 }
-.weather-widget.large-widget .weather-info-column {
+.nova-enabled .weather-widget.large-widget .weather-info-column {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-small);
 }
-.weather-widget.large-widget .weather-info-row {
+.nova-enabled .weather-widget.large-widget .weather-info-row {
   flex-direction: row;
 }
-.weather-widget.large-widget .weather-icon-column {
+.nova-enabled .weather-widget.large-widget .weather-icon-column {
   padding: var(--space-large);
 }
-.weather-widget.large-widget .weather-icon-column .weather-icon {
+.nova-enabled .weather-widget.large-widget .weather-icon-column .weather-icon {
   width: calc(var(--icon-size-medium) * 2);
 }
-.weather-widget.large-widget .high-low-row {
+.nova-enabled .weather-widget.large-widget .high-low-row {
   align-self: center;
 }
-.weather-widget.large-widget .weather-info-description {
+.nova-enabled .weather-widget.large-widget .weather-info-description {
   display: block;
   font-size: var(--font-size-small);
   color: var(--text-color-deemphasized);
 }
-.weather-widget.large-widget .forecast-footer {
+.nova-enabled .weather-widget.large-widget .forecast-footer {
   padding-block-start: var(--space-large);
   position: relative;
   inset: unset;
   display: flex;
   justify-content: space-between;
 }
-.weather-widget.large-widget .forecast-footer .full-forecast {
+.nova-enabled .weather-widget.large-widget .forecast-footer .full-forecast {
   display: inline-block;
 }
-.weather-widget.large-widget .today-forecast {
+.nova-enabled .weather-widget.large-widget .today-forecast {
   display: block;
   margin: 0;
 }
-.weather-widget.weather-opt-in {
+.nova-enabled .weather-widget.weather-opt-in {
   position: relative;
   padding-inline: 0;
 }
-.weather-widget.weather-opt-in .widget-title-bar {
+.nova-enabled .weather-widget.weather-opt-in .widget-title-bar {
   justify-content: flex-end;
   position: absolute;
   inset-block-start: var(--space-medium);
   inset-inline-end: var(--space-medium);
   z-index: 1;
 }
-.weather-widget.weather-opt-in .weather-icon {
+.nova-enabled .weather-widget.weather-opt-in .weather-icon {
   display: none;
 }
-.weather-widget.weather-opt-in .weather-icon-column {
+.nova-enabled .weather-widget.weather-opt-in .weather-icon-column {
   width: max-content;
   border-radius: var(--border-radius-medium);
 }
-.weather-widget.weather-opt-in .weather-opt-in-container {
+.nova-enabled .weather-widget.weather-opt-in .weather-opt-in-container {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   height: 100%;
 }
-.weather-widget.weather-opt-in .weather-opt-in-container-title-bar {
+.nova-enabled .weather-widget.weather-opt-in .weather-opt-in-container-title-bar {
   width: 100%;
   display: flex;
   align-items: center;
   gap: var(--space-medium);
 }
-.weather-widget.weather-opt-in .weather-opt-in-container-title {
+.nova-enabled .weather-widget.weather-opt-in .weather-opt-in-container-title {
   font-size: var(--font-size-small);
   margin: 0;
   padding-inline-end: var(--space-xlarge);
   font-weight: var(--font-weight-heading);
 }
-.weather-widget.weather-opt-in .weather-opt-in-container-buttons {
+.nova-enabled .weather-widget.weather-opt-in .weather-opt-in-container-buttons {
   display: flex;
   align-items: center;
   flex-direction: column;
   justify-content: center;
   gap: var(--space-xsmall);
 }
-.weather-widget.weather-opt-in .weather-text-link {
+.nova-enabled .weather-widget.weather-opt-in .weather-text-link {
   border: 1px solid transparent;
   border-radius: var(--border-radius-small);
   color: var(--link-color);
   font-size: var(--font-size-small);
   appearance: none;
 }
-.weather-widget.weather-opt-in .weather-text-link:hover {
+.nova-enabled .weather-widget.weather-opt-in .weather-text-link:hover {
   color: var(--link-color-hover);
   text-decoration: underline;
 }
-.weather-widget.weather-opt-in .weather-text-link:active {
+.nova-enabled .weather-widget.weather-opt-in .weather-text-link:active {
   color: var(--link-color-active);
 }
 @media (forced-colors: active) {
-  .weather-widget.weather-opt-in .weather-text-link {
+  .nova-enabled .weather-widget.weather-opt-in .weather-text-link {
     padding: var(--space-small) var(--space-medium);
     padding-inline-start: var(--space-xlarge);
   }
 }
-.weather-widget.weather-opt-in .weather-text-link:dir(rtl) {
+.nova-enabled .weather-widget.weather-opt-in .weather-text-link:dir(rtl) {
   background-position-x: right;
 }
-.weather-widget.weather-opt-in .weather-text-link:focus-visible {
+.nova-enabled .weather-widget.weather-opt-in .weather-text-link:focus-visible {
   border: 1px solid var(--focus-outline-color);
   outline: 0;
 }
-.weather-widget.weather-opt-in.small-widget .weather-opt-in-container-title {
+.nova-enabled .weather-widget.weather-opt-in.small-widget .weather-opt-in-container-title {
   padding-block-start: var(--space-small);
 }
-.weather-widget.weather-opt-in.medium-widget {
+.nova-enabled .weather-widget.weather-opt-in.medium-widget {
   padding-inline: var(--space-medium);
 }
-.weather-widget.weather-opt-in.medium-widget .weather-icon {
+.nova-enabled .weather-widget.weather-opt-in.medium-widget .weather-icon {
   display: block;
 }
-.weather-widget.weather-opt-in.medium-widget .weather-icon-column .weather-icon {
+.nova-enabled .weather-widget.weather-opt-in.medium-widget .weather-icon-column .weather-icon {
   width: calc(var(--icon-size-medium) * 2);
 }
-.weather-widget.weather-opt-in.medium-widget .weather-opt-in-container-title {
+.nova-enabled .weather-widget.weather-opt-in.medium-widget .weather-opt-in-container-title {
   font-size: var(--font-size-root);
   padding-inline-end: var(--space-xxlarge);
 }
-.weather-widget.weather-opt-in.medium-widget .weather-opt-in-container-buttons {
+.nova-enabled .weather-widget.weather-opt-in.medium-widget .weather-opt-in-container-buttons {
   gap: var(--space-medium);
 }
-.weather-widget.weather-opt-in.large-widget .weather-icon {
+.nova-enabled .weather-widget.weather-opt-in.large-widget .weather-icon {
   display: block;
 }
-.weather-widget.weather-opt-in.large-widget .weather-opt-in-container {
+.nova-enabled .weather-widget.weather-opt-in.large-widget .weather-opt-in-container {
   justify-content: center;
   gap: var(--space-xxlarge);
 }
-.weather-widget.weather-opt-in.large-widget .weather-opt-in-container-title-bar {
+.nova-enabled .weather-widget.weather-opt-in.large-widget .weather-opt-in-container-title-bar {
   margin-block-start: var(--space-large);
   flex-direction: column;
   justify-content: center;
 }
-.weather-widget.weather-opt-in.large-widget .weather-opt-in-container-title {
+.nova-enabled .weather-widget.weather-opt-in.large-widget .weather-opt-in-container-title {
   font-size: var(--font-size-large);
   text-align: center;
   padding-inline-end: 0;
 }
-.weather-widget.weather-opt-in.large-widget .weather-opt-in-container-buttons {
+.nova-enabled .weather-widget.weather-opt-in.large-widget .weather-opt-in-container-buttons {
   gap: var(--space-medium);
 }
-.weather-widget.weather-search-active .weather-search-container {
+.nova-enabled .weather-widget.weather-search-active .weather-search-container {
   position: relative;
 }
-.weather-widget.weather-search-active .location-input {
+.nova-enabled .weather-widget.weather-search-active .location-input {
   padding: var(--space-small);
   outline: 1px solid var(--border-color-selected);
   border-radius: var(--border-radius-circle);
@@ -5452,11 +5452,11 @@ button.arrow-button:dir(rtl) {
   border: 0;
   width: 100%;
 }
-.weather-widget.weather-search-active .location-input-wrapper {
+.nova-enabled .weather-widget.weather-search-active .location-input-wrapper {
   margin-block-end: var(--space-small);
   position: relative;
 }
-.weather-widget.weather-search-active .search-icon {
+.nova-enabled .weather-widget.weather-search-active .search-icon {
   content: url("chrome://global/skin/icons/search-glass.svg");
   -moz-context-properties: fill;
   fill: var(--icon-color);
@@ -5465,58 +5465,58 @@ button.arrow-button:dir(rtl) {
   transform: translateY(-50%);
   inset-inline-start: var(--space-large);
 }
-.weather-widget.weather-search-active .close-icon {
+.nova-enabled .weather-widget.weather-search-active .close-icon {
   position: absolute;
   inset-block-start: 50%;
   transform: translateY(-50%);
   inset-inline-end: var(--space-medium);
 }
-.weather-widget.weather-search-active .close-icon:focus-visible {
+.nova-enabled .weather-widget.weather-search-active .close-icon:focus-visible {
   outline: var(--focus-outline);
 }
-.weather-widget.weather-search-active .weather-anchor, .weather-widget.weather-search-active .weather-container, .weather-widget.weather-search-active .forecast-footer, .weather-widget.weather-search-active .widget-title-bar {
+.nova-enabled .weather-widget.weather-search-active .weather-anchor, .nova-enabled .weather-widget.weather-search-active .weather-container, .nova-enabled .weather-widget.weather-search-active .forecast-footer, .nova-enabled .weather-widget.weather-search-active .widget-title-bar {
   display: none;
 }
-.weather-widget.weather-search-active.small-widget {
+.nova-enabled .weather-widget.weather-search-active.small-widget {
   position: absolute;
   inset-inline-end: 0;
   width: calc(4 * var(--col-width) + 3 * var(--space-medium));
   height: calc(2 * var(--row-height) + var(--space-medium));
 }
-.weather-widget.weather-error-state {
+.nova-enabled .weather-widget.weather-error-state {
   justify-content: flex-start;
 }
-.weather-widget.weather-error-state .weather-error {
+.nova-enabled .weather-widget.weather-error-state .weather-error {
   display: flex;
   align-items: flex-start;
   flex-direction: column;
   justify-content: space-evenly;
   gap: var(--space-small);
 }
-.weather-widget.weather-error-state p {
+.nova-enabled .weather-widget.weather-error-state p {
   margin: 0;
   font-size: var(--font-size-small);
   color: var(--text-color-deemphasized);
 }
-.weather-widget.weather-error-state.small-widget .weather-error {
+.nova-enabled .weather-widget.weather-error-state.small-widget .weather-error {
   margin-block-start: auto;
   gap: var(--space-xsmall);
 }
-.weather-widget.weather-error-state.medium-widget .weather-error {
+.nova-enabled .weather-widget.weather-error-state.medium-widget .weather-error {
   flex-direction: row;
   justify-content: flex-start;
   margin-block: auto;
 }
-.weather-widget.weather-error-state.medium-widget .widget-title-bar {
+.nova-enabled .weather-widget.weather-error-state.medium-widget .widget-title-bar {
   margin-block-end: 0;
 }
-.weather-widget.weather-error-state.large-widget .weather-error {
+.nova-enabled .weather-widget.weather-error-state.large-widget .weather-error {
   height: 100%;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
-.weather-widget.weather-error-state.large-widget .widget-title-bar {
+.nova-enabled .weather-widget.weather-error-state.large-widget .widget-title-bar {
   margin-block-end: 0;
 }
 
@@ -11341,39 +11341,39 @@ hr {
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-.section-title-wrapper {
+.nova-enabled .section-title-wrapper {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   column-gap: var(--space-medium);
 }
 @container content-grid (inline-size >= calc(12 * 75px + 11 * 0.75rem)) {
-  .section-title-wrapper {
+  .nova-enabled .section-title-wrapper {
     column-gap: var(--space-large);
   }
 }
-.section-title-wrapper .section-subtitle {
+.nova-enabled .section-title-wrapper .section-subtitle {
   flex-basis: 100%;
 }
 
-.lightWallpaper .ds-section .section-follow,
-.lightWallpaper .ds-section .section-context-menu {
+.lightWallpaper .nova-enabled .ds-section .section-follow,
+.lightWallpaper .nova-enabled .ds-section .section-context-menu {
   color-scheme: light;
 }
-.darkWallpaper .ds-section .section-follow,
-.darkWallpaper .ds-section .section-context-menu {
+.darkWallpaper .nova-enabled .ds-section .section-follow,
+.darkWallpaper .nova-enabled .ds-section .section-context-menu {
   color-scheme: dark;
 }
 
-.ds-section .section-follow moz-button::part(button) {
+.nova-enabled .ds-section .section-follow moz-button::part(button) {
   transition: background-color 0.2s ease;
 }
-.ds-section .section-follow moz-button::part(moz-button-label) {
+.nova-enabled .ds-section .section-follow moz-button::part(moz-button-label) {
   max-width: 30ch;
   transition: max-width 0.2s ease, opacity 0.2s ease;
 }
 @starting-style {
-  .ds-section .section-follow moz-button::part(moz-button-label) {
+  .nova-enabled .ds-section .section-follow moz-button::part(moz-button-label) {
     max-width: 0;
     opacity: 0;
   }

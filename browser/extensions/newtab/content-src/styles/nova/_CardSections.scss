@@ -4,7 +4,7 @@
 
 // @nova-cleanup(merge-styles): Move to components/DiscoveryStreamComponents/CardSections/_CardSections.scss
 
-.section-title-wrapper {
+.nova-enabled .section-title-wrapper {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -19,12 +19,12 @@
   }
 }
 
-.ds-section .section-follow,
-.ds-section .section-context-menu {
+.nova-enabled .ds-section .section-follow,
+.nova-enabled .ds-section .section-context-menu {
   @include wallpaper-contrast-fix;
 }
 
-.ds-section .section-follow {
+.nova-enabled .ds-section .section-follow {
   moz-button::part(button) {
     transition: background-color 0.2s ease;
   }
