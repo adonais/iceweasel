@@ -154,6 +154,81 @@ export class IPProtectionPanel {
   #window = null;
   #panelView = null;
   #headerButtons = [];
+  #locationsKeyListener = e => {
+    if (e.code !== "Tab" && e.code !== "ArrowDown" && e.code !== "ArrowUp") {
+      return;
+    }
+
+    const view = this.locationsView;
+    if (!view) {
+      return;
+    }
+
+    const backButton = view.querySelector(".subviewbutton-back");
+    const infoButton = view.querySelector(".panel-info-button");
+    const locationsList = view.querySelector("locations-list");
+    const listItems = locationsList
+      ? Array.from(
+          locationsList.querySelectorAll(".location-item:not([disabled])")
+        )
+      : [];
+    const promoButton = view.querySelector("moz-promo moz-button");
+    const focused = view.ownerDocument.activeElement;
+
+    if (!view.contains(focused)) {
+      return;
+    }
+
+    const isOnListItem = listItems.includes(focused);
+
+    // Arrow key handling. Make it only work for the locations list
+    if (e.code === "ArrowDown" || e.code === "ArrowUp") {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!isOnListItem) {
+        return;
+      }
+      const focusedIndex = listItems.indexOf(focused);
+      const nextListItem =
+        e.code === "ArrowDown"
+          ? listItems[(focusedIndex + 1) % listItems.length]
+          : listItems[(focusedIndex - 1 + listItems.length) % listItems.length];
+      nextListItem?.focus();
+      return;
+    }
+
+    // Tab key handling
+    const tabOnlyElements = [
+      backButton,
+      infoButton,
+      listItems[0],
+      promoButton,
+    ].filter(el => el != null);
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Force focus out of locations list if on a list item
+    if (isOnListItem) {
+      if (e.shiftKey) {
+        infoButton?.focus();
+      } else {
+        (promoButton ?? backButton)?.focus();
+      }
+      return;
+    }
+
+    const tabOnlyFocusedIndex = tabOnlyElements.indexOf(focused);
+    const nextTabOnlyElement = e.shiftKey
+      ? tabOnlyElements[
+          (tabOnlyFocusedIndex - 1 + tabOnlyElements.length) %
+            tabOnlyElements.length
+        ]
+      : tabOnlyElements[(tabOnlyFocusedIndex + 1) % tabOnlyElements.length];
+    nextTabOnlyElement?.focus();
+  };
+
   // Bug 2020733: Adds a key listener at the panel level
   //  since moz-button (header button) traps key events in its shadow DOM.
   //  This also avoids duplicate listeners across panel components.
@@ -627,14 +702,10 @@ export class IPProtectionPanel {
       view.addEventListener("ViewShown", resolve, { once: true });
     });
 
-    // ipprotection-locations and locations-list are rendered as roots in the light DOM,
-    // so moveFocus in the panelKeyListener can reach both elements naturally.
-    // TODO: see if we can tab between the header buttons and the locations list,
-    // but have arrow keys for moving through location items. (Bug 2034577)
     view.addEventListener(
       "ViewHiding",
       () => {
-        view.removeEventListener("keydown", this.#panelKeyListener, {
+        view.removeEventListener("keydown", this.#locationsKeyListener, {
           capture: true,
         });
       },
@@ -645,7 +716,15 @@ export class IPProtectionPanel {
     this.#createPanel(view, IPProtectionPanel.LOCATIONS_TAGNAME);
 
     await viewShown;
-    view.addEventListener("keydown", this.#panelKeyListener, {
+
+    // Allow back button and list items to manage focus and override the PanelMultiView keydown listener
+    for (let el of view.querySelectorAll(
+      ".subviewbutton-back, .location-item, moz-promo moz-button"
+    )) {
+      el.dataset.capturesFocus = "true";
+    }
+
+    view.addEventListener("keydown", this.#locationsKeyListener, {
       capture: true,
     });
   }
