@@ -802,7 +802,7 @@ export var UrlbarUtils = {
    * protocol.
    *
    * @param {string} iconUrl The URL of the icon.
-   * @param {number} size The desired size of the icon.
+   * @param {number} size The desired size of the icon (currently ignored).
    * @param {Window} win The window context.
    * @returns {string|null} The URL of the remote icon or null if not available.
    */
@@ -820,7 +820,10 @@ export var UrlbarUtils = {
         });
       }
       return lazy.FaviconUtils.getMozRemoteImageURL(iconUrl, {
-        size: Math.floor(size * win.devicePixelRatio),
+        // TODO Bug 2035971: Restore the size property once `FaviconUtils` and
+        // `moz-remote-image` handle the image aspect ratio correctly.
+        //
+        // size: Math.floor(size * win.devicePixelRatio),
         colorScheme: win.matchMedia("(prefers-color-scheme: dark)").matches
           ? "dark"
           : "light",
