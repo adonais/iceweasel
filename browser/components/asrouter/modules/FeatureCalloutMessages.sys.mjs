@@ -1175,6 +1175,163 @@ const MESSAGES = () => {
         lifetime: 1,
       },
     },
+    {
+      id: "SMARTWINDOW_SIDEBAR_AUTO_OPEN_PROMPT",
+      template: "feature_callout",
+      groups: [],
+      content: {
+        id: "SMARTWINDOW_SIDEBAR_AUTO_OPEN_PROMPT",
+        template: "multistage",
+        backdrop: "transparent",
+        transitions: false,
+        disableHistoryUpdates: true,
+        screens: [
+          {
+            id: "SMARTWINDOW_SIDEBAR_AUTO_OPEN_PROMPT_CALLOUT",
+            force_hide_steps_indicator: true,
+            anchors: [
+              {
+                selector: "#smartwindow-ask-button",
+                panel_position: {
+                  anchor_attachment: "bottomcenter",
+                  callout_attachment: "topright",
+                },
+              },
+            ],
+            content: {
+              position: "callout",
+              title: {
+                string_id: "smartwindow-sidebar-auto-open-callout-title",
+              },
+              subtitle: {
+                string_id: "smartwindow-sidebar-auto-open-callout-body",
+              },
+              primary_button: {
+                label: {
+                  string_id: "smartwindow-sidebar-auto-open-callout-accept",
+                },
+                action: {
+                  type: "SET_PREF",
+                  data: {
+                    pref: {
+                      name: "browser.smartwindow.sidebar.openByDefault",
+                      value: false,
+                    },
+                  },
+                  advance_screens: {
+                    id: "SMARTWINDOW_SIDEBAR_AUTO_OPEN_ACCEPTED_CALLOUT",
+                  },
+                },
+              },
+              secondary_button: {
+                label: {
+                  string_id: "smartwindow-sidebar-auto-open-callout-dismiss",
+                },
+                action: {
+                  advance_screens: {
+                    id: "SMARTWINDOW_SIDEBAR_AUTO_OPEN_REJECTED_CALLOUT",
+                  },
+                },
+              },
+              dismiss_button: { action: { dismiss: true } },
+            },
+          },
+          {
+            id: "SMARTWINDOW_SIDEBAR_AUTO_OPEN_ACCEPTED_CALLOUT",
+            force_hide_steps_indicator: true,
+            anchors: [
+              {
+                selector: "#smartwindow-ask-button",
+                panel_position: {
+                  anchor_attachment: "bottomcenter",
+                  callout_attachment: "topright",
+                },
+              },
+            ],
+            content: {
+              position: "callout",
+              title: {
+                string_id:
+                  "smartwindow-sidebar-auto-open-callout-accepted-title",
+              },
+              above_button_content: [
+                {
+                  type: "text",
+                  text: {
+                    string_id:
+                      "smartwindow-sidebar-auto-open-callout-accepted-subtitle",
+                    textAlign: "start",
+                    fontSize: "0.8em",
+                    marginBlock: "0",
+                    marginInline: "0",
+                  },
+                  link_keys: ["settings"],
+                },
+              ],
+              settings: {
+                action: {
+                  type: "OPEN_PREFERENCES_PAGE",
+                  data: { category: "personalizeSmartWindow" },
+                  dismiss: true,
+                },
+              },
+              dismiss_button: { action: { dismiss: true } },
+            },
+          },
+          {
+            id: "SMARTWINDOW_SIDEBAR_AUTO_OPEN_REJECTED_CALLOUT",
+            force_hide_steps_indicator: true,
+            anchors: [
+              {
+                selector: "#smartwindow-ask-button",
+                panel_position: {
+                  anchor_attachment: "bottomcenter",
+                  callout_attachment: "topright",
+                },
+              },
+            ],
+            content: {
+              position: "callout",
+              title: {
+                string_id:
+                  "smartwindow-sidebar-auto-open-callout-rejected-title",
+              },
+              above_button_content: [
+                {
+                  type: "text",
+                  text: {
+                    string_id:
+                      "smartwindow-sidebar-auto-open-callout-rejected-subtitle",
+                    textAlign: "start",
+                    fontSize: "0.8em",
+                    marginBlock: "0",
+                    marginInline: "0",
+                  },
+                  link_keys: ["settings"],
+                },
+              ],
+              settings: {
+                action: {
+                  type: "OPEN_PREFERENCES_PAGE",
+                  data: { category: "personalizeSmartWindow" },
+                  dismiss: true,
+                },
+              },
+              dismiss_button: { action: { dismiss: true } },
+            },
+          },
+        ],
+      },
+      targeting:
+        "isAIWindow && 'browser.smartwindow.sidebar.emptyCloseCount' | preferenceValue >= 2",
+      trigger: {
+        id: "preferenceObserver",
+        params: ["browser.smartwindow.sidebar.emptyCloseCount"],
+      },
+      frequency: {
+        lifetime: 1,
+      },
+    },
   ];
   messages = add24HourImpressionJEXLTargeting(
     ["FIREFOX_VIEW_TAB_PICKUP_REMINDER"],
