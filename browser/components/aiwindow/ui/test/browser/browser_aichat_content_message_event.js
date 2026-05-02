@@ -136,6 +136,65 @@ add_task(async function test_messageEvent_assistant() {
   await SpecialPowers.popPrefEnv();
 });
 
+add_task(async function test_completed_assistant_message_announced() {
+  const restoreSignIn = skipSignIn();
+  const { restore } = await stubEngineNetworkBoundaries({
+    serverOptions: { streamChunks: ["**Final** answer\n\nSecond paragraph"] },
+  });
+
+  let win;
+  try {
+    win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    await typeInSmartbar(browser, "Hello");
+    await submitSmartbar(browser);
+
+    const aiWindowEl = browser.contentDocument?.querySelector("ai-window");
+    const aichatBrowser = await TestUtils.waitForCondition(
+      () => aiWindowEl.shadowRoot?.querySelector("#aichat-browser"),
+      "Wait for aichat-browser"
+    );
+
+    await SpecialPowers.spawn(aichatBrowser, [], async () => {
+      const chatContent = content.document.querySelector("ai-chat-content");
+      const announcer = await ContentTaskUtils.waitForCondition(
+        () =>
+          chatContent.shadowRoot?.querySelector(
+            ".assistant-response-announcer"
+          ),
+        "assistant response announcer should exist"
+      );
+      Assert.equal(
+        announcer.getAttribute("role"),
+        "status",
+        "announcer should expose status"
+      );
+      Assert.equal(
+        announcer.getAttribute("aria-live"),
+        "polite",
+        "announcer should use polite live updates"
+      );
+      Assert.equal(
+        announcer.getAttribute("aria-atomic"),
+        "true",
+        "announcer should announce its full contents"
+      );
+
+      await ContentTaskUtils.waitForCondition(
+        () => announcer.textContent.trim() === "Final answer Second paragraph",
+        "completed assistant response should be announced"
+      );
+    });
+  } finally {
+    if (win) {
+      await BrowserTestUtils.closeWindow(win);
+    }
+    restoreSignIn();
+    await restore();
+  }
+});
+
 /**
  * Test that messageEvent handles loading messages correctly
  */

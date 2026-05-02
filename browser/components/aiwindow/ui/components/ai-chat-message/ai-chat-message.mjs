@@ -42,6 +42,7 @@ export class AIChatMessage extends MozLitElement {
     message: { type: String },
     messageId: { type: String, reflect: true, attribute: "data-message-id" },
     searchTokens: { type: Array },
+    complete: { type: Boolean },
     seenUrls: { type: Object, attribute: false },
     conversationId: { type: String },
   };
@@ -135,6 +136,24 @@ export class AIChatMessage extends MozLitElement {
       composed: true,
     });
     this.dispatchEvent(e);
+  }
+
+  updated(changed) {
+    if (changed.has("complete") && this.complete && this.role === "assistant") {
+      const messageEl = this.shadowRoot?.querySelector(`.message-${this.role}`);
+      const text = messageEl
+        ? (messageEl.innerText || messageEl.textContent || "")
+            .replace(/\s+/g, " ")
+            .trim()
+        : "";
+      this.dispatchEvent(
+        new CustomEvent("ai-chat-message:complete", {
+          bubbles: true,
+          composed: true,
+          detail: { messageId: this.messageId, text },
+        })
+      );
+    }
   }
 
   #getIconSrc = linkHref => {

@@ -69,6 +69,16 @@
   }
 }
 
+.assistant-response-announcer {
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
 /* Temporary chat bubble styling */
 .chat-bubble {
   box-sizing: border-box;
