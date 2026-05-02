@@ -668,12 +668,13 @@
                       data-l10n-id="fxa-menu-sync-settings"
                       hidden="true"
                       />
-      <toolbarseparator id="PanelUI-fxa-menu-sendtab-separator" />
+      <toolbarseparator id="PanelUI-fxa-menu-sendtab-separator" hidden="true" />
       <toolbarbutton id="PanelUI-fxa-menu-sendtab-button"
                       class="subviewbutton subviewbutton-nav"
                       data-l10n-id="fxa-menu-send-to-device"
                       data-l10n-args='{"tabCount":1}'
                       closemenu="none"
+                      hidden="true"
                       />
       <toolbarseparator id="PanelUI-sign-out-separator" />
       <toolbarbutton id="PanelUI-fxa-menu-account-signout-button"
@@ -765,27 +766,23 @@
     </vbox>
   </panelview>
 
-  <panelview id="PanelUI-fxa-menu-sendtab-not-configured" class="PanelUI-subView">
-    <vbox id="PanelUI-fxa-sendtab-not-configured" align="center" class="panel-subview-body">
-      <image class="fxaSendToDeviceLogo" role="presentation"/>
-      <label class="PanelUI-fxa-service-description-label" data-l10n-id="fxa-menu-send-tab-to-device-description"></label>
-      <html:moz-button type="primary"
-                       id="PanelUI-fxa-menu-sendtab-not-configured-button"
-                       class="PanelUI-fxa-signin-button"
-                       data-l10n-id="appmenuitem-fxa-sign-in"
-                       />
+  <panelview id="PanelUI-fxa-menu-sendtab-enable-sync" class="PanelUI-subView">
+    <vbox id="PanelUI-fxa-sendtab-enable-sync" class="panel-subview-body">
+      <toolbarbutton id="PanelUI-fxa-menu-sendtab-enable-sync-button" class="subviewbutton panel-subview-footer-button"
+                     data-l10n-id="fxa-menu-send-to-mobile-enable-sync2"
+                     />
     </vbox>
   </panelview>
 
-  <panelview id="PanelUI-fxa-menu-sendtab-no-devices" class="PanelUI-subView">
-    <vbox id="PanelUI-fxa-sendtab-no-devices" align="center" class="panel-subview-body">
-      <image class="fxaSendToDeviceLogo" role="presentation"/>
-      <label class="PanelUI-fxa-service-description-label" data-l10n-id="fxa-menu-send-tab-to-device-description"></label>
-      <html:moz-button type="primary"
-                       id="PanelUI-fxa-menu-sendtab-connect-device-button"
-                       class="PanelUI-fxa-signin-button"
-                       data-l10n-id="appmenu-remote-tabs-connectdevice"
-                       />
+  <panelview id="PanelUI-fxa-menu-sendtab-connect-phone" class="PanelUI-subView">
+    <vbox id="PanelUI-fxa-sendtab-connect-phone" class="panel-subview-body">
+      <toolbarbutton id="PanelUI-fxa-menu-sendtab-connect-phone-button" class="subviewbutton panel-subview-footer-button"
+                     data-l10n-id="fxa-menu-send-to-mobile-connect-phone2"
+                     />
+      <toolbarseparator id="PanelUI-set-up-connect-phone-separator" />
+      <toolbarbutton id="PanelUI-fxa-menu-sendtab-no-phone-button" class="subviewbutton panel-subview-footer-button"
+                     data-l10n-id="fxa-menu-send-to-mobile-device-missing2"
+                     />
     </vbox>
   </panelview>
 
