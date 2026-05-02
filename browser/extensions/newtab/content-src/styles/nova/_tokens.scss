@@ -15,7 +15,7 @@
  * Remove this file when `browser.nova.enabled` unifies both prefs and reaches Release.
  */
 
-.nova-enabled {
+:root:has(.nova-enabled) {
   /** background-color **/
   --background-color-box: light-dark(var(--color-white), var(--color-neutral-70));
   --background-color-box-info: light-dark(var(--color-neutral-20), var(--color-neutral-80));
@@ -222,7 +222,7 @@
 }
 
 @media (forced-colors) {
-  .nova-enabled {
+  :root:has(.nova-enabled) {
     /** background-color **/
     --background-color-box: var(--background-color-canvas);
     --background-color-box-info: var(--background-color-canvas);
