@@ -110,7 +110,7 @@ class URL final : public URLSearchParamsObserver, public nsWrapperCache {
 
   void SetSearch(const nsAString& aSearch);
 
-  URLSearchParams* SearchParams();
+  already_AddRefed<URLSearchParams> SearchParams();
 
   void GetHash(nsAString& aHost) const;
 

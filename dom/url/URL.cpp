@@ -159,9 +159,9 @@ bool URL::CanParse(const GlobalObject& aGlobal, const nsAString& aURL,
   return NS_SUCCEEDED(NS_NewURI(getter_AddRefs(uri), urlStr, nullptr, baseUri));
 }
 
-URLSearchParams* URL::SearchParams() {
+already_AddRefed<URLSearchParams> URL::SearchParams() {
   CreateSearchParamsIfNeeded();
-  return mSearchParams;
+  return do_AddRef(mSearchParams);
 }
 
 bool IsChromeURI(nsIURI* aURI) { return aURI->SchemeIs("chrome"); }
