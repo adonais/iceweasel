@@ -2729,6 +2729,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">U bent beschermd</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Help mee trackers te vangen</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Standaard (standaard)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -4500,8 +4502,6 @@
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Resultaten bekijken</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Wedstrijddetails bekijken</string>
-  <!-- Sports widget section header for previous soccer match results. -->
-  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Vorige wedstrijd</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">Gerelateerde wedstrijden</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
@@ -4565,14 +4565,14 @@
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
   <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Teamselectieblad sluiten</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
-  <string name="sports_widget_close_content_description" tools:ignore="UnusedResources">Sluiten</string>
+  <string name="sports_widget_close_content_description">Sluiten</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
   <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Meer opties</string>
   <!--
     Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
     %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
   -->
-  <string name="sports_widget_countdown_remaining_content_description" tools:ignore="UnusedResources">Resterende tijd. Dagen: %1$d. Uren: %2$d. Minuten: %3$d.</string>
+  <string name="sports_widget_countdown_remaining_content_description">Resterende tijd. Dagen: %1$d. Uren: %2$d. Minuten: %3$d.</string>
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
   <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Naar WK-website</string>
   <!--

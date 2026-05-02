@@ -57,4 +57,6 @@
   <string name="mozac_ai_controls_page_summary_title">Souhrny stránek</string>
   <!-- Description for the page summary AI controllable feature -->
   <string name="mozac_ai_controls_page_summary_description">Stránky a souhrny se nikdy neukládají.</string>
+  <!-- Button text for the Error dismiss button on Shake to Summarize -->
+  <string name="mozac_summarize_error_dissmiss">Zavřít</string>
 </resources>

@@ -2721,6 +2721,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">보호되고 있습니다</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">추적기 잡기에 도와주세요</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">표준 (기본값)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -4457,7 +4459,7 @@
   <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
   <string name="sports_widget_final">결승</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
-  <string name="sports_widget_bronze_final">동메달</string>
+  <string name="sports_widget_bronze_final">동메달 결정전</string>
   <!-- Sports widget error card message shown when match data fails to load. -->
   <string name="sports_widget_error_load_failed">지금은 경기 정보를 사용할 수 없습니다. 몇 분 후에 새로 고침 해 보세요.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
@@ -4492,8 +4494,6 @@
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">결과 보기</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">경기 상세 정보 보기</string>
-  <!-- Sports widget section header for previous soccer match results. -->
-  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">이전 경기</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">관련 경기</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
@@ -4557,14 +4557,14 @@
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
   <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">팀 선택 시트 닫기</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
-  <string name="sports_widget_close_content_description" tools:ignore="UnusedResources">닫기</string>
+  <string name="sports_widget_close_content_description">닫기</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
   <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">추가 옵션</string>
   <!--
     Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
     %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
   -->
-  <string name="sports_widget_countdown_remaining_content_description" tools:ignore="UnusedResources">남은 시간. 일: %1$d. 시간: %2$d. 분: %3$d.</string>
+  <string name="sports_widget_countdown_remaining_content_description">남은 시간. 일: %1$d. 시간: %2$d. 분: %3$d.</string>
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
   <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">월드컵 사이트로 이동</string>
   <!--

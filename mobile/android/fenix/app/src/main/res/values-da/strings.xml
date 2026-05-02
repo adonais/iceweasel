@@ -2637,8 +2637,8 @@
 
       Text shown on the trackers blocked card. %d is the number of trackers blocked.
     -->
-    <item quantity="one">%d sporings-tjeneste blokeret</item>
-    <item quantity="other">%d sporings-tjenester blokeret</item>
+    <item quantity="one">%dforsøg på sporing blokeret</item>
+    <item quantity="other">%d forsøg på sporing blokeret</item>
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Du er beskyttet</string>

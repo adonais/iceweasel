@@ -8,9 +8,9 @@
 
 <resources>
   <!-- Title for the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_title">正在导入书签</string>
+  <string name="mozac_feature_importer_dialog_title">Buukmaarkiiwwan galchuu</string>
   <!-- Description for the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_description">保持此屏幕打开，此过程大概只需几秒钟。</string>
+  <string name="mozac_feature_importer_dialog_description">Iskiriinii kana banaa kaa\'aa. Sekondii muraasa qofa fudhachuu qaba.</string>
   <!-- Label for the cancel action on the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_cancel">取消</string>
+  <string name="mozac_feature_importer_dialog_cancel">Haqi</string>
 </resources>

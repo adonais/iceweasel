@@ -373,6 +373,10 @@
   <string name="ai_controls_learn_more">Zjistit více</string>
   <!-- Title for the block AI enhancements toggle -->
   <string name="ai_controls_block_ai_title">Blokovat vylepšení pomocí AI</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Překlady</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Hlasové vyhledávání</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Co bude blokováno:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -4409,8 +4413,6 @@
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Zobrazit výsledky</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Zobrazit podrobnosti o zápase</string>
-  <!-- Sports widget section header for previous soccer match results. -->
-  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Předchozí zápas</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">Související zápasy</string>
   <!--

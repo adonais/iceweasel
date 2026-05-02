@@ -4486,8 +4486,6 @@
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">იხილეთ შედეგები</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">შეხვედრის შესახებ ვრცლად</string>
-  <!-- Sports widget section header for previous soccer match results. -->
-  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">წინა შეხვედრა</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">მსგავსი შეხვედრები</string>
   <!--

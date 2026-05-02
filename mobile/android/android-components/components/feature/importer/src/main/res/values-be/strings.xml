@@ -8,9 +8,9 @@
 
 <resources>
   <!-- Title for the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_title">正在导入书签</string>
+  <string name="mozac_feature_importer_dialog_title">Імпартуем закладкі</string>
   <!-- Description for the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_description">保持此屏幕打开，此过程大概只需几秒钟。</string>
+  <string name="mozac_feature_importer_dialog_description">Трымайце гэты экран адкрытым. Гэта павінна заняць усяго некалькі секунд.</string>
   <!-- Label for the cancel action on the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_cancel">取消</string>
+  <string name="mozac_feature_importer_dialog_cancel">Скасаваць</string>
 </resources>

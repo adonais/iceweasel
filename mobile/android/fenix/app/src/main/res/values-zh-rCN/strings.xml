@@ -4343,6 +4343,8 @@
   <string name="sports_widget_final">决赛</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">三四名决赛</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">连接中断 — 实时更新已暂停。</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">刷新</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4373,8 +4375,6 @@
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">查看比赛结果</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">查看比赛详情</string>
-  <!-- Sports widget section header for previous soccer match results. -->
-  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">上一场</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">本组其他场次</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->

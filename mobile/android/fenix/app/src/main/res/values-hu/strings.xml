@@ -4500,8 +4500,6 @@
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">Eredmények megtekintése</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Mérkőzés részleteinek megtekintése</string>
-  <!-- Sports widget section header for previous soccer match results. -->
-  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">Előző mérkőzés</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">Kapcsolódó mérkőzések</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
@@ -4565,7 +4563,7 @@
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
   <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Csapatválasztó lap bezárása</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
-  <string name="sports_widget_close_content_description" tools:ignore="UnusedResources">Bezárás</string>
+  <string name="sports_widget_close_content_description">Bezárás</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
   <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">További beállítások</string>
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->

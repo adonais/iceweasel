@@ -1667,6 +1667,30 @@
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Hætta við</string>
   <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Gult</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Appelsínugult</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Rautt</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Bleikt</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Purpurablátt</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Fjólublátt</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Blátt</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Blágrænt</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Grænt</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Grátt</string>
+  <!--
     History
 
     Text for the button to search all history
@@ -2048,6 +2072,8 @@
   <string name="bookmark_sort_menu_a_to_z">Raða frá A til Ö</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Raða frá Ö til A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Flytja inn úr skrá</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2295,6 +2321,12 @@
   <string name="menu_print">Prenta</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">Senda til tækis</string>
+  <!-- Text for the QR code action in the native share sheet -->
+  <string name="share_qr_code">QR-kóði</string>
+  <!-- Title shown in the QR code display screen -->
+  <string name="qr_code_display_title">QR-kóði</string>
+  <!-- Content description for the close button in the QR code display screen -->
+  <string name="qr_code_display_close">Loka</string>
   <!-- Label for the download button on the QR code display screen -->
   <string name="qr_code_display_download">Sækja</string>
   <!-- Toast shown when the QR code is successfully saved to Downloads -->
@@ -2954,6 +2986,16 @@
   <string name="email_masks_max_free_tier_reached">Þú hefur notað 5 ókeypis tölvupósthulur, svo við völdum eina fyrir þig til að endurnýta.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Tölvupóstshulur eru ekki tiltækar eins og er. Reyndu aftur eftir nokkrar mínútur.</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Innbyggt VPN</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA-prófun</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
   <!-- Label for the browser VPN toggle on the settings screen -->
   <string name="ip_protection_toggle_label">VPN</string>
   <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
@@ -2977,6 +3019,10 @@
   <string name="ip_protection_location_section">Staðsetning</string>
   <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
   <string name="ip_protection_location_recommended_label">Ráðlagt</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Kveikt</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Slökkt</string>
   <!-- Badge label shown in the menu item while the browser VPN is connecting -->
   <string name="ip_protection_menu_connecting">Tengist…</string>
   <!-- Badge label shown in the menu item when the browser VPN is paused -->

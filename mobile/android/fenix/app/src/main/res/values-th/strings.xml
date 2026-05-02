@@ -2721,6 +2721,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">คุณได้รับการปกป้อง</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">ช่วยไล่จับพวกตัวติดตาม</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">มาตรฐาน (ค่าเริ่มต้น)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -4492,8 +4494,6 @@
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">ดูผลการแข่ง</string>
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">ดูรายละเอียดการแข่ง</string>
-  <!-- Sports widget section header for previous soccer match results. -->
-  <string name="sports_widget_previous_match" tools:ignore="UnusedResources">การแข่งก่อนหน้า</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">การแข่งในกลุ่มเดียวกัน</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
@@ -4557,14 +4557,14 @@
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
   <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">ปิดหน้าเลือกทีม</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
-  <string name="sports_widget_close_content_description" tools:ignore="UnusedResources">ปิด</string>
+  <string name="sports_widget_close_content_description">ปิด</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
   <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">ตัวเลือกเพิ่มเติม</string>
   <!--
     Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
     %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
   -->
-  <string name="sports_widget_countdown_remaining_content_description" tools:ignore="UnusedResources">เหลือเวลาอีก %1$d วัน %2$d ชั่วโมง %3$d นาที</string>
+  <string name="sports_widget_countdown_remaining_content_description">เหลือเวลาอีก %1$d วัน %2$d ชั่วโมง %3$d นาที</string>
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
   <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">ไปยังเว็บไซต์ฟุตบอลโลก</string>
   <!--

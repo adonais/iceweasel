@@ -23,4 +23,6 @@
   <string name="hiscore">يۇقىرى نومۇر: %1$d</string>
   <string name="sound_on">🔈 ئاۋاز ئوچۇق</string>
   <string name="sound_off">🔇ئاۋاز تاقاق</string>
+  <!-- Back button -->
+  <string name="back">قايت</string>
 </resources>

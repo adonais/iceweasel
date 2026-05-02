@@ -662,6 +662,10 @@
     %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
   -->
   <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">Da’ gā’hue nāhuin sà’ doj riña aché nunt nan nī, a’nïn Firefox nuguan’ da’ nàchinj nan’an dàj ‘hiaj sun Mozilla. %1$s</string>
+  <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
+  <string name="nova_onboarding_tou_body_line_3_link_text">Gānatsij dàj ruhuât nāgi’hiát</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Ngà huā sa huìi riña daran’ nej si enlasêt si ruhuât nā’nint</string>
   <!-- Theme selection onboarding "light" option label. -->
   <string name="nova_onboarding_theme_selection_light_label" tools:ignore="UnusedResources">Sa yigìïn</string>
   <!-- Theme selection onboarding "dark" option label. -->
