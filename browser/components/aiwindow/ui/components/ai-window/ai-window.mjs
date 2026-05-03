@@ -1380,6 +1380,10 @@ export class AIWindow extends MozLitElement {
   }
 
   #onMessageComplete = (_event, msg) => {
+    this.#dispatchMessageToChatContent({
+      role: "assistant-message-complete",
+      content: { id: msg?.id },
+    });
     const followupCount = msg?.tokens?.followup?.length;
     if (followupCount) {
       this.onQuickPromptDisplayed(followupCount);
