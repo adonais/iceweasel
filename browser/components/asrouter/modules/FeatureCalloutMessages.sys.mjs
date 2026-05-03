@@ -1323,7 +1323,7 @@ const MESSAGES = () => {
         ],
       },
       targeting:
-        "isAIWindow && 'browser.smartwindow.sidebar.emptyCloseCount' | preferenceValue >= 2",
+        "isAIWindow && 'browser.smartwindow.sidebar.openByDefault' | preferenceValue && 'browser.smartwindow.sidebar.emptyCloseCount' | preferenceValue >= 2",
       trigger: {
         id: "preferenceObserver",
         params: ["browser.smartwindow.sidebar.emptyCloseCount"],

@@ -48,6 +48,27 @@ describe("sidebar auto-open pref prompt", () => {
 
       Assert.ok(callout, "The auto open prompt should be showing");
     });
+
+    describe("when the browser.smartwindow.sidebar.openByDefault pref is already disabled", () => {
+      beforeEach(async () => {
+        await SpecialPowers.pushPrefEnv({
+          set: [["browser.smartwindow.sidebar.openByDefault", false]],
+        });
+      });
+
+      afterEach(async () => {
+        await SpecialPowers.popPrefEnv();
+      });
+
+      it("does not open the auto-open pref prompt", async () => {
+        await triggerAutoOpenPrompt(win, askButton);
+
+        Assert.ok(
+          !win.document.querySelector(promptShowingSelector),
+          "Prompt should not open if browser.smartwindow.sidebar.openByDefault is set to false"
+        );
+      });
+    });
   });
 
   describe("when the user accepts the prompt", () => {
