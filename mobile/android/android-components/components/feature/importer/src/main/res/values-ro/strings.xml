@@ -8,9 +8,9 @@
 
 <resources>
   <!-- Title for the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_title">Воридоти хатбаракҳо</string>
+  <string name="mozac_feature_importer_dialog_title">Se importă marcaje</string>
   <!-- Description for the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_description">Ин экранро кушода нигоҳ доред. Ин амал бояд танҳо дар якчанд сония иҷро карда шавад.</string>
+  <string name="mozac_feature_importer_dialog_description">Ține acest ecran deschis. Ar trebui să dureze numai câteva secunde.</string>
   <!-- Label for the cancel action on the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_cancel">Бекор кардан</string>
+  <string name="mozac_feature_importer_dialog_cancel">Anulează</string>
 </resources>

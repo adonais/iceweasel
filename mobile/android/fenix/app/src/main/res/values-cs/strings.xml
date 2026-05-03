@@ -367,7 +367,11 @@
     Toolbar title for the Page summaries settings fragment
   -->
   <string name="preferences_page_summaries">Souhrny stránek</string>
-  <!-- Title for the AI controls settings screen -->
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
   <string name="preferences_ai_controls">Ovládání AI</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Zjistit více</string>

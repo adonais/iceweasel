@@ -19,6 +19,8 @@
   <string name="mozac_summarize_shake_consent_off_device_negative_button">Ikke nu</string>
   <!-- Title for the on-device shake summarization and download consent screen -->
   <string name="mozac_summarize_shake_consent_on_device_title">Sammenfat denne side</string>
+  <!-- Message for the on-device shake summarization and download consent screen. %s will be replaced by app name. -->
+  <string name="mozac_summarize_shake_consent_on_device_message">Efter en hurtig engangs-filhentning kan %s sammenfatte sider, når du ryster din enhed.</string>
   <!-- Button text for the on-device shake summarization and download consent screen approving shake and download consent -->
   <string name="mozac_summarize_shake_consent_on_device_button_positive">Hent \u0020for at sammenfatte</string>
   <!-- Button text for the on-device shake summarization and download consent screen denying shake and download consent -->
