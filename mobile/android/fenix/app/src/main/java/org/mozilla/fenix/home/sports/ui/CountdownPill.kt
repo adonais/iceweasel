@@ -17,6 +17,10 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -47,9 +51,19 @@ private fun CountdownPill(
     hours: String,
     mins: String,
 ) {
+    val countdownPillContentDescription = stringResource(
+        R.string.sports_widget_countdown_remaining_content_description,
+        days.toIntOrNull() ?: 0,
+        hours.toIntOrNull() ?: 0,
+        mins.toIntOrNull() ?: 0,
+    )
     Surface(
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        modifier = Modifier.clearAndSetSemantics {
+            this.contentDescription = countdownPillContentDescription
+            liveRegion = LiveRegionMode.Polite
+        },
     ) {
         Row(
             modifier = Modifier.padding(

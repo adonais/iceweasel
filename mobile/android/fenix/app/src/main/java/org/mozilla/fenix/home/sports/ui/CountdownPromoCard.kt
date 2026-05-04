@@ -34,8 +34,9 @@ fun CountdownPromoCard(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val contentDescription = stringResource(R.string.sports_widget_close_content_description)
     PromoCard(
-        closeButtonContentDescription = null,
+        closeButtonContentDescription = contentDescription,
         onDismiss = onDismiss,
         modifier = modifier,
         title = {
