@@ -132,27 +132,28 @@ ipprotection-message-bar.vpn-top-content {
 }
 
 .skeleton-title {
-  /* Intentionally use a larger font size to match font size of actual status box title */
-  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  font-size: 1.4lh;
   height: 1lh;
-  width: 102px;
+  width: var(--size-layout-xsmall);
   border-radius: var(--space-xxsmall);
+  margin-block: var(--space-medium) var(--space-small);
 }
 
 .skeleton-line {
-  /* Intentionally use a larger font size to match font size of actual status box description */
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-  font-size: 1.23em;
+  font-size: 0.625rem;
   height: 1lh;
-  width: 239px;
+  width: var(--size-layout-small);
   border-radius: var(--space-xxsmall);
 }
 
 .skeleton-line-thick {
-  height: var(--button-min-height, 32px);
+  height: var(--button-min-height);
   width: 100%;
   border-radius: var(--border-radius-small);
+
+  &:first-of-type {
+    margin-block-start: var(--space-xxlarge);
+  }
 }
 
 #site-exclusion-control {
