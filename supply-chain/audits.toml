@@ -4657,7 +4657,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:8d766f6f735e8775272c251c9e468ff795c19c7f"
+delta = "28.0.0 -> 28.0.0@git:cdc5ca5ed9e4fe6f4d5f8464e488c3c103d4ce54"
 importable = false
 
 [[audits.net2]]
@@ -7463,7 +7463,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:8d766f6f735e8775272c251c9e468ff795c19c7f"
+delta = "28.0.0 -> 28.0.0@git:cdc5ca5ed9e4fe6f4d5f8464e488c3c103d4ce54"
 importable = false
 
 [[audits.wgpu-core-deps-apple]]
@@ -7504,7 +7504,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:8d766f6f735e8775272c251c9e468ff795c19c7f"
+delta = "28.0.0 -> 28.0.0@git:cdc5ca5ed9e4fe6f4d5f8464e488c3c103d4ce54"
 importable = false
 
 [[audits.wgpu-core-deps-windows-linux-android]]
@@ -7545,7 +7545,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:8d766f6f735e8775272c251c9e468ff795c19c7f"
+delta = "28.0.0 -> 28.0.0@git:cdc5ca5ed9e4fe6f4d5f8464e488c3c103d4ce54"
 importable = false
 
 [[audits.wgpu-hal]]
@@ -7664,7 +7664,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:8d766f6f735e8775272c251c9e468ff795c19c7f"
+delta = "28.0.0 -> 28.0.0@git:cdc5ca5ed9e4fe6f4d5f8464e488c3c103d4ce54"
 importable = false
 
 [[audits.wgpu-types]]
@@ -7778,7 +7778,7 @@ who = [
     "Jim Blandy <jimb@red-bean.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "28.0.0 -> 28.0.0@git:8d766f6f735e8775272c251c9e468ff795c19c7f"
+delta = "28.0.0 -> 28.0.0@git:cdc5ca5ed9e4fe6f4d5f8464e488c3c103d4ce54"
 importable = false
 
 [[audits.whatsys]]
