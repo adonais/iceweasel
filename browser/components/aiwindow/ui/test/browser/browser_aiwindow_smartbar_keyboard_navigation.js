@@ -144,3 +144,57 @@ add_task(async function test_smartbar_sidebar_keyboard_vertical_arrows() {
 
   await BrowserTestUtils.closeWindow(win);
 });
+
+add_task(async function test_input_cta_dropdown_keeps_suggestions_open() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  await promiseSmartbarSuggestionsOpen(browser, () =>
+    typeInSmartbar(browser, "hello")
+  );
+
+  const { viewOpenBeforeMove, viewOpenAfterMove } = await SpecialPowers.spawn(
+    browser,
+    [],
+    async () => {
+      const aiWindowElement = content.document.querySelector("ai-window");
+      const smartbar = await ContentTaskUtils.waitForCondition(
+        () => aiWindowElement.shadowRoot?.querySelector("#ai-window-smartbar"),
+        "Wait for Smartbar"
+      );
+      const inputCta = smartbar.querySelector("input-cta");
+      const mozButton = inputCta.shadowRoot.querySelector("moz-button");
+      const chevron = await ContentTaskUtils.waitForCondition(
+        () => mozButton.shadowRoot.querySelector("#chevron-button"),
+        "Wait for chevron button"
+      );
+
+      const panelList = inputCta.shadowRoot.querySelector("panel-list");
+      const panelShown = new Promise(resolve =>
+        panelList.addEventListener("shown", resolve, { once: true })
+      );
+      chevron.click();
+      await panelShown;
+
+      const isOpenBeforeMove = smartbar.hasAttribute("open");
+      inputCta.focus();
+      await new Promise(r => content.setTimeout(r, 0));
+
+      return {
+        viewOpenBeforeMove: isOpenBeforeMove,
+        viewOpenAfterMove: smartbar.hasAttribute("open"),
+      };
+    }
+  );
+
+  ok(
+    viewOpenBeforeMove,
+    "Suggestions view should be open when input-cta dropdown is open"
+  );
+  ok(
+    viewOpenAfterMove,
+    "Suggestions view should stay open after focus moves into input-cta dropdown"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+});

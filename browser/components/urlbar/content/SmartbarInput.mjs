@@ -5410,7 +5410,10 @@ export class SmartbarInput extends HTMLElement {
 
     // Respect the autohide preference for easier inspecting/debugging via
     // the browser toolbox.
-    if (!lazy.UrlbarPrefs.get("ui.popup.disable_autohide")) {
+    if (
+      !lazy.UrlbarPrefs.get("ui.popup.disable_autohide") &&
+      !this._inputCta?.contains(event.relatedTarget)
+    ) {
       this.view.close();
     }
 
