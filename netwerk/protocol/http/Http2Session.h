@@ -318,7 +318,7 @@ class Http2Session final : public ASpdySession,
                                            uint32_t*, bool*) final;
   [[nodiscard]] nsresult WriteSegmentsAgain(nsAHttpSegmentWriter*, uint32_t,
                                             uint32_t*, bool*) final;
-  [[nodiscard]] bool Do0RTT(bool aCanSendEarlyData) final { return true; }
+  [[nodiscard]] bool Do0RTT() final { return true; }
   [[nodiscard]] nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) final;
 
   // For use by an HTTP2Stream

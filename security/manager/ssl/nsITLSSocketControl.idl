@@ -54,12 +54,6 @@ interface nsITLSSocketControl : nsISupports {
      */
     readonly attribute boolean earlyDataAccepted;
 
-    /* True if a TLS session resumption token was loaded from the token cache
-     * and offered in the ClientHello (regardless of whether the server
-     * accepted the resumption or whether early data was also sent).
-     */
-    readonly attribute boolean resumptionTokenPresent;
-
     /* When 0RTT is performed, PR_Write will not drive the handshake forward.
      * It must be forced by calling this function.
      */

@@ -38,10 +38,6 @@ const char* kHostZeroRttAlertVersion =
 const char* kHostZeroRttAlertUnexpected = "0rtt-alert-unexpected.example.com";
 const char* kHostZeroRttAlertDowngrade = "0rtt-alert-downgrade.example.com";
 const char* kHostDecryptErrorOnResume = "decrypt-error-on-resume.example.com";
-const char* kHostIllegalParameterOnResume =
-    "illegal-parameter-on-resume.example.com";
-const char* kHostPSKDecryptErrorNoEarlyData =
-    "psk-no-early-data-on-resume.example.com";
 
 const char* kHostMlkem768x25519NetInterrupt =
     "mlkem768x25519-net-interrupt.example.com";
@@ -62,8 +58,6 @@ MOZ_RUNINIT const FaultyServerHost sFaultyServerHosts[]{
     {kHostZeroRttAlertUnexpected, kCertWildcard, ZeroRtt},
     {kHostZeroRttAlertDowngrade, kCertWildcard, ZeroRtt},
     {kHostDecryptErrorOnResume, kCertWildcard, ZeroRtt},
-    {kHostIllegalParameterOnResume, kCertWildcard, ZeroRtt},
-    {kHostPSKDecryptErrorNoEarlyData, kCertWildcard, ZeroRtt},
     {kHostMlkem768x25519NetInterrupt, kCertWildcard, Mlkem768x25519},
     {kHostMlkem768x25519AlertAfterServerHello, kCertWildcard, Mlkem768x25519},
     {nullptr, nullptr},
@@ -169,24 +163,7 @@ void SecretCallbackFailZeroRtt(PRFileDesc* fd, PRUint16 epoch,
       SSL3_SendAlert(ss, alert_fatal, unexpected_message);
     } else if (!strcmp(host->mHostName, kHostDecryptErrorOnResume)) {
       SSL3_SendAlert(ss, alert_fatal, decrypt_error);
-    } else if (!strcmp(host->mHostName, kHostIllegalParameterOnResume)) {
-      SSL3_SendAlert(ss, alert_fatal, illegal_parameter);
     }
-  } else if (epoch == 2 && dir == ssl_secret_read &&
-             !strcmp(host->mHostName, kHostPSKDecryptErrorNoEarlyData)) {
-    sslSocket* ss = ssl_FindSocket(fd);
-    if (!ss) {
-      fprintf(stderr, "PSK-no-earlydata handler, no ss!\n");
-      return;
-    }
-    if (!ss->statelessResume) {
-      return;
-    }
-    fprintf(stderr, "PSK-no-earlydata handler, sending alert\n");
-    char path[256];
-    SprintfLiteral(path, "/callback/%d", epoch);
-    DoCallback(path);
-    SSL3_SendAlert(ss, alert_fatal, decrypt_error);
   }
 }
 

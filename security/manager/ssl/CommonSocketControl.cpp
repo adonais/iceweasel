@@ -143,13 +143,6 @@ CommonSocketControl::GetEarlyDataAccepted(bool* aEarlyDataAccepted) {
 }
 
 NS_IMETHODIMP
-CommonSocketControl::GetResumptionTokenPresent(bool* aPresent) {
-  COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-  *aPresent = mSessionCacheInfo.isSome();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 CommonSocketControl::DriveHandshake(void) { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP

@@ -418,20 +418,13 @@ function checkConnectionActivities(activites, host, port) {
     };
   }
 
-  // Three connections: the initial h2 attempt, an h1 retry triggered by the
-  // PSK resumption error logic in nsHttpTransaction, and the final h1
-  // fallback.
-  Assert.equal(connections.length, 3);
+  Assert.equal(connections.length, 2);
 
   const firstConn = parseConnInfoHash(connections[0]);
   Assert.equal(firstConn.h2Flag, ".");
   Assert.equal(firstConn.host, host);
   Assert.equal(firstConn.port, port);
-  const retryConn = parseConnInfoHash(connections[1]);
-  Assert.equal(retryConn.h2Flag, "X");
-  Assert.equal(retryConn.host, host);
-  Assert.equal(retryConn.port, port);
-  const fallbackConn = parseConnInfoHash(connections[2]);
+  const fallbackConn = parseConnInfoHash(connections[1]);
   Assert.equal(fallbackConn.h2Flag, "X");
   Assert.equal(fallbackConn.host, host);
   Assert.equal(fallbackConn.port, port);
