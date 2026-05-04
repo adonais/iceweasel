@@ -63,7 +63,6 @@ fun MatchCard(
             SportCardHeader(
                 match = state.match,
                 round = state.round,
-                onViewMatchDetails = {},
                 onMenuClick = onMenuClick,
             )
 

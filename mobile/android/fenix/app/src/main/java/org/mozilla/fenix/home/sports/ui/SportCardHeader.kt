@@ -19,15 +19,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.theme.success
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.LinkText
-import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.StatusBadge
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchStatus
@@ -40,7 +37,6 @@ import mozilla.components.ui.icons.R as iconsR
 internal fun SportCardHeader(
     match: Match,
     round: TournamentRound,
-    onViewMatchDetails: () -> Unit,
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -58,31 +54,11 @@ internal fun SportCardHeader(
             color = MaterialTheme.colorScheme.onSurface,
         )
 
-        Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
-
-        Text(
-            text = "·",
-            style = FirefoxTheme.typography.body2,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
-
-        LinkText(
-            text = stringResource(id = R.string.sports_widget_view_match_details),
-            linkTextStates = listOf(
-                LinkTextState(
-                    text = stringResource(id = R.string.sports_widget_view_match_details),
-                    url = "",
-                    onClick = { onViewMatchDetails() },
-                ),
-            ),
-            style = FirefoxTheme.typography.body2,
-            linkTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            linkTextDecoration = TextDecoration.Underline,
-        )
-
         if (match.matchStatus.isLive()) {
+            Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
+
+            LiveBadge()
+        } else {
             Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
 
             Text(
@@ -93,8 +69,14 @@ internal fun SportCardHeader(
 
             Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
 
-            LiveBadge()
+            Text(
+                text = match.date,
+                style = FirefoxTheme.typography.body2,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
+
+        Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
 
         Spacer(Modifier.weight(1f))
 
@@ -201,7 +183,6 @@ private fun SportCardHeaderPreview(
                     matchStatus = state.status,
                 ),
                 round = state.round,
-                onViewMatchDetails = {},
                 onMenuClick = {},
             )
         }
