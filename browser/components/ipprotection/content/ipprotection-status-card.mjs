@@ -144,6 +144,13 @@ export default class IPProtectionStatusCard extends MozLitElement {
         ></moz-button>
 
         ${this.locationSelectionButtonTemplate()}
+        ${!this.location || this.location === "REC"
+          ? html`<div
+              slot="content"
+              class="location-message"
+              data-l10n-id="ipprotection-recommended-location-description"
+            ></div>`
+          : null}
       </ipprotection-status-box>
     `;
   }

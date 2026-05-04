@@ -572,3 +572,92 @@ add_task(async function test_location_button_label_recommended_fallback() {
   await closePanel();
   await cleanupStatusCardTest();
 });
+
+/**
+ * Tests that the recommended location description is shown when location is "REC".
+ */
+add_task(async function test_recommended_location_message_for_REC_location() {
+  await setupStatusCardTest();
+
+  let content = await openPanel({
+    location: "REC",
+    isProtectionEnabled: true,
+    bandwidthUsage: mockBandwidthUsage,
+  });
+
+  let statusCard = content.statusCardEl;
+  let descEl = statusCard.shadowRoot.querySelector(
+    '[slot="content"].location-message'
+  );
+
+  Assert.ok(
+    descEl,
+    "Location message element should be present when location is REC"
+  );
+  Assert.equal(
+    descEl.getAttribute("data-l10n-id"),
+    "ipprotection-recommended-location-description",
+    "Location message should have the correct l10n id"
+  );
+
+  await closePanel();
+  await cleanupStatusCardTest();
+});
+
+/**
+ * Tests that the recommended location description is shown when location is null.
+ */
+add_task(async function test_recommended_location_message_for_null_location() {
+  await setupStatusCardTest();
+
+  let content = await openPanel({
+    location: null,
+    isProtectionEnabled: true,
+    bandwidthUsage: mockBandwidthUsage,
+  });
+
+  let statusCard = content.statusCardEl;
+  let descEl = statusCard.shadowRoot.querySelector(
+    '[slot="content"].location-message'
+  );
+
+  Assert.ok(
+    descEl,
+    "Location message element should be present when location is null"
+  );
+  Assert.equal(
+    descEl.getAttribute("data-l10n-id"),
+    "ipprotection-recommended-location-description",
+    "Location message should have the correct l10n id"
+  );
+
+  await closePanel();
+  await cleanupStatusCardTest();
+});
+
+/**
+ * Tests that the recommended location description is absent when a specific
+ * country is selected.
+ */
+add_task(async function test_location_message_hidden_for_country() {
+  await setupStatusCardTest();
+
+  let content = await openPanel({
+    location: "CA",
+    isProtectionEnabled: true,
+    bandwidthUsage: mockBandwidthUsage,
+  });
+
+  let statusCard = content.statusCardEl;
+  let descEl = statusCard.shadowRoot.querySelector(
+    '[slot="content"].location-message'
+  );
+
+  Assert.ok(
+    !descEl,
+    "Location message element should not be present for a country code"
+  );
+
+  await closePanel();
+  await cleanupStatusCardTest();
+});

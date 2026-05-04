@@ -7,21 +7,28 @@
 }
 
 .location-btn-content {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: var(--space-medium);
   width: 100%;
 
+  moz-badge {
+    grid-column: 1;
+    justify-self: start;
+  }
+
   span {
+    grid-column: 2;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    flex: 1;
   }
 
   .arrow-icon {
+    grid-column: 3;
+    justify-self: end;
     -moz-context-properties: fill, fill-opacity, stroke;
     fill: currentColor;
   }
