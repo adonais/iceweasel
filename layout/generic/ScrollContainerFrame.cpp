@@ -6677,8 +6677,6 @@ void ScrollContainerFrame::LayoutButtonBox(const ScrollReflowInput& aState,
   // The button box is placed on the inline-end side, between the scrollport and
   // the inside-border edge, vertically centered.
   const nscoord buttonISize = aState.mButtonISize;
-  const LogicalRect scrollPort(wm, mScrollPort, GetSize());
-
   const auto kidWM = aButtonBox->GetWritingMode();
   auto availSize =
       LogicalSize(wm, buttonISize, NS_UNCONSTRAINEDSIZE).ConvertTo(kidWM, wm);
@@ -6689,12 +6687,14 @@ void ScrollContainerFrame::LayoutButtonBox(const ScrollReflowInput& aState,
   ReflowChild(aButtonBox, pc, kidDesiredSize, kidRI, wm, LogicalPoint(wm),
               containerSize, ReflowChildFlags::Default, status);
 
-  // Center the button in the block axis within the scrollport.
+  // Center the button in the block axis within the content box.
+  LogicalRect contentBox(wm, mScrollPort, GetSize());
+  contentBox.Deflate(wm, aState.KidPadding());
   const LogicalSize buttonSize =
       kidDesiredSize.Size(kidWM).ConvertTo(wm, kidWM);
-  LogicalPoint pos = scrollPort.Origin(wm);
-  pos.I(wm) += scrollPort.ISize(wm);
-  pos.B(wm) += (scrollPort.BSize(wm) - buttonSize.BSize(wm)) / 2;
+  LogicalPoint pos = contentBox.Origin(wm);
+  pos.I(wm) += contentBox.ISize(wm);
+  pos.B(wm) += (contentBox.BSize(wm) - buttonSize.BSize(wm)) / 2;
   FinishReflowChild(aButtonBox, pc, kidDesiredSize, &kidRI, wm, pos,
                     containerSize, ReflowChildFlags::Default);
 }
