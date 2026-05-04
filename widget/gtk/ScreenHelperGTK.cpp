@@ -108,6 +108,10 @@ static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
           availRect.height = config->pixelHeight;
           defaultCssScale = CSSToLayoutDeviceScale(fractionalScale);
           contentsScale.scale = fractionalScale;
+        } else if (!workarea.width || !workarea.height) {
+          LOG_SCREEN("We're missing workarea, use monitor size.");
+          availRect.width = config->pixelWidth;
+          availRect.height = config->pixelHeight;
         }
       }
     }
