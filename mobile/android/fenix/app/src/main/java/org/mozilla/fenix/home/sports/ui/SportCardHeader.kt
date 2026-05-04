@@ -29,19 +29,23 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.StatusBadge
-import org.mozilla.fenix.home.sports.MatchInfo
+import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchStatus
+import org.mozilla.fenix.home.sports.Team
 import org.mozilla.fenix.home.sports.TournamentRound
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun SportCardHeader(
-    match: MatchInfo,
+    match: Match,
+    round: TournamentRound,
     onViewMatchDetails: () -> Unit,
     onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val groupOrRound = match.home.group ?: roundDisplayName(round)
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -49,7 +53,7 @@ internal fun SportCardHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = match.groupLabel.ifEmpty { roundDisplayName(match.round) },
+            text = groupOrRound,
             style = FirefoxTheme.typography.headline8,
             color = MaterialTheme.colorScheme.onSurface,
         )
@@ -78,7 +82,7 @@ internal fun SportCardHeader(
             linkTextDecoration = TextDecoration.Underline,
         )
 
-        if (isLiveStatus(match.status)) {
+        if (match.matchStatus.isLive()) {
             Spacer(modifier = Modifier.width(FirefoxTheme.layout.space.static100))
 
             Text(
@@ -114,11 +118,9 @@ private fun LiveBadge() {
     )
 }
 
-private fun isLiveStatus(status: MatchStatus): Boolean = when (status) {
-    MatchStatus.LIVE,
-    MatchStatus.HALFTIME,
-    MatchStatus.EXTRA_TIME,
-    MatchStatus.PENALTIES,
+private fun MatchStatus.isLive(): Boolean = when (this) {
+    is MatchStatus.Live,
+    is MatchStatus.Penalties,
         -> true
     else -> false
 }
@@ -145,42 +147,32 @@ private class SportCardHeaderPreviewProvider : PreviewParameterProvider<SportCar
         SportCardHeaderPreviewState(
             round = TournamentRound.GROUP_STAGE,
             groupLabelResId = R.string.sports_widget_group_d,
-            status = MatchStatus.LIVE,
+            status = MatchStatus.Live(period = "1", clock = "29"),
         ),
         SportCardHeaderPreviewState(
             round = TournamentRound.GROUP_STAGE,
             groupLabelResId = R.string.sports_widget_group_a,
-            status = MatchStatus.UPCOMING,
-        ),
-        SportCardHeaderPreviewState(
-            round = TournamentRound.ROUND_OF_32,
-            groupLabelResId = null,
-            status = MatchStatus.HALFTIME,
+            status = MatchStatus.Scheduled,
         ),
         SportCardHeaderPreviewState(
             round = TournamentRound.ROUND_OF_16,
             groupLabelResId = null,
-            status = MatchStatus.UPCOMING,
-        ),
-        SportCardHeaderPreviewState(
-            round = TournamentRound.QUARTER_FINAL,
-            groupLabelResId = null,
-            status = MatchStatus.EXTRA_TIME,
+            status = MatchStatus.Scheduled,
         ),
         SportCardHeaderPreviewState(
             round = TournamentRound.SEMI_FINAL,
             groupLabelResId = null,
-            status = MatchStatus.PENALTIES,
+            status = MatchStatus.Penalties(),
         ),
         SportCardHeaderPreviewState(
             round = TournamentRound.FINAL,
             groupLabelResId = null,
-            status = MatchStatus.FINAL,
+            status = MatchStatus.Final,
         ),
         SportCardHeaderPreviewState(
             round = TournamentRound.THIRD_PLACE_PLAYOFF,
             groupLabelResId = null,
-            status = MatchStatus.UPCOMING,
+            status = MatchStatus.Scheduled,
         ),
     )
 }
@@ -190,18 +182,25 @@ private class SportCardHeaderPreviewProvider : PreviewParameterProvider<SportCar
 private fun SportCardHeaderPreview(
     @PreviewParameter(SportCardHeaderPreviewProvider::class) state: SportCardHeaderPreviewState,
 ) {
+    val groupLabel = state.groupLabelResId?.let { stringResource(it) }
     FirefoxTheme {
         Surface {
             SportCardHeader(
-                match = MatchInfo(
-                    homeTeamCode = "USA",
-                    homeFlagResId = R.drawable.flag_us,
-                    awayTeamCode = "PAR",
-                    awayFlagResId = R.drawable.flag_py,
-                    status = state.status,
-                    round = state.round,
-                    groupLabel = state.groupLabelResId?.let { stringResource(it) }.orEmpty(),
+                match = Match(
+                    date = "2026-06-19T18:00:00Z",
+                    home = Team(
+                        key = "USA",
+                        flagResId = R.drawable.flag_us,
+                        group = groupLabel,
+                    ),
+                    away = Team(
+                        key = "PAR",
+                        flagResId = R.drawable.flag_py,
+                        group = groupLabel,
+                    ),
+                    matchStatus = state.status,
                 ),
+                round = state.round,
                 onViewMatchDetails = {},
                 onMenuClick = {},
             )
