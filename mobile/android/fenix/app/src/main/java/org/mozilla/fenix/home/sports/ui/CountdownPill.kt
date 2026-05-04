@@ -11,6 +11,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -18,10 +21,28 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import org.mozilla.fenix.R
+import org.mozilla.fenix.home.sports.CountdownTime
+import org.mozilla.fenix.home.sports.countdownFlow
 import org.mozilla.fenix.theme.FirefoxTheme
 
+/**
+ * Displays a live countdown to [dateInUtc], updating every minute. The timer pauses
+ * when the app is backgrounded and stops when this composable leaves the composition.
+ *
+ * @param dateInUtc ISO 8601 UTC date string (e.g. "2025-06-28T14:00:00Z") remaining until kickoff.
+ */
 @Composable
-internal fun CountdownPill(
+internal fun CountdownPill(dateInUtc: String) {
+    val countdown by rememberCountdownState(dateInUtc)
+    CountdownPill(
+        days = countdown.days,
+        hours = countdown.hours,
+        mins = countdown.mins,
+    )
+}
+
+@Composable
+private fun CountdownPill(
     days: String,
     hours: String,
     mins: String,
@@ -81,17 +102,22 @@ private fun CountdownSeparator() {
     )
 }
 
-private data class CountdownPillPreviewState(
-    val days: String,
-    val hours: String,
-    val mins: String,
-)
+@Composable
+private fun rememberCountdownState(utcDate: String): State<CountdownTime> =
+    produceState(
+        initialValue = CountdownTime("00", "00", "00"),
+        key1 = utcDate,
+    ) {
+        countdownFlow(utcDate).collect { value = it }
+    }
+
+private data class CountdownPillPreviewState(val dateInUtc: String)
 
 private class CountdownPillPreviewProvider : PreviewParameterProvider<CountdownPillPreviewState> {
     override val values = sequenceOf(
-        CountdownPillPreviewState(days = "30", hours = "12", mins = "45"),
-        CountdownPillPreviewState(days = "4", hours = "2", mins = "34"),
-        CountdownPillPreviewState(days = "0", hours = "0", mins = "5"),
+        CountdownPillPreviewState(dateInUtc = "2026-06-11T19:00:00Z"),
+        CountdownPillPreviewState(dateInUtc = "2026-06-04T02:34:00Z"),
+        CountdownPillPreviewState(dateInUtc = "2026-06-04T00:00:05Z"),
     )
 }
 
@@ -102,11 +128,7 @@ private fun CountdownPillPreview(
 ) {
     FirefoxTheme {
         Surface {
-            CountdownPill(
-                days = state.days,
-                hours = state.hours,
-                mins = state.mins,
-            )
+            CountdownPill(dateInUtc = state.dateInUtc)
         }
     }
 }

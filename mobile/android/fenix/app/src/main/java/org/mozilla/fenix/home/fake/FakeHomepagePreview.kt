@@ -108,6 +108,8 @@ internal object FakeHomepagePreview {
             override fun onSkippedFollowTeam() { /* no op */ }
 
             override fun onSportsWidgetDismissed() { /* no op */ }
+
+            override fun onViewScheduleClicked() { /* no op */ }
         }
 
     internal val storiesInteractor

@@ -4,8 +4,11 @@
 
 package org.mozilla.fenix.home.sports
 
+import androidx.navigation.NavController
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
+import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -29,6 +32,11 @@ interface SportsController {
      * Handles the user dismissing the sports widget from the homepage.
      */
     fun handleSportsWidgetDismissed()
+
+    /**
+     * Handles the user clicking the "View Schedule" button.
+     */
+    fun handleViewScheduleClicked()
 }
 
 /**
@@ -36,10 +44,14 @@ interface SportsController {
  *
  * @param appStore The [AppStore] to dispatch actions to.
  * @param settings [Settings] used to persist sports widget preferences.
+ * @param navController [NavController] used to navigate to a new browser fragment.
+ * @param fenixBrowserUseCases [FenixBrowserUseCases] used to load the sports schedule.
  */
 class DefaultSportsController(
     private val appStore: AppStore,
     private val settings: Settings,
+    private val navController: NavController,
+    private val fenixBrowserUseCases: FenixBrowserUseCases,
 ) : SportsController {
 
     override fun handleCountriesSelected(countryCodes: Set<String>) {
@@ -55,5 +67,19 @@ class DefaultSportsController(
     override fun handleSportsWidgetDismissed() {
         settings.showHomepageSportsWidget = false
         appStore.dispatch(AppAction.SportsWidgetAction.VisibilityChanged(isVisible = false))
+    }
+
+    override fun handleViewScheduleClicked() {
+        navController.openToBrowser()
+
+        fenixBrowserUseCases.loadUrlOrSearch(
+            searchTermOrURL = SPORT_SCHEDULE_URL,
+            newTab = true,
+        )
+    }
+
+    companion object {
+        const val SPORT_SCHEDULE_URL =
+            "https://www.fifa.com/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures"
     }
 }
