@@ -82,16 +82,11 @@ CameraPortalPrivate::~CameraPortalPrivate() {
     notifier_ = nullptr;
   }
 
-  if (cancellable_)
-    g_cancellable_cancel(cancellable_);
-
-  if (guard_) {
-    MutexLock lock(&guard_->mutex);
-    guard_->portal = nullptr;
+  if (access_request_signal_id_) {
+    g_dbus_connection_signal_unsubscribe(connection_,
+                                         access_request_signal_id_);
+    access_request_signal_id_ = 0;
   }
-
-  xdg_portal::UnsubscribeSignalHandler(connection_, access_request_signal_id_);
-
   if (cancellable_) {
     g_cancellable_cancel(cancellable_);
     g_object_unref(cancellable_);
@@ -172,8 +167,11 @@ void CameraPortalPrivate::OnAccessResponse(GDBusProxy* proxy,
     if (g_error_matches(error.get(), G_IO_ERROR, G_IO_ERROR_CANCELLED))
       return;
     RTC_LOG(LS_ERROR) << "Failed to access portal:" << error->message;
-    xdg_portal::UnsubscribeSignalHandler(that->connection_,
-                                         that->access_request_signal_id_);
+    if (that->access_request_signal_id_) {
+      g_dbus_connection_signal_unsubscribe(that->connection_,
+                                           that->access_request_signal_id_);
+      that->access_request_signal_id_ = 0;
+    }
     that->OnPortalDone(RequestResponse::kError);
   }
 }
@@ -188,13 +186,6 @@ void CameraPortalPrivate::OnResponseSignalEmitted(GDBusConnection* connection,
                                                   gpointer user_data) {
   CameraPortalPrivate* that = static_cast<CameraPortalPrivate*>(user_data);
   RTC_DCHECK(that);
-
-  if (!xdg_portal::UnsubscribeSignalHandler(that->connection_,
-                                            that->access_request_signal_id_)) {
-    RTC_LOG(LS_ERROR) << "Duplicate access response signal from portal.";
-    that->OnPortalDone(RequestResponse::kError);
-    return;
-  }
 
   uint32_t portal_response;
   g_variant_get(parameters, "(u@a{sv})", &portal_response, nullptr);
@@ -229,8 +220,11 @@ void CameraPortalPrivate::OnOpenResponse(GDBusProxy* proxy,
     if (g_error_matches(error.get(), G_IO_ERROR, G_IO_ERROR_CANCELLED))
       return;
     RTC_LOG(LS_ERROR) << "Failed to open PipeWire remote:" << error->message;
-    xdg_portal::UnsubscribeSignalHandler(that->connection_,
-                                         that->access_request_signal_id_);
+    if (that->access_request_signal_id_) {
+      g_dbus_connection_signal_unsubscribe(that->connection_,
+                                           that->access_request_signal_id_);
+      that->access_request_signal_id_ = 0;
+    }
     that->OnPortalDone(RequestResponse::kError);
     return;
   }
