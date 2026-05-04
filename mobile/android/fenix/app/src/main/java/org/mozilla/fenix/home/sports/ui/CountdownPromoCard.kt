@@ -4,12 +4,19 @@
 
 package org.mozilla.fenix.home.sports.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
@@ -35,30 +42,52 @@ fun CountdownPromoCard(
     modifier: Modifier = Modifier,
 ) {
     val contentDescription = stringResource(R.string.sports_widget_close_content_description)
-    PromoCard(
-        closeButtonContentDescription = contentDescription,
-        onDismiss = onDismiss,
-        modifier = modifier,
-        title = {
-            Text(
-                text = stringResource(R.string.sports_widget_countdown_to_world_cup),
-                style = FirefoxTheme.typography.headline7,
-            )
-        },
-        message = {
-            CountdownPill(dateInUtc = dateInUtc)
-        },
-        actions = {
-            FilledButton(
-                text = stringResource(R.string.sports_widget_view_schedule),
-                onClick = onViewSchedule,
-            )
-        },
-        contentSpacing = FirefoxTheme.layout.space.static200,
-        colors = PromoCardColors.promoCardColors(
-            backgroundColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+    val sportPainter = painterResource(R.drawable.firefox_sport)
+
+    Box(
+        modifier = modifier.background(
+            color = MaterialTheme.colorScheme.surfaceContainerLowest,
+            shape = MaterialTheme.shapes.large,
         ),
-    )
+    ) {
+        PromoCard(
+            closeButtonContentDescription = contentDescription,
+            onDismiss = onDismiss,
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.large)
+                .drawBehind {
+                    val targetWidth = 150.dp.toPx()
+                    val imgSize = sportPainter.intrinsicSize
+                    val scaledSize = imgSize * (targetWidth / imgSize.width)
+                    translate(
+                        left = size.width - scaledSize.width,
+                        top = size.height - scaledSize.height,
+                    ) {
+                        with(sportPainter) { draw(scaledSize) }
+                    }
+                },
+            title = {
+                Text(
+                    text = stringResource(R.string.sports_widget_countdown_to_world_cup),
+                    style = FirefoxTheme.typography.headline7,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            },
+            message = {
+                CountdownPill(dateInUtc = dateInUtc)
+            },
+            actions = {
+                FilledButton(
+                    text = stringResource(R.string.sports_widget_view_schedule),
+                    onClick = onViewSchedule,
+                )
+            },
+            contentSpacing = FirefoxTheme.layout.space.static200,
+            colors = PromoCardColors.promoCardColors(
+                backgroundColor = Color.Transparent,
+            ),
+        )
+    }
 }
 
 @PreviewLightDark
