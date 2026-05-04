@@ -596,9 +596,9 @@ bool ProxiedConnection::ProcessFailure() {
 }
 
 bool WaylandProxy::CheckWaylandDisplay(const char* aWaylandDisplay) {
-  struct sockaddr_un addr = {};
+  struct sockaddr_un addr = {0};
   addr.sun_family = AF_UNIX;
-  strcpy(addr.sun_path, aWaylandDisplay);
+  strncpy(addr.sun_path, aWaylandDisplay, sizeof(addr.sun_path) - 1);
 
   int sc = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
   if (sc == -1) {
@@ -654,7 +654,7 @@ bool WaylandProxy::SetupWaylandDisplays() {
 
   // WAYLAND_DISPLAY can be absolute path
   if (waylandDisplay[0] == '/') {
-    if (strlen(mWaylandDisplay) >= sMaxDisplayNameLen) {
+    if (strlen(waylandDisplay) >= sMaxDisplayNameLen) {
       ErrorPlain("WaylandProxy::SetupWaylandDisplays() WAYLAND_DISPLAY is too large.\n");
       return false;
     }
