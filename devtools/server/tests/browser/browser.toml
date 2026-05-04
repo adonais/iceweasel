@@ -126,14 +126,6 @@ skip-if = [
 
 ["browser_canvasframe_helper_03.js"]
 
-["browser_canvasframe_helper_04.js"]
-skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1183605
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1183605
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1183605
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1183605
-]
-
 ["browser_canvasframe_helper_05.js"]
 
 ["browser_canvasframe_helper_06.js"]
