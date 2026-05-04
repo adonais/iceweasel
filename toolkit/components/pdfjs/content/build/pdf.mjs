@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.7.186
- * pdfjsBuild = 7cc921e6c
+ * pdfjsVersion = 5.7.187
+ * pdfjsBuild = 26d215563
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -13784,7 +13784,7 @@ function getDocument(src = {}) {
   }
   const docParams = {
     docId,
-    apiVersion: "5.7.186",
+    apiVersion: "5.7.187",
     data,
     password,
     disableAutoFetch,
@@ -15396,8 +15396,8 @@ class InternalRenderTask {
     }
   }
 }
-const version = "5.7.186";
-const build = "7cc921e6c";
+const version = "5.7.187";
+const build = "26d215563";
 
 ;// ./src/display/editor/color_picker.js
 
@@ -24922,7 +24922,7 @@ class AnnotationEditorLayer {
     const {
       target
     } = event;
-    if (target === this.#textLayer.div || (target.getAttribute("role") === "img" || target.classList.contains("endOfContent") || target.classList.contains("textLayerImagePlaceholder")) && this.#textLayer.div.contains(target)) {
+    if (target === this.#textLayer.div || (target.getAttribute("role") === "img" || target.classList.contains("endOfContent") || target.classList.contains("textLayerImages") || target.classList.contains("textLayerImagePlaceholder")) && this.#textLayer.div.contains(target)) {
       const {
         isMac
       } = FeatureTest.platform;
