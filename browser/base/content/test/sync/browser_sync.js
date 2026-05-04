@@ -229,15 +229,20 @@ add_task(async function test_ui_state_signedin() {
     ),
     "expected toolbar to be visible after opening"
   );
-  let sendTabButtonId = PanelMultiView.getViewNode(
+  let sendTabButton = PanelMultiView.getViewNode(
     document,
     "PanelUI-fxa-menu-sendtab-button"
-  ).getAttribute("data-l10n-id");
+  );
+  let sendTabButtonId = sendTabButton.getAttribute("data-l10n-id");
   Assert.equal(
     sendTabButtonId,
     "fxa-menu-send-to-device",
     "'Send to Device' displayed on send tab button"
   );
+  // Ensure that the send tab button has the navigation arrow
+  // to indicate that there are sub menu items.
+  ok(sendTabButton.classList.contains("subviewbutton-nav"));
+
   checkFxaToolbarButtonPanel({
     headerTitle: "Manage account",
     headerDescription: state.displayName,
@@ -533,6 +538,14 @@ add_task(async function test_ui_state_signedin_mobile_only_send_tab() {
     "fxa-menu-send-to-mobile",
     "'Send to Mobile' displayed on send tab button when all targets are mobile"
   );
+
+  // Ensure that the send tab button has the navigation arrow
+  // to indicate that there are sub menu items.
+  let sendTabButton = PanelMultiView.getViewNode(
+    document,
+    "PanelUI-fxa-menu-sendtab-button"
+  );
+  ok(sendTabButton.classList.contains("subviewbutton-nav"));
 
   await closeFxaPanel();
   sandbox.restore();
@@ -1368,6 +1381,10 @@ add_task(async function test_ui_state_signed_out_send_tab() {
     "PanelUI-fxa-menu-sendtab-button"
   );
 
+  // Check that the navigation arrow is removed from the send tab element
+  // since there aren't any submenu items.
+  ok(!sendTabButton.classList.contains("subviewbutton-nav"));
+
   Assert.equal(
     sendTabButton.getAttribute("data-l10n-id"),
     "fxa-menu-send-to-mobile",
@@ -1420,6 +1437,10 @@ add_task(async function test_ui_state_sync_disabled_send_tab() {
     document,
     "PanelUI-fxa-menu-sendtab-button"
   );
+
+  // Ensure that the send tab button has the navigation arrow
+  // to indicate that there are sub menu items.
+  ok(sendTabButton.classList.contains("subviewbutton-nav"));
 
   Assert.equal(
     sendTabButton.getAttribute("data-l10n-id"),
@@ -1496,6 +1517,10 @@ add_task(async function test_ui_state_single_device_send_tab() {
     "fxa-menu-send-to-mobile",
     "'Send to Mobile' displayed on send tab button"
   );
+
+  // Ensure that the send tab button has the navigation arrow
+  // to indicate that there are sub menu items.
+  ok(sendTabButton.classList.contains("subviewbutton-nav"));
 
   sendTabButton.click();
 

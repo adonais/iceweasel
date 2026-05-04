@@ -1129,6 +1129,10 @@ var gSync = {
     const fxaToolbarMenuBtn = document.getElementById(
       "fxa-toolbar-menu-button"
     );
+    const sendTabButton = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sendtab-button"
+    );
 
     if (anchor === null) {
       anchor = fxaToolbarMenuBtn;
@@ -1158,10 +1162,8 @@ var gSync = {
         return;
       }
 
-      PanelMultiView.getViewNode(
-        document,
-        "PanelUI-fxa-menu-sendtab-button"
-      ).setAttribute("data-l10n-id", "fxa-menu-send-to-mobile");
+      sendTabButton.setAttribute("data-l10n-id", "fxa-menu-send-to-mobile");
+      sendTabButton.classList.remove("subviewbutton-nav");
 
       // If we're signed out but have the PXI pref enabled
       // we should show the PXI panel instead of taking the user
@@ -1194,16 +1196,11 @@ var gSync = {
       !sendTabTargets.length ||
       this.hasOnlyMobileSendTabTargets(sendTabTargets)
     ) {
-      PanelMultiView.getViewNode(
-        document,
-        "PanelUI-fxa-menu-sendtab-button"
-      ).setAttribute("data-l10n-id", "fxa-menu-send-to-mobile");
+      sendTabButton.setAttribute("data-l10n-id", "fxa-menu-send-to-mobile");
     } else {
-      PanelMultiView.getViewNode(
-        document,
-        "PanelUI-fxa-menu-sendtab-button"
-      ).setAttribute("data-l10n-id", "fxa-menu-send-to-device");
+      sendTabButton.setAttribute("data-l10n-id", "fxa-menu-send-to-device");
     }
+    sendTabButton.classList.add("subviewbutton-nav");
 
     if (anchor.getAttribute("open") == "true") {
       PanelUI.hide();
