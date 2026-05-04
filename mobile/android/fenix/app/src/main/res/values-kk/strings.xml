@@ -3204,6 +3204,18 @@
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN белсенді.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Бастау</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">%s ішіндегі кіріктірілген VPN қызметін қолданып көріңіз</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">Тіпті қоғамдық Wi-Fi желісінде де орналасқан жеріңізді жасыру арқылы %1$s. Ай сайын %2$d ГБ тегін алыңыз.</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">қосымша қорғаныспен шолыңыз</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Қазір емес</string>
   <!--
     Autofill
 

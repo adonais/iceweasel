@@ -1787,6 +1787,14 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">ลบกลุ่ม</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">ยกเลิก</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">ต้องการปิดแท็บและลบกลุ่มหรือไม่?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">การดำเนินการนี้จะลบกลุ่มแท็บถาวร</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">ลบกลุ่ม</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">ยกเลิก</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -3188,6 +3196,18 @@
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN เปิดใช้งานอยู่</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">เริ่มต้นใช้งาน</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">ลองใช้ VPN ในตัวของ %s</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$sด้วยการซ่อนตำแหน่งที่ตั้งของคุณแม้แต่บน Wi-Fi สาธารณะ รับ %2$d GB ฟรีทุกเดือน</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">ท่องเว็บด้วยการปกป้องเพิ่มเติม</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">ไม่ใช่ตอนนี้</string>
   <!--
     Autofill
 

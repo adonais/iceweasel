@@ -1718,7 +1718,7 @@
   <!-- The header text displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_header">נסו קבוצות לשוניות - פחות לגלול, יותר לעשות</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
-  <string name="tab_manager_empty_tab_groups_page_description">יש לבחור לשוניות כדי ליצור קבוצה. הם יישמרו כאן, מוכנים עבורך.</string>
+  <string name="tab_manager_empty_tab_groups_page_description">יש לבחור לשוניות כדי ליצור קבוצה. הן יישמרו כאן, מוכנות עבורך.</string>
   <!--
     Tab Group
 

@@ -51,4 +51,12 @@
   <string name="mozac_summarize_download_error_negative_button">Cancelar</string>
   <!-- Title for the error screen when page is too long to summarize -->
   <string name="mozac_summarize_content_too_long_error_title">Página demasiado larga para resumir</string>
+  <!-- Title for the info error screen -->
+  <string name="mozac_summarize_info_error_title">No es posible resumir en este momento</string>
+  <!-- Generic fallback message for the info error screen -->
+  <string name="mozac_summarize_info_error_message">Intentar de nuevo más tarde.</string>
+  <!-- Error code shown on long press of the error icon. %1$d is an error code. -->
+  <string name="mozac_summarize_info_error_code">Código de error: %1$d</string>
+  <!-- Loading text displayed while a page summary is being generated -->
+  <string name="mozac_feature_summarize_loading_title">Resumiendo…</string>
 </resources>
