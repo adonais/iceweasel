@@ -15448,6 +15448,34 @@ browser:
       - android-probes@mozilla.com
     expires: never
 
+world_cup:
+  view_schedule_on_countdown_clicked:
+    type: event
+    description: |
+      A user has clicked on the view schedule button
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035767
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D297350
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  countdown_cross_action_clicked:
+    type: event
+    description: |
+      A user has clicked on the cross action
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035767
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D297350
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
 vpn:
   onboarding_shown:
     type: event

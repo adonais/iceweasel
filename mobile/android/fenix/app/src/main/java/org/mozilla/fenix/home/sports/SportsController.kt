@@ -5,6 +5,7 @@
 package org.mozilla.fenix.home.sports
 
 import androidx.navigation.NavController
+import org.mozilla.fenix.GleanMetrics.WorldCup
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
@@ -77,6 +78,7 @@ class DefaultSportsController(
     override fun handleCountdownWidgetDismissed() {
         settings.showHomepageCountdownWidget = false
         appStore.dispatch(AppAction.SportsWidgetAction.CountdownVisibilityChanged(isCountdownVisible = false))
+        WorldCup.countdownCrossActionClicked.record()
     }
 
     override fun handleViewScheduleClicked() {
@@ -86,6 +88,7 @@ class DefaultSportsController(
             searchTermOrURL = SPORT_SCHEDULE_URL,
             newTab = true,
         )
+        WorldCup.viewScheduleOnCountdownClicked.record()
     }
 
     companion object {
