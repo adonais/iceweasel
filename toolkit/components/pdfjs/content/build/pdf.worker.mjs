@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.7.187
- * pdfjsBuild = 26d215563
+ * pdfjsVersion = 5.7.195
+ * pdfjsBuild = bc6920662
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -63156,6 +63156,62 @@ class PDFEditor {
       }
     }
     insertAfterList.sort((a, b) => a.insertAfter - b.insertAfter);
+    if (insertAfterList.length > 0) {
+      for (const info of pageInfos) {
+        if (!info.document || !info.pageIndices) {
+          continue;
+        }
+        const filteredCount = this.#getFilteredPageIndices(info).length;
+        if (info.pageIndices.length < filteredCount) {
+          throw new Error("extractPages: partial pageIndices cannot be combined with insertAfter entries.");
+        }
+      }
+    }
+    const hasExplicitLayout = insertAfterList.length > 0 && pageInfos.some(info => info.document && info.pageIndices);
+    if (sequence.length === 0 && hasExplicitLayout) {
+      const updatedPageInfos = pageInfos.slice();
+      let maxExistingPos = -1;
+      for (const info of pageInfos) {
+        if (info.document && info.pageIndices) {
+          for (const idx of info.pageIndices) {
+            if (idx > maxExistingPos) {
+              maxExistingPos = idx;
+            }
+          }
+        }
+      }
+      let offset = 0;
+      for (const {
+        i,
+        insertAfter,
+        count
+      } of insertAfterList) {
+        const threshold = Math.min(Math.max(insertAfter, -1) + offset, maxExistingPos);
+        for (let j = 0; j < updatedPageInfos.length; j++) {
+          const existingInfo = updatedPageInfos[j];
+          if (!existingInfo.document || !existingInfo.pageIndices || existingInfo.pageIndices.every(idx => idx <= threshold)) {
+            continue;
+          }
+          updatedPageInfos[j] = {
+            ...existingInfo,
+            pageIndices: existingInfo.pageIndices.map(idx => idx > threshold ? idx + count : idx)
+          };
+        }
+        const insertedIndices = [];
+        for (let k = 0; k < count; k++) {
+          insertedIndices.push(threshold + 1 + k);
+        }
+        const newInfo = {
+          ...updatedPageInfos[i],
+          pageIndices: insertedIndices
+        };
+        delete newInfo.insertAfter;
+        updatedPageInfos[i] = newInfo;
+        offset += count;
+        maxExistingPos += count;
+      }
+      return updatedPageInfos;
+    }
     let offset = 0;
     for (const {
       i,
@@ -63764,6 +63820,7 @@ class PDFEditor {
         result.push({
           ...item,
           dest: hasValidOwnDest ? item.dest : null,
+          rawDict: hasValidOwnDest ? item.rawDict : null,
           items: filteredChildren,
           _documentData: documentData
         });
@@ -64149,7 +64206,7 @@ class PDFEditor {
     const resourcesValuesCache = new Map();
     for (const field of drToFix) {
       const ap = field.get("AP");
-      for (const value of ap.getValues()) {
+      for (const [, value] of ap) {
         if (!(value instanceof BaseStream)) {
           continue;
         }
@@ -64944,7 +65001,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "5.7.187";
+    const workerVersion = "5.7.195";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
@@ -65346,7 +65403,7 @@ class WorkerMessageHandler {
         const buffer = await pdfEditor.extractPages(pageInfos, annotationStorage, handler, task);
         return buffer;
       } catch (reason) {
-        console.error(reason);
+        warn(`extractPages: "${reason}".`);
         return null;
       } finally {
         if (task) {

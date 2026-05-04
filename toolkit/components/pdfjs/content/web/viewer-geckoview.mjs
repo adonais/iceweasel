@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.7.187
- * pdfjsBuild = 26d215563
+ * pdfjsVersion = 5.7.195
+ * pdfjsBuild = bc6920662
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -8628,7 +8628,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "5.7.187";
+    const viewerVersion = "5.7.195";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }
@@ -11182,6 +11182,8 @@ const PDFViewerApplication = {
     } else {
       await (this.pdfDocument?.annotationStorage.size > 0 ? this.save() : this.download());
     }
+    delete this._mergedDocumentNeedsSaving;
+    this.setTitle();
     classList.remove("wait");
   },
   async _documentError(key, moreInfo = null) {
@@ -11514,7 +11516,7 @@ const PDFViewerApplication = {
     }
   },
   _hasChanges() {
-    return this.pdfDocument?.annotationStorage.size > 0 || this.pdfThumbnailViewer?.hasStructuralChanges();
+    return this.pdfDocument?.annotationStorage.size > 0 || this.pdfThumbnailViewer?.hasStructuralChanges() || this._mergedDocumentNeedsSaving === true;
   },
   _initializeAnnotationStorageCallbacks(pdfDocument) {
     if (pdfDocument !== this.pdfDocument) {
@@ -11859,6 +11861,7 @@ const PDFViewerApplication = {
       console.error("Something wrong happened when saving the edited PDF.\nPlease file a bug.");
       return;
     }
+    this._mergedDocumentNeedsSaving = true;
     this.open({
       data: modifiedPdfBytes,
       filename: this._docFilename
