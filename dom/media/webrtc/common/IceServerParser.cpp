@@ -213,7 +213,13 @@ IceServerParser::ParseStunTurnUri(const nsACString& aUri) {
   // nsIURI.idl says "A port value of -1 corresponds to the protocol's default
   // port"
   if (port == -1) {
-    port = defaultPort;
+    // Workaround: The URL parser gives us -1 if the port is 443.
+    auto idx = hostPort.RFind(":443");
+    if (idx != kNotFound && (hostPort.Length() - idx == 4)) {
+      port = 443;
+    } else {
+      port = defaultPort;
+    }
   }
 
   // Parsing out hostAndPortUrl seems to catch this, but the type it uses is
