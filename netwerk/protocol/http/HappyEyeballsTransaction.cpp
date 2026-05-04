@@ -204,8 +204,8 @@ nsIRequestContext* HappyEyeballsTransaction::RequestContext() {
   return mTransaction ? mTransaction->RequestContext() : nullptr;
 }
 
-bool HappyEyeballsTransaction::Do0RTT() {
-  return mTransaction ? mTransaction->Do0RTT() : false;
+bool HappyEyeballsTransaction::Do0RTT(bool aCanSendEarlyData) {
+  return mTransaction ? mTransaction->Do0RTT(aCanSendEarlyData) : false;
 }
 
 void HappyEyeballsTransaction::DisableSpdy() {

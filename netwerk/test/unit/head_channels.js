@@ -600,15 +600,19 @@ function sleep(seconds) {
 // environment that every FaultyServer test needs:
 //   - FAULTY_SERVER_CALLBACK_PORT pointed at callbackServer
 //   - MOZ_TLS_SERVER_0RTT enabled so NewSessionTickets carry maxEarlyDataSize
+//     (pass { use0RTT: false } to suppress — for tests that need PSK without
+//     early data)
 //   - The FaultyServer binary started via asyncStartTLSTestServer
 //   - The NSS external+internal session cache cleared (see Bug 1878505)
 //   - network.http.speculative-parallel-limit suppressed and restored
-async function asyncSetupFaultyServer(callbackServer) {
+async function asyncSetupFaultyServer(callbackServer, { use0RTT = true } = {}) {
   Services.env.set(
     "FAULTY_SERVER_CALLBACK_PORT",
     callbackServer.identity.primaryPort
   );
-  Services.env.set("MOZ_TLS_SERVER_0RTT", "1");
+  if (use0RTT) {
+    Services.env.set("MOZ_TLS_SERVER_0RTT", "1");
+  }
   await asyncStartTLSTestServer(
     "FaultyServer",
     "../../../security/manager/ssl/tests/unit/test_faulty_server"

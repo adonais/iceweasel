@@ -28,7 +28,7 @@ class HappyEyeballsTransaction final : public nsAHttpTransaction {
   }
 
   void OnActivated() override;
-  bool Do0RTT() override;
+  bool Do0RTT(bool aCanSendEarlyData) override;
   nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) override;
   uint64_t BrowserId() override;
   nsIRequestContext* RequestContext() override;

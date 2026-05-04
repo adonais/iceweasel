@@ -703,7 +703,6 @@ run-if = [
 ["test_file_protocol.js"]
 
 ["test_file_url_with_host.js"]
-
 ["test_filestreams.js"]
 
 ["test_freshconnection.js"]
@@ -1482,6 +1481,20 @@ skip-if = [
 
 ["test_retry_decrypt_error.js"]
 run-sequentially = ["true"] # tlsserver uses fixed port
+
+["test_retry_illegal_parameter.js"]
+run-sequentially = ["true"] # tlsserver uses fixed port
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix", # Bug 2034343
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix", # Bug 2034343
+]
+
+["test_retry_psk_no_early_data.js"]
+run-sequentially = ["true"] # tlsserver uses fixed port
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix", # Bug 2034343
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && msix", # Bug 2034343
+]
 
 ["test_safeoutputstream.js"]
 
