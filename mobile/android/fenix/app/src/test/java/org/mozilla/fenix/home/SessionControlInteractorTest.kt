@@ -308,4 +308,10 @@ class SessionControlInteractorTest {
         interactor.onSportsWidgetDismissed()
         verify { sportsController.handleSportsWidgetDismissed() }
     }
+
+    @Test
+    fun `WHEN the countdown widget is dismissed THEN sports controller handles the dismissal`() {
+        interactor.onCountdownWidgetDismissed()
+        verify { sportsController.handleCountdownWidgetDismissed() }
+    }
 }

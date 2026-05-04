@@ -184,4 +184,68 @@ class SportsWidgetReducerTest {
         assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
         assertFalse(finalState.sportsWidgetState.isVisible)
     }
+
+    @Test
+    fun `GIVEN isCountdownWidgetVisible is true WHEN CountdownVisibilityChanged is dispatched with false THEN isCountdownWidgetVisible is false`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(isCountdownWidgetVisible = true),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.CountdownVisibilityChanged(isCountdownVisible = false),
+        )
+
+        assertFalse(finalState.sportsWidgetState.isCountdownWidgetVisible)
+    }
+
+    @Test
+    fun `GIVEN isCountdownWidgetVisible is false WHEN CountdownVisibilityChanged is dispatched with true THEN isCountdownWidgetVisible is true`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(isCountdownWidgetVisible = false),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.CountdownVisibilityChanged(isCountdownVisible = true),
+        )
+
+        assertTrue(finalState.sportsWidgetState.isCountdownWidgetVisible)
+    }
+
+    @Test
+    fun `GIVEN isCountdownWidgetVisible is false WHEN CountdownVisibilityChanged is dispatched with false THEN isCountdownWidgetVisible remains false`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(isCountdownWidgetVisible = false),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.CountdownVisibilityChanged(isCountdownVisible = false),
+        )
+
+        assertFalse(finalState.sportsWidgetState.isCountdownWidgetVisible)
+    }
+
+    @Test
+    fun `GIVEN countries and skip state WHEN CountdownVisibilityChanged is dispatched THEN other fields are preserved`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(
+                countriesSelected = setOf("US"),
+                hasSkippedFollowTeam = true,
+                isVisible = true,
+                isCountdownWidgetVisible = true,
+            ),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.CountdownVisibilityChanged(isCountdownVisible = false),
+        )
+
+        assertEquals(setOf("US"), finalState.sportsWidgetState.countriesSelected)
+        assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
+        assertTrue(finalState.sportsWidgetState.isVisible)
+        assertFalse(finalState.sportsWidgetState.isCountdownWidgetVisible)
+    }
 }

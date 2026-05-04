@@ -87,4 +87,14 @@ class SportsControllerTest {
             appStore.dispatch(AppAction.SportsWidgetAction.VisibilityChanged(isVisible = false))
         }
     }
+
+    @Test
+    fun `WHEN the countdown widget is dismissed THEN the visibility preference is set to false and the action is dispatched`() {
+        controller.handleCountdownWidgetDismissed()
+
+        verify {
+            settings.showHomepageCountdownWidget = false
+            appStore.dispatch(AppAction.SportsWidgetAction.CountdownVisibilityChanged(isCountdownVisible = false))
+        }
+    }
 }

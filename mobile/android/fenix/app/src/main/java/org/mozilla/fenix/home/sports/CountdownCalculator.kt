@@ -8,6 +8,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.text.NumberFormat
+import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -60,4 +61,14 @@ private fun parseUtcDate(utcDate: String): Long? = try {
     ZonedDateTime.parse(utcDate, DateTimeFormatter.ISO_DATE_TIME).toInstant().toEpochMilli()
 } catch (e: DateTimeParseException) {
     null
+}
+
+/**
+ * Checks if the world cup has started using the device's date
+ */
+fun hasWorldCupStarted(): Boolean {
+    val worldCupYear = 2026
+    val worldCupMonth = 6
+    val worldCupDay = 11
+    return LocalDate.now() >= LocalDate.of(worldCupYear, worldCupMonth, worldCupDay)
 }

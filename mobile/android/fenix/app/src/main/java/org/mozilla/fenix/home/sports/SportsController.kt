@@ -34,6 +34,11 @@ interface SportsController {
     fun handleSportsWidgetDismissed()
 
     /**
+     * Handles the user dismissing the countdown widget from the homepage.
+     */
+    fun handleCountdownWidgetDismissed()
+
+    /**
      * Handles the user clicking the "View Schedule" button.
      */
     fun handleViewScheduleClicked()
@@ -67,6 +72,11 @@ class DefaultSportsController(
     override fun handleSportsWidgetDismissed() {
         settings.showHomepageSportsWidget = false
         appStore.dispatch(AppAction.SportsWidgetAction.VisibilityChanged(isVisible = false))
+    }
+
+    override fun handleCountdownWidgetDismissed() {
+        settings.showHomepageCountdownWidget = false
+        appStore.dispatch(AppAction.SportsWidgetAction.CountdownVisibilityChanged(isCountdownVisible = false))
     }
 
     override fun handleViewScheduleClicked() {

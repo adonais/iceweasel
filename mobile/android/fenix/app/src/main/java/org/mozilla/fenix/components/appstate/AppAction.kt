@@ -841,5 +841,12 @@ sealed class AppAction : Action {
          * @property isVisible The new visibility state of the sports widget.
          */
         data class VisibilityChanged(val isVisible: Boolean) : SportsWidgetAction()
+
+        /**
+         * Dispatched when the countdown widget's visibility changes.
+         *
+         * @property isCountdownVisible The new visibility state of the countdown widget.
+         */
+        data class CountdownVisibilityChanged(val isCountdownVisible: Boolean) : SportsWidgetAction()
     }
 }

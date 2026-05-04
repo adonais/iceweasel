@@ -27,6 +27,11 @@ interface SportsInteractor {
     fun onSportsWidgetDismissed()
 
     /**
+     * Called when the user dismisses the countdown widget.
+     */
+    fun onCountdownWidgetDismissed()
+
+    /**
      * Called when the user clicks the "View Schedule" button.
      */
     fun onViewScheduleClicked()
@@ -51,6 +56,10 @@ class DefaultSportsInteractor(
 
     override fun onSportsWidgetDismissed() {
         controller.handleSportsWidgetDismissed()
+    }
+
+    override fun onCountdownWidgetDismissed() {
+        controller.handleCountdownWidgetDismissed()
     }
 
     override fun onViewScheduleClicked() {

@@ -371,6 +371,7 @@ class Components(private val context: Context) {
         hasSkippedFollowTeam = settings.hasSkippedSportsFollowTeam,
         isVisible = settings.showHomepageSportsWidget,
         isFeatureEnabled = settings.enableHomepageSportsWidget,
+        isCountdownWidgetVisible = settings.showHomepageCountdownWidget,
     )
 
     val fxSuggest by lazyMonitored { FxSuggest(context, remoteSettingsService.value, analytics.crashReporter) }

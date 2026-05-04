@@ -2581,6 +2581,15 @@ class Settings(
     )
 
     /**
+     * Indicates if the Homepage Countdown Widget should be visible on the homepage.
+     * This is independent of the [enableHomepageSportsWidget] feature flag and [showHomepageSportsWidget] setting.
+     */
+    var showHomepageCountdownWidget by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_show_homepage_countdown_widget),
+        default = true,
+    )
+
+    /**
      * The set of ISO codes of the user's selected countries to follow for the sports widget.
      */
     var sportsSelectedCountries by stringSetPreference(
