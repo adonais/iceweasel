@@ -319,12 +319,12 @@ add_task(async function () {
       selector: `h5, [test-hint="style-query"]`,
       ancestorRulesData: [
         "@container style(--x: red), " +
-          "style((var(--y, 1px) > 20px)), " +
+          "style(var(--y, 1px) > 20px), " +
           "post style(--x), " +
           "mycontainer style(--x), " +
           "style(--z), " +
           "style(--empty), " +
-          "style(((attr(data-x type(<length>)) < 10px)) or ((attr(data-y px, 10px) < 100px)) or ((attr(data-z px) < 1000px))) {",
+          "style((attr(data-x type(<length>)) < 10px) or (attr(data-y px, 10px) < 100px) or (attr(data-z px) < 1000px)) {",
       ],
     },
     {
@@ -350,7 +350,7 @@ add_task(async function () {
     view,
     ruleIndex: 1,
     conditionIndex: 1,
-    expectedConditionText: "style((var(--y, 1px) > 20px))",
+    expectedConditionText: "style(var(--y, 1px) > 20px)",
     expectedHeaderText: "<article>",
     expectedBodyText: [
       "container-name: post",
@@ -358,7 +358,7 @@ add_task(async function () {
       `--y: 10px`,
     ],
     expectedSelectedNodeAfterClick: "article",
-    // condition is "style((var(--y, 1px) > 20px))", but --y is set to "10px" on <article>
+    // condition is "style(var(--y, 1px) > 20px)", but --y is set to "10px" on <article>
     unmatched: true,
   });
   await assertQueryContainerTooltip({
@@ -427,7 +427,7 @@ add_task(async function () {
     ruleIndex: 1,
     conditionIndex: 6,
     expectedConditionText:
-      "style(((attr(data-x type(<length>)) < 10px)) or ((attr(data-y px, 10px) < 100px)) or ((attr(data-z px) < 1000px)))",
+      "style((attr(data-x type(<length>)) < 10px) or (attr(data-y px, 10px) < 100px) or (attr(data-z px) < 1000px))",
     expectedHeaderText: "<article>",
     expectedBodyText: [
       "container-name: post",
