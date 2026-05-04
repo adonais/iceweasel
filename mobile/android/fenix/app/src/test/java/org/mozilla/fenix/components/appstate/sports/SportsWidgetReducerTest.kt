@@ -6,11 +6,18 @@ package org.mozilla.fenix.components.appstate.sports
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.AppStoreReducer
+import org.mozilla.fenix.home.sports.Match
+import org.mozilla.fenix.home.sports.MatchCard
+import org.mozilla.fenix.home.sports.MatchStatus
+import org.mozilla.fenix.home.sports.Team
+import org.mozilla.fenix.home.sports.TournamentRound
 
 class SportsWidgetReducerTest {
 
@@ -247,5 +254,92 @@ class SportsWidgetReducerTest {
         assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
         assertTrue(finalState.sportsWidgetState.isVisible)
         assertFalse(finalState.sportsWidgetState.isCountdownWidgetVisible)
+    }
+
+    @Test
+    fun `GIVEN matchCardState is null WHEN MatchCardStateUpdated is dispatched with a card THEN matchCardState is set`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(matchCardState = null),
+        )
+        val matchCardState = sampleMatchCardState()
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardState = matchCardState),
+        )
+
+        assertEquals(matchCardState, finalState.sportsWidgetState.matchCardState)
+    }
+
+    @Test
+    fun `GIVEN a matchCardState is set WHEN MatchCardStateUpdated is dispatched with null THEN matchCardState is cleared`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(matchCardState = sampleMatchCardState()),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardState = null),
+        )
+
+        assertNull(finalState.sportsWidgetState.matchCardState)
+    }
+
+    @Test
+    fun `GIVEN a matchCardState is set WHEN MatchCardStateUpdated is dispatched with a different card THEN matchCardState is replaced`() {
+        val original = sampleMatchCardState()
+        val replacement = sampleMatchCardState().copy(round = TournamentRound.QUARTER_FINAL)
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(matchCardState = original),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardState = replacement),
+        )
+
+        assertEquals(replacement, finalState.sportsWidgetState.matchCardState)
+    }
+
+    @Test
+    fun `GIVEN unrelated fields are set WHEN MatchCardStateUpdated is dispatched THEN other fields are preserved`() {
+        val matchCardState = sampleMatchCardState()
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(
+                countriesSelected = setOf("US"),
+                hasSkippedFollowTeam = true,
+                isVisible = true,
+                isFeatureEnabled = true,
+            ),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.MatchCardStateUpdated(matchCardState = matchCardState),
+        )
+
+        assertEquals(setOf("US"), finalState.sportsWidgetState.countriesSelected)
+        assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
+        assertTrue(finalState.sportsWidgetState.isVisible)
+        assertTrue(finalState.sportsWidgetState.isFeatureEnabled)
+        assertEquals(matchCardState, finalState.sportsWidgetState.matchCardState)
+    }
+
+    private fun sampleMatchCardState(): MatchCard {
+        val home = Team(key = "USA", flagResId = R.drawable.flag_us)
+        val away = Team(key = "CAN", flagResId = R.drawable.flag_ca)
+
+        return MatchCard(
+            match = Match(
+                date = "2026-06-22T18:00:00Z",
+                home = home,
+                away = away,
+                homeScore = 1,
+                awayScore = 2,
+                matchStatus = MatchStatus.Live(period = "1", clock = "29"),
+            ),
+            round = TournamentRound.GROUP_STAGE,
+            relatedMatches = emptyList(),
+        )
     }
 }

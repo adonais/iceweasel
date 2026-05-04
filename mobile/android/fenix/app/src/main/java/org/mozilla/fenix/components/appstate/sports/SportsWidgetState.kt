@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.components.appstate.sports
 
+import org.mozilla.fenix.home.sports.MatchCard
 import org.mozilla.fenix.home.sports.hasWorldCupStarted
 
 /**
@@ -14,6 +15,8 @@ import org.mozilla.fenix.home.sports.hasWorldCupStarted
  * @property isVisible Whether the sports widget is visible on the homepage.
  * @property isFeatureEnabled Whether the Homepage Sports Widget feature is enabled.
  * @property isCountdownWidgetVisible Whether the Homepage Countdown Widget feature is enabled.
+ * @property matchCardState The [MatchCard] to render on the homepage, or null when no match
+ * data is available.
  */
 data class SportsWidgetState(
     val countriesSelected: Set<String> = emptySet(),
@@ -21,6 +24,7 @@ data class SportsWidgetState(
     val isVisible: Boolean = true,
     val isFeatureEnabled: Boolean = false,
     val isCountdownWidgetVisible: Boolean = true,
+    val matchCardState: MatchCard? = null,
 ) {
     /**
      * Whether the sports widget should be rendered on the homepage: true only when the feature

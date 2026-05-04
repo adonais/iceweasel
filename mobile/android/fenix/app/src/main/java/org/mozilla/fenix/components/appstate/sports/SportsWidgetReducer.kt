@@ -35,5 +35,11 @@ internal object SportsWidgetReducer {
                 isCountdownWidgetVisible = action.isCountdownVisible,
             ),
         )
+
+        is SportsWidgetAction.MatchCardStateUpdated -> state.copy(
+            sportsWidgetState = state.sportsWidgetState.copy(
+                matchCardState = action.matchCardState,
+            ),
+        )
     }
 }

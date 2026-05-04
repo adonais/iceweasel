@@ -80,6 +80,7 @@ import org.mozilla.fenix.home.sessioncontrol.MessageCardInteractor
 import org.mozilla.fenix.home.setup.ui.SetupChecklist
 import org.mozilla.fenix.home.sports.ui.CountdownPromoCard
 import org.mozilla.fenix.home.sports.ui.FollowTeamPromoCard
+import org.mozilla.fenix.home.sports.ui.MatchCard
 import org.mozilla.fenix.home.sports.ui.SportsCountrySelectorBottomSheet
 import org.mozilla.fenix.home.store.HeaderState
 import org.mozilla.fenix.home.store.HomepageState
@@ -582,6 +583,12 @@ private fun SportsWidgetSection(
             onFollowTeam = onFollowTeam,
             onSkip = onSkip,
             onDismiss = onDismiss,
+            modifier = modifier.padding(horizontal = horizontalMargin),
+        )
+    } else if (sportsWidgetState.matchCardState != null) {
+        MatchCard(
+            state = sportsWidgetState.matchCardState,
+            onMenuClick = {},
             modifier = modifier.padding(horizontal = horizontalMargin),
         )
     }
