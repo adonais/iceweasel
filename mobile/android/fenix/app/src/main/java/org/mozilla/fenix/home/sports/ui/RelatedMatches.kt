@@ -4,9 +4,6 @@
 
 package org.mozilla.fenix.home.sports.ui
 
-import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,8 +19,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -69,7 +64,10 @@ internal fun RelatedMatchRow(match: Match) {
             .height(24.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        FlagContainer(flagResId = match.home.flagResId)
+        FlagContainer(
+            flagResId = match.home.flagResId,
+            modifier = Modifier.size(width = 30.dp, height = 20.dp),
+        )
 
         Spacer(Modifier.width(FirefoxTheme.layout.space.static100))
 
@@ -102,7 +100,10 @@ internal fun RelatedMatchRow(match: Match) {
 
         Spacer(Modifier.width(FirefoxTheme.layout.space.static100))
 
-        FlagContainer(flagResId = match.away.flagResId)
+        FlagContainer(
+            flagResId = match.away.flagResId,
+            modifier = Modifier.size(width = 30.dp, height = 20.dp),
+        )
     }
 }
 
@@ -117,26 +118,6 @@ private fun formatScoreWithSuffix(match: Match): String {
         ""
     }
     return "${match.homeScore} - ${match.awayScore} $suffix".trim()
-}
-
-@Composable
-private fun FlagContainer(
-    @DrawableRes flagResId: Int,
-) {
-    val shape = MaterialTheme.shapes.extraSmall
-
-    Image(
-        painter = painterResource(flagResId),
-        contentDescription = null,
-        modifier = Modifier
-            .size(width = 30.dp, height = 20.dp)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = shape,
-            )
-            .clip(shape),
-    )
 }
 
 private data class RelatedMatchesPreviewState(
