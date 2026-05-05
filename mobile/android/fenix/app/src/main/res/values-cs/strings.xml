@@ -381,6 +381,8 @@
   <string name="ai_controls_translations_title">Překlady</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">Hlasové vyhledávání</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Blokovat vylepšování umělou inteligencí?</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Co bude blokováno:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
@@ -1101,6 +1103,8 @@
   <string name="customize_wallpapers">Tapety</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Sponzorované zkratky</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Světový šampionát</string>
   <!--
     Wallpapers
 
@@ -1716,6 +1720,10 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Smazat skupinu</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Zrušit</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Smazat skupinu</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Zrušit</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -2126,6 +2134,10 @@
   <string name="bookmark_sort_menu_a_to_z">Seřadit od A do Z</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Seřadit od Z do A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Importovat ze souboru</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Záložky se nepodařilo naimportovat. Zkuste to znovu.</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2184,8 +2196,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Zavřít složku: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Zavřít záložky</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Importovat ze souboru</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Nemáte zatím žádné záložky</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Mějte všechny své oblíbené záložky pohromadě</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Záložek ve složce: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -3111,6 +3127,8 @@
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN je aktivní.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Začít</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Teď ne</string>
   <!--
     Autofill
 
@@ -4371,6 +4389,8 @@
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">ŽIVĚ</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Mistrovství světa ve fotbale 2026</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Třetí místo</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">Nejlepších 32</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4419,6 +4439,12 @@
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Zobrazit podrobnosti o zápase</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">Související zápasy</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Nadcházející</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(Konec zápasu)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Konec zápasu</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4439,6 +4465,12 @@
   <string name="sports_widget_still_want_to_follow">Stále chcete sledovat?</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Sledovat jiný tým</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Odpočítávání do Mistrovství světa</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Zobrazit rozpis zápasů</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Přeskočit</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">Poločas</string>
   <!-- Sports widget match status label shown during extra time of a match. -->

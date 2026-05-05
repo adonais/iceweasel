@@ -4429,6 +4429,8 @@
   <string name="sports_widget_choose_another_team">Izberite še kakšno ekipo, katere napredek na svetovnem prvenstvu želite spremljati.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Spremljaj drugo ekipo</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Odštevanje do svetovnega prvenstva</string>
   <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
   <string name="sports_widget_skip">Preskoči</string>
   <!-- Sports widget match status label shown during halftime of a match. -->

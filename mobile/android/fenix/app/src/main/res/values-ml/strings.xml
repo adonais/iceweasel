@@ -279,6 +279,8 @@
   <string name="browser_menu_edit_bookmark">അടയാളക്കുറിപ്പ് തിരുത്തുക</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
   <string name="browser_menu_save_as_pdf_2">പീ.ഡീ.എഫ ആയി കരുതിവയ്ക്കുക</string>
+  <!-- Browser menu label for moving the current private tab to a non-private tab -->
+  <string name="browser_menu_move_to_non_private_tab">സ്വകാര്യമല്ലാത്ത ടാബിലേക്കു നീക്കുക</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">താളിന്റെ വിവൎത്തനം ചെയ്യുക</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
@@ -353,6 +355,20 @@
   <string name="translation_toolbar_expand_action">വിവൎത്തന കടലാസു തുറക്കുക</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">സന്ദേശം തള്ളിക്കളയുക</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">കൂടുതലറിയുക</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">മൊഴിമാറ്റങ്ങൾ</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">എല്ലാ മൊഴിമാറ്റങ്ങളും താങ്ങളുടെ ഉപകരണത്തിൽ സ്വകാര്യമായി തുടരും.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">മൊഴിമാറ്റ ക്രമീകരണങ്ങൾ</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">എന്തെല്ലാം തടയപ്പെടും:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">റദ്ദാക്കുക</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">തടയുക</string>
   <!--
     Locale Settings Fragment
 
@@ -882,6 +898,13 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">ഈ അറ ഉപയോഗിക്കാൻ താങ്ങൾക്കനുവാദമില്ല. മറ്റൊരെണ്ണം തിരഞ്ഞെടുത്തുനോക്കു്.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">മറ്റൊരു പ്രയോഗംവഴി ഇറക്കിവയ്ക്കലുകൾ കൈകാര്യം ചെയ്യുക</string>
+  <string name="preferences_downloads_delete_from_device">ഉപകരണത്തിൽ നിന്നു മായ്ക്കുക</string>
+  <string name="preferences_downloads_delete_from_device_description">താങ്ങളുടെ ഉപകരണത്തിൽ നിന്നും നാൾവഴിയിൽ നിന്നും ഈ ഫയൽ മായ്ക്കപ്പെടും</string>
+  <string name="preferences_downloads_remove_from_download_history">ഇറക്കിവയ്ക്കൽ നാൾവഴിയിൽ നിന്നു മായ്ക്കുക</string>
+  <string name="preferences_downloads_remove_from_download_history_description">താങ്ങളുടെ ഇറക്കിവയ്ക്കൽ നാൾവഴിയിൽ നിന്നു് ഈ ഫയൽ മായ്ക്കപ്പെട്ടിരിക്കുന്നു എന്നാൽ ഇപ്പോഴും താങ്ങളുടെ ഉപകരണത്തിൽ കരുതിവെച്ചിരിപ്പുണ്ടു്.\u0020</string>
+  <string name="preferences_downloads_ask_when_to_delete_files">ഞാൻ ഫയലുകൾ മായ്ക്കുമ്പോൾ ഒരുവട്ടം ചോദിക്കുക</string>
+  <!-- Preference for downloads -->
+  <string name="preferences_downloads_2">ഇറക്കിവയ്ക്കൽ ക്രമീകരണങ്ങൾ</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
   <string name="preferences_downloads_settings_clean_up_files_title">%s-ൽ നിന്നും ഉപകരണത്തിൽനിന്നും മായ്ക്കുക</string>
   <!-- Preference for downloads -->
@@ -1193,6 +1216,8 @@
   <string name="toolbar_customize_shortcut_homepage">പൂമുറ്റം</string>
   <!-- Back shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_back">തിരിച്ചു്</string>
+  <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+  <string name="toolbar_customize_shortcut_none">ഒന്നുമില്ല</string>
   <!--
     App icon Preferences
 
@@ -1497,6 +1522,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">പേരു്</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">ഇതിലേക്കു ചേൎക്കുക</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">പുതിയ ടാബുകൂട്ടത്തിലേക്കു ചേൎക്കുക</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">\"ടാബുകൂട്ടത്തിൽ ചേൎക്കുക\" എന്നതു് അടയ്ക്കുക</string>
   <!-- Label for adding to a new tab group. -->
@@ -1509,6 +1536,34 @@
     <item quantity="one">%1$d ടാബു്</item>
     <item quantity="other">%1$d ടാബുകൾ</item>
   </plurals>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">കൂട്ടം മായ്ക്കുക</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">റദ്ദാക്കുക</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">മഞ്ഞ</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">പഴുക്ക</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">ചുവപ്പ്</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">പാടല</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">ഊതന്നിറം</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">മാന്തളിർ</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">നീല</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">വാരുണി</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">പച്ച</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">ചാരം</string>
   <!--
     History
 
@@ -1587,6 +1642,11 @@
     This button will dismiss the dialog.
   -->
   <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">റദ്ദാക്കുക</string>
+  <plurals name="downloads_delete_dialog_title">
+    <!-- Title for the download deletion confirmation dialog. The message changes depending on how many files are selected. %d is the number of files to be deleted. -->
+    <item quantity="one">ഫയൽ മായ്ക്കണോ?</item>
+    <item quantity="other">%d ഫയലുകൾ മായ്ക്കണോ?</item>
+  </plurals>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">മായ്ക്കുക</string>
   <!-- Content description for the toolbar "Navigate back" button -->
@@ -1618,6 +1678,12 @@
   <string name="download_delete_multi_select_dialog_confirm">മായ്ക്കുക</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">റദ്ദാക്കുക</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_device">ഉപകരണത്തിൽ നിന്നു മായ്ക്കുക</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
+  <string name="download_delete_dialog_cancel">റദ്ദാക്കുക</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
+  <string name="download_delete_dialog_confirm">തീൎച്ചപ്പെടുത്തുക</string>
   <!-- Title for the alert dialog confirmation before renaming a download item. -->
   <string name="download_rename_dialog_title">ഫയലിന്റെ പേരുമാറ്റുക</string>
   <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
@@ -2096,6 +2162,10 @@
   <string name="menu_print">അച്ചടിപ്പിക്കുക</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">ഉപകരണത്തിലേക്ക് അയക്കു</string>
+  <!-- Content description for the close button in the QR code display screen -->
+  <string name="qr_code_display_close">അടയ്ക്കുക</string>
+  <!-- Label for the download button on the QR code display screen -->
+  <string name="qr_code_display_download">ഇറക്കിവയ്ക്കുക</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">എല്ലാ പ്രവർത്തനങ്ങളും</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
@@ -2693,6 +2763,33 @@
   <string name="preferences_email_masks_manage_title">ഇതപാൽ പൊയ്മുഖങ്ങൾ കൈകാര്യം ചെയ്യുക</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">ഇ-തപാൽ പൊയ്മുഖങ്ങൾ നിലവിൽ ലഭ്യമല്ല. കുറച്ചു മിനിറ്റുകൾക്കുള്ളിൽ വീണ്ടും ശ്രമിക്കുക.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">കൂടുതലറിയുക</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">ഇടം</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">ശുപാൎശ ചെയ്ത</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">തുടങ്ങിവച്ചതു്</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">അണച്ചതു്</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">ബന്ധപ്പെടുന്നു…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">നിറുത്തി</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">പിഴവു്</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">%1$d ജി.ബി അതിരെത്തി</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">തുടങ്ങാം</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">ഇനിയും പരിരക്ഷണയോടെ തിരയുക</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">ഇപ്പോഴല്ല</string>
   <!--
     Autofill
 
@@ -2987,6 +3084,10 @@
     which navigates the user to a screen displaying all the shortcuts.
   -->
   <string name="homepage_shortcuts_show_all_content_description">എല്ലാ കുറുക്കുവഴികൾ കാണിക്കുക</string>
+  <!-- Label for the "Add shortcut" button displayed as a tile. -->
+  <string name="homepage_shortcuts_add_shortcut">കുറുക്കുവഴി ചേൎക്കുക</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">വെബ്ബിടവിലാസം നല്കുക</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">കുറുക്കുവഴി പരിധി എത്തി</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3080,6 +3181,8 @@
     Header text for a section on the home screen.
   -->
   <string name="pocket_stories_header_2">കഥകൾ</string>
+  <!-- Header text for the Stories screen. -->
+  <string name="stories_screen_text_news">വാൎത്ത</string>
   <!--
     Context description text for the "Discover more" button in the stories home screen section
     which navigates the user to a screen displaying more stories.
