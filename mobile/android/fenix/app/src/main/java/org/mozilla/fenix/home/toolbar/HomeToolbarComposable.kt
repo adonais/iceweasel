@@ -103,8 +103,6 @@ internal class HomeToolbarComposable(
 
         setContent {
             val isSearching = toolbarStore.observeAsComposableState { it.isEditMode() }.value
-            val isSearchEmpty =
-                toolbarStore.observeAsComposableState { it.editState.query.current.isEmpty() }.value
             val shouldShowTabStrip: Boolean = remember { settings.isTabStripEnabled }
             val isAddressBarVisible = remember { addressBarVisibility }
 
@@ -126,7 +124,7 @@ internal class HomeToolbarComposable(
                 MaterialTheme(
                     colorScheme = homepageToolbarColors(
                         isPrivateMode = browsingModeManager.mode == BrowsingMode.Private,
-                        shouldUseEdgeToEdgeColors = isEdgeToEdgeBackgroundEnabled && isSearchEmpty,
+                        shouldUseEdgeToEdgeColors = isEdgeToEdgeBackgroundEnabled && !isSearching,
                     ),
                 ) {
                     Column {
