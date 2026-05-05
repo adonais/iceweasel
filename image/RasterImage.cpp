@@ -267,7 +267,12 @@ AspectRatio RasterImage::GetIntrinsicRatio() {
   if (mError) {
     return {};
   }
-  return AspectRatio::FromSize(mSize.width, mSize.height);
+  OrientedIntSize size = mSize;
+  if (mResolution.mX != mResolution.mY) {
+    mResolution.ApplyXTo(size.width);
+    mResolution.ApplyYTo(size.height);
+  }
+  return AspectRatio::FromSize(size.width, size.height);
 }
 
 NS_IMETHODIMP_(Orientation)
