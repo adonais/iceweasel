@@ -1729,7 +1729,7 @@ Result<mozilla::LayoutDeviceRect, nsresult> nsDOMWindowUtils::ConvertTo(
   }
 
   LayoutDeviceRect devPixelsRect = LayoutDeviceRect::FromAppUnits(
-      appUnitsRect, presContext->AppUnitsPerDevPixel());
+      appUnitsRect, rootPresContext->AppUnitsPerDevPixel());
 
   // Apply the desktop zoom value via PresShell::GetResolution()
   devPixelsRect =

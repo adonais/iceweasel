@@ -159,3 +159,17 @@ add_task(async function test_popup_positioned_zoomed_oop() {
     true
   );
 });
+
+add_task(async function test_popup_positioned_iframe_zoom_same_origin() {
+  await runPopupPositionTest(
+    "helper_test_select_popup_position_iframe_zoom.html",
+    false
+  );
+});
+
+add_task(async function test_popup_positioned_iframe_zoom_oop() {
+  await runPopupPositionTest(
+    "helper_test_select_popup_position_iframe_zoom.html",
+    true
+  );
+});
