@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,15 +37,17 @@ import mozilla.components.ui.icons.R as iconsR
  * It allows the user to fill the link into the current input field.
  *
  * @param shouldUseBottomToolbar Indicates whether the toolbar is at the bottom of the screen.
+ * @param backgroundColor Background color for the suggestion bar.
  * @param onClick Callback invoked when the suggestion bar is clicked.
  */
 @Composable
 fun ClipboardSuggestionBar(
     shouldUseBottomToolbar: Boolean,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
     onClick: () -> Unit,
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.surface,
+        color = backgroundColor,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Box {
