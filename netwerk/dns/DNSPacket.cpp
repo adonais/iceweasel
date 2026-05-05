@@ -205,20 +205,21 @@ nsresult DNSPacket::PassQName(unsigned int& index,
 // GetQname: retrieves the qname (stores in 'aQname') and stores the index
 // after qname was parsed into the 'aIndex'.
 nsresult DNSPacket::GetQname(nsACString& aQname, unsigned int& aIndex,
-                             const unsigned char* aBuffer) {
+                             const unsigned char* aBuffer,
+                             unsigned int aBodySize) {
   uint8_t clength = 0;
   unsigned int cindex = aIndex;
   unsigned int loop = 128;    // a valid DNS name can never loop this much
   unsigned int endindex = 0;  // index position after this data
   do {
-    if (cindex >= mBodySize) {
+    if (cindex >= aBodySize) {
       LOG(("TRR: bad Qname packet\n"));
       return NS_ERROR_ILLEGAL_VALUE;
     }
     clength = static_cast<uint8_t>(aBuffer[cindex]);
     if ((clength & 0xc0) == 0xc0) {
       // name pointer, get the new offset (14 bits)
-      if ((cindex + 1) >= mBodySize) {
+      if ((cindex + 1) >= aBodySize) {
         return NS_ERROR_ILLEGAL_VALUE;
       }
       // extract the new index position for the next label
@@ -242,7 +243,7 @@ nsresult DNSPacket::GetQname(nsACString& aQname, unsigned int& aIndex,
       if (!aQname.IsEmpty()) {
         aQname.Append(".");
       }
-      if ((cindex + clength) > mBodySize) {
+      if ((cindex + clength) > aBodySize) {
         return NS_ERROR_ILLEGAL_VALUE;
       }
       aQname.Append((const char*)(&aBuffer[cindex]), clength);
@@ -560,7 +561,7 @@ nsresult DNSPacket::DecodeInternal(
 
   while (answerRecords) {
     nsAutoCString qname;
-    rv = GetQname(qname, index, aBuffer);
+    rv = GetQname(qname, index, aBuffer, mBodySize);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -662,7 +663,7 @@ nsresult DNSPacket::DecodeInternal(
           if (aCname.IsEmpty()) {
             nsAutoCString qname;
             unsigned int qnameindex = index;
-            rv = GetQname(qname, qnameindex, aBuffer);
+            rv = GetQname(qname, qnameindex, aBuffer, mBodySize);
             if (NS_FAILED(rv)) {
               return rv;
             }
@@ -731,7 +732,7 @@ nsresult DNSPacket::DecodeInternal(
           parsed.mSvcFieldPriority = get16bit(aBuffer, svcbIndex);
           svcbIndex += 2;
 
-          rv = GetQname(parsed.mSvcDomainName, svcbIndex, aBuffer);
+          rv = GetQname(parsed.mSvcDomainName, svcbIndex, aBuffer, mBodySize);
           if (NS_FAILED(rv)) {
             return rv;
           }
@@ -893,7 +894,7 @@ nsresult DNSPacket::DecodeInternal(
 
   while (arRecords) {
     nsAutoCString qname;
-    rv = GetQname(qname, index, aBuffer);
+    rv = GetQname(qname, index, aBuffer, mBodySize);
     if (NS_FAILED(rv)) {
       LOG(("Bad qname for additional record"));
       return rv;
