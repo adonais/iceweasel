@@ -1,8 +1,14 @@
 "use strict";
 
-const { BaseNodeServer, NodeServer } = ChromeUtils.importESModule(
-  "resource://testing-common/NodeServer.sys.mjs"
-);
+const {
+  BaseNodeServer,
+  HTTP3Server,
+  NodeHTTPServer,
+  NodeHTTPSServer,
+  NodeHTTP2Server,
+  NodeServer,
+  with_node_servers,
+} = ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
 const baseURL = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
@@ -144,6 +150,10 @@ add_setup(async function () {
       ["network.lna.blocking", true],
       ["network.proxy.allow_hijacking_localhost", false],
       ["network.lna.address_space.public.override", "127.0.0.1:4443"],
+      [
+        "network.proxy.no_proxies_on",
+        "localhost, 127.0.0.1, foo.example.com, cert-mismatch.test",
+      ],
     ],
   });
 
@@ -271,4 +281,291 @@ add_task(async function test_lna_accept_receives_sni() {
   );
 
   gBrowser.removeTab(tab);
+});
+
+// foo.example.com is in the NodeHTTPSServer/NodeHTTP2Server cert SAN; the
+// .test hostname is not, so TLS will fail on a cert mismatch.
+const CERT_MATCH_HOST = "foo.example.com";
+const CERT_MISMATCH_HOST = "cert-mismatch.test";
+
+function observeStopRequest(targetURL) {
+  return new Promise(resolve => {
+    let observer = {
+      observe(subject) {
+        let channel = subject.QueryInterface(Ci.nsIChannel);
+        if (channel.URI.spec !== targetURL) {
+          return;
+        }
+        Services.obs.removeObserver(observer, "http-on-stop-request");
+        resolve(channel.status);
+      },
+    };
+    Services.obs.addObserver(observer, "http-on-stop-request");
+  });
+}
+
+function raceWithTimeout(promise, ms) {
+  let timeoutId;
+  let timeout = new Promise(resolve => {
+    // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+    timeoutId = setTimeout(() => resolve(false), ms);
+  });
+  return Promise.race([promise.then(() => true), timeout]).finally(() =>
+    clearTimeout(timeoutId)
+  );
+}
+
+// Shared setup for one server: pins `host` to 127.0.0.1, classifies the
+// server address:port as Private, and builds the target and page URLs. The
+// caller is responsible for removing the tab and clearing the DNS override.
+async function setupLnaRequest(server, host) {
+  Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
+  Services.perms.removeAll();
+
+  let port = server.port();
+  let scheme = server.protocol();
+  info(`${scheme}/${server.version()} server listening on port ${port}`);
+
+  const dnsOverride = Cc[
+    "@mozilla.org/network/native-dns-override;1"
+  ].getService(Ci.nsINativeDNSResolverOverride);
+  dnsOverride.addIPOverride(host, "127.0.0.1");
+
+  let prefs = [
+    ["network.lna.address_space.private.override", `127.0.0.1:${port}`],
+  ];
+  // The initiating page is served over https://example.com; when the fetch
+  // target is plaintext HTTP we need to disable mixed-content blocking,
+  // otherwise the fetch is blocked by the DOM layer before any network
+  // code (and any LNA check) runs.
+  if (scheme === "http") {
+    prefs.push(
+      ["security.mixed_content.block_active_content", false],
+      ["security.mixed_content.upgrade_mixed_display_content", false],
+      ["security.mixed_content.upgrade_mixed_active_content", false]
+    );
+  }
+  await SpecialPowers.pushPrefEnv({ set: prefs });
+
+  return {
+    scheme,
+    label: `${scheme}/${server.version()}`,
+    targetURL: `${scheme}://${host}:${port}/`,
+    pageURL:
+      `${baseURL}page_fetch_localhost_https.html` +
+      `?port=${port}&host=${host}&scheme=${scheme}`,
+    async cleanup(tab) {
+      if (tab) {
+        gBrowser.removeTab(tab);
+      }
+      dnsOverride.clearHostOverride(host);
+      await SpecialPowers.popPrefEnv();
+    },
+  };
+}
+
+// Shared body for the cert-mismatch assertion: open the tab, wait for the
+// fetch to fail, and verify TLS (not LNA) is the failure reason and no LNA
+// prompt was shown.
+async function runCertMismatchAgainstServer(server) {
+  let ctx = await setupLnaRequest(server, CERT_MISMATCH_HOST);
+  info(`cert mismatch variant: ${ctx.label}`);
+
+  let popupShown = false;
+  let popupListener = () => {
+    popupShown = true;
+  };
+  PopupNotifications.panel.addEventListener("popupshown", popupListener);
+
+  let fetchDone = observeStopRequest(ctx.targetURL);
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    ctx.pageURL
+  );
+
+  let status = await fetchDone;
+  PopupNotifications.panel.removeEventListener("popupshown", popupListener);
+
+  Assert.notEqual(
+    status,
+    Cr.NS_OK,
+    `[${ctx.label}] Fetch should fail due to TLS cert hostname mismatch`
+  );
+  Assert.notEqual(
+    status,
+    Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+    `[${ctx.label}] Fetch should fail from TLS, not from an LNA prompt decision`
+  );
+  ok(
+    !popupShown,
+    `[${ctx.label}] No LNA prompt should be shown when TLS cert does not match`
+  );
+  for (let id of ["loopback-network", "local-network"]) {
+    let popup = PopupNotifications.getNotification(id, tab.linkedBrowser);
+    ok(!popup, `[${ctx.label}] No ${id} LNA prompt should be present`);
+  }
+
+  await ctx.cleanup(tab);
+}
+
+// For each TLS server variant, verify that a fetch to a hostname not covered
+// by the server cert fails on TLS without showing an LNA prompt.
+add_task(async function test_local_network_cert_mismatch() {
+  await with_node_servers(
+    [NodeHTTPSServer, NodeHTTP2Server],
+    runCertMismatchAgainstServer
+  );
+});
+
+// Exercise the prompt-shown path for a single server: open the tab, wait for
+// the local-network prompt, click deny, and assert the fetch is denied.
+async function runPromptShownAgainstServer(server) {
+  let ctx = await setupLnaRequest(server, CERT_MATCH_HOST);
+  info(`prompt-shown variant: ${ctx.label}`);
+
+  let promptPromise = BrowserTestUtils.waitForEvent(
+    PopupNotifications.panel,
+    "popupshown"
+  );
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    ctx.pageURL
+  );
+
+  let promptShown = await raceWithTimeout(promptPromise, 5000);
+  ok(promptShown, `[${ctx.label}] LNA prompt should be shown within 5s`);
+
+  let popup = PopupNotifications.getNotification(
+    "local-network",
+    tab.linkedBrowser
+  );
+  ok(popup, `[${ctx.label}] local-network LNA permission prompt should appear`);
+
+  if (popup) {
+    let fetchDone = observeStopRequest(ctx.targetURL);
+    let notification = popup.owner.panel.childNodes[0];
+    ok(notification, `[${ctx.label}] Notification popup element is available`);
+    notification.secondaryButton.doCommand();
+    let status = await fetchDone;
+
+    Assert.equal(
+      status,
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      `[${ctx.label}] Fetch should be denied after user rejects the LNA prompt`
+    );
+  }
+
+  await ctx.cleanup(tab);
+}
+
+// For each server variant, verify that a fetch to a Private address shows the
+// local-network LNA prompt. TLS variants exercise the deferred post-handshake
+// path; the plaintext HTTP variant exercises the check without any TLS.
+add_task(async function test_local_network_prompt_shown() {
+  await with_node_servers(
+    [NodeHTTPServer, NodeHTTPSServer, NodeHTTP2Server],
+    runPromptShownAgainstServer
+  );
+});
+
+// Resolve paths for the h3 server binary and its cert DB. Mochitest does not
+// set MOZ_HTTP3_SERVER_PATH / MOZ_HTTP3_CERT_DB_PATH the way xpcshell does, so
+// fall back to the conventional build layout.
+function resolveHttp3Paths() {
+  let binPath = Services.env.get("MOZ_HTTP3_SERVER_PATH");
+  if (!binPath) {
+    let greD = Services.dirsvc.get("GreD", Ci.nsIFile).clone();
+    greD.append(
+      "http3server" + (Services.appinfo.OS === "WINNT" ? ".exe" : "")
+    );
+    if (greD.exists()) {
+      binPath = greD.path;
+    }
+  }
+
+  let dbPath = Services.env.get("MOZ_HTTP3_CERT_DB_PATH");
+  if (!dbPath) {
+    // Walk up from CurWorkD to find a repo/obj root containing
+    // netwerk/test/http3serverDB.
+    let dir = Services.dirsvc.get("CurWorkD", Ci.nsIFile).clone();
+    while (dir) {
+      let candidate = dir.clone();
+      candidate.append("netwerk");
+      candidate.append("test");
+      candidate.append("http3serverDB");
+      if (candidate.exists() && candidate.isDirectory()) {
+        dbPath = candidate.path;
+        break;
+      }
+      let parent = dir.parent;
+      if (!parent || parent.equals(dir)) {
+        break;
+      }
+      dir = parent;
+    }
+  }
+
+  return { binPath, dbPath };
+}
+
+// Run `body(server)` against an h3 server, mapping `host` to the local h3
+// listener via the alt-svc-mapping-for-testing pref. Skips the test if the
+// http3server binary or cert DB cannot be located.
+async function withHttp3Server(host, body) {
+  let { binPath, dbPath } = resolveHttp3Paths();
+  if (!binPath || !dbPath) {
+    info(
+      `Skipping h3 variant: http3server binary or DB not found ` +
+        `(bin=${binPath}, db=${dbPath})`
+    );
+    return;
+  }
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["network.http.http3.enable", true],
+      ["network.dns.disableIPv6", true],
+    ],
+  });
+
+  let server = new HTTP3Server();
+  try {
+    await server.start(binPath, dbPath);
+  } catch (e) {
+    info(`Skipping h3 variant: failed to start http3server: ${e}`);
+    await SpecialPowers.popPrefEnv();
+    return;
+  }
+
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "network.http.http3.alt-svc-mapping-for-testing",
+        `${host};h3=:${server.port()}`,
+      ],
+    ],
+  });
+
+  try {
+    await body(server);
+  } finally {
+    await server.stop();
+    await SpecialPowers.popPrefEnv();
+    await SpecialPowers.popPrefEnv();
+  }
+}
+
+// Same prompt-shown assertion, but against an h3 server. H3 uses alt-svc to
+// route the h1 origin to the h3 listener on localhost, so we set the
+// alt-svc-mapping-for-testing pref instead of hitting the h3 port directly.
+add_task(async function test_local_network_prompt_shown_h3() {
+  await withHttp3Server(CERT_MATCH_HOST, runPromptShownAgainstServer);
+});
+
+// Same cert-mismatch assertion as test_local_network_cert_mismatch, but
+// against an h3 server: a public hostname misdirected to a local h3 listener
+// whose cert does not cover the hostname must fail on TLS (inside QUIC)
+// without surfacing an LNA prompt.
+add_task(async function test_local_network_cert_mismatch_h3() {
+  await withHttp3Server(CERT_MISMATCH_HOST, runCertMismatchAgainstServer);
 });

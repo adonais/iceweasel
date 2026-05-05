@@ -282,6 +282,7 @@ skip-if = [
 ["browser_test_local_network_access_sni_leak.js"]
 support-files = [
   "page_fetch_localhost_https.html",
+  "!/netwerk/test/unit/http2-ca.pem", # for node server
 ]
 
 ["browser_test_local_network_access_telemetry.js"]
