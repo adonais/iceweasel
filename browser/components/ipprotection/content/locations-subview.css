@@ -30,7 +30,7 @@
   align-items: center;
   gap: var(--space-small);
   flex: 1;
-  border: var(--button-border);
+  border: none;
   color: var(--button-text-color-menu);
   background-color: var(--button-background-color-menu);
   text-align: start;
