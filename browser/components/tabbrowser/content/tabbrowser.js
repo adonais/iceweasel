@@ -800,7 +800,7 @@
               once: true,
             }
           );
-          this._insertBrowser(tab);
+          gBrowser._insertBrowser(tab);
         }
       }
 
