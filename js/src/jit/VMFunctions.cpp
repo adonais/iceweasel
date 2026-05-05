@@ -3366,7 +3366,7 @@ void AssertPropertyLookup(NativeObject* obj, PropertyKey id, uint32_t slot) {
 
 // This is a specialized version of WeakMap::valueReadBarrier. It should
 // only be called with a tenured cell that is not marked black.
-void WeakMapValueReadBarrier(js::gc::TenuredCell* cell, Zone* zone) {
+void WeakMapValueReadBarrier(js::gc::TenuredCell* cell, Zone* mapZone) {
   AutoUnsafeCallWithABI unsafe;
 
   // This is an inlined and specialized copy of ExposeGCThingToActiveJS.
@@ -3375,18 +3375,19 @@ void WeakMapValueReadBarrier(js::gc::TenuredCell* cell, Zone* zone) {
     MOZ_ASSERT(!gc::IsInsideNursery(cell));
     MOZ_ASSERT(!gc::detail::TenuredCellIsMarkedBlack(cell));
 
-    if (zone->needsMarkingBarrier()) {
+    Zone* cellZone = cell->zone();
+    if (cellZone->needsMarkingBarrier()) {
       gc::PerformIncrementalReadBarrier(cell);
-    } else if (!zone->isGCPreparing() &&
-	       gc::detail::NonBlackCellIsMarkedGray(cell)) {
+    } else if (!cellZone->isGCPreparing() &&
+               gc::detail::NonBlackCellIsMarkedGray(cell)) {
       gc::UnmarkGrayGCThingRecursively(cell);
     }
-    MOZ_ASSERT_IF(!zone->isGCPreparing(),
-		  !gc::detail::TenuredCellIsMarkedGray(cell));
+    MOZ_ASSERT_IF(!cellZone->isGCPreparing(),
+                  !gc::detail::TenuredCellIsMarkedGray(cell));
   }
 
   if (MOZ_UNLIKELY(cell->is<JS::Symbol>())) {
-    gc::MarkSymbolForWeakMapReadBarrier(zone, cell->as<JS::Symbol>());
+    gc::MarkSymbolForWeakMapReadBarrier(mapZone, cell->as<JS::Symbol>());
   }
 }
 
