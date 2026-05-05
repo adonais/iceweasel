@@ -23,6 +23,7 @@ using dom::NullableRootedUnion;
 using dom::Promise;
 using dom::PromiseNativeHandler;
 using dom::Sequence;
+using dom::SequenceRooter;
 using dom::UniFFICallbackHandler;
 using dom::UniFFIPointer;
 using dom::UniFFIScaffoldingCallCode;
@@ -15637,6 +15638,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(2, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -15697,6 +15699,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -15773,6 +15776,7 @@ extern "C" void callback_interface_logins_encryptor_decryptor_decrypt(
 
   // Convert arguments
   nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aes.cx(), &uniffiArgs);
   if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
     MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_logins_encryptor_decryptor_decrypt] Failed to allocate arguments"));
     return;
@@ -15822,6 +15826,7 @@ extern "C" void callback_interface_logins_encryptor_decryptor_encrypt(
 
   // Convert arguments
   nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aes.cx(), &uniffiArgs);
   if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
     MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_logins_encryptor_decryptor_encrypt] Failed to allocate arguments"));
     return;
@@ -15893,6 +15898,7 @@ extern "C" void callback_interface_logins_key_manager_get_key(
 
   // Convert arguments
   nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aes.cx(), &uniffiArgs);
   if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
     MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_logins_key_manager_get_key] Failed to allocate arguments"));
     return;
@@ -15957,6 +15963,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -16036,6 +16043,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -16115,6 +16123,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -16219,6 +16228,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -16301,6 +16311,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(2, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -16416,6 +16427,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -16495,6 +16507,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -16577,6 +16590,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -16665,6 +16679,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -16773,6 +16788,7 @@ extern "C" void callback_interface_uniffi_bindings_tests_test_callback_interface
 
   // Convert arguments
   nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aes.cx(), &uniffiArgs);
   if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
     MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_callback_interface_noop] Failed to allocate arguments"));
     return;
@@ -16813,6 +16829,7 @@ extern "C" void callback_interface_uniffi_bindings_tests_test_callback_interface
 
   // Convert arguments
   nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aes.cx(), &uniffiArgs);
   if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
     MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_callback_interface_get_value] Failed to allocate arguments"));
     return;
@@ -16854,6 +16871,7 @@ extern "C" void callback_interface_uniffi_bindings_tests_test_callback_interface
 
   // Convert arguments
   nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aes.cx(), &uniffiArgs);
   if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
     MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_callback_interface_set_value] Failed to allocate arguments"));
     return;
@@ -16903,6 +16921,7 @@ extern "C" void callback_interface_uniffi_bindings_tests_test_callback_interface
 
   // Convert arguments
   nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aes.cx(), &uniffiArgs);
   if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
     MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_callback_interface_throw_if_equal] Failed to allocate arguments"));
     return;
@@ -16978,6 +16997,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -17057,6 +17077,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -17139,6 +17160,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -17227,6 +17249,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -17335,6 +17358,7 @@ extern "C" void callback_interface_uniffi_bindings_tests_test_trait_interface_no
 
   // Convert arguments
   nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aes.cx(), &uniffiArgs);
   if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
     MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_trait_interface_noop] Failed to allocate arguments"));
     return;
@@ -17375,6 +17399,7 @@ extern "C" void callback_interface_uniffi_bindings_tests_test_trait_interface_ge
 
   // Convert arguments
   nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aes.cx(), &uniffiArgs);
   if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
     MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_trait_interface_get_value] Failed to allocate arguments"));
     return;
@@ -17416,6 +17441,7 @@ extern "C" void callback_interface_uniffi_bindings_tests_test_trait_interface_se
 
   // Convert arguments
   nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aes.cx(), &uniffiArgs);
   if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
     MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_trait_interface_set_value] Failed to allocate arguments"));
     return;
@@ -17465,6 +17491,7 @@ extern "C" void callback_interface_uniffi_bindings_tests_test_trait_interface_th
 
   // Convert arguments
   nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aes.cx(), &uniffiArgs);
   if (!uniffiArgs.AppendElements(1, mozilla::fallible)) {
     MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[callback_interface_uniffi_bindings_tests_test_trait_interface_throw_if_equal] Failed to allocate arguments"));
     return;
@@ -17538,6 +17565,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements(0, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;

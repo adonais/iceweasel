@@ -126,6 +126,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements({{ arguments.len()  }}, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -235,6 +236,7 @@ public:
   MakeCall(JSContext* aCx, dom::UniFFICallbackHandler* aJsHandler, ErrorResult& aError) override {
     // Convert arguments
     nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+    SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aCx, &uniffiArgs);
     if (!uniffiArgs.AppendElements({{ arguments.len()  }}, mozilla::fallible)) {
       aError.Throw(NS_ERROR_OUT_OF_MEMORY);
       return nullptr;
@@ -296,6 +298,7 @@ extern "C" void {{ meth.fn_name }}(
 
   // Convert arguments
   nsTArray<dom::OwningUniFFIScaffoldingValue> uniffiArgs;
+  SequenceRooter<dom::OwningUniFFIScaffoldingValue> uniffiArgsRooter(aes.cx(), &uniffiArgs);
   if (!uniffiArgs.AppendElements({{ arguments.len()  }}, mozilla::fallible)) {
     MOZ_LOG(gUniffiLogger, LogLevel::Error, ("[{{ meth.fn_name }}] Failed to allocate arguments"));
     return;

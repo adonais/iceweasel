@@ -23,6 +23,7 @@ using dom::NullableRootedUnion;
 using dom::Promise;
 using dom::PromiseNativeHandler;
 using dom::Sequence;
+using dom::SequenceRooter;
 using dom::UniFFICallbackHandler;
 using dom::UniFFIPointer;
 using dom::UniFFIScaffoldingCallCode;
