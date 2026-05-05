@@ -2763,7 +2763,6 @@ dependencies = [
  "rust_minidump_writer_linux",
  "shell_windows",
  "signature_cache",
- "ssl_tokens_cache",
  "static_prefs",
  "storage",
  "trust-anchors",
@@ -6901,20 +6900,6 @@ dependencies = [
  "rusqlite 0.37.0",
  "tempfile",
  "thiserror 2.0.12",
-]
-
-[[package]]
-name = "ssl_tokens_cache"
-version = "0.1.0"
-dependencies = [
- "bincode",
- "flate2",
- "log",
- "nsstring",
- "rustc-hash 2.1.1",
- "serde",
- "static_assertions",
- "tempfile",
 ]
 
 [[package]]

@@ -22,7 +22,6 @@
 #include "mozilla/Base64.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/FilePreferences.h"
-#include "mozilla/OriginAttributes.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
@@ -62,9 +61,6 @@
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"
-#ifdef ENABLE_TESTS
-#  include "nsISSLTokensCacheTest.h"
-#endif
 #include "nss.h"
 #include "p12plcy.h"
 #include "pk11pub.h"
@@ -1658,12 +1654,7 @@ nsresult nsNSSComponent::Init() {
 }
 
 // nsISupports Implementation for the class
-#ifdef ENABLE_TESTS
-NS_IMPL_ISUPPORTS(nsNSSComponent, nsINSSComponent, nsIObserver,
-                  nsISSLTokensCacheTest)
-#else
 NS_IMPL_ISUPPORTS(nsNSSComponent, nsINSSComponent, nsIObserver)
-#endif
 
 static const char* const PROFILE_BEFORE_CHANGE_TOPIC = "profile-before-change";
 
@@ -1862,52 +1853,6 @@ nsNSSComponent::GetDefaultCertVerifier(SharedCertVerifier** result) {
 void nsNSSComponent::DoClearSSLExternalAndInternalSessionCache() {
   SSL_ClearSessionCache();
   mozilla::net::SSLTokensCache::Clear();
-}
-
-template <typename F>
-static nsresult WithParsedOAPattern(const nsAString& aPatternJson, F&& aFunc) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  if (!XRE_IsParentProcess()) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  mozilla::OriginAttributesPattern pattern;
-  if (!pattern.Init(aPatternJson)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-  aFunc(pattern);
-  return NS_OK;
-}
-
-#ifdef ENABLE_TESTS
-
-NS_IMETHODIMP
-nsNSSComponent::CountSSLTokens(uint32_t* aCount) {
-  *aCount = mozilla::net::SSLTokensCache::CountForTest();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNSSComponent::PutSSLTokenForTest(const nsACString& aKey) {
-  mozilla::net::SSLTokensCache::PutForTest(aKey);
-  return NS_OK;
-}
-
-#endif  // ENABLE_TESTS
-
-NS_IMETHODIMP
-nsNSSComponent::RemoveSSLTokensByHostAndOriginAttributesPattern(
-    const nsACString& aHost, const nsAString& aPattern) {
-  return WithParsedOAPattern(aPattern, [&aHost](const auto& pattern) {
-    mozilla::net::SSLTokensCache::RemoveByHostAndOAPattern(aHost, pattern);
-  });
-}
-
-NS_IMETHODIMP
-nsNSSComponent::RemoveSSLTokensBySiteAndOriginAttributesPattern(
-    const nsACString& aSite, const nsAString& aPattern) {
-  return WithParsedOAPattern(aPattern, [&aSite](const auto& pattern) {
-    mozilla::net::SSLTokensCache::RemoveBySiteAndOAPattern(aSite, pattern);
-  });
 }
 
 NS_IMETHODIMP

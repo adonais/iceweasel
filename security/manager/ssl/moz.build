@@ -39,9 +39,6 @@ XPIDL_SOURCES += [
     "nsIX509CertValidity.idl",
 ]
 
-if CONFIG["ENABLE_TESTS"]:
-    XPIDL_SOURCES += ["nsISSLTokensCacheTest.idl"]
-
 XPIDL_MODULE = "pipnss"
 
 XPCOM_MANIFESTS += [

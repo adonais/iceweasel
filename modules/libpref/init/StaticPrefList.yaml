@@ -15132,12 +15132,6 @@
   value: 10
   mirror: always
 
-# Enable persistence of the SSL tokens cache to disk
-- name: network.ssl_tokens_cache_persistence
-  type: RelaxedAtomicBool
-  value: true
-  mirror: always
-
 # The maximum allowed length for a URL - 1MB default.
 - name: network.standard-url.max-length
   type: RelaxedAtomicUint32
