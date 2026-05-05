@@ -233,7 +233,9 @@ class ContinuousOnboardingFeatureDefault(
         activity: Activity,
         stage: ContinuousOnboardingStage,
     ) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            !activity.components.notificationsDelegate.hasPostNotificationsPermission()
+        ) {
             logger.info("Showing notification-permission card dialog.")
 
             val onDismissCard = {
