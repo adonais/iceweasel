@@ -218,6 +218,11 @@ export class AIWindowTabStatesManager {
     );
 
     this.#window.addEventListener(
+      "ai-window:conversation-changed",
+      this.#onConversationChanged
+    );
+
+    this.#window.addEventListener(
       "ai-window:sidebar-toggle",
       this.#onSidebarToggle
     );
@@ -255,6 +260,11 @@ export class AIWindowTabStatesManager {
     this.#window.removeEventListener(
       "ai-window:clear-conversation",
       this.#onConversationCleared
+    );
+
+    this.#window.removeEventListener(
+      "ai-window:conversation-changed",
+      this.#onConversationChanged
     );
 
     this.#window.removeEventListener(
@@ -683,19 +693,43 @@ export class AIWindowTabStatesManager {
    * @param {TabStateEvent} event
    */
   #onConversationCleared = event => {
-    const { tab } = event.detail;
+    const { tab, conversation, conversationId } = event.detail;
     const currentTabState = this.#getTabState(tab);
 
-    // Preserve existing state but clear only the conversationId.
-    // keepSidebarOpen is preserved as-is; it is only modified by explicit
-    // user actions (sidebar toggle) or conversation open, not by clear.
+    // Preserve existing state and keep the newly-swapped empty conversation
+    // so tab switches back to this tab reuse the same instance (and its
+    // cached transient starter prompts).
     if (currentTabState?.state) {
       this.#getTabState(tab, {
         ...currentTabState.state,
-        conversationId: null,
-        conversation: null,
+        conversationId,
+        conversation,
       });
     }
+  };
+
+  /**
+   * Handles ai-window:conversation-changed events dispatched whenever
+   * an ai-window's active conversation is swapped. Triggers starter
+   * prompt loading when the conversation is empty and the current page
+   * URL differs from the one starters were already loaded for.
+   *
+   * @param {TabStateEvent} event
+   */
+  #onConversationChanged = event => {
+    const { conversation, mode, tab } = event.detail;
+
+    if (!conversation || conversation.messageCount) {
+      return;
+    }
+
+    const currentUrl = tab.linkedBrowser.currentURI.spec ?? "";
+    const dedupSkip = conversation.transientStarterUrl === currentUrl;
+    if (dedupSkip) {
+      return;
+    }
+
+    lazy.AIWindowUI.updateStarterPrompts(this.#window, false, mode, tab);
   };
 
   /**
@@ -806,7 +840,7 @@ export class AIWindowTabStatesManager {
         const tab = this.#window.gBrowser.selectedTab;
         let tabState = this.#tabStates.get(tab);
 
-        lazy.AIWindowUI.updateStarterPrompts(this.#window);
+        lazy.AIWindowUI.updateStarterPrompts(this.#window, true);
 
         if (!tabState || !tabState.state?.conversationId) {
           return;

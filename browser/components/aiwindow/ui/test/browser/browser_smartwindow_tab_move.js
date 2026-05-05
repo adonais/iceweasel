@@ -192,6 +192,9 @@ add_task(async function test_smarttab_with_conversation_becomes_classic() {
     "Re-adopted tab should keep its AI window content"
   );
 
+  // waiting for focus stabilizes flaky test here
+  await SimpleTest.promiseFocus(smartWin);
+
   // Verify the CTA button is functional after re-adoption, testing that the
   // actor connection and SmartbarInput currentPage guard are both working.
   await typeInSmartbar(reAdoptedTab.linkedBrowser, "hello");

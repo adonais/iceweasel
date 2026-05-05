@@ -171,6 +171,15 @@ export class ChatConversation extends EventEmitter {
     this.seenUrls = seenUrls ? new Set(seenUrls) : new Set();
     this.memoriesToggled = memoriesToggled;
 
+    // transient: tracks the URL the current starter prompts were generated
+    // for. Not persisted only used while conversation is empty
+    this.transientStarterUrl = null;
+
+    // transient: caches the last set of starter prompts generated for this
+    // conversation so a tab switch-back can restore without re-fetching.
+    // Not persisted only meaningful while the conversation is empty.
+    this.transientStarters = null;
+
     // NOTE: Destructuring params.status causes a linter error
     this.status = params.status || CONVERSATION_STATUS.ACTIVE;
     if (params.securityProperties instanceof SecurityProperties) {
