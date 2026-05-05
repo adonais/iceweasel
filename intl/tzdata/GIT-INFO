@@ -1,7 +1,5 @@
-commit 238963317ce36a82827d6e1896035430e582fe63
-Author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
-Date:   Tue Mar 3 20:50:33 2026 +0100
+commit 1e485258faadaa2fd7b0e85434e18ffb17fd3d28
+Author: Robert Bastian <4706271+robertbastian@users.noreply.github.com>
+Date:   Thu Apr 23 21:13:59 2026 +0200
 
-    ICU-23330 TZDB 2026a (#50)
-    
-    Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+    ICU-23384 Manual patch
