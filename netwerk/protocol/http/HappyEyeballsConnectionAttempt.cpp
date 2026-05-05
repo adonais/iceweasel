@@ -409,8 +409,16 @@ nsresult HappyEyeballsConnectionAttempt::CheckLNA(
   }
 
   auto addrSpace = peerAddr.GetIpAddressSpace();
+  // Local targets are always checked pre-TLS. Private targets on HTTPS can
+  // be deferred until after the TLS handshake succeeds (see
+  // nsHttpConnection::HandshakeDoneInternal) when
+  // network.lna.defer_https_check is set.
+  // This is in order to prevent unactionable LNA prompts when captive portals
+  // temporarily intercept DNS - See bug 2017712.
+  bool deferPrivate = addrSpace == nsILoadInfo::IPAddressSpace::Private &&
+                      StaticPrefs::network_lna_defer_https_check();
   if (addrSpace != nsILoadInfo::IPAddressSpace::Local &&
-      addrSpace != nsILoadInfo::IPAddressSpace::Private) {
+      (addrSpace != nsILoadInfo::IPAddressSpace::Private || deferPrivate)) {
     return NS_OK;
   }
 

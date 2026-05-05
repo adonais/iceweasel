@@ -14938,6 +14938,17 @@
   value: true
   mirror: always
 
+# When this pref is true, defer the LNA check for private IP address space
+# targets on HTTPS connections until after the TLS handshake succeeds. This
+# avoids prompting the user when DNS transiently misdirects a public hostname
+# to a private address and the server cannot present a valid certificate.
+# Local (loopback) addresses and plaintext HTTP requests are unaffected and
+# are still checked pre-connect.
+- name: network.lna.defer_https_check
+  type: RelaxedAtomicBool
+  value: true
+  mirror: always
+
 # When true, benchmarking IP addresses 198.18.X.X is treated as local
 # Depending on how this ends up being treated in the LNA spec, we might
 # change it to be in the private space, but for now it's disabled to

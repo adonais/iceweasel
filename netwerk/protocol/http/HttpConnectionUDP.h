@@ -153,6 +153,10 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   bool mProxyConnectSucceeded = false;
   nsTArray<RefPtr<nsHttpTransaction>> mQueuedHttpConnectTransaction;
   nsTArray<RefPtr<nsHttpTransaction>> mQueuedConnectUdpTransaction;
+
+  // Transactions whose LNA check has been deferred until after the QUIC
+  // handshake completes; drained in OnConnected().
+  nsTArray<RefPtr<nsHttpTransaction>> mDeferredLnaTransactions;
 };
 
 }  // namespace net
