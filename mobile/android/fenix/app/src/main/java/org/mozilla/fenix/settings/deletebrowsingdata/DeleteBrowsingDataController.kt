@@ -9,10 +9,8 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
-import mozilla.components.browser.state.action.CustomTabListAction
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.RecentlyClosedAction
-import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.translate.ModelManagementOptions
@@ -151,10 +149,6 @@ class DefaultDeleteBrowsingDataController(
 
     override suspend fun deleteBrowsingHistory() {
         dataStorage.history.deleteEverything()
-
-        stores.browserStore.dispatch(TabListAction.RemoveAllNormalTabsAction)
-        stores.browserStore.dispatch(TabListAction.RemoveAllPrivateTabsAction)
-        stores.browserStore.dispatch(CustomTabListAction.RemoveAllCustomTabsAction)
         stores.browserStore.dispatch(EngineAction.PurgeHistoryAction)
         stores.browserStore.dispatch(RecentlyClosedAction.RemoveAllClosedTabAction)
     }
