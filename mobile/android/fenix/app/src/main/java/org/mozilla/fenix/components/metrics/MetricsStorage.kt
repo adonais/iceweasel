@@ -89,8 +89,7 @@ internal class DefaultMetricsStorage(
                     currentTime.duringFirstMonth() && !settings.adClickGrowthSent
                 }
                 Event.GrowthData.UsageThreshold -> {
-                    !settings.usageTimeGrowthSent &&
-                        settings.usageTimeGrowthData > USAGE_THRESHOLD_MILLIS
+                    !settings.usageTimeGrowthSent
                 }
                 Event.GrowthData.FirstAppOpenForDay -> {
                     currentTime.afterFirstDay() &&
@@ -365,8 +364,7 @@ internal class DefaultMetricsStorage(
     }
 
     /**
-     * This will store app usage time to disk, based on Resume and Pause lifecycle events. Currently,
-     * there is only interest in usage during the first day after install.
+     * Stores first day app usage time to disk, based on Resume and Pause lifecycle events.
      */
     internal class UsageRecorder(
         private val metricsStorage: MetricsStorage,
@@ -397,9 +395,6 @@ internal class DefaultMetricsStorage(
         private const val FULL_WEEK_MILLIS: Long = DAY_MILLIS * 8
 
         private const val SEVEN_DAYS_MILLIS: Long = DAY_MILLIS * 7
-
-        // The usage threshold we are interested in is currently 340 seconds.
-        private const val USAGE_THRESHOLD_MILLIS = 1000 * 340
 
         // The usage threshold for "activated" growth users.
         private const val DAYS_ACTIVATED_THREASHOLD = 3

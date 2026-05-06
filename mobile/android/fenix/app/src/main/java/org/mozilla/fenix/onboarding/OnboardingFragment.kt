@@ -34,6 +34,7 @@ import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
 import org.mozilla.fenix.components.initializeGlean
+import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.components.metrics.installSourcePackage
 import org.mozilla.fenix.components.startMetricsIfEnabled
 import org.mozilla.fenix.compose.LinkTextState
@@ -501,6 +502,8 @@ class OnboardingFragment : Fragment() {
             isMarketingTelemetryEnabled = settings.isMarketingTelemetryEnabled,
             isDailyUsagePingEnabled = false,
         )
+
+        requireComponents.analytics.metrics.track(Event.GrowthData.ConversionEvent6)
 
         findNavController().nav(
             id = R.id.onboardingFragment,
