@@ -7246,24 +7246,21 @@
   value: true # Match naive behavior, but hopefully we can stop soon!
   mirror: always
 
-# Enable reporting video-dynamic-range: high media capability so that websites
-# choose to serve HDR video, this does not affect whether HDR videos will play
-# as HDR as that is just a matter of color space and transfer function.
+# Enable reporting video-dynamic-range: high media capability when document is
+# on an HDR-enabled desktop, this tells websites to serve HDR video and allows
+# video overlaysk to use HDR transfer functions.  In future this will also
+# enable rendering web content in HDR.
 - name: gfx.color_management.hdr
   type: RelaxedAtomicBool
-#if defined(XP_MACOSX)
+#if defined(XP_MACOSX) || defined(XP_WIN)
   value: true
-#elif defined(XP_WIN)
-# Change to true when shipping HDR video on Windows
-# https://bugzilla.mozilla.org/show_bug.cgi?id=2012848
-  value: @IS_EARLY_BETA_OR_EARLIER@
 #else
   value: false
 #endif
   mirror: always
 
-# Enable reporting video-dynamic-range: high media capability on non-HDR display
-# for testing purposes.
+# Enable HDR features even if displays are not HDR capable, useful for testing
+# purposes.
 - name: gfx.color_management.hdr.force_enabled
   type: RelaxedAtomicBool
   value: false
