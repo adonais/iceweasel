@@ -471,6 +471,7 @@ export class _WallpaperCategories extends React.PureComponent {
 
     let wallpaperCustomSolidColorHex = null;
 
+    const wallpapersUserEnabled = prefs["newtabWallpapers.user.enabled"];
     const selectedWallpaper = prefs["newtabWallpapers.wallpaper"];
 
     // User has previous selected a custom color
@@ -753,8 +754,12 @@ export class _WallpaperCategories extends React.PureComponent {
                           name={`wallpaper-${title}`}
                           id={title}
                           value={title}
-                          checked={title === activeWallpaper}
-                          aria-checked={title === activeWallpaper}
+                          checked={
+                            wallpapersUserEnabled && title === activeWallpaper
+                          }
+                          aria-checked={
+                            wallpapersUserEnabled && title === activeWallpaper
+                          }
                           className={`wallpaper-input theme-${theme} ${this.state.activeId === title ? "active" : ""}`}
                           onClick={() => this.setActiveId(title)} //
                           tabIndex={index === 0 ? 0 : -1} //the first wallpaper in the array will have a tabindex of 0 so we can tab into it. The rest will have a tabindex of -1

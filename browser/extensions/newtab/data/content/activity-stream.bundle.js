@@ -16116,6 +16116,7 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
       return arr;
     }
     let wallpaperCustomSolidColorHex = null;
+    const wallpapersUserEnabled = prefs["newtabWallpapers.user.enabled"];
     const selectedWallpaper = prefs["newtabWallpapers.wallpaper"];
 
     // User has previous selected a custom color
@@ -16343,8 +16344,8 @@ class _WallpaperCategories extends (external_React_default()).PureComponent {
           name: `wallpaper-${title}`,
           id: title,
           value: title,
-          checked: title === activeWallpaper,
-          "aria-checked": title === activeWallpaper,
+          checked: wallpapersUserEnabled && title === activeWallpaper,
+          "aria-checked": wallpapersUserEnabled && title === activeWallpaper,
           className: `wallpaper-input theme-${theme} ${this.state.activeId === title ? "active" : ""}`,
           onClick: () => this.setActiveId(title) //
           ,
