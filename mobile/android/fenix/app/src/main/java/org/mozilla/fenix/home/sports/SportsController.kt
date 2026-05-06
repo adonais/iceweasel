@@ -5,6 +5,8 @@
 package org.mozilla.fenix.home.sports
 
 import androidx.navigation.NavController
+import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
+import mozilla.components.browser.state.store.BrowserStore
 import org.mozilla.fenix.GleanMetrics.WorldCup
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
@@ -49,12 +51,14 @@ interface SportsController {
  * Default implementation of [SportsController] that dispatches actions to the [AppStore].
  *
  * @param appStore The [AppStore] to dispatch actions to.
+ * @param browserStore [BrowserStore] to sync from.
  * @param settings [Settings] used to persist sports widget preferences.
  * @param navController [NavController] used to navigate to a new browser fragment.
- * @param fenixBrowserUseCases [FenixBrowserUseCases] used to load the sports schedule.
+ * @param fenixBrowserUseCases [FenixBrowserUseCases] used to load the sports query.
  */
 class DefaultSportsController(
     private val appStore: AppStore,
+    private val browserStore: BrowserStore,
     private val settings: Settings,
     private val navController: NavController,
     private val fenixBrowserUseCases: FenixBrowserUseCases,
@@ -85,14 +89,15 @@ class DefaultSportsController(
         navController.openToBrowser()
 
         fenixBrowserUseCases.loadUrlOrSearch(
-            searchTermOrURL = SPORT_SCHEDULE_URL,
+            searchTermOrURL = SPORT_SCHEDULE_QUERY,
             newTab = true,
+            searchEngine = appStore.state.searchState.selectedSearchEngine?.searchEngine
+                ?: browserStore.state.search.selectedOrDefaultSearchEngine,
         )
         WorldCup.viewScheduleOnCountdownClicked.record()
     }
 
     companion object {
-        const val SPORT_SCHEDULE_URL =
-            "https://www.fifa.com/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures"
+        private const val SPORT_SCHEDULE_QUERY = "World Cup Schedule"
     }
 }

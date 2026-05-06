@@ -702,6 +702,7 @@ class HomeFragment : Fragment(), SystemInsetsPaddedFragment {
             ),
             sportsController = DefaultSportsController(
                 appStore = components.appStore,
+                browserStore = components.core.store,
                 settings = components.settings,
                 navController = findNavController(),
                 fenixBrowserUseCases = components.useCases.fenixBrowserUseCases,
