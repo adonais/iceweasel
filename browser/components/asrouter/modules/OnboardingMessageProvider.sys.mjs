@@ -3098,6 +3098,7 @@ const BASE_MESSAGES = () => [
     frequency: {
       lifetime: 1,
     },
+    skip_in_tests: "We don't want it to pop up in tests",
     content: {
       id: "RELAY_50_MASKS_ANNOUNCEMENT",
       template: "multistage",
@@ -3139,7 +3140,7 @@ const BASE_MESSAGES = () => [
                 type: "OPEN_URL",
                 data: {
                   args: "https://relay.firefox.com",
-                  where: "tab",
+                  where: "tabshifted",
                 },
                 dismiss: true,
               },
