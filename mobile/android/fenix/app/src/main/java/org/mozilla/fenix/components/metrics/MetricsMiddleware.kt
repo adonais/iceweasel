@@ -31,7 +31,7 @@ class MetricsMiddleware(
             metrics.track(Event.GrowthData.SetAsDefault)
             metrics.track(Event.GrowthData.FirstAppOpenForDay)
             metrics.track(Event.GrowthData.FirstWeekSeriesActivity)
-            // Usage threshold event handled in [OnboardingFragment]
+            metrics.track(Event.GrowthData.UsageThreshold)
             metrics.track(Event.GrowthData.UserActivated(fromSearch = false))
             metrics.track(Event.FirstWeekPostInstall.LastThreeDaysActivity)
             metrics.track(Event.FirstWeekPostInstall.RecurrentActivity)

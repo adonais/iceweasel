@@ -32,6 +32,7 @@ class DefaultMetricsStorageTest {
     private val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val calendarStart = Calendar.getInstance(Locale.US)
     private val dayMillis: Long = 1000 * 60 * 60 * 24
+    private val usageThresholdMillis: Long = 340 * 1000
 
     private var checkDefaultBrowser = false
     private val doCheckDefaultBrowser = { checkDefaultBrowser }
@@ -250,21 +251,23 @@ class DefaultMetricsStorageTest {
     }
 
     @Test
-    fun `GIVEN usage time growth event has not been sent WHEN checking to track THEN event will be sent`() = runTest(dispatcher) {
+    fun `GIVEN usage time has not passed threshold and has not been sent WHEN checking to track THEN event will not be sent`() = runTest(dispatcher) {
+        every { settings.usageTimeGrowthData } returns usageThresholdMillis - 1
+        every { settings.usageTimeGrowthSent } returns false
+
+        val result = storage.shouldTrack(Event.GrowthData.UsageThreshold)
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun `GIVEN usage time has passed threshold and has not been sent WHEN checking to track THEN event will be sent`() = runTest(dispatcher) {
+        every { settings.usageTimeGrowthData } returns usageThresholdMillis + 1
         every { settings.usageTimeGrowthSent } returns false
 
         val result = storage.shouldTrack(Event.GrowthData.UsageThreshold)
 
         assertTrue(result)
-    }
-
-    @Test
-    fun `GIVEN usage time growth event has already been sent WHEN checking to track THEN event will not be sent`() = runTest(dispatcher) {
-        every { settings.usageTimeGrowthSent } returns true
-
-        val result = storage.shouldTrack(Event.GrowthData.UsageThreshold)
-
-        assertFalse(result)
     }
 
     @Test
