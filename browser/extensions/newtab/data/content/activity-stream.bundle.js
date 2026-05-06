@@ -14877,7 +14877,7 @@ function Widgets() {
         iconSrc: "chrome://global/skin/icons/more.svg",
         menuId: "widgets-header-context-panel",
         type: "ghost",
-        size: "small"
+        size: "default"
       }), /*#__PURE__*/external_React_default().createElement("panel-list", {
         id: "widgets-header-context-panel"
       }, /*#__PURE__*/external_React_default().createElement("panel-item", {

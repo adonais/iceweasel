@@ -4840,6 +4840,12 @@ dialog:dir(rtl)::after {
 .widgets-header-context-menu {
   position: relative;
 }
+.lightWallpaper .widgets-header-context-menu {
+  color-scheme: light;
+}
+.darkWallpaper .widgets-header-context-menu {
+  color-scheme: dark;
+}
 .widgets-header-context-menu .widgets-header-context-menu-button::part(button) {
   background-color: transparent;
 }

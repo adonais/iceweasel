@@ -175,6 +175,8 @@
 .widgets-header-context-menu {
   position: relative;
 
+  @include wallpaper-contrast-fix;
+
   .widgets-header-context-menu-button {
     &::part(button) {
       background-color: transparent;

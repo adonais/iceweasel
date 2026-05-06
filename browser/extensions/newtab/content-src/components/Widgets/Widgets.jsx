@@ -435,7 +435,7 @@ function Widgets() {
             iconSrc="chrome://global/skin/icons/more.svg"
             menuId="widgets-header-context-panel"
             type="ghost"
-            size="small"
+            size="default"
           />
           <panel-list id="widgets-header-context-panel">
             <panel-item
