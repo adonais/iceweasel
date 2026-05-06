@@ -511,7 +511,7 @@ export class WeatherFeed {
  * This makes it easier for us to write automated tests that simulate responses.
  */
 WeatherFeed.prototype.MerinoClient = name => {
-  return new lazy.MerinoClient(name, { allowOhttp: true });
+  return new lazy.MerinoClient(name, { allowOhttp: false });
 };
 WeatherFeed.prototype.PersistentCache = (...args) => {
   return new lazy.PersistentCache(...args);
