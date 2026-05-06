@@ -5,6 +5,12 @@
 import { ASRouterPreferences } from "resource:///modules/asrouter/ASRouterPreferences.sys.mjs";
 import { MESSAGE_TYPE_HASH as msg } from "resource:///modules/asrouter/ActorConstants.mjs";
 
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  AWScreenUtils: "resource:///modules/aboutwelcome/AWScreenUtils.sys.mjs",
+});
+
 export class ASRouterParentProcessMessageHandler {
   constructor({
     router,
@@ -154,6 +160,12 @@ export class ASRouterParentProcessMessageHandler {
       case msg.EDIT_STATE: {
         const [[key, value]] = Object.entries(data);
         return this._router.editState(key, value);
+      }
+      case msg.AW_EVALUATE_SCREEN_TARGETING: {
+        return lazy.AWScreenUtils.evaluateTargetingAndRemoveScreens(data);
+      }
+      case msg.AW_ADD_SCREEN_IMPRESSION: {
+        return lazy.AWScreenUtils.addScreenImpression(data);
       }
       default: {
         return Promise.reject(new Error(`Unknown message received: ${name}`));
