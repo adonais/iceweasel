@@ -631,9 +631,14 @@ class FirefoxDataProvider {
         this.commands.resourceCommand.TYPES.NETWORK_EVENT_STACKTRACE
       )
     ) {
-      const requestInfo = this.stackTraceRequestInfoByActorID.get(actorID);
-      const { stacktrace } = await this.#getStackTraceFromWatcher(requestInfo);
-      this.stackTraceRequestInfoByActorID.delete(actorID);
+      let stacktrace = [];
+      const requestActorInfo = this.stackTraceRequestInfoByActorID.get(actorID);
+      if (requestActorInfo) {
+        const traceData =
+          await this.#getStackTraceFromWatcher(requestActorInfo);
+        stacktrace = traceData.stacktrace;
+        this.stackTraceRequestInfoByActorID.delete(actorID);
+      }
       response = { from: actor, stacktrace };
     } else {
       // We don't create fronts for NetworkEvent actors,
