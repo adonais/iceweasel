@@ -21,7 +21,7 @@ const Template = ({ messageData }) => html`
       background-color: var(--background-color-canvas);
       border: 2px solid var(--card-border-color);
       color: var(--text-color);
-      border-radius: var(--border-radius-medium);
+      border-radius: var(--border-radius-large);
       margin-block: 0 var(--space-xlarge);
       margin-inline: auto;
       overflow: hidden;
