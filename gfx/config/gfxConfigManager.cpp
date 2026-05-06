@@ -29,10 +29,6 @@ void gfxConfigManager::Init() {
   mWrForceEnabled = gfxPlatform::WebRenderPrefEnabled();
   mWrSoftwareForceEnabled = StaticPrefs::gfx_webrender_software_AtStartup();
   mWrCompositorForceEnabled =
-#ifdef MOZ_WAYLAND
-      StaticPrefs::gfx_color_management_hdr() ||
-      StaticPrefs::gfx_color_management_hdr_force_enabled() ||
-#endif
       StaticPrefs::gfx_webrender_compositor_force_enabled_AtStartup();
   mWrForcePartialPresent =
       StaticPrefs::gfx_webrender_force_partial_present_AtStartup();
@@ -158,6 +154,11 @@ void gfxConfigManager::ConfigureWebRender() {
   if (mWrCompositorForceEnabled) {
     mFeatureWrCompositor->UserForceEnable("Force enabled by pref");
   }
+#ifdef MOZ_WAYLAND
+  else if (gfxPlatform::UseHDR()) {
+    mFeatureWrCompositor->UserForceEnable("Force enabled by HDR pref");
+  }
+#endif
 
   ConfigureFromBlocklist(nsIGfxInfo::FEATURE_WEBRENDER_COMPOSITOR,
                          mFeatureWrCompositor);

@@ -16,6 +16,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/ScreenBinding.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "nsCSSProps.h"
 #include "nsCSSValue.h"
 #include "nsContentUtils.h"
@@ -372,10 +373,12 @@ StyleDynamicRange Gecko_MediaFeatures_VideoDynamicRange(
     return StyleDynamicRange::Standard;
   }
   // Usually compositors can process HDR content even without HDR displays.
+  //
+  // This parallels logic in gfxPlatform::UseHDR().
   if (StaticPrefs::gfx_color_management_hdr_force_enabled()) {
     return StyleDynamicRange::High;
   }
-  if (!StaticPrefs::gfx_color_management_hdr()) {
+  if (!StaticPrefs::gfx_color_management_hdr() || !gfx::gfxVars::VideoHDR()) {
     return StyleDynamicRange::Standard;
   }
   // video-dynamic-range: high has 3 requirements:

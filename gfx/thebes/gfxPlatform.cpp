@@ -1241,6 +1241,19 @@ bool gfxPlatform::UseRemoteCanvas() {
 }
 
 /* static */
+bool gfxPlatform::UseHDR() {
+  // If the user set gfx.color_management.hdr.force_enabled then we want to
+  // honor that, if gfx.color_management.hdr is false or the GPU vendor is
+  // blocklisted then we want to do what we did before with HDR video - which
+  // did not look good, but we'll be implementing workarounds for driver
+  // limitations in future so that this will be less common.
+  //
+  // This parallels the logic in Gecko_MediaFeatures_VideoDynamicRange().
+  return (StaticPrefs::gfx_color_management_hdr() && gfxVars::VideoHDR()) ||
+         StaticPrefs::gfx_color_management_hdr_force_enabled();
+}
+
+/* static */
 bool gfxPlatform::IsBackendAccelerated(
     const mozilla::gfx::BackendType aBackendType) {
   return false;
@@ -3071,6 +3084,19 @@ void gfxPlatform::InitHardwareVideoConfig() {
                             "Force disabled by failed sanity test",
                             "FEATURE_FAILURE_SANITY_TEST_FAILED"_ns);
   }
+
+  FeatureState& featureHdr = gfxConfig::GetFeature(Feature::VIDEO_HDR);
+  featureHdr.Reset();
+  featureHdr.EnableByDefault();
+  if (NS_FAILED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_VIDEO_HDR,
+                                          failureId, &status))) {
+    featureHdr.Disable(FeatureStatus::BlockedNoGfxInfo, "gfxInfo is broken",
+                       "FEATURE_FAILURE_NO_GFX_INFO"_ns);
+  } else if (status != nsIGfxInfo::FEATURE_ALLOW_ALWAYS) {
+    featureHdr.Disable(FeatureStatus::Blocklisted, "Blocklisted by gfxInfo",
+                       failureId);
+  }
+  gfxVars::SetVideoHDR(featureHdr.IsEnabled());
 
   InitPlatformHardwareVideoConfig();
   InitPlatformHardwarDRMConfig();

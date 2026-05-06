@@ -229,6 +229,8 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   static bool UseRemoteCanvas();
 
+  static bool UseHDR();
+
   static bool IsBackendAccelerated(
       const mozilla::gfx::BackendType aBackendType);
 

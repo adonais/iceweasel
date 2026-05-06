@@ -487,6 +487,13 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         OperatingSystem::MacOS, DeviceFamily::IntelWebRenderBlocked,
         nsIGfxInfo::FEATURE_WEBRENDER, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
         "FEATURE_FAILURE_INTEL_GEN5_OR_OLDER");
+
+    // Allow HDR video - this is also controlled by the pref
+    // gfx.color_management.hdr
+    APPEND_TO_DRIVER_BLOCKLIST2(
+        OperatingSystem::MacOS, DeviceFamily::All,
+        nsIGfxInfo::FEATURE_VIDEO_HDR, nsIGfxInfo::FEATURE_ALLOW_ALWAYS,
+        DRIVER_COMPARISON_IGNORED, V(0, 0, 0, 0), "FEATURE_ROLLOUT_ALL");
   }
   return *sDriverInfo;
 }
