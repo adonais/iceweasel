@@ -13,10 +13,6 @@ $ds-width: 936px;
   // @nova-cleanup(remove-conditional): Make grid default, remove conditional
   .nova-enabled & {
     display: grid;
-
-    &.ds-layout-widgets {
-      grid-template-columns: subgrid;
-    }
   }
 
   @while $columns > 0 {

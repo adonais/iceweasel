@@ -4513,9 +4513,6 @@ dialog:dir(rtl)::after {
 .nova-enabled .discovery-stream.ds-layout {
   display: grid;
 }
-.nova-enabled .discovery-stream.ds-layout.ds-layout-widgets {
-  grid-template-columns: subgrid;
-}
 .discovery-stream.ds-layout .ds-column-12 {
   grid-column-start: auto;
   grid-column-end: span 12;
@@ -4713,10 +4710,7 @@ dialog:dir(rtl)::after {
   max-width: max-content;
 }
 .nova-enabled .widgets-wrapper {
-  grid-column: 1/-1;
-  display: grid;
-  grid-template-columns: subgrid;
-  grid-template-rows: subgrid;
+  display: contents;
 }
 
 .classic-enabled .widgets-section-container {
@@ -4736,7 +4730,9 @@ dialog:dir(rtl)::after {
 .nova-enabled .widgets-section-container {
   grid-column: 1/-1;
   display: grid;
-  grid-template-columns: subgrid;
+  grid-template-columns: repeat(auto-fill, calc(4 * var(--col-width) + 3 * var(--space-medium)));
+  gap: var(--space-medium);
+  justify-content: center;
 }
 .widgets-section-container .widgets-title-container {
   display: flex;
@@ -4876,7 +4872,7 @@ dialog:dir(rtl)::after {
 .nova-enabled .widgets-container {
   grid-column: 1/-1;
   display: grid;
-  grid-template-columns: subgrid;
+  grid-template-columns: repeat(auto-fill, var(--col-width));
   grid-auto-rows: var(--row-height);
   gap: var(--space-medium);
 }
