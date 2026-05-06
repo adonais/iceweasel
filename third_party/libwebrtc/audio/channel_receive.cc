@@ -130,7 +130,8 @@ class ChannelReceive : public ChannelReceiveInterface,
                  scoped_refptr<FrameDecryptorInterface> frame_decryptor,
                  const CryptoOptions& crypto_options,
                  scoped_refptr<FrameTransformerInterface> frame_transformer,
-                 RtcpEventObserver* rtcp_event_observer);
+                 RtcpEventObserver* rtcp_event_observer,
+                 uint32_t local_ssrc);
   ~ChannelReceive() override;
 
   void SetSink(AudioSinkInterface* sink) override;
@@ -563,7 +564,8 @@ ChannelReceive::ChannelReceive(
     scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     const CryptoOptions& crypto_options,
     scoped_refptr<FrameTransformerInterface> frame_transformer,
-    RtcpEventObserver* rtcp_event_observer)
+    RtcpEventObserver* rtcp_event_observer,
+    uint32_t local_ssrc)
     : env_(env),
       worker_thread_(TaskQueueBase::Current()),
       rtp_receive_statistics_(ReceiveStatistics::Create(&env_.clock())),
@@ -599,14 +601,8 @@ ChannelReceive::ChannelReceive(
   if (frame_transformer)
     InitFrameTransformerDelegate(std::move(frame_transformer));
 
-  rtp_rtcp_ =
-      ModuleRtpRtcpImpl2::CreateReceiveModule(env_, configuration, [this] {
-        if (packet_router_ == nullptr) {
-          return kFallbackRtcpSsrcForAudio;
-        }
-        return packet_router_->SsrcOfFirstSender().value_or(
-            kFallbackRtcpSsrcForAudio);
-      });
+  rtp_rtcp_ = ModuleRtpRtcpImpl2::CreateReceiveModule(
+      env_, configuration, [local_ssrc] { return local_ssrc; });
   rtp_rtcp_->SetRemoteSSRC(remote_ssrc_);
 
   // Ensure that RTCP is enabled for the created channel.
@@ -1213,13 +1209,14 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     const CryptoOptions& crypto_options,
     scoped_refptr<FrameTransformerInterface> frame_transformer,
-    RtcpEventObserver* rtcp_event_observer) {
+    RtcpEventObserver* rtcp_event_observer,
+    uint32_t local_ssrc) {
   return std::make_unique<ChannelReceive>(
       env, neteq_factory, audio_device_module, rtcp_send_transport, remote_ssrc,
       jitter_buffer_max_packets, jitter_buffer_fast_playout,
       jitter_buffer_min_delay_ms, enable_non_sender_rtt, decoder_factory,
       std::move(frame_decryptor), crypto_options, std::move(frame_transformer),
-      rtcp_event_observer);
+      rtcp_event_observer, local_ssrc);
 }
 
 }  // namespace voe

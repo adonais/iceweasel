@@ -129,7 +129,8 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
     RtcpCnameCallback* rtcp_cname_callback,
     PacketRouter* packet_router,
     bool non_sender_rtt_measurement,
-    RtcpEventObserver* rtcp_event_observer) {
+    RtcpEventObserver* rtcp_event_observer,
+    uint32_t local_ssrc) {
   RtpRtcpInterface::Configuration configuration;
   configuration.audio = false;
   configuration.receiver_only = true;
@@ -143,14 +144,7 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(
   configuration.non_sender_rtt_measurement = non_sender_rtt_measurement;
 
   auto rtp_rtcp = ModuleRtpRtcpImpl2::CreateReceiveModule(
-      env, configuration, [packet_router]() {
-        if (packet_router) {
-          return packet_router->SsrcOfFirstSender().value_or(
-              kFallbackRtcpSsrcForVideo);
-        } else {  // This happens at least in some test configurations.
-          return kFallbackRtcpSsrcForVideo;
-        }
-      });
+      env, configuration, [local_ssrc] { return local_ssrc; });
   rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
 
   return rtp_rtcp;
@@ -323,7 +317,8 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
           rtcp_cname_callback,
           packet_router,
           config_.rtp.rtcp_xr.receiver_reference_time_report,
-          config_.rtp.rtcp_event_observer)),
+          config_.rtp.rtcp_event_observer,
+          config_.rtp.local_ssrc)),
       nack_periodic_processor_(nack_periodic_processor),
       complete_frame_callback_(complete_frame_callback),
       keyframe_request_method_(config_.rtp.keyframe_method),

@@ -124,6 +124,10 @@ FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
            .outgoing_transport = config.rtcp_send_transport,
            .rtt_stats = rtt_stats},
           [packet_router] {
+            // Mozilla: Unreachable as Flexfec is not implemented.
+            //          When implementing, wire up signaled recvonly a=ssrc into
+            //          this recv_ssrsc_callback.
+            RTC_CHECK_NOTREACHED();
             // Use the same logic as for the video receiver.
             if (packet_router != nullptr) {
               return packet_router->SsrcOfFirstSender().value_or(

@@ -95,7 +95,7 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
       config.jitter_buffer_min_delay_ms, config.enable_non_sender_rtt,
       config.decoder_factory, std::move(config.frame_decryptor),
       config.crypto_options, std::move(config.frame_transformer),
-      config.rtp.rtcp_event_observer);
+      config.rtp.rtcp_event_observer, config.rtp.local_ssrc);
 }
 }  // namespace
 

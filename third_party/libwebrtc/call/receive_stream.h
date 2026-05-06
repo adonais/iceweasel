@@ -37,7 +37,9 @@ class ReceiveStreamInterface {
     // This member is no longer used by WebRTC, but retained in order to
     // allow downstream code to compile.
     // TODO: issues.webrtc.org/41480926 - Delete when downstream changed.
-    [[deprecated("No longer used")]] uint32_t local_ssrc = 0;
+    // Mozilla: Undeprecated to allow using the signaled send ssrc in RTCP for
+    //          recvonly m-sections to make Teams happy.
+    uint32_t local_ssrc = 0;
   };
 
  protected:

@@ -183,7 +183,8 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     const webrtc::CryptoOptions& crypto_options,
     scoped_refptr<FrameTransformerInterface> frame_transformer,
-    RtcpEventObserver* rtcp_event_observer);
+    RtcpEventObserver* rtcp_event_observer,
+    uint32_t local_ssrc);
 
 }  // namespace voe
 }  // namespace webrtc
