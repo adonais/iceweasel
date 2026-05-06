@@ -33,7 +33,7 @@ class MetricsMiddleware(
             // Conversion event 3 handled in [TelemetryMiddleware]
             metrics.track(Event.GrowthData.ConversionEvent4)
             // Conversion event 5 handled in [MetricController]
-            metrics.track(Event.GrowthData.ConversionEvent6)
+            // Conversion event 6 handled in [OnboardingFragment]
             metrics.track(Event.GrowthData.ConversionEvent7(fromSearch = false))
             metrics.track(Event.FirstWeekPostInstall.ConversionEvent8)
             metrics.track(Event.FirstWeekPostInstall.ConversionEvent9)
