@@ -1410,6 +1410,8 @@
   <string name="toolbar_customize_shortcut_homepage">باش بەت</string>
   <!-- Back shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_back">قايت</string>
+  <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+  <string name="toolbar_customize_shortcut_none">يوق</string>
   <!--
     App icon Preferences
 
@@ -1740,6 +1742,38 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">گۇرۇپپا ئۆچۈر</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">ۋاز كەچ</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">بەتكۈچنى تاقاپ، گۇرۇپپىنى ئۆچۈرەمدۇ؟</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">بۇ گۇرۇپپىنى مەڭگۈلۈك ئۆچۈرىدۇ.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">گۇرۇپپا ئۆچۈر</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">ۋاز كەچ</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">سېرىق</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">قىزغۇچ سېرىق</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">قىزىل</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">ھالرەڭ</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">بىنەپشە</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">كۆكۈچ سۆسۈن</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">كۆك</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">ئوچۇق كۆك</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">يېشىل</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">كۈلرەڭ</string>
   <!--
     History
 

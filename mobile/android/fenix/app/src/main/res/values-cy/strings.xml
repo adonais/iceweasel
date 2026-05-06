@@ -2242,7 +2242,7 @@
   <!-- Label for button to import bookmarks from file. -->
   <string name="bookmark_import_menu_button">Mewnforio o ffeil</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
-  <string name="bookmark_import_failure_snackbar">Ni fu modd mewnforio nodau tudalen. Ceisiwch eto.</string>
+  <string name="bookmark_import_failure_snackbar">Methu mewnforio nodau tudalen. Ceisiwch eto.</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2774,7 +2774,7 @@
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Wedi\'ch diogelu</string>
   <!-- Text shown below the trackers blocked card with typing animation -->
-  <string name="help_catch_trackers">Helpu tracwyr dal</string>
+  <string name="help_catch_trackers">Helpu dal tracwyr</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Safonol (rhagosodedig)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -3237,7 +3237,7 @@
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Cychwyn arni</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
-  <string name="ip_protection_onboarding_card_headline">Rhowch gynnig ar VPN integredig %s</string>
+  <string name="ip_protection_onboarding_card_headline">Rhowch gynnig ar VPN mewnol %s</string>
   <!--
     The body of the VPN onboarding card.
     %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
@@ -4509,9 +4509,9 @@
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Pencampwyr Cwpan y Byd 2026</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
-  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Ail</string>
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Yn Ail</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
-  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Trydydd lle</string>
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Yn Drydydd</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">Rownd o 32</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4563,9 +4563,9 @@
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
   <string name="sports_widget_upcoming" tools:ignore="UnusedResources">I Ddod</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_suffix">(Llawn amser)</string>
+  <string name="sports_widget_match_full_time_suffix">(Amser llawn)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Llawn amser</string>
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Amser llawn</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4611,7 +4611,7 @@
     if there is an equivalent single character for your language, use that (e.g. S for German).
     Your translation will be automatically truncated at 2 characters to avoid layout issues.
   -->
-  <string name="sports_widget_countdown_hours">H</string>
+  <string name="sports_widget_countdown_hours">A</string>
   <!--
     Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
     if there is an equivalent single character for your language, use that.
@@ -4619,7 +4619,7 @@
   -->
   <string name="sports_widget_countdown_minutes">M</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
-  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Caewch y daflen dewis tîm</string>
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Cau taflen dewis tîm</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">Cau</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
@@ -4628,14 +4628,14 @@
     Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
     %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
   -->
-  <string name="sports_widget_countdown_remaining_content_description">Amser sy\'n weddill. Dyddiau: %1$d. Oriau: %2$d. Munud: %3$d.</string>
+  <string name="sports_widget_countdown_remaining_content_description">Amser sy\'n weddill. Diwrnod: %1$d. Awr: %2$d. Munud: %3$d.</string>
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
-  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Ewch i safle Cwpan y Byd</string>
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Mynd i wefan Cwpan y Byd</string>
   <!--
     Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
     %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
   -->
-  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Yn dod: %1$s yn erbyn %2$s, %3$s am %4$s</string>
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">I ddod: %1$s yn erbyn %2$s, %3$s am %4$s</string>
   <!--
     Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
     %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
@@ -4660,7 +4660,7 @@
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Canlyniadau terfynol Cwpan y Byd, tudalen %1$d o %2$d</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
-  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Tynnu Cwpan y Byd oddi cartref</string>
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Tynnu Cwpan y Byd o\'r cartref</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
