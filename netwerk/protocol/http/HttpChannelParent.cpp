@@ -1193,7 +1193,7 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
   // NOTE: Transferring cookies in this way happens here, rather than in
   // `AboutToLoadDocumentForChild`, as we need the PCookieService actor to be
   // initialized before we can transmit cookies.
-  if (!mIPCClosed) {
+  if (!mIPCClosed && chan->IsNavigation()) {
     // FIXME: We should consider skipping sending cookies if the response isn't
     // going to result in the document being rendered (e.g. if we're going to
     // display a load error)

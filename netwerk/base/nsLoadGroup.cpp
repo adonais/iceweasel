@@ -343,7 +343,7 @@ nsLoadGroup::SetDefaultLoadRequest(nsIRequest* aRequest) {
     // Mask off any bits that are not part of the nsIRequest flags.
     // in particular, nsIChannel::LOAD_DOCUMENT_URI...
     //
-    mLoadFlags &= nsIRequest::LOAD_REQUESTMASK;
+    mLoadFlags &= nsIRequest::LOAD_INHERIT_MASK;
 
     nsCOMPtr<nsITimedChannel> timedChannel = do_QueryInterface(aRequest);
     mDefaultLoadIsTimed = timedChannel != nullptr;

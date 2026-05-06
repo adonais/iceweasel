@@ -328,4 +328,18 @@ interface nsIRequest : nsISupports
 
     // Note that all flags are taken, the rest of the flags
     // are located in nsIChannel and nsICachingChannel
+
+%{C++
+    /**
+     * In addition to non-nsIRequest flags, we also don't want to inherit the
+     * LOAD_HTML_OBJECT_DATA, and LOAD_DOCUMENT_NEEDS_COOKIE flags to
+     * subresources via. the load group.
+     *
+     * These should be nsIChannel flags, but are on nsIRequest as all nsIChannel
+     * flags were already taken when they were added.
+     */
+    static constexpr uint32_t LOAD_INHERIT_MASK =
+        LOAD_REQUESTMASK & ~(LOAD_HTML_OBJECT_DATA |
+                             LOAD_DOCUMENT_NEEDS_COOKIE);
+%}
 };
