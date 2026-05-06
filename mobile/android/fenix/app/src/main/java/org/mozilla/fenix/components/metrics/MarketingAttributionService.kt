@@ -129,6 +129,7 @@ class MarketingAttributionService(private val context: Context) {
             return MetaParams.extractMetaAttribution(utmParams.content) != null
         }
 
+        @Suppress("ReturnCount")
         @VisibleForTesting
         internal suspend fun shouldShowMarketingOnboarding(
             installReferrerResponse: String?,
@@ -140,6 +141,10 @@ class MarketingAttributionService(private val context: Context) {
 
             if (installReferrerResponse.isNullOrBlank()) {
                 return false
+            }
+
+            if (isMetaAttribution(installReferrerResponse)) {
+                return true
             }
 
             return marketingPrefixes.any { installReferrerResponse.startsWith(it, ignoreCase = true) }
