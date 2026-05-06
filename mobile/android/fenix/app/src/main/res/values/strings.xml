@@ -4130,6 +4130,10 @@
     <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">World Cup final results, page %1$d of %2$d</string>
     <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
     <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Remove World Cup from home</string>
+    <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+    <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Following: \n%s</string>
+    <!-- Description shown on the sports widget immediately after the user has followed a team -->
+    <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Check back for match info as the tournament approaches.</string>
 
     <!-- Privacy notice homepage banner -->
     <!-- A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
