@@ -4321,7 +4321,14 @@ button.arrow-button:dir(rtl) {
   font-weight: var(--font-weight-bold);
 }
 .nova-enabled .widgets-section-container h1 {
+  font-size: var(--font-size-heading-large);
+  font-weight: var(--font-weight-heading);
   color: var(--newtab-contextual-text-primary-color);
+}
+@container content-grid (inline-size >= calc(12 * 75px + 11 * 0.75rem)) {
+  .nova-enabled .widgets-section-container h1 {
+    font-size: var(--font-size-heading-xlarge);
+  }
 }
 .lightWallpaper .nova-enabled .widgets-section-container h1 {
   color-scheme: light;

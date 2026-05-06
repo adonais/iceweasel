@@ -94,7 +94,13 @@
 
     // @nova-cleanup(remove-conditional): Make default, remove .nova-enabled selector
     .nova-enabled & {
+      font-size: var(--font-size-heading-large);
+      font-weight: var(--font-weight-heading);
       color: var(--newtab-contextual-text-primary-color);
+
+      @include at-content-cols(12) {
+        font-size: var(--font-size-heading-xlarge);
+      }
 
       @include wallpaper-contrast-fix;
     }
