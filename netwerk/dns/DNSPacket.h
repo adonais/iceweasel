@@ -82,7 +82,7 @@ class DNSPacket {
 
   nsresult PassQName(unsigned int& index, const unsigned char* aBuffer);
   nsresult GetQname(nsACString& aQname, unsigned int& aIndex,
-                    const unsigned char* aBuffer);
+                    const unsigned char* aBuffer, unsigned int aBodySize);
   nsresult ParseSvcParam(unsigned int svcbIndex, uint16_t key,
                          SvcFieldValue& field, uint16_t length,
                          const unsigned char* aBuffer);

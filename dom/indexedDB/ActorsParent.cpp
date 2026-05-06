@@ -1951,6 +1951,7 @@ class TransactionDatabaseOperationBase : public DatabaseOperationBase {
   InternalState mInternalState = InternalState::Initial;
   bool mWaitingForContinue = false;
   const bool mTransactionIsAborted;
+  bool mNotedActiveRequest = false;
 
  protected:
   const int64_t mTransactionLoggingSerialNumber;
@@ -2016,6 +2017,8 @@ class TransactionDatabaseOperationBase : public DatabaseOperationBase {
                                    uint64_t aLoggingSerialNumber);
 
   ~TransactionDatabaseOperationBase() override;
+
+  void NoteTransactionActiveRequest();
 
   virtual void RunOnConnectionThread();
 
@@ -6586,10 +6589,14 @@ already_AddRefed<PBackgroundIDBFactoryParent> AllocPBackgroundIDBFactoryParent(
     return nullptr;
   }
 
-  if (NS_AUUF_OR_WARN_IF(!aLoggingInfo.nextTransactionSerialNumber()) ||
+  // Requests and normal transaction serial numbers must stay positive.
+  // VersionChange transaction serial numbers must stay negative.
+  // https://searchfox.org/firefox-main/rev/8332a06d47ce7d66623d807068b3410061cd29d3/dom/indexedDB/ActorsChild.cpp#82
+  if (NS_AUUF_OR_WARN_IF(aLoggingInfo.nextTransactionSerialNumber() <= 0) ||
       NS_AUUF_OR_WARN_IF(
-          !aLoggingInfo.nextVersionChangeTransactionSerialNumber()) ||
-      NS_AUUF_OR_WARN_IF(!aLoggingInfo.nextRequestSerialNumber())) {
+          aLoggingInfo.nextVersionChangeTransactionSerialNumber() >= 0) ||
+      NS_AUUF_OR_WARN_IF(
+          static_cast<int64_t>(aLoggingInfo.nextRequestSerialNumber()) <= 0)) {
     return nullptr;
   }
 
@@ -15864,7 +15871,7 @@ nsresult OpenDatabaseOp::DispatchToWorkThread() {
 
   mVersionChangeOp = versionChangeOp;
 
-  mVersionChangeTransaction->NoteActiveRequest();
+  versionChangeOp->NoteTransactionActiveRequest();
   mVersionChangeTransaction->Init(transactionId);
 
   return NS_OK;
@@ -16728,6 +16735,7 @@ TransactionDatabaseOperationBase::TransactionDatabaseOperationBase(
 
 TransactionDatabaseOperationBase::~TransactionDatabaseOperationBase() {
   MOZ_ASSERT(mInternalState == InternalState::Completed);
+  MOZ_ASSERT(!mNotedActiveRequest);
   MOZ_ASSERT(!mTransaction,
              "TransactionDatabaseOperationBase::Cleanup() was not called by a "
              "subclass!");
@@ -16860,6 +16868,14 @@ void TransactionDatabaseOperationBase::NoteContinueReceived() {
   Unused << this->Run();
 }
 
+void TransactionDatabaseOperationBase::NoteTransactionActiveRequest() {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(!mNotedActiveRequest);
+
+  (*mTransaction)->NoteActiveRequest();
+  mNotedActiveRequest = true;
+}
+
 void TransactionDatabaseOperationBase::SendToConnectionPool() {
   AssertIsOnOwningThread();
   MOZ_ASSERT(mInternalState == InternalState::Initial);
@@ -16870,7 +16886,7 @@ void TransactionDatabaseOperationBase::SendToConnectionPool() {
 
   gConnectionPool->Dispatch((*mTransaction)->TransactionId(), this);
 
-  (*mTransaction)->NoteActiveRequest();
+  NoteTransactionActiveRequest();
 }
 
 void TransactionDatabaseOperationBase::SendPreprocess() {
@@ -16945,8 +16961,9 @@ void TransactionDatabaseOperationBase::SendPreprocessInfoOrResults(
 
     mWaitingForContinue = true;
   } else {
-    if (mLoggingSerialNumber) {
+    if (mNotedActiveRequest) {
       (*mTransaction)->NoteFinishedRequest(mLoggingSerialNumber, ResultCode());
+      mNotedActiveRequest = false;
     }
 
     Cleanup();

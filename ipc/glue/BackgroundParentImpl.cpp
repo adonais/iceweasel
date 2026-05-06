@@ -642,6 +642,9 @@ BackgroundParentImpl::AllocPIdleSchedulerParent() {
 dom::PRemoteWorkerControllerParent*
 BackgroundParentImpl::AllocPRemoteWorkerControllerParent(
     const dom::RemoteWorkerData& aRemoteWorkerData) {
+  if (BackgroundParent::IsOtherProcessActor(this)) {
+    return nullptr;
+  }
   if (!IsContentActor(this)) {
     return nullptr;
   }
@@ -659,7 +662,6 @@ IPCResult BackgroundParentImpl::RecvPRemoteWorkerControllerConstructor(
   }
 
   MOZ_ASSERT(aActor);
-
   return IPC_OK();
 }
 

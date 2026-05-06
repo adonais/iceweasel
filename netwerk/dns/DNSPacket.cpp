@@ -17,12 +17,15 @@ namespace mozilla {
 namespace net {
 
 static uint16_t get16bit(const unsigned char* aData, unsigned int index) {
-  return ((aData[index] << 8) | aData[index + 1]);
+  return (static_cast<uint16_t>(aData[index]) << 8) |
+         static_cast<uint16_t>(aData[index + 1]);
 }
 
 static uint32_t get32bit(const unsigned char* aData, unsigned int index) {
-  return (aData[index] << 24) | (aData[index + 1] << 16) |
-         (aData[index + 2] << 8) | aData[index + 3];
+  return (static_cast<uint32_t>(aData[index]) << 24) |
+         (static_cast<uint32_t>(aData[index + 1]) << 16) |
+         (static_cast<uint32_t>(aData[index + 2]) << 8) |
+         static_cast<uint32_t>(aData[index + 3]);
 }
 
 // https://datatracker.ietf.org/doc/html/draft-ietf-dnsop-extended-error-16#section-4
@@ -202,20 +205,21 @@ nsresult DNSPacket::PassQName(unsigned int& index,
 // GetQname: retrieves the qname (stores in 'aQname') and stores the index
 // after qname was parsed into the 'aIndex'.
 nsresult DNSPacket::GetQname(nsACString& aQname, unsigned int& aIndex,
-                             const unsigned char* aBuffer) {
+                             const unsigned char* aBuffer,
+                             unsigned int aBodySize) {
   uint8_t clength = 0;
   unsigned int cindex = aIndex;
   unsigned int loop = 128;    // a valid DNS name can never loop this much
   unsigned int endindex = 0;  // index position after this data
   do {
-    if (cindex >= mBodySize) {
+    if (cindex >= aBodySize) {
       LOG(("TRR: bad Qname packet\n"));
       return NS_ERROR_ILLEGAL_VALUE;
     }
     clength = static_cast<uint8_t>(aBuffer[cindex]);
     if ((clength & 0xc0) == 0xc0) {
       // name pointer, get the new offset (14 bits)
-      if ((cindex + 1) >= mBodySize) {
+      if ((cindex + 1) >= aBodySize) {
         return NS_ERROR_ILLEGAL_VALUE;
       }
       // extract the new index position for the next label
@@ -239,7 +243,7 @@ nsresult DNSPacket::GetQname(nsACString& aQname, unsigned int& aIndex,
       if (!aQname.IsEmpty()) {
         aQname.Append(".");
       }
-      if ((cindex + clength) > mBodySize) {
+      if ((cindex + clength) > aBodySize) {
         return NS_ERROR_ILLEGAL_VALUE;
       }
       aQname.Append((const char*)(&aBuffer[cindex]), clength);
@@ -286,8 +290,12 @@ nsresult DOHresp::Add(uint32_t TTL, unsigned char const* dns,
 
   // While the DNS packet might return individual TTLs for each address,
   // we can only return one value in the AddrInfo class so pick the
-  // lowest number.
-  if (mTtl < TTL) {
+  // lowest number. Seed from the first successful add (mAddresses
+  // empty means no record's TTL is in mTtl yet), otherwise take the
+  // running minimum. mTtl stays at 0 if no record is ever added so
+  // downstream callers that read it as a "don't cache" sentinel
+  // continue to work.
+  if (mAddresses.IsEmpty() || TTL < mTtl) {
     mTtl = TTL;
   }
 
@@ -303,7 +311,7 @@ nsresult DOHresp::Add(uint32_t TTL, unsigned char const* dns,
 nsresult DNSPacket::OnDataAvailable(nsIRequest* aRequest,
                                     nsIInputStream* aInputStream,
                                     uint64_t aOffset, const uint32_t aCount) {
-  if (aCount + mBodySize > MAX_SIZE) {
+  if (aCount > MAX_SIZE - mBodySize) {
     LOG(("DNSPacket::OnDataAvailable:%d fail\n", __LINE__));
     return NS_ERROR_FAILURE;
   }
@@ -313,8 +321,7 @@ nsresult DNSPacket::OnDataAvailable(nsIRequest* aRequest,
   if (NS_FAILED(rv)) {
     return rv;
   }
-  MOZ_ASSERT(count == aCount);
-  mBodySize += aCount;
+  mBodySize += count;
   return NS_OK;
 }
 
@@ -505,7 +512,6 @@ nsresult DNSPacket::DecodeInternal(
   // 0000 0080 0004 5db8 d822
 
   unsigned int index = 12;
-  uint8_t length;
   nsAutoCString host;
   nsresult rv;
   uint16_t extendedError = UINT16_MAX;
@@ -522,26 +528,23 @@ nsresult DNSPacket::DecodeInternal(
   LOG(("TRR Decode %s RCODE %d\n", PromiseFlatCString(aHost).get(), rcode));
 
   uint16_t questionRecords = get16bit(aBuffer, 4);  // qdcount
-  // iterate over the single(?) host name in question
+  // iterate over the host name(s) in the question. Use GetQname so a
+  // server-side compression pointer (a label byte with the top two
+  // bits set, legal per RFC 1035 4.1.4) is followed instead of being
+  // treated as a 192-byte label, which would desync `index` and let
+  // the answer-section parsing below read at the wrong offset.
   while (questionRecords) {
-    do {
-      if (aLen < (index + 1)) {
-        LOG(("TRR Decode 1 index: %u size: %u", index, aLen));
-        return NS_ERROR_ILLEGAL_VALUE;
-      }
-      length = static_cast<uint8_t>(aBuffer[index]);
-      if (length) {
-        if (host.Length()) {
-          host.Append(".");
-        }
-        if (aLen < (index + 1 + length)) {
-          LOG(("TRR Decode 2 index: %u size: %u len: %u", index, aLen, length));
-          return NS_ERROR_ILLEGAL_VALUE;
-        }
-        host.Append(((char*)aBuffer) + index + 1, length);
-      }
-      index += 1 + length;  // skip length byte + label
-    } while (length);
+    nsAutoCString qname;
+    rv = GetQname(qname, index, aBuffer, mBodySize);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+    if (host.IsEmpty()) {
+      host = qname;
+    } else if (!qname.IsEmpty()) {
+      host.Append(".");
+      host.Append(qname);
+    }
     if (aLen < (index + 4)) {
       LOG(("TRR Decode 3 index: %u size: %u", index, aLen));
       return NS_ERROR_ILLEGAL_VALUE;
@@ -558,7 +561,7 @@ nsresult DNSPacket::DecodeInternal(
 
   while (answerRecords) {
     nsAutoCString qname;
-    rv = GetQname(qname, index, aBuffer);
+    rv = GetQname(qname, index, aBuffer, mBodySize);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -660,7 +663,7 @@ nsresult DNSPacket::DecodeInternal(
           if (aCname.IsEmpty()) {
             nsAutoCString qname;
             unsigned int qnameindex = index;
-            rv = GetQname(qname, qnameindex, aBuffer);
+            rv = GetQname(qname, qnameindex, aBuffer, mBodySize);
             if (NS_FAILED(rv)) {
               return rv;
             }
@@ -729,7 +732,7 @@ nsresult DNSPacket::DecodeInternal(
           parsed.mSvcFieldPriority = get16bit(aBuffer, svcbIndex);
           svcbIndex += 2;
 
-          rv = GetQname(parsed.mSvcDomainName, svcbIndex, aBuffer);
+          rv = GetQname(parsed.mSvcDomainName, svcbIndex, aBuffer, mBodySize);
           if (NS_FAILED(rv)) {
             return rv;
           }
@@ -891,7 +894,7 @@ nsresult DNSPacket::DecodeInternal(
 
   while (arRecords) {
     nsAutoCString qname;
-    rv = GetQname(qname, index, aBuffer);
+    rv = GetQname(qname, index, aBuffer, mBodySize);
     if (NS_FAILED(rv)) {
       LOG(("Bad qname for additional record"));
       return rv;
