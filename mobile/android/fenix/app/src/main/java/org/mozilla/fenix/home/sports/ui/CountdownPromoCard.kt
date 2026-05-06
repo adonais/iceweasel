@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
@@ -59,8 +60,9 @@ fun CountdownPromoCard(
                     val targetWidth = 150.dp.toPx()
                     val imgSize = sportPainter.intrinsicSize
                     val scaledSize = imgSize * (targetWidth / imgSize.width)
+                    val leftOffset = if (layoutDirection == LayoutDirection.Rtl) 0f else size.width - scaledSize.width
                     translate(
-                        left = size.width - scaledSize.width,
+                        left = leftOffset,
                         top = size.height - scaledSize.height,
                     ) {
                         with(sportPainter) { draw(scaledSize) }
