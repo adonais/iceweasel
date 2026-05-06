@@ -204,6 +204,7 @@
         UrlbarProviderOpenTabs:
           "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
         FaviconUtils: "moz-src:///toolkit/modules/FaviconUtils.sys.mjs",
+        KeyboardLockUtils: "resource://gre/modules/KeyboardLockUtils.sys.mjs",
       });
       ChromeUtils.defineLazyGetter(this, "tabLocalization", () => {
         return new Localization(
@@ -8049,15 +8050,23 @@
         return;
       }
 
-      // Skip if chrome code has cancelled this:
-      if (aEvent.defaultPreventedByChrome) {
+      // Skip if chrome code has cancelled this or keyboard lock prevented
+      if (aEvent.defaultPrevented) {
+        return;
+      }
+
+      // We only want to request reply if this is an actual action.
+      const action = ShortcutUtils.getSystemActionForEvent(aEvent);
+      if (
+        action != null &&
+        this.KeyboardLockUtils.mustWaitForKeyboardLockRequestedReply(aEvent)
+      ) {
         return;
       }
 
       // Don't check if the event was already consumed because tab
       // navigation should always work for better user experience.
-
-      switch (ShortcutUtils.getSystemActionForEvent(aEvent)) {
+      switch (action) {
         case ShortcutUtils.TOGGLE_CARET_BROWSING:
           this._maybeRequestReplyFromRemoteContent(aEvent);
           return;

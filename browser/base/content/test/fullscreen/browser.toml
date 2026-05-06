@@ -52,6 +52,8 @@ skip-if = [
 
 ["browser_fullscreen_keyboard_lock.js"]
 
+["browser_fullscreen_keyboard_lock_ctrltab.js"]
+
 ["browser_fullscreen_keyboard_lock_reserved.js"]
 
 ["browser_fullscreen_keyboard_lock_warning.js"]

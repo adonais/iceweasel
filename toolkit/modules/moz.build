@@ -181,6 +181,7 @@ EXTRA_JS_MODULES += [
     "Integration.sys.mjs",
     "JSONFile.sys.mjs",
     "JsonSchema.sys.mjs",
+    "KeyboardLockUtils.sys.mjs",
     "KeywordUtils.sys.mjs",
     "LayoutUtils.sys.mjs",
     "Log.sys.mjs",

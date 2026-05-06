@@ -14,6 +14,7 @@
   let imports = {};
   ChromeUtils.defineESModuleGetters(imports, {
     DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
+    KeyboardLockUtils: "resource://gre/modules/KeyboardLockUtils.sys.mjs",
     ShortcutUtils: "resource://gre/modules/ShortcutUtils.sys.mjs",
   });
 
@@ -116,17 +117,27 @@
         return;
       }
 
-      // Skip if chrome code has cancelled this:
-      if (event.defaultPreventedByChrome) {
+      // Skip if chrome code has cancelled this
+      // or keyboard lock & webcontent default prevented it
+      if (event.defaultPrevented) {
         return;
       }
 
       // Don't check if the event was already consumed because tab
       // navigation should always work for better user experience.
 
-      const { ShortcutUtils } = imports;
+      const { KeyboardLockUtils, ShortcutUtils } = imports;
 
-      switch (ShortcutUtils.getSystemActionForEvent(event)) {
+      const action = ShortcutUtils.getSystemActionForEvent(event);
+      // If we don't have an action, don't request reply.
+      if (
+        action != null &&
+        KeyboardLockUtils.mustWaitForKeyboardLockRequestedReply(event)
+      ) {
+        return;
+      }
+
+      switch (action) {
         case ShortcutUtils.CYCLE_TABS:
           Glean.browserUiInteraction.keyboard["ctrl-tab"].add(1);
           Services.prefs.setBoolPref(
