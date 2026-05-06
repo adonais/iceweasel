@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 5.6.110
- * pdfjsBuild = a1cc75126
+ * pdfjsVersion = 5.7.99
+ * pdfjsBuild = b72ae81a8
  */
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
@@ -48,72 +48,7 @@
 /************************************************************************/
 var __webpack_exports__ = {};
 
-;// ./web/pdfjs.js
-const {
-  AbortException,
-  AnnotationEditorLayer,
-  AnnotationEditorParamsType,
-  AnnotationEditorType,
-  AnnotationEditorUIManager,
-  AnnotationLayer,
-  AnnotationMode,
-  AnnotationType,
-  applyOpacity,
-  build,
-  ColorPicker,
-  createValidAbsoluteUrl,
-  CSSConstants,
-  DOMSVGFactory,
-  DrawLayer,
-  FeatureTest,
-  fetchData,
-  findContrastColor,
-  getDocument,
-  getFilenameFromUrl,
-  getPdfFilenameFromUrl,
-  getRGB,
-  getUuid,
-  getXfaPageViewport,
-  GlobalWorkerOptions,
-  ImageKind,
-  InvalidPDFException,
-  isDataScheme,
-  isPdfFile,
-  isValidExplicitDest,
-  makeArr,
-  makeMap,
-  makeObj,
-  MathClamp,
-  noContextMenu,
-  normalizeUnicode,
-  OPS,
-  OutputScale,
-  PasswordResponses,
-  PDFDataRangeTransport,
-  PDFDateString,
-  PDFWorker,
-  PermissionFlag,
-  PixelsPerInch,
-  RenderingCancelledException,
-  renderRichText,
-  ResponseException,
-  setLayerDimensions,
-  shadow,
-  SignatureExtractor,
-  stopEvent,
-  SupportedImageMimeTypes,
-  TextLayer,
-  TextLayerImages,
-  TouchManager,
-  updateUrlHash,
-  Util,
-  VerbosityLevel,
-  version,
-  XfaLayer
-} = globalThis.pdfjsLib;
-
 ;// ./web/ui_utils.js
-
 const DEFAULT_SCALE_VALUE = "auto";
 const DEFAULT_SCALE = 1.0;
 const DEFAULT_SCALE_DELTA = 1.1;
@@ -161,7 +96,7 @@ const CursorTool = {
   ZOOM: 2
 };
 const AutoPrintRegExp = /\bprint\s*\(/;
-function scrollIntoView(element, spot, scrollMatches = false) {
+function scrollIntoView(element, spot) {
   let parent = element.offsetParent;
   if (!parent) {
     console.error("offsetParent is not set -- cannot scroll");
@@ -169,7 +104,7 @@ function scrollIntoView(element, spot, scrollMatches = false) {
   }
   let offsetY = element.offsetTop + element.clientTop;
   let offsetX = element.offsetLeft + element.clientLeft;
-  while (parent.clientHeight === parent.scrollHeight && parent.clientWidth === parent.scrollWidth || scrollMatches && (parent.classList.contains("markedContent") || getComputedStyle(parent).overflow === "hidden")) {
+  while (parent.clientHeight === parent.scrollHeight && parent.clientWidth === parent.scrollWidth) {
     offsetY += parent.offsetTop;
     offsetX += parent.offsetLeft;
     parent = parent.offsetParent;
@@ -182,13 +117,7 @@ function scrollIntoView(element, spot, scrollMatches = false) {
       offsetY += spot.top;
     }
     if (spot.left !== undefined) {
-      if (scrollMatches) {
-        const elementWidth = element.getBoundingClientRect().width;
-        const padding = MathClamp((parent.clientWidth - elementWidth) / 2, 20, 400);
-        offsetX += spot.left - padding;
-      } else {
-        offsetX += spot.left;
-      }
+      offsetX += spot.left;
       parent.scrollLeft = offsetX;
     }
   }
@@ -886,7 +815,11 @@ const defaultOptions = {
     kind: OptionKind.API
   },
   enableHWA: {
-    value: false,
+    value: true,
+    kind: OptionKind.API + OptionKind.PREFERENCE
+  },
+  enableWebGPU: {
+    value: true,
     kind: OptionKind.API + OptionKind.PREFERENCE
   },
   enableXfa: {
@@ -899,10 +832,6 @@ const defaultOptions = {
   },
   iccUrl: {
     value: "resource://pdf.js/web/iccs/",
-    kind: OptionKind.API
-  },
-  isEvalSupported: {
-    value: true,
     kind: OptionKind.API
   },
   isOffscreenCanvasSupported: {
@@ -999,6 +928,70 @@ class AppOptions {
     }
   }
 }
+
+;// ./web/pdfjs.js
+const {
+  AbortException,
+  AnnotationEditorLayer,
+  AnnotationEditorParamsType,
+  AnnotationEditorType,
+  AnnotationEditorUIManager,
+  AnnotationLayer,
+  AnnotationMode,
+  AnnotationType,
+  applyOpacity,
+  build,
+  ColorPicker,
+  createValidAbsoluteUrl,
+  CSSConstants,
+  DOMSVGFactory,
+  DrawLayer,
+  FeatureTest,
+  fetchData,
+  findContrastColor,
+  getDocument,
+  getFilenameFromUrl,
+  getPdfFilenameFromUrl,
+  getRGB,
+  getUuid,
+  getXfaPageViewport,
+  GlobalWorkerOptions,
+  ImageKind,
+  InvalidPDFException,
+  isDataScheme,
+  isPdfFile,
+  isValidExplicitDest,
+  makeArr,
+  makeMap,
+  makeObj,
+  MathClamp,
+  noContextMenu,
+  normalizeUnicode,
+  OPS,
+  OutputScale,
+  PasswordResponses,
+  PDFDataRangeTransport,
+  PDFDateString,
+  PDFWorker,
+  PermissionFlag,
+  PixelsPerInch,
+  RenderingCancelledException,
+  renderRichText,
+  ResponseException,
+  setLayerDimensions,
+  shadow,
+  SignatureExtractor,
+  stopEvent,
+  SupportedImageMimeTypes,
+  TextLayer,
+  TextLayerImages,
+  TouchManager,
+  updateUrlHash,
+  Util,
+  VerbosityLevel,
+  version,
+  XfaLayer
+} = globalThis.pdfjsLib;
 
 ;// ./web/pdf_link_service.js
 
@@ -2645,7 +2638,7 @@ class CommentManager {
     return CommentManager._makeCommentColor(color, opacity);
   }
   static _makeCommentColor(color, opacity) {
-    return this.#hasForcedColors ? null : findContrastColor(applyOpacity(...color, opacity ?? 1), CSSConstants.commentForegroundColor);
+    return this.#hasForcedColors ? null : findContrastColor(applyOpacity(color, opacity ?? 1), CSSConstants.commentForegroundColor);
   }
   destroy() {
     this.#dialog.destroy();
@@ -3862,7 +3855,6 @@ const FindState = {
   PENDING: 3
 };
 const FIND_TIMEOUT = 250;
-const MATCH_SCROLL_OFFSET_TOP = -50;
 const CHARACTERS_TO_NORMALIZE = {
   "\u2010": "-",
   "\u2018": "'",
@@ -4169,7 +4161,6 @@ class PDFFindController {
   }
   scrollMatchIntoView({
     element = null,
-    selectedLeft = 0,
     pageIndex = -1,
     matchIndex = -1
   }) {
@@ -4181,11 +4172,10 @@ class PDFFindController {
       return;
     }
     this._scrollMatches = false;
-    const spot = {
-      top: MATCH_SCROLL_OFFSET_TOP,
-      left: selectedLeft
-    };
-    scrollIntoView(element, spot, true);
+    element.scrollIntoView({
+      block: "start",
+      inline: "center"
+    });
   }
   #reset() {
     this._highlightMatches = false;
@@ -7084,11 +7074,23 @@ class StructTreeLayerBuilder {
       this.#elementsToStealFromTextLayer = null;
     }
   }
+  #collectIds(node, ids) {
+    if (!node) {
+      return;
+    }
+    if ("id" in node) {
+      ids.push(node.id);
+    }
+    for (const kid of node.children || []) {
+      this.#collectIds(kid, ids);
+    }
+  }
   #walk(node, parentNodes = []) {
     if (!node) {
       return null;
     }
     let element;
+    let visitChildren = true;
     if ("role" in node) {
       const {
         role
@@ -7120,17 +7122,11 @@ class StructTreeLayerBuilder {
       }
       if (role === "Formula") {
         if (node.mathML && MathMLSanitizer.sanitizer) {
+          visitChildren = false;
           element.setHTML(node.mathML, {
             sanitizer: MathMLSanitizer.sanitizer
           });
-          for (const {
-            id
-          } of node.children || []) {
-            if (!id) {
-              continue;
-            }
-            (this.#elementsToHideInTextLayer ||= []).push(id);
-          }
+          this.#collectIds(node, this.#elementsToHideInTextLayer ||= []);
           delete node.alt;
         }
         if (!node.mathML && node.children.length === 1 && node.children[0].role !== "math") {
@@ -7144,7 +7140,7 @@ class StructTreeLayerBuilder {
     if (node.children) {
       if (node.children.length === 1 && "id" in node.children[0]) {
         this.#setAttributes(node.children[0], element);
-      } else {
+      } else if (visitChildren) {
         parentNodes.push(node);
         for (const kid of node.children) {
           element.append(this.#walk(kid, parentNodes));
@@ -7437,13 +7433,9 @@ class TextHighlighter {
         span.append(node);
         div.append(span);
         if (className.includes("selected")) {
-          const {
-            left
-          } = span.getClientRects()[0];
-          const parentLeft = div.getBoundingClientRect().left;
-          return left - parentLeft;
+          return span;
         }
-        return 0;
+        return null;
       }
       div.append(node);
       return 0;
@@ -7469,7 +7461,7 @@ class TextHighlighter {
       const end = match.end;
       const isSelected = isSelectedPage && i === selectedMatchIdx;
       const highlightSuffix = isSelected ? " selected" : "";
-      let selectedLeft = 0;
+      let selectedSpan = null;
       if (!prevEnd || begin.divIdx !== prevEnd.divIdx) {
         if (prevEnd !== null) {
           appendTextToDiv(prevEnd.divIdx, prevEnd.offset, infinity.offset);
@@ -7479,9 +7471,9 @@ class TextHighlighter {
         appendTextToDiv(prevEnd.divIdx, prevEnd.offset, begin.offset);
       }
       if (begin.divIdx === end.divIdx) {
-        selectedLeft = appendTextToDiv(begin.divIdx, begin.offset, end.offset, "highlight" + highlightSuffix);
+        selectedSpan = appendTextToDiv(begin.divIdx, begin.offset, end.offset, "highlight" + highlightSuffix);
       } else {
-        selectedLeft = appendTextToDiv(begin.divIdx, begin.offset, infinity.offset, "highlight begin" + highlightSuffix);
+        selectedSpan = appendTextToDiv(begin.divIdx, begin.offset, infinity.offset, "highlight begin" + highlightSuffix);
         for (let n0 = begin.divIdx + 1, n1 = end.divIdx; n0 < n1; n0++) {
           textDivs[n0].className = "highlight middle" + highlightSuffix;
         }
@@ -7490,8 +7482,7 @@ class TextHighlighter {
       prevEnd = end;
       if (isSelected) {
         findController.scrollMatchIntoView({
-          element: textDivs[begin.divIdx],
-          selectedLeft,
+          element: selectedSpan,
           pageIndex: pageIdx,
           matchIndex: selectedMatchIdx
         });
@@ -7626,20 +7617,19 @@ class TextLayerBuilder {
       div
     } = this;
     const abortSignal = this.#abortSignal;
+    const opts = abortSignal ? {
+      signal: abortSignal
+    } : null;
     div.addEventListener("mousedown", () => {
       div.classList.add("selecting");
-    }, {
-      signal: abortSignal
-    });
+    }, opts);
     div.addEventListener("copy", event => {
       if (!this.#enablePermissions) {
         const selection = document.getSelection();
         event.clipboardData.setData("text/plain", removeNullCharacters(normalizeUnicode(selection.toString())));
       }
       stopEvent(event);
-    }, {
-      signal: abortSignal
-    });
+    }, opts);
     TextLayerBuilder.#textLayers.set(div, end);
     TextLayerBuilder.#enableGlobalSelectionListener(abortSignal);
   }
@@ -8635,7 +8625,7 @@ class PDFViewer {
   #savedPageViews = null;
   #deletedPageNumbers = null;
   constructor(options) {
-    const viewerVersion = "5.6.110";
+    const viewerVersion = "5.7.99";
     if (version !== viewerVersion) {
       throw new Error(`The API version "${version}" does not match the Viewer version "${viewerVersion}".`);
     }

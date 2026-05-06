@@ -51,7 +51,10 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
                          mozilla::IntrinsicISizeType aType) override;
 
   mozilla::IntrinsicSize GetIntrinsicSize() override;
-  mozilla::AspectRatio GetIntrinsicRatio() const override;
+  mozilla::AspectRatio GetIntrinsicRatio() const override {
+    return GetIntrinsicRatio(false);
+  }
+  mozilla::AspectRatio GetIntrinsicRatio(bool aIgnoreContainment) const;
 
   const nsPoint& GetExtraOffset() const { return mExtraOffset; }
 

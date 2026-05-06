@@ -118,18 +118,21 @@ internal class MarketingAttributionServiceTest {
     }
 
     @Test
-    fun `WHEN installReferrerResponse contains Meta utm_content params THEN isMetaAttribution returns true`() {
+    fun `WHEN installReferrerResponse contains Meta utm_content params THEN isMetaAttribution returns true`() = runBlocking {
         val metaReferrer = """utm_content={"app":12345,"t":1234567890,"source":{"data":"DATA","nonce":"NONCE"}}"""
         assertTrue(MarketingAttributionService.isMetaAttribution(metaReferrer))
+        assertTrue(MarketingAttributionService.shouldShowMarketingOnboarding(metaReferrer, distributionIdManager))
     }
 
     @Test
-    fun `WHEN installReferrerResponse missing Meta data or nonce THEN isMetaAttribution returns false`() {
+    fun `WHEN installReferrerResponse missing Meta data or nonce THEN isMetaAttribution returns false`() = runBlocking {
         var metaReferrer = """utm_content={"app":12345,"t":1234567890,"source":{"nonce":"NONCE"}}"""
         assertFalse(MarketingAttributionService.isMetaAttribution(metaReferrer))
+        assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(metaReferrer, distributionIdManager))
 
         metaReferrer = """utm_content={"app":12345,"t":1234567890,"source":{"data":"DATA"}}"""
         assertFalse(MarketingAttributionService.isMetaAttribution(metaReferrer))
+        assertFalse(MarketingAttributionService.shouldShowMarketingOnboarding(metaReferrer, distributionIdManager))
     }
 
     @Test

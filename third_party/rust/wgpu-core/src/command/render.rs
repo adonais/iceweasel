@@ -44,7 +44,8 @@ use crate::{
     },
     snatch::SnatchGuard,
     track::{ResourceUsageCompatibilityError, Tracker, UsageScope},
-    validation, Label,
+    validation::{self, check_workgroup_sizes},
+    Label,
 };
 
 #[cfg(feature = "serde")]
@@ -756,17 +757,17 @@ pub enum RenderPassErrorInner {
     MissingDownlevelFlags(#[from] MissingDownlevelFlags),
     #[error("Indirect buffer offset {0:?} is not a multiple of 4")]
     UnalignedIndirectBufferOffset(BufferAddress),
-    #[error("Indirect draw uses bytes {offset}..{end_offset} using count {count} which overruns indirect buffer of size {buffer_size}")]
+    #[error("Indirect draw arguments of {args_size} bytes (count = {count}) starting at {offset} would overrun buffer size of {buffer_size}")]
     IndirectBufferOverrun {
         count: u32,
         offset: u64,
-        end_offset: u64,
+        args_size: u64,
         buffer_size: u64,
     },
-    #[error("Indirect draw uses bytes {begin_count_offset}..{end_count_offset} which overruns indirect buffer of size {count_buffer_size}")]
+    #[error("Indirect draw count of {count_bytes} bytes starting at {begin_count_offset} would overrun buffer of size {count_buffer_size}")]
     IndirectCountBufferOverrun {
+        count_bytes: u64,
         begin_count_offset: u64,
-        end_count_offset: u64,
         count_buffer_size: u64,
     },
     #[error(transparent)]
@@ -2731,21 +2732,17 @@ fn draw_mesh_tasks(
         .device
         .limits
         .max_task_mesh_workgroup_total_count;
-    if group_count_x > groups_size_limit
-        || group_count_y > groups_size_limit
-        || group_count_z > groups_size_limit
-        || group_count_x * group_count_y * group_count_z > max_groups
-    {
-        return Err(DrawError::InvalidGroupSize {
-            current: [group_count_x, group_count_y, group_count_z],
-            limit: groups_size_limit,
-            max_total: max_groups,
-        }
-        .into());
-    }
+    let total_count = check_workgroup_sizes(
+        &[group_count_x, group_count_y, group_count_z],
+        &[groups_size_limit, groups_size_limit, groups_size_limit],
+        "max_task_mesh_workgroups_per_dimension",
+        max_groups,
+        "max_task_mesh_workgroup_total_count",
+    )
+    .map_err(|err| RenderPassErrorInner::Draw(err.into()))?;
 
     unsafe {
-        if group_count_x > 0 && group_count_y > 0 && group_count_z > 0 {
+        if total_count > 0 {
             state.pass.base.raw_encoder.draw_mesh_tasks(
                 group_count_x,
                 group_count_y,
@@ -2792,21 +2789,22 @@ fn multi_draw_indirect(
     }
 
     let stride = get_stride_of_indirect_args(family);
-
-    let end_offset = offset + stride * count as u64;
-    if end_offset > indirect_buffer.size {
-        return Err(RenderPassErrorInner::IndirectBufferOverrun {
-            count,
-            offset,
-            end_offset,
-            buffer_size: indirect_buffer.size,
-        });
-    }
+    let args_size = match stride.checked_mul(u64::from(count)) {
+        Some(sz) if sz <= indirect_buffer.size && indirect_buffer.size - sz >= offset => sz,
+        args_size => {
+            return Err(RenderPassErrorInner::IndirectBufferOverrun {
+                count,
+                offset,
+                args_size: args_size.unwrap_or(u64::MAX),
+                buffer_size: indirect_buffer.size,
+            });
+        }
+    };
 
     state.pass.base.buffer_memory_init_actions.extend(
         indirect_buffer.initialization_status.read().create_action(
             &indirect_buffer,
-            offset..end_offset,
+            offset..offset + args_size,
             MemoryInitKind::NeedsInitializedMemory,
         ),
     );
@@ -3001,36 +2999,39 @@ fn multi_draw_indirect_count(
         return Err(RenderPassErrorInner::UnalignedIndirectBufferOffset(offset));
     }
 
-    let end_offset = offset + stride * max_count as u64;
-    if end_offset > indirect_buffer.size {
-        return Err(RenderPassErrorInner::IndirectBufferOverrun {
-            count: 1,
-            offset,
-            end_offset,
-            buffer_size: indirect_buffer.size,
-        });
-    }
+    let args_size = match stride.checked_mul(u64::from(max_count)) {
+        Some(sz) if sz <= indirect_buffer.size && indirect_buffer.size - sz >= offset => sz,
+        args_size => {
+            return Err(RenderPassErrorInner::IndirectBufferOverrun {
+                count: 1,
+                offset,
+                args_size: args_size.unwrap_or(u64::MAX),
+                buffer_size: indirect_buffer.size,
+            });
+        }
+    };
+
     state.pass.base.buffer_memory_init_actions.extend(
         indirect_buffer.initialization_status.read().create_action(
             &indirect_buffer,
-            offset..end_offset,
+            offset..offset + args_size,
             MemoryInitKind::NeedsInitializedMemory,
         ),
     );
 
     let begin_count_offset = count_buffer_offset;
-    let end_count_offset = count_buffer_offset + 4;
-    if end_count_offset > count_buffer.size {
+    let count_bytes = 4;
+    if count_buffer.size < count_bytes || count_buffer.size - count_bytes < count_buffer_offset {
         return Err(RenderPassErrorInner::IndirectCountBufferOverrun {
             begin_count_offset,
-            end_count_offset,
+            count_bytes: 4,
             count_buffer_size: count_buffer.size,
         });
     }
     state.pass.base.buffer_memory_init_actions.extend(
         count_buffer.initialization_status.read().create_action(
             &count_buffer,
-            count_buffer_offset..end_count_offset,
+            count_buffer_offset..count_buffer_offset + count_bytes,
             MemoryInitKind::NeedsInitializedMemory,
         ),
     );

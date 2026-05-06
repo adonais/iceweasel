@@ -8265,7 +8265,7 @@ nsIFrame::ContentOffsets nsTextFrame::GetCharacterOffsetAtFramePointInternal(
         gfxFontUtils::IsRegionalIndicator(
             characterDataBuffer.ScalarValueAt(offs))) {
       allowSplitLigature = false;
-      if (extraCluster.GetSkippedOffset() > 1 &&
+      if (extraCluster.GetSkippedOffset() >= skippedRange.start + 2 &&
           !mTextRun->IsLigatureGroupStart(extraCluster.GetSkippedOffset())) {
         // CountCharsFit() left us in the middle of the flag; back up over the
         // first character of the ligature, and adjust fitWidth accordingly.

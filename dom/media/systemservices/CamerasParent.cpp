@@ -666,10 +666,9 @@ Maybe<webrtc::VideoCaptureCapability> AggregateCapturer::CombinedCapability(
         minDistance = distance;
       }
     }
-    if (!minDistanceCapability) {
-      return Nothing();
+    if (minDistanceCapability) {
+      combinedCap = Some(*minDistanceCapability);
     }
-    combinedCap = Some(*minDistanceCapability);
   }
   return combinedCap;
 }

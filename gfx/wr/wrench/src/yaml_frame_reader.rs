@@ -2038,6 +2038,10 @@ impl YamlFrameReader {
         let default_bounds = || LayoutRect::from_size(wrench.window_size_f32());
         let mut bounds = yaml["bounds"].as_rect().unwrap_or_else(default_bounds);
 
+        let transform_style = yaml["transform-style"]
+            .as_transform_style()
+            .unwrap_or(TransformStyle::Flat);
+
         let has_transform = !yaml["transform"].is_badvalue() || !yaml["perspective"].is_badvalue();
         let pushed_reference_frame = if has_transform || bounds.min != LayoutPoint::zero() {
             let reference_frame_id = if has_transform {
@@ -2047,7 +2051,7 @@ impl YamlFrameReader {
                 dl.push_reference_frame(
                     bounds.min,
                     parent_spatial_id,
-                    TransformStyle::Flat,
+                    transform_style,
                     PropertyBinding::Value(LayoutTransform::identity()),
                     ReferenceFrameKind::Transform {
                         is_2d_scale_translation: true,
@@ -2066,10 +2070,6 @@ impl YamlFrameReader {
         };
 
         let clip_chain_id = self.to_clip_chain_id(&yaml["clip-chain"], dl);
-
-        let transform_style = yaml["transform-style"]
-            .as_transform_style()
-            .unwrap_or(TransformStyle::Flat);
         let mix_blend_mode = yaml["mix-blend-mode"]
             .as_mix_blend_mode()
             .unwrap_or(MixBlendMode::Normal);

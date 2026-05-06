@@ -3138,6 +3138,10 @@ export class SmartbarInput extends HTMLElement {
     return this.querySelector(".urlbar-go-button");
   }
 
+  get smartbarButtonContainer() {
+    return this.querySelector(".smartbar-button-container");
+  }
+
   get value() {
     return this.#smartbarInputController?.value ?? this.inputField.value;
   }
@@ -5406,7 +5410,10 @@ export class SmartbarInput extends HTMLElement {
 
     // Respect the autohide preference for easier inspecting/debugging via
     // the browser toolbox.
-    if (!lazy.UrlbarPrefs.get("ui.popup.disable_autohide")) {
+    if (
+      !lazy.UrlbarPrefs.get("ui.popup.disable_autohide") &&
+      !this._inputCta?.contains(event.relatedTarget)
+    ) {
       this.view.close();
     }
 
@@ -5557,6 +5564,9 @@ export class SmartbarInput extends HTMLElement {
           event.composedTarget != this.inputField &&
           event.composedTarget != this._inputContainer
         ) {
+          if (this.smartbarButtonContainer?.contains(event.composedTarget)) {
+            event.preventDefault();
+          }
           break;
         }
 

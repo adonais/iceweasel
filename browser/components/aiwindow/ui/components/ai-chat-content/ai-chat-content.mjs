@@ -21,6 +21,7 @@ const FOLLOW_UP_QTY = 2;
 export class AIChatContent extends MozLitElement {
   static properties = {
     assistantIsLoading: { type: Boolean },
+    assistantResponseAnnouncement: { type: String, state: true },
     conversationState: { type: Array },
     followUpSuggestions: { type: Array },
     errorObj: { type: Object },
@@ -35,10 +36,12 @@ export class AIChatContent extends MozLitElement {
   #scrollHandler = null;
   #scrollClickHandler = null;
   #scrollRafId = null;
+  #pendingAnnouncementMessageId = null;
 
   constructor() {
     super();
     this.assistantIsLoading = false;
+    this.assistantResponseAnnouncement = "";
     this.conversationState = [];
     this.followUpSuggestions = [];
     this.errorObj = null;
@@ -136,6 +139,14 @@ export class AIChatContent extends MozLitElement {
       "aiChatError:sign-in",
       this.openAccountSignInAfterError.bind(this)
     );
+
+    this.addEventListener("ai-chat-message:complete", event => {
+      const { messageId, text } = event.detail ?? {};
+      if (messageId && messageId === this.#pendingAnnouncementMessageId) {
+        this.#pendingAnnouncementMessageId = null;
+        this.assistantResponseAnnouncement = text || "";
+      }
+    });
   }
 
   /**
@@ -326,7 +337,7 @@ export class AIChatContent extends MozLitElement {
         this.handleUserPromptEvent(event);
         break;
       case "assistant-message-complete":
-        this.#setMessageCompleteAttr(message);
+        this.#setMessageComplete(message);
         break;
       // Used to clear the conversation state via side effects ( new conv id )
       case "clear-conversation":
@@ -334,15 +345,27 @@ export class AIChatContent extends MozLitElement {
     }
   }
 
-  #setMessageCompleteAttr(message) {
+  #setMessageComplete(message) {
     this.assistantIsLoading = false;
+    const messageId = message.content?.id;
+    if (!messageId) {
+      return;
+    }
+
     const assistantLastMessage = this.conversationState.findLast(
-      msg => msg?.messageId === message.content.id
+      msg => msg?.messageId === messageId
     );
     if (assistantLastMessage) {
       assistantLastMessage.isLastChunk = true;
     }
+    this.#pendingAnnouncementMessageId = messageId;
+    this.assistantResponseAnnouncement = "";
     this.requestUpdate();
+  }
+
+  #clearAssistantResponseAnnouncement() {
+    this.#pendingAnnouncementMessageId = null;
+    this.assistantResponseAnnouncement = "";
   }
 
   /**
@@ -366,12 +389,14 @@ export class AIChatContent extends MozLitElement {
     if (convIdChanged || isReloadingSameConvo) {
       this.conversationState = [];
       this.followUpSuggestions = [];
+      this.#clearAssistantResponseAnnouncement();
       this.requestUpdate();
     }
   }
 
   handleLoadingEvent(event) {
     const { isSearching } = event.detail;
+    this.#clearAssistantResponseAnnouncement();
     this.isSearching = !!isSearching;
     this.assistantIsLoading = true;
     this.requestUpdate();
@@ -395,6 +420,7 @@ export class AIChatContent extends MozLitElement {
     const { convId, content, ordinal, isPreviousMessage } = event.detail;
     if (!isPreviousMessage) {
       this.assistantIsLoading = true;
+      this.#clearAssistantResponseAnnouncement();
     }
     this.conversationState[ordinal] = {
       role: "user",
@@ -442,7 +468,7 @@ export class AIChatContent extends MozLitElement {
       content,
       memoriesApplied,
       showMemoriesCallout,
-      webSearchQueries,
+      webSearchQueries = [],
       followUpSuggestions = [],
     } = event.detail;
 
@@ -586,6 +612,7 @@ export class AIChatContent extends MozLitElement {
           .role=${msg.role}
           .messageId=${msg.messageId}
           .searchTokens=${msg.searchTokens || []}
+          .complete=${msg.role === "assistant" && !!msg.isLastChunk}
           .conversationId=${this.conversationId}
           .seenUrls=${this.seenUrls}
         ></ai-chat-message>
@@ -655,6 +682,14 @@ export class AIChatContent extends MozLitElement {
           ${this.#renderMessages()} ${this.#renderFollowUpSuggestions()}
           ${this.#renderLoader()} ${this.#renderError()}
         </div>
+      </div>
+      <div
+        class="assistant-response-announcer"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        ${this.assistantResponseAnnouncement}
       </div>
       <moz-button
         class="jump-to-bottom-button"

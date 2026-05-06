@@ -186,14 +186,16 @@ void MediaDrmCDMProxy::NotifyOutputProtectionStatus(
 
 void MediaDrmCDMProxy::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mOwnerThread);
+  mKeys.Clear();
+  if (!mOwnerThread) {
+    return;
+  }
   nsCOMPtr<nsIRunnable> task(NewRunnableMethod(
       "MediaDrmCDMProxy::md_Shutdown", this, &MediaDrmCDMProxy::md_Shutdown));
 
   mOwnerThread->Dispatch(task, NS_DISPATCH_NORMAL);
   mOwnerThread->Shutdown();
   mOwnerThread = nullptr;
-  mKeys.Clear();
 }
 
 void MediaDrmCDMProxy::Terminated() {

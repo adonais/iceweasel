@@ -221,10 +221,9 @@ class ContinuousOnboardingFeatureDefault(
                 sequenceId = OnboardingPageUiData.Type.DEFAULT_BROWSER.telemetryId,
                 sequencePosition = "0",
             )
-            maybeShowNotificationCardDialog(activity, pendingStage)
-        } else {
-            markStageCompleted(pendingStage)
         }
+
+        maybeShowNotificationCardDialog(activity, pendingStage)
 
         // Reset the pending stage
         pendingStage = ContinuousOnboardingStage.NONE
@@ -234,7 +233,9 @@ class ContinuousOnboardingFeatureDefault(
         activity: Activity,
         stage: ContinuousOnboardingStage,
     ) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            !activity.components.notificationsDelegate.hasPostNotificationsPermission()
+        ) {
             logger.info("Showing notification-permission card dialog.")
 
             val onDismissCard = {

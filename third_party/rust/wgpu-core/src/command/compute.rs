@@ -154,10 +154,10 @@ pub enum ComputePassErrorInner {
     DestroyedResource(#[from] DestroyedResourceError),
     #[error("Indirect buffer offset {0:?} is not a multiple of 4")]
     UnalignedIndirectBufferOffset(BufferAddress),
-    #[error("Indirect buffer uses bytes {offset}..{end_offset} which overruns indirect buffer of size {buffer_size}")]
+    #[error("Indirect buffer of {args_size} bytes starting at offset {offset} would overrun buffer of size {buffer_size}")]
     IndirectBufferOverrun {
+        args_size: u64,
         offset: u64,
-        end_offset: u64,
         buffer_size: u64,
     },
     #[error(transparent)]
@@ -885,11 +885,11 @@ fn dispatch_indirect(
         return Err(ComputePassErrorInner::UnalignedIndirectBufferOffset(offset));
     }
 
-    let end_offset = offset + size_of::<wgt::DispatchIndirectArgs>() as u64;
-    if end_offset > buffer.size {
+    let args_size = size_of::<wgt::DispatchIndirectArgs>() as u64;
+    if buffer.size < args_size || buffer.size - args_size < offset {
         return Err(ComputePassErrorInner::IndirectBufferOverrun {
+            args_size,
             offset,
-            end_offset,
             buffer_size: buffer.size,
         });
     }

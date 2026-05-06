@@ -105,6 +105,8 @@ support-files = [
 
 ["browser_smartwindow_beta_badge.js"]
 
+["browser_smartwindow_classic_mode_switch.js"]
+
 ["browser_smartwindow_content.js"]
 
 ["browser_smartwindow_context_url.js"]
@@ -141,6 +143,8 @@ support-files = [
 
 ["browser_smartwindow_sidebar_prefs.js"]
 
+["browser_smartwindow_sidebar.js"]
+
 ["browser_smartwindow_smartbar_tab_state.js"]
 
 ["browser_smartwindow_switcher_telemetry.js"]
@@ -148,5 +152,9 @@ support-files = [
 ["browser_smartwindow_tab_move.js"]
 
 ["browser_smartwindow_tab_switching.js"]
+
+["browser_smartwindow_tab_switching_memories.js"]
+
+["browser_smartwindow_tab_switching_starters.js"]
 
 ["browser_smartwindow_telemetry.js"]

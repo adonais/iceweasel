@@ -3195,7 +3195,7 @@ void gfxPlatform::InitWebGLConfig() {
 #endif
   }
 
-  if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS) &&
+  if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS) && !IsHeadless() &&
 #ifdef ANDROID
       !StaticPrefs::webgl_allow_in_content_AtStartup() &&
 #endif
