@@ -832,16 +832,9 @@ var gSync = {
     );
     if (sendTabButton && !sendTabButton.hidden) {
       const targets = this.getSendTabTargets();
-      // Use the FxA toolbar button as the trigger node
-      const triggerNode =
-        panelview.triggerNode ||
-        document.getElementById("fxa-toolbar-menu-button") ||
-        document.getElementById("appMenu-fxa-label2");
-      if (triggerNode) {
-        this.emitFxaToolbarTelemetry("send_tab_exposed", triggerNode, {
-          device_count: String(targets.length),
-        });
-      }
+      this.emitFxaToolbarTelemetry("send_tab_exposed", sendTabButton, {
+        device_count: String(targets.length),
+      });
     }
   },
 
@@ -1482,55 +1475,51 @@ var gSync = {
     }
   },
 
-  // This is mis-named - it can be used to record any FxA UI telemetry, whether from
-  // the toolbar or not. The required `sourceElement` param is enough to help us know
-  // how to record the interaction.
+  /**
+   * Record an FxA menu telemetry event. The entry point (fxa_avatar_menu vs
+   * fxa_app_menu) is resolved from where `sourceElement` lives in the DOM at
+   * call time, so make sure `sourceElement` is in its source popup when this
+   * fires. For events fired after panel navigation (e.g. clicking a device in
+   * the Send Tab submenu), pass an element whose DOM position is stable, like
+   * the FxA menu's Send Tab button.
+   *
+   * @param {string} type - event type, e.g. "sync_now", "send_tab_opened"
+   * @param {Element} sourceElement - element used to resolve the entry point
+   * @param {object} [extraOpts] - additional Glean event extra keys
+   */
   emitFxaToolbarTelemetry(type, sourceElement, extraOpts = {}) {
-    if (UIState.isReady()) {
-      const state = UIState.get();
-      const hasAvatar = state.avatarURL && !state.avatarIsDefault;
-      let extraOptions = {
-        fxa_status: state.status,
-        fxa_avatar: hasAvatar ? "true" : "false",
-        fxa_sync_on: state.syncEnabled,
-        ...extraOpts,
-      };
-
-      let eventName = this._getEntryPointForElement(sourceElement);
-      let category = "";
-      if (eventName == "fxa_avatar_menu") {
-        category = "fxaAvatarMenu";
-      } else if (eventName == "fxa_app_menu") {
-        category = "fxaAppMenu";
-      } else {
-        return;
-      }
-
-      // Handle the new Send Tab event types:
-      // - send_tab_exposed -> sendTabExposed
-      // - send_tab_opened -> sendTabOpened
-      // - send_tab -> clickSendTab (legacy click format)
-      let methodName;
-      if (type.startsWith("send_tab_")) {
-        // Convert send_tab_exposed -> sendTabExposed
-        methodName = type
-          .split("_")
-          .map((word, i) =>
-            i === 0 ? word : word[0].toUpperCase() + word.slice(1)
-          )
-          .join("");
-      } else {
-        // Legacy format: click + capitalized type (e.g., "sync_now" -> "clickSyncNow")
-        methodName =
-          "click" +
-          type
-            .split("_")
-            .map(word => word[0].toUpperCase() + word.slice(1))
-            .join("");
-      }
-
-      Glean[category][methodName]?.record(extraOptions);
+    if (!UIState.isReady()) {
+      return;
     }
+    const entryPoint = this._getEntryPointForElement(sourceElement);
+    let category = null;
+    if (entryPoint == "fxa_avatar_menu") {
+      category = "fxaAvatarMenu";
+    } else if (entryPoint == "fxa_app_menu") {
+      category = "fxaAppMenu";
+    } else {
+      return;
+    }
+
+    const state = UIState.get();
+    const hasAvatar = state.avatarURL && !state.avatarIsDefault;
+    const extraOptions = {
+      fxa_status: state.status,
+      fxa_avatar: hasAvatar ? "true" : "false",
+      fxa_sync_on: state.syncEnabled,
+      ...extraOpts,
+    };
+
+    // send_tab_exposed -> sendTabExposed, send_tab_opened -> sendTabOpened.
+    // All other types are legacy click events: sync_now -> clickSyncNow,
+    // send_tab -> clickSendTab, etc.
+    const cap = w => w[0].toUpperCase() + w.slice(1);
+    const parts = type.split("_");
+    const methodName = type.startsWith("send_tab_")
+      ? parts[0] + parts.slice(1).map(cap).join("")
+      : "click" + parts.map(cap).join("");
+
+    Glean[category][methodName]?.record(extraOptions);
   },
 
   updatePanelPopup({ email, displayName, status }) {
@@ -1758,9 +1747,9 @@ var gSync = {
     if (sourceElement.id == "fxa-toolbar-menu-button") {
       return "fxa_avatar_menu";
     }
-    // ... or is in the panel shown by that button.
-    const fxaMenu = document.getElementById("PanelUI-fxa-menu");
-    if (fxaMenu && fxaMenu.contains(sourceElement)) {
+    // ... or is in the panel shown by that button (PanelUI-fxa-menu) or one
+    // of its sibling Send Tab panelviews (PanelUI-fxa-menu-sendtab-*).
+    if (sourceElement.closest?.('[id^="PanelUI-fxa-menu"]')) {
       return "fxa_avatar_menu";
     }
     return "fxa_discoverability_native";
@@ -1973,10 +1962,11 @@ var gSync = {
       send(targets);
       // Record Send Tab clicked telemetry for "Send to All Devices"
       if (isFxaMenu) {
-        const triggerNode =
-          document.getElementById("fxa-toolbar-menu-button") ||
-          document.getElementById("appMenu-fxa-label2");
-        this.emitFxaToolbarTelemetry("send_tab", triggerNode, {
+        const sendTabButton = PanelMultiView.getViewNode(
+          document,
+          "PanelUI-fxa-menu-sendtab-button"
+        );
+        this.emitFxaToolbarTelemetry("send_tab", sendTabButton, {
           device_count: String(targets.length),
           action: "all_devices",
         });
@@ -1995,10 +1985,11 @@ var gSync = {
       send([target]);
       // Record Send Tab clicked telemetry for specific device
       if (isFxaMenu) {
-        const triggerNode =
-          document.getElementById("fxa-toolbar-menu-button") ||
-          document.getElementById("appMenu-fxa-label2");
-        this.emitFxaToolbarTelemetry("send_tab", triggerNode, {
+        const sendTabButton = PanelMultiView.getViewNode(
+          document,
+          "PanelUI-fxa-menu-sendtab-button"
+        );
+        this.emitFxaToolbarTelemetry("send_tab", sendTabButton, {
           device_count: String(targets.length),
           action: "device",
         });
@@ -2079,10 +2070,11 @@ var gSync = {
           gSync.openDevicesManagementPage("sendtab");
           // Record Send Tab clicked telemetry for "Manage Devices"
           if (isFxaMenu) {
-            const triggerNode =
-              document.getElementById("fxa-toolbar-menu-button") ||
-              document.getElementById("appMenu-fxa-label2");
-            this.emitFxaToolbarTelemetry("send_tab", triggerNode, {
+            const sendTabButton = PanelMultiView.getViewNode(
+              document,
+              "PanelUI-fxa-menu-sendtab-button"
+            );
+            this.emitFxaToolbarTelemetry("send_tab", sendTabButton, {
               device_count: String(targets.length),
               action: "manage_devices",
             });
