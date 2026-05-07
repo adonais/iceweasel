@@ -4134,6 +4134,10 @@
     <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Following: \n%s</string>
     <!-- Description shown on the sports widget immediately after the user has followed a team -->
     <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Check back for match info as the tournament approaches.</string>
+    <!-- Sports widget match status label shown during first half of a match. -->
+    <string name="sports_widget_first_half" tools:ignore="UnusedResources">First half</string>
+    <!-- Sports widget match status label shown during second half of a match. -->
+    <string name="sports_widget_second_half" tools:ignore="UnusedResources">Second half</string>
 
     <!-- Privacy notice homepage banner -->
     <!-- A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
