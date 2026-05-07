@@ -2594,13 +2594,19 @@ void Element::AddDocOrShadowObserversForAttrAssociatedElement(
         ReferenceTargetChangedAttrAssociatedElementCallback, callbackData);
   } else {
     MOZ_ASSERT(observerData->mLastKnownAttrValue);
-    aContainingDocOrShadow.AddIDTargetObserver(
+    Element* idTarget = aContainingDocOrShadow.AddIDTargetObserver(
         observerData->mLastKnownAttrValue,
         IDTargetChangedAttrAssociatedElementCallback, callbackData, false);
 
-    Element* idTarget = aContainingDocOrShadow.GetElementById(
-        observerData->mLastKnownAttrValue);
     if (idTarget) {
+      if (nsCOMPtr<Element> element =
+              do_QueryReferent(observerData->mLastKnownAttrElement)) {
+        Element* lastAttrElement = element.get();
+        if (idTarget != lastAttrElement) {
+          IDTargetChangedAttrAssociatedElementCallback(lastAttrElement,
+                                                       idTarget, callbackData);
+        }
+      }
       idTarget->AddReferenceTargetChangeObserver(
           ReferenceTargetChangedAttrAssociatedElementCallback, callbackData);
     }
