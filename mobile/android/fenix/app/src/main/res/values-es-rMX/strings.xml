@@ -1616,6 +1616,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Pestañas privadas abiertas: %1$s. Toca para cambiar de pestaña.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">Tienes %1$d grupo de pestañas abierto. Toca para cambiar de pestaña.</item>
+    <item quantity="other">Tienes %1$d grupos de pestañas abiertos. Toca para cambiar de pestaña.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1675,6 +1683,10 @@
   <string name="remove_tab_from_collection">Eliminar la pestaña de la colección</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
   <string name="tabs_tray_select_tabs">Seleccionar pestañas</string>
+  <!-- Text for tab manager search page when there are no results. -->
+  <string name="tab_manager_no_search_results">No se encuentran coincidencias.</string>
+  <!-- Additional text for tab manager search page when there are no results. -->
+  <string name="tab_manager_no_search_results_additional_text">¡Haz una nueva búsqueda!</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button. Closes the current session when pressed -->
   <string name="close_tab">Cerrar pestaña</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab <title> button. %s is the tab title -->
@@ -1701,9 +1713,16 @@
   <string name="pwa_site_controls_title_private">%1$s (Modo Privado)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Abrir búsqueda en pestañas</string>
+  <!--
+    Tab Group
+
+    Title for the create tab group bottom sheet
+  -->
+  <string name="create_tab_group_title">Crear grupo de pestañas</string>
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Editar grupo</string>
   <string name="create_tab_group_save_button">Guardar</string>
+  <string name="edit_tab_group_bottom_sheet_close_content_description">Cerrar edición del grupo de pestañas</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupo</string>
   <!--
@@ -1917,6 +1936,22 @@
     %2$s is the total size of the downloaded file.
   -->
   <string name="download_item_in_progress_description_pending">%1$s / %2$s • pendiente</string>
+  <!--
+    Description of an in progress download item, displayed in the downloads list when the total download size is unknown. This results in the estimated download time remaining to be unknown also.
+    %1$s is the current file size that has been downloaded.
+  -->
+  <string name="download_item_in_progress_description_unknown_total_size">%1$s • tiempo desconocido</string>
+  <!--
+    Description of a paused download item, displayed in the downloads list.
+    %1$s is the current file size that has been downloaded.
+    %2$s is the total size of the downloaded file.
+  -->
+  <string name="download_item_paused_description">%1$s / %2$s • en pausa</string>
+  <!--
+    Description of a paused download item, displayed in the downloads list when the total download size is unknown.
+    %1$s is the current file size that has been downloaded.
+  -->
+  <string name="download_item_paused_description_unknown_total_size">%1$s • en pausa</string>
   <!-- Text to indicate that a download has failed to download. -->
   <string name="download_item_status_failed">La descarga ha fallado</string>
   <!-- Text for the snackbar action button to view failed download details. -->
@@ -1957,6 +1992,8 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">Informar de un sitio no funcional</string>
+  <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
+  <string name="webcompat_reporter_description_3">Tu reporte nos ayuda a entender y corregir fallas en %1$s para mejorar la experiencia de toda la comunidad. %2$s</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
   <string name="webcompat_reporter_label_url">URL</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
@@ -1967,6 +2004,8 @@
   <string name="webcompat_reporter_choose_reason_error">Por favor elige una razón</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">Describe el problema (opcional)</string>
+  <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
+  <string name="webcompat_reporter_add_more_info">Agregar más información</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">Cancelar</string>
   <!-- The button text for the send button to submit the provided form data. -->

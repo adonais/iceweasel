@@ -409,6 +409,8 @@
   <string name="ai_controls_voice_search_description">Lyd blir konvertert til tekst av Google Speech Services.</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_title">Blokkere AI-forbetringar?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Du vil ikkje sjå nye eller eksisterande AI-forbetringar i %1$s, eller varsel om dei. Etterpå kan du oppheve blokkeringa av det du ønskjer å halde fram med å bruke.\n\nBlokkering påverkar også utvidingar som bruker AI levert av %1$s.</string>
   <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
   <string name="ai_controls_block_dialog_what_will_be_blocked">Kva som vil bli blokkert:</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->

@@ -8,9 +8,9 @@
 
 <resources>
   <!-- Title for the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_title">Yer imleri içe aktarılıyor</string>
+  <string name="mozac_feature_importer_dialog_title">სანიშნების გადმოტანა</string>
   <!-- Description for the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_description">Bu ekranı açık tutun. Sadece birkaç saniye sürecek.</string>
+  <string name="mozac_feature_importer_dialog_description">დატოვეთ ეს ეკრანი გახსნილი. მხოლოდ რამდენიმე წამს გასტანს.</string>
   <!-- Label for the cancel action on the bookmarks import loading dialog. -->
-  <string name="mozac_feature_importer_dialog_cancel">İptal</string>
+  <string name="mozac_feature_importer_dialog_cancel">გაუქმება</string>
 </resources>

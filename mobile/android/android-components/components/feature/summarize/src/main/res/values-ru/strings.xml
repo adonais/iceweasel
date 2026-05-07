@@ -22,7 +22,7 @@
   <!-- Message for the on-device shake summarization and download consent screen. %s will be replaced by app name. -->
   <string name="mozac_summarize_shake_consent_on_device_message">После быстрой разовой загрузки, %s может резюмировать страницы, когда вы встряхиваете устройство.</string>
   <!-- Button text for the on-device shake summarization and download consent screen approving shake and download consent -->
-  <string name="mozac_summarize_shake_consent_on_device_button_positive">Загрузить, чтобы резюмировать</string>
+  <string name="mozac_summarize_shake_consent_on_device_button_positive">Скачать, чтобы резюмировать</string>
   <!-- Button text for the on-device shake summarization and download consent screen denying shake and download consent -->
   <string name="mozac_summarize_shake_consent_on_device_negative_button">Не сейчас</string>
   <!-- Title for the download consent screen -->
@@ -30,7 +30,7 @@
   <!-- Message for the consent to download when using an on-device model. %s will be replaced by app name. -->
   <string name="mozac_summarize_download_nano_consent_message">Единовременная загрузка позволяет %s создавать резюме страниц, которые в дальнейшем будут контролироваться вами.</string>
   <!-- Button text for the consent to download an on-device model approving download consent -->
-  <string name="mozac_summarize_download_consent_button_positive">Загрузить, чтобы резюмировать</string>
+  <string name="mozac_summarize_download_consent_button_positive">Скачать, чтобы резюмировать</string>
   <!-- Button text for the consent to download an on-device model denying download consent -->
   <string name="mozac_summarize_download_consent_button_negative">Отмена</string>
   <!-- Title for the download in progress screen -->

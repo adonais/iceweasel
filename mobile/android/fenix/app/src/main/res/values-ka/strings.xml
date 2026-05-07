@@ -1129,6 +1129,8 @@
   <string name="customize_wallpapers">ფონები</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">დამკვეთის მალსახმობები</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">მსოფლიო თასი</string>
   <!--
     Wallpapers
 
@@ -1791,6 +1793,14 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">ჯგუფის წაშლა</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">გაუქმება</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">დაიხუროს ჩანართი და წაიშალოს ჯგუფი?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">შედეგად ჯგუფი სამუდამოდ წაიშლება.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">ჯგუფის წაშლა</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">გაუქმება</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -2201,6 +2211,10 @@
   <string name="bookmark_sort_menu_a_to_z">დალაგება ანბანურად</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">დალაგება უკუანბანურად</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">ფაილიდან გადმოტანა</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">სანიშნების გადმოტანა ვერ მოხერხდა. სცადეთ ხელახლა.</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2259,8 +2273,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">საქაღალდის დახურვა: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">სანიშნების დახურვა</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">ფაილიდან გადმოტანა</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">სანიშნები არაა</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">შეინახეთ ყველა თქვენი რჩეული სანიშნი ერთად</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">სანიშნები საქაღალდეში: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -2723,6 +2741,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">დაცული ხართ</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">დახმარება მეთვალყურეთა დაჭერაში</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">საშუალო (ნაგულისხმევი)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -3184,6 +3204,18 @@
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN მოქმედია.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">დაიწყეთ</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">გამოცადეთ %s ჩაშენებული VPN-ით</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$s მდებარეობის დამალვით, საჯარო WiFi-ქსელებშიც კი. მიიღეთ %2$d ᲒᲑ უფასოდ ყოველთვიურად.</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">გვერდების მონახულება კიდევ უფრო დაცულად</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">ახლა არა</string>
   <!--
     Autofill
 
@@ -4421,7 +4453,7 @@
 
     Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
   -->
-  <string name="sports_widget_country_selector_title">თვალი მიადევნეთ თქვენს გუნდს</string>
+  <string name="sports_widget_country_selector_title">მიჰყევით თქვენს გუნდს</string>
   <!-- Section header for the North America region in the sports widget country selector. -->
   <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">ჩრდილო ამერიკა</string>
   <!-- Section header for the Africa confederation group in the sports widget country selector. -->
@@ -4444,6 +4476,10 @@
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">ᲞᲘᲠᲓ.</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026 მსოფლიოს გამარჯვებულები</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">მეორეადგილოსანი</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">მესამე ადგილი</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
   <string name="sports_widget_round_of_32">1/32-ფინალი</string>
   <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
@@ -4457,9 +4493,9 @@
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">ბრინჯაოსთვის</string>
   <!-- Sports widget error card message shown when match data fails to load. -->
-  <string name="sports_widget_error_load_failed">შესაბამისი მონაცემები ამჟამად მიუწვდომელია. სცადეთ გაახლება რამდენიმე წუთში.</string>
+  <string name="sports_widget_error_load_failed">შეხვედრის მონაცემები ამჟამად მიუწვდომელია. სცადეთ გაახლება რამდენიმე წუთში.</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
-  <string name="sports_widget_error_connection_interrupted">კავშირი გაწყვეტილია — პირდაპირი განახლებები შეჩერებულია.</string>
+  <string name="sports_widget_error_connection_interrupted">კავშირი გაწყვეტილია — მიმდინარე განახლებები შეჩერებულია.</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">გაახლება</string>
   <!-- Sports widget group stage label for group A in the soccer tournament. -->
@@ -4492,6 +4528,12 @@
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">შეხვედრის შესახებ ვრცლად</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">მსგავსი შეხვედრები</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">მოახლოებული</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(დასრულებული)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">დასრულებული</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4501,7 +4543,7 @@
   -->
   <string name="sports_widget_card_title" tools:ignore="UnusedResources">თვალი ადევნეთ მსოფლიო თასს</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
-  <string name="sports_widget_card_description" tools:ignore="UnusedResources">შეხვედრების სიახლეები პირდაპირ ეთერში და ა.შ.</string>
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">იხილეთ მიმდინარე შეხვედრების სიახლეები და სხვ.</string>
   <!-- Sports widget menu item to change the selected team. -->
   <string name="sports_widget_change_team" tools:ignore="UnusedResources">გუნდის შეცვლა</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
@@ -4514,6 +4556,12 @@
   <string name="sports_widget_choose_another_team">აირჩიეთ სხვა გუნდი მსოფლიო თასზე თვალის მისადევნებლად.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">სხვა გუნდის მიდევნება</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">დროის ათვლა მსოფლიო თასამდე</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">განრიგის ნახვა</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">გამოტოვება</string>
   <!-- Sports widget match status label shown during halftime of a match. -->
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">შესვენება</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
@@ -4538,6 +4586,49 @@
     Your translation will be automatically truncated at 2 characters to avoid layout issues
   -->
   <string name="sports_widget_countdown_minutes">თვ</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">გუნდის ასარჩევის დახურვა</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description">დახურვა</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">სხვა პარამეტრები</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description">დარჩენილი დრო. დღე: %1$d. საათი: %2$d. წუთი: %3$d.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">გადასვლა მსოფლიო თასის საიტზე</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">მოახლოებული: %1$s და %2$s, %3$s, %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, მიმდინარე თამაში</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, მიმდინარე</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, გვერდი %2$d, სულ %3$d</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">მსოფლიო თასის საბოლოო შედეგები, გვერდი %1$d, სულ %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">მსოფლიო თასის მოცილება საწყისი გვერდიდან</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

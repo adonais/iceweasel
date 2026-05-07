@@ -1140,7 +1140,7 @@
   <!-- Snackbar message for when wallpaper couldn't be downloaded -->
   <string name="wallpaper_download_error_snackbar_message">Nem sikerült letölteni a háttérképet</string>
   <!-- Snackbar label for action to retry downloading the wallpaper -->
-  <string name="wallpaper_download_error_snackbar_action">Próbálja újra</string>
+  <string name="wallpaper_download_error_snackbar_action">Újrapróbálkozás</string>
   <!-- Snackbar message for when wallpaper couldn't be selected because of the disk error -->
   <string name="wallpaper_select_error_snackbar_message">Nem sikerült megváltoztatni a háttérképet</string>
   <!-- Text displayed that links to website containing documentation about the "Limited Edition" wallpapers. -->
@@ -3688,7 +3688,7 @@
   <!-- Button text on the translations dialog to begin a translation of the website. -->
   <string name="translations_bottom_sheet_positive_button">Fordítás</string>
   <!-- Button text on the translations dialog when a translation error appears. -->
-  <string name="translations_bottom_sheet_positive_button_error">Próbálja újra</string>
+  <string name="translations_bottom_sheet_positive_button_error">Újrapróbálkozás</string>
   <!-- Inactive button text on the translations dialog that indicates a translation is currently in progress. This button will be accompanied by a loading icon. -->
   <string name="translations_bottom_sheet_translating_in_progress">Fordítás</string>
   <!-- Button content description (not visible, for screen readers etc.) for the translations dialog translate button that indicates a translation is currently in progress. -->

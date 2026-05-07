@@ -1794,7 +1794,7 @@
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Cancelar</string>
   <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
-  <string name="close_tab_and_delete_group_confirmation_dialog_title">¿Cerrar pestaña y eliminar grupo?</string>
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">¿Cerrar pestaña y borrar grupo?</string>
   <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
   <string name="close_tab_and_delete_group_confirmation_dialog_body">Esto borrará el grupo permanentemente.</string>
   <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
@@ -4533,7 +4533,7 @@
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_suffix">(Partido terminado)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
-  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Tiempo completo</string>
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Partido terminado</string>
   <!--
     Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
     meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
@@ -4598,7 +4598,7 @@
   -->
   <string name="sports_widget_countdown_remaining_content_description">Tiempo restante. Días: %1$d. Horas: %2$d. Minutos: %3$d.</string>
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
-  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Ir al sitio de la Copa Mundial</string>
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Ir al sitio de la Copa Del Mundo</string>
   <!--
     Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
     %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
@@ -4609,7 +4609,7 @@
     %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
     or Final represented by sports_widget_final).
   -->
-  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, juego en vivo</string>
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, partido en vivo</string>
   <!--
     Content description (for accessibility, not displayed) announcing a live score.
     %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
@@ -4628,7 +4628,7 @@
   -->
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Resultados finales de la Copa del Mundo, página %1$d de %2$d</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
-  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Eliminar la Copa del Mundo de inicio</string>
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Eliminar la Copa del Mundo del inicio</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

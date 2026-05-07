@@ -46,7 +46,7 @@
   <!-- Generic fallback message for the download error screen -->
   <string name="mozac_summarize_download_error_fallback_message">Ismeretlen hiba</string>
   <!-- Button for the download error screen to try again -->
-  <string name="mozac_summarize_download_error_positive_button">Próbálja újra</string>
+  <string name="mozac_summarize_download_error_positive_button">Újrapróbálkozás</string>
   <!-- Button for the download error screen to cancel -->
   <string name="mozac_summarize_download_error_negative_button">Mégse</string>
   <!-- Title for the error screen when page is too long to summarize -->

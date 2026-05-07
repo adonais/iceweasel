@@ -4504,6 +4504,10 @@
   <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">اسكتلندا</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">أزِل</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description">أغلق</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">خيارات إضافية</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

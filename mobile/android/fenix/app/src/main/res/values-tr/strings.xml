@@ -1792,7 +1792,15 @@
   <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_confirm">Grubu sil</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
-  <string name="delete_tab_group_confirmation_dialog_cancel">Vazgeç</string>
+  <string name="delete_tab_group_confirmation_dialog_cancel">İptal</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Sekme kapatılıp grup silinsin mi?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">Bu işlem bu grubu kalıcı olarak siler.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Grubu sil</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">İptal</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -1936,7 +1944,7 @@
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
   <string name="download_delete_dialog_from_history">Yalnızca indirme geçmişinden sil</string>
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
-  <string name="download_delete_dialog_cancel">Vazgeç</string>
+  <string name="download_delete_dialog_cancel">İptal</string>
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
   <string name="download_delete_dialog_confirm">Onayla</string>
   <!-- Title for the alert dialog confirmation before renaming a download item. -->
@@ -3196,6 +3204,10 @@
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN etkin.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Başla</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Ekstra korumayla gezinin</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Şimdi değil</string>
   <!--
     Autofill
 

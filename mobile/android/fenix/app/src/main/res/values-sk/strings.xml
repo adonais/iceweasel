@@ -1805,6 +1805,14 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Odstrániť skupinu</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Zrušiť</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Zatvoriť kartu a odstrániť skupinu?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">Týmto sa skupina natrvalo odstráni.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Odstrániť skupinu</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Zrušiť</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -2749,6 +2757,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Ste chránení</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Pomôžte chytiť sledovačov</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Štandardná (predvolená)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -3210,6 +3220,18 @@
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN je aktívna.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Poďme na to</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">Vyskúšajte VPN vstavanú priamo vo %se</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$s skrytím svojej polohy, a to aj na verejnej Wi‑Fi sieti. Získajte %2$d\u00a0GB zadarmo každý mesiac.</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Prehliadajte s extra ochranou</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Teraz nie</string>
   <!--
     Autofill
 
