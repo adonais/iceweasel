@@ -446,6 +446,13 @@ nsIntPoint MouseEvent::GetMovementPoint() const {
     return nsIntPoint(0, 0);
   }
 
+  // If the platform supplied raw delta information, use it instead of
+  // calculating from mRefPoint/mLastRefPoint.
+  if (WidgetMouseEvent* mouseEvent = mEvent->AsMouseEvent();
+      mouseEvent && mouseEvent->mMovement) {
+    return nsIntPoint(mouseEvent->mMovement->x, mouseEvent->mMovement->y);
+  }
+
   // Calculate the delta between the last screen point and the current one.
   nsIntPoint current = DevPixelsToCSSPixels(mEvent->mRefPoint, mPresContext);
   nsIntPoint last = DevPixelsToCSSPixels(mEvent->mLastRefPoint, mPresContext);

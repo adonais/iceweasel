@@ -4020,6 +4020,14 @@
   value: true
   mirror: always
 
+#if defined(MOZ_WIDGET_COCOA)
+# Whether to use the platform API to "lock" the native pointer for pointer lock.
+- name: dom.pointer-lock.native-lock.enabled
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+#endif
+
 # re-SAB: Whether to allow postMessage of a SharedArrayBuffer if various
 # preconditions related to COOP and COEP are met
 - name: dom.postMessage.sharedArrayBuffer.withCOOP_COEP

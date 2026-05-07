@@ -499,6 +499,26 @@ nsresult nsCocoaWindow::SynthesizeNativeMouseEvent(
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
+nsresult nsCocoaWindow::SynthesizeNativeMouseMove(
+    LayoutDeviceIntPoint aPoint, nsISynthesizedEventCallback* aCallback) {
+  if (IsNativePointerLocked()) {
+    AutoSynthesizedEventCallbackNotifier notifier(aCallback);
+    sNativeLockedPoint = aPoint - WidgetToScreenOffset();
+
+    WidgetMouseEvent event(true, eMouseMove, this, WidgetMouseEvent::eReal);
+    event.mRefPoint = sNativeLockedPoint;
+    event.mTimeStamp = nsCocoaUtils::GetEventTimeStamp(0);
+    event.mMovement = Some(LayoutDeviceIntPoint(0, 0));
+    DispatchInputEvent(&event);
+
+    return NS_OK;
+  }
+
+  return SynthesizeNativeMouseEvent(
+      aPoint, NativeMouseMessage::Move, mozilla::MouseButton::eNotPressed,
+      nsIWidget::Modifiers::NO_MODIFIERS, aCallback);
+}
+
 nsresult nsCocoaWindow::SynthesizeNativeMouseScrollEvent(
     mozilla::LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage,
     double aDeltaX, double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
@@ -2862,7 +2882,26 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
   NSPoint locationInWindow =
       nsCocoaUtils::EventLocationForWindow(aMouseEvent, [self window]);
 
-  outGeckoEvent->mRefPoint = [self convertWindowCoordinates:locationInWindow];
+  // If the pointer is locked, we need to track the reference point ourselves,
+  // because EventStateManager uses the mouse event's mRefPoint to determine
+  // whether the pointer needs to be re-centered.
+  if (nsCocoaWindow::IsNativePointerLocked()) {
+    outGeckoEvent->mRefPoint = nsCocoaWindow::GetNativeLockedPoint();
+    WidgetMouseEvent* widgetMouseEvent = outGeckoEvent->AsMouseEvent();
+    if (widgetMouseEvent && widgetMouseEvent->mMessage == eMouseMove) {
+      int32_t movementX = int32_t(aMouseEvent.deltaX);
+      int32_t movementY = int32_t(aMouseEvent.deltaY);
+      if (movementX == 0 && movementY == 0) {
+        // Ignore the the mouse move event with zero movement, since they
+        // don't cause any movement of the pointer.
+        return;
+      }
+      widgetMouseEvent->mMovement =
+          Some(LayoutDeviceIntPoint(movementX, movementY));
+    }
+  } else {
+    outGeckoEvent->mRefPoint = [self convertWindowCoordinates:locationInWindow];
+  }
 
   WidgetMouseEventBase* mouseEvent = outGeckoEvent->AsMouseEventBase();
   mouseEvent->mButtons = 0;
@@ -7205,6 +7244,52 @@ void nsCocoaWindow::CocoaWindowDidResize() {
   // Resizing might have changed our zoom state.
   DispatchSizeModeEvent();
   ReportSizeEvent();
+}
+
+void nsCocoaWindow::LockNativePointer() {
+  if (!StaticPrefs::dom_pointer_lock_native_lock_enabled()) {
+    return;
+  }
+
+  if (sIsNativePointerLocked) {
+    // XXX Maybe we should avoid calling LockNativePointer() again when the
+    // content changes the pointer lock element while the pointer is already
+    // locked.
+    return;
+  }
+
+  sIsNativePointerLocked = true;
+  CGAssociateMouseAndMouseCursorPosition(false);
+}
+
+void nsCocoaWindow::UnlockNativePointer() {
+  if (!StaticPrefs::dom_pointer_lock_native_lock_enabled()) {
+    return;
+  }
+
+  if (NS_WARN_IF(!sIsNativePointerLocked)) {
+    return;
+  }
+
+  sIsNativePointerLocked = false;
+  CGAssociateMouseAndMouseCursorPosition(true);
+  sNativeLockedPoint = LayoutDeviceIntPoint(0, 0);
+}
+
+/* static */ bool nsCocoaWindow::sIsNativePointerLocked = false;
+/* static */ LayoutDeviceIntPoint nsCocoaWindow::sNativeLockedPoint;
+
+/* static */
+bool nsCocoaWindow::IsNativePointerLocked() {
+  MOZ_ASSERT_IF(sIsNativePointerLocked,
+                StaticPrefs::dom_pointer_lock_native_lock_enabled());
+  return sIsNativePointerLocked;
+}
+
+/* static */
+LayoutDeviceIntPoint nsCocoaWindow::GetNativeLockedPoint() {
+  MOZ_ASSERT(IsNativePointerLocked());
+  return sNativeLockedPoint;
 }
 
 - (void)windowDidResize:(NSNotification*)aNotification {

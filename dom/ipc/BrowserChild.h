@@ -293,10 +293,10 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   mozilla::ipc::IPCResult RecvNormalPriorityRealMouseMoveEvent(
       const mozilla::WidgetMouseEvent& aEvent, const ScrollableLayerGuid& aGuid,
       const uint64_t& aInputBlockId);
-  mozilla::ipc::IPCResult RecvRealMouseMoveEventForTests(
+  mozilla::ipc::IPCResult RecvRealMouseMoveEventNoCompress(
       const mozilla::WidgetMouseEvent& aEvent, const ScrollableLayerGuid& aGuid,
       const uint64_t& aInputBlockId);
-  mozilla::ipc::IPCResult RecvNormalPriorityRealMouseMoveEventForTests(
+  mozilla::ipc::IPCResult RecvNormalPriorityRealMouseMoveEventNoCompress(
       const mozilla::WidgetMouseEvent& aEvent, const ScrollableLayerGuid& aGuid,
       const uint64_t& aInputBlockId);
 
