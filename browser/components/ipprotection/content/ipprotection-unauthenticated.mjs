@@ -28,6 +28,20 @@ export default class IPProtectionUnauthenticatedContentElement extends MozLitEle
     );
   }
 
+  handleTosClick(event) {
+    event.preventDefault();
+    if (
+      event.target.id === "vpn-terms-of-service" ||
+      event.target.id === "vpn-privacy-notice"
+    ) {
+      const win = event.target.ownerGlobal;
+      win.openWebLinkIn(event.target.href, "tab");
+      this.dispatchEvent(
+        new CustomEvent("IPProtection:Close", { bubbles: true, composed: true })
+      );
+    }
+  }
+
   handleLearnMoreClick(event) {
     event.preventDefault();
     if (event.target.classList.contains("learn-more-vpn")) {
@@ -48,7 +62,7 @@ export default class IPProtectionUnauthenticatedContentElement extends MozLitEle
       <div id="unauthenticated-vpn-content">
         <img
           id="unauthenticated-vpn-img"
-          src="chrome://browser/content/ipprotection/assets/vpn-panel-get-started-light.svg"
+          src="chrome://browser/content/ipprotection/assets/ipprotection-unauthenticated.svg"
           alt=""
         />
         <h2
@@ -58,8 +72,10 @@ export default class IPProtectionUnauthenticatedContentElement extends MozLitEle
         ></h2>
         <ul id="unauthenticated-vpn-message" class="vpn-description">
           <li
-            data-l10n-id="unauthenticated-hide-location-message-3"
+            id="unauthenticated-private-location"
+            data-l10n-id="unauthenticated-private-location-message"
             @click=${this.handleLearnMoreClick}
+            class="with-icon"
           >
             <a
               class="learn-more-vpn"
@@ -70,8 +86,15 @@ export default class IPProtectionUnauthenticatedContentElement extends MozLitEle
             ></a>
           </li>
           <li
+            id="unauthenticated-choose-location"
+            data-l10n-id="unauthenticated-choose-location-message"
+            class="with-icon"
+          ></li>
+          <li
+            id="unauthenticated-bandwidth-limit"
             data-l10n-id="unauthenticated-bandwidth-limit-message"
             data-l10n-args=${JSON.stringify({ maxUsage: BANDWIDTH.MAX_IN_GB })}
+            class="with-icon"
           ></li>
         </ul>
         <moz-button
@@ -81,6 +104,22 @@ export default class IPProtectionUnauthenticatedContentElement extends MozLitEle
           type="primary"
           @click=${this.handleOptIn}
         ></moz-button>
+        <span
+          id="unauthenticated-footer"
+          data-l10n-id="unauthenticated-terms-of-service-privacy-notice"
+          @click=${this.handleTosClick}
+        >
+          <a
+            id="vpn-terms-of-service"
+            href=${LINKS.TERMS_OF_SERVICE_URL}
+            data-l10n-name="vpn-terms-of-service"
+          ></a>
+          <a
+            id="vpn-privacy-notice"
+            href=${LINKS.PRIVACY_NOTICE_URL}
+            data-l10n-name="vpn-privacy-notice"
+          ></a>
+        </span>
       </div>
     `;
   }

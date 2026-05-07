@@ -240,6 +240,94 @@ add_task(async function test_learn_more_vpn_link() {
 });
 
 /**
+ * Tests that clicking the terms of service link opens the correct URL in a new
+ * tab and closes the panel.
+ */
+add_task(async function test_terms_of_service_link() {
+  setupService({
+    isSignedIn: false,
+    isEnrolledAndEntitled: false,
+  });
+
+  let content = await openPanel({ unauthenticated: true });
+  let unauthenticatedContent = content.unauthenticatedEl;
+
+  let tosLink = unauthenticatedContent.shadowRoot.querySelector(
+    "#vpn-terms-of-service"
+  );
+
+  Assert.ok(tosLink, "Terms of service link should be present");
+
+  let openWebLinkInStub = sinon.stub(window, "openWebLinkIn");
+
+  let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
+  tosLink.click();
+  await panelHiddenPromise;
+
+  Assert.ok(
+    openWebLinkInStub.calledOnce,
+    "openWebLinkIn should be called once"
+  );
+  Assert.equal(
+    openWebLinkInStub.firstCall.args[0],
+    LINKS.TERMS_OF_SERVICE_URL,
+    "openWebLinkIn should be called with the terms of service URL"
+  );
+  Assert.equal(
+    openWebLinkInStub.firstCall.args[1],
+    "tab",
+    "openWebLinkIn should open in a tab"
+  );
+
+  openWebLinkInStub.restore();
+  cleanupService();
+});
+
+/**
+ * Tests that clicking the privacy notice link opens the correct URL in a new
+ * tab and closes the panel.
+ */
+add_task(async function test_privacy_notice_link() {
+  setupService({
+    isSignedIn: false,
+    isEnrolledAndEntitled: false,
+  });
+
+  let content = await openPanel({ unauthenticated: true });
+  let unauthenticatedContent = content.unauthenticatedEl;
+
+  let privacyLink = unauthenticatedContent.shadowRoot.querySelector(
+    "#vpn-privacy-notice"
+  );
+
+  Assert.ok(privacyLink, "Privacy notice link should be present");
+
+  let openWebLinkInStub = sinon.stub(window, "openWebLinkIn");
+
+  let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
+  privacyLink.click();
+  await panelHiddenPromise;
+
+  Assert.ok(
+    openWebLinkInStub.calledOnce,
+    "openWebLinkIn should be called once"
+  );
+  Assert.equal(
+    openWebLinkInStub.firstCall.args[0],
+    LINKS.PRIVACY_NOTICE_URL,
+    "openWebLinkIn should be called with the privacy notice URL"
+  );
+  Assert.equal(
+    openWebLinkInStub.firstCall.args[1],
+    "tab",
+    "openWebLinkIn should open in a tab"
+  );
+
+  openWebLinkInStub.restore();
+  cleanupService();
+});
+
+/**
  * Tests that clicking "get started" still calls fxaSignInFlow when signed in.
  */
 add_task(async function test_panel_get_started_signed_in() {

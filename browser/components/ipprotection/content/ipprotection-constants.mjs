@@ -26,6 +26,18 @@ export const LINKS = Object.freeze({
   },
 
   SUPPORT_SLUG: "built-in-vpn",
+
+  get TERMS_OF_SERVICE_URL() {
+    return Services.urlFormatter.formatURL(
+      "https://www.mozilla.org/%LOCALE%/about/legal/terms/firefox/"
+    );
+  },
+
+  get PRIVACY_NOTICE_URL() {
+    return Services.urlFormatter.formatURL(
+      "https://www.mozilla.org/%LOCALE%/privacy/firefox/#notice"
+    );
+  },
 });
 
 export const SIGNIN_DATA = Object.freeze({

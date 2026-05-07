@@ -52,19 +52,34 @@ hr {
   /* Intentionally using a larger font size for clearer visual hierarchy
 /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   font-size: 1.23em;
-  color: var(--text-color-deemphasized);
-}
 
-.vpn-description ul {
-  padding-inline-start: var(--space-xxlarge);
-}
+  ul {
+    padding-inline-start: var(--space-large);
+  }
 
-.vpn-description li {
-  padding-block-start: var(--space-xsmall);
-}
+  li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-small);
+    padding-block-start: var(--space-medium);
 
-.vpn-description li:last-of-type {
-  padding-block-end: var(--space-small);
+    &:last-of-type {
+      padding-block-end: var(--space-xlarge);
+    }
+
+    &.with-icon::before {
+      content: "";
+      display: inline-block;
+      width: var(--icon-size-small);
+      height: var(--icon-size-small);
+      flex-shrink: 0;
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      -moz-context-properties: fill;
+      fill: currentColor;
+    }
+  }
 }
 
 .vpn-button {
@@ -73,6 +88,12 @@ hr {
   font-size: 1.2em;
   display: block;
   padding-top: var(--space-medium);
+}
+
+#unauthenticated-vpn-title {
+  /* Intentionally using a larger font size for clearer visual hierarchy
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+  font-size: 1.9em;
 }
 
 #unauthenticated-vpn-content {
@@ -84,19 +105,49 @@ hr {
   padding-inline-end: var(--space-large);
 }
 
+#unauthenticated-vpn-img {
+  width: max-content;
+  align-self: center;
+  margin-block-start: var(--space-large);
+  margin-block-end: var(--space-large);
+}
+
 #unauthenticated-vpn-message {
   margin: 0;
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+#upgrade-vpn-description {
+  color: var(--text-color-deemphasized);
+}
+
+#unauthenticated-private-location::before {
+  background-image: url("chrome://browser/skin/notification-icons/geo.svg");
+}
+
+#unauthenticated-choose-location::before {
+  background-image: url("chrome://global/skin/icons/defaultFavicon.svg");
+}
+
+#unauthenticated-bandwidth-limit::before {
+  background-image: url("chrome://browser/skin/gift.svg");
+}
+
+#unauthenticated-get-started {
+  --button-padding: var(--space-medium);
+  width: 100%;
+}
+
+#unauthenticated-footer {
+  margin-block-start: var(--space-medium);
+  margin-block-end: var(--space-medium);
+  color: var(--text-color-deemphasized);
 }
 
 ipprotection-message-bar.vpn-top-content {
   margin-block-start: 0;
   margin-block-end: var(--space-small);
-}
-
-@media (prefers-color-scheme: dark) {
-  #unauthenticated-vpn-img {
-    content: url("chrome://browser/content/ipprotection/assets/vpn-panel-get-started-dark.svg");
-  }
 }
 
 #enrolling-container {
