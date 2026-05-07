@@ -12,7 +12,9 @@ import mozilla.components.concept.integrity.IntegrityClient
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.LoginsStorage
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.ClientUUID
+import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.debugsettings.addons.ui.AddonsDebugToolsScreen
 import org.mozilla.fenix.debugsettings.addresses.AddressesDebugRegionRepository
 import org.mozilla.fenix.debugsettings.addresses.AddressesTools
@@ -95,6 +97,10 @@ enum class DebugDrawerRoute(
         route = "tab_group_tools",
         title = R.string.debug_drawer_tab_group_tools_title,
     ),
+    SportsWidgetTool(
+        route = "sports_widget_tool",
+        title = R.string.debug_drawer_sports_widget_tool_title,
+    ),
     ;
 
     companion object {
@@ -102,6 +108,7 @@ enum class DebugDrawerRoute(
          * Transforms the values of [DebugDrawerRoute] into a list of [DebugDrawerDestination]s.
          *
          * @param debugDrawerStore [DebugDrawerStore] used to dispatch navigation actions.
+         * @param appStore [AppStore] used to dispatch [AppAction] actions.
          * @param browserStore [BrowserStore] used to access [BrowserState].
          * @param cfrToolsStore [CfrToolsStore] used to access [CfrToolsState].
          * @param gleanDebugToolsStore [GleanDebugToolsStore] used to dispatch glean debug tools actions.
@@ -116,6 +123,7 @@ enum class DebugDrawerRoute(
         @Suppress("LongParameterList", "LongMethod")
         fun generateDebugDrawerDestinations(
             debugDrawerStore: DebugDrawerStore,
+            appStore: AppStore,
             browserStore: BrowserStore,
             cfrToolsStore: CfrToolsStore,
             gleanDebugToolsStore: GleanDebugToolsStore,
@@ -257,6 +265,14 @@ enum class DebugDrawerRoute(
                                 browserStore = browserStore,
                             )
                         }
+                    }
+
+                    SportsWidgetTool -> {
+                        onClick = {
+                            appStore.dispatch(AppAction.SportsWidgetAction.DebugToolVisibilityChanged(visible = true))
+                            debugDrawerStore.dispatch(DebugDrawerAction.DrawerClosed)
+                        }
+                        content = {}
                     }
                 }
 

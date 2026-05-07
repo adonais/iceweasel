@@ -9,15 +9,11 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.AppStoreReducer
-import org.mozilla.fenix.home.sports.Match
-import org.mozilla.fenix.home.sports.MatchCard
-import org.mozilla.fenix.home.sports.MatchStatus
-import org.mozilla.fenix.home.sports.Team
 import org.mozilla.fenix.home.sports.TournamentRound
+import org.mozilla.fenix.home.sports.fake.FakeMatchCardScenario
 
 class SportsWidgetReducerTest {
 
@@ -261,7 +257,7 @@ class SportsWidgetReducerTest {
         val initialState = AppState(
             sportsWidgetState = SportsWidgetState(matchCardState = null),
         )
-        val matchCardState = sampleMatchCardState()
+        val matchCardState = FakeMatchCardScenario.Live.build()
 
         val finalState = AppStoreReducer.reduce(
             initialState,
@@ -274,7 +270,7 @@ class SportsWidgetReducerTest {
     @Test
     fun `GIVEN a matchCardState is set WHEN MatchCardStateUpdated is dispatched with null THEN matchCardState is cleared`() {
         val initialState = AppState(
-            sportsWidgetState = SportsWidgetState(matchCardState = sampleMatchCardState()),
+            sportsWidgetState = SportsWidgetState(matchCardState = FakeMatchCardScenario.Live.build()),
         )
 
         val finalState = AppStoreReducer.reduce(
@@ -287,8 +283,8 @@ class SportsWidgetReducerTest {
 
     @Test
     fun `GIVEN a matchCardState is set WHEN MatchCardStateUpdated is dispatched with a different card THEN matchCardState is replaced`() {
-        val original = sampleMatchCardState()
-        val replacement = sampleMatchCardState().copy(round = TournamentRound.QUARTER_FINAL)
+        val original = FakeMatchCardScenario.Live.build()
+        val replacement = FakeMatchCardScenario.Live.build().copy(round = TournamentRound.QUARTER_FINAL)
         val initialState = AppState(
             sportsWidgetState = SportsWidgetState(matchCardState = original),
         )
@@ -303,7 +299,7 @@ class SportsWidgetReducerTest {
 
     @Test
     fun `GIVEN unrelated fields are set WHEN MatchCardStateUpdated is dispatched THEN other fields are preserved`() {
-        val matchCardState = sampleMatchCardState()
+        val matchCardState = FakeMatchCardScenario.Live.build()
         val initialState = AppState(
             sportsWidgetState = SportsWidgetState(
                 countriesSelected = setOf("US"),
@@ -325,21 +321,45 @@ class SportsWidgetReducerTest {
         assertEquals(matchCardState, finalState.sportsWidgetState.matchCardState)
     }
 
-    private fun sampleMatchCardState(): MatchCard {
-        val home = Team(key = "USA", flagResId = R.drawable.flag_us)
-        val away = Team(key = "CAN", flagResId = R.drawable.flag_ca)
-
-        return MatchCard(
-            match = Match(
-                date = "2026-06-22T18:00:00Z",
-                home = home,
-                away = away,
-                homeScore = 1,
-                awayScore = 2,
-                matchStatus = MatchStatus.Live(period = "1", clock = "29"),
-            ),
-            round = TournamentRound.GROUP_STAGE,
-            relatedMatches = emptyList(),
+    @Test
+    fun `GIVEN isDebugToolVisible is false WHEN DebugToolVisibilityChanged is dispatched with true THEN isDebugToolVisible is true`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(isDebugToolVisible = false),
         )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.DebugToolVisibilityChanged(visible = true),
+        )
+
+        assertTrue(finalState.sportsWidgetState.isDebugToolVisible)
+    }
+
+    @Test
+    fun `GIVEN hasWorldCupStartedOverride is false WHEN WorldCupStartedUpdated is dispatched with true THEN hasWorldCupStarted is true`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(hasWorldCupStartedOverride = false),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.WorldCupStartedOverrideUpdated(hasWorldCupStartedOverride = true),
+        )
+
+        assertTrue(finalState.sportsWidgetState.hasWorldCupStarted)
+    }
+
+    @Test
+    fun `GIVEN hasSkippedFollowTeam is false WHEN SkipFollowTeamUpdated is dispatched with true THEN hasSkippedFollowTeam is true`() {
+        val initialState = AppState(
+            sportsWidgetState = SportsWidgetState(hasSkippedFollowTeam = false),
+        )
+
+        val finalState = AppStoreReducer.reduce(
+            initialState,
+            AppAction.SportsWidgetAction.SkipFollowTeamUpdated(hasSkippedFollowTeam = true),
+        )
+
+        assertTrue(finalState.sportsWidgetState.hasSkippedFollowTeam)
     }
 }

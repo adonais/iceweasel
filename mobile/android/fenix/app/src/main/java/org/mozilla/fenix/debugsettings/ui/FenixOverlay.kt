@@ -30,7 +30,9 @@ import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.LoginsStorage
 import mozilla.telemetry.glean.Glean
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.ClientUUID
+import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.debugsettings.addresses.AddressesDebugRegionRepository
 import org.mozilla.fenix.debugsettings.addresses.AddressesTools
 import org.mozilla.fenix.debugsettings.addresses.FakeAddressesDebugRegionRepository
@@ -81,6 +83,7 @@ fun FenixOverlay(
 
     FenixOverlay(
         browserStore = browserStore,
+        appStore = context.components.appStore,
         cfrToolsStore = CfrToolsStore(
             middlewares = listOf(
                 CfrToolsPreferencesMiddleware(
@@ -131,6 +134,7 @@ fun FenixOverlay(
 /**
  * Overlay for presenting Fenix-wide debugging content.
  *
+ * @param appStore [AppStore] used to dispatch [AppAction] actions.
  * @param browserStore [BrowserStore] used to access [BrowserState].
  * @param cfrToolsStore [CfrToolsStore] used to access [CfrToolsState].
  * @param gleanDebugToolsStore [GleanDebugToolsStore] used to access [GleanDebugToolsState].
@@ -145,6 +149,7 @@ fun FenixOverlay(
 @Suppress("LongParameterList")
 @Composable
 private fun FenixOverlay(
+    appStore: AppStore,
     browserStore: BrowserStore,
     cfrToolsStore: CfrToolsStore,
     gleanDebugToolsStore: GleanDebugToolsStore,
@@ -178,6 +183,7 @@ private fun FenixOverlay(
     val debugDrawerDestinations = remember {
         DebugDrawerRoute.generateDebugDrawerDestinations(
             debugDrawerStore = debugDrawerStore,
+            appStore = appStore,
             browserStore = browserStore,
             cfrToolsStore = cfrToolsStore,
             gleanDebugToolsStore = gleanDebugToolsStore,
@@ -254,6 +260,7 @@ private fun FenixOverlayPreview() {
         browserStore = BrowserStore(
             BrowserState(selectedTabId = selectedTab.id, tabs = listOf(selectedTab)),
         ),
+        appStore = org.mozilla.fenix.components.AppStore(),
         cfrToolsStore = CfrToolsStore(),
         gleanDebugToolsStore = GleanDebugToolsStore(
             initialState = GleanDebugToolsState(

@@ -23,6 +23,7 @@ import org.mozilla.fenix.browser.StandardSnackbarError
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
+import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
 import org.mozilla.fenix.components.appstate.webcompat.WebCompatState
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.home.bookmarks.Bookmark
@@ -857,5 +858,28 @@ sealed class AppAction : Action {
          * should be shown.
          */
         data class MatchCardStateUpdated(val matchCardState: MatchCard?) : SportsWidgetAction()
+
+        /**
+         * Dispatched when the sport widget's debug tool visibility changes.
+         *
+         * @property visible Whether the debug tool should be displayed.
+         */
+        data class DebugToolVisibilityChanged(val visible: Boolean) : SportsWidgetAction()
+
+        /**
+         * Dispatched when the user toggles the world cup started override setting in the sport widget's debug tool.
+         * This overrides [SportsWidgetState.hasWorldCupStarted] and should be used for debug only.
+         *
+         * @property hasWorldCupStartedOverride Whether the world cup has started.
+         */
+        data class WorldCupStartedOverrideUpdated(val hasWorldCupStartedOverride: Boolean) : SportsWidgetAction()
+
+        /**
+         * Dispatched when the user toggles the skip follow team setting in the sport widget's debug tool.
+         * This should be used for debug only.
+         *
+         * @property hasSkippedFollowTeam Whether the user skipped the "Follow your team" card.
+         */
+        data class SkipFollowTeamUpdated(val hasSkippedFollowTeam: Boolean) : SportsWidgetAction()
     }
 }

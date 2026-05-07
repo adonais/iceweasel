@@ -29,7 +29,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchStatus
 import org.mozilla.fenix.home.sports.Team
-import org.mozilla.fenix.home.sports.TournamentRound
+import org.mozilla.fenix.home.sports.fake.FakeMatchCardScenario
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.home.sports.MatchCard as MatchCardState
 
@@ -206,91 +206,9 @@ private data class MatchCardPreviewState(
 )
 
 private class MatchCardPreviewProvider : PreviewParameterProvider<MatchCardPreviewState> {
-    private val usa = Team(key = "USA", flagResId = R.drawable.flag_us, group = "Group D")
-    private val par = Team(key = "PAR", flagResId = R.drawable.flag_py, group = "Group D")
-    private val aus = Team(key = "AUS", flagResId = R.drawable.flag_au, group = "Group D")
-    private val tur = Team(key = "TUR", flagResId = R.drawable.flag_tr, group = "Group D")
-
-    private val relatedMatches = listOf(
-        Match(date = "2026-06-19T18:00:00Z", home = usa, away = aus),
-        Match(date = "2026-06-25T21:00:00Z", home = tur, away = usa),
-    )
-
-    override val values = sequenceOf(
-        MatchCardPreviewState(
-            label = "Live",
-            state = MatchCardState(
-                match = Match(
-                    date = "2026-06-22T18:00:00Z",
-                    home = usa,
-                    away = par,
-                    homeScore = 1,
-                    awayScore = 2,
-                    matchStatus = MatchStatus.Live(period = "1", clock = "29"),
-                ),
-                round = TournamentRound.GROUP_STAGE,
-                relatedMatches = relatedMatches,
-            ),
-        ),
-        MatchCardPreviewState(
-            label = "Scheduled",
-            state = MatchCardState(
-                match = Match(
-                    date = "2026-06-22T18:00:00Z",
-                    home = usa,
-                    away = par,
-                    matchStatus = MatchStatus.Scheduled,
-                ),
-                round = TournamentRound.GROUP_STAGE,
-                relatedMatches = relatedMatches,
-            ),
-        ),
-        MatchCardPreviewState(
-            label = "Penalties",
-            state = MatchCardState(
-                match = Match(
-                    date = "2026-07-15T20:00:00Z",
-                    home = usa,
-                    away = par,
-                    homeScore = 3,
-                    awayScore = 3,
-                    matchStatus = MatchStatus.Penalties(homeScore = 5, awayScore = 4),
-                ),
-                round = TournamentRound.SEMI_FINAL,
-                relatedMatches = emptyList(),
-            ),
-        ),
-        MatchCardPreviewState(
-            label = "Final",
-            state = MatchCardState(
-                match = Match(
-                    date = "2026-07-19T20:00:00Z",
-                    home = usa,
-                    away = par,
-                    homeScore = 2,
-                    awayScore = 1,
-                    matchStatus = MatchStatus.Final,
-                ),
-                round = TournamentRound.FINAL,
-                relatedMatches = emptyList(),
-            ),
-        ),
-        MatchCardPreviewState(
-            label = "Final after penalties",
-            state = MatchCardState(
-                match = Match(
-                    date = "2026-07-19T20:00:00Z",
-                    home = usa,
-                    away = par,
-                    homeScore = 3,
-                    awayScore = 3,
-                    matchStatus = MatchStatus.FinalAfterPenalties(homeScore = 5, awayScore = 4),
-                ),
-                round = TournamentRound.FINAL,
-                relatedMatches = emptyList(),
-            ),
-        ),
-    )
+    override val values = FakeMatchCardScenario.entries.asSequence().map { scenario ->
+        MatchCardPreviewState(label = scenario.label, state = scenario.build())
+    }
 }
 
 @PreviewLightDark

@@ -17,6 +17,9 @@ import org.mozilla.fenix.home.sports.hasWorldCupStarted
  * @property isCountdownWidgetVisible Whether the Homepage Countdown Widget feature is enabled.
  * @property matchCardState The [MatchCard] to render on the homepage, or null when no match
  * data is available.
+ * @property isDebugToolVisible Whether the debug tool for adjusting [SportsWidgetState]
+ * is currently displayed on the homepage.
+ * @property hasWorldCupStartedOverride Debug-only override for [hasWorldCupStarted].
  */
 data class SportsWidgetState(
     val countriesSelected: Set<String> = emptySet(),
@@ -25,6 +28,8 @@ data class SportsWidgetState(
     val isFeatureEnabled: Boolean = false,
     val isCountdownWidgetVisible: Boolean = true,
     val matchCardState: MatchCard? = null,
+    val isDebugToolVisible: Boolean = false,
+    val hasWorldCupStartedOverride: Boolean? = null,
 ) {
     /**
      * Whether the sports widget should be rendered on the homepage: true only when the feature
@@ -34,7 +39,7 @@ data class SportsWidgetState(
         get() = isFeatureEnabled && isVisible
 
     val hasWorldCupStarted: Boolean
-        get() = hasWorldCupStarted()
+        get() = hasWorldCupStartedOverride ?: hasWorldCupStarted()
 
     val isCountdownShown: Boolean
         get() = !hasWorldCupStarted && isCountdownWidgetVisible

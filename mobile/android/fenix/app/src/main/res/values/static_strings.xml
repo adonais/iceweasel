@@ -249,6 +249,11 @@
     <string name="profiler_service_notification_channel_name" translatable="false">App Profiling Status</string>
     <string name="profiler_service_description" translatable="false">App Profiling Status</string>
 
+    <!-- Debug drawer Homepage Sports Widget tool -->
+    <string name="debug_drawer_sports_widget_tool_title">Homepage Sports Widget Tool</string>
+    <string name="debug_drawer_sports_widget_tool_world_cup_started">World Cup has started</string>
+    <string name="debug_drawer_sports_widget_tool_skipped_follow_team">Skip follow your team</string>
+
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The description of the reset CFR section in CFR Tools -->
     <string name="debug_drawer_cfr_tools_reset_cfr_description">Toggle off a CFR to reset it. Toggle on a CFR to mark it as shown.</string>

@@ -41,5 +41,23 @@ internal object SportsWidgetReducer {
                 matchCardState = action.matchCardState,
             ),
         )
+
+        is SportsWidgetAction.DebugToolVisibilityChanged -> state.copy(
+            sportsWidgetState = state.sportsWidgetState.copy(
+                isDebugToolVisible = action.visible,
+            ),
+        )
+
+        is SportsWidgetAction.WorldCupStartedOverrideUpdated -> state.copy(
+            sportsWidgetState = state.sportsWidgetState.copy(
+                hasWorldCupStartedOverride = action.hasWorldCupStartedOverride,
+            ),
+        )
+
+        is SportsWidgetAction.SkipFollowTeamUpdated -> state.copy(
+            sportsWidgetState = state.sportsWidgetState.copy(
+                hasSkippedFollowTeam = action.hasSkippedFollowTeam,
+            ),
+        )
     }
 }

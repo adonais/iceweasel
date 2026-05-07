@@ -27,7 +27,7 @@ import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.sports.Match
 import org.mozilla.fenix.home.sports.MatchStatus
-import org.mozilla.fenix.home.sports.Team
+import org.mozilla.fenix.home.sports.fake.FakeSportsPreview
 import org.mozilla.fenix.theme.FirefoxTheme
 
 @Composable
@@ -126,50 +126,25 @@ private data class RelatedMatchesPreviewState(
 )
 
 private class RelatedMatchesPreviewProvider : PreviewParameterProvider<RelatedMatchesPreviewState> {
-    private val usa = Team(key = "USA", flagResId = R.drawable.flag_us)
-    private val aus = Team(key = "AUS", flagResId = R.drawable.flag_au)
-    private val tur = Team(key = "TUR", flagResId = R.drawable.flag_tr)
-    private val par = Team(key = "PAR", flagResId = R.drawable.flag_py)
-
     override val values = sequenceOf(
         RelatedMatchesPreviewState(
             labelResId = R.string.sports_widget_related_matches,
-            matches = listOf(
-                Match(
-                    date = "2026-06-19T18:00:00Z",
-                    home = usa,
-                    away = aus,
-                ),
-                Match(
-                    date = "2026-06-25T21:00:00Z",
-                    home = tur,
-                    away = usa,
-                ),
-            ),
+            matches = FakeSportsPreview.relatedMatches(),
         ),
         RelatedMatchesPreviewState(
             labelResId = null,
             matches = listOf(
-                Match(
-                    date = "2026-06-19T18:00:00Z",
-                    home = usa,
-                    away = par,
+                FakeSportsPreview.match(
                     homeScore = 1,
                     awayScore = 2,
                     matchStatus = MatchStatus.Live(period = "2", clock = "67"),
                 ),
-                Match(
-                    date = "2026-06-19T18:00:00Z",
-                    home = usa,
-                    away = par,
+                FakeSportsPreview.match(
                     homeScore = 1,
                     awayScore = 2,
                     matchStatus = MatchStatus.Final,
                 ),
-                Match(
-                    date = "2026-06-19T18:00:00Z",
-                    home = usa,
-                    away = par,
+                FakeSportsPreview.match(
                     homeScore = 1,
                     awayScore = 2,
                     matchStatus = MatchStatus.Final,
