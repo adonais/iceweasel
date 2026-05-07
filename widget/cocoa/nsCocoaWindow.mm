@@ -2889,15 +2889,10 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
     outGeckoEvent->mRefPoint = nsCocoaWindow::GetNativeLockedPoint();
     WidgetMouseEvent* widgetMouseEvent = outGeckoEvent->AsMouseEvent();
     if (widgetMouseEvent && widgetMouseEvent->mMessage == eMouseMove) {
-      int32_t movementX = int32_t(aMouseEvent.deltaX);
-      int32_t movementY = int32_t(aMouseEvent.deltaY);
-      if (movementX == 0 && movementY == 0) {
-        // Ignore the the mouse move event with zero movement, since they
-        // don't cause any movement of the pointer.
-        return;
-      }
-      widgetMouseEvent->mMovement =
-          Some(LayoutDeviceIntPoint(movementX, movementY));
+      // XXX maybe we would like to ignore the the mousemove event with zero
+      // movement, since they don't cause any chanage of the pointer?
+      widgetMouseEvent->mMovement = Some(LayoutDeviceIntPoint(
+          int32_t(aMouseEvent.deltaX), int32_t(aMouseEvent.deltaY)));
     }
   } else {
     outGeckoEvent->mRefPoint = [self convertWindowCoordinates:locationInWindow];
