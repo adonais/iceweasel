@@ -1950,10 +1950,27 @@ class Document : public nsINode,
 
   bool TopLayerContains(Element&) const;
 
+  // https://fullscreen.spec.whatwg.org/#fullscreen-element-ready-check
+  enum class ElementReadyCheckResult {
+    // error is false, in the Fullscreen API requestFullscreen algorithm
+    eOk,
+    // Shall not abort early during synchronous phase of requestFullscreen, but
+    // will during ApplyFullscreen.
+    // Not yet spec'ed.
+    eKeyboardLockOnly,
+    // Request was for an element that already is the fullscreenElement and the
+    // keyboard lock status is also the same
+    eSame,
+    // Element Ready check failed
+    eErrorPromiseRejected
+  };
+
   // Do the "fullscreen element ready check" from the fullscreen spec.
-  // It returns true if the given element is allowed to go into fullscreen.
-  // It is responsive to dispatch "fullscreenerror" event when necessary.
-  bool FullscreenElementReadyCheck(FullscreenRequest&);
+  // see https://fullscreen.spec.whatwg.org/#fullscreen-element-ready-check
+  // It returns ElementReadyCheckResult::eOk if the given element is allowed to
+  // go into fullscreen. It is responsive to dispatch "fullscreenerror" event
+  // when necessary.
+  ElementReadyCheckResult FullscreenElementReadyCheck(FullscreenRequest&);
 
   /**
    * When this is called on content process, this asynchronously requests that

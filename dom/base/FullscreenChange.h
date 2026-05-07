@@ -109,8 +109,16 @@ class FullscreenRequest : public FullscreenChange {
                                     aReason);
   }
 
+  void SetShouldDispatchKeyboardLockEvent(bool aValue) {
+    mDispatchKeyboardLockEvent = aValue;
+  }
+  bool ShouldDispatchKeyboardLockEvent() const {
+    return mDispatchKeyboardLockEvent;
+  }
+
  private:
   RefPtr<dom::Element> mElement;
+  bool mDispatchKeyboardLockEvent = false;
 
  public:
   // This value should be true if the fullscreen request is
