@@ -487,7 +487,7 @@ export class WeatherSuggestions extends SuggestProvider {
   async #fetchMerinoSuggestion(cityGeoname) {
     if (!this.#merino) {
       this.#merino = new lazy.MerinoClient(this.constructor.name, {
-        allowOhttp: true,
+        allowOhttp: false,
         cachePeriodMs: MERINO_WEATHER_CACHE_PERIOD_MS,
       });
     }
