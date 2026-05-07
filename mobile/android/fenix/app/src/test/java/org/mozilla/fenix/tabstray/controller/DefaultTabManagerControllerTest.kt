@@ -352,19 +352,6 @@ class DefaultTabManagerControllerTest {
     }
 
     @Test
-    fun `GIVEN already on browserFragment WHEN handleNavigateToBrowser is called THEN the manager is closed`() {
-        every { navController.currentDestination?.id } returns R.id.browserFragment
-
-        createController().handleNavigateToBrowser()
-
-        verify(exactly = 0) { navController.popBackStack() }
-        verify(exactly = 0) { navController.popBackStack(any<Int>(), any()) }
-        verify(exactly = 0) { navController.navigate(any<Int>()) }
-        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
-        verify(exactly = 0) { navController.navigate(any<NavDirections>(), any<NavOptions>()) }
-    }
-
-    @Test
     fun `GIVEN not already on browserFragment WHEN handleNavigateToBrowser is called THEN the manager is closed and popBackStack is executed`() {
         every { navController.currentDestination?.id } returns R.id.browserFragment + 1
         every { navController.popBackStack(R.id.browserFragment, false) } returns true
@@ -397,19 +384,6 @@ class DefaultTabManagerControllerTest {
 
         verify(exactly = 1) { navController.popBackStack(R.id.browserFragment, false) }
         verify(exactly = 0) { navController.navigate(R.id.browserFragment) }
-    }
-
-    @Test
-    fun `GIVEN the homepage is currently shown WHEN navigate to home is called THEN the manager is closed`() {
-        every { navController.currentDestination?.id } returns R.id.homeFragment
-
-        createController().handleNavigateToHome()
-
-        verify(exactly = 0) { navController.popBackStack() }
-        verify(exactly = 0) { navController.popBackStack(any<Int>(), any()) }
-        verify(exactly = 0) { navController.navigate(any<Int>()) }
-        verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
-        verify(exactly = 0) { navController.navigate(any<NavDirections>(), any<NavOptions>()) }
     }
 
     @Test

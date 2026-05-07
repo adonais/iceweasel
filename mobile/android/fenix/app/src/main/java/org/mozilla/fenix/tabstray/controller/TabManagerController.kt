@@ -324,17 +324,13 @@ class DefaultTabManagerController(
     }
 
     override fun handleNavigateToBrowser() {
-        if (navController.currentDestination?.id == R.id.browserFragment) {
-            return
-        } else if (!navController.popBackStack(R.id.browserFragment, false)) {
+        if (!navController.popBackStack(R.id.browserFragment, false)) {
             navController.navigate(R.id.browserFragment)
         }
     }
 
     override fun handleNavigateToHome() {
-        if (navController.currentDestination?.id == R.id.homeFragment) {
-            return
-        } else if (!navController.popBackStack(R.id.homeFragment, false)) {
+        if (!navController.popBackStack(R.id.homeFragment, false)) {
             navController.navigate(
                 TabManagementFragmentDirections.actionGlobalHome(),
             )

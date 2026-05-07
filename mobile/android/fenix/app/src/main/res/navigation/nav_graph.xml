@@ -205,7 +205,7 @@
         android:id="@+id/action_global_to_installedAddonDetailsFragment"
         app:destination="@id/installedAddonDetailsFragment" />
 
-    <dialog
+    <fragment
         android:id="@+id/tabManagementFragment"
         android:name="org.mozilla.fenix.tabstray.ui.TabManagementFragment">
         <argument
@@ -220,7 +220,7 @@
             android:name="accessPoint"
             android:defaultValue="None"
             app:argType="org.mozilla.fenix.tabstray.ui.AccessPoint" />
-    </dialog>
+    </fragment>
 
     <fragment
         android:id="@+id/startupFragment"
