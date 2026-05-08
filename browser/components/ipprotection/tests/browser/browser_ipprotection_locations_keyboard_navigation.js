@@ -14,7 +14,7 @@ const MOCK_LOCATIONS_LIST = [
  * Opens the IP Protection panel, then navigates to the locations subview.
  *
  * @param {object} state - Additional state to set on the panel.
- * @returns {Promise<{backButton: Element, headerButton: Element, firstListItem: Element, promoButton: Element|null, locationsView: Element}>}
+ * @returns {Promise<{backButton: Element, firstListItem: Element, promoButton: Element|null, locationsView: Element}>}
  */
 async function openLocationsSubview(state = {}) {
   await openPanel({
@@ -45,7 +45,6 @@ async function openLocationsSubview(state = {}) {
   await locationsList?.updateComplete;
 
   let backButton = locationsView.querySelector(".subviewbutton-back");
-  let headerButton = locationsView.querySelector(".panel-info-button");
   let firstListItem = locationsList?.querySelector(
     ".location-item:not([disabled])"
   );
@@ -53,7 +52,6 @@ async function openLocationsSubview(state = {}) {
 
   return {
     backButton,
-    headerButton,
     firstListItem,
     promoButton,
     locationsView,
@@ -65,21 +63,20 @@ async function openLocationsSubview(state = {}) {
  * ignoring list items.
  */
 add_task(async function test_locations_tab_nav_with_promo() {
-  let { backButton, headerButton, firstListItem, promoButton } =
-    await openLocationsSubview({ hasUpgraded: false });
+  let { backButton, firstListItem, promoButton } = await openLocationsSubview({
+    hasUpgraded: false,
+  });
 
   Assert.ok(promoButton, "promo button should be present when not upgraded");
 
   backButton.focus();
 
-  await expectFocusAfterKey("Tab", headerButton);
   await expectFocusAfterKey("Tab", firstListItem);
   await expectFocusAfterKey("Tab", promoButton);
   await expectFocusAfterKey("Tab", backButton);
 
   await expectFocusAfterKey("Shift+Tab", promoButton);
   await expectFocusAfterKey("Shift+Tab", firstListItem);
-  await expectFocusAfterKey("Shift+Tab", headerButton);
   await expectFocusAfterKey("Shift+Tab", backButton);
 
   await closePanel();
@@ -91,20 +88,19 @@ add_task(async function test_locations_tab_nav_with_promo() {
  * ignoring list items.
  */
 add_task(async function test_locations_tab_nav_without_promo() {
-  let { backButton, headerButton, firstListItem, promoButton } =
-    await openLocationsSubview({ hasUpgraded: true });
+  let { backButton, firstListItem, promoButton } = await openLocationsSubview({
+    hasUpgraded: true,
+  });
 
   Assert.ok(!promoButton, "promo button should not be present when upgraded");
 
   backButton.focus();
 
-  await expectFocusAfterKey("Tab", headerButton);
   await expectFocusAfterKey("Tab", firstListItem);
   await expectFocusAfterKey("Tab", backButton);
 
   // Shift+Tab reverses.
   await expectFocusAfterKey("Shift+Tab", firstListItem);
-  await expectFocusAfterKey("Shift+Tab", headerButton);
   await expectFocusAfterKey("Shift+Tab", backButton);
 
   await closePanel();
@@ -113,14 +109,12 @@ add_task(async function test_locations_tab_nav_without_promo() {
 
 /**
  * Tests that Tab from any list item skips directly to promo,
- * and Shift+Tab from any list item goes back to the help button.
+ * and Shift+Tab from any list item goes back to the back button.
  */
 add_task(async function test_locations_tab_exits_list_from_any_item() {
-  let { headerButton, locationsView, promoButton } = await openLocationsSubview(
-    {
-      hasUpgraded: false,
-    }
-  );
+  let { locationsView, promoButton } = await openLocationsSubview({
+    hasUpgraded: false,
+  });
 
   Assert.ok(promoButton, "promo button should be present");
 
@@ -135,9 +129,10 @@ add_task(async function test_locations_tab_exits_list_from_any_item() {
   listItems[1].focus();
   await expectFocusAfterKey("Tab", promoButton);
 
-  // Shift+Tab from a non-first list item should jump straight to info button.
+  // Shift+Tab from a non-first list item should jump straight to back button.
+  let backButton = locationsView.querySelector(".subviewbutton-back");
   listItems[1].focus();
-  await expectFocusAfterKey("Shift+Tab", headerButton);
+  await expectFocusAfterKey("Shift+Tab", backButton);
 
   await closePanel();
   cleanupService();
@@ -176,7 +171,7 @@ add_task(async function test_locations_arrow_keys_navigate_list() {
  * Tests that ArrowDown and ArrowUp do not move focus when on non-list elements.
  */
 add_task(async function test_locations_arrow_keys_ignored_outside_list() {
-  let { backButton, headerButton } = await openLocationsSubview();
+  let { backButton } = await openLocationsSubview();
 
   backButton.focus();
 
@@ -186,15 +181,6 @@ add_task(async function test_locations_arrow_keys_ignored_outside_list() {
     document.activeElement,
     backButton,
     "ArrowDown on back button should not move focus"
-  );
-
-  headerButton.focus();
-
-  EventUtils.synthesizeKey("KEY_ArrowDown", {});
-  Assert.equal(
-    document.activeElement,
-    headerButton,
-    "ArrowDown on help button should not move focus"
   );
 
   await closePanel();
