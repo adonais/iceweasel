@@ -24,11 +24,19 @@ add_task(async function test_app_menu_ai_feature_toggle_from_disabled() {
     { visible: false },
     "The app-menu translate button is hidden when the page loads with Translations feature disabled."
   );
+  await FullPageTranslationsTestUtils.assertMoreToolsTranslateItemVisibility(
+    { visible: false },
+    "The more-tools translate menu item is hidden when the page loads with the Translations feature disabled."
+  );
 
   await TranslationsParent.AIFeature.enable();
   await FullPageTranslationsTestUtils.assertAppMenuTranslateItemVisibility(
     { visible: true },
     "The app-menu translate button is visible when the Translations feature is enabled."
+  );
+  await FullPageTranslationsTestUtils.assertMoreToolsTranslateItemVisibility(
+    { visible: true },
+    "The more-tools translate menu item is visible when the Translations feature is enabled."
   );
 
   await FullPageTranslationsTestUtils.openPanel({
@@ -60,6 +68,10 @@ add_task(async function test_app_menu_ai_feature_toggle_from_disabled() {
     { visible: false },
     "The app-menu translate button is hidden after disabling the Translations feature."
   );
+  await FullPageTranslationsTestUtils.assertMoreToolsTranslateItemVisibility(
+    { visible: false },
+    "The more-tools translate menu item is hidden after disabling the Translations feature."
+  );
 
   await cleanup();
 });
@@ -85,6 +97,10 @@ add_task(async function test_app_menu_ai_feature_toggle_from_enabled() {
   await FullPageTranslationsTestUtils.assertAppMenuTranslateItemVisibility(
     { visible: true },
     "The app-menu translate button is visible when the Translations feature is enabled."
+  );
+  await FullPageTranslationsTestUtils.assertMoreToolsTranslateItemVisibility(
+    { visible: true },
+    "The more-tools translate menu item is visible when the Translations feature is enabled."
   );
 
   await FullPageTranslationsTestUtils.openPanel({
@@ -116,11 +132,19 @@ add_task(async function test_app_menu_ai_feature_toggle_from_enabled() {
     { visible: false },
     "The app-menu translate button is hidden when the Translations feature is disabled."
   );
+  await FullPageTranslationsTestUtils.assertMoreToolsTranslateItemVisibility(
+    { visible: false },
+    "The more-tools translate menu item is hidden when the Translations feature is disabled."
+  );
 
   await TranslationsParent.AIFeature.enable();
   await FullPageTranslationsTestUtils.assertAppMenuTranslateItemVisibility(
     { visible: true },
     "The app-menu translate button is visible after enabling the Translations feature."
+  );
+  await FullPageTranslationsTestUtils.assertMoreToolsTranslateItemVisibility(
+    { visible: true },
+    "The more-tools translate menu item is visible after enabling the Translations feature."
   );
 
   await FullPageTranslationsTestUtils.openPanel({
