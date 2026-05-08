@@ -17,6 +17,7 @@ from gecko_taskgraph.util.partners import (
     check_if_partners_enabled,
     generate_attribution_code,
     get_partner_config_by_kind,
+    locales_per_build_platform,
 )
 
 log = logging.getLogger(__name__)
@@ -44,7 +45,9 @@ def add_command_arguments(config, tasks):
         )
         for platform in partner_config["platforms"]:
             stage_platform = platform.replace("-shippable", "")
-            for locale in partner_config["locales"]:
+            for locale in locales_per_build_platform(
+                platform, partner_config["locales"]
+            ):
                 # find the upstream, throw away locales we don't have, somehow. Skip ?
                 if locale == "en-US":
                     upstream_label = "repackage-signing-{platform}/opt".format(
