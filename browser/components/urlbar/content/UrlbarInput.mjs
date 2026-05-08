@@ -476,6 +476,7 @@ ${
     // This listener handles clicks from our children too, included the search mode
     // indicator close button.
     this._inputContainer.addEventListener("click", this);
+    this._inputContainer.addEventListener("auxclick", this);
 
     // This is used to detect commands launched from the panel, to avoid
     // recording abandonment events when the command causes a blur event.
@@ -571,6 +572,7 @@ ${
     // This listener handles clicks from our children too, included the search mode
     // indicator close button.
     this._inputContainer.removeEventListener("click", this);
+    this._inputContainer.removeEventListener("auxclick", this);
 
     // This is used to detect commands launched from the panel, to avoid
     // recording abandonment events when the command causes a blur event.
@@ -5180,6 +5182,14 @@ ${
         this.select();
         break;
 
+      case this.goButton:
+        this.handleCommand(event);
+        break;
+    }
+  }
+
+  _on_auxclick(event) {
+    switch (event.target) {
       case this.goButton:
         this.handleCommand(event);
         break;
