@@ -370,17 +370,13 @@
   <!--
     AI Controls settings
 
-    Label for the secret settings preference to enable AI controls
-  -->
-  <string name="preferences_debug_settings_ai_controls">AI 제어 활성화</string>
-  <!--
-    AI Controls settings
-
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">AI 제어</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">%s에는 항상 선택권이 있습니다</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">여기에는 AI로 향상된 기능을 사용할지 여부가 포함됩니다. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">여기에는 AI로 향상된 기능을 사용할지 여부가 포함됩니다.</string>
   <!-- Link text for learning more about AI controls -->
@@ -2208,6 +2204,8 @@
   <string name="bookmark_import_menu_button">파일에서 가져오기</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">북마크를 가져올 수 없습니다. 다시 시도하세요.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">가져온 북마크</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -4621,6 +4619,10 @@
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">월드컵 최종 결과, %1$d / %2$d 페이지</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">홈에서 월드컵 제거</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">팔로잉: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">대회가 다가오면 경기 정보를 확인해 주세요.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

@@ -370,12 +370,6 @@
   <!--
     AI Controls settings
 
-    Label for the secret settings preference to enable AI controls
-  -->
-  <string name="preferences_debug_settings_ai_controls">Activează comenzile AI</string>
-  <!--
-    AI Controls settings
-
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">Comenzi AI</string>

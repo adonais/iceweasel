@@ -21,4 +21,10 @@
   <string name="mozac_compose_base_snackbar_dismiss_content_description">เพิกเฉยข้อความ</string>
   <!-- Content description for the close icon of a Banner -->
   <string name="mozac_compose_base_close_button_content_description">ปิด</string>
+  <!-- Title shown in the dialog that lists every clickable link inside a LinkText composable when the text contains more than one link. -->
+  <string name="mozac_compose_base_link_text_links_title">ลิงก์</string>
+  <!-- Announcement appended to the LinkText content description so screen readers know that interactive links are present in the text. -->
+  <string name="mozac_compose_base_link_text_links_available">ลิงค์ที่มีอยู่</string>
+  <!-- Label for the button that dismisses the LinkText links dialog without selecting a link. -->
+  <string name="mozac_compose_base_link_text_dismiss">ยกเลิก</string>
 </resources>

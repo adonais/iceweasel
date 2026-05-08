@@ -370,17 +370,13 @@
   <!--
     AI Controls settings
 
-    Label for the secret settings preference to enable AI controls
-  -->
-  <string name="preferences_debug_settings_ai_controls">Yapay zekâ kontrollerini etkinleştir</string>
-  <!--
-    AI Controls settings
-
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">Yapay zekâ kontrolleri</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">%s ile tercih daima sizin</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Yapay zekâ sayesinde çalışan özelliklerin kullanılması da dahildir. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">Yapay zekâ sayesinde çalışan özelliklerin kullanılması da dahildir.</string>
   <!-- Link text for learning more about AI controls -->
@@ -2215,6 +2211,8 @@
   <string name="bookmark_import_menu_button">Dosyadan içe aktar</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">Yer imleri içe aktarılamadı. Yeniden deneyin.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">İçe aktarılan yer imleri</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -3204,8 +3202,16 @@
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN etkin.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Başla</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">Yerleşik %s VPN’i deneyin</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">Halka açık Wi-Fi ağlarından bile konumunuzu gizleyerek %1$s. Her ay %2$d ücretsiz.</string>
   <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
-  <string name="ip_protection_onboarding_body_link">Ekstra korumayla gezinin</string>
+  <string name="ip_protection_onboarding_body_link">ekstra korumayla gezinin</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">Şimdi değil</string>
   <!--
@@ -4538,6 +4544,8 @@
   <string name="sports_widget_card_description" tools:ignore="UnusedResources">Canlı maç haberlerini ve daha fazlasını alın.</string>
   <!-- Sports widget menu item to change the selected team. -->
   <string name="sports_widget_change_team" tools:ignore="UnusedResources">Takım değiştir</string>
+  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
+  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Kişisel duvar kâğıdını indir</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Kaldır</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
@@ -4619,6 +4627,10 @@
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Dünya Kupası sonuçları, sayfa %1$d/%2$d</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Dünya Kupası’nı giriş sayfasından kaldır</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Takip ediliyor: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Turnuva yaklaşırken maç bilgileri için burayı tekrar kontrol edin.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

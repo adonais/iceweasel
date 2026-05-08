@@ -362,6 +362,24 @@
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">メッセージを閉じる</string>
   <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">ページ要約</string>
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
+  <string name="preferences_ai_controls">AI 制御</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">%s には常に選択肢があります</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">これには、AI で強化された機能を使用するかどうかも含まれます。%s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">これには、AI で強化された機能を使用するかどうかも含まれます。</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -1684,6 +1702,12 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">グループを削除</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">キャンセル</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">シアン</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">緑</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">灰色</string>
   <!--
     History
 

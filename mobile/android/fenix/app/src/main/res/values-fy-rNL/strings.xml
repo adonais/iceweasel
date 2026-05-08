@@ -370,17 +370,13 @@
   <!--
     AI Controls settings
 
-    Label for the secret settings preference to enable AI controls
-  -->
-  <string name="preferences_debug_settings_ai_controls">AI-betsjinningseleminten ynskeakelje</string>
-  <!--
-    AI Controls settings
-
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">AI-betsjinningseleminten</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">Jo hawwe altyd in kar yn %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Dat omfettet it al of net brûken fan mei AI ferbettere funksjes. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">Dat omfettet it al of net brûken fan mei AI ferbettere funksjes.</string>
   <!-- Link text for learning more about AI controls -->
@@ -2215,6 +2211,8 @@
   <string name="bookmark_import_menu_button">Ut bestân ymportearje</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">Kin blêdwizers net ymportearje. Probearje it opnij.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Ymportearre blêdwizers</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -4629,6 +4627,10 @@
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Einresultaten WK, side %1$d fan %2$d</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Wrâldkampioenskip-widget fan jo startside fuortsmite</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Folgjend: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Kom letter werom foar wedstriidynfo as it toernoai der oankomt.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

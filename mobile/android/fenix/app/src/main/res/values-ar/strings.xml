@@ -370,17 +370,13 @@
   <!--
     AI Controls settings
 
-    Label for the secret settings preference to enable AI controls
-  -->
-  <string name="preferences_debug_settings_ai_controls">فعِّل عناصر التحكم بالذكاء الاصطناعي</string>
-  <!--
-    AI Controls settings
-
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">التحكم بالذكاء الاصطناعي</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">لديك دائمًا خيار في %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">ويشمل ذلك ما إذا كان ينبغي استخدام الميزات المحسّنة بالذكاء الاصطناعي. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">ويشمل ذلك ما إذا كان ينبغي استخدام الميزات المحسّنة بالذكاء الاصطناعي.</string>
   <!-- Link text for learning more about AI controls -->
@@ -2241,6 +2237,8 @@
   <string name="bookmark_import_menu_button">استورِد من ملف</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">تعذّر استيراد العلامات. حاول مجددًا.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">العلامات المستوردة</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected

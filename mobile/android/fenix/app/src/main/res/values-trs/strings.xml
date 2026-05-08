@@ -370,17 +370,13 @@
   <!--
     AI Controls settings
 
-    Label for the secret settings preference to enable AI controls
-  -->
-  <string name="preferences_debug_settings_ai_controls">Nāchrūn sa nikāj ñu’ūnj dàj gi’hiaj sun IA</string>
-  <!--
-    AI Controls settings
-
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">Nej sa nikāj ñu’ūnj dàj gi’hiaj sun IA</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">Nīgànj chre hua sa nāguīt riña %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Ngà ‘na’ nej nuguan’ yākàn doj sa gā’hue nāgi’hiaj sà’t ngà IA. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">Ngà ‘na’ nej nuguan’ yākàn doj sa gā’hue nāgi’hiaj sà’t ngà IA.</string>
   <!-- Link text for learning more about AI controls -->
@@ -817,6 +813,12 @@
   <string name="preferences_category_about">Rayi\'î</string>
   <!-- Preference category for settings related to changing the default search engine -->
   <string name="preferences_category_select_default_search_engine">Nāguī ‘ngòj</string>
+  <!-- Preference category for settings related to changing the default search engine -->
+  <string name="preferences_category_select_default_search_engine_2">Riña gāchē nut ngà sa nānà’huì’t ngà nīkāj nīñanj ‘naj</string>
+  <!-- Preference category for settings related to changing the private browsing search engine -->
+  <string name="preferences_category_select_private_search_engine">Riña gāchē nu huìt ngà sa nānà’huì’t ngà nīkāj nīñanj ‘naj</string>
+  <!-- Option to set the private browsing mode to use the normal default search engine -->
+  <string name="search_engine_use_default">Gūñān hua sa arâjsunj nana’huij dàj rû’ ‘hia nga aché sun nāsinùnjt</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">Ginùn huin gīrìt a’ngô nej sa gārasunt da’ nānà’huì’t</string>
   <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
@@ -829,10 +831,16 @@
   <string name="preferences_search">Nānà\'uì\'</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Nej sa rugûñu’ūnj nana’huî’</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Si widget raga’ riña ayī’ìt</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Dànanj hua dā’āj nej sa gārasunt da’ nānà’huì’t</string>
   <!-- Preference Category for settings related to Search address bar -->
   <string name="preferences_settings_address_bar">Nej sa garan’ ruhuât ginù riña si dùkuanj nej dīreksiûn</string>
+  <!-- Preference Category for settings to Firefox Suggest -->
+  <string name="preference_search_address_bar_fx_suggest" tools:ignore="BrandUsage">Dukuán ‘na’ nej dīreksiûn - Nāguī Firefox</string>
+  <!-- Preference link to Learn more about Firefox Suggest -->
+  <string name="preference_search_learn_about_fx_suggest" tools:ignore="BrandUsage">Doj nuguan’ huā rayi’î Nāguī Firefox</string>
   <!-- Preference link to rating Fenix on the Play Store -->
   <string name="preferences_rate">Nāga\'uì\' du\'uej riña Google Play</string>
   <!--
@@ -846,6 +854,8 @@
   <string name="preferences_category_advanced">Sa tàj ñā doj</string>
   <!-- Preference category for privacy and security settings -->
   <string name="preferences_category_privacy_security">Riña ginu \'ngō rînt nī sa dūgumî sò\'</string>
+  <!-- Preference for advanced site settings -->
+  <string name="preferences_site_settings">Nagi\'iô\' dàj huin ruhuô\' sitio</string>
   <!-- Preference for private browsing options -->
   <string name="preferences_private_browsing_options">Riña gachē nu huìt</string>
   <!-- Preference for opening links in a private tab -->
@@ -858,6 +868,14 @@
   <string name="preferences_add_private_browsing_shortcut">Gāchrūn aksêso direkto riña aché nu huìt</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">‘Hiaj sunj màn ngà HTTPS</string>
+  <!-- Preference title for using the screen lock to hide tabs in private browsing -->
+  <string name="preferences_pbm_lock_screen_title">Nārán riña raga’a da’ gāchrī huìt nej rakïj ñanj riña aché nu huìt</string>
+  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
+  <string name="preferences_pbm_lock_screen_summary_3">Gīni’hiāj riña nej rakïj ñanj ngà da’nga’ dêj ra’ât, PIN asi nāni’in riñant. Si nāchrūnt sun nan nī rugûñu’un da’ sī ginunt nārīt ñadu’hua raga’a.</string>
+  <!-- Label for cookie banner section in quick settings panel. -->
+  <string name="cookie_banner_blocker">Sa nará riña si Baner Kôki</string>
+  <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
+  <string name="preferences_cookie_banner_reduction_private_mode">Sa nará riña si Baner Kôki ngà aché nu huìt</string>
   <!-- Text for indicating cookie banner handling is off this site, this is shown as part of the protections panel with the tracking protection toggle -->
   <string name="reduce_cookie_banner_off_for_site">Nitāj si huā nî’nïn guendâ sitiô nan</string>
   <!-- Text for cancel button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner details view. -->
@@ -874,8 +892,20 @@
   <string name="reduce_cookie_banner_unsupported_site_request_submitted_2">Ngà gan\\’ānj si nūguàn\\’t sa nutâ\'t</string>
   <!-- Text for indicating cookie banner handling is currently not supported for this site, this is shown as part of the protections panel with the tracking protection toggle -->
   <string name="reduce_cookie_banner_unsupported_site">Huā sa gāchin da’ gā’hue nāyi’nïn sitiô nan</string>
+  <!-- Title text for a detail explanation indicating cookie banner handling is on this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
+  <string name="reduce_cookie_banner_details_panel_title_on_for_site_1">Nāchrūnt sa narán riña si baner kôki riña %1$s aj.</string>
+  <!-- Title text for a detail explanation indicating cookie banner handling is off this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
+  <string name="reduce_cookie_banner_details_panel_title_off_for_site_1">Dūnâ’àjt nej si banêr nej kôki guendâ %1$s aj.</string>
   <!-- Title text for a detail explanation indicating cookie banner reducer didn't work for the current site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox"). -->
   <string name="reduce_cookie_banner_details_panel_title_unsupported_site_request_2">%1$s na’hue gūxunj nej nuguan’ achín nì’hiaj nej kôki riña sitiô nan. Gā’hue gā’nïnjt ‘ngō nuguan’an riña sa nikāj ñu’ūnj sitiô nan.</string>
+  <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is off for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="reduce_cookie_banner_details_panel_description_off_for_site_1">Sisī ginâ’a nī %1$s nādūre’ej nej kôki nī nāgi’hiaj nàkaj sitio nan. Gā’hue gāchìnj nì’hia si gāhuīt asi gī’hiaj hīu ruhuâ nej karrû li ruhuât gīrānt.</string>
+  <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is on for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="reduce_cookie_banner_details_panel_description_on_for_site_3">Sisī nànunj nī %1$s ginùn huin gi’hiaj ane daran’ nej baner kokî ‘na’ riña sitiô nan.</string>
+  <!-- Title for the cookie banner re-engagement CFR, the placeholder is replaced with app name. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="cookie_banner_cfr_title">\u0020%1$s gi’hiaj man ‘ngō sunūnj un riñant nī nū nāhuin rā’a man kôki</string>
+  <!-- Message for the cookie banner re-engagement CFR -->
+  <string name="cookie_banner_cfr_message">Naga’ nej sa rañu’ūj sò’, nitāj nìko kôki gānikò’ sò’ sitiô nan.</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Huin ruhuaj gātu riña nej sitio ngà ‘ngō da’nga’ gū’nàj HTTPS dadin’ dugumîn da’nga’ nan doj daran’ nej sa huā ‘hiát.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -910,6 +940,8 @@
   <string name="preferences_gestures">Da\'nga\'a</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Nādunō\' dàj huin ruhuô\'</string>
+  <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
+  <string name="preferences_sign_in_description">Nāgi’hiaj nūguan’ànt nej rakïj ñanj, nej markadô, nej da’nga’ huìi nī doj sa huāa.</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
   <string name="preferences_account_sync_error">Nātū nākà ñû da\' gānahuij nāgi\'iaj nūguàn\'anj</string>
   <!-- Preference for language -->

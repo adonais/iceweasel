@@ -370,12 +370,6 @@
   <!--
     AI Controls settings
 
-    Label for the secret settings preference to enable AI controls
-  -->
-  <string name="preferences_debug_settings_ai_controls">启用 AI 控制</string>
-  <!--
-    AI Controls settings
-
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">AI 控制</string>
@@ -4380,7 +4374,7 @@
   <!-- Sports widget button label to view details of a soccer match results. -->
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">查看比赛详情</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
-  <string name="sports_widget_related_matches">本组其他场次</string>
+  <string name="sports_widget_related_matches">相关比赛</string>
   <!-- Sports widget card description shown below the title on the homepage entry point. -->
   <string name="sports_widget_card_description" tools:ignore="UnusedResources">获取实时赛况等信息。</string>
   <!-- Sports widget menu item to change the selected team. -->

@@ -370,17 +370,13 @@
   <!--
     AI Controls settings
 
-    Label for the secret settings preference to enable AI controls
-  -->
-  <string name="preferences_debug_settings_ai_controls">Включить управление ИИ</string>
-  <!--
-    AI Controls settings
-
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">Управление ИИ</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">В %s у вас всегда есть выбор</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Включает в себя, использовать ли функции, улучшенные с помощью ИИ. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">Это включает в себя, использовать ли функции, улучшенные с помощью ИИ.</string>
   <!-- Link text for learning more about AI controls -->
@@ -2222,6 +2218,8 @@
   <string name="bookmark_import_menu_button">Импортировать из файла</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">Не удалось импортировать закладки. Попробуйте снова.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Импортированные закладки</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -4637,6 +4635,10 @@
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Результаты финалов ЧМ, страница %1$d из %2$d</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Удалить ЧМ с домашней страницы</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Далее: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Зайдите на сайт, чтобы получить информацию о турнире по мере приближения события.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

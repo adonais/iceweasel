@@ -370,17 +370,13 @@
   <!--
     AI Controls settings
 
-    Label for the secret settings preference to enable AI controls
-  -->
-  <string name="preferences_debug_settings_ai_controls">KI-Steuerung aktivieren</string>
-  <!--
-    AI Controls settings
-
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">KI-Steuerung</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">Sie haben immer eine Wahl in %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Dazu gehört auch, ob mit KI verbesserte Funktionen genutzt werden sollen. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">Dazu gehört auch, ob mit KI verbesserte Funktionen genutzt werden sollen.</string>
   <!-- Link text for learning more about AI controls -->
@@ -2215,6 +2211,8 @@
   <string name="bookmark_import_menu_button">Aus Datei importieren</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">Lesezeichen konnten nicht importiert werden. Versuchen Sie es erneut.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Importierte Lesezeichen</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -4629,6 +4627,10 @@
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Endergebnisse der Weltmeisterschaft, Seite %1$d von %2$d</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Weltmeisterschaft von Startseite entfernen</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Sie folgen: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Schauen Sie hier nach Spiel-Infos, wenn das Turnier näher rückt.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

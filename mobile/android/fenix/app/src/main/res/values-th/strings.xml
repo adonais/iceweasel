@@ -370,17 +370,13 @@
   <!--
     AI Controls settings
 
-    Label for the secret settings preference to enable AI controls
-  -->
-  <string name="preferences_debug_settings_ai_controls">เปิดใช้งานส่วนควบคุม AI</string>
-  <!--
-    AI Controls settings
-
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">ส่วนควบคุม AI</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">คุณมีทางเลือกเสมอใน %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">นั่นรวมถึงว่าจะใช้คุณลักษณะที่ถูกเพิ่มประสิทธิภาพด้วย AI หรือไม่ %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">นั่นรวมถึงว่าจะใช้คุณลักษณะที่ถูกเพิ่มประสิทธิภาพด้วย AI หรือไม่</string>
   <!-- Link text for learning more about AI controls -->
@@ -2208,6 +2204,8 @@
   <string name="bookmark_import_menu_button">นำเข้าจากไฟล์</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">ไม่สามารถนำเข้าที่คั่นหน้าได้ โปรดลองอีกครั้ง</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">ที่คั่นหน้าที่นำเข้า</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2462,21 +2460,21 @@
   <!-- Content description for the drag handle that dismisses the Send to Device bottom sheet -->
   <string name="send_to_devices_bottom_sheet_close_content_description">ปิด ส่งไปยังอุปกรณ์</string>
   <!-- Text for the QR code action in the native share sheet -->
-  <string name="share_qr_code">รหัส QR</string>
+  <string name="share_qr_code">คิวอาร์โค้ด</string>
   <!-- Title shown in the QR code display screen -->
-  <string name="qr_code_display_title">รหัส QR</string>
+  <string name="qr_code_display_title">คิวอาร์โค้ด</string>
   <!-- Content description for the close button in the QR code display screen -->
   <string name="qr_code_display_close">ปิด</string>
   <!-- Heading on the QR code display screen -->
   <string name="qr_code_display_share_nearby">แบ่งปันลิงก์ในบริเวณใกล้เคียง</string>
   <!-- Body text on the QR code display screen instructing the user to have others scan the code -->
-  <string name="qr_code_display_instructions">เพื่อแบ่งปันลิงก์นี้แก่คนที่อยู่ใกล้เคียง ให้พวกเขาสแกนรหัส QR ด้านล่าง</string>
+  <string name="qr_code_display_instructions">เพื่อแบ่งปันลิงก์นี้แก่คนที่อยู่ใกล้เคียง ให้พวกเขาสแกนคิวอาร์โค้ดด้านล่าง</string>
   <!-- Label for the download button on the QR code display screen -->
   <string name="qr_code_display_download">ดาวน์โหลด</string>
   <!-- Toast shown when the QR code is successfully saved to Downloads -->
-  <string name="qr_code_download_success">รหัส QR ถูกบันทึกในการดาวน์โหลดแล้ว</string>
+  <string name="qr_code_download_success">คิวอาร์โค้ดถูกบันทึกในการดาวน์โหลดแล้ว</string>
   <!-- Toast shown when saving the QR code to Downloads fails -->
-  <string name="qr_code_download_failure">บันทึกรหัส QR ไม่สำเร็จ</string>
+  <string name="qr_code_download_failure">บันทึกคิวอาร์โค้ดไม่สำเร็จ</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">การกระทำทั้งหมด</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
@@ -4621,6 +4619,10 @@
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">ผลการแข่งขันฟุตบอลโลกรอบชิงชนะเลิศ หน้า %1$d จาก %2$d</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">นำวิดเจ็ตฟุตบอลโลกออกจากหน้าแรก</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">กำลังติดตาม: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">กลับมาตรวจสอบข้อมูลการแข่งอีกครั้งเมื่อทัวร์นาเมนต์ใกล้เข้ามา</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

@@ -370,17 +370,13 @@
   <!--
     AI Controls settings
 
-    Label for the secret settings preference to enable AI controls
-  -->
-  <string name="preferences_debug_settings_ai_controls">Activar controles de IA</string>
-  <!--
-    AI Controls settings
-
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">Controles de IA</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">Siempre hay opciones en %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Esto incluye decidir si se usan funciones mejoradas con IA. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">Esto incluye la opción de utilizar funciones mejoradas con IA.</string>
   <!-- Link text for learning more about AI controls -->
@@ -1713,6 +1709,10 @@
   <string name="pwa_site_controls_title_private">%1$s (Modo Privado)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Abrir búsqueda en pestañas</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Prueba los grupos de pestañas: menos desplazamientos, más resultados</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Selecciona pestañas para crear un grupo. Se guardarán aquí, listas para cuando las necesites.</string>
   <!--
     Tab Group
 
@@ -1722,6 +1722,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Editar grupo</string>
   <string name="create_tab_group_save_button">Guardar</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Nuevo grupo, control para contraer</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Cerrar edición del grupo de pestañas</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupo</string>
@@ -1736,6 +1738,53 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nombre</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Agregar a</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Agregar a un grupo, control para contraer</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Agregar a un nuevo grupo de pestañas</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_close_content_description">Cerrar \"Agregar al grupo de pestañas\"</string>
+  <!-- Label for adding to a new tab group. -->
+  <string name="add_to_new_tab_group_title">Nuevo grupo de pestañas</string>
+  <plurals name="tab_group_tabs_count_subtitle">
+    <!--
+      Subtitle for the number of tabs in a tab group.
+      %1$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">%1$d pestaña</item>
+    <item quantity="other">%1$d pestañas</item>
+  </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Agregar al grupo de pestañas %1$s, %2$d pestaña, color %3$s</item>
+    <item quantity="other">Agregar al grupo de pestañas %1$s, %2$d pestañas, color %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Compartir al grupo pestañas %1$s con %2$d pestaña.</item>
+    <item quantity="other">Compartir grupo de pestañas %1$s con %2$d pestañas.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Ver grupo, control para contraer</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Grupo de pestañas %1$s con %2$d pestaña, color %3$s</item>
+    <item quantity="other">Grupo de pestañas %1$s con %2$d pestañas, color %3$s</item>
+  </plurals>
+  <!-- Title for the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_title">¿Eliminar el grupo de pestañas?</string>
+  <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_body">Esto eliminará el grupo de forma permanente.</string>
   <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_confirm">Eliminar grupo</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
@@ -1859,6 +1908,8 @@
   <string name="download_delete_item">Eliminar</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Regresar a la navegación</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">Ir a la configuración de descargas</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">Retroceder y cerrar búsqueda</string>
   <!--
@@ -1876,6 +1927,8 @@
   <string name="download_share_url">Compartir URL</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Compartir archivo</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Cambiar nombre del archivo</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">¿Estás seguro que deseas eliminar los elementos seleccionados?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
@@ -1890,12 +1943,25 @@
   <string name="download_delete_dialog_cancel">Cancelar</string>
   <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
   <string name="download_delete_dialog_confirm">Confirmar</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Cambiar nombre del archivo</string>
   <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
   <string name="download_rename_dialog_label">Nombre</string>
   <string name="download_rename_dialog_confirm_button">Guardar</string>
   <string name="download_rename_dialog_cancel_button">Cancelar</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Un archivo llamado “%s” ya existe en esta ubicación</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Los nombres de los archivos no pueden tener “/”</string>
   <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
   <string name="download_rename_error_case_only_error">El nombre ingresado solo cambia mayúsculas o minúsculas. Intenta con un nombre de archivo diferente.</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">No se puede cambiar el nombre del archivo</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">No se puede cambiar el nombre a este archivo debido a restricciones del sistema o del almacenamiento.</string>
   <string name="download_rename_error_dismiss_button">Aceptar</string>
   <!--
     Title for the alert dialog to change file extension.
@@ -1994,12 +2060,16 @@
   <string name="webcompat_reporter_screen_title">Informar de un sitio no funcional</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
   <string name="webcompat_reporter_description_3">Tu reporte nos ayuda a entender y corregir fallas en %1$s para mejorar la experiencia de toda la comunidad. %2$s</string>
+  <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
+  <string name="webcompat_reporter_learn_more">Saber más</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
   <string name="webcompat_reporter_label_url">URL</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
   <string name="webcompat_reporter_url_error_invalid">Por favor, introduce una URL válida</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">¿Qué es lo que falla?</string>
+  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
+  <string name="webcompat_reporter_choose_reason_2">Selecciona un motivo</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_error">Por favor elige una razón</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
@@ -2010,6 +2080,18 @@
   <string name="webcompat_reporter_cancel">Cancelar</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Enviar</string>
+  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
+  <string name="webcompat_reporter_success_snackbar_text_2">Reporte enviado</string>
+  <!-- Placeholder text for the description field to prompt the user on what they should type. -->
+  <string name="webcompat_reporter_problem_description_placeholder_text">¿Qué pasó? ¿Qué debería haber pasado?</string>
+  <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
+  <string name="webcompat_reporter_etp_checkbox_text">Enviar las URL bloqueadas por la protección contra el rastreo</string>
+  <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page. -->
+  <string name="webcompat_reporter_etp_checkbox_description">La Protección de rastreo mejorada podría bloquear rastreadores y scripts que algunos sitios web necesitan para funcionar bien.</string>
+  <!-- The button text for the preview report button to view a preview of the report. -->
+  <string name="webcompat_reporter_preview_report">Vista previa del informe</string>
+  <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
+  <string name="webcompat_reporter_preview_bottom_sheet_header">Vista previa del reporte</string>
   <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
   <string name="webcompat_reporter_preview_bottom_sheet_send">Enviar</string>
   <!--
@@ -2048,6 +2130,10 @@
   <string name="tab_crash_restore">Restaurar pestaña</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_dialog_title_2">%s dejó de funcionar. ¿Enviar un informe?</string>
+  <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="unsubmitted_crash_requested_by_devs_dialog_title">Tienes un informe de error sin enviar sobre fallas bajo investigación. Enviarlo ayudará a mejorar %1$s. Si cierras esta notificación, se ignorará el informe.</string>
+  <!-- Multiple unsubmitted crashes matching remote settings. %1$d is the number of unsent crash reports, %2$s is the name of the app (for example "Firefox"). -->
+  <string name="unsubmitted_crashes_requested_by_devs_dialog_title">Tienes informes de errores (%1$d) sin enviar sobre fallas bajo investigación. Enviarlos ayudará a mejorar %2$s. Si cierras esta notificación, se ignorarán los informes.</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
   <string name="unsubmitted_crash_dialog_checkbox_label">Enviar automáticamente informes de fallos</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
@@ -2125,6 +2211,8 @@
   <string name="bookmark_import_menu_button">Importar desde un archivo</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">No se pudieron importar los marcadores. Intenta nuevamente.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Marcadores importados</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2384,8 +2472,16 @@
   <string name="qr_code_display_title">Código QR</string>
   <!-- Content description for the close button in the QR code display screen -->
   <string name="qr_code_display_close">Cerrar</string>
+  <!-- Heading on the QR code display screen -->
+  <string name="qr_code_display_share_nearby">Compartir enlace con dispositivos cercanos</string>
+  <!-- Body text on the QR code display screen instructing the user to have others scan the code -->
+  <string name="qr_code_display_instructions">Para compartir este vínculo con personas cercanas, pídeles que escaneen el siguiente código QR.</string>
   <!-- Label for the download button on the QR code display screen -->
   <string name="qr_code_display_download">Descargar</string>
+  <!-- Toast shown when the QR code is successfully saved to Downloads -->
+  <string name="qr_code_download_success">Código QR guardado en Descargas</string>
+  <!-- Toast shown when saving the QR code to Downloads fails -->
+  <string name="qr_code_download_failure">Error al guardar el código QR</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">Todas las acciones</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
@@ -2632,6 +2728,19 @@
   <string name="preference_enhanced_tracking_protection_explanation_2">%s te protege de muchos de los rastreadores más comunes que rastrean lo que haces en línea.</string>
   <!-- Text displayed that links to website about enhanced tracking protection -->
   <string name="preference_enhanced_tracking_protection_explanation_learn_more">Saber más</string>
+  <plurals name="trackers_blocked_count">
+    <!--
+      Trackers blocked card on homepage
+
+      Text shown on the trackers blocked card. %d is the number of trackers blocked.
+    -->
+    <item quantity="one">%d rastreador bloqueado</item>
+    <item quantity="other">%d rastreadores bloqueados</item>
+  </plurals>
+  <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
+  <string name="trackers_blocked_empty">Tu navegación es segura</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Ayuda a detectar rastreadores</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Estándar (predeterminado)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2642,8 +2751,26 @@
   <string name="preference_enhanced_tracking_protection_strict">Estricto</string>
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Protección contra rastreo mejorada y mayor rendimiento, pero puede que algunos sitios no funcionen correctamente.</string>
+  <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Solucionar problemas importantes del sitio (recomendado)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_convenience_label">Solucionar problemas menores del sitio</string>
+  <!-- Preference description for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience_description">Debe usarse con correcciones para problemas críticos.</string>
+  <!-- Preference sub header for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_subheader">Corregir problemas del sitio</string>
+  <!-- Learn more text for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_learn_more">Más información</string>
+  <!--
+    Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
+
+    Title for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection
+  -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">¿Confirmas que deseas desactivar las correcciones?</string>
+  <!-- Message for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_message">Este ajuste ayuda a corregir los problemas más comunes de los sitios. Si lo desactivas, es posible que algunos sitios no funcionen y %1$s no podrá ayudar a solucionar esos errores.</string>
+  <!-- Confirmation button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_confirm">Desactivar correcciones</string>
   <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
   <string name="preference_enhanced_tracking_protection_allow_list_dialog_cancel">Mantener las correcciones activadas</string>
   <!-- Accessibility text for the Strict protection information icon -->
@@ -2940,6 +3067,10 @@
   <string name="saved_login_clear_username">Borrar nombre de usuario</string>
   <!-- Content Description (for screenreaders etc) read for the button to clear the hostname field while creating a login -->
   <string name="saved_login_clear_hostname">Borrar nombre de servidor</string>
+  <!-- Content description, used by tools like screenreaders, for the 3 dots button that shows commands related to the currently displayed login (edit, delete). -->
+  <string name="login_detail_menu_button_content_description">Menú de datos de inicio de sesión</string>
+  <!-- Content description, used by tools like screenreaders, to go back and exit the login detail view. -->
+  <string name="login_details_navigate_back_button_content_description">Regresar a la navegación</string>
   <!-- Edit text for the login detail menu edit button -->
   <string name="login_detail_menu_edit_button">Editar</string>
   <!-- Delete text for the login detail menu delete button -->
@@ -3221,6 +3352,8 @@
   <string name="quick_settings_sheet_secure_connection_2">Conexión segura</string>
   <!-- Label that indicates a site is using a insecure connection -->
   <string name="quick_settings_sheet_insecure_connection_2">La conexión no es segura</string>
+  <!-- Label that indicates a site is displaying a local document -->
+  <string name="quick_settings_sheet_local_page">Esta página se encuentra guardada en tu dispositivo.</string>
   <!-- Label to clear site data -->
   <string name="clear_site_data">Limpiar cookies y datos del sitio</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site. %s is the domain of the site. -->
@@ -3294,6 +3427,10 @@
   <string name="synced_tabs_expand_group">Ampliar grupo de pestañas sincronizadas</string>
   <!-- Content description for collapsing a group of synced tabs. -->
   <string name="synced_tabs_collapse_group">Reducir grupo de pestañas sincronizadas</string>
+  <!-- Label for the "Add shortcut" button displayed as a tile. -->
+  <string name="homepage_shortcuts_add_shortcut">Agregar acceso directo</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Ingresa la dirección de un sitio web</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Alcanzado el límite para atajos</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3387,6 +3524,8 @@
     Header text for a section on the home screen.
   -->
   <string name="pocket_stories_header_2">Historias</string>
+  <!-- Header text for the Stories screen. -->
+  <string name="stories_screen_text_news">Noticias</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Patrocinado</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -3463,6 +3602,8 @@
   <string name="translation_error_could_not_load_languages_warning_text">No se pudieron cargar los idiomas. Verifica tu conexión a Internet y vuelve a intentarlo.</string>
   <!-- The title of the warning card informs the user that a language is not supported. %1$s is the name of the language that is not supported. -->
   <string name="translation_error_language_not_supported_warning_text" tools:ignore="UnusedResources" moz:removedIn="150">Lo sentimos, %1$s aún no está disponible.</string>
+  <!-- The title of the warning card informs the user that translations from a language are not supported yet. %1$s is the name of the source language. -->
+  <string name="translation_error_language_not_supported_warning_text_2">Lo sentimos, todavía no ofrecemos traducciones desde %1$s.</string>
   <!-- Snackbar title shown if the user closes the Translation Request dialogue and a translation is in progress. -->
   <string name="translation_in_progress_snackbar">Traduciendo…</string>
   <!--
@@ -3677,6 +3818,14 @@
   <string name="protection_panel_banner_protected_description">Tienes protección. Si detectamos algo, te lo haremos saber.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
   <string name="protection_panel_etp_toggle_label">Protección de seguimiento mejorada</string>
+  <!-- Toggle if Enhanced Tracking Protection is turned on -->
+  <string name="protection_panel_etp_toggle_on">Activar</string>
+  <!-- Toggle if Enhanced Tracking Protection is turned off -->
+  <string name="protection_panel_etp_toggle_off">Desactivar</string>
+  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
+  <string name="protection_panel_etp_toggle_enabled_description_2">Si algo parece que no funciona en este sitio, intenta desactivarla.</string>
+  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
+  <string name="protection_panel_etp_toggle_disabled_description_2">Se recomienda activar la protección contra el rastreo.</string>
   <!--
     Text for displaying the total number of trackers blocked in the protection panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3684,6 +3833,8 @@
   <string name="protection_panel_num_trackers_blocked">Rastreadores bloqueados: %d</string>
   <!-- Text for when no trackers have been blocked. -->
   <string name="protection_panel_no_trackers_blocked">No se encontraron rastreadores</string>
+  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
+  <string name="protection_panel_privacy_and_security_settings_2">Ajustes de privacidad</string>
   <!-- Title text for the protection panel permissions section. -->
   <string name="protection_panel_permissions_title">Permisos</string>
   <!--
@@ -3710,11 +3861,20 @@
   <string name="connection_security_panel_secure">Conexión segura</string>
   <!-- Text for the connection security panel when the site is not secure. -->
   <string name="connection_security_panel_not_secure">Conexión no segura</string>
+  <!-- Text for the connection security panel when accessed from local PDF. -->
+  <string name="connection_security_panel_local_pdf">Esta página se encuentra guardada en tu dispositivo</string>
   <!--
     Text for the connection security panel to indicate who the certificate was verified by.
     %s is a placeholder for the name of the certificate authority that issued the certificate.
   -->
   <string name="connection_security_panel_verified_by">Verificado por %s</string>
+  <!--
+    Text for the connection security panel when the site uses a QWAC.
+    %s is a placeholder for the organization for which the certificate was issued.
+  -->
+  <string name="connection_security_panel_issued_to">Otorgado a %s</string>
+  <!-- Text for the connection security panel when the site uses a QWAC. -->
+  <string name="connection_security_panel_qualified_certificate">Calificado según lo especificado en el Reglamento (UE) 2024/1183.</string>
   <!--
     Debug drawer
 
@@ -3831,6 +3991,8 @@
   <string name="microsurvey_close_handle_content_description">Cerrar encuesta</string>
   <!-- Content description for "X" button that is closing microsurvey. -->
   <string name="microsurvey_close_button_content_description">Cerrar</string>
+  <!-- The title of the autofill tab in the Debug Drawer. -->
+  <string name="debug_drawer_autofill_title">Herramientas de llenado automático</string>
   <!--
     Debug drawer logins
 
@@ -3893,6 +4055,22 @@
   <string name="debug_drawer_regin_tools_description">Reemplazar temporalmente los valores de inicio y de región actual para realizar pruebas.</string>
   <!-- The text label for displaying home region. -->
   <string name="debug_drawer_home_region_label">Región de origen</string>
+  <!-- The text field label for overriding home region. -->
+  <string name="debug_drawer_override_home_region_label">Reemplazar la región de origen</string>
+  <!-- The text field label for overriding current region. -->
+  <string name="debug_drawer_override_current_region_label">Reemplazar la región actual</string>
+  <!-- The title of the button for overriding home and current region. -->
+  <string name="debug_drawer_override_region">Reemplazar el inicio y la región actual</string>
+  <!-- The title of the button for overriding home region permanently. -->
+  <string name="debug_drawer_override_home_region_permanently">Reemplazar la región de origen de forma permanente</string>
+  <!--
+    Add-ons debug tools
+
+    The description of the Add-ons Tools in the Debug Drawer
+  -->
+  <string name="debug_drawer_addons_tools_title">Herramientas de extensiones</string>
+  <!-- The title of the button used to check for add-on updates. -->
+  <string name="addons_debug_tools_check_for_updates_button">Buscar actualizaciones</string>
   <!--
     Messages explaining how to exit fullscreen mode
 
@@ -3960,6 +4138,36 @@
   <!-- Title for the setup checklist feature when the state is 'completed' -->
   <string name="setup_checklist_title_state_completed">¡Felicidades!</string>
   <!--
+    ===== Setup checklist feature: Subtitles for 3 steps =====
+
+    Subtitle for a setup checklist with 3 steps initial step. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_3_steps_initial_state">Sigue estos 3 pasos para configurar %1$s y obtener la mejor experiencia de navegación.</string>
+  <!-- Subtitle for a setup checklist with 3 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_3_steps_first_step">¡Buen inicio! Completaste 1 de los 3 pasos.</string>
+  <!-- Subtitle for a setup checklist with 3 steps when two of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_3_steps_second_step">¡Ya casi! Completaste dos pasos y solo falta 1.</string>
+  <!-- Subtitle for a setup checklist with 3 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_3_steps_completed_state">¡Listo! Completaste los 3 pasos. Disfruta la velocidad, privacidad y seguridad de %1$s.</string>
+  <!--
+    ===== Setup checklist feature: Subtitles for 6 steps =====
+
+    Subtitle for a setup checklist with 6 steps initial state. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="setup_checklist_subtitle_6_steps_initial_state">Completa estos 6 pasos para configurar %1$s y obtener la mejor experiencia de navegación.</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the first task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_first_step">¡Buen inicio! Completaste 1 de los 6 pasos.</string>
+  <!-- Subtitle for the setup checklist when the second task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_second_step">Completaste 2 de 6 pasos. ¡Gran avance!</string>
+  <!-- Subtitle for a setup checklist with 6 steps when three of the tasks are completed. -->
+  <string name="setup_checklist_subtitle_6_steps_third_step">¡Ya vas a la mitad! Completaste tres pasos y solo faltan 3.</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the fourth task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_fourth_step">Ya llevas 4 pasos. ¡Solo faltan 2!</string>
+  <!-- Subtitle for a setup checklist with 6 steps when the fifth task is completed. -->
+  <string name="setup_checklist_subtitle_6_steps_fifth_step">¡Ya casi! Estás a solo 1 paso de la meta.</string>
+  <!-- Subtitle for a setup checklist with 6 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="setup_checklist_subtitle_6_steps_completed_state">¡Listo! Completaste los 6 pasos de configuración. Disfruta la velocidad, privacidad y seguridad de %1$s.</string>
+  <!--
     ===== Setup checklist feature: Subtitles for 5 steps (Large screen devices don't support toolbar placement) =====
 
     Subtitle for a setup checklist with 5 steps initial state. %1$s is the name of the app (for example "Firefox").
@@ -3987,6 +4195,8 @@
   <string name="setup_checklist_task_theme_selection">Selecciona un tema</string>
   <!-- The title of the toolbar selection task for the setup checklist -->
   <string name="setup_checklist_task_toolbar_selection">Elegir ubicación de la barra de herramientas</string>
+  <!-- The title of the explore extensions task for the setup checklist -->
+  <string name="setup_checklist_task_explore_extensions">Explorar extensiones</string>
   <!--
     ===== Setup checklist feature: Group titles =====
 
@@ -4011,8 +4221,16 @@
   <string name="a11y_completed_task_description">Tarea completada</string>
   <!-- Accessibility description for the task icon -->
   <string name="a11y_task_icon_description">Ícono de tarea</string>
+  <!--
+    Private browsing mode authentication screen
+
+    Label for the secondary action to exit private browsing mode
+  -->
+  <string name="pbm_authentication_leave_private_tabs">Dejar pestañas privadas</string>
   <!-- Label for the primary action button to unlock private tabs -->
   <string name="pbm_authentication_unlock">Desbloquear</string>
+  <!-- Title text instructing the user to unlock private tabs -->
+  <string name="pbm_authentication_unlock_private_tabs">Desbloquear pestañas privadas</string>
   <!-- Authentication prompt title to enable the private tabs mode -->
   <string name="pbm_authentication_enable_lock">Habilitar el bloqueo de pantalla de pestañas privadas</string>
   <!-- Authentication prompt title to disable the private tabs mode -->
@@ -4025,6 +4243,24 @@
   <string name="private_tab_cfr_negative">No, gracias</string>
   <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
   <string name="private_tab_cfr_positive">Bloquear pestañas</string>
+  <!--
+    Review prompt
+
+    Title for a prompt asking the user about their experience using the app. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="review_prompt_pre_prompt_header">¿Qué te parece %1$s?</string>
+  <!-- Label for a button negatively rating the user's experience with the app -->
+  <string name="review_prompt_negative_button">Tengo dificultades</string>
+  <!-- Label for a button positively rating the user's experience with the app -->
+  <string name="review_prompt_positive_button">¡Es excelente!</string>
+  <!-- Title for a prompt asking the user to rate the app on Google Play Store. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="review_prompt_rate_header">¡Qué bueno que te guste %1$s! ¿Tienes un momento para darnos una calificación?</string>
+  <!-- Label for a button proceeding to rate the app on Google Play Store. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="review_prompt_rate_button">Califica a %1$s en la Play Store</string>
+  <!-- Title for a prompt asking the user send us feedback. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="review_prompt_feedback_header">Sentimos los inconvenientes. Dinos qué podemos hacer para mejorar %1$s.</string>
+  <!-- Label for a button opening a feedback forum -->
+  <string name="review_prompt_feedback_button">Danos tu opinión</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- ==== Experiment strings. ==== -->

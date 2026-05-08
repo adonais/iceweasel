@@ -370,17 +370,13 @@
   <!--
     AI Controls settings
 
-    Label for the secret settings preference to enable AI controls
-  -->
-  <string name="preferences_debug_settings_ai_controls">Aktiver KI-kontrollar</string>
-  <!--
-    AI Controls settings
-
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">KI-kontrollar</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">Du har alltid eit val i %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Det inkluderer om du vil bruke funksjonar som er forbetra med AI. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">Det inkluderer om du vil bruke funksjonar som er forbetra med AI.</string>
   <!-- Link text for learning more about AI controls -->
@@ -1705,6 +1701,8 @@
   <string name="pwa_site_controls_title_private">%1$s (privatmodus)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Opne fanesøk</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Prøv fanegrupper for mindre skrolling og meir gjort</string>
   <!-- The description displayed on the tab groups page when no tab groups are open -->
   <string name="tab_manager_empty_tab_groups_page_description">Vel faner for å opprette ei gruppe. Dei er lagra her, klare når du er det.</string>
   <!--
@@ -1748,8 +1746,33 @@
     <item quantity="one">%1$d fane</item>
     <item quantity="other">%1$d faner</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Legg til i fanegruppa %1$s, %2$d fane, farge %3$s</item>
+    <item quantity="other">Legg til i fanegruppa %1$s, %2$d faner, farge %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Del fanegruppa %1$s med %2$d fane.</item>
+    <item quantity="other">Del fanegruppa %1$s med %2$d faner.</item>
+  </plurals>
   <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
   <string name="tab_group_sheet_dismiss_description">Vis fanegruppe, skjul drahandtak</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Fanegruppa %1$s med %2$d fane, farge %3$s</item>
+    <item quantity="other">Fanegruppa %1$s med %2$d faner, farge %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Slette fanegruppe?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -2180,6 +2203,8 @@
   <string name="bookmark_import_menu_button">Importer frå fil</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">Klarte ikkje å importere bokmerke. Prøv igjen.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Importer bokmerke</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -4594,6 +4619,10 @@
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">VM-sluttresultat, side %1$d av %2$d</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Fjern VM-widgeten frå startsida di</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Følgjer: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Følg med for kampinformasjon når turneringa nærmar seg.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
