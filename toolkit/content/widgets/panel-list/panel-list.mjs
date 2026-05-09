@@ -333,7 +333,7 @@ export class PanelList extends HTMLElement {
           VIEWPORT_PANEL_MIN_MARGIN
         );
         // Provide a max-height for larger elements which will provide scrolling as needed.
-        this.style.maxHeight = `${roundedAnchorTop + VIEWPORT_PANEL_MIN_MARGIN}px`;
+        this.style.maxHeight = `${roundedAnchorTop - VIEWPORT_PANEL_MIN_MARGIN}px`;
         valign = "top";
       } else {
         topOffset = roundedAnchorBottom;
