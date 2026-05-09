@@ -373,18 +373,38 @@
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">Унсурҳои идоракунии зеҳни сунъӣ (AI)</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Шумо ҳамеша дар барномаи «%s» интихоб доред</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Ин бахш имконияти истифодаи ҳусусиятҳои такмилёфтаро тавассути зеҳни сунъӣ (AI) дар бар мегирад. %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Ин бахш имконияти истифодаи ҳусусиятҳои такмилёфтаро тавассути зеҳни сунъӣ (AI) дар бар мегирад.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Маълумоти бештар</string>
   <!-- Title for the block AI enhancements toggle -->
   <string name="ai_controls_block_ai_title">Манъ кардани такмилҳои зеҳни сунъӣ (AI)</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Амали манъкунӣ маънои онро дорад, ки шумо дар барномаи «%s» такмилҳои нав ё ҷории зеҳни сунъиро (AI) намебинед, аз он ҷумла маълумот дар бораи онҳо тавассути равзанаҳои зоҳиршаванда.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Озмоед, ки чӣ дохил карда шудааст ва чӣ дохил карда нашудааст</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Такмилҳои нав ё ҷории зеҳни сунъӣ (AI) ба таври пешфарз манъ карда мешаванд. Хусусиятҳои мушаххасро дар зер кушоед.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Хусусиятҳои зеҳни сунъӣ (AI)</string>
   <!-- Title for the translations AI feature toggle -->
   <string name="ai_controls_translations_title">Тарҷумаҳо</string>
   <!-- Description for the translations AI feature toggle -->
   <string name="ai_controls_translations_description">Ҳамаи тарҷумаҳо дар дастгоҳи шумо ба таври махфӣ мемонанд.</string>
   <!-- Link text to navigate to more translations settings -->
   <string name="ai_controls_more_translations_settings">Танзимоти иловагии тарҷума</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Танзимоти иловагии хулосаи саҳифа</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">Ҷустуҷӯи овозӣ</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Аудио тавассути «Google Speech Services» ба матн табдил дода мешавад.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Такмилҳои зеҳни сунъӣ (AI)-ро манъ мекунед?</string>
   <!-- Cancel button text in the block AI enhancements confirmation dialog -->
   <string name="ai_controls_block_dialog_cancel">Бекор кардан</string>
   <!-- Block button text in the block AI enhancements confirmation dialog -->

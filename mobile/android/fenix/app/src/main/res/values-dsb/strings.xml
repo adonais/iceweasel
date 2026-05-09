@@ -375,6 +375,8 @@
   <string name="preferences_ai_controls">Wóźeńske elementy KI</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">W %s maśo pśecej wólbu</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">To wopśimjejo, lěc se maju funkcije wužywaś, kótarež su pśez KI pólěpšone. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">To wopśimjejo, lěc se maju funkcije wužywaś, kótarež su pśez KI pólěpšone.</string>
   <!-- Link text for learning more about AI controls -->
@@ -2223,6 +2225,8 @@
   <string name="bookmark_import_menu_button">Z dataje importěrowaś</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">Cytańske znamjenja njedaju se importěrowaś. Wopytajśo hyšći raz.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Importěrowane cytańske znamjenja</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -4639,6 +4643,10 @@
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Kóńcne wuslědki swětowego mejstaŕstwa, bok %1$d z %2$d</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Swětowe mejstaŕstwo ze startowego boka wótwónoźeś</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Slědujo: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Glědajśo za informacijami wó graśu, gaž se turněr bližy.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

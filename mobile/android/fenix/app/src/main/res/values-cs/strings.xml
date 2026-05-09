@@ -2723,7 +2723,7 @@
   <!-- Option for enhanced tracking protection for the custom protection settings for cookies -->
   <string name="preference_enhanced_tracking_protection_custom_cookies_5">Izolovat cross-site cookies</string>
   <!-- Preference for Global Privacy Control for the custom privacy settings for Global Privacy Control. '&amp;' is replaced with the ampersand symbol: & -->
-  <string name="preference_enhanced_tracking_protection_custom_global_privacy_control">Požádat webové stránky, aby nesdílely a neprodávaly mé údaje</string>
+  <string name="preference_enhanced_tracking_protection_custom_global_privacy_control">Říkat webům, aby nesdílely ani neprodávaly vaše údaje</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings for tracking content -->
   <string name="preference_enhanced_tracking_protection_custom_tracking_content">Sledující obsah</string>
   <!-- Option for enhanced tracking protection for the custom protection settings for tracking content -->
