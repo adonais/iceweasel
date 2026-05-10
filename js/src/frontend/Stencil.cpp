@@ -33,7 +33,7 @@
 #include "gc/AllocKind.h"         // gc::AllocKind
 #include "gc/Tracer.h"            // TraceNullableRoot
 #include "jit/BaselineCompileTask.h"  // BaselineCompileTask::OffThreadBaselineCompilationAvailable
-#include "jit/BaselineJIT.h"  // jit::BaselineScript, jit::CanBaselineInterpretScript
+#include "jit/BaselineJIT.h"  // jit::BaselineScript, jit::CanBaselineCompileScript
 #include "jit/JitContext.h"     // jit::MethodStatus
 #include "jit/JitRuntime.h"     // jit::JitRuntime
 #include "jit/JitScript.h"      // AutoKeepJitScripts
@@ -2723,7 +2723,7 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
                                              const CompilationStencil& stencil,
                                              CompilationGCOutput& gcOutput,
                                              bool doAggressive) {
-  if (!jit::IsBaselineInterpreterEnabled()) {
+  if (!jit::IsBaselineJitEnabled(cx)) {
     return true;
   }
 
@@ -2762,11 +2762,7 @@ static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
       }
     }
 
-    if (script->baselineDisabled()) {
-      continue;
-    }
-
-    if (!jit::CanBaselineInterpretScript(script)) {
+    if (!jit::CanBaselineCompileScript(cx, script)) {
       continue;
     }
 
