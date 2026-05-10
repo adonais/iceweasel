@@ -449,6 +449,7 @@ add_task(async function test_searchWithPostEngine() {
     BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser),
   ]);
   popup.querySelector("panel-item[data-engine-name=MozSearch]").button.click();
+  EventUtils.synthesizeKey("KEY_Enter");
   await promise;
 
   Assert.equal(spy.firstCall.args[0], "https://example.com/", "Correct URL");

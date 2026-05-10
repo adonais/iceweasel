@@ -94,6 +94,7 @@ add_task(async function select_non_default_engine_and_search() {
   popup
     .querySelector("panel-item[data-engine-name=MochiSearch]")
     .button.click();
+  EventUtils.synthesizeKey("KEY_Enter");
   await popupHidden;
   await browserLoadedPromise;
 

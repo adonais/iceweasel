@@ -101,6 +101,7 @@ add_task(async function test_fixedOverflow() {
     expectedUrl
   );
   popup.querySelector('panel-item[data-engine-name="engine2"]').button.click();
+  EventUtils.synthesizeKey("KEY_Enter");
   await browserLoaded;
   Assert.equal(gBrowser.currentURI.spec, expectedUrl, "Used correct engine");
   Assert.equal(searchbar.value, searchTerm, "Search term was persisted");
