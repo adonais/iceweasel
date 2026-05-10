@@ -4488,6 +4488,12 @@
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
   <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">前往世界杯网站</string>
   <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s，第 %2$d/%3$d 页</string>
+  <!--
     Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
     %1$d is the current page number, and %2$d is the total number of pages.
   -->

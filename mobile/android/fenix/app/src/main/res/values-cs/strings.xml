@@ -373,12 +373,28 @@
     Title for the AI controls settings screen
   -->
   <string name="preferences_ai_controls">Ovládání AI</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">V aplikaci %s máte vždy na výběr</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">To zahrnuje i to, zda používat funkce vylepšené umělou inteligencí.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Zjistit více</string>
   <!-- Title for the block AI enhancements toggle -->
   <string name="ai_controls_block_ai_title">Blokovat vylepšení pomocí AI</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Podívejte se, co je a není zahrnuto</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Nová a aktuální vylepšení AI jsou ve výchozím nastavení blokována. Níže odblokujte konkrétní funkce.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Funkce založené na umělé inteligenci</string>
   <!-- Title for the translations AI feature toggle -->
   <string name="ai_controls_translations_title">Překlady</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Všechny překlady zůstávají soukromé ve vašem zařízení.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Další nastavení překladu</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Další nastavení souhrnu stránek</string>
   <!-- Title for the voice search AI feature toggle -->
   <string name="ai_controls_voice_search_title">Hlasové vyhledávání</string>
   <!-- Title for the block AI enhancements confirmation dialog -->
@@ -1424,6 +1440,8 @@
   <string name="preference_gestures_swipe_toolbar_show_tabs">Zobrazit panely vytažením nástrojové lišty nahoru</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Panely přepínat přejetím adresního řádku do stran</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Vytvořit souhrn zatřesením</string>
   <!--
     Library
 
@@ -1698,6 +1716,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Název</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Přidat do</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Přidat do nové skupiny panelů</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Zavře panel pro přidání do skupiny</string>
   <!-- Label for adding to a new tab group. -->
@@ -1720,6 +1740,10 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Smazat skupinu</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Zrušit</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Zavřít panel a smazat skupinu?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">Tímto se skupina natrvalo odstraní.</string>
   <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
   <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Smazat skupinu</string>
   <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
@@ -2138,6 +2162,8 @@
   <string name="bookmark_import_menu_button">Importovat ze souboru</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">Záložky se nepodařilo naimportovat. Zkuste to znovu.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Importované záložky</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -3127,8 +3153,12 @@
   <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN je aktivní.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Začít</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Prohlížejte s extra ochranou</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">Teď ne</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">Nepodařilo se připojit k síti VPN. Zkuste to znovu za několik minut.</string>
   <!--
     Autofill
 
