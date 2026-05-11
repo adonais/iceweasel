@@ -42,8 +42,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
@@ -54,8 +56,6 @@ import org.mozilla.fenix.onboarding.view.Action
 import org.mozilla.fenix.onboarding.view.OnboardingMarketingData
 import org.mozilla.fenix.onboarding.view.OnboardingPageState
 import org.mozilla.fenix.theme.FirefoxTheme
-
-private val buttonHeight = 40.dp
 
 /**
  * UI for an onboarding page that allows the user to opt out of marketing data analytics.
@@ -102,7 +102,7 @@ fun MarketingDataOnboardingPageRedesign(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(scrollState)
-                            .padding(start = 20.dp, end = 32.dp),
+                            .padding(start = 20.dp, end = 32.dp, bottom = 32.dp),
                         verticalArrangement = Arrangement.spacedBy(36.dp),
                     ) {
                         Text(
@@ -126,12 +126,34 @@ fun MarketingDataOnboardingPageRedesign(
                             MarketingDataView(
                                 marketingData = it,
                                 checkboxChecked = checkboxChecked,
-                                onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
                                 onMarketingOptInToggle = { isChecked ->
                                     checkboxChecked = isChecked
                                     onMarketingOptInToggle(isChecked)
                                 },
                             )
+                        }
+
+                        Spacer(Modifier.weight(1f))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            state.marketingData?.let {
+                                LinkText(
+                                    text = it.bodyOneLinkText,
+                                    linkTextStates = listOf(
+                                        LinkTextState(
+                                            text = it.bodyOneLinkText,
+                                            url = "",
+                                            onClick = { onMarketingDataLearnMoreClick() },
+                                        ),
+                                    ),
+                                    linkTextDecoration = TextDecoration.Underline,
+                                    style = FirefoxTheme.typography.body2,
+                                    textAlign = TextAlign.Start,
+                                )
+                            }
                         }
                     }
                 }
@@ -143,7 +165,17 @@ fun MarketingDataOnboardingPageRedesign(
                 )
             }
 
-            Spacer(Modifier.height(buttonHeight))
+            state.secondaryButton?.let {
+                FilledButton(
+                    text = it.text,
+                    modifier = Modifier
+                        .width(width = FirefoxTheme.layout.size.maxWidth.small)
+                        .semantics {
+                            testTag = state.title + "onboarding_card_redesign.negative_button"
+                        },
+                    onClick = { onMarketingDataContinueClick(checkboxChecked) },
+                )
+            }
 
             FilledButton(
                 text = state.primaryButton.text,
@@ -152,6 +184,7 @@ fun MarketingDataOnboardingPageRedesign(
                     .semantics {
                         testTag = state.title + "onboarding_card_redesign.positive_button"
                     },
+                icon = painterResource(id = R.drawable.ic_favourite_filled),
                 onClick = { onMarketingDataContinueClick(checkboxChecked) },
             )
         }
@@ -166,7 +199,6 @@ fun MarketingDataOnboardingPageRedesign(
 private fun MarketingDataView(
     marketingData: OnboardingMarketingData,
     checkboxChecked: Boolean,
-    onMarketingDataLearnMoreClick: () -> Unit,
     onMarketingOptInToggle: (optIn: Boolean) -> Unit,
 ) {
     Column {
@@ -190,16 +222,8 @@ private fun MarketingDataView(
                 },
             )
 
-            LinkText(
-                text = marketingData.bodyOneText.updateFirstPlaceholder(marketingData.bodyOneLinkText),
-                linkTextStates = listOf(
-                    LinkTextState(
-                        text = marketingData.bodyOneLinkText,
-                        url = "",
-                        onClick = { onMarketingDataLearnMoreClick() },
-                    ),
-                ),
-                linkTextDecoration = TextDecoration.Underline,
+            Text(
+                text = marketingData.bodyOneText,
                 style = FirefoxTheme.typography.body2,
                 textAlign = TextAlign.Start,
             )
@@ -207,9 +231,24 @@ private fun MarketingDataView(
     }
 }
 
-@FlexibleWindowLightDarkPreview
+private class BodyResourcePreviewProvider : PreviewParameterProvider<Int> {
+    override val values = sequenceOf(
+        R.string.nova_onboarding_marketing_body_2,
+        R.string.nova_onboarding_marketing_body_3,
+        R.string.nova_onboarding_marketing_body_4,
+        R.string.nova_onboarding_marketing_body_5,
+    )
+}
+
+// Uncomment @FlexibleWindowLightDarkPreview below to review changes across multiple screen sizes.
+// @FlexibleWindowLightDarkPreview
+
+// Use @PreviewLightDark by default for preview rendering performance and easier preview navigation.
+@PreviewLightDark
 @Composable
-private fun MarketingDataOnboardingPagePreview() {
+private fun MarketingDataOnboardingPagePreview(
+    @PreviewParameter(BodyResourcePreviewProvider::class) bodyResource: Int,
+) {
     FirefoxTheme {
         MarketingDataOnboardingPageRedesign(
             state = OnboardingPageState(
@@ -217,12 +256,16 @@ private fun MarketingDataOnboardingPagePreview() {
                 title = stringResource(id = R.string.nova_onboarding_marketing_title),
                 description = "", // NB: not used in the redesign
                 primaryButton = Action(
-                    text = stringResource(id = R.string.nova_onboarding_continue_button),
+                    text = stringResource(id = R.string.nova_onboarding_marketing_primary_button_text),
+                    onClick = {},
+                ),
+                secondaryButton = Action(
+                    text = stringResource(id = R.string.nova_onboarding_marketing_secondary_button_text),
                     onClick = {},
                 ),
                 marketingData = OnboardingMarketingData(
                     marketingCardVariant = MarketingCardVariant.DEFAULT,
-                    bodyOneText = stringResource(id = R.string.nova_onboarding_marketing_body),
+                    bodyOneText = stringResource(id = bodyResource),
                     bodyOneLinkText = stringResource(id = R.string.nova_onboarding_marketing_body_link_text),
                     bodyTwoText = "", // NB: not used in the redesign
                 ),
@@ -233,5 +276,3 @@ private fun MarketingDataOnboardingPagePreview() {
         )
     }
 }
-
-private fun String.updateFirstPlaceholder(text: String) = replace($$"%1$s", text)

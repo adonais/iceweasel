@@ -97,7 +97,7 @@ features:
               primary-button-label: nova_onboarding_continue_button
               extra-data:
                 marketing-data:
-                  body-line-one-text: nova_onboarding_marketing_body
+                  body-line-one-text: nova_onboarding_marketing_body_2
                   body-line-one-link-text: nova_onboarding_marketing_body_link_text
     defaults:
       - channel: nightly
