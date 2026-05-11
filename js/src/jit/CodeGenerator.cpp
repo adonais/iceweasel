@@ -18436,6 +18436,9 @@ void CodeGenerator::visitLoadSlotByIteratorIndexCommon(Register object,
   masm.bind(&indexOkay);
 
   masm.loadValue(BaseObjectElementIndex(kindScratch, indexScratch), result);
+  masm.branchTestMagicValue(Assembler::NotEqual, result, JS_ELEMENTS_HOLE,
+                            &done);
+  masm.assumeUnreachable("Dense element is a hole");
   masm.bind(&done);
 }
 
