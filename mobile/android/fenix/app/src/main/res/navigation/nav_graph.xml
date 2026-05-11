@@ -204,6 +204,9 @@
     <action
         android:id="@+id/action_global_to_installedAddonDetailsFragment"
         app:destination="@id/installedAddonDetailsFragment" />
+    <action
+      android:id="@+id/action_global_aiControlsFragment"
+      app:destination="@+id/aiControlsFragment"/>
 
     <fragment
         android:id="@+id/tabManagementFragment"
