@@ -298,6 +298,7 @@ let JSWINDOWACTORS = {
       "about:newtab*",
       "about:home*",
     ],
+    remoteTypes: ["parent", "privilegedabout"],
   },
 
   BlockedSite: {
