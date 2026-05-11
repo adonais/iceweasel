@@ -2321,6 +2321,30 @@ onboarding:
     send_in_pings:
       - onboarding
       - events
+  marketing_data_skip_clicked:
+    type: event
+    description:
+      The user clicked skip on the marketing data opt out screen
+    extra_keys:
+      onboarding_reason:
+        type: string
+        description: The reason the user is being onboarded.
+      install_source:
+        type: string
+        description: The source of installation.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037795
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D299320
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Onboarding
+    send_in_pings:
+      - onboarding
+      - events
   marketing_data_card_viewed:
     type: event
     description:

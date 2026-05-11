@@ -320,6 +320,9 @@ class OnboardingFragment : Fragment() {
                 }
                 telemetryRecorder.onMarketingDataContinueClicked(allowMarketingDataCollection)
             },
+            onMarketingDataSkipClick = {
+                telemetryRecorder.onMarketingDataSkipClicked()
+            },
             currentIndex = { index ->
                 removeMarketingFeature.withFeature { it.currentPageIndex = index }
             },

@@ -66,6 +66,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param onMarketingDataLearnMoreClick callback for when the user clicks the learn more text link.
  * @param onMarketingOptInToggle callback for when the user toggles the opt-in checkbox.
  * @param onMarketingDataContinueClick callback for when the user clicks the continue button.
+ * @param onMarketingDataSkipClick callback for when the user clicks the skip button.
  */
 @Suppress("LongMethod")
 @Composable
@@ -74,6 +75,7 @@ fun MarketingDataOnboardingPageRedesign(
     onMarketingDataLearnMoreClick: () -> Unit,
     onMarketingOptInToggle: (optIn: Boolean) -> Unit,
     onMarketingDataContinueClick: (allowMarketingDataCollection: Boolean) -> Unit,
+    onMarketingDataSkipClick: () -> Unit,
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -169,9 +171,9 @@ fun MarketingDataOnboardingPageRedesign(
 
             state.secondaryButton?.let {
                 if (state.marketingData?.marketingCardVariant == MarketingCardVariant.TREATMENT_C) {
-                    SecondaryButtonOutline(it, state, onMarketingDataContinueClick, checkboxChecked)
+                    SecondaryButtonOutline(it, state, onMarketingDataSkipClick)
                 } else {
-                    SecondaryButtonFilled(it, state, onMarketingDataContinueClick, checkboxChecked)
+                    SecondaryButtonFilled(it, state, onMarketingDataSkipClick)
                 }
             }
 
@@ -198,8 +200,7 @@ fun MarketingDataOnboardingPageRedesign(
 private fun SecondaryButtonFilled(
     action: Action,
     state: OnboardingPageState,
-    onMarketingDataContinueClick: (Boolean) -> Unit,
-    checkboxChecked: Boolean,
+    onMarketingDataSkipClick: () -> Unit,
 ) {
     FilledButton(
         text = action.text,
@@ -208,7 +209,7 @@ private fun SecondaryButtonFilled(
             .semantics {
                 testTag = state.title + "onboarding_card_redesign.negative_button"
             },
-        onClick = { onMarketingDataContinueClick(checkboxChecked) },
+        onClick = { onMarketingDataSkipClick() },
     )
 }
 
@@ -216,8 +217,7 @@ private fun SecondaryButtonFilled(
 private fun SecondaryButtonOutline(
     action: Action,
     state: OnboardingPageState,
-    onMarketingDataContinueClick: (Boolean) -> Unit,
-    checkboxChecked: Boolean,
+    onMarketingDataSkipClick: () -> Unit,
 ) {
     OutlinedButton(
         text = action.text,
@@ -226,7 +226,7 @@ private fun SecondaryButtonOutline(
             .semantics {
                 testTag = state.title + "onboarding_card_redesign.negative_button"
             },
-        onClick = { onMarketingDataContinueClick(checkboxChecked) },
+        onClick = { onMarketingDataSkipClick() },
     )
 }
 
@@ -325,6 +325,7 @@ private fun MarketingDataOnboardingPagePreview(
             onMarketingDataLearnMoreClick = {},
             onMarketingOptInToggle = {},
             onMarketingDataContinueClick = {},
+            onMarketingDataSkipClick = {},
         )
     }
 }
