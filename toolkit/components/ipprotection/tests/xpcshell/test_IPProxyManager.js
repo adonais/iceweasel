@@ -351,6 +351,32 @@ add_task(async function test_IPPProxyStates_error() {
 });
 
 /**
+ * Tests that a 500 from Guardian during activation surfaces as CATASTROPHIC.
+ */
+add_task(async function test_IPPProxyManager_catastrophic_on_500() {
+  const sandbox = sinon.createSandbox();
+  setupStubs(sandbox);
+  IPPFxaAuthProvider.fetchProxyPass.resolves({
+    status: 500,
+    error: undefined,
+    pass: undefined,
+    usage: undefined,
+  });
+
+  await IPProtectionService.init();
+  const result = await IPPProxyManager.start(false);
+
+  Assert.equal(
+    result.error,
+    ERRORS.CATASTROPHIC,
+    "Status 500 from Guardian should surface CATASTROPHIC"
+  );
+
+  IPProtectionService.uninit();
+  sandbox.restore();
+});
+
+/**
  * Tests that activation failures reset the proxy state to the previous state.
  */
 add_task(async function test_IPPProxyManager_activation_failure() {

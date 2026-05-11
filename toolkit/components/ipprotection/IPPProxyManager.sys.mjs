@@ -377,7 +377,8 @@ class IPPProxyManagerSingleton extends EventTarget {
     // If the current proxy pass is valid, no need to re-authenticate.
     // Throws an error if the proxy pass is not available.
     if (this.#pass == null || this.#pass.shouldRotate()) {
-      const { pass, usage, error } = await this.#getPassAndUsage(abortSignal);
+      const { pass, usage, error, status } =
+        await this.#getPassAndUsage(abortSignal);
       if (usage) {
         this.#setUsage(usage);
         if (this.#usage.remaining <= 0) {
@@ -387,6 +388,9 @@ class IPPProxyManagerSingleton extends EventTarget {
       }
 
       if (error || !pass) {
+        if (status === 500) {
+          throw ERRORS.CATASTROPHIC;
+        }
         throw ERRORS.PASS_UNAVAILABLE;
       }
       this.#pass = pass;
@@ -578,15 +582,15 @@ class IPPProxyManagerSingleton extends EventTarget {
       lazy.logConsole.info("Quota exceeded", {
         usage: usage ? `${usage.remaining} / ${usage.max}` : "unknown",
       });
-      return { pass: null, usage, error };
+      return { pass: null, usage, error, status };
     }
 
     // All other error cases
     if (error || status != 200) {
-      return { error: error || `Status: ${status}` };
+      return { error: error || `Status: ${status}`, status };
     }
 
-    return { pass, usage };
+    return { pass, usage, status };
   }
 
   /**
