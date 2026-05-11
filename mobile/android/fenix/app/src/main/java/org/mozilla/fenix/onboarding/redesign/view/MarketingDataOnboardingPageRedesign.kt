@@ -47,6 +47,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
@@ -167,15 +168,11 @@ fun MarketingDataOnboardingPageRedesign(
             }
 
             state.secondaryButton?.let {
-                FilledButton(
-                    text = it.text,
-                    modifier = Modifier
-                        .width(width = FirefoxTheme.layout.size.maxWidth.small)
-                        .semantics {
-                            testTag = state.title + "onboarding_card_redesign.negative_button"
-                        },
-                    onClick = { onMarketingDataContinueClick(checkboxChecked) },
-                )
+                if (state.marketingData?.marketingCardVariant == MarketingCardVariant.TREATMENT_C) {
+                    SecondaryButtonOutline(it, state, onMarketingDataContinueClick, checkboxChecked)
+                } else {
+                    SecondaryButtonFilled(it, state, onMarketingDataContinueClick, checkboxChecked)
+                }
             }
 
             FilledButton(
@@ -195,6 +192,42 @@ fun MarketingDataOnboardingPageRedesign(
     LaunchedEffect(Unit) {
         state.onRecordImpressionEvent()
     }
+}
+
+@Composable
+private fun SecondaryButtonFilled(
+    action: Action,
+    state: OnboardingPageState,
+    onMarketingDataContinueClick: (Boolean) -> Unit,
+    checkboxChecked: Boolean,
+) {
+    FilledButton(
+        text = action.text,
+        modifier = Modifier
+            .width(width = FirefoxTheme.layout.size.maxWidth.small)
+            .semantics {
+                testTag = state.title + "onboarding_card_redesign.negative_button"
+            },
+        onClick = { onMarketingDataContinueClick(checkboxChecked) },
+    )
+}
+
+@Composable
+private fun SecondaryButtonOutline(
+    action: Action,
+    state: OnboardingPageState,
+    onMarketingDataContinueClick: (Boolean) -> Unit,
+    checkboxChecked: Boolean,
+) {
+    OutlinedButton(
+        text = action.text,
+        modifier = Modifier
+            .width(width = FirefoxTheme.layout.size.maxWidth.small)
+            .semantics {
+                testTag = state.title + "onboarding_card_redesign.negative_button"
+            },
+        onClick = { onMarketingDataContinueClick(checkboxChecked) },
+    )
 }
 
 @Composable
@@ -224,8 +257,9 @@ private fun MarketingDataView(
                 },
             )
 
+            val bodyCopyRes = bodyCopyForVariant(marketingData.marketingCardVariant)
             Text(
-                text = marketingData.bodyOneText,
+                text = stringResource(bodyCopyRes),
                 style = FirefoxTheme.typography.body2,
                 textAlign = TextAlign.Start,
             )
@@ -233,13 +267,29 @@ private fun MarketingDataView(
     }
 }
 
-private class BodyResourcePreviewProvider : PreviewParameterProvider<Int> {
+private fun bodyCopyForVariant(marketingCardVariant: MarketingCardVariant) =
+    when (marketingCardVariant) {
+        MarketingCardVariant.DEFAULT -> R.string.nova_onboarding_marketing_body_2
+        MarketingCardVariant.TREATMENT_A -> R.string.nova_onboarding_marketing_body_3
+        MarketingCardVariant.TREATMENT_B,
+        MarketingCardVariant.TREATMENT_C,
+            -> R.string.nova_onboarding_marketing_body_4
+
+        MarketingCardVariant.TREATMENT_D -> R.string.nova_onboarding_marketing_body_5
+    }
+
+private class BodyResourcePreviewProvider : PreviewParameterProvider<MarketingCardVariant> {
     override val values = sequenceOf(
-        R.string.nova_onboarding_marketing_body_2,
-        R.string.nova_onboarding_marketing_body_3,
-        R.string.nova_onboarding_marketing_body_4,
-        R.string.nova_onboarding_marketing_body_5,
+        MarketingCardVariant.DEFAULT,
+        MarketingCardVariant.TREATMENT_A,
+        MarketingCardVariant.TREATMENT_B,
+        MarketingCardVariant.TREATMENT_C,
+        MarketingCardVariant.TREATMENT_D,
     )
+
+    override fun getDisplayName(index: Int): String {
+        return values.elementAt(index).name
+    }
 }
 
 // Uncomment @FlexibleWindowLightDarkPreview below to review changes across multiple screen sizes.
@@ -249,7 +299,7 @@ private class BodyResourcePreviewProvider : PreviewParameterProvider<Int> {
 @PreviewLightDark
 @Composable
 private fun MarketingDataOnboardingPagePreview(
-    @PreviewParameter(BodyResourcePreviewProvider::class) bodyResource: Int,
+    @PreviewParameter(BodyResourcePreviewProvider::class) variant: MarketingCardVariant,
 ) {
     FirefoxTheme {
         MarketingDataOnboardingPageRedesign(
@@ -266,8 +316,8 @@ private fun MarketingDataOnboardingPagePreview(
                     onClick = {},
                 ),
                 marketingData = OnboardingMarketingData(
-                    marketingCardVariant = MarketingCardVariant.DEFAULT,
-                    bodyOneText = stringResource(id = bodyResource),
+                    marketingCardVariant = variant,
+                    bodyOneText = "", // NB: not used in the redesign
                     bodyOneLinkText = stringResource(id = R.string.nova_onboarding_marketing_body_link_text),
                     bodyTwoText = "", // NB: not used in the redesign
                 ),
