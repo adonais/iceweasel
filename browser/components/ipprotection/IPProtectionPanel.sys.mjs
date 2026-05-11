@@ -154,8 +154,18 @@ export class IPProtectionPanel {
   #window = null;
   #panelView = null;
   #headerButtons = [];
+  #locationsClosedByKeyboard = false;
   #locationsKeyListener = e => {
-    if (e.code !== "Tab" && e.code !== "ArrowDown" && e.code !== "ArrowUp") {
+    if (
+      e.code !== "Tab" &&
+      e.code !== "ArrowDown" &&
+      e.code !== "ArrowUp" &&
+      e.code !== "ArrowLeft" &&
+      e.code !== "ArrowRight" &&
+      e.code !== "Enter" &&
+      e.code !== "NumpadEnter" &&
+      e.code !== "Space"
+    ) {
       return;
     }
 
@@ -174,28 +184,60 @@ export class IPProtectionPanel {
     const promoButton = view.querySelector("moz-promo moz-button");
     const focused = view.ownerDocument.activeElement;
 
-    if (!view.contains(focused)) {
+    const isRTL = Services.locale.isAppLocaleRTL;
+    const isBackArrow = isRTL
+      ? e.code === "ArrowRight"
+      : e.code === "ArrowLeft";
+
+    if (e.code === "ArrowRight" || e.code === "ArrowLeft") {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isBackArrow) {
+        this.#locationsClosedByKeyboard = true;
+        this.panelMultiView?.goBack();
+      }
       return;
     }
 
-    const isOnListItem = listItems.includes(focused);
-
-    // Arrow key handling. Make it only work for the locations list
+    // Make up/down arrow keys only work for the locations list
     if (e.code === "ArrowDown" || e.code === "ArrowUp") {
       e.preventDefault();
       e.stopPropagation();
 
-      if (!isOnListItem) {
+      if (!view.contains(focused)) {
         return;
       }
-      const focusedIndex = listItems.indexOf(focused);
+
+      const isOnListItemForArrows = listItems.includes(focused);
+      if (!isOnListItemForArrows) {
+        return;
+      }
+      const arrowFocusedIndex = listItems.indexOf(focused);
       const nextListItem =
         e.code === "ArrowDown"
-          ? listItems[(focusedIndex + 1) % listItems.length]
-          : listItems[(focusedIndex - 1 + listItems.length) % listItems.length];
+          ? listItems[(arrowFocusedIndex + 1) % listItems.length]
+          : listItems[
+              (arrowFocusedIndex - 1 + listItems.length) % listItems.length
+            ];
       nextListItem?.focus();
       return;
     }
+
+    if (e.code === "Enter" || e.code === "NumpadEnter" || e.code === "Space") {
+      if (view.contains(focused) && focused === backButton) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.#locationsClosedByKeyboard = true;
+        this.panelMultiView?.goBack();
+      }
+      return;
+    }
+
+    if (!view.contains(focused)) {
+      return;
+    }
+
+    const isOnListItemForFocus = listItems.includes(focused);
 
     // Tab key handling
     const tabOnlyElements = [backButton, listItems[0], promoButton].filter(
@@ -206,7 +248,7 @@ export class IPProtectionPanel {
     e.stopPropagation();
 
     // Force focus out of locations list if on a list item
-    if (isOnListItem) {
+    if (isOnListItemForFocus) {
       if (e.shiftKey) {
         backButton?.focus();
       } else {
@@ -693,12 +735,18 @@ export class IPProtectionPanel {
 
   /**
    * Show the Locations subview and create its components if necessary.
+   *
+   * @param {boolean} [keyboardActivated]
+   *   True if the subview was opened via keyboard, false if via mouse.
+   * @param {HTMLElement|null} [locationButton]
+   *   The button that opened the subview, to restore focus when the subview closes.
    */
-  async showLocationSelector() {
+  async showLocationSelector(keyboardActivated = false, locationButton = null) {
     let view = this.locationsView;
     if (!view) {
       return;
     }
+
     let viewShown = new Promise(resolve => {
       view.addEventListener("ViewShown", resolve, { once: true });
     });
@@ -709,6 +757,10 @@ export class IPProtectionPanel {
         view.removeEventListener("keydown", this.#locationsKeyListener, {
           capture: true,
         });
+        if (this.#locationsClosedByKeyboard) {
+          this.#locationsClosedByKeyboard = false;
+          locationButton?.focus();
+        }
       },
       { once: true }
     );
@@ -718,11 +770,17 @@ export class IPProtectionPanel {
 
     await viewShown;
 
-    // Allow back button and list items to manage focus and override the PanelMultiView keydown listener
+    // Allow back button, list items and promo button to manage focus and override
+    // the PanelMultiView keydown listener.
     for (let el of view.querySelectorAll(
       ".subviewbutton-back, .location-item, moz-promo moz-button"
     )) {
       el.dataset.capturesFocus = "true";
+    }
+
+    // On keyboard activation, focus the first list item
+    if (keyboardActivated) {
+      view.querySelector(".location-item:not([disabled])")?.focus();
     }
 
     view.addEventListener("keydown", this.#locationsKeyListener, {
@@ -1189,7 +1247,10 @@ export class IPProtectionPanel {
         this.setState({ showLocationButtonBadge: false });
       }
       Glean.ipprotection.locationSelectorButtonClicked.record();
-      this.showLocationSelector();
+      this.showLocationSelector(
+        event.detail?.keyboardActivated,
+        event.detail?.locationButton
+      );
     } else if (event.type == "IPProtection:UserSelectLocation") {
       const { code } = event.detail;
       Glean.ipprotection.locationChanged.record({ location: code });

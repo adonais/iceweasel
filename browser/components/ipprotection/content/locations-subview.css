@@ -48,7 +48,7 @@
     outline-offset: var(--focus-outline-inset);
   }
 
-  &[aria-selected="true"] {
+  &[aria-checked="true"] {
     .location-check {
       visibility: visible;
     }
@@ -62,6 +62,14 @@
     .location-description {
       color: var(--text-color-deemphasized);
     }
+  }
+
+  @media (prefers-contrast) {
+    border: var(--button-border);
+  }
+
+  @media (forced-colors) {
+    border: var(--button-border);
   }
 }
 
