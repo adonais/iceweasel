@@ -171,11 +171,15 @@ fun MarketingDataOnboardingPageRedesign(
 
             Spacer(Modifier.height(32.dp))
 
-            state.secondaryButton?.let {
-                if (state.marketingData?.marketingCardVariant == MarketingCardVariant.TREATMENT_C) {
-                    SecondaryButtonOutline(it, state, onMarketingDataSkipClick)
-                } else {
-                    SecondaryButtonFilled(it, state, onMarketingDataSkipClick)
+            state.secondaryButton?.let { action ->
+                when (state.marketingData?.marketingCardVariant) {
+                    MarketingCardVariant.TREATMENT_A,
+                    MarketingCardVariant.TREATMENT_B,
+                        ->
+                        SecondaryButtonFilled(action, state, onMarketingDataSkipClick)
+
+                    else ->
+                        SecondaryButtonOutline(action, state, onMarketingDataSkipClick)
                 }
             }
 
