@@ -1214,6 +1214,17 @@ static MOZ_ALWAYS_INLINE bool CallAddPropertyHook(JSContext* cx,
                                                   Handle<NativeObject*> obj,
                                                   HandleId id,
                                                   HandleValue value) {
+  // Inline addProperty for array objects.
+  if (obj->is<ArrayObject>()) {
+    ArrayObject* arr = &obj->as<ArrayObject>();
+    uint32_t length = arr->length();
+    uint32_t index;
+    if (IdIsIndex(id, &index) && index >= length) {
+      arr->setLength(cx, index + 1);
+    }
+    return true;
+  }
+
   JSAddPropertyOp addProperty = obj->getClass()->getAddProperty();
   if (MOZ_UNLIKELY(addProperty)) {
     if (!CallJSAddPropertyOp(cx, addProperty, obj, id, value)) {
