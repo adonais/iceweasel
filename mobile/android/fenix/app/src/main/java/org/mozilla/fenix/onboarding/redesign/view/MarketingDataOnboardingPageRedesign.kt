@@ -59,6 +59,8 @@ import org.mozilla.fenix.onboarding.view.OnboardingMarketingData
 import org.mozilla.fenix.onboarding.view.OnboardingPageState
 import org.mozilla.fenix.theme.FirefoxTheme
 
+private val MARKETING_CONTENT_IMAGE_HEIGHT = 150.dp
+
 /**
  * UI for an onboarding page that allows the user to opt out of marketing data analytics.
  *
@@ -106,7 +108,7 @@ fun MarketingDataOnboardingPageRedesign(
                         modifier = Modifier
                             .fillMaxSize()
                             .verticalScroll(scrollState)
-                            .padding(start = 20.dp, end = 32.dp, bottom = 32.dp),
+                            .padding(start = 20.dp, end = 32.dp),
                         verticalArrangement = Arrangement.spacedBy(36.dp),
                     ) {
                         Text(
@@ -120,7 +122,7 @@ fun MarketingDataOnboardingPageRedesign(
                             horizontalArrangement = Arrangement.Center,
                         ) {
                             Image(
-                                modifier = Modifier.height(CONTENT_IMAGE_HEIGHT),
+                                modifier = Modifier.height(MARKETING_CONTENT_IMAGE_HEIGHT),
                                 painter = painterResource(id = state.imageRes),
                                 contentDescription = null,
                             )
@@ -136,29 +138,6 @@ fun MarketingDataOnboardingPageRedesign(
                                 },
                             )
                         }
-
-                        Spacer(Modifier.weight(1f))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                        ) {
-                            state.marketingData?.let {
-                                LinkText(
-                                    text = it.bodyOneLinkText,
-                                    linkTextStates = listOf(
-                                        LinkTextState(
-                                            text = it.bodyOneLinkText,
-                                            url = "",
-                                            onClick = { onMarketingDataLearnMoreClick() },
-                                        ),
-                                    ),
-                                    linkTextDecoration = TextDecoration.Underline,
-                                    style = FirefoxTheme.typography.body2,
-                                    textAlign = TextAlign.Start,
-                                )
-                            }
-                        }
                     }
                 }
 
@@ -168,6 +147,29 @@ fun MarketingDataOnboardingPageRedesign(
                     enabled = state.isSmallDevice,
                 )
             }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                state.marketingData?.let {
+                    LinkText(
+                        text = it.bodyOneLinkText,
+                        linkTextStates = listOf(
+                            LinkTextState(
+                                text = it.bodyOneLinkText,
+                                url = "",
+                                onClick = { onMarketingDataLearnMoreClick() },
+                            ),
+                        ),
+                        linkTextDecoration = TextDecoration.Underline,
+                        style = FirefoxTheme.typography.body2,
+                        textAlign = TextAlign.Start,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(32.dp))
 
             state.secondaryButton?.let {
                 if (state.marketingData?.marketingCardVariant == MarketingCardVariant.TREATMENT_C) {
