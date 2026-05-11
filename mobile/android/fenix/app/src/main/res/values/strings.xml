@@ -4158,6 +4158,10 @@
     <string name="sports_widget_first_half" tools:ignore="UnusedResources">First half</string>
     <!-- Sports widget match status label shown during second half of a match. -->
     <string name="sports_widget_second_half" tools:ignore="UnusedResources">Second half</string>
+    <!-- Sports widget error card title shown when the user is offline. -->
+    <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Looks like you’re offline.</string>
+    <!-- Sports widget error card description shown when the user is offline. -->
+    <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Check your internet connection and try again.</string>
 
     <!-- Privacy notice homepage banner -->
     <!-- A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
