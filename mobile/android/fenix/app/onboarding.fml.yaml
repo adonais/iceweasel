@@ -308,6 +308,10 @@ objects:
   MarketingData:
     description: An object to describe the marketing data onboarding card.
     fields:
+      marketing-card-variant:
+        description: Which marketing card variant to use.
+        type: MarketingCardVariant
+        default: default
       body-line-one-text:
         type: Text
         description: The text for line one of the body.
@@ -360,3 +364,9 @@ enums:
         description: Sets the theme to light mode.
       theme-dark:
         description: Sets the theme to dark mode.
+
+  MarketingCardVariant:
+    description: An enum to describe a marketing card variation.
+    variants:
+      default:
+        description: The default marketing card variation.

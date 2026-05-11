@@ -7,6 +7,7 @@ package org.mozilla.fenix.onboarding.view
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.mozilla.fenix.R
+import org.mozilla.fenix.nimbus.MarketingCardVariant
 
 class OnboardingMapperTest {
 
@@ -222,6 +223,7 @@ class OnboardingMapperTest {
     @Test
     fun `GIVEN a marketing data collection opt out page WHEN mapToOnboardingPageState is called THEN creates the expected OnboardingPageState`() {
         val marketingData = OnboardingMarketingData(
+            marketingCardVariant = MarketingCardVariant.DEFAULT,
             bodyOneText = "marketing data body one",
             bodyOneLinkText = "marketing data body one link",
             bodyTwoText = "marketing data body two",

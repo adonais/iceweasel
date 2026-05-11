@@ -49,6 +49,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.ScrollIndicator
+import org.mozilla.fenix.nimbus.MarketingCardVariant
 import org.mozilla.fenix.onboarding.view.Action
 import org.mozilla.fenix.onboarding.view.OnboardingMarketingData
 import org.mozilla.fenix.onboarding.view.OnboardingPageState
@@ -220,6 +221,7 @@ private fun MarketingDataOnboardingPagePreview() {
                     onClick = {},
                 ),
                 marketingData = OnboardingMarketingData(
+                    marketingCardVariant = MarketingCardVariant.DEFAULT,
                     bodyOneText = stringResource(id = R.string.nova_onboarding_marketing_body),
                     bodyOneLinkText = stringResource(id = R.string.nova_onboarding_marketing_body_link_text),
                     bodyTwoText = "", // NB: not used in the redesign

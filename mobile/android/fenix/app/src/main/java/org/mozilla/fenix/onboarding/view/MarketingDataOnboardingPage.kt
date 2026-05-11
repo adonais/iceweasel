@@ -42,6 +42,7 @@ import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
+import org.mozilla.fenix.nimbus.MarketingCardVariant
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -189,6 +190,7 @@ private fun MarketingDataOnboardingPagePreview() {
                     onClick = {},
                 ),
                 marketingData = OnboardingMarketingData(
+                    marketingCardVariant = MarketingCardVariant.DEFAULT,
                     bodyOneText = stringResource(id = R.string.onboarding_marketing_learn_more),
                     bodyOneLinkText = stringResource(id = R.string.onboarding_marketing_learn_more),
                     bodyTwoText = stringResource(id = R.string.onboarding_marketing_opt_out_checkbox),
