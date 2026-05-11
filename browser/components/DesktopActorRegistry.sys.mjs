@@ -296,6 +296,7 @@ let JSWINDOWACTORS = {
       "about:welcome*",
       "chrome://browser/content/spotlight.html",
     ],
+    remoteTypes: ["parent", "privilegedabout"],
   },
 
   BlockedSite: {
