@@ -94,11 +94,11 @@ features:
               ordering: 60
               title: nova_onboarding_marketing_title
               image-res: nova_onboarding_marketing
-              primary-button-label: nova_onboarding_marketing_primary_button_text
+              primary-button-label: nova_onboarding_continue_button
               secondary-button-label: nova_onboarding_marketing_secondary_button_text
               extra-data:
                 marketing-data:
-                  body-line-one-text: nova_onboarding_marketing_body_2
+                  body-line-one-text: nova_onboarding_marketing_body
                   body-line-one-link-text: nova_onboarding_marketing_body_link_text
     defaults:
       - channel: nightly
@@ -377,5 +377,3 @@ enums:
         description: The Treatment B marketing card variation.
       treatment-c:
         description: The Treatment C marketing card variation.
-      treatment-d:
-        description: The Treatment D marketing card variation.
