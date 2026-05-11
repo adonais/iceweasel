@@ -47,6 +47,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
@@ -185,6 +186,7 @@ fun MarketingDataOnboardingPageRedesign(
                         testTag = state.title + "onboarding_card_redesign.positive_button"
                     },
                 icon = painterResource(id = R.drawable.ic_favourite_filled),
+                iconTint = PhotonColors.Red50,
                 onClick = { onMarketingDataContinueClick(checkboxChecked) },
             )
         }
