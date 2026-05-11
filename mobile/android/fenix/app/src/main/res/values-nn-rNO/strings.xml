@@ -3214,6 +3214,13 @@
   <string name="ip_protection_onboarding_body_link">Surf med ekstra vern</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">Ikkje no</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">Klarte ikkje å koble til VPN. Prøv igjen om nokre minutt.</string>
+  <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">%1$d GB med VPN-data brukt. Tilgangen blir tilbakestilt neste månad.</string>
   <!--
     Autofill
 
