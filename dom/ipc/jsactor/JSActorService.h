@@ -104,6 +104,11 @@ class JSActorProtocol : public nsISupports {
 
   virtual const Sided& Parent() const = 0;
   virtual const Sided& Child() const = 0;
+
+ protected:
+  bool RemoteTypePrefixMatches(const nsACString& aRemoteType);
+
+  nsTArray<nsCString> mRemoteTypes;
 };
 
 }  // namespace dom

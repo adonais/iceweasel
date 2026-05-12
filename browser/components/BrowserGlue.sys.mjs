@@ -626,6 +626,7 @@ let JSWINDOWACTORS = {
       "about:preferences",
       "chrome://browser/content/migration/migration-dialog-window.html",
     ],
+    remoteTypes: ["parent", "privilegedabout"],
   },
 
   PageInfo: {
