@@ -837,18 +837,16 @@ static inline ColorDepth ColorDepthForBitDepth(uint8_t aBitDepth) {
   return depth;
 }
 
-// 10 and 12 bits color depth image are using 16 bits integers for storage
-// As such we need to rescale the value from 10 or 12 bits to 16.
+// 10 and 12 bits color depth image are using 16 bits integers for storage.
+// Data is placed as MSB and texture is sampled within [0 - 1] range.
 static inline uint32_t RescalingFactorForColorDepth(ColorDepth aColorDepth) {
   uint32_t factor = 1;
   switch (aColorDepth) {
     case ColorDepth::COLOR_8:
       break;
     case ColorDepth::COLOR_10:
-      factor = 64;
       break;
     case ColorDepth::COLOR_12:
-      factor = 16;
       break;
     case ColorDepth::COLOR_16:
       break;
