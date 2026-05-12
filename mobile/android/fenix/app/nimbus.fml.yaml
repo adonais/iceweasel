@@ -1039,6 +1039,14 @@ features:
         value:
           enabled: false
 
+  marketing-onboarding-card:
+    description: A temporary feature to control the marketing onboarding card shown during the onboarding flow.
+    variables:
+      enabled:
+        description: If false, the marketing onboarding card will never be shown.
+        type: Boolean
+        default: true
+
   suppress-sponsored-top-sites:
     description: Suppress sponsored top sites for new users for 14 days.
     variables:
