@@ -11,7 +11,6 @@
  */
 
 import { createEngine } from "chrome://global/content/ml/EngineProcess.sys.mjs";
-import { getFxAccountsSingleton } from "resource://gre/modules/FxAccounts.sys.mjs";
 import {
   OAUTH_CLIENT_ID,
   SCOPE_PROFILE_UID,
@@ -21,6 +20,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
+  getFxAccountsSingleton: "resource://gre/modules/FxAccounts.sys.mjs",
 });
 
 const APIKEY_PREF = "browser.smartwindow.apiKey";
@@ -673,7 +673,7 @@ export class openAIEngine {
    */
   static async getFxAccountToken() {
     try {
-      const fxAccounts = getFxAccountsSingleton();
+      const fxAccounts = lazy.getFxAccountsSingleton();
       return await fxAccounts.getOAuthToken({
         scope: [SCOPE_SMART_WINDOW, SCOPE_PROFILE_UID],
         client_id: OAUTH_CLIENT_ID,
@@ -768,7 +768,7 @@ export class openAIEngine {
         "LLM request returned a 401 - revoking our token and retrying"
       );
 
-      const fxAccounts = getFxAccountsSingleton();
+      const fxAccounts = lazy.getFxAccountsSingleton();
       const oldToken = content.fxAccountToken;
       if (oldToken) {
         await fxAccounts.removeCachedOAuthToken({ token: oldToken });
@@ -865,7 +865,7 @@ export class openAIEngine {
         "LLM streaming request returned a 401 - revoking our token and retrying"
       );
 
-      const fxAccounts = getFxAccountsSingleton();
+      const fxAccounts = lazy.getFxAccountsSingleton();
       const oldToken = options.fxAccountToken;
       if (oldToken) {
         await fxAccounts.removeCachedOAuthToken({ token: oldToken });
