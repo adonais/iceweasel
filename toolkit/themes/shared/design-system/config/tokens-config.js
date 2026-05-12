@@ -533,10 +533,10 @@ function formatNovaNewtabTokens({ mediaQuery, args }) {
   });
 
   if (mediaQuery) {
-    return `\n@media (${mediaQuery}) {\n  :root:has(.nova-enabled) {\n${formattedVars}\n  }\n}\n`;
+    return `\n@media (${mediaQuery}) {\n  :root.nova-tokens {\n${formattedVars}\n  }\n}\n`;
   }
 
-  return `:root:has(.nova-enabled) {\n${formattedVars}\n}\n`;
+  return `:root.nova-tokens {\n${formattedVars}\n}\n`;
 }
 
 /**

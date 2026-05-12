@@ -509,7 +509,15 @@ export class BaseContent extends React.PureComponent {
   }
 
   applyBodyClasses() {
-    const { body } = this.props.document;
+    const { body, documentElement } = this.props.document;
+
+    if (documentElement) {
+      documentElement.classList.toggle(
+        "nova-tokens",
+        !!this.props.Prefs.values[PREF_NOVA_ENABLED]
+      );
+    }
+
     if (!body) {
       return;
     }

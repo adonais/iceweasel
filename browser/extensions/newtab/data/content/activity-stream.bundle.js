@@ -18975,8 +18975,12 @@ class BaseContent extends (external_React_default()).PureComponent {
   }
   applyBodyClasses() {
     const {
-      body
+      body,
+      documentElement
     } = this.props.document;
+    if (documentElement) {
+      documentElement.classList.toggle("nova-tokens", !!this.props.Prefs.values[Base_PREF_NOVA_ENABLED]);
+    }
     if (!body) {
       return;
     }
