@@ -907,7 +907,9 @@ export var Policies = {
         return;
       }
       if (param == 3) {
-        // allows access, leave pref value at default
+        // allow access to serial ports, but don't lock the
+        // pref so it can be manually disabled
+        PoliciesUtils.setDefaultPref("dom.webserial.enabled", true, false);
       } else if (param == 2) {
         // do not allow access to serial ports
         setAndLockPref("dom.webserial.enabled", false);
