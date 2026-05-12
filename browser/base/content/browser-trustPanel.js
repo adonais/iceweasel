@@ -432,16 +432,16 @@ class TrustPanel {
       !ContentBlockingAllowList.canHandle(window.gBrowser.selectedBrowser)
     );
 
-    let hasSiteData = false;
     try {
       let baseDomain = SiteDataManager.getBaseDomainFromHost(this.#uri.host);
-      hasSiteData = await SiteDataManager.hasSiteData(baseDomain);
+      SiteDataManager.hasSiteData(baseDomain).then(hasSiteData => {
+        this.#updateAttribute(
+          document.getElementById("trustpanel-clear-cookies-button"),
+          "disabled",
+          !hasSiteData
+        );
+      });
     } catch (e) {}
-    this.#updateAttribute(
-      document.getElementById("trustpanel-clear-cookies-button"),
-      "disabled",
-      !hasSiteData
-    );
 
     this.#updateAttribute(
       document.getElementById("trustpanel-toggle"),
