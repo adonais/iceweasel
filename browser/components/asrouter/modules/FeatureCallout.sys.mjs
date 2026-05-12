@@ -2530,7 +2530,7 @@ export class FeatureCallout {
           "Menu linear-gradient(var(--panel-background), var(--panel-background))",
         color: "var(--panel-color)",
         border: "var(--panel-border-color)",
-        "accent-color": "var(--fc-primary-button-color)",
+        "accent-color": "var(--focus-outline-color)",
         // Button Background
         "button-background": "var(--button-background-color)",
         "button-background-hover": "var(--button-background-color-hover)",
