@@ -4162,6 +4162,8 @@
     <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Looks like you’re offline.</string>
     <!-- Sports widget error card description shown when the user is offline. -->
     <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Check your internet connection and try again.</string>
+    <!-- Sports widget general group stage label in the soccer tournament. -->
+    <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Group Stage</string>
 
     <!-- Privacy notice homepage banner -->
     <!-- A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
