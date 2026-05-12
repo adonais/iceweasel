@@ -80,6 +80,7 @@ void ConnectionAttemptPool::InsertIntoConnectionAttempts(
 
 void ConnectionAttemptPool::RemoveConnectionAttempt(ConnectionAttempt* sock,
                                                     bool abandon) {
+  RefPtr<ConnectionAttempt> keepAlive(sock);
   if (abandon) {
     sock->Abandon();
   }
@@ -155,7 +156,12 @@ void ConnectionAttemptPool::TimeoutTick() {
 
   TimeStamp currentTime = TimeStamp::Now();
   double maxConnectTime_ms = gHttpHandler->ConnectTimeout();
-  for (const auto& sock : Reversed(mAttempts)) {
+
+  // Iterate a snapshot: OnTimeout / RemoveConnectionAttempt below can
+  // mutate mAttempts (directly or via reentrant Close paths), which
+  // would invalidate iterators over the live array.
+  nsTArray<RefPtr<ConnectionAttempt>> snapshot(mAttempts.Clone());
+  for (const auto& sock : snapshot) {
     double delta = sock->Duration(currentTime);
     // If the socket has timed out, close it so the waiting
     // transaction will get the proper signal.
