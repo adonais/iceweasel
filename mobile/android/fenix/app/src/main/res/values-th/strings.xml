@@ -74,7 +74,7 @@
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">ความเข้าใจผิดที่พบบ่อยเกี่ยวกับการท่องเว็บแบบส่วนตัว</string>
   <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
-  <string name="private_browsing_a11y_session_announcement">วาระการท่องเว็บแบบส่วนตัว</string>
+  <string name="private_browsing_a11y_session_announcement">เซสชันการท่องเว็บแบบส่วนตัว</string>
   <!--
     True Private Browsing Mode
 
@@ -442,7 +442,7 @@
   <!-- Button in the search suggestions onboarding that does not allow search suggestions in private sessions -->
   <string name="search_suggestions_onboarding_do_not_allow_button">ไม่อนุญาต</string>
   <!-- Search suggestion onboarding hint title text -->
-  <string name="search_suggestions_onboarding_title">อนุญาตคำแนะนำการค้นหาในวาระส่วนตัวหรือไม่?</string>
+  <string name="search_suggestions_onboarding_title">อนุญาตคำแนะนำการค้นหาในเซสชันส่วนตัวหรือไม่?</string>
   <!-- Search suggestion onboarding hint description text, %s is the name of the app (for example "Firefox"). -->
   <string name="search_suggestions_onboarding_text">%s จะแบ่งปันทุกอย่างที่คุณพิมพ์ในแถบที่อยู่ไปยังเครื่องมือค้นหาเริ่มต้นของคุณ</string>
   <!-- Search engine suggestion title text. %s is the name of the suggested engine. -->
@@ -972,7 +972,7 @@
   <!-- Preference title for switch preference to show voice search button -->
   <string name="preferences_show_voice_search">แสดงการค้นหาด้วยเสียง</string>
   <!-- Preference title for switch preference to show search suggestions also in private mode -->
-  <string name="preferences_show_search_suggestions_in_private">แสดงในวาระส่วนตัว</string>
+  <string name="preferences_show_search_suggestions_in_private">แสดงในเซสชันส่วนตัว</string>
   <!-- Preference title for switch preference to show trending search suggestions -->
   <string name="preferences_show_trending_search_suggestions">แสดงข้อเสนอแนะที่กำลังนิยม</string>
   <!-- Preference title for switch preference to show recent search suggestions -->
@@ -1245,7 +1245,7 @@
     The user can decide if they would like to continue trying to start extensions or if they'd rather continue without them.
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="extension_process_crash_dialog_message">มีส่วนขยายอย่างน้อยหนึ่งตัวหยุดทำงาน ทำให้ระบบของคุณไม่เสถียร %1$s ลองเริ่มการทำงานของส่วนขยายใหม่ไม่สำเร็จ\n\nส่วนขยายจะไม่เริ่มทำงานใหม่ในระหว่างวาระปัจจุบันของคุณ\n\nการลบหรือปิดใช้งานส่วนขยายอาจแก้ปัญหานี้ได้</string>
+  <string name="extension_process_crash_dialog_message">มีส่วนขยายอย่างน้อยหนึ่งตัวหยุดทำงาน ทำให้ระบบของคุณไม่เสถียร %1$s ลองเริ่มการทำงานของส่วนขยายใหม่ไม่สำเร็จ\n\nส่วนขยายจะไม่เริ่มทำงานใหม่ในระหว่างเซสชันปัจจุบันของคุณ\n\nการลบหรือปิดใช้งานส่วนขยายอาจแก้ปัญหานี้ได้</string>
   <!-- Button text on the extension crash dialog to prompt the user to try restarting the extensions but the dialog will reappear if it is unsuccessful again -->
   <string name="extension_process_crash_dialog_retry_button_text" tools:ignore="UnusedResources">ลองเริ่มส่วนขยายใหม่</string>
   <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->

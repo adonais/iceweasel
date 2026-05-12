@@ -256,7 +256,7 @@
   <!-- This is displayed when the add-on is not allowed to run in private browsing. -->
   <string name="mozac_feature_addons_not_allowed_in_private_browsing">Niedozwolone w\u00a0oknach prywatnych</string>
   <!-- Indicates the add-on is enabled. -->
-  <string name="mozac_feature_addons_enabled">Włączony</string>
+  <string name="mozac_feature_addons_enabled">Włączone</string>
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the installed section. -->
   <string name="mozac_feature_addons_installed_section">Zainstalowane</string>
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the recommended section. -->

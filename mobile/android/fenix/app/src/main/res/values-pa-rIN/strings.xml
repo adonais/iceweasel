@@ -375,6 +375,8 @@
   <string name="preferences_ai_controls">AI ਕੰਟਰੋਲ</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">%s ਵਿੱਚ ਤੁਹਾਡੇ ਕੋਲ ਹਮੇਸ਼ਾਂ ਚੋਣ ਹੁੰਦੀ ਹੈ</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">ਉਸ ਵਿੱਚ AI ਨਾਲ ਸੁਧਾਰ ਕੀਤੇ ਫ਼ੀਚਰਾਂ ਨੂੰ ਵਰਤਣਾ ਵੀ ਸ਼ਾਮਲ ਹੈ। %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">ਉਸ ਵਿੱਚ AI ਨਾਲ ਸੁਧਾਰ ਕੀਤੇ ਫ਼ੀਚਰਾਂ ਨੂੰ ਵਰਤਣਾ ਵੀ ਸ਼ਾਮਲ ਹੈ।</string>
   <!-- Link text for learning more about AI controls -->
@@ -1738,6 +1740,10 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">ਗਰੁੱਪ ਨੂੰ ਹਟਾਓ</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">ਰੱਦ ਕਰੋ</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">ਟੈਬ ਨੂੰ ਬੰਦ ਕਰਕੇ ਗਰੁੱਪ ਨੂੰ ਹਟਾਉਣਾ ਹੈ?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">ਇਹ ਗਰੁੱਪ ਨੂੰ ਪੱਕੇ ਤੌਰ ਉੱਤੇ ਹਟਾਉਂਦਾ ਹੈ।</string>
   <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
   <string name="close_tab_and_delete_group_confirmation_dialog_confirm">ਗਰੁੱਪ ਨੂੰ ਹਟਾਓ</string>
   <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
@@ -3152,6 +3158,11 @@
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">ਹੁਣੇ ਨਹੀਂ</string>
   <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">VPN ਦੇ %1$d GB ਨੂੰ ਵਰਤਿਆ ਗਿਆ ਹੈ। ਪਹੁੰਚ ਅਗਲੇ ਮਹੀਨੇ ਮੁੜ-ਸੈੱਟ ਹੋਵੇਗੀ।</string>
+  <!--
     Autofill
 
     Preference and title for managing the autofill settings
@@ -3693,6 +3704,8 @@
   <string name="translation_settings_download_language">ਭਾਸ਼ਾਵਾਂ ਨੂੰ ਡਾਊਨਲੋਡ ਕਰੋ</string>
   <!-- Toggle switch title and description for the translation settings control. -->
   <string name="translation_settings_control_title">ਅਨੁਵਾਦ</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">ਸਭ ਅਨੁਵਾਦ ਤੁਹਾਡੇ ਡਿਵਾਈਸ ਉੱਤੇ ਪ੍ਰਾਈਵੇਟ ਰਹਿੰਦੇ ਹਨ।</string>
   <!-- Clickable text for the translations settings item that links to a website. -->
   <string name="translation_settings_control_learn_more">ਹੋਰ ਜਾਣੋ</string>
   <!--
@@ -4399,10 +4412,44 @@
   <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">ਯੂਰਪ</string>
   <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
   <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">ਓਸ਼ੇਨੀਆ</string>
+  <!-- Section header for the South America confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">ਦੱਖਣੀ ਅਮਰੀਕਾ</string>
+  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_england" tools:ignore="UnusedResources">ਇੰਗਲੈਂਡ</string>
+  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">ਸਕਾਟਲੈਂਡ</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">ਲਾਈਵ</string>
+  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">2026 ਵਰਲਡ ਕੱਪ ਚੈਪੀਅਨ</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">ਦੂਜੇ ਨੰਬਰ ਉੱਤੇ</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">ਤੀਜੀ ਥਾਂ</string>
+  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_32">32ਵੇਂ ਗੇੜ</string>
+  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_16">16ਵੇਂ ਗੇੜ</string>
+  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
+  <string name="sports_widget_quarter_final">ਕੁਆਟਰ ਫਾਈਨਲ</string>
+  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
+  <string name="sports_widget_semi_final">ਸੈਮੀ-ਫਾਈਨਲ</string>
+  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
+  <string name="sports_widget_final">ਫਾਈਨਲ</string>
+  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
+  <string name="sports_widget_bronze_final">ਕਾਂਸੀ ਲਈ ਫਾਈਨਲ</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">ਮੈਚ ਦੀ ਜਾਣਕਾਰੀ ਹਾਲੇ ਮੌਜੂਦ ਨਹੀਂ ਹੈ। ਕੁਝ ਕੁ ਮਿੰਟਾਂ ਵਿੱਚ ਤਾਜ਼ਾ ਕਰਨ ਦੀ ਕੋਸ਼ਿਸ਼ ਕਰੀਓ।</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
   <string name="sports_widget_error_connection_interrupted">ਕਨੈਕਸ਼ਨ ਰੋਕਿਆ — ਲਾਈਵ ਅੱਪਡੇਟ ਰੋਕੇ ਗਏ।</string>
   <!-- Sports widget action label to refresh match data after an error. -->
   <string name="sports_widget_error_refresh">ਤਾਜ਼ਾ ਕਰੋ</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a" tools:ignore="UnusedResources">ਗਰੁੱਪ A</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b" tools:ignore="UnusedResources">ਗਰੁੱਪ B</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c" tools:ignore="UnusedResources">ਗਰੁੱਪ C</string>
   <!-- Sports widget group stage label for group D in the soccer tournament. -->
   <string name="sports_widget_group_d" tools:ignore="UnusedResources">ਗਰੁੱਪ D</string>
   <!-- Sports widget group stage label for group E in the soccer tournament. -->
@@ -4423,6 +4470,8 @@
   <string name="sports_widget_group_l" tools:ignore="UnusedResources">ਗਰੁੱਪ L</string>
   <!-- Sports widget button label to see match results. -->
   <string name="sports_widget_see_results" tools:ignore="UnusedResources">ਨਤੀਜਿਆਂ ਨੂੰ ਵੇਖੋ</string>
+  <!-- Sports widget button label to view details of a soccer match results. -->
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">ਮੈਚ ਵੇਰਵਿਆਂ ਨੂੰ ਵੇਖੋ</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">ਸੰਬੰਧਿਤ ਮੈਚ</string>
   <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
@@ -4431,12 +4480,26 @@
   <string name="sports_widget_match_full_time_suffix">(ਸਾਰਾ ਸਮਾਂ)</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">ਸਾਰਾ ਸਮਾਂ</string>
+  <!--
+    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
+    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
+    It’s playfully related to Firefox in that “tabs” are a browser feature.
+    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
+    or tracking in a technical sense; the meaning is about staying informed.
+  -->
+  <string name="sports_widget_card_title" tools:ignore="UnusedResources">ਵਰਲਡ ਕੱਪ ਉੱਤੇ ਨਿਗ੍ਹਾ ਰੱਖੋ</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">ਲਾਈਵ ਮੈਚ ਅੱਪਡੇਟ ਅਤੇ ਹੋਰ ਲਵੋ।</string>
   <!-- Sports widget menu item to change the selected team. -->
   <string name="sports_widget_change_team" tools:ignore="UnusedResources">ਟੀਮ ਨੂੰ ਬਦਲੋ</string>
   <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
   <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">ਪਸੰਦੀਦਾ ਵਾਲਪੇਪਰ ਲਵੋ</string>
   <!-- Sports widget menu item to remove the widget from the homepage. -->
   <string name="sports_widget_remove" tools:ignore="UnusedResources">ਹਟਾਓ</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow">ਹਾਲੇ ਵੀ ਫ਼ਾਲੋ ਕਰਨਾ ਚਾਹੁੰਦੇ ਹੋ?</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team">ਵਰਲਡ ਕੱਪ ਨਾਲ ਜੁੜੇ ਰਹਿਣ ਥਈ ਹੋਰ ਟੀਮ ਨੂੰ ਚੁਣੋ।</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">ਹੋਰ ਟੀਮ ਨੂੰ ਫ਼ਾਲੋ ਕਰੋ</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->

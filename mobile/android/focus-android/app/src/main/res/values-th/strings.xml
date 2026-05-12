@@ -549,7 +549,7 @@
     * To understand what notification channels are, see: https://www.androidcentral.com/notification-channels
     * To see how this string will look like in Android's UI, see: https://github.com/mozilla-mobile/focus-android/issues/863#issuecomment-324105723
   -->
-  <string name="notification_browsing_session_channel_name">วาระการท่องเว็บแบบส่วนตัว</string>
+  <string name="notification_browsing_session_channel_name">เซสชันการท่องเว็บแบบส่วนตัว</string>
   <!--
     The user visible description of the "notification channel" (Android 8+ feature) for the ongoing notification shown while a browsing session is active.
     The recommended maximum length is 300 characters; the value may be truncated if it is too long. %1$s will be replaced with the name of the app (e.g. Firefox Focus).
@@ -557,7 +557,7 @@
     * To understand what notification channels are, see: https://www.androidcentral.com/notification-channels
     * To see how this string will look like in Android's UI, see: https://github.com/mozilla-mobile/focus-android/issues/863#issuecomment-324105723
   -->
-  <string name="notification_browsing_session_channel_description">การแจ้งเตือนช่วยให้คุณล้างวาระ %1$s ของคุณด้วยการแตะ คุณไม่จำเป็นต้องเปิดแอปหรือดูสิ่งที่กำลังทำงานในเบราว์เซอร์ของคุณ</string>
+  <string name="notification_browsing_session_channel_description">การแจ้งเตือนช่วยให้คุณล้างเซสชัน %1$s ของคุณด้วยการแตะ คุณไม่จำเป็นต้องเปิดแอปหรือดูสิ่งที่กำลังทำงานในเบราว์เซอร์ของคุณ</string>
   <!-- Label for a button in the "tabs tray" to erase the browsing history (closes all tabs and removes associated data). -->
   <string name="tabs_tray_action_erase">ล้างประวัติการท่องเว็บ</string>
   <!-- Label for the option in the Focus "tabs tray" to clos the other tabs except the current tab. -->
@@ -736,7 +736,7 @@
     Button for the fingerprint authentication dialog box that is shown to the user when sharing a link to the app
     while the user has biometric authentication enabled. When pressed, the user's previous session is cleared, and the shared link is opened.
   -->
-  <string name="biometric_auth_open_link_new_session">เปิดลิงก์ในวาระใหม่</string>
+  <string name="biometric_auth_open_link_new_session">เปิดลิงก์ในเซสชันใหม่</string>
   <!-- Description for the fingerprint authentication image. Used for accessibility purposes. -->
   <string name="biometric_auth_image_description">ไอคอนลายนิ้วมือ</string>
   <!--
@@ -941,7 +941,7 @@
   <!-- This is the title of promote search widget dialog. -->
   <string name="promote_search_widget_dialog_title">ล้างประวัติการท่องเว็บแล้ว! 🎉</string>
   <!-- Banner Info Message than will appear when user first enters in the app. The location is at the toolbar. -->
-  <string name="cfr_for_start_browsing">เริ่มวาระการท่องเว็บแบบส่วนตัว แล้วเราจะปิดกั้นตัวติดตามและสิ่งไม่พึงประสงค์ในขณะที่คุณใช้งาน</string>
+  <string name="cfr_for_start_browsing">เริ่มเซสชันการท่องเว็บแบบส่วนตัว แล้วเราจะปิดกั้นตัวติดตามและสิ่งไม่พึงประสงค์ในขณะที่คุณใช้งาน</string>
   <!--
     This is the subtitle of promote search widget dialog. %1$s will get replaced with the name
     of the app (e.g. "Focus")

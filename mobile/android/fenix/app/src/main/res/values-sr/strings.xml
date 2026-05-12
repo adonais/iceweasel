@@ -16,7 +16,7 @@
 
     Content description (not visible, for screen readers etc.): "Three dot" menu button.
   -->
-  <string name="content_description_menu">Више опција</string>
+  <string name="content_description_menu">Више могућности</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Приватно прегледање</string>
   <!-- Content description (not visible, for screen readers etc.): "Normal Browsing" menu button. -->
@@ -85,7 +85,7 @@
     Description of private browsing mode displayed to users on the homepage when they enable private mode.
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="felt_privacy_info_card_subtitle_3">%1$s брише ваше колачиће, историјат и податке сајтова када затворите све ваше приватне језичке.</string>
+  <string name="felt_privacy_info_card_subtitle_3">%1$s брише ваше колачиће, историјат и податке страница када затворите све ваше приватне језичке.</string>
   <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
@@ -119,7 +119,7 @@
   <!-- Text for the banner message to tell users about our auto close feature. -->
   <string name="tab_tray_close_tabs_banner_message">Подесите отворене језичке да се аутоматски затварају ако нису прегледане последњег дана, недеље или месеца.</string>
   <!-- Text for the positive action button to go to Settings for auto close tabs. -->
-  <string name="tab_tray_close_tabs_banner_positive_button_text">Погледај опције</string>
+  <string name="tab_tray_close_tabs_banner_positive_button_text">Погледај могућности</string>
   <!-- Text for the negative action button to dismiss the Close Tabs Banner. -->
   <string name="tab_tray_close_tabs_banner_negative_button_text">Одбаци</string>
   <!-- Text for the banner message to tell users about our inactive tabs feature. -->
@@ -292,9 +292,9 @@
   <!-- Browser menu badge text for summarization feature -->
   <string name="browser_menu_summarize_page_badge">Ново</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Пријави неисправан сајт…</string>
+  <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Пријави неисправну страницу…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
-  <string name="browser_menu_webcompat_reporter_2">Пријави неисправан сајт</string>
+  <string name="browser_menu_webcompat_reporter_2">Пријави неисправну страницу</string>
   <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
   <string name="browser_menu_translated">Преведено</string>
   <!-- Browser menu label for the print feature -->
@@ -361,8 +361,58 @@
   <string name="translation_toolbar_expand_action">Отвори лист за превођење</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Одбаци поруку</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Резимеи страница</string>
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
+  <string name="preferences_ai_controls">ВИ контроле</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">У %s-у увек имате избор</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">То укључује и то да ли ћете користити могућности унапређене помоћу ВИ. %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">То укључује и то да ли ћете користити могућности унапређене помоћу ВИ.</string>
   <!-- Link text for learning more about AI controls -->
   <string name="ai_controls_learn_more">Сазнајте више</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Блокирај ВИ побољшања</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Блокирање значи да нећете видети нова или тренутна ВИ побољшања у %s, нити искачуће прозоре о њима.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Погледајте шта јесте и шта није укључено</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">Нова и тренутна ВИ побољшања су подразумевано блокирана. Одблокирајте одређене могућности испод.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Могућности засноване на ВИ</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Преводи</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Сви преводи остају приватни на вашем уређају.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Још подешавања превода</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Још подешавања сажетка странице</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Гласовна претрага</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">Аудио се претвара у текст помоћу Google Speech Services.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Блокирај ВИ побољшања?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Нећете видети нова или тренутна побољшања помоћу ВИ у %1$s, ни искачуће прозоре о њима. Након тога, можете одблокирати све што желите да наставите да користите.\\n\\nБлокирање такође утиче на додатке који користе ВИ коју обезбеђује %1$s.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Шта ће бити блокирано:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Откажи</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Блокирај</string>
   <!--
     Locale Settings Fragment
 
@@ -525,7 +575,7 @@
   <!-- Terms of use (ToU) onboarding redesign title. -->
   <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">Покрените врхунски Android прегледач</string>
   <!-- Terms of use (ToU) first subheader. -->
-  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">Учитавајте сајтове муњевито брзо</string>
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">Учитавајте странице муњевито брзо</string>
   <!-- Terms of use (ToU) second subheader. -->
   <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">Аутоматска заштита од праћења</string>
   <!-- Terms of use (ToU) third subheader. -->
@@ -806,7 +856,7 @@
   <!-- Preference category for privacy and security settings -->
   <string name="preferences_category_privacy_security">Приватност и безбедност</string>
   <!-- Preference for advanced site settings -->
-  <string name="preferences_site_settings">Подешавања сајта</string>
+  <string name="preferences_site_settings">Подешавања странице</string>
   <!-- Preference for private browsing options -->
   <string name="preferences_private_browsing_options">Приватно прегледање</string>
   <!-- Preference for opening links in a private tab -->
@@ -824,11 +874,11 @@
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
   <string name="preferences_pbm_lock_screen_summary_3">Прегледајте језичке помоћу отиска прста, ПИН-а или откључавања лицем. Укључивање овога такође спречава снимање и дељење екрана.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
-  <string name="cookie_banner_blocker">Блокатор банера колачића</string>
+  <string name="cookie_banner_blocker">Блокатор барјака колачића</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
-  <string name="preferences_cookie_banner_reduction_private_mode">Блокатор банера колачића у приватном прегледању</string>
+  <string name="preferences_cookie_banner_reduction_private_mode">Блокатор барјака колачића у приватном прегледању</string>
   <!-- Text for indicating cookie banner handling is off this site, this is shown as part of the protections panel with the tracking protection toggle -->
-  <string name="reduce_cookie_banner_off_for_site">Искључено за овај сајт</string>
+  <string name="reduce_cookie_banner_off_for_site">Искључено за ову страницу</string>
   <!-- Text for cancel button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner details view. -->
   <string name="cookie_banner_handling_details_site_is_not_supported_cancel_button">Откажи</string>
   <!-- Text for request support button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner details view. -->
@@ -838,25 +888,25 @@
   <!-- Label for the snackBar, after the user reports with success a website where cookie banner reducer did not work -->
   <string name="cookie_banner_handling_report_site_snack_bar_text_2">Захтев послат</string>
   <!-- Text for indicating cookie banner handling is on this site, this is shown as part of the protections panel with the tracking protection toggle -->
-  <string name="reduce_cookie_banner_on_for_site">Укључено за овај сајт</string>
+  <string name="reduce_cookie_banner_on_for_site">Укључено за ову страницу</string>
   <!-- Text for indicating that a request for unsupported site was sent to Nimbus (it's a Mozilla library for experiments), this is shown as part of the protections panel with the tracking protection toggle -->
   <string name="reduce_cookie_banner_unsupported_site_request_submitted_2">Захтев за подршку је послат</string>
   <!-- Text for indicating cookie banner handling is currently not supported for this site, this is shown as part of the protections panel with the tracking protection toggle -->
-  <string name="reduce_cookie_banner_unsupported_site">Сајт тренутно није подржан</string>
+  <string name="reduce_cookie_banner_unsupported_site">Страница тренутно није подржана</string>
   <!-- Title text for a detail explanation indicating cookie banner handling is on this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
-  <string name="reduce_cookie_banner_details_panel_title_on_for_site_1">Укључити блокатор банера колачића за %1$s?</string>
+  <string name="reduce_cookie_banner_details_panel_title_on_for_site_1">Укључити блокатор барјака колачића за %1$s?</string>
   <!-- Title text for a detail explanation indicating cookie banner handling is off this site, this is shown as part of the cookie banner panel in the toolbar. %1$s is a shortened URL of the current site. -->
-  <string name="reduce_cookie_banner_details_panel_title_off_for_site_1">Искључити блокатор банера колачића за %1$s?</string>
+  <string name="reduce_cookie_banner_details_panel_title_off_for_site_1">Искључити блокатор барјака колачића за %1$s?</string>
   <!-- Title text for a detail explanation indicating cookie banner reducer didn't work for the current site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="reduce_cookie_banner_details_panel_title_unsupported_site_request_2">%1$s не може самостално одбити захтеве за употребу колачића на овој страници. Можете послати захтев за подржавање одбијања на овом сајту у будућности.</string>
+  <string name="reduce_cookie_banner_details_panel_title_unsupported_site_request_2">%1$s не може самостално одбити захтеве за употребу колачића на овој страници. Можете послати захтев за подржавање одбијања на овој страници у будућности.</string>
   <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is off for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="reduce_cookie_banner_details_panel_description_off_for_site_1">Искључите и %1$s ће обрисати колачиће и поново учитати овај сајт. Ово вас може одјавити са налога или испразнити вашу корпу за куповину.</string>
+  <string name="reduce_cookie_banner_details_panel_description_off_for_site_1">Искључите и %1$s ће обрисати колачиће и поново учитати ову страницу. Ово вас може одјавити са налога или испразнити вашу корпу за куповину.</string>
   <!-- Long text for a detail explanation indicating what will happen if cookie banner handling is on for a site, this is shown as part of the cookie banner panel in the toolbar. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="reduce_cookie_banner_details_panel_description_on_for_site_3">Укључите и %1$s ће покушати да аутоматски одбије све банере колачића на овом сајту.</string>
+  <string name="reduce_cookie_banner_details_panel_description_on_for_site_3">Укључите и %1$s ће покушати да аутоматски одбије све барјаке колачића на овој страници.</string>
   <!-- Title for the cookie banner re-engagement CFR, the placeholder is replaced with app name. %1$s is the name of the app (for example "Firefox"). -->
   <string name="cookie_banner_cfr_title">%1$s је управо одбио колачиће уместо вас</string>
   <!-- Message for the cookie banner re-engagement CFR -->
-  <string name="cookie_banner_cfr_message">Мање ометања, мање колачића који вас прате на овом сајту.</string>
+  <string name="cookie_banner_cfr_message">Мање ометања, мање колачића који вас прате на овој страници.</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->
   <string name="preferences_https_only_summary">Самостално се повезујемо на странице користећи HTTPS протокол за шифровање података у преносу зарад боље безбедности.</string>
   <!-- Summary of https only preference if https only is set to off -->
@@ -1020,7 +1070,7 @@
 
     The title of the origin permission option allowing a user to enable the extension to run on all sites
   -->
-  <string name="addons_permissions_allow_for_all_sites">Дозволи за све сајтове</string>
+  <string name="addons_permissions_allow_for_all_sites">Дозволи за све странице</string>
   <!-- The subtitle for the allow for all sites preference toggle -->
   <string name="addons_permissions_allow_for_all_sites_subtitle">Ако верујете овом додатку, можете му дату дозволу на свакој страници.</string>
   <!-- The text shown when an extension does not require permissions -->
@@ -1076,6 +1126,8 @@
   <string name="customize_wallpapers">Позадине</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Спонзорисане пречице</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Светско првенство</string>
   <!--
     Wallpapers
 
@@ -1167,7 +1219,7 @@
   <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="restart_warning_dialog_body_2">Апликација се може затворити. Само додирните своју сјајну нову иконицу да бисте поново отворили %1$s.</string>
   <!-- Message to warn users that applying an alternative app icon may require an app restart and will remove existing shortcuts because of the OS limitations. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
-  <string name="restart_and_shortcuts_removal_warning_dialog_body">Промена иконице ће уклонити све сајтове и пречице које сте сачували на почетном екрану. \n\n%1$s се може затворити. Додирните нову иконицу да бисте га поново отворили.</string>
+  <string name="restart_and_shortcuts_removal_warning_dialog_body">Промена иконице ће уклонити све странице и пречице које сте сачували на почетном екрану. \n\n%1$s се може затворити. Додирните нову иконицу да бисте га поново отворили.</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
   <string name="restart_warning_dialog_button_positive_2">Промени иконицу</string>
   <!-- Dialog button text for cancelling app icon change -->
@@ -1392,9 +1444,13 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Скролујте да сакријете траку с алаткама</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Превуците алатну траку усправно да видите отворене језичке</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Превуците траку с алаткама на горе да отворите језичке</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Превуците адресну траку у страну да промените језичке</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Протресите за сажимање</string>
   <!--
     Library
 
@@ -1557,6 +1613,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Отворени приватни језичци: %1$s. Додирните да бисте променили језичке.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d група језичака је отворена. Тапните да промените језичке.</item>
+    <item quantity="other">%1$d групе језичака су отворене. Тапните да промените језичке.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1646,6 +1710,10 @@
   <string name="pwa_site_controls_title_private">%1$s (приватни режим)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Отвори претрагу језичака</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Пробајте групе језичака за мање помицања и више рада.</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Изаберите језичке да направите групу. Оне су сачуване овде, спремне када и ви.</string>
   <!--
     Tab Group
 
@@ -1655,6 +1723,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Уреди групу</string>
   <string name="create_tab_group_save_button">Сачувај</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Нова група, ручка за превлачење за скупљање</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Затвори уређивање групе језичака</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Група</string>
@@ -1670,6 +1740,10 @@
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Додај у</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Додај у групу језичака, ручка за превлачење и скупљање</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Додај у нову групу језичака</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
   <string name="add_to_tab_group_bottom_sheet_close_content_description">Затвори групу додавања у језичак</string>
   <!-- Label for adding to a new tab group. -->
   <string name="add_to_new_tab_group_title">Нова група језичака</string>
@@ -1682,6 +1756,33 @@
     <item quantity="few">%1$d језичка</item>
     <item quantity="other">%1$d језичака</item>
   </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Додај у групу језичака %1$s, %2$d језичак, боја %3$s</item>
+    <item quantity="other">Додај у групу језичака %1$s, %2$d језичака, боја %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Подели групу језичака %1$s са %2$d језичком.</item>
+    <item quantity="other">Подели групу језичака %1$s са %2$d језицима.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Преглед групе језичака, скупи ручку за превлачење</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Група језичака %1$s са %2$d језичком, боја %3$s</item>
+    <item quantity="other">Група језичака %1$s са %2$d језицима, боја %3$s</item>
+  </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">Обрисати групу језичака?</string>
   <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
@@ -1690,6 +1791,38 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Обриши групу</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Откажи</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Затворити језичак и обрисати групу?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">Ово трајно брише групу.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Обриши групу</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Откажи</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Жута</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Наранџаста</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Црвена</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Ружичаста</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Љубичаста</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Тамнољубичаста</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Плава</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Плавичаста</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Зелена</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Сива</string>
   <!--
     History
 
@@ -1826,6 +1959,8 @@
   <string name="download_rename_error_exists_error">Датотека под називом „%s“ већ постоји на овој локацији</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Имена датотека не могу да користе „/“</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Назив који сте унели мења само велика или мала слова. Покушајте са другим називом датотеке.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Не могу преименовати датотеку</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -1925,7 +2060,7 @@
 
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
-  <string name="webcompat_reporter_screen_title">Пријавите неисправан сајт</string>
+  <string name="webcompat_reporter_screen_title">Пријавите неисправну страницу</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
   <string name="webcompat_reporter_description_3">Ваш извештај нам помаже да разумемо и поправимо проблеме у апликацији %1$s како бисмо је учинили бољом за све. %2$s</string>
   <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
@@ -1955,7 +2090,7 @@
   <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
   <string name="webcompat_reporter_etp_checkbox_text">Пошаљи УРЛ-ове које је блокирала заштита од праћења</string>
   <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page. -->
-  <string name="webcompat_reporter_etp_checkbox_description">Побољшана заштита од праћења може да блокира пратиоце и скрипте који су неким веб-сајтовима потребни за правилан рад.</string>
+  <string name="webcompat_reporter_etp_checkbox_description">Побољшана заштита од праћења може да блокира пратиоце и скрипте које су неким веб страницама потребне за правилан рад.</string>
   <!-- The button text for the preview report button to view a preview of the report. -->
   <string name="webcompat_reporter_preview_report">Преглед извештаја</string>
   <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
@@ -1967,11 +2102,11 @@
 
     Broken site reason text for site doesn’t load
   -->
-  <string name="webcompat_reporter_reason_load">Веб сајт се не учитава</string>
+  <string name="webcompat_reporter_reason_load">Веб страница се не учитава</string>
   <!-- Broken site reason text for can’t pay, check out or shop -->
   <string name="webcompat_reporter_reason_checkout">Плаћање, наплата или куповина не раде</string>
   <!-- Broken site reason text for site is slow -->
-  <string name="webcompat_reporter_reason_slow2">Сајт је спор</string>
+  <string name="webcompat_reporter_reason_slow2">Страница је спора</string>
   <!-- Broken site reason text for video isn’t playing or loading -->
   <string name="webcompat_reporter_reason_media2">Видео се не пушта или се не учитава</string>
   <!-- Broken site reason text for missing content -->
@@ -1979,7 +2114,7 @@
   <!-- Broken site reason text for can’t sign in or register -->
   <string name="webcompat_reporter_reason_account2">Пријављивање или регистрација не раде</string>
   <!-- Broken site reason text for site asked to turn off ad blocker -->
-  <string name="webcompat_reporter_reason_turn_off_adblocker">Сајт је тражио искључивање блокатора огласа</string>
+  <string name="webcompat_reporter_reason_turn_off_adblocker">Страница је тражила искључивање блокатора огласа</string>
   <!-- Broken site reason text for browser isn’t supported or blocked -->
   <string name="webcompat_reporter_reason_notsupported">Прегледач није подржан или је блокиран</string>
   <!-- Broken site reason text for something else -->
@@ -2064,7 +2199,7 @@
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Обриши</string>
   <!-- Accessibility label for sorting options -->
-  <string name="bookmark_sort_menu_content_desc">Опције ређања</string>
+  <string name="bookmark_sort_menu_content_desc">Могућности ређања</string>
   <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_custom">Поређај по произвољном редоследу</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
@@ -2075,6 +2210,12 @@
   <string name="bookmark_sort_menu_a_to_z">Поређај од А до Ш</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Поређај од Ш до А</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Увези из датотеке</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Нисмо могли да увеземо обележиваче. Покушајте поново.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Увезени обележивачи</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2133,18 +2274,22 @@
   <string name="bookmark_select_folder_close_folder_content_description">Затвори фасциклу: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Затвори обележиваче</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Увези из датотеке</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Још нема обележивача</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Задржите све своје омиљене обележиваче заједно</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Обележивачи у фасцикли: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
-  <string name="bookmark_empty_list_guest_description">Чувајте сајтове док прегледате. Пријавите се да преузмете обележиваче са других усклађених уређаја.</string>
+  <string name="bookmark_empty_list_guest_description">Чувајте странице док прегледате. Пријавите се да преузмете обележиваче са других усклађених уређаја.</string>
   <!-- Text for the button to navigate to sync authentication -->
   <string name="bookmark_empty_list_guest_cta">Пријави се ради усклађивања</string>
   <!-- Description for the bookmark list empty state when you're signed into sync. -->
-  <string name="bookmark_empty_list_authenticated_description">Чувајте сајтове док прегледате. Такође ћемо преузети обележиваче са других усклађених уређаја.</string>
+  <string name="bookmark_empty_list_authenticated_description">Чувајте странице док прегледате. Такође ћемо преузети обележиваче са других усклађених уређаја.</string>
   <!-- Description for the bookmark list empty state when you're in an empty folder. -->
-  <string name="bookmark_empty_list_folder_description">Додајте обележиваче док прегледате да би касније нашли ваше омиљене сајтове.</string>
+  <string name="bookmark_empty_list_folder_description">Додајте обележиваче док прегледате да би касније нашли ваше омиљене странице.</string>
   <!-- Description for the add new folder button when selecting a folder. -->
   <string name="bookmark_select_folder_new_folder_button_title">Нова фасцикла</string>
   <!-- Bookmark snackbar message for moving a single item. %1$s is the title of the item being moved and %2$s is the new parent folder of the bookmark -->
@@ -2248,7 +2393,7 @@
   <!-- Category header of a preference that allows a user to alter settings related to web content. -->
   <string name="preferences_category_content">Садржај</string>
   <!-- Preference for altering the default browsing mode. When enabled, the desktop site will always be requested. -->
-  <string name="preference_feature_desktop_mode_default">Увек захтевај сајт у десктоп приказу</string>
+  <string name="preference_feature_desktop_mode_default">Увек захтевај страницу у стоном приказу</string>
   <!--
     Collections
 
@@ -2489,7 +2634,7 @@
   -->
   <string name="preferences_delete_browsing_data_browsing_data_subtitle">%d адреса</string>
   <!-- Title for the cookies and site data items in Delete browsing data -->
-  <string name="preferences_delete_browsing_data_cookies_and_site_data">Колачићи и подаци сајта</string>
+  <string name="preferences_delete_browsing_data_cookies_and_site_data">Колачићи и подаци страница</string>
   <!-- Subtitle for the cookies item in Delete browsing data -->
   <string name="preferences_delete_browsing_data_cookies_subtitle">Бићете одјављени са већине страница</string>
   <!-- Title for the cached images and files item in Delete browsing data -->
@@ -2597,6 +2742,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Заштићени сте</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Помозите у откривању пратилаца</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Стандардно (подразумевано)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2608,13 +2755,13 @@
   <!-- Preference description for enhanced tracking protection for the strict protection settings -->
   <string name="preference_enhanced_tracking_protection_strict_description_4">Јача заштита од праћења и брже перформансе, али неке странице можда неће радити исправно.</string>
   <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
-  <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Поправи веће проблеме са сајтом (препоручено)</string>
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">Поправи веће проблеме са страницом (препоручено)</string>
   <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
-  <string name="preference_enhanced_tracking_protection_allow_list_convenience_label">Поправи мање проблеме са сајтом</string>
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience_label">Поправи мање проблеме са страницом</string>
   <!-- Preference description for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_convenience_description">Мора се користити са исправкама за веће проблеме.</string>
   <!-- Preference sub header for the enhanced tracking protection options to fix issues caused by tracker blocking -->
-  <string name="preference_enhanced_tracking_protection_allow_list_subheader">Поправи проблеме са сајтом</string>
+  <string name="preference_enhanced_tracking_protection_allow_list_subheader">Поправи проблеме на страници</string>
   <!-- Learn more text for the enhanced tracking protection options to fix issues caused by tracker blocking -->
   <string name="preference_enhanced_tracking_protection_allow_list_learn_more">Сазнајте више</string>
   <!--
@@ -2624,7 +2771,7 @@
   -->
   <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">Да ли сте сигурни да желите да искључите исправке?</string>
   <!-- Message for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. %1$s is the name of the application (e.g. Fenix). -->
-  <string name="preference_enhanced_tracking_protection_allow_list_dialog_message">Ова поставка помаже у решавању најчешћих проблема са сајтовима. Ако је искључите, неки сајтови можда неће радити, а %1$s неће моћи да помогне у решавању тих проблема.</string>
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_message">Ова поставка помаже у решавању најчешћих проблема са страницама. Ако је искључите, неке странице можда неће радити, а %1$s неће моћи да помогне у решавању тих проблема.</string>
   <!-- Confirmation button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection -->
   <string name="preference_enhanced_tracking_protection_allow_list_dialog_confirm">Искључи исправке</string>
   <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
@@ -2748,7 +2895,7 @@
   <!-- Content description for the "Info" button -->
   <string name="preference_doh_info_description">Информације</string>
   <!-- Content description for the "Add Site" button -->
-  <string name="preference_doh_add_site_description">Додај веб сајт</string>
+  <string name="preference_doh_add_site_description">Додај веб страницу</string>
   <!-- Title displayed for "Default Protection" option under "DNS over HTTPS" -->
   <string name="preference_doh_default_protection">Подразумевана заштита</string>
   <!-- Summary displayed for "Default Protection" option under "DNS over HTTPS". %1$s is the name of the application (e.g. Fenix). -->
@@ -2780,7 +2927,7 @@
   <!-- Bullet point 2 for "Max Protection" information page under "DNS over HTTPS" -->
   <string name="preference_doh_max_protection_info_2">Увек упозори ако безбедни ДНС није доступан</string>
   <!-- Bullet point 3 for "Max Protection" information page under "DNS over HTTPS" -->
-  <string name="preference_doh_max_protection_info_3">Ако безбедни ДНС није доступан, сајтови се неће учитавати или неће радити исправно</string>
+  <string name="preference_doh_max_protection_info_3">Ако безбедни ДНС није доступан, странице се неће учитавати или неће радити исправно</string>
   <!-- Title displayed for "Off" option under "DNS over HTTPS" -->
   <string name="preference_doh_off">Искључено</string>
   <!-- Summary displayed for "Off" option under "DNS over HTTPS" -->
@@ -2806,11 +2953,11 @@
   <!-- Preference to access list of login exceptions that we don't use DNS over HTTPS -->
   <string name="preference_doh_exceptions">Изузеци</string>
   <!-- Description of "exceptions" for "DNS over HTTPS". %1$s is the name of the app (for example "Firefox"). -->
-  <string name="preference_doh_exceptions_summary">%1$s неће користити безбедни DNS на овим сајтовима и њиховим поддоменима.</string>
+  <string name="preference_doh_exceptions_summary">%1$s неће користити безбедни DNS на овим страницама и њиховим поддоменима.</string>
   <!-- Text displayed that links to adding website domain for "DNS over HTTPS" exceptions. -->
-  <string name="preference_doh_exceptions_add">Додај сајт</string>
+  <string name="preference_doh_exceptions_add">Додај страницу</string>
   <!-- Text displayed above the input field when adding exceptions for "DNS over HTTPS". -->
-  <string name="preference_doh_exceptions_add_site">Сајт</string>
+  <string name="preference_doh_exceptions_add_site">Страница</string>
   <!-- Placeholder URL displayed in the input field when adding exceptions for "DNS over HTTPS". -->
   <string name="preference_doh_exceptions_add_placeholder">primer.rs</string>
   <!-- Error displayed in the input field when adding invalid URLs for "DNS over HTTPS". -->
@@ -2862,7 +3009,7 @@
   <!-- Placeholder text for the TextView in the Add to Homescreen dialog -->
   <string name="add_to_homescreen_text_placeholder">Назив пречице</string>
   <!-- Describes the add to homescreen functionality -->
-  <string name="add_to_homescreen_description_2">Овај сајт можете лако додати на почетни екран уређаја за директан приступ и брже прегледање, баш као што користите апликацију.</string>
+  <string name="add_to_homescreen_description_2">Ову страницу можете лако додати на почетни екран уређаја за директан приступ и брже прегледање, баш као што користите апликацију.</string>
   <!-- Preference for managing the settings for logins and passwords in Fenix -->
   <string name="preferences_passwords_logins_and_passwords_2">Лозинке</string>
   <!-- Preference for managing the saving of logins and passwords in Fenix -->
@@ -2872,13 +3019,13 @@
   <!-- Preference option for never saving passwords in Fenix -->
   <string name="preferences_passwords_save_logins_never_save">Никада не чувај</string>
   <!-- Preference for autofilling saved logins in Firefox (in web content), %1$s will be replaced with the app name -->
-  <string name="preferences_passwords_autofill2">Аутоматско попуњавање у %1$s</string>
+  <string name="preferences_passwords_autofill2">Самостално попуњавање у %1$s</string>
   <!-- Description for the preference for autofilling saved logins in Firefox (in web content), %1$s will be replaced with the app name -->
-  <string name="preferences_passwords_autofill_description">Аутоматски попуњавајте корисничка имена и лозинке на сајтовима када користите %1$s.</string>
+  <string name="preferences_passwords_autofill_description">Самостално попуњавајте корисничка имена и лозинке на страницама када користите %1$s.</string>
   <!-- Preference for autofilling logins from Fenix in other apps (e.g. autofilling the Twitter app) -->
-  <string name="preferences_android_autofill">Аутоматско попуњавање у другим апликацијама</string>
+  <string name="preferences_android_autofill">Самостално попуњавање у другим апликацијама</string>
   <!-- Description for the preference for autofilling logins from Fenix in other apps (e.g. autofilling the Twitter app) -->
-  <string name="preferences_android_autofill_description">Аутоматски попуњавајте корисничка имена и лозинке када користите друге апликације на свом уређају.</string>
+  <string name="preferences_android_autofill_description">Самостално попуњавајте корисничка имена и лозинке када користите друге апликације на свом уређају.</string>
   <!-- Preference option for adding a password -->
   <string name="preferences_logins_add_login_2">Додај лозинку</string>
   <!-- Preference for syncing saved passwords in Fenix -->
@@ -2894,9 +3041,9 @@
   <!-- Preference to access list of login exceptions that we never save logins for -->
   <string name="preferences_passwords_exceptions">Изузеци</string>
   <!-- Empty description of list of login exceptions that we never save passwords for. %s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_passwords_exceptions_description_empty_2">%s неће сачувати лозинке за сајтове наведене овде.</string>
+  <string name="preferences_passwords_exceptions_description_empty_2">%s неће сачувати лозинке за странице наведене овде.</string>
   <!-- Description of list of login exceptions that we never save passwords for. %s is the name of the app (for example "Firefox"). -->
-  <string name="preferences_passwords_exceptions_description_2">%s неће сачувати лозинке за ове сајтове.</string>
+  <string name="preferences_passwords_exceptions_description_2">%s неће сачувати лозинке за ове странице.</string>
   <!-- Text on button to remove all saved login exceptions -->
   <string name="preferences_passwords_exceptions_remove_all">Обрисати све изузетке</string>
   <!-- Hint for search box in passwords list -->
@@ -2984,7 +3131,7 @@
   <!-- Title for the Suggest Email Masks toggle -->
   <string name="preferences_email_masks_suggest_title">Предложи маске е-поште</string>
   <!-- Summary for the Suggest Email Masks toggle. -->
-  <string name="preferences_email_masks_suggest_summary">Сакријте своју праву адресу е-поште да бисте заштитили своје сандуче од непожељних порука. Неки сајтови не подржавају маске е-поште.</string>
+  <string name="preferences_email_masks_suggest_summary">Сакријте своју праву адресу е-поште да бисте заштитили своје сандуче од непожељних порука. Неке странице не подржавају маске е-поште.</string>
   <!-- Text that links to additional information about the Email Masks -->
   <string name="preferences_email_masks_suggest_learn_more">Сазнајте више</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
@@ -2993,6 +3140,90 @@
   <string name="email_masks_max_free_tier_reached">Искористили сте својих 5 бесплатних маски е-поште, па смо изабрали једну за поновну употребу.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">Маске е-поште тренутно нису доступне. Покушајте поново за неколико минута.</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">Уграђени ВПН</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">БЕТА</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">ВПН</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">ВПН</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">Уграђени ВПН у %s</string>
+  <!-- Body text for the browser VPN promo card -->
+  <string name="ip_protection_promo_body">Прегледајте веб-странице уз додатну заштиту скривањем ваше локације, чак и на јавним бежичним мрежама.</string>
+  <!-- Link text that opens additional information about the browser VPN -->
+  <string name="ip_protection_learn_more">Сазнајте више</string>
+  <!-- Label for the monthly data allowance section on the browser VPN settings screen -->
+  <string name="ip_protection_data_limit_label">Месечно ограничење података</string>
+  <!--
+    Data usage shown on the browser VPN settings screen.
+    %1$.1f is the data remaining in GB (for example "8.3").
+    %2$.1f is the total monthly allowance in GB (for example "50.0").
+  -->
+  <string name="ip_protection_data_limit_value">%1$.1f GB од %2$.1f GB преостало</string>
+  <!--
+    Text shown below the data usage bar describing when the monthly allowance resets.
+    %1$.0f is the total monthly data allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_reset_info">Враћа се на %1$.0f GB првог дана сваког месеца.</string>
+  <!-- Header for the browser VPN `location` section -->
+  <string name="ip_protection_location_section">Локација</string>
+  <!-- Label for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_label">Препоручено</string>
+  <!-- Description for the recommended automatic location option on the browser VPN settings screen -->
+  <string name="ip_protection_location_recommended_description">Бира најбржу ВПН локацију за вас.</string>
+  <!-- Badge label shown in the menu item when the browser VPN is active -->
+  <string name="preferences_ip_protection_on">Укључено</string>
+  <!-- Badge label shown in the menu item when the browser VPN is off -->
+  <string name="preferences_ip_protection_off">Искључено</string>
+  <!-- Badge label shown in the menu item while the browser VPN is connecting -->
+  <string name="ip_protection_menu_connecting">Повезивање…</string>
+  <!-- Badge label shown in the menu item when the browser VPN is paused -->
+  <string name="ip_protection_menu_paused">Паузирано</string>
+  <!-- Badge label shown in the menu item when the browser VPN has an error -->
+  <string name="ip_protection_menu_error">Грешка</string>
+  <!-- Content description for the chevron button that opens the browser VPN settings screen -->
+  <string name="ip_protection_navigate_settings">Отвори подешавања ВПН-а</string>
+  <!--
+    Subtitle shown below the VPN label in menus when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_menu_limit_reached">Достигнуто ограничење од %1$d GB</string>
+  <!--
+    Error message shown on the browser VPN settings screen when the monthly data allowance is exhausted.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_description">Искористили сте целих %1$d GB ваших ВПН података. Приступ ће се вратити следећег месеца.</string>
+  <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
+  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">ВПН покренут</string>
+  <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
+  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">ВПН је покренут.</string>
+  <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+  <string name="ip_protection_get_started">Започните</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">Испробајте уграђени ВПН %s-а</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$s прикривањем ваше локације, чак и на јавним бежичним мрежама. Добијте %2$d GB бесплатно сваког месеца.</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Прегледајте са додатном заштитом</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Не сада</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">Нисмо успели да се повежемо са ВПН-ом. Покушајте поново за неколико минута.</string>
+  <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">Искоришћено је %1$d GB ВПН података. Приступ ће бити враћен следећег месеца.</string>
   <!--
     Autofill
 
@@ -3208,9 +3439,9 @@
   <!-- Label that indicates a site is displaying a local document -->
   <string name="quick_settings_sheet_local_page">Ова страница је сачувана на вашем уређају.</string>
   <!-- Label to clear site data -->
-  <string name="clear_site_data">Обриши колачиће и податке сајта</string>
+  <string name="clear_site_data">Обриши колачиће и податке странице</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site. %s is the domain of the site. -->
-  <string name="confirm_clear_site_data"><![CDATA[Да ли сте сигурни да желите очистити колачиће и податке сајта <b>%s</b>?]]></string>
+  <string name="confirm_clear_site_data"><![CDATA[Да ли сте сигурни да желите очистити колачиће и податке странице <b>%s</b>?]]></string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for all sites -->
   <string name="confirm_clear_permissions_on_all_sites">Јесте ли сигурни да желите да избришете све дозволе на свим веб страницама?</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site -->
@@ -3293,10 +3524,12 @@
   <string name="homepage_shortcuts_show_all_content_description">Прикажи све пречице</string>
   <!-- Label for the "Add shortcut" button displayed as a tile. -->
   <string name="homepage_shortcuts_add_shortcut">Додај пречицу</string>
+  <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
+  <string name="homepage_shortcuts_add_website_title">Унесите адресу веб странице</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Ограничење пречица достигнуто</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
-  <string name="shortcut_max_limit_content">Да бисте додали нову пречицу, уклоните једну постојећу. Додирните и држите прст над страницом па изаберите опцију за уклањање.</string>
+  <string name="shortcut_max_limit_content">Да бисте додали нову пречицу, уклоните једну постојећу. Додирните и држите прст над страницом па изаберите могућност за уклањање.</string>
   <!-- Confirmation dialog button text when top sites limit is reached. -->
   <string name="top_sites_max_limit_confirmation_button">Важи, разумем</string>
   <!-- Label for the preference to show the shortcuts for the most visited top sites on the homepage -->
@@ -3492,7 +3725,7 @@
 
     Title of the translation options dialog that allows a user to set their translation options for the site the user is currently on.
   -->
-  <string name="translation_option_bottom_sheet_title_heading">Опције превода</string>
+  <string name="translation_option_bottom_sheet_title_heading">Могућности превода</string>
   <!-- Toggle switch label that allows a user to set the setting if they would like the browser to always offer or suggest translations when available. -->
   <string name="translation_option_bottom_sheet_always_translate">Увек понуди превођење</string>
   <!-- Toggle switch label that allows a user to set if they would like a given language to automatically translate or not. %1$s is the language name, for example, "Spanish". -->
@@ -3531,6 +3764,12 @@
   <string name="translation_settings_automatic_never_translate_sites">Никад не преводи ове странице</string>
   <!-- Button text for the button that will take the user to the download languages dialog. On the download languages dialog, the user can manage which languages they would like to download for translations. -->
   <string name="translation_settings_download_language">Преузми језике</string>
+  <!-- Toggle switch title and description for the translation settings control. -->
+  <string name="translation_settings_control_title">Преводи</string>
+  <!-- Description for the translation settings toggle switch. -->
+  <string name="translation_settings_control_description">Сви преводи остају приватни на вашем уређају.</string>
+  <!-- Clickable text for the translations settings item that links to a website. -->
+  <string name="translation_settings_control_learn_more">Сазнајте више</string>
   <!--
     Automatic translation preference screen
 
@@ -3548,7 +3787,7 @@
   -->
   <string name="automatic_translation_option_offer_to_translate_title_preference">Понуди превод (подразумевано)</string>
   <!-- Preference option for offering to translate. Radio button summary text. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="automatic_translation_option_offer_to_translate_summary_preference">%1$s ће понудити да преведе сајтове на овом језику.</string>
+  <string name="automatic_translation_option_offer_to_translate_summary_preference">%1$s ће понудити да преведе странице на овом језику.</string>
   <!-- Preference option for always translate. Radio button title text. -->
   <string name="automatic_translation_option_always_translate_title_preference">Увек преводи</string>
   <!-- Preference option for always translate. Radio button summary text. %1$s is the name of the app (for example "Firefox"). -->
@@ -3556,7 +3795,7 @@
   <!-- Preference option for never translate. Radio button title text. -->
   <string name="automatic_translation_option_never_translate_title_preference">Никад не преводи</string>
   <!-- Preference option for never translate. Radio button summary text. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="automatic_translation_option_never_translate_summary_preference">%1$s никада неће понудити да преведе сајтове на овом језику.</string>
+  <string name="automatic_translation_option_never_translate_summary_preference">%1$s никада неће понудити да преведе странице на овом језику.</string>
   <!--
     Never translate site preference screen
 
@@ -3564,14 +3803,14 @@
   -->
   <string name="never_translate_site_toolbar_title_preference">Никад не преводи ове странице</string>
   <!-- Screen header presenting the never translate site preference feature. It will appear under the toolbar. -->
-  <string name="never_translate_site_header_preference">Да бисте додали нови сајт: посетите га и изаберите “Никад не преводи овај сајт” из менија за превод.</string>
+  <string name="never_translate_site_header_preference">Да бисте додали нову страницу: посетите је и изаберите „Никад не преводи ову страницу“ из менија превођења.</string>
   <!--
     Content description (not visible, for screen readers etc.): For a never-translated site list item that is selected.
     %1$s is web site url (for example:"wikipedia.com")
   -->
   <string name="never_translate_site_item_list_content_description_preference">Уклони %1$s</string>
   <!-- The title of the warning card informs the user that an error has occurred at the never translate sites list. -->
-  <string name="never_translate_site_error_warning_text">Учитавање сајтова није успело. Проверите поново касније.</string>
+  <string name="never_translate_site_error_warning_text">Учитавање страница није успело. Проверите поново касније.</string>
   <!--
     The Delete site dialogue title will appear when the user clicks on a list item.
     %1$s is web site url (for example:"wikipedia.com")
@@ -3673,7 +3912,7 @@
 
     Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_banner_not_secure_title">Будите пажљиви на овом сајту</string>
+  <string name="protection_panel_banner_not_secure_title">Будите пажљиви на овој страници</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">Ваша веза није безбедна.</string>
   <!-- Title text for the protection panel banner when tracking protection is disabled. -->
@@ -3697,7 +3936,7 @@
   <!-- Toggle if Enhanced Tracking Protection is turned off -->
   <string name="protection_panel_etp_toggle_off">Искљ.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-  <string name="protection_panel_etp_toggle_enabled_description_2">Ако нешто изгледа неисправно на овом сајту, покушајте да искључите ову опцију.</string>
+  <string name="protection_panel_etp_toggle_enabled_description_2">Ако нешто изгледа неисправно на овој страници, покушајте да искључите ову могућност.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description_2">Препоручује се укључивање заштите од праћења.</string>
   <!--
@@ -3728,7 +3967,7 @@
     Description text for a dialog confirming whether the user wants to delete all data for current site.
     %s is a placeholder for the base domain of website.
   -->
-  <string name="clear_site_data_dialog_description"><![CDATA[Уклањање колачића и података веб сајтова за <b>%s</b> може вас одјавити са веб сајтова и испразнити корпе за куповину.]]></string>
+  <string name="clear_site_data_dialog_description"><![CDATA[Уклањање колачића и података веб страница за <b>%s</b> може вас одјавити са веб страница и испразнити корпе за куповину.]]></string>
   <!-- Button text on the clear site data dialog to allow users to confirm they wish to clear the site data. -->
   <string name="clear_site_data_dialog_positive_button_text">Обриши</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
@@ -3760,7 +3999,7 @@
   <!-- Content description (not visible, for screen readers etc.): Navigate back within the debug drawer. -->
   <string name="debug_drawer_back_button_content_description">Иди назад</string>
   <!-- Content description (not visible, for screen readers etc.): Open debug drawer. -->
-  <string name="debug_drawer_fab_content_description">Отвори опције за отклањање грешака</string>
+  <string name="debug_drawer_fab_content_description">Отвори могућности за отклањање грешака</string>
   <!--
     Debug drawer tabs tools
 
@@ -4217,6 +4456,199 @@
   <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">Можете сазнати више %1$s.</string>
   <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
   <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">овде</string>
+  <!--
+    Sports widget
+
+    Title text shown at the top of the sports widget country selector, encouraging the user to pick a national team to follow.
+  -->
+  <string name="sports_widget_country_selector_title">Пратите ваш тим</string>
+  <!-- Section header for the North America region in the sports widget country selector. -->
+  <string name="sports_widget_confederation_north_america" tools:ignore="UnusedResources">Северна Америка</string>
+  <!-- Section header for the Africa confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_africa" tools:ignore="UnusedResources">Африка</string>
+  <!-- Section header for the Asia confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_asia" tools:ignore="UnusedResources">Азија</string>
+  <!-- Section header for the CONCACAF confederation group in the sports widget country selector. "CONCACAF" is the abbreviation for "Confederation of North, Central America and Caribbean Association Football". -->
+  <string name="sports_widget_confederation_concacaf" tools:ignore="UnusedResources">CONCACAF</string>
+  <!-- Section header for the Europe confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_europe" tools:ignore="UnusedResources">Европа</string>
+  <!-- Section header for the Oceania confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_oceania" tools:ignore="UnusedResources">Океанија</string>
+  <!-- Section header for the South America confederation group in the sports widget country selector. -->
+  <string name="sports_widget_confederation_south_america" tools:ignore="UnusedResources">Јужна Америка</string>
+  <!-- Country name for England in the sports widget. England cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_england" tools:ignore="UnusedResources">Енглеска</string>
+  <!-- Country name for Scotland in the sports widget. Scotland cannot be resolved with the Android Intl APIs so it needs an explicit string. -->
+  <string name="sports_widget_country_scotland" tools:ignore="UnusedResources">Шкотска</string>
+  <!-- Label shown on the sports widget scoreboard when a match is currently being played live. -->
+  <string name="sports_widget_match_live" tools:ignore="UnusedResources">УЖИВО</string>
+  <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
+  <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Шампиони Светског првенства 2026.</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Финалисти</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
+  <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Треће место</string>
+  <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_32">Шеснаестина финала</string>
+  <!-- Round name shown on the sports widget for the Round of 16 stage in the soccer tournament. -->
+  <string name="sports_widget_round_of_16">Осмина финала</string>
+  <!-- Round name shown on the sports widget for the quarter-finals stage in the soccer tournament. -->
+  <string name="sports_widget_quarter_final">Четвртфинале</string>
+  <!-- Round name shown on the sports widget for the semi-finals stage in the soccer tournament. -->
+  <string name="sports_widget_semi_final">Полуфинале</string>
+  <!-- Round name shown on the sports widget for the final stage in the soccer tournament. -->
+  <string name="sports_widget_final">Финале</string>
+  <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
+  <string name="sports_widget_bronze_final">Утакмица за треће место</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">Подаци о утакмици тренутно нису доступни. Покушајте поново да освежите за неколико минута.</string>
+  <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
+  <string name="sports_widget_error_connection_interrupted">Веза је прекинута - ажурирања уживо су заустављена.</string>
+  <!-- Sports widget action label to refresh match data after an error. -->
+  <string name="sports_widget_error_refresh">Освежи</string>
+  <!-- Sports widget group stage label for group A in the soccer tournament. -->
+  <string name="sports_widget_group_a" tools:ignore="UnusedResources">Група А</string>
+  <!-- Sports widget group stage label for group B in the soccer tournament. -->
+  <string name="sports_widget_group_b" tools:ignore="UnusedResources">Група Б</string>
+  <!-- Sports widget group stage label for group C in the soccer tournament. -->
+  <string name="sports_widget_group_c" tools:ignore="UnusedResources">Група Ц</string>
+  <!-- Sports widget group stage label for group D in the soccer tournament. -->
+  <string name="sports_widget_group_d" tools:ignore="UnusedResources">Група Д</string>
+  <!-- Sports widget group stage label for group E in the soccer tournament. -->
+  <string name="sports_widget_group_e" tools:ignore="UnusedResources">Група Е</string>
+  <!-- Sports widget group stage label for group F in the soccer tournament. -->
+  <string name="sports_widget_group_f" tools:ignore="UnusedResources">Група Ф</string>
+  <!-- Sports widget group stage label for group G in the soccer tournament. -->
+  <string name="sports_widget_group_g" tools:ignore="UnusedResources">Група Г</string>
+  <!-- Sports widget group stage label for group H in the soccer tournament. -->
+  <string name="sports_widget_group_h" tools:ignore="UnusedResources">Група Х</string>
+  <!-- Sports widget group stage label for group I in the soccer tournament. -->
+  <string name="sports_widget_group_i" tools:ignore="UnusedResources">Група И</string>
+  <!-- Sports widget group stage label for group J in the soccer tournament. -->
+  <string name="sports_widget_group_j" tools:ignore="UnusedResources">Група Ј</string>
+  <!-- Sports widget group stage label for group K in the soccer tournament. -->
+  <string name="sports_widget_group_k" tools:ignore="UnusedResources">Група К</string>
+  <!-- Sports widget group stage label for group L in the soccer tournament. -->
+  <string name="sports_widget_group_l" tools:ignore="UnusedResources">Група Л</string>
+  <!-- Sports widget button label to see match results. -->
+  <string name="sports_widget_see_results" tools:ignore="UnusedResources">Погледајте резултате</string>
+  <!-- Sports widget button label to view details of a soccer match results. -->
+  <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">Погледајте детаље утакмице</string>
+  <!-- Sports widget section header for related soccer matches in the same group. -->
+  <string name="sports_widget_related_matches">Повезане утакмице</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">Предстојеће</string>
+  <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_suffix">(крај)</string>
+  <!-- Sports widget match status to indicate the match has been completed. -->
+  <string name="sports_widget_match_full_time_2" tools:ignore="UnusedResources">Крај</string>
+  <!--
+    Sports widget card title encouraging the user to follow the soccer tournament. “Keep tabs on” is an informal expression
+    meaning to stay updated on or regularly follow something (in this case, World Cup matches and updates).
+    It’s playfully related to Firefox in that “tabs” are a browser feature.
+    It suggests ongoing awareness rather than active monitoring or control. Not to be translated literally as physical “tabs”
+    or tracking in a technical sense; the meaning is about staying informed.
+  -->
+  <string name="sports_widget_card_title" tools:ignore="UnusedResources">Пратите Светско првенство</string>
+  <!-- Sports widget card description shown below the title on the homepage entry point. -->
+  <string name="sports_widget_card_description" tools:ignore="UnusedResources">Пратите вести утакмица уживо и још много тога.</string>
+  <!-- Sports widget menu item to change the selected team. -->
+  <string name="sports_widget_change_team" tools:ignore="UnusedResources">Промени тим</string>
+  <!-- Sports widget menu item to get a custom wallpaper for the widget. -->
+  <string name="sports_widget_get_custom_wallpaper" tools:ignore="UnusedResources">Прибави прилагођену позадину</string>
+  <!-- Sports widget menu item to remove the widget from the homepage. -->
+  <string name="sports_widget_remove" tools:ignore="UnusedResources">Уклони</string>
+  <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
+  <string name="sports_widget_still_want_to_follow">Да ли и даље желите да пратите дешавања?</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team">Изаберите други тим како бисте пратили Светско првенство.</string>
+  <!-- Sports widget button label to follow another team after the current team is eliminated. -->
+  <string name="sports_widget_follow_another_team">Пратите други тим</string>
+  <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
+  <string name="sports_widget_countdown_to_world_cup" tools:ignore="UnusedResources">Одбројавање до Светског првенства</string>
+  <!-- Sports widget button label that navigates the user to the full soccer tournament match schedule. -->
+  <string name="sports_widget_view_schedule">Прикажи распоред</string>
+  <!-- Sports widget button label that dismisses the step of choosing a team to follow. -->
+  <string name="sports_widget_skip">Прескочи</string>
+  <!-- Sports widget match status label shown during halftime of a match. -->
+  <string name="sports_widget_halftime" tools:ignore="UnusedResources">Полувреме</string>
+  <!-- Sports widget match status label shown during extra time of a match. -->
+  <string name="sports_widget_extra_time" tools:ignore="UnusedResources">Додатно време</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">Пенали</string>
+  <!--
+    Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. T for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_days">Д</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">Ч</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">М</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
+  <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">Затвори лист за избор тима</string>
+  <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
+  <string name="sports_widget_close_content_description">Затвори</string>
+  <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
+  <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">Више могућности</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description">Преостало време. Дана: %1$d. Сати: %2$d. Минути: %3$d.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Иди на страницу Светског првенства</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Предстојеће: %1$s против %2$s, %3$s у %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s, утакмица уживо</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d, %3$s %4$d, %5$s, уживо</string>
+  <!--
+    Content description (for accessibility, not displayed) for a paginated item.
+    %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
+    %2$d is the current page number, and %3$d is the total number of pages.
+  -->
+  <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, страница %2$d од %3$d</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Коначни резултати Светског првенства, страница %1$d од %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Уклони Светско првенство са почетне</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Пратите: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Поново проверите податке о утакмицама како се турнир приближава.</string>
+  <!-- Sports widget match status label shown during first half of a match. -->
+  <string name="sports_widget_first_half" tools:ignore="UnusedResources">Прво полувреме</string>
+  <!-- Sports widget match status label shown during second half of a match. -->
+  <string name="sports_widget_second_half" tools:ignore="UnusedResources">Друго полувреме</string>
+  <!-- Sports widget error card title shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Чини се да сте ван мреже.</string>
+  <!-- Sports widget error card description shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Проверите своју интернет везу и покушајте поново.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

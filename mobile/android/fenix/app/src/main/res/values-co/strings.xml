@@ -19,6 +19,8 @@
   <string name="content_description_menu">Ozzioni addiziunale</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Navigazione privata</string>
+  <!-- Content description (not visible, for screen readers etc.): "Normal Browsing" menu button. -->
+  <string name="content_description_normal_browsing">Navigazione nurmale</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Circà o stampittà un indirizzu</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -281,6 +283,8 @@
   <string name="browser_menu_edit_bookmark">Mudificà l’indetta</string>
   <!-- Browser menu label that the saves the currently visited page as a PDF -->
   <string name="browser_menu_save_as_pdf_2">Arregistrà cum’è PDF</string>
+  <!-- Browser menu label for moving the current private tab to a non-private tab -->
+  <string name="browser_menu_move_to_non_private_tab">Dispiazzà versu un’unghjetta non privata</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Traduce a pagina</string>
   <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
@@ -357,6 +361,58 @@
   <string name="translation_toolbar_expand_action">Apre u panellu di traduzzione</string>
   <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
   <string name="translation_toolbar_close_action">Righjittà u messaghju</string>
+  <!--
+    Page summaries
+
+    Toolbar title for the Page summaries settings fragment
+  -->
+  <string name="preferences_page_summaries">Riassunti di pagine</string>
+  <!--
+    AI Controls settings
+
+    Title for the AI controls settings screen
+  -->
+  <string name="preferences_ai_controls">Cuntrolli di l’IA</string>
+  <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_banner_headline">Avete sempre a scelta in %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Què include l’impiegu - o nò - di funzioni amendate da l’intelligenza artificiale. %s</string>
+  <!-- Supporting text for the AI controls banner -->
+  <string name="ai_controls_banner_supporting_text">Què include l’impiegu - o nò - di funzioni amendate da l’intelligenza artificiale.</string>
+  <!-- Link text for learning more about AI controls -->
+  <string name="ai_controls_learn_more">Sapene di più</string>
+  <!-- Title for the block AI enhancements toggle -->
+  <string name="ai_controls_block_ai_title">Bluccà l’amendamenti impieghendu l’IA</string>
+  <!-- Description for the block AI enhancements toggle. %s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_ai_description">Attivà u blucchime vole dì chì ùn viderete micca in %s l’amendamenti - novi o attuale - basati nant’à l’IA, nè i finestrini relativi.</string>
+  <!-- Link text to see what AI enhancements are and aren’t included -->
+  <string name="ai_controls_see_whats_included">Fighjate ciò chì hè inclusu è ciò chì ùn hè micca</string>
+  <!-- Banner text shown when AI enhancements are blocked -->
+  <string name="ai_controls_blocked_info_banner">L’amendamenti - novi o attuale - basati nant’à l’IA sò bluccati da predefinizione. Sbluccate quì sottu e funzioni specifiche.</string>
+  <!-- Section header for the AI-powered features list -->
+  <string name="ai_controls_ai_powered_features">Funzioni basate nant’à l’IA</string>
+  <!-- Title for the translations AI feature toggle -->
+  <string name="ai_controls_translations_title">Traduzzioni</string>
+  <!-- Description for the translations AI feature toggle -->
+  <string name="ai_controls_translations_description">Tutte e traduzzioni stanu private nant’à u vostru apparechju.</string>
+  <!-- Link text to navigate to more translations settings -->
+  <string name="ai_controls_more_translations_settings">Altri parametri per e traduzzioni</string>
+  <!-- Link text to navigate to more page summary settings -->
+  <string name="ai_controls_more_page_summary_settings">Altri parametri per i riassunti di pagina</string>
+  <!-- Title for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_title">Ricerca vucale</string>
+  <!-- Description for the voice search AI feature toggle -->
+  <string name="ai_controls_voice_search_description">L’audio hè cunvertitu in testu da Google Speech Services.</string>
+  <!-- Title for the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_title">Bluccà l’amendamenti impieghendu l’IA\u00a0?</string>
+  <!-- Body text for the block AI enhancements confirmation dialog. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="ai_controls_block_dialog_body">Ùn viderete micca in %1$s l’amendamenti - novi o attuale - basati nant’à l’IA, nè i finestrini relativi. Più tardi, puderete sbluccà tutta funzione chì vo vulete cuntinuà à impiegà.\n\nU blucchime affetta dinù l’estensioni chì impieganu l’IA pruviste da %1$s.</string>
+  <!-- Label shown above the list of features that will be blocked in the block AI dialog -->
+  <string name="ai_controls_block_dialog_what_will_be_blocked">Ciò chì serà bluccatu\u00a0:</string>
+  <!-- Cancel button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_cancel">Abbandunà</string>
+  <!-- Block button text in the block AI enhancements confirmation dialog -->
+  <string name="ai_controls_block_dialog_block">Bluccà</string>
   <!--
     Locale Settings Fragment
 
@@ -591,8 +647,12 @@
 
   <!-- "Continue" onboarding button. -->
   <string name="nova_onboarding_continue_button">Cuntinuà</string>
+  <!-- "Continue browsing" onboarding button. -->
+  <string name="nova_onboarding_continue_browsing_button" tools:ignore="UnusedResources">Cuntinuà a navigazione</string>
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Micca subitu</string>
+  <!-- "Skip" onboarding button. -->
+  <string name="nova_onboarding_skip_button" tools:ignore="UnusedResources">Ignurà</string>
   <!-- Terms of use (ToU) onboarding title. -->
   <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Appruntatevi à navigà in libertà sana</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
@@ -667,6 +727,25 @@
   <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage">Principiate ogni ricerca da u screnu d’accolta di u vostru telefonu è siate assicurati chì e prutezzioni autumatiche di Firefox vi prutegenu.</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Aghjunghje u widget di Firefox</string>
+  <!-- Customize prompt onboarding title. -->
+  <string name="nova_onboarding_customize_prompt_title" tools:ignore="UnusedResources">Faciule à persunalizà è sempre più privatu à ogni picchicciata</string>
+  <plurals name="nova_onboarding_customize_prompt_body" tools:ignore="UnusedResources">
+    <!--
+      Customize prompt onboarding body.
+      %1$s is replaced by the product name (for example "Firefox"),
+      %2$,d is replaced by the number of trackers blocked. The comma represents the thousand
+      separator (e.g. 1,000 in English), and it will automatically use the correct character
+      for your locale (don't change or remove it).
+    -->
+    <item quantity="one">%1$s hà bluccatu %2$,d perseguitatore durante a vostra navigazione nant’a u Web.</item>
+    <item quantity="other">%1$s hà bluccatu %2$,d perseguitatori durante a vostra navigazione nant’a u Web.</item>
+  </plurals>
+  <!-- Customize prompt onboarding positive button. -->
+  <string name="nova_onboarding_customize_prompt_positive_button" tools:ignore="UnusedResources">Principià a persunalizazione</string>
+  <!-- App icon onboarding title. -->
+  <string name="nova_onboarding_app_icon_prompt_title" tools:ignore="UnusedResources">Sceglie un’icona persunalizata per l’appiecazione</string>
+  <!-- App icon onboarding body. -->
+  <string name="nova_onboarding_app_icon_prompt_body" tools:ignore="UnusedResources">Date un toccu persunale à u vostru screnu d’accolta.</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
@@ -734,6 +813,12 @@
   <string name="preferences_category_about">Apprupositu</string>
   <!-- Preference category for settings related to changing the default search engine -->
   <string name="preferences_category_select_default_search_engine">Selezziunà una trà l’ozzioni.</string>
+  <!-- Preference category for settings related to changing the default search engine -->
+  <string name="preferences_category_select_default_search_engine_2">Mutore di ricerca predefinitu per a navigazione nurmale</string>
+  <!-- Preference category for settings related to changing the private browsing search engine -->
+  <string name="preferences_category_select_private_search_engine">Mutore di ricerca predefinitu per a navigazione privata</string>
+  <!-- Option to set the private browsing mode to use the normal default search engine -->
+  <string name="search_engine_use_default">Impiegà u listessu mutore di ricerca chè quellu di a navigazione nurmale</string>
   <!-- Preference for settings related to managing search shortcuts for the quick search menu -->
   <string name="preferences_manage_search_shortcuts_2">Ghjestione di l’altri mutori di ricerca</string>
   <!-- Summary for preference for settings related to managing search shortcuts for the quick search menu -->
@@ -950,6 +1035,15 @@
   <string name="preference_downloads_folder_permission_lost" tools:ignore="UnusedResources">Ùn avete micca u permessu d’impiegà stu cartulare. Pruvate di scegliene un altru.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Urganizà i scaricamenti cù un’altra appiecazione</string>
+  <!-- Preference category for deleting or removing downloads -->
+  <string name="preferences_category_delete_or_remove_downloads">Squassà o caccià scaricamenti</string>
+  <string name="preferences_downloads_delete_from_device">Squassà da l’apparechju</string>
+  <string name="preferences_downloads_delete_from_device_description">U schedariu hè squassatu da u vostru apparechju è cacciatu da a cronolugia di i scaricamenti</string>
+  <string name="preferences_downloads_remove_from_download_history">Caccià da a cronolugia di i scaricamenti</string>
+  <string name="preferences_downloads_remove_from_download_history_description">U schedariu hè \u0020cacciatu da a vostra cronolugia di i scaricamenti ma stà sempre arregistratu nant’à u vostru apparechju</string>
+  <string name="preferences_downloads_ask_when_to_delete_files">Dumandà quandu squassu i schedarii</string>
+  <!-- Preference for downloads -->
+  <string name="preferences_downloads_2">Parametri di scaricamentu</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
   <string name="preferences_downloads_settings_clean_up_files_title">Squassà da %s è da l’apparechju</string>
   <!-- Summary for the setting to automatically clean up downloaded files -->
@@ -1031,6 +1125,8 @@
   <string name="customize_wallpapers">Sfonduli di screnu</string>
   <!-- Title for the customize home screen section with sponsored shortcuts. -->
   <string name="customize_toggle_contile">Accurtatoghji spunsurizati</string>
+  <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
+  <string name="customize_toggle_world_cup" tools:ignore="UnusedResources">Coppa di u mondu</string>
   <!--
     Wallpapers
 
@@ -1312,6 +1408,8 @@
   <string name="toolbar_customize_shortcut_homepage">Pagina d’accolta</string>
   <!-- Back shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_back">Ritornu</string>
+  <!-- Label for choosing in toolbar customization settings to not use any custom shortcut button. -->
+  <string name="toolbar_customize_shortcut_none">Nisunu</string>
   <!--
     App icon Preferences
 
@@ -1345,9 +1443,13 @@
   <!-- Preference for using the dynamic toolbar -->
   <string name="preference_gestures_dynamic_toolbar">Sfilà per piattà a barra d’attrezzi</string>
   <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
+  <string name="preference_gestures_swipe_toolbar_show_tabs_2">Fà sfilà a barra d’attrezzi verticalmente per affissà l’unghjette aperte</string>
+  <!-- Preference for showing the opened tabs by swiping up on the toolbar -->
   <string name="preference_gestures_swipe_toolbar_show_tabs">Fà sfilà a barra d’attrezzi insù per apre unghjette</string>
   <!-- Preference for switching tabs by swiping horizontally on the addressbar -->
   <string name="preference_gestures_swipe_toolbar_switch_tabs_2">Fà sguillà a barra d’indirizzu lateralmente per cambià d’unghjetta</string>
+  <!-- Preference for switching for the shake to summarize toggle in page summaries and customize settings -->
+  <string name="preferences_shake_to_summarize">Ciambuttà per riassume</string>
   <!--
     Library
 
@@ -1510,6 +1612,14 @@
     The %1$s will be replaced by the number of opened private tabs
   -->
   <string name="tabs_header_private_tabs_counter_title">Unghjette private aperte : %1$s. Picchichjà per cambià d’unghjetta.</string>
+  <plurals name="tabs_header_tab_group_counter_title">
+    <!--
+      Title for the list of tab groups used by a11y services
+      The %1$d will be replaced by the number of opened tab groups
+    -->
+    <item quantity="one">%1$d gruppu d’unghjette apertu. Picchichjà per cambià d’unghjetta.</item>
+    <item quantity="other">%1$d gruppi d’unghjette aperti. Picchichjà per cambià d’unghjetta.</item>
+  </plurals>
   <!--
     Title for the list of tabs in the synced tabs used by a11y services
     The %1$s will be replaced by the number of opened synced tabs
@@ -1599,6 +1709,10 @@
   <string name="pwa_site_controls_title_private">%1$s (navigazione privata)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Apre a ricerca d’unghjetta</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Pruvate i gruppi d’unghjette per esse più efficace</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Selezziunà l’unghjette per creà un gruppu. Sò arregistrate quì, pronti à impiegalli quandu ci hè bisognu.</string>
   <!--
     Tab Group
 
@@ -1608,6 +1722,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Mudificà u gruppu</string>
   <string name="create_tab_group_save_button">Arregistrà</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Novu gruppu, maneghja di spiazzamentu di l’elementi</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Compie a mudificazione di u gruppu d’unghjette</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Gruppu</string>
@@ -1620,6 +1736,91 @@
   <string name="create_tab_group_name_label">Nome</string>
   <!-- Label for the tab group name field in the bottom sheet to create or edit a tab group. -->
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nome</string>
+  <!-- Title for adding more tabs to a tab group. -->
+  <string name="add_to_tab_group_title">Aghjunghje à</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Aghjunghje à un gruppu d’unghjette, maneghja di spiazzamentu di l’elementi</string>
+  <!-- Content Description for "New tab group" panel. -->
+  <string name="add_to_new_tab_group_content_description">Aghjunghje à un gruppu d’unghjette novu</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_close_content_description">Chjode l’aghjuntu à u gruppu d’unghjette</string>
+  <!-- Label for adding to a new tab group. -->
+  <string name="add_to_new_tab_group_title">Novu gruppu d’unghjette</string>
+  <plurals name="tab_group_tabs_count_subtitle">
+    <!--
+      Subtitle for the number of tabs in a tab group.
+      %1$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">%1$d unghjetta</item>
+    <item quantity="other">%1$d unghjette</item>
+  </plurals>
+  <plurals name="add_to_exiting_tab_group_content_description">
+    <!--
+      Accessibility description for add to existing tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Aghjunghje à u gruppu d’unghjette %1$s, %2$d unghjetta, culore %3$s</item>
+    <item quantity="other">Aghjunghje à u gruppu d’unghjette %1$s, %2$d unghjette, culore %3$s</item>
+  </plurals>
+  <plurals name="share_tab_group_button_content_description">
+    <!--
+      Content Description for share tab group button.
+      %1$s is the name of the tab group.
+      %2$d is the number of tabs in a tab group.
+    -->
+    <item quantity="one">Sparte u gruppu d’unghjette %1$s cù %2$d unghjetta.</item>
+    <item quantity="other">Sparte u gruppu d’unghjette %1$s cù %2$d unghjette.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Affissà u gruppu d’unghjette, maneghja di spiazzamentu di l’elementi</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Gruppu d’unghjette %1$s cù %2$d unghjetta, culore %3$s</item>
+    <item quantity="other">Gruppu d’unghjette %1$s cù %2$d unghjette, culore %3$s</item>
+  </plurals>
+  <!-- Title for the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_title">Squassà u gruppu d’unghjette\u00a0?</string>
+  <!-- Text shown in the body of the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_body">St’azzione squassa u gruppu ab’eternu.</string>
+  <!-- Text shown on the confirm button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_confirm">Squassà u gruppu</string>
+  <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
+  <string name="delete_tab_group_confirmation_dialog_cancel">Abbandunà</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Chjode l’unghjetta è squassà u gruppu\u00a0?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">St’azzione squassa u gruppu ab’eternu.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Squassà u gruppu</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Abbandunà</string>
+  <!--
+    Color labels for tab groups, used for accessibility and selection UI.
+
+    Tab group color: Yellow
+  -->
+  <string name="tab_group_color_yellow">Ghjallu</string>
+  <!-- Tab group color: Orange -->
+  <string name="tab_group_color_orange">Aranciu</string>
+  <!-- Tab group color: Red -->
+  <string name="tab_group_color_red">Rossu</string>
+  <!-- Tab group color: Pink -->
+  <string name="tab_group_color_pink">Rusulatu</string>
+  <!-- Tab group color: Purple -->
+  <string name="tab_group_color_purple">Purpura</string>
+  <!-- Tab group color: Violet -->
+  <string name="tab_group_color_violet">Viulettu</string>
+  <!-- Tab group color: Blue -->
+  <string name="tab_group_color_blue">Turchinu</string>
+  <!-- Tab group color: Cyan -->
+  <string name="tab_group_color_cyan">Cianu</string>
+  <!-- Tab group color: Green -->
+  <string name="tab_group_color_green">Verde</string>
+  <!-- Tab group color: Grey -->
+  <string name="tab_group_color_grey">Grisgiu</string>
   <!--
     History
 
@@ -1698,6 +1899,11 @@
     This button will dismiss the dialog.
   -->
   <string name="download_file_has_not_enough_storage_dialog_cancel_button_text">Abbandunà</string>
+  <plurals name="downloads_delete_dialog_title">
+    <!-- Title for the download deletion confirmation dialog. The message changes depending on how many files are selected. %d is the number of files to be deleted. -->
+    <item quantity="one">Squassà u schedariu\u00a0?</item>
+    <item quantity="other">Squassà i %d schedarii\u00a0?</item>
+  </plurals>
   <!-- Text for the button to delete a single downloaded file item -->
   <string name="download_delete_item">Squassà</string>
   <!-- Content description for the toolbar "Navigate back" button -->
@@ -1729,6 +1935,14 @@
   <string name="download_delete_multi_select_dialog_confirm">Squassà</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Abbandunà</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_device">Squassà da l’apparechju</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is one of the radio buttons within the dialog box for the user to select. -->
+  <string name="download_delete_dialog_from_history">Caccià solu da a cronolugia di i scaricamenti</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the negative action. -->
+  <string name="download_delete_dialog_cancel">Abbandunà</string>
+  <!-- Alert dialog confirmation before deleting a single download item or many download items, this is the positive action. -->
+  <string name="download_delete_dialog_confirm">Cunfirmà</string>
   <!-- Title for the alert dialog confirmation before renaming a download item. -->
   <string name="download_rename_dialog_title">Rinuminà u schedariu</string>
   <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
@@ -1742,6 +1956,8 @@
   <string name="download_rename_error_exists_error">Un schedariu cù u nome «\u00a0%s\u00a0» esiste dighjà in stu locu</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">I nomi di schedariu ùn ponu micca impiegà «\u00a0/\u00a0»</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">U nome chì vo avete stampittatu cambia solu lettere maiuscule è minuscule. Pruvate cù un nome di schedariu sfarente.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Ùn si pò rinuminà u schedariu</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -1826,6 +2042,16 @@
   <string name="download_content_type_filter_document">Ducumenti</string>
   <!-- Text for the filter button to show all other file types in the downloads list -->
   <string name="download_content_type_filter_other_1">Altru</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location before downloading it.
+    %s is the formatted size of the file (e.g., "12.5 MB").
+  -->
+  <string name="download_rename_and_change_location_dialog_title">Scaricà u schedariu\u00a0?\n(%s)</string>
+  <!--
+    Title for the alert dialog to rename a file and/or change its download location
+    when the file size is not available before downloading it.
+  -->
+  <string name="download_rename_and_change_location_dialog_title_with_unknown_size">Scaricà u schedariu\u00a0?</string>
   <!--
     WebCompat Reporter
 
@@ -1981,6 +2207,12 @@
   <string name="bookmark_sort_menu_a_to_z">Ordinà da A à Z</string>
   <!-- Label for button to sort bookmarks in reverse alphabetical order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_z_to_a">Ordinà da Z à A</string>
+  <!-- Label for button to import bookmarks from file. -->
+  <string name="bookmark_import_menu_button">Impurtà da un schedariu</string>
+  <!-- Snackbar message shown when a bookmark import attempt fails. -->
+  <string name="bookmark_import_failure_snackbar">Ùn si pò micca impurtà l’indette. Pruvà torna.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Indette impurtate</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2039,8 +2271,12 @@
   <string name="bookmark_select_folder_close_folder_content_description">Chjode u cartulare\u00a0: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Chjode l’indette</string>
+  <!-- Content description for the Import bookmarks button in bookmarks screen. -->
+  <string name="bookmark_import_bookmarks_button_content_description">Impurtà da un schedariu</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Nisuna indetta à st’ora</string>
+  <!-- Title for the bookmark list empty state at the root level. -->
+  <string name="bookmark_empty_list_root_title">Tinite inseme tutte e vostre unghjette favurite</string>
   <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
   <string name="bookmarks_folder_description">Indette in u cartulare\u00a0: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
@@ -2228,6 +2464,24 @@
   <string name="menu_print">Stampà</string>
   <!-- Sub-header in the dialog to share a link to another sync device -->
   <string name="share_device_subheader">Mandà à l’apparechju</string>
+  <!-- Content description for the drag handle that dismisses the Send to Device bottom sheet -->
+  <string name="send_to_devices_bottom_sheet_close_content_description">Chjode l’inviu à un apparechju</string>
+  <!-- Text for the QR code action in the native share sheet -->
+  <string name="share_qr_code">Codice QR</string>
+  <!-- Title shown in the QR code display screen -->
+  <string name="qr_code_display_title">Codice QR</string>
+  <!-- Content description for the close button in the QR code display screen -->
+  <string name="qr_code_display_close">Chjode</string>
+  <!-- Heading on the QR code display screen -->
+  <string name="qr_code_display_share_nearby">Sparte u liame in vicinanza</string>
+  <!-- Body text on the QR code display screen instructing the user to have others scan the code -->
+  <string name="qr_code_display_instructions">Per sparte stu liame cù a ghjente in vicinanza, dumandatela d’analizà u codice QR quì sottu</string>
+  <!-- Label for the download button on the QR code display screen -->
+  <string name="qr_code_display_download">Scaricà</string>
+  <!-- Toast shown when the QR code is successfully saved to Downloads -->
+  <string name="qr_code_download_success">Codice QR arregistratu in Scaricamenti</string>
+  <!-- Toast shown when saving the QR code to Downloads fails -->
+  <string name="qr_code_download_failure">Fiascu à l’arregistramentu di u codice QR</string>
   <!-- Sub-header in the dialog to share a link to an app from the full list -->
   <string name="share_link_all_apps_subheader">Tutte l’azzioni</string>
   <!-- Sub-header in the dialog to share a link to an app from the most-recent sorted list -->
@@ -2485,6 +2739,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Site prutetti</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Aiutà à chjappà i perseguitatori</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Classica (predefinita)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -2881,6 +3137,20 @@
   <string name="email_masks_max_free_tier_reached">Avete impiegatu e vostre 5 maschere di messaghjeria di rigalu, tandu n’avemu sceltu unu chì vo puderete rimpiegà.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">E maschere di messaghjeria ùn sò micca dispunibule subitu. Pruvate torna trà qualchì minutu.</string>
+  <!--
+    Firefox browser VPN (a browser-only proxy, distinct from the Mozilla VPN service)
+
+    Title for the browser VPN entry in the settings list
+  -->
+  <string name="preferences_ip_protection_title_2">VPN integratu</string>
+  <!-- Label for the BETA badge for the browser VPN entry in the settings list -->
+  <string name="preferences_ip_protection_beta_badge_label">BETA</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_promo_headline">VPN integratu à %s</string>
   <!--
     Autofill
 
