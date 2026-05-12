@@ -41,13 +41,13 @@ smart-window-model-learn-link = Learn about models
 
 smart-window-model-fast =
     .label = Fast: Answers quickly
-    .description = Model { $model } by { $ownerName }
+    .description = Model { $modelName } by { $ownerName }
 smart-window-model-flexible =
     .label = Flexible: Solid fit for most needs
-    .description = Model { $model } by { $ownerName }
+    .description = Model { $modelName } by { $ownerName }
 smart-window-model-personal =
     .label = Personal: Most tailored answers
-    .description = Model { $model } by { $ownerName }
+    .description = Model { $modelName } by { $ownerName }
 smart-window-model-custom =
     .label = Custom: Use your own LLM
 smart-window-model-custom-name =

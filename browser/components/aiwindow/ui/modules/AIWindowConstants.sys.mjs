@@ -53,7 +53,7 @@ export const MODELS = {
  * Fallback model data - matches Remote Settings shape
  * Used when Remote Settings lookup fails
  */
-export const FALLBACK_MODELS = {
+const FALLBACK_MODELS = {
   0: { model: "custom-model", ownerName: "" },
   1: {
     model: "gemini-2.5-flash-lite",
@@ -92,23 +92,16 @@ export async function getModelForChoice(choiceId = lazy.modelChoice) {
   return { model: "unknown", ownerName: "unknown" };
 }
 
-/**
- *
- * @type {{[key: string]: {model: string, ownerName: string}}|null}
- * holds model metadata -- this should replace FALLBACK_MODELS where sync calls are needed
- * see getCachedModelsData() below
- */
-let _modelsDataCache = null;
+export function getCurrentModelName() {
+  return FALLBACK_MODELS[lazy.modelChoice]?.model ?? "";
+}
 
 /**
- * Gets metadata for all models, with fallback. Result is cached after first call.
+ * Gets metadata for all models, with fallback
  *
  * @returns {Promise<{[key: string]: {model: string, ownerName: string}}>}
  */
 export async function getAllModelsData() {
-  if (_modelsDataCache) {
-    return _modelsDataCache;
-  }
   const modelData = { ...FALLBACK_MODELS };
   // RS reads from a local dump. Only the first call sets up RS state,
   // subsequent calls are cached
@@ -118,28 +111,7 @@ export async function getAllModelsData() {
   for (const [id, data] of entries) {
     modelData[id] = data;
   }
-  _modelsDataCache = modelData;
-  return _modelsDataCache;
-}
-
-/**
- * Returns cached model data synchronously, or FALLBACK_MODELS if not yet fetched.
- *
- * @returns {{[key: string]: {model: string, ownerName: string}}}
- */
-export function getCachedModelsData() {
-  return _modelsDataCache ?? FALLBACK_MODELS;
-}
-
-export function getCurrentModelName() {
-  return getCachedModelsData()[lazy.modelChoice]?.model ?? "";
-}
-
-/**
- * Clearls ModelsDataCache -- mostly used for testing
- */
-export function _clearModelsDataCacheForTesting() {
-  _modelsDataCache = null;
+  return modelData;
 }
 
 export {

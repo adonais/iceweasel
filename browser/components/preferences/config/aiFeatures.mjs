@@ -28,7 +28,7 @@ const lazy = XPCOMUtils.declareLazy({
   GenAI: "resource:///modules/GenAI.sys.mjs",
   MemoryStore:
     "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs",
-  getCachedModelsData:
+  MODELS:
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs",
 });
 
@@ -301,11 +301,6 @@ const AI_CONTROL_OPTIONS = [
     l10nId: "preferences-ai-controls-state-blocked",
   },
 ];
-
-const modelL10nArgs = key => ({
-  model: lazy.getCachedModelsData()[key].model,
-  ownerName: lazy.getCachedModelsData()[key].ownerName,
-});
 
 /**
  * Validates that a URL is trustworthy (HTTPS or localhost).
@@ -742,9 +737,7 @@ Preferences.addSetting({
     },
     set(value, deps, setting) {
       const prev = deps.smartWindowFirstRunModelChoice.value;
-      previousAssistantModel = prev
-        ? lazy.getCachedModelsData()[String(prev)].model
-        : "No model";
+      previousAssistantModel = prev ? lazy.MODELS[prev].modelName : "No model";
 
       customRadioSelected = value === "0";
       if (customRadioSelected) {
@@ -764,7 +757,7 @@ Preferences.addSetting({
       // sending telemetry only for the preset models
       // custom model telemetry is sent after user hits the save button
       if (value !== "0") {
-        const new_model = lazy.getCachedModelsData()[String(value)].model;
+        const new_model = lazy.MODELS[value].modelName;
         Glean.smartWindow.settingsModel.record({
           previous_model: previousAssistantModel,
           new_model,
@@ -871,7 +864,7 @@ Preferences.addSetting({
       return;
     }
 
-    const new_model = lazy.getCachedModelsData()["0"].model;
+    const new_model = lazy.MODELS["0"].modelName;
     Glean.smartWindow.settingsModel.record({
       previous_model: previousAssistantModel,
       new_model,
@@ -1405,21 +1398,21 @@ SettingGroupManager.registerGroups({
             value: "1",
             l10nId: "smart-window-model-fast",
             get l10nArgs() {
-              return modelL10nArgs("1");
+              return lazy.MODELS["1"];
             },
           },
           {
             value: "2",
             l10nId: "smart-window-model-flexible",
             get l10nArgs() {
-              return modelL10nArgs("2");
+              return lazy.MODELS["2"];
             },
           },
           {
             value: "3",
             l10nId: "smart-window-model-personal",
             get l10nArgs() {
-              return modelL10nArgs("3");
+              return lazy.MODELS["3"];
             },
           },
           {
