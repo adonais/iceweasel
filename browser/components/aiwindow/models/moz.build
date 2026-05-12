@@ -28,6 +28,7 @@ MOZ_SRC_FILES += [
     "TitleGeneration.sys.mjs",
     "Tools.sys.mjs",
     "Utils.sys.mjs",
+    "WCSMerinoClient.sys.mjs",
 ]
 
 XPCSHELL_TESTS_MANIFESTS += [

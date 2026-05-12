@@ -23,6 +23,10 @@ import {
   RUN_SEARCH,
   GET_USER_MEMORIES,
   GET_NAVIGATION_INFO,
+  WORLD_CUP_MATCHES,
+  WORLD_CUP_LIVE,
+  WORLD_CUP_TOOLS,
+  WORLD_CUP_PREF,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
 import {
   expandUrlTokensInToolParams,
@@ -34,6 +38,31 @@ import { compactMessages } from "moz-src:///browser/components/aiwindow/models/P
 // Prevents infinite tool-call loops when the model repeatedly requests search.
 // Bug 2024006.
 const MAX_RUN_SEARCH_PER_TURN = 3;
+
+/**
+ * Handlers for tools that are feature-gated by a pref and intended to be
+ * added or removed independently of the main tool dispatch. Lookups happen
+ * before the main switch so each new gated tool does not grow
+ * fetchWithHistory's cyclomatic complexity.
+ */
+const FEATURE_GATED_HANDLERS = new Map([
+  [WORLD_CUP_MATCHES, toolFns.worldCupMatches],
+  [WORLD_CUP_LIVE, toolFns.worldCupLive],
+]);
+
+/**
+ * Removes any feature-gated tools whose enable pref is currently off, so the
+ * model is never offered tools the build is not configured to support.
+ *
+ * @param {object[]} tools
+ * @returns {object[]}
+ */
+function filterFeatureGatedTools(tools) {
+  if (Services.prefs.getBoolPref(WORLD_CUP_PREF, false)) {
+    return tools;
+  }
+  return tools.filter(t => !WORLD_CUP_TOOLS.has(t.function?.name));
+}
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -159,6 +188,8 @@ Object.assign(Chat, {
         RunSearch.setGeneratedSearchQueryDescription(chatToolsConfig);
       isVerbatimQuery = false;
     }
+
+    chatToolsConfig = filterFeatureGatedTools(chatToolsConfig);
 
     let fullResponseText = "";
     const searchExecuted = conversation._searchExecutedTurn === currentTurn;
@@ -340,60 +371,65 @@ Object.assign(Chat, {
         // Dispatch the required arguments to different tool calls. Wrap this in a
         // try/catch so the conversation can be updated for failed calls.
         let result;
+        const featureGatedHandler = FEATURE_GATED_HANDLERS.get(toolName);
         try {
-          switch (toolName) {
-            case GET_PAGE_CONTENT: {
-              const startTime = new Date();
-              result = await GetPageContent.getPageContent(
-                toolParams,
-                conversation
-              );
-              Glean.smartWindow.getPageContent.record({
-                location: mode,
-                chat_id: conversation.id,
-                message_seq: conversation.messageCount,
-                length: result.reduce(
-                  (acc, curr) => acc + (curr?.length || 0),
-                  0
-                ),
-                time: new Date() - startTime,
-              });
-              break;
+          if (featureGatedHandler) {
+            result = await featureGatedHandler(toolParams, conversation);
+          } else {
+            switch (toolName) {
+              case GET_PAGE_CONTENT: {
+                const startTime = new Date();
+                result = await GetPageContent.getPageContent(
+                  toolParams,
+                  conversation
+                );
+                Glean.smartWindow.getPageContent.record({
+                  location: mode,
+                  chat_id: conversation.id,
+                  message_seq: conversation.messageCount,
+                  length: result.reduce(
+                    (acc, curr) => acc + (curr?.length || 0),
+                    0
+                  ),
+                  time: new Date() - startTime,
+                });
+                break;
+              }
+              case RUN_SEARCH: {
+                result = await RunSearch.runSearch(
+                  toolParams,
+                  browsingContext,
+                  conversation
+                );
+                const engine = await lazy.SearchService.getDefault();
+                Glean.smartWindow.searchHandoff.record({
+                  location: mode,
+                  chat_id: conversation.id,
+                  message_seq: conversation.messageCount,
+                  provider: engine.name ?? "unknown",
+                  model: engineInstance?.model,
+                });
+                conversation._searchExecutedTurn = currentTurn;
+                break;
+              }
+              case GET_OPEN_TABS:
+                result = await toolFns.getOpenTabs(conversation);
+                break;
+              case SEARCH_BROWSING_HISTORY:
+                result = await toolFns.searchBrowsingHistory(
+                  toolParams,
+                  conversation
+                );
+                break;
+              case GET_USER_MEMORIES:
+                result = await toolFns.getUserMemories(conversation);
+                break;
+              case GET_NAVIGATION_INFO:
+                result = await toolFns.getNavigationInfo(toolParams);
+                break;
+              default:
+                throw new Error(`No such tool: ${toolName}`);
             }
-            case RUN_SEARCH: {
-              result = await RunSearch.runSearch(
-                toolParams,
-                browsingContext,
-                conversation
-              );
-              const engine = await lazy.SearchService.getDefault();
-              Glean.smartWindow.searchHandoff.record({
-                location: mode,
-                chat_id: conversation.id,
-                message_seq: conversation.messageCount,
-                provider: engine.name ?? "unknown",
-                model: engineInstance?.model,
-              });
-              conversation._searchExecutedTurn = currentTurn;
-              break;
-            }
-            case GET_OPEN_TABS:
-              result = await toolFns.getOpenTabs(conversation);
-              break;
-            case SEARCH_BROWSING_HISTORY:
-              result = await toolFns.searchBrowsingHistory(
-                toolParams,
-                conversation
-              );
-              break;
-            case GET_USER_MEMORIES:
-              result = await toolFns.getUserMemories(conversation);
-              break;
-            case GET_NAVIGATION_INFO:
-              result = await toolFns.getNavigationInfo(toolParams);
-              break;
-            default:
-              throw new Error(`No such tool: ${toolName}`);
           }
 
           // Debug logging: Record the data returned by the tool before feeding it to the model
