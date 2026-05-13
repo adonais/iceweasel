@@ -18,6 +18,7 @@ import org.mozilla.fenix.distributions.DistributionBrowserStoreProvider
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.distributions.DistributionProviderChecker
 import org.mozilla.fenix.distributions.DistributionSettings
+import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.MarketingOnboardingCard
 
