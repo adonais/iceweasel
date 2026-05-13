@@ -723,6 +723,8 @@ LoadInfo::LoadInfo(const LoadInfo& rhs)
       mSecurityFlags(rhs.mSecurityFlags),
       mSandboxFlags(rhs.mSandboxFlags),
       mInternalContentPolicyType(rhs.mInternalContentPolicyType),
+      // mServiceWorkerTaintingSynthesized must be handled specially during
+      // redirect
       mTainting(rhs.mTainting),
 #define DEFINE_INIT(_t, name, _n, _d) m##name(rhs.m##name),
       LOADINFO_FOR_EACH_FIELD(DEFINE_INIT, LOADINFO_DUMMY_SETTER)
@@ -764,7 +766,8 @@ LoadInfo::LoadInfo(
     const Maybe<ClientInfo>& aInitialClientInfo,
     const Maybe<ServiceWorkerDescriptor>& aController,
     nsSecurityFlags aSecurityFlags, uint32_t aSandboxFlags,
-    nsContentPolicyType aContentPolicyType, LoadTainting aTainting,
+    nsContentPolicyType aContentPolicyType,
+    bool aServiceWorkerTaintingSynthesized, LoadTainting aTainting,
 #define DEFINE_PARAMETER(type, name, _n, _d) type a##name,
     LOADINFO_FOR_EACH_FIELD(DEFINE_PARAMETER, LOADINFO_DUMMY_SETTER)
 #undef DEFINE_PARAMETER
@@ -803,6 +806,7 @@ LoadInfo::LoadInfo(
       mSecurityFlags(aSecurityFlags),
       mSandboxFlags(aSandboxFlags),
       mInternalContentPolicyType(aContentPolicyType),
+      mServiceWorkerTaintingSynthesized(aServiceWorkerTaintingSynthesized),
       mTainting(aTainting),
 
 #define DEFINE_INIT(_t, name, _n, _d) m##name(a##name),
@@ -1658,6 +1662,14 @@ LoadInfo::SetLoadTriggeredFromExternal(bool aLoadTriggeredFromExternal) {
 NS_IMETHODIMP
 LoadInfo::GetLoadTriggeredFromExternal(bool* aLoadTriggeredFromExternal) {
   *aLoadTriggeredFromExternal = mLoadTriggeredFromExternal;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LoadInfo::GetServiceWorkerTaintingSynthesized(
+    bool* aServiceWorkerTaintingSynthesized) {
+  MOZ_ASSERT(aServiceWorkerTaintingSynthesized);
+  *aServiceWorkerTaintingSynthesized = mServiceWorkerTaintingSynthesized;
   return NS_OK;
 }
 

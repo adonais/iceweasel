@@ -877,6 +877,7 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
       reservedClientInfo, initialClientInfo, controller,
       loadInfoArgs.securityFlags(), loadInfoArgs.sandboxFlags(),
       loadInfoArgs.contentPolicyType(),
+      loadInfoArgs.serviceWorkerTaintingSynthesized(),
       static_cast<LoadTainting>(loadInfoArgs.tainting()),
 
 #define DEFINE_ARGUMENT(_t, _n, name, _d) loadInfoArgs.name(),
