@@ -3,7 +3,7 @@
 
 do_get_profile();
 
-const { openAIEngine, FEATURE_MAJOR_VERSIONS } = ChromeUtils.importESModule(
+const { openAIEngine } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
@@ -30,7 +30,7 @@ add_task(async function test_getModelForChoice_with_remote_settings_data() {
       },
       {
         feature: "chat",
-        version: `${FEATURE_MAJOR_VERSIONS.chat}.13`,
+        version: "2.13",
         model: "gemini-2.5-flash-lite",
         model_choice_id: "1",
         owner_name: "Google",
@@ -88,7 +88,7 @@ add_task(async function test_getAllModelsData_with_remote_settings() {
     const fakeRecords = [
       {
         feature: "chat",
-        version: `${FEATURE_MAJOR_VERSIONS.chat}.19`,
+        version: "2.19",
         model: "qwen3-235b-a22b-instruct-2507-maas",
         model_choice_id: "2",
         owner_name: "Alibaba",
@@ -96,14 +96,14 @@ add_task(async function test_getAllModelsData_with_remote_settings() {
       },
       {
         feature: "chat",
-        version: `${FEATURE_MAJOR_VERSIONS.chat}.13`,
+        version: "2.13",
         model: "gemini-2.5-flash-lite",
         model_choice_id: "1",
         owner_name: "Google",
       },
       {
         feature: "chat",
-        version: `${FEATURE_MAJOR_VERSIONS.chat}.10`,
+        version: "2.10",
         model: "gpt-oss-120b",
         model_choice_id: "3",
         owner_name: "OpenAI",
@@ -158,7 +158,7 @@ add_task(async function test_getAllModelsData_with_fallbacks() {
     const fakeRecords = [
       {
         feature: "chat",
-        version: `${FEATURE_MAJOR_VERSIONS.chat}.19`,
+        version: "2.19",
         model: "gemini-2.5-flash-lite",
         model_choice_id: "1",
         owner_name: "Google",
