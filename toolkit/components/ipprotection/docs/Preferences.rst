@@ -34,6 +34,12 @@ Startup and caching
   Cached Guardian location list shared between ``IPProtectionService`` and
   ``GuardianClient``.
 
+``browser.ipProtection.upgradeNotAvailable`` (boolean, default: ``false``)
+  When ``true``, suppresses all upgrade-related messaging (settings link, feature
+  callouts, locations subview promo) regardless of the user's subscription state.
+  Intended to be flipped via Nimbus in regions or configurations where the VPN
+  upgrade path is not offered.
+
 ``browser.ipProtection.cacheDisabled`` (boolean, default: ``false``)
   Turns off all startup caches. Used primarily by xpcshell tests.
 

@@ -39,6 +39,7 @@ const IPP_STATE_CACHE_PREF = "browser.ipProtection.stateCache";
 const IPP_PANEL_HAS_OPENED_PREF = "browser.ipProtection.everOpenedPanel";
 const IPP_CACHE_DISABLED_PREF = "browser.ipProtection.cacheDisabled";
 const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+const UPGRADE_NOT_AVAILABLE_PREF = "browser.ipProtection.upgradeNotAvailable";
 
 add_setup(async function ippSetup() {
   await SpecialPowers.pushPrefEnv({
@@ -62,6 +63,7 @@ async function setupVpnPrefs({
   autostartprivate = false,
   entitlementCache = "",
   usageCache = "",
+  upgradeNotAvailable = false,
 }) {
   let prefs = [
     [FEATURE_PREF, feature],
@@ -72,6 +74,7 @@ async function setupVpnPrefs({
     [AUTOSTART_PRIVATE_PREF, autostartprivate],
     [ENTITLEMENT_CACHE_PREF, entitlementCache],
     [USAGE_CACHE_PREF, usageCache],
+    [UPGRADE_NOT_AVAILABLE_PREF, upgradeNotAvailable],
   ];
 
   return SpecialPowers.pushPrefEnv({
@@ -928,6 +931,33 @@ add_task(async function test_vpn_ipProtectionLinks_hidden_if_subscribed() {
     }
   );
 });
+
+// Test that the upsell link is not visible when upgradeNotAvailable is true.
+add_task(
+  async function test_vpn_ipProtectionLinks_hidden_if_upgrade_not_available() {
+    await setupVpnPrefs({
+      feature: true,
+      siteExceptions: true,
+      entitlementCache: '{"subscribed": false}',
+      upgradeNotAvailable: true,
+    });
+
+    await BrowserTestUtils.withNewTab(
+      { gBrowser, url: "about:preferences#privacy" },
+      async function (browser) {
+        let settingGroup = testSettingsGroupVisible(browser);
+        let ipProtectionLinks =
+          settingGroup?.querySelector("#ipProtectionLinks");
+        is_element_hidden(
+          ipProtectionLinks,
+          "VPN upgrade link section is hidden when upgradeNotAvailable is true"
+        );
+      }
+    );
+
+    await SpecialPowers.popPrefEnv();
+  }
+);
 
 // Test that we default to showing the upsell link if entitlement cache pref fails to be parsed.
 add_task(

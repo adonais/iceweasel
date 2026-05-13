@@ -3561,6 +3561,8 @@ pref("browser.ipProtection.guardian.endpoint", "https://vpn.mozilla.org/");
 pref("browser.ipProtection.added", false);
 // Pref to track whether the user has upgraded to Mozilla VPN
 pref("browser.ipProtection.hasUpgraded", false);
+// Pref to disable upgrade-related messaging when VPN upgrade is not available
+pref("browser.ipProtection.upgradeNotAvailable", false);
 // Pref that enables bandwidth usage feature
 pref("browser.ipProtection.bandwidth.enabled", true);
 // Pref for messaging the maximum bandwidth allowance in GB

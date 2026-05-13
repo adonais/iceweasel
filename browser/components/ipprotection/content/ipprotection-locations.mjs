@@ -40,7 +40,7 @@ export default class IPProtectionLocationsElement extends MozLitElement {
   }
 
   promoTemplate() {
-    if (this.state?.hasUpgraded) {
+    if (this.state?.hasUpgraded || this.state?.upgradeNotAvailable) {
       return null;
     }
     return html`

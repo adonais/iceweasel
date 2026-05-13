@@ -117,6 +117,33 @@ add_task(async function test_locations_tab_nav_without_promo() {
 });
 
 /**
+ * Tests that the promo button is not present when upgradeNotAvailable is true,
+ * and that tab order skips directly from the list to the back button.
+ */
+add_task(async function test_locations_tab_nav_upgrade_not_available() {
+  let { backButton, firstListItem, promoButton } = await openLocationsSubview({
+    hasUpgraded: false,
+    upgradeNotAvailable: true,
+  });
+
+  Assert.ok(
+    !promoButton,
+    "promo button should not be present when upgradeNotAvailable is true"
+  );
+
+  backButton.focus();
+
+  await expectFocusAfterKey("Tab", firstListItem);
+  await expectFocusAfterKey("Tab", backButton);
+
+  await expectFocusAfterKey("Shift+Tab", firstListItem);
+  await expectFocusAfterKey("Shift+Tab", backButton);
+
+  await closePanel();
+  cleanupService();
+});
+
+/**
  * Tests that Tab from any list item skips directly to promo,
  * and Shift+Tab from any list item goes back to the back button.
  */
