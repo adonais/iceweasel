@@ -135,6 +135,7 @@ WebrtcMediaDataEncoder::WebrtcMediaDataEncoder(
                             "WebrtcMediaDataEncoder::mTaskQueue")),
       mFactory(new PEMFactory()),
       mCallbackMutex("WebrtcMediaDataEncoderCodec encoded callback mutex"),
+      mPendingMutex("WebrtcMediaDataEncoderCodec pending frames mutex"),
       mFormatParams(aFormat.parameters),
       // Use the same lower and upper bound as h264_video_toolbox_encoder which
       // is an encoder from webrtc's upstream codebase.
@@ -340,6 +341,10 @@ int32_t WebrtcMediaDataEncoder::Shutdown() {
     mCallback = nullptr;
     mError = NS_OK;
   }
+  {
+    MutexAutoLock lock(mPendingMutex);
+    mPendingFrames.Clear();
+  }
   if (mEncoder) {
     media::Await(do_AddRef(mTaskQueue), mEncoder->Shutdown());
     mEncoder = nullptr;
@@ -370,13 +375,11 @@ static already_AddRefed<VideoData> CreateVideoDataFromWebrtcVideoFrame(
       new RecyclingPlanarYCbCrImage(new BufferRecycleBin());
   image->CopyData(yCbCrData);
 
-  // Although webrtc::VideoFrame::timestamp_rtp_ will likely be deprecated,
-  // webrtc::EncodedImage and the VPx encoders still use it in the imported
-  // version of libwebrtc. Not using the same timestamp values generates
-  // discontinuous time and confuses the video receiver when switching from
-  // platform to libwebrtc encoder.
-  TimeUnit timestamp =
-      media::TimeUnit(aFrame.rtp_timestamp(), webrtc::kVideoCodecClockrate);
+  // Use the input frame's microsecond timestamp ("webrtc time") as the
+  // encoder's time base. This matches what libwebrtc's own encoders do, and
+  // gives the encode-complete handler a unique key with which to recover
+  // the original rtp_timestamp from PendingFrame metadata.
+  TimeUnit timestamp = TimeUnit::FromMicroseconds(aFrame.timestamp_us());
   return VideoData::CreateFromImage(image->GetSize(), 0, timestamp, aDuration,
                                     image, aIsKeyFrame, timestamp);
 }
@@ -461,6 +464,21 @@ int32_t WebrtcMediaDataEncoder::Encode(
       TimeUnit::FromSeconds(1.0 / mMaxFrameRate));
   const gfx::IntSize displaySize = data->mDisplay;
 
+  // Record per-frame metadata for the encoder output to recover, keyed by
+  // the input timestamp which the encoder preserves. Evict the oldest
+  // entry rather than refuse new inputs when at capacity, so the encoder
+  // is never starved.
+  {
+    MutexAutoLock lock(mPendingMutex);
+    while (mPendingFrames.Length() >= kMaxFramesInFlight) {
+      mPendingFrames.RemoveElementAt(0);
+    }
+    MOZ_ASSERT(mPendingFrames.IsEmpty() ||
+               mPendingFrames.LastElement().mTime < data->mTime);
+    mPendingFrames.AppendElement(PendingFrame{
+        .mTime = data->mTime, .mRtpTimestamp = aInputFrame.rtp_timestamp()});
+  }
+
   mEncoder->Encode(data)->Then(
       mTaskQueue, __func__,
       [self = RefPtr<WebrtcMediaDataEncoder>(this), this,
@@ -468,36 +486,61 @@ int32_t WebrtcMediaDataEncoder::Encode(
         LOG_V("Received encoded frame, nums %zu width %d height %d",
               aFrames.Length(), displaySize.width, displaySize.height);
         for (auto& frame : aFrames) {
-          MutexAutoLock lock(mCallbackMutex);
-          if (!mCallback) {
-            break;
+          const TimeUnit& frameTime = frame->mTime;
+          Maybe<PendingFrame> matched;
+          {
+            MutexAutoLock lock(mPendingMutex);
+            // Walk the queue from the front. Anything older than this
+            // output is an input the encoder skipped; the matching entry
+            // (if any) supplies the per-frame metadata.
+            size_t numToRemove = 0;
+            while (numToRemove < mPendingFrames.Length()) {
+              const PendingFrame& pendingFrame = mPendingFrames[numToRemove];
+              if (pendingFrame.mTime > frameTime) {
+                break;
+              }
+              if (pendingFrame.mTime == frameTime) {
+                matched = Some(pendingFrame);
+                ++numToRemove;
+                break;
+              }
+              ++numToRemove;
+            }
+            mPendingFrames.RemoveElementsAt(0, numToRemove);
           }
+
+          if (matched.isNothing()) {
+            continue;
+          }
+
           webrtc::EncodedImage image;
           image.SetEncodedData(
               webrtc::EncodedImageBuffer::Create(frame->Data(), frame->Size()));
           image._encodedWidth = displaySize.width;
           image._encodedHeight = displaySize.height;
-          CheckedInt64 time =
-              TimeUnitToFrames(frame->mTime, webrtc::kVideoCodecClockrate);
-          if (!time.isValid()) {
-            mError = MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                                 "invalid timestamp from encoder");
-            break;
-          }
-          image.SetRtpTimestamp(time.value());
+          image.SetRtpTimestamp(matched->mRtpTimestamp);
+          image.capture_time_ms_ =
+              webrtc::Timestamp::Micros(matched->mTime.ToMicroseconds()).ms();
           image._frameType = frame->mKeyframe
                                  ? webrtc::VideoFrameType::kVideoFrameKey
                                  : webrtc::VideoFrameType::kVideoFrameDelta;
           GetVPXQp(mCodecSpecific.codecType, image);
-          UpdateCodecSpecificInfo(mCodecSpecific, displaySize,
-                                  frame->mKeyframe);
+          UpdateCodecSpecificInfo(mCodecSpecific, displaySize, frame->mKeyframe);
 
+          MutexAutoLock lock(mCallbackMutex);
+          if (!mCallback) {
+            return;
+          }
           LOG_V("Send encoded image");
           mCallback->OnEncodedImage(image, &mCodecSpecific);
           mBitrateAdjuster.Update(image.size());
         }
       },
       [self = RefPtr<WebrtcMediaDataEncoder>(this)](const MediaResult& aError) {
+        {
+          MutexAutoLock lock(self->mPendingMutex);
+          self->mPendingFrames.Clear();
+        }
         MutexAutoLock lock(self->mCallbackMutex);
         self->mError = aError;
       });
