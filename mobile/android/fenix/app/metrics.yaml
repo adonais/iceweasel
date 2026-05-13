@@ -9942,8 +9942,6 @@ adjust_attribution:
           Which conversion event was sent, numbered 1-10. Events 1-7 are
           GrowthData events; events 8-10 are FirstWeekPostInstall events.
         type: quantity
-    send_in_pings:
-      - adjust-attribution
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2038776
     data_reviews:

@@ -200,8 +200,6 @@ class AdjustMetricsService(
                 is Event.FirstWeekPostInstall.ConversionEvent10 ->
                     conversionEventRecorder.recordConversionEvent(CONVERSION_EVENT_10)
             }
-
-            conversionEventRecorder.submitAdjustAttributionPing()
         }
 
         private fun enableOnlyMetaThirdPartySharing() {
