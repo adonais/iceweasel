@@ -122,15 +122,14 @@ export class BackupUIParent extends JSWindowActorParent {
    *   Returns either a success object, a file details object, or null.
    */
   async receiveMessage(message) {
-    let currentWindowGlobal = this.browsingContext.currentWindowGlobal;
+    let windowGlobal = this.manager;
     // The backup spotlights can be embedded in less privileged content pages, so let's
     // make sure that any messages from content are coming from the privileged
     // about content process type
     if (
-      !currentWindowGlobal ||
-      (!currentWindowGlobal.isInProcess &&
-        this.browsingContext.currentRemoteType !=
-          lazy.E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE)
+      !windowGlobal ||
+      (!windowGlobal.isInProcess &&
+        windowGlobal.remoteType != lazy.E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE)
     ) {
       lazy.logConsole.debug(
         "BackupUIParent: received message from the wrong content process type."

@@ -46,9 +46,8 @@ export class MozNewTabRemoteRendererProtocolParent extends JSWindowActorParent {
 
   receiveMessage(message) {
     if (
-      !this.browsingContext.currentRemoteType.isInProcess &&
-      this.browsingContext.currentRemoteType !==
-        lazy.E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE
+      !this.manager.isInProcess &&
+      this.manager.remoteType !== lazy.E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE
     ) {
       return Promise.reject(new Error("Process type mismatch"));
     }
