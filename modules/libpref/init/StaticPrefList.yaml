@@ -7260,7 +7260,7 @@
 # enable rendering web content in HDR.
 - name: gfx.color_management.hdr
   type: RelaxedAtomicBool
-#if defined(XP_MACOSX) || defined(XP_WIN)
+#if defined(XP_MACOSX)
   value: true
 #else
   value: false
