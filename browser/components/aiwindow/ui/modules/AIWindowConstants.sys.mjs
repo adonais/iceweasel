@@ -44,8 +44,8 @@ export const PREF_BRANCH = "browser.smartwindow.chatHistory";
  */
 export const MODELS = {
   0: { modelName: "custom-model" },
-  1: { modelName: "gemini-2.5-flash-lite", ownerName: "Google" },
-  2: { modelName: "Qwen3-235B-A22B-Instruct-2507", ownerName: "Alibaba" },
+  1: { modelName: "gemini-flash-lite", ownerName: "Google" },
+  2: { modelName: "qwen3-235B-A22B-Instruct-2507", ownerName: "Alibaba" },
   3: { modelName: "gpt-oss-120B", ownerName: "OpenAI" },
 };
 
