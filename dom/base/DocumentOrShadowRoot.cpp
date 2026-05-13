@@ -61,9 +61,7 @@ void DocumentOrShadowRoot::AddSizeOfExcludingThis(nsWindowSizes& aSizes) const {
 }
 
 DocumentOrShadowRoot::~DocumentOrShadowRoot() {
-  for (StyleSheet* sheet : mStyleSheets) {
-    sheet->ClearAssociatedDocumentOrShadowRoot();
-  }
+  MOZ_ASSERT(mStyleSheets.IsEmpty());
 }
 
 StyleSheetList* DocumentOrShadowRoot::StyleSheets() {
