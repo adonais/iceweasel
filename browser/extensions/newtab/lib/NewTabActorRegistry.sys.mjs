@@ -38,6 +38,7 @@ const JSWINDOWACTORS = {
         "resource://newtab/lib/actors/MozNewTabRemoteRendererProtocolParent.sys.mjs",
     },
     includeParent: true,
+    remoteTypes: ["parent", "privilegedabout"],
   },
 };
 
