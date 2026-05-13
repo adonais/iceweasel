@@ -127,6 +127,8 @@ skip-if = [
 
 ["browser_smartwindow_conversation_state.js"]
 
+["browser_smartwindow_default_startup.js"]
+
 ["browser_smartwindow_disclaimer.js"]
 
 ["browser_smartwindow_footer.js"]

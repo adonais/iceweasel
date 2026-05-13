@@ -45,6 +45,7 @@ Preferences.addAll([
   { id: "browser.smartwindow.memories.generateFromHistory", type: "bool" },
   { id: "browser.smartwindow.model", type: "string" },
   { id: "browser.smartwindow.preferences.endpoint", type: "string" },
+  { id: "browser.smartwindow.isDefaultWindow", type: "bool" },
   { id: "browser.smartwindow.sidebar.openByDefault", type: "bool" },
   { id: "browser.smartwindow.tos.consentTime", type: "int" },
   { id: "browser.preferences.aiControls.showUnavailable", type: "bool" },
@@ -683,6 +684,11 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "openSidebarByDefault",
   pref: "browser.smartwindow.sidebar.openByDefault",
+});
+
+Preferences.addSetting({
+  id: "smartWindowIsDefaultWindow",
+  pref: "browser.smartwindow.isDefaultWindow",
 });
 
 Preferences.addSetting({
@@ -1378,6 +1384,11 @@ SettingGroupManager.registerGroups({
     l10nId: "ai-window-default-section",
     headingLevel: 2,
     items: [
+      {
+        id: "smartWindowIsDefaultWindow",
+        l10nId: "ai-window-is-default-window",
+        control: "moz-checkbox",
+      },
       {
         id: "openSidebarByDefault",
         l10nId: "ai-window-open-sidebar",

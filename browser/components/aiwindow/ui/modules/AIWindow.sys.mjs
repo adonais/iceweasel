@@ -51,6 +51,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
+  SessionStartup: "resource:///modules/sessionstore/SessionStartup.sys.mjs",
   MemoriesSchedulers:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchedulers.sys.mjs",
   SmartWindowTelemetry:
@@ -315,6 +316,35 @@ export const AIWindow = {
       return;
     }
     askButton.hidden = !this.isAIWindowActive(win);
+  },
+
+  get isDefaultWindow() {
+    return (
+      this.AIWindowEnabledPref &&
+      this.isAIWindowEnabled() &&
+      Services.prefs.getBoolPref("browser.smartwindow.isDefaultWindow", false)
+    );
+  },
+
+  /**
+   * Registered under the `browser-first-window-ready` category, so it runs
+   * exactly once per session after the first browser window finishes loading.
+   * When the user has chosen Smart Window as their default, promote that
+   * first window to Smart (prompting for sign-in if needed).
+   *
+   * @param {Window} win The first browser window for the session.
+   */
+  async onFirstWindowReady(win) {
+    if (
+      !this.isDefaultWindow ||
+      lazy.PrivateBrowsingUtils.isWindowPrivate(win) ||
+      this.isAIWindowActive(win) ||
+      lazy.SessionStartup.willRestore()
+    ) {
+      return;
+    }
+
+    await this._authorizeAndToggleWindow(win, "startup");
   },
 
   /**

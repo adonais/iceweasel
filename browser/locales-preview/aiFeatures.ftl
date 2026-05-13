@@ -26,6 +26,9 @@ ai-window-personalize-header =
 
 ai-window-default-section =
     .label = Default settings
+ai-window-is-default-window =
+    .label = Use Smart Window by default
+    .description = Open Smart Window when {-brand-short-name} starts, restarts, or opens links from other apps.
 ai-window-open-sidebar =
     .label = Open assistant automatically
     .description = Show the assistant sidebar on each new tab. Close it anytime.
