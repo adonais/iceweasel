@@ -63,6 +63,10 @@ hr {
     gap: var(--space-small);
     padding-block-start: var(--space-medium);
 
+    > span {
+      flex: 1;
+    }
+
     &:last-of-type {
       padding-block-end: var(--space-xlarge);
     }

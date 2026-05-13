@@ -73,29 +73,30 @@ export default class IPProtectionUnauthenticatedContentElement extends MozLitEle
         <ul id="unauthenticated-vpn-message" class="vpn-description">
           <li
             id="unauthenticated-private-location"
-            data-l10n-id="unauthenticated-private-location-message"
             @click=${this.handleLearnMoreClick}
             class="with-icon"
           >
-            <a
-              class="learn-more-vpn"
-              data-l10n-name="learn-more-vpn"
-              href=${Services.urlFormatter.formatURLPref(
-                "app.support.baseURL"
-              ) + LINKS.SUPPORT_SLUG}
-            ></a>
+            <span data-l10n-id="unauthenticated-private-location-message">
+              <a
+                class="learn-more-vpn"
+                data-l10n-name="learn-more-vpn"
+                href=${Services.urlFormatter.formatURLPref(
+                  "app.support.baseURL"
+                ) + LINKS.SUPPORT_SLUG}
+              ></a>
+            </span>
           </li>
-          <li
-            id="unauthenticated-choose-location"
-            data-l10n-id="unauthenticated-choose-location-message"
-            class="with-icon"
-          ></li>
-          <li
-            id="unauthenticated-bandwidth-limit"
-            data-l10n-id="unauthenticated-bandwidth-limit-message"
-            data-l10n-args=${JSON.stringify({ maxUsage: BANDWIDTH.MAX_IN_GB })}
-            class="with-icon"
-          ></li>
+          <li id="unauthenticated-choose-location" class="with-icon">
+            <span data-l10n-id="unauthenticated-choose-location-message"></span>
+          </li>
+          <li id="unauthenticated-bandwidth-limit" class="with-icon">
+            <span
+              data-l10n-id="unauthenticated-bandwidth-limit-message"
+              data-l10n-args=${JSON.stringify({
+                maxUsage: BANDWIDTH.MAX_IN_GB,
+              })}
+            ></span>
+          </li>
         </ul>
         <moz-button
           id="unauthenticated-get-started"
