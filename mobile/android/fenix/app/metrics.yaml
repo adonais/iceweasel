@@ -9933,6 +9933,29 @@ adjust_attribution:
       tags:
         - Performance
         - Attribution
+  conversion_event:
+    type: event
+    description: A conversion event has been sent to Adjust
+    extra_keys:
+      event_number:
+        description: >
+          Which conversion event was sent, numbered 1-10. Events 1-7 are
+          GrowthData events; events 8-10 are FirstWeekPostInstall events.
+        type: quantity
+    send_in_pings:
+      - adjust-attribution
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2038776
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D299816
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Attribution
 
 browser.search:
   with_ads:
