@@ -513,7 +513,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">បន្ត</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">ជួយយើងធ្វើឱ្យ Firefox រីកចម្រើន</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">ជួយយើងធ្វើឱ្យ Firefox រីកចម្រើន</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">ចែករំលែកពីរបៀបដែលអ្នកបានស្គាល់ Firefox និងការប្រើប្រាស់វា ជាមួយដៃគូទីផ្សាររបស់ Mozilla។ ទិន្នន័យនេះមិនត្រូវបានលក់ឡើយ។</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->

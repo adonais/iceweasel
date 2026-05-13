@@ -608,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">继续</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">助力壮大 Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">助力壮大 Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">与 Mozilla 的营销合作伙伴分享您发现 Firefox 的途径及使用方式。我们绝不会出售此数据。</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -712,9 +712,13 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">与 Mozilla 的营销合作伙伴分享您发现 Firefox 的途径及使用方式。我们绝不会出售此数据。%1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">与 Mozilla 的营销合作伙伴分享您发现 Firefox 的途径及使用方式。我们绝不会出售此数据。%1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">与 Mozilla 的营销合作伙伴分享您发现 Firefox 的途径及使用方式。我们绝不会出售此数据。</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">我们如何使用您的数据</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">不了，谢谢</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">允许通知可让 Firefox 更好地为您保驾护航</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -3160,9 +3164,16 @@
   -->
   <string name="ip_protection_data_limit_reached_description">您已用完全部 %1$d GB VPN 流量，使用权限将于下个月重置。</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
-  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN 已启用。</string>
+  <string name="ip_protection_toolbar_pill_description">VPN 已启用。</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">暂时不要</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">无法连接 VPN，请过几分钟再试。</string>
+  <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">%1$d GB VPN 流量已用完，使用权限将于下个月重置。</string>
   <!--
     Autofill
 
@@ -4439,6 +4450,8 @@
   <string name="sports_widget_final">决赛</string>
   <!-- Round name shown on the sports widget for the bronze final stage in the soccer tournament. -->
   <string name="sports_widget_bronze_final">三四名决赛</string>
+  <!-- Sports widget error card message shown when match data fails to load. -->
+  <string name="sports_widget_error_load_failed">暂时无法获取比赛信息，请过几分钟再尝试刷新。</string>
   <!-- Sports widget error card message shown when the network connection is interrupted and live updates pause. -->
   <string name="sports_widget_error_connection_interrupted">连接中断 — 实时更新已暂停。</string>
   <!-- Sports widget action label to refresh match data after an error. -->
@@ -4473,6 +4486,8 @@
   <string name="sports_widget_view_match_details" tools:ignore="UnusedResources">查看比赛详情</string>
   <!-- Sports widget section header for related soccer matches in the same group. -->
   <string name="sports_widget_related_matches">相关比赛</string>
+  <!-- Sports widget section header for a list of upcoming soccer matches that have not yet started. -->
+  <string name="sports_widget_upcoming" tools:ignore="UnusedResources">即将进行</string>
   <!-- Sports widget match status suffix appended to match scores (e.g., "3 - 2 (Full time)") to indicate the match has been completed. -->
   <string name="sports_widget_match_full_time_suffix">（全场）</string>
   <!-- Sports widget match status to indicate the match has been completed. -->
@@ -4509,20 +4524,56 @@
   <string name="sports_widget_halftime" tools:ignore="UnusedResources">中场休息</string>
   <!-- Sports widget match status label shown during extra time of a match. -->
   <string name="sports_widget_extra_time" tools:ignore="UnusedResources">加时赛</string>
+  <!-- Sports widget match status label shown during penalties of a match. -->
+  <string name="sports_widget_penalties" tools:ignore="UnusedResources">点球决胜</string>
   <!--
     Sports widget countdown label for days. D is short for Day. The layout only allows for 1–2 characters:
     if there is an equivalent single character for your language, use that (e.g. T for German).
     Your translation will be automatically truncated at 2 characters to avoid layout issues.
   -->
   <string name="sports_widget_countdown_days">天</string>
+  <!--
+    Sports widget countdown pill abbreviated label for hours. H is short for Hour. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that (e.g. S for German).
+    Your translation will be automatically truncated at 2 characters to avoid layout issues.
+  -->
+  <string name="sports_widget_countdown_hours">小时</string>
+  <!--
+    Sports widget countdown pill abbreviated label for minutes. M is short for Minute. The layout only allows for 1–2 characters:
+    if there is an equivalent single character for your language, use that.
+    Your translation will be automatically truncated at 2 characters to avoid layout issues
+  -->
+  <string name="sports_widget_countdown_minutes">分钟</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget team / country selector. -->
   <string name="sports_widget_close_team_selection_sheet_content_description" tools:ignore="UnusedResources">关闭球队选择表单</string>
   <!-- Content description (for accessibility, not displayed) for the close button on the sports widget card. -->
   <string name="sports_widget_close_content_description">关闭</string>
   <!-- Content description (for accessibility, not displayed) for the overflow (more options) menu button on the sports widget card. -->
   <string name="sports_widget_more_options_content_description" tools:ignore="UnusedResources">更多选项</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing the time remaining until the soccer tournament kickoff.
+    %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
+  -->
+  <string name="sports_widget_countdown_remaining_content_description">剩余时间：%1$d 天 %2$d 小时 %3$d 分钟。</string>
   <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
   <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">前往世界杯网站</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">即将进行： %1$s 对 %2$s，%3$s %4$s</string>
+  <!--
+    Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
+    %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
+    or Final represented by sports_widget_final).
+  -->
+  <string name="sports_widget_live_game_content_description" tools:ignore="UnusedResources">%s，进行中</string>
+  <!--
+    Content description (for accessibility, not displayed) announcing a live score.
+    %1$s is the home team name, %2$d is the home team score, %3$s is the away team name, %4$d is the away team score,
+    and %5$s is the match elapsed time (e.g. 72 minutes).
+  -->
+  <string name="sports_widget_live_score_content_description" tools:ignore="UnusedResources">%1$s %2$d 球，%3$s %4$d 球，%5$s，进行中</string>
   <!--
     Content description (for accessibility, not displayed) for a paginated item.
     %1$s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32),
@@ -4546,6 +4597,8 @@
   <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">您似乎已离线。</string>
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">请检查您的互联网连接，然后重试。</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">小组赛阶段</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

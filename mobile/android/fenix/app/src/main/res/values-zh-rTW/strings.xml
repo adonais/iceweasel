@@ -608,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">繼續</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">協助我們讓 Firefox 成長</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">協助我們讓 Firefox 成長</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">與 Mozilla 的行銷夥伴分享您如何發現 Firefox 以及是如何使用的，我們絕不會販售此資料。</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -712,9 +712,27 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">與 Mozilla 的行銷夥伴分享您如何發現 Firefox 以及是如何使用的，我們絕不會販售此資料。%1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">與 Mozilla 的行銷夥伴分享您如何發現 Firefox 以及是如何使用的，我們絕不會販售此資料。%1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">與 Mozilla 的行銷夥伴分享您如何發現 Firefox 以及是如何使用的，我們絕不會販售此資料。</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">您可以透過讓 Mozilla 告知我們用來宣傳 Firefox 的平台您是 Firefox 使用者，幫助我們接觸更多人。</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">您可以透過讓 Mozilla 知道您是從哪個平台下載 Firefox 的，幫助我們接觸更多人。</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">讓 Mozilla 知道您是從哪個平台下載 Firefox 的，幫助我們接觸更多人。</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">我們會如何使用該資料</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">幫助 Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">不要，謝謝</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">透過通知功能，讓您使用 Firefox 更安全</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -3178,6 +3196,8 @@
   <string name="ip_protection_menu_paused">已暫停</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">錯誤</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">試試看</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">開啟 VPN 設定</string>
   <!--
@@ -3191,9 +3211,9 @@
   -->
   <string name="ip_protection_data_limit_reached_description">您已用完 %1$d GB 的 VPN 流量。將於下個月重設使用權。</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
-  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN 開啟</string>
+  <string name="ip_protection_toolbar_pill_label">VPN 開啟</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
-  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">已開啟 VPN。</string>
+  <string name="ip_protection_toolbar_pill_description">已開啟 VPN。</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">開始使用</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
@@ -4640,6 +4660,8 @@
   <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">看來您的網路不通。</string>
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">請確認網路連線正常後再試一次。</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">小組賽</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

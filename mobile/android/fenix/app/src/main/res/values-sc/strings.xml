@@ -550,7 +550,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Sighi</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Agiuda·nos a fàghere crèschere Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Agiuda·nos a fàghere crèschere Firefox</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">Comente impreamus is datos</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->

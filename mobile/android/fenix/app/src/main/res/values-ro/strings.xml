@@ -608,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Continuă</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Ajută-ne să dezvoltăm Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Ajută-ne să dezvoltăm Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Partajează cu partenerii de marketing Mozilla cum ai descoperit Firefox și că îl folosești. Aceste date nu sunt niciodată vândute.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -712,7 +712,7 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Partajează cu partenerii de marketing Mozilla cum ai descoperit Firefox și că îl folosești. Aceste date nu sunt niciodată vândute. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Partajează cu partenerii de marketing Mozilla cum ai descoperit Firefox și că îl folosești. Aceste date nu sunt niciodată vândute. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Cum utilizăm datele</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -3205,9 +3205,9 @@
   -->
   <string name="ip_protection_data_limit_reached_description">Ai folosit toți cei %1$d GB din datele VPN. Accesul se resetează luna viitoare.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
-  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN activat</string>
+  <string name="ip_protection_toolbar_pill_label">VPN activat</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
-  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN-ul este activ.</string>
+  <string name="ip_protection_toolbar_pill_description">VPN-ul este activ.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Începe</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->

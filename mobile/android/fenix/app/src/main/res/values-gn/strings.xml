@@ -608,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Eku’ejey</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Orepytyvõ Firefox oiko porãve hag̃ua</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Orepytyvõ Firefox oiko porãve hag̃ua</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Emombe’u marketing Mozilla-guápe mba’éichapa eikuaáraka’e Firefox ha ijeporu. Ko’ã mba’ekuaarã araka’eve noñevendéi.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -712,7 +712,7 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Emombe’u marketing Mozilla-guápe mba’éichapa eikuaáraka’e Firefox ha ijeporu. Ko’ã mba’ekuaarã noñevendemo’ãi. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Emombe’u marketing Mozilla-guápe mba’éichapa eikuaáraka’e Firefox ha ijeporu. Ko’ã mba’ekuaarã noñevendemo’ãi. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Mba’éichapa jaiporu mba’ekuaarãita</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -3197,9 +3197,9 @@
   -->
   <string name="ip_protection_data_limit_reached_description">Ojeporu %1$d GB mba’ekuaarã nde VPN rehegua. Jeike oikojeýta ambue jasýpe.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
-  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN hendy</string>
+  <string name="ip_protection_toolbar_pill_label">VPN hendy</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
-  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN hendyhína.</string>
+  <string name="ip_protection_toolbar_pill_description">VPN hendyhína.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Eñepyrũ</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->

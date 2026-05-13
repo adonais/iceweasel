@@ -608,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Parhau</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Helpwch ni i dyfu Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Helpwch ni i dyfu Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Rhannwch sut wnaethoch chi ddarganfod Firefox, a\'ch bod chi\'n ei ddefnyddio, gyda phartneriaid marchnata Mozilla. Nid yw\'r data hwn byth yn cael ei werthu.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -712,9 +712,27 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Rhannwch sut wnaethoch chi ddarganfod Firefox, a\'ch bod chi\'n ei ddefnyddio, gyda phartneriaid marchnata Mozilla. Fydd y data hwn byth yn cael ei werthu. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Rhannwch sut wnaethoch chi ddarganfod Firefox, a\'ch bod chi\'n ei ddefnyddio, gyda phartneriaid marchnata Mozilla. Fydd y data hwn byth yn cael ei werthu. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Rhannwch sut wnaethoch chi ddarganfod Firefox, a\'ch bod chi\'n ei ddefnyddio, gyda phartneriaid marchnata Mozilla. Nid yw\'r data hwn byth yn cael ei werthu.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Gallwch ein helpu i gyrraedd mwy o bobl trwy ganiatáu i Mozilla hysbysu\'r sianeli lle rydym yn hyrwyddo Firefox eich bod yn ddefnyddiwr Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Gallwch ein helpu i gyrraedd mwy o bobl drwy ganiatáu i Mozilla hysbysu\'r platfform y daethoch ohono eich bod yn defnyddio Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Helpwch ni i gyrraedd mwy o bobl trwy ganiatáu i Mozilla hysbysu\'r platfform y daethoch ohono eich bod yn defnyddio Firefox.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Sut rydym yn defnyddio\'r data</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Helpwch Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Dim Diolch</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Mae hysbysiadau’n eich helpu i gadw’n fwy diogel gyda Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -3216,6 +3234,8 @@
   <string name="ip_protection_menu_paused">Oedwyd</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Gwall</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Rhowch gynnig arni</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Agor gosodiadau VPN</string>
   <!--
@@ -3229,9 +3249,9 @@
   -->
   <string name="ip_protection_data_limit_reached_description">Rydych chi wedi defnyddio %1$d GB o\'ch data VPN. Mae\'ch mynediad yn ailosod y mis nesaf.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
-  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN ymlaen</string>
+  <string name="ip_protection_toolbar_pill_label">VPN ymlaen</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
-  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">Mae VPN yn weithredol.</string>
+  <string name="ip_protection_toolbar_pill_description">Mae VPN yn weithredol.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Cychwyn arni</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
@@ -3246,6 +3266,13 @@
   <string name="ip_protection_onboarding_body_link">Pori gyda diogelwch ychwanegol</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">Nid nawr</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">Methu cysylltu â\'r VPN. Ceisiwch eto mewn ychydig funudau.</string>
+  <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">Defnyddiwyd %1$d GB o ddata VPN. Bydd mynediad yn ailgychwyn mis nesaf.</string>
   <!--
     Autofill
 
@@ -4667,6 +4694,12 @@
   <string name="sports_widget_first_half" tools:ignore="UnusedResources">Hanner cyntaf</string>
   <!-- Sports widget match status label shown during second half of a match. -->
   <string name="sports_widget_second_half" tools:ignore="UnusedResources">Ail hanner</string>
+  <!-- Sports widget error card title shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Mae\'n debyg eich bod all-lein.</string>
+  <!-- Sports widget error card description shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Gwiriwch eich cysylltiad rhyngrwyd a cheisio eto.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Cymal Grŵp</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

@@ -606,7 +606,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Continue</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Help us grow Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Help us grow Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Share how you discovered Firefox, and that you use it, with Mozilla’s marketing partners. This data is never sold.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -710,7 +710,7 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Share how you discovered Firefox, and that you use it, with Mozilla’s marketing partners. This data is never sold. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Share how you discovered Firefox, and that you use it, with Mozilla’s marketing partners. This data is never sold. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">How we use the data</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -3193,9 +3193,9 @@
   -->
   <string name="ip_protection_data_limit_reached_description">You’ve used all %1$d GB of your VPN data. Access resets next month.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
-  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN on</string>
+  <string name="ip_protection_toolbar_pill_label">VPN on</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
-  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN is active.</string>
+  <string name="ip_protection_toolbar_pill_description">VPN is active.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Get started</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->

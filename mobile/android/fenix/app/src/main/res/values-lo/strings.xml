@@ -548,7 +548,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">ສືບຕໍ່</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">ຊ່ວຍພວກເຮົາພັດທະນາ Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">ຊ່ວຍພວກເຮົາພັດທະນາ Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">ແບ່ງປັນວິທີທີ່ທ່ານຄົ້ນພົບ Firefox, ແລະ ທີ່ທ່ານໃຊ້ມັນ, ກັບຄູ່ຮ່ວມການຕະຫຼາດຂອງ Mozilla. ຂໍ້ມູນນີ້ບໍ່ເຄີຍຖືກຂາຍ.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -648,7 +648,7 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">ແບ່ງປັນວິທີທີ່ເຈົ້າຄົ້ນພົບ Firefox ແລະ ວິທີທີ່ເຈົ້າໃຊ້ມັນກັບຄູ່ຮ່ວມງານດ້ານການຕະຫຼາດຂອງ Mozilla. ຂໍ້ມູນນີ້ບໍ່ເຄີຍຖືກຂາຍ. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">ແບ່ງປັນວິທີທີ່ເຈົ້າຄົ້ນພົບ Firefox ແລະ ວິທີທີ່ເຈົ້າໃຊ້ມັນກັບຄູ່ຮ່ວມງານດ້ານການຕະຫຼາດຂອງ Mozilla. ຂໍ້ມູນນີ້ບໍ່ເຄີຍຖືກຂາຍ. %1$s</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->

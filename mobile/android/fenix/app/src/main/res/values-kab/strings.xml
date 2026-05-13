@@ -524,7 +524,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Kemmel</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Mudd afus i usnerni n Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Mudd afus i usnerni n Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Bḍu amek i d-tufiḍ Firefox, daɣen i t-tesseqdaceḍ, akked yicriken n ulzuz n Mozilla. Isefka-a werǧin ttnuzun.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->

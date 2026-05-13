@@ -375,6 +375,8 @@
   <string name="preferences_ai_controls">AA kontrolak</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">Beti aukera dezakezu %s(e)n</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Horren barne dago AArekin hobetutako eginbideak erabiltzea edo ez. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">Horren barne dago AArekin hobetutako eginbideak erabiltzea edo ez.</string>
   <!-- Link text for learning more about AI controls -->
@@ -606,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Jarraitu</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Lagun iezaguzu Firefox hazten</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Lagun iezaguzu Firefox hazten</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Partekatu Mozillaren marketin-bazkideekin nola aurkitu duzun Firefox eta erabili egiten duzula. Datu hauek inoiz ez dira saltzen.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -710,7 +712,7 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Partekatu Mozillaren marketin-bazkideekin nola aurkitu duzun Firefox eta erabili egiten duzula. Datu hauek inoiz ez dira saltzen. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Partekatu Mozillaren marketin-bazkideekin nola aurkitu duzun Firefox eta erabili egiten duzula. Datu hauek inoiz ez dira saltzen. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Nola erabiltzen ditugun datuak</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -1787,6 +1789,14 @@
   <string name="delete_tab_group_confirmation_dialog_confirm">Ezabatu taldea</string>
   <!-- Text shown on the cancel button in the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_cancel">Utzi</string>
+  <!-- Title for the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_title">Itxi fitxak eta ezabatu taldea?</string>
+  <!-- Text shown in the body of the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_body">Honek fitxa-taldea betirako ezabatzen du.</string>
+  <!-- Text shown on the confirm button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_confirm">Ezabatu taldea</string>
+  <!-- Text shown on the cancel button in the Close last tab and delete tab group confirmation dialog. -->
+  <string name="close_tab_and_delete_group_confirmation_dialog_cancel">Utzi</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -2201,6 +2211,8 @@
   <string name="bookmark_import_menu_button">Inportatu fitxategitik</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">Ezin dira laster-markak inportatu. Saiatu berriro.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Inportatutako laster-markak</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -2727,6 +2739,8 @@
   </plurals>
   <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
   <string name="trackers_blocked_empty">Babestuta zaude</string>
+  <!-- Text shown below the trackers blocked card with typing animation -->
+  <string name="help_catch_trackers">Lagundu jarraipen-elementuak harrapatzen</string>
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Oinarrizkoa (lehenetsia)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
@@ -3183,11 +3197,30 @@
   -->
   <string name="ip_protection_data_limit_reached_description">Zure VPN datuen %1$d GB guztiak erabili dituzu. Sarbidea datorren hilabetean berrezarriko da.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
-  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPNa aktibo</string>
+  <string name="ip_protection_toolbar_pill_label">VPNa aktibo</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
-  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPNa aktibo dago.</string>
+  <string name="ip_protection_toolbar_pill_description">VPNa aktibo dago.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Hasi erabiltzen</string>
+  <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
+  <string name="ip_protection_onboarding_card_headline">Probatu %s(r)en integratutako VPNa</string>
+  <!--
+    The body of the VPN onboarding card.
+    %1$s is a link using ip_protection_onboarding_body_link (“Browse with extra protection”) as text. It links to a support article about VPN on Firefox.
+    %2$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_onboarding_body">%1$s zure kokapena ezkutatuz, baita Wi-Fi publikoetan ere. Lortu doako %2$d GB hilero.</string>
+  <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+  <string name="ip_protection_onboarding_body_link">Nabigatu babes estrekin</string>
+  <!-- Label for the dismiss button on the onboarding bottom sheet. -->
+  <string name="ip_protection_onboarding_not_now_button">Une honetan ez</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">Ezin da VPNra konektatu. Saiatu berriro minutu batzuk barru.</string>
+  <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">VPN datuen %1$d GB erabilita. Sarbidea datorren hilabetean berrezarriko da.</string>
   <!--
     Autofill
 
@@ -4601,6 +4634,18 @@
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Munduko Kopako finalaren emaitzak, %1$d / %2$d orria</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Kendu Munduko Kopa hasierako orritik</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Jarraitzen: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Itzuli partiden informazioa jasotzeko txapelketa gerturatu ahala.</string>
+  <!-- Sports widget match status label shown during first half of a match. -->
+  <string name="sports_widget_first_half" tools:ignore="UnusedResources">Lehenengo zatia</string>
+  <!-- Sports widget match status label shown during second half of a match. -->
+  <string name="sports_widget_second_half" tools:ignore="UnusedResources">Bigarren zatia</string>
+  <!-- Sports widget error card title shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Badirudi lineaz kanpo zaudela.</string>
+  <!-- Sports widget error card description shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Egiaztatu Interneterako zure konexioa eta saiatu berriro.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

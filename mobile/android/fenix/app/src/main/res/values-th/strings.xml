@@ -608,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">ดำเนินการต่อ</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">ช่วยเราพัฒนา Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">ช่วยเราพัฒนา Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">แบ่งปันว่าคุณค้นพบ Firefox ได้อย่างไร และคุณใช้มันอย่างไรกับพันธมิตรด้านการตลาดของ Mozilla โดยข้อมูลนี้จะไม่ถูกนำไปขาย</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -712,9 +712,27 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">แบ่งปันว่าคุณค้นพบ Firefox ได้อย่างไร และคุณใช้มันอย่างไรกับพันธมิตรด้านการตลาดของ Mozilla โดยข้อมูลนี้จะไม่ถูกนำไปขาย %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">แบ่งปันว่าคุณค้นพบ Firefox ได้อย่างไร และคุณใช้มันอย่างไรกับพันธมิตรด้านการตลาดของ Mozilla โดยข้อมูลนี้จะไม่ถูกนำไปขาย %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">แบ่งปันว่าคุณค้นพบ Firefox ได้อย่างไร และคุณใช้มันอย่างไรกับพันธมิตรด้านการตลาดของ Mozilla โดยข้อมูลนี้จะไม่ถูกนำไปขาย</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">คุณสามารถช่วยเราเข้าถึงผู้คนได้มากขึ้นด้วยการอนุญาตให้ Mozilla แจ้งช่องทางต่าง ๆ ที่เราโปรโมต Firefox ว่าคุณคือผู้ใช้ Firefox</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">คุณสามารถช่วยเราเข้าถึงผู้คนได้มากขึ้นด้วยการอนุญาตให้ Mozilla แจ้งแพลตฟอร์มที่คุณเข้ามาว่าคุณใช้ Firefox</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">ช่วยเราเข้าถึงผู้คนได้มากขึ้นด้วยการอนุญาตให้ Mozilla แจ้งแพลตฟอร์มที่คุณเข้ามาว่าคุณใช้ Firefox</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">เราใช้ข้อมูลอย่างไร</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">ช่วย Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">ไม่ ขอบคุณ</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">การแจ้งเตือนช่วยให้คุณปลอดภัยยิ่งขึ้นด้วย Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -3176,6 +3194,8 @@
   <string name="ip_protection_menu_paused">หยุดชั่วคราว</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">ข้อผิดพลาด</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">ลองดู</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">เปิดการตั้งค่า VPN</string>
   <!--
@@ -3189,9 +3209,9 @@
   -->
   <string name="ip_protection_data_limit_reached_description">คุณได้ใช้ข้อมูล VPN ครบ %1$d GB แล้ว การเข้าถึงจะถูกรีเซ็ตในเดือนหน้า</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
-  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN เปิดอยู่</string>
+  <string name="ip_protection_toolbar_pill_label">VPN เปิดอยู่</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
-  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN เปิดใช้งานอยู่</string>
+  <string name="ip_protection_toolbar_pill_description">VPN เปิดใช้งานอยู่</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">เริ่มต้นใช้งาน</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
@@ -4638,6 +4658,8 @@
   <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">ดูเหมือนว่าคุณจะออฟไลน์อยู่</string>
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณแล้วลองอีกครั้ง</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">รอบแบ่งกลุ่ม</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

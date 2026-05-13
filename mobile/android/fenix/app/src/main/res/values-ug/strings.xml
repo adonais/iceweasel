@@ -604,7 +604,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">داۋاملاشتۇر</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Firefox نى زورايتىشىمىزغا ياردەملىشىڭ</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Firefox نى زورايتىشىمىزغا ياردەملىشىڭ</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Firefox نى قانداق بايقىغانلىقىڭىز ۋە ئۇنى ئىشلىتىشنى Mozilla نىڭ بازارچىلىق ھەمكارلاشقۇچىلىرى بىلەن ھەمبەھىرلەڭ. بۇ سانلىق مەلۇماتلار ھەرگىز سېتىلمايدۇ.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -708,7 +708,7 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Firefox نى قانداق بايقىغانلىقىڭىز ۋە ئۇنى ئىشلىتىشنى Mozilla نىڭ بازارچىلىق ھەمكارلاشقۇچىلىرى بىلەن ھەمبەھىرلەڭ. بۇ سانلىق مەلۇماتلار ھەرگىز سېتىلمايدۇ. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Firefox نى قانداق بايقىغانلىقىڭىز ۋە ئۇنى ئىشلىتىشنى Mozilla نىڭ بازارچىلىق ھەمكارلاشقۇچىلىرى بىلەن ھەمبەھىرلەڭ. بۇ سانلىق مەلۇماتلار ھەرگىز سېتىلمايدۇ. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">سانلىق مەلۇماتنى قانداق ئىشلىتىمىز</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
@@ -3031,6 +3031,10 @@
   <string name="email_masks_max_free_tier_reached">سىز 5 ھەقسىز ئېلخەت نىقابىنى ئىشلەتتىڭىز شۇڭا قايتا ئىشلىتىشىڭىز ئۈچۈن بىرنى تاللىدۇق.</string>
   <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
   <string name="email_masks_error_retrieving_masks">ھازىر ئىلخەت نىقابىنى ئىشلەتكىلى بولمايدۇ. بىر قانچە مىنۇتتىن كېيىن قايتا سىناڭ.</string>
+  <!-- Title for the browser VPN settings screen (displayed in the app bar) -->
+  <string name="ip_protection_title">VPN</string>
+  <!-- Label for the browser VPN toggle on the settings screen -->
+  <string name="ip_protection_toggle_label">VPN</string>
   <!--
     Autofill
 

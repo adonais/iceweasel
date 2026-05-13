@@ -542,7 +542,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">തുടരുക</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">ഫയൎഫോക്സിനെ ഉയൎത്താൻ ഞങ്ങളെ സഹായിക്കുക</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">ഫയൎഫോക്സിനെ ഉയൎത്താൻ ഞങ്ങളെ സഹായിക്കുക</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">എങ്ങനെയാണു് ഞങ്ങൾ ദത്തയെ ഉപയോഗിക്കുന്നതു്</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->

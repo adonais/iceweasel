@@ -375,6 +375,8 @@
   <string name="preferences_ai_controls">Controles de IA</string>
   <!-- Headline text for the AI controls banner. %s is the name of the app (for example "Firefox"). -->
   <string name="ai_controls_banner_headline">Siempre tienes una opción en %s</string>
+  <!-- Supporting text for the AI controls banner. %s is a learn more link using ai_controls_learn_more as text. -->
+  <string name="ai_controls_banner_supporting_text_2">Eso incluye si se van a usar funciones mejoradas con IA. %s</string>
   <!-- Supporting text for the AI controls banner -->
   <string name="ai_controls_banner_supporting_text">Eso incluye si se van a usar funciones mejoradas con IA.</string>
   <!-- Link text for learning more about AI controls -->
@@ -1720,6 +1722,8 @@
   <!-- Title for the edit tab group bottom sheet -->
   <string name="edit_tab_group_title">Editar grupo</string>
   <string name="create_tab_group_save_button">Guardar</string>
+  <!-- Description for the handle at the top of a bottom sheet, used to drag the sheet up or down. -->
+  <string name="edit_tab_group_bottom_sheet_grabber_content_description">Nuevo grupo, contraer el control de arrastre</string>
   <string name="edit_tab_group_bottom_sheet_close_content_description">Cerrar edición de grupo de pestañas</string>
   <!-- Default tab group name when creating a tab group -->
   <string name="create_tab_group_default_name" tools:ignore="UnusedResources" moz:removedIn="150">Grupo</string>
@@ -1734,6 +1738,8 @@
   <string name="tab_group_name_label" tools:ignore="UnusedResources" moz:removedIn="150">Nombre</string>
   <!-- Title for adding more tabs to a tab group. -->
   <string name="add_to_tab_group_title">Añadir a</string>
+  <!-- Content Description for closing the "Add to Tab Group" panel. -->
+  <string name="add_to_tab_group_bottom_sheet_grabber_content_description">Añadir a un grupo de pestañas, contraer el control de arrastre</string>
   <!-- Content Description for "New tab group" panel. -->
   <string name="add_to_new_tab_group_content_description">Añadir a un nuevo grupo de pestañas</string>
   <!-- Content Description for closing the "Add to Tab Group" panel. -->
@@ -1764,6 +1770,16 @@
     -->
     <item quantity="one">Compartir grupo de pestañas %1$s con %2$d pestaña.</item>
     <item quantity="other">Compartir grupo de pestañas %1$s con %2$d pestañas.</item>
+  </plurals>
+  <!-- Content description for the grabber/handle of the tab group bottom sheet. -->
+  <string name="tab_group_sheet_dismiss_description">Ver grupo de pestañas, contraer el control de arrastre</string>
+  <plurals name="expanded_tab_group_header_description">
+    <!--
+      Accessibility description for the header of an expanded tab group.
+      %1$s is the group name, %2$d is the number of tabs, %3$s is the color name.
+    -->
+    <item quantity="one">Grupo de pestañas %1$s con %2$d pestaña, color %3$s</item>
+    <item quantity="other">Grupo de pestañas %1$s con %2$d pestañas, color %3$s</item>
   </plurals>
   <!-- Title for the Delete tab group confirmation dialog. -->
   <string name="delete_tab_group_confirmation_dialog_title">¿Eliminar grupo de pestañas?</string>
@@ -2195,6 +2211,8 @@
   <string name="bookmark_import_menu_button">Importar desde archivo</string>
   <!-- Snackbar message shown when a bookmark import attempt fails. -->
   <string name="bookmark_import_failure_snackbar">No se han podido importar los marcadores. Vuelve a intentarlo.</string>
+  <!-- Default name for the folder created when importing bookmarks from a file. -->
+  <string name="bookmark_import_destination_default_name">Marcadores importados</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -3196,6 +3214,13 @@
   <string name="ip_protection_onboarding_body_link">Navega con protección adicional</string>
   <!-- Label for the dismiss button on the onboarding bottom sheet. -->
   <string name="ip_protection_onboarding_not_now_button">Ahora no</string>
+  <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
+  <string name="ip_protection_connection_error_snackbar">No se ha podido conectar a la VPN. Inténtalo de nuevo en unos minutos.</string>
+  <!--
+    Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
+    %1$d is the total monthly allowance in GB (for example "50").
+  -->
+  <string name="ip_protection_data_limit_reached_snackbar">Se han utilizado %1$d GB de datos de la VPN. El acceso se restablecerá el próximo mes.</string>
   <!--
     Autofill
 
@@ -4609,6 +4634,18 @@
   <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Resultados finales de la Copa del Mundo, página %1$d de %2$d</string>
   <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
   <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Eliminar Copa del Mundo del inicio</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Siguiendo: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">Consulta de nuevo esta página para obtener información sobre los partidos a medida que se acerque el torneo.</string>
+  <!-- Sports widget match status label shown during first half of a match. -->
+  <string name="sports_widget_first_half" tools:ignore="UnusedResources">Primer tiempo</string>
+  <!-- Sports widget match status label shown during second half of a match. -->
+  <string name="sports_widget_second_half" tools:ignore="UnusedResources">Segundo tiempo</string>
+  <!-- Sports widget error card title shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Parece que no tienes conexión.</string>
+  <!-- Sports widget error card description shown when the user is offline. -->
+  <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Comprueba tu conexión a Internet y vuelve a intentarlo.</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

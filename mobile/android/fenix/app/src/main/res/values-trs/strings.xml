@@ -608,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Guij ne\' ñāan</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Rūgûñu’ūnj da’ gāchīj doj Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Rūgûñu’ūnj da’ gāchīj doj Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">\u0020Nātà’ nan’ānj dàj gayī’ìt garâj sunt Firefox nī aràj sunt man ngà nej duguî’ ‘nïnj ra’a si marketin Mozzilla. Nitāj si ane’ nej nuguan’ nan.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -712,7 +712,7 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Nātà’ nan’ānj dàj gayī’ìt garâj sunt Firefox nī aràj sunt man ngà nej duguî’ ‘nïnj ra’a si marketin Mozzilla. Nitāj si ane’ nej nuguan’ nan. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Nātà’ nan’ānj dàj gayī’ìt garâj sunt Firefox nī aràj sunt man ngà nej duguî’ ‘nïnj ra’a si marketin Mozzilla. Nitāj si ane’ nej nuguan’ nan. %1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Dàj arâj sun ñunj nej nuguan’an</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->

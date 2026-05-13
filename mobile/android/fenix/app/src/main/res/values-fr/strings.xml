@@ -608,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Continuer</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Aidez-nous à faire connaitre Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Aidez-nous à faire connaitre Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Partagez la manière dont vous avez découvert Firefox et que vous l’utilisez, avec les partenaires marketing de Mozilla. Ces données ne sont jamais vendues.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -712,9 +712,27 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Partagez la manière dont vous avez découvert Firefox et que vous l’utilisez, avec les partenaires marketing de Mozilla. Ces données ne sont jamais vendues. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Partagez la manière dont vous avez découvert Firefox et que vous l’utilisez, avec les partenaires marketing de Mozilla. Ces données ne sont jamais vendues. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Partagez la manière dont vous avez découvert Firefox et que vous l’utilisez, avec les partenaires marketing de Mozilla. Ces données ne sont jamais vendues.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Vous pouvez nous aider à atteindre plus de personnes en permettant à Mozilla d’informer les canaux sur lesquels nous faisons la promotion de Firefox que vous utilisez Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Vous pouvez nous aider à atteindre plus de gens en permettant à Mozilla d’informer la plateforme d’où vous venez que vous utilisez Firefox.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Aidez-nous à toucher plus de personnes en permettant à Mozilla d’informer la plateforme d’où vous venez que vous utilisez Firefox.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Notre utilisation des données</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Aider Firefox</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Non merci</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Les notifications vous aident à rester en sécurité avec Firefox</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -3184,6 +3202,8 @@
   <string name="ip_protection_menu_paused">En pause</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Erreur</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Essayer</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Ouvrir les paramètres VPN</string>
   <!--
@@ -3197,9 +3217,9 @@
   -->
   <string name="ip_protection_data_limit_reached_description">Vous avez consommé la totalité de vos %1$d\u00a0Go de données VPN. L’accès sera rétabli le mois prochain.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
-  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN activé</string>
+  <string name="ip_protection_toolbar_pill_label">VPN activé</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
-  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">Le VPN est actif.</string>
+  <string name="ip_protection_toolbar_pill_description">Le VPN est actif.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Démarrer</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
@@ -4646,6 +4666,8 @@
   <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">On dirait que vous êtes hors connexion.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Vérifiez votre connexion Internet puis réessayez.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Phase de groupes</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

@@ -608,7 +608,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">계속</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Firefox를 성장시킬 수 있도록 도와주세요</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Firefox를 성장시킬 수 있도록 도와주세요</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Firefox를 발견한 방법과 사용 방법을 Mozilla의 마케팅 파트너들과 공유해보세요. 이 데이터는 판매되지 않습니다.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -712,9 +712,27 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Firefox를 발견한 방법과 사용 방법을 Mozilla의 마케팅 파트너들과 공유해보세요. 이 데이터는 판매되지 않습니다. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Firefox를 발견한 방법과 사용 방법을 Mozilla의 마케팅 파트너들과 공유해보세요. 이 데이터는 판매되지 않습니다. %1$s</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_2" tools:ignore="BrandUsage">Firefox를 발견한 방법과 사용 방법을 Mozilla의 마케팅 파트너들과 공유해보세요. 이 데이터는 판매되지 않습니다.</string>
+  <!-- Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_body_3" tools:ignore="BrandUsage">Mozilla가 Firefox를 홍보하는 채널에 여러분이 Firefox 사용자임을 알릴 수 있도록 허용해 주시면, 더 많은 분들께 Firefox를 알리는 데 도움이 됩니다.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_4" tools:ignore="BrandUsage">Firefox를 사용하는 플랫폼의 출처를 Mozilla에 알려주시면 더 많은 사람들에게 도움을 주실 수 있습니다.</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">여러분이 Firefox를 사용하는 플랫폼에 대해 Mozilla가 알릴 수 있도록 하여 더 많은 사람들에게 다가갈 수 있도록 도와주세요.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">저희가 데이터를 사용하는 방법</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Firefox 도움말</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">아니요</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">알림으로 Firefox를 더욱 안전하게 사용할 수 있습니다</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -3176,6 +3194,8 @@
   <string name="ip_protection_menu_paused">일시 중지됨</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">오류</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">사용해 보기</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">VPN 설정 열기</string>
   <!--
@@ -3189,9 +3209,9 @@
   -->
   <string name="ip_protection_data_limit_reached_description">VPN 데이터 %1$d GB를 모두 사용했습니다. 다음 달에 초기화됩니다.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
-  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN 켜짐</string>
+  <string name="ip_protection_toolbar_pill_label">VPN 켜짐</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
-  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN이 활성화 되어 있습니다.</string>
+  <string name="ip_protection_toolbar_pill_description">VPN이 활성화 되어 있습니다.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">시작하기</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
@@ -4638,6 +4658,8 @@
   <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">오프라인 상태인 것 같습니다.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">인터넷 연결을 확인하고 다시 시도하세요.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">조별 예선</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--

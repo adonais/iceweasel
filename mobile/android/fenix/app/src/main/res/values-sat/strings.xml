@@ -554,7 +554,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">ᱞᱮᱛᱟᱲ</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Firefox ᱵᱟᱵᱚᱛ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱰᱟᱭ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱟ ᱞᱮᱢ</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Firefox ᱵᱟᱵᱚᱛ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱰᱟᱭ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱟ ᱞᱮᱢ</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -656,7 +656,7 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾%1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾%1$s</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">ᱟᱵᱚ ᱰᱟᱴᱟ ᱪᱮᱫ ᱞᱮᱠᱟ ᱵᱚᱱ ᱵᱮᱵᱷᱟᱨᱮᱫᱟ</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->

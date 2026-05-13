@@ -602,7 +602,7 @@
   <!-- Onboarding label for 'Continue' button. -->
   <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">Pokračovat</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">Pomozte nám rozvíjet Firefox</string>
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Pomozte nám rozvíjet Firefox</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">Podělte se s marketingovými partnery Mozilly o to, jak jste Firefox objevili a že ho používáte. Tyto údaje nejsou nikdy prodávány.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -706,9 +706,18 @@
     Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
     %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
   -->
-  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">Podělte se s marketingovými partnery Mozilly o tom, jak jste objevili Firefox a že jej používáte. Tato data nejsou nikdy prodávána. %1$s</string>
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Podělte se s marketingovými partnery Mozilly o tom, jak jste objevili Firefox a že jej používáte. Tato data nejsou nikdy prodávána. %1$s</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    “Platform you came from” refers to the external app, website, store, campaign, or other source that directed the user to Firefox.
+  -->
+  <string name="nova_onboarding_marketing_body_5" tools:ignore="BrandUsage,UnusedResources">Pomozte nám oslovit více lidí. Dovolte Mozille informovat platformu, odkud jste přišli, že používáte Firefox.</string>
   <!-- Marketing onboarding body link text. -->
   <string name="nova_onboarding_marketing_body_link_text">Jak data používáme</string>
+  <!-- Marketing onboarding primary button text. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage">Pomozte Firefoxu</string>
+  <!-- Marketing onboarding secondary button text. -->
+  <string name="nova_onboarding_marketing_secondary_button_text">Ne, děkuji</string>
   <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Oznámení vám pomáhají zůstat s Firefoxem ve větším bezpečí</string>
   <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
@@ -1697,6 +1706,10 @@
   <string name="pwa_site_controls_title_private">%1$s (anonymní režim)</string>
   <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
   <string name="tab_manager_open_tab_search">Otevřít vyhledávání v panelech</string>
+  <!-- The header text displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_header">Vyzkoušejte skupiny panelů – méně posouvání, více práce</string>
+  <!-- The description displayed on the tab groups page when no tab groups are open -->
+  <string name="tab_manager_empty_tab_groups_page_description">Vyberte panely a vytvořte skupinu. Budou zde uloženy a připraveny k použití, až je budete potřebovat.</string>
   <!--
     Tab Group
 
@@ -1915,6 +1928,8 @@
   <string name="download_rename_error_exists_error">Soubor s názvem „%s“ již v tomto umístění existuje</string>
   <!-- Error message when renaming with an invalid file name. -->
   <string name="download_rename_error_invalid_name_error">Názvy souborů nemohou obsahovat znak „/“</string>
+  <!-- Error message shown when a user tries to rename a downloaded file but only changes the casing (e.g., "file.txt" to "File.txt"). -->
+  <string name="download_rename_error_case_only_error">Zadaný název obsahuje pouze velká nebo malá písmena. Zkuste zadat jiný název souboru.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Soubor se nedá přejmenovat</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -3143,6 +3158,8 @@
   <string name="ip_protection_menu_paused">Pozastaveno</string>
   <!-- Badge label shown in the menu item when the browser VPN has an error -->
   <string name="ip_protection_menu_error">Chyba</string>
+  <!-- Badge label shown in the menu item when the user is eligible to use the browser VPN but should authenticate or authorize it first. -->
+  <string name="ip_protection_menu_auth_required">Vyzkoušejte ho</string>
   <!-- Content description for the chevron button that opens the browser VPN settings screen -->
   <string name="ip_protection_navigate_settings">Otevřít nastavení VPN</string>
   <!--
@@ -3156,9 +3173,9 @@
   -->
   <string name="ip_protection_data_limit_reached_description">Využili jste všech %1$d GB vašich dat VPN. Přístup bude příští měsíc obnoven.</string>
   <!-- Label shown next to the browser protection icon in the address bar when the browser VPN is active -->
-  <string name="ip_protection_toolbar_pill_label" tools:ignore="UnusedResources">VPN zapnuta</string>
+  <string name="ip_protection_toolbar_pill_label">VPN zapnuta</string>
   <!-- Accessibility description for the browser VPN pill in the address bar when the VPN has been activated -->
-  <string name="ip_protection_toolbar_pill_description" tools:ignore="UnusedResources">VPN je aktivní.</string>
+  <string name="ip_protection_toolbar_pill_description">VPN je aktivní.</string>
   <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
   <string name="ip_protection_get_started">Začít</string>
   <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
@@ -4434,6 +4451,8 @@
   <string name="sports_widget_match_live" tools:ignore="UnusedResources">ŽIVĚ</string>
   <!-- Title shown on the sports widget champion scoreboard row celebrating the soccer tournament winner. -->
   <string name="sports_widget_champions_title" tools:ignore="UnusedResources">Mistrovství světa ve fotbale 2026</string>
+  <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament runners-up. Runners-up means second place. -->
+  <string name="sports_widget_runner_up_title" tools:ignore="UnusedResources">Druhé místo</string>
   <!-- Title shown on the sports widget champion scoreboard celebrating the soccer tournament third place winners. -->
   <string name="sports_widget_third_place_title" tools:ignore="UnusedResources">Třetí místo</string>
   <!-- Round name shown on the sports widget for the Round of 32 stage in the soccer tournament. -->
@@ -4508,6 +4527,8 @@
   <string name="sports_widget_remove" tools:ignore="UnusedResources">Odebrat</string>
   <!-- Sports widget card title shown after a team is eliminated, asking if the user still wants to continue following the soccer tournament. -->
   <string name="sports_widget_still_want_to_follow">Stále chcete sledovat?</string>
+  <!-- Sports widget card description shown after a team is eliminated, suggesting to choose another team. -->
+  <string name="sports_widget_choose_another_team">Vyberte si jiný tým, abyste byli v obraze ohledně mistrovství světa.</string>
   <!-- Sports widget button label to follow another team after the current team is eliminated. -->
   <string name="sports_widget_follow_another_team">Sledovat jiný tým</string>
   <!-- Sports widget card title shown before the soccer tournament begins on top of a timer that is counting down. -->
@@ -4549,6 +4570,13 @@
     %1$d is the number of days, %2$d is the number of hours, and %3$d is the number of minutes.
   -->
   <string name="sports_widget_countdown_remaining_content_description">Zbývající čas. Dny: %1$d. Hodiny: %2$d. Minuty: %3$d.</string>
+  <!-- Content description (for accessibility, not displayed)  for the action that navigates to the World Cup website. -->
+  <string name="sports_widget_go_to_world_cup_site_content_description" tools:ignore="UnusedResources">Přejít na stránky Mistrovství světa</string>
+  <!--
+    Content description (for accessibility, not displayed)  announcing an upcoming soccer match.
+    %1$s is the home team name, %2$s is the away team name, %3$s is the match date, %4$s is the kickoff time.
+  -->
+  <string name="sports_widget_upcoming_match_content_description" tools:ignore="UnusedResources">Nadcházející: %1$s versus %2$s, %3$s v %4$s</string>
   <!--
     Content description (for accessibility, not displayed)  used for the sports widget card header announcing a live match for a group or stage.
     %s is the soccer tournament group name or stage (e.g. Group A represented by sports_widget_group_a, Round of 32 represented by sports_widget_round_of_32,
@@ -4567,6 +4595,17 @@
     %2$d is the current page number, and %3$d is the total number of pages.
   -->
   <string name="sports_widget_page_position_content_description" tools:ignore="UnusedResources">%1$s, stránka %2$d z %3$d</string>
+  <!--
+    Content description (for accessibility, not displayed) for a page within the World Cup final results carousel.
+    %1$d is the current page number, and %2$d is the total number of pages.
+  -->
+  <string name="sports_widget_final_results_page_content_description" tools:ignore="UnusedResources">Konečné výsledky Mistrovství světa, stránka %1$d z %2$d</string>
+  <!-- Content description (for accessibility, not displayed) for the remove button that removes the sports widget from the homepage. -->
+  <string name="sports_widget_remove_content_description" tools:ignore="UnusedResources">Odstranit Mistrovství světa z domovské stránky</string>
+  <!-- Title shown on the sports widget immediately after the user has followed a team. %s is the selected team (e.g., "USA"). -->
+  <string name="sports_widget_team_followed_title" tools:ignore="UnusedResources">Sledujete: \n%s</string>
+  <!-- Description shown on the sports widget immediately after the user has followed a team -->
+  <string name="sports_widget_team_followed_description" tools:ignore="UnusedResources">S blížícím se turnajem se sem vraťte pro informace o zápasech.</string>
   <!-- Sports widget match status label shown during first half of a match. -->
   <string name="sports_widget_first_half" tools:ignore="UnusedResources">První poločas</string>
   <!-- Sports widget match status label shown during second half of a match. -->
@@ -4575,6 +4614,8 @@
   <string name="sports_widget_error_connection_offline_title" tools:ignore="UnusedResources">Zdá se, že jste offline.</string>
   <!-- Sports widget error card description shown when the user is offline. -->
   <string name="sports_widget_error_connection_offline_description" tools:ignore="UnusedResources">Zkontrolujte své připojení k internetu a zkuste to znovu.</string>
+  <!-- Sports widget general group stage label in the soccer tournament. -->
+  <string name="sports_widget_group_stage" tools:ignore="UnusedResources">Skupinová fáze</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 
   <!--
